@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pf_active>
+ 
+     <ids_properties>
+          <comment>      
+      Guo, Yong, Bingjia Xiao, Bin Wu, and Chengyue Liu. “Experimental Advanced Superconducting Tokamak Ohmic Discharge Simulation by the Tokamak Simulation Code.” Plasma Physics and Controlled Fusion 54, no. 8 (July 2012): 085022. https://doi.org/10.1088/0741-3335/54/8/085022. 
+                    COILS     R(m)       Z(m)     dR(m)     dZ(m)     TURNS
+                    CS3U      1.409      5.491    0.661     2.136     396
+                    CS2U      1.409      3.294    0.661     2.136     396
+                    CS1U      1.409      1.098    0.661     2.136     396
+                    CS1L      1.409     -1.098    0.661     2.136     396
+                    CS2L      1.409     -3.294    0.661     2.136     396
+                    CS3L      1.409     -5.491    0.661     2.136     396
+                    PF1U      3.109      7.642    1.353     0.861     308
+                    PF2U      9.15       6.697    0.834     0.715     168
+                    PF3U     11.704      2.743    0.834     0.715     168
+                    PF3L     11.704     -2.743    0.834     0.715     168
+                    PF2L      9.15      -6.697    0.834     0.715     168
+                    PF1L      3.109     -7.642    1.353     0.861     308
+          </comment>
+     <provider>Yong GUO</provider>
+     <creation_date>2020-10-12</creation_date>
+     </ids_properties>
+    
+     <coil id='1' ><name>CS3U</name><identifier>CS3U</identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float">  1.409  </r> <z dtype="float"> 5.491  </z> <width dtype="float">0.661  </width> <height dtype="float">2.136</height>  </rectangle> </geometry>   <turns_with_sign dtype="int">396</turns_with_sign></element></coil> 
+     <coil id='2' ><name>CS2U</name><identifier>CS2U</identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float">  1.409  </r> <z dtype="float"> 3.294  </z> <width dtype="float">0.661  </width> <height dtype="float">2.136</height>  </rectangle> </geometry>   <turns_with_sign dtype="int">396</turns_with_sign></element></coil>
+     <coil id='3' ><name>CS1U</name><identifier>CS1U</identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float">  1.409  </r> <z dtype="float"> 1.098  </z> <width dtype="float">0.661  </width> <height dtype="float">2.136</height>  </rectangle> </geometry>   <turns_with_sign dtype="int">396</turns_with_sign></element></coil>  
+     <coil id='4' ><name>CS1L</name><identifier>CS1L</identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float">  1.409  </r> <z dtype="float">-1.098  </z> <width dtype="float">0.661  </width> <height dtype="float">2.136</height>  </rectangle> </geometry>   <turns_with_sign dtype="int">396</turns_with_sign></element></coil> 
+     <coil id='5' ><name>CS2L</name><identifier>CS2L</identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float">  1.409  </r> <z dtype="float">-3.294  </z> <width dtype="float">0.661  </width> <height dtype="float">2.136</height>  </rectangle> </geometry>   <turns_with_sign dtype="int">396</turns_with_sign></element></coil>    
+     <coil id='6' ><name>CS3L</name><identifier>CS3L</identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float">  1.409  </r> <z dtype="float">-5.491  </z> <width dtype="float">0.661  </width> <height dtype="float">2.136</height>  </rectangle> </geometry>   <turns_with_sign dtype="int">396</turns_with_sign></element></coil>  
+     <coil id='7' ><name>PF1U</name><identifier>PF1U</identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float">  3.109  </r> <z dtype="float"> 7.642  </z> <width dtype="float">1.353  </width> <height dtype="float">0.861</height>  </rectangle> </geometry>   <turns_with_sign dtype="int">308</turns_with_sign></element></coil>  
+     <coil id='8' ><name>PF2U</name><identifier>PF2U</identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float">  9.15   </r> <z dtype="float"> 6.697  </z> <width dtype="float">0.834  </width> <height dtype="float">0.715</height>  </rectangle> </geometry>   <turns_with_sign dtype="int">168</turns_with_sign></element></coil>   
+     <coil id='9' ><name>PF3U</name><identifier>PF3U</identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float"> 11.704  </r> <z dtype="float"> 2.743  </z> <width dtype="float">0.834  </width> <height dtype="float">0.715</height>  </rectangle> </geometry>   <turns_with_sign dtype="int">168</turns_with_sign></element></coil>  
+     <coil id='10'><name>PF3L</name><identifier>PF3L</identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float"> 11.704  </r> <z dtype="float">-2.743  </z> <width dtype="float">0.834  </width> <height dtype="float">0.715</height>  </rectangle> </geometry>   <turns_with_sign dtype="int">168</turns_with_sign></element></coil>  
+     <coil id='11'><name>PF2L</name><identifier>PF2L</identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float">  9.15   </r> <z dtype="float">-6.697  </z> <width dtype="float">0.834  </width> <height dtype="float">0.715</height>  </rectangle> </geometry>   <turns_with_sign dtype="int">168</turns_with_sign></element></coil>  
+     <coil id='12'><name>PF1L</name><identifier>PF1L</identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float">  3.109  </r> <z dtype="float">-7.642  </z> <width dtype="float">1.353  </width> <height dtype="float">0.861</height>  </rectangle> </geometry>   <turns_with_sign dtype="int">308</turns_with_sign></element></coil>   
+    
+
+    
+
+</pf_active>
