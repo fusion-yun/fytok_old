@@ -12,9 +12,9 @@ class CFETRCollection(TokamakCollection):
     DEVICE_NAME = "CFETR"
 
     def __init__(self, uri, *args, mapping=None,   **kwargs):
-        if isinstance(uri, str):
-            uri = urisplit(uri)
-
+        # if isinstance(uri, str):
+        #     uri = urisplit(uri)
+    
         # path = getattr(uri, "path", None) or pathlib.Path.home()/f"public_data/~t/imas/3"
 
         # source = Collection(uriunsplit("mdsplus", uri.authority, path, None, uri.fragment), *args, **kwargs)
