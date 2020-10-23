@@ -46,4 +46,4 @@ class TokamakCollection(MappingCollection):
         super().__init__(uri, *args, source=source, mapping=mapping, id_hasher=id_hasher or "{shot}", **kwargs)
 
 
-__SP_EXPORT__ = TokamakCollection
+__SP_EXPORT__ = TokamakCollection 

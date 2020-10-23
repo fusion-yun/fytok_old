@@ -1,7 +1,7 @@
 import os
 import pathlib
 
-from spdm.data.plugin.PluginTokamak import TokamakCollection
+from spdm.data.plugins.PluginTokamak import TokamakCollection
 from spdm.util.logger import logger
 from spdm.util.urilib import urisplit, uriunsplit
 
