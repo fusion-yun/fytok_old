@@ -7,12 +7,12 @@ EPSILON = 1.0e-5
 _SOLVER_COEFFICIENTS = collections.namedtuple("_SOLVER_COEFFICIENTS", "a b c d e f g h u v w")
 
 
-class Transport:
+class CoreTransport:
     """
         Solve transport equation s
 
         Refs:
-            - Hinton\Hazeltine, Rev. Mod. Phys. vol. 48 (1976), pp.239-308
+            - Hinton/Hazeltine, Rev. Mod. Phys. vol. 48 (1976), pp.239-308
             - David P. Coster, Vincent Basiuk, Grigori Pereverzev, Denis Kalupin, Roman Zagórksi, Roman Stankiewicz, Philippe Huynh, and Fréd…,
               "The European Transport Solver", IEEE Transactions on Plasma Science 38, 9 PART 1 (2010), pp. 2085--2092.
             - G V Pereverzev, P N Yushmanov, and Eta, "ASTRA–Automated System for Transport Analysis in a Tokamak",
@@ -23,56 +23,36 @@ class Transport:
     """
 
     def __init__(self, *args, **kwargs):
-        pass
+        self._enable_quasi_neutrality = False
 
-    #   MAIN PLASMA
-    def main_plasma(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs):
+        return self.solve(*args, **kwargs)
 
-        #-------------------------------------------------------#
-        #     This routine finds the solution for the set of    #
-        #     transport equations describing the main plasma,   #
-        #     with given kwargs and transport coefficients     #
-        #     for all components.                               #
-        #-------------------------------------------------------#
-        #     Source:       ---                                 #
-        #     Developers:   D.Kalupin, R.Stankiewicz            #
-        #     Kontacts:     D.Kalupin@fz-juelich.de             #
-        #                   Roman.Stankiewich@gmail.com         #
-        #                                                       #
-        #     Comments:     equation are derived following      #
-        #                   Hinton\Hazeltine, Rev. Mod. Phys.   #
-        #                   vol. 48 (1976), pp.239-308          #
-        #                                                       #
-        #-------------------------------------------------------#
+    @property
+    def enable_quasi_neutrality(self):
+        return self._enable_quasi_neutrality
 
-        # Set up dimensions:
-        # AF, 11.Oct.2011
-        # if (allocated(local_flux_ni_s4)) deallocate(local_flux_ni_s4)
-        # if (allocated(local_flux_ni_conv_s4)) deallocate(local_flux_ni_conv_s4)
-        # ALLOCATE(local_flux_ni_s4(nion))
-        # ALLOCATE(local_flux_ni_conv_s4(nion))
-        # local_flux_ni_s4        =np.zeros(self.nrho)
-        # local_flux_ni_conv_s4   =np.zeros(self.nrho)
-        # AF - End
+    def solve(self, profiles, dt, *args, transports=None, sources=None, **kwargs):
+        """Solve transport equations"""
 
         # calculation of new current density profile:
-        self.current()
+        self.current(*args, **kwargs)
 
         # calculation of new ion density profiles:
-        self.ion_density()
+        self.ion_density(*args, **kwargs)
 
         # calculation of new electron density profile:
-        if (self.QUASI_NEUT > 0.5):
-            self.electron_density()
+        if self.enable_quasi_neutrality:
+            self.electron_density(*args, **kwargs)
 
         # calculation of electron/ion density profile from quasi-neutrality:
-        self.quasi_neutrality()
+        self.quasi_neutrality(*args, **kwargs)
 
         # calculation of new ion temperature profiles:
-        self.temperatures()
+        self.temperatures(*args, **kwargs)
 
         # calculation of new toroidal rotation profiles:
-        self.rotation()
+        self.rotation(*args, **kwargs)
 
     #___________  SOLUTION OF TRANSPORT EQUATIONS: _________#
     #                                                       #
@@ -82,35 +62,34 @@ class Transport:
 
     #  CURRENT TRANSPORT EQUATION
     def current(self, *args,
-                itime,
                 equilibrium,
                 core_profiles,
-                core_sources,  # ids.core_sources.source[0].profiles_1d[itime]
+                core_sources,  # ids.core_sources.source[0].profiles_1d
                 **kwargs):
 
         ########################################
         # Geometry
 
         # diamagnetic function,$F=R B_\phi$                 [T*m]
-        fdia = equilibrium.time_slice[itime].profiles_1d.f
+        fdia = equilibrium.profiles_1d.f
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        vpr = equilibrium.time_slice[itime].profiles_1d.dvolume_dpsi
+        vpr = equilibrium.profiles_1d.dvolume_dpsi
         # $gm2 \euqiv \left\langle \left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle $  [m^-2]
-        gm2 = equilibrium.time_slice[itime].profiles_1d.gm2
+        gm2 = equilibrium.profiles_1d.gm2
 
         ########################################
         # boundary condition, value, [depend on PSI_BND_TYPE]
-        psi_bnd = PSI_BND  # ids.equilibrium.time_slice[itime].boundary.psi
+        psi_bnd = PSI_BND  # ids.equilibrium.boundary.psi
         psi_bnd_type = PSI_BND_TYPE  # boundary condition, type
 
         ########################################
         # Profile
-        tau = core_profiles.profiles_1d[itime].time - core_profiles.profiles_1d[itime].time
+        tau = core_profiles.time - core_profiles.time
 
         # $rho$ not  normalised minor radius                [m]
-        rho = core_profiles.profiles_1d[itime].grid.rho_tor
+        rho = core_profiles.grid.rho_tor
         # $\Psi$ flux function from current                 [Wb]
-        psi = core_profiles.profiles_1d[itime].grid.psi
+        psi = core_profiles.grid.psi
         # # $\frac{\partial\Psi}{\partial\rho}$               [Wb/m]
         # dpsi = core_profiles_old.grid.dpsi
 
@@ -119,7 +98,7 @@ class Transport:
         # # $R_0$ characteristic major radius of the device   [m]
         R0 = core_profiles.vacuum_toroidal_field.r0
         # $B_0$ magnetic field measured at $R_0$            [T]
-        Bt0 = core_profiles.vacuum_toroidal_field.b0[itime]
+        Bt0 = core_profiles.vacuum_toroidal_field.b0
         # $B_0^-$ previous time steps$B_0$,                 [T]
         Bt0m = core_profiles.vacuum_toroidal_field.b0[itime-1]
 
@@ -127,12 +106,12 @@ class Transport:
         Bt0prime = (Bt0 - Bt0m)/tau
 
         # $q$ safety factor                                 [-]
-        qsf = core_profiles.profiles_1d[itime].q
+        qsf = core_profiles.q
 
         ########################################
         # Sources
         # plasma parallel conductivity,                     [(Ohm*m)^-1]
-        sigma = core_profiles.profiles_1d[itime].conductivity_parallel
+        sigma = core_profiles.conductivity_parallel
 
         ########################################
         # Sources
@@ -143,7 +122,7 @@ class Transport:
 
         for src in core_sources.sources:
             j_ni_exp += src.profiles_1d.j_parallel
-        
+
         h = tau                                        # coefficients for numerical solver
         v = [0, 0]                                     # boundary conditions for numerical solver
         u = [0, 0]                                     # boundary conditions for numerical solver
@@ -1939,6 +1918,45 @@ class Transport:
         if d2 < 0:
             raise RuntimeError('d2 <= 0 in F_par_AXIS')
         f[0] = f[1]-d1**2*(f[2]-f[1])/(d2**2+2*d1*d2)
+
+
+class CoreProfiles(object):
+    def __init__(self,  *args, **kwargs):
+        super().__init__()
+
+    @property
+    def pprime(self):
+        return NotImplemented
+
+    @property
+    def ffprime(self):
+        return NotImplemented
+
+
+class Transport(object):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self._profiles = CoreProfiles(self)
+        pass
+
+    def solve(self, dt, eq, *args, core_tansport=None, core_sources=None, Bt0=None,  **kwargs):
+        return None
+
+    @property
+    def time(self):
+        return self._time
+
+    @property
+    def vacuum_toroidal_field(self):
+        return self._vacuum_toroidal_field
+
+    @property
+    def global_quantities(self):
+        return []
+
+    @property
+    def profiles_1d(self):
+        return self._profiles
 
 
 if __name__ == "__main__":

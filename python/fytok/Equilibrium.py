@@ -1,49 +1,269 @@
 
-import numpy
+import numpy as np
 import scipy
+import functools
+import collections
+
+import matplotlib.pyplot as plt
+from spdm.util.sp_export import sp_find_module
+
+from .Wall import Wall
+from .PFCoils import PFCoils
+
+
+class EqProfiles1D(object):
+    """
+        Equilibrium profiles (1D radial grid) as a function of the poloidal flux
+
+        @ref: equilibrium.time_slice[itime].profiles_1d
+    """
+
+    def __init__(self, equilibrium, npsi=129,  *args, **kwargs):
+        self._eq = equilibrium
+        self._npsi = npsi
+        self._psi = np.linspace(1.0/(self._npsi+1), 1.0, npsi)
+
+    @functools.cached_property
+    def psi(self):
+        return self._psi
+
+    @functools.cached_property
+    def psi_nrom(self):
+        return (self._psi-self._psi[0])/(self._psi[-1]-self._psi[0])
+
+    @functools.cached_property
+    def phi(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def pressure(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def f(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def dpressure_dpsi(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def f_df_dpsi(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def j_parallel(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def q(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def magnetic_shear(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def r_inboard(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def r_outboard(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def rho_tor(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def rho_tor_norm(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def dpsi_drho_tor(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def geometric_axis(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def elongation(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def triangularity_upper(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def triangularity_lower(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def volume(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def rho_volume_norm(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def dvolume_dpsi(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def dvolume_drho_tor(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def area(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def darea_dpsi(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def surface(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def trapped_fraction(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def gm1(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def gm2(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def gm3(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def gm4(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def gm5(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def gm6(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def gm7(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def gm8(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def gm9(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def b_field_max(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def beta_pol(self):
+        raise NotImplementedError()
+
+    @functools.cached_property
+    def mass_density(self):
+        raise NotImplementedError()
 
 
 class Equilibrium:
+    """
+        Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.	
+        imas dd version 3.28
+        ids=equilibrium
+    """
 
-    def __init__(self, *args, nsigma=32, ntheta=32, **kwargs):
+    @staticmethod
+    def __new__(cls,  *args,   backend="FreeGS", **kwargs):
+        if cls is not Equilibrium:
+            return super(Equilibrium, cls).__new__(cls)
 
-        self.nsigma = nsigma
-        self.ntheta = ntheta
+        plugin_name = f"{__package__}.plugins.equilibrium.Plugin{backend}"
 
-        # define mesh
+        n_cls = sp_find_module(plugin_name, fragment=f"Equilibrium{backend}")
 
-        self.sigma_m = numpy.linspace(
-            0.5/nsigma, 1 - 0.5/nsigma, nsigma, dtype=float)
+        if n_cls is None:
+            raise ModuleNotFoundError(f"Can not find plugin {plugin_name}#Equilibrium{backend}")
 
-        self.sigma_g = numpy.linspace(0, 1, nsigma+1, dtype=float)
+        return object.__new__(n_cls)
 
-        self.theta_m = numpy.linspace(
-            0.5/ntheta, 1 - 0.5/ntheta, nsigma, dtype=float)
+    def __init__(self, *args, wall=None, pf_coils=None, fvec=1.0, **kwargs):
+        super().__init__()
+        # self._vacuum_toroidal_field = collections.namedtuple("eq_vacuum_toroidal_field", "r0 b0")(R0, Bt0)
+        self._profiles_1d = EqProfiles1D(self)
+        self._wall = wall or Wall()
+        self._pf_coils = pf_coils or PFCoils()
+        self._fvec = fvec
 
-        self.theta_g = numpy.linspace(0, 1, ntheta+1, dtype=float)
+    def solve(self, pprime=None, ffprime=None):
+        pass
 
-        self.initialize_psi()
-        self.define_boundary()
-        self.iteration_Loop()
+    @property
+    def fvec(self):
+        return self._fvec
 
+    @property
+    def global_quantities(self):
+        return []
+
+    @property
     def boundary(self):
-        return []
+        return NotImplemented
 
-    def limiter(self):
-        return []
+    @property
+    def boundary_separatrix(self):
+        return NotImplemented
 
-    def read_gfile(self, fid):
-        pass
+    @property
+    def constraints(self):
+        return NotImplemented
 
-    def write_gfile(self, fid):
-        pass
+    @property
+    def profiles_1d(self):
+        return self._profiles_1d
+
+    @property
+    def profiles_2d(self):
+        return NotImplemented
+
+    @property
+    def coordinate_system(self):
+        return NotImplemented
+
+    @property
+    def convergence(self):
+        return NotImplemented
+
+    @property
+    def R(self):
+        return self._R or np.meshgrid(np.linspace(rmin, rmax, NX), np.linspace(zmin, zmax, NY))
+
+    @property
+    def Z(self):
+        return self._Z or np.meshgrid(np.linspace(rmin, rmax, NX), np.linspace(zmin, zmax, NY))
 
     @property
     def psi(self):
-        return numpy.ndarray()
+        return NotImplemented
 
-    @property
-    def equilibrium(self):
-        return {}
+    def plot(self, axis=None, **kwargs):
 
-    def initialize_psi(self):
+        if axis is None:
+            axis = plt.gca()
+
+        # axis.contour(self.R, self.Z, self.psi, **kwargs)
+        return axis
