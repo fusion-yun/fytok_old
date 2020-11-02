@@ -1,3 +1,4 @@
+
 import sys
 sys.path.append("/home/salmon/workspace/freegs/")
 sys.path.append("/home/salmon/workspace/fytok/python")
@@ -6,13 +7,10 @@ sys.path.append("/home/salmon/workspace/SpDev/SpDB")
 
 
 #################################################
-
 import matplotlib.pyplot as plt
-
 from spdm.util.logger import logger
 from spdm.data.Collection import Collection
 from fytok.FyTok import FyTok
-
 
 if __name__ == "__main__":
 
@@ -40,10 +38,17 @@ if __name__ == "__main__":
                          turns=int(coil.element[0].turns_with_sign)
                          )
 
-    tok.equilibrium.solve()
+    lfcs_r = entry.equilibrium.time_slice[10].boundary.outline.r.__value__()[:, 0]
+    lfcs_z = entry.equilibrium.time_slice[10].boundary.outline.z.__value__()[:, 0]
 
-    fig=plt.figure()
+    psivals = [(R, Z, 0.0) for R, Z in zip(lfcs_r, lfcs_z)]
+    # psivals = [ (R, Z, 0.0) for R, Z in zip(entry.equilibrium.time_slice[10].boundary.outline.r.__value__(),
+    #             entry.equilibrium.time_slice[10].boundary.outline.z.__value__()) ]
 
-    tok.plot(axis=fig.add_subplot(111))
+    tok.equilibrium.solve(psivals=psivals)
 
-    fig.savefig("a.png")
+    fig = plt.figure()
+    
+    tok.plot(axis= fig.add_subplot(111))
+
+    fig.savefig("a.svg")

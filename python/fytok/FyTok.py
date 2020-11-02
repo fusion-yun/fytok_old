@@ -20,8 +20,7 @@ class FyTok:
         # self._tf_coils = tf_coils or {}
         self._pf_coils = PFCoils(pf_coils)
         self._wall = Wall(wall)
-
-        self._equilibrium = Equilibrium(self._wall, self._pf_coils)
+        self._equilibrium = Equilibrium(self)
 
         self._profiles = FyTok.Profiles({}, {})
 

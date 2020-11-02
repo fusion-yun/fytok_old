@@ -182,7 +182,7 @@ class EqProfiles1D(object):
 
 class Equilibrium:
     """
-        Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.	
+        Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
         imas dd version 3.28
         ids=equilibrium
     """
@@ -201,20 +201,18 @@ class Equilibrium:
 
         return object.__new__(n_cls)
 
-    def __init__(self, *args, wall=None, pf_coils=None, fvec=1.0, **kwargs):
+    def __init__(self, tokamak, *args,  **kwargs):
         super().__init__()
         # self._vacuum_toroidal_field = collections.namedtuple("eq_vacuum_toroidal_field", "r0 b0")(R0, Bt0)
+        self._tokamak = tokamak
         self._profiles_1d = EqProfiles1D(self)
-        self._wall = wall or Wall()
-        self._pf_coils = pf_coils or PFCoils()
-        self._fvec = fvec
-
-    def solve(self, pprime=None, ffprime=None):
-        pass
 
     @property
-    def fvec(self):
-        return self._fvec
+    def tokamak(self):
+        return self._tokamak
+
+    def solve(self, profiles=None, **kwargs):
+        raise NotImplementedError()
 
     @property
     def global_quantities(self):

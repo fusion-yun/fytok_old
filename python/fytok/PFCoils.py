@@ -12,6 +12,10 @@ class PFCoils:
     def __init__(self, *args, **kwargs):
         self._coils = {}
 
+    def __iter__(self):
+        for name, coil in self._coils.items():
+            yield name, coil
+
     def add(self, name, **kwargs):
         self._coils[name] = PFCoils.Coil(**kwargs)
 
