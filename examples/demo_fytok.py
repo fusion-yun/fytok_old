@@ -1,4 +1,4 @@
-
+import pprint
 import sys
 sys.path.append("/home/salmon/workspace/freegs/")
 sys.path.append("/home/salmon/workspace/fytok/python")
@@ -6,49 +6,47 @@ sys.path.append("/home/salmon/workspace/SpDev/SpCommon")
 sys.path.append("/home/salmon/workspace/SpDev/SpDB")
 
 
-#################################################
-import matplotlib.pyplot as plt
-from spdm.util.logger import logger
-from spdm.data.Collection import Collection
-from fytok.FyTok import FyTok
+##################################################################################################
 
 if __name__ == "__main__":
 
-    db = Collection("east+mdsplus:///home/salmon/public_data/~t/", default_tree_name="efit_east")
-    entry = db.open(shot=55555).entry
+    import matplotlib.pyplot as plt
+    from fytok.FyTok import FyTok
+    from fytok.Wall import Wall
+    from fytok.PFActive import PFActive
 
-    tok = FyTok()
+    from spdm.data.Entry import open_entry
+    from spdm.util.logger import logger
 
-    tok.wall.limiter = [entry.wall.description_2d[0].limiter.unit[0].outline.r.__value__(),
-                        entry.wall.description_2d[0].limiter.unit[0].outline.z.__value__()]
+    entry = open_entry("east+mdsplus:///home/salmon/public_data/~t/?default_tree_name=efit_east#shot=55555")
 
-    tok.wall.vessel = {"inner": [entry.wall.description_2d.vessel.annular.outline_inner.r.__value__(),
-                                 entry.wall.description_2d.vessel.annular.outline_inner.z.__value__()],
+    wall = Wall(
+        limiter=entry.wall.description_2d[0].limiter.unit[0].outline,
+        vessel=entry.wall.description_2d[0].vessel.annular
+    )
 
-                       "outer":  [entry.wall.description_2d.vessel.annular.outline_outer.r.__value__(),
-                                  entry.wall.description_2d.vessel.annular.outline_outer.z.__value__()]}
+    pf_active = PFActive(entry.pf_active)
 
-    for coil in entry.pf_active.coil:
-        rect = coil.element[0].geometry.rectangle.__value__()
-        tok.pf_coils.add(str(coil.name),
-                         r=float(rect.r),
-                         z=float(rect.z),
-                         width=float(rect.width),
-                         height=float(rect.height),
-                         turns=int(coil.element[0].turns_with_sign)
-                         )
+    # tok = FyTok(entry)
+    # logger.debug(tok)
+    # logger.debug(tok.entry.wall())
+    # lfcs_r = entry.equilibrium.time_slice[10].boundary.outline.r.__value__()[:, 0]
+    # lfcs_z = entry.equilibrium.time_slice[10].boundary.outline.z.__value__()[:, 0]
+    # psivals = [(R, Z, 0.0) for R, Z in zip(lfcs_r, lfcs_z)]
 
-    lfcs_r = entry.equilibrium.time_slice[10].boundary.outline.r.__value__()[:, 0]
-    lfcs_z = entry.equilibrium.time_slice[10].boundary.outline.z.__value__()[:, 0]
+    # tok.entry.equilibrium.solve(core_profiles=None, psivals=psivals)
 
-    psivals = [(R, Z, 0.0) for R, Z in zip(lfcs_r, lfcs_z)]
-    # psivals = [ (R, Z, 0.0) for R, Z in zip(entry.equilibrium.time_slice[10].boundary.outline.r.__value__(),
-    #             entry.equilibrium.time_slice[10].boundary.outline.z.__value__()) ]
+    # tok.entry.core_profiles.vacuum_toroidal_field.b0 = 1.0
+    # tok.entry.core_profiles.vacuum_toroidal_field.r0 = 1.0
+    # tok.entry.core_profiles.profiles_1d.conductivity_parallel = 1.0
 
-    tok.equilibrium.solve(psivals=psivals)
+    # # tok.solve(0.1, max_iters=1, constraints={"psivals": psivals})
 
     fig = plt.figure()
-    
-    tok.plot(axis= fig.add_subplot(111))
 
+    axis = fig.add_subplot(111)
+    wall.plot(axis=axis)
+    pf_active.plot(axis=axis)
+
+    axis.axis("scaled")
     fig.savefig("a.svg")

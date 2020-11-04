@@ -1,17 +1,12 @@
+import collections
+import functools
+
 import numpy as np
 import scipy
-import functools
-import collections
-
-core_profiles = collections.namedtuple("core_profiles", [
-
-    "global_quantity",
-    "vacuum_toroidal_field",
-
-])
+from spdm.util.AttributeTree import AttributeTree
 
 
-class CoreProfiles:
+class CoreProfiles(AttributeTree):
     """
         imas dd version 3.28
 
@@ -19,7 +14,11 @@ class CoreProfiles:
     """
 
     def __init__(self, *args, **kwargs):
-        pass
+        super().__init__(dict)
+        self.update(kwargs)
 
-    def __call__(self, *args, **kwargs):
+    def ffprime(self, psi):
+        return NotImplemented
+
+    def pprime(self, psi):
         return NotImplemented

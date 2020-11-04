@@ -1,186 +1,110 @@
 
-import numpy as np
-import scipy
-import functools
 import collections
+import functools
 
 import matplotlib.pyplot as plt
+import numpy as np
+import scipy
+from spdm.util.AttributeTree import AttributeTree
+from spdm.util.LazyProxy import LazyProxy
+from spdm.util.logger import logger
+from spdm.util.Profiles import Profiles1D, Profiles2D
 from spdm.util.sp_export import sp_find_module
 
+from .PFActive import PFActive
 from .Wall import Wall
-from .PFCoils import PFCoils
 
 
-class EqProfiles1D(object):
+class EqProfiles1D(Profiles1D):
     """
         Equilibrium profiles (1D radial grid) as a function of the poloidal flux
 
         @ref: equilibrium.time_slice[itime].profiles_1d
     """
 
-    def __init__(self, equilibrium, npsi=129,  *args, **kwargs):
+    def __init__(self, equilibrium,  psi_nrom=None,  *args, **kwargs):
+        super().__init__(psi_nrom, *args,  **kwargs)
         self._eq = equilibrium
-        self._npsi = npsi
-        self._psi = np.linspace(1.0/(self._npsi+1), 1.0, npsi)
+        self._psi_norm = self.grid
+        self._psi_axis = 0
+        self._psi_boundary = 1
 
-    @functools.cached_property
-    def psi(self):
-        return self._psi
-
-    @functools.cached_property
+    @property
     def psi_nrom(self):
-        return (self._psi-self._psi[0])/(self._psi[-1]-self._psi[0])
+        return self._psi_norm
 
-    @functools.cached_property
-    def phi(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def pressure(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def f(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def dpressure_dpsi(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def f_df_dpsi(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def j_parallel(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def q(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def magnetic_shear(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def r_inboard(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def r_outboard(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def rho_tor(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def rho_tor_norm(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def dpsi_drho_tor(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def geometric_axis(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def elongation(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def triangularity_upper(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def triangularity_lower(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def volume(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def rho_volume_norm(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def dvolume_dpsi(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def dvolume_drho_tor(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def area(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def darea_dpsi(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def surface(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def trapped_fraction(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def gm1(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def gm2(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def gm3(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def gm4(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def gm5(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def gm6(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def gm7(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def gm8(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def gm9(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def b_field_max(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def beta_pol(self):
-        raise NotImplementedError()
-
-    @functools.cached_property
-    def mass_density(self):
-        raise NotImplementedError()
+    def __missing__(self, key):
+        super().__setitem__(key, np.zeros(self._npoints))
 
 
-class Equilibrium:
+class EqProfiles2D(Profiles2D):
+    """
+        Equilibrium 2D profiles in the poloidal plane.
+        @ref: equilibrium.time_slice[itime].profiles_2d
+    """
+
+    def __init__(self, equilibrium, npoints=None, psi_nrom=None,  *args, **kwargs):
+        super().__init__(npoints, **kwargs)
+        self._backend = equilibrium.backend
+        self._psi_norm = psi_nrom or np.linspace(1/(self. npoints+1), 1, self. npoints)
+        self._psi_axis = 0
+        self._psi_boundary = 1
+
+    def __missing__(self, key):
+        super().__setitem__(key, np.zeros(self._npoints))
+
+    @property
+    def r(self):
+        return self._backend.R()
+
+    @property
+    def z(self):
+        return self._backend.Z()
+
+    @property
+    def psi(self):
+        return self._backend.R()
+# psi
+# phi
+# pressure
+# f
+# dpressure_dpsi
+# f_df_dpsi
+# j_parallel
+# q
+# magnetic_shear
+# r_inboard
+# r_outboard
+# rho_tor
+# rho_tor_norm
+# dpsi_drho_tor
+# geometric_axis
+# elongation
+# triangularity_upper
+# triangularity_lower
+# volume
+# rho_volume_norm
+# dvolume_dpsi
+# dvolume_drho_tor
+# area
+# darea_dpsi
+# surface
+# trapped_fraction
+# gm1
+# gm2
+# gm3
+# gm4
+# gm5
+# gm6
+# gm7
+# gm8
+# gm9
+# b_field_max
+# beta_pol
+# mass_density
+
+
+class Equilibrium(AttributeTree):
     """
         Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
         imas dd version 3.28
@@ -188,9 +112,12 @@ class Equilibrium:
     """
 
     @staticmethod
-    def __new__(cls,  *args,   backend="FreeGS", **kwargs):
+    def __new__(cls,  *args,  backend=None, **kwargs):
         if cls is not Equilibrium:
             return super(Equilibrium, cls).__new__(cls)
+
+        if backend is None:
+            backend = "FreeGS"
 
         plugin_name = f"{__package__}.plugins.equilibrium.Plugin{backend}"
 
@@ -199,69 +126,60 @@ class Equilibrium:
         if n_cls is None:
             raise ModuleNotFoundError(f"Can not find plugin {plugin_name}#Equilibrium{backend}")
 
-        return object.__new__(n_cls)
+        return dict.__new__(n_cls)
 
-    def __init__(self, tokamak, *args,  **kwargs):
-        super().__init__()
-        # self._vacuum_toroidal_field = collections.namedtuple("eq_vacuum_toroidal_field", "r0 b0")(R0, Bt0)
-        self._tokamak = tokamak
-        self._profiles_1d = EqProfiles1D(self)
+    def __init__(self,   *args,  wall=None, coils=None,   **kwargs):
+        super().__init__(*args, **kwargs)
+        self._wall = wall
+        self._coils = coils
+        self.profiles_1d = EqProfiles1D(self)
+        self.profiles_2d = EqProfiles2D(self)
 
-    @property
-    def tokamak(self):
-        return self._tokamak
+    def __call__(self, *args, **kwargs):
+        return self.solve(*args, **kwargs)
 
-    def solve(self, profiles=None, **kwargs):
+    def solve(self, *args, **kwargs):
         raise NotImplementedError()
 
     @property
-    def global_quantities(self):
-        return []
+    def wall(self):
+        return self._wall
 
     @property
-    def boundary(self):
+    def coils(self):
+        return self._coils
+
+    @property
+    def oxpoints(self):
         return NotImplemented
 
-    @property
-    def boundary_separatrix(self):
-        return NotImplemented
-
-    @property
-    def constraints(self):
-        return NotImplemented
-
-    @property
-    def profiles_1d(self):
-        return self._profiles_1d
-
-    @property
-    def profiles_2d(self):
-        return NotImplemented
-
-    @property
-    def coordinate_system(self):
-        return NotImplemented
-
-    @property
-    def convergence(self):
-        return NotImplemented
-
-    @property
-    def R(self):
-        return self._R or np.meshgrid(np.linspace(rmin, rmax, NX), np.linspace(zmin, zmax, NY))
-
-    @property
-    def Z(self):
-        return self._Z or np.meshgrid(np.linspace(rmin, rmax, NX), np.linspace(zmin, zmax, NY))
-
-    @property
-    def psi(self):
-        return NotImplemented
-
-    def plot(self, axis=None, **kwargs):
-
+    def plot(self, axis=None, levels=40, **kwargs):
+        """ learn from freegs
+        """
         if axis is None:
             axis = plt.gca()
 
-        # axis.contour(self.R, self.Z, self.psi, **kwargs)
+        R = self.entry.profiles_2d.r()
+        Z = self.entry.profiles_2d.z()
+        Psi = self.entry.profiles_2d.psi()
+
+        levels = np.linspace(np.amin(Psi), np.amax(Psi), levels)
+
+        axis.contour(R, Z, Psi, levels=levels, linewidths=0.2)
+
+        try:
+            opts, xpts = self.oxpoints
+        except AttributeError:
+            opts = []
+            xpts = []
+
+        axis.plot([p[0] for p in xpts], [p[1] for p in xpts], 'rx', label="X-points")
+
+        axis.plot([p[0] for p in opts], [p[1] for p in opts], 'g.', label="O-points")
+
+        if xpts:
+            psi_bndry = xpts[0][2]
+            axis.contour(R, Z, Psi, levels=[psi_bndry], colors='r', linestyles='dashed', linewidths=0.4)
+            axis.plot([], [], 'r--', label="Separatrix")
+
         return axis
