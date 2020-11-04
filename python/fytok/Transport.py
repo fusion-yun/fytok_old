@@ -265,7 +265,7 @@ class Transport:
 
         j_tor = - 2.0*constants.pi*R0/constants.mu_0/vpr * dfun4
         j_par = - 2.0*constants.pi/R0/constants.mu_0/vpr * (fdia/B0)**2*dfun5
-
+        
         # $E_\parallel$  parallel electric field,,          [V/m]
         e_par = (j_par - j_ni_exp - j_ni_imp*y) / sigma
         # core_profiles_iter.e_field.parallel = e_par
