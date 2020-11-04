@@ -1,4 +1,5 @@
 import collections
+import copy
 import pprint
 
 import numpy as np
@@ -99,11 +100,10 @@ class Transport:
 
         ########################################
         # Geometry
-
         # $rho$ not  normalised minor radius                [m]
-        rho = core_profiles.profiles_1d.grid.rho
+        rho = core_profiles.profiles_1d.grid.rho()
         # $\Psi$ flux function from current                 [Wb]
-        psi = core_profiles.profiles_1d.grid.psi
+        psi = core_profiles.profiles_1d.grid.psi()
         # # $\frac{\partial\Psi}{\partial\rho}$               [Wb/m]
         dpsi = core_profiles.profiles_1d.grid.dpsi
 
@@ -119,12 +119,11 @@ class Transport:
         gm2 = equilibrium.profiles_1d.gm2(psi_norm)
 
         # $R_0$ characteristic major radius of the device   [m]
-        R0 = float(equilibrium.vacuum_toroidal_field.r0)
+        R0 = equilibrium.vacuum_toroidal_field.r0()
         # $B_0$ magnetic field measured at $R_0$            [T]
-        B0 = float(equilibrium.vacuum_toroidal_field.b0)
+        B0 = equilibrium.vacuum_toroidal_field.b0()
         # $B_0^-$ previous time steps$B_0$,                 [T]
-        B0m = float(core_profiles.vacuum_toroidal_field.b0)
-
+        B0m = core_profiles.vacuum_toroidal_field.b0()
         # $\dot{B}_{0}$ time derivative or $B_0$,           [T/s]
         B0prime = (B0 - B0m)/tau
 
@@ -142,7 +141,7 @@ class Transport:
         ########################################
         # Sources
         # plasma parallel conductivity,                     [(Ohm*m)^-1]
-        sigma = core_profiles.profiles_1d.conductivity_parallel
+        sigma = core_profiles.profiles_1d.conductivity_parallel()
 
         ########################################
         # Sources
@@ -162,8 +161,9 @@ class Transport:
         # Coefficients for for current diffusion
         #   equation in form:
         #         (A*Y-B*Y(t-1))/H + 1/C * (-D*Y' + E*Y) = F - G*Y
-        a = sigma*1.0                                     # $\sigma_{\parallel}$
-        b = sigma*1.0                                       # $\sigma_{\parallel}$
+        
+        a = sigma                                    # $\sigma_{\parallel}$
+        b = sigma                                       # $\sigma_{\parallel}$
         c = constants.mu_0*B0*rho / fdia**2              # $\frac{\mu_{0}B_{0}\rho}{F^{2}}$
         d = vpr/(4.0*(constants.pi**2)*fdia)*gm2       # $\frac{V^{\prime}g_{3}}{4\pi^{2}F}$
 
@@ -261,7 +261,7 @@ class Transport:
         # New profiles of plasma parameters obtained
         #     from current diffusion equation:
 
-        core_profiles_iter = core_profiles.duplicate()
+        core_profiles_iter = copy.deepcopy(core_profiles)
 
         j_tor = - 2.0*constants.pi*R0/constants.mu_0/vpr * dfun4
         j_par = - 2.0*constants.pi/R0/constants.mu_0/vpr * (fdia/B0)**2*dfun5
@@ -1949,45 +1949,6 @@ class Transport:
         if d2 < 0:
             raise RuntimeError('d2 <= 0 in F_par_AXIS')
         f[0] = f[1]-d1**2*(f[2]-f[1])/(d2**2+2*d1*d2)
-
-
-class CoreProfiles(object):
-    def __init__(self,  *args, **kwargs):
-        super().__init__()
-
-    @property
-    def pprime(self):
-        return NotImplemented
-
-    @property
-    def ffprime(self):
-        return NotImplemented
-
-
-class Transport(object):
-    def __init__(self, *args, **kwargs):
-        super().__init__()
-        self._profiles = CoreProfiles(self)
-        pass
-
-    def solve(self, dt, eq, *args, core_tansport=None, core_sources=None, B0=None,  **kwargs):
-        return None
-
-    @property
-    def time(self):
-        return self._time
-
-    @property
-    def vacuum_toroidal_field(self):
-        return self._vacuum_toroidal_field
-
-    @property
-    def global_quantities(self):
-        return []
-
-    @property
-    def profiles_1d(self):
-        return self._profiles
 
 
 if __name__ == "__main__":

@@ -37,13 +37,13 @@ if __name__ == "__main__":
     lfcs_z = device.equilibrium.time_slice[10].boundary.outline.z.__value__()[:, 0]
     psivals = [(R, Z, 0.0) for R, Z in zip(lfcs_r, lfcs_z)]
 
-    tok.entry.equilibrium.solve(core_profiles=None, psivals=psivals)
+    # tok.entry.equilibrium.solve(core_profiles=None, psivals=psivals)
 
     # tok.entry.vacuum_toroidal_field.b0 = 1.0
     # tok.entry.vacuum_toroidal_field.r0 = 1.0
     # tok.entry.core_profiles.profiles_1d.conductivity_parallel = 1.0
 
-    # tok.solve(0.1, max_iters=1, constraints={"psivals": psivals})
+    tok.solve(0.1, max_iters=1, psivals=psivals)
     # fig = plt.figure()
 
     fig = tok.plot_full()

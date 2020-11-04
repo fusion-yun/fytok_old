@@ -25,10 +25,10 @@ class Tokamak(AttributeTree):
         if len(args)+len(kwargs) > 0:
             self.load(*args, **kwargs)
 
-    def load(self, entry=None,  *args, itime=0,  backends={}, **kwargs):
+    def load(self, entry=None,  *args, itime=0, R0=None, B0=None, backends={}, **kwargs):
         if isinstance(entry, str):
             entry = open_entry(entry)
-        
+
         self.entry.vacuum_toroidal_field.r0 = kwargs.get("R0", 1.0)
         self.entry.vacuum_toroidal_field.b0 = kwargs.get("B0", 1.0)
 
@@ -51,7 +51,7 @@ class Tokamak(AttributeTree):
             self.entry.wall.load(entry.wall)
             self.entry.pf_active.load(entry.pf_active)
             self.entry.equilibrium.load(entry.equilibrium.time_slice[itime],  tokamak=self.entry)
-            # self.entry.core_profiles.load(entry.core_profiles.profiles_1d[itime])
+            self.entry.core_profiles.load(entry.core_profiles.profiles_1d[itime])
             # self.entry.core_transports.load(entry.core_transports.model.profiles_1d[itime])
             # self.entry.core_sources.load(entry.core_sources.source[itime])
             self.entry.vacuum_toroidal_field.r0 = entry.equilibrium.vacuum_toroidal_field.r0() or 1.0
@@ -60,64 +60,37 @@ class Tokamak(AttributeTree):
             self.entry.wall.load(**kwargs.get("wall", {}))
             self.entry.pf_active.load(**kwargs.get("pf_active", {}))
             self.entry.equilibrium.load(**kwargs.get("equilibrium", {}), tokamak=self.entry)
-            # self.entry.core_profiles.load(**kwags.get("core_profiles", {}))
-            # self.entry.core_transports.load(**kwags.get("core_transports", {}))
-            # self.entry.core_sources.load(**kwags.get("core_sources", {}))
+            self.entry.core_profiles.load(**kwargs.get("core_profiles", {}))
+            # self.entry.core_transports.load(**kwargs.get("core_transports", {}))
+            # self.entry.core_sources.load(**kwargs.get("core_sources", {}))
 
+        self.entry.vacuum_toroidal_field.r0 = R0 or self.entry.wall.limiter.outline.r.mean()
+        self.entry.vacuum_toroidal_field.b0 = B0 or 1.0
+        self.entry.core_profiles.vacuum_toroidal_field.r0 = self.entry.vacuum_toroidal_field.r0()
+        self.entry.core_profiles.vacuum_toroidal_field.b0 = self.entry.vacuum_toroidal_field.b0()
         return self.entry
-
-        # self.entry.wall.limiter = [self._data_source.wall.description_2d[0].limiter.unit[0].outline.r.__value__(),
-        #                            self._data_source.wall.description_2d[0].limiter.unit[0].outline.z.__value__()]
-        # self.entry.wall.vessel.inner = [self._data_source .wall.description_2d.vessel.annular.outline_inner.r.__value__(),
-        #                                 self._data_source .wall.description_2d.vessel.annular.outline_inner.z.__value__()]
-        # self.entry.wall.vessel.outer = [self._data_source .wall.description_2d.vessel.annular.outline_outer.r.__value__(),
-        #                                 self._data_source .wall.description_2d.vessel.annular.outline_outer.z.__value__()]
-        # for coil in self._data_source.pf_active.coil:
-        #     rect = coil.element[0].geometry.rectangle.__value__()
-        #     self.entry.pf_active.coil.__push_back__(
-        #         {
-        #             "name": str(coil.name),
-        #             "r": float(rect.r),
-        #             "z": float(rect.z),
-        #             "width": float(rect.width),
-        #             "height": float(rect.height),
-        #             "turns": int(coil.element[0].turns_with_sign)
-        #         }
-        #     )
-        # try:
-        #     itime = kwargs.get("itime", 0)
-        #     lfcs_r = self._data_source .equilibrium.time_slice[itime].boundary.outline.r.__value__()[:, 0]
-        #     lfcs_z = self._data_source .equilibrium.time_slice[itime].boundary.outline.z.__value__()[:, 0]
-
-        #     psivals = [(R, Z, 0.0) for R, Z in zip(lfcs_r, lfcs_z)]
-        #     psivals = [(R, Z, 0.0) for R, Z in zip(self._data_source .equilibrium.time_slice[itime].boundary.outline.r.__value__(),
-        #                                            self._data_source .equilibrium.time_slice[itime].boundary.outline.z.__value__())]
-
-        # except KeyError:
-        #     pass
-        # else:
-        #     self.equilibrium.solve(psivals=psivals)
 
     def save(self, uri, *args, **kwargs):
         raise NotImplementedError()
 
-    def solve(self, dt, *, max_iters=100,  B0=None, ** kwargs):
+    def solve(self, dt, *, max_iters=100,  B0=None,  **constraints):
 
         if B0 is not None:
             self.entry.vacuum_toroidal_field.b0 = B0
+
+        fvec = self.entry.vacuum_toroidal_field.r0() * self.entry.vacuum_toroidal_field.b0()
 
         core_profiles_iter = self.entry.core_profiles
 
         for iter_count in range(max_iters):
 
-            self.entry.equilibrium.solve(core_profiles_iter,  **kwargs)
+            # self.entry.equilibrium.solve(core_profiles_iter, fvec=fvec,  **constraints)
 
             core_profiles_new = self.transport.solve(
                 core_profiles_iter, dt,
-                equilibrium=self.equilibrium,
-                transports=self.core_transports,
-                sources=self.core_sources,
-                **kwargs)
+                equilibrium=self.entry.equilibrium,
+                transports=self.entry.core_transports,
+                sources=self.entry.core_sources)
 
             # TODO: edge
             # edge_profiles_old = copy(edge_profiles_iter)

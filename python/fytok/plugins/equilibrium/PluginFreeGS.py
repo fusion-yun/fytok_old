@@ -9,7 +9,7 @@ from spdm.util.logger import logger
 from spdm.util.Profiles import Profiles1D, Profiles2D
 
 from ...CoreProfiles import CoreProfiles
-from ...Equilibrium import EqProfiles1D, Equilibrium
+from ...Equilibrium import Equilibrium
 
 
 class EqProfiles1DFreeGS(Profiles1D):
@@ -53,7 +53,7 @@ class EqProfiles2DFreeGS(Profiles2D):
     """
 
     def __init__(self, backend, dims=None, *args, **kwargs):
-        super().__init__(dims, **kwargs)
+        super().__init__(dims or [129, 129], **kwargs)
         self._backend = backend
 
     def r(self, dims=None):
@@ -72,6 +72,10 @@ class EquilibriumFreeGS(Equilibrium):
 
     def load(self, ids=None, *args,  **kwargs):
         super().load(ids, *args, **kwargs)
+
+        self.entry.vacuum_toroidal_field.b0 = self.tokamak.entry.vacuum_toroidal_field.b0
+        self.entry.vacuum_toroidal_field.r0 = self.tokamak.entry.vacuum_toroidal_field.r0
+
         eq_wall = freegs.machine.Wall(self.tokamak.wall.limiter.outline.r(), self.tokamak.wall.limiter.outline.z())
 
         eq_coils = []
@@ -124,9 +128,10 @@ class EquilibriumFreeGS(Equilibrium):
     def oxpoints(self):
         return freegs.critical.find_critical(self.r, self.z, self.psi)
 
-    def solve(self, core_profiles, fvec=None,  constraints=None, **kwargs):
-        if fvec is None:
-            fvec = self.fvec
+    def solve(self, core_profiles, B0=None,  constraints=None, **kwargs):
+        self.entry.vacuum_toroidal_field.b0 = B0 or 1.0
+
+        fvec = self.entry.vacuum_toroidal_field.b0 * self.entry.vacuum_toroidal_field.r0
 
         if isinstance(core_profiles, CoreProfiles):
             psi = self.entry.profiles_1d.psi.__value__()
