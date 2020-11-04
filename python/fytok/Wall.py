@@ -11,12 +11,13 @@ from spdm.util.logger import logger
 class Wall(AttributeTree):
     def __init__(self, *args, **kwargs):
         super().__init__()
-        self.load(*args, **kwargs)
+        if len(args)+len(kwargs) > 0:
+            self.load(*args, **kwargs)
 
     def load(self, ids=None, *args, limiter=None, vessel=None, **kwargs):
         if isinstance(ids, LazyProxy):
             if limiter is None:
-                limiter = ids.description_2d.limiter.outline
+                limiter = ids.description_2d.limiter.unit.outline
 
             if vessel is None:
                 vessel = ids.description_2d.vessel.annular
@@ -57,11 +58,11 @@ class Wall(AttributeTree):
 
     @property
     def vessel(self):
-        return LazyProxy(super().__getitem__("vessel"), AttributeTree)
+        return LazyProxy(super().__getitem__("vessel"))
 
     @property
     def limiter(self):
-        return LazyProxy(super().__getitem__("limiter"), AttributeTree)
+        return LazyProxy(super().__getitem__("limiter"))
 
     def plot(self, axis=None, **kwargs):
 

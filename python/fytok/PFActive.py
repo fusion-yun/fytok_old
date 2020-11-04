@@ -17,7 +17,8 @@ class PFActive(AttributeTree):
 
     def __init__(self, *args,  **kwargs):
         super().__init__()
-        self.load(*args,  **kwargs)
+        if len(args)+len(kwargs) > 0:
+            self.load(*args, **kwargs)
 
     def load(self, ids=None,  *args, coils=None, circuit=None, supply=None, **kwags):
         if isinstance(ids, LazyProxy):
@@ -32,18 +33,20 @@ class PFActive(AttributeTree):
 
         if coils is None:
             pass
-        else:
-
+        elif isinstance(coils, LazyProxy):
             for coil in coils:
-                if coil.element.geometry.geometry_type == 2:
-                    rect = coil.element.geometry.rectangle
-                    next_coil = self.entry.coil.__push_back__()
-                    next_coil.name = str(coil.name)
-                    next_coil.r = float(rect.r)
-                    next_coil.z = float(rect.z)
-                    next_coil.width = float(rect.width)
-                    next_coil.height = float(rect.height)
-                    next_coil.turns = int(coil.element[0].turns_with_sign)
+                if coil.element.geometry.geometry_type != 2:
+                    raise NotImplementedError()
+                rect = coil.element.geometry.rectangle
+                next_coil = self.entry.coil.__push_back__()
+                next_coil.name = str(coil.name)
+                next_coil.r = float(rect.r)
+                next_coil.z = float(rect.z)
+                next_coil.width = float(rect.width)
+                next_coil.height = float(rect.height)
+                next_coil.turns = int(coil.element[0].turns_with_sign)
+        else:
+            raise NotImplementedError()
 
     @property
     def coil(self):

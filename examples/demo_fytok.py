@@ -18,23 +18,25 @@ if __name__ == "__main__":
     from spdm.data.Entry import open_entry
     from spdm.util.logger import logger
 
-    entry = open_entry("east+mdsplus:///home/salmon/public_data/~t/?default_tree_name=efit_east#shot=55555")
+    device = open_entry("east+mdsplus:///home/salmon/public_data/~t/?default_tree_name=efit_east#shot=55555")
 
-    wall = Wall(
-        limiter=entry.wall.description_2d[0].limiter.unit[0].outline,
-        vessel=entry.wall.description_2d[0].vessel.annular
-    )
+    # wall = Wall(
+    #     limiter=device.wall.description_2d[0].limiter.unit[0].outline,
+    #     vessel=device.wall.description_2d[0].vessel.annular
+    # )
 
-    pf_active = PFActive(entry.pf_active)
+    # pf_active = PFActive(device.pf_active)
 
-    # tok = FyTok(entry)
+    tok = FyTok()
+    tok.load(device)
+
     # logger.debug(tok)
     # logger.debug(tok.entry.wall())
-    # lfcs_r = entry.equilibrium.time_slice[10].boundary.outline.r.__value__()[:, 0]
-    # lfcs_z = entry.equilibrium.time_slice[10].boundary.outline.z.__value__()[:, 0]
-    # psivals = [(R, Z, 0.0) for R, Z in zip(lfcs_r, lfcs_z)]
+    lfcs_r = device.equilibrium.time_slice[10].boundary.outline.r.__value__()[:, 0]
+    lfcs_z = device.equilibrium.time_slice[10].boundary.outline.z.__value__()[:, 0]
+    psivals = [(R, Z, 0.0) for R, Z in zip(lfcs_r, lfcs_z)]
 
-    # tok.entry.equilibrium.solve(core_profiles=None, psivals=psivals)
+    tok.entry.equilibrium.solve(core_profiles=None, psivals=psivals)
 
     # tok.entry.core_profiles.vacuum_toroidal_field.b0 = 1.0
     # tok.entry.core_profiles.vacuum_toroidal_field.r0 = 1.0
@@ -45,8 +47,8 @@ if __name__ == "__main__":
     fig = plt.figure()
 
     axis = fig.add_subplot(111)
-    wall.plot(axis=axis)
-    pf_active.plot(axis=axis)
+
+    tok.plot(axis=axis)
 
     axis.axis("scaled")
     fig.savefig("a.svg")

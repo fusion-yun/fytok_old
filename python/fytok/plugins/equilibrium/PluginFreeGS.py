@@ -1,9 +1,11 @@
 import collections
 import sys
-
+import pprint
 import freegs
 import numpy as np
 from spdm.util.logger import logger
+from spdm.util.Profiles import Profiles1D, Profiles2D
+from spdm.util.LazyProxy import LazyProxy
 
 from ...Equilibrium import Equilibrium, EqProfiles1D
 from ...CoreProfiles import CoreProfiles
@@ -36,34 +38,34 @@ class EqProfiles1DFreeGS(EqProfiles1D):
 
 
 class EquilibriumFreeGS(Equilibrium):
-    def __init__(self,  *args, grid=[129, 129], **kwargs):
+    def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._backend = None
-        self._grid = grid
-        # self._profiles_1d = EqProfiles1DFreeGS(self)
 
     @property
     def backend(self):
-        if hasattr(self, "_backend"):
-            return self._backend
+        return self._backend
 
-        eq_wall = freegs.machine.Wall(self.wall.limiter.r,
-                                      self.wall.limiter.z)
+    def load(self, ids=None, *args,  **kwargs):
+        super().load(ids, *args, **kwargs)
+        eq_wall = freegs.machine.Wall(self.tokamak.wall.limiter.outline.r(), self.tokamak.wall.limiter.outline.z())
+
         eq_coils = []
 
-        for name, coil in self.coils:
-            eq_coils.append((name, freegs.machine.Coil(
-                coil.r+coil.width/2, coil.z+coil.height/2, turns=coil.turns)))
+        for coil in self.tokamak.pf_active.coil:
+            t_coil = freegs.machine.Coil(
+                coil.r+coil.width/2, coil.z+coil.height/2, turns=coil.turns())
+            eq_coils.append((coil.name(), t_coil))
 
-        logger.debug(self.wall.limiter)
-        box = [[min(self.wall.limiter.r), min(self.wall.limiter.z)],
-               [max(self.wall.limiter.r), max(self.wall.limiter.z)]]
+        tokamak = freegs.machine.Machine(eq_coils, wall=eq_wall)
+
+        dim1 = self.entry.coordinate_system.grid.dim1()
+        dim2 = self.entry.coordinate_system.grid.dim2()
 
         self._backend = freegs.Equilibrium(
-            tokamak=freegs.machine.Machine(eq_coils, eq_wall),
-            Rmin=box[0][0], Rmax=box[1][0],
-            Zmin=box[0][1], Zmax=box[1][1],
-            nx=self._grid[0], ny=self._grid[1],
+            tokamak=tokamak,
+            Rmin=min(dim1), Rmax=max(dim1),
+            Zmin=min(dim2), Zmax=max(dim2),
+            nx=len(dim1), ny=len(dim2),
             boundary=freegs.boundary.freeBoundaryHagenow)
         return self._backend
 
@@ -74,11 +76,11 @@ class EquilibriumFreeGS(Equilibrium):
     #     return self._profiles_1d
 
     @property
-    def R(self):
+    def r(self):
         return self.backend.R
 
     @property
-    def Z(self):
+    def z(self):
         return self.backend.Z
 
     @property
@@ -91,7 +93,7 @@ class EquilibriumFreeGS(Equilibrium):
 
     @property
     def oxpoints(self):
-        return freegs.critical.find_critical(self.R, self.Z, self.psi)
+        return freegs.critical.find_critical(self.r, self.z, self.psi)
 
     def solve(self, core_profiles, fvec=1.0,  constraints=None, **kwargs):
         if isinstance(core_profiles, CoreProfiles):

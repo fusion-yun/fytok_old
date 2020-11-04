@@ -5,6 +5,7 @@ import functools
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
+from spdm.data.Entry import open_entry
 from spdm.util.AttributeTree import AttributeTree
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
@@ -128,12 +129,19 @@ class Equilibrium(AttributeTree):
 
         return dict.__new__(n_cls)
 
-    def __init__(self,   *args,  wall=None, coils=None,   **kwargs):
-        super().__init__(*args, **kwargs)
-        self._wall = wall
-        self._coils = coils
-        self.profiles_1d = EqProfiles1D(self)
-        self.profiles_2d = EqProfiles2D(self)
+    def __init__(self,   *args, backend=None, **kwargs):
+        super().__init__()
+
+        if len(args)+len(kwargs) > 0:
+            self.load(*args, **kwargs)
+
+    def load(self, entry=None,  tokamak=None, nr=129, nz=129, **kwargs):
+        self.tokamak = tokamak
+        lim_r = self.tokamak.wall.limiter.outline.r()
+        lim_z = self.tokamak.wall.limiter.outline.z()
+
+        self.entry.coordinate_system.grid.dim1 = np.linspace(min(lim_r), max(lim_r), nr)
+        self.entry.coordinate_system.grid.dim2 = np.linspace(min(lim_z), max(lim_z), nz)
 
     def __call__(self, *args, **kwargs):
         return self.solve(*args, **kwargs)
@@ -142,15 +150,19 @@ class Equilibrium(AttributeTree):
         raise NotImplementedError()
 
     @property
-    def wall(self):
-        return self._wall
-
-    @property
-    def coils(self):
-        return self._coils
-
-    @property
     def oxpoints(self):
+        return NotImplemented
+
+    @property
+    def r(self):
+        return NotImplemented
+
+    @property
+    def z(self):
+        return NotImplemented
+
+    @property
+    def psi(self):
         return NotImplemented
 
     def plot(self, axis=None, levels=40, **kwargs):
@@ -159,25 +171,21 @@ class Equilibrium(AttributeTree):
         if axis is None:
             axis = plt.gca()
 
-        R = self.entry.profiles_2d.r()
-        Z = self.entry.profiles_2d.z()
-        Psi = self.entry.profiles_2d.psi()
+        R = self.r
+        Z = self.z
+        Psi = self.psi
 
         levels = np.linspace(np.amin(Psi), np.amax(Psi), levels)
 
         axis.contour(R, Z, Psi, levels=levels, linewidths=0.2)
 
-        try:
-            opts, xpts = self.oxpoints
-        except AttributeError:
-            opts = []
-            xpts = []
+        opts, xpts = self.oxpoints
 
-        axis.plot([p[0] for p in xpts], [p[1] for p in xpts], 'rx', label="X-points")
+        if len(opts) > 0:
+            axis.plot([p[0] for p in opts], [p[1] for p in opts], 'g.', label="O-points")
 
-        axis.plot([p[0] for p in opts], [p[1] for p in opts], 'g.', label="O-points")
-
-        if xpts:
+        if len(xpts) > 0:
+            axis.plot([p[0] for p in xpts], [p[1] for p in xpts], 'rx', label="X-points")
             psi_bndry = xpts[0][2]
             axis.contour(R, Z, Psi, levels=[psi_bndry], colors='r', linestyles='dashed', linewidths=0.4)
             axis.plot([], [], 'r--', label="Separatrix")

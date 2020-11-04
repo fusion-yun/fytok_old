@@ -3,7 +3,7 @@ import copy
 
 import matplotlib.pyplot as plt
 import numpy as np
-from spdm.data.Collection import Collection
+from spdm.data.Entry import open_entry
 from spdm.util.AttributeTree import AttributeTree
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
@@ -20,60 +20,66 @@ from .Transport import Transport
 
 class FyTok(AttributeTree):
 
-    def __init__(self, device=None, *args, backends={}, **kwargs):
-        super().__init__(*args, **kwargs)
-        # self._tf_coils = tf_coils or {}
-        self._data_source = None
+    def __init__(self,   *args, **kwargs):
+        super().__init__()
+        if len(args)+len(kwargs) > 0:
+            self.load(*args, **kwargs)
+
+    def load(self, entry=None,  *args, itime=0,  backends={}, **kwags):
+        if isinstance(entry, str):
+            entry = open_entry(entry)
+
+        self.entry.vacuum_toroidal_field
+        self.entry.wall = Wall()
+        self.entry.pf_active = PFActive()
+        self.entry.core_profiles = CoreProfiles()
+        self.entry.core_transports = CoreTransports(backend=backends.get("transport", None))
+        self.entry.core_sources = CoreSources()
+
+        self.entry.equilibrium = Equilibrium(backend=backends.get("equilibrium", None))
+
+        self.transport = Transport(backend=backends.get("transport", None))
 
         # self._transport_edge_solver = TransportEdge(backend=backends.get("transport_edge", None))
         # self.edge_profiles = EdgeProfiles()
         # self.edge_tranports = EdgeTransport()
         # self.edge_sources = EdgeSources()
 
-        self.wall = Wall()
-        self.pf_active = PFActive()
-        self.core_profiles = CoreProfiles()
-        self.core_transports = CoreTransports()
-        self.core_sources = CoreSources()
-        self.equilibrium = Equilibrium(
-            wall=self.wall,
-            coils=self.pf_active,
-            backend=backends.get("equilibrium", None))
+        if isinstance(entry, LazyProxy):
+            self.entry.wall.load(entry.wall)
+            self.entry.pf_active.load(entry.pf_active)
+            self.entry.equilibrium.load(entry.equilibrium.time_slice[itime],  tokamak=self.entry)
+            # self.entry.core_profiles.load(entry.core_profiles.profiles_1d[itime])
+            # self.entry.core_transports.load(entry.core_transports.model.profiles_1d[itime])
+            # self.entry.core_sources.load(entry.core_sources.source[itime])
 
-        self.transport = Transport(backend=backends.get("transport", None))
-
-        # if device is not None:
-        #     self.load(device, **kwargs)
-
-    def load(self, device, **kwargs):
-        if isinstance(device, str):
-            self._data_source = Collection(device).open(**kwargs).entry
-        elif isinstance(device, LazyProxy):
-            self._data_source = device
         else:
-            raise TypeError(f"Illegal device! {device}")
+            self.entry.wall.load(**kwags.get("wall", {}))
+            self.entry.pf_active.load(**kwags.get("pf_active", {}))
+            self.entry.equilibrium.load(**kwags.get("equilibrium", {}), tokamak=self.entry)
+            # self.entry.core_profiles.load(**kwags.get("core_profiles", {}))
+            # self.entry.core_transports.load(**kwags.get("core_transports", {}))
+            # self.entry.core_sources.load(**kwags.get("core_sources", {}))
 
-        self.entry.wall.limiter = [self._data_source.wall.description_2d[0].limiter.unit[0].outline.r.__value__(),
-                                   self._data_source.wall.description_2d[0].limiter.unit[0].outline.z.__value__()]
 
-        self.entry.wall.vessel.inner = [self._data_source .wall.description_2d.vessel.annular.outline_inner.r.__value__(),
-                                        self._data_source .wall.description_2d.vessel.annular.outline_inner.z.__value__()]
-
-        self.entry.wall.vessel.outer = [self._data_source .wall.description_2d.vessel.annular.outline_outer.r.__value__(),
-                                        self._data_source .wall.description_2d.vessel.annular.outline_outer.z.__value__()]
-
-        for coil in self._data_source.pf_active.coil:
-            rect = coil.element[0].geometry.rectangle.__value__()
-            self.entry.pf_active.coil.__push_back__(
-                {
-                    "name": str(coil.name),
-                    "r": float(rect.r),
-                    "z": float(rect.z),
-                    "width": float(rect.width),
-                    "height": float(rect.height),
-                    "turns": int(coil.element[0].turns_with_sign)
-                }
-            )
+        # self.entry.wall.limiter = [self._data_source.wall.description_2d[0].limiter.unit[0].outline.r.__value__(),
+        #                            self._data_source.wall.description_2d[0].limiter.unit[0].outline.z.__value__()]
+        # self.entry.wall.vessel.inner = [self._data_source .wall.description_2d.vessel.annular.outline_inner.r.__value__(),
+        #                                 self._data_source .wall.description_2d.vessel.annular.outline_inner.z.__value__()]
+        # self.entry.wall.vessel.outer = [self._data_source .wall.description_2d.vessel.annular.outline_outer.r.__value__(),
+        #                                 self._data_source .wall.description_2d.vessel.annular.outline_outer.z.__value__()]
+        # for coil in self._data_source.pf_active.coil:
+        #     rect = coil.element[0].geometry.rectangle.__value__()
+        #     self.entry.pf_active.coil.__push_back__(
+        #         {
+        #             "name": str(coil.name),
+        #             "r": float(rect.r),
+        #             "z": float(rect.z),
+        #             "width": float(rect.width),
+        #             "height": float(rect.height),
+        #             "turns": int(coil.element[0].turns_with_sign)
+        #         }
+        #     )
         # try:
         #     itime = kwargs.get("itime", 0)
         #     lfcs_r = self._data_source .equilibrium.time_slice[itime].boundary.outline.r.__value__()[:, 0]
@@ -90,6 +96,7 @@ class FyTok(AttributeTree):
 
     def save(self, uri, *args, **kwargs):
         raise NotImplementedError()
+
 
     def solve(self, dt,  *,   max_iters=100,   ** kwargs):
 
@@ -135,7 +142,7 @@ class FyTok(AttributeTree):
             axis = plt.gca()
 
         self.entry.wall.plot(axis, **kwargs)
-        # self.entry.pf_active.plot(axis, **kwargs)
+        self.entry.pf_active.plot(axis, **kwargs)
         self.entry.equilibrium.plot(axis, **kwargs)
 
         axis.set_aspect('equal')
