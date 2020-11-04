@@ -61,6 +61,7 @@ class FyTok(AttributeTree):
             # self.entry.core_transports.load(**kwags.get("core_transports", {}))
             # self.entry.core_sources.load(**kwags.get("core_sources", {}))
 
+        return self.entry
 
         # self.entry.wall.limiter = [self._data_source.wall.description_2d[0].limiter.unit[0].outline.r.__value__(),
         #                            self._data_source.wall.description_2d[0].limiter.unit[0].outline.z.__value__()]
@@ -97,14 +98,13 @@ class FyTok(AttributeTree):
     def save(self, uri, *args, **kwargs):
         raise NotImplementedError()
 
-
     def solve(self, dt,  *,   max_iters=100,   ** kwargs):
 
         core_profiles_iter = self.entry.core_profiles
 
         for iter_count in range(max_iters):
 
-            self.equilibrium.solve(core_profiles_iter, **kwargs)
+            self.entry.equilibrium.solve(core_profiles_iter, **kwargs)
 
             core_profiles_new = self.transport.solve(
                 core_profiles_iter, dt,
@@ -136,21 +136,59 @@ class FyTok(AttributeTree):
     def check_convergence(self, p_old, p_new):
         return False
 
-    def plot(self, axis=None, **kwargs):
+    def plot(self, axis=None, *args,   **kwargs):
 
         if axis is None:
             axis = plt.gca()
 
-        self.entry.wall.plot(axis, **kwargs)
-        self.entry.pf_active.plot(axis, **kwargs)
-        self.entry.equilibrium.plot(axis, **kwargs)
+        self.entry.wall.plot(axis, **kwargs.get("wall", {}))
+        self.entry.pf_active.plot(axis, **kwargs.get("pf_active", {}))
+        self.entry.equilibrium.plot(axis, **kwargs.get("equilibrium", {}))
 
         axis.set_aspect('equal')
-        axis.axis('scaled')
+        # axis.axis('scaled')
         axis.set_xlabel(r"Major radius $R$ [m]")
         axis.set_ylabel(r"Height $Z$ [m]")
         axis.legend()
+
         return axis
+
+    def plot_full(self,  profiles=None, profiles_label=None, x_axis="psi_norm", xlabel=r'$\psi_{norm}$', *args, **kwargs):
+
+        if isinstance(profiles, str):
+            profiles.split(" ")
+        elif profiles is None:
+            profiles = ["q", "pprime", "ffprime", "fpol", "pressure"]
+            profiles_label = [r"q", r"$p^{\prime}$",  r"$f f^{\prime}$", r"$f_{pol}$", r"pressure"]
+
+        nprofiles = len(profiles)
+        if nprofiles == 0:
+            return self.plot(*args, **kwargs)
+
+        fig, axs = plt.subplots(ncols=2, nrows=nprofiles, sharex=True)
+        gs = axs[0, 1].get_gridspec()
+        # remove the underlying axes
+        for ax in axs[:, 1]:
+            ax.remove()
+        ax_right = fig.add_subplot(gs[:, 1])
+
+        self.plot(ax_right, *args, **kwargs)
+
+        x = self.entry.equilibrium.profiles_1d[x_axis]()
+
+        if profiles_label is None:
+            profiles_label = profiles
+
+        for idx, pname in enumerate(profiles):
+            axs[idx, 0].plot(x, self.entry.equilibrium.profiles_1d[pname](), label=profiles_label[idx])
+            # axs[idx, 0].set_ylabel(profiles_label[idx])
+            axs[idx, 0].legend()
+
+        axs[nprofiles-1, 0].set_xlabel(xlabel)
+
+        fig.tight_layout()
+        fig.subplots_adjust(hspace=0)
+        return fig
 
     # def core_transports(self, *args,  **kwargs):
     #     """Core plasma transport of particles, energy, momentum and poloidal flux."""

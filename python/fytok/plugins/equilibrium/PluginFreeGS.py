@@ -1,31 +1,40 @@
 import collections
-import sys
 import pprint
+import sys
+
 import freegs
 import numpy as np
+from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.util.Profiles import Profiles1D, Profiles2D
-from spdm.util.LazyProxy import LazyProxy
 
-from ...Equilibrium import Equilibrium, EqProfiles1D
 from ...CoreProfiles import CoreProfiles
+from ...Equilibrium import EqProfiles1D, Equilibrium
 
 
-class EqProfiles1DFreeGS(EqProfiles1D):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class EqProfiles1DFreeGS(Profiles1D):
+    def __init__(self, backend, *args, psinorm=None, npoints=129, ** kwargs):
+        self._backend = backend
+        if npoints is None:
+            npoints = 129
+
+        super().__init__(np.linspace(1.0/(npoints+1), 1.0, npoints), *args, **kwargs)
+
+    @property
+    def psi_norm(self):
+        return self.grid
 
     def pprime(self, psinorm=None):
-        return self._eq.backend.pprime(psinorm or self.psi_nrom)
+        return self._backend.pprime(psinorm or self.psi_norm)
 
     def ffprime(self,  psinorm=None):
-        return self._eq.backend.ffprime(psinorm or self.psi_nrom)
+        return self._backend.ffprime(psinorm or self.psi_norm)
 
     def pressure(self,   psinorm=None):
-        return self._eq.backend.pressure(psinorm or self.psi_nrom)
+        return self._backend.pressure(psinorm or self.psi_norm)
 
     def fpol(self,   psinorm=None):
-        return self._eq.backend.fpol(psinorm or self.psi_nrom)
+        return self._backend.fpol(psinorm or self.psi_norm)
 
     def f(self,   psinorm=None):
         return self.psi_nrom
@@ -40,10 +49,6 @@ class EqProfiles1DFreeGS(EqProfiles1D):
 class EquilibriumFreeGS(Equilibrium):
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-    @property
-    def backend(self):
-        return self._backend
 
     def load(self, ids=None, *args,  **kwargs):
         super().load(ids, *args, **kwargs)
@@ -67,7 +72,10 @@ class EquilibriumFreeGS(Equilibrium):
             Zmin=min(dim2), Zmax=max(dim2),
             nx=len(dim1), ny=len(dim2),
             boundary=freegs.boundary.freeBoundaryHagenow)
-        return self._backend
+
+        self.entry.profiles_1d = EqProfiles1DFreeGS(self._backend)
+
+        return self.entry
 
     # @property
     # def profiles_1d(self):
@@ -77,19 +85,19 @@ class EquilibriumFreeGS(Equilibrium):
 
     @property
     def r(self):
-        return self.backend.R
+        return self._backend.R
 
     @property
     def z(self):
-        return self.backend.Z
+        return self._backend.Z
 
     @property
     def psi(self):
-        return self.backend.psi()
+        return self._backend.psi()
 
     @property
     def psi_norm(self):
-        return self.backend.ps
+        return self._backend.ps
 
     @property
     def oxpoints(self):
@@ -115,7 +123,7 @@ class EquilibriumFreeGS(Equilibrium):
         constrain = freegs.control.constrain(**collections.ChainMap(constraints or {}, kwargs, self.entry.constraints))
 
         logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] Start")
-        freegs.solve(self.backend, profiles, constrain)
+        freegs.solve(self._backend, profiles, constrain)
         logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] End")
 
         return

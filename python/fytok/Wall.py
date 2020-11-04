@@ -55,6 +55,8 @@ class Wall(AttributeTree):
             self.entry.vessel.annular.outline_outer.z = vessel.outline_outer.z()
         else:
             raise TypeError(f"Unknown type {type(vessel)}")
+        
+        return self.entry
 
     @property
     def vessel(self):
@@ -64,7 +66,7 @@ class Wall(AttributeTree):
     def limiter(self):
         return LazyProxy(super().__getitem__("limiter"))
 
-    def plot(self, axis=None, **kwargs):
+    def plot(self, axis=None, *args, **kwargs):
 
         if axis is None:
             axis = plt.gca()
@@ -77,8 +79,8 @@ class Wall(AttributeTree):
 
         limiter_points = np.array([self.limiter.outline.r(), self.limiter.outline.z()]).transpose([1, 0])
 
-        axis.add_patch(plt.Polygon(limiter_points, fill=False, closed=True), **kwargs)
-        axis.add_patch(plt.Polygon(vessel_outer_points, fill=False, closed=True), **kwargs)
-        axis.add_patch(plt.Polygon(vessel_inner_points, fill=False, closed=True), **kwargs)
+        axis.add_patch(plt.Polygon(limiter_points, fill=False, closed=True))
+        axis.add_patch(plt.Polygon(vessel_outer_points, fill=False, closed=True))
+        axis.add_patch(plt.Polygon(vessel_inner_points, fill=False, closed=True))
 
         return axis

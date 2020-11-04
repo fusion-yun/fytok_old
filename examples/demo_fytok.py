@@ -1,5 +1,7 @@
+import matplotlib.pyplot as plt
 import pprint
 import sys
+
 sys.path.append("/home/salmon/workspace/freegs/")
 sys.path.append("/home/salmon/workspace/fytok/python")
 sys.path.append("/home/salmon/workspace/SpDev/SpCommon")
@@ -10,11 +12,9 @@ sys.path.append("/home/salmon/workspace/SpDev/SpDB")
 
 if __name__ == "__main__":
 
-    import matplotlib.pyplot as plt
     from fytok.FyTok import FyTok
-    from fytok.Wall import Wall
     from fytok.PFActive import PFActive
-
+    from fytok.Wall import Wall
     from spdm.data.Entry import open_entry
     from spdm.util.logger import logger
 
@@ -42,13 +42,12 @@ if __name__ == "__main__":
     # tok.entry.core_profiles.vacuum_toroidal_field.r0 = 1.0
     # tok.entry.core_profiles.profiles_1d.conductivity_parallel = 1.0
 
-    # # tok.solve(0.1, max_iters=1, constraints={"psivals": psivals})
+    # tok.solve(0.1, max_iters=1, constraints={"psivals": psivals})
+    # fig = plt.figure()
 
-    fig = plt.figure()
+    fig = tok.plot_full()
 
-    axis = fig.add_subplot(111)
-
-    tok.plot(axis=axis)
-
-    axis.axis("scaled")
+   
+    # axs[0].axis("scaled")
+    # axs[1].axis("scaled")
     fig.savefig("a.svg")

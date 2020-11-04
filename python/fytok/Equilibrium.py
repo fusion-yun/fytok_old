@@ -65,6 +65,7 @@ class EqProfiles2D(Profiles2D):
     @property
     def psi(self):
         return self._backend.R()
+
 # psi
 # phi
 # pressure
@@ -142,6 +143,7 @@ class Equilibrium(AttributeTree):
 
         self.entry.coordinate_system.grid.dim1 = np.linspace(min(lim_r), max(lim_r), nr)
         self.entry.coordinate_system.grid.dim2 = np.linspace(min(lim_z), max(lim_z), nz)
+        return self.entry
 
     def __call__(self, *args, **kwargs):
         return self.solve(*args, **kwargs)
@@ -165,7 +167,7 @@ class Equilibrium(AttributeTree):
     def psi(self):
         return NotImplemented
 
-    def plot(self, axis=None, levels=40, **kwargs):
+    def plot(self, axis=None, *args, levels=40, oxpoints=True, **kwargs):
         """ learn from freegs
         """
         if axis is None:
@@ -179,15 +181,16 @@ class Equilibrium(AttributeTree):
 
         axis.contour(R, Z, Psi, levels=levels, linewidths=0.2)
 
-        opts, xpts = self.oxpoints
+        if oxpoints:
+            opts, xpts = self.oxpoints
 
-        if len(opts) > 0:
-            axis.plot([p[0] for p in opts], [p[1] for p in opts], 'g.', label="O-points")
+            if len(opts) > 0:
+                axis.plot([p[0] for p in opts], [p[1] for p in opts], 'g.', label="O-points")
 
-        if len(xpts) > 0:
-            axis.plot([p[0] for p in xpts], [p[1] for p in xpts], 'rx', label="X-points")
-            psi_bndry = xpts[0][2]
-            axis.contour(R, Z, Psi, levels=[psi_bndry], colors='r', linestyles='dashed', linewidths=0.4)
-            axis.plot([], [], 'r--', label="Separatrix")
+            if len(xpts) > 0:
+                axis.plot([p[0] for p in xpts], [p[1] for p in xpts], 'rx', label="X-points")
+                psi_bndry = xpts[0][2]
+                axis.contour(R, Z, Psi, levels=[psi_bndry], colors='r', linestyles='dashed', linewidths=0.4)
+                axis.plot([], [], 'r--', label="Separatrix")
 
         return axis

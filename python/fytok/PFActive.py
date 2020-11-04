@@ -47,6 +47,7 @@ class PFActive(AttributeTree):
                 next_coil.turns = int(coil.element[0].turns_with_sign)
         else:
             raise NotImplementedError()
+        return self.entry
 
     @property
     def coil(self):
@@ -60,7 +61,7 @@ class PFActive(AttributeTree):
     def supply(self):
         return LazyProxy(super().__getitem__("supply"))
 
-    def plot(self, axis=None, with_circuit=False, **kwargs):
+    def plot(self, axis=None, *args, with_circuit=False, **kwargs):
 
         if axis is None:
             axis = plt.gca()
@@ -72,7 +73,6 @@ class PFActive(AttributeTree):
                      coil.z-coil.height/2.0),
                     coil.width,
                     coil.height,
-                    fill=False),
-                **kwargs)
+                    fill=False))
 
         return axis
