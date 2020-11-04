@@ -37,13 +37,33 @@ class EqProfiles1DFreeGS(Profiles1D):
         return self._backend.fpol(psinorm or self.psi_norm)
 
     def f(self,   psinorm=None):
-        return self.psi_nrom
+        return self.psi_norm
 
     def dvolume_dpsi(self, psi_norm=None):
-        return self.psi_nrom
+        return self.psi_norm
 
     def gm2(self, psi_norm=None):
-        return self.psi_nrom
+        return self.psi_norm
+
+
+class EqProfiles2DFreeGS(Profiles2D):
+    """
+        Equilibrium 2D profiles in the poloidal plane.
+        @ref: equilibrium.time_slice[itime].profiles_2d
+    """
+
+    def __init__(self, backend, dims=None, *args, **kwargs):
+        super().__init__(dims, **kwargs)
+        self._backend = backend
+
+    def r(self, dims=None):
+        return self._backend.R
+
+    def z(self, dims=None):
+        return self._backend.Z
+
+    def psi(self, dims=None):
+        return self._backend.psi()
 
 
 class EquilibriumFreeGS(Equilibrium):
@@ -74,6 +94,7 @@ class EquilibriumFreeGS(Equilibrium):
             boundary=freegs.boundary.freeBoundaryHagenow)
 
         self.entry.profiles_1d = EqProfiles1DFreeGS(self._backend)
+        self.entry.profiles_2d = EqProfiles2DFreeGS(self._backend)
 
         return self.entry
 
@@ -97,13 +118,16 @@ class EquilibriumFreeGS(Equilibrium):
 
     @property
     def psi_norm(self):
-        return self._backend.ps
+        return self._backend.psi_norm
 
     @property
     def oxpoints(self):
         return freegs.critical.find_critical(self.r, self.z, self.psi)
 
-    def solve(self, core_profiles, fvec=1.0,  constraints=None, **kwargs):
+    def solve(self, core_profiles, fvec=None,  constraints=None, **kwargs):
+        if fvec is None:
+            fvec = self.fvec
+
         if isinstance(core_profiles, CoreProfiles):
             psi = self.entry.profiles_1d.psi.__value__()
             profiles = freegs.jtor.ProfilesPprimeFfprime(
@@ -120,7 +144,7 @@ class EquilibriumFreeGS(Equilibrium):
                                                     1e6,  # Plasma current [Amps]
                                                     fvec)
 
-        constrain = freegs.control.constrain(**collections.ChainMap(constraints or {}, kwargs, self.entry.constraints))
+        constrain = freegs.control.constrain(**collections.ChainMap(constraints or {}, kwargs))
 
         logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] Start")
         freegs.solve(self._backend, profiles, constrain)

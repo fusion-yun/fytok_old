@@ -18,18 +18,20 @@ from .Wall import Wall
 from .Transport import Transport
 
 
-class FyTok(AttributeTree):
+class Tokamak(AttributeTree):
 
     def __init__(self,   *args, **kwargs):
         super().__init__()
         if len(args)+len(kwargs) > 0:
             self.load(*args, **kwargs)
 
-    def load(self, entry=None,  *args, itime=0,  backends={}, **kwags):
+    def load(self, entry=None,  *args, itime=0,  backends={}, **kwargs):
         if isinstance(entry, str):
             entry = open_entry(entry)
+        
+        self.entry.vacuum_toroidal_field.r0 = kwargs.get("R0", 1.0)
+        self.entry.vacuum_toroidal_field.b0 = kwargs.get("B0", 1.0)
 
-        self.entry.vacuum_toroidal_field
         self.entry.wall = Wall()
         self.entry.pf_active = PFActive()
         self.entry.core_profiles = CoreProfiles()
@@ -52,11 +54,12 @@ class FyTok(AttributeTree):
             # self.entry.core_profiles.load(entry.core_profiles.profiles_1d[itime])
             # self.entry.core_transports.load(entry.core_transports.model.profiles_1d[itime])
             # self.entry.core_sources.load(entry.core_sources.source[itime])
-
+            self.entry.vacuum_toroidal_field.r0 = entry.equilibrium.vacuum_toroidal_field.r0() or 1.0
+            self.entry.vacuum_toroidal_field.b0 = entry.equilibrium.vacuum_toroidal_field.b0[itime]() or 1.0
         else:
-            self.entry.wall.load(**kwags.get("wall", {}))
-            self.entry.pf_active.load(**kwags.get("pf_active", {}))
-            self.entry.equilibrium.load(**kwags.get("equilibrium", {}), tokamak=self.entry)
+            self.entry.wall.load(**kwargs.get("wall", {}))
+            self.entry.pf_active.load(**kwargs.get("pf_active", {}))
+            self.entry.equilibrium.load(**kwargs.get("equilibrium", {}), tokamak=self.entry)
             # self.entry.core_profiles.load(**kwags.get("core_profiles", {}))
             # self.entry.core_transports.load(**kwags.get("core_transports", {}))
             # self.entry.core_sources.load(**kwags.get("core_sources", {}))
@@ -98,13 +101,16 @@ class FyTok(AttributeTree):
     def save(self, uri, *args, **kwargs):
         raise NotImplementedError()
 
-    def solve(self, dt,  *,   max_iters=100,   ** kwargs):
+    def solve(self, dt, *, max_iters=100,  B0=None, ** kwargs):
+
+        if B0 is not None:
+            self.entry.vacuum_toroidal_field.b0 = B0
 
         core_profiles_iter = self.entry.core_profiles
 
         for iter_count in range(max_iters):
 
-            self.entry.equilibrium.solve(core_profiles_iter, **kwargs)
+            self.entry.equilibrium.solve(core_profiles_iter,  **kwargs)
 
             core_profiles_new = self.transport.solve(
                 core_profiles_iter, dt,

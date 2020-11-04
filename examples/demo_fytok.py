@@ -12,7 +12,7 @@ sys.path.append("/home/salmon/workspace/SpDev/SpDB")
 
 if __name__ == "__main__":
 
-    from fytok.FyTok import FyTok
+    from fytok.Tokamak import Tokamak
     from fytok.PFActive import PFActive
     from fytok.Wall import Wall
     from spdm.data.Entry import open_entry
@@ -27,7 +27,8 @@ if __name__ == "__main__":
 
     # pf_active = PFActive(device.pf_active)
 
-    tok = FyTok()
+    tok = Tokamak()
+
     tok.load(device)
 
     # logger.debug(tok)
@@ -38,8 +39,8 @@ if __name__ == "__main__":
 
     tok.entry.equilibrium.solve(core_profiles=None, psivals=psivals)
 
-    # tok.entry.core_profiles.vacuum_toroidal_field.b0 = 1.0
-    # tok.entry.core_profiles.vacuum_toroidal_field.r0 = 1.0
+    # tok.entry.vacuum_toroidal_field.b0 = 1.0
+    # tok.entry.vacuum_toroidal_field.r0 = 1.0
     # tok.entry.core_profiles.profiles_1d.conductivity_parallel = 1.0
 
     # tok.solve(0.1, max_iters=1, constraints={"psivals": psivals})
@@ -47,7 +48,6 @@ if __name__ == "__main__":
 
     fig = tok.plot_full()
 
-   
     # axs[0].axis("scaled")
     # axs[1].axis("scaled")
     fig.savefig("a.svg")
