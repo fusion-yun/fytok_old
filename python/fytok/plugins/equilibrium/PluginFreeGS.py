@@ -81,13 +81,14 @@ class EquilibriumFreeGS(Equilibrium):
         eq_coils = []
 
         for coil in self.tokamak.pf_active.coil:
-            logger.debug(coil)
             t_coil = freegs.machine.Coil(
-                coil.r+coil.width/2, coil.z+coil.height/2, turns=coil.turns())
+                coil.r+coil.width/2,
+                coil.z+coil.height/2,
+                turns=coil.turns())
             eq_coils.append((coil.name(), t_coil))
 
         tokamak = freegs.machine.Machine(eq_coils, wall=eq_wall)
-        
+
         dim1 = self.coordinate_system.grid.dim1
         dim2 = self.coordinate_system.grid.dim2
 
