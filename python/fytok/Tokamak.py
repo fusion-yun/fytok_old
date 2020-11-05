@@ -161,7 +161,7 @@ class Tokamak(AttributeTree):
 
         for idx, pname in enumerate(profiles):
             y = self.equilibrium.profiles_1d[pname](x)
-            axs[idx, 0].plot(x, y, "b*-", label=profiles_label[idx])
+            axs[idx, 0].plot(x, y,  label=profiles_label[idx])
             # axs[idx, 0].set_ylabel(profiles_label[idx])
             axs[idx, 0].legend()
 
