@@ -20,14 +20,7 @@ if __name__ == "__main__":
     from spdm.util.logger import logger
 
     device = open_entry("east+mdsplus:///home/salmon/public_data/~t/?default_tree_name=efit_east#shot=55555")
-
-    # wall = Wall(
-    #     limiter=device.wall.description_2d[0].limiter.unit[0].outline,
-    #     vessel=device.wall.description_2d[0].vessel.annular
-    # )
-
-    # pf_active = PFActive(device.pf_active)
-
+ 
     tok = Tokamak()
 
     tok.load(device)
@@ -36,13 +29,14 @@ if __name__ == "__main__":
     lfcs_z = device.equilibrium.time_slice[10].boundary.outline.z()[:, 0]
     psivals = [(R, Z, 0.0) for R, Z in zip(lfcs_r, lfcs_z)]
 
-    # tok.equilibrium.solve(None, constraints={"psivals": psivals})
+    tok.equilibrium.solve(None, constraints={"psivals": psivals})
 
-    tok.solve(0.1, max_iters=1, constraints={"psivals": psivals})
+    # tok.solve(0.1, max_iters=1, constraints={"psivals": psivals})
     # fig = plt.figure()
     # tok.plot(axis=fig.add_subplot(111))
-    fig = tok.plot_full()
+    # fig.savefig("tokamak.svg")
 
-    fig.savefig("a.svg")
+    tok.equilibrium.plot_full().savefig("../output/equilibrium_full.svg")
+
 
     logger.info("Done")

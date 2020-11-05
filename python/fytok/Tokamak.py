@@ -132,44 +132,7 @@ class Tokamak(AttributeTree):
 
         return axis
 
-    def plot_full(self,  profiles=None, profiles_label=None, x_axis="psi_norm", xlabel=r'$\psi_{norm}$', *args, **kwargs):
-
-        if isinstance(profiles, str):
-            profiles.split(" ")
-        elif profiles is None:
-            profiles = ["q", "pprime", "ffprime", "fpol", "pressure"]
-            profiles_label = [r"q", r"$p^{\prime}$",  r"$f f^{\prime}$", r"$f_{pol}$", r"pressure"]
-
-        nprofiles = len(profiles)
-        if nprofiles == 0:
-            return self.plot(*args, **kwargs)
-
-        fig, axs = plt.subplots(ncols=2, nrows=nprofiles, sharex=True)
-        gs = axs[0, 1].get_gridspec()
-        # remove the underlying axes
-        for ax in axs[:, 1]:
-            ax.remove()
-        ax_right = fig.add_subplot(gs[:, 1])
-
-        self.plot(ax_right, *args, **kwargs)
-
-        x = self.equilibrium.profiles_1d[x_axis]
-        #  np.linspace(0, 1.0, 16)
-
-        if profiles_label is None:
-            profiles_label = profiles
-
-        for idx, pname in enumerate(profiles):
-            y = self.equilibrium.profiles_1d[pname](x)
-            axs[idx, 0].plot(x, y,  label=profiles_label[idx])
-            # axs[idx, 0].set_ylabel(profiles_label[idx])
-            axs[idx, 0].legend()
-
-        axs[nprofiles-1, 0].set_xlabel(xlabel)
-
-        fig.tight_layout()
-        fig.subplots_adjust(hspace=0)
-        return fig
+  
 
     # def core_transports(self, *args,  **kwargs):
     #     """Core plasma transport of particles, energy, momentum and poloidal flux."""

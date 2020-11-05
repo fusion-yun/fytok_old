@@ -8,14 +8,13 @@ from spdm.util.logger import logger
 from spdm.util.Profiles import Profiles
 
 from ...CoreProfiles import CoreProfiles
-from ...Equilibrium import Equilibrium
+from ...Equilibrium import Equilibrium, EqProfiles1D
 
 
-class EqProfiles1DFreeGS(Profiles):
-    def __init__(self, backend, *args, psi_norm=None,  ** kwargs):
+class EqProfiles1DFreeGS(EqProfiles1D):
+    def __init__(self, backend, *args,  ** kwargs):
+        super().__init__(*args, **kwargs)
         self._backend = backend
-        npoints = 129
-        super().__init__(psi_norm or np.linspace(1.0/(npoints+1), 1.0, npoints), *args, **kwargs)
 
     @property
     def psi_norm(self):
@@ -165,4 +164,39 @@ class EquilibriumFreeGS(Equilibrium):
 
         logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] End")
 
+        self.update_global_quantities()
         return
+
+    def update_global_quantities(self):
+        # Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip^2] {dynamic} [-]	FLT_0D
+        self.global_quantities.beta_pol = self._backend.poloidalBeta()
+        # Toroidal beta, defined as the volume-averaged total perpendicular pressure divided by (B0^2/(2*mu0)), i.e. beta_toroidal = 2 mu0 int(p dV) / V / B0^2 {dynamic} [-]	FLT_0D
+        self.global_quantities.beta_tor = NotImplemented
+        # Normalised toroidal beta, defined as 100 * beta_tor * a[m] * B0 [T] / ip [MA] {dynamic} [-]	FLT_0D
+        self.global_quantities.beta_normal = NotImplemented
+        # Plasma current (toroidal component). Positive sign means anti-clockwise when viewed from above. {dynamic} [A]. This quantity is COCOS-dependent, with the following transformation :
+        self.global_quantities.ip = self._backend.plasmaCurrent()
+        # Internal inductance {dynamic} [-]	FLT_0D
+        self.global_quantities.li_3 = NotImplemented
+        # Total plasma volume {dynamic} [m^3]	FLT_0D
+        self.global_quantities.volume = self._backend.plasmaVolume()
+        # Area of the LCFS poloidal cross section {dynamic} [m^2]	FLT_0D
+        self.global_quantities.area = NotImplemented
+        # Surface area of the toroidal flux surface {dynamic} [m^2]	FLT_0D
+        self.global_quantities.surface = NotImplemented
+        # Poloidal length of the magnetic surface {dynamic} [m]	FLT_0D
+        self.global_quantities.length_pol = NotImplemented
+        # Poloidal flux at the magnetic axis {dynamic} [Wb]. This quantity is COCOS-dependent, with the following transformation :
+        self.global_quantities.psi_axis = self._backend.psi_axis
+        # Poloidal flux at the selected plasma boundary {dynamic} [Wb]. This quantity is COCOS-dependent, with the following transformation :
+        self.global_quantities.psi_boundary = self._backend.psi_bndry
+        # Magnetic axis position and toroidal field	structure
+        self.global_quantities.magnetic_axis = NotImplemented
+        # q at the magnetic axis {dynamic} [-]. This quantity is COCOS-dependent, with the following transformation :
+        self.global_quantities.q_axis = NotImplemented
+        # q at the 95% poloidal flux surface (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic} [-]. This quantity is COCOS-dependent, with the following transformation :
+        self.global_quantities.q_95 = NotImplemented
+        # Minimum q value and position	structure
+        self.global_quantities.q_min = NotImplemented
+        # Plasma energy content = 3/2 * int(p,dV) with p being the total pressure (thermal + fast particles) [J]. Time-dependent; Scalar {dynamic} [J]
+        self.global_quantities.energy_mhd = NotImplemented
