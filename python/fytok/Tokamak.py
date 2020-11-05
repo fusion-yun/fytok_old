@@ -29,16 +29,16 @@ class Tokamak(AttributeTree):
         if isinstance(entry, str):
             entry = open_entry(entry)
 
-        self.entry.vacuum_toroidal_field.r0 = kwargs.get("R0", 1.0)
-        self.entry.vacuum_toroidal_field.b0 = kwargs.get("B0", 1.0)
+        self.vacuum_toroidal_field.r0 = kwargs.get("R0", 1.0)
+        self.vacuum_toroidal_field.b0 = kwargs.get("B0", 1.0)
 
-        self.entry.wall = Wall()
-        self.entry.pf_active = PFActive()
-        self.entry.core_profiles = CoreProfiles()
-        self.entry.core_transports = CoreTransports(backend=backends.get("transport", None))
-        self.entry.core_sources = CoreSources()
+        self.wall = Wall()
+        self.pf_active = PFActive()
+        self.core_profiles = CoreProfiles()
+        self.core_transports = CoreTransports(backend=backends.get("transport", None))
+        self.core_sources = CoreSources()
 
-        self.entry.equilibrium = Equilibrium(backend=backends.get("equilibrium", None))
+        self.equilibrium = Equilibrium(backend=backends.get("equilibrium", None))
 
         self.transport = Transport(backend=backends.get("transport", None))
 
@@ -48,27 +48,27 @@ class Tokamak(AttributeTree):
         # self.edge_sources = EdgeSources()
 
         if isinstance(entry, LazyProxy):
-            self.entry.wall.load(entry.wall)
-            self.entry.pf_active.load(entry.pf_active)
-            self.entry.equilibrium.load(entry.equilibrium.time_slice[itime],  tokamak=self.entry)
-            self.entry.core_profiles.load(entry.core_profiles.profiles_1d[itime])
-            # self.entry.core_transports.load(entry.core_transports.model.profiles_1d[itime])
-            # self.entry.core_sources.load(entry.core_sources.source[itime])
-            self.entry.vacuum_toroidal_field.r0 = entry.equilibrium.vacuum_toroidal_field.r0() or 1.0
-            self.entry.vacuum_toroidal_field.b0 = entry.equilibrium.vacuum_toroidal_field.b0[itime]() or 1.0
+            self.wall.load(entry.wall)
+            self.pf_active.load(entry.pf_active)
+            self.equilibrium.load(entry.equilibrium.time_slice[itime](),  tokamak=self)
+            self.core_profiles.load(entry.core_profiles.profiles_1d[itime])
+            # self.core_transports.load(core_transports.model.profiles_1d[itime])
+            # self.core_sources.load(core_sources.source[itime])
+            self.vacuum_toroidal_field.r0 = entry.equilibrium.vacuum_toroidal_field.r0() or 1.0
+            self.vacuum_toroidal_field.b0 = entry.equilibrium.vacuum_toroidal_field.b0[itime]() or 1.0
         else:
-            self.entry.wall.load(**kwargs.get("wall", {}))
-            self.entry.pf_active.load(**kwargs.get("pf_active", {}))
-            self.entry.equilibrium.load(**kwargs.get("equilibrium", {}), tokamak=self.entry)
-            self.entry.core_profiles.load(**kwargs.get("core_profiles", {}))
-            # self.entry.core_transports.load(**kwargs.get("core_transports", {}))
-            # self.entry.core_sources.load(**kwargs.get("core_sources", {}))
+            self.wall.load(**kwargs.get("wall", {}))
+            self.pf_active.load(**kwargs.get("pf_active", {}))
+            self.equilibrium.load(**kwargs.get("equilibrium", {}), tokamak=self)
+            self.core_profiles.load(**kwargs.get("core_profiles", {}))
+            # self.core_transports.load(**kwargs.get("core_transports", {}))
+            # self.core_sources.load(**kwargs.get("core_sources", {}))
 
-        self.entry.vacuum_toroidal_field.r0 = R0 or self.entry.wall.limiter.outline.r.mean()
-        self.entry.vacuum_toroidal_field.b0 = B0 or 1.0
-        self.entry.core_profiles.vacuum_toroidal_field.r0 = self.entry.vacuum_toroidal_field.r0()
-        self.entry.core_profiles.vacuum_toroidal_field.b0 = self.entry.vacuum_toroidal_field.b0()
-        return self.entry
+        self.vacuum_toroidal_field.r0 = R0 or self.wall.limiter.outline.r.mean()
+        self.vacuum_toroidal_field.b0 = B0 or 1.0
+        self.core_profiles.vacuum_toroidal_field.r0 = self.vacuum_toroidal_field.r0
+        self.core_profiles.vacuum_toroidal_field.b0 = self.vacuum_toroidal_field.b0
+        return self
 
     def save(self, uri, *args, **kwargs):
         raise NotImplementedError()
@@ -76,21 +76,21 @@ class Tokamak(AttributeTree):
     def solve(self, dt, *, max_iters=100,  B0=None,  **constraints):
 
         if B0 is not None:
-            self.entry.vacuum_toroidal_field.b0 = B0
+            self.vacuum_toroidal_field.b0 = B0
 
-        fvec = self.entry.vacuum_toroidal_field.r0() * self.entry.vacuum_toroidal_field.b0()
+        fvec = self.vacuum_toroidal_field.r0 * self.vacuum_toroidal_field.b0
 
-        core_profiles_iter = self.entry.core_profiles
+        core_profiles_iter = self.core_profiles
 
         for iter_count in range(max_iters):
 
-            # self.entry.equilibrium.solve(core_profiles_iter, fvec=fvec,  **constraints)
+            # self.equilibrium.solve(core_profiles_iter, fvec=fvec,  **constraints)
 
             core_profiles_new = self.transport.solve(
                 core_profiles_iter, dt,
-                equilibrium=self.entry.equilibrium,
-                transports=self.entry.core_transports,
-                sources=self.entry.core_sources)
+                equilibrium=self.equilibrium,
+                transports=self.core_transports,
+                sources=self.core_sources)
 
             # TODO: edge
             # edge_profiles_old = copy(edge_profiles_iter)
@@ -104,7 +104,7 @@ class Tokamak(AttributeTree):
             #     **kwargs)
 
             if self.check_convergence(core_profiles_new, core_profiles_iter):
-                self.entry.core_profiles = core_profiles_new
+                self.core_profiles = core_profiles_new
                 # self._edge_profiles = edge_profiles_iter
                 break
             elif iter_count == max_iters-1:
@@ -120,9 +120,9 @@ class Tokamak(AttributeTree):
         if axis is None:
             axis = plt.gca()
 
-        self.entry.wall.plot(axis, **kwargs.get("wall", {}))
-        self.entry.pf_active.plot(axis, **kwargs.get("pf_active", {}))
-        self.entry.equilibrium.plot(axis, **kwargs.get("equilibrium", {}))
+        self.wall.plot(axis, **kwargs.get("wall", {}))
+        self.pf_active.plot(axis, **kwargs.get("pf_active", {}))
+        self.equilibrium.plot(axis, **kwargs.get("equilibrium", {}))
 
         axis.set_aspect('equal')
         # axis.axis('scaled')
@@ -153,13 +153,13 @@ class Tokamak(AttributeTree):
 
         self.plot(ax_right, *args, **kwargs)
 
-        x = self.entry.equilibrium.profiles_1d[x_axis]()
+        x = self.equilibrium.profiles_1d[x_axis]()
 
         if profiles_label is None:
             profiles_label = profiles
 
         for idx, pname in enumerate(profiles):
-            axs[idx, 0].plot(x, self.entry.equilibrium.profiles_1d[pname](), label=profiles_label[idx])
+            axs[idx, 0].plot(x, self.equilibrium.profiles_1d[pname](), label=profiles_label[idx])
             # axs[idx, 0].set_ylabel(profiles_label[idx])
             axs[idx, 0].legend()
 

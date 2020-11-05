@@ -39,7 +39,7 @@ class Equilibrium(AttributeTree):
         if n_cls is None:
             raise ModuleNotFoundError(f"Can not find plugin {plugin_name}#Equilibrium{backend}")
 
-        return dict.__new__(n_cls)
+        return AttributeTree.__new__(n_cls)
 
     def __init__(self,   *args, backend=None, **kwargs):
         super().__init__()
@@ -49,15 +49,11 @@ class Equilibrium(AttributeTree):
 
     def load(self, entry=None,  tokamak=None, nr=129, nz=129, **kwargs):
         self.tokamak = tokamak
-        lim_r = self.tokamak.wall.limiter.outline.r()
-        lim_z = self.tokamak.wall.limiter.outline.z()
-
-        self.entry.coordinate_system.grid.dim1 = np.linspace(min(lim_r), max(lim_r), nr)
-        self.entry.coordinate_system.grid.dim2 = np.linspace(min(lim_z), max(lim_z), nz)
-        return self.entry
-
-    def __call__(self, *args, **kwargs):
-        return self.solve(*args, **kwargs)
+        lim_r = self.tokamak.wall.limiter.outline.r
+        lim_z = self.tokamak.wall.limiter.outline.z
+        self.coordinate_system.grid.dim1 = np.linspace(min(lim_r), max(lim_r), nr)
+        self.coordinate_system.grid.dim2 = np.linspace(min(lim_z), max(lim_z), nz)
+        return self
 
     def solve(self, *args, **kwargs):
         raise NotImplementedError()

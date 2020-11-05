@@ -4,7 +4,6 @@ import sys
 
 sys.path.append("/home/salmon/workspace/freegs/")
 sys.path.append("/home/salmon/workspace/fytok/python")
-sys.path.append("/home/salmon/workspace/SpDev/SpCommon")
 sys.path.append("/home/salmon/workspace/SpDev/SpDB")
 
 
@@ -13,6 +12,8 @@ sys.path.append("/home/salmon/workspace/SpDev/SpDB")
 if __name__ == "__main__":
 
     from fytok.Tokamak import Tokamak
+    from fytok.CoreProfiles import CoreProfiles
+
     from fytok.PFActive import PFActive
     from fytok.Wall import Wall
     from spdm.data.Entry import open_entry
@@ -31,23 +32,15 @@ if __name__ == "__main__":
 
     tok.load(device)
 
-    # logger.debug(tok)
-    # logger.debug(tok.entry.wall())
-    lfcs_r = device.equilibrium.time_slice[10].boundary.outline.r.__value__()[:, 0]
-    lfcs_z = device.equilibrium.time_slice[10].boundary.outline.z.__value__()[:, 0]
+    lfcs_r = device.equilibrium.time_slice[10].boundary.outline.r()[:, 0]
+    lfcs_z = device.equilibrium.time_slice[10].boundary.outline.z()[:, 0]
     psivals = [(R, Z, 0.0) for R, Z in zip(lfcs_r, lfcs_z)]
 
-    # tok.entry.equilibrium.solve(core_profiles=None, psivals=psivals)
+    tok.equilibrium.solve(None, constraints={"psivals": psivals})
 
-    # tok.entry.vacuum_toroidal_field.b0 = 1.0
-    # tok.entry.vacuum_toroidal_field.r0 = 1.0
-    # tok.entry.core_profiles.profiles_1d.conductivity_parallel = 1.0
-
-    tok.solve(0.1, max_iters=1, psivals=psivals)
-    # fig = plt.figure()
-
-    fig = tok.plot_full()
-
+    # tok.solve(0.1, max_iters=1, psivals=psivals)
+    fig = plt.figure()
+    tok.plot(axis=fig.add_subplot(111))
     # axs[0].axis("scaled")
     # axs[1].axis("scaled")
     fig.savefig("a.svg")

@@ -22,8 +22,17 @@ class CoreProfiles(AttributeTree):
     def load(self, entry=None, *args, dims=None, itime=0, **kwargs):
         if dims is None:
             dims = 129
-        self.entry.profiles_1d.grid.rho = np.linspace(1.0/(dims+1), 1, dims)
-        self.entry.profiles_1d.grid.psi = np.linspace(1.0/(dims+1), 1, dims)
-        self.entry.profiles_1d.grid.dpsi = np.linspace(1.0/(dims+1), 1, dims)
-        self.entry.profiles_1d.grid.psi_norm = np.linspace(1.0/(dims+1), 1, dims)
-        self.entry.profiles_1d.conductivity_parallel = np.linspace(1.0/(dims+1), 1, dims)
+        self.vacuum_toroidal_field.b0 = 1.0
+        self.vacuum_toroidal_field.r0 = 1.0
+
+        self.profiles_1d.grid.rho = np.linspace(1.0/(dims+1), 1, dims)
+        self.profiles_1d.grid.psi = np.linspace(1.0/(dims+1), 1, dims)
+        self.profiles_1d.grid.dpsi = np.linspace(1.0/(dims+1), 1, dims)
+        self.profiles_1d.grid.psi_norm = np.linspace(1.0/(dims+1), 1, dims)
+        self.profiles_1d.conductivity_parallel = np.linspace(1.0/(dims+1), 1, dims)
+    
+    def ffprime(self, psi_norm):
+        return self.profiles_1d.ffprime or []
+
+    def pprime(self, psi_norm):
+        return self.profiles_1d.pprime  or []

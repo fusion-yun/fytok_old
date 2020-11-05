@@ -1,5 +1,4 @@
 import collections
-import pprint
 import sys
 
 import freegs
@@ -73,22 +72,24 @@ class EquilibriumFreeGS(Equilibrium):
     def load(self, ids=None, *args,  **kwargs):
         super().load(ids, *args, **kwargs)
 
-        self.entry.vacuum_toroidal_field.b0 = self.tokamak.entry.vacuum_toroidal_field.b0
-        self.entry.vacuum_toroidal_field.r0 = self.tokamak.entry.vacuum_toroidal_field.r0
+        self.vacuum_toroidal_field.b0 = self.tokamak.vacuum_toroidal_field.b0
+        self.vacuum_toroidal_field.r0 = self.tokamak.vacuum_toroidal_field.r0
 
-        eq_wall = freegs.machine.Wall(self.tokamak.wall.limiter.outline.r(), self.tokamak.wall.limiter.outline.z())
+        eq_wall = freegs.machine.Wall(self.tokamak.wall.limiter.outline.r,
+                                      self.tokamak.wall.limiter.outline.z)
 
         eq_coils = []
 
         for coil in self.tokamak.pf_active.coil:
+            logger.debug(coil)
             t_coil = freegs.machine.Coil(
                 coil.r+coil.width/2, coil.z+coil.height/2, turns=coil.turns())
             eq_coils.append((coil.name(), t_coil))
 
         tokamak = freegs.machine.Machine(eq_coils, wall=eq_wall)
-
-        dim1 = self.entry.coordinate_system.grid.dim1()
-        dim2 = self.entry.coordinate_system.grid.dim2()
+        
+        dim1 = self.coordinate_system.grid.dim1
+        dim2 = self.coordinate_system.grid.dim2
 
         self._backend = freegs.Equilibrium(
             tokamak=tokamak,
@@ -97,8 +98,8 @@ class EquilibriumFreeGS(Equilibrium):
             nx=len(dim1), ny=len(dim2),
             boundary=freegs.boundary.freeBoundaryHagenow)
 
-        self.entry.profiles_1d = EqProfiles1DFreeGS(self._backend)
-        self.entry.profiles_2d = EqProfiles2DFreeGS(self._backend)
+        self.profiles_1d = EqProfiles1DFreeGS(self._backend)
+        self.profiles_2d = EqProfiles2DFreeGS(self._backend)
 
         return self.entry
 
@@ -128,31 +129,38 @@ class EquilibriumFreeGS(Equilibrium):
     def oxpoints(self):
         return freegs.critical.find_critical(self.r, self.z, self.psi)
 
-    def solve(self, core_profiles, B0=None,  constraints=None, **kwargs):
-        self.entry.vacuum_toroidal_field.b0 = B0 or 1.0
-
-        fvec = self.entry.vacuum_toroidal_field.b0 * self.entry.vacuum_toroidal_field.r0
+    def solve(self, core_profiles, constraints=None, fvec=None, **kwargs):
+        if fvec is None:
+            fvec = 1.0
 
         if isinstance(core_profiles, CoreProfiles):
-            psi = self.entry.profiles_1d.psi.__value__()
+            self.vacuum_toroidal_field.b0 = core_profiles.vacuum_toroidal_field.b0
+            psi_norm = self.profiles_1d.psi_norm
             profiles = freegs.jtor.ProfilesPprimeFfprime(
-                core_profiles.pprime(psi),
-                core_profiles.ffprime(psi),
-                fvec)
+                core_profiles.pprime(psi_norm),
+                core_profiles.ffprime(psi_norm),
+                self.vacuum_toroidal_field.b0 * self.vacuum_toroidal_field.r0)
+
         elif core_profiles is not None and "Ip" in core_profiles:
-            profiles = freegs.jtor.jtor.ConstrainPaxisIp(core_profiles["pressure"],  # Plasma pressure on axis [Pascals]
-                                                         core_profiles["Ip"],  # Plasma current [Amps]
-                                                         fvec)
+            self.vacuum_toroidal_field.b0 = fvec / self.vacuum_toroidal_field.r0
+            profiles = freegs.jtor.jtor.ConstrainPaxisIp(
+                core_profiles["pressure"],  # Plasma pressure on axis [Pascals]
+                core_profiles["Ip"],        # Plasma current [Amps]
+                fvec)
         else:
             logger.warning(f"Using default profile pressure=1e3 Ip=1e6")
-            profiles = freegs.jtor.ConstrainPaxisIp(1e3,  # Plasma pressure on axis [Pascals]
-                                                    1e6,  # Plasma current [Amps]
-                                                    fvec)
+            self.vacuum_toroidal_field.b0 = fvec / self.vacuum_toroidal_field.r0
+            profiles = freegs.jtor.ConstrainPaxisIp(
+                1e3,  # Plasma pressure on axis [Pascals]
+                1e6,  # Plasma current [Amps]
+                fvec)
 
-        constrain = freegs.control.constrain(**collections.ChainMap(constraints or {}, kwargs))
+        constrain = freegs.control.constrain(** (constraints or {}))
 
         logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] Start")
+
         freegs.solve(self._backend, profiles, constrain)
+
         logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] End")
 
         return

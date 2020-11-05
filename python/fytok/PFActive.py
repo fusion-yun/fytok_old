@@ -38,7 +38,7 @@ class PFActive(AttributeTree):
                 if coil.element.geometry.geometry_type != 2:
                     raise NotImplementedError()
                 rect = coil.element.geometry.rectangle
-                next_coil = self.entry.coil.__push_back__()
+                next_coil = self.coil.push_back()
                 next_coil.name = str(coil.name)
                 next_coil.r = float(rect.r)
                 next_coil.z = float(rect.z)

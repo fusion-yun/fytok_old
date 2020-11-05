@@ -1,6 +1,5 @@
 import collections
 import copy
-import pprint
 
 import numpy as np
 from scipy import constants
@@ -101,9 +100,9 @@ class Transport:
         ########################################
         # Geometry
         # $rho$ not  normalised minor radius                [m]
-        rho = core_profiles.profiles_1d.grid.rho()
+        rho = core_profiles.profiles_1d.grid.rho
         # $\Psi$ flux function from current                 [Wb]
-        psi = core_profiles.profiles_1d.grid.psi()
+        psi = core_profiles.profiles_1d.grid.psi
         # # $\frac{\partial\Psi}{\partial\rho}$               [Wb/m]
         dpsi = core_profiles.profiles_1d.grid.dpsi
 
@@ -119,11 +118,11 @@ class Transport:
         gm2 = equilibrium.profiles_1d.gm2(psi_norm)
 
         # $R_0$ characteristic major radius of the device   [m]
-        R0 = equilibrium.vacuum_toroidal_field.r0()
+        R0 = equilibrium.vacuum_toroidal_field.r0
         # $B_0$ magnetic field measured at $R_0$            [T]
-        B0 = equilibrium.vacuum_toroidal_field.b0()
+        B0 = equilibrium.vacuum_toroidal_field.b0
         # $B_0^-$ previous time steps$B_0$,                 [T]
-        B0m = core_profiles.vacuum_toroidal_field.b0()
+        B0m = core_profiles.vacuum_toroidal_field.b0
         # $\dot{B}_{0}$ time derivative or $B_0$,           [T/s]
         B0prime = (B0 - B0m)/tau
 
@@ -141,7 +140,7 @@ class Transport:
         ########################################
         # Sources
         # plasma parallel conductivity,                     [(Ohm*m)^-1]
-        sigma = core_profiles.profiles_1d.conductivity_parallel()
+        sigma = core_profiles.profiles_1d.conductivity_parallel
 
         ########################################
         # Sources
