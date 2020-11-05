@@ -9,7 +9,7 @@ from spdm.data.Entry import open_entry
 from spdm.util.AttributeTree import AttributeTree
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
-from spdm.util.Profiles import Profiles1D, Profiles2D
+# from spdm.util.Profiles import Profiles1D, Profiles2D
 from spdm.util.sp_export import sp_find_module
 
 from .PFActive import PFActive

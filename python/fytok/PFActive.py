@@ -38,7 +38,7 @@ class PFActive(AttributeTree):
                 if coil.element.geometry.geometry_type != 2:
                     raise NotImplementedError()
                 rect = coil.element.geometry.rectangle
-                next_coil = self.coil.push_back()
+                _, next_coil = self.coil.__push_back__()
                 next_coil.name = str(coil.name)
                 next_coil.r = float(rect.r)
                 next_coil.z = float(rect.z)
@@ -48,18 +48,6 @@ class PFActive(AttributeTree):
         else:
             raise NotImplementedError()
         return self.entry
-
-    @property
-    def coil(self):
-        return LazyProxy(super().__getitem__("coil"))
-
-    @property
-    def circuit(self):
-        return LazyProxy(super().__getitem__("circuit"))
-
-    @property
-    def supply(self):
-        return LazyProxy(super().__getitem__("supply"))
 
     def plot(self, axis=None, *args, with_circuit=False, **kwargs):
 

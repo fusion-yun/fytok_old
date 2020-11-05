@@ -44,3 +44,4 @@ if __name__ == "__main__":
     # axs[0].axis("scaled")
     # axs[1].axis("scaled")
     fig.savefig("a.svg")
+    logger.info("Done")

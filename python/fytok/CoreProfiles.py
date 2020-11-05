@@ -4,7 +4,7 @@ import functools
 import numpy as np
 import scipy
 from spdm.util.AttributeTree import AttributeTree
-from spdm.util.Profiles import Profiles1D
+from spdm.util.logger import logger
 
 
 class CoreProfiles(AttributeTree):
@@ -15,7 +15,7 @@ class CoreProfiles(AttributeTree):
     """
 
     def __init__(self, *args, dims=None, **kwargs):
-        super().__init__(dims or 129)
+        super().__init__()
         # if len(args)+len(kwargs) > 0:
         self.load(*args, **kwargs)
 

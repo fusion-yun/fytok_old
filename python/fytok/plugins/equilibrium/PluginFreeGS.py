@@ -5,19 +5,18 @@ import freegs
 import numpy as np
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
-from spdm.util.Profiles import Profiles1D, Profiles2D
+from spdm.util.Profiles import Profiles
 
 from ...CoreProfiles import CoreProfiles
 from ...Equilibrium import Equilibrium
 
 
-class EqProfiles1DFreeGS(Profiles1D):
-    def __init__(self, backend, *args, psinorm=None, npoints=129, ** kwargs):
+class EqProfiles1DFreeGS(Profiles):
+    def __init__(self, backend, *args, psinorm=None,  ** kwargs):
         self._backend = backend
-        if npoints is None:
-            npoints = 129
+        npoints = 129
 
-        super().__init__(np.linspace(1.0/(npoints+1), 1.0, npoints), *args, **kwargs)
+        super().__init__(psinorm or np.linspace(1.0/(npoints+1), 1.0, npoints), *args, **kwargs)
 
     @property
     def psi_norm(self):
@@ -45,7 +44,7 @@ class EqProfiles1DFreeGS(Profiles1D):
         return self.psi_norm
 
 
-class EqProfiles2DFreeGS(Profiles2D):
+class EqProfiles2DFreeGS(Profiles):
     """
         Equilibrium 2D profiles in the poloidal plane.
         @ref: equilibrium.time_slice[itime].profiles_2d
@@ -84,8 +83,8 @@ class EquilibriumFreeGS(Equilibrium):
             t_coil = freegs.machine.Coil(
                 coil.r+coil.width/2,
                 coil.z+coil.height/2,
-                turns=coil.turns())
-            eq_coils.append((coil.name(), t_coil))
+                turns=coil.turns)
+            eq_coils.append((coil.name, t_coil))
 
         tokamak = freegs.machine.Machine(eq_coils, wall=eq_wall)
 
