@@ -153,7 +153,8 @@ class Tokamak(AttributeTree):
 
         self.plot(ax_right, *args, **kwargs)
 
-        x = np.linspace(0, 1.0, 16)
+        x = self.equilibrium.profiles_1d[x_axis]
+        #  np.linspace(0, 1.0, 16)
 
         if profiles_label is None:
             profiles_label = profiles
