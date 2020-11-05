@@ -12,36 +12,38 @@ from ...Equilibrium import Equilibrium
 
 
 class EqProfiles1DFreeGS(Profiles):
-    def __init__(self, backend, *args, psinorm=None,  ** kwargs):
+    def __init__(self, backend, *args, psi_norm=None,  ** kwargs):
         self._backend = backend
         npoints = 129
-
-        super().__init__(psinorm or np.linspace(1.0/(npoints+1), 1.0, npoints), *args, **kwargs)
+        super().__init__(psi_norm or np.linspace(1.0/(npoints+1), 1.0, npoints), *args, **kwargs)
 
     @property
     def psi_norm(self):
-        return self.grid
+        return self.dimensions
 
-    def pprime(self, psinorm=None):
-        return self._backend.pprime(psinorm or self.psi_norm)
+    def pprime(self, psi_norm=None):
+        return self._backend.pprime(psi_norm if psi_norm is not None else self.psi_norm)
 
-    def ffprime(self,  psinorm=None):
-        return self._backend.ffprime(psinorm or self.psi_norm)
+    def ffprime(self,  psi_norm=None):
+        return self._backend.ffprime(psi_norm if psi_norm is not None else self.psi_norm)
 
-    def pressure(self,   psinorm=None):
-        return self._backend.pressure(psinorm or self.psi_norm)
+    def pressure(self,   psi_norm=None):
+        return self._backend.pressure(psi_norm if psi_norm is not None else self.psi_norm)
 
-    def fpol(self,   psinorm=None):
-        return self._backend.fpol(psinorm or self.psi_norm)
+    def fpol(self,   psi_norm=None):
+        return self._backend.fpol(psi_norm if psi_norm is not None else self.psi_norm)
 
-    def f(self,   psinorm=None):
-        return self.psi_norm
+    def q(self, psi_norm=None, npsi=100):
+        return self._backend.q(psi_norm if psi_norm is not None else self.psi_norm, npsi=npsi)
+
+    def f(self,   psi_norm=None):
+        return psi_norm if psi_norm is not None else self.psi_norm
 
     def dvolume_dpsi(self, psi_norm=None):
-        return self.psi_norm
+        return psi_norm if psi_norm is not None else self.psi_norm
 
     def gm2(self, psi_norm=None):
-        return self.psi_norm
+        return psi_norm if psi_norm is not None else self.psi_norm
 
 
 class EqProfiles2DFreeGS(Profiles):

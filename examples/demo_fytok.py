@@ -39,9 +39,10 @@ if __name__ == "__main__":
     tok.equilibrium.solve(None, constraints={"psivals": psivals})
 
     # tok.solve(0.1, max_iters=1, psivals=psivals)
-    fig = plt.figure()
-    tok.plot(axis=fig.add_subplot(111))
-    # axs[0].axis("scaled")
-    # axs[1].axis("scaled")
+    # fig = plt.figure()
+    # tok.plot(axis=fig.add_subplot(111))
+    fig = tok.plot_full()
+
     fig.savefig("a.svg")
+
     logger.info("Done")

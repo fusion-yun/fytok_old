@@ -153,13 +153,14 @@ class Tokamak(AttributeTree):
 
         self.plot(ax_right, *args, **kwargs)
 
-        x = self.equilibrium.profiles_1d[x_axis]()
+        x = np.linspace(0, 1.0, 64)
 
         if profiles_label is None:
             profiles_label = profiles
 
         for idx, pname in enumerate(profiles):
-            axs[idx, 0].plot(x, self.equilibrium.profiles_1d[pname](), label=profiles_label[idx])
+            y = self.equilibrium.profiles_1d[pname](x)
+            axs[idx, 0].plot(x, y, label=profiles_label[idx])
             # axs[idx, 0].set_ylabel(profiles_label[idx])
             axs[idx, 0].legend()
 
