@@ -73,7 +73,7 @@ class Tokamak(AttributeTree):
     def save(self, uri, *args, **kwargs):
         raise NotImplementedError()
 
-    def solve(self, dt, *, max_iters=100,  B0=None,  **constraints):
+    def solve(self, dt, *, max_iters=100,  B0=None,   constraints=None, **kwargs):
 
         if B0 is not None:
             self.vacuum_toroidal_field.b0 = B0
@@ -84,7 +84,7 @@ class Tokamak(AttributeTree):
 
         for iter_count in range(max_iters):
 
-            # self.equilibrium.solve(core_profiles_iter, fvec=fvec,  **constraints)
+            self.equilibrium.solve(core_profiles_iter, fvec=fvec,   constraints=constraints)
 
             core_profiles_new = self.transport.solve(
                 core_profiles_iter, dt,

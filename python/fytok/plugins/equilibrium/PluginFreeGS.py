@@ -33,8 +33,8 @@ class EqProfiles1DFreeGS(Profiles):
     def fpol(self,   psi_norm=None):
         return self._backend.fpol(psi_norm if psi_norm is not None else self.psi_norm)
 
-    def q(self, psi_norm=None, npsi=100):
-        return self._backend.q(psi_norm if psi_norm is not None else self.psi_norm, npsi=npsi)
+    def q(self, psi_norm=None):
+        return self._backend.q(psi_norm if psi_norm is not None else self.psi_norm)
 
     def f(self,   psi_norm=None):
         return psi_norm if psi_norm is not None else self.psi_norm
