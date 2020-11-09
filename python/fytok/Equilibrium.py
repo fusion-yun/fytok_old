@@ -9,7 +9,7 @@ from spdm.data.Entry import open_entry
 from spdm.util.AttributeTree import AttributeTree
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
-from spdm.util.Profiles import Profiles
+from spdm.util.Profiles import Profiles1D, Profiles2D
 from spdm.util.sp_export import sp_find_module
 
 from .PFActive import PFActive
@@ -17,7 +17,7 @@ from .Wall import Wall
 #  psi phi pressure f dpressure_dpsi f_df_dpsi j_parallel q magnetic_shear r_inboard r_outboard rho_tor rho_tor_norm dpsi_drho_tor geometric_axis elongation triangularity_upper triangularity_lower volume rho_volume_norm dvolume_dpsi dvolume_drho_tor area darea_dpsi surface trapped_fraction gm1 gm2 gm3 gm4 gm5 gm6 gm7 gm8 gm9 b_field_max beta_pol mass_density
 
 
-class EqProfiles1D(Profiles):
+class EqProfiles1D(Profiles1D):
     def __init__(self,  *args, dimensions=None,  ** kwargs):
         npoints = 129
         super().__init__(dimensions or np.linspace(1.0/(npoints+1), 1.0, npoints), *args, **kwargs)
@@ -184,11 +184,9 @@ class EqProfiles1D(Profiles):
         return NotImplemented
 
 
-class EqProfiles2D(Profiles):
-    def __init__(self,  *args, dimensions=None,  ** kwargs):
-        ndimsR = 129
-        ndimsZ = 129
-        super().__init__(dimensions or np.linspace(1.0/(npoints+1), 1.0, npoints), *args, **kwargs)
+class EqProfiles2D(Profiles2D):
+    def __init__(self,  *args,  ** kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Equilibrium(AttributeTree):
@@ -251,7 +249,7 @@ class Equilibrium(AttributeTree):
     @property
     def fvec(self):
         return self.tokamak.vacuum_toroidal_field.r0() * self.tokamak.vacuum_toroidal_field.b0()
-    
+
     def update_global_quantities(self):
 
         # Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip^2] {dynamic} [-]	FLT_0D
@@ -286,7 +284,6 @@ class Equilibrium(AttributeTree):
         self.global_quantities.q_min = NotImplemented
         # Plasma energy content = 3/2 * int(p,dV) with p being the total pressure (thermal + fast particles) [J]. Time-dependent; Scalar {dynamic} [J]
         self.global_quantities.energy_mhd = NotImplemented
-
 
     def plot(self, axis=None, *args, levels=40, oxpoints=True, **kwargs):
         """ learn from freegs
