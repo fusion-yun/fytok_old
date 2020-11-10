@@ -1,10 +1,11 @@
 import collections
 import copy
+import math
 
 import matplotlib.pyplot as plt
 import numpy as np
 from spdm.data.Entry import open_entry
-from spdm.util.AttributeTree import AttributeTree
+from spdm.util.AttributeTree import AttributeTree, _last_, _next_
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 
@@ -13,79 +14,74 @@ from .CoreSources import CoreSources
 from .CoreTransports import CoreTransports
 from .Equilibrium import Equilibrium
 from .PFActive import PFActive
-from .Wall import Wall
-
 from .Transport import Transport
+from .Wall import Wall
 
 
 class Tokamak(AttributeTree):
 
-    def __init__(self,   *args, config=None, backends={}, **kwargs):
+    def __init__(self,  config=None,  *args,    **kwargs):
         super().__init__()
-        self.wall = Wall()
-        self.pf_active = PFActive()
-        self.core_profiles = CoreProfiles()
-        self.core_transports = CoreTransports()
-        self.core_sources = CoreSources()
-        self.equilibrium = Equilibrium(backend=backends.get("equilibrium", None), tokamak=self)
-        self.transport = Transport(backend=backends.get("transport", None))
 
-        if config is not None:
-            self.load(config)
+        if config is None:
+            config = AttributeTree()
 
-    def load(self, config, itime=0):
-        if isinstance(config, str):
-            config = open_entry(config)
+        self.wall = Wall(config.wall)
+        self.pf_active = PFActive(config.pf_active)
+        self.equilibrium = Equilibrium(config.equilibrium, tokamak=self)
+        self.core_profiles = CoreProfiles(config.core_profiles, tokamak=self)
+        self.core_transports = CoreTransports(config.core_transports, tokamak=self)
+        self.core_sources = CoreSources(config.core_sources, tokamak=self)
+        self.transport = Transport(config.transport, tokamak=self)
 
-        # self._transport_edge_solver = TransportEdge(backend=backends.get("transport_edge", None))
-        # self.edge_profiles = EdgeProfiles()
-        # self.edge_tranports = EdgeTransport()
-        # self.edge_sources = EdgeSources()
-        if isinstance(config, LazyProxy):
+    @staticmethod
+    def load_imas(entry, itime=0):
+        if isinstance(entry, str):
+            entry = open_entry(entry)
 
-            # self.core_profiles.load(config.core_profiles)
-            # self.core_transports.load(config.core_transports)
-            # self.core_sources.load(config.core_sources)
-            self.vacuum_toroidal_field.r0 = config.equilibrium.vacuum_toroidal_field.r0() or 1.0
-            self.vacuum_toroidal_field.b0 = config.equilibrium.vacuum_toroidal_field.b0[itime]() or 1.0
+        config = AttributeTree()
+        config.wall = entry.wall
+        config.pf_active = entry.pf_active
+        config.equilibrium = entry.equilibrium.time_slice[itime].profiles_1d
+        config.core_profiles = entry.core_profiles.profiles_1d[itime]
 
-            self.wall.load(config.wall)
-            self.pf_active.load(config.pf_active)
-            self.equilibrium.load(config.equilibrium)
-        else:
-            self.vacuum_toroidal_field.r0 = config.get("R0") or self.wall.limiter.outline.r.mean()
-            self.vacuum_toroidal_field.b0 = config.get("B0") or 1.0
-
-            self.wall.load(config.get("wall", {}))
-            self.pf_active.load(config.get("pf_active", {}))
-            self.equilibrium.load(config.get("equilibrium", {}), tokamak=self)
-            self.core_profiles.load(config.get("core_profiles", {}))
-            self.core_transports.load(config.get("core_transports", {}))
-            self.core_sources.load(config.get("core_sources", {}))
-
-            self.core_profiles.vacuum_toroidal_field.r0 = self.vacuum_toroidal_field.r0
-            self.core_profiles.vacuum_toroidal_field.b0 = self.vacuum_toroidal_field.b0
-
-        return self
+        for mode in entry.core_transports.mode:
+            config.core_transports.mode[_next_].identifier = mode.identifier
+            config.core_transports.mode[_last_].profiles_1d = mode.profiles_1d[itime]
+        for source in entry.core_sources.mode:
+            config.core_sources.load(source)
+        return Tokamak(config)
 
     def save(self, uri, *args, **kwargs):
         raise NotImplementedError()
 
-    def solve(self, dt, *,   constraints=None, **kwargs):
+    def update(self, *args, time=0.0, core_profiles=None, fvec=1.0,  constraints=None,
+               max_iters=1,
+               relative_deviation=0.1,
+               ** kwargs):
 
-        fvec = self.vacuum_toroidal_field.r0 * self.vacuum_toroidal_field.b0
+        if core_profiles is not None:
+            self.transport.core_profiles.update(core_profiles)
 
-        core_profiles_iter = self.core_profiles
+        convergence = False
+
+        pressure_iter = self.transport.core_profiles.pressure
 
         for iter_count in range(max_iters):
+            logger.debug(f"Iterator = {iter_count}")
 
-            self.equilibrium.solve(core_profiles_iter, fvec=fvec,   constraints=constraints)
+            # self.equilibrium.update(self.transport.core_profiles,
+            #                         time=time,
+            #                         fvec=fvec,
+            #                         constraints=constraints)
 
-            core_profiles_new = self.transport.solve(
-                core_profiles_iter, dt,
-                equilibrium=self.equilibrium,
-                transports=self.core_transports,
-                sources=self.core_sources)
+            # self.core_transports.update(self.equilibrium)
+
+            # self.core_sources.update(self.equilibrium)
+
+            self.transport.update(equilibrium=self.equilibrium,
+                                  transports=self.core_transports,
+                                  sources=self.core_sources)
 
             # TODO: edge
             # edge_profiles_old = copy(edge_profiles_iter)
@@ -98,17 +94,17 @@ class Tokamak(AttributeTree):
             #     sources=self.edge_sources,
             #     **kwargs)
 
-            if self.check_convergence(core_profiles_new, core_profiles_iter):
-                self.core_profiles = core_profiles_new
-                # self._edge_profiles = edge_profiles_iter
-                break
-            elif iter_count == max_iters-1:
-                raise RuntimeError(f"Too much iteration loop! count={iter_count}")
-            else:
-                core_profiles_iter = core_profiles_new
+            if not pressure_iter:
+                convergence = True
+            # elif math.sqrt(sum(self.transport.core_profiles.pressure-pressure_iter**2) /
+            #                sum(self.transport.core_profiles.pressure-pressure_iter**2)) < relative_deviation:
+            #     convergence = True
+            #     break
 
-    def check_convergence(self, p_old, p_new):
-        return False
+            pressure_iter = self.transport.core_profiles.pressure
+
+        if not convergence:
+            raise RuntimeError(f"Not convergence! iter_count={iter_count}")
 
     def plot(self, axis=None, *args,   **kwargs):
 

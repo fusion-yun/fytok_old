@@ -15,21 +15,13 @@ class Coil(AttributeTree):
 
 class PFActive(AttributeTree):
 
-    def __init__(self, *args,  **kwargs):
-        super().__init__()
-        if len(args)+len(kwargs) > 0:
-            self.load(*args, **kwargs)
+    def __init__(self, config, *args,  **kwargs):
+        super().__init__(*args,  **kwargs)
 
-    def load(self, ids=None,  *args, coils=None, circuit=None, supply=None, **kwags):
-        if isinstance(ids, LazyProxy):
-            if coils is None:
-                coils = ids.coil
-
-            if circuit is None:
-                circuit = ids.circuit
-
-            if supply is None:
-                supply = ids.supply
+            
+        coils = config.coil
+        circuit = config.circuit
+        supply = config.supply
 
         if coils is None:
             pass
@@ -47,7 +39,6 @@ class PFActive(AttributeTree):
                 next_coil.turns = int(coil.element[0].turns_with_sign)
         else:
             raise NotImplementedError()
-        return self.entry
 
     def plot(self, axis=None, *args, with_circuit=False, **kwargs):
 

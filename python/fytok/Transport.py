@@ -16,6 +16,8 @@ class Transport:
     """
         Solve transport equations
 
+        Schema:
+            imas_dd:://transport_solver_numerics
         Refs:
             - Hinton/Hazeltine, Rev. Mod. Phys. vol. 48 (1976), pp.239-308
             - David P. Coster, Vincent Basiuk, Grigori Pereverzev, Denis Kalupin, Roman Zagórksi, Roman Stankiewicz, Philippe Huynh, and Fréd…,
@@ -27,9 +29,11 @@ class Transport:
             $  gm2 \\euqiv \\left\\langle \\left|\\frac{\\nabla\\rho}{R}\\right|^{2}\\right\\rangle $
     """
     @staticmethod
-    def __new__(cls,  *args,   backend=None, **kwargs):
+    def __new__(cls,  config, *args, **kwargs):
         if cls is not Transport:
             return super(Transport, cls).__new__(cls)
+
+        backend = config.get("engine", None)
 
         if backend is not None:
             plugin_name = f"{__package__}.plugins.transport.Plugin{backend}"
@@ -43,69 +47,137 @@ class Transport:
 
         return object.__new__(n_cls)
 
-    def __init__(self, *args,  **kwargs):
-        self._solver = AttributeTree()  # transport_solver_numerics
-        self._solver.solver.name = kwargs.get("backend", "FyTok")
-
+    def __init__(self,  config, *args, tokamak={},  **kwargs):
+        super().__init__(*args, **kwargs)
+        self._tokamak = tokamak
+        self._solver = AttributeTree()
+        self._solver.solver.name = "FyTok"
         self._solver.primary_coordinate.name = "rho_tor_norm"    # or "rho_tor"
         self._solver.primary_coordinate.index = "1"              # or 2
+        self._solver.time = 0.0
+        self._solver.vacuum_toroidal_field.r0 = self._tokamak.vacuum_toroidal_field.r0
+        self._solver.vacuum_toroidal_field.b0 = self._tokamak.vacuum_toroidal_field.b0
+
+        # self._solver |= collections.ChainMap((config or {}), kwargs)
+
+        logger.debug(self._solver)
+
         # self._solver.vacuum_toroidal_field = equilibrium.vacuum_toroidal_field
         # self._solver.solver_1d[_next_].grid = core_profiles.profiles_1d[_last_].grid
 
-    def solve(self, core_profiles, equilibrium, *args,   **kwargs):
-        """Solve transport equations
-            calculate new core_profiles at time = equilibrium.profiles_1d.time
+        self.core_profiles = AttributeTree()
 
-            input:
+    def solve(self, *args, **kwargs):
+        return self.update(*args, **kwargs)
+
+    def update(self,  equilibrium, *args, core_profiles=None, **kwargs):
+        """Solve transport equations
+            solve   core_profiles with 'equilibrium' 
+            scheme:
                 core_profiles   :=> imas_dd://core_profiles
                 equilibrium     :=> imas_dd://equilibrium.time_slice
-                self._solver :> imas_dd://self._solver
                 transports      :=> imas_dd://core_transports
                 sources,        :=> imas_dd://core_sources
+
+                .transport_solver :> imas_dd://self.transport_solver_numerics
+
         """
+        if core_profiles is not None:
+            self.core_profiles = core_profiles
+
+        # -----------------------------------------------------------
+
+        # time step                                         [s]
+        self._solver.tau = equilibrium.time - self._solver.time
+        self._solver.time = equilibrium.time
+        self._solver.vacuum_toroidal_field.b0m = self._solver.vacuum_toroidal_field.b0
+        if not equilibrium.vacuum_toroidal_field.b0:
+            pass
+        else:
+            self._solver.vacuum_toroidal_field.b0 = equilibrium.vacuum_toroidal_field.b0
+
+        # -----------------------------------------------------------
+        # Grid
+        if not self._solver.solver_1d.grid.rho_tor_norm:
+            self._solver.solver_1d.grid.rho_tor_norm = np.linspace(0, 1, 128)
+
+            # $rho$ not  normalised minor radius                [m]
+            self._solver.solver_1d.grid.rho_tor = self._solver.solver_1d.grid.rho_tor_norm * \
+                equilibrium.profiles_1d.rho_tor[-1]
+     
+
+ 
+        # $\Psi$ flux function from current                 [Wb]
+        psi0 = core_profiles_prev.grid.psi
+        # $\frac{\partial\Psi}{\partial\rho}$               [Wb/m]
+        psi0p = core_profiles_prev.grid.dpsi or derivate(psi0, rho)
+        # normalized psi  [0,1]                            [-]
+        psi_norm = core_profiles_prev.grid.psi_norm
 
         # -----------------------------------------------------------
         # Equilibrium
-        core_profiles_prev = core_profiles.profiles_1d[_last_]
-        core_profiles_next = core_profiles.profiles_1d[_next_]
-
-        psi_norm = core_profiles_next.grid.psi_norm
-
         # diamagnetic function,$F=R B_\phi$                 [T*m]
-        core_profiles.profiles_1d[_last_].fdia = equilibrium.profiles_1d.f(psi_norm)
+        fdia = equilibrium.profiles_1d.f(psi_norm)
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        core_profiles.profiles_1d[_last_].vpr = equilibrium.profiles_1d.dvolume_dpsi(psi_norm)
+        vpr = equilibrium.profiles_1d.dvolume_dpsi(psi_norm)
 
         # $gm2 \euqiv \left\langle \left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle $  [m^-2]
-        core_profiles.profiles_1d[_last_].gm2 = equilibrium.profiles_1d.gm2(psi_norm)
+        gm2 = equilibrium.profiles_1d.gm2(psi_norm)
+
+        # -----------------------------------------------------------
+        # Profile
+
+        # $q$ safety factor                                 [-]
+        qsf = core_profiles_prev.q
+
+        # plasma parallel conductivity,                     [(Ohm*m)^-1]
+        sigma = core_profiles_prev.conductivity_parallel
+
+        # -----------------------------------------------------------
+        # Equilibrium
+        core_profiles_prev = copy.deepcopy(self.core_profiles.profiles_1d)
+        core_profiles_next = self.core_profiles.profiles_1d
+        logger.debug(core_profiles_prev)
+
+        core_profiles_prev.time = 0.0
+        core_profiles_next.time = equilibrium.time or 0.0
+
+        psi_norm = self._solver.grid.psi_norm
+
+        self._solver.profiles_1d[_next_]
+        # diamagnetic function,$F=R B_\phi$                 [T*m]
+        self._solver.profiles_1d[_last_].fdia = equilibrium.profiles_1d.f(psi_norm)
+
+        # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
+        self._solver.profiles_1d[_last_].vpr = equilibrium.profiles_1d.dvolume_dpsi(psi_norm)
+
+        # $gm2 \euqiv \left\langle \left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle $  [m^-2]
+        self._solver.profiles_1d[_last_].gm2 = equilibrium.profiles_1d.gm2(psi_norm)
 
         # current density profile:
-        self.current(core_profiles_next, core_profiles_prev,   equilibrium, self._solver, **kwargs)
+        self._current(core_profiles_next, core_profiles_prev,   equilibrium,   **kwargs)
 
         # ion density profiles:
-        self.ion_density(core_profiles_next, core_profiles_prev,     equilibrium, self._solver, **kwargs)
+        self._ion_density(core_profiles_next, core_profiles_prev,  equilibrium,  **kwargs)
 
         # # electron density profile:
         # if enable_quasi_neutrality:
-        #     self.electron_density(core_profiles, equilibrium,  **kwargs)
+        #     self._electron_density(core_profiles, equilibrium,  **kwargs)
 
         # # electron/ion density profile from quasi-neutrality:
-        # self.quasi_neutrality(core_profiles, equilibrium,  **kwargs)
+        # self._quasi_neutrality(core_profiles, equilibrium,  **kwargs)
 
         # # ion temperature profiles:
-        # self.temperatures(core_profiles, equilibrium,  **kwargs)
+        # self._temperatures(core_profiles, equilibrium,  **kwargs)
 
         # # toroidal rotation profiles:
-        # self.rotation(core_profiles, equilibrium,  **kwargs)
+        # self._rotation(core_profiles, equilibrium,  **kwargs)
 
-        self.update_global_quantities(core_profiles)
+        # self.update_global_quantities()
 
-        return core_profiles
-
-    def update_global_quantities(self, core_profiles):
-        core_profiles.global_quantities = NotImplemented
-        return core_profiles
+    def update_global_quantities(self, ):
+        self.core_profiles.global_quantities = NotImplemented
 
     def solve_general_form(self, x,
                            y0, yp0,                 #
@@ -182,14 +254,14 @@ class Transport:
 
     ############################################################################################
     #  TRANSPORT EQUATIONS:
-    def current(self,
-                core_profiles_next,
-                core_profiles_prev,
-                equilibrium,
-                *args,
-                transports=None,
-                sources=None,
-                **kwargs):
+    def _current(self,
+                 core_profiles_next,
+                 core_profiles_prev,
+                 equilibrium,
+                 *args,
+                 transports=None,
+                 sources=None,
+                 **kwargs):
 
         ########################################
         # -----------------------------------------------------------
@@ -391,16 +463,16 @@ class Transport:
 
         return True
 
-    def ion_density_one(self,
-                        iion,
-                        core_profiles_next,
-                        core_profiles_prev,
-                        equilibrium,
-                        *args,
-                        transports=None,
-                        sources=None,
-                        hyper_diff=[0, 0],
-                        **kwargs):
+    def _ion_density_one(self,
+                         iion,
+                         core_profiles_next,
+                         core_profiles_prev,
+                         equilibrium,
+                         *args,
+                         transports=None,
+                         sources=None,
+                         hyper_diff=[0, 0],
+                         **kwargs):
 
         ########################################
         # -----------------------------------------------------------
@@ -630,34 +702,34 @@ class Transport:
         core_profiles_next.ion[iion].source = si_exp - si_imp * ni0
         core_profiles_next.ion[iion].int_source = integral(ni0*vpr, rho)
 
-    def ion_density(self,
-                    core_profiles_next,
-                    core_profiles_prev,
-                    equilibrium,
-                    *args,
-                    transports=None,
-                    sources=None,
-                    hyper_diff=[0, 0],
-                    **kwargs):
+    def _ion_density(self,
+                     core_profiles_next,
+                     core_profiles_prev,
+                     equilibrium,
+                     *args,
+                     transports=None,
+                     sources=None,
+                     hyper_diff=[0, 0],
+                     **kwargs):
         for iion, ion in enumerate(core_profiles_prev.ion):
-            self.ion_density_one(self, iion,
-                                 core_profiles_next,
-                                 core_profiles_prev,
-                                 equilibrium,
-                                 transports=transports,
-                                 sources=sources,
-                                 **kwargs
-                                 )
+            self._ion_density_one(self, iion,
+                                  core_profiles_next,
+                                  core_profiles_prev,
+                                  equilibrium,
+                                  transports=transports,
+                                  sources=sources,
+                                  **kwargs
+                                  )
 
-    def electron_density(self,
-                         core_profiles_next,
-                         core_profiles_prev,
-                         equilibrium,
-                         *args,
-                         transports=None,
-                         sources=None,
-                         hyper_diff=[0, 0],
-                         **kwargs):
+    def _electron_density(self,
+                          core_profiles_next,
+                          core_profiles_prev,
+                          equilibrium,
+                          *args,
+                          transports=None,
+                          sources=None,
+                          hyper_diff=[0, 0],
+                          **kwargs):
 
         hyper_diff_exp = hyper_diff[0]  # AF 22.Aug.2016
         hyper_diff_imp = hyper_diff[1]  # AF 22.Aug.2016
@@ -880,15 +952,15 @@ class Transport:
         # core_profiles_next.electron.source = si_exp - si_imp * ne0
         # core_profiles_next.electron.int_source = integral(ne0*vpr, rho)
 
-    def quasi_neutrality(self,
-                         core_profiles_next,
-                         core_profiles_prev,
-                         equilibrium,
-                         *args,
-                         transports=None,
-                         sources=None,
-                         hyper_diff=[0, 0],
-                         **kwargs):
+    def _quasi_neutrality(self,
+                          core_profiles_next,
+                          core_profiles_prev,
+                          equilibrium,
+                          *args,
+                          transports=None,
+                          sources=None,
+                          hyper_diff=[0, 0],
+                          **kwargs):
 
         rho = self._solver.solver_1d[_last_].grid.rho
 
@@ -1036,17 +1108,17 @@ class Transport:
             profiles["ne"] = ne
 
     # HEAT TRANSPORT EQUATIONS
-    def temperatures(self,
-                     core_profiles_next,
-                     core_profiles_prev,
-                     equilibrium,
-                     *args,
-                     collisions=None,
-                     transports=None,
-                     sources=None,
-                     solve_type=0,
-                     hyper_diff=[0, 0],
-                     **kwargs):
+    def _temperatures(self,
+                      core_profiles_next,
+                      core_profiles_prev,
+                      equilibrium,
+                      *args,
+                      collisions=None,
+                      transports=None,
+                      sources=None,
+                      solve_type=0,
+                      hyper_diff=[0, 0],
+                      **kwargs):
 
         hyper_diff_exp = hyper_diff[0]  # AF 22.Aug.2016
         hyper_diff_imp = hyper_diff[1]  # AF 22.Aug.2016
@@ -1593,16 +1665,16 @@ class Transport:
         profiles["INT_SOURCE_TE"] = intfun1
 
     #  ROTATION TRANSPORT EQUATIONS
-    def rotation(self,
-                 core_profiles_next,
-                 core_profiles_prev,
-                 equilibrium,
-                 *args,
-                 transports=None,
-                 sources=None,
-                 boundary_condition=None,
-                 hyper_diff=[0, 0],
-                 **kwargs):
+    def _rotation(self,
+                  core_profiles_next,
+                  core_profiles_prev,
+                  equilibrium,
+                  *args,
+                  transports=None,
+                  sources=None,
+                  boundary_condition=None,
+                  hyper_diff=[0, 0],
+                  **kwargs):
 
         #-------------------------------------------------------#
         #     This subroutine solves the momentum transport     #

@@ -6,6 +6,7 @@ import scipy
 from spdm.util.AttributeTree import AttributeTree
 from spdm.util.logger import logger
 from spdm.util.Profiles import Profiles
+from spdm.util.Interpolate import Interpolate1D
 
 
 class CoreProfiles(AttributeTree):
@@ -32,8 +33,8 @@ class CoreProfiles(AttributeTree):
                              }
         self.profiles_1d.conductivity_parallel = np.linspace(1.0/(dims+1), 1, dims)
 
-    def ffprime(self, psi_norm):
-        return self.profiles_1d.ffprime or []
+    # def ffprime(self, psi_norm):
+    #     return self.profiles_1d.ffprime
 
-    def pprime(self, psi_norm):
-        return self.profiles_1d.pprime or []
+    # def pprime(self, psi_norm):
+    #     return self.profiles_1d.pprime

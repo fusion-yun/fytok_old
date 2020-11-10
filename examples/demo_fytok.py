@@ -19,24 +19,25 @@ if __name__ == "__main__":
     from spdm.data.Entry import open_entry
     from spdm.util.logger import logger
 
-    device = open_entry("east+mdsplus:///home/salmon/public_data/~t/?default_tree_name=efit_east#shot=55555")
- 
-    tok = Tokamak()
+    ids = open_entry("east+mdsplus:///home/salmon/public_data/~t/?default_tree_name=efit_east#shot=55555")
+    itime = 10
 
-    tok.load(device)
+    tok = Tokamak.load_imas(ids, itime)
 
-    lfcs_r = device.equilibrium.time_slice[10].boundary.outline.r()[:, 0]
-    lfcs_z = device.equilibrium.time_slice[10].boundary.outline.z()[:, 0]
+    lfcs_r = ids.equilibrium.time_slice[itime].boundary.outline.r()[:, 0]
+    lfcs_z = ids.equilibrium.time_slice[itime].boundary.outline.z()[:, 0]
     psivals = [(R, Z, 0.0) for R, Z in zip(lfcs_r, lfcs_z)]
 
-    tok.equilibrium.solve(None, constraints={"psivals": psivals})
+    # tok.equilibrium.solve(constraints={"psivals": psivals})
 
-    # tok.solve(0.1, max_iters=1, constraints={"psivals": psivals})
-    # fig = plt.figure()
-    # tok.plot(axis=fig.add_subplot(111))
-    # fig.savefig("tokamak.svg")
+    # fig = tok.equilibrium.plot_full()
 
-    tok.equilibrium.plot_full().savefig("../output/equilibrium_full.svg")
+    tok.update(constraints={"psivals": psivals})
 
+    fig = plt.figure()
+
+    tok.plot(axis=fig.add_subplot(111))
+
+    fig.savefig("../output/tokamak.svg")
 
     logger.info("Done")

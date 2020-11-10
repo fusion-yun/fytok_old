@@ -66,11 +66,8 @@ class EqProfiles2DFreeGS(Profiles):
 
 
 class EquilibriumFreeGS(Equilibrium):
-    def __init__(self,  *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def load(self, ids=None, *args,  **kwargs):
-        super().load(ids, *args, **kwargs)
+    def __init__(self,  config, *args, **kwargs):
+        super().__init__(config, *args, **kwargs)
 
         eq_wall = freegs.machine.Wall(self.tokamak.wall.limiter.outline.r,
                                       self.tokamak.wall.limiter.outline.z)
@@ -99,8 +96,6 @@ class EquilibriumFreeGS(Equilibrium):
         self.profiles_1d = EqProfiles1DFreeGS(self._backend)
         self.profiles_2d = EqProfiles2DFreeGS(self._backend)
 
-        return self 
-
     # @property
     # def profiles_1d(self):
     #     if not hasattr(self, "_profiles_1d"):
@@ -127,42 +122,32 @@ class EquilibriumFreeGS(Equilibrium):
     def oxpoints(self):
         return freegs.critical.find_critical(self.r, self.z, self.psi)
 
-    def solve(self, core_profiles=None, constraints=None, fvec=None, **kwargs):
-        if fvec is None:
-            fvec = self.tokamak.vacuum_toroidal_field.b0 * self.tokamak.vacuum_toroidal_field.r0
+    def solve(self, core_profiles=None, constraints=None,  **kwargs):
+        if not isinstance(core_profiles, CoreProfiles):
+            core_profiles = CoreProfiles(core_profiles)
 
-        if isinstance(core_profiles, CoreProfiles):
-            psi_norm = self.profiles_1d.psi_norm
+        if "pprime" in core_profiles.profiles_1d and "ffprime" in core_profiles.profiles_1d:
             profiles = freegs.jtor.ProfilesPprimeFfprime(
-                core_profiles.pprime(psi_norm),
-                core_profiles.ffprime(psi_norm),
-                fvec)
-
-        elif core_profiles is not None and "Ip" in core_profiles:
-            self.vacuum_toroidal_field.b0 = fvec / self.vacuum_toroidal_field.r0
+                core_profiles.profiles_1d.pprime,
+                core_profiles.profiles_1d.ffprime,
+                core_profiles.vacuum_toroidal_field.b0 * core_profiles.vacuum_toroidal_field.r0)
+        elif "ip" in core_profiles.global_quantities and "pressure" in core_profiles.global_quantities:
             profiles = freegs.jtor.jtor.ConstrainPaxisIp(
-                core_profiles["pressure"],  # Plasma pressure on axis [Pascals]
-                core_profiles["Ip"],        # Plasma current [Amps]
-                fvec)
+                core_profiles.global_quantities.pressure,                  # Plasma pressure on axis [Pascals]
+                core_profiles.global_quantities.ip,         # Plasma current [Amps]
+                core_profiles.vacuum_toroidal_field.b0 * core_profiles.vacuum_toroidal_field.r0)
         else:
-            logger.warning(f"Using default profile pressure=1e3 Ip=1e6")
-            self.vacuum_toroidal_field.b0 = fvec / self.vacuum_toroidal_field.r0
+            logger.debug(f"Using default profile pressure=1e3 Ip=1e6")
             profiles = freegs.jtor.ConstrainPaxisIp(
                 1e3,  # Plasma pressure on axis [Pascals]
                 1e6,  # Plasma current [Amps]
-                fvec)
+                kwargs.get("fvec", 1.0))
 
-        constrain = freegs.control.constrain(** (constraints or {}))
+        constraints = freegs.control.constrain(** (constraints or {}))
 
-        logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] Start")
 
-        freegs.solve(self._backend, profiles, constrain)
-
-        logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] End")
-
-        self.update_global_quantities()
-        return
-
+        freegs.solve(self._backend, profiles, constraints)
+    
     def update_global_quantities(self):
         # Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip^2] {dynamic} [-]
         self.global_quantities.beta_pol = self._backend.poloidalBeta()

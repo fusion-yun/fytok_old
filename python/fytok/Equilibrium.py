@@ -87,7 +87,7 @@ class EqProfiles1D(Profiles1D):
         return NotImplemented
 
     def rho_tor_norm(self,  psi_norm=None):
-        """Normalised toroidal flux coordinate. The normalizing value for rho_tor_norm, is the toroidal flux coordinate at the equilibrium boundary 
+        """Normalised toroidal flux coordinate. The normalizing value for rho_tor_norm, is the toroidal flux coordinate at the equilibrium boundary
             (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation) {dynamic} [-]"""
         return NotImplemented
 
@@ -197,12 +197,11 @@ class Equilibrium(AttributeTree):
     """
 
     @staticmethod
-    def __new__(cls,  *args,  backend=None, **kwargs):
+    def __new__(cls,   config,  *args, **kwargs):
         if cls is not Equilibrium:
             return super(Equilibrium, cls).__new__(cls)
 
-        if backend is None:
-            backend = "FreeGS"
+        backend = str(config.engine or "") or "FreeGS"
 
         plugin_name = f"{__package__}.plugins.equilibrium.Plugin{backend}"
 
@@ -213,21 +212,13 @@ class Equilibrium(AttributeTree):
 
         return AttributeTree.__new__(n_cls)
 
-    def __init__(self,   *args, config=None, backend=None, tokamak=None, **kwargs):
-        super().__init__()
+    def __init__(self,   config,  *args,  tokamak=None, nr=129, nz=129, **kwargs):
+        super().__init__(*args, **kwargs)
         self.tokamak = tokamak
-        if config is not None:
-            self.load(config)
-
-    def load(self, entry=None,  nr=129, nz=129, **kwargs):
         lim_r = self.tokamak.wall.limiter.outline.r
         lim_z = self.tokamak.wall.limiter.outline.z
         self.coordinate_system.grid.dim1 = np.linspace(min(lim_r), max(lim_r), nr)
         self.coordinate_system.grid.dim2 = np.linspace(min(lim_z), max(lim_z), nz)
-        return self
-
-    def solve(self, *args, **kwargs):
-        raise NotImplementedError()
 
     @property
     def oxpoints(self):
@@ -248,6 +239,20 @@ class Equilibrium(AttributeTree):
     @property
     def fvec(self):
         return self.tokamak.vacuum_toroidal_field.r0() * self.tokamak.vacuum_toroidal_field.b0()
+
+    def solve(self, *args, **kwargs):
+        raise NotImplementedError()
+
+    def update(self, *args, time=0.0, **kwargs):
+        self.time = time
+
+        logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] at time={self.time} : Start")
+
+        self.solve(*args, **kwargs)
+
+        logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] at time={self.time} : End")
+
+        # self.update_global_quantities()
 
     def update_global_quantities(self):
 

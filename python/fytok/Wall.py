@@ -9,18 +9,16 @@ from spdm.util.logger import logger
 
 
 class Wall(AttributeTree):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, config, *args, **kwargs):
         super().__init__()
-        if len(args)+len(kwargs) > 0:
-            self.load(*args, **kwargs)
 
-    def load(self, ids=None, *args, limiter=None, vessel=None, **kwargs):
-        if isinstance(ids, LazyProxy):
-            if limiter is None:
-                limiter = ids.description_2d.limiter.unit.outline
+        if isinstance(config, LazyProxy):
 
-            if vessel is None:
-                vessel = ids.description_2d.vessel.annular
+            limiter = config.description_2d.limiter.unit.outline
+            vessel = config.description_2d.vessel.annular
+        else:
+            limiter = None
+            vessel = None
 
         if limiter is None:
             pass
@@ -55,10 +53,8 @@ class Wall(AttributeTree):
             self.vessel.annular.outline_outer.z = vessel.outline_outer.z()
         else:
             raise TypeError(f"Unknown type {type(vessel)}")
-        
-        return self.entry
 
- 
+
     def plot(self, axis=None, *args, **kwargs):
 
         if axis is None:
