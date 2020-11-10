@@ -20,63 +20,58 @@ from .Transport import Transport
 
 class Tokamak(AttributeTree):
 
-    def __init__(self,   *args, **kwargs):
+    def __init__(self,   *args, config=None, backends={}, **kwargs):
         super().__init__()
-        if len(args)+len(kwargs) > 0:
-            self.load(*args, **kwargs)
-
-    def load(self, entry=None,  *args, itime=0, R0=None, B0=None, backends={}, **kwargs):
-        if isinstance(entry, str):
-            entry = open_entry(entry)
-
-        self.vacuum_toroidal_field.r0 = kwargs.get("R0", 1.0)
-        self.vacuum_toroidal_field.b0 = kwargs.get("B0", 1.0)
-
         self.wall = Wall()
         self.pf_active = PFActive()
         self.core_profiles = CoreProfiles()
-        self.core_transports = CoreTransports(backend=backends.get("transport", None))
+        self.core_transports = CoreTransports()
         self.core_sources = CoreSources()
-
-        self.equilibrium = Equilibrium(backend=backends.get("equilibrium", None))
-
+        self.equilibrium = Equilibrium(backend=backends.get("equilibrium", None), tokamak=self)
         self.transport = Transport(backend=backends.get("transport", None))
+
+        if config is not None:
+            self.load(config)
+
+    def load(self, config, itime=0):
+        if isinstance(config, str):
+            config = open_entry(config)
 
         # self._transport_edge_solver = TransportEdge(backend=backends.get("transport_edge", None))
         # self.edge_profiles = EdgeProfiles()
         # self.edge_tranports = EdgeTransport()
         # self.edge_sources = EdgeSources()
+        if isinstance(config, LazyProxy):
 
-        if isinstance(entry, LazyProxy):
-            self.wall.load(entry.wall)
-            self.pf_active.load(entry.pf_active)
-            self.equilibrium.load(entry.equilibrium.time_slice[itime](),  tokamak=self)
-            self.core_profiles.load(entry.core_profiles.profiles_1d[itime])
-            # self.core_transports.load(core_transports.model.profiles_1d[itime])
-            # self.core_sources.load(core_sources.source[itime])
-            self.vacuum_toroidal_field.r0 = entry.equilibrium.vacuum_toroidal_field.r0() or 1.0
-            self.vacuum_toroidal_field.b0 = entry.equilibrium.vacuum_toroidal_field.b0[itime]() or 1.0
+            # self.core_profiles.load(config.core_profiles)
+            # self.core_transports.load(config.core_transports)
+            # self.core_sources.load(config.core_sources)
+            self.vacuum_toroidal_field.r0 = config.equilibrium.vacuum_toroidal_field.r0() or 1.0
+            self.vacuum_toroidal_field.b0 = config.equilibrium.vacuum_toroidal_field.b0[itime]() or 1.0
+
+            self.wall.load(config.wall)
+            self.pf_active.load(config.pf_active)
+            self.equilibrium.load(config.equilibrium)
         else:
-            self.wall.load(**kwargs.get("wall", {}))
-            self.pf_active.load(**kwargs.get("pf_active", {}))
-            self.equilibrium.load(**kwargs.get("equilibrium", {}), tokamak=self)
-            self.core_profiles.load(**kwargs.get("core_profiles", {}))
-            # self.core_transports.load(**kwargs.get("core_transports", {}))
-            # self.core_sources.load(**kwargs.get("core_sources", {}))
+            self.vacuum_toroidal_field.r0 = config.get("R0") or self.wall.limiter.outline.r.mean()
+            self.vacuum_toroidal_field.b0 = config.get("B0") or 1.0
 
-        self.vacuum_toroidal_field.r0 = R0 or self.wall.limiter.outline.r.mean()
-        self.vacuum_toroidal_field.b0 = B0 or 1.0
-        self.core_profiles.vacuum_toroidal_field.r0 = self.vacuum_toroidal_field.r0
-        self.core_profiles.vacuum_toroidal_field.b0 = self.vacuum_toroidal_field.b0
+            self.wall.load(config.get("wall", {}))
+            self.pf_active.load(config.get("pf_active", {}))
+            self.equilibrium.load(config.get("equilibrium", {}), tokamak=self)
+            self.core_profiles.load(config.get("core_profiles", {}))
+            self.core_transports.load(config.get("core_transports", {}))
+            self.core_sources.load(config.get("core_sources", {}))
+
+            self.core_profiles.vacuum_toroidal_field.r0 = self.vacuum_toroidal_field.r0
+            self.core_profiles.vacuum_toroidal_field.b0 = self.vacuum_toroidal_field.b0
+
         return self
 
     def save(self, uri, *args, **kwargs):
         raise NotImplementedError()
 
-    def solve(self, dt, *, max_iters=100,  B0=None,   constraints=None, **kwargs):
-
-        if B0 is not None:
-            self.vacuum_toroidal_field.b0 = B0
+    def solve(self, dt, *,   constraints=None, **kwargs):
 
         fvec = self.vacuum_toroidal_field.r0 * self.vacuum_toroidal_field.b0
 
@@ -131,8 +126,6 @@ class Tokamak(AttributeTree):
         axis.legend()
 
         return axis
-
-  
 
     # def core_transports(self, *args,  **kwargs):
     #     """Core plasma transport of particles, energy, momentum and poloidal flux."""

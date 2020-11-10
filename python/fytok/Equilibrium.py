@@ -213,14 +213,13 @@ class Equilibrium(AttributeTree):
 
         return AttributeTree.__new__(n_cls)
 
-    def __init__(self,   *args, backend=None, **kwargs):
+    def __init__(self,   *args, config=None, backend=None, tokamak=None, **kwargs):
         super().__init__()
-
-        if len(args)+len(kwargs) > 0:
-            self.load(*args, **kwargs)
-
-    def load(self, entry=None,  tokamak=None, nr=129, nz=129, **kwargs):
         self.tokamak = tokamak
+        if config is not None:
+            self.load(config)
+
+    def load(self, entry=None,  nr=129, nz=129, **kwargs):
         lim_r = self.tokamak.wall.limiter.outline.r
         lim_z = self.tokamak.wall.limiter.outline.z
         self.coordinate_system.grid.dim1 = np.linspace(min(lim_r), max(lim_r), nr)
