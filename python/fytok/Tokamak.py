@@ -55,7 +55,11 @@ class Tokamak(AttributeTree):
     def save(self, uri, *args, **kwargs):
         raise NotImplementedError()
 
-    def update(self, *args, time=0.0, core_profiles=None, fvec=1.0,  constraints=None,
+    def update(self, *args, time=0.0,
+               core_profiles=None,
+               ctx=None,
+               fvec=1.0,
+               constraints=None,
                max_iters=1,
                relative_deviation=0.1,
                ** kwargs):
@@ -70,16 +74,17 @@ class Tokamak(AttributeTree):
         for iter_count in range(max_iters):
             logger.debug(f"Iterator = {iter_count}")
 
-            # self.equilibrium.update(self.transport.core_profiles,
-            #                         time=time,
-            #                         fvec=fvec,
-            #                         constraints=constraints)
+            self.equilibrium.update(self.transport.core_profiles,
+                                    time=time,
+                                    fvec=fvec,
+                                    constraints=constraints)
 
-            # self.core_transports.update(self.equilibrium)
+            self.core_transports.update(self.equilibrium, ctx=ctx)
 
-            # self.core_sources.update(self.equilibrium)
+            self.core_sources.update(self.equilibrium, ctx=ctx)
 
             self.transport.update(equilibrium=self.equilibrium,
+                                  ctx=ctx,
                                   transports=self.core_transports,
                                   sources=self.core_sources)
 

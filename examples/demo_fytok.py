@@ -28,15 +28,19 @@ if __name__ == "__main__":
     lfcs_z = ids.equilibrium.time_slice[itime].boundary.outline.z()[:, 0]
     psivals = [(R, Z, 0.0) for R, Z in zip(lfcs_r, lfcs_z)]
 
-    # tok.equilibrium.solve(constraints={"psivals": psivals})
-
+    tok.equilibrium.solve(constraints={"psivals": psivals})
+    tok.equilibrium.update_boundary()
     # fig = tok.equilibrium.plot_full()
 
-    tok.update(constraints={"psivals": psivals})
+    # tok.update(constraints={"psivals": psivals})
 
     fig = plt.figure()
 
-    tok.plot(axis=fig.add_subplot(111))
+    axis = fig.add_subplot(111)
+
+    tok.equilibrium.plot(axis=axis)
+
+    # tok.plot(axis=axis)
 
     fig.savefig("../output/tokamak.svg")
 

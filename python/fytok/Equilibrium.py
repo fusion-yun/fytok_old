@@ -1,37 +1,39 @@
 
 import collections
 import functools
-
+from sympy import Point, Polygon
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from spdm.data.Entry import open_entry
-from spdm.util.AttributeTree import AttributeTree
+from spdm.util.AttributeTree import AttributeTree, _next_
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
-from spdm.util.Profiles import Profiles1D, Profiles2D
+from spdm.util.Profiles import Profiles
 from spdm.util.sp_export import sp_find_module
+from spdm.util.Interpolate import derivate, integral, interpolate, Interpolate2D
+from spdm.util.find_peaks import find_peaks
 
 from .PFActive import PFActive
 from .Wall import Wall
 #  psi phi pressure f dpressure_dpsi f_df_dpsi j_parallel q magnetic_shear r_inboard r_outboard rho_tor rho_tor_norm dpsi_drho_tor geometric_axis elongation triangularity_upper triangularity_lower volume rho_volume_norm dvolume_dpsi dvolume_drho_tor area darea_dpsi surface trapped_fraction gm1 gm2 gm3 gm4 gm5 gm6 gm7 gm8 gm9 b_field_max beta_pol mass_density
 
 
-class EqProfiles1D(Profiles1D):
-    def __init__(self,  *args, dimensions=None,  ** kwargs):
-        npoints = 129
-        super().__init__(dimensions or np.linspace(1.0/(npoints+1), 1.0, npoints), *args, **kwargs)
+class EqProfiles1D(Profiles):
+    def __init__(self, dims=129,  *args, psi_boundary=1.0,  ** kwargs):
+        super().__init__(dims, *args, **kwargs)
+        self.__dict__["_psi_boundary"] = psi_boundary
 
     @property
     def psi_norm(self):
-        return self.dimensions
+        return self.x
 
     def psi(self,   psi_norm=None):
-        """Poloidal flux {dynamic} [Wb]. This quantity is COCOS-dependent, with the following transformation : """
-        return NotImplemented
+        """Poloidal flux {dynamic} [Wb]. """
+        return psi_norm * self._psi_boundary if psi_norm is not None else self.x*self._psi_boundary
 
     def phi(self,   psi_norm=None):
-        """Toroidal flux {dynamic} [Wb]. This quantity is COCOS-dependent, with the following transformation :"""
+        """Toroidal flux {dynamic} [Wb]."""
         return NotImplemented
 
     def pressure(self,   psi_norm=None):
@@ -89,7 +91,8 @@ class EqProfiles1D(Profiles1D):
     def rho_tor_norm(self,  psi_norm=None):
         """Normalised toroidal flux coordinate. The normalizing value for rho_tor_norm, is the toroidal flux coordinate at the equilibrium boundary
             (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation) {dynamic} [-]"""
-        return NotImplemented
+        rho_tor = self.rho_tor(psi_norm)
+        return rho_tor/rho_tor[-1]
 
     def dpsi_drho_tor(self,  psi_norm=None)	:
         """Derivative of Psi with respect to Rho_Tor {dynamic} [Wb/m]. """
@@ -110,7 +113,7 @@ class EqProfiles1D(Profiles1D):
 
     def dvolume_drho_tor(self,  psi_norm=None)	:
         """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor {dynamic} [m^2]"""
-        return NotImplemented
+        return self.dvolume_dpsi(psi_norm)*self.dpsi_drho_tor(psi_norm)
 
     def area(self,  psi_norm=None):
         """Cross-sectional area of the flux surface {dynamic} [m^2]"""
@@ -184,9 +187,24 @@ class EqProfiles1D(Profiles1D):
         return NotImplemented
 
 
-class EqProfiles2D(Profiles2D):
-    def __init__(self,  *args,  ** kwargs):
+class EqProfiles2D(Profiles):
+    def __init__(self, eq, *args,  ** kwargs):
         super().__init__(*args, **kwargs)
+        self._eq = eq
+
+    @property
+    def R(self):
+        return NotImplemented
+
+    @property
+    def Z(self):
+        return NotImplemented
+
+    def psi(self, *args, **kwargs):
+        return NotImplemented
+
+    def psi_norm(self, *args, **kwargs):
+        return (self.psi(*args, **kwargs)-self._eq.global_quantities.psi_axis)/(self._eq.global_quantities.psi_boundary-self._eq.global_quantities.psi_axis)
 
 
 class Equilibrium(AttributeTree):
@@ -217,24 +235,13 @@ class Equilibrium(AttributeTree):
         self.tokamak = tokamak
         lim_r = self.tokamak.wall.limiter.outline.r
         lim_z = self.tokamak.wall.limiter.outline.z
-        self.coordinate_system.grid.dim1 = np.linspace(min(lim_r), max(lim_r), nr)
-        self.coordinate_system.grid.dim2 = np.linspace(min(lim_z), max(lim_z), nz)
-
-    @property
-    def oxpoints(self):
-        return NotImplemented
-
-    @property
-    def r(self):
-        return NotImplemented
-
-    @property
-    def z(self):
-        return NotImplemented
-
-    @property
-    def psi(self):
-        return NotImplemented
+        rmin = min(lim_r)
+        rmax = max(lim_r)
+        zmin = min(lim_z)
+        zmax = max(lim_z)
+        self.coordinate_system.grid.dim1 = np.linspace(rmin-0.1*(rmax-rmin), rmax+0.1*(rmax-rmin), nr)
+        self.coordinate_system.grid.dim2 = np.linspace(zmin-0.1*(zmax-zmin), zmax+0.1*(zmax-zmin), nz)
+        # self.global_quantities
 
     @property
     def fvec(self):
@@ -252,7 +259,7 @@ class Equilibrium(AttributeTree):
 
         logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] at time={self.time} : End")
 
-        # self.update_global_quantities()
+        self.update_global_quantities()
 
     def update_global_quantities(self):
 
@@ -262,7 +269,7 @@ class Equilibrium(AttributeTree):
         self.global_quantities.beta_tor = NotImplemented
         # Normalised toroidal beta, defined as 100 * beta_tor * a[m] * B0 [T] / ip [MA] {dynamic} [-]	FLT_0D
         self.global_quantities.beta_normal = NotImplemented
-        # Plasma current (toroidal component). Positive sign means anti-clockwise when viewed from above. {dynamic} [A]. This quantity is COCOS-dependent, with the following transformation :
+        # Plasma current (toroidal component). Positive sign means anti-clockwise when viewed from above. {dynamic} [A].
         self.global_quantities.ip = NotImplemented
         # Internal inductance {dynamic} [-]	FLT_0D
         self.global_quantities.li_3 = NotImplemented
@@ -274,15 +281,15 @@ class Equilibrium(AttributeTree):
         self.global_quantities.surface = NotImplemented
         # Poloidal length of the magnetic surface {dynamic} [m]	FLT_0D
         self.global_quantities.length_pol = NotImplemented
-        # Poloidal flux at the magnetic axis {dynamic} [Wb]. This quantity is COCOS-dependent, with the following transformation :
+        # Poloidal flux at the magnetic axis {dynamic} [Wb].
         self.global_quantities.psi_axis = NotImplemented
-        # Poloidal flux at the selected plasma boundary {dynamic} [Wb]. This quantity is COCOS-dependent, with the following transformation :
+        # Poloidal flux at the selected plasma boundary {dynamic} [Wb].
         self.global_quantities.psi_boundary = NotImplemented
         # Magnetic axis position and toroidal field	structure
         self.global_quantities.magnetic_axis = NotImplemented
-        # q at the magnetic axis {dynamic} [-]. This quantity is COCOS-dependent, with the following transformation :
+        # q at the magnetic axis {dynamic} [-].
         self.global_quantities.q_axis = NotImplemented
-        # q at the 95% poloidal flux surface (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic} [-]. This quantity is COCOS-dependent, with the following transformation :
+        # q at the 95% poloidal flux surface (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic} [-].
         self.global_quantities.q_95 = NotImplemented
         # Minimum q value and position	structure
         self.global_quantities.q_min = NotImplemented
@@ -295,26 +302,31 @@ class Equilibrium(AttributeTree):
         if axis is None:
             axis = plt.gca()
 
-        R = self.r
-        Z = self.z
-        Psi = self.psi
+        R = self.profiles_2d.R
+        Z = self.profiles_2d.Z
+        psi = self.profiles_2d.psi()
 
-        levels = np.linspace(np.amin(Psi), np.amax(Psi), levels)
+        # if type(levels) is int:
+        #     levels = np.linspace(self.global_quantities.psi_axis, self.global_quantities.psi_boundary, levels)
 
-        axis.contour(R, Z, Psi, levels=levels, linewidths=0.2)
+        axis.contour(R, Z, psi, levels=levels, linewidths=0.2)
 
-        if oxpoints:
-            opts, xpts = self.oxpoints
+        axis.plot(self.global_quantities.magnetic_axis.r,
+                  self.global_quantities.magnetic_axis.z, 'g.', label="Magnetic axis")
 
-            if len(opts) > 0:
-                axis.plot([p[0] for p in opts], [p[1] for p in opts], 'g.', label="O-points")
+        logger.debug(self.boundary)
+        for p in self.boundary.x_point:
+            axis.plot(p.r, p.z, 'rx', label="X-points")
 
-            if len(xpts) > 0:
-                axis.plot([p[0] for p in xpts], [p[1] for p in xpts], 'rx', label="X-points")
-                psi_bndry = xpts[0][2]
-                axis.contour(R, Z, Psi, levels=[psi_bndry], colors='r', linestyles='dashed', linewidths=0.4)
-                axis.plot([], [], 'r--', label="Separatrix")
+        # boundary_points = np.array([self.boundary.outline.r, self.boundary.outline.z]).transpose([1, 0])
 
+        # axis.add_patch(plt.Polygon(boundary_points, colors='r', linestyles='dashed',
+        #                            linewidths=0.4, fill=False, closed=True))
+
+        # axis.plot([], [], 'r--', label="Separatrix")
+        self.tokamak.wall.plot(axis)
+
+        axis.axis("scaled")
         return axis
 
     def plot_full(self,  profiles=None, profiles_label=None, x_axis="psi_norm", xlabel=r'$\psi_{norm}$', *args, **kwargs):
@@ -361,3 +373,73 @@ class Equilibrium(AttributeTree):
         fig.tight_layout()
         fig.subplots_adjust(hspace=0)
         return fig
+
+    # def update_surface(self, psi_norm=None):
+    #     """
+    #         learn from freegs.critical
+    #     """
+    #     self._R = self.profiles_2d.R
+    #     self._Z = self.profiles_2d.Z
+    #     self._psi = self.profiles_2d.psi(R, Z)
+
+    #     self.upate_xpoints()
+
+    def update_boundary(self, R=None, Z=None, psi=None):
+        if R is None:
+            R = self.profiles_2d.R
+        if Z is None:
+            Z = self.profiles_2d.Z
+        if psi is None:
+            psi = self.profiles_2d.psi(R, Z)
+
+        if isinstance(psi, Interpolate2D):
+            psi = Interpolate2D(R, Z, psi)
+
+        opoints, xpoints = self.find_oxpoints(R, Z, psi)
+
+        self.global_quantities.magnetic_axis.r = opoints[0][0]
+
+        self.global_quantities.magnetic_axis.z = opoints[0][1]
+
+        for r, z, _ in xpoints:
+            self.boundary.x_point[_next_] = {"r": r, "z": z}
+
+        logger.debug(self.boundary)
+        return
+
+    def find_oxpoints(self, R, Z, psi):
+        if not isinstance(psi, Interpolate2D):
+            psi = Interpolate2D(R[:, 0], Z[0, :], psi)
+        Br = - psi(R, Z, dy=1)/R
+        Bz = psi(R, Z, dx=1)/R
+        Bp2 = Br**2+Bz**2
+
+        if len(Bp2.shape) != 2:
+            raise NotImplementedError()
+
+        limiter_points = np.array([self.tokamak.wall.limiter.outline.r,
+                                   self.tokamak.wall.limiter.outline.z]).transpose([1, 0])
+
+        limiter_polygon = Polygon(*map(Point, limiter_points))
+        opoint = []
+        xpoint = []
+        for idx in find_peaks(-Bp2, box=[[5, 5], [-5, -5]]):
+            r = R[idx[0], idx[1]]
+            z = Z[idx[0], idx[1]]
+
+            if not limiter_polygon.encloses(Point(r, z)):
+                continue
+            # D = fxx * fyy - (fxy)^2
+            D = psi(r, z, dx=2) * psi(r, z, dy=2) - (psi(r, z,  dx=1, dy=1))**2
+
+            if D < 0.0:                            # X-point
+                xpoint.append((r, z, psi(r, z)))
+            else:  # O-point
+                opoint.append((r, z, psi(r, z)))
+        # Rmid = 0.5*(R[-1, 0] + R[0, 0])
+        # Zmid = 0.5*(Z[0, -1] + Z[0, 0])
+        # opoint.sort(key=lambda x: (x[0] - Rmid)**2 + (x[1] - Zmid)**2)
+        # psi_axis = opoint[0][2]
+        # xpoint.sort(key=lambda x: (x[2] - psi_axis)**2)
+
+        return opoint, xpoint

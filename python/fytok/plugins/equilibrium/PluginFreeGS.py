@@ -3,12 +3,13 @@ import sys
 
 import freegs
 import numpy as np
+from spdm.util.Interpolate import derivate, integral, interpolate
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.util.Profiles import Profiles
-
+from spdm.util.AttributeTree import _next_
 from ...CoreProfiles import CoreProfiles
-from ...Equilibrium import Equilibrium, EqProfiles1D
+from ...Equilibrium import EqProfiles1D, EqProfiles2D, Equilibrium
 
 
 class EqProfiles1DFreeGS(EqProfiles1D):
@@ -16,53 +17,79 @@ class EqProfiles1DFreeGS(EqProfiles1D):
         super().__init__(*args, **kwargs)
         self._backend = backend
 
-    @property
-    def psi_norm(self):
-        return self.dimensions
+    def psi_norm(self, psi_norm):
+        return self._backend.psi_norm(psi_norm)
 
-    def pprime(self, psi_norm=None):
-        return self._backend.pprime(psi_norm if psi_norm is not None else self.psi_norm)
+    def pprime(self, psi_norm):
+        return self._backend.pprime(psi_norm)
 
-    def ffprime(self,  psi_norm=None):
-        return self._backend.ffprime(psi_norm if psi_norm is not None else self.psi_norm)
+    def ffprime(self,  psi_norm):
+        return self._backend.ffprime(psi_norm)
 
-    def pressure(self,   psi_norm=None):
-        return self._backend.pressure(psi_norm if psi_norm is not None else self.psi_norm)
+    def pressure(self,   psi_norm):
+        return self._backend.pressure(psi_norm)
 
-    def fpol(self,   psi_norm=None):
-        return self._backend.fpol(psi_norm if psi_norm is not None else self.psi_norm)
+    def fpol(self,   psi_norm):
+        return self._backend.fpol(psi_norm)
 
-    def q(self, psi_norm=None):
-        return self._backend.q(psi_norm if psi_norm is not None else self.psi_norm)
+    def q(self, psi_norm):
+        return self._backend.q(psi_norm)
 
-    def f(self,   psi_norm=None):
-        return psi_norm if psi_norm is not None else self.psi_norm
+    def f(self, psi_norm):
+        return self._backend.fpol(psi_norm)
 
-    def dvolume_dpsi(self, psi_norm=None):
-        return psi_norm if psi_norm is not None else self.psi_norm
+    def rho_tor(self,  psi_norm):
+        """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0 {dynamic} [m]"""
+        logger.debug(f"FIXME: NOT IMPLEMENTED!")
+        return interpolate(self.x, self.x)(psi_norm)
 
-    def gm2(self, psi_norm=None):
-        return psi_norm if psi_norm is not None else self.psi_norm
+    def dpsi_drho_tor(self,  psi_norm)	:
+        """Derivative of Psi with respect to Rho_Tor {dynamic} [Wb/m]. """
+        logger.debug(f"FIXME: NOT IMPLEMENTED!")
+        return interpolate(self.x, self.x)(psi_norm)
+
+    def volume(self,  psi_norm):
+        """Volume enclosed in the flux surface {dynamic} [m^3]"""
+        return NotImplemented
+
+    def dvolume_dpsi(self,  psi_norm):
+        """Radial derivative of the volume enclosed in the flux surface with respect to Psi {dynamic} [m^3.Wb^-1]. """
+        logger.debug(f"FIXME: NOT IMPLEMENTED!")
+        return np.zeros(shape=psi_norm.shape)
+
+    def dvolume_drho_tor(self,  psi_norm)	:
+        """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor {dynamic} [m^2]"""
+        return self.dvolume_dpsi(psi_norm) * self.dpsi_drho_tor(psi_norm)
 
 
-class EqProfiles2DFreeGS(Profiles):
+class EqProfiles2DFreeGS(EqProfiles2D):
     """
         Equilibrium 2D profiles in the poloidal plane.
         @ref: equilibrium.time_slice[itime].profiles_2d
     """
 
-    def __init__(self, backend, dims=None, *args, **kwargs):
-        super().__init__(dims or [129, 129], **kwargs)
-        self._backend = backend
+    def __init__(self,  *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    def r(self, dims=None):
-        return self._backend.R
+    @property
+    def R(self):
+        return self._eq._backend.R
 
-    def z(self, dims=None):
-        return self._backend.Z
+    @property
+    def Z(self):
+        return self._eq._backend.Z
 
-    def psi(self, dims=None):
-        return self._backend.psi()
+    def psi(self, R=None, Z=None):
+        return self._eq._backend.psiRZ(R if R is not None else self.R, Z if Z is not None else self.Z)
+
+    def b_field_r(self,  R=None, Z=None):
+        return self._eq._backend.Br(R if R is not None else self.R, Z if Z is not None else self.Z)
+
+    def b_field_z(self,  R=None, Z=None):
+        return self._eq._backend.Bz(R if R is not None else self.R, Z if Z is not None else self.Z)
+
+    def b_field_tor(self,  R=None, Z=None):
+        return self._eq._backend.Btor(R if R is not None else self.R, Z if Z is not None else self.Z)
 
 
 class EquilibriumFreeGS(Equilibrium):
@@ -93,8 +120,8 @@ class EquilibriumFreeGS(Equilibrium):
             nx=len(dim1), ny=len(dim2),
             boundary=freegs.boundary.freeBoundaryHagenow)
 
-        self.profiles_1d = EqProfiles1DFreeGS(self._backend)
-        self.profiles_2d = EqProfiles2DFreeGS(self._backend)
+        self.profiles_1d = EqProfiles1DFreeGS(self)
+        self.profiles_2d = EqProfiles2DFreeGS(self)
 
     # @property
     # def profiles_1d(self):
@@ -103,20 +130,12 @@ class EquilibriumFreeGS(Equilibrium):
     #     return self._profiles_1d
 
     @property
-    def r(self):
-        return self._backend.R
+    def psi_axis(self):
+        return self._backend.psi_axis
 
     @property
-    def z(self):
-        return self._backend.Z
-
-    @property
-    def psi(self):
-        return self._backend.psi()
-
-    @property
-    def psi_norm(self):
-        return self._backend.psi_norm
+    def psi_boundary(self):
+        return self._backend.psi_bndry
 
     @property
     def oxpoints(self):
@@ -145,9 +164,8 @@ class EquilibriumFreeGS(Equilibrium):
 
         constraints = freegs.control.constrain(** (constraints or {}))
 
-
         freegs.solve(self._backend, profiles, constraints)
-    
+
     def update_global_quantities(self):
         # Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip^2] {dynamic} [-]
         self.global_quantities.beta_pol = self._backend.poloidalBeta()
@@ -168,9 +186,9 @@ class EquilibriumFreeGS(Equilibrium):
         # Poloidal length of the magnetic surface {dynamic} [m]
         self.global_quantities.length_pol = NotImplemented
         # Poloidal flux at the magnetic axis {dynamic} [Wb].
-        self.global_quantities.psi_axis = self._backend.psi_axis
+        self.global_quantities.psi_axis = NotImplemented
         # Poloidal flux at the selected plasma boundary {dynamic} [Wb].
-        self.global_quantities.psi_boundary = self._backend.psi_bndry
+        self.global_quantities.psi_boundary = NotImplemented
         # Magnetic axis position and toroidal field	structure
         self.global_quantities.magnetic_axis = NotImplemented
         # q at the magnetic axis {dynamic} [-].
@@ -181,3 +199,36 @@ class EquilibriumFreeGS(Equilibrium):
         self.global_quantities.q_min = NotImplemented
         # Plasma energy content = 3/2 * int(p,dV) with p being the total pressure (thermal + fast particles) [J]. Time-dependent; Scalar {dynamic} [J]
         self.global_quantities.energy_mhd = NotImplemented
+
+    def update_surface(self, nbdry=128):
+        """
+            base on  freegs.critical
+        """
+        # Value of the poloidal flux at which the boundary is taken {dynamic} [Wb]
+        self.boundary.psi = self._backend.psi_bndry
+        # Value of the normalised poloidal flux at which the boundary is taken (typically 99.x %),
+        # the flux being normalised to its value at the separatrix {dynamic}
+        self.boundary.psi_norm = 0.99
+
+        psi = self.profiles_2d.psi()
+
+        # find magnetic axis (o-point) and x-points
+        opt, xpt = freegs.critical.find_critical(R, Z, psi)
+        if opt:
+            r, z, v = opt[0]
+            self.global_quantities.magnetic_axis.r = r
+            self.global_quantities.magnetic_axis.z = z
+            self.global_quantities.psi_axis = v
+
+        if xpt:
+            for r, z, _ in xpt:
+                self.boundary.xpoint[_next_] = {"r": r, "z": z}
+
+        isoflux = freegs.find_separatrix(self._backend, opoint=opt, xpoint=xpt, psi=psi, ntheta=nbdry)
+
+        lcfs = self._backend.separatrix(ntheta=nbdry)
+        self.boundary.outline.r = lcfs[:, 0]
+        self.boundary.outline.z = lcfs[:, 1]
+
+        self.boundary.geometric_axis.r = (min(lcfs[:, 0])+max(lcfs[:, 0]))/2
+        self.boundary.geometric_axis.z = (min(lcfs[:, 1])+max(lcfs[:, 1]))/2
