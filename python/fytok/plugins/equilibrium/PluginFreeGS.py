@@ -13,30 +13,30 @@ from ...Equilibrium import EqProfiles1D, EqProfiles2D, Equilibrium
 
 
 class EqProfiles1DFreeGS(EqProfiles1D):
-    def __init__(self, backend, *args,  ** kwargs):
+    def __init__(self, eq, *args,  ** kwargs):
         super().__init__(*args, **kwargs)
-        self._backend = backend
+        self._eq = eq
 
     def psi_norm(self, psi_norm):
-        return self._backend.psi_norm(psi_norm)
+        return self._eq._backend.psi_norm(psi_norm)
 
     def pprime(self, psi_norm):
-        return self._backend.pprime(psi_norm)
+        return self._eq._backend.pprime(psi_norm)
 
     def ffprime(self,  psi_norm):
-        return self._backend.ffprime(psi_norm)
+        return self._eq._backend.ffprime(psi_norm)
 
     def pressure(self,   psi_norm):
-        return self._backend.pressure(psi_norm)
+        return self._eq._backend.pressure(psi_norm)
 
     def fpol(self,   psi_norm):
-        return self._backend.fpol(psi_norm)
+        return self._eq._backend.fpol(psi_norm)
 
     def q(self, psi_norm):
-        return self._backend.q(psi_norm)
+        return self._eq._backend.q(psi_norm)
 
     def f(self, psi_norm):
-        return self._backend.fpol(psi_norm)
+        return self._eq._backend.fpol(psi_norm)
 
     def rho_tor(self,  psi_norm):
         """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0 {dynamic} [m]"""
@@ -131,11 +131,11 @@ class EquilibriumFreeGS(Equilibrium):
 
     @property
     def psi_axis(self):
-        return self._backend.psi_axis
+        return self._eq._backend.psi_axis
 
     @property
     def psi_boundary(self):
-        return self._backend.psi_bndry
+        return self._eq._backend.psi_bndry
 
     @property
     def oxpoints(self):
@@ -168,17 +168,17 @@ class EquilibriumFreeGS(Equilibrium):
 
     def update_global_quantities(self):
         # Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip^2] {dynamic} [-]
-        self.global_quantities.beta_pol = self._backend.poloidalBeta()
+        self.global_quantities.beta_pol = self._eq._backend.poloidalBeta()
         # Toroidal beta, defined as the volume-averaged total perpendicular pressure divided by (B0^2/(2*mu0)), i.e. beta_toroidal = 2 mu0 int(p dV) / V / B0^2 {dynamic} [-]
         self.global_quantities.beta_tor = NotImplemented
         # Normalised toroidal beta, defined as 100 * beta_tor * a[m] * B0 [T] / ip [MA] {dynamic} [-]
         self.global_quantities.beta_normal = NotImplemented
         # Plasma current (toroidal component). Positive sign means anti-clockwise when viewed from above. {dynamic} [A].
-        self.global_quantities.ip = self._backend.plasmaCurrent()
+        self.global_quantities.ip = self._eq._backend.plasmaCurrent()
         # Internal inductance {dynamic} [-]
         self.global_quantities.li_3 = NotImplemented
         # Total plasma volume {dynamic} [m^3]
-        self.global_quantities.volume = self._backend.plasmaVolume()
+        self.global_quantities.volume = self._eq._backend.plasmaVolume()
         # Area of the LCFS poloidal cross section {dynamic} [m^2]
         self.global_quantities.area = NotImplemented
         # Surface area of the toroidal flux surface {dynamic} [m^2]
@@ -205,7 +205,7 @@ class EquilibriumFreeGS(Equilibrium):
             base on  freegs.critical
         """
         # Value of the poloidal flux at which the boundary is taken {dynamic} [Wb]
-        self.boundary.psi = self._backend.psi_bndry
+        self.boundary.psi = self._eq._backend.psi_bndry
         # Value of the normalised poloidal flux at which the boundary is taken (typically 99.x %),
         # the flux being normalised to its value at the separatrix {dynamic}
         self.boundary.psi_norm = 0.99
@@ -224,9 +224,9 @@ class EquilibriumFreeGS(Equilibrium):
             for r, z, _ in xpt:
                 self.boundary.xpoint[_next_] = {"r": r, "z": z}
 
-        isoflux = freegs.find_separatrix(self._backend, opoint=opt, xpoint=xpt, psi=psi, ntheta=nbdry)
+        isoflux = freegs.find_separatrix(self._eq._backend, opoint=opt, xpoint=xpt, psi=psi, ntheta=nbdry)
 
-        lcfs = self._backend.separatrix(ntheta=nbdry)
+        lcfs = self._eq._backend.separatrix(ntheta=nbdry)
         self.boundary.outline.r = lcfs[:, 0]
         self.boundary.outline.z = lcfs[:, 1]
 

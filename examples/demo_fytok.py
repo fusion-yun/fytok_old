@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import pprint
 import sys
-
+import numpy as np
 sys.path.append("/home/salmon/workspace/freegs/")
 sys.path.append("/home/salmon/workspace/fytok/python")
 sys.path.append("/home/salmon/workspace/SpDev/SpDB")
@@ -30,7 +30,8 @@ if __name__ == "__main__":
 
     tok.equilibrium.solve(constraints={"psivals": psivals})
     tok.equilibrium.update_boundary()
-    # fig = tok.equilibrium.plot_full()
+
+    bdr = np.array([p for p in tok.equilibrium.find_surface(0.99)])
 
     # tok.update(constraints={"psivals": psivals})
 
@@ -39,6 +40,8 @@ if __name__ == "__main__":
     axis = fig.add_subplot(111)
 
     tok.equilibrium.plot(axis=axis)
+
+    axis.plot(bdr[:, 0], bdr[:, 1], "y*-")
 
     # tok.plot(axis=axis)
 

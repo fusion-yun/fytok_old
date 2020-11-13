@@ -1,21 +1,24 @@
 
 import collections
 import functools
-from sympy import Point, Polygon
+
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
+from numpy import arctan2, cos, sin, sqrt
 from spdm.data.Entry import open_entry
 from spdm.util.AttributeTree import AttributeTree, _next_
+from spdm.util.Interpolate import (Interpolate2D, derivate, find_root, find_critical,
+                                   integral, interpolate)
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.util.Profiles import Profiles
 from spdm.util.sp_export import sp_find_module
-from spdm.util.Interpolate import derivate, integral, interpolate, Interpolate2D
-from spdm.util.find_peaks import find_peaks
+from sympy import Point, Polygon
 
 from .PFActive import PFActive
 from .Wall import Wall
+
 #  psi phi pressure f dpressure_dpsi f_df_dpsi j_parallel q magnetic_shear r_inboard r_outboard rho_tor rho_tor_norm dpsi_drho_tor geometric_axis elongation triangularity_upper triangularity_lower volume rho_volume_norm dvolume_dpsi dvolume_drho_tor area darea_dpsi surface trapped_fraction gm1 gm2 gm3 gm4 gm5 gm6 gm7 gm8 gm9 b_field_max beta_pol mass_density
 
 
@@ -204,7 +207,8 @@ class EqProfiles2D(Profiles):
         return NotImplemented
 
     def psi_norm(self, *args, **kwargs):
-        return (self.psi(*args, **kwargs)-self._eq.global_quantities.psi_axis)/(self._eq.global_quantities.psi_boundary-self._eq.global_quantities.psi_axis)
+        return (self.psi(*args, **kwargs)-self._eq.global_quantities.psi_axis)\
+            / (self._eq.global_quantities.psi_boundary-self._eq.global_quantities.psi_axis)
 
 
 class Equilibrium(AttributeTree):
@@ -212,8 +216,51 @@ class Equilibrium(AttributeTree):
         Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
         imas dd version 3.28
         ids=equilibrium
-    """
 
+        coordinate system 
+        @ref: O. Sauter and S. Yu Medvedev, "Tokamak coordinate conventions: COCOS", Computer Physics Communications 184, 2 (2013), pp. 293--302.
+
+        COCOS  11
+    #################################################################################
+    # Top view
+    #          ***************
+    #         *               *
+    #        *   ***********   * 
+    #       *   *           *   *
+    #      *   *             *   *
+    #      *   *             *   *
+    #  Ip  v   *             *   ^  \\phi
+    #      *   *    Z o--->R *   *
+    #      *   *             *   *
+    #      *   *             *   *
+    #      *   *     Bpol    *   *
+    #       *   *     o     *   *
+    #        *   ***********   *
+    #         *               *
+    #          ***************
+    #            Bpol x
+    #
+    # Poloidal view 
+    #     ^Z
+    #     |        
+    #     |       ************
+    #     |      *            *
+    #     |     *         ^    *
+    #     |     *  \\rho /     *
+    #     |     *       /      *
+    #     +-----*------X-------*---->R
+    #     |     *  Ip, \\phi   *
+    #     |     *              *
+    #     |      *            *
+    #     |       *****<******
+    #     |       Bpol,\\theta
+    #     |
+    #
+    # Cylindrical coordinate      : (R,\\phi,Z)
+    # Poloidal plane coordinate   : (\\rho,\\theta,\\phi)
+    #################################################################################
+
+    """
     @staticmethod
     def __new__(cls,   config,  *args, **kwargs):
         if cls is not Equilibrium:
@@ -304,28 +351,30 @@ class Equilibrium(AttributeTree):
 
         R = self.profiles_2d.R
         Z = self.profiles_2d.Z
-        psi = self.profiles_2d.psi()
+        psi = self.profiles_2d.psi_norm()
 
         # if type(levels) is int:
         #     levels = np.linspace(self.global_quantities.psi_axis, self.global_quantities.psi_boundary, levels)
 
         axis.contour(R, Z, psi, levels=levels, linewidths=0.2)
 
+        lcfs_points = np.array([self.boundary.outline_inner.r,
+                                self.boundary.outline_inner.z]).transpose([1, 0])
+
+        axis.add_patch(plt.Polygon(lcfs_points, fill=False, closed=True))
+
         axis.plot(self.global_quantities.magnetic_axis.r,
                   self.global_quantities.magnetic_axis.z, 'g.', label="Magnetic axis")
 
-        logger.debug(self.boundary)
-        for p in self.boundary.x_point:
+        for idx, p in enumerate(self.boundary.x_point):
             axis.plot(p.r, p.z, 'rx', label="X-points")
+            axis.text(p.r, p.z, idx)
 
-        # boundary_points = np.array([self.boundary.outline.r, self.boundary.outline.z]).transpose([1, 0])
+        boundary_points = np.array([self.boundary.outline.r, self.boundary.outline.z]).transpose([1, 0])
 
-        # axis.add_patch(plt.Polygon(boundary_points, colors='r', linestyles='dashed',
-        #                            linewidths=0.4, fill=False, closed=True))
-
-        # axis.plot([], [], 'r--', label="Separatrix")
-        self.tokamak.wall.plot(axis)
-
+        axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
+                                   linewidth=0.5, fill=False, closed=True))
+        axis.plot([], [], 'r--', label="Separatrix")
         axis.axis("scaled")
         return axis
 
@@ -384,7 +433,7 @@ class Equilibrium(AttributeTree):
 
     #     self.upate_xpoints()
 
-    def update_boundary(self, R=None, Z=None, psi=None):
+    def update_boundary(self, R=None, Z=None, psi=None, psi_norm=0.99, nbrdy=128):
         if R is None:
             R = self.profiles_2d.R
         if Z is None:
@@ -404,18 +453,42 @@ class Equilibrium(AttributeTree):
         for r, z, _ in xpoints:
             self.boundary.x_point[_next_] = {"r": r, "z": z}
 
-        logger.debug(self.boundary)
+        self.global_quantities.psi_axis = opoints[0][2]
+        self.global_quantities.psi_boundary = xpoints[0][2]
+
+        # boundary = np.array([p for p in self.find_surface(1.0, npoints=nbrdy)])
+
+        # self.boundary.outline.r = boundary[:, 0]
+        # self.boundary.outline.z = boundary[:, 1]
         return
+
+    def find_surface(self, psival, psi_norm=None,  r0=None, z0=None, r1=None, z1=None, npoints=128):
+        if psi_norm is None:
+            psi_norm = Interpolate2D(self.profiles_2d.R[:, 0], self.profiles_2d.Z[0, :], self.profiles_2d.psi_norm())
+
+        if r0 == None:
+            r0 = self.global_quantities.magnetic_axis.r
+            z0 = self.global_quantities.magnetic_axis.z
+            r1 = self.boundary.x_point[0]["r"]
+            z1 = self.boundary.x_point[0]["z"]
+
+        # logger.debug(psival)
+        theta0 = arctan2(r1 - r0, z1 - z0)
+        R = sqrt((r1-r0)**2+(z1-z0)**2)
+        for theta in np.linspace(0, scipy.constants.pi*2.0, npoints)+theta0:
+            yield find_root(psi_norm, psival, line=[[r0, z0], [r0 + R*sin(theta), z0 + R * cos(theta)]])
 
     def find_oxpoints(self, R, Z, psi):
         if not isinstance(psi, Interpolate2D):
             psi = Interpolate2D(R[:, 0], Z[0, :], psi)
-        Br = - psi(R, Z, dy=1)/R
-        Bz = psi(R, Z, dx=1)/R
+        Br = psi(R, Z, dy=1)/R/(2.0*scipy.constants.pi)
+        Bz = - psi(R, Z, dx=1)/R/(2.0*scipy.constants.pi)
         Bp2 = Br**2+Bz**2
 
-        if len(Bp2.shape) != 2:
-            raise NotImplementedError()
+        # Bp2fun = Interpolate2D(R[:, 0], Z[0, :], Bp2)
+
+        # if len(Bp2.shape) != 2:
+        #     raise NotImplementedError()
 
         limiter_points = np.array([self.tokamak.wall.limiter.outline.r,
                                    self.tokamak.wall.limiter.outline.z]).transpose([1, 0])
@@ -423,23 +496,20 @@ class Equilibrium(AttributeTree):
         limiter_polygon = Polygon(*map(Point, limiter_points))
         opoint = []
         xpoint = []
-        for idx in find_peaks(-Bp2, box=[[5, 5], [-5, -5]]):
-            r = R[idx[0], idx[1]]
-            z = Z[idx[0], idx[1]]
 
-            if not limiter_polygon.encloses(Point(r, z)):
-                continue
-            # D = fxx * fyy - (fxy)^2
-            D = psi(r, z, dx=2) * psi(r, z, dy=2) - (psi(r, z,  dx=1, dy=1))**2
+        for r, z, tag in find_critical(psi):
+            # if not limiter_polygon.encloses(Point(r, z)):
+            #     continue
 
-            if D < 0.0:                            # X-point
+            if tag < 0.0:  # saddle/X-point
                 xpoint.append((r, z, psi(r, z)))
-            else:  # O-point
+            else:  # extrema/ O-point
                 opoint.append((r, z, psi(r, z)))
-        # Rmid = 0.5*(R[-1, 0] + R[0, 0])
-        # Zmid = 0.5*(Z[0, -1] + Z[0, 0])
-        # opoint.sort(key=lambda x: (x[0] - Rmid)**2 + (x[1] - Zmid)**2)
-        # psi_axis = opoint[0][2]
-        # xpoint.sort(key=lambda x: (x[2] - psi_axis)**2)
+
+        Rmid = 0.5*(R[-1, 0] + R[0, 0])
+        Zmid = 0.5*(Z[0, -1] + Z[0, 0])
+        opoint.sort(key=lambda x: (x[0] - Rmid)**2 + (x[1] - Zmid)**2)
+        psi_axis = opoint[0][2]
+        xpoint.sort(key=lambda x: (x[2] - psi_axis)**2)
 
         return opoint, xpoint
