@@ -3,7 +3,7 @@ import sys
 
 import freegs
 import numpy as np
-from spdm.util.Interpolate import derivate, integral, interpolate
+from spdm.util.Interpolate import derivate, integral, interpolate, Interpolate2D
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.util.Profiles import Profiles
@@ -80,7 +80,27 @@ class EqProfiles2DFreeGS(EqProfiles2D):
         return self._eq._backend.Z
 
     def psi(self, R=None, Z=None):
-        return self._eq._backend.psiRZ(R if R is not None else self.R, Z if Z is not None else self.Z)
+        if R is not None and Z is not None:
+            return self._eq._backend.psiRZ(R, Z)
+        else:
+            R = self._eq._backend.R
+            Z = self._eq._backend.Z
+            total_psi = self._eq._backend.plasma_psi+self._eq._backend.tokamak.psi(R, Z)
+            return Interpolate2D(R[:, 0], Z[0, :], total_psi)
+
+    def psi_norm(self, R=None, Z=None):
+        if R is not None and Z is not None:
+            total_psi = self.psi(R, Z)
+            return (total_psi-self._eq.global_quantities.psi_axis)\
+                / (self._eq.global_quantities.psi_boundary-self._eq.global_quantities.psi_axis)
+        else:
+            R = self._eq._backend.R
+            Z = self._eq._backend.Z
+            total_psi = self._eq._backend.plasma_psi+self._eq._backend.tokamak.psi(R, Z)
+            psi_norm = (total_psi-self._eq.global_quantities.psi_axis)\
+                / (self._eq.global_quantities.psi_boundary-self._eq.global_quantities.psi_axis)
+
+            return Interpolate2D(R[:, 0], Z[0, :], psi_norm)
 
     def b_field_r(self,  R=None, Z=None):
         return self._eq._backend.Br(R if R is not None else self.R, Z if Z is not None else self.Z)

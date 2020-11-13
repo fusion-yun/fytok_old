@@ -352,7 +352,7 @@ class Equilibrium(AttributeTree):
 
         R = self.profiles_2d.R
         Z = self.profiles_2d.Z
-        psi = self.profiles_2d.psi_norm()
+        psi = self.profiles_2d.psi_norm(R, Z)
 
         # if type(levels) is int:
         #     levels = np.linspace(self.global_quantities.psi_axis, self.global_quantities.psi_boundary, levels)
@@ -376,7 +376,7 @@ class Equilibrium(AttributeTree):
         axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
                                    linewidth=0.5, fill=False, closed=True))
         axis.plot([], [], 'r--', label="Separatrix")
-        axis.axis("scaled")
+
         return axis
 
     def plot_full(self,  profiles=None, profiles_label=None, x_axis="psi_norm", xlabel=r'$\psi_{norm}$', *args, **kwargs):
@@ -434,18 +434,9 @@ class Equilibrium(AttributeTree):
 
     #     self.upate_xpoints()
 
-    def update_boundary(self, R=None, Z=None, psi=None, psi_norm=0.99, nbrdy=128):
-        if R is None:
-            R = self.profiles_2d.R
-        if Z is None:
-            Z = self.profiles_2d.Z
-        if psi is None:
-            psi = self.profiles_2d.psi(R, Z)
+    def update_boundary(self,  psi_norm=0.99, nbrdy=128):
 
-        if isinstance(psi, Interpolate2D):
-            psi = Interpolate2D(R, Z, psi)
-
-        opoints, xpoints = self.find_oxpoints(R, Z, psi)
+        opoints, xpoints = self.find_oxpoints()
 
         self.global_quantities.magnetic_axis.r = opoints[0][0]
 
@@ -465,7 +456,7 @@ class Equilibrium(AttributeTree):
 
     def find_surface(self, psival, psi_norm=None,  r0=None, z0=None, r1=None, z1=None, npoints=128):
         if psi_norm is None:
-            psi_norm = Interpolate2D(self.profiles_2d.R[:, 0], self.profiles_2d.Z[0, :], self.profiles_2d.psi_norm())
+            psi_norm = self.profiles_2d.psi_norm()
 
         if r0 == None:
             r0 = self.global_quantities.magnetic_axis.r
@@ -474,7 +465,7 @@ class Equilibrium(AttributeTree):
             z1 = self.boundary.x_point[0]["z"]
 
         # logger.debug(psival)
-        theta0 = arctan2(r1 - r0, z1 - z0)
+        theta0 = arctan2(r1 - r0, z1 - z0)  # + scipy.constants.pi/npoints  # avoid x-point
         R = sqrt((r1-r0)**2+(z1-z0)**2)
 
         def f(r, x0, x1, val):
@@ -483,6 +474,9 @@ class Equilibrium(AttributeTree):
         for theta in np.linspace(0, scipy.constants.pi*2.0, npoints)+theta0:
             r1 = r0 + R * sin(theta)
             z1 = z0 + R * cos(theta)
+            if np.isclose(psi_norm(r1, z1), psival):
+                yield r1, z1
+                continue
             try:
                 sol = root_scalar(f, bracket=[0, 1], args=([r0, z0], [r1, z1], psival), method='brentq')
             except ValueError:
@@ -492,9 +486,10 @@ class Equilibrium(AttributeTree):
             r = sol.root
             yield (1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1
 
-    def find_oxpoints(self, R, Z, psi):
-        if not isinstance(psi, Interpolate2D):
-            psi = Interpolate2D(R[:, 0], Z[0, :], psi)
+    def find_oxpoints(self):
+        R = self.profiles_2d.R
+        Z = self.profiles_2d.Z
+        psi = self.profiles_2d.psi()
 
         limiter_points = np.array([self.tokamak.wall.limiter.outline.r,
                                    self.tokamak.wall.limiter.outline.z]).transpose([1, 0])

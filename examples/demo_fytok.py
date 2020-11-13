@@ -46,6 +46,8 @@ if __name__ == "__main__":
     tok.wall.plot(axis)
 
     # tok.plot(axis=axis)
+    
+    axis.axis("scaled")
 
     fig.savefig("../output/tokamak.svg")
 
