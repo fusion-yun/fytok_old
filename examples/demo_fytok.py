@@ -41,7 +41,9 @@ if __name__ == "__main__":
 
     tok.equilibrium.plot(axis=axis)
 
-    axis.plot(bdr[:, 0], bdr[:, 1], "y--")
+    axis.plot(bdr[:, 0], bdr[:, 1], "b--")
+
+    tok.wall.plot(axis)
 
     # tok.plot(axis=axis)
 
