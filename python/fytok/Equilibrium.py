@@ -15,6 +15,7 @@ from spdm.util.logger import logger
 from spdm.util.Profiles import Profiles
 from spdm.util.sp_export import sp_find_module
 from sympy import Point, Polygon
+from scipy.optimize import root_scalar
 
 from .PFActive import PFActive
 from .Wall import Wall
@@ -456,10 +457,10 @@ class Equilibrium(AttributeTree):
         self.global_quantities.psi_axis = opoints[0][2]
         self.global_quantities.psi_boundary = xpoints[0][2]
 
-        # boundary = np.array([p for p in self.find_surface(1.0, npoints=nbrdy)])
+        boundary = np.array([p for p in self.find_surface(1.0, npoints=nbrdy)])
 
-        # self.boundary.outline.r = boundary[:, 0]
-        # self.boundary.outline.z = boundary[:, 1]
+        self.boundary.outline.r = boundary[:, 0]
+        self.boundary.outline.z = boundary[:, 1]
         return
 
     def find_surface(self, psival, psi_norm=None,  r0=None, z0=None, r1=None, z1=None, npoints=128):
@@ -475,31 +476,36 @@ class Equilibrium(AttributeTree):
         # logger.debug(psival)
         theta0 = arctan2(r1 - r0, z1 - z0)
         R = sqrt((r1-r0)**2+(z1-z0)**2)
+
+        def f(r, x0, x1, val):
+            return psi_norm((1.0-r)*x0[0]+r*x1[0], (1.0-r)*x0[1]+r*x1[1]) - val
+
         for theta in np.linspace(0, scipy.constants.pi*2.0, npoints)+theta0:
-            yield find_root(psi_norm, psival, line=[[r0, z0], [r0 + R*sin(theta), z0 + R * cos(theta)]])
+            r1 = r0 + R * sin(theta)
+            z1 = z0 + R * cos(theta)
+            try:
+                sol = root_scalar(f, bracket=[0, 1], args=([r0, z0], [r1, z1], psival), method='brentq')
+            except ValueError:
+                continue
+            if not sol.converged:
+                continue
+            r = sol.root
+            yield (1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1
 
     def find_oxpoints(self, R, Z, psi):
         if not isinstance(psi, Interpolate2D):
             psi = Interpolate2D(R[:, 0], Z[0, :], psi)
-        Br = psi(R, Z, dy=1)/R/(2.0*scipy.constants.pi)
-        Bz = - psi(R, Z, dx=1)/R/(2.0*scipy.constants.pi)
-        Bp2 = Br**2+Bz**2
-
-        # Bp2fun = Interpolate2D(R[:, 0], Z[0, :], Bp2)
-
-        # if len(Bp2.shape) != 2:
-        #     raise NotImplementedError()
 
         limiter_points = np.array([self.tokamak.wall.limiter.outline.r,
                                    self.tokamak.wall.limiter.outline.z]).transpose([1, 0])
-
         limiter_polygon = Polygon(*map(Point, limiter_points))
+
         opoint = []
         xpoint = []
 
         for r, z, tag in find_critical(psi):
-            # if not limiter_polygon.encloses(Point(r, z)):
-            #     continue
+            if not limiter_polygon.encloses(Point(r, z)):
+                continue
 
             if tag < 0.0:  # saddle/X-point
                 xpoint.append((r, z, psi(r, z)))

@@ -31,7 +31,7 @@ if __name__ == "__main__":
     tok.equilibrium.solve(constraints={"psivals": psivals})
     tok.equilibrium.update_boundary()
 
-    bdr = np.array([p for p in tok.equilibrium.find_surface(0.99)])
+    bdr = np.array([p for p in tok.equilibrium.find_surface(0.6)])
 
     # tok.update(constraints={"psivals": psivals})
 
@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
     tok.equilibrium.plot(axis=axis)
 
-    axis.plot(bdr[:, 0], bdr[:, 1], "y*-")
+    axis.plot(bdr[:, 0], bdr[:, 1], "y--")
 
     # tok.plot(axis=axis)
 
