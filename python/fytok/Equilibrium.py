@@ -176,7 +176,7 @@ class Equilibrium(AttributeTree):
 
         return axis
 
-    def plot_full(self,  profiles=None, profiles_label=None, x_axis="psi_norm", xlabel=r'$\psi_{norm}$', *args, **kwargs):
+    def plot_full(self,  profiles=None, profiles_label=None, x_axis="psi_norm", xlabel=r'$(\psi_{norm}-\psi_{axis})/(\psi_{boundary}-\psi_{axis})$', *args, **kwargs):
 
         if isinstance(profiles, str):
             profiles = profiles.split(",")
