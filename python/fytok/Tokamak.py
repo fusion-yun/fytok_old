@@ -28,6 +28,11 @@ class Tokamak(AttributeTree):
 
         self.wall = Wall(config.wall)
         self.pf_active = PFActive(config.pf_active)
+
+        if not self.vacuum_toroidal_field.r0:  # FIXME: r0 should load from configure file
+            lim_r = self.wall.limiter.outline.r
+            self.vacuum_toroidal_field.r0 = (min(lim_r)+max(lim_r))*0.5
+
         self.equilibrium = Equilibrium(config.equilibrium, tokamak=self)
         self.core_profiles = CoreProfiles(config.core_profiles, tokamak=self)
         self.core_transports = CoreTransports(config.core_transports, tokamak=self)

@@ -28,7 +28,7 @@ if __name__ == "__main__":
     lfcs_z = ids.equilibrium.time_slice[itime].boundary.outline.z()[:, 0]
     psivals = [(R, Z, 0.0) for R, Z in zip(lfcs_r, lfcs_z)]
 
-    tok.equilibrium.solve(constraints={"psivals": psivals})
+    tok.equilibrium.update(constraints={"psivals": psivals})
 
     # bdr = np.array([p for p in tok.equilibrium.find_surface(0.6)])
 
@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
     # axis.axis("scaled")
 
-    fig = tok.equilibrium.plot_full("q,phi,rho_tor")
+    fig = tok.equilibrium.plot_full()
 
     fig.savefig("../output/tokamak.svg")
 

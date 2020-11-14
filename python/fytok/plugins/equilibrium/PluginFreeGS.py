@@ -1,10 +1,11 @@
 import collections
 import sys
 from functools import cached_property
+import matplotlib.pyplot as plt
 import freegs
 from freegs.critical import find_separatrix
 import numpy as np
-from spdm.util.Interpolate import derivate, integral, interpolate, Interpolate2D
+from spdm.util.Interpolate import derivate, integral, interpolate, Interpolate2D, Interpolate1D
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.util.Profiles import Profiles
@@ -41,28 +42,55 @@ class EquilibriumFreeGS(Equilibrium):
             nx=len(dim1), ny=len(dim2),
             boundary=freegs.boundary.freeBoundaryHagenow)
 
-    def solve(self, core_profiles=None, constraints=None,  **kwargs):
-        if not isinstance(core_profiles, CoreProfiles):
-            core_profiles = CoreProfiles(core_profiles)
+    def _solve(self, profiles=None, constraints=None,  **kwargs):
 
-        if "pprime" in core_profiles.profiles_1d and "ffprime" in core_profiles.profiles_1d:
-            profiles = freegs.jtor.ProfilesPprimeFfprime(
-                core_profiles.profiles_1d.pprime,
-                core_profiles.profiles_1d.ffprime,
-                core_profiles.vacuum_toroidal_field.b0 * core_profiles.vacuum_toroidal_field.r0)
-        elif "ip" in core_profiles.global_quantities and "pressure" in core_profiles.global_quantities:
-            profiles = freegs.jtor.jtor.ConstrainPaxisIp(
-                core_profiles.global_quantities.pressure,                  # Plasma pressure on axis [Pascals]
-                core_profiles.global_quantities.ip,         # Plasma current [Amps]
-                core_profiles.vacuum_toroidal_field.b0 * core_profiles.vacuum_toroidal_field.r0)
+        if profiles is None:
+            profiles = {}
+        elif not isinstance(profiles, collections.abc.Mapping):
+            raise NotImplementedError()
+
+        self.vacuum_toroidal_field.b0 = profiles.get("B0", self.vacuum_toroidal_field.b0)
+
+        fvec = self.vacuum_toroidal_field.b0 * self.vacuum_toroidal_field.r0
+
+        if "pprime" in profiles and "ffprime" in profiles:
+
+            psi_norm = profiles.get("psi_norm", self.profiles_1d.psi_norm)
+            pprime = Interpolate1D(profiles["pprime"], psi_norm)
+            ffprime = Interpolate1D(profiles["ffprime"], psi_norm)
+
+            profiles = freegs.jtor.ProfilesPprimeFfprime(pprime, ffprime, fvec)
+            logger.debug("Create Profile:     Specified profile functions p'(psi), ff'(psi)")
+        elif "betap" in profiles:
+            #  Poloidal beta
+            betap = profiles.get("betap", 1.0)
+            # Plasma current [Amps]
+            ip = profiles.get("ip", 1.0)
+            profiles = freegs.jtor.ConstrainBetapIp(profiles["betap"], profiles["ip"], fvec)
+
+            logger.debug(f"""Create Profile: Constrain poloidal Beta and plasma current
+                     Plasma pressure on axis    ={pressure} [Pascals],  
+                     Plasma current Ip          ={ip} [Amps], 
+                     fvec                       ={fvec} [T.m]""")
         else:
-            logger.debug(f"Using default profile pressure=1e3 Ip=1e6")
-            profiles = freegs.jtor.ConstrainPaxisIp(
-                1e3,  # Plasma pressure on axis [Pascals]
-                1e6,  # Plasma current [Amps]
-                kwargs.get("fvec", 1.0))
+            # Plasma pressure on axis [Pascals]
+            pressure = profiles.get("pressure", 1.0e3)
+            # Plasma current [Amps]
+            ip = profiles.get("ip", 1.0e6)
+            Raxis = self.vacuum_toroidal_field.r0
+            profiles = freegs.jtor.ConstrainPaxisIp(pressure, ip, fvec, Raxis=Raxis)
+
+            logger.debug(f"""Create Profile: Constrain pressure on axis and plasma current
+                     Plasma pressure on axis    ={pressure} [Pascals],  
+                     Plasma current Ip          ={ip} [Amps], 
+                     fvec                       ={fvec} [T.m],
+                     Raxis                      ={Raxis} [m]
+                     """)
+
+            
 
         constraints = freegs.control.constrain(** (constraints or {}))
+
 
         try:
             freegs.solve(self._backend, profiles, constraints)

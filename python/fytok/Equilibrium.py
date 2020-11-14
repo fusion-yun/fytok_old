@@ -102,24 +102,50 @@ class Equilibrium(AttributeTree):
         zmax = max(lim_z)
         self.coordinate_system.grid.dim1 = np.linspace(rmin-0.1*(rmax-rmin), rmax+0.1*(rmax-rmin), nr)
         self.coordinate_system.grid.dim2 = np.linspace(zmin-0.1*(zmax-zmin), zmax+0.1*(zmax-zmin), nz)
-        # self.global_quantities
+        self.constraints = Equilibrium.Constraints(self)
 
-    def solve(self, *args, **kwargs):
+        self.vacuum_toroidal_field.r0 = self.tokamak.vacuum_toroidal_field.r0
+        self.vacuum_toroidal_field.b0 = 1.0
+
+        self.__dict__["_time"] = 0.0
+
+    def _solve(self, *args, **kwargs):
         raise NotImplementedError()
 
-    def update(self, *args, time=0.0, **kwargs):
-        self.time = time
+    def update(self, *args, time=0.0,  ** kwargs):
+
+        # self.constraints.update(constraints)
 
         logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] at time={self.time} : Start")
 
-        self.solve(*args, **kwargs)
+        self._solve(*args, time=time,  ** kwargs)
 
         logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] at time={self.time} : End")
 
-        self.clear_cache()
+        # change time to invalid all cache
+        self.time = time
+        # self.clear_cache()
 
     def clear_cache(self):
+        del self.global_quantities
+        del self.profiles_1d
+        del self.profiles_2d
+        del self.boundary
+        del self.boundary_separatrix
+        del self.critical_points
+
         raise NotImplementedError()
+
+    @property
+    def time(self):
+        return self._time
+
+    @time.setter
+    def time(self, t):
+        """ Change time will invalid all cache,  """
+        self._time = t
+
+        self.clear_cache()
 
     @cached_property
     def profiles_1d(self):
@@ -128,6 +154,38 @@ class Equilibrium(AttributeTree):
     @cached_property
     def profiles_2d(self):
         return Equilibrium.Profiles2D(self)
+
+    @cached_property
+    def critical_points(self):
+
+        R = self.profiles_2d.r
+        Z = self.profiles_2d.z
+        psi = self.profiles_2d.psi
+
+        limiter_points = np.array([self.tokamak.wall.limiter.outline.r,
+                                   self.tokamak.wall.limiter.outline.z]).transpose([1, 0])
+        limiter_polygon = Polygon(*map(Point, limiter_points))
+
+        opoints = []
+        xpoints = []
+
+        for r, z, tag in find_critical(psi):
+            # Remove points outside the vacuum wall
+            if not limiter_polygon.encloses(Point(r, z)):
+                continue
+
+            if tag < 0.0:  # saddle/X-point
+                xpoints.append((r, z, psi(r, z)))
+            else:  # extremum/ O-point
+                opoints.append((r, z, psi(r, z)))
+
+        Rmid = 0.5*(R[-1, 0] + R[0, 0])
+        Zmid = 0.5*(Z[0, -1] + Z[0, 0])
+        opoints.sort(key=lambda x: (x[0] - Rmid)**2 + (x[1] - Zmid)**2)
+        psi_axis = opoints[0][2]
+        xpoints.sort(key=lambda x: (x[2] - psi_axis)**2)
+
+        return opoints, xpoints
 
     @cached_property
     def global_quantities(self):
@@ -140,90 +198,6 @@ class Equilibrium(AttributeTree):
     @cached_property
     def boundary_separatrix(self):
         return Equilibrium.BoundarySeparatrix(self)
-
-    def plot(self, axis=None, *args, levels=40, oxpoints=True, **kwargs):
-        """ learn from freegs
-        """
-        if axis is None:
-            axis = plt.gca()
-
-        R = self.profiles_2d.r
-        Z = self.profiles_2d.z
-        psi = self.profiles_2d.psi
-
-        # if type(levels) is int:
-        #     levels = np.linspace(self.global_quantities.psi_axis, self.global_quantities.psi_boundary, levels)
-
-        axis.contour(R, Z, psi, levels=levels, linewidths=0.2)
-
-        lcfs_points = np.array([self.boundary.outline_inner.r,
-                                self.boundary.outline_inner.z]).transpose([1, 0])
-
-        axis.add_patch(plt.Polygon(lcfs_points, fill=False, closed=True))
-
-        for idx, p in enumerate(self.boundary.x_point):
-            axis.plot(p.r, p.z, 'rx')
-            axis.text(p.r, p.z, idx)
-
-        boundary_points = np.array([self.boundary.outline.r, self.boundary.outline.z]).transpose([1, 0])
-
-        axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
-                                   linewidth=0.5, fill=False, closed=True))
-        axis.plot([], [], 'r--', label="Separatrix")
-
-        axis.plot(self.global_quantities.magnetic_axis.r,
-                  self.global_quantities.magnetic_axis.z, 'g.', label="Magnetic axis")
-
-        return axis
-
-    def plot_full(self,  profiles=None, profiles_label=None, x_axis="psi_norm", xlabel=r'$(\psi_{norm}-\psi_{axis})/(\psi_{boundary}-\psi_{axis})$', *args, **kwargs):
-
-        if isinstance(profiles, str):
-            profiles = profiles.split(",")
-            profiles_label = profiles
-        elif profiles is None:
-            profiles = ["q", "pprime", "ffprime", "fpol", "pressure"]
-            profiles_label = [r"q", r"$p^{\prime}$",  r"$f f^{\prime}$", r"$f_{pol}$", r"pressure"]
-
-        nprofiles = len(profiles)
-        if nprofiles == 0:
-            return self.plot(*args, **kwargs)
-
-        fig, axs = plt.subplots(ncols=2, nrows=nprofiles, sharex=True)
-        gs = axs[0, 1].get_gridspec()
-        # remove the underlying axes
-        for ax in axs[:, 1]:
-            ax.remove()
-        ax_right = fig.add_subplot(gs[:, 1])
-
-        self.tokamak.wall.plot(ax_right, **kwargs.get("wall", {}))
-        self.tokamak.pf_active.plot(ax_right, **kwargs.get("pf_active", {}))
-        self.plot(ax_right, **kwargs.get("equilibrium", {}))
-
-        ax_right.set_aspect('equal')
-        ax_right.set_xlabel(r"Major radius $R$ [m]")
-        ax_right.set_ylabel(r"Height $Z$ [m]")
-        ax_right.legend()
-
-        x = self.profiles_1d[x_axis]
-
-        if profiles_label is None:
-            profiles_label = profiles
-
-        for idx, pname in enumerate(profiles):
-            y = self.profiles_1d[pname]
-            if y is NotImplemented or y is None:
-                logger.warning(f"Plot profile '{pname}' failed!")
-                continue
-            axs[idx, 0].plot(x, y,  label=profiles_label[idx])
-            # axs[idx, 0].set_ylabel(profiles_label[idx])
-            axs[idx, 0].legend()
-
-        axs[nprofiles-1, 0].set_xlabel(xlabel)
-
-        fig.tight_layout()
-        fig.subplots_adjust(hspace=0)
-        return fig
 
     def _find_psi(self, psival, r0, z0, r1, z1):
         if np.isclose(self.profiles_2d.psi(r1, z1), psival):
@@ -280,37 +254,10 @@ class Equilibrium(AttributeTree):
             # r = sol.root
             # yield (1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1
 
-    @property
-    def critical_points(self):
-
-        R = self.profiles_2d.r
-        Z = self.profiles_2d.z
-        psi = self.profiles_2d.psi
-
-        limiter_points = np.array([self.tokamak.wall.limiter.outline.r,
-                                   self.tokamak.wall.limiter.outline.z]).transpose([1, 0])
-        limiter_polygon = Polygon(*map(Point, limiter_points))
-
-        opoints = []
-        xpoints = []
-
-        for r, z, tag in find_critical(psi):
-            # Remove points outside the vacuum wall
-            if not limiter_polygon.encloses(Point(r, z)):
-                continue
-
-            if tag < 0.0:  # saddle/X-point
-                xpoints.append((r, z, psi(r, z)))
-            else:  # extremum/ O-point
-                opoints.append((r, z, psi(r, z)))
-
-        Rmid = 0.5*(R[-1, 0] + R[0, 0])
-        Zmid = 0.5*(Z[0, -1] + Z[0, 0])
-        opoints.sort(key=lambda x: (x[0] - Rmid)**2 + (x[1] - Zmid)**2)
-        psi_axis = opoints[0][2]
-        xpoints.sort(key=lambda x: (x[2] - psi_axis)**2)
-
-        return opoints, xpoints
+    class Constraints(AttributeTree):
+        def __init__(self, eq, *args, **kwargs):
+            super().__init__(eq, *args, **kwargs)
+            self.__dict__['_eq'] = eq
 
     class GlobalQuantities(AttributeTree):
 
@@ -454,40 +401,45 @@ class Equilibrium(AttributeTree):
         @cached_property
         def pressure(self):
             """	Pressure {dynamic} [Pa]"""
-            if psi_norm is None:
-                psi_norm = self.psi_norm
-            pprime = self.dprime_dpsi()
-            psi_scale = self._eq.global_quantities.psi_boundary - self._eq.global_quantities.psi_axis
-            return [pprime.integral(0, psi)*psi_scale for psi in psi_norm]
+            # pprime = self.dpresure_dpsi
+            # return [pprime.integral(0, self.psi) for psi in self.psi]
+            return NotImplemented
 
         @cached_property
         def f(self):
             """Diamagnetic function (F=R B_Phi) {dynamic} [T.m]."""
-            psi_norm = self.psi_norm
-            ffprime = self.dprime_dpsi()
-            psi_scale = self._eq.global_quantities.psi_boundary - self._eq.global_quantities.psi_axis
-            f2 = [ffprime.integral(0, psi)*psi_scale for psi in psi_norm]
-            return np.sqrt(f2)
+            # ffprime = self.f_df_dpsi
+            # f2 = [2*ffprime.integral(0, psi) for psi in self.psi]
+            # return np.sqrt(f2)
+            return NotImplemented
+
+        @cached_property
+        def fpol(self):
+            return self.f
+
+        @cached_property
+        def fdia(self):
+            return self.f
 
         @cached_property
         def pprime(self):
             """Derivative of pressure w.r.t. psi {dynamic} [Pa.Wb^-1]."""
-            return NotImplemented
+            return self.dpressure_dpsi
 
         @cached_property
         def dpressure_dpsi(self):
             """Derivative of pressure w.r.t. psi {dynamic} [Pa.Wb^-1]."""
-            return self.pprime
+            return NotImplemented
 
         @cached_property
         def ffprime(self):
             """	Derivative of F w.r.t. Psi, multiplied with F {dynamic} [T^2.m^2/Wb]. """
-            return NotImplemented
+            return self.f_df_dpsi
 
         @cached_property
         def f_df_dpsi(self):
             """	Derivative of F w.r.t. Psi, multiplied with F {dynamic} [T^2.m^2/Wb]. """
-            return self.ffprime
+            return NotImplemented
 
         @cached_property
         def j_tor(self):
@@ -784,6 +736,115 @@ class Equilibrium(AttributeTree):
         def __init__(self, eq, *args,  ** kwargs):
             super().__init__(*args, **kwargs)
             self._eq = eq
+
+    ####################################################################################
+    # Plot proflies
+
+    def plot(self, axis=None, *args, levels=40, oxpoints=True, **kwargs):
+        """ learn from freegs
+        """
+        if axis is None:
+            axis = plt.gca()
+
+        R = self.profiles_2d.r
+        Z = self.profiles_2d.z
+        psi = self.profiles_2d.psi
+
+        # if type(levels) is int:
+        #     levels = np.linspace(self.global_quantities.psi_axis, self.global_quantities.psi_boundary, levels)
+
+        axis.contour(R, Z, psi, levels=levels, linewidths=0.2)
+
+        lcfs_points = np.array([self.boundary.outline_inner.r,
+                                self.boundary.outline_inner.z]).transpose([1, 0])
+
+        axis.add_patch(plt.Polygon(lcfs_points, fill=False, closed=True))
+
+        for idx, p in enumerate(self.boundary.x_point):
+            axis.plot(p.r, p.z, 'rx')
+            axis.text(p.r, p.z, idx)
+
+        boundary_points = np.array([self.boundary.outline.r, self.boundary.outline.z]).transpose([1, 0])
+
+        axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
+                                   linewidth=0.5, fill=False, closed=True))
+        axis.plot([], [], 'r--', label="Separatrix")
+
+        axis.plot(self.global_quantities.magnetic_axis.r,
+                  self.global_quantities.magnetic_axis.z, 'g.', label="Magnetic axis")
+
+        return axis
+
+    def plot_full(self,  profiles=None, profiles_label=None, x_axis="psi_norm", xlabel=r'$(\psi-\psi_{axis})/(\psi_{boundary}-\psi_{axis})$', *args, **kwargs):
+
+        if isinstance(profiles, str):
+            profiles = profiles.split(",")
+        elif profiles is None:
+            profiles = [("q", r"q", r"$[-]$"),
+                        ("pprime", r"$p^{\prime}$", r"$[Pa / Wb]$"),
+                        ("ffprime", r"$f f^{\prime}$", r"$[T^2.m^2/Wb]$"),
+                        ("fpol", r"$f_{pol}$", r"$[T \cdot m]$"),
+                        ("pressure", r"pressure", r"$[Pa]$")]
+
+        def fetch_profile(p):
+            if isinstance(p, str):
+                p = {"key": p, "label": p}
+            elif isinstance(p, tuple):
+                key, label, unit = p
+                p = {"key": key, "label": label, "unit": unit}
+
+            try:
+                d = self.profiles_1d[p["key"]]
+            except KeyError:
+                d = None
+
+            if d is None or d is NotImplemented or len(d) == 0:
+                logger.warning(f"Plot profile '{p}' failed!")
+            else:
+                p["data"] = d
+
+            return p
+
+        profiles = [p for p in map(fetch_profile, profiles) if p.get("data", None) is not None]
+
+        nprofiles = len(profiles)
+
+        if nprofiles == 0:
+            return self.plot(*args, **kwargs)
+
+        fig, axs = plt.subplots(ncols=2, nrows=nprofiles, sharex=True)
+        gs = axs[0, 1].get_gridspec()
+        # remove the underlying axes
+        for ax in axs[:, 1]:
+            ax.remove()
+        ax_right = fig.add_subplot(gs[:, 1])
+
+        self.tokamak.wall.plot(ax_right, **kwargs.get("wall", {}))
+        self.tokamak.pf_active.plot(ax_right, **kwargs.get("pf_active", {}))
+        self.plot(ax_right, **kwargs.get("equilibrium", {}))
+
+        ax_right.set_aspect('equal')
+        ax_right.set_xlabel(r"Major radius $R$ [m]")
+        ax_right.set_ylabel(r"Height $Z$ [m]")
+        ax_right.legend()
+
+        x = self.profiles_1d[x_axis]
+
+        if profiles_label is None:
+            profiles_label = profiles
+
+        for idx, p in enumerate(profiles):
+            axs[idx, 0].plot(x, p["data"],  label=p["label"])
+            unit = p.get("unit", None)
+            if unit is not None:
+                axs[idx, 0].set_ylabel(unit)
+            axs[idx, 0].legend()
+
+        axs[nprofiles-1, 0].set_xlabel(xlabel)
+
+        fig.tight_layout()
+        fig.subplots_adjust(hspace=0)
+        return fig
 
     # # Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip^2] {dynamic} [-]	FLT_0D
     # self.global_quantities.beta_pol = NotImplemented
