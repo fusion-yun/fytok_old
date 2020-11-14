@@ -91,24 +91,35 @@ class Equilibrium(AttributeTree):
 
         return AttributeTree.__new__(n_cls)
 
-    def __init__(self,   config,  *args,  tokamak=None, nr=129, nz=129, npsi=129, ntheta=129, **kwargs):
+    def __init__(self,   config,  *args,  tokamak=None,  **kwargs):
         super().__init__(*args, **kwargs)
         self.tokamak = tokamak
+        # ----------------------------------------------------------
+        self.__dict__["_grid_box"] = AttributeTree()
+
         lim_r = self.tokamak.wall.limiter.outline.r
         lim_z = self.tokamak.wall.limiter.outline.z
-        rmin = min(lim_r)
-        rmax = max(lim_r)
-        zmin = min(lim_z)
-        zmax = max(lim_z)
-        self.coordinate_system.grid.dim1 = np.linspace(rmin-0.1*(rmax-rmin), rmax+0.1*(rmax-rmin), nr)
-        self.coordinate_system.grid.dim2 = np.linspace(zmin-0.1*(zmax-zmin), zmax+0.1*(zmax-zmin), nz)
+
+        rmin = config.rmin or kwargs.get("rmin", None) or min(lim_r)
+        rmax = config.rmax or kwargs.get("rmax", None) or max(lim_r)
+        zmin = config.zmin or kwargs.get("zmin", None) or min(lim_z)
+        zmax = config.zmax or kwargs.get("zmax", None) or max(lim_z)
+        nr = config.nr or kwargs.get("nr", None) or 129
+        nz = config.nz or kwargs.get("nz", None) or 129
+        self._grid_box.dim1 = np.linspace(rmin-0.1*(rmax-rmin), rmax+0.1*(rmax-rmin), nr)
+        self._grid_box.dim2 = np.linspace(zmin-0.1*(zmax-zmin), zmax+0.1*(zmax-zmin), nz)
+        # ----------------------------------------------------------
+        npsi = config.npsi or kwargs.get("npsi", None) or 129
+        ntheta = config.ntheta or kwargs.get("ntheta", None) or 129
+
+        self.coordinate_system = Equilibrium.CoordinateSystem(
+            self, [npsi, ntheta], grid_type=config.coordinate_system.grid_type)
+
         self.constraints = Equilibrium.Constraints(self)
 
         self.vacuum_toroidal_field.r0 = self.tokamak.vacuum_toroidal_field.r0
         self.vacuum_toroidal_field.b0 = 1.0
 
-        self.__dict__["_npsi"] = npsi
-        self.__dict__["_ntheta"] = ntheta
         self.__dict__["_time"] = 0.0
 
     def _solve(self, *args, **kwargs):
@@ -150,7 +161,7 @@ class Equilibrium(AttributeTree):
 
     @cached_property
     def profiles_1d(self):
-        return Equilibrium.Profiles1D(self, npsi=self._npsi)
+        return Equilibrium.Profiles1D(self)
 
     @cached_property
     def profiles_2d(self):
@@ -162,7 +173,7 @@ class Equilibrium(AttributeTree):
 
     @cached_property
     def boundary(self):
-        return Equilibrium.Boundary(self, ntheta=self._ntheta)
+        return Equilibrium.Boundary(self)
 
     @cached_property
     def boundary_separatrix(self):
@@ -220,10 +231,14 @@ class Equilibrium(AttributeTree):
 
         return (1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1
 
-    def find_surface(self, psival, ntheta=None, psi_func=None):
+    def find_surface(self, psival, theta_dim=None, psi_func=None):
 
-        if ntheta is None:
-            ntheta = self._ntheta
+        if theta_dim is None:
+            theta_dim = self._eq.coorindate_system.grid.dims2
+        elif type(theta_dim) is not int:
+            theta_dim = np.linspace(0, scipy.constants.pi*2.0, theta_dim)
+        else:
+            theta_dim = theta_dim
 
         if psi_func is None:
             psi_func = Interpolate2D(self.profiles_2d.r, self.profiles_2d.z, self.profiles_2d.psi_norm)
@@ -236,13 +251,66 @@ class Equilibrium(AttributeTree):
         theta0 = arctan2(r1 - r0, z1 - z0)  # + scipy.constants.pi/npoints  # avoid x-point
         R = sqrt((r1-r0)**2+(z1-z0)**2)
 
-        for theta in np.linspace(0, scipy.constants.pi*2.0, ntheta)+theta0:
+        for theta in theta_dim+theta0:
             try:
                 r, z = self._find_psi(psi_func, psival, r0, z0,  r0 + R * sin(theta), z0 + R * cos(theta))
             except ValueError:
                 continue
             else:
                 yield r, z
+
+    class CoordinateSystem(AttributeTree):
+        def __init__(self, eq, shape=[120, 129], *args, grid_type=None, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.__dict__['_eq'] = eq
+            self.__dict__['_shape'] = shape
+
+            self.grid_type.name = grid_type or ""
+            self.grid_type.index = 0
+            self.grid_type.description = ""
+
+        @cached_property
+        def grid(self):
+            """
+                Definition of the 2D grid
+
+                .dim1           :   First dimension values {dynamic} [mixed]
+                .dim2           :   Second dimension values {dynamic} [mixed]
+                .volume_element :   Elementary plasma volume of plasma enclosed in the cell formed by the nodes
+                                    [dim1(i) dim2(j)], [dim1(i+1) dim2(j)], [dim1(i) dim2(j+1)]
+                                    and [dim1(i+1) dim2(j+1)] {dynamic} [m^3]
+
+            """
+            return AttributeTree({
+                "dim1": np.linspace(0, 1.0, self._shape[0]),
+                "dim2": np.linspace(0, scipy.constants.pi*2.0, self._shape[1]),
+                "volume_element": np.full(self._shape, np.nan)
+            })
+
+        @cached_property
+        def r(self):
+            """	Values of the major radius on the grid {dynamic} [m]"""
+            return np.full(self._shape, np.nan)
+
+        @cached_property
+        def z(self):
+            """Values of the Height on the grid {dynamic} [m]"""
+            return np.full(self._shape, np.nan)
+
+        @cached_property
+        def jacobian(self):
+            """	Absolute value of the jacobian of the coordinate system {dynamic} [mixed]"""
+            return np.full(self._shape, np.nan)
+
+        @cached_property
+        def tensor_covariant(self):
+            """Covariant metric tensor on every point of the grid described by grid_type {dynamic} [mixed]. """
+            return np.full([*self._shape, 3, 3], np.nan)
+
+        @cached_property
+        def tensor_contravariant(self):
+            """Contravariant metric tensor on every point of the grid described by grid_type {dynamic} [mixed]"""
+            return np.full([*self._shape, 3, 3], np.nan)
 
     class Constraints(AttributeTree):
         def __init__(self, eq, *args, **kwargs):
@@ -363,14 +431,16 @@ class Equilibrium(AttributeTree):
             ncls = getattr(eq.__class__, cls.__name__, cls)
             return AttributeTree.__new__(ncls)
 
-        def __init__(self, eq,  *args, npsi=129,  ** kwargs):
+        def __init__(self, eq,  *args, psi_norm=None,  ** kwargs):
             super().__init__(*args, **kwargs)
             self.__dict__["_eq"] = eq
-            self._npsi = npsi
 
-        @cached_property
-        def psi_norm(self):
-            return np.linspace(0, 1, self._npsi)
+            if psi_norm is None:
+                self.psi_norm = self._eq.coordinate_system.grid.dim1
+            elif type(psi_norm) is int:
+                self.psi_norm = np.linspace(0, 1, psi_norm)
+            else:
+                self.psi_norm = np.array(psi_norm)
 
         @cached_property
         def psi(self):
@@ -384,7 +454,6 @@ class Equilibrium(AttributeTree):
             psi_norm = self.psi_norm
             psi_scale = self._eq.global_quantities.psi_boundary-self._eq.global_quantities.psi_axis
             psi = self.psi
-
             q = Interpolate1D(psi_norm, self.q)
             return [q.integral(0, p) for p in psi_norm]
 
@@ -477,7 +546,7 @@ class Equilibrium(AttributeTree):
         @cached_property
         def dpsi_drho_tor(self)	:
             """Derivative of Psi with respect to Rho_Tor {dynamic} [Wb/m]. """
-            return self._eq.vacuum_toroidal_field.b0*self.rho/self.q
+            return self._eq.vacuum_toroidal_field.b0*self.rho_tor/self.q
 
         @cached_property
         def volume(self):
@@ -601,9 +670,32 @@ class Equilibrium(AttributeTree):
             ncls = getattr(eq.__class__, cls.__name__, cls)
             return AttributeTree.__new__(ncls)
 
-        def __init__(self, eq, *args,  ** kwargs):
+        def __init__(self, eq, *args, grid=None,  ** kwargs):
             super().__init__(*args, **kwargs)
             self._eq = eq
+
+            if grid is None:
+                self.grid = self._eq._grid_box
+            else:
+                self.grid = grid
+
+        @cached_property
+        def grid_type(self):
+            if self._grid_type_index != 1:
+                raise NotImplementedError
+            return AttributeTree({
+                "name": "rectangular",
+                "index": 1,
+                "description": """ Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). In this case the position 
+            arrays should not be filled since they are redundant with grid/dim1 and dim2."""})
+
+        # @cached_property
+        # def grid(self):
+        #     return AttributeTree({
+        #         "dim1": self._eq._profiles_2d_grid.dim1,
+        #         "dim2": self._eq._profiles_2d_grid.dim2,
+
+        #     })
 
         @cached_property
         def r(self):
@@ -624,10 +716,10 @@ class Equilibrium(AttributeTree):
             ncls = getattr(eq.__class__, cls.__name__, cls)
             return AttributeTree.__new__(ncls)
 
-        def __init__(self, eq, *args, ntheta=129,  ** kwargs):
+        def __init__(self, eq, *args,   ntheta=None, ** kwargs):
             super().__init__(*args, **kwargs)
             self._eq = eq
-            self._ntheta = ntheta
+            self.__dict__['_ntheta'] = ntheta or len(self._eq.coordinate_system.grid.dim2)
 
         @cached_property
         def type(self):
@@ -637,7 +729,7 @@ class Equilibrium(AttributeTree):
         @cached_property
         def outline(self):
             """ RZ outline of the plasma boundary  """
-            boundary = np.array([p for p in self._eq.find_surface(1.0, ntheta=self._ntheta)])
+            boundary = np.array([p for p in self._eq.find_surface(1.0)])
 
             return AttributeTree({
                 "r": boundary[:, 0],

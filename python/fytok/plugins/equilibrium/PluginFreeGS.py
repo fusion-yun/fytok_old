@@ -32,8 +32,8 @@ class EquilibriumFreeGS(Equilibrium):
 
         tokamak = freegs.machine.Machine(eq_coils, wall=eq_wall)
 
-        dim1 = self.coordinate_system.grid.dim1
-        dim2 = self.coordinate_system.grid.dim2
+        dim1 = self._grid_box.dim1
+        dim2 = self._grid_box.dim2
 
         self._backend = freegs.Equilibrium(
             tokamak=tokamak,
@@ -87,10 +87,7 @@ class EquilibriumFreeGS(Equilibrium):
                      Raxis                      ={Raxis} [m]
                      """)
 
-            
-
         constraints = freegs.control.constrain(** (constraints or {}))
-
 
         try:
             freegs.solve(self._backend, profiles, constraints)
@@ -200,7 +197,7 @@ class EquilibriumFreeGS(Equilibrium):
             return res
 
     class Boundary(Equilibrium.Boundary):
-        def __init__(self, eq, *args,  **kwargs):
+        def __init__(self, eq, *args, **kwargs):
             super().__init__(eq, *args, **kwargs)
             self.__dict__['_backend'] = eq._backend
 
@@ -212,9 +209,12 @@ class EquilibriumFreeGS(Equilibrium):
         @cached_property
         def outline(self):
             opt, xpt = self._eq.critical_points
-
+            
             lcfs = np.array(freegs.critical.find_separatrix(
-                self._backend, opoint=opt, xpoint=xpt,   ntheta=self._ntheta))
+                self._backend,
+                opoint=opt,
+                xpoint=xpt,
+                ntheta=self._ntheta))
 
             return AttributeTree({
                 "r": lcfs[:, 0],
