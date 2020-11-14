@@ -91,7 +91,7 @@ class Equilibrium(AttributeTree):
 
         return AttributeTree.__new__(n_cls)
 
-    def __init__(self,   config,  *args,  tokamak=None, nr=129, nz=129, **kwargs):
+    def __init__(self,   config,  *args,  tokamak=None, nr=129, nz=129, npsi=129, ntheta=129, **kwargs):
         super().__init__(*args, **kwargs)
         self.tokamak = tokamak
         lim_r = self.tokamak.wall.limiter.outline.r
@@ -107,6 +107,8 @@ class Equilibrium(AttributeTree):
         self.vacuum_toroidal_field.r0 = self.tokamak.vacuum_toroidal_field.r0
         self.vacuum_toroidal_field.b0 = 1.0
 
+        self.__dict__["_npsi"] = npsi
+        self.__dict__["_ntheta"] = ntheta
         self.__dict__["_time"] = 0.0
 
     def _solve(self, *args, **kwargs):
@@ -144,23 +146,37 @@ class Equilibrium(AttributeTree):
     def time(self, t):
         """ Change time will invalid all cache,  """
         self._time = t
-
         self.clear_cache()
 
     @cached_property
     def profiles_1d(self):
-        return Equilibrium.Profiles1D(self)
+        return Equilibrium.Profiles1D(self, npsi=self._npsi)
 
     @cached_property
     def profiles_2d(self):
         return Equilibrium.Profiles2D(self)
 
     @cached_property
+    def global_quantities(self):
+        return Equilibrium.GlobalQuantities(self)
+
+    @cached_property
+    def boundary(self):
+        return Equilibrium.Boundary(self, ntheta=self._ntheta)
+
+    @cached_property
+    def boundary_separatrix(self):
+        return Equilibrium.BoundarySeparatrix(self)
+
+    @cached_property
     def critical_points(self):
 
-        R = self.profiles_2d.r
-        Z = self.profiles_2d.z
         psi = self.profiles_2d.psi
+
+        if not isinstance(psi, Interpolate2D):
+            R = self.profiles_2d.r
+            Z = self.profiles_2d.z
+            psi = Interpolate2D(R, Z, psi)
 
         limiter_points = np.array([self.tokamak.wall.limiter.outline.r,
                                    self.tokamak.wall.limiter.outline.z]).transpose([1, 0])
@@ -187,24 +203,12 @@ class Equilibrium(AttributeTree):
 
         return opoints, xpoints
 
-    @cached_property
-    def global_quantities(self):
-        return Equilibrium.GlobalQuantities(self)
-
-    @cached_property
-    def boundary(self):
-        return Equilibrium.Boundary(self)
-
-    @cached_property
-    def boundary_separatrix(self):
-        return Equilibrium.BoundarySeparatrix(self)
-
-    def _find_psi(self, psival, r0, z0, r1, z1):
-        if np.isclose(self.profiles_2d.psi(r1, z1), psival):
+    def _find_psi(self, psi_func, psival, r0, z0, r1, z1):
+        if np.isclose(psi_func(r1, z1), psival):
             return r1, z1
 
         try:
-            sol = root_scalar(lambda r: self.profiles_2d.psi_norm((1.0-r)*r0+r*z0, (1.0-r)*r1+r*z1) - psival,
+            sol = root_scalar(lambda r: psi_func((1.0-r)*r0+r*z0, (1.0-r)*r1+r*z1) - psival,
                               bracket=[0, 1], method='brentq')
         except ValueError:
             raise ValueError(f"Find root fialed!")
@@ -216,43 +220,29 @@ class Equilibrium(AttributeTree):
 
         return (1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1
 
-    def find_surface(self, psival, npoints=128):
+    def find_surface(self, psival, ntheta=None, psi_func=None):
 
-        if not self.boundary.x_point:
-            self.update_boundary()
+        if ntheta is None:
+            ntheta = self._ntheta
 
-        psi_norm = self.profiles_2d.psi_norm()
+        if psi_func is None:
+            psi_func = Interpolate2D(self.profiles_2d.r, self.profiles_2d.z, self.profiles_2d.psi_norm)
 
         r0 = self.global_quantities.magnetic_axis.r
         z0 = self.global_quantities.magnetic_axis.z
         r1 = self.boundary.x_point[0]["r"]
         z1 = self.boundary.x_point[0]["z"]
 
-        # logger.debug(psival)
         theta0 = arctan2(r1 - r0, z1 - z0)  # + scipy.constants.pi/npoints  # avoid x-point
         R = sqrt((r1-r0)**2+(z1-z0)**2)
 
-        # def f(r, x0, x1, val):
-        #     return psi_norm((1.0-r)*x0[0]+r*x1[0], (1.0-r)*x0[1]+r*x1[1]) - val
-
-        for theta in np.linspace(0, scipy.constants.pi*2.0, npoints)+theta0:
+        for theta in np.linspace(0, scipy.constants.pi*2.0, ntheta)+theta0:
             try:
-                r, z = self._find_psi(psival, r0, z0,  r0 + R * sin(theta), z0 + R * cos(theta))
+                r, z = self._find_psi(psi_func, psival, r0, z0,  r0 + R * sin(theta), z0 + R * cos(theta))
             except ValueError:
                 continue
             else:
                 yield r, z
-            # if np.isclose(psi_norm(r1, z1), psival):
-            #     yield r1, z1
-            #     continue
-            # try:
-            #     sol = root_scalar(f, bracket=[0, 1], args=([r0, z0], [r1, z1], psival), method='brentq')
-            # except ValueError:
-            #     continue
-            # if not sol.converged:
-            #     continue
-            # r = sol.root
-            # yield (1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1
 
     class Constraints(AttributeTree):
         def __init__(self, eq, *args, **kwargs):
