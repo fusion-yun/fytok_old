@@ -34,11 +34,11 @@ if __name__ == "__main__":
 
     # tok.update(constraints={"psivals": psivals})
 
-    fig = plt.figure()
+    # fig = plt.figure()
 
-    axis = fig.add_subplot(111)
+    # axis = fig.add_subplot(111)
 
-    tok.equilibrium.plot(axis=axis)
+    # tok.equilibrium.plot(axis=axis)
 
     # axis.plot(bdr[:, 0], bdr[:, 1], "b--")
 
@@ -46,9 +46,9 @@ if __name__ == "__main__":
 
     # tok.plot(axis=axis)
 
-    axis.axis("scaled")
+    # axis.axis("scaled")
 
-    # fig = tok.equilibrium.plot_full("q,phi,rho_tor")
+    fig = tok.equilibrium.plot_full("q,phi,rho_tor")
 
     fig.savefig("../output/tokamak.svg")
 

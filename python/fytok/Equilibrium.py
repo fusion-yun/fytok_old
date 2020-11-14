@@ -161,8 +161,6 @@ class Equilibrium(AttributeTree):
 
         axis.add_patch(plt.Polygon(lcfs_points, fill=False, closed=True))
 
-        logger.debug(self.boundary.x_point)
-
         for idx, p in enumerate(self.boundary.x_point):
             axis.plot(p.r, p.z, 'rx')
             axis.text(p.r, p.z, idx)
@@ -213,7 +211,10 @@ class Equilibrium(AttributeTree):
             profiles_label = profiles
 
         for idx, pname in enumerate(profiles):
-            y = self.profiles_1d[pname](x)
+            y = self.profiles_1d[pname]
+            if y is NotImplemented or y is None:
+                logger.warning(f"Plot profile '{pname}' failed!")
+                continue
             axs[idx, 0].plot(x, y,  label=profiles_label[idx])
             # axs[idx, 0].set_ylabel(profiles_label[idx])
             axs[idx, 0].legend()
@@ -223,67 +224,6 @@ class Equilibrium(AttributeTree):
         fig.tight_layout()
         fig.subplots_adjust(hspace=0)
         return fig
-
-    def find_oxpoints(self):
-
-        psi = self.profiles_2d.psi
-
-        R, Z = psi.mesh_coordinates
-
-        limiter_points = np.array([self.tokamak.wall.limiter.outline.r,
-                                   self.tokamak.wall.limiter.outline.z]).transpose([1, 0])
-        limiter_polygon = Polygon(*map(Point, limiter_points))
-
-        opoints = []
-        xpoints = []
-
-        for r, z, tag in find_critical(psi):
-
-            # Remove points outside the vacuum wall
-            if not limiter_polygon.encloses(Point(r, z)):
-                continue
-
-            if tag < 0.0:  # saddle/X-point
-                xpoints.append((r, z, psi(r, z)))
-            else:  # extremum/ O-point
-                opoints.append((r, z, psi(r, z)))
-
-        Rmid = 0.5*(R[-1, 0] + R[0, 0])
-        Zmid = 0.5*(Z[0, -1] + Z[0, 0])
-        opoints.sort(key=lambda x: (x[0] - Rmid)**2 + (x[1] - Zmid)**2)
-        psi_axis = opoints[0][2]
-        xpoints.sort(key=lambda x: (x[2] - psi_axis)**2)
-
-        return opoints, xpoints
-
-    def update_boundary(self, nbrdy=128):
-
-        opoints, xpoints = self.find_oxpoints()
-
-        if not opoints:
-            raise RuntimeError(f"Can not find O-point!")
-
-        if not xpoints:
-            raise RuntimeError(f"Can not find X-point!")
-
-        self.global_quantities.magnetic_axis.r = opoints[0][0]
-
-        self.global_quantities.magnetic_axis.z = opoints[0][1]
-
-        self.global_quantities.magnetic_axis.b_field_tor = self.profiles_2d.Btor(opoints[0][0], opoints[0][1])
-
-        for r, z, _ in xpoints:
-            self.boundary.x_point[_next_] = {"r": r, "z": z}
-
-        self.global_quantities.psi_axis = opoints[0][2]
-        self.global_quantities.psi_boundary = xpoints[0][2]
-
-        boundary = np.array([p for p in self.find_surface(1.0, npoints=nbrdy)])
-
-        self.boundary.outline.r = boundary[:, 0]
-        self.boundary.outline.z = boundary[:, 1]
-
-        return boundary
 
     def _find_psi(self, psival, r0, z0, r1, z1):
         if np.isclose(self.profiles_2d.psi(r1, z1), psival):
@@ -339,6 +279,38 @@ class Equilibrium(AttributeTree):
             #     continue
             # r = sol.root
             # yield (1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1
+
+    @property
+    def critical_points(self):
+
+        R = self.profiles_2d.r
+        Z = self.profiles_2d.z
+        psi = self.profiles_2d.psi
+
+        limiter_points = np.array([self.tokamak.wall.limiter.outline.r,
+                                   self.tokamak.wall.limiter.outline.z]).transpose([1, 0])
+        limiter_polygon = Polygon(*map(Point, limiter_points))
+
+        opoints = []
+        xpoints = []
+
+        for r, z, tag in find_critical(psi):
+            # Remove points outside the vacuum wall
+            if not limiter_polygon.encloses(Point(r, z)):
+                continue
+
+            if tag < 0.0:  # saddle/X-point
+                xpoints.append((r, z, psi(r, z)))
+            else:  # extremum/ O-point
+                opoints.append((r, z, psi(r, z)))
+
+        Rmid = 0.5*(R[-1, 0] + R[0, 0])
+        Zmid = 0.5*(Z[0, -1] + Z[0, 0])
+        opoints.sort(key=lambda x: (x[0] - Rmid)**2 + (x[1] - Zmid)**2)
+        psi_axis = opoints[0][2]
+        xpoints.sort(key=lambda x: (x[2] - psi_axis)**2)
+
+        return opoints, xpoints
 
     class GlobalQuantities(AttributeTree):
 
@@ -402,20 +374,23 @@ class Equilibrium(AttributeTree):
         @property
         def psi_axis(self):
             """ Poloidal flux at the magnetic axis {dynamic} [Wb]."""
-            return NotImplemented
+            opt, _ = self._eq.critical_points
+            return opt[0][2]
 
         @property
         def psi_boundary(self):
             """ Poloidal flux at the selected plasma boundary {dynamic} [Wb]."""
-            return NotImplemented
+            _, xpt = self._eq.critical_points
+            return xpt[0][2]
 
-        # @property
-        # def magnetic_axis(self):
-        #     """ Magnetic axis position and toroidal field	structure"""
-        #     return AttributeTree({"r":  opt[0][0],
-        #                           "z":  opt[0][1],
-        #                           "b_field_tor":  self._backend.Btor(opt[0][0], opt[0][1])
-        #                           })
+        @property
+        def magnetic_axis(self):
+            """ Magnetic axis position and toroidal field	structure"""
+            opt, _ = self._eq.critical_points
+            return AttributeTree({"r":  opt[0][0],
+                                  "z":  opt[0][1],
+                                  "b_field_tor": NotImplemented  # self.profiles_2d.b_field_tor(opt[0][0], opt[0][1])
+                                  })
 
         @property
         def q_axis(self):
@@ -424,8 +399,8 @@ class Equilibrium(AttributeTree):
 
         @property
         def q_95(self):
-            """ q at the 95% poloidal flux surface 
-            (IMAS uses COCOS=11: only positive when toroidal current 
+            """ q at the 95% poloidal flux surface
+            (IMAS uses COCOS=11: only positive when toroidal current
             and magnetic field are in same direction) {dynamic} [-]."""
 
             return NotImplemented
@@ -451,13 +426,14 @@ class Equilibrium(AttributeTree):
             ncls = getattr(eq.__class__, cls.__name__, cls)
             return AttributeTree.__new__(ncls)
 
-        def __init__(self, eq,  *args, profiles=None,   ** kwargs):
+        def __init__(self, eq,  *args, npsi=129,  ** kwargs):
             super().__init__(*args, **kwargs)
             self.__dict__["_eq"] = eq
+            self._npsi = npsi
 
         @cached_property
         def psi_norm(self):
-            return self.grid[0]
+            return np.linspace(0, 1, self._npsi)
 
         @cached_property
         def psi(self):
@@ -702,9 +678,100 @@ class Equilibrium(AttributeTree):
             ncls = getattr(eq.__class__, cls.__name__, cls)
             return AttributeTree.__new__(ncls)
 
-        def __init__(self, eq, *args,  ** kwargs):
+        def __init__(self, eq, *args, ntheta=129,  ** kwargs):
             super().__init__(*args, **kwargs)
             self._eq = eq
+            self._ntheta = ntheta
+
+        @cached_property
+        def type(self):
+            """0 (limiter) or 1 (diverted) {dynamic} """
+            return 1
+
+        @cached_property
+        def outline(self):
+            """ RZ outline of the plasma boundary  """
+            boundary = np.array([p for p in self._eq.find_surface(1.0, ntheta=self._ntheta)])
+
+            return AttributeTree({
+                "r": boundary[:, 0],
+                "z": boundary[:, 1]
+            })
+
+        @cached_property
+        def x_point(self):
+            res = AttributeTree()
+            _, xpt = self._eq.critical_points
+            for r, z, _ in xpt:
+                res[_next_] = {"r": r, "z": z}
+
+            return res
+
+        @cached_property
+        def psi(self):
+            """ Value of the poloidal flux at which the boundary is taken {dynamic} [Wb]"""
+            _, xpt = self._eq.critical_points
+            return xpt[0][2]
+
+        @cached_property
+        def psi_norm(self):
+            """ Value of the normalised poloidal flux at which the boundary is taken (typically 99.x %),
+                the flux being normalised to its value at the separatrix {dynamic}"""
+            return self.psi*0.99
+
+        @cached_property
+        def geometric_axis(self):
+            """RZ position of the geometric axis (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the boundary)"""
+            return AttributeTree(
+                {
+                    "r": (min(self.outline.r)+max(self.outline.r))/2,
+                    "z": (min(self.outline.z)+max(self.outline.z))/2
+                })
+
+        @cached_property
+        def minor_radius(self):
+            """Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary) {dynamic}[m]	FLT_0D"""
+            return (max(self.outline.r)-min(self.outline.r))*0.5
+
+        @cached_property
+        def elongation(self):
+            """Elongation of the plasma boundary Click here for further documentation. {dynamic}[-]	FLT_0D"""
+            return (max(self.outline.z)-min(self.outline.z))/(max(self.outline.r)-min(self.outline.r))
+
+        @cached_property
+        def elongation_upper(self):
+            """Elongation(upper half w.r.t. geometric axis) of the plasma boundary Click here for further documentation. {dynamic}[-]	FLT_0D"""
+            return (max(self.outline.z)-self.geometric_axis.z)/(max(self.outline.r)-min(self.outline.r))
+
+        @cached_property
+        def elongation_lower(self):
+            """Elongation(lower half w.r.t. geometric axis) of the plasma boundary Click here for further documentation. {dynamic}[-]	FLT_0D"""
+            return (self.geometric_axis.z-min(self.outline.z))/(max(self.outline.r)-min(self.outline.r))
+
+        @cached_property
+        def triangularity(self):
+            """Triangularity of the plasma boundary Click here for further documentation. {dynamic}[-]	FLT_0D"""
+            return (self.outline.r[np.argmax(self.outline.z)]-self.outline.r[np.argmin(self.outline.z)])/self.minor_radius
+
+        @cached_property
+        def triangularity_upper(self):
+            """Upper triangularity of the plasma boundary Click here for further documentation. {dynamic}[-]	FLT_0D"""
+            return (self.geometric_axis.r - self.outline.r[np.argmax(self.outline.z)])/self.minor_radius
+
+        @cached_property
+        def triangularity_lower(self):
+            """Lower triangularity of the plasma boundary Click here for further documentation. {dynamic}[-]"""
+            return (self.geometric_axis.r - self.outline.r[np.argmin(self.outline.z)])/self.minor_radius
+
+        @cached_property
+        def strike_point(self)	:
+            """Array of strike points, for each of them the RZ position is given	struct_array [max_size=unbounded]	1- 1...N"""
+            return NotImplemented
+
+        @cached_property
+        def active_limiter_point(self):
+            """	RZ position of the active limiter point (point of the plasma boundary in contact with the limiter)"""
+            return NotImplemented
 
     class BoundarySeparatrix(AttributeTree):
         @staticmethod
