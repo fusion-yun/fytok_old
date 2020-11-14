@@ -493,6 +493,10 @@ class Equilibrium(AttributeTree):
             return NotImplemented
 
         @cached_property
+        def vprime(self):
+            return self.dvolume_dpsi
+
+        @cached_property
         def dvolume_dpsi(self):
             """Radial derivative of the volume enclosed in the flux surface with respect to Psi {dynamic} [m^3.Wb^-1]. """
             return NotImplemented
@@ -765,7 +769,7 @@ class Equilibrium(AttributeTree):
 
         return axis
 
-    def plot_full(self,  profiles=None, profiles_label=None, x_axis="psi_norm", xlabel=r'$(\psi-\psi_{axis})/(\psi_{boundary}-\psi_{axis})$', *args, **kwargs):
+    def plot_full(self, x_axis="psi_norm",  profiles=None, profiles_label=None, xlabel=r'$(\psi-\psi_{axis})/(\psi_{boundary}-\psi_{axis})$', *args, **kwargs):
 
         if isinstance(profiles, str):
             profiles = profiles.split(",")
@@ -795,6 +799,8 @@ class Equilibrium(AttributeTree):
 
             return p
 
+        x_axis = fetch_profile(x_axis)
+
         profiles = [p for p in map(fetch_profile, profiles) if p.get("data", None) is not None]
 
         nprofiles = len(profiles)
@@ -818,7 +824,7 @@ class Equilibrium(AttributeTree):
         ax_right.set_ylabel(r"Height $Z$ [m]")
         ax_right.legend()
 
-        x = self.profiles_1d[x_axis]
+        x = x_axis["data"]
 
         if profiles_label is None:
             profiles_label = profiles
@@ -830,7 +836,7 @@ class Equilibrium(AttributeTree):
                 axs[idx, 0].set_ylabel(unit)
             axs[idx, 0].legend()
 
-        axs[nprofiles-1, 0].set_xlabel(xlabel)
+        axs[nprofiles-1, 0].set_xlabel(x_axis["label"]+x_axis["unit"])
 
         fig.tight_layout()
         fig.subplots_adjust(hspace=0)
