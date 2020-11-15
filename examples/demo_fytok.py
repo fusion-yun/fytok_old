@@ -49,13 +49,13 @@ if __name__ == "__main__":
     # axis.axis("scaled")
 
     fig = tok.equilibrium.plot_full(
-        x_axis=("rho_tor_norm", r"$\rho_{tor}/\rho_b$", r"$[-]$"),
-        profiles=[
-            ("rho_tor", r"$\rho_{tor}$", r"$[m]$"),
-            ("phi", r"$\Phi_{tor}$", r"$[Wb]$"),
-            ("dpsi_drho_tor", r"$d\psi/d\rho_{tor}$", r"$[Wb/m]$"),            
-            ("vprime", r"$V^{\prime}$", r"$[m^3/Wb]$")
-        ]
+        # x_axis=("rho_tor_norm", r"$\rho_{tor}/\rho_b$", r"$[-]$"),
+        # profiles=[
+        #     ("rho_tor", r"$\rho_{tor}$", r"$[m]$"),
+        #     ("phi", r"$\Phi_{tor}$", r"$[Wb]$"),
+        #     ("dpsi_drho_tor", r"$d\psi/d\rho_{tor}$", r"$[Wb/m]$"),            
+        #     ("vprime", r"$V^{\prime}$", r"$[m^3/Wb]$")
+        # ]
     )
 
     fig.savefig("../output/tokamak.svg", transparent=True)

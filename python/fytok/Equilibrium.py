@@ -181,13 +181,12 @@ class Equilibrium(AttributeTree):
 
     @cached_property
     def critical_points(self):
-
         psi = self.profiles_2d.psi
 
         if not isinstance(psi, Interpolate2D):
             R = self.profiles_2d.r
             Z = self.profiles_2d.z
-            psi = Interpolate2D(R, Z, psi)
+            psi = Interpolate2D(R[:, 0], Z[0, :], np.array(psi))
 
         limiter_points = np.array([self.tokamak.wall.limiter.outline.r,
                                    self.tokamak.wall.limiter.outline.z]).transpose([1, 0])
@@ -195,7 +194,6 @@ class Equilibrium(AttributeTree):
 
         opoints = []
         xpoints = []
-
         for r, z, tag in find_critical(psi):
             # Remove points outside the vacuum wall
             if not limiter_polygon.encloses(Point(r, z)):
@@ -219,10 +217,10 @@ class Equilibrium(AttributeTree):
             return r1, z1
 
         try:
-            sol = root_scalar(lambda r: psi_func((1.0-r)*r0+r*z0, (1.0-r)*r1+r*z1) - psival,
+            sol = root_scalar(lambda r: psi_func((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1) - psival,
                               bracket=[0, 1], method='brentq')
-        except ValueError:
-            raise ValueError(f"Find root fialed!")
+        except ValueError as error:
+            raise ValueError(f"Find root fialed! {error}")
 
         if not sol.converged:
             raise ValueError(f"Find root fialed!")
@@ -233,15 +231,18 @@ class Equilibrium(AttributeTree):
 
     def find_surface(self, psival, theta_dim=None, psi_func=None):
 
-        if theta_dim is None:
-            theta_dim = self._eq.coorindate_system.grid.dims2
+        if theta_dim is None or theta_dim is NotImplemented or len(theta_dim) == 0:
+            theta_dim = self.coordinate_system.grid.dim2
         elif type(theta_dim) is not int:
             theta_dim = np.linspace(0, scipy.constants.pi*2.0, theta_dim)
         else:
             theta_dim = theta_dim
 
         if psi_func is None:
-            psi_func = Interpolate2D(self.profiles_2d.r, self.profiles_2d.z, self.profiles_2d.psi_norm)
+            psi_func = Interpolate2D(self.profiles_2d.r[:, 0], self.profiles_2d.z[0, :], self.profiles_2d.psi)
+
+        psival = psival*(self.global_quantities.psi_boundary -
+                         self.global_quantities.psi_axis)+self.global_quantities.psi_axis
 
         r0 = self.global_quantities.magnetic_axis.r
         z0 = self.global_quantities.magnetic_axis.z
@@ -254,10 +255,13 @@ class Equilibrium(AttributeTree):
         for theta in theta_dim+theta0:
             try:
                 r, z = self._find_psi(psi_func, psival, r0, z0,  r0 + R * sin(theta), z0 + R * cos(theta))
-            except ValueError:
+            except ValueError as error:
+                logger.debug(error)
                 continue
             else:
                 yield r, z
+            # finally:
+            #     yield r0 + R * sin(theta), z0 + R * cos(theta)
 
     class CoordinateSystem(AttributeTree):
         def __init__(self, eq, shape=[120, 129], *args, grid_type=None, **kwargs):
@@ -705,7 +709,8 @@ class Equilibrium(AttributeTree):
         def z(self):
             return NotImplemented
 
-        def psi(self, *args, **kwargs):
+        @cached_property
+        def psi(self):
             return NotImplemented
 
     class Boundary(AttributeTree):
@@ -730,7 +735,7 @@ class Equilibrium(AttributeTree):
         def outline(self):
             """ RZ outline of the plasma boundary  """
             boundary = np.array([p for p in self._eq.find_surface(1.0)])
-
+            
             return AttributeTree({
                 "r": boundary[:, 0],
                 "z": boundary[:, 1]
@@ -928,7 +933,7 @@ class Equilibrium(AttributeTree):
                 axs[idx, 0].set_ylabel(unit)
             axs[idx, 0].legend()
 
-        axs[nprofiles-1, 0].set_xlabel(x_axis["label"]+x_axis["unit"])
+        axs[nprofiles-1, 0].set_xlabel(x_axis["label"]+x_axis.get("unit", ""))
 
         fig.tight_layout()
         fig.subplots_adjust(hspace=0)

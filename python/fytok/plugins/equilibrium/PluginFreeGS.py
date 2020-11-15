@@ -94,18 +94,18 @@ class EquilibriumFreeGS(Equilibrium):
         except ValueError as error:
             raise RuntimeError(f"Solve G-S equation failed [{self.__class__.__name__}]! {error}")
 
-    @property
-    def critical_points(self):
-        R = self.profiles_2d.r
-        Z = self.profiles_2d.z
-        psi = self.profiles_2d.psi
+    # @property
+    # def critical_points(self):
+    #     R = self.profiles_2d.r
+    #     Z = self.profiles_2d.z
+    #     psi = self.profiles_2d.psi
 
-        # find magnetic axis (o-point) and x-points
-        opt, xpt = freegs.critical.find_critical(R, Z, psi)
+    #     # find magnetic axis (o-point) and x-points
+    #     opt, xpt = freegs.critical.find_critical(R, Z, psi)
 
-        if not opt or not xpt:
-            raise RuntimeError(f"Can not find O-point or X-points!")
-        return opt, xpt
+    #     if not opt or not xpt:
+    #         raise RuntimeError(f"Can not find O-point or X-points!")
+    #     return opt, xpt
 
     class Profiles1D(Equilibrium.Profiles1D):
         def __init__(self, eq, *args, **kwargs):
@@ -196,27 +196,27 @@ class EquilibriumFreeGS(Equilibrium):
             res.b_field_tor = self._backend.Btor(res.r, res.z)
             return res
 
-    class Boundary(Equilibrium.Boundary):
-        def __init__(self, eq, *args, **kwargs):
-            super().__init__(eq, *args, **kwargs)
-            self.__dict__['_backend'] = eq._backend
+    # class Boundary(Equilibrium.Boundary):
+    #     def __init__(self, eq, *args, **kwargs):
+    #         super().__init__(eq, *args, **kwargs)
+    #         self.__dict__['_backend'] = eq._backend
 
-        @cached_property
-        def psi(self):
-            """ Value of the poloidal flux at which the boundary is taken {dynamic} [Wb]"""
-            return self._backend.psi_bndry
+    #     @cached_property
+    #     def psi(self):
+    #         """ Value of the poloidal flux at which the boundary is taken {dynamic} [Wb]"""
+    #         return self._backend.psi_bndry
 
-        @cached_property
-        def outline(self):
-            opt, xpt = self._eq.critical_points
+    #     @cached_property
+    #     def outline(self):
+    #         opt, xpt = self._eq.critical_points
             
-            lcfs = np.array(freegs.critical.find_separatrix(
-                self._backend,
-                opoint=opt,
-                xpoint=xpt,
-                ntheta=self._ntheta))
+    #         lcfs = np.array(freegs.critical.find_separatrix(
+    #             self._backend,
+    #             opoint=opt,
+    #             xpoint=xpt,
+    #             ntheta=self._ntheta))
 
-            return AttributeTree({
-                "r": lcfs[:, 0],
-                "z": lcfs[:, 1]
-            })
+    #         return AttributeTree({
+    #             "r": lcfs[:, 0],
+    #             "z": lcfs[:, 1]
+    #         })
