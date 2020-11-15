@@ -35,11 +35,17 @@ class EquilibriumFreeGS(Equilibrium):
         dim1 = self._grid_box.dim1
         dim2 = self._grid_box.dim2
 
+        if config.profiles_2d.psi is NotImplemented:
+            psi = None
+        else:
+            psi =np.array( config.profiles_2d.psi())
+
         self._backend = freegs.Equilibrium(
             tokamak=tokamak,
             Rmin=min(dim1), Rmax=max(dim1),
             Zmin=min(dim2), Zmax=max(dim2),
             nx=len(dim1), ny=len(dim2),
+            psi=psi,
             boundary=freegs.boundary.freeBoundaryHagenow)
 
     def _solve(self, profiles=None, constraints=None,  **kwargs):
@@ -209,7 +215,7 @@ class EquilibriumFreeGS(Equilibrium):
         @cached_property
         def outline(self):
             opt, xpt = self._eq.critical_points
-            
+
             lcfs = np.array(freegs.critical.find_separatrix(
                 self._backend,
                 opoint=opt,

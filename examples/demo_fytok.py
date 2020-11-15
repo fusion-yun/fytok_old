@@ -34,29 +34,29 @@ if __name__ == "__main__":
 
     # tok.update(constraints={"psivals": psivals})
 
-    # fig = plt.figure()
+    fig = plt.figure()
 
-    # axis = fig.add_subplot(111)
+    axis = fig.add_subplot(111)
 
-    # tok.equilibrium.plot(axis=axis)
+    tok.equilibrium.plot(axis=axis)
 
     # axis.plot(bdr[:, 0], bdr[:, 1], "b--")
 
-    # tok.wall.plot(axis)
+    tok.wall.plot(axis)
 
     # tok.plot(axis=axis)
 
-    # axis.axis("scaled")
+    axis.axis("scaled")
 
-    fig = tok.equilibrium.plot_full(
-        # x_axis=("rho_tor_norm", r"$\rho_{tor}/\rho_b$", r"$[-]$"),
-        # profiles=[
-        #     ("rho_tor", r"$\rho_{tor}$", r"$[m]$"),
-        #     ("phi", r"$\Phi_{tor}$", r"$[Wb]$"),
-        #     ("dpsi_drho_tor", r"$d\psi/d\rho_{tor}$", r"$[Wb/m]$"),            
-        #     ("vprime", r"$V^{\prime}$", r"$[m^3/Wb]$")
-        # ]
-    )
+    # fig = tok.equilibrium.plot_full(
+    #     # x_axis=("rho_tor_norm", r"$\rho_{tor}/\rho_b$", r"$[-]$"),
+    #     # profiles=[
+    #     #     ("rho_tor", r"$\rho_{tor}$", r"$[m]$"),
+    #     #     ("phi", r"$\Phi_{tor}$", r"$[Wb]$"),
+    #     #     ("dpsi_drho_tor", r"$d\psi/d\rho_{tor}$", r"$[Wb/m]$"),            
+    #     #     ("vprime", r"$V^{\prime}$", r"$[m^3/Wb]$")
+    #     # ]
+    # )
 
     fig.savefig("../output/tokamak.svg", transparent=True)
 

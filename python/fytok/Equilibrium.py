@@ -109,11 +109,11 @@ class Equilibrium(AttributeTree):
         self._grid_box.dim1 = np.linspace(rmin-0.1*(rmax-rmin), rmax+0.1*(rmax-rmin), nr)
         self._grid_box.dim2 = np.linspace(zmin-0.1*(zmax-zmin), zmax+0.1*(zmax-zmin), nz)
         # ----------------------------------------------------------
-        npsi = config.npsi or kwargs.get("npsi", None) or 129
-        ntheta = config.ntheta or kwargs.get("ntheta", None) or 129
+        npsi = config.npsi or kwargs.get("npsi", None) or 16
+        ntheta = config.ntheta or kwargs.get("ntheta", None) or 64
 
         self.coordinate_system = Equilibrium.CoordinateSystem(
-            self, [npsi, ntheta], grid_type=config.coordinate_system.grid_type)
+            self, [npsi, ntheta], grid_type=int(config.coordinate_system.grid_type.index))
 
         self.constraints = Equilibrium.Constraints(self)
 
@@ -264,57 +264,130 @@ class Equilibrium(AttributeTree):
             #     yield r0 + R * sin(theta), z0 + R * cos(theta)
 
     class CoordinateSystem(AttributeTree):
-        def __init__(self, eq, shape=[120, 129], *args, grid_type=None, **kwargs):
+        """
+            Definition of the 2D grid
+
+            grid.dim1           :   First dimension values {dynamic} [mixed]
+            grid.dim2           :   Second dimension values {dynamic} [mixed]
+            grid.volume_element :   Elementary plasma volume of plasma enclosed in the cell formed by the nodes
+                                [dim1(i) dim2(j)], [dim1(i+1) dim2(j)], [dim1(i) dim2(j+1)]
+                                and [dim1(i+1) dim2(j+1)] {dynamic} [m^3]
+
+            grid_type.name      :
+            grid_type.index     : 0xFF (rho theta)
+                                    theta
+                                    0x0?  : rho= psi,  poloidal flux function
+                                    0x1?  : rho= V, volume within surface
+                                    0x2?  : rho= sqrt(V)
+                                    0x3?  : rho= Phi, toroidal flux with in surface
+                                    0x4?  : rho= sqrt(Phi/B0/pi)
+                                    theta
+                                    0x?0  : poloidal angle
+                                    0x?1  : constant arch length
+                                    0x?2  : straight filed lines
+                                    0x?3  : constant area
+                                    0x?4  : constant volume
+        """
+
+        def __init__(self, eq, shape=[120, 129], *args, grid_type=0, **kwargs):
+
             super().__init__(*args, **kwargs)
             self.__dict__['_eq'] = eq
             self.__dict__['_shape'] = shape
 
-            self.grid_type.name = grid_type or ""
-            self.grid_type.index = 0
+            self.grid_type.index = int(grid_type)
+            self.grid_type.name = ""
             self.grid_type.description = ""
+            self.grid.dim1 = np.linspace(0, 1.0, self._shape[0], endpoint=False)+0.5/(self._shape[0])
+            self.grid.dim2 = np.linspace(0, scipy.constants.pi*2.0, self._shape[1], endpoint=False) +\
+                scipy.constants.pi/(shape[1])
+
+            self.grid.volume_element = NotImplemented
+
+        def _re_grid(self, grid_type, R, Z, psi_func):
+            raise NotImplementedError()
+            return R, Z
 
         @cached_property
-        def grid(self):
-            """
-                Definition of the 2D grid
+        def _mesh(self):
+            logger.debug((self.grid.dim1[1]-self.grid.dim1[0], self.grid.dim1[2]-self.grid.dim1[1],
+                          self.grid.dim1[-1] - self.grid.dim1[0]-1))
+            logger.debug((self.grid.dim2[1]-self.grid.dim2[0], self.grid.dim2[2]-self.grid.dim2[1],
+                          self.grid.dim2[-1] - self.grid.dim2[0]-scipy.constants.pi*2.0))
 
-                .dim1           :   First dimension values {dynamic} [mixed]
-                .dim2           :   Second dimension values {dynamic} [mixed]
-                .volume_element :   Elementary plasma volume of plasma enclosed in the cell formed by the nodes
-                                    [dim1(i) dim2(j)], [dim1(i+1) dim2(j)], [dim1(i) dim2(j+1)]
-                                    and [dim1(i+1) dim2(j+1)] {dynamic} [m^3]
+            psi = Interpolate2D(self._eq.profiles_2d.r[:, 0], self._eq.profiles_2d.z[0, :], self._eq.profiles_2d.psi)
 
-            """
+            R = np.full(self._shape, np.nan)
+            Z = np.full(self._shape, np.nan)
+
+            R0 = self._eq.global_quantities.magnetic_axis.r
+            Z0 = self._eq.global_quantities.magnetic_axis.z
+            R1 = self._eq.boundary.x_point[0]["r"]
+            Z1 = self._eq.boundary.x_point[0]["z"]
+
+            theta0 = arctan2(R1 - R0, Z1 - Z0)  # + scipy.constants.pi/npoints  # avoid x-point
+
+            Rm = sqrt((R1-R0)**2+(Z1-Z0)**2)
+
+            for i, r in enumerate(self.grid.dim1):
+                if abs(r) < 1.0e-6:
+                    R[i, :] = R0
+                    Z[i, :] = Z0
+                    continue
+                psival = r*(self._eq.global_quantities.psi_boundary -
+                            self._eq.global_quantities.psi_axis)+self._eq.global_quantities.psi_axis
+                for j, t in enumerate(self.grid.dim2):
+                    theta = t+theta0
+                    R[i, j],  Z[i, j] = self._eq._find_psi(psi, psival,
+                                                           R0,
+                                                           Z0,
+                                                           R0 + Rm * sin(theta),
+                                                           Z0 + Rm * cos(theta))
+            if self.grid_type.index == 0:
+                pass
+            else:
+                R, Z = self._re_grid(self.grid_type.index, R, Z, psi)
+
+            return AttributeTree({"r": R, "z": Z})
+
+        @cached_property
+        def _metric(self):
+            jacobian = np.full(self._shape, np.nan)
+            tensor_covariant = np.full([*self._shape, 3, 3], np.nan)
+            tensor_contravariant = np.full([*self._shape, 3, 3], np.nan)
+
+            # TODO: not complete
+
             return AttributeTree({
-                "dim1": np.linspace(0, 1.0, self._shape[0]),
-                "dim2": np.linspace(0, scipy.constants.pi*2.0, self._shape[1]),
-                "volume_element": np.full(self._shape, np.nan)
+                "jacobian": jacobian,
+                "tensor_covariant": tensor_covariant,
+                "tensor_contravariant": tensor_contravariant
             })
 
         @cached_property
         def r(self):
             """	Values of the major radius on the grid {dynamic} [m]"""
-            return np.full(self._shape, np.nan)
+            return self._mesh.r
 
         @cached_property
         def z(self):
             """Values of the Height on the grid {dynamic} [m]"""
-            return np.full(self._shape, np.nan)
+            return self._mesh.z
 
         @cached_property
         def jacobian(self):
             """	Absolute value of the jacobian of the coordinate system {dynamic} [mixed]"""
-            return np.full(self._shape, np.nan)
+            return self._metric.jacobian
 
         @cached_property
         def tensor_covariant(self):
             """Covariant metric tensor on every point of the grid described by grid_type {dynamic} [mixed]. """
-            return np.full([*self._shape, 3, 3], np.nan)
+            return self._metric.tensor_covariant
 
         @cached_property
         def tensor_contravariant(self):
             """Contravariant metric tensor on every point of the grid described by grid_type {dynamic} [mixed]"""
-            return np.full([*self._shape, 3, 3], np.nan)
+            return self._metric.tensor_contravariant
 
     class Constraints(AttributeTree):
         def __init__(self, eq, *args, **kwargs):
@@ -735,7 +808,7 @@ class Equilibrium(AttributeTree):
         def outline(self):
             """ RZ outline of the plasma boundary  """
             boundary = np.array([p for p in self._eq.find_surface(1.0)])
-            
+
             return AttributeTree({
                 "r": boundary[:, 0],
                 "z": boundary[:, 1]
@@ -831,7 +904,7 @@ class Equilibrium(AttributeTree):
     ####################################################################################
     # Plot proflies
 
-    def plot(self, axis=None, *args, levels=40, oxpoints=True, **kwargs):
+    def plot(self, axis=None, *args, levels=16, oxpoints=True, **kwargs):
         """ learn from freegs
         """
         if axis is None:
@@ -841,8 +914,8 @@ class Equilibrium(AttributeTree):
         Z = self.profiles_2d.z
         psi = self.profiles_2d.psi
 
-        # if type(levels) is int:
-        #     levels = np.linspace(self.global_quantities.psi_axis, self.global_quantities.psi_boundary, levels)
+        if type(levels) is int:
+            levels = np.linspace(self.global_quantities.psi_boundary, self.global_quantities.psi_axis,  levels)
 
         axis.contour(R, Z, psi, levels=levels, linewidths=0.2)
 
@@ -864,6 +937,9 @@ class Equilibrium(AttributeTree):
         axis.plot(self.global_quantities.magnetic_axis.r,
                   self.global_quantities.magnetic_axis.z, 'g.', label="Magnetic axis")
 
+        axis.plot(self.coordinate_system.r, self.coordinate_system.z, "b--", linewidth=0.1)
+        axis.plot(self.coordinate_system.r.transpose(1, 0),
+                  self.coordinate_system.z.transpose(1, 0), "b--", linewidth=0.1)
         return axis
 
     def plot_full(self, x_axis="psi_norm",  profiles=None, profiles_label=None, xlabel=r'$(\psi-\psi_{axis})/(\psi_{boundary}-\psi_{axis})$', *args, **kwargs):

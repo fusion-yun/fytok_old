@@ -47,7 +47,7 @@ class Tokamak(AttributeTree):
         config = AttributeTree()
         config.wall = entry.wall
         config.pf_active = entry.pf_active
-        config.equilibrium = entry.equilibrium.time_slice[itime].profiles_1d
+        config.equilibrium = entry.equilibrium.time_slice[itime]
         config.core_profiles = entry.core_profiles.profiles_1d[itime]
 
         for mode in entry.core_transports.mode:
