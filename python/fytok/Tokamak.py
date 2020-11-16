@@ -40,19 +40,18 @@ class Tokamak(AttributeTree):
         self.transport = Transport(config.transport, tokamak=self)
 
     @staticmethod
-    def load_imas(entry, itime=0):
-        if isinstance(entry, str):
-            entry = open_entry(entry)
+    def load_from(entry, *args, **kwargs):
 
+        entry = open_entry(entry, *args, **kwargs)
         config = AttributeTree()
         config.wall = entry.wall
         config.pf_active = entry.pf_active
-        config.equilibrium = entry.equilibrium.time_slice[itime]
-        config.core_profiles = entry.core_profiles.profiles_1d[itime]
+        config.equilibrium = entry.equilibrium.time_slice
+        config.core_profiles = entry.core_profiles.profiles_1d
 
         for mode in entry.core_transports.mode:
             config.core_transports.mode[_next_].identifier = mode.identifier
-            config.core_transports.mode[_last_].profiles_1d = mode.profiles_1d[itime]
+            config.core_transports.mode[_last_].profiles_1d = mode.profiles_1d
         for source in entry.core_sources.mode:
             config.core_sources.load(source)
         return Tokamak(config)

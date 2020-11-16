@@ -2,7 +2,8 @@ import os
 import pathlib
 
 from spdm.util.logger import logger
-from spdm.util.urilib import urisplit, uriunsplit
+from spdm.util.urilib import urisplit
+from spdm.util.AttributeTree import AttributeTree
 
 from ..Collection import Collection
 from spdm.data.plugins.PluginMapping import MappingCollection
@@ -10,11 +11,11 @@ from spdm.data.plugins.PluginMapping import MappingCollection
 
 class TokamakCollection(MappingCollection):
 
-    def __init__(self, uri, *args, source=None, id_hasher=None, device_name="EAST", mapping=None, **kwargs):
-        if isinstance(uri, str):
-            uri = urisplit(uri)
+    def __init__(self, desc, *args, source=None, id_hasher=None, device_name="EAST", mapping=None, **kwargs):
+        if isinstance(desc, str):
+            desc = urisplit(desc)
 
-        schema = uri.schema.split('+')
+        schema = desc.schema.split('+')
 
         self._device_name = (device_name or schema[0]).upper()
 
@@ -37,13 +38,18 @@ class TokamakCollection(MappingCollection):
 
         if source is None:
 
-            path = getattr(uri, "path", None) or pathlib.Path.home() / \
+            path = desc.path or pathlib.Path.home() / \
                 f"public_data/{self._device_name}/{SPDB_NAMELIST_VERSION}/~t"
 
-            source = Collection(uriunsplit(schema, uri.authority, path, None, uri.fragment),
-                                *args, **kwargs)
+            source = Collection(AttributeTree({
+                "schema": schema,
+                "authority": desc.authority,
+                "path": path,
+                "query": desc.query,
+                "fragment": desc.fragment
+            }),  *args, **kwargs)
 
-        super().__init__(uri, *args, source=source, mapping=mapping, id_hasher=id_hasher or "{shot}", **kwargs)
+        super().__init__(desc, *args, source=source, mapping=mapping, id_hasher=id_hasher or "{shot}", **kwargs)
 
 
-__SP_EXPORT__ = TokamakCollection 
+__SP_EXPORT__ = TokamakCollection

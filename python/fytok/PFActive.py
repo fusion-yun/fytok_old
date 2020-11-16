@@ -6,6 +6,7 @@ import numpy as np
 from spdm.util.AttributeTree import AttributeTree
 from spdm.util.logger import logger
 from spdm.util.LazyProxy import LazyProxy
+from spdm.util.urilib import urisplit
 
 
 class Coil(AttributeTree):
@@ -17,19 +18,16 @@ class PFActive(AttributeTree):
 
     def __init__(self, config, *args,  **kwargs):
         super().__init__(*args,  **kwargs)
+        self.load(config)
 
-            
-        coils = config.coil
-        circuit = config.circuit
-        supply = config.supply
+    def load(self, config):
 
-        if coils is None:
-            pass
-        elif isinstance(coils, LazyProxy):
-            for coil in coils:
+        if isinstance(config, LazyProxy):
+            for coil in config.coil:
                 if coil.element.geometry.geometry_type != 2:
                     raise NotImplementedError()
                 rect = coil.element.geometry.rectangle
+                
                 _, next_coil = self.coil.__push_back__()
                 next_coil.name = str(coil.name)
                 next_coil.r = float(rect.r)
