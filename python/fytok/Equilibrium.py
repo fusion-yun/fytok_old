@@ -13,6 +13,8 @@ from spdm.util.AttributeTree import AttributeTree, _next_
 from spdm.util.Interpolate import (Interpolate1D, Interpolate2D, derivate,
                                    find_critical, find_root, integral,
                                    interpolate)
+
+from spdm.util.utilities import first_not_empty
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.util.sp_export import sp_find_module
@@ -22,6 +24,10 @@ from .PFActive import PFActive
 from .Wall import Wall
 
 #  psi phi pressure f dpressure_dpsi f_df_dpsi j_parallel q magnetic_shear r_inboard r_outboard rho_tor rho_tor_norm dpsi_drho_tor geometric_axis elongation triangularity_upper triangularity_lower volume rho_volume_norm dvolume_dpsi dvolume_drho_tor area darea_dpsi surface trapped_fraction gm1 gm2 gm3 gm4 gm5 gm6 gm7 gm8 gm9 b_field_max beta_pol mass_density
+
+
+def first_not_empty(*args):
+    return next(x for x in args if len(x) > 0)
 
 
 class Equilibrium(AttributeTree):
@@ -81,7 +87,7 @@ class Equilibrium(AttributeTree):
         if cls is not Equilibrium:
             return super(Equilibrium, cls).__new__(cls)
 
-        backend = str(config.engine or "")
+        backend = str(config.engine or "FreeGS")
         n_cls = cls
 
         if backend != "":
@@ -116,27 +122,22 @@ class Equilibrium(AttributeTree):
         # ----------------------------------------------------------
         npsi = config.npsi or kwargs.get("npsi", None) or 16
         ntheta = config.ntheta or kwargs.get("ntheta", None) or 64
-        self.coordinate_system = Equilibrium.CoordinateSystem(
-            self, [npsi, ntheta], grid_type=config.coordinate_system.grid_type.index or 0)
-
-        self.constraints = Equilibrium.Constraints(self)
-
-        self.vacuum_toroidal_field.r0 = self.tokamak.vacuum_toroidal_field.r0
-        self.vacuum_toroidal_field.b0 = 1.0
 
         self.__dict__["_time"] = 0.0
 
     def load(self, config):
-        self._data_src_lazy = config
+        self._cache = config
 
     @cached_property
-    def _data(self):
-        if isinstance(self._data_src_lazy, LazyProxy):
-            return self._data_src_lazy()
-        elif isinstance(self._data_src_lazy, AttributeTree):
-            return self._data_src_lazy
+    def cache(self):
+        if isinstance(self._cache, LazyProxy):
+            res = self._cache()
+        elif isinstance(self._cache, AttributeTree):
+            res = self._cache
         else:
-            return AttributeTree(self._data_src_lazy)
+            res = AttributeTree(self._cache)
+
+        return res
 
     def _solve(self, *args, **kwargs):
         raise NotImplementedError()
@@ -176,6 +177,13 @@ class Equilibrium(AttributeTree):
         self.clear_cache()
 
     @cached_property
+    def vacuum_toroidal_field(self):
+        return AttributeTree(
+            r0=self.tokamak.vacuum_toroidal_field.r0,
+            b0=self.tokamak.vacuum_toroidal_field.b0
+        )
+
+    @cached_property
     def profiles_1d(self):
         return Equilibrium.Profiles1D(self)
 
@@ -196,11 +204,18 @@ class Equilibrium(AttributeTree):
         return Equilibrium.BoundarySeparatrix(self)
 
     @cached_property
-    def critical_points(self):
-        psi = self.profiles_2d.psi
+    def constraints(self):
+        return Equilibrium.Constraints(self)
 
-        if not isinstance(psi, Interpolate2D):
-            psi = Interpolate2D(self.profiles_2d.grid.dim1, self.profiles_2d.grid.dim2, psi)
+    @cached_property
+    def coordinate_system(self):
+        return Equilibrium.CoordinateSystem(self)
+
+    @cached_property
+    def critical_points(self):
+        psi = Interpolate2D(self.profiles_2d.grid.dim1[1:-1],
+                            self.profiles_2d.grid.dim2[1:-1],
+                            self.profiles_2d.psi[1:-1, 1:-1])
 
         limiter_points = np.array([self.tokamak.wall.limiter.outline.r,
                                    self.tokamak.wall.limiter.outline.z]).transpose([1, 0])
@@ -209,10 +224,10 @@ class Equilibrium(AttributeTree):
         opoints = []
         xpoints = []
         for r, z, tag in find_critical(psi):
-            logger.debug((r, z, tag))
+
             # Remove points outside the vacuum wall
-            # if not limiter_polygon.encloses(Point(r, z)):
-            #     continue
+            if not limiter_polygon.encloses(Point(r, z)):
+                continue
 
             if tag < 0.0:  # saddle/X-point
                 xpoints.append((r, z, psi(r, z)))
@@ -283,14 +298,19 @@ class Equilibrium(AttributeTree):
             #     yield r0 + R * sin(theta), z0 + R * cos(theta)
 
     @cached_property
-    def _surface_intergral(self):
+    def _surface_average(self):
+        logger.debug(f"Calculate magnetic flux surface averge")
+        assert(self.coordinate_system.grid is not NotImplemented and self.coordinate_system.grid is not None)
 
-        psi = Interpolate2D(self.profiles_2d.r[:, 0], self.profiles_2d.z[0, :], self.profiles_2d.psi)
+        psi = Interpolate2D(self.profiles_2d.grid.dim1[1:-1],
+                            self.profiles_2d.grid.dim2[1:-1],
+                            self.profiles_2d.psi[1:-1, 1:-1])
 
-        psi_norm = self.coordinate_system.grid.dim1
+        dim_psi = self.coordinate_system.grid.dim1
+        dim_theta = self.coordinate_system.grid.dim1
 
-        R = self.coordinate_system.grid.r
-        Z = self.coordinate_system.grid.z
+        R = self.coordinate_system.r
+        Z = self.coordinate_system.z
 
         dpsi_dr = psi(R, Z, dx=1)
         dpsi_dz = psi(R, Z, dy=1)
@@ -306,33 +326,36 @@ class Equilibrium(AttributeTree):
         # dl
         dl = sqrt(dR ** 2 + dZ ** 2)
 
-        fpol = self.equilibrium.proflies_1d.f(self.coordinate_system.grid.dim1)
-
+        # fpol = self.profiles_1d.f
+        fpol = self.profiles_1d.fpol
         # B= fpol grad phi  + grad psi \time grad phi
-        B2 = fpol ** 2+dpsi_dr**2 + dpsi_dz**2
+        B2 = dpsi_dr**2 + dpsi_dz**2  # + fpol ** 2
 
         # Vprime =  2 *pi* int( R / |grad psi| * dl )
-        Vprime = (2*scipy.constants.pi) * sum(R/grad_psi_s*dl, axis=1)
+        Vprime = (2*scipy.constants.pi) * np.sum(R/grad_psi_s*dl, axis=1)
 
         # <R^-2> =  int(R^-2 * dl * R / |grad psi|)/Vprime
-        gm1 = (2*scipy.constants.pi) * sum(dl/grad_psi_s/R, axis=1) / Vprime
+        gm1 = (2*scipy.constants.pi) * np.sum(dl/grad_psi_s/R, axis=1) / Vprime
 
         # q(psi) = F Vprime <R^-2> /(4 pi**2)
         q = fpol*Vprime * gm1 / (4*scipy.constants.pi**2)
 
         # phi= int (q)
-        phi = [Interpolate1D(psi_norm, q, p) for p in psi_norm]
+        # phi = [Interpolate1D(psi_norm, q, p) for p in psi_norm]
+        phi = dim_psi  # FIXME
 
-        drho_tor_dpsi = q*sqrt(scipy.constants.pi/(phi*self._eq.vacuum_toroidal_field.b0))
+        drho_tor_dpsi = q*sqrt(scipy.constants.pi/(phi*self.vacuum_toroidal_field.b0))
 
         # <(grad rho)**2>
-        gm3 = (2*scipy.constants.pi) * sum(grad_psi_s*R*dl, axis=1) / Vprime
+        gm3 = (2*scipy.constants.pi) * np.sum(grad_psi_s*R*dl, axis=1) / Vprime
 
         # <(grad rho)**2/B**2>
-        gm6 = (2*scipy.constants.pi) * sum(drho_tor_dpsi*R*dl/B2, axis=1) / Vprime
+        gm6 = (2*scipy.constants.pi) * drho_tor_dpsi * np.sum(R*dl/B2, axis=1) / Vprime
 
         # <R>
-        gm8 = (2*scipy.constants.pi) * sum(R*R*dl/drho_tor_dpsi, axis=1) / Vprime
+        gm8 = (2*scipy.constants.pi) * np.sum(R*R*dl, axis=1) / drho_tor_dpsi / Vprime
+
+        logger.debug(f"Calculate magnetic flux surface averge: Done")
 
         return AttributeTree({
             "vprime": Vprime,
@@ -371,36 +394,36 @@ class Equilibrium(AttributeTree):
                                     0x?4  : constant volume
         """
 
-        def __init__(self, eq, shape=[120, 129], *args, grid_type=0, **kwargs):
+        def __init__(self, eq,  *args, grid=None, grid_type=None, **kwargs):
 
             super().__init__(*args, **kwargs)
             self.__dict__['_eq'] = eq
-            self.__dict__['_shape'] = shape
 
-            self.grid_type.index = int(grid_type)
-            self.grid_type.name = ""
-            self.grid_type.description = ""
-            self.grid.dim1 = np.linspace(0, 1.0, self._shape[0], endpoint=False)+0.5/(self._shape[0])
-            self.grid.dim2 = np.linspace(0, scipy.constants.pi*2.0, self._shape[1], endpoint=False) +\
-                scipy.constants.pi/(shape[1])
+            grid_type = grid_type or self._eq.cache.coordinate_system.grid_type
+            self.grid_type = {}
+            if not grid_type:
+                self.grid_type.index = 0
+                self.grid_type.name = ""
+                self.grid_type.description = ""
+            else:
+                self.grid_type = grid_type
 
-            self.grid.volume_element = NotImplemented
+            self.grid = grid or self._eq.cache.coordinate_system.grid or {"dim1": 31, "dim2": 128}
 
-        def _re_grid(self, grid_type, R, Z, psi_func):
-            raise NotImplementedError()
-            return R, Z
+            if np.issubdtype(self.grid.dim1, np.integer):
+                self.grid.dim1 = np.linspace(0, 1.0, self.grid.dim1)
+
+            if np.issubdtype(self.grid.dim2, np.integer):
+                self.grid.dim2 = np.linspace(0, scipy.constants.pi*2.0, self.grid.dim2,
+                                             endpoint=False) + scipy.constants.pi/self.grid.dim2
 
         @cached_property
         def _mesh(self):
-            logger.debug((self.grid.dim1[1]-self.grid.dim1[0], self.grid.dim1[2]-self.grid.dim1[1],
-                          self.grid.dim1[-1] - self.grid.dim1[0]-1))
-            logger.debug((self.grid.dim2[1]-self.grid.dim2[0], self.grid.dim2[2]-self.grid.dim2[1],
-                          self.grid.dim2[-1] - self.grid.dim2[0]-scipy.constants.pi*2.0))
+            psi = Interpolate2D(self._eq.profiles_2d.grid.dim1[1:-1],
+                                self._eq.profiles_2d.grid.dim2[1:-1],
+                                self._eq.profiles_2d.psi[1:-1, 1:-1])
 
-            psi = Interpolate2D(self._eq.profiles_2d.r[:, 0], self._eq.profiles_2d.z[0, :], self._eq.profiles_2d.psi)
-
-            R = np.full(self._shape, np.nan)
-            Z = np.full(self._shape, np.nan)
+            R, Z = np.meshgrid(self.grid.dim1, self.grid.dim2, indexing="ij")
 
             R0 = self._eq.global_quantities.magnetic_axis.r
             Z0 = self._eq.global_quantities.magnetic_axis.z
@@ -426,11 +449,10 @@ class Equilibrium(AttributeTree):
                                                            R0 + Rm * sin(theta),
                                                            Z0 + Rm * cos(theta))
             if self.grid_type.index == 0:
-                pass
+                return AttributeTree(r=R,  z=Z)
             else:
-                R, Z = self._re_grid(self.grid_type.index, R, Z, psi)
-
-            return AttributeTree({"r": R, "z": Z})
+                raise ValueError(f"Unknown grid type {self.grid_type}")
+                # return self._meshgrid(self.grid_type.index, R, Z, psi)
 
         @cached_property
         def _metric(self):
@@ -477,14 +499,6 @@ class Equilibrium(AttributeTree):
             self.__dict__['_eq'] = eq
 
     class GlobalQuantities(AttributeTree):
-
-        @staticmethod
-        def __new__(cls,   eq,  *args, **kwargs):
-            if cls is not Equilibrium.GlobalQuantities:
-                return super(Equilibrium.GlobalQuantities, cls).__new__(cls)
-            ncls = getattr(eq.__class__, cls.__name__, cls)
-            return AttributeTree.__new__(ncls)
-
         def __init__(self, eq, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self.__dict__['_eq'] = eq
@@ -492,17 +506,17 @@ class Equilibrium(AttributeTree):
         @property
         def beta_pol(self):
             """ Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip^2] {dynamic} [-]"""
-            return self._eq._data.global_quantities.beta_pol
+            return self._eq.cache.global_quantities.beta_pol
 
         @property
         def beta_tor(self):
             """ Toroidal beta, defined as the volume-averaged total perpendicular pressure divided by (B0^2/(2*mu0)), i.e. beta_toroidal = 2 mu0 int(p dV) / V / B0^2 {dynamic} [-]"""
-            return self._eq._data.global_quantities.beta_tor
+            return self._eq.cache.global_quantities.beta_tor
 
         @property
         def beta_normal(self):
             """ Normalised toroidal beta, defined as 100 * beta_tor * a[m] * B0 [T] / ip [MA] {dynamic} [-]"""
-            return self._eq._data.global_quantities.beta_normal
+            return self._eq.cache.global_quantities.beta_normal
 
         @property
         def ip(self):
@@ -517,7 +531,7 @@ class Equilibrium(AttributeTree):
         @property
         def volume(self):
             """ Total plasma volume {dynamic} [m^3]"""
-            return self._eq._data.global_quantities.volume
+            return self._eq.cache.global_quantities.volume
 
         @property
         def area(self):
@@ -537,12 +551,12 @@ class Equilibrium(AttributeTree):
         @property
         def psi_axis(self):
             """ Poloidal flux at the magnetic axis {dynamic} [Wb]."""
-            return self._eq._data.global_quantities.psi_axis or self._eq.critical_points[0][0][2]
+            return self._eq.cache.global_quantities.psi_axis or self._eq.critical_points[0][0][2]
 
         @property
         def psi_boundary(self):
             """ Poloidal flux at the selected plasma boundary {dynamic} [Wb]."""
-            return self._eq._data.global_quantities.psi_boundary or self._eq.critical_points[1][0][2]
+            return self._eq.cache.global_quantities.psi_boundary or self._eq.critical_points[1][0][2]
 
         @property
         def magnetic_axis(self):
@@ -580,41 +594,47 @@ class Equilibrium(AttributeTree):
             return NotImplemented
 
     class Profiles1D(AttributeTree):
-        @staticmethod
-        def __new__(cls,   eq,  *args, **kwargs):
-            if cls is not Equilibrium.Profiles1D:
-                return super(Equilibrium.Profiles1D, cls).__new__(cls)
-            ncls = getattr(eq.__class__, cls.__name__, cls)
-            return AttributeTree.__new__(ncls)
+        """Equilibrium profiles (1D radial grid) as a function of the poloidal flux	"""
 
-        def __init__(self, eq,  *args, psi_norm=None,  ** kwargs):
+        def __init__(self, eq,  *args, npsi=None,  ** kwargs):
             super().__init__(*args, **kwargs)
             self.__dict__["_eq"] = eq
-
-            if psi_norm is None:
-                self.psi_norm = self._eq.coordinate_system.grid.dim1
-            elif type(psi_norm) is int:
-                self.psi_norm = np.linspace(0, 1, psi_norm)
-            else:
-                self.psi_norm = np.array(psi_norm)
+            self.__dict__["_npsi"] = npsi or 129
 
         @cached_property
         def psi(self):
             """Poloidal flux {dynamic} [Wb]. """
-            psi_scale = self._eq.global_quantities.psi_boundary - self._eq.global_quantities.psi_axis
-            return (self.psi_norm)*psi_scale+self._eq.global_quantities.psi_axis
+            res = self._eq.cache.profiles_1d.psi
+            if res is not NotImplemented and res is not None and len(res) > 0:
+                pass
+            elif self.psi_norm is not NotImplemented and self.psi_norm is not None and len(self.psi_norm) > 0:
+                res = self.psi_norm * (self._eq.global_quantities.psi_boundary -
+                                       self._eq.global_quantities.psi_axis) + self._eq.global_quantities.psi_axis
+
+            return self._eq.cache.profiles_1d.psi
+
+        @cached_property
+        def psi_norm(self):
+            """Normalized poloidal flux {dynamic} [Wb]. """
+            res = self._eq.cache.profiles_1d.psi_norm
+            if res is NotImplemented or res is None or len(res) == 0:
+                res = np.linspace(0, 1, self._npsi)
+            return res
 
         @cached_property
         def phi(self):
             """Toroidal flux {dynamic} [Wb]."""
-            return self._eq._surface_intergral.phi
+            return self._eq._surface_average.phi
 
         @cached_property
         def pressure(self):
             """	Pressure {dynamic} [Pa]"""
             # pprime = self.dpresure_dpsi
             # return [pprime.integral(0, self.psi) for psi in self.psi]
-            return NotImplemented
+            res = self._eq.cache.profiles_1d.pressure
+            if len(res) == 0:
+                res = self._eq._surface_average.pressure
+            return res
 
         @cached_property
         def f(self):
@@ -622,14 +642,17 @@ class Equilibrium(AttributeTree):
             # ffprime = self.f_df_dpsi
             # f2 = [2*ffprime.integral(0, psi) for psi in self.psi]
             # return np.sqrt(f2)
-            return NotImplemented
+            res = self._eq.cache.profiles_1d.f
+
+            if len(res) == 0:
+                res = self._eq.cache.profiles_1d.fpol
+
+            if res is NotImplemented or res is None or len(res) == 0:
+                raise KeyError("f")
+            return res
 
         @cached_property
         def fpol(self):
-            return self.f
-
-        @cached_property
-        def fdia(self):
             return self.f
 
         @cached_property
@@ -640,7 +663,12 @@ class Equilibrium(AttributeTree):
         @cached_property
         def dpressure_dpsi(self):
             """Derivative of pressure w.r.t. psi {dynamic} [Pa.Wb^-1]."""
-            return NotImplemented
+            res = self._eq.cache.profiles_1d.dpressure_dpsi
+            if len(res) == 0:
+                res = self._eq.cache.profiles_1d.pprime
+            if len(res) == 0:
+                res = self._eq._surface_average.pprime
+            return res
 
         @cached_property
         def ffprime(self):
@@ -650,7 +678,10 @@ class Equilibrium(AttributeTree):
         @cached_property
         def f_df_dpsi(self):
             """	Derivative of F w.r.t. Psi, multiplied with F {dynamic} [T^2.m^2/Wb]. """
-            return NotImplemented
+            res = self._eq.cache.profiles_1d.f_df_dpsi
+            if len(res) == 0:
+                res = self._eq.cache.profiles_1d.ffprime
+            return res
 
         @cached_property
         def j_tor(self):
@@ -665,7 +696,10 @@ class Equilibrium(AttributeTree):
         @cached_property
         def q(self):
             """Safety factor (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic} [-]. """
-            return self._eq._surface_intergral.q
+            res = self._eq.cache.profiles_1d.q
+            if len(res) == 0:
+                res = self._eq._surface_average.q
+            return res
 
         @cached_property
         def magnetic_shear(self):
@@ -685,7 +719,7 @@ class Equilibrium(AttributeTree):
         @cached_property
         def rho_tor(self):
             """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0 {dynamic} [m]"""
-            b0 = self._eq.vacuum_toroidal_field.b0 or 1.0
+            b0 = self._eq.vacuum_toroidal_field.b0
             return np.sqrt(self.phi)/np.sqrt(scipy.constants.pi*b0)
 
         @cached_property
@@ -719,7 +753,7 @@ class Equilibrium(AttributeTree):
         @cached_property
         def dvolume_dpsi(self):
             """Radial derivative of the volume enclosed in the flux surface with respect to Psi {dynamic} [m^3.Wb^-1]. """
-            return self._eq._surface_intergral.dvolume_dpsi
+            return self._eq._surface_average.dvolume_dpsi
 
         @cached_property
         def dvolume_drho_tor(self)	:
@@ -779,7 +813,7 @@ class Equilibrium(AttributeTree):
         @cached_property
         def gm3(self):
             """ Flux surface averaged |grad_rho_tor|^2 {dynamic} [-]	"""
-            return self._eq._surface_intergral.gm3
+            return self._eq._surface_average.gm3
 
         @cached_property
         def gm4(self):
@@ -794,7 +828,7 @@ class Equilibrium(AttributeTree):
         @cached_property
         def gm6(self):
             """ Flux surface averaged |grad_rho_tor|^2/B^2 {dynamic} [T^-2]	"""
-            return self._eq._surface_intergral.gm6
+            return self._eq._surface_average.gm6
 
         @cached_property
         def gm7(self):
@@ -804,7 +838,7 @@ class Equilibrium(AttributeTree):
         @cached_property
         def gm8(self):
             """ Flux surface averaged R {dynamic} [m]	"""
-            return self._eq._surface_intergral.gm8
+            return self._eq._surface_average.gm8
 
         @cached_property
         def gm9(self):
@@ -812,12 +846,9 @@ class Equilibrium(AttributeTree):
             return NotImplemented
 
     class Profiles2D(AttributeTree):
-        @staticmethod
-        def __new__(cls,   eq,  *args, **kwargs):
-            if cls is not Equilibrium.Profiles2D:
-                return super(Equilibrium.Profiles2D, cls).__new__(cls)
-            ncls = getattr(eq.__class__, cls.__name__, cls)
-            return AttributeTree.__new__(ncls)
+        """
+            Equilibrium 2D profiles in the poloidal plane. 
+        """
 
         def __init__(self, eq, *args, grid=None,  ** kwargs):
             super().__init__(*args, **kwargs)
@@ -825,50 +856,126 @@ class Equilibrium(AttributeTree):
 
         @cached_property
         def grid_type(self):
-            if self._grid_type_index != 1:
-                raise NotImplementedError
-            return AttributeTree({
-                "name": "rectangular",
-                "index": 1,
-                "description": """ Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). In this case the position
+            res = self._eq.cache.profiles_2d.grid_type
+            if res is NotImplemented or res is None:
+                res = AttributeTree({
+                    "name": "rectangular",
+                    "index": 1,
+                    "description": """ Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). In this case the position
             arrays should not be filled since they are redundant with grid/dim1 and dim2."""})
+
+            return res
 
         @cached_property
         def grid(self):
             return AttributeTree(
-                dim1=self._eq._data.profiles_2d.grid.dim1,
-                dim2=self._eq._data.profiles_2d.grid.dim2
+                dim1=self._eq.cache.profiles_2d.grid.dim1,
+                dim2=self._eq.cache.profiles_2d.grid.dim2
             )
 
         @cached_property
-        def rz(self):
-            r, z = np.meshgrid(self.grid.dim1, self.grid.dim2)
-            return AttributeTree(r=r, z=z)
+        def _rectangular(self):
+            if not self.grid_type.index or self.grid_type.index == 1:
+                r, z = np.meshgrid(self.grid.dim1, self.grid.dim2, indexing='ij')
+                return AttributeTree(r=r, z=z)
+            else:
+                return AttributeTree(r=NotImplemented, z=NotImplemented)
 
         @cached_property
         def r(self):
-            return self.rz.r
+            """Values of the major radius on the grid {dynamic} [m] """
+            res = self._eq.cache.profiles_2d.r
+            if res is NotImplemented or res is None or len(res) == 0:
+                res = self._rectangular.r
+            return res
 
         @cached_property
         def z(self):
-            return self.rz.z
+            """Values of the Height on the grid {dynamic} [m] """
+            res = self._eq.cache.profiles_2d.z
+            if res is NotImplemented or res is None or len(res) == 0:
+                res = self._rectangular.z
+            return res
+
+        @cached_property
+        def _rho_polar(self):
+            if self.grid_type.index > 1 and self.grid_type.index < 91:
+                psi, theta = np.meshgrid(self.grid.dim1, self.grid.dim2, indexing='ij')
+                return AttributeTree(psi=psi, thetaz=theta)
+            else:
+                return AttributeTree(psi=NotImplemented, theta=NotImplemented)
 
         @cached_property
         def psi(self):
-            return self._eq._data.profiles_2d.psi
+            """Values of the poloidal flux at the grid in the poloidal plane {dynamic} [Wb]. """
+            res = self._eq.cache.profiles_2d.psi
+            if res is NotImplemented or res is None or len(res) == 0:
+                res = self._rho_polar.psi
+            return res
+
+        @cached_property
+        def theta(self):
+            """	Values of the poloidal angle on the grid {dynamic} [rad] """
+            res = self._eq.cache.profiles_2d.theta
+            if res is NotImplemented or res is None or len(res) == 0:
+                res = self._rho_polar.theta
+
+            return res
+
+        @cached_property
+        def phi(self):
+            """	Toroidal flux {dynamic} [Wb]"""
+            return NotImplemented
+
+        @cached_property
+        def j_tor(self):
+            """	Toroidal plasma current density {dynamic} [A.m^-2]"""
+            return NotImplemented
+
+        @cached_property
+        def j_parallel(self):
+            """	Parallel (to magnetic field) plasma current density {dynamic} [A.m^-2]"""
+            return NotImplemented
+
+        @cached_property
+        def _b_field(self):
+            """Values of the major radius on the grid {dynamic} [m] """
+            return AttributeTree(
+                r=None,
+                z=None,
+                tor=None
+            )
+
+        @cached_property
+        def b_field_r(self):
+            """R component of the poloidal magnetic field {dynamic} [T]"""
+            res = self._eq.cache.profiles_2d.b_field_r
+            if res is NotImplemented or res is None or len(res) == 0:
+                res = self._b_field.r
+            return res
+
+        @cached_property
+        def b_field_z(self):
+            """Z component of the poloidal magnetic field {dynamic} [T]"""
+            res = self._eq.cache.profiles_2d.b_field_z
+            if res is NotImplemented or res is None or len(res) == 0:
+                res = self._b_field.z
+            return res
+
+        @cached_property
+        def b_field_tor(self):
+            """Toroidal component of the magnetic field {dynamic} [T]"""
+            res = self._eq.cache.profiles_2d.b_field_tor
+            if res is not NotImplemented and res is not None and len(res) > 0:
+                pass
+            else:
+                res = self._b_field.tor
+            return res
 
     class Boundary(AttributeTree):
-        @staticmethod
-        def __new__(cls,   eq,  *args, **kwargs):
-            if cls is not Equilibrium.Boundary:
-                return super(Equilibrium.Boundary, cls).__new__(cls)
-            ncls = getattr(eq.__class__, cls.__name__, cls)
-            return AttributeTree.__new__(ncls)
-
         def __init__(self, eq, *args,   ntheta=None, ** kwargs):
             super().__init__(*args, **kwargs)
             self._eq = eq
-            self.__dict__['_ntheta'] = ntheta or len(self._eq.coordinate_system.grid.dim2)
 
         @cached_property
         def type(self):
@@ -879,8 +986,8 @@ class Equilibrium(AttributeTree):
         def outline(self):
             """ RZ outline of the plasma boundary  """
 
-            r = self._eq._data.boundary.outline.r
-            z = self._eq._data.boundary.outline.z
+            r = self._eq.cache.boundary.outline.r
+            z = self._eq.cache.boundary.outline.z
 
             if len(r) == 0 or len(z) == 0:
                 boundary = np.array([p for p in self._eq.find_surface(1.0)])
@@ -965,13 +1072,6 @@ class Equilibrium(AttributeTree):
             return NotImplemented
 
     class BoundarySeparatrix(AttributeTree):
-        @staticmethod
-        def __new__(cls,   eq,  *args, **kwargs):
-            if cls is not Equilibrium.BoundarySeparatrix:
-                return super(Equilibrium.BoundarySeparatrix, cls).__new__(cls)
-            ncls = getattr(eq.__class__, cls.__name__, cls)
-            return AttributeTree.__new__(ncls)
-
         def __init__(self, eq, *args,  ** kwargs):
             super().__init__(*args, **kwargs)
             self._eq = eq
@@ -988,21 +1088,21 @@ class Equilibrium(AttributeTree):
         R = self.profiles_2d.r
         Z = self.profiles_2d.z
         psi = self.profiles_2d.psi
-        # psi = (psi - self.global_quantities.psi_axis) / \
-        #     (self.global_quantities.psi_boundary - self.global_quantities.psi_axis)
 
-        # if type(levels) is int:
-        #     levels = np.linspace(-1, 1,  levels)
+        psi = (psi - self.global_quantities.psi_axis) / \
+            (self.global_quantities.psi_boundary - self.global_quantities.psi_axis)
 
-        axis.contour(R, Z, psi, levels=levels, linewidths=0.2)
+        if type(levels) is int:
+            levels = np.linspace(-2, 2,  levels)
 
+        axis.contour(R[1:-1, 1:-1], Z[1:-1, 1:-1], psi[1:-1, 1:-1], levels=levels, linewidths=0.2)
 
         for idx, p in enumerate(self.boundary.x_point):
             axis.plot(p.r, p.z, 'rx')
             axis.text(p.r, p.z, idx)
 
-        boundary_points = np.array([self.boundary.outline.r.transpose([1, 0])[0],
-                                    self.boundary.outline.z.transpose([1, 0])[0]]).transpose([1, 0])
+        boundary_points = np.array([self.boundary.outline.r,
+                                    self.boundary.outline.z]).transpose([1, 0])
 
         axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
                                    linewidth=0.5, fill=False, closed=True))
@@ -1011,49 +1111,58 @@ class Equilibrium(AttributeTree):
         axis.plot(self.global_quantities.magnetic_axis.r,
                   self.global_quantities.magnetic_axis.z, 'g.', label="Magnetic axis")
 
-        # # axis.plot(self.coordinate_system.r, self.coordinate_system.z, "b--", linewidth=0.1)
-        # axis.plot(self.coordinate_system.r.transpose(1, 0),
-        #           self.coordinate_system.z.transpose(1, 0), "b--", linewidth=0.1)
         return axis
 
-    def plot_full(self, x_axis="psi_norm",  profiles=None, profiles_label=None, xlabel=r'$(\psi-\psi_{axis})/(\psi_{boundary}-\psi_{axis})$', *args, **kwargs):
+    def plot_surface_mesh(self, axis):
+        axis.plot(self.coordinate_system.r, self.coordinate_system.z, "b--", linewidth=0.1)
+        axis.plot(self.coordinate_system.r.transpose(1, 0),
+                  self.coordinate_system.z.transpose(1, 0), "b--", linewidth=0.1)
+        return axis
+
+    def plot_full(self,  profiles=None, *args,
+                  x_axis={"key": "psi_norm", "label": r'$(\psi-\psi_{axis})/(\psi_{boundary}-\psi_{axis})$'},
+                  **kwargs):
 
         if isinstance(profiles, str):
             profiles = profiles.split(",")
         elif profiles is None:
-            profiles = [("q", r"q", r"$[-]$"),
-                        ("pprime", r"$p^{\prime}$", r"$[Pa / Wb]$"),
-                        ("ffprime", r"$f f^{\prime}$", r"$[T^2.m^2/Wb]$"),
-                        ("fpol", r"$f_{pol}$", r"$[T \cdot m]$"),
-                        ("pressure", r"pressure", r"$[Pa]$")]
+            profiles = [
+                ("q", r"q", r"$[-]$"),
+                ("pprime", r"$p^{\prime}$", r"$[Pa/Wb]$"),
+                ("ffprime", r"$f f^{\prime}$", r"$[T^2 \cdot m^2/Wb]$"),
+                ("fpol", r"$f_{pol}$", r"$[T \cdot m]$"),
+                # ("pressure", r"pressure", r"$[Pa]$")
+            ]
 
         def fetch_profile(p):
             if isinstance(p, str):
-                p = {"key": p, "label": p}
+                p = AttributeTree(key=p)
             elif isinstance(p, tuple):
                 key, label, unit = p
-                p = {"key": key, "label": label, "unit": unit}
+                p = AttributeTree(key=key,  label=label, unit=unit)
+            elif not isinstance(p, AttributeTree):
+                p = AttributeTree(p)
 
             try:
                 d = self.profiles_1d[p["key"]]
-            except KeyError:
+            except KeyError as error:
+                logger.warning(f"Plot profile  failed!  {error}")
                 d = None
 
             if d is None or d is NotImplemented or len(d) == 0:
-                logger.warning(f"Plot profile '{p}' failed!")
+                pass
             else:
-                p["data"] = d
+                p.data = d
 
             return p
 
         x_axis = fetch_profile(x_axis)
 
-        profiles = [p for p in map(fetch_profile, profiles) if p.get("data", None) is not None]
+        assert (x_axis.data is not NotImplemented)
+
+        profiles = [p for p in map(fetch_profile, profiles) if len(p.data) > 0]
 
         nprofiles = len(profiles)
-
-        if nprofiles == 0:
-            return self.plot(*args, **kwargs)
 
         fig, axs = plt.subplots(ncols=2, nrows=nprofiles, sharex=True)
         gs = axs[0, 1].get_gridspec()
@@ -1071,22 +1180,19 @@ class Equilibrium(AttributeTree):
         ax_right.set_ylabel(r"Height $Z$ [m]")
         ax_right.legend()
 
-        x = x_axis["data"]
-
-        if profiles_label is None:
-            profiles_label = profiles
-
         for idx, p in enumerate(profiles):
-            axs[idx, 0].plot(x, p["data"],  label=p["label"])
-            unit = p.get("unit", None)
-            if unit is not None:
-                axs[idx, 0].set_ylabel(unit)
-            axs[idx, 0].legend()
 
-        axs[nprofiles-1, 0].set_xlabel(x_axis["label"]+x_axis.get("unit", ""))
+            axs[idx, 0].plot(x_axis.data, p.data)
+            # if p.unit is not None:
+            axs[idx, 0].set_ylabel(f"{p.label or p.key}{p.unit or '[-]'}")
+            # axs[idx, 0].legend()
+
+        axs[nprofiles-1, 0].set_xlabel(x_axis.label+(x_axis.unit or ""))
 
         fig.tight_layout()
         fig.subplots_adjust(hspace=0)
+        fig.align_ylabels()
+
         return fig
 
     # # Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip^2] {dynamic} [-]	FLT_0D

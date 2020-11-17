@@ -1,7 +1,7 @@
 import collections
 import copy
 import math
-
+from functools import cached_property
 import matplotlib.pyplot as plt
 import numpy as np
 from spdm.data.Entry import open_entry
@@ -22,39 +22,60 @@ class Tokamak(AttributeTree):
 
     def __init__(self,  config=None,  *args,    **kwargs):
         super().__init__()
+        self.load(config)
+        # if config is None:
+        #     config = AttributeTree()
 
-        if config is None:
-            config = AttributeTree()
+        # self.vacuum_toroidal_field = config.vacuum_toroidal_field
 
-        self.wall = Wall(config.wall)
-        self.pf_active = PFActive(config.pf_active)
-
-        if not self.vacuum_toroidal_field.r0:  # FIXME: r0 should load from configure file
-            lim_r = self.wall.limiter.outline.r
-            self.vacuum_toroidal_field.r0 = (min(lim_r)+max(lim_r))*0.5
-
-        self.equilibrium = Equilibrium(config.equilibrium, tokamak=self)
-        self.core_profiles = CoreProfiles(config.core_profiles, tokamak=self)
-        self.core_transports = CoreTransports(config.core_transports, tokamak=self)
-        self.core_sources = CoreSources(config.core_sources, tokamak=self)
-        self.transport = Transport(config.transport, tokamak=self)
+        # if not self.vacuum_toroidal_field.r0:
+        #     lim_r = self.wall.limiter.outline.r
+        #     self.vacuum_toroidal_field.r0 = (min(lim_r)+max(lim_r))*0.5
 
     @staticmethod
     def load_from(entry, *args, **kwargs):
+        return Tokamak(open_entry(entry, *args, **kwargs))
 
-        entry = open_entry(entry, *args, **kwargs)
-        config = AttributeTree()
-        config.wall = entry.wall
-        config.pf_active = entry.pf_active
-        config.equilibrium = entry.equilibrium.time_slice
-        config.core_profiles = entry.core_profiles.profiles_1d
+    def load(self, config):
+        self._cache = config
 
-        for mode in entry.core_transports.mode:
-            config.core_transports.mode[_next_].identifier = mode.identifier
-            config.core_transports.mode[_last_].profiles_1d = mode.profiles_1d
-        for source in entry.core_sources.mode:
-            config.core_sources.load(source)
-        return Tokamak(config)
+    @cached_property
+    def vacuum_toroidal_field(self):
+        r0 = float(self._cache.equilibrium.vacuum_toroidal_field.r0)
+        b0 = float(self._cache.equilibrium.vacuum_toroidal_field.r0)
+
+        if not r0:
+            lim_r = self.wall.limiter.outline.r
+            r0 = (min(lim_r)+max(lim_r))*0.5
+        return AttributeTree(r0=r0, b0=b0)
+
+    @cached_property
+    def wall(self):
+        return Wall(self._cache.wall)
+
+    @cached_property
+    def pf_active(self):
+        return PFActive(self._cache.pf_active)
+
+    @cached_property
+    def equilibrium(self):
+        return Equilibrium(self._cache.equilibrium.time_slice, tokamak=self)
+
+    @cached_property
+    def core_profiles(self):
+        return CoreProfiles(self._cache.core_profiles, tokamak=self)
+
+    @cached_property
+    def core_transports(self):
+        return CoreTransports(self._cache.core_transports.mode, tokamak=self)
+
+    @cached_property
+    def core_sources(self):
+        return CoreSources(self._cache.core_sources.mode, tokamak=self)
+
+    @cached_property
+    def transport(self):
+        return Transport(self._cache.transport, tokamak=self)
 
     def save(self, uri, *args, **kwargs):
         raise NotImplementedError()

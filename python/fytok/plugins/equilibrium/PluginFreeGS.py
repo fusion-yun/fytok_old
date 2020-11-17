@@ -15,6 +15,7 @@ from ...Equilibrium import Equilibrium
 
 
 class EquilibriumFreeGS(Equilibrium):
+    
     def __init__(self,  config, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
 
@@ -30,32 +31,24 @@ class EquilibriumFreeGS(Equilibrium):
                 turns=coil.turns)
             eq_coils.append((coil.name, t_coil))
 
-        tokamak = freegs.machine.Machine(eq_coils, wall=eq_wall)
-
-        dim1 = self._grid_box.dim1
-        dim2 = self._grid_box.dim2
-
-        if config.profiles_2d.psi is NotImplemented:
-            psi = None
-        else:
-            psi =np.array( config.profiles_2d.psi())
-
-        self._backend = freegs.Equilibrium(
-            tokamak=tokamak,
-            Rmin=min(dim1), Rmax=max(dim1),
-            Zmin=min(dim2), Zmax=max(dim2),
-            nx=len(dim1), ny=len(dim2),
-            psi=psi,
-            boundary=freegs.boundary.freeBoundaryHagenow)
+        self._machine = freegs.machine.Machine(eq_coils, wall=eq_wall)
+        self._eq = None
 
     def _solve(self, profiles=None, constraints=None,  **kwargs):
+        if self._eq is None:
+            self._eq = freegs.Equilibrium(
+                tokamak=self._machine,
+                Rmin=min(self.profiles_2d.grid.dim1), Rmax=max(self.profiles_2d.grid.dim1),
+                Zmin=min(self.profiles_2d.grid.dim2), Zmax=max(self.profiles_2d.grid.dim2),
+                nx=len(self.profiles_2d.grid.dim1), ny=len(self.profiles_2d.grid.dim2),
+                psi=self.profiles_2d.psi,
+                current=self.global_quantities.ip or 0.0,
+                boundary=freegs.boundary.freeBoundaryHagenow)
 
         if profiles is None:
             profiles = {}
         elif not isinstance(profiles, collections.abc.Mapping):
             raise NotImplementedError()
-
-        self.vacuum_toroidal_field.b0 = profiles.get("B0", self.vacuum_toroidal_field.b0)
 
         fvec = self.vacuum_toroidal_field.b0 * self.vacuum_toroidal_field.r0
 
@@ -75,8 +68,8 @@ class EquilibriumFreeGS(Equilibrium):
             profiles = freegs.jtor.ConstrainBetapIp(profiles["betap"], profiles["ip"], fvec)
 
             logger.debug(f"""Create Profile: Constrain poloidal Beta and plasma current
-                     Plasma pressure on axis    ={pressure} [Pascals],  
-                     Plasma current Ip          ={ip} [Amps], 
+                     Plasma pressure on axis    ={pressure} [Pascals],
+                     Plasma current Ip          ={ip} [Amps],
                      fvec                       ={fvec} [T.m]""")
         else:
             # Plasma pressure on axis [Pascals]
@@ -87,142 +80,58 @@ class EquilibriumFreeGS(Equilibrium):
             profiles = freegs.jtor.ConstrainPaxisIp(pressure, ip, fvec, Raxis=Raxis)
 
             logger.debug(f"""Create Profile: Constrain pressure on axis and plasma current
-                     Plasma pressure on axis    ={pressure} [Pascals],  
-                     Plasma current Ip          ={ip} [Amps], 
+                     Plasma pressure on axis    ={pressure} [Pascals],
+                     Plasma current Ip          ={ip} [Amps],
                      fvec                       ={fvec} [T.m],
                      Raxis                      ={Raxis} [m]
                      """)
+        if constraints is None:
+            constraints = {}
+        psivals = constraints.get("psivals", None) or self.constraints.psivals or []
+        isoflux = constraints.get("isoflux", None) or self.constraints.isoflux or []
+        xpoints = constraints.get("xpoints", None) or self.constraints.xpoints or []
 
-        constraints = freegs.control.constrain(** (constraints or {}))
+        constraints = freegs.control.constrain(psivals=psivals, isoflux=isoflux, xpoints=xpoints)
 
         try:
-            freegs.solve(self._backend, profiles, constraints)
+            freegs.solve(self._eq, profiles, constraints)
         except ValueError as error:
             raise RuntimeError(f"Solve G-S equation failed [{self.__class__.__name__}]! {error}")
 
-    @property
-    def critical_points(self):
-        R = self.profiles_2d.r
-        Z = self.profiles_2d.z
-        psi = self.profiles_2d.psi
+        self._update_cache(self._eq)
 
-        # find magnetic axis (o-point) and x-points
-        opt, xpt = freegs.critical.find_critical(R, Z, psi)
+    def _update_cache(self, eq, ntheta=128):
+        psi_norm = self.profiles_1d.psi_norm
+        self._cache.profiles_1d.pprime = eq.pprime(psi_norm)
+        self._cache.profiles_1d.f_df_dpsi = eq.ffprime(psi_norm)
+        self._cache.profiles_1d.f = eq.fpol(psi_norm)
+        self._cache.profiles_1d.pressure = eq.pressure(psi_norm)
+        self._cache.profiles_1d.q = eq.q(psi_norm)
 
-        if not opt or not xpt:
-            raise RuntimeError(f"Can not find O-point or X-points!")
-        return opt, xpt
+        r, z = np.meshgrid(self.profiles_2d.grid.dim1, self.profiles_2d.grid.dim2, indexing="ij")
+        self._cache.profiles_2d.r = r
+        self._cache.profiles_2d.z = z
+        self._cache.profiles_2d.psi = eq.psiRZ(r, z)
+        self._cache.global_quantities.beta_pol = eq.poloidalBeta()
+        self._cache.global_quantities.ip = eq.plasmaCurrent()
+        self._cache.global_quantities.volume = eq.plasmaVolume()
 
-    class Profiles1D(Equilibrium.Profiles1D):
-        def __init__(self, eq, *args, **kwargs):
-            super().__init__(eq, *args, **kwargs)
-            self.__dict__['_backend'] = eq._backend
+        self._cache.boundary.psi = eq.psi_bndry
 
-        @cached_property
-        def pprime(self):
-            return self._backend.pprime(self.psi_norm)
+        brdy = eq.separatrix(ntheta)
 
-        @cached_property
-        def pressure(self):
-            return self._backend.pressure(self.psi_norm)
+        self._cache.boundary.outline.r = brdy[:, 0]
+        self._cache.boundary.outline.z = brdy[:, 1]
 
-        @cached_property
-        def f(self):
-            return self._backend.fpol(self.psi_norm)
+    # @property
+    # def critical_points(self):
+    #     R = self.profiles_2d.r
+    #     Z = self.profiles_2d.z
+    #     psi = self.profiles_2d.psi
 
-        @cached_property
-        def f_df_dpsi(self):
-            return self._backend.ffprime(self.psi_norm)
+    #     # find magnetic axis (o-point) and x-points
+    #     opt, xpt = freegs.critical.find_critical(R, Z, psi)
 
-        @cached_property
-        def q(self):
-            return self._backend.q(self.psi_norm)
-
-    class Profiles2D(Equilibrium.Profiles2D):
-        def __init__(self, eq, *args, **kwargs):
-            super().__init__(eq, *args, **kwargs)
-            self.__dict__['_backend'] = eq._backend
-
-        @cached_property
-        def r(self):
-            return self._backend.R
-
-        @cached_property
-        def z(self):
-            return self._backend.Z
-
-        @cached_property
-        def psi(self):
-            return self._backend.psiRZ(self.r, self.z)
-
-        @cached_property
-        def theta(self):
-            return NotImplemented
-
-        @cached_property
-        def phi(self):
-            return NotImplemented
-
-        @cached_property
-        def b_field_r(self):
-            return self._backend.Br(self.r, self.z)
-
-        @cached_property
-        def b_field_z(self):
-            return self._backend.BZ(self.r, self.z)
-
-        @cached_property
-        def b_field_tor(self):
-            return self._backend.Btor(self.r, self.z)
-
-    class GlobalQuantities(Equilibrium.GlobalQuantities):
-        def __init__(self, eq, *args, **kwargs):
-            super().__init__(eq, *args, **kwargs)
-            self.__dict__['_backend'] = eq._backend
-
-        @property
-        def beta_pol(self):
-            # Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip^2] {dynamic} [-]
-            return self._backend.poloidalBeta()
-
-        @property
-        def ip(self):
-            # Plasma current (toroidal component). Positive sign means anti-clockwise when viewed from above. {dynamic} [A].
-            return self._backend.plasmaCurrent()
-
-        @property
-        def volume(self):
-            # Total plasma volume {dynamic} [m^3]
-            return self._backend.plasmaVolume()
-
-        @property
-        def magnetic_axis(self):
-            """ Magnetic axis position and toroidal field	structure"""
-            res = super().magnetic_axis
-            res.b_field_tor = self._backend.Btor(res.r, res.z)
-            return res
-
-    class Boundary(Equilibrium.Boundary):
-        def __init__(self, eq, *args, **kwargs):
-            super().__init__(eq, *args, **kwargs)
-            self.__dict__['_backend'] = eq._backend
-
-        @cached_property
-        def psi(self):
-            """ Value of the poloidal flux at which the boundary is taken {dynamic} [Wb]"""
-            return self._backend.psi_bndry
-
-        @cached_property
-        def outline(self):
-            opt, xpt = self._eq.critical_points
-
-            lcfs = np.array(freegs.critical.find_separatrix(
-                self._backend,
-                opoint=opt,
-                xpoint=xpt,
-                ntheta=self._ntheta))
-
-            return AttributeTree({
-                "r": lcfs[:, 0],
-                "z": lcfs[:, 1]
-            })
+    #     if not opt or not xpt:
+    #         raise RuntimeError(f"Can not find O-point or X-points!")
+    #     return opt, xpt
