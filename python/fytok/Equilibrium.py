@@ -359,7 +359,7 @@ class Equilibrium(AttributeTree):
 
         return AttributeTree({
             "vprime": Vprime,
-            "q": q,
+            "q1": q,
             "phi": phi,
             "drho_tor_dpsi": drho_tor_dpsi,
             "gm1": gm1,
@@ -702,6 +702,11 @@ class Equilibrium(AttributeTree):
             return res
 
         @cached_property
+        def q1(self):
+            """Safety factor (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic} [-]. """
+            return self._eq._surface_average.q1
+
+        @cached_property
         def magnetic_shear(self):
             """Magnetic shear, defined as rho_tor/q . dq/drho_tor {dynamic} [-]	 """
             return self.rho_tor/self.q * derivate(self.q, self.dpsi_drho_tor)
@@ -847,7 +852,7 @@ class Equilibrium(AttributeTree):
 
     class Profiles2D(AttributeTree):
         """
-            Equilibrium 2D profiles in the poloidal plane. 
+            Equilibrium 2D profiles in the poloidal plane.
         """
 
         def __init__(self, eq, *args, grid=None,  ** kwargs):
@@ -1079,7 +1084,7 @@ class Equilibrium(AttributeTree):
     ####################################################################################
     # Plot proflies
 
-    def plot(self, axis=None, *args, levels=32, oxpoints=True, **kwargs):
+    def plot(self, axis=None, *args, levels=32, oxpoints=True, coils=True, wall=True, **kwargs):
         """ learn from freegs
         """
         if axis is None:
@@ -1111,6 +1116,16 @@ class Equilibrium(AttributeTree):
         axis.plot(self.global_quantities.magnetic_axis.r,
                   self.global_quantities.magnetic_axis.z, 'g.', label="Magnetic axis")
 
+        if wall:
+            self.tokamak.wall.plot(axis, **kwargs.get("wall", {}))
+        if coils:
+            self.tokamak.pf_active.plot(axis, **kwargs.get("pf_active", {}))
+
+        axis.set_aspect('equal')
+        axis.set_xlabel(r"Major radius $R$ [m]")
+        axis.set_ylabel(r"Height $Z$ [m]")
+        axis.legend()
+
         return axis
 
     def plot_surface_mesh(self, axis):
@@ -1119,75 +1134,89 @@ class Equilibrium(AttributeTree):
                   self.coordinate_system.z.transpose(1, 0), "b--", linewidth=0.1)
         return axis
 
+    def fetch_profile(self, d):
+        if isinstance(d, str):
+            data = d
+            opts = {"label": d}
+        elif isinstance(d, collections.abc.Mapping):
+            data = d.get("name", None)
+            opts = d.get("opts", {})
+        elif isinstance(d, tuple):
+            data, opts = d
+        elif isinstance(d, AttributeTree):
+            data = d.data
+            opts = d.opts
+        else:
+            raise TypeError(f"Illegal profile type! {d}")
+
+        if isinstance(opts, str):
+            opts = {"label": opts}
+
+        if isinstance(data, str):
+            data = self.profiles_1d[data]
+        elif isinstance(data, list):
+            data = np.array(data)
+        elif isinstance(d, np.ndarray):
+            pass
+        else:
+            raise TypeError(f"Illegal data type! {type(data)}")
+
+        return data, opts
+
+    def plot_profiles(self, axis, x_axis, profiles):
+        if not isinstance(profiles, list):
+            profiles = [profiles]
+
+        for idx, data in enumerate(profiles):
+            ylabel = None
+            opts = {}
+            if isinstance(data, tuple):
+                data, ylabel = data
+            if isinstance(data, str):
+                ylabel = data
+
+            if not isinstance(data, list):
+                data = [data]
+
+            for d in data:
+                value, opts = self.fetch_profile(d)
+
+                if value is not NotImplemented and value is not None and len(value) > 0:
+                    axis[idx].plot(x_axis.data, value, **opts)
+
+            if isinstance(data, list) and len(data) > 1:
+                axis[idx].legend(fontsize=6)
+
+            if ylabel:
+                axis[idx].set_ylabel(ylabel, fontsize=6).set_rotation(0)
+            axis[idx].labelsize = "media"
+            axis[idx].tick_params(labelsize =6)
+        return axis[-1]
+
     def plot_full(self,  profiles=None, *args,
-                  x_axis={"key": "psi_norm", "label": r'$(\psi-\psi_{axis})/(\psi_{boundary}-\psi_{axis})$'},
+                  x_axis=("psi_norm",   r'$(\psi-\psi_{axis})/(\psi_{boundary}-\psi_{axis}) [-]$'),
                   **kwargs):
 
-        if isinstance(profiles, str):
-            profiles = profiles.split(",")
-        elif profiles is None:
-            profiles = [
-                ("q", r"q", r"$[-]$"),
-                ("pprime", r"$p^{\prime}$", r"$[Pa/Wb]$"),
-                ("ffprime", r"$f f^{\prime}$", r"$[T^2 \cdot m^2/Wb]$"),
-                ("fpol", r"$f_{pol}$", r"$[T \cdot m]$"),
-                # ("pressure", r"pressure", r"$[Pa]$")
-            ]
-
-        def fetch_profile(p):
-            if isinstance(p, str):
-                p = AttributeTree(key=p)
-            elif isinstance(p, tuple):
-                key, label, unit = p
-                p = AttributeTree(key=key,  label=label, unit=unit)
-            elif not isinstance(p, AttributeTree):
-                p = AttributeTree(p)
-
-            try:
-                d = self.profiles_1d[p["key"]]
-            except KeyError as error:
-                logger.warning(f"Plot profile  failed!  {error}")
-                d = None
-
-            if d is None or d is NotImplemented or len(d) == 0:
-                pass
-            else:
-                p.data = d
-
-            return p
-
-        x_axis = fetch_profile(x_axis)
+        x_axis, x_axis_opts = self.fetch_profile(x_axis)
 
         assert (x_axis.data is not NotImplemented)
 
-        profiles = [p for p in map(fetch_profile, profiles) if len(p.data) > 0]
+        if len(profiles) == 0:
+            fig, ax_right = plt.subplots(ncols=1, nrows=len(profiles), sharex=True)
+        else:
+            fig, axs = plt.subplots(ncols=2, nrows=len(profiles), sharex=True)
+            # left
+            ax_left = self.plot_profiles(axs[:, 0], x_axis, profiles)
 
-        nprofiles = len(profiles)
+            ax_left.set_xlabel(x_axis_opts.get("label", "[-]"), fontsize=6)
 
-        fig, axs = plt.subplots(ncols=2, nrows=nprofiles, sharex=True)
-        gs = axs[0, 1].get_gridspec()
-        # remove the underlying axes
-        for ax in axs[:, 1]:
-            ax.remove()
-        ax_right = fig.add_subplot(gs[:, 1])
+            # right
+            gs = axs[0, 1].get_gridspec()
+            for ax in axs[:, 1]:
+                ax.remove()  # remove the underlying axes
+            ax_right = fig.add_subplot(gs[:, 1])
 
-        self.tokamak.wall.plot(ax_right, **kwargs.get("wall", {}))
-        self.tokamak.pf_active.plot(ax_right, **kwargs.get("pf_active", {}))
         self.plot(ax_right, **kwargs.get("equilibrium", {}))
-
-        ax_right.set_aspect('equal')
-        ax_right.set_xlabel(r"Major radius $R$ [m]")
-        ax_right.set_ylabel(r"Height $Z$ [m]")
-        ax_right.legend()
-
-        for idx, p in enumerate(profiles):
-
-            axs[idx, 0].plot(x_axis.data, p.data)
-            # if p.unit is not None:
-            axs[idx, 0].set_ylabel(f"{p.label or p.key}{p.unit or '[-]'}")
-            # axs[idx, 0].legend()
-
-        axs[nprofiles-1, 0].set_xlabel(x_axis.label+(x_axis.unit or ""))
 
         fig.tight_layout()
         fig.subplots_adjust(hspace=0)

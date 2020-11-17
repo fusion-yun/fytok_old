@@ -43,13 +43,16 @@ if __name__ == "__main__":
 
     fig = tok.equilibrium.plot_full(
         profiles=[
-            ("q", r"q", r"$[-]$"),
-            ("pprime", r"$p^{\prime}$", r"$[Pa/Wb]$"),
-
-            ("rho_tor", r"$\rho_{tor}$", r"$[m]$"),
-            ("phi", r"$\Phi_{tor}$", r"$[Wb]$"),
-            ("dpsi_drho_tor", r"$d\psi/d\rho_{tor}$", r"$[Wb/m]$"),
-            ("vprime", r"$V^{\prime}$", r"$[m^3/Wb]$")
+            ([{"name": "q", "opts": {"label": r"$q_{exp}$"}},
+              {"name": "q1", "opts": {"label": r"$q_{average}$"}}],   r"$[-]$"),
+            ({"name": "pprime", "opts": {"label": r"$p^{\prime}$"}}, r"$p^{\prime}[Pa/Wb]$"),
+            ({"name": "ffprime", "opts": {"label": r"$f f^{\prime}$"}}, r"$f f^{\prime}[T^2 \cdot m^2/Wb]$"),
+            ({"name": "fpol", "opts": {"label":  r"$f_{pol}$"}}, r"$f_{pol}[T \cdot m]$"),
+            ({"name": "rho_tor", "opts": {"label": r"$\rho_{tor}$"}}, r"$\rho_{tor}[m]$"),
+            ({"name": "phi", "opts": {"label": r"$\Phi_{tor}$"}}, r"$\Phi_{tor}[Wb]$"),
+            ({"name": "dpsi_drho_tor", "opts": {"label": r"$d\psi/d\rho_{tor}$"}}, r"$d\psi/d\rho_{tor}[Wb/m]$"),
+            ({"name": "vprime", "opts": {"label": r"$V^{\prime}$"}}, r"$V^{\prime}[m^3/Wb]$")
+            # ("pressure", r"pressure", r"$[Pa]$")
         ]
     )
     fig.savefig("../output/tokamak.svg", transparent=True)
