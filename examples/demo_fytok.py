@@ -30,7 +30,7 @@ def draw(tok):
             ({"name": "vprime", "opts": {"label": r"$V^{\prime}$"}}, r"$[m^3/Wb]$"),
             ({"name": "gm1", "opts": {"label": r"$gm1=<R^{-2}>$"}}, r"$[m^{-2}]$"),
             ({"name": "gm3", "opts": {"label": r"$gm3: \left\langle  |\nabla\rho |^{2}\right\rangle $"}},  r"$\left[-\right]$"),
-            ({"name": "gm4", "opts": {"label": r"$gm4: \left\langle \frac{1}{B^{2}}\right\rangle$"}},   r"$\left[T^{-2}\right]$"),
+            # ({"name": "gm4", "opts": {"label": r"$gm4: \left\langle 1/B^{2} \right\rangle$"}},   r"$\left[T^{-2}\right]$"),
             ({"name": "gm5", "opts": {"label": r"$gm5: \left\langle B^{2}\right\rangle$"}},  r"$\left[T^2\right]$"),
             ({"name": "psi_norm", "opts": {"label": r"$\psi_{norm}$"}}, r"$[Wb]$")
         ],
@@ -69,13 +69,23 @@ if __name__ == "__main__":
     xpoints[0][1] -= 0.1
     xpoints[1][0] += 0.1
     xpoints[1][1] += 0.1
+
+
     tok.equilibrium.update(
-        psi=None,
+        # psi=None,
         constraints={
             # "psivals": psivals,
             "xpoints": xpoints,
             "isoflux": isoflux
         })
+    # tok.equilibrium.update(
+    #     psi=None,
+    #     constraints={
+    #         # "psivals": psivals,
+    #         "xpoints": xpoints,
+    #         "isoflux": isoflux
+    #     })
+
     draw(tok).savefig("../output/tokamak1.svg", transparent=True)
 
     # tok.equilibrium.plot().savefig("../output/tokamak1.svg", transparent=True)

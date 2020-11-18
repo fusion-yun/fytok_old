@@ -928,9 +928,6 @@ class Equilibrium(AttributeTree):
 
         axis.contour(R[1:-1, 1:-1], Z[1:-1, 1:-1], psi[1:-1, 1:-1], levels=levels, linewidths=0.2)
 
-        for idx, p in enumerate(self.boundary.x_point):
-            axis.plot(p.r, p.z, 'rx')
-            axis.text(p.r, p.z, idx)
         if boundary:
             boundary_points = np.array([self.boundary.outline.r,
                                         self.boundary.outline.z]).transpose([1, 0])
@@ -938,6 +935,12 @@ class Equilibrium(AttributeTree):
             axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
                                        linewidth=0.5, fill=False, closed=True))
             axis.plot([], [], 'r--', label="Separatrix")
+
+        for idx, p in enumerate(self.boundary.x_point):
+            axis.plot(p.r, p.z, 'rx')
+            axis.text(p.r, p.z, idx)
+
+        axis.plot([], [], 'rx', label="X-Point")
 
         axis.plot(self.global_quantities.magnetic_axis.r,
                   self.global_quantities.magnetic_axis.z, 'g.', label="Magnetic axis")
