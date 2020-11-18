@@ -1025,12 +1025,13 @@ class Equilibrium(AttributeTree):
             axis[idx].tick_params(labelsize=6)
         return axis[-1]
 
-    def plot_full(self,  profiles=None, *args,
-                  profiles_2d=[],
-                  vec_field=[],
-                  x_axis=("psi_norm",   r'$(\psi-\psi_{axis})/(\psi_{boundary}-\psi_{axis}) [-]$'),
-                  surface_mesh=False,
-                  **kwargs):
+    def plot(self, *args,
+             x_axis=("psi_norm",   r'$(\psi-\psi_{axis})/(\psi_{boundary}-\psi_{axis}) [-]$'),
+             profiles=None,
+             profiles_2d=[],
+             vec_field=[],
+             surface_mesh=False,
+             **kwargs):
 
         x_axis, x_axis_opts = self.fetch_profile(x_axis)
 

@@ -41,9 +41,9 @@ if __name__ == "__main__":
 
     # axis.axis("scaled")
 
-    fig = tok.equilibrium.plot_full(
-        x_axis=("psi_norm",   r'$(\psi-\psi_{axis})/(\psi_{boundary}-\psi_{axis}) [-]$'),
-        # x_axis=("rho_tor_norm",  r"$\rho_{tor}/\rho_{bndry}$"),
+    fig = tok.equilibrium.plot(
+        # x_axis=("psi_norm",   r'$(\psi-\psi_{axis})/(\psi_{boundary}-\psi_{axis}) [-]$'),
+        x_axis=("rho_tor_norm",  r"$\rho_{tor}/\rho_{bndry}$"),
         profiles=[
             ({"name": "psi_norm", "opts": {"label": r"$\psi_{norm}$"}}, r"$[Wb]$"),
             ({"name": "phi", "opts": {"label": r"$\Phi_{tor}$"}}, r"$[Wb]$"),
