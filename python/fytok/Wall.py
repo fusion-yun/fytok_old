@@ -6,6 +6,8 @@ import numpy as np
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.AttributeTree import AttributeTree
 from spdm.util.logger import logger
+from functools import cached_property
+from sympy import Point, Polygon
 
 
 class Wall(AttributeTree):
@@ -54,6 +56,21 @@ class Wall(AttributeTree):
         else:
             raise TypeError(f"Unknown type {type(vessel)}")
 
+    @cached_property
+    def limiter_polygon(self):
+        limiter_points = np.array([self.limiter.outline.r,
+                                   self.limiter.outline.z]).transpose([1, 0])
+        return Polygon(*map(Point, limiter_points))
+
+    @cached_property
+    def vessel_polygon(self):
+        vessel_inner_points = np.array([self.vessel.annular.outline_inner.r,
+                                        self.vessel.annular.outline_inner.z]).transpose([1, 0])
+
+        vessel_outer_points = np.array([self.vessel.annular.outline_outer.r,
+                                        self.vessel.annular.outline_outer.z]).transpose([1, 0])
+
+        return Polygon(*map(Point, vessel_inner_points)), Polygon(*map(Point, vessel_outer_points))
 
     def plot(self, axis=None, *args, **kwargs):
 

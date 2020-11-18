@@ -42,16 +42,23 @@ if __name__ == "__main__":
     # axis.axis("scaled")
 
     fig = tok.equilibrium.plot_full(
+        x_axis=("psi_norm",   r'$(\psi-\psi_{axis})/(\psi_{boundary}-\psi_{axis}) [-]$'),
+        # x_axis=("rho_tor_norm",  r"$\rho_{tor}/\rho_{bndry}$"),
         profiles=[
-            ([{"name": "q", "opts": {"label": r"$q_{exp}$"}},
-              {"name": "q1", "opts": {"label": r"$q_{average}$"}}],   r"$[-]$"),
-            ({"name": "pprime", "opts": {"label": r"$p^{\prime}$"}}, r"$p^{\prime}[Pa/Wb]$"),
-            ({"name": "ffprime", "opts": {"label": r"$f f^{\prime}$"}}, r"$f f^{\prime}[T^2 \cdot m^2/Wb]$"),
-            ({"name": "fpol", "opts": {"label":  r"$f_{pol}$"}}, r"$f_{pol}[T \cdot m]$"),
-            ({"name": "rho_tor", "opts": {"label": r"$\rho_{tor}$"}}, r"$\rho_{tor}[m]$"),
-            ({"name": "phi", "opts": {"label": r"$\Phi_{tor}$"}}, r"$\Phi_{tor}[Wb]$"),
-            ({"name": "dpsi_drho_tor", "opts": {"label": r"$d\psi/d\rho_{tor}$"}}, r"$d\psi/d\rho_{tor}[Wb/m]$"),
-            ({"name": "vprime", "opts": {"label": r"$V^{\prime}$"}}, r"$V^{\prime}[m^3/Wb]$")
+            ({"name": "psi", "opts": {"label": r"$\psi$"}}, r"$[Wb]$"),
+            ({"name": "rho_tor", "opts": {"label": r"$\rho_{tor}$"}}, r"$[m]$"),
+            # ({"name": "rho_tor_norm", "opts": {"label": r"$\rho_{tor}/\rho_{bndry}$"}}, r"[m]"),
+            # ({"name": "phi", "opts": {"label": r"$\Phi_{tor}$"}}, r"$[Wb]$"),
+            # ([{"name": "q", "opts": {"label": r"$q_{exp}$"}},
+            #   {"name": "flux_surface_average.q", "opts": {"label": r"$q_{average}$"}}],   r"$[-]$"),
+            ({"name": "pprime", "opts": {"label": r"$p^{\prime}$"}}, r"$[Pa/Wb]$"),
+            ({"name": "ffprime", "opts": {"label": r"$f f^{\prime}$"}}, r"$[T^2 \cdot m^2/Wb]$"),
+            ({"name": "fpol", "opts": {"label":  r"$f_{pol}$"}}, r"$[T \cdot m]$"),
+            ([{"name": "drho_tor_dpsi", "opts": {"label": r"$d\rho_{tor}/d\psi$"}}], r"$[m\cdot Wb]$"),
+            ({"name": "dpsi_drho_tor", "opts": {"label": r"$d\psi/d\rho_{tor}$"}}, r"$[Wb/m]$"),
+            ({"name": "vprime", "opts": {"label": r"$V^{\prime}$"}}, r"$[m^3/Wb]$"),
+            ({"name": "gm1", "opts": {"label": r"$gm1=<\frac{1}{R^2}>$"}}, r"$[m^{-2}]$")
+
             # ("pressure", r"pressure", r"$[Pa]$")
         ]
     )
