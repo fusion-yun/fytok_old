@@ -23,7 +23,7 @@ class Tokamak(AttributeTree):
     def __init__(self,  config=None,  *args,    **kwargs):
         super().__init__()
         self.load(config)
-        self._time = 0
+        self._time = None
         # if config is None:
         #     config = AttributeTree()
 
@@ -42,12 +42,24 @@ class Tokamak(AttributeTree):
 
     @property
     def time(self):
+        if self._time is None:
+            self._time = self.equilibrium.cache.time  # FIXME: this is a risk!
         return self._time
+
+    @time.setter
+    def time(self, value):
+        if self._time is not None:
+            dt = value-self._time
+            self.upate(dt=dt)
+            self._time = value
+        else:
+            self._time = value
+            self.upate()
 
     @cached_property
     def vacuum_toroidal_field(self):
         r0 = float(self._cache.equilibrium.vacuum_toroidal_field.r0)
-        b0 = float(self._cache.equilibrium.vacuum_toroidal_field.r0)
+        b0 = float(self._cache.equilibrium.vacuum_toroidal_field.b0)
 
         if not r0:
             lim_r = self.wall.limiter.outline.r
@@ -56,11 +68,15 @@ class Tokamak(AttributeTree):
 
     @cached_property
     def wall(self):
-        return Wall(self._cache.wall)
+        return Wall(self._cache.wall, tokamak=self)
+
+    @cached_property
+    def tf(self):
+        return PFActive(self._cache.tf, tokamak=self)
 
     @cached_property
     def pf_active(self):
-        return PFActive(self._cache.pf_active)
+        return PFActive(self._cache.pf_active, tokamak=self)
 
     @cached_property
     def equilibrium(self):
@@ -85,10 +101,10 @@ class Tokamak(AttributeTree):
     def save(self, uri, *args, **kwargs):
         raise NotImplementedError()
 
-    def update(self, *args, time=0.0,
+    def update(self, *args, ctx=None,
+               time=0.0,
                core_profiles=None,
-               ctx=None,
-               fvec=1.0,
+
                constraints=None,
                max_iters=1,
                tolerance=0.1,
@@ -104,7 +120,8 @@ class Tokamak(AttributeTree):
         for iter_count in range(max_iters):
             logger.debug(f"Iterator = {iter_count}")
 
-            self.equilibrium.update(profiles=self.transport.core_profiles, constraints=constraints)
+            self.equilibrium.update(profiles=self.core_profiles.interploate(["pprime", "ffprime"]),
+                                    constraints=constraints)
 
             self.core_transports.update(self.equilibrium, ctx=ctx)
 
@@ -129,7 +146,7 @@ class Tokamak(AttributeTree):
             if not pressure_iter:
                 convergence = True
             # elif math.sqrt(sum(self.transport.core_profiles.pressure-pressure_iter**2) /
-            #                sum(self.transport.core_profiles.pressure-pressure_iter**2)) < relative_deviation:
+            #                sum(self.transport.core_profiles.pressure-pressure_iter**2)) < tolerance:
             #     convergence = True
             #     break
 

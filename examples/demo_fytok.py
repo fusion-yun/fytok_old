@@ -29,7 +29,8 @@ def draw(tok):
               ], r"$[-]$"),
             ({"name": "vprime", "opts": {"label": r"$V^{\prime}$"}}, r"$[m^3/Wb]$"),
             ({"name": "gm1", "opts": {"label": r"$gm1=<R^{-2}>$"}}, r"$[m^{-2}]$"),
-            ({"name": "gm3", "opts": {"label": r"$gm3: \left\langle  |\nabla\rho |^{2}\right\rangle $"}},  r"$\left[-\right]$"),
+            ({"name": "gm3", "opts": {"label": r"$gm3: \left\langle  |\nabla\rho |^{2}\right\rangle $"}},
+             r"$\left[-\right]$"),
             # ({"name": "gm4", "opts": {"label": r"$gm4: \left\langle 1/B^{2} \right\rangle$"}},   r"$\left[T^{-2}\right]$"),
             ({"name": "gm5", "opts": {"label": r"$gm5: \left\langle B^{2}\right\rangle$"}},  r"$\left[T^2\right]$"),
             ({"name": "psi_norm", "opts": {"label": r"$\psi_{norm}$"}}, r"$[Wb]$")
@@ -70,16 +71,13 @@ if __name__ == "__main__":
     xpoints[1][0] += 0.1
     xpoints[1][1] += 0.1
 
-
     tok.equilibrium.update(
-        # psi=None,
         constraints={
             # "psivals": psivals,
             "xpoints": xpoints,
             "isoflux": isoflux
         })
-    # tok.equilibrium.update(
-    #     psi=None,
+    # tok.update(
     #     constraints={
     #         # "psivals": psivals,
     #         "xpoints": xpoints,

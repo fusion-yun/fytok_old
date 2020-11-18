@@ -9,9 +9,7 @@ from spdm.util.LazyProxy import LazyProxy
 from spdm.util.urilib import urisplit
 
 
-class Coil(AttributeTree):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+from .Coil import Coil
 
 
 class PFActive(AttributeTree):
@@ -27,7 +25,7 @@ class PFActive(AttributeTree):
                 if coil.element.geometry.geometry_type != 2:
                     raise NotImplementedError()
                 rect = coil.element.geometry.rectangle
-                
+
                 _, next_coil = self.coil.__push_back__()
                 next_coil.name = str(coil.name)
                 next_coil.r = float(rect.r)

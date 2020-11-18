@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <tf xmlns:spdb="http://hpc.ipp.ac.cn/SpDB">
-  <ids_properties>
-    <homogeneous_time dtype="int">1</homogeneous_time>
-  </ids_properties>
+
+  <r0>
+    <time><spdb:mdsplus>DATA(\TIME) </spdb:mdsplus></time>
+    <data><spdb:mdsplus>DATA(\BCENTR)</spdb:mdsplus></data>
+  </r0>
+  <is_periodic dtype="int">0</is_periodic>
+  <coils_n> 1</coils_n>
   <coil>
       <name>TF</name>
       <identifier>TF</identifier>
       <current><data></data></current>
       <voltage><data></data></voltage>
   </coil>
-  <b_field_tor_vacuum_r>
-    <data></data>
-  </b_field_tor_vacuum_r>
 </tf>
