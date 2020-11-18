@@ -424,7 +424,7 @@ class Equilibrium(AttributeTree):
             """Poloidal flux {dynamic} [Wb]. """
             res = self._eq.cache.profiles_1d.psi
             if res is not NotImplemented and res is not None and len(res) > 0:
-                pass
+                logger.debug(f"Using 'psi' cache")
             elif self.psi_norm is not NotImplemented and self.psi_norm is not None and len(self.psi_norm) > 0:
                 res = self.psi_norm * (self._eq.global_quantities.psi_boundary -
                                        self._eq.global_quantities.psi_axis) + self._eq.global_quantities.psi_axis
