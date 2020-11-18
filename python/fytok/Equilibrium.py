@@ -161,7 +161,7 @@ class Equilibrium(AttributeTree):
 
         raise NotImplementedError()
 
-    @ property
+    @property
     def time(self):
         return self._time
 
@@ -322,62 +322,64 @@ class Equilibrium(AttributeTree):
             super().__init__(*args, **kwargs)
             self.__dict__['_eq'] = eq
 
-        @ property
+        @property
         def beta_pol(self):
             """ Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip^2] {dynamic} [-]"""
             return self._eq.cache.global_quantities.beta_pol
 
-        @ property
+        @property
         def beta_tor(self):
             """ Toroidal beta, defined as the volume-averaged total perpendicular pressure divided by (B0^2/(2*mu0)), i.e. beta_toroidal = 2 mu0 int(p dV) / V / B0^2 {dynamic} [-]"""
             return self._eq.cache.global_quantities.beta_tor
 
-        @ property
+        @property
         def beta_normal(self):
             """ Normalised toroidal beta, defined as 100 * beta_tor * a[m] * B0 [T] / ip [MA] {dynamic} [-]"""
             return self._eq.cache.global_quantities.beta_normal
 
-        @ property
+        @property
         def ip(self):
             """ Plasma current (toroidal component). Positive sign means anti-clockwise when viewed from above. {dynamic} [A]."""
             return NotImplemented
 
-        @ property
+        @property
         def li_3(self):
             """ Internal inductance {dynamic} [-]"""
             return NotImplemented
 
-        @ property
+        @property
         def volume(self):
             """ Total plasma volume {dynamic} [m^3]"""
             return self._eq.cache.global_quantities.volume
 
-        @ property
+        @property
         def area(self):
             """ Area of the LCFS poloidal cross section {dynamic} [m^2]"""
             return NotImplemented
 
-        @ property
+        @property
         def surface(self):
             """ Surface area of the toroidal flux surface {dynamic} [m^2]"""
             return NotImplemented
 
-        @ property
+        @property
         def length_pol(self):
             """ Poloidal length of the magnetic surface {dynamic} [m]"""
             return NotImplemented
 
-        @ property
+        @property
         def psi_axis(self):
             """ Poloidal flux at the magnetic axis {dynamic} [Wb]."""
-            return self._eq.cache.global_quantities.psi_axis or self._eq.flux_surface.magnetic_axis.psi
+            # return self._eq.cache.global_quantities.psi_axis or
+            return self._eq.flux_surface.magnetic_axis.psi
 
-        @ property
+        @property
         def psi_boundary(self):
             """ Poloidal flux at the selected plasma boundary {dynamic} [Wb]."""
-            return self._eq.cache.global_quantities.psi_boundary or self._eq.flux_surface.x_points[0].psi
+            # return self._eq.cache.global_quantities.psi_boundary or
+            return self._eq.flux_surface.x_points[0].psi
 
-        @ property
+        @property
         def magnetic_axis(self):
             """ Magnetic axis position and toroidal field	structure"""
             return AttributeTree({"r":  self._eq.flux_surface.magnetic_axis.r,
@@ -385,12 +387,12 @@ class Equilibrium(AttributeTree):
                                   "b_field_tor": NotImplemented  # self.profiles_2d.b_field_tor(opt[0][0], opt[0][1])
                                   })
 
-        @ property
+        @property
         def q_axis(self):
             """ q at the magnetic axis {dynamic} [-]."""
             return NotImplemented
 
-        @ property
+        @property
         def q_95(self):
             """ q at the 95% poloidal flux surface
             (IMAS uses COCOS=11: only positive when toroidal current
@@ -398,13 +400,13 @@ class Equilibrium(AttributeTree):
 
             return NotImplemented
 
-        @ property
+        @property
         def q_min(self):
             """ Minimum q value and position	structure"""
 
             return NotImplemented
 
-        @ property
+        @property
         def energy_mhd(self):
             """ Plasma energy content:
                   3/2 * int(p, dV) with p being the total pressure(thermal + fast particles)[J].
@@ -423,6 +425,7 @@ class Equilibrium(AttributeTree):
         def psi(self):
             """Poloidal flux {dynamic} [Wb]. """
             res = self._eq.cache.profiles_1d.psi
+            logger.debug(res)
             if res is not NotImplemented and res is not None and len(res) > 0:
                 logger.debug(f"Using 'psi' cache")
             elif self.psi_norm is not NotImplemented and self.psi_norm is not None and len(self.psi_norm) > 0:
@@ -441,12 +444,11 @@ class Equilibrium(AttributeTree):
 
         @cached_property
         def phi(self):
-            """Toroidal flux {dynamic} [Wb]."""
+            """Toroidal flux {dynamic} [Wb]. FIXME: not sure,need double check"""
             psi = self.psi_norm
-            q = self.q/(2.0*scipy.constants.pi)*(self._eq.global_quantities.psi_boundary -
-                                                 self._eq.global_quantities.psi_axis)
+            q = self.q/(2.0*scipy.constants.pi)
             q_func = UnivariateSpline(psi, q)
-            psi0 = self.psi[0]
+            psi0 = psi[0]
             return [q_func.integral(psi0, psi1) for psi1 in psi]
 
         @cached_property
