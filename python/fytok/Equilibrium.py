@@ -917,10 +917,8 @@ class Equilibrium(AttributeTree):
         if coils:
             self.tokamak.pf_active.plot(axis, **kwargs.get("pf_active", {}))
 
-        # if surface_mesh:
-        #     axis.plot(self.coordinate_system.r, self.coordinate_system.z, "b--", linewidth=0.1)
-        #     axis.plot(self.coordinate_system.r.transpose(1, 0),
-        #               self.coordinate_system.z.transpose(1, 0), "b--", linewidth=0.1)
+        if surface_mesh:
+            self.flux_surface.plot(axis)
 
         axis.set_aspect('equal')
         axis.set_xlabel(r"Major radius $R$ [m]")
