@@ -58,6 +58,7 @@ if __name__ == "__main__":
             ({"name": "dpsi_drho_tor", "opts": {"label": r"$d\psi/d\rho_{tor}$"}}, r"$[Wb/m]$"),
             ({"name": "vprime", "opts": {"label": r"$V^{\prime}$"}}, r"$[m^3/Wb]$"),
             ({"name": "gm1", "opts": {"label": r"$gm1=<\frac{1}{R^2}>$"}}, r"$[m^{-2}]$")
+            ({"name": "gm4", "opts": {"label": r"$\left\langle \frac{1}{B^{2}}\right\rangle$"}}, r"$\left[T^{-2}\right]$")
 
             # ("pressure", r"pressure", r"$[Pa]$")
         ]

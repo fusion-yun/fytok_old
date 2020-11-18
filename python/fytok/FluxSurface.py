@@ -123,7 +123,6 @@ class FluxSurface:
         yield from self.find_by_psi(psival*(self.psi_boundary-self.psi_axis)+self.psi_axis, *args, **kwargs)
 
     def find_by_psi(self, psival, ntheta=129):
-
         if type(ntheta) is int:
             dim_theta = np.linspace(
                 0, scipy.constants.pi*2.0,  ntheta, endpoint=False) + scipy.constants.pi / ntheta
