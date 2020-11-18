@@ -104,54 +104,57 @@ class Equilibrium(AttributeTree):
         self.tokamak = tokamak
         self.load(config)
         # ----------------------------------------------------------
-        self.__dict__["_grid_box"] = AttributeTree()
+        # self.__dict__["_grid_box"] = AttributeTree()
 
-        lim_r = self.tokamak.wall.limiter.outline.r
-        lim_z = self.tokamak.wall.limiter.outline.z
+        # lim_r = self.tokamak.wall.limiter.outline.r
+        # lim_z = self.tokamak.wall.limiter.outline.z
 
-        rmin = config.rmin or kwargs.get("rmin", None) or min(lim_r)
-        rmax = config.rmax or kwargs.get("rmax", None) or max(lim_r)
-        zmin = config.zmin or kwargs.get("zmin", None) or min(lim_z)
-        zmax = config.zmax or kwargs.get("zmax", None) or max(lim_z)
-        nr = config.nr or kwargs.get("nr", None) or 129
-        nz = config.nz or kwargs.get("nz", None) or 129
-        self._grid_box.dim1 = np.linspace(rmin-0.1*(rmax-rmin), rmax+0.1*(rmax-rmin), nr)
-        self._grid_box.dim2 = np.linspace(zmin-0.1*(zmax-zmin), zmax+0.1*(zmax-zmin), nz)
-
-        self.__dict__["_time"] = 0.0
-        self.__dict__["_surface_average"] = None
+        # rmin = config.rmin or kwargs.get("rmin", None) or min(lim_r)
+        # rmax = config.rmax or kwargs.get("rmax", None) or max(lim_r)
+        # zmin = config.zmin or kwargs.get("zmin", None) or min(lim_z)
+        # zmax = config.zmax or kwargs.get("zmax", None) or max(lim_z)
+        # nr = config.nr or kwargs.get("nr", None) or 129
+        # nz = config.nz or kwargs.get("nz", None) or 129
+        # self._grid_box.dim1 = np.linspace(rmin-0.1*(rmax-rmin), rmax+0.1*(rmax-rmin), nr)
+        # self._grid_box.dim2 = np.linspace(zmin-0.1*(zmax-zmin), zmax+0.1*(zmax-zmin), nz)
 
     def load(self, config):
         self._cache = config
 
-    @cached_property
+    @property
     def cache(self):
         if isinstance(self._cache, LazyProxy):
-            res = self._cache()
+            self._cache = self._cache()
         elif isinstance(self._cache, AttributeTree):
-            res = self._cache
+            self._cache = self._cache
         else:
-            res = AttributeTree(self._cache)
-        return res
+            self._cache = AttributeTree(self._cache)
+        return self._cache
+
+    @property
+    def vacuum_toroidal_field(self):
+        return self.tokamak.vacuum_toroidal_field or self._eq.cache.vacuum_toroidal_field
+
+    @property
+    def time(self):
+        return self.tokamak.time or self._eq.cache.time or 0.0
 
     def _solve(self, *args, **kwargs):
         raise NotImplementedError()
 
-    def update(self, *args, time=0.0,  ** kwargs):
+    def update(self, *args, ** kwargs):
 
         # self.constraints.update(constraints)
 
-        logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] at time={self.time} : Start")
+        logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] at: Start")
 
-        self._solve(*args, time=time,  ** kwargs)
+        self._solve(*args, ** kwargs)
 
-        logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] at time={self.time} : End")
+        logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] at: End")
 
-        # change time to invalid all cache
-        self.time = time
-        # self.clear_cache()
+        self.update_cache()
 
-    def clear_cache(self):
+    def update_cache(self):
         del self.global_quantities
         del self.profiles_1d
         del self.profiles_2d
@@ -159,11 +162,8 @@ class Equilibrium(AttributeTree):
         del self.boundary_separatrix
         del self.flux_surface
 
-        raise NotImplementedError()
-
-    @property
-    def time(self):
-        return self._time
+        # if isinstance(self._cache, LazyProxy):
+        #     self._cache = AttributeTree()
 
     @cached_property
     def flux_surface(self):
@@ -171,19 +171,6 @@ class Equilibrium(AttributeTree):
                            coordinate_system=self.coordinate_system,
                            fpol=self.profiles_1d.interpolate("fpol"),
                            limiter=self.tokamak.wall.limiter_polygon)
-
-    @ time.setter
-    def time(self, t):
-        """ Change time will invalid all cache,  """
-        self._time = t
-        self.clear_cache()
-
-    @cached_property
-    def vacuum_toroidal_field(self):
-        return AttributeTree(
-            r0=self.tokamak.vacuum_toroidal_field.r0,
-            b0=self.tokamak.vacuum_toroidal_field.b0
-        )
 
     @cached_property
     def profiles_1d(self):
@@ -245,7 +232,7 @@ class Equilibrium(AttributeTree):
             self.__dict__['_eq'] = eq
 
             if grid_type is None:
-                grid_type = eq.cache.coordinate_system.grid_type or 1
+                grid_type = self._eq.cache.coordinate_system.grid_type or 1
 
             if type(grid_type) is int:
                 self.grid_type = AttributeTree(
@@ -258,7 +245,7 @@ class Equilibrium(AttributeTree):
                 self.grid_type = AttributeTree(grid_type)
 
             if grid is None:
-                self.grid = eq.cache.coordinate_system.grid or [32, 128]
+                self.grid = self._eq.cache.coordinate_system.grid or [32, 128]
             elif isinstance(grid, AttributeTree):
                 self.grid = grid
             elif isinstance(grid, list):
@@ -340,12 +327,12 @@ class Equilibrium(AttributeTree):
         @property
         def ip(self):
             """ Plasma current (toroidal component). Positive sign means anti-clockwise when viewed from above. {dynamic} [A]."""
-            return NotImplemented
+            return self._eq.cache.global_quantities.ip
 
         @property
         def li_3(self):
             """ Internal inductance {dynamic} [-]"""
-            return NotImplemented
+            return self._eq.cache.global_quantities.li
 
         @property
         def volume(self):
@@ -371,13 +358,13 @@ class Equilibrium(AttributeTree):
         def psi_axis(self):
             """ Poloidal flux at the magnetic axis {dynamic} [Wb]."""
             # return self._eq.cache.global_quantities.psi_axis or
-            return self._eq.flux_surface.magnetic_axis.psi
+            return self._eq.flux_surface.psi_axis
 
         @property
         def psi_boundary(self):
             """ Poloidal flux at the selected plasma boundary {dynamic} [Wb]."""
             # return self._eq.cache.global_quantities.psi_boundary or
-            return self._eq.flux_surface.x_points[0].psi
+            return self._eq.flux_surface.psi_boundary
 
         @property
         def magnetic_axis(self):
@@ -390,28 +377,26 @@ class Equilibrium(AttributeTree):
         @property
         def q_axis(self):
             """ q at the magnetic axis {dynamic} [-]."""
-            return NotImplemented
+            return self._eq.cache.global_quantities.q_axis
 
         @property
         def q_95(self):
             """ q at the 95% poloidal flux surface
             (IMAS uses COCOS=11: only positive when toroidal current
             and magnetic field are in same direction) {dynamic} [-]."""
-
-            return NotImplemented
+            return self._eq.cache.global_quantities.q_95
 
         @property
         def q_min(self):
-            """ Minimum q value and position	structure"""
-
-            return NotImplemented
+            """ Minimum q value and position structure"""
+            return self._eq.cache.global_quantities.q_min
 
         @property
         def energy_mhd(self):
             """ Plasma energy content:
                   3/2 * int(p, dV) with p being the total pressure(thermal + fast particles)[J].
                 Time-dependent  Scalar {dynamic}[J]"""
-            return NotImplemented
+            return self._eq.cache.global_quantities.energy_mhd
 
     class Profiles1D(AttributeTree):
         """Equilibrium profiles (1D radial grid) as a function of the poloidal flux	"""
@@ -429,7 +414,6 @@ class Equilibrium(AttributeTree):
         def psi(self):
             """Poloidal flux {dynamic} [Wb]. """
             res = self._eq.cache.profiles_1d.psi
-            logger.debug(res)
             if res is not NotImplemented and res is not None and len(res) > 0:
                 logger.debug(f"Using 'psi' cache")
             elif self.psi_norm is not NotImplemented and self.psi_norm is not None and len(self.psi_norm) > 0:
@@ -458,11 +442,15 @@ class Equilibrium(AttributeTree):
         @cached_property
         def pressure(self):
             """	Pressure {dynamic} [Pa]"""
-            # pprime = self.dpresure_dpsi
-            # return [pprime.integral(0, self.psi) for psi in self.psi]
             res = self._eq.cache.profiles_1d.pressure
-            if len(res) == 0:
-                res = NotImplemented
+
+            if res is NotImplemented or res is None or len(res) == 0:
+                res = self._eq.cache.profiles_1d.p
+
+            if res is NotImplemented or res is None or len(res) == 0:
+                pprime_func = UnivariateSpline(self.psi_norm, self.pprime)
+                scale = self._eq.global_quantities.psi_axis-self._eq.global_quantities.psi_boundary
+                res = [pprime_func.integral(psi, 1.0)*scale for psi in self.psi_norm]
             return res
 
         @cached_property
@@ -473,11 +461,15 @@ class Equilibrium(AttributeTree):
             # return np.sqrt(f2)
             res = self._eq.cache.profiles_1d.f
 
-            if len(res) == 0:
+            if res is NotImplemented or res is None or len(res) == 0:
                 res = self._eq.cache.profiles_1d.fpol
 
             if res is NotImplemented or res is None or len(res) == 0:
-                raise KeyError("f")
+                ffprime_func = UnivariateSpline(self.psi_norm, self.pprime)
+                scale = self._eq.global_quantities.psi_axis-self._eq.global_quantities.psi_boundary
+                fvac = self._eq.vacuum_toroidal_field.r0*self._eq.vacuum_toroidal_field.b0
+                res = [ffprime_func.integral(psi, 1.0)*scale for psi in self.psi_norm]
+                res = np.sqrt(res**2+fvac**2)
             return res
 
         @cached_property
@@ -524,14 +516,8 @@ class Equilibrium(AttributeTree):
         def q(self):
             """ Safety factor (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic} [-].
                 q(psi) = F Vprime <R^-2> /(4 pi**2) """
-            res = self._eq.cache.profiles_1d.q
-            res[-1] = res[-2]
-            if len(res) == 0:
-                res = self.fpol*self.vprime * self.gm1 / (4*scipy.constants.pi**2)
-            return res
-
-        @cached_property
-        def q1(self):
+            # res = self._eq.cache.profiles_1d.q
+            # if len(res) == 0:
             return self.fpol*self.vprime * self.gm1 / (4*scipy.constants.pi**2)
 
         @cached_property
@@ -562,7 +548,14 @@ class Equilibrium(AttributeTree):
 
         @cached_property
         def drho_tor_dpsi(self)	:
-            return self.q/self._eq.vacuum_toroidal_field.b0/self.rho_tor
+            # res = np.zeros(shape=self.q.shape)
+            # logger.debug((self.q[1], self.q[0], self.psi_norm[1], self.psi_norm[0]))
+            # dq_dpsi = self.interpolate("rho_tor").derivative(self.psi_norm) / (self._eq.global_quantities.psi_boundary -
+            #                                                  self._eq.global_quantities.psi_axis)
+            # res[0] = np.sqrt(dq_dpsi / (self._eq.vacuum_toroidal_field.b0 * scipy.constants.pi)**2)
+            # # res[0] = 2*res[1]-res[2]
+            return self.interpolate("rho_tor").derivative(n=1)(self.psi_norm) / (self._eq.global_quantities.psi_boundary -
+                                                                                 self._eq.global_quantities.psi_axis)
 
         @cached_property
         def dpsi_drho_tor(self)	:
@@ -688,6 +681,7 @@ class Equilibrium(AttributeTree):
 
         def __init__(self, eq, *args, grid=None,  ** kwargs):
             super().__init__(*args, **kwargs)
+            logger.debug(f"Create {self.__class__.__name__}")
             self._eq = eq
 
         @cached_property
@@ -806,6 +800,7 @@ class Equilibrium(AttributeTree):
         def __init__(self, eq, *args,   ntheta=None, ** kwargs):
             super().__init__(*args, **kwargs)
             self._eq = eq
+            self._ntheta = ntheta or 129
 
         @cached_property
         def type(self):
@@ -816,13 +811,13 @@ class Equilibrium(AttributeTree):
         def outline(self):
             """ RZ outline of the plasma boundary  """
 
-            r = self._eq.cache.boundary.outline.r
-            z = self._eq.cache.boundary.outline.z
+            # r = self._eq.cache.boundary.outline.r
+            # z = self._eq.cache.boundary.outline.z
 
-            if len(r) == 0 or len(z) == 0:
-                boundary = self._eq.flux_surface.find(1.0)
-                r = boundary[:, 0]
-                z = boundary[:, 1]
+            # if len(r) == 0 or len(z) == 0:
+            boundary = np.array([[r, z] for r, z in self._eq.flux_surface.find_by_psinorm(1.0, self._ntheta)])
+            r = boundary[:, 0]
+            z = boundary[:, 1]
 
             return AttributeTree(r=r, z=z)
 
@@ -837,8 +832,7 @@ class Equilibrium(AttributeTree):
         @cached_property
         def psi(self):
             """ Value of the poloidal flux at which the boundary is taken {dynamic} [Wb]"""
-            _, xpt = self._eq.flux_surface.critical_points
-            return xpt[0].psi
+            return self._eq.flux_surface.psi_boundary
 
         @cached_property
         def psi_norm(self):
@@ -916,7 +910,7 @@ class Equilibrium(AttributeTree):
             self.tokamak.pf_active.plot(axis, **kwargs.get("pf_active", {}))
         axis.axis("scaled")
 
-    def plot_profiles2d(self, axis=None, *args, profiles=[], vec_field=[], levels=32, oxpoints=True,   **kwargs):
+    def plot_profiles2d(self, axis=None, *args, profiles=[], vec_field=[], boundary=True, levels=32, oxpoints=True,   **kwargs):
         """ learn from freegs
         """
         if axis is None:
@@ -926,24 +920,24 @@ class Equilibrium(AttributeTree):
         Z = self.profiles_2d.z
         psi = self.profiles_2d.psi
 
-        psi = (psi - self.global_quantities.psi_axis) / \
-            (self.global_quantities.psi_boundary - self.global_quantities.psi_axis)
+        # psi = (psi - self.global_quantities.psi_axis) / \
+        #     (self.global_quantities.psi_boundary - self.global_quantities.psi_axis)
 
-        if type(levels) is int:
-            levels = np.linspace(-2, 2,  levels)
+        # if type(levels) is int:
+        #     levels = np.linspace(-2, 2,  levels)
 
         axis.contour(R[1:-1, 1:-1], Z[1:-1, 1:-1], psi[1:-1, 1:-1], levels=levels, linewidths=0.2)
 
         for idx, p in enumerate(self.boundary.x_point):
             axis.plot(p.r, p.z, 'rx')
             axis.text(p.r, p.z, idx)
+        if boundary:
+            boundary_points = np.array([self.boundary.outline.r,
+                                        self.boundary.outline.z]).transpose([1, 0])
 
-        boundary_points = np.array([self.boundary.outline.r,
-                                    self.boundary.outline.z]).transpose([1, 0])
-
-        axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
-                                   linewidth=0.5, fill=False, closed=True))
-        axis.plot([], [], 'r--', label="Separatrix")
+            axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
+                                       linewidth=0.5, fill=False, closed=True))
+            axis.plot([], [], 'r--', label="Separatrix")
 
         axis.plot(self.global_quantities.magnetic_axis.r,
                   self.global_quantities.magnetic_axis.z, 'g.', label="Magnetic axis")
@@ -986,7 +980,13 @@ class Equilibrium(AttributeTree):
             opts = {"label": opts}
 
         if isinstance(data, str):
-            data = self.profiles_1d[data.split(".")]
+            nlist = data.split(".")
+            if len(nlist) == 1:
+                data = self.profiles_1d[nlist[0]]
+            elif nlist[0] == 'cache':
+                data = self.cache.profiles_1d[nlist[1:]]
+            else:
+                data = self.profiles_1d[nlist]
         elif isinstance(data, list):
             data = np.array(data)
         elif isinstance(d, np.ndarray):
@@ -1016,6 +1016,8 @@ class Equilibrium(AttributeTree):
 
                 if value is not NotImplemented and value is not None and len(value) > 0:
                     axis[idx].plot(x_axis.data, value, **opts)
+                else:
+                    logger.error(f"Can not find profile '{d}'")
 
             axis[idx].legend(fontsize=6)
 
@@ -1037,8 +1039,8 @@ class Equilibrium(AttributeTree):
 
         assert (x_axis.data is not NotImplemented)
 
-        if len(profiles) == 0:
-            fig, ax_right = plt.subplots(ncols=1, nrows=len(profiles), sharex=True)
+        if profiles is None or len(profiles) == 0:
+            fig, ax_right = plt.subplots(ncols=1, nrows=1, sharex=True)
         else:
             fig, axs = plt.subplots(ncols=2, nrows=len(profiles), sharex=True)
             # left
@@ -1058,8 +1060,8 @@ class Equilibrium(AttributeTree):
         self.plot_machine(ax_right, **kwargs.get("machine", {}))
 
         ax_right.legend()
-
         fig.tight_layout()
+
         fig.subplots_adjust(hspace=0)
         fig.align_ylabels()
 

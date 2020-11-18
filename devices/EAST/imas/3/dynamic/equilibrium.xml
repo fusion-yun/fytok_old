@@ -68,9 +68,9 @@
         </coordinate_system>                
 
         <global_quantities>
-            <beta_pol><spdb:data protocol="mdsplus">DATA(\BETAP[{time_slice}])</spdb:data></beta_pol>
-            <beta_tor><spdb:data protocol="mdsplus">DATA(\BETAT[{time_slice}])</spdb:data></beta_tor>
-            <beta_normal><spdb:data protocol="mdsplus">DATA(\BETAN[{time_slice}])</spdb:data></beta_normal>
+            <beta_pol><spdb:data protocol="mdsplus">DATA(\BETAP)[{time_slice}]</spdb:data></beta_pol>
+            <beta_tor><spdb:data protocol="mdsplus">DATA(\BETAT)[{time_slice}]</spdb:data></beta_tor>
+            <beta_normal><spdb:data protocol="mdsplus">DATA(\BETAN)[{time_slice}]</spdb:data></beta_normal>
 
             <ip><spdb:data protocol="mdsplus">DATA(\EFIT_MFILE:PLASMA)[{time_slice}]</spdb:data></ip>
 

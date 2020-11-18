@@ -117,15 +117,18 @@ class FluxSurface:
 
     @cached_property
     def psi_boundary(self):
-        return self.x_points[0].psi
+        if len(self.x_points) > 0:
+            return self.x_points[0].psi
+        else:
+            raise ValueError(f"No x-point")
 
     def find_by_psinorm(self, psival, *args, **kwargs):
         yield from self.find_by_psi(psival*(self.psi_boundary-self.psi_axis)+self.psi_axis, *args, **kwargs)
 
     def find_by_psi(self, psival, ntheta=64):
         if type(ntheta) is int:
-            dim_theta = np.linspace(
-                0, scipy.constants.pi*2.0,  ntheta, endpoint=False) + scipy.constants.pi / ntheta
+            dim_theta = np.linspace(0, scipy.constants.pi*2.0,  ntheta, endpoint=False)
+            #+ scipy.constants.pi / ntheta
         elif isinstance(ntheta, collections.abc.Sequence) or isinstance(ntheta, np.ndarray):
             dim_theta = ntheta
         else:
@@ -218,7 +221,7 @@ class FluxSurface:
         """ Vprime =  2 *pi* int( R / |grad psi| * dl )
             V'(psi)= 2 *pi* int( dl * R / |grad psi|)"""
         res = (2*scipy.constants.pi) * np.sum(self.Jdl, axis=1)
-        res[0] = res[1]
+        # res[0] = res[1]
         return res
 
     @ property
@@ -239,6 +242,7 @@ class FluxSurface:
     def gm3(self):
         """<(grad_rho_tor)**2>"""
         return self.average(self.grad_psi2)*(self.drho_dpsi**2)
+         
 
     @cached_property
     def gm4(self):
@@ -275,7 +279,7 @@ class FluxSurface:
             res = (2*scipy.constants.pi) * np.sum(func(self.R, self.Z, *args, **kwargs)*self.Jdl, axis=1) / self.vprime
         else:
             res = (2*scipy.constants.pi) * np.sum(func * self.Jdl, axis=1) / self.vprime
-        res[0] = res[1]
+        # res[0] = res[1]
         return res
 
     def apply(self, func, R, Z, *args, **kwargs):

@@ -23,6 +23,7 @@ class Tokamak(AttributeTree):
     def __init__(self,  config=None,  *args,    **kwargs):
         super().__init__()
         self.load(config)
+        self._time = 0
         # if config is None:
         #     config = AttributeTree()
 
@@ -38,6 +39,10 @@ class Tokamak(AttributeTree):
 
     def load(self, config):
         self._cache = config
+
+    @property
+    def time(self):
+        return self._time
 
     @cached_property
     def vacuum_toroidal_field(self):
@@ -86,7 +91,7 @@ class Tokamak(AttributeTree):
                fvec=1.0,
                constraints=None,
                max_iters=1,
-               relative_deviation=0.1,
+               tolerance=0.1,
                ** kwargs):
 
         if core_profiles is not None:
@@ -99,10 +104,7 @@ class Tokamak(AttributeTree):
         for iter_count in range(max_iters):
             logger.debug(f"Iterator = {iter_count}")
 
-            self.equilibrium.update(self.transport.core_profiles,
-                                    time=time,
-                                    fvec=fvec,
-                                    constraints=constraints)
+            self.equilibrium.update(profiles=self.transport.core_profiles, constraints=constraints)
 
             self.core_transports.update(self.equilibrium, ctx=ctx)
 
@@ -143,10 +145,10 @@ class Tokamak(AttributeTree):
 
         self.wall.plot(axis, **kwargs.get("wall", {}))
         self.pf_active.plot(axis, **kwargs.get("pf_active", {}))
-        self.equilibrium.plot(axis, **kwargs.get("equilibrium", {}))
+        self.equilibrium.plot_profiles2d(axis, **kwargs.get("equilibrium", {}))
 
         axis.set_aspect('equal')
-        # axis.axis('scaled')
+        axis.axis('scaled')
         axis.set_xlabel(r"Major radius $R$ [m]")
         axis.set_ylabel(r"Height $Z$ [m]")
         axis.legend()
