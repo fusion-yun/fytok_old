@@ -2,7 +2,7 @@
 import collections
 import functools
 import inspect
-from functools import cached_property
+from functools import cached_property, lru_cache
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -169,7 +169,7 @@ class Equilibrium(AttributeTree):
     def flux_surface(self):
         return FluxSurface(self.profiles_2d.psirz,
                            coordinate_system=self.coordinate_system,
-                           fpol=UnivariateSpline(self.profiles_1d.psi_norm, self.profiles_1d.fpol),
+                           fpol=self.profiles_1d.interpolate("fpol"),
                            limiter=self.tokamak.wall.limiter_polygon)
 
     @ time.setter
@@ -421,6 +421,10 @@ class Equilibrium(AttributeTree):
             self.__dict__["_eq"] = eq
             self.__dict__["_npsi"] = npsi or 129
 
+        @lru_cache
+        def interpolate(self, key):
+            return UnivariateSpline(self.psi_norm, self[key])
+
         @cached_property
         def psi(self):
             """Poloidal flux {dynamic} [Wb]. """
@@ -521,9 +525,14 @@ class Equilibrium(AttributeTree):
             """ Safety factor (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic} [-].
                 q(psi) = F Vprime <R^-2> /(4 pi**2) """
             res = self._eq.cache.profiles_1d.q
+            res[-1] = res[-2]
             if len(res) == 0:
                 res = self.fpol*self.vprime * self.gm1 / (4*scipy.constants.pi**2)
             return res
+
+        @cached_property
+        def q1(self):
+            return self.fpol*self.vprime * self.gm1 / (4*scipy.constants.pi**2)
 
         @cached_property
         def magnetic_shear(self):
@@ -751,17 +760,18 @@ class Equilibrium(AttributeTree):
         @cached_property
         def phi(self):
             """	Toroidal flux {dynamic} [Wb]"""
-            return self._eq.profiles_1d.phi(self.psi(self.r, self.z))
+            return self.apply_psifunc("phi")
+            # return self._eq.profiles_1d.phi(self.psi(self.r, self.z))
 
         @cached_property
         def j_tor(self):
             """	Toroidal plasma current density {dynamic} [A.m^-2]"""
-            return self._eq.profiles_1d.j_tor(self.psi(self.r, self.z))
+            return self.apply_psifunc("j_tor")
 
         @cached_property
         def j_parallel(self):
             """	Parallel (to magnetic field) plasma current density {dynamic} [A.m^-2]"""
-            return self._eq.profiles_1d.j_parallel(self.psi(self.r, self.z))
+            return self.apply_psifunc("j_parallel")
 
         @cached_property
         def b_field_r(self):
@@ -776,7 +786,21 @@ class Equilibrium(AttributeTree):
         @cached_property
         def b_field_tor(self):
             """Toroidal component of the magnetic field {dynamic} [T]"""
-            return self._eq.profiles_1d.fpol(self.psi(self.r, self.z))/self.r
+            return self.apply_psifunc("fpol")/self.r
+
+        def apply_psifunc(self, func):
+            if isinstance(func, str):
+                func = self._eq.profiles_1d.interpolate(func)
+
+            NX = self.grid.dim1.shape[0]
+            NY = self.grid.dim2.shape[0]
+
+            res = np.full([NX, NY], np.nan)
+
+            for i in range(NX):
+                for j in range(NY):
+                    res[i, j] = func(self.psirz(self.r[i, j], self.z[i, j]))
+            return res
 
     class Boundary(AttributeTree):
         def __init__(self, eq, *args,   ntheta=None, ** kwargs):
@@ -883,8 +907,16 @@ class Equilibrium(AttributeTree):
 
     ####################################################################################
     # Plot proflies
+    def plot_machine(self, axis=None, *args, coils=True, wall=True, **kwargs):
+        if axis is None:
+            axis = plt.gca()
+        if wall:
+            self.tokamak.wall.plot(axis, **kwargs.get("wall", {}))
+        if coils:
+            self.tokamak.pf_active.plot(axis, **kwargs.get("pf_active", {}))
+        axis.axis("scaled")
 
-    def plot(self, axis=None, *args, levels=32, oxpoints=True, coils=True, wall=True, surface_mesh=True, **kwargs):
+    def plot_profiles2d(self, axis=None, *args, profiles=[], vec_field=[], levels=32, oxpoints=True,   **kwargs):
         """ learn from freegs
         """
         if axis is None:
@@ -916,18 +948,22 @@ class Equilibrium(AttributeTree):
         axis.plot(self.global_quantities.magnetic_axis.r,
                   self.global_quantities.magnetic_axis.z, 'g.', label="Magnetic axis")
 
-        if wall:
-            self.tokamak.wall.plot(axis, **kwargs.get("wall", {}))
-        if coils:
-            self.tokamak.pf_active.plot(axis, **kwargs.get("pf_active", {}))
+        for k, opts in profiles:
+            d = self.profiles_2d[k]
+            if d is not NotImplemented and d is not None:
+                axis.contourf(R[1:-1, 1:-1], Z[1:-1, 1:-1], d[1:-1, 1:-1], **opts)
+        for u, v, opts in vec_field:
+            uf = self.profiles_2d[u]
+            vf = self.profiles_2d[v]
+            axis.streamplot(self.profiles_2d.grid.dim1[1:-1],
+                            self.profiles_2d.grid.dim2[1:-1],
 
-        if surface_mesh:
-            self.flux_surface.plot(axis)
+                            vf[1:-1, 1:-1].transpose(1, 0),
+                            uf[1:-1, 1:-1].transpose(1, 0), **opts)
 
-        axis.set_aspect('equal')
         axis.set_xlabel(r"Major radius $R$ [m]")
         axis.set_ylabel(r"Height $Z$ [m]")
-        axis.legend()
+        axis.set_aspect('equal')
 
         return axis
 
@@ -950,7 +986,7 @@ class Equilibrium(AttributeTree):
             opts = {"label": opts}
 
         if isinstance(data, str):
-            data = self.profiles_1d[data]
+            data = self.profiles_1d[data.split(".")]
         elif isinstance(data, list):
             data = np.array(data)
         elif isinstance(d, np.ndarray):
@@ -990,7 +1026,10 @@ class Equilibrium(AttributeTree):
         return axis[-1]
 
     def plot_full(self,  profiles=None, *args,
+                  profiles_2d=[],
+                  vec_field=[],
                   x_axis=("psi_norm",   r'$(\psi-\psi_{axis})/(\psi_{boundary}-\psi_{axis}) [-]$'),
+                  surface_mesh=False,
                   **kwargs):
 
         x_axis, x_axis_opts = self.fetch_profile(x_axis)
@@ -1012,7 +1051,12 @@ class Equilibrium(AttributeTree):
                 ax.remove()  # remove the underlying axes
             ax_right = fig.add_subplot(gs[:, 1])
 
-        self.plot(ax_right, **kwargs.get("equilibrium", {}))
+        if surface_mesh:
+            self.flux_surface.plot(ax_right)
+        self.plot_profiles2d(ax_right, profiles=profiles_2d, vec_field=vec_field, **kwargs.get("equilibrium", {}))
+        self.plot_machine(ax_right, **kwargs.get("machine", {}))
+
+        ax_right.legend()
 
         fig.tight_layout()
         fig.subplots_adjust(hspace=0)

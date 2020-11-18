@@ -49,20 +49,24 @@ if __name__ == "__main__":
             ({"name": "phi", "opts": {"label": r"$\Phi_{tor}$"}}, r"$[Wb]$"),
             ({"name": "rho_tor", "opts": {"label": r"$\rho_{tor}$"}}, r"$[m]$"),
             # ({"name": "rho_tor_norm", "opts": {"label": r"$\rho_{tor}/\rho_{bndry}$"}}, r"[m]"),
-            # ([{"name": "q", "opts": {"label": r"$q_{exp}$"}},
-            #   {"name": "flux_surface_average.q", "opts": {"label": r"$q_{average}$"}}],   r"$[-]$"),
-            ({"name": "pprime", "opts": {"label": r"$p^{\prime}$"}}, r"$[Pa/Wb]$"),
-            ({"name": "ffprime", "opts": {"label": r"$f f^{\prime}$"}}, r"$[T^2 \cdot m^2/Wb]$"),
-            ({"name": "fpol", "opts": {"label":  r"$f_{pol}$"}}, r"$[T \cdot m]$"),
-            ([{"name": "drho_tor_dpsi", "opts": {"label": r"$d\rho_{tor}/d\psi$"}}], r"$[m\cdot Wb]$"),
-            ({"name": "dpsi_drho_tor", "opts": {"label": r"$d\psi/d\rho_{tor}$"}}, r"$[Wb/m]$"),
-            ({"name": "vprime", "opts": {"label": r"$V^{\prime}$"}}, r"$[m^3/Wb]$"),
-            ({"name": "gm1", "opts": {"label": r"$gm1=<\frac{1}{R^2}>$"}}, r"$[m^{-2}]$"),
+            ([{"name": "q", "opts": {"label": r"$q_{exp}$", "marker": "o"}},
+              {"name": "q1", "opts": {"label": r"$q_{average}$", "marker": "*"}}],   r"$[-]$"),
+            # ({"name": "pprime", "opts": {"label": r"$p^{\prime}$"}}, r"$[Pa/Wb]$"),
+            # ({"name": "ffprime", "opts": {"label": r"$f f^{\prime}$"}}, r"$[T^2 \cdot m^2/Wb]$"),
+            # ({"name": "fpol", "opts": {"label":  r"$f_{pol}$"}}, r"$[T \cdot m]$"),
+            # ([{"name": "drho_tor_dpsi", "opts": {"label": r"$d\rho_{tor}/d\psi$"}}], r"$[m\cdot Wb]$"),
+            # ({"name": "dpsi_drho_tor", "opts": {"label": r"$d\psi/d\rho_{tor}$"}}, r"$[Wb/m]$"),
+            # ({"name": "vprime", "opts": {"label": r"$V^{\prime}$"}}, r"$[m^3/Wb]$"),
+            # ({"name": "gm1", "opts": {"label": r"$gm1=<\frac{1}{R^2}>$"}}, r"$[m^{-2}]$"),
             ({"name": "gm4", "opts": {"label": r"$\left\langle \frac{1}{B^{2}}\right\rangle$"}},
              r"$\left[T^{-2}\right]$")
 
             # ("pressure", r"pressure", r"$[Pa]$")
-        ]
+        ],
+        # profiles_2d=[("phi", {})],
+        vec_field=[("b_field_r", "b_field_z", {"linewidth": 0.5, "arrowsize": 0.2})],
+        # surface_mesh=True,
+        machine={"coils": False}
     )
     fig.savefig("../output/tokamak.svg", transparent=True)
 
