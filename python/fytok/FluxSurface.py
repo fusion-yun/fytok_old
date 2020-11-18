@@ -122,7 +122,7 @@ class FluxSurface:
     def find_by_psinorm(self, psival, *args, **kwargs):
         yield from self.find_by_psi(psival*(self.psi_boundary-self.psi_axis)+self.psi_axis, *args, **kwargs)
 
-    def find_by_psi(self, psival, ntheta=129):
+    def find_by_psi(self, psival, ntheta=64):
         if type(ntheta) is int:
             dim_theta = np.linspace(
                 0, scipy.constants.pi*2.0,  ntheta, endpoint=False) + scipy.constants.pi / ntheta
@@ -172,11 +172,9 @@ class FluxSurface:
             pass
         elif self.coordinate_system.grid_type.index > 1:
             raise ValueError(f"Unknown grid type {self.coordinate_system.grid_type}")
-
         R, Z = np.meshgrid(self.coordinate_system.grid.dim1, self.coordinate_system.grid.dim2, indexing="ij")
 
         for i, psival in enumerate(self.coordinate_system.grid.dim1):
-            logger.debug(psival)
             for j, x in enumerate(self.find_by_psinorm(psival, self.coordinate_system.grid.dim2)):
                 R[i, j] = x[0]
                 Z[i, j] = x[1]
@@ -213,13 +211,12 @@ class FluxSurface:
     @cached_property
     def B2(self):
         dpsi_dr, dpsi_dz = self.grad_psi
-        return (dpsi_dr**2 + dpsi_dz**2+self.fpol**2)/(self.R**2)
+        return (dpsi_dr**2 + dpsi_dz**2+self.fpol.reshape(-1, 1)**2)/(self.R**2)
 
     @cached_property
     def dvolume_dpsi(self):
         """ Vprime =  2 *pi* int( R / |grad psi| * dl )
             V'(psi)= 2 *pi* int( dl * R / |grad psi|)"""
-
         res = (2*scipy.constants.pi) * np.sum(self.Jdl, axis=1)
         res[0] = res[1]
         return res
@@ -227,10 +224,6 @@ class FluxSurface:
     @ property
     def vprime(self):
         return self.dvolume_dpsi
-
-    @cached_property
-    def phi(self):
-        return self.coordinate_system.grid.dim1
 
     @cached_property
     def gm1(self):

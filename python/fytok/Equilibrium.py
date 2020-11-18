@@ -132,7 +132,6 @@ class Equilibrium(AttributeTree):
             res = self._cache
         else:
             res = AttributeTree(self._cache)
-
         return res
 
     def _solve(self, *args, **kwargs):
@@ -158,7 +157,7 @@ class Equilibrium(AttributeTree):
         del self.profiles_2d
         del self.boundary
         del self.boundary_separatrix
-        del self.flix_surface
+        del self.flux_surface
 
         raise NotImplementedError()
 
@@ -259,9 +258,8 @@ class Equilibrium(AttributeTree):
                 self.grid_type = AttributeTree(grid_type)
 
             if grid is None:
-                grid = eq.cache.coordinate_system.grid or [32, 128]
-
-            if isinstance(grid, AttributeTree):
+                self.grid = eq.cache.coordinate_system.grid or [32, 128]
+            elif isinstance(grid, AttributeTree):
                 self.grid = grid
             elif isinstance(grid, list):
                 self.grid = AttributeTree(dim1=grid[0], dim2=grid[1])
@@ -444,8 +442,12 @@ class Equilibrium(AttributeTree):
         @cached_property
         def phi(self):
             """Toroidal flux {dynamic} [Wb]."""
-            # return Interpolate1D(self.q, self.psi).integral(self.psi)
-            return self.psi
+            psi = self.psi_norm
+            q = self.q/(2.0*scipy.constants.pi)*(self._eq.global_quantities.psi_boundary -
+                                                 self._eq.global_quantities.psi_axis)
+            q_func = UnivariateSpline(psi, q)
+            psi0 = self.psi[0]
+            return [q_func.integral(psi0, psi1) for psi1 in psi]
 
         @cached_property
         def pressure(self):
