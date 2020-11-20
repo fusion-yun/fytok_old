@@ -2,13 +2,15 @@
 import collections
 import functools
 import inspect
+import numbers
 from functools import cached_property, lru_cache
 
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from numpy import arctan2, cos, sin, sqrt
-from scipy.interpolate import RectBivariateSpline, UnivariateSpline, SmoothBivariateSpline
+from scipy.interpolate import (RectBivariateSpline, SmoothBivariateSpline,
+                               UnivariateSpline)
 from spdm.util.AttributeTree import AttributeTree, _next_
 from spdm.util.Interpolate import (Interpolate1D, Interpolate2D, derivate,
                                    find_critical, find_root, integral,
@@ -28,47 +30,75 @@ class CoreProfiles(AttributeTree):
         ids = core_profiles.profiles_1d
     """
 
-    def __init__(self, time=None, *args,  equilibrium=None, rho_tor_norm=None, ** kwargs):
+    def __init__(self, cache=None, *args, equilibrium=None, rho_tor_norm=None, ** kwargs):
         super().__init__(*args, ** kwargs)
-        self.time = time or equilibrium.time
-        self.vacuum_toroidal_field = equilibrium.vacuum_toroidal_field
-        self._equilibrium = equilibrium
-        self._rho_tor_norm = rho_tor_norm
 
-    def update(self, config):
-        if isinstance(config, LazyProxy):
-            config = config()
-        self.__update__(config)
+        self.time = equilibrium.time
+        self.vacuum_toroidal_field = equilibrium.vacuum_toroidal_field
+
+        if isinstance(cache, LazyProxy) or isinstance(cache, AttributeTree):
+            cache = cache
+        else:
+            cache = AttributeTree(cache)
+
+        self.profiles_1d = CoreProfiles.Profiles1D(cache.profiles_1d,
+                                                   equilibrium=equilibrium,
+                                                   rho_tor_norm=rho_tor_norm)
+
+        self.global_quantities = CoreProfiles.GlobalQuantities(self)
 
     class Profiles1D(AttributeTree):
-        def __init__(self,  *args, equilibrium=None, rho_tor_norm=None, **kwargs):
+        def __init__(self, cache=None,  *args, equilibrium=None, rho_tor_norm=None, **kwargs):
             super().__init__(*args, **kwargs)
-            self._eq = equilibrium
-            self.grid = CoreProfiles.Profiles1D.Grid(equilibrium, rho_tor_norm=rho_tor_norm)
+            if isinstance(cache, LazyProxy) or isinstance(cache, AttributeTree):
+                self.__dict__["_cache"] = cache
+            else:
+                self.__dict__["_cache"] = AttributeTree(cache)
+
+            self.__dict__["_eq"] = equilibrium
+
+            self.grids = CoreProfiles.Profiles1D.Grid(self._eq)
+
+            """Quantities related to the different ion species"""
+            self.ion = CoreProfiles.Ion(self)
+
+            """Quantities related to the electrons"""
+            self.electons = CoreProfiles.Electons(self)
+
+            """Quantities related to the different neutral species"""
+            self.neutral = CoreProfiles.Neutral(self)
 
         def __missing__(self, key):
-            d = self._eq.profiles_1d[key]
-            if d is not NotImplemented and d is not None and len(d) > 0:
-                return UnivariateSpline(self._eq.profiles_1d.rho_tor_norm, d)(self.grid.rho_tor_norm)
-            else:
-                return np.full(self.grid.rho_tor_norm.shape, np.nan)
+            d = self._cache[key]
+            if isinstance(d, LazyProxy):
+                d = d()
+
+            if d is NotImplemented or not d:
+                d = self._eq.profiles_1d[key]
+                if isinstance(d, np.ndarray) and len(d) > 0:
+                    d = UnivariateSpline(self._eq.profiles_1d.rho_tor_norm, d)(self.grid.rho_tor_norm)
+
+            if isinstance(d, np.ndarray):
+                pass
+            elif callable(d):
+                d = d(self.grid.rho_tor_norm)
+            elif isinstance(d, numbers.Number):
+                d = np.full(self.grid.rho_tor_norm.shape, float(d))
+            elif d in (NotImplemented, None, [], {}):
+                d = np.full(self.grid.rho_tor_norm.shape, np.nan)
+
+            return d
 
         def interpolate(self, key):
             if not isinstance(key, str) and isinstance(key, collections.abc.Sequence):
                 return {k: self.interpolate(k) for k in key}
+
             v = self.__getitem__(key)
-            if v is None or v is NotImplemented:
-                return None
-            elif len(v) == len(self.grid.rho_tor_norm):
+
+            if isinstance(v, np.ndarray) and v.shape[0] == self.grid.rho_tor_norm.shape[0]:
                 return UnivariateSpline(self.grid.rho_tor_norm, v)
-
-        class TemperatureFit(AttributeTree):
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-
-        class DensityFit(AttributeTree):
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
+            else:
+                raise ValueError(f"Cannot create interploate! {key}")
 
         class Grid(AttributeTree):
             def __init__(self, eq, *args, rho_tor_norm=None,  **kwargs):
@@ -110,7 +140,7 @@ class CoreProfiles(AttributeTree):
             #     return NotImplemented
 
             # def psi(self):
-            #     """Poloidal magnetic flux {dynamic} [Wb]. This quantity is COCOS-dependent, with the following transformation :"""
+            #     """Poloidal magnetic flux {dynamic} [Wb]. """
 
             # def volume(self):
             #     """Volume enclosed inside the magnetic surface {dynamic} [m^3]"""
@@ -120,6 +150,14 @@ class CoreProfiles(AttributeTree):
 
             # def surface(self):
             #     """Surface area of the toroidal flux surface {dynamic} [m^2]"""
+
+        class TemperatureFit(AttributeTree):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+
+        class DensityFit(AttributeTree):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
 
         class Electons(AttributeTree):
             def __init__(self,  grid,  *args,  **kwargs):
@@ -417,21 +455,6 @@ class CoreProfiles(AttributeTree):
             #     """Quantities related to the different states of the species (energy, excitation, ...)	struct_array [max_size=unbounded]	1- 1...N"""
             #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
 
-        @cached_property
-        def ion(self):
-            """Quantities related to the different ion species"""
-            return CoreProfiles.Ion(self)
-
-        @cached_property
-        def electons(self):
-            """Quantities related to the electrons"""
-            return CoreProfiles.Electons(self)
-
-        @cached_property
-        def neutral(self):
-            """Quantities related to the different neutral species"""
-            return CoreProfiles.Neutral(self)
-
         @property
         def pprime(self):
             return None
@@ -564,49 +587,68 @@ class CoreProfiles(AttributeTree):
         #     """Magnetic shear, defined as rho_tor/q . dq/drho_tor {dynamic}[-]"""
         #     return NotImplemented
 
+    class GlobalQuantities(AttributeTree):
+        def __init__(self, core_profiles, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.__dict__["_core_profile"] = core_profiles
+
+        @cached_property
+        def p(self):
+            """ Total plasma current (toroidal component). Positive sign means anti-clockwise when viewed from above. {dynamic} [A]. """
+            return NotImplemented
+
+        @cached_property
+        def current_non_inductive(self):
+            """  Total non-inductive current (toroidal component). Positive sign means anti-clockwise when viewed from above. {dynamic} [A]. """
+            return NotImplemented
+
+        @cached_property
+        def current_bootstrap(self):
+            """  Bootstrap current (toroidal component). Positive sign means anti-clockwise when viewed from above. {dynamic} [A]. """
+            return NotImplemented
+
+        @cached_property
+        def v_loop(self):
+            """ LCFS loop voltage (positive value drives positive ohmic current that flows anti-clockwise when viewed from above) {dynamic} [V]. """
+            return NotImplemented
+
+        @cached_property
+        def li_3(self):
+            """ Internal inductance. The li_3 definition is used, i.e. li_3 = 2/R0/mu0^2/Ip^2 * int(Bp^2 dV). {dynamic} [-]"""
+            return NotImplemented
+
+        @cached_property
+        def beta_tor(self):
+            """ Toroidal beta, defined as the volume-averaged total perpendicular pressure divided by (B0^2/(2*mu0)), i.e. beta_toroidal = 2 mu0 int(p dV) / V / B0^2 {dynamic} [-]"""
+            return NotImplemented
+
+        @cached_property
+        def beta_tor_norm(self):
+            """  Normalised toroidal beta, defined as 100 * beta_tor * a[m] * B0 [T] / ip [MA] {dynamic} [-]"""
+            return NotImplemented
+
+        @cached_property
+        def beta_pol(self):
+            """ Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip^2] {dynamic} [-]"""
+            return NotImplemented
+
+        @cached_property
+        def energy_diamagnetic(self):
+            """  Plasma energy content = 3/2 * integral over the plasma volume of the total perpendicular pressure {dynamic} [J]"""
+            return NotImplemented
+
+        @cached_property
+        def z_eff_resistive(self):
+            """  Volume average plasma effective charge, estimated from the flux consumption in the ohmic phase {dynamic} [-]"""
+            return NotImplemented
+
     @cached_property
     def profiles_1d(self):
-        return CoreProfiles.Profiles1D(None,
-                                       equilibrium=self._equilibrium,
-                                       rho_tor_norm=self._rho_tor_norm)
 
-    def plot(self, profiles, axis=None):
-        return plot_profiles(self, profiles, x_axis="grid.rho_tor_norm", prefix="profiles_1d", axis=axis)
-
-
-    #     fig, axis = plt.subplots(ncols=1, nrows=len(profiles), sharex=True)
-
-    #     if not isinstance(profiles, list):
-    #         profiles = [profiles]
-
-    #     x_axis = self.profiles_1d.grid.rho_tor_norm
-
-    #     for idx, data in enumerate(profiles):
-    #         ylabel = None
-    #         opts = {}
-    #         if isinstance(data, tuple):
-    #             data, ylabel = data
-    #         if isinstance(data, str):
-    #             ylabel = data
-
-    #         if not isinstance(data, list):
-    #             data = [data]
-
-        #    for d in data:
-        #         value = self.profiles_1d[d]
-
-        #         if value is not NotImplemented and value is not None and len(value) > 0:
-        #             axis[idx].plot(x_axis, value, **opts)
-        #         else:
-        #             logger.error(f"Can not find profile '{d}'")
-
-        #     axis[idx].legend(fontsize=6)
-
-        #     if ylabel:
-        #         axis[idx].set_ylabel(ylabel, fontsize=6).set_rotation(0)
-        #     axis[idx].labelsize = "media"
-        #     axis[idx].tick_params(labelsize=6)
-
-        # axis[-1].set_xlabel(r"$\rho_{norm}$", fontsize=6)
-
-        # return fig
+    def plot(self, profiles, axis=None, x_axis=None):
+        return plot_profiles(
+            self,
+            profiles,
+            x_axis=x_axis or ("grid.rho_tor_norm", r"$\rho_{norm}$"),
+            prefix="profiles_1d",
+            axis=axis)

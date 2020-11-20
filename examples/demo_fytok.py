@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import pprint
 import sys
 import numpy as np
+import scipy.constants
 sys.path.append("/home/salmon/workspace/freegs/")
 sys.path.append("/home/salmon/workspace/fytok/python")
 sys.path.append("/home/salmon/workspace/SpDev/SpDB")
@@ -46,9 +47,9 @@ if __name__ == "__main__":
 
     from fytok.Tokamak import Tokamak
     from spdm.util.logger import logger
+    from spdm.data.Entry import open_entry
 
-    tok = Tokamak.load_from("east+mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east",
-                            shot=55555, time_slice=100)
+    tok = Tokamak(open_entry("east+mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east", shot=55555, time_slice=100))
 
     draw(tok).savefig("../output/tokamak0.svg", transparent=True)
 
@@ -77,17 +78,16 @@ if __name__ == "__main__":
     #         "xpoints": xpoints,
     #         "isoflux": isoflux
     #     })
+
     tok.update(
-        constraints={
-            # "psivals": psivals,
-            "xpoints": xpoints,
-            "isoflux": isoflux
-        })
+        constraints={"xpoints": xpoints, "isoflux": isoflux},  # "psivals": psivals,
+        core_profiles={"profiles_1d": {"conductivity_parallel": scipy.constants.sigma}}
+    )
 
     draw(tok).savefig("../output/tokamak1.svg", transparent=True)
 
-    _, fig = tok.core_profiles.plot([("pressure", {"maker": ".", "markersize": 2}), ("j_tor", {}), "fpol", "rho_tor","vprime","gm1","gm3","gm5"])
-
+    _, fig = tok.core_profiles.plot("dpsi_drho_tor,pressure,j_tor,fpol,psi,grid.rho_tor_norm,vprime,conductivity_parallel")
+    #
     fig.tight_layout()
     fig.subplots_adjust(hspace=0)
     fig.align_ylabels()

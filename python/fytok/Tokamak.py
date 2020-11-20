@@ -4,7 +4,6 @@ import math
 from functools import cached_property
 import matplotlib.pyplot as plt
 import numpy as np
-from spdm.data.Entry import open_entry
 from spdm.util.AttributeTree import AttributeTree, _last_, _next_
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
@@ -21,43 +20,16 @@ from .TF import TF
 
 class Tokamak(AttributeTree):
 
-    def __init__(self,  config=None,  *args,    **kwargs):
-        super().__init__()
-        self.load(config)
-        self._time = None
-        # if config is None:
-        #     config = AttributeTree()
-
-        # self.vacuum_toroidal_field = config.vacuum_toroidal_field
-
-        # if not self.vacuum_toroidal_field.r0:
-        #     lim_r = self.wall.limiter.outline.r
-        #     self.vacuum_toroidal_field.r0 = (min(lim_r)+max(lim_r))*0.5
-        self.core_profiles = CoreProfiles(time=self.time, equilibrium=self.equilibrium)
-        self.core_profiles.update(self._cache.core_profiles)
-
-    @staticmethod
-    def load_from(entry, *args, **kwargs):
-        return Tokamak(open_entry(entry, *args, **kwargs))
-
-    def load(self, config):
-        self._cache = config
-
-    @property
-    def time(self):
-        if self._time is None:
-            self._time = self.equilibrium.cache.time  # FIXME: this is a risk!
-        return self._time
-
-    @time.setter
-    def time(self, value):
-        if self._time is not None:
-            dt = value-self._time
-            self.upate(dt=dt)
-            self._time = value
+    def __init__(self,  cache=None,  *args, time=0.0, core_profiles=None,  **kwargs):
+        super().__init__(*args, time=time, **kwargs)
+        if isinstance(cache, LazyProxy) or isinstance(cache, AttributeTree):
+            self._cache = cache
         else:
-            self._time = value
-            self.upate()
+            self._cache = AttributeTree(cache)
+        logger.debug(core_profiles)
+        self.core_profiles = CoreProfiles(
+            core_profiles or self._cache.core_profiles,
+            time=self.time, equilibrium=self.equilibrium)
 
     @cached_property
     def vacuum_toroidal_field(self):
@@ -100,7 +72,7 @@ class Tokamak(AttributeTree):
     def save(self, uri, *args, **kwargs):
         raise NotImplementedError()
 
-    def update(self, *args, ctx=None,
+    def update(self, *args,
                time=0.0,
                core_profiles=None,
                constraints=None,
@@ -108,10 +80,9 @@ class Tokamak(AttributeTree):
                tolerance=0.1,
                ** kwargs):
 
-        if core_profiles is not None:
-            self.core_profiles.update(core_profiles)
-
         convergence = False
+
+        core_profiles_iter = CoreProfiles(core_profiles or {}, equilibrium=self.equilibrium)
 
         for iter_count in range(max_iters):
             logger.debug(f"Iterator = {iter_count}")
@@ -119,14 +90,15 @@ class Tokamak(AttributeTree):
             # self.equilibrium.update(profiles=self.core_profiles.interploate(["pprime", "ffprime"]),
             #                         constraints=constraints)
 
-            self.core_transports.update(self.equilibrium)
+            # self.core_sources.update(self.equilibrium)
+            # self.core_transports.update(self.equilibrium)
 
-            self.core_sources.update(self.equilibrium)
+            core_profiles_iter = CoreProfiles(core_profiles, equilibrium=self.equilibrium)
 
-            self.core_profiles, tol = self.transport.update(
-                self.core_profiles,
+            tol = self.transport.update(
+                core_profiles_prev,
+                core_profiles_iter,
                 tokamak=self,
-                equilibrium=self.equilibrium,
                 transports=self.core_transports,
                 sources=self.core_sources)
 
@@ -144,9 +116,13 @@ class Tokamak(AttributeTree):
             if tol < tolerance:
                 convergence = True
                 break
+            else:
+                core_profiles_prev = core_profiles_iter
 
         if not convergence:
             raise RuntimeError(f"Not convergence! iter_count={iter_count}")
+
+        self.core_profiles = core_profiles_iter
 
     def plot(self, axis=None, *args,   **kwargs):
 

@@ -60,12 +60,12 @@ class Transport(AttributeTree):
         self.description.primary_coordinate.name = "rho_tor_norm"    # or "rho_tor"
         self.description.primary_coordinate.index = "1"              # or 2
 
-    def update(self, core_profiles,
+    def update(self,
+               core_profiles_prev,
+               core_profiles_iter,
                *args,
-               equilibrium=None,
                core_transports=None,
                core_sources=None,
-               rho_tor_norm=None,
                enable_quasi_neutrality=True,
                **kwargs):
         """Solve transport equations
@@ -79,16 +79,10 @@ class Transport(AttributeTree):
                 .transport_solver :> imas_dd://self.transport_solver_numerics
 
         """
-        core_profiles_prev = core_profiles
-
-        if rho_tor_norm is None:
-            rho_tor_norm = core_profiles_prev.profiles_1d.grid.rho_tor_norm
-
-        core_profiles_iter = CoreProfiles(equilibrium=equilibrium, rho_tor_norm=rho_tor_norm)
 
         # -----------------------------------------------------------
         # Equilibrium
-
+       
         # current density profile:
         self._current(core_profiles_prev,  core_profiles_iter,  **kwargs)
 
@@ -110,9 +104,7 @@ class Transport(AttributeTree):
 
         self.update_global_quantities(core_profiles_prev,  core_profiles_iter)
 
-        tol = self.check_converge(core_profiles_prev, core_profiles_iter)
-
-        return core_profiles_iter, tol
+        return self.check_converge(core_profiles_prev, core_profiles_iter)
 
     def check_converge(self, core_profiles_prev, core_profiles_iter):
         return 0
@@ -205,7 +197,6 @@ class Transport(AttributeTree):
         ########################################
         # -----------------------------------------------------------
         # time step                                         [s]
-        logger.debug((core_profiles_iter, core_profiles_prev))
         tau = core_profiles_iter.time - core_profiles_prev.time
 
         # $R_0$ characteristic major radius of the device   [m]
