@@ -4,8 +4,9 @@ from spdm.util.logger import logger
 
 
 class CoreSources(AttributeTree):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, config, *args, tokamak=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.load(config)
 
     def load(self, *args, **kwargs):
         logger.debug("NOT IMPLEMENTED")

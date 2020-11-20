@@ -4,8 +4,9 @@ from spdm.util.logger import logger
 
 
 class CoreTransports(AttributeTree):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, config=None, *args, tokamak=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.load(config)
 
     def load(self, *args, **kwargs):
         logger.debug("NOT IMPLEMENTED")

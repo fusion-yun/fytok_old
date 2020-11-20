@@ -3,6 +3,7 @@ import collections
 import functools
 import inspect
 from functools import cached_property
+from concurrent import futures
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -126,9 +127,9 @@ class FluxSurface:
         yield from self.find_by_psi(psival*(self.psi_boundary-self.psi_axis)+self.psi_axis, *args, **kwargs)
 
     def find_by_psi(self, psival, ntheta=64):
+
         if type(ntheta) is int:
             dim_theta = np.linspace(0, scipy.constants.pi*2.0,  ntheta, endpoint=False)
-            #+ scipy.constants.pi / ntheta
         elif isinstance(ntheta, collections.abc.Sequence) or isinstance(ntheta, np.ndarray):
             dim_theta = ntheta
         else:
@@ -175,22 +176,37 @@ class FluxSurface:
             pass
         elif self.coordinate_system.grid_type.index > 1:
             raise ValueError(f"Unknown grid type {self.coordinate_system.grid_type}")
-        R, Z = np.meshgrid(self.coordinate_system.grid.dim1, self.coordinate_system.grid.dim2, indexing="ij")
 
-        for i, psival in enumerate(self.coordinate_system.grid.dim1):
-            for j, x in enumerate(self.find_by_psinorm(psival, self.coordinate_system.grid.dim2)):
-                R[i, j] = x[0]
-                Z[i, j] = x[1]
+        npsi = self.coordinate_system.grid.dim1
+        ntheta = self.coordinate_system.grid.dim2
 
-        return R, Z
+        # TODO: Using futures.ThreadPoolExecutor() cannot improve performance. Why ?
+        return np.array([[[r, z] for r, z in self.find_by_psinorm(psival, ntheta)] for psival in npsi])
+
+        # RZ = np.full([npsi.shape[0], ntheta.shape[0], 2], np.nan)
+
+        # def func(psival, ntheta=ntheta):
+        #     return [[r, z] for r, z in self.find_by_psinorm(psival, ntheta)]
+
+        # # We can use a with statement to ensure threads are cleaned up promptly
+        # with futures.ThreadPoolExecutor( ) as executor:
+
+        #     # Start the load operations and mark each future with its URL
+        #     future_to_i = {executor.submit(func, psi): i for i, psi in enumerate(npsi)}
+        #     for future in futures.as_completed(future_to_i):
+        #         i = future_to_i[future]
+        #         try:
+        #             RZ[i] = future.result()
+        #         except Exception as exc:
+        #             print('%r generated an exception: %s' % (i, exc))
 
     @cached_property
     def R(self):
-        return self.surface_mesh[0]
+        return self.surface_mesh[:, :, 0]
 
     @cached_property
     def Z(self):
-        return self.surface_mesh[1]
+        return self.surface_mesh[:, :, 1]
 
     @cached_property
     def grad_psi(self):
@@ -242,7 +258,6 @@ class FluxSurface:
     def gm3(self):
         """<(grad_rho_tor)**2>"""
         return self.average(self.grad_psi2)*(self.drho_dpsi**2)
-         
 
     @cached_property
     def gm4(self):

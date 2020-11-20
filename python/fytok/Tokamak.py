@@ -16,6 +16,7 @@ from .Equilibrium import Equilibrium
 from .PFActive import PFActive
 from .Transport import Transport
 from .Wall import Wall
+from .TF import TF
 
 
 class Tokamak(AttributeTree):
@@ -32,6 +33,8 @@ class Tokamak(AttributeTree):
         # if not self.vacuum_toroidal_field.r0:
         #     lim_r = self.wall.limiter.outline.r
         #     self.vacuum_toroidal_field.r0 = (min(lim_r)+max(lim_r))*0.5
+        self.core_profiles = CoreProfiles(time=self.time, equilibrium=self.equilibrium)
+        self.core_profiles.update(self._cache.core_profiles)
 
     @staticmethod
     def load_from(entry, *args, **kwargs):
@@ -72,7 +75,7 @@ class Tokamak(AttributeTree):
 
     @cached_property
     def tf(self):
-        return PFActive(self._cache.tf, tokamak=self)
+        return TF(self._cache.tf, tokamak=self)
 
     @cached_property
     def pf_active(self):
@@ -81,10 +84,6 @@ class Tokamak(AttributeTree):
     @cached_property
     def equilibrium(self):
         return Equilibrium(self._cache.equilibrium.time_slice, tokamak=self)
-
-    @cached_property
-    def core_profiles(self):
-        return CoreProfiles(self._cache.core_profiles, tokamak=self)
 
     @cached_property
     def core_transports(self):
@@ -104,33 +103,32 @@ class Tokamak(AttributeTree):
     def update(self, *args, ctx=None,
                time=0.0,
                core_profiles=None,
-
                constraints=None,
                max_iters=1,
                tolerance=0.1,
                ** kwargs):
 
         if core_profiles is not None:
-            self.transport.core_profiles.update(core_profiles)
+            self.core_profiles.update(core_profiles)
 
         convergence = False
-
-        pressure_iter = self.transport.core_profiles.pressure
 
         for iter_count in range(max_iters):
             logger.debug(f"Iterator = {iter_count}")
 
-            self.equilibrium.update(profiles=self.core_profiles.interploate(["pprime", "ffprime"]),
-                                    constraints=constraints)
+            # self.equilibrium.update(profiles=self.core_profiles.interploate(["pprime", "ffprime"]),
+            #                         constraints=constraints)
 
-            self.core_transports.update(self.equilibrium, ctx=ctx)
+            self.core_transports.update(self.equilibrium)
 
-            self.core_sources.update(self.equilibrium, ctx=ctx)
+            self.core_sources.update(self.equilibrium)
 
-            self.transport.update(equilibrium=self.equilibrium,
-                                  ctx=ctx,
-                                  transports=self.core_transports,
-                                  sources=self.core_sources)
+            self.core_profiles, tol = self.transport.update(
+                self.core_profiles,
+                tokamak=self,
+                equilibrium=self.equilibrium,
+                transports=self.core_transports,
+                sources=self.core_sources)
 
             # TODO: edge
             # edge_profiles_old = copy(edge_profiles_iter)
@@ -143,14 +141,9 @@ class Tokamak(AttributeTree):
             #     sources=self.edge_sources,
             #     **kwargs)
 
-            if not pressure_iter:
+            if tol < tolerance:
                 convergence = True
-            # elif math.sqrt(sum(self.transport.core_profiles.pressure-pressure_iter**2) /
-            #                sum(self.transport.core_profiles.pressure-pressure_iter**2)) < tolerance:
-            #     convergence = True
-            #     break
-
-            pressure_iter = self.transport.core_profiles.pressure
+                break
 
         if not convergence:
             raise RuntimeError(f"Not convergence! iter_count={iter_count}")

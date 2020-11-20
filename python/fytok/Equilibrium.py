@@ -137,7 +137,7 @@ class Equilibrium(AttributeTree):
 
     @property
     def time(self):
-        return self.tokamak.time or self._eq.cache.time or 0.0
+        return self.tokamak.time or self.cache.time or 0.0
 
     def _solve(self, *args, **kwargs):
         raise NotImplementedError()

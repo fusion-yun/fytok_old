@@ -16,4 +16,4 @@ class Coil(AttributeTree):
 
 class Circuit(AttributeTree):
     def __init__(self, *args, **kwargs):
-    super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)

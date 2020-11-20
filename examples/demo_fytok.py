@@ -71,20 +71,27 @@ if __name__ == "__main__":
     xpoints[1][0] += 0.1
     xpoints[1][1] += 0.1
 
-    tok.equilibrium.update(
-        constraints={
-            # "psivals": psivals,
-            "xpoints": xpoints,
-            "isoflux": isoflux
-        })
-    # tok.update(
+    # tok.equilibrium.update(
     #     constraints={
     #         # "psivals": psivals,
     #         "xpoints": xpoints,
     #         "isoflux": isoflux
     #     })
+    tok.update(
+        constraints={
+            # "psivals": psivals,
+            "xpoints": xpoints,
+            "isoflux": isoflux
+        })
 
     draw(tok).savefig("../output/tokamak1.svg", transparent=True)
+
+    _, fig = tok.core_profiles.plot([("pressure", {"maker": ".", "markersize": 2}), ("j_tor", {}), "fpol", "rho_tor"])
+
+    fig.tight_layout()
+    fig.subplots_adjust(hspace=0)
+    fig.align_ylabels()
+    fig.savefig("../output/core_profiles.svg", transparent=True)
 
     # tok.equilibrium.plot().savefig("../output/tokamak1.svg", transparent=True)
     # bdr = np.array([p for p in tok.equilibrium.find_surface(0.6)])

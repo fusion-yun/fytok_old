@@ -85,7 +85,7 @@ class EquilibriumFreeGS(Equilibrium):
             logger.debug(f"""Create Profile: Constrain poloidal Beta and plasma current
                      Betap                      ={betap} [-],
                      Plasma current Ip          ={ip} [Amps],
-                     fvec                       ={fvac} [T.m]""")
+                     fvac                       ={fvac} [T.m]""")
         else:
             # Plasma pressure on axis [Pascals]
             pressure = profiles.get("pressure", None) or  \
@@ -101,7 +101,7 @@ class EquilibriumFreeGS(Equilibrium):
             logger.debug(f"""Create Profile: Constrain pressure on axis and plasma current
                      Plasma pressure on axis    ={pressure} [Pascals],
                      Plasma current Ip          ={ip} [Amps],
-                     fvec                       ={fvac} [T.m],
+                     fvac                       ={fvac} [T.m],
                      Raxis                      ={Raxis} [m]
                      """)
         if constraints is None:
