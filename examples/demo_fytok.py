@@ -86,7 +86,7 @@ if __name__ == "__main__":
 
     draw(tok).savefig("../output/tokamak1.svg", transparent=True)
 
-    _, fig = tok.core_profiles.plot([("pressure", {"maker": ".", "markersize": 2}), ("j_tor", {}), "fpol", "rho_tor"])
+    _, fig = tok.core_profiles.plot([("pressure", {"maker": ".", "markersize": 2}), ("j_tor", {}), "fpol", "rho_tor","vprime","gm1","gm3","gm5"])
 
     fig.tight_layout()
     fig.subplots_adjust(hspace=0)
