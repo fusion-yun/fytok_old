@@ -2,14 +2,15 @@
 import collections
 import functools
 import inspect
-from functools import cached_property
 from concurrent import futures
+from functools import cached_property
 
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from numpy import arctan2, cos, sin, sqrt
-from scipy.interpolate import RectBivariateSpline, UnivariateSpline, SmoothBivariateSpline
+from scipy.interpolate import (RectBivariateSpline, SmoothBivariateSpline,
+                               UnivariateSpline)
 from scipy.optimize import root_scalar
 from spdm.util.AttributeTree import AttributeTree, _next_
 from spdm.util.Interpolate import (Interpolate1D, Interpolate2D, derivate,
@@ -20,22 +21,26 @@ from sympy import Point, Polygon
 
 
 class FluxSurface:
-    """
-        Flux surface average of function
-        <a(psi)> =2 *pi* int(a dl * R / |grad psi|)/V'
+    r"""Flux surface average of function
+       <a(psi)> =2 *pi* int(a dl * R / |grad psi|)/V'
 
-        $V^{\prime}\left(\rho\right)=\frac{\partial V}{\partial\rho}=2\pi\int_{0}^{2\pi}\sqrt{g}d\theta=2\pi\varoint\frac{R}{\left|\nabla\rho\right|}dl$
+        .. math::
+            V^{\prime}\left(\rho\right)=\frac{\partial V}{\partial\rho}=2\pi\int_{0}^{2\pi}\sqrt{g}d\theta=2\pi\oint\frac{R}{\left|\nabla\rho\right|}dl
 
-        $\left\langle \alpha\right\rangle  =\frac{2\pi}{V^{\prime}}\int_{0}^{2\pi}\alpha\sqrt{g}d\theta=\frac{2\pi}{V^{\prime}}\varoint\alpha\frac{R}{\left|\nabla\rho\right|}dl$
+        .. math::
+            \left\langle\alpha\right\rangle\equiv\frac{2\pi}{V^{\prime}}\int_{0}^{2\pi}\alpha\sqrt{g}d\theta=\frac{2\pi}{V^{\prime}}\varoint\alpha\frac{R}{\left|\nabla\rho\right|}dl
 
         grid_type : defined by imas://equilibrium.time_slice.profiles_2d.grid_type.index
-                    =1  rectangular	,
-                        Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). In this case the position
-                        arrays should not be filled since they are redundant with grid/dim1 and dim2.
+                   =1  rectangular	,
+                       Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). In this case the position
+                       arrays should not be filled since they are redundant with grid/dim1 and dim2.
     """
+  
 
     def __init__(self,  psirz, coordinate_system, *args, limiter=None, fpol=None, tolerance=1.0e-6,   ** kwargs):
+        """ Initialize FluxSurface
 
+        """
         super().__init__(*args, **kwargs)
 
         logger.debug(f"Calculate magnetic flux surface averge")
@@ -50,7 +55,7 @@ class FluxSurface:
         else:
             raise NotImplementedError(f"coordinate_system type error! {coordinate_system}")
 
-        self.drho_dpsi = 1
+        self.drho_dpsi = 1 
 
         # self.drho_dpsi = drho_dpsi
 

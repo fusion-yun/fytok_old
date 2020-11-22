@@ -1,4 +1,3 @@
-
 import collections
 import functools
 import inspect
@@ -8,7 +7,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from numpy import arctan2, cos, sin, sqrt
-from scipy.interpolate import RectBivariateSpline, UnivariateSpline, SmoothBivariateSpline
+from scipy.interpolate import (RectBivariateSpline, SmoothBivariateSpline,
+                               UnivariateSpline)
 from scipy.optimize import root_scalar
 from spdm.data.Entry import open_entry
 from spdm.util.AttributeTree import AttributeTree, _next_
@@ -21,17 +21,16 @@ from spdm.util.sp_export import sp_find_module
 from spdm.util.utilities import first_not_empty
 from sympy import Point, Polygon
 
-from .PFActive import PFActive
-from .Wall import Wall
-from .FluxSurface import FluxSurface
+from fytok.FluxSurface import FluxSurface
+from fytok.PFActive import PFActive
+from fytok.Wall import Wall
 
 #  psi phi pressure f dpressure_dpsi f_df_dpsi j_parallel q magnetic_shear r_inboard r_outboard rho_tor rho_tor_norm dpsi_drho_tor geometric_axis elongation triangularity_upper triangularity_lower volume rho_volume_norm dvolume_dpsi dvolume_drho_tor area darea_dpsi surface trapped_fraction gm1 gm2 gm3 gm4 gm5 gm6 gm7 gm8 gm9 b_field_max beta_pol mass_density
 TOLERANCE = 1.0e-6
 
 
 class Equilibrium(AttributeTree):
-    """
-        Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
+    """Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
         imas dd version 3.28
         ids=equilibrium
 
@@ -40,47 +39,43 @@ class Equilibrium(AttributeTree):
 
         COCOS  11
 
-        #################################################################################
-        # Top view
-        #          ***************
-        #         *               *
-        #        *   ***********   *
-        #       *   *           *   *
-        #      *   *             *   *
-        #      *   *             *   *
-        #  Ip  v   *             *   ^  \\phi
-        #      *   *    Z o--->R *   *
-        #      *   *             *   *
-        #      *   *             *   *
-        #      *   *     Bpol    *   *
-        #       *   *     o     *   *
-        #        *   ***********   *
-        #         *               *
-        #          ***************
-        #            Bpol x
-        #
-        # Poloidal view
-        #     ^Z
-        #     |
-        #     |       ************
-        #     |      *            *
-        #     |     *         ^    *
-        #     |     *  \\rho /     *
-        #     |     *       /      *
-        #     +-----*------X-------*---->R
-        #     |     *  Ip, \\phi   *
-        #     |     *              *
-        #     |      *            *
-        #     |       *****<******
-        #     |       Bpol,\\theta
-        #     |
-        #
-        # Cylindrical coordinate      : (R,\\phi,Z)
-        # Poloidal plane coordinate   : (\\rho,\\theta,\\phi)
-        #################################################################################
-    """
-
-    @ staticmethod
+    """    
+    #    Top view
+    #             ***************
+    #            *               *
+    #           *   ***********   *
+    #          *   *           *   *
+    #         *   *             *   *
+    #         *   *             *   *
+    #     Ip  v   *             *   ^  \\phi
+    #         *   *    Z o--->R *   *
+    #         *   *             *   *
+    #         *   *             *   *
+    #         *   *     Bpol    *   *
+    #          *   *     o     *   *
+    #           *   ***********   *
+    #            *               *
+    #             ***************
+    #               Bpol x
+    #            Poloidal view
+    #        ^Z
+    #        |
+    #        |       ************
+    #        |      *            *
+    #        |     *         ^    *
+    #        |     *  \\rho /     *
+    #        |     *       /      *
+    #        +-----*------X-------*---->R
+    #        |     *  Ip, \\phi   *
+    #        |     *              *
+    #        |      *            *
+    #        |       *****<******
+    #        |       Bpol,\\theta
+    #        |
+    #            Cylindrical coordinate      : (R,\\phi,Z)
+    #    Poloidal plane coordinate   : (\\rho,\\theta,\\phi)
+        
+    @staticmethod
     def __new__(cls,   config,  *args, **kwargs):
         if cls is not Equilibrium:
             return super(Equilibrium, cls).__new__(cls)
@@ -201,29 +196,28 @@ class Equilibrium(AttributeTree):
         return Equilibrium.CoordinateSystem(self)
 
     class CoordinateSystem(AttributeTree):
-        """
-            Definition of the 2D grid
+        """Definition of the 2D grid
 
-            grid.dim1           :   First dimension values {dynamic} [mixed]
-            grid.dim2           :   Second dimension values {dynamic} [mixed]
-            grid.volume_element :   Elementary plasma volume of plasma enclosed in the cell formed by the nodes
-                                [dim1(i) dim2(j)], [dim1(i+1) dim2(j)], [dim1(i) dim2(j+1)]
-                                and [dim1(i+1) dim2(j+1)] {dynamic} [m^3]
+           grid.dim1           :   First dimension values  [mixed]
+           grid.dim2           :   Second dimension values  [mixed]
+           grid.volume_element :   Elementary plasma volume of plasma enclosed in the cell formed by the nodes
+                               [dim1(i) dim2(j)], [dim1(i+1) dim2(j)], [dim1(i) dim2(j+1)]
+                               and [dim1(i+1) dim2(j+1)]  [m^3]
 
-            grid_type.name      :
-            grid_type.index     : 0xFF (rho theta)
-                                    theta
-                                    0x0?  : rho= psi,  poloidal flux function
-                                    0x1?  : rho= V, volume within surface
-                                    0x2?  : rho= sqrt(V)
-                                    0x3?  : rho= Phi, toroidal flux with in surface
-                                    0x4?  : rho= sqrt(Phi/B0/pi)
-                                    theta
-                                    0x?0  : poloidal angle
-                                    0x?1  : constant arch length
-                                    0x?2  : straight filed lines
-                                    0x?3  : constant area
-                                    0x?4  : constant volume
+           grid_type.name      :
+           grid_type.index     : 0xFF (rho theta)
+                                   theta
+                                   0x0?  : rho= psi,  poloidal flux function
+                                   0x1?  : rho= V, volume within surface
+                                   0x2?  : rho= sqrt(V)
+                                   0x3?  : rho= Phi, toroidal flux with in surface
+                                   0x4?  : rho= sqrt(Phi/B0/pi)
+                                   theta
+                                   0x?0  : poloidal angle
+                                   0x?1  : constant arch length
+                                   0x?2  : straight filed lines
+                                   0x?3  : constant area
+                                   0x?4  : constant volume
         """
 
         def __init__(self, eq,  *args, grid=None, grid_type=None, **kwargs):
@@ -276,27 +270,27 @@ class Equilibrium(AttributeTree):
 
         @cached_property
         def r(self):
-            """	Values of the major radius on the grid {dynamic} [m]"""
+            """	Values of the major radius on the grid  [m]"""
             return self._mesh.r
 
         @cached_property
         def z(self):
-            """Values of the Height on the grid {dynamic} [m]"""
+            """Values of the Height on the grid  [m]"""
             return self._mesh.z
 
         @cached_property
         def jacobian(self):
-            """	Absolute value of the jacobian of the coordinate system {dynamic} [mixed]"""
+            """	Absolute value of the jacobian of the coordinate system  [mixed]"""
             return self._metric.jacobian
 
         @cached_property
         def tensor_covariant(self):
-            """Covariant metric tensor on every point of the grid described by grid_type {dynamic} [mixed]. """
+            """Covariant metric tensor on every point of the grid described by grid_type  [mixed]. """
             return self._metric.tensor_covariant
 
         @cached_property
         def tensor_contravariant(self):
-            """Contravariant metric tensor on every point of the grid described by grid_type {dynamic} [mixed]"""
+            """Contravariant metric tensor on every point of the grid described by grid_type  [mixed]"""
             return self._metric.tensor_contravariant
 
     class Constraints(AttributeTree):
@@ -311,58 +305,58 @@ class Equilibrium(AttributeTree):
 
         @property
         def beta_pol(self):
-            """ Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip^2] {dynamic} [-]"""
+            """ Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip^2]  [-]"""
             return self._eq.cache.global_quantities.beta_pol
 
         @property
         def beta_tor(self):
-            """ Toroidal beta, defined as the volume-averaged total perpendicular pressure divided by (B0^2/(2*mu0)), i.e. beta_toroidal = 2 mu0 int(p dV) / V / B0^2 {dynamic} [-]"""
+            """ Toroidal beta, defined as the volume-averaged total perpendicular pressure divided by (B0^2/(2*mu0)), i.e. beta_toroidal = 2 mu0 int(p dV) / V / B0^2  [-]"""
             return self._eq.cache.global_quantities.beta_tor
 
         @property
         def beta_normal(self):
-            """ Normalised toroidal beta, defined as 100 * beta_tor * a[m] * B0 [T] / ip [MA] {dynamic} [-]"""
+            """ Normalised toroidal beta, defined as 100 * beta_tor * a[m] * B0 [T] / ip [MA]  [-]"""
             return self._eq.cache.global_quantities.beta_normal
 
         @property
         def ip(self):
-            """ Plasma current (toroidal component). Positive sign means anti-clockwise when viewed from above. {dynamic} [A]."""
+            """ Plasma current (toroidal component). Positive sign means anti-clockwise when viewed from above.  [A]."""
             return self._eq.cache.global_quantities.ip
 
         @property
         def li_3(self):
-            """ Internal inductance {dynamic} [-]"""
+            """ Internal inductance  [-]"""
             return self._eq.cache.global_quantities.li
 
         @property
         def volume(self):
-            """ Total plasma volume {dynamic} [m^3]"""
+            """ Total plasma volume  [m^3]"""
             return self._eq.cache.global_quantities.volume
 
         @property
         def area(self):
-            """ Area of the LCFS poloidal cross section {dynamic} [m^2]"""
+            """ Area of the LCFS poloidal cross section  [m^2]"""
             return NotImplemented
 
         @property
         def surface(self):
-            """ Surface area of the toroidal flux surface {dynamic} [m^2]"""
+            """ Surface area of the toroidal flux surface  [m^2]"""
             return NotImplemented
 
         @property
         def length_pol(self):
-            """ Poloidal length of the magnetic surface {dynamic} [m]"""
+            """ Poloidal length of the magnetic surface  [m]"""
             return NotImplemented
 
         @property
         def psi_axis(self):
-            """ Poloidal flux at the magnetic axis {dynamic} [Wb]."""
+            """ Poloidal flux at the magnetic axis  [Wb]."""
             # return self._eq.cache.global_quantities.psi_axis or
             return self._eq.flux_surface.psi_axis
 
         @property
         def psi_boundary(self):
-            """ Poloidal flux at the selected plasma boundary {dynamic} [Wb]."""
+            """ Poloidal flux at the selected plasma boundary  [Wb]."""
             # return self._eq.cache.global_quantities.psi_boundary or
             return self._eq.flux_surface.psi_boundary
 
@@ -376,14 +370,14 @@ class Equilibrium(AttributeTree):
 
         @property
         def q_axis(self):
-            """ q at the magnetic axis {dynamic} [-]."""
+            """ q at the magnetic axis  [-]."""
             return self._eq.cache.global_quantities.q_axis
 
         @property
         def q_95(self):
             """ q at the 95% poloidal flux surface
             (IMAS uses COCOS=11: only positive when toroidal current
-            and magnetic field are in same direction) {dynamic} [-]."""
+            and magnetic field are in same direction)  [-]."""
             return self._eq.cache.global_quantities.q_95
 
         @property
@@ -393,9 +387,7 @@ class Equilibrium(AttributeTree):
 
         @property
         def energy_mhd(self):
-            """ Plasma energy content:
-                  3/2 * int(p, dV) with p being the total pressure(thermal + fast particles)[J].
-                Time-dependent  Scalar {dynamic}[J]"""
+            """ Plasma energy content: 3/2 * int(p, dV) with p being the total pressure(thermal + fast particles)[J].  Time-dependent  Scalar [J]"""
             return self._eq.cache.global_quantities.energy_mhd
 
     class Profiles1D(AttributeTree):
@@ -412,7 +404,7 @@ class Equilibrium(AttributeTree):
 
         @cached_property
         def psi(self):
-            """Poloidal flux {dynamic} [Wb]. """
+            """Poloidal flux  [Wb]. """
             res = self._eq.cache.profiles_1d.psi
             if res is not NotImplemented and res is not None and len(res) > 0:
                 logger.debug(f"Using 'psi' cache")
@@ -424,7 +416,7 @@ class Equilibrium(AttributeTree):
 
         @cached_property
         def psi_norm(self):
-            """Normalized poloidal flux {dynamic} [Wb]. """
+            """Normalized poloidal flux  [Wb]. """
             res = self._eq.cache.profiles_1d.psi_norm
             if res is NotImplemented or res is None or len(res) == 0:
                 res = np.linspace(0, 1, self._npsi)
@@ -432,7 +424,7 @@ class Equilibrium(AttributeTree):
 
         @cached_property
         def phi(self):
-            """Toroidal flux {dynamic} [Wb]. FIXME: not sure,need double check"""
+            """Toroidal flux  [Wb]. FIXME: not sure,need double check"""
             psi = self.psi_norm
             q = self.q/(2.0*scipy.constants.pi)
             q_func = UnivariateSpline(psi, q)
@@ -441,7 +433,7 @@ class Equilibrium(AttributeTree):
 
         @cached_property
         def pressure(self):
-            """	Pressure {dynamic} [Pa]"""
+            """	Pressure  [Pa]"""
             res = self._eq.cache.profiles_1d.pressure
 
             if res is NotImplemented or res is None or len(res) == 0:
@@ -455,7 +447,7 @@ class Equilibrium(AttributeTree):
 
         @cached_property
         def f(self):
-            """Diamagnetic function (F=R B_Phi) {dynamic} [T.m]."""
+            """Diamagnetic function (F=R B_Phi)  [T.m]."""
             # ffprime = self.f_df_dpsi
             # f2 = [2*ffprime.integral(0, psi) for psi in self.psi]
             # return np.sqrt(f2)
@@ -478,12 +470,12 @@ class Equilibrium(AttributeTree):
 
         @cached_property
         def pprime(self):
-            """Derivative of pressure w.r.t. psi {dynamic} [Pa.Wb^-1]."""
+            """Derivative of pressure w.r.t. psi  [Pa.Wb^-1]."""
             return self.dpressure_dpsi
 
         @cached_property
         def dpressure_dpsi(self):
-            """Derivative of pressure w.r.t. psi {dynamic} [Pa.Wb^-1]."""
+            """Derivative of pressure w.r.t. psi  [Pa.Wb^-1]."""
             res = self._eq.cache.profiles_1d.dpressure_dpsi
             if len(res) == 0:
                 res = self._eq.cache.profiles_1d.pprime
@@ -491,12 +483,12 @@ class Equilibrium(AttributeTree):
 
         @cached_property
         def ffprime(self):
-            """	Derivative of F w.r.t. Psi, multiplied with F {dynamic} [T^2.m^2/Wb]. """
+            """	Derivative of F w.r.t. Psi, multiplied with F  [T^2.m^2/Wb]. """
             return self.f_df_dpsi
 
         @cached_property
         def f_df_dpsi(self):
-            """	Derivative of F w.r.t. Psi, multiplied with F {dynamic} [T^2.m^2/Wb]. """
+            """	Derivative of F w.r.t. Psi, multiplied with F  [T^2.m^2/Wb]. """
             res = self._eq.cache.profiles_1d.f_df_dpsi
             if len(res) == 0:
                 res = self._eq.cache.profiles_1d.ffprime
@@ -504,17 +496,17 @@ class Equilibrium(AttributeTree):
 
         @cached_property
         def j_tor(self):
-            """Flux surface averaged toroidal current density = average(j_tor/R) / average(1/R) {dynamic} [A.m^-2]."""
+            """Flux surface averaged toroidal current density = average(j_tor/R) / average(1/R)  [A.m^-2]."""
             return NotImplemented
 
         @cached_property
         def j_parallel(self):
-            """Flux surface averaged parallel current density = average(j.B) / B0, where B0 = Equilibrium/Global/Toroidal_Field/B0 {dynamic} [A/m^2].  """
+            """Flux surface averaged parallel current density = average(j.B) / B0, where B0 = Equilibrium/Global/Toroidal_Field/B0  [A/m^2].  """
             return NotImplemented
 
         @cached_property
         def q(self):
-            """ Safety factor (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic} [-].
+            """ Safety factor (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)  [-].
                 q(psi) = F Vprime <R^-2> /(4 pi**2) """
             # res = self._eq.cache.profiles_1d.q
             # if len(res) == 0:
@@ -522,28 +514,28 @@ class Equilibrium(AttributeTree):
 
         @cached_property
         def magnetic_shear(self):
-            """Magnetic shear, defined as rho_tor/q . dq/drho_tor {dynamic} [-]	 """
+            """Magnetic shear, defined as rho_tor/q . dq/drho_tor  [-]	 """
             return self.rho_tor/self.q * derivate(self.q, self.dpsi_drho_tor)
 
         @cached_property
         def r_inboard(self):
-            """Radial coordinate (major radius) on the inboard side of the magnetic axis {dynamic} [m]"""
+            """Radial coordinate (major radius) on the inboard side of the magnetic axis  [m]"""
             return NotImplemented
 
         @cached_property
         def r_outboard(self):
-            """Radial coordinate (major radius) on the outboard side of the magnetic axis {dynamic} [m]"""
+            """Radial coordinate (major radius) on the outboard side of the magnetic axis  [m]"""
             return NotImplemented
 
         @cached_property
         def rho_tor(self):
-            """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0 {dynamic} [m]"""
+            """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0  [m]"""
             return np.sqrt(self.phi)/np.sqrt(scipy.constants.pi * self._eq.vacuum_toroidal_field.b0)
 
         @cached_property
         def rho_tor_norm(self):
             """Normalised toroidal flux coordinate. The normalizing value for rho_tor_norm, is the toroidal flux coordinate at the equilibrium boundary
-                (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation) {dynamic} [-]"""
+                (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation)  [-]"""
             return self.rho_tor/self.rho_tor[-1]
 
         @cached_property
@@ -559,12 +551,12 @@ class Equilibrium(AttributeTree):
 
         @cached_property
         def dpsi_drho_tor(self)	:
-            """Derivative of Psi with respect to Rho_Tor {dynamic} [Wb/m]. """
+            """Derivative of Psi with respect to Rho_Tor  [Wb/m]. """
             return self._eq.vacuum_toroidal_field.b0*self.rho_tor/self.q
 
         @cached_property
         def volume(self):
-            """Volume enclosed in the flux surface {dynamic} [m^3]"""
+            """Volume enclosed in the flux surface  [m^3]"""
             vprime = self.dvolume_dpsi
             psi_scale = self._eq.global_quantities.psi_boundary - self._eq.global_quantities.psi_axis
             return [integral(vprime, 0, psi)*psi_scale for psi in self.psi_norm]
@@ -572,52 +564,52 @@ class Equilibrium(AttributeTree):
         @cached_property
         def rho_volume_norm(self)	:
             """Normalised square root of enclosed volume (radial coordinate). The normalizing value is the enclosed volume at the equilibrium boundary
-                (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation) {dynamic} [-]"""
+                (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation)  [-]"""
             return NotImplemented
 
         @cached_property
         def dvolume_drho_tor(self)	:
-            """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor {dynamic} [m^2]"""
+            """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor  [m^2]"""
             return self.dvolume_dpsi*self.dpsi_drho_tor
 
         @cached_property
         def area(self):
-            """Cross-sectional area of the flux surface {dynamic} [m^2]"""
+            """Cross-sectional area of the flux surface  [m^2]"""
             return NotImplemented
 
         @cached_property
         def darea_dpsi(self):
-            """Radial derivative of the cross-sectional area of the flux surface with respect to psi {dynamic} [m^2.Wb^-1]. """
+            """Radial derivative of the cross-sectional area of the flux surface with respect to psi  [m^2.Wb^-1]. """
             return NotImplemented
 
         @cached_property
         def darea_drho_tor(self)	:
-            """Radial derivative of the cross-sectional area of the flux surface with respect to rho_tor {dynamic} [m]"""
+            """Radial derivative of the cross-sectional area of the flux surface with respect to rho_tor  [m]"""
             return NotImplemented
 
         @cached_property
         def surface(self):
-            """Surface area of the toroidal flux surface {dynamic} [m^2]"""
+            """Surface area of the toroidal flux surface  [m^2]"""
             return NotImplemented
 
         @cached_property
         def trapped_fraction(self)	:
-            """Trapped particle fraction {dynamic} [-]"""
+            """Trapped particle fraction  [-]"""
             return NotImplemented
 
         @cached_property
         def b_field_max(self):
-            """Maximum(modulus(B)) on the flux surface (always positive, irrespective of the sign convention for the B-field direction) {dynamic} [T]"""
+            """Maximum(modulus(B)) on the flux surface (always positive, irrespective of the sign convention for the B-field direction)  [T]"""
             return NotImplemented
 
         @cached_property
         def beta_pol(self):
-            """Poloidal beta profile. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip^2] {dynamic} [-]"""
+            """Poloidal beta profile. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip^2]  [-]"""
             return NotImplemented
 
         @cached_property
         def mass_density(self):
-            """Mass density {dynamic} [kg.m^-3]"""
+            """Mass density  [kg.m^-3]"""
             return NotImplemented
 
         @cached_property
@@ -626,52 +618,52 @@ class Equilibrium(AttributeTree):
 
         @cached_property
         def dvolume_dpsi(self):
-            """Radial derivative of the volume enclosed in the flux surface with respect to Psi {dynamic} [m^3.Wb^-1]. """
+            """Radial derivative of the volume enclosed in the flux surface with respect to Psi  [m^3.Wb^-1]. """
             return self._eq.flux_surface.dvolume_dpsi
 
         @cached_property
         def gm1(self):
-            """ Flux surface averaged 1/R^2 {dynamic} [m^-2]  """
+            """ Flux surface averaged 1/R^2  [m^-2]  """
             return self._eq.flux_surface.gm1
 
         @cached_property
         def gm2(self):
-            """ Flux surface averaged |grad_rho_tor|^2/R^2 {dynamic} [m^-2] """
+            """ Flux surface averaged |grad_rho_tor|^2/R^2  [m^-2] """
             return self._eq.flux_surface.gm2*self.drho_tor_dpsi
 
         @cached_property
         def gm3(self):
-            """ Flux surface averaged |grad_rho_tor|^2 {dynamic} [-]	"""
+            """ Flux surface averaged |grad_rho_tor|^2  [-]	"""
             return self._eq.flux_surface.gm3*(self.drho_tor_dpsi**2)
 
         @cached_property
         def gm4(self):
-            """ Flux surface averaged 1/B^2 {dynamic} [T^-2]	"""
+            """ Flux surface averaged 1/B^2  [T^-2]	"""
             return self._eq.flux_surface.gm4
 
         @cached_property
         def gm5(self):
-            """ Flux surface averaged B^2 {dynamic} [T^2]	"""
+            """ Flux surface averaged B^2  [T^2]	"""
             return self._eq.flux_surface.gm5
 
         @cached_property
         def gm6(self):
-            """ Flux surface averaged |grad_rho_tor|^2/B^2 {dynamic} [T^-2]	"""
+            """ Flux surface averaged |grad_rho_tor|^2/B^2  [T^-2]	"""
             return self._eq.flux_surface.gm6 * (self.drho_tor_dpsi**2)
 
         @cached_property
         def gm7(self):
-            """ Flux surface averaged |grad_rho_tor| {dynamic} [-]	"""
+            """ Flux surface averaged |grad_rho_tor|  [-]	"""
             return self._eq.flux_surface.gm7 * self.drho_tor_dpsi
 
         @cached_property
         def gm8(self):
-            """ Flux surface averaged R {dynamic} [m]	"""
+            """ Flux surface averaged R  [m]	"""
             return self._eq.flux_surface.gm8
 
         @cached_property
         def gm9(self):
-            """ Flux surface averaged 1/R {dynamic} [m^-1]          """
+            """ Flux surface averaged 1/R  [m^-1]          """
             return self._eq.flux_surface.gm9
 
     class Profiles2D(AttributeTree):
@@ -733,53 +725,53 @@ class Equilibrium(AttributeTree):
 
         @cached_property
         def r(self):
-            """Values of the major radius on the grid {dynamic} [m] """
+            """Values of the major radius on the grid  [m] """
             return self._rectangular.r
 
         @cached_property
         def z(self):
-            """Values of the Height on the grid {dynamic} [m] """
+            """Values of the Height on the grid  [m] """
             return self._rectangular.z
 
         @cached_property
         def psi(self):
-            """Values of the poloidal flux at the grid in the poloidal plane {dynamic} [Wb]. """
+            """Values of the poloidal flux at the grid in the poloidal plane  [Wb]. """
             return self.psirz(self.r, self.z)
 
         @cached_property
         def theta(self):
-            """	Values of the poloidal angle on the grid {dynamic} [rad] """
+            """	Values of the poloidal angle on the grid  [rad] """
             return NotImplementedError()
 
         @cached_property
         def phi(self):
-            """	Toroidal flux {dynamic} [Wb]"""
+            """	Toroidal flux  [Wb]"""
             return self.apply_psifunc("phi")
             # return self._eq.profiles_1d.phi(self.psi(self.r, self.z))
 
         @cached_property
         def j_tor(self):
-            """	Toroidal plasma current density {dynamic} [A.m^-2]"""
+            """	Toroidal plasma current density  [A.m^-2]"""
             return self.apply_psifunc("j_tor")
 
         @cached_property
         def j_parallel(self):
-            """	Parallel (to magnetic field) plasma current density {dynamic} [A.m^-2]"""
+            """	Parallel (to magnetic field) plasma current density  [A.m^-2]"""
             return self.apply_psifunc("j_parallel")
 
         @cached_property
         def b_field_r(self):
-            """R component of the poloidal magnetic field {dynamic} [T]"""
+            """R component of the poloidal magnetic field  [T]"""
             return self.psirz(self.r, self.z, dx=1)/(self.r*scipy.constants.pi*2.0)
 
         @cached_property
         def b_field_z(self):
-            """Z component of the poloidal magnetic field {dynamic} [T]"""
+            """Z component of the poloidal magnetic field  [T]"""
             return - self.psirz(self.r, self.z, dy=1)/(self.r*scipy.constants.pi*2.0)
 
         @cached_property
         def b_field_tor(self):
-            """Toroidal component of the magnetic field {dynamic} [T]"""
+            """Toroidal component of the magnetic field  [T]"""
             return self.apply_psifunc("fpol")/self.r
 
         def apply_psifunc(self, func):
@@ -804,7 +796,7 @@ class Equilibrium(AttributeTree):
 
         @cached_property
         def type(self):
-            """0 (limiter) or 1 (diverted) {dynamic} """
+            """0 (limiter) or 1 (diverted)  """
             return 1
 
         @cached_property
@@ -831,13 +823,13 @@ class Equilibrium(AttributeTree):
 
         @cached_property
         def psi(self):
-            """ Value of the poloidal flux at which the boundary is taken {dynamic} [Wb]"""
+            """ Value of the poloidal flux at which the boundary is taken  [Wb]"""
             return self._eq.flux_surface.psi_boundary
 
         @cached_property
         def psi_norm(self):
             """ Value of the normalised poloidal flux at which the boundary is taken (typically 99.x %),
-                the flux being normalised to its value at the separatrix {dynamic}"""
+                the flux being normalised to its value at the separatrix """
             return self.psi*0.99
 
         @cached_property
@@ -851,37 +843,37 @@ class Equilibrium(AttributeTree):
 
         @cached_property
         def minor_radius(self):
-            """Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary) {dynamic}[m]	FLT_0D"""
+            """Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary) [m]	FLT_0D"""
             return (max(self.outline.r)-min(self.outline.r))*0.5
 
         @cached_property
         def elongation(self):
-            """Elongation of the plasma boundary Click here for further documentation. {dynamic}[-]	FLT_0D"""
+            """Elongation of the plasma boundary Click here for further documentation. [-]	FLT_0D"""
             return (max(self.outline.z)-min(self.outline.z))/(max(self.outline.r)-min(self.outline.r))
 
         @cached_property
         def elongation_upper(self):
-            """Elongation(upper half w.r.t. geometric axis) of the plasma boundary Click here for further documentation. {dynamic}[-]	FLT_0D"""
+            """Elongation(upper half w.r.t. geometric axis) of the plasma boundary Click here for further documentation. [-]	FLT_0D"""
             return (max(self.outline.z)-self.geometric_axis.z)/(max(self.outline.r)-min(self.outline.r))
 
         @cached_property
         def elongation_lower(self):
-            """Elongation(lower half w.r.t. geometric axis) of the plasma boundary Click here for further documentation. {dynamic}[-]	FLT_0D"""
+            """Elongation(lower half w.r.t. geometric axis) of the plasma boundary Click here for further documentation. [-]	FLT_0D"""
             return (self.geometric_axis.z-min(self.outline.z))/(max(self.outline.r)-min(self.outline.r))
 
         @cached_property
         def triangularity(self):
-            """Triangularity of the plasma boundary Click here for further documentation. {dynamic}[-]	FLT_0D"""
+            """Triangularity of the plasma boundary Click here for further documentation. [-]	FLT_0D"""
             return (self.outline.r[np.argmax(self.outline.z)]-self.outline.r[np.argmin(self.outline.z)])/self.minor_radius
 
         @cached_property
         def triangularity_upper(self):
-            """Upper triangularity of the plasma boundary Click here for further documentation. {dynamic}[-]	FLT_0D"""
+            """Upper triangularity of the plasma boundary Click here for further documentation. [-]	FLT_0D"""
             return (self.geometric_axis.r - self.outline.r[np.argmax(self.outline.z)])/self.minor_radius
 
         @cached_property
         def triangularity_lower(self):
-            """Lower triangularity of the plasma boundary Click here for further documentation. {dynamic}[-]"""
+            """Lower triangularity of the plasma boundary Click here for further documentation. [-]"""
             return (self.geometric_axis.r - self.outline.r[np.argmin(self.outline.z)])/self.minor_radius
 
         @cached_property
@@ -1070,35 +1062,35 @@ class Equilibrium(AttributeTree):
 
         return fig
 
-    # # Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip^2] {dynamic} [-]	FLT_0D
+    # # Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip^2]  [-]	FLT_0D
     # self.global_quantities.beta_pol = NotImplemented
-    # # Toroidal beta, defined as the volume-averaged total perpendicular pressure divided by (B0^2/(2*mu0)), i.e. beta_toroidal = 2 mu0 int(p dV) / V / B0^2 {dynamic} [-]	FLT_0D
+    # # Toroidal beta, defined as the volume-averaged total perpendicular pressure divided by (B0^2/(2*mu0)), i.e. beta_toroidal = 2 mu0 int(p dV) / V / B0^2  [-]	FLT_0D
     # self.global_quantities.beta_tor = NotImplemented
-    # # Normalised toroidal beta, defined as 100 * beta_tor * a[m] * B0 [T] / ip [MA] {dynamic} [-]	FLT_0D
+    # # Normalised toroidal beta, defined as 100 * beta_tor * a[m] * B0 [T] / ip [MA]  [-]	FLT_0D
     # self.global_quantities.beta_normal = NotImplemented
-    # # Plasma current (toroidal component). Positive sign means anti-clockwise when viewed from above. {dynamic} [A].
+    # # Plasma current (toroidal component). Positive sign means anti-clockwise when viewed from above.  [A].
     # self.global_quantities.ip = NotImplemented
-    # # Internal inductance {dynamic} [-]	FLT_0D
+    # # Internal inductance  [-]	FLT_0D
     # self.global_quantities.li_3 = NotImplemented
-    # # Total plasma volume {dynamic} [m^3]	FLT_0D
+    # # Total plasma volume  [m^3]	FLT_0D
     # self.global_quantities.volume = NotImplemented
-    # # Area of the LCFS poloidal cross section {dynamic} [m^2]	FLT_0D
+    # # Area of the LCFS poloidal cross section  [m^2]	FLT_0D
     # self.global_quantities.area = NotImplemented
-    # # Surface area of the toroidal flux surface {dynamic} [m^2]	FLT_0D
+    # # Surface area of the toroidal flux surface  [m^2]	FLT_0D
     # self.global_quantities.surface = NotImplemented
-    # # Poloidal length of the magnetic surface {dynamic} [m]	FLT_0D
+    # # Poloidal length of the magnetic surface  [m]	FLT_0D
     # self.global_quantities.length_pol = NotImplemented
-    # # Poloidal flux at the magnetic axis {dynamic} [Wb].
+    # # Poloidal flux at the magnetic axis  [Wb].
     # self.global_quantities.psi_axis = NotImplemented
-    # # Poloidal flux at the selected plasma boundary {dynamic} [Wb].
+    # # Poloidal flux at the selected plasma boundary  [Wb].
     # self.global_quantities.psi_boundary = NotImplemented
     # # Magnetic axis position and toroidal field	structure
     # self.global_quantities.magnetic_axis = NotImplemented
-    # # q at the magnetic axis {dynamic} [-].
+    # # q at the magnetic axis  [-].
     # self.global_quantities.q_axis = NotImplemented
-    # # q at the 95% poloidal flux surface (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic} [-].
+    # # q at the 95% poloidal flux surface (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)  [-].
     # self.global_quantities.q_95 = NotImplemented
     # # Minimum q value and position	structure
     # self.global_quantities.q_min = NotImplemented
-    # # Plasma energy content = 3/2 * int(p,dV) with p being the total pressure (thermal + fast particles) [J]. Time-dependent; Scalar {dynamic} [J]
+    # # Plasma energy content = 3/2 * int(p,dV) with p being the total pressure (thermal + fast particles) [J]. Time-dependent; Scalar  [J]
     # self.global_quantities.energy_mhd = NotImplemented

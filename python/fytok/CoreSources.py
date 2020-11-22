@@ -6,12 +6,12 @@ from spdm.util.logger import logger
 class CoreSources(AttributeTree):
     def __init__(self, config, *args, tokamak=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.load(config)
+        self.update(config, tokamak=tokamak)
 
-    def load(self, *args, **kwargs):
-        logger.debug("NOT IMPLEMENTED")
+    def update(self, *args, tokamak=None, **kwargs):
+        if tokamak is not None:
+            self.__dict__["_tokamak"] = tokamak
 
-    def update(self, *args, **kwargs):
         logger.debug("NOT IMPLEMENTED")
 
     @property

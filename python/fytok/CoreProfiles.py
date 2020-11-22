@@ -20,7 +20,7 @@ from spdm.util.logger import logger
 from spdm.util.sp_export import sp_find_module
 from sympy import Point, Polygon
 
-from .Plot import plot_profiles
+from fytok.Plot import plot_profiles
 
 
 class CoreProfiles(AttributeTree):
@@ -33,13 +33,14 @@ class CoreProfiles(AttributeTree):
     def __init__(self, cache=None, *args, equilibrium=None, rho_tor_norm=None, ** kwargs):
         super().__init__(*args, ** kwargs)
 
-        self.time = equilibrium.time
-        self.vacuum_toroidal_field = equilibrium.vacuum_toroidal_field
-
         if isinstance(cache, LazyProxy) or isinstance(cache, AttributeTree):
             cache = cache
         else:
             cache = AttributeTree(cache)
+
+        self.time = equilibrium.time
+
+        self.vacuum_toroidal_field = equilibrium.vacuum_toroidal_field
 
         self.profiles_1d = CoreProfiles.Profiles1D(cache.profiles_1d,
                                                    equilibrium=equilibrium,
@@ -56,17 +57,6 @@ class CoreProfiles(AttributeTree):
                 self.__dict__["_cache"] = AttributeTree(cache)
 
             self.__dict__["_eq"] = equilibrium
-
-            self.grids = CoreProfiles.Profiles1D.Grid(self._eq)
-
-            """Quantities related to the different ion species"""
-            self.ion = CoreProfiles.Ion(self)
-
-            """Quantities related to the electrons"""
-            self.electons = CoreProfiles.Electons(self)
-
-            """Quantities related to the different neutral species"""
-            self.neutral = CoreProfiles.Neutral(self)
 
         def __missing__(self, key):
             d = self._cache[key]
@@ -101,9 +91,9 @@ class CoreProfiles(AttributeTree):
                 raise ValueError(f"Cannot create interploate! {key}")
 
         class Grid(AttributeTree):
-            def __init__(self, eq, *args, rho_tor_norm=None,  **kwargs):
+            def __init__(self, cache=None,  *args, equilibrium=None, rho_tor_norm=None,  **kwargs):
                 super().__init__(*args, **kwargs)
-                self.__dict__['_eq'] = eq
+                self.__dict__['_eq'] = equilibrium
 
                 """Normalised toroidal flux coordinate. The normalizing value for rho_tor_norm,
                 is the toroidal flux coordinate at the equilibrium boundary (LCFS or 99.x % of the LCFS in case of
@@ -160,7 +150,7 @@ class CoreProfiles(AttributeTree):
                 super().__init__(*args, **kwargs)
 
         class Electons(AttributeTree):
-            def __init__(self,  grid,  *args,  **kwargs):
+            def __init__(self, cache=None, *args, grid=None,  **kwargs):
                 super().__init__(*args, **kwargs)
                 self.__dict__['_grid'] = grid
                 self |= {
@@ -245,7 +235,7 @@ class CoreProfiles(AttributeTree):
             #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
 
         class Ion(AttributeTree):
-            def __init__(self,  grid,  *args, z_ion=1, label=None, neutral_index=None, **kwargs):
+            def __init__(self, cache=None,  *args, grid=None, z_ion=1, label=None, neutral_index=None,  **kwargs):
                 super().__init__(*args, z_ion=z_ion, label=label, neutral_index=neutral_index, **kwargs)
                 self.__dict__['_grid'] = grid
                 self |= {
@@ -378,7 +368,7 @@ class CoreProfiles(AttributeTree):
             #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
 
         class Neutral(AttributeTree):
-            def __init__(self, grid, *args, label=None, ion_index=None, **kwargs):
+            def __init__(self, cache=None,  *args, grid=None, label=None, ion_index=None, **kwargs):
                 super().__init__(*args, **kwargs)
                 self.__dict__['_grid'] = grid
                 self |= {
@@ -463,6 +453,24 @@ class CoreProfiles(AttributeTree):
         def ffprime(self):
             return None
 
+        @cached_property
+        def grid(self):
+            return CoreProfiles.Profiles1D.Grid(self._cache.grid, equilibrium=self._eq)
+
+        @cached_property
+        def ion(self):
+            """Quantities related to the different ion species"""
+            return CoreProfiles.Profiles1D.Ion(self._cache.ion, grid=self.grid)
+
+        @cached_property
+        def electons(self):
+            """Quantities related to the electrons"""
+            return CoreProfiles.Profiles1D.Electons(self._cache.electons, grid=self.grid)
+
+        @cached_property
+        def neutral(self):
+            """Quantities related to the different neutral species"""
+            return CoreProfiles.Profiles1D.Neutral(self._cache.neutral, grid=self.grid)
         # @property
         # def t_i_average(self):
         #     """	Ion temperature(averaged on charge states and ion species) {dynamic}[eV]"""
@@ -641,9 +649,6 @@ class CoreProfiles(AttributeTree):
         def z_eff_resistive(self):
             """  Volume average plasma effective charge, estimated from the flux consumption in the ohmic phase {dynamic} [-]"""
             return NotImplemented
-
-    @cached_property
-    def profiles_1d(self):
 
     def plot(self, profiles, axis=None, x_axis=None):
         return plot_profiles(

@@ -1,5 +1,6 @@
 import collections
 import copy
+from functools import cached_property
 
 import numpy as np
 import scipy
@@ -7,63 +8,147 @@ from scipy import constants
 from scipy.interpolate import RectBivariateSpline, UnivariateSpline
 from spdm.util.AttributeTree import AttributeTree, _last_, _next_
 from spdm.util.Interpolate import Interpolate1D, derivate, integral
+from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.util.sp_export import sp_find_module
 
-from .CoreProfiles import CoreProfiles
+from fytok.CoreProfiles import CoreProfiles
+from fytok.Identifier import Identifier
+from fytok.RadialProfile import RadialProfile
 
-EPSILON = 1.0e-5
+EPSILON = 1.0e-15
+TOLERANCE = 1.0e-6
 
 
-class Transport(AttributeTree):
-    """
-        Solve transport equations
+class TransportSolver(AttributeTree):
+    r"""Solve transport equations
 
-        Schema:
-            imas_dd:://transport_solver_numerics
-        Refs:
+        imas_dd:://transport_solver_numerics
+
+
+        Reference 参考文献 :
             - Hinton/Hazeltine, Rev. Mod. Phys. vol. 48 (1976), pp.239-308
-            - David P. Coster, Vincent Basiuk, Grigori Pereverzev, Denis Kalupin, Roman Zagórksi,
-                Roman Stankiewicz, Philippe Huynh, and Fréd…,
-              "The European Transport Solver", IEEE Transactions on Plasma Science 38, 9 PART 1 (2010), pp. 2085--2092.
-            - G V Pereverzev, P N Yushmanov, and Eta, "ASTRA–Automated System for Transport Analysis in a Tokamak",
-              Max-Planck-Institut für Plasmaphysik (1991), 147.
+            - David P. Coster, Vincent Basiuk, Grigori Pereverzev, Denis Kalupin, Roman Zagórksi, Roman Stankiewicz, Philippe Huynh, and Fréd…, "The European Transport Solver", IEEE Transactions on Plasma Science 38, 9 PART 1 (2010), pp. 2085--2092.
+            - G V Pereverzev, P N Yushmanov, and Eta, "ASTRA–Automated System for Transport Analysis in a Tokamak", Max-Planck-Institut für Plasmaphysik (1991), 147.  
 
-            $  \\rho\\equiv\\sqrt{\\frac{\\Phi}{\\pi B_{0}}} $
-            $  gm2 \\euqiv \\left\\langle \\left|\\frac{\\nabla\\rho}{R}\\right|^{2}\\right\\rangle $
+        .. math::
+            \rho\equiv\sqrt{\frac{\Phi}{\pi B_{0}}} 
+
+        .. math::  
+            gm2\equiv\left\langle \left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle 
+
     """
     @staticmethod
-    def __new__(cls,  config, *args, **kwargs):
-        if cls is not Transport:
-            return super(Transport, cls).__new__(cls)
+    def __new__(cls,  cache, *args, **kwargs):
+        if cls is not TransportSolver:
+            return super(TransportSolver, cls).__new__(cls)
 
-        backend = config.engine
+        backend = cache.solver.name
+        if isinstance(backend, LazyProxy):
+            backend = backend()
 
-        if not backend:
+        if backend is NotImplemented or not backend:
             n_cls = cls
         else:
-            plugin_name = f"{__package__}.plugins.transport.Plugin{backend}"
+            plugin_name = f"{__package__}.plugins.transport_solver.Plugin{backend}"
 
-            n_cls = sp_find_module(plugin_name, fragment=f"Transport{backend}")
+            n_cls = sp_find_module(plugin_name, fragment=f"TransportSolver{backend}")
 
             if n_cls is None:
-                raise ModuleNotFoundError(f"Can not find plugin {plugin_name}#Transport{backend}")
+                raise ModuleNotFoundError(f"Can not find plugin {plugin_name}#TransportSolver{backend}")
 
         return object.__new__(n_cls)
 
-    def __init__(self,  config, *args, tokamak={},  **kwargs):
+    def __init__(self,  cache, *args, tokamak={},  **kwargs):
         super().__init__(*args, **kwargs)
-
+        self.__dict__['_cache'] = cache
         self._tokamak = tokamak
-        self.description = AttributeTree()
-        self.description.name = "FyTok"
-        self.description.primary_coordinate.name = "rho_tor_norm"    # or "rho_tor"
-        self.description.primary_coordinate.index = "1"              # or 2
+
+    @cached_property
+    def solver(self):
+        """
+        solver	Solver identifier	structure	
+            name    Short string identifier 	STR_0D	
+            index   Integer identifier (enumeration index within a list). Private identifier values must be indicated by a negative index. 	INT_0D	
+            description	Verbose description 	STR_0D
+        """
+        c = self._cache.solver
+        return Identifier(
+            name="FyTok",
+            index=0,
+            description="Default core transport solver"
+        ) if c is NotImplemented or c is None or len(c) == 0 else Identifier(c)
+
+    @cached_property
+    def primary_coordinate(self):
+        """Primary coordinate system with which the transport equations are solved. 
+
+           For a 1D transport solver: 
+                name        :   Short string identifier 	STR_0D	
+                index       :   Integer identifier (enumeration index within a list). index = 1 means rho_tor_norm; 2 = rho_tor. Private identifier values must be indicated by a negative index. 	INT_0D	
+                description	:   Verbose description 
+
+        """
+        c = self._cache.primary_coordinate
+        return Identifier(
+            name="rho_tor_norm",
+            index=1,
+            description=""
+        ) if c is NotImplemented or c is None or len(c) == 0 else Identifier(c)
+
+    class BoundaryCondition(AttributeTree):
+        def __init__(self, cache, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+        @cached_property
+        def identifier(self):
+            """Identifier of the boundary condition type. 
+            
+                ID=
+                    - 1: value of the field y; 
+                    - 2: radial derivative of the field (-dy/drho_tor); 
+                    - 3: scale length of the field y/(-dy/drho_tor);
+                    - 4: flux; 
+                    - 5: generic boundary condition y expressed as a1y'+a2y=a3. 
+                    - 6: equation not solved; [eV]	structure	
+                   
+            """
+            return NotImplemented
+
+        @cached_property
+        def value(self):
+            """Value of the boundary condition. 
+                For ID = 1 to 4, only the first position in the vector is used. 
+                For ID = 5, all three positions are used, meaning respectively a1, a2, a3. {dynamic} [mixed]	"""
+            return NotImplemented
+
+        @cached_property
+        def rho_tor_norm(self):
+            """Position, in normalised toroidal flux, at which the boundary 
+                condition is imposed. Outside this position, the value of the data are 
+                considered to be prescribed. {dynamic} [-]	"""
+            return NotImplemented
+
+    @cached_property
+    def boundary_conditions(self):
+        """ Boundary conditions of the radial transport equations for various time slices. 
+            To be removed when the solver_1d structure is finalized. {dynamic}"""
+        res = AttributeTree(
+            current={},
+            electrons={},
+            ions=AttributeTree(
+                default_factory_array=lambda _holder=self: TransportSolver.BoundaryConditions1D(None, parent=_holder)),
+            energy_ion_total={},
+            momentum_tor={},
+            default_factory=lambda k, _holder=self: TransportSolver.BoundaryConditions1D(None, holder=_holder, key=k))
+        return res
 
     def update(self,
                core_profiles_prev,
                core_profiles_iter,
                *args,
+               boundary_condition=None,
+               equilibrium=None,
                core_transports=None,
                core_sources=None,
                enable_quasi_neutrality=True,
@@ -79,12 +164,13 @@ class Transport(AttributeTree):
                 .transport_solver :> imas_dd://self.transport_solver_numerics
 
         """
-
+        if boundary_condition is None:
+            boundary_condition = self.boundary_conditions
         # -----------------------------------------------------------
         # Equilibrium
-       
+
         # current density profile:
-        self._current(core_profiles_prev,  core_profiles_iter,  **kwargs)
+        self._current(core_profiles_prev,  core_profiles_iter, boundary_condition=boundary_condition, ** kwargs)
 
         # # ion density profiles:
         # self._ion_density(core_profiles_prev,  core_profiles_iter,  **kwargs)
@@ -116,19 +202,23 @@ class Transport(AttributeTree):
     def solve_general_form(self, x,
                            y0, yp0,                 #
                            a, b, c, d, e, f, g,     # coefficients, which are  fuction of x
-                           h,                       # time step
+                           inv_tau,                 # time step
+                           inv_d,                   # 1/d
                            u, v, w,                 # boundary condition
                            ** kwargs
                            ):
-        """ solve standard form
-            $\\f[
-            \\frac{a\\cdot Y-a\\cdot Y^{-1}}{h} +\\frac{1}{c}\\frac{\\partial}{\\partial\\rho}\\left(-d\\cdot\\frac{\\partial Y}{\\partial\\rho}+e\\cdot Y\\right) =f-g\\cdot Y
-            ]$ where $Y$ is the function, $a,b,c,d,e,f,g$ are function of $x$, the boundary condition is
-            $\\f[
-                v\\cdot\\left.\\frac{\\partial Y}{\\partial x}\\right|_{x=bnd}+u\\cdot Y=w
-            ]$
-
-            return y, dy/dx
+        r"""solve standard form
+           
+           .. math::
+                \frac{a\cdot Y-a\cdot Y^{-1}}{h} +\frac{1}{c}\frac{\partial}{\partial\rho}\left(-d\cdot\frac{\partial Y}{\partial\rho}+e\cdot Y\right) =f-g\cdot Y
+           
+           where $Y$ is the function, $a,b,c,d,e,f,g$ are function of $x$, the boundary condition is
+           
+           .. math::
+               v\cdot\left.\frac{\partial Y}{\partial x}\right|_{x=bnd}+u\cdot Y=w
+            
+           
+           return y, dy/dx
 
         """
         if yp0 is None:
@@ -137,16 +227,16 @@ class Transport(AttributeTree):
         dd = UnivariateSpline(x, d).derivative()(x)
         de = UnivariateSpline(x, e).derivative()(x)
 
-        A = UnivariateSpline(x, (-dd+e)/d)
-        B = UnivariateSpline(x, (c*a/h+de+c*g)/d)
-        C = UnivariateSpline(x, -c*b*y0/(h*d)-c*f/d)
+        A = UnivariateSpline(x,  (-dd+e)*inv_d)
+        B = UnivariateSpline(x,  (c*a*inv_tau+de+c*g)*inv_d)
+        C = UnivariateSpline(x,  (-c*b*y0*inv_tau-c*f)*inv_d)
 
         def fun(x, Y):
-            """
+            r"""
             Y=[y,y']
 
-            $ \\frac{\\partial y}{\\partial\\rho}&=Y^{\\prime}  \\\\
-              \\frac{\\partial y^{\\prime}}{\\partial\\rho}&=A\\cdot y^{\\prime}+B\\cdot y+C
+            $ \frac{\partial y}{\partial\rho}&=Y^{\prime}  
+              \frac{\partial y^{\prime}}{\partial\rho}&=A\cdot y^{\prime}+B\cdot y+C
             $
             dy/dx =y'
             dy'/dx=A*y'+B*Y+C
@@ -155,26 +245,18 @@ class Transport(AttributeTree):
             yp = Y[1]
             dy = yp
             ddy = A(x) * yp + B(x) * y+C(x)
+            # ddy = aa*yp+bb*y+cc
             return np.array([dy, ddy])
 
-        def bc(Ya, Yb,   u=u, v=v, w=w):
+        def bc(Ya, Yb):
             """
             u *y'(b)+v*y(b)=w
-
             Ya=[y(a),y'(a)]
             Yb=[y(b),y'(b)]
             P=[[u(a),u(b)],[v(a),v(b)],[w(a),w(b)]]
 
             """
-            Ya = (w[0] - Ya*u[0])/v[0]
-            Yb = (w[1] - Yb*u[1])/v[1]
-
-            # for k in range(len(Ya)):
-            #     if v[k] is None or v[k] == 1.0e-8:
-            #         Ybc[k][0] = -w[k]/u[k]
-            #     else:
-            #         Ybc[k][1] = (w[k] - Ybc[k][0]*u[k])/v[k]
-            return Ya[0], Yb[0]
+            return u[0]*Ya[1]+v[0]*Ya[0] - w[0], u[1]*Yb[1]+v[1]*Yb[0] - w[1]
 
         solution = scipy.integrate.solve_bvp(fun, bc, x, np.array([y0, yp0]))
 
@@ -182,7 +264,7 @@ class Transport(AttributeTree):
             raise RuntimeError(solution.message)
         else:
             logger.debug("Solve bvp DONE")
-        return solution.sol
+        return solution
 
     ############################################################################################
     #  TRANSPORT EQUATIONS:
@@ -192,12 +274,17 @@ class Transport(AttributeTree):
                  *args,
                  transports=None,
                  sources=None,
+                 boundary_condition=None,
                  **kwargs):
 
-        ########################################
         # -----------------------------------------------------------
         # time step                                         [s]
         tau = core_profiles_iter.time - core_profiles_prev.time
+
+        if abs(tau) < EPSILON:
+            inv_tau = 0.0
+        else:
+            inv_tau = 1.0/tau
 
         # $R_0$ characteristic major radius of the device   [m]
         R0 = core_profiles_iter.vacuum_toroidal_field.r0
@@ -209,13 +296,8 @@ class Transport(AttributeTree):
         B0m = core_profiles_prev.vacuum_toroidal_field.b0
 
         # $\dot{B}_{0}$ time derivative or $B_0$,           [T/s]
+        B0dot = (B0 - B0m)*inv_tau
 
-        if tau > EPSILON:
-            B0dot = (B0 - B0m)/tau
-        else:
-            B0dot = 0.0
-            tau = 0.0
-            B0m = B0
         # -----------------------------------------------------------
         # Grid
         # $rho$ not  normalised minor radius                [m]
@@ -260,22 +342,15 @@ class Transport(AttributeTree):
         # for src in sources(equilibrium):
         #     j_ni_exp += src.profiles_1d.j_parallel
 
-        # coefficients for numerical solver
-        h = tau
-
-        v = [0, 0]                                     # boundary conditions for numerical solver
-        u = [0, 0]                                     # boundary conditions for numerical solver
-        w = [0, 0]                                     # boundary conditions for numerical solver
-
-        # Coefficients for for current diffusion
-        #   equation in form:
-        #         (A*Y-B*Y(t-1))/H + 1/C * (-D*Y' + E*Y) = F - G*Y
+        # Coefficients for current diffusion equation in form:
+        #   (A*Y-B*Y(t-1))/H + 1/C * (-D*Y' + E*Y) = F - G*Y
 
         a = sigma                                      # $\sigma_{\parallel}$
         b = sigma                                      # $\sigma_{\parallel}$
 
         c = constants.mu_0*B0*rho / fpol**2            # $\frac{\mu_{0}B_{0}\rho}{F^{2}}$
         d = vpr/(4.0*(constants.pi**2)*fpol)*gm2       # $\frac{V^{\prime}g_{3}}{4\pi^{2}F}$
+        inv_d = (4.0*(constants.pi**2)*fpol)*gm2/vpr    # $\frac{4\pi^{2}F}{V^{\prime}g_{3}}$
 
         # $fun1=\frac{\sigma_{\parallel}\mu_{0}\rho^{2}}{F^{2}}$
         fun1 = sigma*constants.mu_0*(rho/fpol)**2
@@ -298,25 +373,43 @@ class Transport(AttributeTree):
         #         f[irho] = 1.0/(2.0*constants.pi)*j_ni_exp[irho]
         #         g[irho] = 1.0/(2.0*constants.pi)*j_ni_imp[irho] + B0dot/2.0*sigma[irho]*dfun1[irho]
 
-        #  Boundary conditions for current diffusion
-        #     equation in form:
+        # Boundary conditions for current diffusion equation in form:
         #     V*Y' + U*Y =W
         # On axis:
         #     dpsi/drho(rho=0)=0
-        v[0] = 1.0
-        u[0] = 0.0
-        w[0] = 0.0
+ 
+        v = [1, 0]   # boundary conditions for numerical solver
+        u = [0, 0]   # boundary conditions for numerical solver
+        w = [0, 0]   # boundary conditions for numerical solver
+       
 
         # -----------------------------------------------------------
         # boundary condition, value
-        # boundary_condition={
-        #   "type":  in [0,1,2,3,4],
-        #   "value": [[u0,v0,w0],[u1,v1,w1]]
-        # }
+        # Identifier of the boundary condition type. 
+        #   ID =    1: poloidal flux; 
+        #           2: ip; 
+        #           3: loop voltage; 
+        #           4: undefined; 
+        #           5: generic boundary condition y expressed as a1y'+a2y=a3. 
+        #           6: equation not solved; [eV]
 
         # At the edge:
-        bc = core_profiles_iter.boundary_conditions.current
-        if not bc or bc.identifier.index not in [1, 2, 3, 5]:          # Current equation is not solved:
+        if  boundary_condition.identifier.index == 1:  # poloidal flux
+            v[1] = 0.0
+            u[1] = 1.0
+            w[1] = boundary_condition.value[0]
+        elif boundary_condition.identifier.index == 2:  # ip
+            v[1] = 1.0
+            u[1] = 0.0
+            w[1] = - constants.mu_0/fun2[-1]*boundary_condition.value[0]
+        elif boundary_condition.identifier.index == 3:  # loop voltage
+            v[1] = 0.0
+            u[1] = 1.0
+            w[1] = tau*boundary_condition.value[0]+psi0[-1]
+        elif boundary_condition.identifier.index == 5:  # generic boundary condition  y expressed as a1y'+a2y=a3.
+            v[1], u[1], w[1] = boundary_condition.value
+        else:
+            # Current equation is not solved:
             #  Interpretative value of safety factor should be given
             # if any(qsf != 0.0):  # FIXME
             dy = 2.0*constants.pi*B0*rho/qsf
@@ -333,27 +426,11 @@ class Transport(AttributeTree):
             u[1] = 1.0
             w[1] = UnivariateSpline(rho_tor_norm, 2.0*constants.pi*B0/qsf).integral(0, 1.0)
 
-        elif bc.identifier.index == 1:  # poloidal flux
-            v[1] = 0.0
-            u[1] = 1.0
-            w[1] = bc.value[0]
-        elif bc.identifier.index == 2:  # ip
-
-            v[1] = 1.0
-            u[1] = 0.0
-            w[1] = - constants.mu_0/fun2[-1]*bc.value[1][0]
-        elif bc.identifier.index == 3:  # loop voltage
-            v[1] = 0.0
-            u[1] = 1.0
-            w[1] = tau*bc.value[0]+psi0[-1]
-        elif bc.identifier.index == 5:  # generic boundary condition  y expressed as a1y'+a2y=a3.
-            v[1], u[1], w[1] = bc.value
-
         # Solution of current diffusion equation:
         try:
-            sol = self.solve_general_form(rho, psi0, dpsi_drho0, a, b, c, d, e, f, g, h, u, v, w)
-        except RuntimeError as error:
-            logger.error(f"Fail to solve current transport equation! \n {error} ")
+            sol = self.solve_general_form(rho, psi0, dpsi_drho0, a, b, c, d, e, f, g,  inv_tau, inv_d, u, v, w)
+        except Exception as error:
+            logger.error(f"Unable to solve the 'current' transport equation! \n {error} ")
             psi1 = psi0
             dpsi_drho1 = dpsi_drho0
         else:
@@ -361,11 +438,11 @@ class Transport(AttributeTree):
             dpsi_drho1 = sol.yp[0]
 
         # New magnetic flux function and current density:
-        # dpc2 = (c*((a*y-b*ym)/h + g*y - f) + e*y) / d
-        func7 = UnivariateSpline(rho_tor_norm, c*((a*psi1-b*psi0)/h + g*psi1 - f))
+        # dpc2 = (c*((a*y-b*ym)*inv_tau+ g*y - f) + e*y) / d
+        func7 = UnivariateSpline(rho_tor_norm, c*((a*psi1-b*psi0)*inv_tau + g*psi1 - f))
         intfun7 = [func7.integral(0, r) for r in rho_tor_norm]
 
-        dy = intfun7/d + e/d*psi1
+        dy = intfun7*inv_d + e*inv_d*psi1
 
         # fun4 = fun2*dy
         # fun5 = fun2*dy*R0*B0/fpol
@@ -378,14 +455,16 @@ class Transport(AttributeTree):
 
         core_profiles_iter.profiles_1d.psi = psi1
         core_profiles_iter.profiles_1d.dpsi_drho_tor = dpsi_drho1
-        core_profiles_iter.profiles_1d.q = 2.0*constants.pi*B0*rho/dpsi_drho1
+        # core_profiles_iter.profiles_1d.q = 2.0*constants.pi*B0*rho/dpsi_drho1
 
+        # current density, toroidal,                        [A/m^2]
         j_tor = - 2.0*constants.pi*R0/constants.mu_0/vpr * dfun4
-        j_par = - 2.0*constants.pi/R0/constants.mu_0/vpr * (fpol/B0)**2*dfun5
+        core_profiles_iter.profiles_1d.profiles_1d.j_tor = j_tor
+        j_par = -  2.0*constants.pi/R0/constants.mu_0/vpr * (fpol/B0)**2*dfun5
+        core_profiles_iter.profiles_1d.profiles_1d.current_parallel_inside = j_par
 
         # $E_\parallel$  parallel electric field,,          [V/m]
-        e_par = (j_par - j_ni_exp - j_ni_imp*psi1) / sigma
-        core_profiles_iter.profiles_1d.e_field.parallel = e_par
+        core_profiles_iter.profiles_1d.e_field.parallel = (j_par - j_ni_exp - j_ni_imp*psi1) / sigma
 
         # Total Ohmic currents                              [A]
         # fun7 = vpr * j_par / 2.0e0 / constants.pi * B0 / fpol**2
@@ -393,7 +472,6 @@ class Transport(AttributeTree):
         intfun7 = [func7.integral(0, r) for r in rho_tor_norm]
         core_profiles_iter.profiles_1d.j_ohmic = intfun7[-1] * fpol[-1]
 
-        # current density, toroidal,                        [A/m^2]
         core_profiles_iter.profiles_1d.j_tor = j_tor
 
         # Total non-inductive currents                       [A]
@@ -429,7 +507,7 @@ class Transport(AttributeTree):
         B0m = core_profiles_prev.vacuum_toroidal_field.b0
 
         # $\dot{B}_{0}$ time derivative or $B_0$,           [T/s]
-        B0dot = (B0 - B0m)/tau
+        B0dot = (B0 - B0m)*inv_tau
 
         # -----------------------------------------------------------
         # Grid
@@ -596,11 +674,11 @@ class Transport(AttributeTree):
             #                *(1.e0_R8/TAU+SI_IMP(IRHO)))
             #
 
-        fun1 = vpr*si_exp + vprm*ni0/tau - ni0*vpr*(1./tau+si_imp)
+        fun1 = vpr*si_exp + vprm*ni0*inv_tau - ni0*vpr*(1.*inv_tau+si_imp)
 
         intfun1 = integral(fun1, rho)
 
-        local_fun1_s4 = (si_exp[0] + ni0[0]/tau - ni0[0]*(1./tau+si_imp[0]))/gm3[0]  # stripping G1
+        local_fun1_s4 = (si_exp[0] + ni0[0]*inv_tau - ni0[0]*(1.*inv_tau+si_imp[0]))/gm3[0]  # stripping G1
         # stripped integral for the axis - from the INTEGR2 routine, first point only
         local_intfun1_s4 = local_fun1_s4*rho[0]/2.0
 
@@ -683,7 +761,7 @@ class Transport(AttributeTree):
         B0m = core_profiles.vacuum_toroidal_field.b0
 
         # $\dot{B}_{0}$ time derivative or $B_0$,           [T/s]
-        B0dot = (B0 - B0m)/tau
+        B0dot = (B0 - B0m)*inv_tau
 
         # -----------------------------------------------------------
         # Grid
@@ -847,9 +925,9 @@ class Transport(AttributeTree):
             ne1 = sol.y[0]
             ne1p = sol.yp[0]
 
-        intfun1 = integral(vpr*se_exp + vprm*ne0/tau - ne0*vpr*(1./tau+se_imp), rho)
+        intfun1 = integral(vpr*se_exp + vprm*ne0*inv_tau - ne0*vpr*(1.*inv_tau+se_imp), rho)
 
-        local_fun1_s4 = (se_exp[0] + ne0[0]/tau - ne[0]*(1./tau+se_imp[0]))/gm3[0]
+        local_fun1_s4 = (se_exp[0] + ne0[0]*inv_tau - ne[0]*(1.*inv_tau+se_imp[0]))/gm3[0]
         local_intfun1_s4 = local_fun1_s4*rho[0]/2.
 
         int_source = intfun1 + B0dot/2./B0*rho*vpr*ne
@@ -1071,7 +1149,7 @@ class Transport(AttributeTree):
         B0m = core_profiles.vacuum_toroidal_field.b0
 
         # $\dot{B}_{0}$ time derivative or $B_0$,           [T/s]
-        B0dot = (B0 - B0m)/tau
+        B0dot = (B0 - B0m)*inv_tau
 
         # -----------------------------------------------------------
         # Grid
@@ -1457,14 +1535,14 @@ class Transport(AttributeTree):
             # end if
             if(rho != 0.):  # FIXME
                 fun1 = vpr/rho *                                           \
-                    ((1.5*nim*ti0/tau*(vprm/vpr)**fivethird
+                    ((1.5*nim*ti0*inv_tau*(vprm/vpr)**fivethird
                       + qi_exp + qei + qzi + qgi)
-                     - (1.5*ni/tau + qi_imp + vei + vzi
+                     - (1.5*ni*inv_tau + qi_imp + vei + vzi
                         - B0dot/2./B0*rho*ni*dvpr) * y)
             else:
-                fun1 = ((1.5*nim*ti0/tau
+                fun1 = ((1.5*nim*ti0*inv_tau
                          + qi_exp + qei + qzi + qgi)
-                        - (1.5*ni/tau + qi_imp + vei + vzi
+                        - (1.5*ni*inv_tau + qi_imp + vei + vzi
                            - B0dot/2./B0*rho*ni*dvpr) * y)
 
             intfun1 = integral(fun1, rho)  # Integral source
@@ -1542,14 +1620,14 @@ class Transport(AttributeTree):
 
         if(rho != 0.):  # FIXME
             fun2 = vpr/rho *                                         \
-                (1.5*ne0*tem/tau*(vprm/vpr)**fivethird
+                (1.5*ne0*tem*inv_tau*(vprm/vpr)**fivethird
                  + qe_exp + qie - qgi
-                 - y * (1.5*ne/tau + qe_imp + vie
+                 - y * (1.5*ne*inv_tau + qe_imp + vie
                         - B0dot/2./B0*rho*ne*dvpr/vpr))
         else:
-            fun2 = (1.5*ne0*tem/tau
+            fun2 = (1.5*ne0*tem*inv_tau
                     + qe_exp + qie - qgi
-                    - y * (1.5*ne/tau + qe_imp + vie
+                    - y * (1.5*ne*inv_tau + qe_imp + vie
                            - B0dot/2./B0*ne*dvpr))
 
         intfun2 = integral(fun2, rho)  # Integral source
@@ -1621,7 +1699,7 @@ class Transport(AttributeTree):
 
         B0 = kwargs["BGEO"]
         B0m = kwargs["BTM"]
-        B0dot = (B0-B0m)/tau
+        B0dot = (B0-B0m)*inv_tau
 
         # Flux surface averaged R {dynamic} [m]
         gm8 = equilibrium.profiles_1d.interpolate("gm8")(rho_tor_norm)
@@ -1871,9 +1949,9 @@ class Transport(AttributeTree):
             mtor_tot = mtor_tot + mtor
 
             if(rho != 0.):  # FIXME
-                fun1 = vpr/rho * (ui_exp + uzi + (wzi + gm8*mion*ni/tau - ui_imp) * y)
+                fun1 = vpr/rho * (ui_exp + uzi + (wzi + gm8*mion*ni*inv_tau - ui_imp) * y)
             else:
-                fun1 = (ui_exp + uzi + (wzi + gm8*mion*ni/tau - ui_imp) * y)
+                fun1 = (ui_exp + uzi + (wzi + gm8*mion*ni*inv_tau - ui_imp) * y)
 
             intfun1 = integral(fun1, rho)  # Integral source
 
@@ -1928,25 +2006,6 @@ class Transport(AttributeTree):
             profiles["FLUX_MTOR_TOT"] = flux_mtor_tot
 
 
-if __name__ == "__main__":
-    nrho = 128
-    transport = Transport(
-        rho=np.linspace(1.0/(nrho+1), 1, nrho, dtype=float),
-        R0=1.0,
-        Bt=1.0,
-        Btm=1.0,
-        fpol=np.ones(nrho, dtype=float),
-        vprime=np.zeros(nrho, dtype=float),
-        gm2=np.zeros(nrho, dtype=float),
-        sigma=np.ones(nrho, dtype=float),
-    )
-    transport.current(
-        psi=np.zeros(nrho, dtype=float),
-        psim=np.zeros(nrho, dtype=float),
-        dpsi=np.zeros(nrho, dtype=float),
-        dpsim=np.zeros(nrho, dtype=float),
-        qsf=np.ones(nrho, dtype=float)
-    )
 
 
 # while time < end_time

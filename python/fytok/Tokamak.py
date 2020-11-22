@@ -8,14 +8,14 @@ from spdm.util.AttributeTree import AttributeTree, _last_, _next_
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 
-from .CoreProfiles import CoreProfiles
-from .CoreSources import CoreSources
-from .CoreTransports import CoreTransports
-from .Equilibrium import Equilibrium
-from .PFActive import PFActive
-from .Transport import Transport
-from .Wall import Wall
-from .TF import TF
+from fytok.CoreProfiles import CoreProfiles
+from fytok.CoreSources import CoreSources
+from fytok.CoreTransports import CoreTransports
+from fytok.Equilibrium import Equilibrium
+from fytok.PFActive import PFActive
+from fytok.TransportSolver import TransportSolver
+from fytok.Wall import Wall
+from fytok.TF import TF
 
 
 class Tokamak(AttributeTree):
@@ -26,7 +26,6 @@ class Tokamak(AttributeTree):
             self._cache = cache
         else:
             self._cache = AttributeTree(cache)
-        logger.debug(core_profiles)
         self.core_profiles = CoreProfiles(
             core_profiles or self._cache.core_profiles,
             time=self.time, equilibrium=self.equilibrium)
@@ -67,7 +66,7 @@ class Tokamak(AttributeTree):
 
     @cached_property
     def transport(self):
-        return Transport(self._cache.transport, tokamak=self)
+        return TransportSolver(self._cache.transport, tokamak=self)
 
     def save(self, uri, *args, **kwargs):
         raise NotImplementedError()
@@ -83,6 +82,7 @@ class Tokamak(AttributeTree):
         convergence = False
 
         core_profiles_iter = CoreProfiles(core_profiles or {}, equilibrium=self.equilibrium)
+        core_profiles_prev = self.core_profiles
 
         for iter_count in range(max_iters):
             logger.debug(f"Iterator = {iter_count}")
@@ -90,15 +90,19 @@ class Tokamak(AttributeTree):
             # self.equilibrium.update(profiles=self.core_profiles.interploate(["pprime", "ffprime"]),
             #                         constraints=constraints)
 
-            # self.core_sources.update(self.equilibrium)
-            # self.core_transports.update(self.equilibrium)
+            core_profiles_iter = CoreProfiles(
+                core_profiles,
+                equilibrium=self.equilibrium,
+                rho_tor_norm=core_profiles_prev.grid.rho_tor_norm)
 
-            core_profiles_iter = CoreProfiles(core_profiles, equilibrium=self.equilibrium)
+            self.core_sources.update()
+
+            self.core_transports.update()
 
             tol = self.transport.update(
                 core_profiles_prev,
                 core_profiles_iter,
-                tokamak=self,
+                equilibrium=self.equilibrium,
                 transports=self.core_transports,
                 sources=self.core_sources)
 
@@ -120,9 +124,9 @@ class Tokamak(AttributeTree):
                 core_profiles_prev = core_profiles_iter
 
         if not convergence:
-            raise RuntimeError(f"Not convergence! iter_count={iter_count}")
-
-        self.core_profiles = core_profiles_iter
+            raise RuntimeError(f"Does not converge! iter_count={iter_count}")
+        else:
+            self.core_profiles = core_profiles_iter
 
     def plot(self, axis=None, *args,   **kwargs):
 

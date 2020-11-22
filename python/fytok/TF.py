@@ -10,8 +10,6 @@ from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.util.urilib import urisplit
 
-from .Coil import Coil
-
 
 class TF(AttributeTree):
     def __init__(self,   config,  *args,  tokamak=None,  **kwargs):
