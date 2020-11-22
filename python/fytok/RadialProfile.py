@@ -11,10 +11,12 @@ from spdm.util.Interpolate import Interpolate1D, derivate, integral
 from spdm.util.logger import logger
 from spdm.util.sp_export import sp_find_module
 
-from fytok.Identifier import Identifier
+from fytok.Misc import Identifier
 
 
 class RadialProfile(AttributeTree):
+    """ Radial Profiles
+    """
     def __init__(self, cache, *args, primary_coordinate=None, parent=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.__dict__["_parent"] = parent

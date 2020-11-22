@@ -22,6 +22,7 @@ from sympy import Point, Polygon
 
 class FluxSurface:
     r"""Flux surface average of function
+
        <a(psi)> =2 *pi* int(a dl * R / |grad psi|)/V'
 
         .. math::
@@ -38,7 +39,7 @@ class FluxSurface:
   
 
     def __init__(self,  psirz, coordinate_system, *args, limiter=None, fpol=None, tolerance=1.0e-6,   ** kwargs):
-        """ Initialize FluxSurface
+        """Initialize FluxSurface
 
         """
         super().__init__(*args, **kwargs)
@@ -239,8 +240,9 @@ class FluxSurface:
 
     @cached_property
     def dvolume_dpsi(self):
-        """ Vprime =  2 *pi* int( R / |grad psi| * dl )
-            V'(psi)= 2 *pi* int( dl * R / |grad psi|)"""
+        r""".. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
+            .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
+        """
         res = (2*scipy.constants.pi) * np.sum(self.Jdl, axis=1)
         # res[0] = res[1]
         return res
@@ -251,47 +253,47 @@ class FluxSurface:
 
     @cached_property
     def gm1(self):
-        """<R^-2> =  int(R^-2 * dl * R / |grad psi|)/Vprime"""
+        r""".. math:: \left\langle\frac{1}{R^{2}}\right\rangle """
         return self.average(1.0/self.R**2)
 
     @cached_property
     def gm2(self):
-        """<|grad rho_tor|**2/R^-2>  """
+        r""".. math:: \left\langle\left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle """
         return self.average(self.grad_psi2/self.R**2)*(self.drho_dpsi**2)
 
     @cached_property
     def gm3(self):
-        """<(grad_rho_tor)**2>"""
+        r""".. math:: {\left\langle \left|\nabla\rho\right|^{2}\right\rangle}"""
         return self.average(self.grad_psi2)*(self.drho_dpsi**2)
 
     @cached_property
     def gm4(self):
-        """<1/B**2>"""
+        r""".. math:: \left\langle \frac{1}{B^{2}}\right\rangle """
         return self.average(1/self.B2)
 
     @cached_property
     def gm5(self):
-        """<B**2>"""
+        r""".. math:: \left\langle B^{2}\right\rangle """
         return self.average(self.B2)
 
     @cached_property
     def gm6(self):
-        """ <(grad rho)**2/B**2>"""
+        r""".. math:: \left\langle \frac{\left|\nabla\rho\right|^{2}}{B^{2}}\right\rangle """
         return (self.drho_dpsi**2) * self.average(self.grad_psi2/self.B2)
 
     @cached_property
     def gm7(self):
-        """ <|grad_rho_tor|>"""
+        r""".. math:: \left\langle \left|\nabla\rho\right|\right\rangle """
         return (self.drho_dpsi) * self.average(np.sqrt(self.grad_psi2))
 
     @cached_property
     def gm8(self):
-        """ <R>"""
+        r""".. math:: \left\langle R\right\rangle """
         return self.average(self.R)
 
     @cached_property
     def gm9(self):
-        """ <R>"""
+        r""".. math:: \left\langle \frac{1}{R}\right\rangle """
         return self.average(1.0/self.R)
 
     def average(self, func, *args, **kwargs):

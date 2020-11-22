@@ -13,7 +13,7 @@ from spdm.util.logger import logger
 from spdm.util.sp_export import sp_find_module
 
 from fytok.CoreProfiles import CoreProfiles
-from fytok.Identifier import Identifier
+from fytok.Misc import Identifier
 from fytok.RadialProfile import RadialProfile
 
 EPSILON = 1.0e-15

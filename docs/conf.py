@@ -30,7 +30,11 @@ release = '0.0.0'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ["sphinx.ext.napoleon","sphinx.ext.imgmath","sphinx.ext.graphviz","sphinx.ext.autosummary"]
+extensions = ["sphinx.ext.napoleon",
+            "sphinx.ext.imgmath",
+            "sphinx.ext.graphviz",
+            "sphinx.ext.autodoc",
+            "sphinx.ext.todo"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -86,3 +90,7 @@ latex_elements = {
     'printindex': r'\footnotesize\raggedright\printindex',
 }
 latex_show_urls = 'footnote'
+
+autodoc_member_order='groupwise'
+
+todo_include_todos =True

@@ -1,18 +1,18 @@
-FyTok 托卡马克数值模拟器 文档
+FyTok 托卡马克数值模拟器 
 =============================================
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Contents 内容:
 
    Introduction
    Installation
    QuickStart
    Tutorial
    UserGuide
-   _apidoc/modules
-
-
+   Reference
+   Changelog
+   TODO
 
 Indices and tables
 ==================
