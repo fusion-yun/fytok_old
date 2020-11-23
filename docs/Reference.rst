@@ -5,8 +5,10 @@ API Reference 参考
    :maxdepth: 4
 
    ../_apidoc/Tokamak
-   reference/Control      
+   reference/Operation      
    reference/Transport
+   reference/Auxiliary      
+   reference/Magnetics     
    reference/Plasma
    reference/Diagnosis
    reference/Misc

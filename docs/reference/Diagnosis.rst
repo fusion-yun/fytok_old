@@ -1,4 +1,4 @@
-Diagnosis
+Diagnosis 诊断
 =================
 
 诊断数据
@@ -9,23 +9,23 @@ Diagnosis
 .. toctree::
     :maxdepth: 4
 
-    ../_apidoc/diagnosis.Barometry
-    ../_apidoc/diagnosis.Bolometer
-    ../_apidoc/diagnosis.BremsstrahlungVisible
-    ../_apidoc/diagnosis.CameraIR
-    ../_apidoc/diagnosis.CameraVisible
-    ../_apidoc/diagnosis.ChargeExchange
-    ../_apidoc/diagnosis.ECE
-    ../_apidoc/diagnosis.HardXRays
-    ../_apidoc/diagnosis.Interferometer
-    ../_apidoc/diagnosis.LangmuirProbes
-    ../_apidoc/diagnosis.MSE
-    ../_apidoc/diagnosis.NeutronDiagnostic
-    ../_apidoc/diagnosis.Polarimeter
-    ../_apidoc/diagnosis.ReflectometerProfile
-    ../_apidoc/diagnosis.SoftXRays
-    ../_apidoc/diagnosis.SpectrometerMass
-    ../_apidoc/diagnosis.SpectrometerUV
-    ../_apidoc/diagnosis.SpectrometerVisible
-    ../_apidoc/diagnosis.SpectrometerXRayCrystal
-    ../_apidoc/diagnosis.ThomsonScattering
+    ../_apidoc/Barometry
+    ../_apidoc/Bolometer
+    ../_apidoc/BremsstrahlungVisible
+    ../_apidoc/CameraIR
+    ../_apidoc/CameraVisible
+    ../_apidoc/ChargeExchange
+    ../_apidoc/ECE
+    ../_apidoc/HardXRays
+    ../_apidoc/Interferometer
+    ../_apidoc/LangmuirProbes
+    ../_apidoc/MSE
+    ../_apidoc/NeutronDiagnostic
+    ../_apidoc/Polarimeter
+    ../_apidoc/ReflectometerProfile
+    ../_apidoc/SoftXRays
+    ../_apidoc/SpectrometerMass
+    ../_apidoc/SpectrometerUV
+    ../_apidoc/SpectrometerVisible
+    ../_apidoc/SpectrometerXRayCrystal
+    ../_apidoc/ThomsonScattering

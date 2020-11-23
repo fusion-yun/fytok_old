@@ -1,4 +1,4 @@
-Plasma
+Plasma 等离子体 
 ===================
 
 描述等离子体的行为和状态。
@@ -11,22 +11,22 @@ Plasma
 .. toctree::
    :maxdepth: 2
 
-   ../_apidoc/plasma.AMNSData
-   ../_apidoc/plasma.Radiation
+   ../_apidoc/AMNSData
+   ../_apidoc/Radiation
 
-   ../_apidoc/plasma.Waves
+   ../_apidoc/Waves
 
-   ../_apidoc/plasma.CoreInstantChanges
-   ../_apidoc/plasma.Disruption
+   ../_apidoc/CoreInstantChanges
+   ../_apidoc/Disruption
 
-   ../_apidoc/plasma.DistributionSources
-   ../_apidoc/plasma.Distributions
-   ../_apidoc/plasma.Gyrokinetics
+   ../_apidoc/DistributionSources
+   ../_apidoc/Distributions
+   ../_apidoc/Gyrokinetics
 
-   ../_apidoc/plasma.MHD
-   ../_apidoc/plasma.MHDLinear
+   ../_apidoc/MHD
+   ../_apidoc/MHDLinear
 
-   ../_apidoc/plasma.NTMS
-   ../_apidoc/plasma.Sawteeth
-   ../_apidoc/plasma.Turbulence
+   ../_apidoc/NTMS
+   ../_apidoc/Sawteeth
+   ../_apidoc/Turbulence
    

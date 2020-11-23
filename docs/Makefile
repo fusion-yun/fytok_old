@@ -20,7 +20,7 @@ help:
 .PHONY: help Makefile 
 
 apidoc:
-	@$(SPHINXAPIDOC) -feM -o "$(APIDOCDIR)" "$(ROOTDIR)"	
+	@$(SPHINXAPIDOC) -feMT -o "$(APIDOCDIR)" "$(ROOTDIR)"	
 	
 	
 # Catch-all target: route all unknown targets to Sphinx using the new
