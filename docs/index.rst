@@ -2,21 +2,28 @@ FyTok 托卡马克数值模拟器
 =============================================
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents 内容:
+    :maxdepth: 3
+    :numbered:
 
-   Introduction
-   Installation
-   QuickStart
-   Tutorial
-   UserGuide
-   Reference
-   Changelog
-   TODO
+    Introduction
+    Installation
+    QuickStart
+    Tutorial
+    UserGuide
+    DevGuide
+    Design
+    APIReference
+    Changelog
+    TODO
+    Bibliography
 
-Indices and tables
-==================
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. only:: html    
+
+    Indices and tables
+    ==================
+    * :ref:`genindex`
+    * :ref:`modindex`
+    * :ref:`search`
+
+

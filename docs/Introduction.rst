@@ -1,6 +1,6 @@
 Introduction 介绍
 =============================================
-
-.. figure:: ./figures/FuYunSystem.svg 
+.. image::   figures/FuYunSystem.svg
 
 .. include:: ../README.md
+

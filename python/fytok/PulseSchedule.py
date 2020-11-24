@@ -13,9 +13,10 @@ class PulseSchedule(AttributeTree):
     """
     IDS = "pulse_schedule"
 
-    def __init__(self, cache=None, *args, **kwargs):
+    def __init__(self, cache=None, *args, tokamak=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.__dict__["_cache"] = cache
+        self.__dict__["_tokamak"] = tokamak
 
     @cached_property
     def ids_properties(self):
@@ -233,7 +234,7 @@ class PulseSchedule(AttributeTree):
                 pit.r = float(xp.r)
                 pit.z = float(xp.z)
                 pit.value.data = xp.value
-                
+
             return res
 
     @cached_property

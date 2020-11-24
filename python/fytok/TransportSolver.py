@@ -1,3 +1,9 @@
+"""
+See  :cite:`hinton_theory_1976,coster_european_2010,pereverzev_astraautomated_1991`
+
+
+"""
+
 import collections
 import copy
 from functools import cached_property
@@ -21,23 +27,18 @@ TOLERANCE = 1.0e-6
 
 
 class TransportSolver(AttributeTree):
-    r"""Solve transport equations
-
-        imas_dd:://transport_solver_numerics
-
-
-        Reference 参考文献 :
-            - Hinton/Hazeltine, Rev. Mod. Phys. vol. 48 (1976), pp.239-308
-            - David P. Coster, Vincent Basiuk, Grigori Pereverzev, Denis Kalupin, Roman Zagórksi, Roman Stankiewicz, Philippe Huynh, and Fréd…, "The European Transport Solver", IEEE Transactions on Plasma Science 38, 9 PART 1 (2010), pp. 2085--2092.
-            - G V Pereverzev, P N Yushmanov, and Eta, "ASTRA–Automated System for Transport Analysis in a Tokamak", Max-Planck-Institut für Plasmaphysik (1991), 147.  
+    r"""Solve transport equations :eq:`rho`
 
         .. math::
-            \rho\equiv\sqrt{\frac{\Phi}{\pi B_{0}}} 
+            \rho\equiv\sqrt{\frac{\Phi}{\pi B_{0}}}
+            :label: rho
 
         .. math::  
             gm2\equiv\left\langle \left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle 
 
     """
+    IDS = "transport_solver_numerics"
+
     @staticmethod
     def __new__(cls,  cache, *args, **kwargs):
         if cls is not TransportSolver:
@@ -103,7 +104,7 @@ class TransportSolver(AttributeTree):
         @cached_property
         def identifier(self):
             """Identifier of the boundary condition type. 
-            
+
                 ID=
                     - 1: value of the field y; 
                     - 2: radial derivative of the field (-dy/drho_tor); 
@@ -111,7 +112,7 @@ class TransportSolver(AttributeTree):
                     - 4: flux; 
                     - 5: generic boundary condition y expressed as a1y'+a2y=a3. 
                     - 6: equation not solved; [eV]	structure	
-                   
+
             """
             return NotImplemented
 
@@ -151,17 +152,9 @@ class TransportSolver(AttributeTree):
                equilibrium=None,
                core_transports=None,
                core_sources=None,
-               enable_quasi_neutrality=True,
+               enablequasi_neutrality=True,
                **kwargs):
         """Solve transport equations
-            solve   core_profiles with 'equilibrium'
-            scheme:
-                core_profiles   :=> imas_dd://core_profiles
-                equilibrium     :=> imas_dd://equilibrium.time_slice
-                transports      :=> imas_dd://core_transports
-                sources,        :=> imas_dd://core_sources
-
-                .transport_solver :> imas_dd://self.transport_solver_numerics
 
         """
         if boundary_condition is None:
@@ -170,23 +163,23 @@ class TransportSolver(AttributeTree):
         # Equilibrium
 
         # current density profile:
-        self._current(core_profiles_prev,  core_profiles_iter, boundary_condition=boundary_condition, ** kwargs)
+        self.current(core_profiles_prev,  core_profiles_iter, boundary_condition=boundary_condition, ** kwargs)
 
         # # ion density profiles:
-        # self._ion_density(core_profiles_prev,  core_profiles_iter,  **kwargs)
+        # self.ion_density(core_profiles_prev,  core_profiles_iter,  **kwargs)
 
         # # electron density profile:
-        # if enable_quasi_neutrality:
-        #     self._electron_density(core_profiles_prev,  core_profiles_iter,  **kwargs)
+        # if enablequasi_neutrality:
+        #     self.electron_density(core_profiles_prev,  core_profiles_iter,  **kwargs)
 
         # # electron/ion density profile from quasi-neutrality:
-        # self._quasi_neutrality(core_profiles_prev,  core_profiles_iter,  **kwargs)
+        # self.quasi_neutrality(core_profiles_prev,  core_profiles_iter,  **kwargs)
 
         # # ion temperature profiles:
-        # self._temperatures(core_profiles_prev,  core_profiles_iter,  **kwargs)
+        # self.temperatures(core_profiles_prev,  core_profiles_iter,  **kwargs)
 
         # # toroidal rotation profiles:
-        # self._rotation(core_profiles_prev,  core_profiles_iter,  **kwargs)
+        # self.rotation(core_profiles_prev,  core_profiles_iter,  **kwargs)
 
         self.update_global_quantities(core_profiles_prev,  core_profiles_iter)
 
@@ -208,16 +201,16 @@ class TransportSolver(AttributeTree):
                            ** kwargs
                            ):
         r"""solve standard form
-           
+
            .. math::
                 \frac{a\cdot Y-a\cdot Y^{-1}}{h} +\frac{1}{c}\frac{\partial}{\partial\rho}\left(-d\cdot\frac{\partial Y}{\partial\rho}+e\cdot Y\right) =f-g\cdot Y
-           
+
            where $Y$ is the function, $a,b,c,d,e,f,g$ are function of $x$, the boundary condition is
-           
+
            .. math::
                v\cdot\left.\frac{\partial Y}{\partial x}\right|_{x=bnd}+u\cdot Y=w
-            
-           
+
+
            return y, dy/dx
 
         """
@@ -266,9 +259,8 @@ class TransportSolver(AttributeTree):
             logger.debug("Solve bvp DONE")
         return solution
 
-    ############################################################################################
-    #  TRANSPORT EQUATIONS:
-    def _current(self,
+ 
+    def current(self,
                  core_profiles_prev,
                  core_profiles_iter,
                  *args,
@@ -276,6 +268,10 @@ class TransportSolver(AttributeTree):
                  sources=None,
                  boundary_condition=None,
                  **kwargs):
+        r"""
+            .. math ::  \sigma_{\parallel}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\Psi=\frac{F^{2}}{\mu_{0}B_{0}\rho}\frac{\partial}{\partial\rho}\left[\frac{V^{\prime}}{4\pi^{2}}\left\langle \left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle \frac{1}{F}\frac{\partial\Psi}{\partial\rho}\right]-\frac{V^{\prime}}{2\pi\rho}\left(j_{ni,exp}+j_{ni,imp}\Psi\right)
+        
+        """
 
         # -----------------------------------------------------------
         # time step                                         [s]
@@ -377,24 +373,23 @@ class TransportSolver(AttributeTree):
         #     V*Y' + U*Y =W
         # On axis:
         #     dpsi/drho(rho=0)=0
- 
+
         v = [1, 0]   # boundary conditions for numerical solver
         u = [0, 0]   # boundary conditions for numerical solver
         w = [0, 0]   # boundary conditions for numerical solver
-       
 
         # -----------------------------------------------------------
         # boundary condition, value
-        # Identifier of the boundary condition type. 
-        #   ID =    1: poloidal flux; 
-        #           2: ip; 
-        #           3: loop voltage; 
-        #           4: undefined; 
-        #           5: generic boundary condition y expressed as a1y'+a2y=a3. 
+        # Identifier of the boundary condition type.
+        #   ID =    1: poloidal flux;
+        #           2: ip;
+        #           3: loop voltage;
+        #           4: undefined;
+        #           5: generic boundary condition y expressed as a1y'+a2y=a3.
         #           6: equation not solved; [eV]
 
         # At the edge:
-        if  boundary_condition.identifier.index == 1:  # poloidal flux
+        if boundary_condition.identifier.index == 1:  # poloidal flux
             v[1] = 0.0
             u[1] = 1.0
             w[1] = boundary_condition.value[0]
@@ -483,7 +478,7 @@ class TransportSolver(AttributeTree):
 
         return True
 
-    def _ion_density_one(self,
+    def ion_density_one(self,
                          iion,
                          core_profiles_iter,
                          core_profiles_prev,
@@ -492,6 +487,9 @@ class TransportSolver(AttributeTree):
                          sources=None,
                          hyper_diff=[0, 0],
                          **kwargs):
+        r"""
+        .. math:: \left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(V^{\prime}n_{i}\right)+\frac{\partial}{\partial\rho}\Gamma_{i}=V^{\prime}\left(S_{i,exp}-S_{i,imp}\cdot n_{i}\right)
+        """
 
         # -----------------------------------------------------------
         # time step                                         [s]
@@ -717,7 +715,7 @@ class TransportSolver(AttributeTree):
         core_profiles_iter.ion[iion].source = si_exp - si_imp * ni0
         core_profiles_iter.ion[iion].int_source = integral(ni0*vpr, rho)
 
-    def _ion_density(self,
+    def ion_density(self,
                      core_profiles_iter,
                      core_profiles_prev,
                      *args,
@@ -726,7 +724,7 @@ class TransportSolver(AttributeTree):
                      hyper_diff=[0, 0],
                      **kwargs):
         for iion, ion in enumerate(core_profiles_prev.profiles_1d.ion):
-            self._ion_density_one(self, iion,
+            self.ion_density_one(self, iion,
                                   core_profiles_iter,
                                   core_profiles_prev,
                                   equilibrium,
@@ -735,7 +733,7 @@ class TransportSolver(AttributeTree):
                                   **kwargs
                                   )
 
-    def _electron_density(self,
+    def electron_density(self,
                           core_profiles_iter,
                           core_profiles_prev,
                           *args,
@@ -965,7 +963,7 @@ class TransportSolver(AttributeTree):
         # core_profiles_iter.electron.source = si_exp - si_imp * ne0
         # core_profiles_iter.electron.int_source = integral(ne0*vpr, rho)
 
-    def _quasi_neutrality(self,
+    def quasi_neutrality(self,
                           core_profiles_iter,
                           core_profiles_prev,
                           *args,
@@ -1119,8 +1117,8 @@ class TransportSolver(AttributeTree):
 
             profiles["ne"] = ne
 
-    # HEAT TRANSPORT EQUATIONS
-    def _temperatures(self,
+    
+    def temperatures(self,
                       core_profiles_iter,
                       core_profiles_prev,
                       *args,
@@ -1130,6 +1128,19 @@ class TransportSolver(AttributeTree):
                       solve_type=0,
                       hyper_diff=[0, 0],
                       **kwargs):
+        r"""heat transport equations
+
+        ion 
+
+        .. math:: \frac{3}{2}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(n_{i}T_{i}V^{\prime\frac{5}{3}}\right)+V^{\prime\frac{2}{3}}\frac{\partial}{\partial\rho}\left(q_{i}+T_{i}\gamma_{i}\right)=V^{\prime\frac{5}{3}}\left[Q_{i,exp}-Q_{i,imp}\cdot T_{i}+Q_{ei}+Q_{zi}+Q_{\gamma i}\right]
+            :label: transport_ion_temperature 
+
+        electron 
+
+        .. math:: \frac{3}{2}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(n_{e}T_{e}V^{\prime\frac{5}{3}}\right)+V^{\prime\frac{2}{3}}\frac{\partial}{\partial\rho}\left(q_{e}+T_{e}\gamma_{e}\right)=V^{\prime\frac{5}{3}}\left[Q_{e,exp}-Q_{e,imp}\cdot T_{e}+Q_{ei}-Q_{\gamma i}\right]
+            :label: transport_electron_temperature 
+
+        """
 
         hyper_diff_exp = hyper_diff[0]  # AF 22.Aug.2016
         hyper_diff_imp = hyper_diff[1]  # AF 22.Aug.2016
@@ -1676,7 +1687,7 @@ class TransportSolver(AttributeTree):
         profiles["INT_SOURCE_TE"] = intfun1
 
     #  ROTATION TRANSPORT EQUATIONS
-    def _rotation(self,
+    def rotation(self,
                   core_profiles_iter,
                   core_profiles_prev,
                   *args,
@@ -1685,6 +1696,11 @@ class TransportSolver(AttributeTree):
                   boundary_condition=None,
                   hyper_diff=[0, 0],
                   **kwargs):
+        r"""
+
+        .. math::  \left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(V^{\prime\frac{5}{3}}\left\langle R\right\rangle m_{i}n_{i}u_{i,\varphi}\right)+\frac{\partial}{\partial\rho}\Phi_{i}=V^{\prime}\left[U_{i,\varphi,exp}-U_{i,\varphi}\cdot u_{i,\varphi}+U_{zi,\varphi}\right]
+            :label: transport_eq_rotation
+        """
 
         # Allocate types for interface with PLASMA_COLLISIONS:
         self.allocate_collisionality(nrho, nion, collisions, ifail)
@@ -2004,8 +2020,6 @@ class TransportSolver(AttributeTree):
         for irho in range(rho.shape[0]):
             profiles["MTOR_TOT"] = mtor_tot
             profiles["FLUX_MTOR_TOT"] = flux_mtor_tot
-
-
 
 
 # while time < end_time

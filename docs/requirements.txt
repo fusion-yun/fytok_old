@@ -1,0 +1,4 @@
+sphinx-autobuild
+sphinxcontrib-bibtex
+sphinx_rtd_theme
+recommonmark

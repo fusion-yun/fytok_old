@@ -11,7 +11,7 @@ FyTok 托卡马克数值模拟器
 
 # from .CoreProfiles import CoreProfiles
 # from .CoreSources import CoreSources
-# from .CoreTransports import CoreTransports
+# from .CoreTransport import CoreTransport
 
 # from .EdgeProfiles import EdgeProfiles
 # from .EdgeSources import EdgeSources

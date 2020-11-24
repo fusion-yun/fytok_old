@@ -12,6 +12,11 @@ from spdm.util.urilib import urisplit
 
 
 class TF(AttributeTree):
+    """TF　Coils
+
+    """
+    IDS="tf"
+
     def __init__(self,   config,  *args,  tokamak=None,  **kwargs):
         super().__init__(*args, **kwargs)
         self.tokamak = tokamak
@@ -33,6 +38,7 @@ class TF(AttributeTree):
     @cached_property
     def r0(self):
         """Reference major radius of the device (from the official description of the device).
+           
            This node is the placeholder for this official machine description quantity
             (typically the middle of the vessel at the equatorial midplane, although the exact
             definition may depend on the device) {static} [m]"""

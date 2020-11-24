@@ -1,7 +1,17 @@
+"""
+   功能：
+        - 描述装置在单一时刻的状态，
+        - 在时间推进时，确定各个子系统之间的依赖和演化关系，
+
+
+"""
+
+
 import collections
 import copy
 import math
 from functools import cached_property
+
 import matplotlib.pyplot as plt
 import numpy as np
 from spdm.util.AttributeTree import AttributeTree, _last_, _next_
@@ -10,25 +20,33 @@ from spdm.util.logger import logger
 
 from fytok.CoreProfiles import CoreProfiles
 from fytok.CoreSources import CoreSources
-from fytok.CoreTransports import CoreTransports
+from fytok.CoreTransport import CoreTransport
+from fytok.EdgeProfiles import EdgeProfiles
+from fytok.EdgeSources import EdgeSources
+from fytok.EdgeTransport import EdgeTransport
 from fytok.Equilibrium import Equilibrium
 from fytok.PFActive import PFActive
+from fytok.TF import TF
 from fytok.TransportSolver import TransportSolver
 from fytok.Wall import Wall
-from fytok.TF import TF
 
 
 class Tokamak(AttributeTree):
+    """Tokamak
+        功能：
+                - 描述装置在单一时刻的状态，
+                - 在时间推进时，确定各个子系统之间的依赖和演化关系，
 
-    def __init__(self,  cache=None,  *args, time=0.0, core_profiles=None,  **kwargs):
+    """
+
+    def __init__(self,  cache=None,  *args, time=0.0,    **kwargs):
         super().__init__(*args, time=time, **kwargs)
-        if isinstance(cache, LazyProxy) or isinstance(cache, AttributeTree):
-            self._cache = cache
-        else:
-            self._cache = AttributeTree(cache)
-        self.core_profiles = CoreProfiles(
-            core_profiles or self._cache.core_profiles,
-            time=self.time, equilibrium=self.equilibrium)
+        self.__dict__["_cache"] = cache or AttributeTree()
+
+        self._core_profiles = None
+        self._edge_profiles = None
+
+    # --------------------------------------------------------------------------
 
     @cached_property
     def vacuum_toroidal_field(self):
@@ -52,25 +70,57 @@ class Tokamak(AttributeTree):
     def pf_active(self):
         return PFActive(self._cache.pf_active, tokamak=self)
 
+    # --------------------------------------------------------------------------
+
     @cached_property
     def equilibrium(self):
         return Equilibrium(self._cache.equilibrium.time_slice, tokamak=self)
 
+    @property
+    def core_profiles(self):
+        if self._core_profiles is None:
+            self._core_profiles = CoreProfiles(self._cache.core_profiles,  time=self.time, equilibrium=self.equilibrium)
+        return self._core_profiles
+
+    @core_profiles.setter
+    def core_profiles(self, other):
+        if not isinstance(other, CoreProfiles):
+            other = CoreProfiles(other,  time=self.time, equilibrium=self.equilibrium)
+        self._core_profiles = other
+
     @cached_property
-    def core_transports(self):
-        return CoreTransports(self._cache.core_transports.mode, tokamak=self)
+    def core_transport(self):
+        return CoreTransport(self._cache.core_transport.mode, tokamak=self)
 
     @cached_property
     def core_sources(self):
         return CoreSources(self._cache.core_sources.mode, tokamak=self)
 
+    @property
+    def edge_profiles(self):
+        if self._edge_profiles is None:
+            self._edge_profiles = EdgeProfiles(self._cache.edge_profiles,  time=self.time, equilibrium=self.equilibrium)
+        return self._edge_profiles
+
+    @edge_profiles.setter
+    def edge_profiles(self, other):
+        if not isinstance(other, EdgeProfiles):
+            other = EdgeProfiles(other,  time=self.time, equilibrium=self.equilibrium)
+        self._edge_profiles = other
+
+    @cached_property
+    def edge_transports(self):
+        return EdgeTransport(self._cache.edge_transport.mode, tokamak=self)
+
+    @cached_property
+    def edge_sources(self):
+        return CoreSources(self._cache.edge_sources.mode, tokamak=self)
+
     @cached_property
     def transport(self):
         return TransportSolver(self._cache.transport, tokamak=self)
 
-    def save(self, uri, *args, **kwargs):
-        raise NotImplementedError()
-
+    # --------------------------------------------------------------------------
     def update(self, *args,
                time=0.0,
                core_profiles=None,
@@ -82,6 +132,7 @@ class Tokamak(AttributeTree):
         convergence = False
 
         core_profiles_iter = CoreProfiles(core_profiles or {}, equilibrium=self.equilibrium)
+
         core_profiles_prev = self.core_profiles
 
         for iter_count in range(max_iters):
@@ -97,16 +148,16 @@ class Tokamak(AttributeTree):
 
             self.core_sources.update()
 
-            self.core_transports.update()
+            self.core_transport.update()
 
             tol = self.transport.update(
                 core_profiles_prev,
                 core_profiles_iter,
                 equilibrium=self.equilibrium,
-                transports=self.core_transports,
+                transports=self.core_transport,
                 sources=self.core_sources)
 
-            # TODO: edge
+            # .. todo:: inetgrate core and edge
             # edge_profiles_old = copy(edge_profiles_iter)
 
             # edge_profiles_iter = self._transport_edge_solver(
@@ -126,7 +177,11 @@ class Tokamak(AttributeTree):
         if not convergence:
             raise RuntimeError(f"Does not converge! iter_count={iter_count}")
         else:
-            self.core_profiles = core_profiles_iter
+            self._core_profiles = core_profiles_iter
+    # --------------------------------------------------------------------------
+
+    def save(self, uri, *args, **kwargs):
+        raise NotImplementedError()
 
     def plot(self, axis=None, *args,   **kwargs):
 
@@ -145,7 +200,7 @@ class Tokamak(AttributeTree):
 
         return axis
 
-    # def core_transports(self, *args,  **kwargs):
+    # def core_transport(self, *args,  **kwargs):
     #     """Core plasma transport of particles, energy, momentum and poloidal flux."""
     #     return NotImplemented
 

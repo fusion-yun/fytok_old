@@ -11,6 +11,10 @@ from sympy import Point, Polygon
 
 
 class Wall(AttributeTree):
+    """Wall
+
+    """
+    IDS="wall"
     def __init__(self, config, *args, **kwargs):
         super().__init__()
 

@@ -24,11 +24,9 @@ from fytok.Plot import plot_profiles
 
 
 class CoreProfiles(AttributeTree):
+    """CoreProfiles
     """
-        imas dd version 3.28
-
-        ids = core_profiles.profiles_1d
-    """
+    IDS="core_profiles"
 
     def __init__(self, cache=None, *args, equilibrium=None, rho_tor_norm=None, ** kwargs):
         super().__init__(*args, ** kwargs)

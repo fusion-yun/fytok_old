@@ -16,6 +16,7 @@ class Identifier(AttributeTree):
 
 class Signal(AttributeTree):
     def __init__(self,  *args, time=None, data=None, **kwargs):
+        super().__init__(*args, **kwargs)
         if type(time) is int:
             time = np.linspace(0, 1, time)
         elif type(time) is float:
@@ -58,7 +59,7 @@ class Signal(AttributeTree):
         return NotImplemented
 
 
-class IdsProperties(AttributeTree):
+class IDSProperties(AttributeTree):
     def __init__(self, *args, **kwargs):
         super().__init__(self, *args, **kwargs)
 

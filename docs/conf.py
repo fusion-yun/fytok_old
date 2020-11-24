@@ -18,7 +18,7 @@ sys.path.insert(0, '../python/fytok')
 # -- Project information -----------------------------------------------------
 
 project = 'FyTok'
-copyright = '2020, 于治 YUZhi '
+copyright = '2020, 于治 YUZhi@ipp.ac.cn '
 author = 'Salmon (yuzhi@ipp.ac.cn)'
 
 # The full version, including alpha/beta/rc tags
@@ -31,11 +31,14 @@ release = '0.0.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ["sphinx.ext.napoleon",
-            "sphinx.ext.imgmath",
-            "sphinx.ext.graphviz",
-            "sphinx.ext.autodoc",
-            "sphinx.ext.todo",
-            "recommonmark"]
+              "sphinx.ext.imgmath",
+              "sphinx.ext.graphviz",
+              "sphinx.ext.autodoc",
+              "sphinx.ext.todo",
+              "sphinx.ext.imgconverter",
+              "sphinx.ext.graphviz",
+              "sphinxcontrib.bibtex",
+              "recommonmark"]
 
 source_suffix = {
     '.rst': 'restructuredtext',
@@ -64,7 +67,9 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
+# html_theme = 'alabaster'
+
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -72,7 +77,7 @@ html_theme = 'alabaster'
 html_static_path = ['_static']
 
 # imgmath_latex = 'xelatex'
-imgmath_latex_preamble= r'''
+imgmath_latex_preamble = r'''
 \usepackage{wasysym}
 '''
 latex_engine = 'xelatex'
@@ -92,12 +97,16 @@ latex_elements = {
 \setdefaultlanguage[variant=american]{english}
 \usepackage{wasysym}
 \usepackage{esint}
+\usepackage{etoolbox}
+\patchcmd{\thebibliography}{\section*{\refname}}{}{}{}
 ''',
     'fncychap': r'\usepackage[Bjornstrup]{fncychap}',
     'printindex': r'\footnotesize\raggedright\printindex',
 }
 latex_show_urls = 'footnote'
 
-autodoc_member_order='groupwise'
+autodoc_member_order = 'bysource'  # "groupwise"
 
-todo_include_todos =True
+todo_include_todos = True
+
+image_converter_args=['-verbose']

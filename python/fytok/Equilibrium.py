@@ -25,17 +25,13 @@ from fytok.FluxSurface import FluxSurface
 from fytok.PFActive import PFActive
 from fytok.Wall import Wall
 
-#  psi phi pressure f dpressure_dpsi f_df_dpsi j_parallel q magnetic_shear r_inboard r_outboard rho_tor rho_tor_norm dpsi_drho_tor geometric_axis elongation triangularity_upper triangularity_lower volume rho_volume_norm dvolume_dpsi dvolume_drho_tor area darea_dpsi surface trapped_fraction gm1 gm2 gm3 gm4 gm5 gm6 gm7 gm8 gm9 b_field_max beta_pol mass_density
 TOLERANCE = 1.0e-6
 
-
 class Equilibrium(AttributeTree):
-    """Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
-        imas dd version 3.28
-        ids=equilibrium
+    r"""Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.         
 
-        coordinate system
-        @ref: O. Sauter and S. Yu Medvedev, "Tokamak coordinate conventions: COCOS", Computer Physics Communications 184, 2 (2013), pp. 293--302.
+        Reference:
+            - O. Sauter and S. Yu Medvedev, "Tokamak coordinate conventions: COCOS", Computer Physics Communications 184, 2 (2013), pp. 293--302.
 
         COCOS  11
 
@@ -47,7 +43,7 @@ class Equilibrium(AttributeTree):
     #          *   *           *   *
     #         *   *             *   *
     #         *   *             *   *
-    #     Ip  v   *             *   ^  \\phi
+    #     Ip  v   *             *   ^  \phi
     #         *   *    Z o--->R *   *
     #         *   *             *   *
     #         *   *             *   *
@@ -63,18 +59,19 @@ class Equilibrium(AttributeTree):
     #        |       ************
     #        |      *            *
     #        |     *         ^    *
-    #        |     *  \\rho /     *
+    #        |     *   \rho /     *
     #        |     *       /      *
     #        +-----*------X-------*---->R
-    #        |     *  Ip, \\phi   *
+    #        |     *  Ip, \phi   *
     #        |     *              *
     #        |      *            *
     #        |       *****<******
-    #        |       Bpol,\\theta
+    #        |       Bpol,\theta
     #        |
-    #            Cylindrical coordinate      : (R,\\phi,Z)
-    #    Poloidal plane coordinate   : (\\rho,\\theta,\\phi)
-        
+    #            Cylindrical coordinate      : (R,\phi,Z)
+    #    Poloidal plane coordinate   : (\rho,\theta,\phi)
+  
+    IDS="Equilibrium"
     @staticmethod
     def __new__(cls,   config,  *args, **kwargs):
         if cls is not Equilibrium:
@@ -849,32 +846,32 @@ class Equilibrium(AttributeTree):
 
         @cached_property
         def minor_radius(self):
-            """Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary) [m]	FLT_0D"""
+            """Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary) [m]	"""
             return (max(self.outline.r)-min(self.outline.r))*0.5
 
         @cached_property
         def elongation(self):
-            """Elongation of the plasma boundary Click here for further documentation. [-]	FLT_0D"""
+            """Elongation of the plasma boundary Click here for further documentation. [-]	"""
             return (max(self.outline.z)-min(self.outline.z))/(max(self.outline.r)-min(self.outline.r))
 
         @cached_property
         def elongation_upper(self):
-            """Elongation(upper half w.r.t. geometric axis) of the plasma boundary Click here for further documentation. [-]	FLT_0D"""
+            """Elongation(upper half w.r.t. geometric axis) of the plasma boundary Click here for further documentation. [-]	"""
             return (max(self.outline.z)-self.geometric_axis.z)/(max(self.outline.r)-min(self.outline.r))
 
         @cached_property
         def elongation_lower(self):
-            """Elongation(lower half w.r.t. geometric axis) of the plasma boundary Click here for further documentation. [-]	FLT_0D"""
+            """Elongation(lower half w.r.t. geometric axis) of the plasma boundary Click here for further documentation. [-]	"""
             return (self.geometric_axis.z-min(self.outline.z))/(max(self.outline.r)-min(self.outline.r))
 
         @cached_property
         def triangularity(self):
-            """Triangularity of the plasma boundary Click here for further documentation. [-]	FLT_0D"""
+            """Triangularity of the plasma boundary Click here for further documentation. [-]	"""
             return (self.outline.r[np.argmax(self.outline.z)]-self.outline.r[np.argmin(self.outline.z)])/self.minor_radius
 
         @cached_property
         def triangularity_upper(self):
-            """Upper triangularity of the plasma boundary Click here for further documentation. [-]	FLT_0D"""
+            """Upper triangularity of the plasma boundary Click here for further documentation. [-]	"""
             return (self.geometric_axis.r - self.outline.r[np.argmax(self.outline.z)])/self.minor_radius
 
         @cached_property
@@ -1068,23 +1065,23 @@ class Equilibrium(AttributeTree):
 
         return fig
 
-    # # Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip^2]  [-]	FLT_0D
+    # # Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip^2]  [-]	
     # self.global_quantities.beta_pol = NotImplemented
-    # # Toroidal beta, defined as the volume-averaged total perpendicular pressure divided by (B0^2/(2*mu0)), i.e. beta_toroidal = 2 mu0 int(p dV) / V / B0^2  [-]	FLT_0D
+    # # Toroidal beta, defined as the volume-averaged total perpendicular pressure divided by (B0^2/(2*mu0)), i.e. beta_toroidal = 2 mu0 int(p dV) / V / B0^2  [-]	
     # self.global_quantities.beta_tor = NotImplemented
-    # # Normalised toroidal beta, defined as 100 * beta_tor * a[m] * B0 [T] / ip [MA]  [-]	FLT_0D
+    # # Normalised toroidal beta, defined as 100 * beta_tor * a[m] * B0 [T] / ip [MA]  [-]	
     # self.global_quantities.beta_normal = NotImplemented
     # # Plasma current (toroidal component). Positive sign means anti-clockwise when viewed from above.  [A].
     # self.global_quantities.ip = NotImplemented
-    # # Internal inductance  [-]	FLT_0D
+    # # Internal inductance  [-]	
     # self.global_quantities.li_3 = NotImplemented
-    # # Total plasma volume  [m^3]	FLT_0D
+    # # Total plasma volume  [m^3]	
     # self.global_quantities.volume = NotImplemented
-    # # Area of the LCFS poloidal cross section  [m^2]	FLT_0D
+    # # Area of the LCFS poloidal cross section  [m^2]	
     # self.global_quantities.area = NotImplemented
-    # # Surface area of the toroidal flux surface  [m^2]	FLT_0D
+    # # Surface area of the toroidal flux surface  [m^2]	
     # self.global_quantities.surface = NotImplemented
-    # # Poloidal length of the magnetic surface  [m]	FLT_0D
+    # # Poloidal length of the magnetic surface  [m]	
     # self.global_quantities.length_pol = NotImplemented
     # # Poloidal flux at the magnetic axis  [Wb].
     # self.global_quantities.psi_axis = NotImplemented
