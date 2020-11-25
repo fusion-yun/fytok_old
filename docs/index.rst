@@ -1,17 +1,21 @@
-FyTok 托卡马克数值模拟器 
-=============================================
+.. include:: common.rst
+
+#########################
+|FyTok| 
+#########################
 
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 4
     :numbered:
 
     Introduction
+    Requirements
+    Design
     Installation
     QuickStart
     Tutorial
     UserGuide
     DevGuide
-    Design
     APIReference
     Changelog
     TODO
@@ -25,5 +29,4 @@ FyTok 托卡马克数值模拟器
     * :ref:`genindex`
     * :ref:`modindex`
     * :ref:`search`
-
 

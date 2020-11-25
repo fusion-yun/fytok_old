@@ -5,7 +5,7 @@ from fytok.IDS import IDS
 class ChargeExchange(IDS):
     r"""Charge exchange spectroscopy diagnostic
         
-        .. note:: ChargeExchange is an ids
+        Note: ChargeExchange is an ids
     """
     IDS="charge_exchange"
     def __init__(self, *args, **kwargs):

@@ -37,6 +37,7 @@ extensions = ["sphinx.ext.napoleon",
               "sphinx.ext.todo",
               "sphinx.ext.imgconverter",
               "sphinx.ext.graphviz",
+              "sphinx.ext.autosectionlabel",
               "sphinxcontrib.bibtex",
               "recommonmark"]
 
@@ -109,4 +110,4 @@ autodoc_member_order = 'bysource'  # "groupwise"
 
 todo_include_todos = True
 
-image_converter_args=['-verbose']
+image_converter_args = ['-verbose']

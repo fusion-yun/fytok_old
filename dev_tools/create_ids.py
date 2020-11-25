@@ -7,7 +7,7 @@ from fytok.IDS import IDS
 
 class {clsname}(IDS):
     r\"\"\"{doc_string}
-        .. note:: {clsname} is an ids
+        Note: {clsname} is an ids
     \"\"\"
     IDS="{ids}"
     def __init__(self, *args, **kwargs):

@@ -5,7 +5,7 @@ from fytok.IDS import IDS
 class Ntms(IDS):
     r"""Description of neoclassical tearing modes
         
-        .. note:: Ntms is an ids
+        Note: Ntms is an ids
     """
     IDS="ntms"
     def __init__(self, *args, **kwargs):

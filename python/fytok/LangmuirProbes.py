@@ -5,7 +5,7 @@ from fytok.IDS import IDS
 class LangmuirProbes(IDS):
     r"""Langmuir probes
         
-        .. note:: LangmuirProbes is an ids
+        Note: LangmuirProbes is an ids
     """
     IDS="langmuir_probes"
     def __init__(self, *args, **kwargs):

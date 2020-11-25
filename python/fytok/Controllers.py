@@ -10,7 +10,7 @@ from fytok.Misc import IDSProperties, Signal
 class Controllers(AttributeTree):
     r"""Feedback and feedforward controllers
 
-        .. note:: Controllers is an ids
+        Note: Controllers is an ids
     """
     IDS = "controllers"
 

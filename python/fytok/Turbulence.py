@@ -4,7 +4,7 @@ from fytok.IDS import IDS
 
 class Turbulence(IDS):
     r"""Description of plasma turbulence
-        .. note:: Turbulence is an ids
+        Note: Turbulence is an ids
     """
     IDS="turbulence"
     def __init__(self, *args, **kwargs):

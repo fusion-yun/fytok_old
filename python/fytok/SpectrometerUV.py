@@ -5,7 +5,7 @@ from fytok.IDS import IDS
 class SpectrometerUV(IDS):
     r"""Spectrometer in uv light range diagnostic
         
-        .. note:: SpectrometerUV is an ids
+        Note: SpectrometerUV is an ids
     """
     IDS="spectrometer_uv"
     def __init__(self, *args, **kwargs):

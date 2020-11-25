@@ -5,7 +5,7 @@ from fytok.IDS import IDS
 class ECE(IDS):
     r"""Electron cyclotron emission diagnostic
         
-        .. note:: ECE is an ids
+        Note: ECE is an ids
     """
     IDS="ece"
     def __init__(self, *args, **kwargs):

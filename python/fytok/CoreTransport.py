@@ -5,6 +5,11 @@ from spdm.util.logger import logger
 
 class CoreTransport(AttributeTree):
     r"""Core Transport
+    
+    Todo: 
+        * transport
+        * need complete
+
     """
     IDS="core_transport"
 

@@ -5,7 +5,7 @@ from fytok.IDS import IDS
 class CoreInstantChanges(IDS):
     r"""Instant changes of the radial core plasma profiles due to pellet, MHD, ...
        
-        .. note:: CoreInstantChanges is an ids
+        Note: CoreInstantChanges is an ids
     """
     IDS="core_instant_changes"
     def __init__(self, *args, **kwargs):

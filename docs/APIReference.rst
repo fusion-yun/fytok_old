@@ -17,8 +17,8 @@ Modules 模块
 
    modules/Operation      
    modules/Magnetics   
-   modules/Auxiliary      
    modules/Transport
+   modules/Auxiliary      
    modules/Plasma
    modules/Diagnosis
 

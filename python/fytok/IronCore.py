@@ -5,7 +5,7 @@ from fytok.IDS import IDS
 class IronCore(IDS):
     r"""Iron core description
        
-        .. note:: IronCore is an ids
+        Note: IronCore is an ids
     """
     IDS="iron_core"
     def __init__(self, *args, **kwargs):

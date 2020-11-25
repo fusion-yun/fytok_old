@@ -4,7 +4,7 @@ from fytok.IDS import IDS
 
 class ThomsonScattering(IDS):
     r"""Thomson scattering diagnostic
-        .. note:: ThomsonScattering is an ids
+        Note: ThomsonScattering is an ids
     """
     IDS="thomson_scattering"
     def __init__(self, *args, **kwargs):

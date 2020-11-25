@@ -5,7 +5,7 @@ from fytok.IDS import IDS
 class CameraIR(IDS):
     r"""Infrared camera for monitoring of Plasma Facing Components
         
-        .. note:: CameraIR is an ids
+        Note: CameraIR is an ids
     """
     IDS="camera_ir"
     def __init__(self, *args, **kwargs):

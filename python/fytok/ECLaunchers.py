@@ -5,7 +5,7 @@ from fytok.IDS import IDS
 class ECLaunchers(IDS):
     r"""Launchers for heating and current drive in the electron cyclotron (EC) frequencies.
         
-        .. note:: ECLaunchers is an ids
+        Note: ECLaunchers is an ids
     """
     IDS="ec_launchers"
     def __init__(self, *args, **kwargs):

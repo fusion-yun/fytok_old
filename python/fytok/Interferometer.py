@@ -5,7 +5,7 @@ from fytok.IDS import IDS
 class Interferometer(IDS):
     r"""Interferometer diagnostic
         
-        .. note:: Interferometer is an ids
+        Note: Interferometer is an ids
     """
     IDS="interferometer"
     def __init__(self, *args, **kwargs):

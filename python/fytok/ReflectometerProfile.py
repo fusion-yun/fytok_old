@@ -5,7 +5,7 @@ from fytok.IDS import IDS
 class ReflectometerProfile(IDS):
     r"""Profile reflectometer diagnostic. Multiple reflectometers are considered as independent diagnostics to be handled with different occurrence numbers
         
-        .. note:: ReflectometerProfile is an ids
+        Note: ReflectometerProfile is an ids
     """
     IDS="reflectometer_profile"
     def __init__(self, *args, **kwargs):

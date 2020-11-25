@@ -5,7 +5,8 @@ from fytok.IDS import IDS
 class Disruption(IDS):
     r"""Description of physics quantities of specific interest during a disruption, in particular halo currents, etc ...
         
-        .. note:: Disruption is an ids
+        Note: 
+            Disruption is an ids
     """
     IDS="disruption"
     def __init__(self, *args, **kwargs):

@@ -5,7 +5,7 @@ from fytok.IDS import IDS
 class Polarimeter(IDS):
     r"""Polarimeter diagnostic
         
-        .. note:: Polarimeter is an ids
+        Note: Polarimeter is an ids
     """
     IDS="polarimeter"
     def __init__(self, *args, **kwargs):

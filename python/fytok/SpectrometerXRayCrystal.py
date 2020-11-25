@@ -5,7 +5,7 @@ from fytok.IDS import IDS
 class SpectrometerXRayCrystal(IDS):
     r"""X-crystal spectrometer diagnostic
         
-        .. note:: SpectrometerXRayCrystal is an ids
+        Note: SpectrometerXRayCrystal is an ids
     """
     IDS="spectrometer_x_ray_crystal"
     def __init__(self, *args, **kwargs):
