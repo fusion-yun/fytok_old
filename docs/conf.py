@@ -39,6 +39,7 @@ extensions = ["sphinx.ext.napoleon",
               "sphinx.ext.graphviz",
               "sphinx.ext.autosectionlabel",
               "sphinxcontrib.bibtex",
+              'sphinxcontrib.plantuml',
               "recommonmark"]
 
 source_suffix = {
@@ -111,3 +112,5 @@ autodoc_member_order = 'bysource'  # "groupwise"
 todo_include_todos = True
 
 image_converter_args = ['-verbose']
+
+plantuml_output_format='svg'

@@ -1,0 +1,100 @@
+@startuml
+left to right direction
+skinparam classFontName 'Noto Sans Mono CJK SC Regular'
+
+package "Opreation 运行和控制系统" {
+    [Pulse Schedule] 
+    [Controllers] 
+    [SDN]
+}
+package "Device and Magnetics Field 装置位形，磁场线圈"{
+    [Wall] 
+    [TF] -->                        Coils
+    [PF Active] -->                 Coils
+    [Magnetics] -->                 Coils
+    [Iron Core] -->                 Coils
+    [Coils Non Axisymmetric] -->    Coils
+    [EMCoupling] --> Magnetics
+}
+package "Confinement and transport 约束和输运" {
+   [TransportSolver] -->  [CoreProfiles]
+   [FluxSurface] <--  [Equilibrium]
+   [Equilibrium]  --> [TransportSolver]
+   [RadialProfile]
+   [CoreProfiles] 
+   [CoreSources] --> [TransportSolver]
+   [CoreTransport] --> [TransportSolver]
+   [EdgeProfiles]
+   [EdgeSources]
+   [EdgeTransport]
+}
+package "Auxiliary 辅助系统，加热、驱动和加料" {
+   [ECLaunchers] -->    RF
+   [GasInjection] -->   RF
+   [ICAntennas] -->     RF
+   [LHAntennas] -->     RF
+   [NBI]     
+   [Pellets]  
+}
+
+
+
+package "Plasma 等离子体" {
+    [AMNSData] --> Sources
+    [Radiation] --> Sources
+    [Waves] --> Sources
+    [Core Instant Changes] --> Sources
+    [Disruption] --> Transport
+    [DistributionSources] --> Transport
+    [Distributions] --> Transport
+    [Gyrokinetics] --> Transport
+    [MHD] --> Transport
+    [MHDLinear] --> Transport
+    [NTMS] --> Transport
+    [Sawteeth] --> Transport
+    [Turbulence] --> Transport
+}
+
+
+
+package "Diagnosis 诊断" {
+   Diagnosis --> [Barometry]
+   Diagnosis --> [Bolometer]
+   Diagnosis --> [BremsstrahlungVisible]
+   Diagnosis --> [CameraIR]
+   Diagnosis --> [CameraVisible]
+   Diagnosis --> [ChargeExchange]
+   Diagnosis --> [ECE]
+   Diagnosis --> [HardXRays]
+   Diagnosis --> [Interferometer]
+   Diagnosis --> [LangmuirProbes]
+   Diagnosis --> [MSE]
+   Diagnosis --> [NeutronDiagnostic]
+   Diagnosis --> [Polarimeter]
+   Diagnosis --> [ReflectometerProfile]
+   Diagnosis --> [SoftXRays]
+   Diagnosis --> [SpectrometerMass]
+   Diagnosis --> [SpectrometerUV]
+   Diagnosis --> [SpectrometerVisible]
+   Diagnosis --> [SpectrometerXRayCrystal]
+   Diagnosis --> [ThomsonScattering]
+}
+
+cloud "Simulator 模拟器"  {   
+    [Tokamak] 
+    [Scenario]-->  [Tokamak]
+}
+[Equilibrium]-->[Tokamak]
+[CoreProfiles]-->[Tokamak]
+
+[Tokamak] -->Diagnosis
+[Pulse Schedule] -->   [Scenario]
+[Controllers] -->   [Scenario]
+[Wall] --> [Tokamak]
+Coils --> [Equilibrium]
+Transport -->  [CoreTransport] 
+Sources -->  [CoreSources] 
+[NBI] -->  [CoreSources]
+[Pellets]--> [CoreSources]
+RF--> [CoreSources]
+@enduml
