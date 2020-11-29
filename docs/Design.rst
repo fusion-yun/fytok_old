@@ -89,7 +89,7 @@ Infrastructure 基础架构
     * **UI/UX 交互界面** : 用户与 |FyTok| 交互的环境。 需要在其中实现“执行图”编写、调试、数据可视化等功能。计划采用科学交互
       计算环境Jupyter作为主要环境。
 
-    * **数据源** : 是数据的实际存储载体。可以是本地数据文件、远程数据库或其他具有CRUD(Create,Read,Update,Delete)功能数据源。
+    * **数据源** : 是数据的实际存储载体。可以是本地数据文件、远程数据库或其他具有CRUD(Create, Read, Update, Delete)功能数据源。
       这些数据源通常不具有标准的IMAS数据标准语义，需要通过UDA进行转换。
 
     * **外部模块** ：|FyTok| 中的物理模块可通过插件的方式替换。每个模块对应一个外部模拟程序，同一个功能会有多个不同外部程序
@@ -190,8 +190,8 @@ Amazon Cosmos DB，Microsoft  Document DB 等满足这一抽象。
 
 例如，
 
->>> entry=open_entry("east+mdsplus://mdsplus.ipp.ac.cn/?tree_name=efit_east#shot=55555,time_slice=100")
->>> entry=open_entry("east+mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east#shot=55555,time_slice=100")
+>>> entry=open_entry("east+mdsplus://mdsplus.ipp.ac.cn/?tree_name=efit_east#shot=55555, time_slice=100")
+>>> entry=open_entry("east+mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east#shot=55555, time_slice=100")
 >>> entry=open_entry("/home/salmon/public_data/efit_east_00055555.h5#time_slice=100")
 
 其中
@@ -342,8 +342,8 @@ EAST　动态映射文件　``ids=equilibrium``
             <boundary>
                 <type>1</type>
                 <outline>
-                    <r><spdb:data protocol="mdsplus">DATA(\BDRY)[0, 0: DATA(\NBDRY)[{time_slice}]-1,{time_slice}]</spdb:data></r>
-                    <z><spdb:data protocol="mdsplus">DATA(\BDRY)[1, 0: DATA(\NBDRY)[{time_slice}]-1,{time_slice}]</spdb:data></z>
+                    <r><spdb:data protocol="mdsplus">DATA(\BDRY)[0, 0: DATA(\NBDRY)[{time_slice}]-1, {time_slice}]</spdb:data></r>
+                    <z><spdb:data protocol="mdsplus">DATA(\BDRY)[1, 0: DATA(\NBDRY)[{time_slice}]-1, {time_slice}]</spdb:data></z>
                 </outline>
                 <psi><spdb:data protocol="mdsplus">DATA(\SSIBRY)</spdb:data></psi>
 
@@ -363,12 +363,12 @@ EAST　动态映射文件　``ids=equilibrium``
                 <grid_type>
                     <name>rectangular</name>
                     <index dtype='int'>0</index>
-                    <description>Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). 
+                    <description>Cylindrical R, Z ala eqdsk (R=dim1, Z=dim2). 
                         In this case the position arrays should not be filled since 
                         they are redundant with grid/dim1 and dim2.</description>
                 </grid_type> 
                 <grid>
-                    <dim1><spdb:data protocol="mdsplus">SIZE(DATA(\PPRIME)[*,{time_slice}])</spdb:data></dim1>
+                    <dim1><spdb:data protocol="mdsplus">SIZE(DATA(\PPRIME)[*, {time_slice}])</spdb:data></dim1>
                     <dim2><spdb:data protocol="mdsplus">DATA(\NBDRY)[{time_slice}]</spdb:data></dim2>
                 </grid>
               
@@ -406,14 +406,14 @@ EAST　动态映射文件　``ids=equilibrium``
             </global_quantities>
 
             <profiles_1d>
-                <f><spdb:data protocol="mdsplus">DATA(\FPOL)[*,{time_slice}]</spdb:data></f>
-                <dpressure_dpsi><spdb:data protocol="mdsplus">DATA(\PPRIME)[*,{time_slice}]</spdb:data></dpressure_dpsi>
-                <f_df_dpsi><spdb:data protocol="mdsplus">DATA(\FFPRIM)[*,{time_slice}]</spdb:data></f_df_dpsi>
-                <q><spdb:data protocol="mdsplus">DATA(\QPSI)[*,{time_slice}]</spdb:data></q>
+                <f><spdb:data protocol="mdsplus">DATA(\FPOL)[*, {time_slice}]</spdb:data></f>
+                <dpressure_dpsi><spdb:data protocol="mdsplus">DATA(\PPRIME)[*, {time_slice}]</spdb:data></dpressure_dpsi>
+                <f_df_dpsi><spdb:data protocol="mdsplus">DATA(\FFPRIM)[*, {time_slice}]</spdb:data></f_df_dpsi>
+                <q><spdb:data protocol="mdsplus">DATA(\QPSI)[*, {time_slice}]</spdb:data></q>
             </profiles_1d>
 
             <profiles_2d>   
-                <psi><spdb:data protocol="mdsplus" tree="EAST_EFIT">DATA(\PSIRZ)[*,*,{time_slice}]</spdb:data></psi>
+                <psi><spdb:data protocol="mdsplus" tree="EAST_EFIT">DATA(\PSIRZ)[*, *, {time_slice}]</spdb:data></psi>
 
                 <grid>
                     <dim1><spdb:data protocol="mdsplus">DATA(\R)[*]</spdb:data></dim1>
@@ -448,19 +448,19 @@ Tokamka 模拟器
 
 
 Opreation 运行和控制系统: 与PCS系统的数据接口，例如，放电规划，控制信息等
-    包括 PulseSchedule ,Controllers ,SDN
+    包括 PulseSchedule , Controllers , SDN
 
 Device and Magnetics Field 装置位形，磁场线圈: 装置位形和磁场线圈信息
-    包括 Wall,TF,PFActive,Magnetics,IronCore,CoilsNonAxisymmetric,EMCoupling
+    包括 Wall, TF, PFActive, Magnetics, IronCore, CoilsNonAxisymmetric, EMCoupling
 
 Confinement and transport 约束和输运：约束输运相关过程，涵盖芯部和边界输运，
-    包括 TransportSolver,FluxSurface,Equilibrium,RadialProfile,CoreProfiles,CoreSources,CoreTransport,EdgeProfiles,EdgeSources,EdgeTransport
+    包括 TransportSolver, FluxSurface, Equilibrium, RadialProfile, CoreProfiles, CoreSources, CoreTransport, EdgeProfiles, EdgeSources, EdgeTransport
 
 Auxiliary 辅助系统，加热、驱动和加料：外部辅助系统，结果体现为输运过程的源项
     包括 ECLaunchers, GasInjection, ICAntennas, LHAntennas, NBI, Pellets
 
 Plasma 等离子体：等离子体物理过程，主要反映较高精度模拟过程的，结果体现为输运系数
-    包括 AMNSData,Radiation,Waves,CoreInstantChanges,Disruption,DistributionSources,Distributions,Gyrokinetics,MHD,MHDLinear,NTMS,Sawteeth,Turbulence
+    包括 AMNSData, Radiation, Waves, CoreInstantChanges, Disruption, DistributionSources, Distributions, Gyrokinetics, MHD, MHDLinear, NTMS, Sawteeth, Turbulence
 
 Diagnosis 诊断：实验数据库诊断数据接口，这部分数据默认为只读。
     包括 Barometry Bolometer BremsstrahlungVisible CameraIR CameraVisible ChargeExchange ECE HardXRays Interferometer LangmuirProbes MSE NeutronDiagnostic Polarimeter ReflectometerProfile SoftXRays SpectrometerMass SpectrometerUV SpectrometerVisible SpectrometerXRayCrystal ThomsonScattering

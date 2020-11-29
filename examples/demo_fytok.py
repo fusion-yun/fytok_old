@@ -16,24 +16,24 @@ def draw(tok):
         # x_axis=("psi_norm",   r'$(\psi-\psi_{axis})/(\psi_{boundary}-\psi_{axis}) [-]$'),
         x_axis=("rho_tor_norm",  r"$\rho_{tor}/\rho_{bndry}$"),
         profiles=[
-            # ({"name": "pprime", "opts": {"label": r"$p^{\prime}$"}}, r"$[Pa/Wb]$"),
-            # ({"name": "pressure", "opts": {"label": r"$p$"}}, r"$[Pa]$"),
-            # ({"name": "ffprime", "opts": {"label": r"$f f^{\prime}$"}}, r"$[T^2 \cdot m^2/Wb]$"),
-            # ({"name": "fpol", "opts": {"label": r"$f_{pol}$"}}, r"$\left[T\cdot m\right]$"),
-            # ({"name": "phi", "opts": {"label": r"$\Phi_{tor}$"}}, r"$[Wb]$"),
-            # ({"name": "rho_tor", "opts": {"label": r"$\rho_{tor}$"}}, r"$[m]$"),
-            # ({"name": "drho_tor_dpsi", "opts": {"label": r"$d\rho / d\psi$"}}, r"$\left[m/Wb\right]$"),
-            # # ({"name": "dpsi_drho_tor", "opts": {"label": r"$d\psi/d\rho_{tor}$"}}, r"$[Wb/m]$"),
-            # # ({"name": "rho_tor_norm", "opts": {"label": r"$\rho_{tor}/\rho_{bndry}$"}}, r"[m]"),
-            # ([{"name": "q", "opts": {"label": r"$q$", "marker": "o", "markersize": 0.5}},
-            #   #   {"name": "cache.q", "opts": {"label": r"$q_{exp}$", "marker": "o", "markersize": 0.5}}
-            #   ], r"$[-]$"),
-            # ({"name": "vprime", "opts": {"label": r"$V^{\prime}$"}}, r"$[m^3/Wb]$"),
-            # ({"name": "gm1", "opts": {"label": r"$gm1=<R^{-2}>$"}}, r"$[m^{-2}]$"),
-            # ({"name": "gm3", "opts": {"label": r"$gm3: \left\langle  |\nabla\rho |^{2}\right\rangle $"}},
-            #  r"$\left[-\right]$"),
-            # # ({"name": "gm4", "opts": {"label": r"$gm4: \left\langle 1/B^{2} \right\rangle$"}},   r"$\left[T^{-2}\right]$"),
-            # ({"name": "gm5", "opts": {"label": r"$gm5: \left\langle B^{2}\right\rangle$"}},  r"$\left[T^2\right]$"),
+            ({"name": "pprime", "opts": {"label": r"$p^{\prime}$"}}, r"$[Pa/Wb]$"),
+            ({"name": "pressure", "opts": {"label": r"$p$"}}, r"$[Pa]$"),
+            ({"name": "ffprime", "opts": {"label": r"$f f^{\prime}$"}}, r"$[T^2 \cdot m^2/Wb]$"),
+            ({"name": "fpol", "opts": {"label": r"$f_{pol}$"}}, r"$\left[T\cdot m\right]$"),
+            ({"name": "phi", "opts": {"label": r"$\Phi_{tor}$"}}, r"$[Wb]$"),
+            ({"name": "rho_tor", "opts": {"label": r"$\rho_{tor}$"}}, r"$[m]$"),
+            ({"name": "drho_tor_dpsi", "opts": {"label": r"$d\rho / d\psi$"}}, r"$\left[m/Wb\right]$"),
+            # ({"name": "dpsi_drho_tor", "opts": {"label": r"$d\psi/d\rho_{tor}$"}}, r"$[Wb/m]$"),
+            # ({"name": "rho_tor_norm", "opts": {"label": r"$\rho_{tor}/\rho_{bndry}$"}}, r"[m]"),
+            ([{"name": "q", "opts": {"label": r"$q$", "marker": "o", "markersize": 0.5}},
+              #   {"name": "cache.q", "opts": {"label": r"$q_{exp}$", "marker": "o", "markersize": 0.5}}
+              ], r"$[-]$"),
+            ({"name": "vprime", "opts": {"label": r"$V^{\prime}$"}}, r"$[m^3/Wb]$"),
+            ({"name": "gm1", "opts": {"label": r"$gm1=<R^{-2}>$"}}, r"$[m^{-2}]$"),
+            ({"name": "gm3", "opts": {"label": r"$gm3: \left\langle  |\nabla\rho |^{2}\right\rangle $"}},
+             r"$\left[-\right]$"),
+            # ({"name": "gm4", "opts": {"label": r"$gm4: \left\langle 1/B^{2} \right\rangle$"}},   r"$\left[T^{-2}\right]$"),
+            ({"name": "gm5", "opts": {"label": r"$gm5: \left\langle B^{2}\right\rangle$"}},  r"$\left[T^2\right]$"),
             ({"name": "psi"}, r"$[Wb]$"),
             ({"name": "dpsi_drho_tor"}, r"$[Wb]$"),
             ({"name": "psi_norm", "opts": {"label": r"$\psi_{norm}$"}}, r"$[Wb]$")
@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
     tok = Tokamak(open_entry("east+mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east", shot=55555, time_slice=100))
 
-    draw(tok).savefig("../output/tokamak0.svg", transparent=True)
+    draw(tok).savefig("../output/tokamak0.png", transparent=True)
 
     lfcs_r = tok.equilibrium.boundary.outline.r
     lfcs_z = tok.equilibrium.boundary.outline.z
@@ -75,23 +75,26 @@ if __name__ == "__main__":
     xpoints[1][0] += 0.1
     xpoints[1][1] += 0.1
 
-    # tok.equilibrium.update(
-    #     constraints={
-    #         # "psivals": psivals,
-    #         "xpoints": xpoints,
-    #         "isoflux": isoflux
-    #     })
+    tok.equilibrium.update(
+        constraints={
+            # "psivals": psivals,
+            "xpoints": xpoints,
+            "isoflux": isoflux
+        })
 
-    tok.update(
-        constraints={"xpoints": xpoints, "isoflux": isoflux},  # "psivals": psivals,
-        core_profiles={"profiles_1d": {"conductivity_parallel": scipy.constants.sigma}}
-    )
+    # tok.update(
+    #     constraints={"xpoints": xpoints,
+    #                  "isoflux": isoflux},  # "psivals": psivals,
+    #     core_profiles={"profiles_1d": {"conductivity_parallel": scipy.constants.sigma}}
+    # )
 
-    draw(tok).savefig("../output/tokamak1.svg", transparent=True)
+    draw(tok).savefig("../output/tokamak1.png", transparent=True)
 
-    fig = plot_profiles(tok.equilibrium.profiles_1d, "rho_tor,psi,dpsi_drho_tor",
+    fig = plot_profiles(tok.equilibrium.profiles_1d,
+                        "rho_tor,psi,dpsi_drho_tor",
                         x_axis="rho_tor_norm")[1].savefig("../output/eq_profiles_1d.svg",)
-    fig = plot_profiles(tok.core_profiles.profiles_1d, "grid.rho_tor,psi,dpsi_drho_tor",
+    fig = plot_profiles(tok.core_profiles.profiles_1d,
+                        "grid.rho_tor,psi,dpsi_drho_tor",
                         x_axis="rho_tor_norm")[1].savefig("../output/core_profiles.svg",)
     #
     # fig.tight_layout()

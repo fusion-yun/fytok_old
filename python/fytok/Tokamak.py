@@ -1,12 +1,3 @@
-"""
-   功能：
-        - 描述装置在单一时刻的状态，
-        - 在时间推进时，确定各个子系统之间的依赖和演化关系，
-
-
-"""
-
-
 import collections
 import copy
 import math
@@ -79,7 +70,8 @@ class Tokamak(AttributeTree):
     @property
     def core_profiles(self):
         if self._core_profiles is None:
-            self._core_profiles = CoreProfiles(self._cache.core_profiles,  time=self.time, equilibrium=self.equilibrium)
+            self._core_profiles = CoreProfiles(self._cache.core_profiles,
+                                               time=self.time, equilibrium=self.equilibrium)
         return self._core_profiles
 
     @core_profiles.setter
@@ -90,16 +82,22 @@ class Tokamak(AttributeTree):
 
     @cached_property
     def core_transport(self):
+        """Core plasma transport of particles, energy, momentum and poloidal flux."""
         return CoreTransport(self._cache.core_transport.mode, tokamak=self)
 
     @cached_property
     def core_sources(self):
+        """Core plasma thermal source terms (for the transport equations of the thermal species).
+            Energy terms correspond to the full kinetic energy equation
+            (i.e. the energy flux takes into account the energy transported by the particle flux)
+        """
         return CoreSources(self._cache.core_sources.mode, tokamak=self)
 
     @property
     def edge_profiles(self):
         if self._edge_profiles is None:
-            self._edge_profiles = EdgeProfiles(self._cache.edge_profiles,  time=self.time, equilibrium=self.equilibrium)
+            self._edge_profiles = EdgeProfiles(self._cache.edge_profiles,
+                                               time=self.time, equilibrium=self.equilibrium)
         return self._edge_profiles
 
     @edge_profiles.setter
@@ -110,10 +108,17 @@ class Tokamak(AttributeTree):
 
     @cached_property
     def edge_transports(self):
+        """Edge plasma transport. Energy terms correspond to the full kinetic energy equation
+         (i.e. the energy flux takes into account the energy transported by the particle flux)
+        """
         return EdgeTransport(self._cache.edge_transport.mode, tokamak=self)
 
     @cached_property
     def edge_sources(self):
+        """Edge plasma sources. Energy terms correspond to the full kinetic energy equation
+         (i.e. the energy flux takes into account the energy transported by the particle flux)
+        """
+
         return CoreSources(self._cache.edge_sources.mode, tokamak=self)
 
     @cached_property
@@ -199,25 +204,3 @@ class Tokamak(AttributeTree):
         axis.legend()
 
         return axis
-
-    # def core_transport(self, *args,  **kwargs):
-    #     """Core plasma transport of particles, energy, momentum and poloidal flux."""
-    #     return NotImplemented
-
-    # def core_sources(self, *args,  **kwargs):
-    #     """Core plasma thermal source terms (for the transport equations of the thermal species).
-    #     Energy terms correspond to the full kinetic energy equation
-    #     (i.e. the energy flux takes into account the energy transported by the particle flux)
-    #     """
-    #     return NotImplemented
-
-    # def edge_transports(self, *args,  **kwargs):
-    #     """Edge plasma transport. Energy terms correspond to the full kinetic energy equation
-    #      (i.e. the energy flux takes into account the energy transported by the particle flux)
-    #     """
-    #     return NotImplemented
-
-    # def edge_sources(self, *args,  **kwargs):
-    #     """Edge plasma sources. Energy terms correspond to the full kinetic energy equation
-    #      (i.e. the energy flux takes into account the energy transported by the particle flux)"""
-    #     return NotImplemented

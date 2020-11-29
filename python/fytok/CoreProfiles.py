@@ -17,6 +17,7 @@ from spdm.util.Interpolate import (Interpolate1D, Interpolate2D, derivate,
                                    interpolate)
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
+from spdm.util.Profiles import Profiles
 from spdm.util.sp_export import sp_find_module
 from sympy import Point, Polygon
 
@@ -26,7 +27,7 @@ from fytok.Plot import plot_profiles
 class CoreProfiles(AttributeTree):
     """CoreProfiles
     """
-    IDS="core_profiles"
+    IDS = "core_profiles"
 
     def __init__(self, cache=None, *args, equilibrium=None, rho_tor_norm=None, ** kwargs):
         super().__init__(*args, ** kwargs)
@@ -46,78 +47,38 @@ class CoreProfiles(AttributeTree):
 
         self.global_quantities = CoreProfiles.GlobalQuantities(self)
 
-    class Profiles1D(AttributeTree):
+    class Profiles1D(Profiles):
         def __init__(self, cache=None,  *args, equilibrium=None, rho_tor_norm=None, **kwargs):
-            super().__init__(*args, **kwargs)
-            if isinstance(cache, LazyProxy) or isinstance(cache, AttributeTree):
-                self.__dict__["_cache"] = cache
-            else:
-                self.__dict__["_cache"] = AttributeTree(cache)
-
-            self.__dict__["_eq"] = equilibrium
+            super().__init__(cache, * args, x_axis=rho_tor_norm, **kwargs)
+            self.__dict__["_equilibrium"] = equilibrium
 
         def __missing__(self, key):
-            d = self._cache[key]
-            if isinstance(d, LazyProxy):
-                d = d()
+            return super().__missing__(key) or self._equilibrium.profiles_1d.mapping("rho_tor_norm", key)(self.grid.rho_tor_norm)
 
-            if d is NotImplemented or not d:
-                d = self._eq.profiles_1d[key]
-                if isinstance(d, np.ndarray) and len(d) > 0:
-                    d = UnivariateSpline(self._eq.profiles_1d.rho_tor_norm, d)(self.grid.rho_tor_norm)
+        class Grid(Profiles):
+            """Normalised toroidal flux coordinate. The normalizing value for rho_tor_norm,
+            is the toroidal flux coordinate at the equilibrium boundary (LCFS or 99.x % of the LCFS in case of
+            a fixed boundary equilibium calculation, see time_slice/boundary/b_flux_pol_norm in the equilibrium IDS) {dynamic} [-]	"""
 
-            if isinstance(d, np.ndarray):
-                pass
-            elif callable(d):
-                d = d(self.grid.rho_tor_norm)
-            elif isinstance(d, numbers.Number):
-                d = np.full(self.grid.rho_tor_norm.shape, float(d))
-            elif d in (NotImplemented, None, [], {}):
-                d = np.full(self.grid.rho_tor_norm.shape, np.nan)
-
-            return d
-
-        def interpolate(self, key):
-            if not isinstance(key, str) and isinstance(key, collections.abc.Sequence):
-                return {k: self.interpolate(k) for k in key}
-
-            v = self.__getitem__(key)
-
-            if isinstance(v, np.ndarray) and v.shape[0] == self.grid.rho_tor_norm.shape[0]:
-                return UnivariateSpline(self.grid.rho_tor_norm, v)
-            else:
-                raise ValueError(f"Cannot create interploate! {key}")
-
-        class Grid(AttributeTree):
             def __init__(self, cache=None,  *args, equilibrium=None, rho_tor_norm=None,  **kwargs):
-                super().__init__(*args, **kwargs)
-                self.__dict__['_eq'] = equilibrium
-
-                """Normalised toroidal flux coordinate. The normalizing value for rho_tor_norm,
-                is the toroidal flux coordinate at the equilibrium boundary (LCFS or 99.x % of the LCFS in case of
-                a fixed boundary equilibium calculation, see time_slice/boundary/b_flux_pol_norm in the equilibrium IDS) {dynamic} [-]	"""
                 if rho_tor_norm is None:
                     rho_tor_norm = 129
                 if type(rho_tor_norm) is int:
-                    self.rho_tor_norm = np.linspace(0, 1.0, rho_tor_norm)
-                else:
-                    self.rho_tor_norm = rho_tor_norm
+                    rho_tor_norm = np.linspace(0, 1.0, rho_tor_norm)
+
+                super().__init__(cache, *args, x_axis=rho_tor_norm, **kwargs)
+
+                self.__dict__['_equilibrium'] = equilibrium
+
+                self.rho_tor_norm = rho_tor_norm
 
                 self |= {
-                    "psi_magnetic_axis": self._eq.global_quantities.psi_axis,  # Value of the poloidal magnetic flux at the magnetic axis (useful to normalize the psi array values when the radial grid doesn't go from the magnetic axis to the plasma boundary) {dynamic} [Wb]	FLT_0D"""
-                    "psi_boundary": self._eq.global_quantities.psi_boundary    # Value of the poloidal magnetic flux at the plasma boundary (useful to normalize the psi array values when the radial grid doesn't go from the magnetic axis to the plasma boundary) {dynamic} [Wb]	FLT_0D"""
+                    "psi_magnetic_axis": self._equilibrium.global_quantities.psi_axis,  # Value of the poloidal magnetic flux at the magnetic axis (useful to normalize the psi array values when the radial grid doesn't go from the magnetic axis to the plasma boundary) {dynamic} [Wb]	FLT_0D"""
+                    "psi_boundary": self._equilibrium.global_quantities.psi_boundary    # Value of the poloidal magnetic flux at the plasma boundary (useful to normalize the psi array values when the radial grid doesn't go from the magnetic axis to the plasma boundary) {dynamic} [Wb]	FLT_0D"""
                 }
 
             def __missing__(self, key):
-                path = key.split('.')
-                x = self._eq.profiles_1d.rho_tor_norm
-                y = self._eq.profiles_1d[key]
-                if y is None or y is NotImplemented:
-                    raise KeyError(path)
-                elif not isinstance(y, np.ndarray) or len(y.shape) > 1:
-                    return y
-                else:
-                    return UnivariateSpline(x, y)(self.rho_tor_norm)
+                return super().__missing__(key) or self._equilibrium.profiles_1d.mapping("rho_tor_norm", key)(self.rho_tor_norm)
 
             # def rho_tor(self):
             #     """Toroidal flux coordinate. rho_tor = sqrt(b_flux_tor/(pi*b0)) ~ sqrt(pi*r^2*b0/(pi*b0)) ~ r [m].
@@ -147,17 +108,14 @@ class CoreProfiles(AttributeTree):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
 
-        class Electons(AttributeTree):
+        class Electons(Profiles):
             def __init__(self, cache=None, *args, grid=None,  **kwargs):
-                super().__init__(*args, **kwargs)
+                super().__init__(cache, *args, x_axis=grid.rho_tor_norm, **kwargs)
                 self.__dict__['_grid'] = grid
                 self |= {
                     "temperature_validity": 0,
                     "density_validity": 0
                 }
-
-            def __missing__(self, key):
-                return np.full(self._grid.rho_tor_norm.shape, np.nan)
 
             # @property
             # def temperature(self):
@@ -232,11 +190,14 @@ class CoreProfiles(AttributeTree):
             #     """	Collisionality normalised to the bounce frequency {dynamic}[-]"""
             #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
 
-        class Ion(AttributeTree):
+        class Ion(Profiles):
             def __init__(self, cache=None,  *args, grid=None, z_ion=1, label=None, neutral_index=None,  **kwargs):
-                super().__init__(*args, z_ion=z_ion, label=label, neutral_index=neutral_index, **kwargs)
+                super().__init__(cache, *args, x_axis=grid.rho_tor_norm, **kwargs)
                 self.__dict__['_grid'] = grid
                 self |= {
+                    "z_ion": "z_ion",
+                    "label": "label",
+                    "neutral_index": "neutral_index",
                     "element": [],
                     "state": [],
                     "temperature_validity": 0,
@@ -365,9 +326,9 @@ class CoreProfiles(AttributeTree):
             #     """Quantities related to the different states of the species (ionisation, energy, excitation, ...)	struct_array [max_size=unbounded]	1- 1...N"""
             #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
 
-        class Neutral(AttributeTree):
+        class Neutral(Profiles):
             def __init__(self, cache=None,  *args, grid=None, label=None, ion_index=None, **kwargs):
-                super().__init__(*args, **kwargs)
+                super().__init__(cache, *args, x_axis=grid.rho_tor_norm, **kwargs)
                 self.__dict__['_grid'] = grid
                 self |= {
                     "label": label,
@@ -447,13 +408,16 @@ class CoreProfiles(AttributeTree):
         def pprime(self):
             return None
 
-        @property
+        @cached_property
         def ffprime(self):
-            return None
+            res = self._cache["ffprime"]
+            if res is NotImplemented or not res:
+                res = self.fpol*self.derivative("fpol")
+            return res
 
         @cached_property
         def grid(self):
-            return CoreProfiles.Profiles1D.Grid(self._cache.grid, equilibrium=self._eq)
+            return CoreProfiles.Profiles1D.Grid(self._cache.grid, equilibrium=self._equilibrium)
 
         @cached_property
         def ion(self):
@@ -566,7 +530,7 @@ class CoreProfiles(AttributeTree):
             """Electric field, averaged on the magnetic surface. E.g for the parallel component, average(E.B) / B0,
              using core_profiles/vacuum_toroidal_field/b0[V.m ^ -1]	"""
             return AttributeTree(
-                parallel=self.grid.rho_tor_norm
+                parallel=NotImplemented  # self.grid.rho_tor_norm
             )
 
         # @property

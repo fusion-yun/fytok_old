@@ -12,16 +12,16 @@
     Requirements
     Design
     Examples
-    .. Installation
-    .. QuickStart
-    .. Tutorial
-    .. UserGuide
-    .. DevGuide
+    Installation
+    QuickStart
+    Tutorial
+    UserGuide
+    DevGuide
     APIReference
-    .. Changelog
-    .. TODO
+    Changelog
+    TODO
     Bibliography
-    .. Appendix
+    Appendix
 
 
 .. only:: html    
