@@ -273,15 +273,23 @@ class FluxSurface(Profiles):
     @cached_property
     def phi(self):
         """Toroidal flux  [Wb]. FIXME: not sure,need double check"""
-        return self.integral(self.q, 0, self._psi_norm)/(2.0*scipy.constants.pi)
+        return self.integral(self.q, 0, self._psi_norm)
 
     @cached_property
     def rho_tor(self):
         """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0  [m]"""
-        return np.sqrt(self.phi)/np.sqrt(scipy.constants.pi * self._b0)
+        return np.sqrt(self.phi)/np.sqrt(scipy.constants.pi * self._b0) 
 
     @cached_property
     def drho_tor_dpsi(self)	:
+        r"""
+            .. math ::
+
+                \frac{d\rho_{tor}}{d\psi}=\frac{d}{d\psi}\sqrt{\frac{\Phi_{tor}}{\pi B_{0}}} \
+                                        =\frac{1}{2\sqrt{\pi B_{0}\Phi_{tor}}}\frac{d\Phi_{tor}}{d\psi} \
+                                        =\frac{q}{2\pi B_{0}\rho_{tor}}
+
+        """
         res = self.q/self.rho_tor/(2.0*constants.pi*self._b0)
         res[0] = res[1]*2-res[2]
         return res

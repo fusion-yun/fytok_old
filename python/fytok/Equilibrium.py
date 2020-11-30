@@ -562,9 +562,15 @@ class Equilibrium(AttributeTree):
             return self._equilibrium.flux_surface.drho_tor_dpsi
 
         @cached_property
+        def drho_tor_dpsi1(self):
+            return self.derivative("rho_tor")
+
+        @cached_property
         def dpsi_drho_tor(self)	:
             """Derivative of Psi with respect to Rho_Tor[Wb/m]. """
             return self._equilibrium.flux_surface.dpsi_drho_tor
+
+      
 
         @cached_property
         def vprime(self):

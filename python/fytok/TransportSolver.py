@@ -400,15 +400,13 @@ class TransportSolver(AttributeTree):
         # $\Psi$ flux function from current                 [Wb]
         psi0 = core_profiles_prev.profiles_1d.psi
         # $\frac{\partial\Psi}{\partial\rho}$               [Wb/m]
-        dpsi_drho_tor0 = core_profiles_prev.profiles_1d.interpolate("psi", k=4)(rho_tor_norm)
-        ddpsi_ddrho_tor0 = core_profiles_prev.profiles_1d.derivative("psi", n=2)
+        dpsi_drho_tor0 = core_profiles_prev.profiles_1d.dpsi_drho_tor
 
         # -----------------------------------------------------------
         # Equilibrium
         # diamagnetic function,$F=R B_\phi$                 [T*m]
         fpol = core_profiles_iter.profiles_1d.fpol
         # fprime = core_profiles_iter.profiles_1d.derivative("fpol")
-        ffprime = core_profiles_iter.profiles_1d.ffprime
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
         vpr = core_profiles_iter.profiles_1d.dvolume_drho_tor
@@ -515,15 +513,17 @@ class TransportSolver(AttributeTree):
 
         A[0] = 2*A[1]-A[2]
         B[-1] = 2 * B[-2]-B[-3]
+       
         C[-1] = 2 * C[-2]-C[-3]
-
+        C[0] = 2*C[1]-C[2]
         # Solution of current diffusion equation:
         try:
+            Afunc = UnivariateSpline(rho_tor_norm, A)
+            Bfunc = UnivariateSpline(rho_tor_norm, B)
+            Cfunc = UnivariateSpline(rho_tor_norm, C)
             sol = self.solve_bvp_raw(rho_tor_norm, psi0, dpsi_drho_tor0,
                                      #  TransportSolver.COEFF(a, b, c, d, e, f),
-                                     UnivariateSpline(rho_tor_norm, A),
-                                     UnivariateSpline(rho_tor_norm, B),
-                                     UnivariateSpline(rho_tor_norm, C),
+                                     Afunc, Bfunc, Cfunc,
                                      (TransportSolver.BCCOEFF(0, 1, 0),  # On axis:  dpsi/drho_tor(rho_tor=0)=0
                                       TransportSolver.BCCOEFF(u, v, w))
                                      )
@@ -533,20 +533,16 @@ class TransportSolver(AttributeTree):
             core_profiles_iter.profiles_1d.rho_tor_norm2 = sol.x  # logger.debug(sol.x)
             core_profiles_iter.profiles_1d.psi = sol.y[0]  # UnivariateSpline(sol.x, sol.y[0])(rho_tor_norm)
             core_profiles_iter.profiles_1d.dpsi_drho_tor = sol.y[1]  # UnivariateSpline(sol.x, sol.y[1])(rho_tor_norm)
-
+        core_profiles_iter.profiles_1d.rho_tor_norm = rho_tor_norm
         core_profiles_iter.profiles_1d.psi0 = psi0
         core_profiles_iter.profiles_1d.dpsi0 = dpsi_drho_tor0
-        core_profiles_iter.profiles_1d.ddpsi0 = ddpsi_ddrho_tor0
         core_profiles_iter.profiles_1d.C_A = -C/A
-        core_profiles_iter.profiles_1d.c = c
 
-        core_profiles_iter.profiles_1d.dc = dc
         core_profiles_iter.profiles_1d.A = A
         core_profiles_iter.profiles_1d.B = B
         core_profiles_iter.profiles_1d.C = C
 
         core_profiles_iter.profiles_1d.j_total = j_ni_exp
-        core_profiles_iter.profiles_1d.fcoeff = f / c
         # core_profiles_iter.profiles_1d.I = j_ni_exp*core_profiles_iter.profiles_1d.volume
 
         # New magnetic flux function and current density:

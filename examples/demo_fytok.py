@@ -103,7 +103,9 @@ if __name__ == "__main__":
                                 "profiles_1d": {"j_parallel": j_total}}
 
     plot_profiles(tok.equilibrium.profiles_1d,
-                  profiles=["psi_norm", ["q", "q1"], "vprime", "phi", "rho_tor", ["fpol", "fpol1"], "gm2"],
+                  profiles=["psi_norm", "phi", ["q", "q1"], "rho_tor",
+                            ["dpsi_drho_tor", "dpsi_drho_tor1"],
+                            ["drho_tor_dpsi", "drho_tor_dpsi1"]],
                   x_axis="psi_norm", grid=True)[1] .savefig("../output/eq_profiles_1d.svg")
 
     tok.update()
@@ -112,6 +114,7 @@ if __name__ == "__main__":
 
     plot_profiles(tok.core_profiles.profiles_1d,
                   profiles=[
+                      "rho_tor_norm",
                       [
                           {"name": "psi0", "opts": {"marker": "+", "label": r"$\psi^{-1}$"}},
                           {"name": "psi", "x_axis": "rho_tor_norm2", "opts": {"marker": "+", "label": r"$\psi$"}}
@@ -121,8 +124,9 @@ if __name__ == "__main__":
                           {"name": "dpsi_drho_tor", "x_axis": "rho_tor_norm2",
                            "opts": {"marker": "+", "label": r"$d\psi/d\rho_{tor,norm}$"}}
                       ], r"$[Wb/m]$"),
-                      "j_total", "fcoeff", "A", "B", "C", "volume", "dc", "c",
-                      ["ddpsi0", "C_A"]
+                      "j_total",  "A",   "C",
+                      #   ["ddpsi0"],
+                      "C_A"
 
                   ],
                   x_axis="rho_tor_norm", grid=True)[1] .savefig("../output/core_profiles.svg")
