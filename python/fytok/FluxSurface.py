@@ -8,6 +8,7 @@ from functools import cached_property
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
+from scipy import constants
 from numpy import arctan2, cos, sin, sqrt
 from scipy.interpolate import (RectBivariateSpline, SmoothBivariateSpline,
                                UnivariateSpline)
@@ -17,10 +18,11 @@ from spdm.util.Interpolate import (Interpolate1D, Interpolate2D, derivate,
                                    find_critical, find_root, integral,
                                    interpolate)
 from spdm.util.logger import logger
+from spdm.util.Profiles import Profiles
 from sympy import Point, Polygon
 
 
-class FluxSurface:
+class FluxSurface(Profiles):
     r"""Flux surface average of function
 
        <a(psi)> =2 *pi* int(a dl * R / |grad psi|)/V'
@@ -40,43 +42,38 @@ class FluxSurface:
     def __init__(self,  psirz,
                  coordinate_system, *args,
                  limiter=None,
-                 R0=None,
-                 B0=None,
-                 fpol=None,
+                 r0=None,
+                 b0=None,
                  ffprime=None,
                  psi_norm=129,
                  tolerance=1.0e-6,   ** kwargs):
         """Initialize FluxSurface
 
         """
-        super().__init__(*args, **kwargs)
+        super().__init__(None, *args, x_axis=psi_norm, **kwargs)
 
         logger.debug(f"Calculate magnetic flux surface averge")
         self.limiter = limiter
         self.psirz = psirz
-        self._R0 = R0
-        self._B0 = B0
-        self._fpol = fpol
+        self._r0 = r0
+        self._b0 = b0
         self._ffprime = ffprime
+        self._psi_norm = self._x_axis
+        if callable(ffprime):
+            self._ffprime = ffprime
+        elif isinstance(ffprime, np.ndarray):
+            self._ffprime = UnivariateSpline(self._psi_norm, ffprime)
+        else:
+            raise TypeError(f"ffprime:{ffprime}")
 
         self.tolerance = tolerance
 
-        if type(psi_norm) is int:
-            self._psi_norm = np.linspace(0.0, 1.0, psi_norm)
-        elif isinstance(psi_norm, np.ndarray):
-            self._psi_norm = psi_norm
-        else:
-            raise TypeError(f"{psi_norm}")
         if not isinstance(coordinate_system, AttributeTree):
             coordinate_system = AttributeTree(coordinate_system)
         if not coordinate_system.grid.grid_type.index or coordinate_system.grid.grid_type.index == 1:
             self.coordinate_system = coordinate_system
         else:
             raise NotImplementedError(f"coordinate_system type error! {coordinate_system}")
-
-        self.drho_dpsi = 1
-
-        # self.drho_dpsi = drho_dpsi
 
     @cached_property
     def critical_points(self):
@@ -119,52 +116,15 @@ class FluxSurface:
         return opoints, xpoints
 
     @cached_property
-    def fpol(self):
-        if callable(self._fpol):
-            return self._fpol(self._psi_norm)
-        # elif isinstance(self._fpol, np.ndarray):
-        #     return self._fpol (not self._fpol) and
-        elif isinstance(self._ffprime, np.ndarray):
-            fvac = self._R0 * self._B0
-            psi_norm = np.linspace(0.0, 1.0, len(self._ffprime))
-            func = UnivariateSpline(psi_norm, self._ffprime)
-            f2 = np.array([func.integral(p, 1.0) for p in self._psi_norm])*(self.psi_axis-self.psi_boundary)
-            logger.debug((self._R0, self._B0))
-            return np.sqrt(f2*2+fvac**2)
-        else:
-            raise ValueError(f"{self._fpol} {self._ffprime}")
-
-    @cached_property
-    def ffprime(self):
-        if self._ffprime is not None:
-            return self._ffprime
-        elif isinstance(self._fpol, np.ndarray):
-            fpol = self._fpol
-            psi_norm = np.linspace(0.0, 1.0, len(fpol))
-            func = UnivariateSpline(psi_norm, fpol)
-            return fpol*func.derivative()(self._psi_norm)
-        else:
-            raise ValueError(f"ffprime")
-
-    @cached_property
-    def magnetic_axis(self):
-        o, _ = self.critical_points
-        return o[0]
-
-    @cached_property
-    def x_points(self):
-        _, x = self.critical_points
-        return x
-
-    @cached_property
     def psi_axis(self):
         o, _ = self.critical_points
         return o[0].psi
 
     @cached_property
     def psi_boundary(self):
-        if len(self.x_points) > 0:
-            return self.x_points[0].psi
+        _, x = self.critical_points
+        if len(x) > 0:
+            return x[0].psi
         else:
             raise ValueError(f"No x-point")
 
@@ -174,20 +134,22 @@ class FluxSurface:
     def find_by_psi(self, psival, ntheta=64):
 
         if type(ntheta) is int:
-            dim_theta = np.linspace(0, scipy.constants.pi*2.0,  ntheta, endpoint=False)
+            dim_theta = np.linspace(0, constants.pi*2.0,  ntheta, endpoint=False)
         elif isinstance(ntheta, collections.abc.Sequence) or isinstance(ntheta, np.ndarray):
             dim_theta = ntheta
         else:
             dim_theta = [ntheta]
 
-        R0 = self.magnetic_axis.r
-        Z0 = self.magnetic_axis.z
+        o_points, x_points = self.critical_points
 
-        if len(self.x_points) > 0:
-            R1 = self.x_points[0].r
-            Z1 = self.x_points[0].z
+        R0 = o_points[0].r
+        Z0 = o_points[0].z
 
-            theta0 = arctan2(R1 - R0, Z1 - Z0)  # + scipy.constants.pi/npoints  # avoid x-point
+        if len(x_points) > 0:
+            R1 = x_points[0].r
+            Z1 = x_points[0].z
+
+            theta0 = arctan2(R1 - R0, Z1 - Z0)  # + constants.pi/npoints  # avoid x-point
             Rm = sqrt((R1-R0)**2+(Z1-Z0)**2)
         else:
             theta0 = 0
@@ -274,19 +236,60 @@ class FluxSurface:
 
     @cached_property
     def B2(self):
-        dpsi_dr, dpsi_dz = self.grad_psi
-        return (dpsi_dr**2 + dpsi_dz**2+self.fpol.reshape((-1, 1))**2)/(self.R**2)
+        return (self.grad_psi2+self.fpol.reshape((-1, 1))**2)/(self.R**2)
+
+    @cached_property
+    def fpol(self):
+        """Diamagnetic function (F=R B_tor)  [T.m]."""
+        f2 = np.array([self._ffprime.integral(p, 1.0) for p in self._psi_norm]) * (self.psi_axis-self.psi_boundary)
+        return np.sqrt(f2 * 2.0 + (self._r0*self._b0)**2)
 
     @cached_property
     def dvolume_dpsi(self):
         r""".. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
             .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
         """
-        return (2*scipy.constants.pi) * np.sum(self.Jdl, axis=1)
+        return (2*constants.pi) * np.sum(self.Jdl, axis=1)
+
+    @cached_property
+    def volume(self):
+        """Volume enclosed in the flux surface[m ^ 3]"""
+        return self.integral(self.dvolume_dpsi, 0.0, self._psi_norm) * (self.psi_axis-self.psi_boundary)
 
     @property
     def vprime(self):
         return self.dvolume_dpsi
+
+    @cached_property
+    def q(self):
+        r"""Safety factor 
+            (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)  [-].
+
+            .. math:: q(\psi) =\frac{F V^{\prime} \left\langle R^{-2}\right \rangle }{4 \pi^2}
+        """
+        logger.debug(r"Calculate q as  F V^{\prime} \left\langle R^{-2}\right \rangle /(4 \pi^2) ")
+        return self.fpol*self.dvolume_dpsi * self.gm1 / (4*scipy.constants.pi**2)
+
+    @cached_property
+    def phi(self):
+        """Toroidal flux  [Wb]. FIXME: not sure,need double check"""
+        return self.integral(self.q, 0, self._psi_norm)/(2.0*scipy.constants.pi)
+
+    @cached_property
+    def rho_tor(self):
+        """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0  [m]"""
+        return np.sqrt(self.phi)/np.sqrt(scipy.constants.pi * self._b0)
+
+    @cached_property
+    def drho_tor_dpsi(self)	:
+        res = self.q/self.rho_tor/(2.0*constants.pi*self._b0)
+        res[0] = res[1]*2-res[2]
+        return res
+
+    @cached_property
+    def dpsi_drho_tor(self)	:
+        """Derivative of Psi with respect to Rho_Tor[Wb/m]. """
+        return (2.0*constants.pi*self._b0)*self.rho_tor/self.q
 
     @cached_property
     def gm1(self):
@@ -296,12 +299,12 @@ class FluxSurface:
     @cached_property
     def gm2(self):
         r""".. math:: \left\langle\left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle """
-        return self.average(self.grad_psi2/(self.R**2))*(self.drho_dpsi**2)
+        return self.average(self.grad_psi2/(self.R**2))*(self.drho_tor_dpsi**2)
 
     @cached_property
     def gm3(self):
         r""".. math:: {\left\langle \left|\nabla\rho\right|^{2}\right\rangle}"""
-        return self.average(self.grad_psi2)*(self.drho_dpsi**2)
+        return self.average(self.grad_psi2)*(self.drho_tor_dpsi**2)
 
     @cached_property
     def gm4(self):
@@ -316,12 +319,12 @@ class FluxSurface:
     @cached_property
     def gm6(self):
         r""".. math:: \left\langle \frac{\left|\nabla\rho\right|^{2}}{B^{2}}\right\rangle """
-        return self.average(self.grad_psi2/self.B2)
+        return self.average(self.grad_psi2/self.B2) * (self.drho_tor_dpsi**2)
 
     @cached_property
     def gm7(self):
         r""".. math:: \left\langle \left|\nabla\rho\right|\right\rangle """
-        return self.average(np.sqrt(self.grad_psi2))
+        return self.average(np.sqrt(self.grad_psi2)) * self.drho_tor_dpsi
 
     @cached_property
     def gm8(self):
@@ -335,9 +338,9 @@ class FluxSurface:
 
     def average(self, func, *args, **kwargs):
         if inspect.isfunction(func):
-            res = (2*scipy.constants.pi) * np.sum(func(self.R, self.Z, *args, **kwargs)*self.Jdl, axis=1) / self.vprime
+            res = (2*constants.pi) * np.sum(func(self.R, self.Z, *args, **kwargs)*self.Jdl, axis=1) / self.vprime
         else:
-            res = (2*scipy.constants.pi) * np.sum(func * self.Jdl, axis=1) / self.vprime
+            res = (2*constants.pi) * np.sum(func * self.Jdl, axis=1) / self.vprime
         # res[0] = res[1]
         return res
 

@@ -103,7 +103,7 @@ if __name__ == "__main__":
                                 "profiles_1d": {"j_parallel": j_total}}
 
     plot_profiles(tok.equilibrium.profiles_1d,
-                  profiles=["psi_norm",["q","q1"] ,"vprime", "fpol", "gm2"],
+                  profiles=["psi_norm", ["q", "q1"], "vprime", "phi", "rho_tor", ["fpol","fpol1"], "gm2"],
                   x_axis="psi_norm", grid=True)[1] .savefig("../output/eq_profiles_1d.svg")
 
     tok.update()
