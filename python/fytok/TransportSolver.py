@@ -354,7 +354,7 @@ class TransportSolver(AttributeTree):
                 sources             : CoreSources
                 boundary_condition  :
 
-            .. math ::  \conductivity_parallel_{\parallel}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho} \right) \psi= \
+            .. math ::  \sigma_{\parallel}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho} \right) \psi= \
                         \frac{F^{2}}{\mu_{0}B_{0}\rho}\frac{\partial}{\partial\rho}\left[\frac{V^{\prime}}{4\pi^{2}}\left\langle \left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle \
                         \frac{1}{F}\frac{\partial\psi}{\partial\rho}\right]-\frac{V^{\prime}}{2\pi\rho}\left(j_{ni,exp}+j_{ni,imp}\psi\right)
                 :label: transport_current
@@ -506,7 +506,7 @@ class TransportSolver(AttributeTree):
             v = 0.0
             w = psi0[-1]  # core_profiles_iter.profiles_1d.integral(2.0*constants.pi*B0/qsf, 0, 1.0)
 
-        dc = UnivariateSpline(rho_tor_norm, c, k=5).derivative()(rho_tor_norm)
+        dc = UnivariateSpline(rho_tor_norm, c).derivative()(rho_tor_norm)
         dd = UnivariateSpline(rho_tor_norm, d).derivative()(rho_tor_norm)
         inv_c = 1.0 / c
         A = (-dc - d)*inv_c
@@ -528,7 +528,7 @@ class TransportSolver(AttributeTree):
                                       TransportSolver.BCCOEFF(u, v, w))
                                      )
         except Exception as error:
-            raise RuntimeError(f"Unable to solve the 'current' transport equation! \n {error} ")
+            logger.error(f"Unable to solve the 'current' transport equation! \n {error} ")
         else:
             core_profiles_iter.profiles_1d.rho_tor_norm2 = sol.x  # logger.debug(sol.x)
             core_profiles_iter.profiles_1d.psi = sol.y[0]  # UnivariateSpline(sol.x, sol.y[0])(rho_tor_norm)
@@ -538,6 +538,8 @@ class TransportSolver(AttributeTree):
         core_profiles_iter.profiles_1d.dpsi0 = dpsi_drho_tor0
         core_profiles_iter.profiles_1d.ddpsi0 = ddpsi_ddrho_tor0
         core_profiles_iter.profiles_1d.C_A = -C/A
+        core_profiles_iter.profiles_1d.c = c
+
         core_profiles_iter.profiles_1d.dc = dc
         core_profiles_iter.profiles_1d.A = A
         core_profiles_iter.profiles_1d.B = B

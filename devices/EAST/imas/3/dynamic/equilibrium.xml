@@ -5,7 +5,6 @@
     </ids_properties>
     <time><spdb:data protocol="mdsplus">DATA(\TIME)</spdb:data></time>
     <vacuum_toroidal_field>
-            <!--!!!! NOTE !!! east_efit://RBCENT and BCENTR should swap positions -->
             <r0><spdb:data protocol="mdsplus" >DATA(\BCENTR)[{time_slice}]</spdb:data></r0>                
             <b0><spdb:data protocol="mdsplus" >DATA(\RBCENT)[{time_slice}]</spdb:data></b0>
     </vacuum_toroidal_field>

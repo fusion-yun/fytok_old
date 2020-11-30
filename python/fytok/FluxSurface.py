@@ -37,7 +37,15 @@ class FluxSurface:
                        arrays should not be filled since they are redundant with grid/dim1 and dim2.
     """
 
-    def __init__(self,  psirz, coordinate_system, *args, limiter=None, fpol=None, tolerance=1.0e-6,   ** kwargs):
+    def __init__(self,  psirz,
+                 coordinate_system, *args,
+                 limiter=None,
+                 R0=None,
+                 B0=None,
+                 fpol=None,
+                 ffprime=None,
+                 psi_norm=129,
+                 tolerance=1.0e-6,   ** kwargs):
         """Initialize FluxSurface
 
         """
@@ -46,8 +54,19 @@ class FluxSurface:
         logger.debug(f"Calculate magnetic flux surface averge")
         self.limiter = limiter
         self.psirz = psirz
+        self._R0 = R0
+        self._B0 = B0
         self._fpol = fpol
+        self._ffprime = ffprime
+
         self.tolerance = tolerance
+
+        if type(psi_norm) is int:
+            self._psi_norm = np.linspace(0.0, 1.0, psi_norm)
+        elif isinstance(psi_norm, np.ndarray):
+            self._psi_norm = psi_norm
+        else:
+            raise TypeError(f"{psi_norm}")
         if not isinstance(coordinate_system, AttributeTree):
             coordinate_system = AttributeTree(coordinate_system)
         if not coordinate_system.grid.grid_type.index or coordinate_system.grid.grid_type.index == 1:
@@ -102,9 +121,30 @@ class FluxSurface:
     @cached_property
     def fpol(self):
         if callable(self._fpol):
-            return self._fpol(self.coordinate_system.grid.dim1*(self.psi_boundary - self.psi_axis)+self.psi_axis)
+            return self._fpol(self._psi_norm)
+        # elif isinstance(self._fpol, np.ndarray):
+        #     return self._fpol (not self._fpol) and
+        elif isinstance(self._ffprime, np.ndarray):
+            fvac = self._R0 * self._B0
+            psi_norm = np.linspace(0.0, 1.0, len(self._ffprime))
+            func = UnivariateSpline(psi_norm, self._ffprime)
+            f2 = np.array([func.integral(p, 1.0) for p in self._psi_norm])*(self.psi_axis-self.psi_boundary)
+            logger.debug((self._R0, self._B0))
+            return np.sqrt(f2*2+fvac**2)
         else:
-            return self.coordinate_system.grid.dim1
+            raise ValueError(f"{self._fpol} {self._ffprime}")
+
+    @cached_property
+    def ffprime(self):
+        if self._ffprime is not None:
+            return self._ffprime
+        elif isinstance(self._fpol, np.ndarray):
+            fpol = self._fpol
+            psi_norm = np.linspace(0.0, 1.0, len(fpol))
+            func = UnivariateSpline(psi_norm, fpol)
+            return fpol*func.derivative()(self._psi_norm)
+        else:
+            raise ValueError(f"ffprime")
 
     @cached_property
     def magnetic_axis(self):
@@ -235,7 +275,7 @@ class FluxSurface:
     @cached_property
     def B2(self):
         dpsi_dr, dpsi_dz = self.grad_psi
-        return (dpsi_dr**2 + dpsi_dz**2+self.fpol.reshape(-1, 1)**2)/(self.R**2)
+        return (dpsi_dr**2 + dpsi_dz**2+self.fpol.reshape((-1, 1))**2)/(self.R**2)
 
     @cached_property
     def dvolume_dpsi(self):
@@ -244,7 +284,7 @@ class FluxSurface:
         """
         return (2*scipy.constants.pi) * np.sum(self.Jdl, axis=1)
 
-    @ property
+    @property
     def vprime(self):
         return self.dvolume_dpsi
 

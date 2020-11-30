@@ -54,7 +54,7 @@ if __name__ == "__main__":
     from fytok.Plot import plot_profiles
     from spdm.util.AttributeTree import _next_
 
-    tok = Tokamak(open_entry("east+mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east", shot=55555, time_slice=100))
+    tok = Tokamak(open_entry("east+mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east", shot=55555, time_slice=20))
 
     # draw(tok).savefig("../output/tokamak0.png", transparent=True)
 
@@ -84,9 +84,11 @@ if __name__ == "__main__":
     #         "isoflux": isoflux
     #     })
 
-    fun = tok.equilibrium.profiles_1d.gm2*tok.equilibrium.profiles_1d.vprime/tok.equilibrium.profiles_1d.fpol
+    fun = tok.equilibrium.profiles_1d.gm2*tok.equilibrium.profiles_1d.vprime * tok.equilibrium.profiles_1d.dpsi_drho_tor / \
+        tok.equilibrium.profiles_1d.fpol / (4.0*(constants.pi**2)*tok.equilibrium.profiles_1d.rho_tor[-1])
     dfun = tok.equilibrium.profiles_1d.derivative(fun)
-    j_total = dfun*(tok.equilibrium.profiles_1d.fpol**2)/tok.equilibrium.profiles_1d.vprime / \
+
+    j_total = -dfun*(tok.equilibrium.profiles_1d.fpol**2)/tok.equilibrium.profiles_1d.vprime/tok.equilibrium.profiles_1d.rho_tor / \
         (constants.mu_0*tok.vacuum_toroidal_field.b0*constants.pi*2.0)
 
     tok.constraints = {"xpoints": xpoints,
@@ -101,9 +103,9 @@ if __name__ == "__main__":
                                 "profiles_1d": {"j_parallel": j_total}}
 
     plot_profiles(tok.equilibrium.profiles_1d,
-                  profiles=["psi", "q", "vprime", "volume", "drho_tor_dpsi", "dpsi_drho_tor"],
+                  profiles=["psi",["q","q1"] ,"vprime", "volume",[ "fpol", "fpol1"], "drho_tor_dpsi", "dpsi_drho_tor"],
                   x_axis="psi_norm", grid=True)[1] .savefig("../output/eq_profiles_1d.svg")
-   
+
     tok.update()
 
     draw(tok).savefig("../output/tokamak1.svg", transparent=True)
@@ -112,13 +114,14 @@ if __name__ == "__main__":
                   profiles=[
                       [
                           {"name": "psi0", "opts": {"marker": "+", "label": r"$\psi^{-1}$"}},
-                          {"name": "psi", "x_axis": "rho_tor_norm2", "opts": {"marker": "+", "label": r"$\psi$"}}],
+                          #   {"name": "psi", "x_axis": "rho_tor_norm2", "opts": {"marker": "+", "label": r"$\psi$"}}
+                      ],
                       ([
                           {"name": "dpsi0", "opts": {"marker": "+", "label": r"$d\psi^{-1}/d\rho_{tor,norm}$"}},
-                          {"name": "dpsi_drho_tor", "x_axis": "rho_tor_norm2",
-                              "opts": {"marker": "+", "label": r"$d\psi/d\rho_{tor,norm}$"}}
+                          #   {"name": "dpsi_drho_tor", "x_axis": "rho_tor_norm2",
+                          #       "opts": {"marker": "+", "label": r"$d\psi/d\rho_{tor,norm}$"}}
                       ], r"$[Wb/m]$"),
-                      "j_total", "fcoeff", "A", "B", "C", "volume","dc",
+                      "j_total", "fcoeff", "A", "B", "C", "volume", "dc", "c",
                       ["ddpsi0", "C_A"]
 
                   ],

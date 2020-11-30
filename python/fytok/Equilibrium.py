@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from numpy import arctan2, cos, sin, sqrt
+import scipy.constants as constants
 from scipy.interpolate import (RectBivariateSpline, SmoothBivariateSpline,
                                UnivariateSpline)
 from scipy.optimize import root_scalar
@@ -94,10 +95,16 @@ class Equilibrium(AttributeTree):
 
         return AttributeTree.__new__(n_cls)
 
-    def __init__(self,   config,  *args,  tokamak=None,  **kwargs):
+    def __init__(self,   cache=None,  *args,  tokamak=None, psi_norm=129, **kwargs):
         super().__init__(*args, **kwargs)
         self.tokamak = tokamak
-        self.load(config)
+        self._cache = cache
+        if type(psi_norm) is int:
+            self._psi_norm = np.linspace(0.0, 1.0, psi_norm)
+        elif isinstance(psi_norm, np.ndarray):
+            self._psi_norm = psi_norm
+        else:
+            raise TypeError(f"{psi_norm}")
         # ----------------------------------------------------------
         # self.__dict__["_grid_box"] = AttributeTree()
 
@@ -113,9 +120,6 @@ class Equilibrium(AttributeTree):
         # self._grid_box.dim1 = np.linspace(rmin-0.1*(rmax-rmin), rmax+0.1*(rmax-rmin), nr)
         # self._grid_box.dim2 = np.linspace(zmin-0.1*(zmax-zmin), zmax+0.1*(zmax-zmin), nz)
 
-    def load(self, config):
-        self._cache = config
-
     @property
     def cache(self):
         if isinstance(self._cache, LazyProxy):
@@ -126,7 +130,7 @@ class Equilibrium(AttributeTree):
             self._cache = AttributeTree(self._cache)
         return self._cache
 
-    @property
+    @cached_property
     def vacuum_toroidal_field(self):
         return self.tokamak.vacuum_toroidal_field
 
@@ -162,7 +166,9 @@ class Equilibrium(AttributeTree):
 
     @cached_property
     def profiles_1d(self):
-        return Equilibrium.Profiles1D(self._cache.profiles_1d, equilibrium=self)
+        return Equilibrium.Profiles1D(self._cache.profiles_1d,
+                                      psi_norm=self._psi_norm,
+                                      equilibrium=self)
 
     @cached_property
     def profiles_2d(self):
@@ -187,6 +193,18 @@ class Equilibrium(AttributeTree):
     @cached_property
     def coordinate_system(self):
         return Equilibrium.CoordinateSystem(equilibrium=self)
+
+    @cached_property
+    def flux_surface(self):
+        # logger.debug(self.profiles_1d._cache)
+        return FluxSurface(self.profiles_2d.psirz,
+                           psi_norm=self._psi_norm,
+                           ffprime=self.profiles_1d.cache("f_df_dpsi"),
+                           fpol=self.profiles_1d.cache("f"),
+                           R0=self.vacuum_toroidal_field.r0,
+                           B0=self.vacuum_toroidal_field.b0,
+                           coordinate_system=self.coordinate_system,
+                           limiter=self.tokamak.wall.limiter_polygon)
 
     class CoordinateSystem(AttributeTree):
         """Definition of the 2D grid
@@ -387,13 +405,6 @@ class Equilibrium(AttributeTree):
             """Plasma energy content: 3/2 * int(p, dV) with p being the total pressure(thermal + fast particles)[J].  Time-dependent  Scalar [J]"""
             return self._equilibrium.cache.global_quantities.energy_mhd
 
-    @cached_property
-    def flux_surface(self):
-        return FluxSurface(self.profiles_2d.psirz,
-                           coordinate_system=self.coordinate_system,
-                           fpol=self.profiles_1d.interpolate("f"),
-                           limiter=self.tokamak.wall.limiter_polygon)
-
     class Profiles1D(Profiles):
         """Equilibrium profiles (1D radial grid) as a function of the poloidal flux	"""
 
@@ -451,30 +462,6 @@ class Equilibrium(AttributeTree):
             return res
 
         @cached_property
-        def f(self):
-            """Diamagnetic function (F=R B_Phi)  [T.m]."""
-            # ffprime = self.f_df_dpsi
-            # f2 = [2*ffprime.integral(0, psi) for psi in self.psi]
-            # return np.sqrt(f2)
-            res = super().cache("f")
-            if res is None:
-                res = super().cache("fpol")
-
-            if res is None or len(res) == 0:
-                fvac = self._equilibrium.vacuum_toroidal_field.r0*self._equilibrium.vacuum_toroidal_field.b0
-                res = self.integral("ffprime", self.psi)
-                res = np.sqrt(res**2+fvac**2)
-            return res
-
-        @cached_property
-        def fpol(self):
-            return self.f
-
-        @cached_property
-        def f1(self):
-            return self._cache.f
-
-        @cached_property
         def pprime(self):
             """Derivative of pressure w.r.t. psi  [Pa.Wb^-1]."""
             return self.dpressure_dpsi
@@ -488,21 +475,40 @@ class Equilibrium(AttributeTree):
             return res
 
         @cached_property
+        def f(self):
+            """Diamagnetic function (F=R B_Phi)  [T.m]."""
+            return self.flux_surface.fpol
+            # # ffprime = self.f_df_dpsi
+            # # f2 = [2*ffprime.integral(0, psi) for psi in self.psi]
+            # # return np.sqrt(f2)
+            # # res = super().cache("f")
+            # # if res is None:
+            # #     res = super().cache("fpol")
+
+            # # if res is None or len(res) == 0:
+            # fvac = self._equilibrium.vacuum_toroidal_field.r0*self._equilibrium.vacuum_toroidal_field.b0
+            # psi_boundary = self._equilibrium.global_quantities.psi_boundary
+            # psi_axis = self._equilibrium.global_quantities.psi_axis
+            # res = self.integral("ffprime",   self.psi_norm, 1.0)*(psi_axis-psi_boundary)
+            # return np.sqrt(res*2.0+fvac**2)
+
+        @cached_property
+        def fpol(self):
+            return self.flux_surface.fpol
+
+        @cached_property
+        def fpol1(self):
+            return self._cache.f
+
+        @cached_property
         def ffprime(self):
             """	Derivative of F w.r.t. Psi, multiplied with F  [T^2.m^2/Wb]. """
-            res = super().cache("ffprime")
-            if not isinstance(res, np.ndarray) or len(res) == 0:
-                res = self.f_df_dpsi
-            return res
+            return self.flux_surface.ffprime
 
         @cached_property
         def f_df_dpsi(self):
             """	Derivative of F w.r.t. Psi, multiplied with F  [T^2.m^2/Wb]. """
-            res = super().cache("f_df_dpsi")
-
-            if not isinstance(res, np.ndarray) or len(res) == 0:
-                res = self.derivative("fpol")*self.fpol
-            return res
+            return self.flux_surface.ffprime
 
         @cached_property
         def j_tor(self):
@@ -518,15 +524,19 @@ class Equilibrium(AttributeTree):
         def q(self):
             r"""Safety factor 
                 (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)  [-].
-                .. math:: q(psi) = F V^{\prime} \left\langle R^{-2}\right \rangle /(4 \pi^2) 
+
+                .. math:: q(\psi) =\frac{F V^{\prime} \left\langle R^{-2}\right \rangle }{4 \pi^2}
             """
             # res = self._equilibrium.cache.profiles_1d.q
             # if len(res) == 0:
-            res = self._equilibrium._cache["q"]
-            if not isinstance(res, np.ndarray):
-                logger.debug(r"Calculate q as  F V^{\prime} \left\langle R^{-2}\right \rangle /(4 \pi^2) ")
-                res = self.fpol*self.dvolume_dpsi * self.gm1 / (4*scipy.constants.pi**2)
-            return res
+            # res = self._equilibrium._cache["q"]
+            # if not isinstance(res, np.ndarray):
+            logger.debug(r"Calculate q as  F V^{\prime} \left\langle R^{-2}\right \rangle /(4 \pi^2) ")
+            return self.fpol*self.dvolume_dpsi * self.gm1 / (4*scipy.constants.pi**2)
+
+        @cached_property
+        def q1(self):
+            return self._equilibrium.cache.profiles_1d.q
 
         @cached_property
         def psi_norm1(self):
@@ -535,7 +545,7 @@ class Equilibrium(AttributeTree):
         @cached_property
         def magnetic_shear(self):
             """Magnetic shear, defined as rho_tor/q . dq/drho_tor  [-]	 """
-            return self.rho_tor/self.q * derivate(self.q, self.dpsi_drho_tor)
+            return self.rho_tor/self.q * self.derivative("q")
 
         @cached_property
         def r_inboard(self):
@@ -560,14 +570,14 @@ class Equilibrium(AttributeTree):
 
         @cached_property
         def drho_tor_dpsi(self)	:
-            res = self.q/(self._equilibrium.vacuum_toroidal_field.b0*self.rho_tor)
+            res = self.q/self.rho_tor/(2.0*constants.pi*self._equilibrium.vacuum_toroidal_field.b0)
             res[0] = res[1]*2-res[2]
             return res
 
         @cached_property
         def dpsi_drho_tor(self)	:
             """Derivative of Psi with respect to Rho_Tor  [Wb/m]. """
-            return self._equilibrium.vacuum_toroidal_field.b0*self.rho_tor/self.q
+            return (2.0*constants.pi*self._equilibrium.vacuum_toroidal_field.b0)*self.rho_tor/self.q
 
         @cached_property
         def volume(self):

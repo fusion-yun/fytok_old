@@ -123,7 +123,7 @@ class EquilibriumFreeGS(Equilibrium):
         super().update_cache()
         self.cache.profiles_1d.pprime = self._backend.pprime(psi_norm)
         self.cache.profiles_1d.f_df_dpsi = self._backend.ffprime(psi_norm)
-        self.cache.profiles_1d.f = self._backend.fpol(psi_norm)
+        self.cache.profiles_1d.fpol = self._backend.fpol(psi_norm)
         self.cache.profiles_1d.pressure = self._backend.pressure(psi_norm)
         x, q = self._backend.q()
         self.cache.profiles_1d.q = UnivariateSpline(x, q)(psi_norm)

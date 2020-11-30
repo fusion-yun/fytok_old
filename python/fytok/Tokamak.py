@@ -47,6 +47,11 @@ class Tokamak(AttributeTree):
         if not r0:
             lim_r = self.wall.limiter.outline.r
             r0 = (min(lim_r)+max(lim_r))*0.5
+
+        if isinstance(self._cache, LazyProxy):
+            # logger.debug(self._cache.equilibrium.time_slice.profiles_1d.f)
+            b0 = self._cache.equilibrium.time_slice.profiles_1d.f()[-1]/r0
+
         return AttributeTree(r0=r0, b0=b0)
 
     @cached_property
