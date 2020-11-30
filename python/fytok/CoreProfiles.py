@@ -8,6 +8,7 @@ from functools import cached_property, lru_cache
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
+import scipy.constants as constants
 from numpy import arctan2, cos, sin, sqrt
 from scipy.interpolate import (RectBivariateSpline, SmoothBivariateSpline,
                                UnivariateSpline)
@@ -37,48 +38,67 @@ class CoreProfiles(AttributeTree):
         else:
             cache = AttributeTree(cache)
 
+        self.__dict__["_cache"] = cache
+
+        self.__dict__["_equilibrium"] = equilibrium
+
+        self.__dict__["_rho_tor_norm"] = rho_tor_norm
+
         self.time = equilibrium.time
 
         self.vacuum_toroidal_field = equilibrium.vacuum_toroidal_field
 
-        self.profiles_1d = CoreProfiles.Profiles1D(cache.profiles_1d,
-                                                   equilibrium=equilibrium,
-                                                   rho_tor_norm=rho_tor_norm)
-
-        self.global_quantities = CoreProfiles.GlobalQuantities(self)
-
     class Profiles1D(Profiles):
         def __init__(self, cache=None,  *args, equilibrium=None, rho_tor_norm=None, **kwargs):
+
             super().__init__(cache, * args, x_axis=rho_tor_norm, **kwargs)
             self.__dict__["_equilibrium"] = equilibrium
+            self.rho_tor_norm = self._x_axis
 
         def __missing__(self, key):
-            return super().__missing__(key) or self._equilibrium.profiles_1d.mapping("rho_tor_norm", key)(self.grid.rho_tor_norm)
+            res = super().__missing__(key)
+            if isinstance(res, np.ndarray):
+                pass
+            else:
+                res = self._equilibrium.profiles_1d.mapping("rho_tor_norm", key)(self.grid.rho_tor_norm)
+            return res
 
         class Grid(Profiles):
             """Normalised toroidal flux coordinate. The normalizing value for rho_tor_norm,
             is the toroidal flux coordinate at the equilibrium boundary (LCFS or 99.x % of the LCFS in case of
             a fixed boundary equilibium calculation, see time_slice/boundary/b_flux_pol_norm in the equilibrium IDS) {dynamic} [-]	"""
 
-            def __init__(self, cache=None,  *args, equilibrium=None, rho_tor_norm=None,  **kwargs):
-                if rho_tor_norm is None:
-                    rho_tor_norm = 129
-                if type(rho_tor_norm) is int:
-                    rho_tor_norm = np.linspace(0, 1.0, rho_tor_norm)
-
-                super().__init__(cache, *args, x_axis=rho_tor_norm, **kwargs)
+            def __init__(self, cache=None,  *args, equilibrium=None, npoint=129, **kwargs):
+                super().__init__(cache, *args, x_axis=npoint, **kwargs)
 
                 self.__dict__['_equilibrium'] = equilibrium
 
-                self.rho_tor_norm = rho_tor_norm
-
-                self |= {
-                    "psi_magnetic_axis": self._equilibrium.global_quantities.psi_axis,  # Value of the poloidal magnetic flux at the magnetic axis (useful to normalize the psi array values when the radial grid doesn't go from the magnetic axis to the plasma boundary) {dynamic} [Wb]	FLT_0D"""
-                    "psi_boundary": self._equilibrium.global_quantities.psi_boundary    # Value of the poloidal magnetic flux at the plasma boundary (useful to normalize the psi array values when the radial grid doesn't go from the magnetic axis to the plasma boundary) {dynamic} [Wb]	FLT_0D"""
-                }
+                self["rho_tor_norm"] = self._x_axis
 
             def __missing__(self, key):
-                return super().__missing__(key) or self._equilibrium.profiles_1d.mapping("rho_tor_norm", key)(self.rho_tor_norm)
+                res = super().__missing__(key)
+                if isinstance(res, np.ndarray):
+                    pass
+                elif not res:
+                    try:
+                        res = self._equilibrium.profiles_1d.mapping("rho_tor_norm", key)(self.rho_tor_norm)
+                    except LookupError:
+                        res = None
+
+                return res
+
+            @cached_property
+            def psi_magnetic_axis(self):
+                """Value of the poloidal magnetic flux at the magnetic axis 
+                   (useful to normalize the psi array values when the radial grid doesn't go 
+                   from the magnetic axis to the plasma boundary) {dynamic} [Wb]	"""
+                return self._equilibrium.global_quantities.psi_axis
+
+            @cached_property
+            def psi_boundary(self):
+                """Value of the poloidal magnetic flux at the plasma boundary (useful to normalize the psi 
+                    array values when the radial grid doesn't go from the magnetic axis to the plasma boundary) {dynamic} [Wb]"""
+                return self._equilibrium.global_quantities.psi_boundary
 
             # def rho_tor(self):
             #     """Toroidal flux coordinate. rho_tor = sqrt(b_flux_tor/(pi*b0)) ~ sqrt(pi*r^2*b0/(pi*b0)) ~ r [m].
@@ -108,7 +128,7 @@ class CoreProfiles(AttributeTree):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
 
-        class Electons(Profiles):
+        class Electrons(Profiles):
             def __init__(self, cache=None, *args, grid=None,  **kwargs):
                 super().__init__(cache, *args, x_axis=grid.rho_tor_norm, **kwargs)
                 self.__dict__['_grid'] = grid
@@ -117,6 +137,11 @@ class CoreProfiles(AttributeTree):
                     "density_validity": 0
                 }
 
+            def __missing__(self, key):
+                res = super().__missing__(key)
+                if not isinstance(res, np.ndarray):
+                    res = np.full(self._x_axis.shape, np.nan)
+                return res
             # @property
             # def temperature(self):
             #     """Temperature {dynamic} [eV]"""
@@ -205,7 +230,10 @@ class CoreProfiles(AttributeTree):
                 }
 
             def __missing__(self, key):
-                return np.full(self._grid.rho_tor_norm.shape, np.nan)
+                res = super().__missing__(key)
+                if not isinstance(res, np.ndarray):
+                    res = np.full(self._x_axis.shape, np.nan)
+                return res
 
             # @property
             # def z_ion(self):
@@ -337,6 +365,13 @@ class CoreProfiles(AttributeTree):
                     "temperature_validity": 0,
                     "density_validity": 0
                 }
+
+            def __missing__(self, key):
+                res = super().__missing__(key)
+                if not isinstance(res, np.ndarray):
+                    res = np.full(self._x_axis.shape, np.nan)
+                return res
+
             # @property
             # def element(self):
             #     """List of elements forming the atom or molecule	struct_array [max_size=unbounded]	1- 1...N"""
@@ -417,22 +452,22 @@ class CoreProfiles(AttributeTree):
 
         @cached_property
         def grid(self):
-            return CoreProfiles.Profiles1D.Grid(self._cache.grid, equilibrium=self._equilibrium)
+            return CoreProfiles.Profiles1D.Grid(self._cache["grid"], equilibrium=self._equilibrium)
 
         @cached_property
         def ion(self):
             """Quantities related to the different ion species"""
-            return CoreProfiles.Profiles1D.Ion(self._cache.ion, grid=self.grid)
+            return CoreProfiles.Profiles1D.Ion(self._cache["ion"], grid=self.grid)
 
         @cached_property
-        def electons(self):
+        def electrons(self):
             """Quantities related to the electrons"""
-            return CoreProfiles.Profiles1D.Electons(self._cache.electons, grid=self.grid)
+            return CoreProfiles.Profiles1D.Electrons(self._cache["electrons"], grid=self.grid)
 
         @cached_property
         def neutral(self):
             """Quantities related to the different neutral species"""
-            return CoreProfiles.Profiles1D.Neutral(self._cache.neutral, grid=self.grid)
+            return CoreProfiles.Profiles1D.Neutral(self._cache["neutral"], grid=self.grid)
         # @property
         # def t_i_average(self):
         #     """	Ion temperature(averaged on charge states and ion species) {dynamic}[eV]"""
@@ -498,21 +533,21 @@ class CoreProfiles(AttributeTree):
         #     """	Parallel current driven inside the flux surface. Cumulative surface integral of j_total {dynamic}[A]"""
         #     return NotImplemented
 
-        # @property
-        # def j_tor(self):
-        #     """	Total toroidal current density = average(J_Tor/R) / average(1/R) {dynamic}[A/m ^ 2]"""
-        #     return NotImplemented
+        @property
+        def j_tor(self):
+            """	Total toroidal current density = average(J_Tor/R) / average(1/R) {dynamic}[A/m ^ 2]"""
+            return NotImplemented
 
-        # @property
-        # def j_ohmic(self):
-        #     """	Ohmic parallel current density = average(J_Ohmic.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
-        #     return NotImplemented
+        @property
+        def j_ohmic(self):
+            """	Ohmic parallel current density = average(J_Ohmic.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
+            return NotImplemented
 
-        # @property
-        # def j_non_inductive(self):
-        #     """	Non-inductive(includes bootstrap) parallel current density = average(jni.B) / B0,
-        #     where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
-        #     return NotImplemented
+        @property
+        def j_non_inductive(self):
+            """	Non-inductive(includes bootstrap) parallel current density = average(jni.B) / B0,
+            where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
+            return NotImplemented
 
         # @property
         # def j_bootstrap(self):
@@ -546,11 +581,11 @@ class CoreProfiles(AttributeTree):
         #     poloidal velocity Click here for further documentation. {dynamic}[s ^ -1]"""
         #     return NotImplemented
 
-        # @property
-        # def q(self):
-        #     """	Safety factor(IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic}[-].
-        #     This quantity is COCOS-dependent, with the following transformation: """
-        #     return NotImplemented
+        @property
+        def q(self):
+            """Safety factor(IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic}[-].
+            This quantity is COCOS-dependent, with the following transformation: """
+            return (constants.pi*2.0)*self._equilibrium.vacuum_toroidal_field.b0*self.rho_tor/self.dpsi_drho_tor
 
         # @property
         # def magnetic_shear(self):
@@ -558,7 +593,7 @@ class CoreProfiles(AttributeTree):
         #     return NotImplemented
 
     class GlobalQuantities(AttributeTree):
-        def __init__(self, core_profiles, *args, **kwargs):
+        def __init__(self, *args, core_profiles=None, **kwargs):
             super().__init__(*args, **kwargs)
             self.__dict__["_core_profile"] = core_profiles
 
@@ -611,6 +646,14 @@ class CoreProfiles(AttributeTree):
         def z_eff_resistive(self):
             """  Volume average plasma effective charge, estimated from the flux consumption in the ohmic phase {dynamic} [-]"""
             return NotImplemented
+
+    @cached_property
+    def profiles_1d(self):
+        return CoreProfiles.Profiles1D(self._cache.profiles_1d, equilibrium=self._equilibrium, rho_tor_norm=self._rho_tor_norm)
+
+    @cached_property
+    def global_quantities(self):
+        return CoreProfiles.GlobalQuantities(self._cache.global_quantities, core_profiles=self)
 
     def plot(self, profiles, axis=None, x_axis=None):
         return plot_profiles(

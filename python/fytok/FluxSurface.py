@@ -36,7 +36,6 @@ class FluxSurface:
                        Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). In this case the position
                        arrays should not be filled since they are redundant with grid/dim1 and dim2.
     """
-  
 
     def __init__(self,  psirz, coordinate_system, *args, limiter=None, fpol=None, tolerance=1.0e-6,   ** kwargs):
         """Initialize FluxSurface
@@ -56,7 +55,7 @@ class FluxSurface:
         else:
             raise NotImplementedError(f"coordinate_system type error! {coordinate_system}")
 
-        self.drho_dpsi = 1 
+        self.drho_dpsi = 1
 
         # self.drho_dpsi = drho_dpsi
 
@@ -243,9 +242,7 @@ class FluxSurface:
         r""".. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
             .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
         """
-        res = (2*scipy.constants.pi) * np.sum(self.Jdl, axis=1)
-        # res[0] = res[1]
-        return res
+        return (2*scipy.constants.pi) * np.sum(self.Jdl, axis=1)
 
     @ property
     def vprime(self):
@@ -259,7 +256,7 @@ class FluxSurface:
     @cached_property
     def gm2(self):
         r""".. math:: \left\langle\left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle """
-        return self.average(self.grad_psi2/self.R**2)*(self.drho_dpsi**2)
+        return self.average(self.grad_psi2/(self.R**2))*(self.drho_dpsi**2)
 
     @cached_property
     def gm3(self):
@@ -279,12 +276,12 @@ class FluxSurface:
     @cached_property
     def gm6(self):
         r""".. math:: \left\langle \frac{\left|\nabla\rho\right|^{2}}{B^{2}}\right\rangle """
-        return (self.drho_dpsi**2) * self.average(self.grad_psi2/self.B2)
+        return self.average(self.grad_psi2/self.B2)
 
     @cached_property
     def gm7(self):
         r""".. math:: \left\langle \left|\nabla\rho\right|\right\rangle """
-        return (self.drho_dpsi) * self.average(np.sqrt(self.grad_psi2))
+        return self.average(np.sqrt(self.grad_psi2))
 
     @cached_property
     def gm8(self):

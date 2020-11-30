@@ -6,6 +6,7 @@ import freegs
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.constants
+from scipy.interpolate import RectBivariateSpline, UnivariateSpline
 from spdm.util.AttributeTree import AttributeTree, _next_
 from spdm.util.Interpolate import (Interpolate1D, Interpolate2D, derivate,
                                    integral, interpolate)
@@ -118,14 +119,14 @@ class EquilibriumFreeGS(Equilibrium):
             logger.error(f"Solve G-S equation failed [{self.__class__.__name__}]! {error}")
 
     def update_cache(self):
-
         psi_norm = self.profiles_1d.psi_norm
         super().update_cache()
         self.cache.profiles_1d.pprime = self._backend.pprime(psi_norm)
         self.cache.profiles_1d.f_df_dpsi = self._backend.ffprime(psi_norm)
         self.cache.profiles_1d.f = self._backend.fpol(psi_norm)
         self.cache.profiles_1d.pressure = self._backend.pressure(psi_norm)
-        self.cache.profiles_1d.q = self._backend.q(psi_norm)
+        x, q = self._backend.q()
+        self.cache.profiles_1d.q = UnivariateSpline(x, q)(psi_norm)
 
         self.cache.profiles_2d.psi = self._backend.psiRZ(self.profiles_2d.r, self.profiles_2d.z)
 

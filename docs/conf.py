@@ -12,8 +12,10 @@
 #
 import os
 import sys
-sys.path.insert(0, '../python/fytok')
+sys.path.append("../python/fytok")
+sys.path.append("../python")
 
+sys.path.append("../../SpDev/SpDB")
 
 # -- Project information -----------------------------------------------------
 

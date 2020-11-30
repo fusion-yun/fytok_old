@@ -10,7 +10,6 @@ Confinement and transport 约束和输运
    ../_apidoc/FluxSurface
    ../_apidoc/Equilibrium
    
-   ../_apidoc/RadialProfile
    ../_apidoc/CoreProfiles
    ../_apidoc/CoreSources
    ../_apidoc/CoreTransport

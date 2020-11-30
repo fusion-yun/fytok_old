@@ -11,12 +11,20 @@ import scipy
 from scipy import constants
 from scipy.interpolate import RectBivariateSpline, UnivariateSpline
 from spdm.util.AttributeTree import AttributeTree, _last_, _next_
-from spdm.util.Interpolate import Interpolate1D, derivate, integral
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.util.sp_export import sp_find_module
 
+from fytok.Equilibrium import Equilibrium
+
 from fytok.CoreProfiles import CoreProfiles
+from fytok.CoreSources import CoreSources
+from fytok.CoreTransport import CoreTransport
+
+from fytok.EdgeProfiles import EdgeProfiles
+from fytok.EdgeSources import EdgeSources
+from fytok.EdgeTransport import EdgeTransport
+
 from fytok.Misc import Identifier
 
 EPSILON = 1.0e-15
@@ -58,7 +66,7 @@ class TransportSolver(AttributeTree):
         self._tokamak = tokamak
 
     @cached_property
-    def solver(self):
+    def solver(self) -> Identifier:
         """Solver identifier """
         c = self._cache.solver
         return Identifier(
@@ -68,17 +76,16 @@ class TransportSolver(AttributeTree):
         ) if c is NotImplemented or c is None or len(c) == 0 else Identifier(c)
 
     @cached_property
-    def primary_coordinate(self):
-        r"""Primary coordinate system with which the transport equations are solved. 
+    def primary_coordinate(self) -> Identifier:
+        r"""Primary coordinate system with which the transport equations are solved.
 
-           For a 1D transport solver: 
-                name        :   Short string identifier    	
-                index       :   Integer identifier (enumeration index within a list). 
+            For a 1D transport solver:
+                name        :   Short string identifier
+                index       :   Integer identifier (enumeration index within a list).
                                 index = 1 means :math:`\rho_{tor,norm}=\rho_{tor}/\rho_{tor,boundary}`;  2 = :math:`\rho_{tor}=\sqrt{ \Phi/\pi B_{0}}`.
-                                Private identifier values must be indicated by a negative index.    
+                                Private identifier values must be indicated by a negative index.
 
-                description	:   Verbose description 
-
+                description	:   Verbose description
         """
         c = self._cache.primary_coordinate
         return Identifier(
@@ -93,36 +100,36 @@ class TransportSolver(AttributeTree):
 
         @cached_property
         def identifier(self):
-            """Identifier of the boundary condition type. 
+            """Identifier of the boundary condition type.
 
                 ID=
-                    - 1: value of the field y; 
-                    - 2: radial derivative of the field (-dy/drho_tor); 
+                    - 1: value of the field y;
+                    - 2: radial derivative of the field (-dy/drho_tor);
                     - 3: scale length of the field y/(-dy/drho_tor);
-                    - 4: flux; 
-                    - 5: generic boundary condition y expressed as a1y'+a2y=a3. 
-                    - 6: equation not solved; [eV]		
+                    - 4: flux;
+                    - 5: generic boundary condition y expressed as a1y'+a2y=a3.
+                    - 6: equation not solved; [eV]
 
             """
             return NotImplemented
 
         @cached_property
         def value(self):
-            """Value of the boundary condition. 
-                For ID = 1 to 4, only the first position in the vector is used. 
+            """Value of the boundary condition.
+                For ID = 1 to 4, only the first position in the vector is used.
                 For ID = 5, all three positions are used, meaning respectively a1, a2, a3. {dynamic} [mixed]	"""
             return NotImplemented
 
         @cached_property
         def rho_tor_norm(self):
-            """Position, in normalised toroidal flux, at which the boundary 
-                condition is imposed. Outside this position, the value of the data are 
+            """Position, in normalised toroidal flux, at which the boundary
+                condition is imposed. Outside this position, the value of the data are
                 considered to be prescribed. {dynamic} [-]	"""
             return NotImplemented
 
     @cached_property
     def boundary_conditions(self):
-        """ Boundary conditions of the radial transport equations for various time slices. 
+        """ Boundary conditions of the radial transport equations for various time slices.
             To be removed when the solver_1d structure is finalized. {dynamic}"""
         res = AttributeTree(
             current=AttributeTree(),
@@ -138,144 +145,222 @@ class TransportSolver(AttributeTree):
                core_profiles_prev,
                core_profiles_iter,
                *args,
-               boundary_condition=None,
                equilibrium=None,
-               core_transports=None,
+               core_transport=None,
                core_sources=None,
+               boundary_condition=None,
                enable_quasi_neutrality=True,
                **kwargs):
         """Solve transport equations
 
         """
-        if boundary_condition is None:
-            boundary_condition = self.boundary_conditions
 
         if equilibrium is None:
-            equilibrium = self.equilibrium
+            equilibrium = self._tokamak.equilibrium
+
+        if core_transport is None:
+            core_transport = self._tokamak.core_transport
+
+        if core_sources is None:
+            core_sources = self._tokamak.core_sources
+
+        if boundary_condition is None:
+            boundary_condition = self._tokamak.boundary_conditions
 
         # current density profile:
         self.current(core_profiles_prev,
                      core_profiles_iter,
                      equilibrium=equilibrium,
+                     sources=core_sources,
+                     transport=core_transport,
                      boundary_condition=boundary_condition.current,
                      ** kwargs)
 
         # electron density profile:
-        self.electron_density(core_profiles_prev,
-                              core_profiles_iter,
-                              equilibrium=equilibrium,
-                              boundary_condition=boundary_condition.electorns,
-                              **kwargs)
+        # self.electron_density(core_profiles_prev,
+        #                       core_profiles_iter,
+        #                       equilibrium=equilibrium,
+        #                       core_transports=core_transport.profiles_1d.electrons.particles,
+        #                       core_sources=None,
+        #                       boundary_condition=boundary_condition.electorns,
+        #                       **kwargs)
 
-        if not enable_quasi_neutrality:
-            # electron/ion density profile from quasi-neutrality:
-            self.quasi_neutrality(core_profiles_prev,  core_profiles_iter,  **kwargs)
-        else:
-            # ion density profiles:
-            self.ion_density(core_profiles_prev,  core_profiles_iter,
-                             equilibrium=equilibrium,
-                             boundary_condition=boundary_condition.ions,   **kwargs)
+        # if not enable_quasi_neutrality:
+        #     # electron/ion density profile from quasi-neutrality:
+        #     self.quasi_neutrality(core_profiles_prev,  core_profiles_iter,  **kwargs)
+        # else:
+        #     # ion density profiles:
+        #     self.ion_density(core_profiles_prev,  core_profiles_iter,
+        #                      equilibrium=equilibrium,
+        #                      boundary_condition=boundary_condition.ions,   **kwargs)
 
-        # temperature profiles:
-        self.temperatures(core_profiles_prev,  core_profiles_iter,
-                          equilibrium=equilibrium,
-                          boundary_condition=boundary_condition.ions,   **kwargs)
+        # # temperature profiles:
+        # self.temperatures(core_profiles_prev,  core_profiles_iter,
+        #                   equilibrium=equilibrium,
+        #                   boundary_condition=boundary_condition.ions,   **kwargs)
 
         # toroidal rotation profiles:
         # self.rotation(core_profiles_prev,  core_profiles_iter,  **kwargs)
 
         self.update_global_quantities(core_profiles_prev,  core_profiles_iter)
 
-        return self.check_converge(core_profiles_prev, core_profiles_iter)
-
-    def check_converge(self, core_profiles_prev, core_profiles_iter):
         return True
 
     def update_global_quantities(self, core_profiles_prev,  core_profiles_iter):
         # self.core_profiles_prev.global_quantities = NotImplemented
         pass
 
-    def solve_general_form(self, x,
-                           y0, yp0,                 #
-                           a, b, c, d, e, f, g,     # coefficients, which are  fuction of x
-                           inv_tau,                 # time step
-                           inv_d,                   # 1/d
-                           u, v, w,                 # boundary condition
-                           ** kwargs
-                           ):
+    COEFF = collections.namedtuple("coeff", "a b c d e f ")
+    BCCOEFF = collections.namedtuple("bc", "u v w")
+
+    def solve_bvp(self, x, y0, yp0,  coeff,  bc):
         r"""solve standard form
 
-           .. math::
-                \frac{a\cdot Y-a\cdot Y^{-1}}{h} +\frac{1}{c}\frac{\partial}{\partial\rho}\left(-d\cdot\frac{\partial Y}{\partial\rho}+e\cdot Y\right) =f-g\cdot Y
+            Args:
+                x      : :math:`\rho_{tor,norm}`
+                y0     : :math:`y(t-1)`
+                yp0    : :math:`y^{\prime}(t-1)=\left.\frac{\partial Y}{\partial x}\right|_{t-1}`
+                tau    : :math:`\tau`  time step
+                coeff  : coefficients for `bvp` solver,
 
-           where $Y$ is the function, $a,b,c,d,e,f,g$ are function of $x$, the boundary condition is
+                        .. math::
+                            \frac{a\cdot y-b\cdot y^{-1}}{\tau}=\frac{d}{dx}\left(c\cdot\frac{dy}{dx}+d\cdot y\right)+e\cdot y+f \\
+                            :label: bvp_eq
 
-           .. math::
-               v\cdot\left.\frac{\partial Y}{\partial x}\right|_{x=bnd}+u\cdot Y=w
+                        where   :math:`Y=[y,y^{\prime}]` is the function, :math:`a,b,c,d,e,f,g` are function of :math:`x` , and
+
+                        .. math::
+                             \lim_{\tau\rightarrow0}\frac{a\cdot y-b\cdot y^{-1}}{\tau}=0,
+
+                bc     : boundary condition ,  :math:`u,v,w`
+
+                         .. math::
+                            u\cdot y+ v\cdot\left.y^{\prime}\right|_{x=bnd} =w
+                            :label: bvp_eq_bc
 
 
-           return y, dy/dx
+            Returns:
+                (np.ndarra,np.ndarray)  : :math:`y(t)` , :math:`y^{\prime}(t)`
+
+            Note:
+
+                BVP Problem of :math:`Y=[y,y^{\prime}]`
+
+                .. math::
+                   \begin{cases}
+                    \frac{d y}{d x} & =y^{\prime}\\
+                    \frac{d y^{\prime}}{d x} & =A\cdot y^{\prime}+B\cdot y+C
+                    \end{cases}
+
+                where
+
+                .. math::
+                    A	&=\left(-\frac{d}{dx}c-d\right) \\
+                    B	&=-\frac{d}{dx}d+\left(\frac{a}{\tau}-e\right) \\
+                    C	&=-\frac{b}{\tau} \cdot y^{-1} -f
+
+                solved by  scipy.integrate.solve_bvp
 
         """
-        if yp0 is None:
-            yp0 = UnivariateSpline(x, y0, x).derivative()(x)
 
-        dd = UnivariateSpline(x, d).derivative()(x)
-        de = UnivariateSpline(x, e).derivative()(x)
+        dc = UnivariateSpline(x, coeff.c).derivative()(x)
+        dd = UnivariateSpline(x, coeff.d).derivative()(x)
+        inv_c = 1.0/coeff.c
+        A = UnivariateSpline(x,  (-dc - coeff.d)*inv_c)
+        B = UnivariateSpline(x,  (-dd + coeff.a - coeff.e)*inv_c)
+        C = UnivariateSpline(x,  (-coeff.b*y0 - coeff.f)*inv_c)
 
-        A = UnivariateSpline(x,  (-dd+e)*inv_d)
-        B = UnivariateSpline(x,  (c*a*inv_tau+de+c*g)*inv_d)
-        C = UnivariateSpline(x,  (-c*b*y0*inv_tau-c*f)*inv_d)
+        bc_a, bc_b = bc
+        logger.debug(bc)
 
         def fun(x, Y):
-            r"""
-            Y=[y,y']
-
-            $ \frac{\partial y}{\partial\rho}&=Y^{\prime}  
-              \frac{\partial y^{\prime}}{\partial\rho}&=A\cdot y^{\prime}+B\cdot y+C
-            $
-            dy/dx =y'
-            dy'/dx=A*y'+B*Y+C
-            """
             y = Y[0]
             yp = Y[1]
             dy = yp
             ddy = A(x) * yp + B(x) * y+C(x)
-            # ddy = aa*yp+bb*y+cc
-            return np.array([dy, ddy])
+            return np.vstack((dy, ddy))
 
-        def bc(Ya, Yb):
+        def bc_func(Ya, Yb):
+            r"""
+                u*y(b)+v*y'(b)=w
+                Ya=[y(a),y'(a)]
+                Yb=[y(b),y'(b)]
+                P=[[u(a),u(b)],[v(a),v(b)],[w(a),w(b)]]
+
             """
-            u *y'(b)+v*y(b)=w
-            Ya=[y(a),y'(a)]
-            Yb=[y(b),y'(b)]
-            P=[[u(a),u(b)],[v(a),v(b)],[w(a),w(b)]]
 
-            """
-            return u[0]*Ya[1]+v[0]*Ya[0] - w[0], u[1]*Yb[1]+v[1]*Yb[0] - w[1]
+            return (bc_a.u * Ya[0] + bc_a.v * Ya[1] - bc_a.w,
+                    bc_b.u * Yb[0] + bc_b.v * Yb[1] - bc_b.w)
 
-        solution = scipy.integrate.solve_bvp(fun, bc, x, np.array([y0, yp0]))
+        solution = scipy.integrate.solve_bvp(fun, bc_func, x, np.vstack((y0, yp0)))
 
         if not solution.success:
+            logger.error(solution.message)
             raise RuntimeError(solution.message)
         else:
-            logger.debug("Solve bvp DONE")
+            logger.debug(f"Solve bvp DONE {solution.message}")
+
+        return solution
+
+    def solve_bvp_raw(self, x, y0, yp0,  A, B, C,  bc):
+        bc_a, bc_b = bc
+
+        def fun(x, Y):
+            y = Y[0]
+            yp = Y[1]
+            dy = yp
+            ddy = A(x) * yp + B(x) * y+C(x)
+            return np.vstack((dy, ddy))
+
+        def bc_func(Ya, Yb):
+            r"""
+                u*y(b)+v*y'(b)=w
+                Ya=[y(a),y'(a)]
+                Yb=[y(b),y'(b)]
+                P=[[u(a),u(b)],[v(a),v(b)],[w(a),w(b)]]
+
+            """
+
+            return (bc_a.u * Ya[0] + bc_a.v * Ya[1] - bc_a.w,
+                    bc_b.u * Yb[0] + bc_b.v * Yb[1] - bc_b.w)
+
+        solution = scipy.integrate.solve_bvp(fun, bc_func, x, np.vstack((y0, yp0)))
+
+        if not solution.success:
+            logger.error(solution.message)
+            raise RuntimeError(solution.message)
+        else:
+            logger.debug(f"Solve bvp DONE {solution.message}")
+
         return solution
 
     def current(self,
                 core_profiles_prev,
                 core_profiles_iter,
-                *args,
-                transports=None,
-                sources=None,
+                *,
+                equilibrium: Equilibrium = None,
+                transport: CoreTransport = None,
+                sources: CoreSources = None,
                 boundary_condition=None,
                 **kwargs):
         r"""
-            .. math ::  \sigma_{\parallel}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\psi=\frac{F^{2}}{\mu_{0}B_{0}\rho}\frac{\partial}{\partial\rho}\left[\frac{V^{\prime}}{4\pi^{2}}\left\langle \left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle \frac{1}{F}\frac{\partial\psi}{\partial\rho}\right]-\frac{V^{\prime}}{2\pi\rho}\left(j_{ni,exp}+j_{ni,imp}\psi\right)
+
+            Args:
+                core_profiles_prev  : profiles at :math:`t-1`
+                core_profiles_iter　:  profiles at :math:`t`
+
+                equilibrium         : Equilibrium
+                transports          : CoreTransport
+                sources             : CoreSources
+                boundary_condition  :
+
+            .. math ::  \conductivity_parallel_{\parallel}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho} \right) \psi= \
+                        \frac{F^{2}}{\mu_{0}B_{0}\rho}\frac{\partial}{\partial\rho}\left[\frac{V^{\prime}}{4\pi^{2}}\left\langle \left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle \
+                        \frac{1}{F}\frac{\partial\psi}{\partial\rho}\right]-\frac{V^{\prime}}{2\pi\rho}\left(j_{ni,exp}+j_{ni,imp}\psi\right)
                 :label: transport_current
 
             Note:
-                if :math:`\psi` is not solved, then 
+                if :math:`\psi` is not solved, then
 
                 ..  math ::  \psi =\int_{0}^{\rho}\frac{2\pi B_{0}}{q}\rho d\rho
 
@@ -304,26 +389,29 @@ class TransportSolver(AttributeTree):
 
         # -----------------------------------------------------------
         # Grid
-        # $rho$ not  normalised minor radius                [m]
-        rho = core_profiles_iter.profiles_1d.grid.rho_tor
-
-        # $rho_{norm}$ normalised minor radius                [-]
-        rho_tor_norm = core_profiles_iter.profiles_1d.grid.rho_tor_norm
+        # $rho_tor$ not  normalised minor radius                [m]
+        rho_tor = core_profiles_iter.profiles_1d.grid.rho_tor
+        rho_tor_boundary = rho_tor[-1]
+        rho_tor_norm = rho_tor/rho_tor_boundary
+        # $rho_tor_{norm}$ normalised minor radius                [-]
+        # rho_tor_norm = rho_tor/rho_tor_boundary
+        # rho_tor_norm = core_profiles_iter.profiles_1d.grid.rho_tor_norm
 
         # $\Psi$ flux function from current                 [Wb]
         psi0 = core_profiles_prev.profiles_1d.psi
         # $\frac{\partial\Psi}{\partial\rho}$               [Wb/m]
-        dpsi_drho0 = core_profiles_prev.profiles_1d.dpsi_drho_tor
+        dpsi_drho_tor0 = core_profiles_prev.profiles_1d.interpolate("psi", k=4)(rho_tor_norm)
+        ddpsi_ddrho_tor0 = core_profiles_prev.profiles_1d.derivative("psi", n=2)
 
         # -----------------------------------------------------------
         # Equilibrium
         # diamagnetic function,$F=R B_\phi$                 [T*m]
         fpol = core_profiles_iter.profiles_1d.fpol
-        fprime = core_profiles_iter.profiles_1d.derivative("fpol")
+        # fprime = core_profiles_iter.profiles_1d.derivative("fpol")
         ffprime = core_profiles_iter.profiles_1d.ffprime
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        vpr = core_profiles_iter.profiles_1d.dvolume_dpsi
+        vpr = core_profiles_iter.profiles_1d.dvolume_drho_tor
 
         # $gm2 \euqiv \left\langle \left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle $  [m^-2]
         gm2 = core_profiles_iter.profiles_1d.gm2
@@ -335,15 +423,21 @@ class TransportSolver(AttributeTree):
         qsf = core_profiles_iter.profiles_1d.q
 
         # plasma parallel conductivity,                     [(Ohm*m)^-1]
-        sigma = core_profiles_iter.profiles_1d.conductivity_parallel
-        dsigma_drho = core_profiles_iter.profiles_1d.derivative("conductivity_parallel")
+        conductivity_parallel = np.zeros(shape=rho_tor_norm.shape)
+
+        for trans in transport:
+            sigma = trans.profiles_1d["conductivity_parallel"]
+            if isinstance(sigma, np.ndarray):
+                conductivity_parallel += sigma
 
         # -----------------------------------------------------------
         # Sources
         # total non inductive current, PSI independent component,          [A/m^2]
-        # sources.profiles_1d.j_parallel if sources.profiles_1d.j_parallel not in [{},None,NotImplemented]  else 0.0
-        j_ni_exp = 0.0
-
+        j_ni_exp = np.zeros(shape=rho_tor_norm.shape)
+        for src in sources:
+            j = src.profiles_1d["j_parallel"]
+            if isinstance(j, np.ndarray):
+                j_ni_exp += j
         # total non inductive current, component proportional to PSI,      [A/m^2/V/s]
         j_ni_imp = 0.0  # sources.j_ni_imp if sources is not None else 0.0   # can not find data in imas dd
 
@@ -351,44 +445,24 @@ class TransportSolver(AttributeTree):
         #     j_ni_exp += src.profiles_1d.j_parallel
 
         # Coefficients for current diffusion equation in form:
-        #   (A*Y-B*Y(t-1))/H + 1/C * (-D*Y' + E*Y) = F - G*Y
+        #   (a*y-b*y(t-1))/tau = d(-d*y' + e*y) + g*y+ f
 
-        a = sigma                                      # $\sigma_{\parallel}$
-        b = sigma                                      # $\sigma_{\parallel}$
+        TEMP = constants.mu_0*B0*rho_tor_boundary / fpol**2
 
-        c = constants.mu_0*B0*rho / fpol**2            # $\frac{\mu_{0}B_{0}\rho}{F^{2}}$
-        d = vpr/(4.0*(constants.pi**2)*fpol)*gm2       # $\frac{V^{\prime}g_{3}}{4\pi^{2}F}$
-        inv_d = (4.0*(constants.pi**2)*fpol)*gm2/vpr    # $\frac{4\pi^{2}F}{V^{\prime}g_{3}}$
+        a = conductivity_parallel * rho_tor*TEMP * inv_tau
 
-        # $fun1=\frac{\sigma_{\parallel}\mu_{0}\rho^{2}}{F^{2}}$
-        fun1 = sigma*constants.mu_0*(rho/fpol)**2
+        b = a
 
-        # $e=-\text{FUN1}\frac{\dot{\Phi}_{b}}{2\Phi_{b}}$
-        e = -fun1 * B0dot/2.0
+        c = vpr*gm2 / (4.0*(constants.pi**2)*fpol*rho_tor_boundary)
 
-        # $f=&-\frac{V^{\prime}}{2\pi\rho}j_{ni,exp}$
-        f = -vpr/(2.0*constants.pi*rho) * j_ni_exp
+        d = (constants.mu_0 * B0dot/2.0)*conductivity_parallel * (rho_tor/fpol)**2
 
-        # $g=-\frac{V^{\prime}}{2\pi\rho}j_{ni,imp}+\sigma_{\parallel}\frac{\partial}{\partial\rho}\left(\frac{\sigma_{\parallel}\mu_{0}\rho^{2}}{F^{2}}\right)\cdot\frac{\dot{\Phi}_{b}}{2\Phi_{b}}$
-        # g = vpr/(2.0*constants.pi*rho) * j_ni_imp + B0dot/2.0*sigma*dfun1
-        g = vpr/(2.0*constants.pi*rho) * j_ni_imp + B0dot/2.0 * (sigma*(2-2*rho*fprime/fpol)+rho*dsigma_drho)
+        f = -TEMP * vpr * j_ni_exp/(2.0*constants.pi)
 
-        # $\frac{V^{\prime}}{4\pi^{2}}\left\langle \left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle $
-        fun2 = vpr*gm2/(4.0*constants.pi**2)
-
-        # for irho in range(nrho):  # fix magnetic axis
-        #     if abs(rho[irho]) < EPSILON:
-        #         f[irho] = 1.0/(2.0*constants.pi)*j_ni_exp[irho]
-        #         g[irho] = 1.0/(2.0*constants.pi)*j_ni_imp[irho] + B0dot/2.0*sigma[irho]*dfun1[irho]
+        e = -core_profiles_iter.profiles_1d.derivative(d) - vpr * TEMP * j_ni_imp/(2.0*constants.pi)
 
         # Boundary conditions for current diffusion equation in form:
-        #     V*Y' + U*Y =W
-        # On axis:
-        #     dpsi/drho(rho=0)=0
-
-        v = [1, 0]   # boundary conditions for numerical solver
-        u = [0, 0]   # boundary conditions for numerical solver
-        w = [0, 0]   # boundary conditions for numerical solver
+        #     u*Y + v*Y' = w
 
         # -----------------------------------------------------------
         # boundary condition, value
@@ -402,91 +476,113 @@ class TransportSolver(AttributeTree):
 
         # At the edge:
         if boundary_condition.identifier.index == 1:  # poloidal flux
-            v[1] = 0.0
-            u[1] = 1.0
-            w[1] = boundary_condition.value[0]
+            u = 1.0
+            v = 0.0
+            w = boundary_condition.value[0]
         elif boundary_condition.identifier.index == 2:  # ip
-            v[1] = 1.0
-            u[1] = 0.0
-            w[1] = - constants.mu_0/fun2[-1]*boundary_condition.value[0]
+            u = 0.0
+            v = 1.0
+            w = - constants.mu_0/(vpr[-1]*g3[-1])*(4.0*constants.pi**2)*boundary_condition.value[0]
         elif boundary_condition.identifier.index == 3:  # loop voltage
-            v[1] = 0.0
-            u[1] = 1.0
-            w[1] = tau*boundary_condition.value[0]+psi0[-1]
+            u = 1.0
+            v = 0.0
+            w = tau*boundary_condition.value[0]+psi0[-1]
         elif boundary_condition.identifier.index == 5:  # generic boundary condition  y expressed as a1y'+a2y=a3.
-            v[1], u[1], w[1] = boundary_condition.value
+            v, u, w = boundary_condition.value
         else:
             # Current equation is not solved:
             #  Interpretative value of safety factor should be given
             # if any(qsf != 0.0):  # FIXME
-            dy = 2.0*constants.pi*B0*rho/qsf
+            # dy = 2.0*constants.pi*B0*rho_tor/qsf
 
             a[-1] = 1.0
             b[-1] = 1.0
-            c[-1] = 1.0
+            # c[-1] = 1.0
             d[-1] = 0.0
             e[-1] = 0.0
-            f[-1] = 0.0
-            g[-1] = 0.0
+            # f[-1] = 0.0
 
-            v[1] = 0.0
-            u[1] = 1.0
-            w[1] = UnivariateSpline(rho_tor_norm, 2.0*constants.pi*B0/qsf).integral(0, 1.0)
+            u = 1.0
+            v = 0.0
+            w = psi0[-1]  # core_profiles_iter.profiles_1d.integral(2.0*constants.pi*B0/qsf, 0, 1.0)
+
+        dc = UnivariateSpline(rho_tor_norm, c, k=5).derivative()(rho_tor_norm)
+        dd = UnivariateSpline(rho_tor_norm, d).derivative()(rho_tor_norm)
+        inv_c = 1.0 / c
+        A = (-dc - d)*inv_c
+        B = (-dd + a - e)*inv_c
+        C = (- b*psi0 - f)*inv_c
+
+        A[0] = 2*A[1]-A[2]
+        B[-1] = 2 * B[-2]-B[-3]
+        C[-1] = 2 * C[-2]-C[-3]
 
         # Solution of current diffusion equation:
         try:
-            sol = self.solve_general_form(rho, psi0, dpsi_drho0, a, b, c, d, e, f, g,  inv_tau, inv_d, u, v, w)
+            sol = self.solve_bvp_raw(rho_tor_norm, psi0, dpsi_drho_tor0,
+                                     #  TransportSolver.COEFF(a, b, c, d, e, f),
+                                     UnivariateSpline(rho_tor_norm, A),
+                                     UnivariateSpline(rho_tor_norm, B),
+                                     UnivariateSpline(rho_tor_norm, C),
+                                     (TransportSolver.BCCOEFF(0, 1, 0),  # On axis:  dpsi/drho_tor(rho_tor=0)=0
+                                      TransportSolver.BCCOEFF(u, v, w))
+                                     )
         except Exception as error:
-            logger.error(f"Unable to solve the 'current' transport equation! \n {error} ")
-            psi1 = psi0
-            dpsi_drho1 = dpsi_drho0
+            raise RuntimeError(f"Unable to solve the 'current' transport equation! \n {error} ")
         else:
-            psi1 = sol.y[0]
-            dpsi_drho1 = sol.yp[0]
+            core_profiles_iter.profiles_1d.rho_tor_norm2 = sol.x  # logger.debug(sol.x)
+            core_profiles_iter.profiles_1d.psi = sol.y[0]  # UnivariateSpline(sol.x, sol.y[0])(rho_tor_norm)
+            core_profiles_iter.profiles_1d.dpsi_drho_tor = sol.y[1]  # UnivariateSpline(sol.x, sol.y[1])(rho_tor_norm)
+
+        core_profiles_iter.profiles_1d.psi0 = psi0
+        core_profiles_iter.profiles_1d.dpsi0 = dpsi_drho_tor0
+        core_profiles_iter.profiles_1d.ddpsi0 = ddpsi_ddrho_tor0
+        core_profiles_iter.profiles_1d.C_A = -C/A
+        core_profiles_iter.profiles_1d.dc = dc
+        core_profiles_iter.profiles_1d.A = A
+        core_profiles_iter.profiles_1d.B = B
+        core_profiles_iter.profiles_1d.C = C
+
+        core_profiles_iter.profiles_1d.j_total = j_ni_exp
+        core_profiles_iter.profiles_1d.fcoeff = f / c
+        # core_profiles_iter.profiles_1d.I = j_ni_exp*core_profiles_iter.profiles_1d.volume
 
         # New magnetic flux function and current density:
-        # dpc2 = (c*((a*y-b*ym)*inv_tau+ g*y - f) + e*y) / d
-        func7 = UnivariateSpline(rho_tor_norm, c*((a*psi1-b*psi0)*inv_tau + g*psi1 - f))
-        intfun7 = [func7.integral(0, r) for r in rho_tor_norm]
+        # intfun7 = core_profiles_iter.profiles_1d.integral(c*((a*psi1 - b*psi0)*inv_tau  - f))
+        # # intfun7 = [func7.integral(0, r) for r in rho_tor_norm]
 
-        dy = intfun7*inv_d + e*inv_d*psi1
+        # dy = (intfun7 + e*psi1) / d
 
-        # fun4 = fun2*dy
-        # fun5 = fun2*dy*R0*B0/fpol
+        # # fun4 = fun2*dy
+        # # fun5 = fun2*dy*R0*B0/fpol
 
-        dfun4 = UnivariateSpline(rho, fun2*dy).derivative()(rho)  # Derivation of function FUN4
-        dfun5 = UnivariateSpline(rho, fun2*dy*R0*B0/fpol).derivative()(rho)   # Derivation of function FUN5
+        # dfun4 = UnivariateSpline(rho_tor, fun2*dy).derivative()(rho_tor)  # Derivation of function FUN4
+        # dfun5 = UnivariateSpline(rho_tor, fun2*dy*R0*B0/fpol).derivative()(rho_tor)   # Derivation of function FUN5
 
-        # New profiles of plasma parameters obtained
-        #     from current diffusion equation:
+        # # New profiles of plasma parameters obtained
+        # #     from current diffusion equation:
 
-        core_profiles_iter.profiles_1d.psi = psi1
-        core_profiles_iter.profiles_1d.dpsi_drho_tor = dpsi_drho1
-        # core_profiles_iter.profiles_1d.q = 2.0*constants.pi*B0*rho/dpsi_drho1
+        # core_profiles_iter.profiles_1d.q = 2.0*constants.pi*B0*rho_tor/dpsi_drho_tor1
 
         # current density, toroidal,                        [A/m^2]
-        j_tor = - 2.0*constants.pi*R0/constants.mu_0/vpr * dfun4
-        core_profiles_iter.profiles_1d.profiles_1d.j_tor = j_tor
-        j_par = -  2.0*constants.pi/R0/constants.mu_0/vpr * (fpol/B0)**2*dfun5
-        core_profiles_iter.profiles_1d.profiles_1d.current_parallel_inside = j_par
+        # j_tor = - 2.0*constants.pi*R0/constants.mu_0/vpr * dfun4
+        # core_profiles_iter.profiles_1d.j_tor = j_tor
+        # j_par = - 2.0*constants.pi/R0/constants.mu_0/vpr * (fpol/B0)**2*dfun5
+        # core_profiles_iter.profiles_1d.current_parallel_inside = j_par
 
-        # $E_\parallel$  parallel electric field,,          [V/m]
-        core_profiles_iter.profiles_1d.e_field.parallel = (j_par - j_ni_exp - j_ni_imp*psi1) / sigma
+        # # $E_\parallel$  parallel electric field,,          [V/m]
+        # core_profiles_iter.profiles_1d.e_field.parallel = (j_par - j_ni_exp - j_ni_imp*psi1) / conductivity_parallel
 
-        # Total Ohmic currents                              [A]
-        # fun7 = vpr * j_par / 2.0 / constants.pi * B0 / fpol**2
-        func7 = UnivariateSpline(rho_tor_norm, vpr * j_par / 2.0 / constants.pi * B0 / fpol**2)
-        intfun7 = [func7.integral(0, r) for r in rho_tor_norm]
-        core_profiles_iter.profiles_1d.j_ohmic = intfun7[-1] * fpol[-1]
+        # # Total Ohmic currents                              [A]
+        # # fun7 = vpr * j_par / 2.0 / constants.pi * B0 / fpol**2
+        # core_profiles_iter.profiles_1d.j_ohmic = fpol[-1]*core_profiles_iter.profiles_1d.integral(
+        #     vpr * j_par / 2.0 / constants.pi * B0 / fpol**2, 0, 1)
 
-        core_profiles_iter.profiles_1d.j_tor = j_tor
+        # core_profiles_iter.profiles_1d.j_tor = j_tor
 
-        # Total non-inductive currents                       [A]
-        # fun7 = vpr * (j_ni_exp + j_ni_imp * psi) / (2.0 * constants.pi) * B0 / fpol**2
-        func7 = UnivariateSpline(rho_tor_norm,
-                                 vpr * (j_ni_exp + j_ni_imp * psi0) / (2.0 * constants.pi) * B0 / fpol**2)
-        intfun7 = [func7.integral(0, r) for r in rho_tor_norm]
-        core_profiles_iter.profiles_1d.j_non_inductive = intfun7[-1] * fpol[-1]
+        # # Total non-inductive currents                       [A]
+        # core_profiles_iter.profiles_1d.j_non_inductive = fpol[-1] * core_profiles_iter.profiles_1d.integral(
+        #     vpr * (j_ni_exp + j_ni_imp * psi1) / (2.0 * constants.pi) * B0 / fpol**2)
 
         return True
 
@@ -496,10 +592,18 @@ class TransportSolver(AttributeTree):
                          *args,
                          equilibrium=None,
                          transports=None,
-                         sources=None,
+                         #  sources=None,
                          boundary_condition=None,
                          hyper_diff=[0, 0],
                          **kwargs):
+
+        if transports is None:
+            core_transports = self.core_transports.profiles_1d.electrons.particles
+
+        if boundary_condition is None:
+            boundary_condition = self.boundary_condition.electorns
+
+        logger.debug(f"{type(core_profiles_iter)} {type(core_profiles_prev)}")
 
         hyper_diff_exp = hyper_diff[0]
         hyper_diff_imp = hyper_diff[1]
@@ -527,16 +631,16 @@ class TransportSolver(AttributeTree):
 
         # -----------------------------------------------------------
         # Grid
-        # $rho$ not  normalised minor radius                [m]
-        rho = core_profiles_iter.grid.rho
+        # $rho_tor$ not  normalised minor radius                [m]
+        rho_tor = core_profiles_iter.profiles_1d.grid.rho_tor
 
-        # $rho_{norm}$ normalised minor radius                [-]
+        # $rho_tor_{norm}$ normalised minor radius                [-]
         rho_tor_norm = core_profiles_iter.profiles_1d.grid.rho_tor_norm
 
         # $\Psi$ flux function from current                 [Wb]
         psi0 = core_profiles_prev.profiles_1d.grid.psi
         # $\frac{\partial\Psi}{\partial\rho}$               [Wb/m]
-        dpsi_drho = core_profiles_prev.profiles_1d.grid.dpsi_drho
+        dpsi_drho_tor = core_profiles_prev.profiles_1d.grid.dpsi_drho_tor
         # normalized psi  [0,1]                            [-]
         psi_norm = core_profiles_prev.profiles_1d.grid.psi_norm
 
@@ -558,7 +662,7 @@ class TransportSolver(AttributeTree):
         qsf = core_profiles_prev.profiles_1d.q
 
         # plasma parallel conductivity,                     [(Ohm*m)^-1]
-        sigma = core_profiles_prev.profiles_1d.conductivity_parallel
+        conductivity_parallel = core_profiles_prev.profiles_1d.conductivity_parallel
 
         #    solution of particle transport equation
 
@@ -570,97 +674,98 @@ class TransportSolver(AttributeTree):
         # ne_bnd = [[0, 0, 0], profiles["NE_BND"]]
 
         # Set up local variables for particular ion type:
-        ne0 = core_profiles_prev.profiles_1d.electron.density
+        ne0 = core_profiles_prev.profiles_1d.electrons.density
 
-        ne0p = core_profiles_prev.profiles_1d.electron.derivate("density")
+        ne0p = core_profiles_prev.profiles_1d.electrons.derivative("density")
 
-        diff = np.zeros(shape=rho.shape)
-        vconv = np.zeros(shape=rho.shape)
+        diff = np.zeros(shape=rho_tor.shape)
+        vconv = np.zeros(shape=rho_tor.shape)
 
-        for model in transports.model:
-            # c1[imodel] = transport["C1"][imodel]
-            diff += model.electron.particles.d
-            vconv += model.electron.particles.v
+        # for model in transports.model:
+        #     # c1[imodel] = transport["C1"][imodel]
+        #     diff += model.electron.particles.d
+        #     vconv += model.electron.particles.v
 
-        se_exp = np.zeros(shape=rho.shape)
-        se_imp = np.zeros(shape=rho.shape)
+        se_exp = np.zeros(shape=rho_tor.shape)
+        se_imp = np.zeros(shape=rho_tor.shape)
 
-        for source in sources.source:
-            si_imp += source.electron.particles_decomposed.implicit_part
-            si_exp += source.electron.particles_decomposed.explicit_part
+        # logger.debug(sources)
+
+        # for source in sources.source:
+
+        #     se_imp += source.electron.particles_decomposed.implicit_part
+        #     se_exp += source.electron.particles_decomposed.explicit_part
 
         # Coefficients for electron diffusion equation in form:
         #
         #     (A*Y-B*Y(t-1))/H + 1/C * (-D*Y' + E*Y) = F - G*Y
-
-        diff_hyper = hyper_diff_exp + hyper_diff_imp*maxval(diff)  # AF 25.Apr.2016, 22.Aug.2016
+        diff_hyper = hyper_diff_exp + hyper_diff_imp * max(diff)
 
         a = vpr
         b = vprm
         c = 1.
-        d = vpr*gm3*(diff+diff_hyper)  # AF 25.Apr.2016
-        e = vpr*gm3*(vconv+diff_hyper*ne0p/ne0) - B0dot/2./B0*rho*vpr
+        d = vpr*gm3*(diff+diff_hyper)
+        e = vpr*gm3*(vconv+diff_hyper*ne0p/ne0) - B0dot/2./B0*rho_tor*vpr
         f = vpr*se_exp
         g = vpr*se_imp
-
-        h = tau
 
         # Boundary conditions for electron diffusion equation in form:
         #
         #     V*Y' + U*Y =W
         #
         # On axis:
-        #       dNi/drho(rho=0)=0: #AF 25.Apr.2016 - this is Ne, not Ni
-        if(solver_type != 4):
-            v[0] = 1.
-            u[0] = 0.
+        #       dNi/drho_tor(rho_tor=0)=0:  - this is Ne, not Ni
+
+        # if(solver_type != 4):
+        #     v[0] = 1.
+        #     u[0] = 0.
+        # else:
+        #       IF (DIFF[0]>1.0E-6) :
+        if((diff[0]+diff_hyper) > 1.0e-6):
+            #         V[0] = -DIFF[0]
+            v[0] = -diff[0]-diff_hyper
         else:
-            #       IF (DIFF[0]>1.0E-6) :
-            if((diff[0]+diff_hyper) > 1.0e-6):  # AF 25.Apr.2016
-                #         V[0] = -DIFF[0]
-                v[0] = -diff[0]-diff_hyper  # AF 25.Apr.2016
-            else:
-                v[0] = -1.0e-6
+            v[0] = -1.0e-6
 
-            #       U[0] = VCONV[0]
-                u[0] = vconv[0]+diff_hyper*ne0p[0]/ne0[0]  # AF 25.Apr.2016
+        #       U[0] = VCONV[0]
+            u[0] = vconv[0]+diff_hyper*ne0p[0]/ne0[0]
 
-            w[0] = 0.
+        w[0] = 0.
 
         # At the edge:
         #       FIXED Ne
         if(boundary_condition.type == 1):
-            v[1] = 0.
-            u[1] = 1.
-            w[1] = ne_bnd[1, 0]
+            v = 0.
+            u = 1.
+            w = boundary_condition[1, 0]
         #       FIXED grad_Ne
         elif(boundary_condition.type == 2):
-            v[1] = 1.
-            u[1] = 0.
-            w[1] = -ne_bnd[1, 0]
+            v = 1.
+            u = 0.
+            w = -boundary_condition[1, 0]
 
         #       FIXED L_Ne
         elif(boundary_condition.type == 3):
-            v[1] = ne_bnd[1, 0]
-            u[1] = 1.
-            w[1] = 0.
+            v = boundary_condition[1, 0]
+            u = 1.
+            w = 0.
 
         #       FIXED Flux_Ne
         elif(boundary_condition.type == 4):
-            v[1] = -vpr[-1]*gm3[-1]*diff[-1]
-            u[1] = vpr[-1]*gm3[-1]*vconv[-1]
-            w[1] = ne_bnd[1, 0]
+            v = -vpr[-1]*gm3[-1]*diff[-1]
+            u = vpr[-1]*gm3[-1]*vconv[-1]
+            w = boundary_condition[1, 0]
 
         #       Generic boundary condition
         elif(boundary_condition.type == 5):
-            v[1] = ne_bnd[1, 0]
-            u[1] = ne_bnd(2, 2)
-            w[1] = ne_bnd(2, 3)
+            v = boundary_condition[1, 0]
+            u = boundary_condition(2, 2)
+            w = boundary_condition(2, 3)
 
         # Density equation is not solved:
         elif(boundary_condition.type == 0):
 
-            dy = derivate(y, rho)
+            dy = derivative(y, rho_tor)
 
             flag = 0
 
@@ -672,64 +777,60 @@ class TransportSolver(AttributeTree):
             f.fill(0.0)
             g.fill(0.0)
 
-            v[1] = 0.0
-            u[1] = 1.0
-            w[1] = y[-1]
-
-        # Solution of density diffusion equation:
-        self.solve_eq(a, b, c, d, e, f, g, h)
-
-        # dy check for nans in solution, return if true)
-        if(any(np.isnan(solver["y"]))):
-            raise RuntimeError('Error in the electron density equation: nans in the solution, stop')
+            v = 0.0
+            u = 1.0
+            w = y[-1]
 
         try:
-            sol = self.solve_general_form(rho, ne0, ne0p, a, b, c, d, e, f, g, h, u, v, w)
+            sol = self.solve_bvp(rho_tor_norm, ne0, ne0p,
+                                 TransportSolver.COEFF(a, b, c, d, e, f, g),
+                                 TransportSolver.BCCOEFF(u, v, w)
+                                 )
         except RuntimeError as error:
             raise RuntimeError(f"Fail to solve ion density transport equation! \n {error} ")
         else:
             ne1 = sol.y[0]
             ne1p = sol.yp[0]
 
-        intfun1 = integral(vpr*se_exp + vprm*ne0*inv_tau - ne0*vpr*(1.*inv_tau+se_imp), rho)
+        # intfun1 = integral(vpr*se_exp + vprm*ne0*inv_tau - ne0*vpr*(1.*inv_tau+se_imp), rho_tor)
 
-        local_fun1_s4 = (se_exp[0] + ne0[0]*inv_tau - ne[0]*(1.*inv_tau+se_imp[0]))/gm3[0]
-        local_intfun1_s4 = local_fun1_s4*rho[0]/2.
+        # local_fun1_s4 = (se_exp[0] + ne0[0]*inv_tau - ne[0]*(1.*inv_tau+se_imp[0]))/gm3[0]
+        # local_intfun1_s4 = local_fun1_s4*rho_tor[0]/2.
 
-        int_source = intfun1 + B0dot/2./B0*rho*vpr*ne
-        flux = vpr*gm3 * (y*vconv - dy*diff)
+        # int_source = intfun1 + B0dot/2./B0*rho_tor*vpr*ne
+        # flux = vpr*gm3 * (y*vconv - dy*diff)
 
         # Contribution to electron energy transport:
-        flux_ne_conv = 0.
+        # flux_ne_conv = 0.
 
         # for imodel in range(nmodel):
         #     flux_ne_conv = flux_ne_conv + c1[imodel]*vpr*gm3 * (y*vconv_mod[imodel] - dy*diff_mod[imodel])
 
         # If equation is not solved, flux is determined
         #     by the integral of kwargs:
-        if(boundary_condition.type == 0):
-            diff = 1.e-6
-            flux = int_source
-            flux_ne_conv = 1.5*int_source
-            if(vpr*gm3 != 0.0):
-                diff = - flux / dy / (vpr*gm3)
-            if (abs(diff) >= nine_diff_limit):
-                diff = sign(nine_diff_limit, diff)
-                vconv = 0.0
-            if(diff <= 1.e-6):
-                diff = 1.e-6
-                vconv = (flux / (max(abs(vpr), 1.e-6)*gm3) + dy*diff) / y
+        # if(boundary_condition.type == 0):
+        #     diff = 1.e-6
+        #     flux = int_source
+        #     flux_ne_conv = 1.5*int_source
+        #     if(vpr*gm3 != 0.0):
+        #         diff = - flux / dy / (vpr*gm3)
+        #     if (abs(diff) >= nine_diff_limit):
+        #         diff = sign(nine_diff_limit, diff)
+        #         vconv = 0.0
+        #     if(diff <= 1.e-6):
+        #         diff = 1.e-6
+        #         vconv = (flux / (max(abs(vpr), 1.e-6)*gm3) + dy*diff) / y
 
         # Return new ion density and flux profiles to the work flow:
 
         core_profiles_iter.electron.density = ne0
-        core_profiles_iter.electron.ddensity_rho = ne0p
+        core_profiles_iter.electron.ddensity_rho_tor = ne0p
         # core_profiles_iter.electron.transport.d = diff
         # core_profiles_iter.electron.transport.v = vconv
         # core_profiles_iter.electron.transport.flux = flux
         # # core_profiles_iter.ion[iion].transport.flux_conv = flux_ni_conv
         # core_profiles_iter.electron.source = si_exp - si_imp * ne0
-        # core_profiles_iter.electron.int_source = integral(ne0*vpr, rho)
+        # core_profiles_iter.electron.int_source = integral(ne0*vpr, rho_tor)
 
     def quasi_neutrality(self,
                          core_profiles_iter,
@@ -742,11 +843,11 @@ class TransportSolver(AttributeTree):
                          **kwargs):
         r"""
         """
-        rho = core_profiles_iter.solver_1d[_last_].grid.rho
+        rho_tor = core_profiles_iter.solver_1d[_last_].grid.rho_tor
 
         ne0 = core_profiles_prev.profiles_1d.electron.density
 
-        ne0p = core_profiles_prev.profiles_1d.electron.density_drho or derivate(ne0, rho)
+        ne0p = core_profiles_prev.profiles_1d.electron.density_drho_tor or derivative(ne0, rho_tor)
 
         flux_ne = profiles["FLUX_NE"]
         flux_ne_conv = profiles["FLUX_NE_CONV"]
@@ -791,7 +892,7 @@ class TransportSolver(AttributeTree):
             #        PROFILES["ZEFF(IRHO)          = NZ2(IRHO)/NE(IRHO)
             #
 
-            profiles["DNE"] = derivate(ne, rho)
+            profiles["DNE"] = derivative(ne, rho_tor)
 
             local_flux_ne_conv_s4 = 0.0
             for iion in range(nion):
@@ -852,7 +953,7 @@ class TransportSolver(AttributeTree):
             for iion in range(nion):
                 aux1 = profiles["NI"][iion]
                 aux2 = 0.0
-                aux2 = derivate(aux1,  kwargs["RHO"])
+                aux2 = derivative(aux1,  kwargs["RHO"])
                 profiles["DNI"][iion] = aux2
 
             # AF - End
@@ -883,7 +984,7 @@ class TransportSolver(AttributeTree):
             if any(ne <= 0.0):
                 raise RuntimeError('Error in the density equation: on-axis electron density is negative, stop')
             # else:
-                # ne = ne(irho-1)
+                # ne = ne(irho_tor-1)
 
             profiles["ne"] = ne
 
@@ -917,13 +1018,13 @@ class TransportSolver(AttributeTree):
 
         # -----------------------------------------------------------
         # Grid
-        # $rho$ not  normalised minor radius                [m]
-        rho = core_profiles_iter.rho_tor
+        # $rho_tor$ not  normalised minor radius                [m]
+        rho_tor = core_profiles_iter.rho_tor
 
         # $\Psi$ flux function from current                 [Wb]
         psi0 = core_profiles_prev.profiles_1d.psi
         # $\frac{\partial\Psi}{\partial\rho}$               [Wb/m]
-        dpsi_drho = core_profiles_prev.profiles_1d.dpsi_drho
+        dpsi_drho_tor = core_profiles_prev.profiles_1d.dpsi_drho_tor
 
         # -----------------------------------------------------------
         # Equilibrium
@@ -946,25 +1047,25 @@ class TransportSolver(AttributeTree):
         qsf = core_profiles_iter.q
 
         # plasma parallel conductivity,                     [(Ohm*m)^-1]
-        sigma = core_profiles_iter.conductivity_parallel
+        conductivity_parallel = core_profiles_iter.conductivity_parallel
 
         hyper_diff_exp = hyper_diff[0]
         hyper_diff_imp = hyper_diff[1]
 
         ni0 = core_profiles_prev.profiles_1d.ion[iion].density
 
-        ni0p = core_profiles_prev.profiles_1d.ion[iion].density_drho or derivate(ni0, rho)
+        ni0p = core_profiles_prev.profiles_1d.ion[iion].density_drho_tor or derivative(ni0, rho_tor)
 
-        diff = np.zeros(shape=rho.shape)
-        vconv = np.zeros(shape=rho.shape)
+        diff = np.zeros(shape=rho_tor.shape)
+        vconv = np.zeros(shape=rho_tor.shape)
 
         for model in transports.model:
             # c1[imodel] = transport["C1"][imodel]
             diff += model.ion[iion].particles.d
             vconv += model.ion[iion].particles.v
 
-        si_exp = np.zeros(shape=rho.shape)
-        si_imp = np.zeros(shape=rho.shape)
+        si_exp = np.zeros(shape=rho_tor.shape)
+        si_imp = np.zeros(shape=rho_tor.shape)
 
         for source in sources.source:
             si_imp += source.ion[iion].particles_decomposed.implicit_part
@@ -974,13 +1075,13 @@ class TransportSolver(AttributeTree):
         #
         #     (A*Y-B*Y(t-1))/H + 1/C * (-D*Y' + E*Y) = F - G*Y
 
-        diff_hyper = hyper_diff_exp + hyper_diff_imp*maxval(diff)  # AF 25.Apr.2016, 22.Aug.2016
+        diff_hyper = hyper_diff_exp + hyper_diff_imp*maxval(diff)
 
         a = vpr
         b = vprm
         c = 1.
-        d = vpr*gm3*(diff+diff_hyper)  # AF 25.Apr.2016
-        e = vpr*gm3*(vconv+diff_hyper*ni0p/ni0) - B0dot/2./B0*rho*vpr
+        d = vpr*gm3*(diff+diff_hyper)
+        e = vpr*gm3*(vconv+diff_hyper*ni0p/ni0) - B0dot/2./B0*rho_tor*vpr
         f = vpr*si_exp
         g = vpr*si_imp
         h = tau
@@ -994,54 +1095,52 @@ class TransportSolver(AttributeTree):
         #     V*Y' + U*Y =W
         #
         # On axis:
-        #       dNi/drho(rho=0)=0:
+        #       dNi/drho_tor(rho_tor=0)=0:
         if(boundary_condition.type != 4):  # AF 11.Oct.2011
             v[0] = 1.
             u[0] = 0.
-        else:  # AF 11.Oct.2011 - Zero flux instead of zero gradient at the axis for solver 4
-            #       IF (DIFF[0]>1.0E-6) : #AF 19.Mar.2012 - To avoid problems with the axis boundary condition
-            # AF 19.Mar.2012 - To avoid problems with the axis boundary condition #AF 25.Apr.2016
+        else:
             if((diff[0]+diff_hyper) > 1.0e-6):
                 #         V[0] = -DIFF[0]
-                v[0] = -diff[0]-diff_hyper  # AF 25.Apr.2016
+                v[0] = -diff[0]-diff_hyper
             else:
                 v[0] = -1.0e-6
 
-                #       U[0] = VCONV[0] #AF 25.Apr.2016
-                u[0] = vconv[0]+diff_hyper*dnim[0]/nim[0]  # AF 25.Apr.2016
+                #       U[0] = VCONV[0]
+                u[0] = vconv[0]+diff_hyper*dnim[0]/nim[0]
             # AF 11.Oct.2011
             w[0] = 0.
 
         # At the edge:
         #       FIXED Ni
         if(boundary_condition.type == 1):
-            v[1] = 0.
-            u[1] = 1.
-            w[1] = boundary_condition.value[1, 0]
+            v = 0.
+            u = 1.
+            w = boundary_condition.value[1, 0]
 
         #       FIXED grad_Ni
         elif(boundary_condition.type == 2):
-            v[1] = 1.
-            u[1] = 0.
-            w[1] = -boundary_condition.value[1, 0]
+            v = 1.
+            u = 0.
+            w = -boundary_condition.value[1, 0]
 
         #       FIXED L_Ni
         elif(boundary_condition.type == 3):
-            v[1] = boundary_condition.value[1, 0]
-            u[1] = 1.
-            w[1] = 0.
+            v = boundary_condition.value[1, 0]
+            u = 1.
+            w = 0.
 
         #       FIXED Flux_Ni
         elif(boundary_condition.type == 4):
             #        V[1] = -G(NRHO)*DIFF(NRHO)
             #        U[1] = G(NRHO)*VCONV(NRHO)
-            v[1] = -vpr[-1]*gm3[-1]*diff[-1]
-            u[1] = vpr[-1]*gm3[-1]*vconv[-1]
-            w[1] = boundary_condition.value[1, 0]
+            v = -vpr[-1]*gm3[-1]*diff[-1]
+            u = vpr[-1]*gm3[-1]*vconv[-1]
+            w = boundary_condition.value[1, 0]
 
         #       Generic boundary condition
         elif(boundary_condition.type == 5):
-            v[1], u[1], w[1] = boundary_condition.value[1]
+            v, u, w = boundary_condition.value[1]
 
         # Density equation is not solved:
         if(boundary_condition.type == 0):
@@ -1055,40 +1154,44 @@ class TransportSolver(AttributeTree):
             f[-1] = 0.0
             g[-1] = 0.0
 
-            v[1] = 0.0
-            u[1] = 1.0
-            w[1] = ni0[-1]
+            v = 0.0
+            u = 1.0
+            w = ni0[-1]
 
         # Solution of ion density diffusion equation:
         try:
-            sol = self.solve_general_form(rho, ni0, ni0p, a, b, c, d, e, f, g, h, u, v, w)
+            sol = self.solve_bvp(rho_tor, ni0, ni0p,
+                                 tau,
+                                 TransportSolver.COEFF(a, b, c, d, e, f, g),
+                                 TransportSolver.BCCOEFF(u, v, w)
+                                 )
         except RuntimeError as error:
             raise RuntimeError(f"Fail to solve ion density transport equation! \n {error} ")
         else:
             ni1 = sol.y[0]
             ni1p = sol.yp[0]
 
-        # for irho in range(rho.shape[0]):
+        # for irho_tor in range(rho_tor.shape[0]):
             #        NI(IRHO)    = Y(IRHO)
             #        DNI(IRHO)   = DY(IRHO)
             #        IF (RHO(IRHO) #= 0.E0_R8) :
-            #           FUN1(IRHO)  = 1.e0_R8/RHO(IRHO)*(VPR(IRHO)*SI_EXP(IRHO)          \ #AF 11.Oct.2011 - the division by rho was needed because the routine INTEGR below actually integrates the function multiplied by rho
-            #                +VPRM(IRHO)*NIM(IRHO)/TAU                                   \
+            #           FUN1(IRHO)  = 1.e0_R8/RHO(IRHO)*(VPR(IRHO)*SI_EXP(IRHO)
+            #                +VPRM(IRHO)*NIM(IRHO)/TAU
             #                -NI(IRHO)*VPR(IRHO)*(1.e0_R8/TAU+SI_IMP(IRHO)))
             #        else:
-            #           FUN1(IRHO) = 1.e0_R8*(SI_EXP(IRHO)+NIM(IRHO)/TAU-NI(IRHO)        \ #AF 11.Oct.2011 - this is only OK with solver_test since Vprime == rho in that case - get it fixed in the trunk#
+            #           FUN1(IRHO) = 1.e0_R8*(SI_EXP(IRHO)+NIM(IRHO)/TAU-NI(IRHO)
             #                *(1.e0_R8/TAU+SI_IMP(IRHO)))
             #
 
         fun1 = vpr*si_exp + vprm*ni0*inv_tau - ni0*vpr*(1.*inv_tau+si_imp)
 
-        intfun1 = integral(fun1, rho)
+        intfun1 = integral(fun1, rho_tor)
 
         local_fun1_s4 = (si_exp[0] + ni0[0]*inv_tau - ni0[0]*(1.*inv_tau+si_imp[0]))/gm3[0]  # stripping G1
         # stripped integral for the axis - from the INTEGR2 routine, first point only
-        local_intfun1_s4 = local_fun1_s4*rho[0]/2.0
+        local_intfun1_s4 = local_fun1_s4*rho_tor[0]/2.0
 
-        int_source = intfun1 + B0dot/2./B0*rho*vpr*ni0
+        int_source = intfun1 + B0dot/2./B0*rho_tor*vpr*ni0
         flux = vpr*gm3 * (ni1*vconv - ni1p*diff)
 
         # Contribution to ion energy transport:
@@ -1115,13 +1218,13 @@ class TransportSolver(AttributeTree):
 
         # Return new ion density and flux profiles to the work flow:
         core_profiles_iter.ion[iion].density = ni0
-        core_profiles_iter.ion[iion].ddensity_rho = ni0p
+        core_profiles_iter.ion[iion].ddensity_rho_tor = ni0p
         core_profiles_iter.ion[iion].transport.d = diff
         core_profiles_iter.ion[iion].transport.v = vconv
         core_profiles_iter.ion[iion].transport.flux = flux
         # core_profiles_iter.ion[iion].transport.flux_conv = flux_ni_conv
         core_profiles_iter.ion[iion].source = si_exp - si_imp * ni0
-        core_profiles_iter.ion[iion].int_source = integral(ni0*vpr, rho)
+        core_profiles_iter.ion[iion].int_source = integral(ni0*vpr, rho_tor)
 
     def ion_density(self,
                     core_profiles_iter,
@@ -1159,15 +1262,15 @@ class TransportSolver(AttributeTree):
                      hyper_diff=[0, 0],
                      **kwargs):
         r"""heat transport equations
-            ion 
+            ion
 
             .. math:: \frac{3}{2}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(n_{i}T_{i}V^{\prime\frac{5}{3}}\right)+V^{\prime\frac{2}{3}}\frac{\partial}{\partial\rho}\left(q_{i}+T_{i}\gamma_{i}\right)=V^{\prime\frac{5}{3}}\left[Q_{i,exp}-Q_{i,imp}\cdot T_{i}+Q_{ei}+Q_{zi}+Q_{\gamma i}\right]
-                :label: transport_ion_temperature 
+                :label: transport_ion_temperature
 
-            electron 
+            electron
 
             .. math:: \frac{3}{2}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(n_{e}T_{e}V^{\prime\frac{5}{3}}\right)+V^{\prime\frac{2}{3}}\frac{\partial}{\partial\rho}\left(q_{e}+T_{e}\gamma_{e}\right)=V^{\prime\frac{5}{3}}\left[Q_{e,exp}-Q_{e,imp}\cdot T_{e}+Q_{ei}-Q_{\gamma i}\right]
-                :label: transport_electron_temperature 
+                :label: transport_electron_temperature
 
         """
 
@@ -1193,26 +1296,26 @@ class TransportSolver(AttributeTree):
 
         # -----------------------------------------------------------
         # Grid
-        # $rho$ not  normalised minor radius                [m]
-        rho = core_profiles_iter.grid.rho
+        # $rho_tor$ not  normalised minor radius                [m]
+        rho_tor = core_profiles_iter.grid.rho_tor
+        rho_tor_norm = core_profiles_iter.grid.rho_tor_norm
+
         # $\Psi$ flux function from current                 [Wb]
         psi0 = core_profiles_iter.grid.psi
         # $\frac{\partial\Psi}{\partial\rho}$               [Wb/m]
-        dpsi_drho = core_profiles_iter.grid.dpsi or derivate(psi0, rho)
-        # normalized psi  [0,1]                            [-]
-        psi_norm = core_profiles_prev.profiles_1d.grid.psi_norm
+        dpsi_drho_tor = core_profiles_iter.grid.dpsi_drho_tor
 
         # -----------------------------------------------------------
         # Equilibrium
         # diamagnetic function,$F=R B_\phi$                 [T*m]
-        fpol = equilibrium.profiles_1d.interpolate("f")(rho_tor_norm)
+        fpol = core_profiles_iter.profiles_1d.interpolate("f")(rho_tor_norm)
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        vpr = equilibrium.profiles_1d.interpolate("dvolume_dpsi")(rho_tor_norm)
-        dvpr = derivate(vpr, rho)  # Derivation of V'
+        vpr = core_profiles_iter.profiles_1d.dvolume_dpsi
+        dvpr = core_profiles_iter.profiles_1d.derivative("dvolume_dpsi")  # Derivation of V'
 
         # $\left\langle \left|\nabla\rho\right|^{2}\right\rangle $  [-]
-        gm3 = equilibrium.profiles_1d.interpolate("gm3")(rho_tor_norm)
+        gm3 = core_profiles_iter.profiles_1d.gm3
 
         # -----------------------------------------------------------
         # Profile
@@ -1221,11 +1324,11 @@ class TransportSolver(AttributeTree):
         qsf = core_profiles_prev.profiles_1d.q
 
         # plasma parallel conductivity,                     [(Ohm*m)^-1]
-        sigma = core_profiles_prev.profiles_1d.conductivity_parallel
+        conductivity_parallel = core_profiles_prev.profiles_1d.conductivity_parallel
 
         # Energy exchange terms due to collisions
         #     (defined from previous iteration):
-        self.plasma_collisions(core_profiles, collisions)
+        # self.plasma_collisions(core_profiles, collisions)
 
         vie = collisions.vie
 
@@ -1241,12 +1344,12 @@ class TransportSolver(AttributeTree):
 
             # Set up local variables for particular ion type:
             ti0 = ion.temperature
-            ti0p = ion.dtemperature_drho or derivate(ti0, rho)
+            ti0p = ion.dtemperature_drho_tor or derivative(ti0, rho_tor)
             ni0 = ion.density
-            ni0p = ion.ddensity_drho or derivate(ni0, rho)
+            ni0p = ion.ddensity_drho_tor or derivative(ni0, rho_tor)
 
             ni1 = core_profiles_iter.ion[iion].density
-            ni1p = core_profiles_iter.ion[iion].ddensity_drho or derivate(ni1, rho)
+            ni1p = core_profiles_iter.ion[iion].ddensity_drho_tor or derivative(ni1, rho_tor)
 
             flux_ti = transports.ion[iion].particles.FLUX_TI
             flux_ti_cond = transports.ion[iion].particles.FLUX_TI_COND
@@ -1274,21 +1377,21 @@ class TransportSolver(AttributeTree):
             #
             #     (A*Y-B*Y(t-1))/H + 1/C * (-D*Y' + E*Y) = F - G*Y
 
-            diff_hyper = hyper_diff_exp + hyper_diff_imp*maxval(diff_ti)  # AF 25.Apr.2016, 22.Aug.2016
+            diff_hyper = hyper_diff_exp + hyper_diff_imp*maxval(diff_ti)
 
             a[iion] = 1.5*vpr*ni
             b[iion] = 1.5*vprm**fivethird/vpr**twothird*nim
             c[iion] = 1.0
-            d[iion] = vpr*gm3*ni*(diff_ti+diff_hyper)  # AF 25.Apr.2016
-            e[iion] = vpr*gm3*ni*(vconv_ti+diff_hyper*ti0p/ti0) + flux_ni - 1.5*B0dot/2./B0*rho*ni*vpr
+            d[iion] = vpr*gm3*ni*(diff_ti+diff_hyper)
+            e[iion] = vpr*gm3*ni*(vconv_ti+diff_hyper*ti0p/ti0) + flux_ni - 1.5*B0dot/2./B0*rho_tor*ni*vpr
             f[iion] = vpr * (qi_exp + qei + qzi + qgi)
-            g[iion] = vpr*(qi_imp + vei + vzi) - B0dot/2./B0*rho*ni*dvpr
+            g[iion] = vpr*(qi_imp + vei + vzi) - B0dot/2./B0*rho_tor*ni*dvpr
 
             # Boundary conditions for ion heat transport equation in form:
             #     V*Y' + U*Y =W
 
             # On axis:
-            #       dTi/drho(rho=0)=0
+            #       dTi/drho_tor(rho_tor=0)=0
             if(solver_type != 4):
                 v[iion][0] = 1.
                 u[iion][0] = 0.
@@ -1335,7 +1438,7 @@ class TransportSolver(AttributeTree):
 
             # Temperature equation is not solved:
             elif(ti_bnd_type(2, iion) == 0):
-                dy = derivate(y, rho)  # temperature gradient
+                dy = derivative(y, rho_tor)  # temperature gradient
                 flag = 0
                 a[iion][-1] = 1.0
                 b[iion][-1] = 1.0
@@ -1362,10 +1465,10 @@ class TransportSolver(AttributeTree):
         # Set up local variables for electron heat transport equation:
 
         ne0 = core_profiles_prev.profiles_1d.electron.density
-        ne0p = core_profiles_prev.profiles_1d.electron.density_drho or derivate(ne0, rho)
+        ne0p = core_profiles_prev.profiles_1d.electron.density_drho_tor or derivative(ne0, rho_tor)
 
         te0 = core_profiles_prev.profiles_1d.electron.temperature
-        te0p = core_profiles_prev.profiles_1d.electron.dtemperature_drho or derivate(te0, rho)
+        te0p = core_profiles_prev.profiles_1d.electron.dtemperature_drho_tor or derivative(te0, rho_tor)
 
         diff_te = transport.electron.particles.d
         vconv_te = transport.electron.particles.v
@@ -1392,7 +1495,7 @@ class TransportSolver(AttributeTree):
         #
         #     (A*Y-B*Y(t-1))/H + 1/C * (-D*Y' + E*Y) = F - G*Y
 
-        diff_hyper = hyper_diff_exp + hyper_diff_imp*maxval(diff_te)  # AF 25.Apr.2016, 22.Aug.2016
+        diff_hyper = hyper_diff_exp + hyper_diff_imp*maxval(diff_te)
 
         a = 1.5*vpr*ne
         # DPC temporary "fix" for NaNs
@@ -1404,9 +1507,9 @@ class TransportSolver(AttributeTree):
         # DPC end of temporary fix
         c = 1.
         d = vpr * gm3 * ne * (diff_te+diff_hyper)
-        e = vpr * gm3 * ne * (vconv_te+diff_hyper*dtem / tem) + flux_ne - 1.5*B0dot/2./B0*rho*ne*vpr
+        e = vpr * gm3 * ne * (vconv_te+diff_hyper*dtem / tem) + flux_ne - 1.5*B0dot/2./B0*rho_tor*ne*vpr
         f = vpr * (qe_exp + qie - qgi)
-        g = vpr * (qe_imp + vie) - B0dot/2./B0*rho*ne*dvpr
+        g = vpr * (qe_imp + vie) - B0dot/2./B0*rho_tor*ne*dvpr
 
         h = tau
 
@@ -1416,61 +1519,61 @@ class TransportSolver(AttributeTree):
         #     V*Y' + U*Y =W
 
         # On axis
-        #     dTe/drho(rho=0)=0:
+        #     dTe/drho_tor(rho_tor=0)=0:
         if(solver_type != 4):
             v[0] = 1.
             u[0] = 0.
         else:  # - Zero flux instead of zero gradient at the axis for solver 4
             #    IF (DIFF_TE[0]>1.0E-6) : #AF 19.Mar.2012 - To avoid problems with the axis boundary condition
-            # AF 19.Mar.2012 - To avoid problems with the axis boundary condition #AF 25.Apr.2016
+            # AF 19.Mar.2012 - To avoid problems with the axis boundary condition
             if((diff_te[0]+diff_hyper) > 1.0e-6):
                 #      V[0] = -DIFF_TE[0]*NE[0]
-                v[0] = -(diff_te[0]+diff_hyper)*ne[0]  # AF 25.Apr.2016
+                v[0] = -(diff_te[0]+diff_hyper)*ne[0]
             else:
                 v[0] = -1.0e-6*ne[0]
 
                 #    U[0] = VCONV_TE[0]*NE[0]+LOCAL_FLUX_NE_CONV_S4
-                u[0] = (vconv_te[0]+diff_hyper*dtem[0]/tem[0])*ne[0]+local_flux_ne_conv_s4  # AF 25.Apr.2016
+                u[0] = (vconv_te[0]+diff_hyper*dtem[0]/tem[0])*ne[0]+local_flux_ne_conv_s4
                 w[0] = 0.
 
         # At the edge:
 
         #     FIXED Te
         if(te_bnd_type[1] == 1):
-            v[1] = 0.
-            u[1] = 1.
-            w[1] = te_bnd[1, 0]
+            v = 0.
+            u = 1.
+            w = te_bnd[1, 0]
 
         #     FIXED grad_Te
         if(te_bnd_type[1] == 2):
-            v[1] = 1.
-            u[1] = 0.
-            w[1] = -te_bnd[1, 0]
+            v = 1.
+            u = 0.
+            w = -te_bnd[1, 0]
 
         #     FIXED L_Te
         if(te_bnd_type[1] == 3):
-            v[1] = te_bnd[1, 0]
-            u[1] = 1.
-            w[1] = 0.
+            v = te_bnd[1, 0]
+            u = 1.
+            w = 0.
 
         #    FIXED Flux_Te
         if(te_bnd_type[1] == 4):
             #     V[1] = -G(NRHO)*DIFF(NRHO)*NE(NRHO)
             #     U[1] = G(NRHO)*VCONV(NRHO)*NE(NRHO)+FLUX_NE(NRHO)
-            v[1] = -vpr[-1]*gm3[-1]*diff_te[-1]*ne[-1]
-            u[1] = vpr[-1]*gm3[-1]*vconv_te[-1]*ne[-1]+flux_ne[-1]
-            w[1] = te_bnd[1, 0]
+            v = -vpr[-1]*gm3[-1]*diff_te[-1]*ne[-1]
+            u = vpr[-1]*gm3[-1]*vconv_te[-1]*ne[-1]+flux_ne[-1]
+            w = te_bnd[1, 0]
 
         #    Generic boundary condition
         if(te_bnd_type[1] == 5):
-            v[1] = te_bnd[1, 0]
-            u[1] = te_bnd(2, 2)
-            w[1] = te_bnd(2, 3)
+            v = te_bnd[1, 0]
+            u = te_bnd(2, 2)
+            w = te_bnd(2, 3)
 
         # Temperature equation is not solved:
         if(te_bnd_type[1] == 0):
 
-            dy = derivate(y, rho)  # temperature gradient
+            dy = derivative(y, rho_tor)  # temperature gradient
 
             flag = 0
 
@@ -1482,19 +1585,19 @@ class TransportSolver(AttributeTree):
             f.fill(0.0)
             g.fill(0.0)
 
-            v[1] = 0.0
-            u[1] = 1.0
-            w[1] = y[-1]
+            v = 0.0
+            u = 1.0
+            w = y[-1]
 
         # Defining coefficients for numerical solver:
         solver["TYPE"] = solver_type
         solver["EQ_FLAG"][ndim] = flag
         solver["NDIM"] = ndim
-        solver["NRHO"] = rho.shape[0]
+        solver["NRHO"] = rho_tor.shape[0]
         solver["AMIX"] = amix
         solver["DERIVATIVE_FLAG"][0] = 0
 
-        solver["RHO"] = rho
+        solver["RHO"] = rho_tor
 
         solver["Y"][ndim] = y
         solver["DY"][ndim] = dy
@@ -1512,9 +1615,9 @@ class TransportSolver(AttributeTree):
 
         solver["H"] = h
 
-        solver["V"][ndim, 1] = v[1]
-        solver["U"][ndim, 1] = u[1]
-        solver["W"][ndim, 1] = w[1]
+        solver["V"][ndim, 1] = v
+        solver["U"][ndim, 1] = u
+        solver["W"][ndim, 1] = w
         solver["V"][ndim, 2] = v[2]
         solver["U"][ndim, 2] = u[2]
         solver["W"][ndim, 2] = w[2]
@@ -1555,12 +1658,12 @@ class TransportSolver(AttributeTree):
             qzi = collisions["QZI"][iion]
             # dpc end
 
-            y = solver["Y"](iion, irho)
-            dy = solver["DY"](iion, irho)
+            y = solver["Y"](iion, irho_tor)
+            dy = solver["DY"](iion, irho_tor)
 
             if(ti_bnd_type[iion] == 0):
                 y = profiles["TI"][iion]
-                dy = derivate(y, rho)
+                dy = derivative(y, rho_tor)
 
             ti = y
             dti = dy
@@ -1568,26 +1671,26 @@ class TransportSolver(AttributeTree):
                 raise RuntimeError('Error in the temperature equation: on-axis ion temperature is negative, stop')
 
             else:
-                # write(*, *) 'warning, temperature for ion ', iion, ' and irho ', irho, 'is negative, set it to the value at the previous irho'
+                # write(*, *) 'warning, temperature for ion ', iion, ' and irho_tor ', irho_tor, 'is negative, set it to the value at the previous irho_tor'
                 ti[1:] = ti[0:-1]
-                dti[1:] = dti(irho-1)
+                dti[1:] = dti(irho_tor-1)
                 # end if
             # end if
-            if(rho != 0.):  # FIXME
-                fun1 = vpr/rho *                                           \
+            if(rho_tor != 0.):  # FIXME
+                fun1 = vpr/rho_tor *                                           \
                     ((1.5*nim*ti0*inv_tau*(vprm/vpr)**fivethird
                       + qi_exp + qei + qzi + qgi)
                      - (1.5*ni*inv_tau + qi_imp + vei + vzi
-                        - B0dot/2./B0*rho*ni*dvpr) * y)
+                        - B0dot/2./B0*rho_tor*ni*dvpr) * y)
             else:
                 fun1 = ((1.5*nim*ti0*inv_tau
                          + qi_exp + qei + qzi + qgi)
                         - (1.5*ni*inv_tau + qi_imp + vei + vzi
-                           - B0dot/2./B0*rho*ni*dvpr) * y)
+                           - B0dot/2./B0*rho_tor*ni*dvpr) * y)
 
-            intfun1 = integral(fun1, rho)  # Integral source
+            intfun1 = integral(fun1, rho_tor)  # Integral source
 
-            for irho in range(rho.shape[0]):
+            for irho_tor in range(rho_tor.shape[0]):
                 flux_ti_conv = y*flux_ni
 
                 flux_ti_cond = vpr*gm3*ni                                     \
@@ -1595,7 +1698,7 @@ class TransportSolver(AttributeTree):
 
                 flux_ti = flux_ti_conv + flux_ti_cond
 
-                int_source = intfun1 + y * 1.5*B0dot/2./B0*rho*ni*vpr
+                int_source = intfun1 + y * 1.5*B0dot/2./B0*rho_tor*ni*vpr
 
                 # If equation is not solved, total and conductive ion heat flux
                 #     are determined from the integral of kwargs:
@@ -1629,7 +1732,7 @@ class TransportSolver(AttributeTree):
                 profiles["QEI_OUT"] = profiles["QEI_OUT"]+qei
 
             fun1 = profiles["SOURCE_TI"][iion]*vpr
-            intfun1 = integral(fun1, rho)
+            intfun1 = integral(fun1, rho_tor)
             profiles["INT_SOURCE_TI"][iion] = intfun1
 
         #-------------------------------------------------------#
@@ -1647,7 +1750,7 @@ class TransportSolver(AttributeTree):
 
         if(te_bnd_type[1] == 0):
             y = profiles["TE"]
-            dy = derivate(y, rho)
+            dy = derivative(y, rho_tor)
 
         te = y
         dte = dy
@@ -1658,19 +1761,19 @@ class TransportSolver(AttributeTree):
             te[1:] = te[0:-1]
             dte[1:] = dte[0:-1]
 
-        if(rho != 0.):  # FIXME
-            fun2 = vpr/rho *                                         \
+        if(rho_tor != 0.):  # FIXME
+            fun2 = vpr/rho_tor *                                         \
                 (1.5*ne0*tem*inv_tau*(vprm/vpr)**fivethird
                  + qe_exp + qie - qgi
                  - y * (1.5*ne*inv_tau + qe_imp + vie
-                        - B0dot/2./B0*rho*ne*dvpr/vpr))
+                        - B0dot/2./B0*rho_tor*ne*dvpr/vpr))
         else:
             fun2 = (1.5*ne0*tem*inv_tau
                     + qe_exp + qie - qgi
                     - y * (1.5*ne*inv_tau + qe_imp + vie
                            - B0dot/2./B0*ne*dvpr))
 
-        intfun2 = integral(fun2, rho)  # Integral source
+        intfun2 = integral(fun2, rho_tor)  # Integral source
 
         flux_te_conv = y*flux_ne
 
@@ -1678,7 +1781,7 @@ class TransportSolver(AttributeTree):
 
         flux_te = flux_te_conv + flux_te_cond
 
-        int_source = intfun2 + y * 1.5*B0dot/2./B0*rho*ne*vpr
+        int_source = intfun2 + y * 1.5*B0dot/2./B0*rho_tor*ne*vpr
 
         # If equation is not solved, conductive component of electron heat flux
         #     is determined from the integral of kwargs:
@@ -1712,7 +1815,7 @@ class TransportSolver(AttributeTree):
         profiles["INT_SOURCE_TE"] = int_source
 
         fun1 = profiles["SOURCE_TE"]*vpr
-        intfun1 = integral(fun1, rho)
+        intfun1 = integral(fun1, rho_tor)
         profiles["INT_SOURCE_TE"] = intfun1
 
     def rotation(self,
@@ -1730,10 +1833,10 @@ class TransportSolver(AttributeTree):
         """
 
         # Allocate types for interface with PLASMA_COLLISIONS:
-        self.allocate_collisionality(nrho, nion, collisions, ifail)
+        self.allocate_collisionality(nrho_tor, nion, collisions, ifail)
 
         # Allocate types for interface with numerical solver:
-        self. allocate_numerics(ndim, nrho, solver, ifail)
+        self. allocate_numerics(ndim, nrho_tor, solver, ifail)
 
         # Set up local variables:
         amix = control["AMIX"]
@@ -1748,7 +1851,7 @@ class TransportSolver(AttributeTree):
         gm8 = equilibrium.profiles_1d.interpolate("gm8")(rho_tor_norm)
         gm3 = equilibrium.profiles_1d.interpolate("gm3")(rho_tor_norm)
 
-        rho = kwargs["RHO"]
+        rho_tor = kwargs["RHO"]
         vpr = kwargs["VPR"]
         vprm = kwargs["VPRM"]
         gm3 = kwargs["G1"]
@@ -1764,7 +1867,7 @@ class TransportSolver(AttributeTree):
         # Numeric types common for all ions:
         solver["TYPE"] = solver_type
         solver["NDIM"] = ndim
-        solver["NRHO"] = nrho
+        solver["NRHO"] = nrho_tor
         solver["AMIX"] = amix
         solver["DERIVATIVE_FLAG"][0] = 0
 
@@ -1842,7 +1945,7 @@ class TransportSolver(AttributeTree):
             c = 1.
             # AF, 14.May.2011 - multipication by G2, which in analytics is 1
             d = vpr*gm3*ni*mion*diff*gm8
-            e = (vpr*gm3*ni*vconv + flux_ni - B0dot/2./B0*rho*ni*vpr) * gm8*mion
+            e = (vpr*gm3*ni*vconv + flux_ni - B0dot/2./B0*rho_tor*ni*vpr) * gm8*mion
             f = vpr*(ui_exp + uzi)
             g = vpr*(ui_imp + wzi)
 
@@ -1853,7 +1956,7 @@ class TransportSolver(AttributeTree):
             #     V*Y' + U*Y =W
 
             # On axis
-            #     dVtor,i/drho(rho=0)=0: # AF - 24.Jun.2010, replaces "#     dTi/drho(rho=0)=0:"
+            #     dVtor,i/drho_tor(rho_tor=0)=0: # AF - 24.Jun.2010, replaces "#     dTi/drho_tor(rho_tor=0)=0:"
             if(solver_type != 4):  # AF 11.Oct.2011
                 v[0] = 1.
                 u[0] = 0.
@@ -1869,40 +1972,40 @@ class TransportSolver(AttributeTree):
             # At the edge:
             #     FIXED Vtor,i
             if(vtor_bnd_type[1] == 1):
-                v[1] = 0.
-                u[1] = 1.
-                w[1] = vtor_bnd[1, 0]
+                v = 0.
+                u = 1.
+                w = vtor_bnd[1, 0]
 
             #     FIXED grad_Vtor,i
             if(vtor_bnd_type[1] == 2):
-                v[1] = 1.
-                u[1] = 0.
-                w[1] = -vtor_bnd[1, 0]
+                v = 1.
+                u = 0.
+                w = -vtor_bnd[1, 0]
 
             #     FIXED L_Vtor,i
             if(vtor_bnd_type[1] == 3):
-                v[1] = 1.
-                u[1] = 1./vtor_bnd[1, 0]
-                w[1] = 0.
+                v = 1.
+                u = 1./vtor_bnd[1, 0]
+                w = 0.
 
             #     FIXED Flux_Mtor,i
             if(vtor_bnd_type[1] == 4):
-                v[1] = -vpr[-1]*gm3[-1]*gm8[-1]*diff[-1]*ni[-1]*mion
-                u[1] = vpr[-1]*gm3[-1]*gm8[-1]*vconv[-1] * \
+                v = -vpr[-1]*gm3[-1]*gm8[-1]*diff[-1]*ni[-1]*mion
+                u = vpr[-1]*gm3[-1]*gm8[-1]*vconv[-1] * \
                     ni[-1]*mion + gm8[-1]*flux_ni[-1]*mion
-                w[1] = vtor_bnd[1, 0]
+                w = vtor_bnd[1, 0]
 
             #     Generic boundary condition
             if(vtor_bnd_type[1] == 5):
-                v[1] = vtor_bnd[1, 0]
-                u[1] = vtor_bnd(2, 2)
-                w[1] = vtor_bnd(2, 3)
+                v = vtor_bnd[1, 0]
+                u = vtor_bnd(2, 2)
+                w = vtor_bnd(2, 3)
 
             # Rotation equation is not solved:
             if(vtor_bnd_type[1] == 0):
-                dy = derivate(y, rho)
+                dy = derivative(y, rho_tor)
                 flag = 0
-                for irho in range(rho.shape[0]):
+                for irho_tor in range(rho_tor.shape[0]):
                     a = 1.0
                     b = 1.0
                     c = 1.0
@@ -1911,14 +2014,14 @@ class TransportSolver(AttributeTree):
                     f = 0.0
                     g = 0.0
 
-                v[1] = 0.0
-                u[1] = 1.0
-                w[1] = y[-1]
+                v = 0.0
+                u = 1.0
+                w = y[-1]
 
             # Defining coefficients for numerical solver:
             solver["EQ_FLAG"][idim] = flag
 
-            solver["RHO"] = rho
+            solver["RHO"] = rho_tor
 
             solver["Y"][idim] = y
             solver["DY"][idim] = dy
@@ -1934,7 +2037,7 @@ class TransportSolver(AttributeTree):
             solver["CM1"][idim, idim] = 0.
 
             for zion in range(nion):
-                solver["CM1"][iion, zion] = wii[irho, zion]
+                solver["CM1"][iion, zion] = wii[irho_tor, zion]
 
             solver["H"] = h
 
@@ -1975,12 +2078,12 @@ class TransportSolver(AttributeTree):
             # dpc end
 
             # New solution and its derivative:
-            y = solver["Y"](idim, irho)
-            dy = solver["DY"](idim, irho)
+            y = solver["Y"](idim, irho_tor)
+            dy = solver["DY"](idim, irho_tor)
 
             if(vtor_bnd_type[1] == 0):
                 y = profiles["VTOR"][iion]
-                dy = derivate(y, rho)
+                dy = derivative(y, rho_tor)
 
             # New rotation velocity and momentum flux:
             vtor = y
@@ -1991,12 +2094,12 @@ class TransportSolver(AttributeTree):
             mtor = gm8*ni*mion*y
             mtor_tot = mtor_tot + mtor
 
-            if(rho != 0.):  # FIXME
-                fun1 = vpr/rho * (ui_exp + uzi + (wzi + gm8*mion*ni*inv_tau - ui_imp) * y)
+            if(rho_tor != 0.):  # FIXME
+                fun1 = vpr/rho_tor * (ui_exp + uzi + (wzi + gm8*mion*ni*inv_tau - ui_imp) * y)
             else:
                 fun1 = (ui_exp + uzi + (wzi + gm8*mion*ni*inv_tau - ui_imp) * y)
 
-            intfun1 = integral(fun1, rho)  # Integral source
+            intfun1 = integral(fun1, rho_tor)  # Integral source
 
             flux_mtor_conv = gm8*mion*flux_ni*y
 
@@ -2005,7 +2108,7 @@ class TransportSolver(AttributeTree):
 
             flux_mtor = flux_mtor_conv + flux_mtor_cond
 
-            int_source = intfun1 + vpr*gm8*B0dot/2./B0*rho*mion*ni*y
+            int_source = intfun1 + vpr*gm8*B0dot/2./B0*rho_tor*mion*ni*y
 
             # if equation is not solved, conductive component of electron heat flux is determined from the integral of kwargs
             if(vtor_bnd_type[1] == 0):
@@ -2041,10 +2144,10 @@ class TransportSolver(AttributeTree):
                 profiles["INT_SOURCE_MTOR"][iion] = int_source
 
             fun1 = profiles["SOURCE_MTOR"][iion]*vpr
-            intfun1 = integral(fun1, rho)
+            intfun1 = integral(fun1, rho_tor)
             profiles["INT_SOURCE_MTOR"][iion] = intfun1
 
-        for irho in range(rho.shape[0]):
+        for irho_tor in range(rho_tor.shape[0]):
             profiles["MTOR_TOT"] = mtor_tot
             profiles["FLUX_MTOR_TOT"] = flux_mtor_tot
 

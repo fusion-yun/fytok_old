@@ -74,16 +74,16 @@ class Tokamak(AttributeTree):
                                                time=self.time, equilibrium=self.equilibrium)
         return self._core_profiles
 
-    @core_profiles.setter
-    def core_profiles(self, other):
-        if not isinstance(other, CoreProfiles):
-            other = CoreProfiles(other,  time=self.time, equilibrium=self.equilibrium)
-        self._core_profiles = other
+    # @core_profiles.setter
+    # def core_profiles(self, other):
+    #     if not isinstance(other, CoreProfiles):
+    #         other = CoreProfiles(other,  time=self.time, equilibrium=self.equilibrium)
+    #     self._core_profiles = other
 
     @cached_property
     def core_transport(self):
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return CoreTransport(self._cache.core_transport.mode, tokamak=self)
+        return AttributeTree(default_factory_array=CoreTransport(None, tokamak=self))
 
     @cached_property
     def core_sources(self):
@@ -91,7 +91,7 @@ class Tokamak(AttributeTree):
             Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return CoreSources(self._cache.core_sources.mode, tokamak=self)
+        return AttributeTree(default_factory_array=CoreSources(None, tokamak=self))
 
     @property
     def edge_profiles(self):
@@ -129,7 +129,6 @@ class Tokamak(AttributeTree):
     def update(self, *args,
                time=0.0,
                core_profiles=None,
-               constraints=None,
                max_iters=1,
                tolerance=0.1,
                ** kwargs):
@@ -143,7 +142,8 @@ class Tokamak(AttributeTree):
         for iter_count in range(max_iters):
             logger.debug(f"Iterator = {iter_count}")
 
-            # self.equilibrium.update(profiles=self.core_profiles.interploate(["pprime", "ffprime"]),
+            # self.equilibrium.update(
+            #     # profiles=self.core_profiles.profiles_1d.interploate(["pprime", "ffprime"]),
             #                         constraints=constraints)
 
             core_profiles_iter = CoreProfiles(
@@ -151,16 +151,11 @@ class Tokamak(AttributeTree):
                 equilibrium=self.equilibrium,
                 rho_tor_norm=core_profiles_prev.grid.rho_tor_norm)
 
-            self.core_sources.update()
+            # self.core_sources.update()
 
-            self.core_transport.update()
+            # self.core_transport.update()
 
-            tol = self.transport.update(
-                core_profiles_prev,
-                core_profiles_iter,
-                equilibrium=self.equilibrium,
-                transports=self.core_transport,
-                sources=self.core_sources)
+            self.transport.update(core_profiles_prev, core_profiles_iter)
 
             # .. todo:: inetgrate core and edge
             # edge_profiles_old = copy(edge_profiles_iter)
@@ -173,7 +168,7 @@ class Tokamak(AttributeTree):
             #     sources=self.edge_sources,
             #     **kwargs)
 
-            if tol < tolerance:
+            if self.check_converge(core_profiles_prev, core_profiles_iter, tolerance):
                 convergence = True
                 break
             else:
@@ -183,6 +178,9 @@ class Tokamak(AttributeTree):
             raise RuntimeError(f"Does not converge! iter_count={iter_count}")
         else:
             self._core_profiles = core_profiles_iter
+
+    def check_converge(self, core_profiles_prev, core_profiles_iter, tolerance):
+        return True
     # --------------------------------------------------------------------------
 
     def save(self, uri, *args, **kwargs):

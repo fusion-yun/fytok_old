@@ -128,7 +128,7 @@ class Equilibrium(AttributeTree):
 
     @property
     def vacuum_toroidal_field(self):
-        return self.tokamak.vacuum_toroidal_field or self._equilibrium.cache.vacuum_toroidal_field
+        return self.tokamak.vacuum_toroidal_field
 
     @property
     def time(self):
@@ -166,7 +166,7 @@ class Equilibrium(AttributeTree):
 
     @cached_property
     def profiles_2d(self):
-        return Equilibrium.Profiles2D(self)
+        return Equilibrium.Profiles2D(self._cache.profiles_2d, equilibrium=self)
 
     @cached_property
     def global_quantities(self):
@@ -397,7 +397,12 @@ class Equilibrium(AttributeTree):
     class Profiles1D(Profiles):
         """Equilibrium profiles (1D radial grid) as a function of the poloidal flux	"""
 
-        def __init__(self, cache,   *args,   equilibrium=None, ** kwargs):
+        def __init__(self, cache,   *args,   equilibrium=None, psi_norm=None, ** kwargs):
+            if psi_norm is None:
+                psi_norm = 129
+
+            if type(psi_norm) is int:
+                psi_norm = np.linspace(0, 1.0, psi_norm, endpoint=False)
             super().__init__(cache, *args, x_axis="psi_norm", **kwargs)
             self.__dict__["_equilibrium"] = equilibrium
 
@@ -434,7 +439,7 @@ class Equilibrium(AttributeTree):
         @cached_property
         def phi(self):
             """Toroidal flux  [Wb]. FIXME: not sure,need double check"""
-            return self.intergral("q", 0, self.psi_norm)/(2.0*scipy.constants.pi)
+            return self.integral("q", 0, self.psi_norm)/(2.0*scipy.constants.pi)
 
         @cached_property
         def pressure(self):
@@ -442,7 +447,7 @@ class Equilibrium(AttributeTree):
             res = super().cache("pressure")
 
             if res is None or len(res) == 0:
-                res = self.intergral("pprime", self.psi)
+                res = self.integral("pprime", self.psi)
             return res
 
         @cached_property
@@ -464,6 +469,10 @@ class Equilibrium(AttributeTree):
         @cached_property
         def fpol(self):
             return self.f
+
+        @cached_property
+        def f1(self):
+            return self._cache.f
 
         @cached_property
         def pprime(self):
@@ -513,7 +522,15 @@ class Equilibrium(AttributeTree):
             """
             # res = self._equilibrium.cache.profiles_1d.q
             # if len(res) == 0:
-            return self.fpol*self.vprime * self.gm1 / (4*scipy.constants.pi**2)
+            res = self._equilibrium._cache["q"]
+            if not isinstance(res, np.ndarray):
+                logger.debug(r"Calculate q as  F V^{\prime} \left\langle R^{-2}\right \rangle /(4 \pi^2) ")
+                res = self.fpol*self.dvolume_dpsi * self.gm1 / (4*scipy.constants.pi**2)
+            return res
+
+        @cached_property
+        def psi_norm1(self):
+            return self.cache("psi_norm")
 
         @cached_property
         def magnetic_shear(self):
@@ -543,13 +560,9 @@ class Equilibrium(AttributeTree):
 
         @cached_property
         def drho_tor_dpsi(self)	:
-            # res = np.zeros(shape=self.q.shape)
-            # logger.debug((self.q[1], self.q[0], self.psi_norm[1], self.psi_norm[0]))
-            # dq_dpsi = self.interpolate("rho_tor").derivative(self.psi_norm) / (self._equilibrium.global_quantities.psi_boundary -
-            #                                                  self._equilibrium.global_quantities.psi_axis)
-            # res[0] = np.sqrt(dq_dpsi / (self._equilibrium.vacuum_toroidal_field.b0 * scipy.constants.pi)**2)
-            # # res[0] = 2*res[1]-res[2]
-            return self.derivative("rho_tor")
+            res = self.q/(self._equilibrium.vacuum_toroidal_field.b0*self.rho_tor)
+            res[0] = res[1]*2-res[2]
+            return res
 
         @cached_property
         def dpsi_drho_tor(self)	:
@@ -559,7 +572,9 @@ class Equilibrium(AttributeTree):
         @cached_property
         def volume(self):
             """Volume enclosed in the flux surface  [m^3]"""
-            return self.intergral("vprdvolume_dpsiime", self.psi[0], self.psi)
+            psi_boundary = self._equilibrium.global_quantities.psi_boundary
+            psi_axis = self._equilibrium.global_quantities.psi_axis
+            return self.integral("dvolume_dpsi", 0.0, self.psi_norm)*abs(psi_boundary-psi_axis)
 
         @cached_property
         def rho_volume_norm(self)	:
@@ -671,9 +686,8 @@ class Equilibrium(AttributeTree):
             Equilibrium 2D profiles in the poloidal plane.
         """
 
-        def __init__(self, equilibrium, *args, grid=None,  ** kwargs):
+        def __init__(self, cache, *args, grid=None, equilibrium=None,  ** kwargs):
             super().__init__(*args, **kwargs)
-            logger.debug(f"Create {self.__class__.__name__}")
             self._equilibrium = equilibrium
 
         @cached_property
