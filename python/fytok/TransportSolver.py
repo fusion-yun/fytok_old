@@ -400,7 +400,7 @@ class TransportSolver(AttributeTree):
         # $\Psi$ flux function from current                 [Wb]
         psi0 = core_profiles_prev.profiles_1d.psi
         # $\frac{\partial\Psi}{\partial\rho}$               [Wb/m]
-        dpsi_drho_tor0 = core_profiles_prev.profiles_1d.dpsi_drho_tor
+        dpsi_drho_tor0 = core_profiles_prev.profiles_1d.derivative("psi")
 
         # -----------------------------------------------------------
         # Equilibrium
