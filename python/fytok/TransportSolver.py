@@ -185,7 +185,7 @@ class TransportSolver(AttributeTree):
                               core_profiles_iter,
                               equilibrium=equilibrium,
                               core_transports=core_transport,
-                              core_sources=None,
+                              core_sources=core_sources,
                               boundary_condition=boundary_condition.electorns,
                               **kwargs)
 
@@ -584,7 +584,6 @@ class TransportSolver(AttributeTree):
     def electron_density(self,
                          core_profiles_prev,
                          core_profiles_iter,
-
                          *args,
                          equilibrium=None,
                          core_transport=None,
@@ -594,10 +593,10 @@ class TransportSolver(AttributeTree):
                          **kwargs):
 
         if core_transport is None:
-            core_transport = self.core_transports
+            core_transport = self._tokamak.core_transport
 
         if core_sources is None:
-            core_sources = self.core_sources
+            core_sources = self._tokamak.core_sources
 
         if boundary_condition is None:
             boundary_condition = self.boundary_condition
@@ -657,17 +656,26 @@ class TransportSolver(AttributeTree):
 
         diff = np.zeros(shape=rho_tor_norm.shape)
         vconv = np.zeros(shape=rho_tor_norm.shape)
-
         for trans in core_transport:
-            diff += trans.profiles_1d.electrons.particles.d
-            vconv += trans.profiles_1d.electrons.particles.v
+            d = trans.profiles_1d.electrons.particles.d
+            if isinstance(d, np.ndarray) or type(d) in (int, float):
+                diff += d
+
+            v = trans.profiles_1d.electrons.particles.v
+            if isinstance(v, np.ndarray) or type(v) in (int, float):
+                vconv += v
 
         se_exp = np.zeros(shape=rho_tor_norm.shape)
         se_imp = np.zeros(shape=rho_tor_norm.shape)
 
         for src in core_sources:
-            se_imp += src.proflies_1d.electrons.particles_decomposed.implicit_part
-            se_exp += src.proflies_1d.electrons.particles_decomposed.explicit_part
+            si = src.proflies_1d.electrons.particles_decomposed.implicit_part
+            if isinstance(si, np.ndarray) or type(si) in (int, float):
+                se_imp += si
+
+            se = src.proflies_1d.electrons.particles_decomposed.explicit_par
+            if isinstance(se, np.ndarray) or type(se) in (int, float):
+                se_exp += se
 
         # Coefficients for electron diffusion equation in form:
         #
@@ -772,7 +780,7 @@ class TransportSolver(AttributeTree):
         #                          (TransportSolver.BCCOEFF(0, 1, 0),  # On axis:  dpsi/drho_tor(rho_tor=0)=0
         #                           TransportSolver.BCCOEFF(u, v, w))
         #                          )
-        except Exception as error:
+        except RuntimeError as error:
             logger.error(f"Fail to solve transport equation: Electron density ! \n {error} ")
         else:
             logger.debug(f"Solve transport equations: Electron density: {sol.message}")
@@ -789,6 +797,10 @@ class TransportSolver(AttributeTree):
         core_profiles_iter.profiles_1d.d = d
         core_profiles_iter.profiles_1d.e = e
         core_profiles_iter.profiles_1d.f = f
+        core_profiles_iter.profiles_1d.density = ne0
+        core_profiles_iter.profiles_1d.diff = diff
+        core_profiles_iter.profiles_1d.vconv = vconv
+        core_profiles_iter.profiles_1d.se_exp = se_exp
 
     def quasi_neutrality(self,
                          core_profiles_iter,

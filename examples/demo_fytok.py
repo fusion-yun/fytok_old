@@ -98,26 +98,28 @@ if __name__ == "__main__":
 
     tok.core_transport[_next_] = {"identifier": {"name": "unspecified", "index": 0},
                                   "profiles_1d": {"conductivity_parallel": 1.0e-8}}
-
-    # logger.debug(tok.core_transport[-1].profiles_1d.electrons)
-
+    trans = tok.core_transport[-1].profiles_1d
+    trans.conductivity_parallel = 1.0e-8
+    trans.electrons.particles.d[:] = 1.0e5
+    trans.electrons.particles.v[:] = 1.0e5
+     
     tok.core_sources[_next_] = {"identifier": {"name": "unspecified", "index": 0},
                                 "profiles_1d": {"j_parallel": j_total}}
 
-    tok.core_profiles.profiles_1d.electrons.density[:] = 1.0e15
+    tok.core_profiles.profiles_1d.electrons.density = 1.0e15
 
-    plot_profiles(tok.equilibrium.profiles_1d,
-                  profiles=["psi_norm", "phi", ["q", "q1"], "rho_tor",
-                            ["dpsi_drho_tor"],
-                            ["drho_tor_dpsi"]],
-                  x_axis="psi_norm", grid=True)[1] .savefig("../output/eq_profiles_1d.svg")
+    # plot_profiles(tok.equilibrium.profiles_1d,
+    #               profiles=["psi_norm", "phi", ["q", "q1"], "rho_tor",
+    #                         ["dpsi_drho_tor"],
+    #                         ["drho_tor_dpsi"]],
+    #               x_axis="psi_norm", grid=True)[1] .savefig("../output/eq_profiles_1d.svg")
 
     tok.update()
 
     draw(tok).savefig("../output/tokamak1.svg", transparent=True)
 
     plot_profiles(tok.core_profiles.profiles_1d,
-                  profiles="A,B,C,a,b,c,d,e,f",
+                  profiles="A,B,C,electrons.density,density,diff,vconv,se_exp",
                   #   [ "electrons.density"
                   #     #   [
                   #     #       {"name": "psi0", "opts": {"marker": "+", "label": r"$\psi^{-1}$"}},

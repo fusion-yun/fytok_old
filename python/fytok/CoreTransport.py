@@ -20,6 +20,7 @@ class CoreTransport(AttributeTree):
 
     def __init__(self, config=None, *args,   rho_tor_norm=None, tokamak=None,  **kwargs):
         super().__init__(*args, **kwargs)
+        self._cache = config or AttributeTree()
         self._tokamak = tokamak
         self._rho_tor_norm = rho_tor_norm
         self._psi_axis = self._tokamak.global_quantities.psi_axis
@@ -42,8 +43,9 @@ class CoreTransport(AttributeTree):
             return np.zeros(self._parent.grid_flux.rho_tor_norm.shape)
 
     class Particle(AttributeTree):
-        def __init__(self, cache, *args, parent=None, **kwargs):
+        def __init__(self, cache=None, *args, parent=None, **kwargs):
             self._parent = parent
+            self._cache = cache or AttributeTree()
 
         @cached_property
         def particles(self):
@@ -77,9 +79,9 @@ class CoreTransport(AttributeTree):
         @cached_property
         def grid_d(self):
             return RadialGrid(self._cache.grid_d,
-                             rho_tor_norm=self._x_axis,
-                             psi_axis=self._psi_axis,
-                             psi_boundary=self._psi_boundary)
+                              rho_tor_norm=self._x_axis,
+                              psi_axis=self._psi_axis,
+                              psi_boundary=self._psi_boundary)
 
         @cached_property
         def grid_v(self):
@@ -95,7 +97,7 @@ class CoreTransport(AttributeTree):
 
         @cached_property
         def electrons(self):
-            return AttributeTree(default_factory_array=lambda _holder=self: CoreTransport.Electrons(parent=_holder))
+            return CoreTransport.Electrons(parent=self)
 
         @cached_property
         def neutral(self):
@@ -111,7 +113,7 @@ class CoreTransport(AttributeTree):
 
     @cached_property
     def profiles_1d(self):
-        return CoreTransport.Porfiles1D(self._cache.profiles_1d,
+        return CoreTransport.Profiles1D(self._cache.profiles_1d,
                                         parent=self,
                                         rho_tor_norm=self._rho_tor_norm,
                                         psi_axis=self._psi_axis,

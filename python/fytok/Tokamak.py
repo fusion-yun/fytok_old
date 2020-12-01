@@ -96,10 +96,10 @@ class Tokamak(AttributeTree):
     @cached_property
     def core_transport(self):
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return AttributeTree(default_factory_array=CoreTransport(
+        return AttributeTree(default_factory_array=lambda _holder=self: CoreTransport(
             None,
-            rho_tor_norm=self.core_profiles.profiles_1d.grid.rho_tor_norm,
-            tokamak=self))
+            rho_tor_norm=_holder.core_profiles.profiles_1d.grid.rho_tor_norm,
+            tokamak=_holder))
 
     @cached_property
     def core_sources(self):
@@ -107,10 +107,10 @@ class Tokamak(AttributeTree):
             Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return AttributeTree(default_factory_array=CoreSources(
+        return AttributeTree(default_factory_array=lambda _holder=self: CoreSources(
             None,
-            rho_tor_norm=self.core_profiles.profiles_1d.grid.rho_tor_norm,
-            tokamak=self))
+            rho_tor_norm=_holder.core_profiles.profiles_1d.grid.rho_tor_norm,
+            tokamak=_holder))
 
     @property
     def edge_profiles(self):
@@ -153,8 +153,6 @@ class Tokamak(AttributeTree):
                ** kwargs):
 
         convergence = False
-
-        core_profiles_iter = self.new_core_profiles(core_profiles or {})
 
         core_profiles_prev = self.core_profiles
 

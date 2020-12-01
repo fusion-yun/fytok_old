@@ -1036,11 +1036,11 @@ class Equilibrium(AttributeTree):
         x_axis, x_axis_opts = self.fetch_profile(x_axis)
 
         assert (x_axis.data is not NotImplemented)
-
-        if profiles is None or len(profiles) == 0:
+        nprofiles = len(profiles)
+        if profiles is None or nprofiles <= 1:
             fig, ax_right = plt.subplots(ncols=1, nrows=1, sharex=True)
         else:
-            fig, axs = plt.subplots(ncols=2, nrows=len(profiles), sharex=True)
+            fig, axs = plt.subplots(ncols=2, nrows=nprofiles, sharex=True)
             # left
             ax_left = self.plot_profiles(axs[:, 0], x_axis, profiles)
 

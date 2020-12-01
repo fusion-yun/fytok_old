@@ -51,8 +51,8 @@ class FluxSurface(Profiles):
         super().__init__(None, *args, x_axis=psi_norm, **kwargs)
 
         logger.debug(f"Calculate magnetic flux surface averge")
-        self.limiter = limiter
-        self.psirz = psirz
+        self._limiter = limiter
+        self._psirz = psirz
         self._r0 = r0
         self._b0 = b0
         self._ffprime = ffprime
@@ -69,20 +69,20 @@ class FluxSurface(Profiles):
         if not isinstance(coordinate_system, AttributeTree):
             coordinate_system = AttributeTree(coordinate_system)
         if not coordinate_system.grid.grid_type.index or coordinate_system.grid.grid_type.index == 1:
-            self.coordinate_system = coordinate_system
+            self._coordinate_system = coordinate_system
         else:
             raise NotImplementedError(f"coordinate_system type error! {coordinate_system}")
 
     @cached_property
     def critical_points(self):
-        psirz = self.psirz
+        psirz = self._psirz
         opoints = []
         xpoints = []
 
-        if not self.limiter:
+        if not self._limiter:
             raise RuntimeError(f"Missing 'limiter'!")
 
-        bounds = [v for v in map(float, self.limiter.bounds)]
+        bounds = [v for v in map(float, self._limiter.bounds)]
 
         NX = 128
         NY = int(NX*(bounds[3] - bounds[1])/(bounds[2] - bounds[0])+0.5)
@@ -95,7 +95,7 @@ class FluxSurface(Profiles):
 
         for r, z, tag in find_critical(psirz, X, Y):
             # Remove points outside the vacuum wall
-            if not self.limiter and self.limiter.encloses(Point(r, z)):
+            if not self._limiter and self._limiter.encloses(Point(r, z)):
                 continue
 
             if tag < 0.0:  # saddle/X-point
@@ -160,9 +160,9 @@ class FluxSurface(Profiles):
             r1 = R0 + Rm * sin(theta)
             z1 = Z0 + Rm * cos(theta)
 
-            if not np.isclose(self.psirz(r1, z1), psival):
+            if not np.isclose(self._psirz(r1, z1), psival):
                 try:
-                    sol = root_scalar(lambda r: self.psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1) - psival,
+                    sol = root_scalar(lambda r: self._psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1) - psival,
                                       bracket=[0, 1], method='brentq')
                 except ValueError as error:
                     raise ValueError(f"Find root fialed! {error}")
@@ -177,13 +177,13 @@ class FluxSurface(Profiles):
 
     @cached_property
     def surface_mesh(self):
-        if not self.coordinate_system.grid_type.index:
+        if not self._coordinate_system.grid_type.index:
             pass
-        elif self.coordinate_system.grid_type.index > 1:
-            raise ValueError(f"Unknown grid type {self.coordinate_system.grid_type}")
+        elif self._coordinate_system.grid_type.index > 1:
+            raise ValueError(f"Unknown grid type {self._coordinate_system.grid_type}")
 
-        npsi = self.coordinate_system.grid.dim1
-        ntheta = self.coordinate_system.grid.dim2
+        npsi = self._coordinate_system.grid.dim1
+        ntheta = self._coordinate_system.grid.dim2
 
         # TODO: Using futures.ThreadPoolExecutor() cannot improve performance. Why ?
         return np.array([[[r, z] for r, z in self.find_by_psinorm(psival, ntheta)] for psival in npsi])
@@ -215,7 +215,7 @@ class FluxSurface(Profiles):
 
     @cached_property
     def grad_psi(self):
-        return self.psirz(self.R, self.Z, dx=1), self.psirz(self.R, self.Z, dy=1)
+        return self._psirz(self.R, self.Z, dx=1), self._psirz(self.R, self.Z, dy=1)
 
     @cached_property
     def dl(self):
@@ -354,7 +354,7 @@ class FluxSurface(Profiles):
         return res
 
     def apply(self, func, R, Z, *args, **kwargs):
-        pval = self.psirz(R, Z, *args, **kwargs)
+        pval = self._psirz(R, Z, *args, **kwargs)
         if isinstance(pval, np.ndarray):
             pass
         return func(pval)
