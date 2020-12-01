@@ -84,7 +84,7 @@ class TransportSolver(AttributeTree):
             For a 1D transport solver:
 
                 name        :   Short string identifier
-            
+
                 index       :   Integer identifier (enumeration index within a list).
                                 index = 1 means :math:`\rho_{tor,norm}=\rho_{tor}/\rho_{tor,boundary}`;  2 = :math:`\rho_{tor}=\sqrt{ \Phi/\pi B_{0}}`.
                                 Private identifier values must be indicated by a negative index.
@@ -394,7 +394,7 @@ class TransportSolver(AttributeTree):
         # $rho_tor$ not  normalised minor radius                [m]
         rho_tor = core_profiles_iter.profiles_1d.grid.rho_tor
         rho_tor_boundary = rho_tor[-1]
-        rho_tor_norm = rho_tor/rho_tor_boundary
+        rho_tor_norm = core_profiles_iter.profiles_1d.grid.rho_tor_norm
         # $rho_tor_{norm}$ normalised minor radius                [-]
         # rho_tor_norm = rho_tor/rho_tor_boundary
         # rho_tor_norm = core_profiles_iter.profiles_1d.grid.rho_tor_norm
@@ -734,12 +734,11 @@ class TransportSolver(AttributeTree):
             w = boundary_condition(2, 3)
 
         # Density equation is not solved:
-        else: #if(boundary_condition.type == 0):
+        else:  # if(boundary_condition.type == 0):
 
             v = 0.0
             u = 1.0
             w = ne0[-1]
-        
 
         y0 = ne0
 

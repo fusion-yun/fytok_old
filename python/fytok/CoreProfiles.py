@@ -24,6 +24,8 @@ from sympy import Point, Polygon
 
 from fytok.Plot import plot_profiles
 
+from .RadialGrid import RadialGrid
+
 
 class CoreProfiles(AttributeTree):
     """CoreProfiles
@@ -47,10 +49,9 @@ class CoreProfiles(AttributeTree):
         self.vacuum_toroidal_field = self._tokamak.vacuum_toroidal_field
 
     class Profiles1D(Profiles):
-        def __init__(self, cache=None,  *args, equilibrium=None, grid=None, **kwargs):
-            super().__init__(cache, * args, x_axis=grid.rho_tor_norm, **kwargs)
+        def __init__(self, cache=None,  *args, equilibrium=None,  rho_tor_norm=None, **kwargs):
+            super().__init__(cache, * args, x_axis=rho_tor_norm, **kwargs)
             self.__dict__["_equilibrium"] = equilibrium
-            self.grid =  grid
 
         def __missing__(self, key):
             res = super().__missing__(key)
@@ -59,6 +60,26 @@ class CoreProfiles(AttributeTree):
             else:
                 res = self._equilibrium.profiles_1d.mapping("rho_tor_norm", key)(self.grid.rho_tor_norm)
             return res
+
+        class Grid(RadialGrid):
+            def __init__(self, cache, *args, equilibrium=None, **kwargs):
+                super().__init__(cache, *args,
+                                 psi_axis=equilibrium.global_quantities.psi_axis,
+                                 psi_boundary=equilibrium.global_quantities.psi_boundary,
+                                 **kwargs)
+                self.__dict__["_equilibrium"] = equilibrium
+
+            def __missing__(self, key):
+                res = super().__missing__(key)
+                if isinstance(res, np.ndarray):
+                    pass
+                else:
+                    res = self._equilibrium.profiles_1d.mapping("rho_tor_norm", key)(self.rho_tor_norm)
+                return res
+
+        @cached_property
+        def grid(self):
+            return CoreProfiles.Profiles1D.Grid(self._cache.grid, equilibrium=self._equilibrium, x_axis=self._x_axis)
 
         class TemperatureFit(AttributeTree):
             def __init__(self, *args, **kwargs):
@@ -586,7 +607,9 @@ class CoreProfiles(AttributeTree):
 
     @cached_property
     def profiles_1d(self):
-        return CoreProfiles.Profiles1D(self._cache.profiles_1d, equilibrium=self._tokamak.equilibrium, grid=self._tokamak.grid)
+        return CoreProfiles.Profiles1D(self._cache.profiles_1d,
+                                       equilibrium=self._tokamak.equilibrium,
+                                       rho_tor_norm=self._tokamak.grid.rho_tor_norm)
 
     @cached_property
     def global_quantities(self):

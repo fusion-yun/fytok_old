@@ -20,7 +20,7 @@ from fytok.PFActive import PFActive
 from fytok.TF import TF
 from fytok.TransportSolver import TransportSolver
 from fytok.Wall import Wall
-from fytok.RadialGrid import RadioGrid
+from fytok.RadialGrid import RadialGrid
 
 
 class Tokamak(AttributeTree):
@@ -36,7 +36,7 @@ class Tokamak(AttributeTree):
         self.__dict__["_cache"] = cache or AttributeTree()
         self.__dict__["_time"] = time
 
-        self.grid_1d = RadioGrid(rho_tor_norm=rho_tor_norm)
+        self.grid = RadialGrid(rho_tor_norm=rho_tor_norm)
         self._time = time
         self._core_profiles = None
 

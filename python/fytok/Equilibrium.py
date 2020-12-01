@@ -95,30 +95,22 @@ class Equilibrium(AttributeTree):
 
         return AttributeTree.__new__(n_cls)
 
-    def __init__(self,   cache=None,  *args,  tokamak=None, psi_norm=129, **kwargs):
+    def __init__(self,   cache=None,  *args,  tokamak=None, psi_norm=None,   **kwargs):
         super().__init__(*args, **kwargs)
-        self.tokamak = tokamak
-        self._cache = cache
+        self.__dict__["_tokamak"] = tokamak
+        self.__dict__["_cache"] = cache
+
+        if psi_norm is None:
+            psi_norm = 129  # default number of magnetic flux surface
+
         if type(psi_norm) is int:
-            self._psi_norm = np.linspace(0.0, 1.0, psi_norm)
+            psi_norm = np.linspace(0.0, 1.0, psi_norm)
         elif isinstance(psi_norm, np.ndarray):
-            self._psi_norm = psi_norm
+            pass
         else:
-            raise TypeError(f"{psi_norm}")
-        # ----------------------------------------------------------
-        # self.__dict__["_grid_box"] = AttributeTree()
+            raise TypeError(f"psi_norm {psi_norm}")
 
-        # lim_r = self.tokamak.wall.limiter.outline.r
-        # lim_z = self.tokamak.wall.limiter.outline.z
-
-        # rmin = config.rmin or kwargs.get("rmin", None) or min(lim_r)
-        # rmax = config.rmax or kwargs.get("rmax", None) or max(lim_r)
-        # zmin = config.zmin or kwargs.get("zmin", None) or min(lim_z)
-        # zmax = config.zmax or kwargs.get("zmax", None) or max(lim_z)
-        # nr = config.nr or kwargs.get("nr", None) or 129
-        # nz = config.nz or kwargs.get("nz", None) or 129
-        # self._grid_box.dim1 = np.linspace(rmin-0.1*(rmax-rmin), rmax+0.1*(rmax-rmin), nr)
-        # self._grid_box.dim2 = np.linspace(zmin-0.1*(zmax-zmin), zmax+0.1*(zmax-zmin), nz)
+        self.__dict__["_psi_norm"] = psi_norm
 
     @property
     def cache(self):
@@ -132,11 +124,11 @@ class Equilibrium(AttributeTree):
 
     @cached_property
     def vacuum_toroidal_field(self):
-        return self.tokamak.vacuum_toroidal_field
+        return self._tokamak.vacuum_toroidal_field
 
     @property
     def time(self):
-        return self.tokamak.time or self.cache.time or 0.0
+        return self._tokamak.time
 
     def _solve(self, *args, **kwargs):
         raise NotImplementedError()
@@ -166,9 +158,7 @@ class Equilibrium(AttributeTree):
 
     @cached_property
     def profiles_1d(self):
-        return Equilibrium.Profiles1D(self._cache.profiles_1d,
-                                      psi_norm=self._psi_norm,
-                                      equilibrium=self)
+        return Equilibrium.Profiles1D(self._cache.profiles_1d, psi_norm=self._psi_norm, equilibrium=self)
 
     @cached_property
     def profiles_2d(self):
@@ -202,7 +192,7 @@ class Equilibrium(AttributeTree):
                            ffprime=self.profiles_1d.interpolate("f_df_dpsi"),
                            r0=self.vacuum_toroidal_field.r0, b0=self.vacuum_toroidal_field.b0,
                            coordinate_system=self.coordinate_system,
-                           limiter=self.tokamak.wall.limiter_polygon)
+                           limiter=self._tokamak.wall.limiter_polygon)
 
     class CoordinateSystem(AttributeTree):
         """Definition of the 2D grid
@@ -570,8 +560,6 @@ class Equilibrium(AttributeTree):
             """Derivative of Psi with respect to Rho_Tor[Wb/m]. """
             return self._equilibrium.flux_surface.dpsi_drho_tor
 
-      
-
         @cached_property
         def vprime(self):
             return self.dvolume_dpsi
@@ -912,9 +900,9 @@ class Equilibrium(AttributeTree):
         if axis is None:
             axis = plt.gca()
         if wall:
-            self.tokamak.wall.plot(axis, **kwargs.get("wall", {}))
+            self._tokamak.wall.plot(axis, **kwargs.get("wall", {}))
         if coils:
-            self.tokamak.pf_active.plot(axis, **kwargs.get("pf_active", {}))
+            self._tokamak.pf_active.plot(axis, **kwargs.get("pf_active", {}))
         axis.axis("scaled")
 
     def plot_profiles2d(self, axis=None, *args, profiles=[], vec_field=[], boundary=True, levels=32, oxpoints=True,   **kwargs):

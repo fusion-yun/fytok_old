@@ -5,7 +5,7 @@ import numpy as np
 from spdm.util.AttributeTree import AttributeTree
 from spdm.util.logger import logger
 from spdm.util.Profiles import Profiles
-from .RadialGrid import RadioGrid
+from .RadialGrid import RadialGrid
 
 
 class CoreTransport(AttributeTree):
@@ -21,7 +21,7 @@ class CoreTransport(AttributeTree):
     def __init__(self, config=None, *args,   rho_tor_norm=None, tokamak=None,  **kwargs):
         super().__init__(*args, **kwargs)
         self._tokamak = tokamak
-        self._rho_tor_norm = rho_tor_norm  
+        self._rho_tor_norm = rho_tor_norm
         self._psi_axis = self._tokamak.global_quantities.psi_axis
         self._psi_boundary = self._tokamak.global_quantities.psi_boundary
 
@@ -76,15 +76,18 @@ class CoreTransport(AttributeTree):
 
         @cached_property
         def grid_d(self):
-            return RadioGrid(self._cache.grid_d, rho_tor_norm=self._x_axis, psi_axis=self._psi_axis, psi_boundary=self._psi_boundary)
+            return RadialGrid(self._cache.grid_d,
+                             rho_tor_norm=self._x_axis,
+                             psi_axis=self._psi_axis,
+                             psi_boundary=self._psi_boundary)
 
         @cached_property
         def grid_v(self):
-            return RadioGrid(self._cache.grid_v, rho_tor_norm=self._x_axis, psi_axis=self._psi_axis, psi_boundary=self._psi_boundary)
+            return RadialGrid(self._cache.grid_v, rho_tor_norm=self._x_axis, psi_axis=self._psi_axis, psi_boundary=self._psi_boundary)
 
         @cached_property
         def grid_flux(self):
-            return RadioGrid(self._cache.grid_flux, rho_tor_norm=self._x_axis, psi_axis=self._psi_axis, psi_boundary=self._psi_boundary)
+            return RadialGrid(self._cache.grid_flux, rho_tor_norm=self._x_axis, psi_axis=self._psi_axis, psi_boundary=self._psi_boundary)
 
         @cached_property
         def ion(self):
