@@ -153,7 +153,6 @@ class TransportSolver(AttributeTree):
                core_transport=None,
                core_sources=None,
                boundary_condition=None,
-               enable_quasi_neutrality=True,
                **kwargs):
         """Solve transport equations
 
@@ -175,8 +174,8 @@ class TransportSolver(AttributeTree):
         self.current(core_profiles_prev,
                      core_profiles_iter,
                      equilibrium=equilibrium,
-                     sources=core_sources,
-                     transport=core_transport,
+                     core_sources=core_sources,
+                     core_transport=core_transport,
                      boundary_condition=boundary_condition.current,
                      ** kwargs)
 
@@ -186,7 +185,7 @@ class TransportSolver(AttributeTree):
                               equilibrium=equilibrium,
                               core_transports=core_transport,
                               core_sources=core_sources,
-                              boundary_condition=boundary_condition.electorns,
+                              boundary_condition=boundary_condition,
                               **kwargs)
 
         # if not enable_quasi_neutrality:
@@ -199,12 +198,22 @@ class TransportSolver(AttributeTree):
         #                      boundary_condition=boundary_condition.ions,   **kwargs)
 
         # # temperature profiles:
-        # self.temperatures(core_profiles_prev,  core_profiles_iter,
+        # self.temperatures(core_profiles_prev,
+        #                   core_profiles_iter,
         #                   equilibrium=equilibrium,
-        #                   boundary_condition=boundary_condition.ions,   **kwargs)
+        #                   core_transports=core_transport,
+        #                   core_sources=core_sources,
+        #                   boundary_condition=boundary_condition,
+        #                   **kwargs)
 
-        # toroidal rotation profiles:
-        # self.rotation(core_profiles_prev,  core_profiles_iter,  **kwargs)
+        # # toroidal rotation profiles:
+        # self.rotation(core_profiles_prev,
+        #               core_profiles_iter,
+        #               equilibrium=equilibrium,
+        #               core_transports=core_transport,
+        #               core_sources=core_sources,
+        #               boundary_condition=boundary_condition,
+        #               **kwargs)
 
         self.update_global_quantities(core_profiles_prev,  core_profiles_iter)
 
@@ -339,7 +348,7 @@ class TransportSolver(AttributeTree):
                 core_profiles_prev,
                 core_profiles_iter,
                 *,
-                equilibrium: Equilibrium = None,
+                equilibrium=None,
                 core_transport=None,
                 core_sources=None,
                 boundary_condition=None,
@@ -748,38 +757,35 @@ class TransportSolver(AttributeTree):
             u = 1.0
             w = ne0[-1]
 
-        y0 = ne0
+        # y0 = ne0
+        # dc = UnivariateSpline(rho_tor_norm, c).derivative()(rho_tor_norm)
+        # dd = UnivariateSpline(rho_tor_norm, d).derivative()(rho_tor_norm)
+        # inv_c = 1.0 / c
+        # A = (-dc - d)*inv_c
+        # B = (-dd + a - e)*inv_c
+        # C = (- b*y0 - f)*inv_c
 
-        dc = UnivariateSpline(rho_tor_norm, c).derivative()(rho_tor_norm)
-        dd = UnivariateSpline(rho_tor_norm, d).derivative()(rho_tor_norm)
-        inv_c = 1.0 / c
-        A = (-dc - d)*inv_c
-        B = (-dd + a - e)*inv_c
-        C = (- b*y0 - f)*inv_c
+        # A[0] = 2*A[1]-A[2]
+        # B[-1] = 2 * B[-2]-B[-3]
 
-        A[0] = 2*A[1]-A[2]
-        B[-1] = 2 * B[-2]-B[-3]
-
-        C[-1] = 2 * C[-2]-C[-3]
-        C[0] = 2*C[1]-C[2]
-        # Solution of current diffusion equation:
+        # C[-1] = 2 * C[-2]-C[-3]
+        # C[0] = 2*C[1]-C[2]
         try:
-            Afunc = UnivariateSpline(rho_tor_norm, A)
-            Bfunc = UnivariateSpline(rho_tor_norm, B)
-            Cfunc = UnivariateSpline(rho_tor_norm, C)
-            sol = self.solve_bvp_raw(rho_tor_norm, ne0, ne0_prime,
-                                     #  TransportSolver.COEFF(a, b, c, d, e, f),
-                                     Afunc, Bfunc, Cfunc,
-                                     (TransportSolver.BCCOEFF(0, 1, 0),  # On axis:  dpsi/drho_tor(rho_tor=0)=0
-                                      TransportSolver.BCCOEFF(u, v, w))
-                                     )
+            # Afunc = UnivariateSpline(rho_tor_norm, A)
+            # Bfunc = UnivariateSpline(rho_tor_norm, B)
+            # Cfunc = UnivariateSpline(rho_tor_norm, C)
+            # sol = self.solve_bvp_raw(rho_tor_norm, ne0, ne0_prime,
+            #                          #  TransportSolver.COEFF(a, b, c, d, e, f),
+            #                          Afunc, Bfunc, Cfunc,
+            #                          (TransportSolver.BCCOEFF(0, 1, 0),  # On axis:  dpsi/drho_tor(rho_tor=0)=0
+            #                           TransportSolver.BCCOEFF(u, v, w))
+            #                          )
 
-        # try:
-        #     sol = self.solve_bvp(rho_tor_norm, ne0, ne0_prime,
-        #                          TransportSolver.COEFF(a, b, c, d, e, f),
-        #                          (TransportSolver.BCCOEFF(0, 1, 0),  # On axis:  dpsi/drho_tor(rho_tor=0)=0
-        #                           TransportSolver.BCCOEFF(u, v, w))
-        #                          )
+            sol = self.solve_bvp(rho_tor_norm, ne0, ne0_prime,
+                                 TransportSolver.COEFF(a, b, c, d, e, f),
+                                 (TransportSolver.BCCOEFF(0, 1, 0),  # On axis:  dpsi/drho_tor(rho_tor=0)=0
+                                  TransportSolver.BCCOEFF(u, v, w))
+                                 )
         except RuntimeError as error:
             logger.error(f"Fail to solve transport equation: Electron density ! \n {error} ")
         else:
@@ -787,32 +793,37 @@ class TransportSolver(AttributeTree):
             core_profiles_iter.profiles_1d.electrons.density = sol.y[0]
             core_profiles_iter.profiles_1d.electrons.density_prime = sol.y[1]
 
-        core_profiles_iter.profiles_1d.A = A
-        core_profiles_iter.profiles_1d.B = B
-        core_profiles_iter.profiles_1d.C = C
-
-        core_profiles_iter.profiles_1d.a = a
-        core_profiles_iter.profiles_1d.b = b
-        core_profiles_iter.profiles_1d.c = c
-        core_profiles_iter.profiles_1d.d = d
-        core_profiles_iter.profiles_1d.e = e
-        core_profiles_iter.profiles_1d.f = f
-        core_profiles_iter.profiles_1d.density = ne0
-        core_profiles_iter.profiles_1d.diff = diff
-        core_profiles_iter.profiles_1d.vconv = vconv
-        core_profiles_iter.profiles_1d.se_exp = se_exp
+        # core_profiles_iter.profiles_1d.A = A
+        # core_profiles_iter.profiles_1d.B = B
+        # core_profiles_iter.profiles_1d.C = C
+        # core_profiles_iter.profiles_1d.a = a
+        # core_profiles_iter.profiles_1d.b = b
+        # core_profiles_iter.profiles_1d.c = c
+        # core_profiles_iter.profiles_1d.d = d
+        # core_profiles_iter.profiles_1d.e = e
+        # core_profiles_iter.profiles_1d.f = f
+        core_profiles_iter.profiles_1d.electrons.density0 = ne0
+        core_profiles_iter.profiles_1d.electrons.diff = diff
+        core_profiles_iter.profiles_1d.electrons.vconv = vconv
+        core_profiles_iter.profiles_1d.electrons.se_exp = se_exp
 
     def quasi_neutrality(self,
-                         core_profiles_iter,
                          core_profiles_prev,
+                         core_profiles_iter,
                          *args,
                          equilibrium=None,
-                         transports=None,
-                         sources=None,
+                         core_transport=None,
+                         core_sources=None,
                          hyper_diff=[0, 0],
                          **kwargs):
         r"""
         """
+        if core_transport is None:
+            core_transport = self.core_transports
+
+        if core_sources is None:
+            core_sources = self.core_sources
+
         rho_tor = core_profiles_iter.solver_1d[_last_].grid.rho_tor
 
         ne0 = core_profiles_prev.profiles_1d.electron.density
@@ -960,13 +971,13 @@ class TransportSolver(AttributeTree):
 
     def ion_density_one(self,
                         iion,
-                        core_profiles_iter,
                         core_profiles_prev,
+                        core_profiles_iter,
                         *args,
-                        transports=None,
-                        sources=None,
+                        equilibrium=None,
+                        core_transport=None,
+                        core_sources=None,
                         boundary_condition=None,
-
                         hyper_diff=[0, 0],
                         **kwargs):
 
@@ -1197,12 +1208,12 @@ class TransportSolver(AttributeTree):
         core_profiles_iter.ion[iion].int_source = integral(ni0*vpr, rho_tor)
 
     def ion_density(self,
-                    core_profiles_iter,
                     core_profiles_prev,
+                    core_profiles_iter,
                     *args,
                     equilibrium=None,
-                    transports=None,
-                    sources=None,
+                    core_transport=None,
+                    core_sources=None,
                     boundary_condition=None,
                     hyper_diff=[0, 0],
                     **kwargs):
@@ -1222,13 +1233,13 @@ class TransportSolver(AttributeTree):
                                  )
 
     def temperatures(self,
-                     core_profiles_iter,
                      core_profiles_prev,
+                     core_profiles_iter,
                      *args,
                      collisions=None,
-                     transports=None,
-                     sources=None,
-                     boundary_condition=None,
+                     core_transport=None,
+                     core_sources=None,
+                     boundary_conditions=None,
                      hyper_diff=[0, 0],
                      **kwargs):
         r"""heat transport equations
@@ -1243,6 +1254,14 @@ class TransportSolver(AttributeTree):
                 :label: transport_electron_temperature
 
         """
+        if core_transport is None:
+            core_transport = self._tokamak.core_transport
+
+        if core_sources is None:
+            core_sources = self._tokamak.core_sources
+
+        if boundary_conditions is None:
+            boundary_conditions = self.boundary_conditions
 
         hyper_diff_exp = hyper_diff[0]
         hyper_diff_imp = hyper_diff[1]
@@ -1251,6 +1270,10 @@ class TransportSolver(AttributeTree):
         # -----------------------------------------------------------
         # time step                                         [s]
         tau = core_profiles_iter.time - core_profiles_prev.time
+        if abs(tau) < EPSILON:
+            inv_tau = 0.0
+        else:
+            inv_tau = 1.0/tau
 
         # $R_0$ characteristic major radius of the device   [m]
         R0 = core_profiles_iter.vacuum_toroidal_field.r0
@@ -1294,7 +1317,7 @@ class TransportSolver(AttributeTree):
         qsf = core_profiles_prev.profiles_1d.q
 
         # plasma parallel conductivity,                     [(Ohm*m)^-1]
-        conductivity_parallel = core_profiles_prev.profiles_1d.conductivity_parallel
+        # conductivity_parallel = core_transport.profiles_1d.conductivity_parallel
 
         # Energy exchange terms due to collisions
         #     (defined from previous iteration):
@@ -1709,7 +1732,6 @@ class TransportSolver(AttributeTree):
         #     ELECTRONS:                                        #
         #-------------------------------------------------------#
 
-        # dpc 2011-08-11: I think we need most of the following
         qgi = 0.
         for iion in range(nion):
             qgi = qgi + transport["QGI"][iion]
@@ -1789,11 +1811,12 @@ class TransportSolver(AttributeTree):
         profiles["INT_SOURCE_TE"] = intfun1
 
     def rotation(self,
-                 core_profiles_iter,
                  core_profiles_prev,
+                 core_profiles_iter,
                  *args,
-                 transports=None,
-                 sources=None,
+                 collisions=None,
+                 core_transport=None,
+                 core_sources=None,
                  boundary_condition=None,
                  hyper_diff=[0, 0],
                  **kwargs):
@@ -1801,6 +1824,15 @@ class TransportSolver(AttributeTree):
             .. math::  \left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(V^{\prime\frac{5}{3}}\left\langle R\right\rangle m_{i}n_{i}u_{i,\varphi}\right)+\frac{\partial}{\partial\rho}\Phi_{i}=V^{\prime}\left[U_{i,\varphi,exp}-U_{i,\varphi}\cdot u_{i,\varphi}+U_{zi,\varphi}\right]
                 :label: transport_rotation
         """
+
+        if core_transport is None:
+            core_transport = self._tokamak.core_transport
+
+        if core_sources is None:
+            core_sources = self._tokamak.core_sources
+
+        if boundary_conditions is None:
+            boundary_conditions = self.boundary_conditions
 
         # Allocate types for interface with PLASMA_COLLISIONS:
         self.allocate_collisionality(nrho_tor, nion, collisions, ifail)

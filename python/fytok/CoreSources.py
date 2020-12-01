@@ -15,6 +15,9 @@ class CoreSources(AttributeTree):
     def __init__(self, cache, *args, tokamak=None, **kwargs):
         super().__init__(*args, **kwargs)
 
+    def update(self, *args, **kwargs):
+        logger.debug("NOT　IMPLEMENTED!")
+
     class Profiles1D(Profiles):
         def __init__(self, cache=None,  *args, equilibrium=None, rho_tor_norm=None, **kwargs):
 

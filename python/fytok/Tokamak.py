@@ -87,12 +87,6 @@ class Tokamak(AttributeTree):
     def new_core_profiles(self, cache=None):
         return CoreProfiles(cache,  time=self._time,   tokamak=self)
 
-    # @core_profiles.setter
-    # def core_profiles(self, other):
-    #     if not isinstance(other, CoreProfiles):
-    #         other = CoreProfiles(other,  time=self.time, equilibrium=self.equilibrium)
-    #     self._core_profiles = other
-
     @cached_property
     def core_transport(self):
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
@@ -144,6 +138,10 @@ class Tokamak(AttributeTree):
     def transport(self):
         return TransportSolver(self._cache.transport, tokamak=self)
 
+    @cached_property
+    def constraints(self):
+        return AttributeTree()
+
     # --------------------------------------------------------------------------
     def update(self, *args,
                time=0.0,
@@ -156,20 +154,34 @@ class Tokamak(AttributeTree):
 
         core_profiles_prev = self.core_profiles
 
+        core_profiles_iter = self.new_core_profiles(core_profiles)
+
         for iter_count in range(max_iters):
+
             logger.debug(f"Iterator = {iter_count}")
 
-            # self.equilibrium.update(
-            #     # profiles=self.core_profiles.profiles_1d.interploate(["pprime", "ffprime"]),
-            #                         constraints=constraints)
+            try:
+                profiles = core_profiles_iter.profiles_1d.interpolate(["dpressure_dpsi", "f_df_dpsi"])
+            except Exception:
+                profiles = None
 
-            core_profiles_iter = self.new_core_profiles(core_profiles)
+            self.equilibrium.update(profiles=profiles, constraints=self.constraints)
 
-            # self.core_sources.update()
+            for src in self.core_sources:
+                src.update(time=time, equilibrium=self.equilibrium)
 
-            # self.core_transport.update()
+            for trans in self.core_transport:
+                trans.update(time=time, equilibrium=self.equilibrium)
 
-            self.transport.update(core_profiles_prev, core_profiles_iter)
+            core_profiles_iter = self.new_core_profiles()
+
+            self.transport.update(core_profiles_prev,
+                                  core_profiles_iter,
+                                  equilibrium=self.equilibrium,
+                                  core_transport=self.core_transport,
+                                  core_sources=self.core_sources,
+                                  boundary_condition=self.boundary_condition
+                                  )
 
             # .. todo:: inetgrate core and edge
             # edge_profiles_old = copy(edge_profiles_iter)

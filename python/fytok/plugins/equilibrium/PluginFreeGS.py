@@ -105,11 +105,11 @@ class EquilibriumFreeGS(Equilibrium):
                      fvac                       ={fvac} [T.m],
                      Raxis                      ={Raxis} [m]
                      """)
-        if constraints is None:
-            constraints = {}
-        psivals = constraints.get("psivals", None) or self.constraints.psivals or []
-        isoflux = constraints.get("isoflux", None) or self.constraints.isoflux or []
-        xpoints = constraints.get("xpoints", None) or self.constraints.xpoints or []
+        constraints = AttributeTree(constraints)
+
+        psivals = self.constraints.psivals or []
+        isoflux = self.constraints.isoflux or []
+        xpoints = self.constraints.xpoints or []
 
         constraints = freegs.control.constrain(psivals=psivals, isoflux=isoflux, xpoints=xpoints)
 
@@ -121,17 +121,18 @@ class EquilibriumFreeGS(Equilibrium):
     def update_cache(self):
         psi_norm = self.profiles_1d.psi_norm
         super().update_cache()
-        self.cache.profiles_1d.pprime = self._backend.pprime(psi_norm)
-        self.cache.profiles_1d.f_df_dpsi = self._backend.ffprime(psi_norm)
-        self.cache.profiles_1d.fpol = self._backend.fpol(psi_norm)
-        self.cache.profiles_1d.pressure = self._backend.pressure(psi_norm)
-        x, q = self._backend.q()
-        self.cache.profiles_1d.q = UnivariateSpline(x, q)(psi_norm)
+        if hasattr(self._backend, "_profiles"):
+            self.cache.profiles_1d.dpressure_dpsi = self._backend.pprime(psi_norm)
+            self.cache.profiles_1d.f_df_dpsi = self._backend.ffprime(psi_norm)
+            self.cache.profiles_1d.f = self._backend.fpol(psi_norm)
+            self.cache.profiles_1d.pressure = self._backend.pressure(psi_norm)
+            x, q = self._backend.q()
+            self.cache.profiles_1d.q = UnivariateSpline(x, q)(psi_norm)
 
-        self.cache.profiles_2d.psi = self._backend.psiRZ(self.profiles_2d.r, self.profiles_2d.z)
+            self.cache.profiles_2d.psi = self._backend.psiRZ(self.profiles_2d.r, self.profiles_2d.z)
 
-        self.cache.global_quantities.beta_pol = self._backend.poloidalBeta()
-        self.cache.global_quantities.ip = self._backend.plasmaCurrent()
+            self.cache.global_quantities.beta_pol = self._backend.poloidalBeta()
+            self.cache.global_quantities.ip = self._backend.plasmaCurrent()
 
     # @property
     # def critical_points(self):

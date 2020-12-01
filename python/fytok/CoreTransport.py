@@ -26,6 +26,9 @@ class CoreTransport(AttributeTree):
         self._psi_axis = self._tokamak.global_quantities.psi_axis
         self._psi_boundary = self._tokamak.global_quantities.psi_boundary
 
+    def update(self, *args, **kwargs):
+        logger.debug("NOT　IMPLEMENTED!")
+
     class TransportCoeff(AttributeTree):
         def __init__(self, cache=None, *args, parent=None, **kwargs):
             self._parent = parent
@@ -110,6 +113,22 @@ class CoreTransport(AttributeTree):
         @cached_property
         def momentum_tor(self):
             return CoreTransport.TransportCoeff(self._cache.momentum_tor, parent=self._parent)
+
+        @cached_property
+        def conductivity_parallel(self):
+            """Radial component of the electric field (calculated e.g. by a neoclassical model) {dynamic} [V.m^-1]"""
+            res = self._cache["conductivity_parallel"]
+            if not isinstance(res, np.ndarray):
+                res = np.zeros(self.grid_d.rho_tor_norm.shape)
+            return res
+
+        @cached_property
+        def e_field_radial(self):
+            """ Radial component of the electric field (calculated e.g. by a neoclassical model) {dynamic} [V.m^-1]"""
+            res = self._cache["e_field_radial"]
+            if not isinstance(res, np.ndarray):
+                res = np.zeros(self.grid_d.rho_tor_norm.shape)
+            return res
 
     @cached_property
     def profiles_1d(self):

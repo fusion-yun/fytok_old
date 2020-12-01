@@ -58,6 +58,7 @@ class CoreProfiles(AttributeTree):
             if isinstance(res, np.ndarray):
                 pass
             else:
+                # raise LookupError(key)
                 res = self._equilibrium.profiles_1d.mapping("rho_tor_norm", key)(self.grid.rho_tor_norm)
             return res
 

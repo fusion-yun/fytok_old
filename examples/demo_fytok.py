@@ -96,13 +96,16 @@ if __name__ == "__main__":
                        # "psivals": psivals,
                        }
 
-    tok.core_transport[_next_] = {"identifier": {"name": "unspecified", "index": 0},
-                                  "profiles_1d": {"conductivity_parallel": 1.0e-8}}
+    tok.core_transport[_next_] = {"identifier": {"name": "unspecified", "index": 0}}
+
     trans = tok.core_transport[-1].profiles_1d
-    trans.conductivity_parallel = 1.0e-8
+
+    trans.conductivity_parallel[:] = 1.0e-8
+
     trans.electrons.particles.d[:] = 1.0e5
+
     trans.electrons.particles.v[:] = 1.0e5
-     
+
     tok.core_sources[_next_] = {"identifier": {"name": "unspecified", "index": 0},
                                 "profiles_1d": {"j_parallel": j_total}}
 
@@ -119,7 +122,11 @@ if __name__ == "__main__":
     draw(tok).savefig("../output/tokamak1.svg", transparent=True)
 
     plot_profiles(tok.core_profiles.profiles_1d,
-                  profiles="A,B,C,electrons.density,density,diff,vconv,se_exp",
+                  profiles=[["electrons.density", "electrons.density0"],
+                            "electrons.diff",
+                            "electrons.vconv",
+                            "electrons.se_exp",
+                            ["psi", "psi0"]],
                   #   [ "electrons.density"
                   #     #   [
                   #     #       {"name": "psi0", "opts": {"marker": "+", "label": r"$\psi^{-1}$"}},
