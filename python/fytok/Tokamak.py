@@ -20,6 +20,7 @@ from fytok.PFActive import PFActive
 from fytok.TF import TF
 from fytok.TransportSolver import TransportSolver
 from fytok.Wall import Wall
+from fytok.RadialGrid import RadioGrid
 
 
 class Tokamak(AttributeTree):
@@ -30,14 +31,19 @@ class Tokamak(AttributeTree):
 
     """
 
-    def __init__(self,  cache=None,  *args, time=0.0,    **kwargs):
+    def __init__(self,  cache=None,  *args, time=0.0, rho_tor_norm=257,   **kwargs):
         super().__init__(*args, time=time, **kwargs)
         self.__dict__["_cache"] = cache or AttributeTree()
+        self.__dict__["_time"] = time
 
+        self.grid_1d = RadioGrid(rho_tor_norm=rho_tor_norm)
+        self._time = time
         self._core_profiles = None
-        self._edge_profiles = None
 
     # --------------------------------------------------------------------------
+    @property
+    def time(self):
+        return self._time
 
     @cached_property
     def vacuum_toroidal_field(self):
@@ -75,9 +81,11 @@ class Tokamak(AttributeTree):
     @property
     def core_profiles(self):
         if self._core_profiles is None:
-            self._core_profiles = CoreProfiles(self._cache.core_profiles,
-                                               time=self.time, equilibrium=self.equilibrium)
+            self._core_profiles = self.new_core_profiles(self._cache.core_profiles)
         return self._core_profiles
+
+    def new_core_profiles(self, cache=None):
+        return CoreProfiles(cache,  time=self._time,   tokamak=self)
 
     # @core_profiles.setter
     # def core_profiles(self, other):
@@ -88,7 +96,10 @@ class Tokamak(AttributeTree):
     @cached_property
     def core_transport(self):
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return AttributeTree(default_factory_array=CoreTransport(None, tokamak=self))
+        return AttributeTree(default_factory_array=CoreTransport(
+            None,
+            rho_tor_norm=self.core_profiles.profiles_1d.grid.rho_tor_norm,
+            tokamak=self))
 
     @cached_property
     def core_sources(self):
@@ -96,7 +107,10 @@ class Tokamak(AttributeTree):
             Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return AttributeTree(default_factory_array=CoreSources(None, tokamak=self))
+        return AttributeTree(default_factory_array=CoreSources(
+            None,
+            rho_tor_norm=self.core_profiles.profiles_1d.grid.rho_tor_norm,
+            tokamak=self))
 
     @property
     def edge_profiles(self):
@@ -140,7 +154,7 @@ class Tokamak(AttributeTree):
 
         convergence = False
 
-        core_profiles_iter = CoreProfiles(core_profiles or {}, equilibrium=self.equilibrium)
+        core_profiles_iter = self.new_core_profiles(core_profiles or {})
 
         core_profiles_prev = self.core_profiles
 
@@ -151,10 +165,7 @@ class Tokamak(AttributeTree):
             #     # profiles=self.core_profiles.profiles_1d.interploate(["pprime", "ffprime"]),
             #                         constraints=constraints)
 
-            core_profiles_iter = CoreProfiles(
-                core_profiles,
-                equilibrium=self.equilibrium,
-                rho_tor_norm=core_profiles_prev.grid.rho_tor_norm)
+            core_profiles_iter = self.new_core_profiles(core_profiles)
 
             # self.core_sources.update()
 

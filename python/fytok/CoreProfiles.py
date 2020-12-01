@@ -30,7 +30,7 @@ class CoreProfiles(AttributeTree):
     """
     IDS = "core_profiles"
 
-    def __init__(self, cache=None, *args, equilibrium=None, rho_tor_norm=None, ** kwargs):
+    def __init__(self, cache=None, *args, tokamak=None, ** kwargs):
         super().__init__(*args, ** kwargs)
 
         if isinstance(cache, LazyProxy) or isinstance(cache, AttributeTree):
@@ -40,20 +40,17 @@ class CoreProfiles(AttributeTree):
 
         self.__dict__["_cache"] = cache
 
-        self.__dict__["_equilibrium"] = equilibrium
+        self.__dict__["_tokamak"] = tokamak
 
-        self.__dict__["_rho_tor_norm"] = rho_tor_norm
+        self.time = self._tokamak.time
 
-        self.time = equilibrium.time
-
-        self.vacuum_toroidal_field = equilibrium.vacuum_toroidal_field
+        self.vacuum_toroidal_field = self._tokamak.vacuum_toroidal_field
 
     class Profiles1D(Profiles):
-        def __init__(self, cache=None,  *args, equilibrium=None, rho_tor_norm=None, **kwargs):
-
-            super().__init__(cache, * args, x_axis=rho_tor_norm, **kwargs)
+        def __init__(self, cache=None,  *args, equilibrium=None, grid=None, **kwargs):
+            super().__init__(cache, * args, x_axis=grid.rho_tor_norm, **kwargs)
             self.__dict__["_equilibrium"] = equilibrium
-            self.rho_tor_norm = self._x_axis
+            self.grid =  grid
 
         def __missing__(self, key):
             res = super().__missing__(key)
@@ -62,63 +59,6 @@ class CoreProfiles(AttributeTree):
             else:
                 res = self._equilibrium.profiles_1d.mapping("rho_tor_norm", key)(self.grid.rho_tor_norm)
             return res
-
-        class Grid(Profiles):
-            """Normalised toroidal flux coordinate. The normalizing value for rho_tor_norm,
-            is the toroidal flux coordinate at the equilibrium boundary (LCFS or 99.x % of the LCFS in case of
-            a fixed boundary equilibium calculation, see time_slice/boundary/b_flux_pol_norm in the equilibrium IDS) {dynamic} [-]	"""
-
-            def __init__(self, cache=None,  *args, equilibrium=None, npoint=129, **kwargs):
-                super().__init__(cache, *args, x_axis=npoint, **kwargs)
-
-                self.__dict__['_equilibrium'] = equilibrium
-
-                self["rho_tor_norm"] = self._x_axis
-
-            def __missing__(self, key):
-                res = super().__missing__(key)
-                if isinstance(res, np.ndarray):
-                    pass
-                elif not res:
-                    try:
-                        res = self._equilibrium.profiles_1d.mapping("rho_tor_norm", key)(self.rho_tor_norm)
-                    except LookupError:
-                        res = None
-
-                return res
-
-            @cached_property
-            def psi_magnetic_axis(self):
-                """Value of the poloidal magnetic flux at the magnetic axis 
-                   (useful to normalize the psi array values when the radial grid doesn't go 
-                   from the magnetic axis to the plasma boundary) {dynamic} [Wb]	"""
-                return self._equilibrium.global_quantities.psi_axis
-
-            @cached_property
-            def psi_boundary(self):
-                """Value of the poloidal magnetic flux at the plasma boundary (useful to normalize the psi 
-                    array values when the radial grid doesn't go from the magnetic axis to the plasma boundary) {dynamic} [Wb]"""
-                return self._equilibrium.global_quantities.psi_boundary
-
-            # def rho_tor(self):
-            #     """Toroidal flux coordinate. rho_tor = sqrt(b_flux_tor/(pi*b0)) ~ sqrt(pi*r^2*b0/(pi*b0)) ~ r [m].
-            #     The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0 {dynamic} [m]"""
-
-            # def rho_pol_norm(self):
-            #     """Normalised poloidal flux coordinate = sqrt((psi(rho)-psi(magnetic_axis)) / (psi(LCFS)-psi(magnetic_axis))) {dynamic} [-]"""
-            #     return NotImplemented
-
-            # def psi(self):
-            #     """Poloidal magnetic flux {dynamic} [Wb]. """
-
-            # def volume(self):
-            #     """Volume enclosed inside the magnetic surface {dynamic} [m^3]"""
-
-            # def area(self):
-            #     """Cross-sectional area of the flux surface {dynamic} [m^2]"""
-
-            # def surface(self):
-            #     """Surface area of the toroidal flux surface {dynamic} [m^2]"""
 
         class TemperatureFit(AttributeTree):
             def __init__(self, *args, **kwargs):
@@ -140,8 +80,9 @@ class CoreProfiles(AttributeTree):
             def __missing__(self, key):
                 res = super().__missing__(key)
                 if not isinstance(res, np.ndarray):
-                    res = np.full(self._x_axis.shape, np.nan)
+                    res = np.zeros(self._x_axis.shape)
                 return res
+
             # @property
             # def temperature(self):
             #     """Temperature {dynamic} [eV]"""
@@ -451,10 +392,6 @@ class CoreProfiles(AttributeTree):
             return res
 
         @cached_property
-        def grid(self):
-            return CoreProfiles.Profiles1D.Grid(self._cache["grid"], equilibrium=self._equilibrium)
-
-        @cached_property
         def ion(self):
             """Quantities related to the different ion species"""
             return CoreProfiles.Profiles1D.Ion(self._cache["ion"], grid=self.grid)
@@ -649,7 +586,7 @@ class CoreProfiles(AttributeTree):
 
     @cached_property
     def profiles_1d(self):
-        return CoreProfiles.Profiles1D(self._cache.profiles_1d, equilibrium=self._equilibrium, rho_tor_norm=self._rho_tor_norm)
+        return CoreProfiles.Profiles1D(self._cache.profiles_1d, equilibrium=self._tokamak.equilibrium, grid=self._tokamak.grid)
 
     @cached_property
     def global_quantities(self):

@@ -99,8 +99,12 @@ if __name__ == "__main__":
     tok.core_transport[_next_] = {"identifier": {"name": "unspecified", "index": 0},
                                   "profiles_1d": {"conductivity_parallel": 1.0e-8}}
 
+    # logger.debug(tok.core_transport[-1].profiles_1d.electrons)
+
     tok.core_sources[_next_] = {"identifier": {"name": "unspecified", "index": 0},
                                 "profiles_1d": {"j_parallel": j_total}}
+
+    tok.core_profiles.profiles_1d.electrons.density[:] = 1.0e15
 
     plot_profiles(tok.equilibrium.profiles_1d,
                   profiles=["psi_norm", "phi", ["q", "q1"], "rho_tor",
@@ -113,19 +117,20 @@ if __name__ == "__main__":
     draw(tok).savefig("../output/tokamak1.svg", transparent=True)
 
     plot_profiles(tok.core_profiles.profiles_1d,
-                  profiles=[
-                      [
-                          {"name": "psi0", "opts": {"marker": "+", "label": r"$\psi^{-1}$"}},
-                          {"name": "psi", "opts": {"marker": "+", "label": r"$\psi$"}}
-                      ],
-                      ([
-                          {"name": "psi0_prime", "opts": {"marker": "+", "label": r"$d\psi^{-1}/d\rho_{tor,norm}$"}},
-                          {"name": "psi_prime",
-                           "opts": {"marker": "+", "label": r"$d\psi/d\rho_{tor,norm}$"}}
-                      ], r"$[Wb/m]$"),
-                      "j_total"  
+                  profiles="A,B,C,a,b,c,d,e,f",
+                  #   [ "electrons.density"
+                  #     #   [
+                  #     #       {"name": "psi0", "opts": {"marker": "+", "label": r"$\psi^{-1}$"}},
+                  #     #       {"name": "psi", "opts": {"marker": "+", "label": r"$\psi$"}}
+                  #     #   ],
+                  #     #   ([
+                  #     #       {"name": "psi0_prime", "opts": {"marker": "+", "label": r"$d\psi^{-1}/d\rho_{tor,norm}$"}},
+                  #     #       {"name": "psi_prime",
+                  #     #        "opts": {"marker": "+", "label": r"$d\psi/d\rho_{tor,norm}$"}}
+                  #     #   ], r"$[Wb/m]$"),
+                  #     #   "j_total"
 
-                  ],
+                  #   ],
                   x_axis="rho_tor_norm", grid=True)[1] .savefig("../output/core_profiles.svg")
     #
     # fig.tight_layout()

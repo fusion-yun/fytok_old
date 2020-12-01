@@ -23,9 +23,7 @@ from sympy import Point, Polygon
 
 
 class FluxSurface(Profiles):
-    r"""Flux surface average of function
-
-       <a(psi)> =2 *pi* int(a dl * R / |grad psi|)/V'
+    r"""Flux surface average 
 
         .. math::
             V^{\prime}\left(\rho\right)=\frac{\partial V}{\partial\rho}=2\pi\int_{0}^{2\pi}\sqrt{g}d\theta=2\pi\oint\frac{R}{\left|\nabla\rho\right|}dl
@@ -33,7 +31,7 @@ class FluxSurface(Profiles):
         .. math::
             \left\langle\alpha\right\rangle\equiv\frac{2\pi}{V^{\prime}}\int_{0}^{2\pi}\alpha\sqrt{g}d\theta=\frac{2\pi}{V^{\prime}}\varoint\alpha\frac{R}{\left|\nabla\rho\right|}dl
 
-        grid_type : defined by imas://equilibrium.time_slice.profiles_2d.grid_type.index
+        grid_type : 
                    =1  rectangular	,
                        Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). In this case the position
                        arrays should not be filled since they are redundant with grid/dim1 and dim2.
@@ -265,20 +263,23 @@ class FluxSurface(Profiles):
         r"""Safety factor 
             (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)  [-].
 
-            .. math:: q(\psi) =\frac{F V^{\prime} \left\langle R^{-2}\right \rangle }{4 \pi^2}
+            .. math:: q(\psi)=\frac{d\Phi}{d\psi}=\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
         """
         logger.debug(r"Calculate q as  F V^{\prime} \left\langle R^{-2}\right \rangle /(4 \pi^2) ")
         return self.fpol*self.dvolume_dpsi * self.gm1 / (4*scipy.constants.pi**2)
 
     @cached_property
     def phi(self):
-        """Toroidal flux  [Wb]. FIXME: not sure,need double check"""
+        r""" 
+            .. math ::
+                \Phi_{tor}\left(\psi\right)=\int_{0}^{\psi}qd\psi
+        """
         return self.integral(self.q, 0, self._psi_norm)
 
     @cached_property
     def rho_tor(self):
         """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0  [m]"""
-        return np.sqrt(self.phi)/np.sqrt(scipy.constants.pi * self._b0) 
+        return np.sqrt(self.phi)/np.sqrt(scipy.constants.pi * self._b0)
 
     @cached_property
     def drho_tor_dpsi(self)	:

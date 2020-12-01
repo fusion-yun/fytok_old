@@ -78,6 +78,31 @@ package "Plasma 等离子体" {
 
 }
 
+package "Diagnosis 诊断" {
+
+    Diagnosis       --> [Barometry]
+    Diagnosis       --> [Bolometer]
+    Diagnosis       --> [BremsstrahlungVisible]
+    Diagnosis       --> [CameraIR]
+    Diagnosis       --> [CameraVisible]
+    Diagnosis       --> [ChargeExchange]
+    Diagnosis       --> [ECE]
+    Diagnosis       --> [HardXRays]
+    Diagnosis       --> [Interferometer]
+    Diagnosis       --> [LangmuirProbes]
+    Diagnosis       --> [MSE]
+    Diagnosis       --> [NeutronDiagnostic]
+    Diagnosis       --> [Polarimeter]
+    Diagnosis       --> [ReflectometerProfile]
+    Diagnosis       --> [SoftXRays]
+    Diagnosis       --> [SpectrometerMass]
+    Diagnosis       --> [SpectrometerUV]
+    Diagnosis       --> [SpectrometerVisible]
+    Diagnosis       --> [SpectrometerXRayCrystal]
+    Diagnosis       --> [ThomsonScattering]
+
+}
+
 
 cloud "Simulator 模拟器"  {   
     [Tokamak] 

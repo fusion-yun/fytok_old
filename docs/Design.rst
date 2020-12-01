@@ -435,8 +435,9 @@ EAST　动态映射文件　``ids=equilibrium``
 1.9127 2.0786 2.2343 2.3771 2.5045 2.6143 2.7046 2.7737 2.8204 2.844 ]
 
 
-Modules 模块
-------------------
+Modules Design 模块
+---------------------
+
 模拟器核心模块Tokamak和Scenario。Tokamak负责整合管理装置在一个“时间片（time slice）”上各子系统的状态，执行系统间的相互约束关系。
 Scenario负责管理时间片（time slice）的演化。图 3 Simulator 功能模块 展示了 模拟功能模块的划分和部分依赖关系。
 
@@ -446,41 +447,28 @@ Tokamka 模拟器
 .. uml:: fytok.uml
     :align: center
 
+功能模块
+^^^^^^^^^^^
 
-Opreation 运行和控制系统: 与PCS系统的数据接口，例如，放电规划，控制信息等
+* Opreation 运行和控制系统: 与PCS系统的数据接口，例如，放电规划，控制信息等
     包括 PulseSchedule , Controllers , SDN
 
-Device and Magnetics Field 装置位形，磁场线圈: 装置位形和磁场线圈信息
+* Device and Magnetics Field 装置位形，磁场线圈: 装置位形和磁场线圈信息
     包括 Wall, TF, PFActive, Magnetics, IronCore, CoilsNonAxisymmetric, EMCoupling
 
-Confinement and transport 约束和输运：约束输运相关过程，涵盖芯部和边界输运，
+* Confinement and transport 约束和输运：约束输运相关过程，涵盖芯部和边界输运，
     包括 TransportSolver, FluxSurface, Equilibrium, RadialProfile, CoreProfiles, CoreSources, CoreTransport, EdgeProfiles, EdgeSources, EdgeTransport
 
-Auxiliary 辅助系统，加热、驱动和加料：外部辅助系统，结果体现为输运过程的源项
+* Auxiliary 辅助系统，加热、驱动和加料：外部辅助系统，结果体现为输运过程的源项
     包括 ECLaunchers, GasInjection, ICAntennas, LHAntennas, NBI, Pellets
 
-Plasma 等离子体：等离子体物理过程，主要反映较高精度模拟过程的，结果体现为输运系数
+* Plasma 等离子体：等离子体物理过程，主要反映较高精度模拟过程的，结果体现为输运系数
     包括 AMNSData, Radiation, Waves, CoreInstantChanges, Disruption, DistributionSources, Distributions, Gyrokinetics, MHD, MHDLinear, NTMS, Sawteeth, Turbulence
 
-Diagnosis 诊断：实验数据库诊断数据接口，这部分数据默认为只读。
+* Diagnosis 诊断：实验数据库诊断数据接口，这部分数据默认为只读。
     包括 Barometry Bolometer BremsstrahlungVisible CameraIR CameraVisible ChargeExchange ECE HardXRays Interferometer LangmuirProbes MSE NeutronDiagnostic Polarimeter ReflectometerProfile SoftXRays SpectrometerMass SpectrometerUV SpectrometerVisible SpectrometerXRayCrystal ThomsonScattering
 
 
 
 
-
-
-功能模块
-^^^^^^^^^^^
-
-* Opreation 运行和控制系统
-
-* Device and Magnetics Field 装置位形，磁场线圈
-
-* Confinement and transport 约束和输运
-
-* Auxiliary 辅助系统，加热、驱动和加料
-
-* Plasma 等离子体
-
-* Diagnosis 诊断
+ 
