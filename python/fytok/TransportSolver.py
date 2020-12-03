@@ -61,10 +61,15 @@ class TransportSolver(AttributeTree):
 
         return object.__new__(n_cls)
 
-    def __init__(self,  cache, *args, tokamak={},  **kwargs):
+    def __init__(self,  cache, *args, tokamak={},
+                 enable_quasi_neutrality=True,
+                 solver="electron",
+                 **kwargs):
         super().__init__(*args, **kwargs)
         self.__dict__['_cache'] = cache
         self._tokamak = tokamak
+        self._enable_quasi_neutrality = enable_quasi_neutrality
+        self._solver = solver
 
     @cached_property
     def solver(self) -> Identifier:
@@ -155,7 +160,6 @@ class TransportSolver(AttributeTree):
                boundary_condition=None,
                **kwargs):
         """Solve transport equations
-
         """
 
         if equilibrium is None:
@@ -170,7 +174,6 @@ class TransportSolver(AttributeTree):
         if boundary_condition is None:
             boundary_condition = self._tokamak.boundary_conditions
 
-        # current density profile:
         self.current(core_profiles_prev,
                      core_profiles_iter,
                      equilibrium=equilibrium,
@@ -179,41 +182,37 @@ class TransportSolver(AttributeTree):
                      boundary_condition=boundary_condition.current,
                      ** kwargs)
 
-        # electron density profile:
-        self.electron_density(core_profiles_prev,
-                              core_profiles_iter,
-                              equilibrium=equilibrium,
-                              core_transports=core_transport,
-                              core_sources=core_sources,
-                              boundary_condition=boundary_condition,
-                              **kwargs)
+        if self._solver == "electron":
+            self.electron_density(core_profiles_prev,
+                                  core_profiles_iter,
+                                  equilibrium=equilibrium,
+                                  core_transports=core_transport,
+                                  core_sources=core_sources,
+                                  boundary_condition=boundary_condition,
+                                  **kwargs)
+        else:
+            self.ion_density(core_profiles_prev,
+                             core_profiles_iter,
+                             equilibrium=equilibrium,
+                             boundary_condition=boundary_condition,
+                             **kwargs)
 
-        # if not enable_quasi_neutrality:
-        #     # electron/ion density profile from quasi-neutrality:
-        #     self.quasi_neutrality(core_profiles_prev,  core_profiles_iter,  **kwargs)
-        # else:
-        #     # ion density profiles:
-        #     self.ion_density(core_profiles_prev,  core_profiles_iter,
-        #                      equilibrium=equilibrium,
-        #                      boundary_condition=boundary_condition.ions,   **kwargs)
+        self.temperatures(core_profiles_prev,
+                          core_profiles_iter,
+                          equilibrium=equilibrium,
+                          core_transports=core_transport,
+                          core_sources=core_sources,
+                          boundary_condition=boundary_condition,
+                          **kwargs)
 
-        # # temperature profiles:
-        # self.temperatures(core_profiles_prev,
-        #                   core_profiles_iter,
-        #                   equilibrium=equilibrium,
-        #                   core_transports=core_transport,
-        #                   core_sources=core_sources,
-        #                   boundary_condition=boundary_condition,
-        #                   **kwargs)
-
-        # # toroidal rotation profiles:
-        # self.rotation(core_profiles_prev,
-        #               core_profiles_iter,
-        #               equilibrium=equilibrium,
-        #               core_transports=core_transport,
-        #               core_sources=core_sources,
-        #               boundary_condition=boundary_condition,
-        #               **kwargs)
+        if enable_rotation:
+            self.rotation(core_profiles_prev,
+                          core_profiles_iter,
+                          equilibrium=equilibrium,
+                          core_transports=core_transport,
+                          core_sources=core_sources,
+                          boundary_condition=boundary_condition,
+                          **kwargs)
 
         self.update_global_quantities(core_profiles_prev,  core_profiles_iter)
 
@@ -375,11 +374,7 @@ class TransportSolver(AttributeTree):
                 ..  math ::  \psi =\int_{0}^{\rho}\frac{2\pi B_{0}}{q}\rho d\rho
 
         """
-        if core_transport is None:
-            core_transport = self.core_transports
 
-        if core_sources is None:
-            core_sources = self.core_sources
         # -----------------------------------------------------------
         # time step                                         [s]
         tau = core_profiles_iter.time - core_profiles_prev.time
@@ -601,15 +596,6 @@ class TransportSolver(AttributeTree):
                          hyper_diff=[0, 0],
                          **kwargs):
 
-        if core_transport is None:
-            core_transport = self._tokamak.core_transport
-
-        if core_sources is None:
-            core_sources = self._tokamak.core_sources
-
-        if boundary_condition is None:
-            boundary_condition = self.boundary_condition
-
         hyper_diff_exp = hyper_diff[0]
         hyper_diff_imp = hyper_diff[1]
 
@@ -806,168 +792,19 @@ class TransportSolver(AttributeTree):
         core_profiles_iter.profiles_1d.electrons.diff = diff
         core_profiles_iter.profiles_1d.electrons.vconv = vconv
         core_profiles_iter.profiles_1d.electrons.se_exp = se_exp
+        if self._enable_quasi_neutrality:
+            core_profiles_iter.profiles_1d.n_i_total = \
+                core_profiles_iter.profiles_1d.electrons.density
+            # ni_tot_flux = core_transport.profiles_1d.electron.particles.flux
+            # ni_tot_energy_flux = core_transport.profiles_1d.electron.energy.flux
 
-    def quasi_neutrality(self,
-                         core_profiles_prev,
-                         core_profiles_iter,
-                         *args,
-                         equilibrium=None,
-                         core_transport=None,
-                         core_sources=None,
-                         hyper_diff=[0, 0],
-                         **kwargs):
-        r"""
-        """
-        if core_transport is None:
-            core_transport = self.core_transports
-
-        if core_sources is None:
-            core_sources = self.core_sources
-
-        rho_tor = core_profiles_iter.solver_1d[_last_].grid.rho_tor
-
-        ne0 = core_profiles_prev.profiles_1d.electron.density
-
-        ne0_prime = core_profiles_prev.profiles_1d.electron.density_drho_tor or derivative(ne0, rho_tor)
-
-        flux_ne = profiles["FLUX_NE"]
-        flux_ne_conv = profiles["FLUX_NE_CONV"]
-
-        ni = profiles["NI"]
-        dni = profiles["DNI"]
-        flux_ni = profiles["FLUX_NI"]
-        flux_ni_conv = profiles["FLUX_NI_CONV"]
-        zion = profiles["ZION"]
-        zion2 = profiles["ZION2"]
-
-        nz = impurity["NZ"]
-        flux_nz = impurity["FLUX_NZ"]
-        zimp = impurity["ZIMP"]
-        zimp2 = impurity["ZIMP2"]
-
-        # Quasineutrality condition:
-
-        if(QUASI_NEUT == 0):
-            # ELECTRON density \ flux oB0ained from QN
-            profiles["NE"] = 0.0
-            profiles["DNE"] = 0.0  # AF
-            profiles["FLUX_NE"] = 0.0
-            profiles["CONTRIB_2_ENERGY_FLUX_NE"] = 0.0
-
-            for iion in range(nion):
-                profiles["NE"] = profiles["NE"] + profiles["ZION"][iion] * \
-                    (profiles["NI"][iion] + profiles["NI_FAST"][iion])
-                profiles["FLUX_NE"] = profiles["FLUX_NE"] + profiles["ZION"][iion]*profiles["FLUX_NI"][iion]
-                profiles["CONTRIB_2_ENERGY_FLUX_NE"] = profiles["CONTRIB_2_ENERGY_FLUX_NE"] + \
-                    profiles["ZION"][iion]*profiles["CONTRIB_2_ENERGY_FLUX_NI"][iion]
-
-            for iimp in range(nimp):
-                for izimp in range(nzimp):
-                    profiles["NE"] = profiles["NE"] + impurity["ZIMP"][iimp, izimp]*impurity["NZ"][iimp, izimp]
-                    profiles["FLUX_NE"] = profiles["FLUX_NE"] + \
-                        impurity["ZIMP"][iimp, izimp]*impurity["FLUX_NZ"][iimp, izimp]
-
-            profiles["NE"] = profiles["NE"] - profiles["NE_FAST"]
-
-            #
-            #        PROFILES["ZEFF(IRHO)          = NZ2(IRHO)/NE(IRHO)
-            #
-
-            profiles["DNE"] = derivative(ne, rho_tor)
-
-            local_flux_ne_conv_s4 = 0.0
-            for iion in range(nion):
-                local_flux_ne_conv_s4 = local_flux_ne_conv_s4 + profiles["ZION"][iion]*local_flux_ni_conv_s4[iion]
-
-        elif(QUASI_NEUT == 1 or QUASI_NEUT == 2):
-            # TOTAL ION density \ flux oB0ained from QN
-
-            ni_tot = profiles["NE"] + profiles["NE_FAST"]
-            flux_ni_tot = profiles["FLUX_NE"]
-            contrib_2_energy_flux_ni_tot = profiles["CONTRIB_2_ENERGY_FLUX_NE"]
-
-            for iion in range(nion):
-                ni_tot = ni_tot - profiles["ZION"][iion]*profiles["NI_FAST"][iion]
-                if(profiles["NI_BND_TYPE"][iion] > 0.5):
-                    ni_tot = ni_tot - profiles["ZION"][iion]*profiles["NI"][iion]
-                    flux_ni_tot = flux_ni_tot - profiles["ZION"][iion]*profiles["FLUX_NI"][iion]
-                    contrib_2_energy_flux_ni_tot = contrib_2_energy_flux_ni_tot - \
-                        profiles["ZION"][iion] * profiles["CONTRIB_2_ENERGY_FLUX_NI"][iion]
-
-            for iimp in range(nimp):
-                for izimp in range(nzimp):
-                    ni_tot = ni_tot - impurity["ZIMP"][iimp, izimp]*impurity["NZ"][iimp, izimp]
-                    flux_ni_tot = flux_ni_tot - impurity["ZIMP"][iimp, izimp]*impurity["FLUX_NZ"][iimp, izimp]
-
-            # Separation for individual ion species
-            nion_qn = 0
-            ni_qn = 0.0
-            zion_av = 0.0
-
-            for iion in range(nion):
-                if(profiles["NI_BND_TYPE"][iion] == 0):
-                    ni_qn = ni_qn + profiles["NI_BND"](1, iion)
-                    nion_qn = nion_qn + 1
-
-            ion_fraction = profiles["NI_BND"][0]/ni_qn
-
-            for iion in range(nion):
-                if(profiles["NI_BND_TYPE"][iion] == 0):
-                    zion_av = zion_av + (ion_fraction[iion]*profiles["ZION"][iion])
-
-            if(QUASI_NEUT == 1):
-                for iion in range(nion):
-                    if(profiles["NI_BND_TYPE"][iion] == 0):
-                        profiles["NI"][iion] = ni_tot / zion_av*ion_fraction[iion]
-                        profiles["FLUX_NI"][iion] = flux_ni_tot / zion_av*ion_fraction[iion]
-                        profiles["CONTRIB_2_ENERGY_FLUX_NI"][iion] = contrib_2_energy_flux_ni_tot / \
-                            zion_av*ion_fraction[iion]
-
-            if(QUASI_NEUT == 2):
-                for iion in range(nion):
-                    if(profiles["NI_BND_TYPE"][iion] == 0):
-                        profiles["NI"][iion] = ni_tot / nion_qn/profiles["ZION"][iion]
-                        profiles["FLUX_NI"][iion] = flux_ni_tot / nion_qn/profiles["ZION"][iion]
-                        profiles["CONTRIB_2_ENERGY_FLUX_NI"][iion] = contrib_2_energy_flux_ni_tot / \
-                            nion_qn/profiles["ZION"][iion]
-
-            for iion in range(nion):
-                aux1 = profiles["NI"][iion]
-                aux2 = 0.0
-                aux2 = derivative(aux1,  kwargs["RHO"])
-                profiles["DNI"][iion] = aux2
-
-            # AF - End
-
-            local_flux_ni_conv_s4 = 0.0
-            for iion in range(nion):
-                if(profiles["NI_BND_TYPE"][iion] == 0):
-                    if(QUASI_NEUT == 1):
-                        # LOCAL_FLUX_NI_CONV_S4 = LOCAL_FLUX_NE_CONV_S4/ZTOT*FION(IION)
-                        local_flux_ni_conv_s4 = local_flux_ne_conv_s4/zion_av*ion_fraction[iion]
-                    if(QUASI_NEUT == 2):
-                        local_flux_ni_conv_s4 = local_flux_ne_conv_s4/nion/zion[iion]
-
-        # Plasma effective charge:
-        ni_z2 = 0.0
-        for iion in range(nion):
-            ni_z2 = ni_z2 + profiles["ZION2"][iion]*(profiles["NI"][iion] + profiles["NI_FAST"][iion])
-        for iimp in range(nimp):
-            for izimp in range(nzimp):
-                ni_z2 = ni_z2 + impurity["ZIMP2"][iimp, izimp]*impurity["NZ"][iimp, izimp]
-
-        profiles["ZEFF"] = ni_z2 / (profiles["NE"] + profiles["NE_FAST"])
-
-        # dy case when ne is not computed at all
-        # dy just check that
-        if (QUASI_NEUT == -1):
-
-            if any(ne <= 0.0):
-                raise RuntimeError('Error in the density equation: on-axis electron density is negative, stop')
-            # else:
-                # ne = ne(irho_tor-1)
-
-            profiles["ne"] = ne
+            # for ion in core_profiles_prev.profiles_1d.ion:
+            #     ni_tot  -= ion.zion*ion.density_fast
+            #     if(profiles["NI_BND_TYPE"][iion] > 0.5):
+            #         ni_tot = ni_tot - profiles["ZION"][iion]*profiles["NI"][iion]
+            #         flux_ni_tot = flux_ni_tot - profiles["ZION"][iion]*profiles["FLUX_NI"][iion]
+            #         contrib_2_energy_flux_ni_tot = contrib_2_energy_flux_ni_tot - \
+            #             profiles["ZION"][iion] * profiles["CONTRIB_2_ENERGY_FLUX_NI"][iion]
 
     def ion_density_one(self,
                         iion,
@@ -1216,10 +1053,12 @@ class TransportSolver(AttributeTree):
                     core_sources=None,
                     boundary_condition=None,
                     hyper_diff=[0, 0],
+                    enable_quasi_neutrality=True,
                     **kwargs):
         r"""
-        .. math:: \left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(V^{\prime}n_{i}\right)+\frac{\partial}{\partial\rho}\Gamma_{i}=V^{\prime}\left(S_{i,exp}-S_{i,imp}\cdot n_{i}\right)
-            :label: transport_ion_density
+            .. math:: \left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(V^{\prime}n_{i}\right)+\
+                        \frac{\partial}{\partial\rho}\Gamma_{i}=V^{\prime}\left(S_{i,exp}-S_{i,imp}\cdot n_{i}\right)
+                :label: transport_ion_density
         """
 
         for iion, ion in enumerate(core_profiles_prev.profiles_1d.ion):
@@ -1227,10 +1066,27 @@ class TransportSolver(AttributeTree):
                                  core_profiles_iter,
                                  core_profiles_prev,
                                  equilibrium=equilibrium,
-                                 transports=transports,
-                                 sources=sources,
+                                 core_transport=core_transport,
+                                 core_sources=core_sources,
+                                 boundary_condition=boundary_condition,
                                  **kwargs
                                  )
+
+        core_profiles_iter.profiles_1d.electrons.density = core_profiles_iter.profiles_1d.n_i_total
+
+        core_profiles_iter.profiles_1d.electrons.density_thermal = \
+            core_profiles_iter.profiles_1d.electrons.density - \
+            core_profiles_iter.profiles_1d.electrons.density_fast
+
+        if enable_quasi_neutrality:
+            ele_transport = core_transport[-1].profiles_1d.electrons
+            ele_transport.particles.flux[:] = 0.0
+            ele_transport.energy.flux[:] = 0.0
+
+            for trans in core_transport:
+                for ion in enumerate(trans.profiles_1d.ion):
+                    ele_transport.particles.flux += ion.z_ion * ion.particles.flux
+                    ele_transport.energy.flux += ion.z_ion * ion.energy.flux
 
     def temperatures(self,
                      core_profiles_prev,
@@ -1245,23 +1101,19 @@ class TransportSolver(AttributeTree):
         r"""heat transport equations
             ion
 
-            .. math:: \frac{3}{2}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(n_{i}T_{i}V^{\prime\frac{5}{3}}\right)+V^{\prime\frac{2}{3}}\frac{\partial}{\partial\rho}\left(q_{i}+T_{i}\gamma_{i}\right)=V^{\prime\frac{5}{3}}\left[Q_{i,exp}-Q_{i,imp}\cdot T_{i}+Q_{ei}+Q_{zi}+Q_{\gamma i}\right]
+            .. math:: \frac{3}{2}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\
+                        \left(n_{i}T_{i}V^{\prime\frac{5}{3}}\right)+V^{\prime\frac{2}{3}}\frac{\partial}{\partial\rho}\left(q_{i}+T_{i}\gamma_{i}\right)=\
+                        V^{\prime\frac{5}{3}}\left[Q_{i,exp}-Q_{i,imp}\cdot T_{i}+Q_{ei}+Q_{zi}+Q_{\gamma i}\right]
                 :label: transport_ion_temperature
 
             electron
 
-            .. math:: \frac{3}{2}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(n_{e}T_{e}V^{\prime\frac{5}{3}}\right)+V^{\prime\frac{2}{3}}\frac{\partial}{\partial\rho}\left(q_{e}+T_{e}\gamma_{e}\right)=V^{\prime\frac{5}{3}}\left[Q_{e,exp}-Q_{e,imp}\cdot T_{e}+Q_{ei}-Q_{\gamma i}\right]
+            .. math:: \frac{3}{2}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\
+                        \left(n_{e}T_{e}V^{\prime\frac{5}{3}}\right)+V^{\prime\frac{2}{3}}\frac{\partial}{\partial\rho}\left(q_{e}+T_{e}\gamma_{e}\right)=
+                        V^{\prime\frac{5}{3}}\left[Q_{e,exp}-Q_{e,imp}\cdot T_{e}+Q_{ei}-Q_{\gamma i}\right]
                 :label: transport_electron_temperature
 
         """
-        if core_transport is None:
-            core_transport = self._tokamak.core_transport
-
-        if core_sources is None:
-            core_sources = self._tokamak.core_sources
-
-        if boundary_conditions is None:
-            boundary_conditions = self.boundary_conditions
 
         hyper_diff_exp = hyper_diff[0]
         hyper_diff_imp = hyper_diff[1]
@@ -1457,15 +1309,15 @@ class TransportSolver(AttributeTree):
 
         # Set up local variables for electron heat transport equation:
 
-        ne0 = core_profiles_prev.profiles_1d.electron.density
-        ne0_prime = core_profiles_prev.profiles_1d.electron.density_drho_tor or derivative(ne0, rho_tor)
+        ne0 = core_profiles_prev.profiles_1d.electrons.density
+        ne0_prime = core_profiles_prev.profiles_1d.electrons.density_prime
 
-        te0 = core_profiles_prev.profiles_1d.electron.temperature
-        te0p = core_profiles_prev.profiles_1d.electron.dtemperature_drho_tor or derivative(te0, rho_tor)
+        te0 = core_profiles_prev.profiles_1d.electrons.temperature
+        te0p = core_profiles_prev.profiles_1d.electrons.temperature_prime
 
-        diff_te = transport.electron.particles.d
-        vconv_te = transport.electron.particles.v
-        flux_ne = transports.electron.particles.flux
+        diff_te = core_transport.profiles_1d.electrons.particles.d
+        vconv_te = core_transport.profiles_1d.electrons.particles.v
+        flux_ne = core_transport.profiles_1d.electrons.particles.flux
 
         qgi = 0.
         for iion in range(nion):
@@ -1474,8 +1326,8 @@ class TransportSolver(AttributeTree):
         qe_exp = kwargs["QOH"] / itm_ev
         qe_imp = 0.
 
-        qe_exp = qe_exp + transports.electron.energy_decomposed.explicit_part
-        qe_imp = qe_imp + transports.electron.energy_decomposed.implicit_part
+        qe_exp = qe_exp + core_sources.profiles_1d.electrons.energy_decomposed.explicit_part
+        qe_imp = qe_imp + core_sources.profiles_1d.electrons.energy_decomposed.implicit_part
 
         qie = collisions["QIE"]
         vie = collisions["VIE"]
@@ -1488,7 +1340,7 @@ class TransportSolver(AttributeTree):
         #
         #     (A*Y-B*Y(t-1))/H + 1/C * (-D*Y' + E*Y) = F - G*Y
 
-        diff_hyper = hyper_diff_exp + hyper_diff_imp*maxval(diff_te)
+        diff_hyper = hyper_diff_exp + hyper_diff_imp*max(diff_te)
 
         a = 1.5*vpr*ne
         # DPC temporary "fix" for NaNs
@@ -1714,7 +1566,7 @@ class TransportSolver(AttributeTree):
 
                 # Return ion temperature and flux:
                 profiles["TI"][iion] = ti
-                profiles["DTI"][iion] = dti  # AF, 25.Sep.2014
+                profiles["DTI"][iion] = dti 
                 profiles["DIFF_TI"][iion] = diff_ti
                 profiles["VCONV_TI"][iion] = vconv_ti
                 profiles["FLUX_TI_CONV"][iion] = flux_ti_conv
@@ -1797,7 +1649,7 @@ class TransportSolver(AttributeTree):
 
         # Return electron temperature and flux:
         profiles["TE"] = te
-        profiles["DTE"] = dte  # AF, 25.Sep.2014
+        profiles["DTE"] = dte 
         profiles["DIFF_TE"] = diff_te
         profiles["VCONV_TE"] = vconv_te
         profiles["FLUX_TE"] = flux_te
@@ -1821,7 +1673,8 @@ class TransportSolver(AttributeTree):
                  hyper_diff=[0, 0],
                  **kwargs):
         r"""
-            .. math::  \left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(V^{\prime\frac{5}{3}}\left\langle R\right\rangle m_{i}n_{i}u_{i,\varphi}\right)+\frac{\partial}{\partial\rho}\Phi_{i}=V^{\prime}\left[U_{i,\varphi,exp}-U_{i,\varphi}\cdot u_{i,\varphi}+U_{zi,\varphi}\right]
+            .. math::  \left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(V^{\prime\frac{5}{3}}\left\langle R\right\rangle \
+                        m_{i}n_{i}u_{i,\varphi}\right)+\frac{\partial}{\partial\rho}\Phi_{i}=V^{\prime}\left[U_{i,\varphi,exp}-U_{i,\varphi}\cdot u_{i,\varphi}+U_{zi,\varphi}\right]
                 :label: transport_rotation
         """
 
@@ -2132,7 +1985,7 @@ class TransportSolver(AttributeTree):
 
                 # Return new profiles to the work flow:
                 profiles["VTOR"][iion] = vtor
-                profiles["DVTOR"][iion] = dvtor  # AF, 25.Sep.2014
+                profiles["DVTOR"][iion] = dvtor 
                 # dy 2019-08-31 make sure profiles from db are written to the coreprof
                 #       way around, address afterwords for consistent fix
                 #        PROFILES["WTOR(IRHO,IION)            = WTOR(IRHO)

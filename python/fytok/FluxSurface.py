@@ -49,8 +49,6 @@ class FluxSurface(Profiles):
 
         """
         super().__init__(None, *args, x_axis=psi_norm, **kwargs)
-
-        logger.debug(f"Calculate magnetic flux surface averge")
         self._limiter = limiter
         self._psirz = psirz
         self._r0 = r0

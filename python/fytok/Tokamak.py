@@ -78,11 +78,9 @@ class Tokamak(AttributeTree):
     def equilibrium(self):
         return Equilibrium(self._cache.equilibrium.time_slice, tokamak=self)
 
-    @property
+    @cached_property
     def core_profiles(self):
-        if self._core_profiles is None:
-            self._core_profiles = self.new_core_profiles(self._cache.core_profiles)
-        return self._core_profiles
+        return CoreProfiles(self._cache.core_profiles,  time=self._time,   tokamak=self)
 
     def new_core_profiles(self, cache=None):
         return CoreProfiles(cache,  time=self._time,   tokamak=self)

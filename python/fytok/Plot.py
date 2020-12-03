@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from spdm.util.AttributeTree import AttributeTree
 from spdm.util.logger import logger
+from spdm.util.Profiles import Profile
 
 
 def fetch_profile(holder, desc, prefix=[]):
@@ -86,12 +87,14 @@ def plot_profiles(holder, profiles, axis=None, x_axis=None, prefix=None, grid=Fa
             data = [data]
 
         for d in data:
-            value, opts, x_axis_alt = fetch_profile(holder, d,  prefix=prefix)
+            profile, opts, x_axis_alt = fetch_profile(holder, d,  prefix=prefix)
 
             if x_axis_alt is None:
                 x_axis_alt = x_axis
-            if value is not NotImplemented and value is not None and len(value) > 0:
-                axis[idx].plot(x_axis_alt, value, **opts)
+            if isinstance(profile, Profile):
+                axis[idx].plot(profile.x_axis, profile, **opts)
+            elif isinstance(profile, np.ndarray):
+                axis[idx].plot(x_axis_alt, profile, **opts)
             else:
                 logger.error(f"Can not find profile '{d}'")
 
@@ -107,4 +110,4 @@ def plot_profiles(holder, profiles, axis=None, x_axis=None, prefix=None, grid=Fa
 
     axis[-1].set_xlabel(x_axis_opts.get("label", ""),  fontsize=6)
 
-    return axis, fig
+    return fig
