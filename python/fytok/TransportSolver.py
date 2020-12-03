@@ -289,7 +289,6 @@ class TransportSolver(AttributeTree):
         C = UnivariateSpline(x,  (-coeff.b*y0 - coeff.f)*inv_c)
 
         bc_a, bc_b = bc
-        logger.debug(bc)
 
         def fun(x, Y):
             y = Y[0]
@@ -403,6 +402,7 @@ class TransportSolver(AttributeTree):
         # Grid
         # $rho_tor$ not  normalised minor radius                [m]
         rho_tor = core_profiles_next.profiles_1d.grid.rho_tor
+
         rho_tor_norm = core_profiles_next.profiles_1d.grid.rho_tor_norm
         rho_tor_boundary = core_profiles_next.profiles_1d.grid.rho_tor_boundary
         # $rho_tor_{norm}$ normalised minor radius                [-]
@@ -412,19 +412,19 @@ class TransportSolver(AttributeTree):
         # -----------------------------------------------------------
         # Equilibrium
         # diamagnetic function,$F=R B_\phi$                 [T*m]
-        fpol = core_profiles_next.profiles_1d.fpol
+        fpol = equilibrium.profiles_1d.mapping("rho_tor_norm", "fpol")(rho_tor_norm)
         # fprime = core_profiles_next.profiles_1d.derivative("fpol")
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        vpr = core_profiles_next.profiles_1d.dvolume_drho_tor
+        vpr = equilibrium.profiles_1d.mapping("rho_tor_norm", "dvolume_drho_tor")(rho_tor_norm)
 
         # $gm2 \euqiv \left\langle \left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle $  [m^-2]
-        gm2 = core_profiles_next.profiles_1d.gm2
+        gm2 = equilibrium.profiles_1d.mapping("rho_tor_norm", "gm2")(rho_tor_norm)
 
         # $\Psi$ flux function from current                 [Wb]
-        psi0 = core_profiles_prev.profiles_1d.psi
+        psi0 = equilibrium.profiles_1d.mapping("rho_tor_norm", "psi")(rho_tor_norm)
         # $\frac{\partial\Psi}{\partial\rho}$               [Wb/m]
-        psi0_prime = core_profiles_prev.profiles_1d.derivative("psi")
+        psi0_prime = equilibrium.profiles_1d.derivative_func("psi", "rho_tor_norm")(rho_tor_norm)
 
         # $q$ safety factor                                 [-]
         # qsf = core_profiles_next.profiles_1d.q
@@ -454,7 +454,6 @@ class TransportSolver(AttributeTree):
 
         # Coefficients for current diffusion equation in form:
         #   (a*y-b*y(t-1))/tau = d(-d*y' + e*y) + g*y+ f
-
         TEMP = constants.mu_0*B0 * rho_tor_boundary / fpol**2
 
         a = conductivity_parallel * rho_tor*TEMP * inv_tau
@@ -503,8 +502,8 @@ class TransportSolver(AttributeTree):
             # if any(qsf != 0.0):  # FIXME
             # dy = 2.0*constants.pi*B0*rho_tor/qsf
 
-            a[-1] = 1.0
-            b[-1] = 1.0
+            a[-1] = 1.0*inv_tau
+            b[-1] = 1.0*inv_tau
             # c[-1] = 1.0
             d[-1] = 0.0
             e[-1] = 0.0
@@ -527,7 +526,6 @@ class TransportSolver(AttributeTree):
         C[-1] = 2 * C[-2]-C[-3]
         C[0] = 2*C[1]-C[2]
 
-        # Solution of current diffusion equation:
         try:
             Afunc = UnivariateSpline(rho_tor_norm, A)
             Bfunc = UnivariateSpline(rho_tor_norm, B)
@@ -541,13 +539,19 @@ class TransportSolver(AttributeTree):
         except Exception as error:
             logger.error(f"Unable to solve the 'current' transport equation! \n {error} ")
         else:
-            core_profiles_next.profiles_1d.psi = sol.y[0]  # UnivariateSpline(sol.x, sol.y[0])(rho_tor_norm)
-            core_profiles_next.profiles_1d.psi_prime = sol.y[1]  # UnivariateSpline(sol.x, sol.y[1])(rho_tor_norm)
+
+            core_profiles_next.profiles_1d.psi = Profile(sol.x, sol.y[0])
+            core_profiles_next.profiles_1d.psi_prime = Profile(sol.x, sol.y[1])
 
         core_profiles_next.profiles_1d.psi0 = psi0
         core_profiles_next.profiles_1d.psi0_prime = psi0_prime
 
         core_profiles_next.profiles_1d.j_total = j_ni_exp
+
+        # core_profiles_next.profiles_1d.A = A
+        # core_profiles_next.profiles_1d.B = B
+        # core_profiles_next.profiles_1d.C = C
+
         # core_profiles_next.profiles_1d.I = j_ni_exp*core_profiles_next.profiles_1d.volume
 
         # New magnetic flux function and current density:
@@ -640,21 +644,22 @@ class TransportSolver(AttributeTree):
         # -----------------------------------------------------------
         # Equilibrium
         # diamagnetic function,$F=R B_\phi$                 [T*m]
-        fpol = core_profiles_next.profiles_1d.fpol
+        fpol = equilibrium.profiles_1d.mapping("rho_tor_norm", "fpol")(rho_tor_norm)
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        vpr = core_profiles_next.profiles_1d.dvolume_dpsi
+        vpr = equilibrium.profiles_1d.mapping("rho_tor_norm", "dvolume_dpsi")(rho_tor_norm)
         vprm = core_profiles_prev.profiles_1d.dvolume_dpsi
 
-        gm3 = core_profiles_next.profiles_1d.gm3
+        gm3 = equilibrium.profiles_1d.mapping("rho_tor_norm", "gm3")(rho_tor_norm)
 
         # Set up local variables for particular ion type:
         ne0 = core_profiles_prev.profiles_1d.electrons.density
 
         ne0_prime = core_profiles_prev.profiles_1d.electrons.derivative("density")
 
-        diff = np.zeros(shape=rho_tor_norm.shape)
-        vconv = np.zeros(shape=rho_tor_norm.shape)
+        diff = core_profiles_next.profiles_1d._create(0.0, name="diff")
+        vconv = core_profiles_next.profiles_1d._create(0.0, name="vconv")
+
         for trans in core_transport:
             d = trans.profiles_1d.electrons.particles.d
             if isinstance(d, np.ndarray) or type(d) in (int, float):
@@ -664,8 +669,8 @@ class TransportSolver(AttributeTree):
             if isinstance(v, np.ndarray) or type(v) in (int, float):
                 vconv += v
 
-        se_exp = np.zeros(shape=rho_tor_norm.shape)
-        se_imp = np.zeros(shape=rho_tor_norm.shape)
+        se_exp = core_profiles_next.profiles_1d._create(0.0, name="se_exp")
+        se_imp = core_profiles_next.profiles_1d._create(0.0, name="se_imp")
 
         for src in core_sources:
             si = src.proflies_1d.electrons.particles_decomposed.implicit_part
@@ -747,51 +752,51 @@ class TransportSolver(AttributeTree):
             u = 1.0
             w = ne0[-1]
 
-        # y0 = ne0
-        # dc = UnivariateSpline(rho_tor_norm, c).derivative()(rho_tor_norm)
-        # dd = UnivariateSpline(rho_tor_norm, d).derivative()(rho_tor_norm)
-        # inv_c = 1.0 / c
-        # A = (-dc - d)*inv_c
-        # B = (-dd + a - e)*inv_c
-        # C = (- b*y0 - f)*inv_c
+        y0 = ne0
+        dc = UnivariateSpline(rho_tor_norm, c).derivative()(rho_tor_norm)
+        dd = UnivariateSpline(rho_tor_norm, d).derivative()(rho_tor_norm)
+        inv_c = 1.0 / c
+        A = (-dc - d)*inv_c
+        B = (-dd + a - e)*inv_c
+        C = (- b*y0 - f)*inv_c
 
-        # A[0] = 2*A[1]-A[2]
-        # B[-1] = 2 * B[-2]-B[-3]
+        A[0] = 2*A[1]-A[2]
+        B[-1] = 2 * B[-2]-B[-3]
 
-        # C[-1] = 2 * C[-2]-C[-3]
-        # C[0] = 2*C[1]-C[2]
+        C[-1] = 2 * C[-2]-C[-3]
+        C[0] = 2*C[1]-C[2]
         try:
-            # Afunc = UnivariateSpline(rho_tor_norm, A)
-            # Bfunc = UnivariateSpline(rho_tor_norm, B)
-            # Cfunc = UnivariateSpline(rho_tor_norm, C)
-            # sol = self.solve_bvp_raw(rho_tor_norm, ne0, ne0_prime,
-            #                          #  TransportSolver.COEFF(a, b, c, d, e, f),
-            #                          Afunc, Bfunc, Cfunc,
-            #                          (TransportSolver.BCCOEFF(0, 1, 0),  # On axis:  dpsi/drho_tor(rho_tor=0)=0
-            #                           TransportSolver.BCCOEFF(u, v, w))
-            #                          )
+            Afunc = UnivariateSpline(rho_tor_norm, A)
+            Bfunc = UnivariateSpline(rho_tor_norm, B)
+            Cfunc = UnivariateSpline(rho_tor_norm, C)
+            sol = self.solve_bvp_raw(rho_tor_norm, ne0, ne0_prime,
+                                     #  TransportSolver.COEFF(a, b, c, d, e, f),
+                                     Afunc, Bfunc, Cfunc,
+                                     (TransportSolver.BCCOEFF(0, 1, 0),  # On axis:  dpsi/drho_tor(rho_tor=0)=0
+                                      TransportSolver.BCCOEFF(u, v, w))
+                                     )
 
-            sol = self.solve_bvp(rho_tor_norm, ne0, ne0_prime,
-                                 TransportSolver.COEFF(a, b, c, d, e, f),
-                                 (TransportSolver.BCCOEFF(0, 1, 0),  # On axis:  dpsi/drho_tor(rho_tor=0)=0
-                                  TransportSolver.BCCOEFF(u, v, w))
-                                 )
+            # sol = self.solve_bvp(rho_tor_norm, ne0, ne0_prime,
+            #                      TransportSolver.COEFF(a, b, c, d, e, f),
+            #                      (TransportSolver.BCCOEFF(0, 1, 0),  # On axis:  dpsi/drho_tor(rho_tor=0)=0
+            #                       TransportSolver.BCCOEFF(u, v, w))
+            #                      )
         except RuntimeError as error:
             logger.error(f"Fail to solve transport equation: Electron density ! \n {error} ")
         else:
             logger.debug(f"Solve transport equations: Electron density: {sol.message}")
-            core_profiles_next.profiles_1d.electrons.density = sol.y[0]
-            core_profiles_next.profiles_1d.electrons.density_prime = sol.y[1]
+            core_profiles_next.profiles_1d.electrons.density = Profile(sol.x, sol.y[0])
+            core_profiles_next.profiles_1d.electrons.density_prime = Profile(sol.x, sol.y[1])
 
-        # core_profiles_next.profiles_1d.A = A
-        # core_profiles_next.profiles_1d.B = B
-        # core_profiles_next.profiles_1d.C = C
-        # core_profiles_next.profiles_1d.a = a
-        # core_profiles_next.profiles_1d.b = b
-        # core_profiles_next.profiles_1d.c = c
-        # core_profiles_next.profiles_1d.d = d
-        # core_profiles_next.profiles_1d.e = e
-        # core_profiles_next.profiles_1d.f = f
+        core_profiles_next.profiles_1d.A = A
+        core_profiles_next.profiles_1d.B = B
+        core_profiles_next.profiles_1d.C = C
+        core_profiles_next.profiles_1d.a = a
+        core_profiles_next.profiles_1d.b = b
+        core_profiles_next.profiles_1d.c = c
+        core_profiles_next.profiles_1d.d = d
+        core_profiles_next.profiles_1d.e = e
+        core_profiles_next.profiles_1d.f = f
         core_profiles_next.profiles_1d.electrons.density0 = ne0
         core_profiles_next.profiles_1d.electrons.diff = diff
         core_profiles_next.profiles_1d.electrons.vconv = vconv

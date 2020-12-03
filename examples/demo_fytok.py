@@ -75,6 +75,7 @@ if __name__ == "__main__":
     ], x_axis="grid_d.rho_tor_norm", grid=True).savefig("../output/core_tranport.svg")
 
     tok.core_sources[_next_] = {"identifier": {"name": "unspecified", "index": 0}}
+
     src = tok.core_sources[-1].profiles_1d
 
     def S_pel(rho, pos=0.7, w=0.1, S0=1.0e19*80): return scipy.stats.norm.pdf((rho-0.7)/w) * \
@@ -92,7 +93,7 @@ if __name__ == "__main__":
     j_total[0] = 2*j_total[1]-j_total[2]
     src.j_parallel = tok.equilibrium.profiles_1d.mapping("rho_tor_norm", j_total)
 
-    src.electrons.particles = lambda rho: S_pel(rho)+S_edge(rho)
+    src.electrons.particles = lambda rho: S_pel(rho)+S_pel(rho)
 
     plot_profiles(src, profiles=[
         "electrons.particles", "grid.rho_tor_norm"
@@ -147,10 +148,12 @@ if __name__ == "__main__":
     # draw(tok).savefig("../output/tokamak1.svg", transparent=True)
 
     plot_profiles(tok.core_profiles.profiles_1d,
-                  profiles=["electrons.density",
+                  profiles=[["electrons.density0", "electrons.density"],
                             # "electrons.diff",
                             # "electrons.vconv",
                             # "electrons.se_exp",
+                            "A", "B", "C",  
+                            "a", "b", "c", "d", "e", "f",
                             [{"name": "psi0", "opts": {"marker": "+", "label": r"$\psi^{-1}$"}},
                              {"name": "psi", "opts": {"marker": "+", "label": r"$\psi$"}}],
                             # ([

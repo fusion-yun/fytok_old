@@ -174,10 +174,8 @@ class Tokamak(AttributeTree):
             for trans in self.core_transport:
                 trans.update(time=time, equilibrium=self.equilibrium)
 
-            core_profiles_next = CoreProfiles(time=time,  grid=self.grid, tokamak=self)
 
-            logger.debug((core_profiles_iter.profiles_1d.grid.rho_tor_norm.shape,
-                          core_profiles_next.profiles_1d.grid.rho_tor_norm.shape))
+            core_profiles_next = CoreProfiles(time=time,  grid=self.grid, tokamak=self)
 
             assert(core_profiles_iter.profiles_1d.grid.rho_tor_norm.shape ==
                    core_profiles_next.profiles_1d.grid.rho_tor_norm.shape)
@@ -203,9 +201,11 @@ class Tokamak(AttributeTree):
 
             if self.check_converge(core_profiles_iter, core_profiles_next, tolerance):
                 convergence = True
+
+            core_profiles_iter = core_profiles_next
+
+            if convergence:
                 break
-            else:
-                core_profiles_iter = core_profiles_next
 
         if not convergence:
             raise RuntimeError(f"Does not converge! iter_count={iter_count}")

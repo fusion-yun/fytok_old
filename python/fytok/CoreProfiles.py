@@ -374,7 +374,7 @@ class CoreProfiles(AttributeTree):
         @cached_property
         def ion(self):
             """Quantities related to the different ion species"""
-            return CoreProfiles.Profiles1D.Ion(self._cache["ion"], grid=self.grid)
+            return AttributeTree(default_factory_array=lambda _holder=self: CoreProfiles.Profiles1D.Ion(None, parent=_holder, grid=_holder.grid))
 
         @cached_property
         def electrons(self):
@@ -399,8 +399,9 @@ class CoreProfiles(AttributeTree):
         @cached_property
         def n_i_total(self):
             """ total ion density(sum over species and charge states)   (thermal+non-thermal) {dynamic}[-]"""
-            res = Profile(0.0, self.grid.rho_tor_norm, description={"name": "n_i_total"})
+            res = Profile(self.grid.rho_tor_norm, 0.0, description={"name": "n_i_total"})
             for ion in self.ion:
+                logger.debug(ion)
                 res += ion.z_ion*(ion.density_thermal+ion.density_fast)
             return res
 
@@ -412,7 +413,7 @@ class CoreProfiles(AttributeTree):
         @cached_property
         def n_i_thermal_total(self):
             """Total ion thermal density(sum over species and charge states) {dynamic}[m ^ -3]"""
-            res = Profile(0.0, self.grid.rho_tor_norm, description={"name": "n_i_thermal_total"})
+            res = Profile(self.grid.rho_tor_norm, 0.0, description={"name": "n_i_thermal_total"})
             for ion in self.ion:
                 res += ion.z_ion * ion.density_thermal
             return res
@@ -420,7 +421,7 @@ class CoreProfiles(AttributeTree):
         @cached_property
         def zeff(self):
             """Effective charge {dynamic}[-]"""
-            res = Profile(0.0, self.grid.rho_tor_norm, description={"name": "zeff"})
+            res = Profile(self.grid.rho_tor_norm, 0.0, description={"name": "zeff"})
             for ion in self.ion:
                 res += ion.z_ion * ion.z_ion * ion.density
             return res/self.n_i_total

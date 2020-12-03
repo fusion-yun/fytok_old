@@ -289,7 +289,8 @@ class FluxSurface(Profiles):
                                         =\frac{q}{2\pi B_{0}\rho_{tor}}
 
         """
-        res = self.q/self.rho_tor/(2.0*constants.pi*self._b0)
+        res = self.q.copy()
+        res[1:] /= self.rho_tor[1:]/(2.0*constants.pi*self._b0)
         res[0] = res[1]*2-res[2]
         return res
 

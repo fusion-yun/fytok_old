@@ -90,7 +90,7 @@ def plot_profiles(holder, profiles, axis=None, x_axis=None, prefix=None, grid=Fa
                 try:
                     axis[idx].plot(profile.x_axis, profile, **opts)
                 except Exception as error:
-                    logger.error(f"Can not plot profile {profile.description}! [{error}]")
+                    logger.error(f"Can not plot profile {type(profile)} {d}! [{error}]")
             elif isinstance(profile, np.ndarray):
                 try:
                     if x_axis is not None:
