@@ -8,14 +8,12 @@ from spdm.util.Profiles import Profile
 
 
 def fetch_profile(holder, desc, prefix=[]):
-    x_axis = None
     if isinstance(desc, str):
         path = desc
         opts = {"label": desc}
     elif isinstance(desc, collections.abc.Mapping):
         path = desc.get("name", None)
         opts = desc.get("opts", {})
-        x_axis = desc.get("x_axis", None)
     elif isinstance(desc, tuple):
         path, opts = desc
     elif isinstance(desc, AttributeTree):
@@ -42,12 +40,7 @@ def fetch_profile(holder, desc, prefix=[]):
     else:
         data = holder[path]
 
-    if isinstance(x_axis, str):
-        x_axis = holder[x_axis]
-    # else:
-    #     raise TypeError(f"Illegal data type! {prefix} {type(data)}")
-
-    return data, opts, x_axis
+    return data, opts
 
 
 def plot_profiles(holder, profiles, axis=None, x_axis=None, prefix=None, grid=False):
@@ -63,7 +56,11 @@ def plot_profiles(holder, profiles, axis=None, x_axis=None, prefix=None, grid=Fa
     elif not isinstance(prefix, collections.abc.Sequence):
         prefix = [prefix]
 
-    x_axis, x_axis_opts, _ = fetch_profile(holder, x_axis, prefix=prefix)
+    if isinstance(x_axis, str):
+        x_axis, x_axis_opts = fetch_profile(holder, x_axis, prefix=prefix)
+    else:
+        x_axis = None
+        x_axis_opts = {}
 
     fig = None
     if isinstance(axis, collections.abc.Sequence):
@@ -87,14 +84,22 @@ def plot_profiles(holder, profiles, axis=None, x_axis=None, prefix=None, grid=Fa
             data = [data]
 
         for d in data:
-            profile, opts, x_axis_alt = fetch_profile(holder, d,  prefix=prefix)
+            profile, opts = fetch_profile(holder, d,  prefix=prefix)
 
-            if x_axis_alt is None:
-                x_axis_alt = x_axis
             if isinstance(profile, Profile):
-                axis[idx].plot(profile.x_axis, profile, **opts)
+                try:
+                    axis[idx].plot(profile.x_axis, profile, **opts)
+                except Exception as error:
+                    logger.error(f"Can not plot profile {profile.description}! [{error}]")
             elif isinstance(profile, np.ndarray):
-                axis[idx].plot(x_axis_alt, profile, **opts)
+                try:
+                    if x_axis is not None:
+                        axis[idx].plot(x_axis, profile, **opts)
+                    else:
+                        axis[idx].plot(profile, **opts)
+
+                except Exception as error:
+                    logger.error(f"Can not plot profile! [{error}]")
             else:
                 logger.error(f"Can not find profile '{d}'")
 

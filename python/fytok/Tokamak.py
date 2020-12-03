@@ -36,14 +36,19 @@ class Tokamak(AttributeTree):
         self.__dict__["_cache"] = cache or AttributeTree()
         self.__dict__["_time"] = time
 
-        self.grid = RadialGrid(rho_tor_norm=rho_tor_norm)
         self._time = time
         self._core_profiles = None
+        self._rho_tor_norm = rho_tor_norm
+        self._edge_profiles = None
 
     # --------------------------------------------------------------------------
     @property
     def time(self):
         return self._time
+
+    @cached_property
+    def grid(self):
+        return RadialGrid(self._rho_tor_norm, equilibrium=self.equilibrium)
 
     @cached_property
     def vacuum_toroidal_field(self):
@@ -78,20 +83,28 @@ class Tokamak(AttributeTree):
     def equilibrium(self):
         return Equilibrium(self._cache.equilibrium.time_slice, tokamak=self)
 
-    @cached_property
+    @property
     def core_profiles(self):
-        return CoreProfiles(self._cache.core_profiles,  time=self._time,   tokamak=self)
+        if self._core_profiles is None:
+            self._core_profiles = CoreProfiles(self._cache.core_profiles,
+                                               time=self.time,
+                                               grid=self.grid,
+                                               tokamak=self)
+        return self._core_profiles
 
-    def new_core_profiles(self, cache=None):
-        return CoreProfiles(cache,  time=self._time,   tokamak=self)
+    @property
+    def edge_profiles(self):
+        if self._edge_profiles is None:
+            self._edge_profiles = EdgeProfiles(self._cache.edge_profiles,
+                                               time=self.time,
+                                               grid=self.grid,
+                                               vacuum_toroidal_field=self.vacuum_toroidal_field)
+        return self._edge_profiles
 
     @cached_property
     def core_transport(self):
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return AttributeTree(default_factory_array=lambda _holder=self: CoreTransport(
-            None,
-            rho_tor_norm=_holder.core_profiles.profiles_1d.grid.rho_tor_norm,
-            tokamak=_holder))
+        return AttributeTree(default_factory_array=lambda _holder=self: CoreTransport(None, grid=_holder.grid, tokamak=_holder))
 
     @cached_property
     def core_sources(self):
@@ -99,23 +112,7 @@ class Tokamak(AttributeTree):
             Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return AttributeTree(default_factory_array=lambda _holder=self: CoreSources(
-            None,
-            rho_tor_norm=_holder.core_profiles.profiles_1d.grid.rho_tor_norm,
-            tokamak=_holder))
-
-    @property
-    def edge_profiles(self):
-        if self._edge_profiles is None:
-            self._edge_profiles = EdgeProfiles(self._cache.edge_profiles,
-                                               time=self.time, equilibrium=self.equilibrium)
-        return self._edge_profiles
-
-    @edge_profiles.setter
-    def edge_profiles(self, other):
-        if not isinstance(other, EdgeProfiles):
-            other = EdgeProfiles(other,  time=self.time, equilibrium=self.equilibrium)
-        self._edge_profiles = other
+        return AttributeTree(default_factory_array=lambda _holder=self: CoreSources(None, grid=_holder.grid, tokamak=_holder))
 
     @cached_property
     def edge_transports(self):
@@ -142,7 +139,7 @@ class Tokamak(AttributeTree):
 
     # --------------------------------------------------------------------------
     def update(self, *args,
-               time=0.0,
+               time=None,
                core_profiles=None,
                max_iters=1,
                tolerance=0.1,
@@ -150,9 +147,15 @@ class Tokamak(AttributeTree):
 
         convergence = False
 
-        core_profiles_prev = self.core_profiles
+        if time is None:
+            time = self._time
 
-        core_profiles_iter = self.new_core_profiles(core_profiles)
+        if core_profiles is not None:
+            core_profiles_iter = CoreProfiles(core_profiles,  time=time, grid=self.grid, tokamak=self)
+        elif self.core_profiles is not None:
+            core_profiles_iter = self.core_profiles
+        else:
+            raise RuntimeError(f"Core profiles is not defined!")
 
         for iter_count in range(max_iters):
 
@@ -163,7 +166,7 @@ class Tokamak(AttributeTree):
             except Exception:
                 profiles = None
 
-            self.equilibrium.update(profiles=profiles, constraints=self.constraints)
+            # self.equilibrium.update(profiles=profiles, constraints=self.constraints)
 
             for src in self.core_sources:
                 src.update(time=time, equilibrium=self.equilibrium)
@@ -171,10 +174,16 @@ class Tokamak(AttributeTree):
             for trans in self.core_transport:
                 trans.update(time=time, equilibrium=self.equilibrium)
 
-            core_profiles_iter = self.new_core_profiles()
+            core_profiles_next = CoreProfiles(time=time,  grid=self.grid, tokamak=self)
 
-            self.transport.update(core_profiles_prev,
-                                  core_profiles_iter,
+            logger.debug((core_profiles_iter.profiles_1d.grid.rho_tor_norm.shape,
+                          core_profiles_next.profiles_1d.grid.rho_tor_norm.shape))
+
+            assert(core_profiles_iter.profiles_1d.grid.rho_tor_norm.shape ==
+                   core_profiles_next.profiles_1d.grid.rho_tor_norm.shape)
+
+            self.transport.update(core_profiles_iter,
+                                  core_profiles_next,
                                   equilibrium=self.equilibrium,
                                   core_transport=self.core_transport,
                                   core_sources=self.core_sources,
@@ -186,24 +195,24 @@ class Tokamak(AttributeTree):
 
             # edge_profiles_iter = self._transport_edge_solver(
             #     edge_profiles_old, dt,
-            #     core_profiles_iter,
+            #     core_profiles_next,
             #     equilibrium=self._equilibrium,
             #     transports=self.edge_transports,
             #     sources=self.edge_sources,
             #     **kwargs)
 
-            if self.check_converge(core_profiles_prev, core_profiles_iter, tolerance):
+            if self.check_converge(core_profiles_iter, core_profiles_next, tolerance):
                 convergence = True
                 break
             else:
-                core_profiles_prev = core_profiles_iter
+                core_profiles_iter = core_profiles_next
 
         if not convergence:
             raise RuntimeError(f"Does not converge! iter_count={iter_count}")
         else:
             self._core_profiles = core_profiles_iter
 
-    def check_converge(self, core_profiles_prev, core_profiles_iter, tolerance):
+    def check_converge(self, core_profiles_iter, core_profiles_next, tolerance):
         return True
     # --------------------------------------------------------------------------
 

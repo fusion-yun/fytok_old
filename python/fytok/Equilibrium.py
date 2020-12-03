@@ -6,8 +6,8 @@ from functools import cached_property, lru_cache
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
-from numpy import arctan2, cos, sin, sqrt
 import scipy.constants as constants
+from numpy import arctan2, cos, sin, sqrt
 from scipy.interpolate import (RectBivariateSpline, SmoothBivariateSpline,
                                UnivariateSpline)
 from scipy.optimize import root_scalar
@@ -18,13 +18,14 @@ from spdm.util.Interpolate import (Interpolate1D, Interpolate2D, derivate,
                                    interpolate)
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
+from spdm.util.Profiles import Profiles
 from spdm.util.sp_export import sp_find_module
 from spdm.util.utilities import first_not_empty
 from sympy import Point, Polygon
-from spdm.util.Profiles import Profiles
 
 from fytok.FluxSurface import FluxSurface
 from fytok.PFActive import PFActive
+from fytok.RadialGrid import RadialGrid
 from fytok.Wall import Wall
 
 TOLERANCE = 1.0e-6
@@ -129,6 +130,12 @@ class Equilibrium(AttributeTree):
     @property
     def time(self):
         return self._tokamak.time
+
+    def radial_grid(self, x_axis=129, primery_coordinate="rho_tor_norm"):
+        if isinstance(x_axis, RadialGrid):
+            return x_axis
+        else:
+            return RadialGrid(x_axis, equilibrium=self)
 
     def _solve(self, *args, **kwargs):
         raise NotImplementedError()
