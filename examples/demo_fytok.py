@@ -153,11 +153,11 @@ if __name__ == "__main__":
 
     plot_profiles(tok.equilibrium.profiles_1d,
                   profiles=[["q", "q1"],
+                            "dpsi_drho_tor",
                             "rho_tor",
                             "fpol",
                             "phi",
                             "psi",
-                            "dvolume",
                             "dvolume_dpsi",
                             "dvolume_drho_tor",
                             "drho_tor_dpsi",
@@ -171,10 +171,13 @@ if __name__ == "__main__":
 
     plot_profiles(tok.core_profiles.profiles_1d,
                   profiles=[
-                      [{"name": "psi0", "opts": {"marker": "+", "label": r"$\psi_{0}$"}},
+                      [{"name": "psi0", "opts": {"marker": "o", "label": r"$\psi_{0}$"}},
                        {"name": "psi", "opts": {"marker": "+", "label": r"$\psi$"}}],
-                      ["psi0_prime", "psi0_prime1", "psi_prime", "psi_prime1"],
-                      ["q0",   "q1"],
+                      ["psi0_prime", "psi0_prime1" ,  "psi1_prime", "psi1_prime1"],"dpsi_drho_tor",
+                      ["q0",   "q1"],"q",
+                      "grid.rho_tor",
+                      "dpsi_drho_tor",
+
                       #   ["dgamma_current", "f_current"],
                       #   ["j_total0", "j_ni_exp"],
                       ["electrons.density0", "electrons.density"],

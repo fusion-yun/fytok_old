@@ -256,7 +256,6 @@ class FluxSurface(Profiles):
 
     @cached_property
     def dvolume_dpsi(self):
- 
         return self.vprime*self.cocos_flag
 
     @cached_property
@@ -296,6 +295,10 @@ class FluxSurface(Profiles):
     def rho_tor(self):
         """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0  [m]"""
         return np.sqrt(self.phi)/np.sqrt(scipy.constants.pi * self._b0)
+
+    @cached_property
+    def rho_tor_norm(self):
+        return self.rho_tor/self.rho_tor[-1]
 
     @cached_property
     def drho_tor_dpsi(self)	:

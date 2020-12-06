@@ -39,7 +39,7 @@ class Tokamak(AttributeTree):
         self._time = time
         self._core_profiles = None
         if rho_tor_norm is None:
-            self._rho_tor_norm =np.linspace(0, 1.0, 129)
+            self._rho_tor_norm = np.linspace(0, 1.0, 129)
         else:
             self._rho_tor_norm = rho_tor_norm
 
@@ -50,8 +50,10 @@ class Tokamak(AttributeTree):
     def time(self):
         return self._time
 
-    @cached_property
+    @property
     def grid(self):
+        # logger.debug(self.equilibrium.profiles_1d.rho_tor_norm)
+        # return RadialGrid(self.equilibrium.profiles_1d.rho_tor_norm, equilibrium=self.equilibrium)
         return RadialGrid(self._rho_tor_norm, equilibrium=self.equilibrium)
 
     @cached_property
@@ -155,9 +157,9 @@ class Tokamak(AttributeTree):
             time = self._time
 
         if core_profiles is not None:
-            core_profiles_iter = CoreProfiles(core_profiles,  time=time, grid=self.grid, tokamak=self)
-        elif self.core_profiles is not None:
-            core_profiles_iter = self.core_profiles
+            core_profiles_prev = CoreProfiles(core_profiles,  time=time, grid=self.grid, tokamak=self)
+        elif self._core_profiles is not None:
+            core_profiles_prev = self._core_profiles
         else:
             raise RuntimeError(f"Core profiles is not defined!")
 
@@ -165,10 +167,10 @@ class Tokamak(AttributeTree):
 
             logger.debug(f"Iterator = {iter_count}")
 
-            try:
-                profiles = core_profiles_iter.profiles_1d.interpolate(["dpressure_dpsi", "f_df_dpsi"])
-            except Exception:
-                profiles = None
+            # try:
+            #     profiles = core_profiles_prev.profiles_1d.interpolate(["dpressure_dpsi", "f_df_dpsi"])
+            # except Exception:
+            #     profiles = None
 
             # self.equilibrium.update(profiles=profiles, constraints=self.constraints)
 
@@ -180,10 +182,10 @@ class Tokamak(AttributeTree):
 
             core_profiles_next = CoreProfiles(time=time,  grid=self.grid, tokamak=self)
 
-            assert(core_profiles_iter.profiles_1d.grid.rho_tor_norm.shape ==
+            assert(core_profiles_prev.profiles_1d.grid.rho_tor_norm.shape ==
                    core_profiles_next.profiles_1d.grid.rho_tor_norm.shape)
 
-            self.transport.update(core_profiles_iter,
+            self.transport.update(core_profiles_prev,
                                   core_profiles_next,
                                   equilibrium=self.equilibrium,
                                   core_transport=self.core_transport,
@@ -202,10 +204,10 @@ class Tokamak(AttributeTree):
             #     sources=self.edge_sources,
             #     **kwargs)
 
-            if self.check_converge(core_profiles_iter, core_profiles_next, tolerance):
+            if self.check_converge(core_profiles_prev, core_profiles_next, tolerance):
                 convergence = True
 
-            core_profiles_iter = core_profiles_next
+            core_profiles_prev = core_profiles_next
 
             if convergence:
                 break
@@ -213,9 +215,9 @@ class Tokamak(AttributeTree):
         if not convergence:
             raise RuntimeError(f"Does not converge! iter_count={iter_count}")
         else:
-            self._core_profiles = core_profiles_iter
+            self._core_profiles = core_profiles_prev
 
-    def check_converge(self, core_profiles_iter, core_profiles_next, tolerance):
+    def check_converge(self, core_profiles_prev, core_profiles_next, tolerance):
         return True
     # --------------------------------------------------------------------------
 

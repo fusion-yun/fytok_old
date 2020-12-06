@@ -50,6 +50,7 @@ class CoreProfiles(AttributeTree):
             if grid is None:
                 grid = parent._grid
             super().__init__(cache, * args, x_axis=grid.rho_tor_norm, **kwargs)
+            self.__dict__["_parent"] = parent
             self.__dict__["_grid"] = grid
             self.__dict__["_b0"] = parent._tokamak.vacuum_toroidal_field.b0
             self.__dict__["_r0"] = parent._tokamak.vacuum_toroidal_field.r0
@@ -57,6 +58,12 @@ class CoreProfiles(AttributeTree):
         @property
         def grid(self):
             return self._grid
+
+        def __missing__(self, key):
+            d = super().__missing__(key)
+            if d is None:
+                d = self._parent._tokamak.equilibrium.profiles_1d.mapping("rho_tor_norm", key, self.grid.rho_tor_norm)
+            return d
 
         class TemperatureFit(AttributeTree):
             def __init__(self, *args, **kwargs):
@@ -160,12 +167,6 @@ class CoreProfiles(AttributeTree):
                     "temperature_validity": 0,
                     "density_validity": 0
                 }
-
-            def __missing__(self, key):
-                res = super().__missing__(key)
-                if not isinstance(res, np.ndarray):
-                    res = np.full(self._x_axis.shape, np.nan)
-                return res
 
             # @property
             # def z_ion(self):
@@ -297,12 +298,6 @@ class CoreProfiles(AttributeTree):
                     "temperature_validity": 0,
                     "density_validity": 0
                 }
-
-            def __missing__(self, key):
-                res = super().__missing__(key)
-                if not isinstance(res, np.ndarray):
-                    res = np.full(self._x_axis.shape, np.nan)
-                return res
 
             # @property
             # def element(self):
@@ -460,7 +455,7 @@ class CoreProfiles(AttributeTree):
         @cached_property
         def j_total(self):
             """Total parallel current density = average(jtot.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
-            return Profile(self.grid.rho_tor_norm, description={"name": "j_total"})
+            return Profile(self.grid.rho_tor_norm, None, description={"name": "j_total"})
 
         # @property
         # def current_parallel_inside(self):
@@ -470,7 +465,7 @@ class CoreProfiles(AttributeTree):
         @cached_property
         def j_tor(self):
             """Total toroidal current density = average(J_Tor/R) / average(1/R) {dynamic}[A/m ^ 2]"""
-            return Profile(self.grid.rho_tor_norm, description={"name": "j_tor"})
+            return Profile(self.grid.rho_tor_norm, None, description={"name": "j_tor"})
 
         @cached_property
         def j_ohmic(self):
@@ -522,7 +517,8 @@ class CoreProfiles(AttributeTree):
         def q(self):
             """Safety factor(IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic}[-].
             This quantity is COCOS-dependent, with the following transformation: """
-            q = (constants.pi*2.0)*self._b0*self.grid.rho_tor/self.grid.dpsi_drho_tor
+            q = (constants.pi*2.0)*self._b0*self.dpsi_drho_tor.x_axis*self.grid.rho_tor[-1]/self.dpsi_drho_tor
+            q._x_axis = self.dpsi_drho_tor.x_axis
             q[0] = 2*q[1]-q[2]
             return q
 
