@@ -233,21 +233,13 @@ class TransportSolver(AttributeTree):
 
     def solve_general_form(self, x, y0, yp0, inv_tau, coeff,  bc, **kwargs):
         r"""solve standard form
+
             Args:
                 x      : :math:`\rho_{tor,norm}`
                 y0     : :math:`y(t-1)`
                 yp0    : :math:`y^{\prime}(t-1)=\left.\frac{\partial Y}{\partial x}\right|_{t-1}`
                 tau    : :math:`\tau`  time step
-                coeff  : coefficients for `bvp` solver,
-
-                        .. math::
-                            \frac{a\cdot y-b\cdot y^{-1}}{\tau}=\frac{d}{dx}\left(c\cdot\frac{dy}{dx}+d\cdot y\right)+e\cdot y+f \\
-                            :label: bvp_eq
-
-                        where   :math:`Y=[y,y^{\prime}]` is the function, :math:`a,b,c,d,e,f,g` are function of :math:`x` , and
-
-                        .. math::
-                             \lim_{\tau\rightarrow0}\frac{a\cdot y-b\cdot y^{-1}}{\tau}=0,
+                coeff  : coefficients for `bvp` solver,                       
 
                 bc     : boundary condition ,  :math:`u,v,w`
 
@@ -260,21 +252,37 @@ class TransportSolver(AttributeTree):
                 (np.ndarra,np.ndarray)  : :math:`y(t)` , :math:`y^{\prime}(t)`
 
             Note:
-
-                BVP Problem of :math:`Y=[y,y^{\prime}]`
+                Generalized form of transport equations:               
 
                 .. math::
-                   \begin{cases}
-                    \frac{d y}{d x} & =y^{\prime}\\
-                    \frac{d y^{\prime}}{d x} & =A\cdot y^{\prime}+B\cdot y+C
+                    \frac{a\left(x\right)\cdot Y\left(x,t\right)-b\left(x\right)\cdot Y\left(x,t-1\right)}{h}+\
+                    \frac{1}{c\left(x\right)}\frac{\partial}{\partial x}\Gamma\left(x,t\right)=f\left(x\right)-g\left(x\right)\cdot Y\left(x,t\right)
+                    :label: generalized_trans_eq
+
+                .. math::
+                    \Gamma\left(x,t\right)\equiv-d\left(x\right)\cdot\frac{\partial Y\left(x,t\right)}{\partial\rho}+e\left(x\right)\cdot Y\left(x,t\right)
+                    :label: generalized_trans_eq_gamma
+
+                where   :math:`Y` is the function, :math:`t` is time , :math:`x` is the radial coordinate. 
+                
+                The boundary conditions are given by                        
+
+                .. math::
+                        u\left(x_{bnd}\right)\cdot Y\left(x_{bnd},t\right)+v\left(x_{bnd}\right)\cdot\Gamma\left(x_{bnd},t\right)=w\left(x_{bnd}\right)
+                        :label: generalized_trans_eq_gamma
+
+                These equations were rewriten as a first-order ODE group
+
+                .. math::
+                    \begin{cases}
+
+                        \frac{\partial Y\left(x,t\right)}{\partial\rho} & = \
+                              -\frac{\Gamma\left(x,t\right)-e\left(x\right)\cdot Y\left(x,t\right)}{d\left(x\right)}\\
+                        \frac{\partial\Gamma\left(x,t\right)}{\partial x} & = \
+                             c\left(x\right)\left[f\left(x\right)-g\left(x\right)\cdot Y\left(x,t\right)-\
+                                 \frac{a\left(x\right)\cdot Y\left(x,t\right)-b\left(x\right)\cdot Y\left(x,t-1\right)}{h}\right]
                     \end{cases}
 
-                where
-
-                .. math::
-                    A	&=\left(-\frac{d}{dx}c-d\right) \\
-                    B	&=-\frac{d}{dx}d+\left(\frac{a}{\tau}-e\right) \\
-                    C	&=-\frac{b}{\tau} \cdot y^{-1} -f
 
                 solved by  scipy.integrate.solve_bvp
         """
