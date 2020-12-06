@@ -18,7 +18,7 @@ from spdm.util.Interpolate import (Interpolate1D, Interpolate2D, derivate,
                                    find_critical, find_root, integral,
                                    interpolate)
 from spdm.util.logger import logger
-from spdm.util.Profiles import Profiles
+from spdm.util.Profiles import Profiles, Profile
 from sympy import Point, Polygon
 
 
@@ -55,6 +55,7 @@ class FluxSurface(Profiles):
         self._b0 = b0
         self._ffprime = ffprime
         self._psi_norm = self._x_axis
+
         if callable(ffprime):
             self._ffprime = ffprime
         elif isinstance(ffprime, np.ndarray):
@@ -110,6 +111,10 @@ class FluxSurface(Profiles):
             xpoints.sort(key=lambda x: (x.psi - psi_axis)**2)
 
         return opoints, xpoints
+
+    @cached_property
+    def cocos_flag(self):
+        return 1 if self.psi_boundary > self.psi_axis else -1
 
     @cached_property
     def psi_axis(self):
@@ -216,18 +221,10 @@ class FluxSurface(Profiles):
         return self._psirz(self.R, self.Z, dx=1), self._psirz(self.R, self.Z, dy=1)
 
     @cached_property
-    def psi(self):
-        return self._psi_norm * (self.psi_boundary-self.psi_axis)+self.psi_axis
-
-    @cached_property
     def dl(self):
         dR = (np.roll(self.R, 1, axis=1) - np.roll(self.R, -1, axis=1))/2.0
         dZ = (np.roll(self.Z, 1, axis=1) - np.roll(self.Z, -1, axis=1))/2.0
         return sqrt(dR ** 2 + dZ ** 2)
-
-    @cached_property
-    def Jdl(self):
-        return (self.R / np.sqrt(self.grad_psi2)) * self.dl
 
     @cached_property
     def grad_psi2(self):
@@ -235,8 +232,21 @@ class FluxSurface(Profiles):
         return dpsi_dr**2 + dpsi_dz**2
 
     @cached_property
+    def Jdl(self):
+        return (self.R / np.sqrt(self.grad_psi2)) * self.dl
+
+    @cached_property
     def B2(self):
         return (self.grad_psi2+self.fpol.reshape((-1, 1))**2)/(self.R**2)
+
+    #################################
+    @cached_property
+    def psi_norm(self):
+        return self._psi_norm
+
+    @cached_property
+    def psi(self):
+        return self._psi_norm * (self.psi_boundary-self.psi_axis)+self.psi_axis
 
     @cached_property
     def fpol(self):
@@ -249,23 +259,16 @@ class FluxSurface(Profiles):
         r""".. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
             .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
         """
-        return (2*constants.pi) * np.sum(self.Jdl, axis=1)
-
-    @cached_property
-    def dvolume_dpsi_norm(self):
-        r""".. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
-            .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
-        """
-        return (2*constants.pi) * np.sum(self.Jdl, axis=1) * (self.psi_boundary-self.psi_axis)
+        return (2*constants.pi) * np.sum(self.Jdl, axis=1)*self.cocos_flag
 
     @cached_property
     def volume(self):
         """Volume enclosed in the flux surface[m ^ 3]"""
-        return self.integral(self.vprime, 0.0, self._psi_norm)* (self.psi_boundary-self.psi_axis)
+        return self.integral(self.dvolume_dpsi, 0.0, self._psi_norm) * (self.psi_boundary-self.psi_axis)
 
     @property
     def vprime(self):
-        return self.dvolume_dpsi_norm
+        return self.dvolume_dpsi
 
     @cached_property
     def q(self):
@@ -275,15 +278,18 @@ class FluxSurface(Profiles):
             .. math:: q(\psi)=\frac{d\Phi}{d\psi}=\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
         """
         logger.debug(r"Calculate q as  F V^{\prime} \left\langle R^{-2}\right \rangle /(4 \pi^2) ")
-        return self.fpol*self.vprime * self.gm1 / (4*scipy.constants.pi**2)
+        return self.cocos_flag * self.fpol * np.sum(self.Jdl/self.R**2, axis=1) / (2*scipy.constants.pi)
 
     @cached_property
     def phi(self):
         r""" 
+            Note:
+                !!! COORDINATE　DEPENDENT!!!
+
             .. math ::
                 \Phi_{tor}\left(\psi\right)=\int_{0}^{\psi}qd\psi
         """
-        return self.integral(self.q, 0, self._psi_norm)
+        return self.integral(self.q, 0, self._psi_norm) * (self.psi_boundary-self.psi_axis)
 
     @cached_property
     def rho_tor(self):
@@ -300,9 +306,11 @@ class FluxSurface(Profiles):
                                         =\frac{q}{2\pi B_{0}\rho_{tor}}
 
         """
-        res = self.q.copy()/(2.0*constants.pi*self._b0)
+        res = self.q/(2.0*constants.pi*self._b0)
         res[1:] /= self.rho_tor[1:]
-        res[0] = res[1]*2-res[2]
+        # res[0] = Profile(self.rho_tor[1:5], res[1:5])(0)  # self.fpol[0]*self.gm1[0]/(2.0*constants.pi*self._b0)
+        # return self.q/(2.0*constants.pi*self._b0)
+        res[0] = 2*res[1]-res[2]
         return res
 
     @cached_property

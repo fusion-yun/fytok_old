@@ -31,14 +31,18 @@ class Tokamak(AttributeTree):
 
     """
 
-    def __init__(self,  cache=None,  *args, time=0.0, rho_tor_norm=129,   **kwargs):
+    def __init__(self,  cache=None,  *args, time=0.0, rho_tor_norm=None,   **kwargs):
         super().__init__(*args, time=time, **kwargs)
         self.__dict__["_cache"] = cache or AttributeTree()
         self.__dict__["_time"] = time
 
         self._time = time
         self._core_profiles = None
-        self._rho_tor_norm = rho_tor_norm
+        if rho_tor_norm is None:
+            self._rho_tor_norm =np.linspace(0, 1.0, 129)
+        else:
+            self._rho_tor_norm = rho_tor_norm
+
         self._edge_profiles = None
 
     # --------------------------------------------------------------------------
@@ -173,7 +177,6 @@ class Tokamak(AttributeTree):
 
             for trans in self.core_transport:
                 trans.update(time=time, equilibrium=self.equilibrium)
-
 
             core_profiles_next = CoreProfiles(time=time,  grid=self.grid, tokamak=self)
 

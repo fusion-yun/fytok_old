@@ -391,8 +391,8 @@ class TransportSolver(AttributeTree):
         gm1 = equilibrium.profiles_1d.mapping("rho_tor_norm", "gm1")(rho_tor_norm)
         # $\Psi$ flux function from current                 [Wb]
         psi0 = equilibrium.profiles_1d.mapping("rho_tor_norm", "psi")(rho_tor_norm)
-        # $\frac{\partial\Psi}{\partial\rho}$               [Wb/m]
-        psi0_prime = equilibrium.profiles_1d.mapping("rho_tor_norm", "dpsi_drho_tor")(rho_tor_norm)*rho_tor_norm
+        # $\frac{\partial\Psi}{\partial\rho_{tor,norm}}$               [Wb/m]
+        psi0_prime = equilibrium.profiles_1d.mapping("rho_tor_norm", "dpsi_drho_tor")(rho_tor_norm)*rho_tor_boundary
 
         # $q$ safety factor                                 [-]
         qsf = equilibrium.profiles_1d.mapping("rho_tor_norm", "q")(rho_tor_norm)
@@ -428,7 +428,7 @@ class TransportSolver(AttributeTree):
 
         d = vpr*gm2/fpol / (4.0*(constants.pi**2)*rho_tor_boundary)
 
-        e = rho_tor_norm*0.0  # - (constants.mu_0 * B0) * k_phi * (conductivity_parallel * rho_tor**2/fpol**2)
+        e = (constants.mu_0 * B0) * k_phi * (conductivity_parallel * rho_tor**2/fpol**2)
 
         f = - vpr * j_ni_exp/(2.0*constants.pi)
 
@@ -480,7 +480,7 @@ class TransportSolver(AttributeTree):
         #     v = 0.0
         #     w =  -constants.mu_0 * boundary_condition.value[0]/fpol[-1]
 
-        Ip = sum(j_ni_exp)
+        # Ip = sum(j_ni_exp)
         #psi0_prime[-1]*d[-1]/constants.mu_0 * fpol[-1]
 
         sol = self.solve_general_form(rho_tor_norm,
@@ -500,6 +500,8 @@ class TransportSolver(AttributeTree):
 
         core_profiles_next.profiles_1d.psi0_prime = psi0_prime
 
+        core_profiles_next.profiles_1d.psi0_prime1 = Profile(rho_tor_norm, psi0).derivative
+
         j_total0 = - Profile(rho_tor_norm,  d * psi0_prime).derivative / c / vpr*(2.0*constants.pi)
 
         j_total0[0] = 2*j_total0[1]-j_total0[2]
@@ -510,13 +512,29 @@ class TransportSolver(AttributeTree):
             core_profiles_next.profiles_1d.psi = Profile(sol.x, sol.y[0])
             core_profiles_next.profiles_1d.psi_prime = Profile(sol.x, sol.yp[0])
             core_profiles_next.profiles_1d.dgamma_current = Profile(sol.x, sol.yp[1])
+            core_profiles_next.profiles_1d.psi_prime1 = Profile(sol.x, sol.y[0]).derivative
 
-            q1 = (constants.pi*2.0)*B0 * rho_tor * rho_tor_boundary / core_profiles_next.profiles_1d.psi_prime
+            # core_profiles_next.profiles_1d.psi_prime
+            q1 = (constants.pi*2.0)*B0 * rho_tor_boundary**2 * sol.x / sol.yp[0]
             # q1[0] = 2*q1[1]-q1[2]
-            q1[0] = Profile(rho_tor_norm[1:], q1[1:]).interpolate()(0)
+            q1[0] = Profile(sol.x[1:6], q1[1:6])(0)
             # # logger.debug(q1)
             # q1 = fpol*gm1/(4.0*constants.pi**2) * vpr * rho_tor_boundary/ core_profiles_next.profiles_1d.psi_prime
-            core_profiles_next.profiles_1d.q1 = q1
+            core_profiles_next.profiles_1d.q1 = Profile(sol.x, q1)
+
+            j_tor = (2.0*constants.pi*R0/constants.mu_0) / vpr \
+                * Profile(rho_tor, -fpol * Profile(sol.x, sol.y[1])(rho_tor_norm)).derivative
+
+            core_profiles_next.profiles_1d.j_tor = j_tor
+
+            j_parallel = (constants.pi*2.0 / (constants.mu_0*B0 * rho_tor_boundary)) * \
+                (fpol**2/vpr) * Profile(sol.x, -sol.yp[1]).interpolate()(rho_tor_norm)
+
+            core_profiles_next.profiles_1d.j_parallel = j_parallel
+
+            # core_profiles_next.profiles_1d.e_field.parallel = (j_parallel-j_ni_exp -
+            #                                                    j_ni_exp*core_profiles_next.profiles_1d.psi)/conductivity_parallel
+
         else:
             psi_prime = (constants.pi*2.0)*B0 * rho_tor / qsf * rho_tor_boundary
             core_profiles_next.profiles_1d.psi_prime = psi_prime
@@ -526,24 +544,9 @@ class TransportSolver(AttributeTree):
 
         core_profiles_next.profiles_1d.q0 = qsf
 
-        dpsi_drho_tor = core_profiles_next.profiles_1d.psi_prime / rho_tor_boundary
+        core_profiles_next.profiles_1d.dpsi_drho_tor = core_profiles_next.profiles_1d.psi_prime
 
-        core_profiles_next.profiles_1d.dpsi_drho_tor = dpsi_drho_tor
-
-        #
-
-        j_tor = (2.0*constants.pi*R0/constants.mu_0 / rho_tor_boundary) / vpr *\
-            Profile(rho_tor_norm, -fpol * core_profiles_next.profiles_1d.electrons.gamma.interpolate()(rho_tor_norm)).derivative
-
-        core_profiles_next.profiles_1d.j_tor = j_tor
-
-        j_parallel = (constants.pi*2.0 / (constants.mu_0*B0 * rho_tor_boundary)) * \
-            (fpol**2/vpr) * Profile(sol.x, -sol.yp[1]).interpolate()(rho_tor_norm)
-
-        core_profiles_next.profiles_1d.j_parallel = j_parallel
-
-        core_profiles_next.profiles_1d.e_field.parallel = (j_parallel-j_ni_exp -
-                                                           j_ni_exp*core_profiles_next.profiles_1d.psi)/conductivity_parallel
+        core_profiles_next.profiles_1d.dpsi_drho_tor /= rho_tor_boundary
 
         core_profiles_next.profiles_1d.j_total = j_ni_exp
 

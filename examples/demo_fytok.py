@@ -100,8 +100,8 @@ if __name__ == "__main__":
     j_total = dgamma  \
         * (tok.equilibrium.profiles_1d.fpol**2) \
         / (constants.mu_0*tok.vacuum_toroidal_field.b0) \
-        * (constants.pi*2.0) \
-        / tok.equilibrium.profiles_1d.dvolume_drho_tor
+        * (constants.pi*2.0)
+    j_total[1:] /= tok.equilibrium.profiles_1d.dvolume_drho_tor[1:]
 
     j_total[0] = 2*j_total[1]-j_total[2]
 
@@ -152,8 +152,15 @@ if __name__ == "__main__":
     #                    }
 
     plot_profiles(tok.equilibrium.profiles_1d,
-                  profiles=["psi_norm", "phi", ["q", "q1"], "rho_tor", "volume", "dvolume_drho_tor",
-                            ["dpsi_drho_tor"]],
+                  profiles=[["q", "q1"],
+                            "rho_tor",
+                            "fpol",
+                            "phi",
+                            "psi",
+                            "vprime",
+                            ["dpsi_drho_tor",
+                             "dpsi_drho_tor1"]
+                            ],
                   x_axis="rho_tor_norm", grid=True) .savefig("../output/eq_profiles_1d.svg")
 
     tok.update()
@@ -164,15 +171,16 @@ if __name__ == "__main__":
                   profiles=[
                       [{"name": "psi0", "opts": {"marker": "+", "label": r"$\psi_{0}$"}},
                        {"name": "psi", "opts": {"marker": "+", "label": r"$\psi$"}}],
-                      ["psi0_prime", "psi_prime" ],
+                      ["psi0_prime", "psi0_prime1", "psi_prime", "psi_prime1"],
+                      ["q0",   "q1"],
                       ["dgamma_current", "f_current"],
                       ["j_total0", "j_ni_exp"],
-                      #   ["electrons.density0", "electrons.density"],
+                      ["electrons.density0", "electrons.density"],
                       #   ["electrons.density_prime", "electrons.density0_prime"],
                       ["electrons.dgamma", "electrons.se_exp0"],
-                        "j_tor", "j_parallel",
+                      "j_tor", "j_parallel",
                       #   "e_field.parallel",
-                      ["q0",   "q1"],
+
                   ],
                   x_axis="grid.rho_tor_norm", grid=True).savefig("../output/core_profiles.svg")
     # #

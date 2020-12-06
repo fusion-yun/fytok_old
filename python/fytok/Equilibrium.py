@@ -104,7 +104,7 @@ class Equilibrium(AttributeTree):
         if psi_norm is None:
             psi_norm = 129  # default number of magnetic flux surface
 
-        if type(psi_norm) is int:
+        if isinstance(psi_norm, int):
             psi_norm = np.linspace(0.0, 1.0, psi_norm)
         elif isinstance(psi_norm, np.ndarray):
             pass
@@ -519,7 +519,7 @@ class Equilibrium(AttributeTree):
 
         @cached_property
         def q1(self):
-            return self._equilibrium.cache.profiles_1d.q
+            return self._equilibrium.cache.profiles_1d.q*self.flux_surface.cocos_flag
 
         @cached_property
         def psi_norm1(self):
@@ -554,10 +554,6 @@ class Equilibrium(AttributeTree):
         @cached_property
         def drho_tor_dpsi(self)	:
             return self.flux_surface.drho_tor_dpsi
-
-        @cached_property
-        def drho_tor_dpsi1(self):
-            return self.derivative("rho_tor")
 
         @cached_property
         def dpsi_drho_tor(self)	:
