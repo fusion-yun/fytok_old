@@ -227,10 +227,7 @@ class TransportSolver(AttributeTree):
     def update_global_quantities(self, core_profiles_prev,  core_profiles_next):
         # self.core_profiles_prev.global_quantities = NotImplemented
         pass
-
-    COEFF = collections.namedtuple("coeff", "a b c d e f ")
-    BCCOEFF = collections.namedtuple("bc", "u v w")
-
+ 
     def solve_general_form(self, x, y0, yp0, inv_tau, coeff,  bc, **kwargs):
         r"""solve standard form
 
@@ -493,7 +490,7 @@ class TransportSolver(AttributeTree):
         logger.debug(
             f"Solve transport equations: Current : {'Done' if  sol.success else 'Failed' }  \n Message: {sol.message} ")
 
-        core_profiles_next.profiles_1d.psi0 = psi0
+        core_profiles_next.profiles_1d.psi0 = psi0.copy()
         core_profiles_next.profiles_1d.psi0_prime = psi0_prime
         core_profiles_next.profiles_1d.psi0_prime1 = Profile(rho_tor_norm, psi0).derivative
 
