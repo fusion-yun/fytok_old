@@ -765,7 +765,8 @@ class TransportSolver(AttributeTree):
                                       tol=0.001, verbose=2, max_nodes=2500)
 
         logger.debug(
-            f"Solve transport equations: Electron density: {'Done' if  sol.success else 'Failed' }  \n Message: {sol.message} ")
+            f"""Solve transport equations: Electron density: {'Done' if  sol.success else 'Failed' }  
+             Message: {sol.message} """)
 
         core_profiles_next.profiles_1d.electrons.density0 = ne0
         core_profiles_next.profiles_1d.electrons.density0_prime = ne0_prime
