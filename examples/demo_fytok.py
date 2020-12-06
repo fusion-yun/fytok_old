@@ -157,9 +157,11 @@ if __name__ == "__main__":
                             "fpol",
                             "phi",
                             "psi",
-                            "vprime",
-                            ["dpsi_drho_tor",
-                             "dpsi_drho_tor1"]
+                            "dvolume",
+                            "dvolume_dpsi",
+                            "dvolume_drho_tor",
+                            "drho_tor_dpsi",
+                            "gm1", "gm2", "gm3"
                             ],
                   x_axis="rho_tor_norm", grid=True) .savefig("../output/eq_profiles_1d.svg")
 
@@ -173,10 +175,10 @@ if __name__ == "__main__":
                        {"name": "psi", "opts": {"marker": "+", "label": r"$\psi$"}}],
                       ["psi0_prime", "psi0_prime1", "psi_prime", "psi_prime1"],
                       ["q0",   "q1"],
-                      ["dgamma_current", "f_current"],
-                      ["j_total0", "j_ni_exp"],
+                      #   ["dgamma_current", "f_current"],
+                      #   ["j_total0", "j_ni_exp"],
                       ["electrons.density0", "electrons.density"],
-                      #   ["electrons.density_prime", "electrons.density0_prime"],
+                      ["electrons.density_prime", "electrons.density0_prime"],
                       ["electrons.dgamma", "electrons.se_exp0"],
                       "j_tor", "j_parallel",
                       #   "e_field.parallel",

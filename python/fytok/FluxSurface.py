@@ -256,19 +256,20 @@ class FluxSurface(Profiles):
 
     @cached_property
     def dvolume_dpsi(self):
+ 
+        return self.vprime*self.cocos_flag
+
+    @cached_property
+    def vprime(self):
         r""".. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
             .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
         """
-        return (2*constants.pi) * np.sum(self.Jdl, axis=1)*self.cocos_flag
+        return (2*constants.pi) * np.sum(self.Jdl, axis=1)
 
     @cached_property
     def volume(self):
         """Volume enclosed in the flux surface[m ^ 3]"""
         return self.integral(self.dvolume_dpsi, 0.0, self._psi_norm) * (self.psi_boundary-self.psi_axis)
-
-    @property
-    def vprime(self):
-        return self.dvolume_dpsi
 
     @cached_property
     def q(self):
@@ -308,9 +309,9 @@ class FluxSurface(Profiles):
         """
         res = self.q/(2.0*constants.pi*self._b0)
         res[1:] /= self.rho_tor[1:]
-        # res[0] = Profile(self.rho_tor[1:5], res[1:5])(0)  # self.fpol[0]*self.gm1[0]/(2.0*constants.pi*self._b0)
+        res[0] = Profile(self.rho_tor[1:5], res[1:5])(0)  # self.fpol[0]*self.gm1[0]/(2.0*constants.pi*self._b0)
         # return self.q/(2.0*constants.pi*self._b0)
-        res[0] = 2*res[1]-res[2]
+        # res[0] = 2*res[1]-res[2]
         return res
 
     @cached_property

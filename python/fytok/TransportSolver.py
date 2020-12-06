@@ -502,9 +502,9 @@ class TransportSolver(AttributeTree):
 
         core_profiles_next.profiles_1d.psi0_prime1 = Profile(rho_tor_norm, psi0).derivative
 
-        j_total0 =   Profile(rho_tor_norm,  d * psi0_prime).derivative / c / vpr*(2.0*constants.pi)
+        j_total0 = Profile(rho_tor_norm,  d * psi0_prime).derivative / c / vpr*(2.0*constants.pi)
 
-        j_total0[0] = 2*j_total0[1]-j_total0[2]
+        # j_total0[0] = 2*j_total0[1]-j_total0[2]
         core_profiles_next.profiles_1d.j_total0 = j_total0
         core_profiles_next.profiles_1d.j_ni_exp = j_ni_exp
 
@@ -647,7 +647,7 @@ class TransportSolver(AttributeTree):
         fpol = equilibrium.profiles_1d.mapping("rho_tor_norm", "fpol")(rho_tor_norm)
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        vpr = equilibrium.profiles_1d.mapping("rho_tor_norm", "dvolume_dpsi")(rho_tor_norm)
+        vpr = equilibrium.profiles_1d.mapping("rho_tor_norm", "dvolume_drho_tor")(rho_tor_norm)
         vprm = vpr  # core_profiles_prev.profiles_1d.dvolume_dpsi
 
         gm3 = equilibrium.profiles_1d.mapping("rho_tor_norm", "gm3")(rho_tor_norm)
