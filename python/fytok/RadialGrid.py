@@ -1,6 +1,6 @@
 
 from functools import cached_property, lru_cache
-
+import collections
 import numpy as np
 from spdm.util.AttributeTree import AttributeTree
 from spdm.util.logger import logger
@@ -12,7 +12,22 @@ class RadialGrid:
 
     def __init__(self,  rho_tor_norm=None, equilibrium=None,   **kwargs):
         self._equilibrium = equilibrium
-        self._rho_tor_norm = make_x_axis(rho_tor_norm)
+
+        if not isinstance(rho_tor_norm, np.ndarray):
+            rho_tor_norm = 129
+
+        if isinstance(rho_tor_norm, int):
+            # rho_tor_norm = np.linspace(1.0/rho_tor_norm, 1.0, rho_tor_norm, endpoint=False)
+            rho_tor_norm = np.linspace(0.0, 1.0, rho_tor_norm, endpoint=True)
+
+        elif isinstance(rho_tor_norm, np.ndarray):
+            pass
+        elif isinstance(rho_tor_norm, collections.abc.Sequence):
+            rho_tor_norm = np.array(rho_tor_norm)
+        else:
+            raise TypeError(f"Illegal x_axis type! Need 'int' or 'ndarray', not {type(rho_tor_norm)}.")
+
+        self._rho_tor_norm = rho_tor_norm
 
     @cached_property
     def rho_tor_norm(self):

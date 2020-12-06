@@ -216,6 +216,10 @@ class FluxSurface(Profiles):
         return self._psirz(self.R, self.Z, dx=1), self._psirz(self.R, self.Z, dy=1)
 
     @cached_property
+    def psi(self):
+        return self._psi_norm * (self.psi_boundary-self.psi_axis)+self.psi_axis
+
+    @cached_property
     def dl(self):
         dR = (np.roll(self.R, 1, axis=1) - np.roll(self.R, -1, axis=1))/2.0
         dZ = (np.roll(self.Z, 1, axis=1) - np.roll(self.Z, -1, axis=1))/2.0
@@ -248,13 +252,20 @@ class FluxSurface(Profiles):
         return (2*constants.pi) * np.sum(self.Jdl, axis=1)
 
     @cached_property
+    def dvolume_dpsi_norm(self):
+        r""".. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
+            .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
+        """
+        return (2*constants.pi) * np.sum(self.Jdl, axis=1) * (self.psi_boundary-self.psi_axis)
+
+    @cached_property
     def volume(self):
         """Volume enclosed in the flux surface[m ^ 3]"""
-        return self.integral(self.dvolume_dpsi, 0.0, self._psi_norm) * (self.psi_axis-self.psi_boundary)
+        return self.integral(self.vprime, 0.0, self._psi_norm)* (self.psi_boundary-self.psi_axis)
 
     @property
     def vprime(self):
-        return self.dvolume_dpsi
+        return self.dvolume_dpsi_norm
 
     @cached_property
     def q(self):
@@ -264,7 +275,7 @@ class FluxSurface(Profiles):
             .. math:: q(\psi)=\frac{d\Phi}{d\psi}=\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
         """
         logger.debug(r"Calculate q as  F V^{\prime} \left\langle R^{-2}\right \rangle /(4 \pi^2) ")
-        return self.fpol*self.dvolume_dpsi * self.gm1 / (4*scipy.constants.pi**2)
+        return self.fpol*self.vprime * self.gm1 / (4*scipy.constants.pi**2)
 
     @cached_property
     def phi(self):
@@ -289,8 +300,8 @@ class FluxSurface(Profiles):
                                         =\frac{q}{2\pi B_{0}\rho_{tor}}
 
         """
-        res = self.q.copy()
-        res[1:] /= self.rho_tor[1:]/(2.0*constants.pi*self._b0)
+        res = self.q.copy()/(2.0*constants.pi*self._b0)
+        res[1:] /= self.rho_tor[1:]
         res[0] = res[1]*2-res[2]
         return res
 

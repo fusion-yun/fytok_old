@@ -442,20 +442,17 @@ class Equilibrium(AttributeTree):
         @cached_property
         def psi_norm(self):
             """Normalized poloidal flux  [Wb]. """
-            return self._x_axis
+            return self.flux_surface.psi_norm
 
         @cached_property
         def psi(self):
             """Poloidal flux  [Wb]. """
-            psi_norm = self.psi_norm
-            psi_boundary = self._equilibrium.global_quantities.psi_boundary
-            psi_axis = self._equilibrium.global_quantities.psi_axis
-            return psi_norm*(psi_boundary-psi_axis)+psi_axis
+            return self.flux_surface.psi
 
         @cached_property
         def phi(self):
             """Toroidal flux  [Wb] """
-            return self._equilibrium.flux_surface.phi
+            return self.flux_surface.phi
 
         @cached_property
         def pressure(self):
@@ -491,7 +488,7 @@ class Equilibrium(AttributeTree):
         @cached_property
         def f(self):
             """Diamagnetic function (F=R B_Phi)  [T.m]."""
-            return self._equilibrium.flux_surface.fpol
+            return self.flux_surface.fpol
 
         @cached_property
         def fpol(self):
@@ -518,7 +515,7 @@ class Equilibrium(AttributeTree):
 
                 .. math:: q(\psi) =\frac{F V^{\prime} \left\langle R^{-2}\right \rangle }{4 \pi^2}
             """
-            return self._equilibrium.flux_surface.q
+            return self.flux_surface.q
 
         @cached_property
         def q1(self):
@@ -546,7 +543,7 @@ class Equilibrium(AttributeTree):
         @cached_property
         def rho_tor(self):
             """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0[m]"""
-            return self._equilibrium.flux_surface.rho_tor
+            return self.flux_surface.rho_tor
 
         @cached_property
         def rho_tor_norm(self):
@@ -556,7 +553,7 @@ class Equilibrium(AttributeTree):
 
         @cached_property
         def drho_tor_dpsi(self)	:
-            return self._equilibrium.flux_surface.drho_tor_dpsi
+            return self.flux_surface.drho_tor_dpsi
 
         @cached_property
         def drho_tor_dpsi1(self):
@@ -565,21 +562,26 @@ class Equilibrium(AttributeTree):
         @cached_property
         def dpsi_drho_tor(self)	:
             """Derivative of Psi with respect to Rho_Tor[Wb/m]. """
-            return self._equilibrium.flux_surface.dpsi_drho_tor
+            return self.flux_surface.dpsi_drho_tor
 
         @cached_property
         def vprime(self):
-            return self.dvolume_dpsi
+            return self.flux_surface.vprime
 
         @cached_property
         def dvolume_dpsi(self):
             """Radial derivative of the volume enclosed in the flux surface with respect to Psi[m ^ 3.Wb ^ -1]. """
-            return self._equilibrium.flux_surface.dvolume_dpsi
+            return self.flux_surface.dvolume_dpsi
+
+        @cached_property
+        def dvolume_dpsi_norm(self):
+            """Radial derivative of the volume enclosed in the flux surface with respect to Psi[m ^ 3.Wb ^ -1]. """
+            return self.flux_surface.dvolume_dpsi_norm
 
         @cached_property
         def volume(self):
             """Volume enclosed in the flux surface[m ^ 3]"""
-            return self._equilibrium.flux_surface.volume
+            return self.flux_surface.volume
 
         @cached_property
         def dvolume_drho_tor(self)	:
@@ -817,7 +819,7 @@ class Equilibrium(AttributeTree):
             # z = self._equilibrium.cache.boundary.outline.z
 
             # if len(r) == 0 or len(z) == 0:
-            boundary = np.array([[r, z] for r, z in self._equilibrium.flux_surface.find_by_psinorm(1.0, self._ntheta)])
+            boundary = np.array([[r, z] for r, z in self.flux_surface.find_by_psinorm(1.0, self._ntheta)])
             r = boundary[:, 0]
             z = boundary[:, 1]
 
@@ -826,7 +828,7 @@ class Equilibrium(AttributeTree):
         @cached_property
         def x_point(self):
             res = AttributeTree()
-            _, xpt = self._equilibrium.flux_surface.critical_points
+            _, xpt = self.flux_surface.critical_points
             for p in xpt:
                 res[_next_] = p
             return res
@@ -834,7 +836,7 @@ class Equilibrium(AttributeTree):
         @cached_property
         def psi(self):
             """Value of the poloidal flux at which the boundary is taken  [Wb]"""
-            return self._equilibrium.flux_surface.psi_boundary
+            return self.flux_surface.psi_boundary
 
         @cached_property
         def psi_norm(self):

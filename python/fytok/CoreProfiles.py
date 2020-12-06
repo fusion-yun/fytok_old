@@ -494,13 +494,16 @@ class CoreProfiles(AttributeTree):
         #     """Parallel conductivity {dynamic}[ohm ^ -1.m ^ -1]"""
         #     return NotImplemented
 
+        class EField(Profiles):
+            def __init__(self, cache=None,  *args, grid=None,    **kwargs):
+                super().__init__(cache, *args, x_axis=grid.rho_tor_norm, **kwargs)
+                self.__dict__['_grid'] = grid
+
         @cached_property
         def e_field(self):
             """Electric field, averaged on the magnetic surface. E.g for the parallel component, average(E.B) / B0,
              using core_profiles/vacuum_toroidal_field/b0[V.m ^ -1]  """
-            return AttributeTree(
-                parallel=Profile(self.grid.rho_tor_norm, description={"name": "e_field.parallel"})
-            )
+            return CoreProfiles.Profiles1D.EField(self._cache["e_field"], grid=self.grid)
 
         @cached_property
         def phi_potential(self):
@@ -519,7 +522,9 @@ class CoreProfiles(AttributeTree):
         def q(self):
             """Safety factor(IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic}[-].
             This quantity is COCOS-dependent, with the following transformation: """
-            return (constants.pi*2.0)*self._b0*self.grid.rho_tor/self.grid.dpsi_drho_tor
+            q = (constants.pi*2.0)*self._b0*self.grid.rho_tor/self.grid.dpsi_drho_tor
+            q[0] = 2*q[1]-q[2]
+            return q
 
         @cached_property
         def magnetic_shear(self):

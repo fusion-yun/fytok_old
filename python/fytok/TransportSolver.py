@@ -237,25 +237,19 @@ class TransportSolver(AttributeTree):
             Args:
                 x      : :math:`\rho_{tor,norm}`
                 y0     : :math:`y(t-1)`
-                yp0    : :math:`y^{\prime}(t-1)=\left.\frac{\partial Y}{\partial x}\right|_{t-1}`
-                tau    : :math:`\tau`  time step
-                coeff  : coefficients for `bvp` solver,                       
-
+                yp0    : :math:`y^{\prime}(t-1)=\left. {\partial Y}/{\partial x}\right|_{t-1}`
+                inv_tau    : :math:`1/\tau`  inverse of time step
+                coeff  : coefficients for `bvp` solver, :math:`a,b,c,d,e,f,g`,
                 bc     : boundary condition ,  :math:`u,v,w`
 
-                         .. math::
-                            u\cdot y+ v\cdot\left.y^{\prime}\right|_{x=bnd} =w
-                            :label: bvp_eq_bc
-
-
             Returns:
-                (np.ndarra,np.ndarray)  : :math:`y(t)` , :math:`y^{\prime}(t)`
+                result of scipy.integrate.solve_bvp
 
             Note:
-                Generalized form of transport equations:               
+                Generalized form of transport equations:
 
                 .. math::
-                    \frac{a\left(x\right)\cdot Y\left(x,t\right)-b\left(x\right)\cdot Y\left(x,t-1\right)}{h}+\
+                    \frac{a\left(x\right)\cdot Y\left(x,t\right)-b\left(x\right)\cdot Y\left(x,t-1\right)}{\tau}+\
                     \frac{1}{c\left(x\right)}\frac{\partial}{\partial x}\Gamma\left(x,t\right)=f\left(x\right)-g\left(x\right)\cdot Y\left(x,t\right)
                     :label: generalized_trans_eq
 
@@ -263,9 +257,9 @@ class TransportSolver(AttributeTree):
                     \Gamma\left(x,t\right)\equiv-d\left(x\right)\cdot\frac{\partial Y\left(x,t\right)}{\partial\rho}+e\left(x\right)\cdot Y\left(x,t\right)
                     :label: generalized_trans_eq_gamma
 
-                where   :math:`Y` is the function, :math:`t` is time , :math:`x` is the radial coordinate. 
-                
-                The boundary conditions are given by                        
+                where   :math:`Y` is the function, :math:`t` is time , :math:`x` is the radial coordinate.
+
+                The boundary conditions are given by
 
                 .. math::
                         u\left(x_{bnd}\right)\cdot Y\left(x_{bnd},t\right)+v\left(x_{bnd}\right)\cdot\Gamma\left(x_{bnd},t\right)=w\left(x_{bnd}\right)
@@ -279,11 +273,10 @@ class TransportSolver(AttributeTree):
                               -\frac{\Gamma\left(x,t\right)-e\left(x\right)\cdot Y\left(x,t\right)}{d\left(x\right)}\\
                         \frac{\partial\Gamma\left(x,t\right)}{\partial x} & = \
                              c\left(x\right)\left[f\left(x\right)-g\left(x\right)\cdot Y\left(x,t\right)-\
-                                 \frac{a\left(x\right)\cdot Y\left(x,t\right)-b\left(x\right)\cdot Y\left(x,t-1\right)}{h}\right]
+                                 \frac{a\left(x\right)\cdot Y\left(x,t\right)-b\left(x\right)\cdot Y\left(x,t-1\right)}{\tau}\right]
                     \end{cases}
+                    :label: generalized_trans_eq_first_order
 
-
-                solved by  scipy.integrate.solve_bvp
         """
 
         a, b, c, d, e, f, g = coeff
@@ -314,9 +307,8 @@ class TransportSolver(AttributeTree):
 
             y0, gamma0 = Ya
             y1, gamma1 = Yb
-
-            return (u0 * y0 - v0 * gamma0 - w0,
-                    u1 * y1 - v1 * gamma1 - w1)
+            return (u0 * y0 + v0 * gamma0 - w0,
+                    u1 * y1 + v1 * gamma1 - w1)
 
         return scipy.integrate.solve_bvp(fun, bc_func, x, np.vstack((y0, gamma0)), **kwargs)
 
@@ -333,19 +325,19 @@ class TransportSolver(AttributeTree):
 
             Args:
                 core_profiles_prev  : profiles at :math:`t-1`
-                core_profiles_next　:  profiles at :math:`t`
-
+                core_profiles_next　: profiles at :math:`t`
                 equilibrium         : Equilibrium
                 transports          : CoreTransport
                 sources             : CoreSources
                 boundary_condition  :
 
-            .. math ::  \sigma_{\parallel}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho} \right) \psi= \
-                        \frac{F^{2}}{\mu_{0}B_{0}\rho}\frac{\partial}{\partial\rho}\left[\frac{V^{\prime}}{4\pi^{2}}\left\langle \left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle \
-                        \frac{1}{F}\frac{\partial\psi}{\partial\rho}\right]-\frac{V^{\prime}}{2\pi\rho}\left(j_{ni,exp}+j_{ni,imp}\psi\right)
-                :label: transport_current
-
             Note:
+                .. math ::  \sigma_{\parallel}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho} \right) \psi= \
+                            \frac{F^{2}}{\mu_{0}B_{0}\rho}\frac{\partial}{\partial\rho}\left[\frac{V^{\prime}}{4\pi^{2}}\left\langle \left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle \
+                            \frac{1}{F}\frac{\partial\psi}{\partial\rho}\right]-\frac{V^{\prime}}{2\pi\rho}\left(j_{ni,exp}+j_{ni,imp}\psi\right)
+                    :label: transport_current
+
+
                 if :math:`\psi` is not solved, then
 
                 ..  math ::  \psi =\int_{0}^{\rho}\frac{2\pi B_{0}}{q}\rho d\rho
@@ -357,18 +349,15 @@ class TransportSolver(AttributeTree):
         tau = core_profiles_next.time - core_profiles_prev.time
 
         if abs(tau) < EPSILON:
-            inv_tau = 0.0
+            inv_tau = 0
         else:
             inv_tau = 1.0/tau
 
+        # $R_0$ characteristic major radius of the device   [m]
+        R0 = core_profiles_next.vacuum_toroidal_field.r0
+
         # $B_0$ magnetic field measured at $R_0$            [T]
         B0 = core_profiles_next.vacuum_toroidal_field.b0
-
-        # $B_0^-$ previous time steps$B_0$,                 [T]
-        B0m = core_profiles_prev.vacuum_toroidal_field.b0
-
-        # $\dot{B}_{0}$ time derivative or $B_0$,           [T/s]
-        B0dot = (B0 - B0m)*inv_tau
 
         # -----------------------------------------------------------
         # Grid
@@ -376,10 +365,17 @@ class TransportSolver(AttributeTree):
         rho_tor = core_profiles_next.profiles_1d.grid.rho_tor
 
         rho_tor_norm = core_profiles_next.profiles_1d.grid.rho_tor_norm
-        rho_tor_boundary = core_profiles_next.profiles_1d.grid.rho_tor_boundary
-        # $rho_tor_{norm}$ normalised minor radius                [-]
-        # rho_tor_norm = rho_tor/rho_tor_boundary
-        # rho_tor_norm = core_profiles_next.profiles_1d.grid.rho_tor_norm
+
+        rho_tor_boundary = core_profiles_next.profiles_1d.grid.rho_tor[-1]
+
+        k_phi = ((core_profiles_next.vacuum_toroidal_field.b0 -
+                  core_profiles_prev.vacuum_toroidal_field.b0) /
+                 (core_profiles_next.vacuum_toroidal_field.b0 +
+                  core_profiles_prev.vacuum_toroidal_field.b0) +
+                 (core_profiles_next.profiles_1d.grid.rho_tor[-1] -
+                  core_profiles_prev.profiles_1d.grid.rho_tor[-1]) /
+                 (core_profiles_next.profiles_1d.grid.rho_tor[-1] +
+                  core_profiles_prev.profiles_1d.grid.rho_tor[-1]))*inv_tau
 
         # -----------------------------------------------------------
         # Equilibrium
@@ -389,17 +385,17 @@ class TransportSolver(AttributeTree):
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
         vpr = equilibrium.profiles_1d.mapping("rho_tor_norm", "dvolume_drho_tor")(rho_tor_norm)
-
+        vppr = equilibrium.profiles_1d.mapping("rho_tor_norm", "dvolume_drho_tor").derivative()(rho_tor_norm)
         # $gm2 \euqiv \left\langle \left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle $  [m^-2]
         gm2 = equilibrium.profiles_1d.mapping("rho_tor_norm", "gm2")(rho_tor_norm)
-
+        gm1 = equilibrium.profiles_1d.mapping("rho_tor_norm", "gm1")(rho_tor_norm)
         # $\Psi$ flux function from current                 [Wb]
         psi0 = equilibrium.profiles_1d.mapping("rho_tor_norm", "psi")(rho_tor_norm)
         # $\frac{\partial\Psi}{\partial\rho}$               [Wb/m]
-        psi0_prime = equilibrium.profiles_1d.derivative_func("psi", "rho_tor_norm")(rho_tor_norm)
+        psi0_prime = equilibrium.profiles_1d.mapping("rho_tor_norm", "dpsi_drho_tor")(rho_tor_norm)*rho_tor_norm
 
         # $q$ safety factor                                 [-]
-        # qsf = core_profiles_next.profiles_1d.q
+        qsf = equilibrium.profiles_1d.mapping("rho_tor_norm", "q")(rho_tor_norm)
 
         # plasma parallel conductivity,                     [(Ohm*m)^-1]
         conductivity_parallel = core_profiles_next.profiles_1d._create(0.0, name="conductivity_parallel")
@@ -424,25 +420,20 @@ class TransportSolver(AttributeTree):
         # for src in sources(equilibrium):
         #     j_ni_exp += src.profiles_1d.j_parallel
 
-        # Coefficients for current diffusion equation in form:
-        #   (a*y-b*y(t-1))/tau = d(-d*y' + e*y) + g*y+ f
-        rho_tor[0] = 0.01
+        a = conductivity_parallel * rho_tor
 
-        a = conductivity_parallel
+        b = conductivity_parallel * rho_tor
 
-        b = conductivity_parallel
+        c = (constants.mu_0*B0 * rho_tor_boundary)/(fpol**2)
 
-        c = (constants.mu_0*B0 * rho_tor*rho_tor_boundary)/fpol**2
+        d = vpr*gm2/fpol / (4.0*(constants.pi**2)*rho_tor_boundary)
 
-        c[0] = 2*c[1]-c[2]
-
-        d = vpr*gm2 / (4.0*(constants.pi**2)*fpol*rho_tor_boundary)
-
-        e = - (constants.mu_0 * B0dot/2.0)*conductivity_parallel * (rho_tor/fpol)**2
+        e = rho_tor_norm*0.0  # - (constants.mu_0 * B0) * k_phi * (conductivity_parallel * rho_tor**2/fpol**2)
 
         f = - vpr * j_ni_exp/(2.0*constants.pi)
 
         g = vpr * j_ni_imp/(2.0*constants.pi)
+        # + rho_tor* conductivity_parallel*k_phi*(2.0-2.0*rho_tor *  fprime/fpol + rho_tor * conductivity_parallel_prime/conductivity_parallel)
 
         # Boundary conditions for current diffusion equation in form:
         #     u*Y + v*Y' = w
@@ -458,79 +449,103 @@ class TransportSolver(AttributeTree):
         #           6: equation not solved; [eV]
 
         # At the edge:
-        if boundary_condition.identifier.index == 1:  # poloidal flux
-            u = 1.0
-            v = 0.0
-            w = boundary_condition.value[0]
-        elif boundary_condition.identifier.index == 2:  # ip
-            u = 0.0
-            v = 1.0
-            w = - constants.mu_0/(vpr[-1]*gm3[-1])*(4.0*constants.pi**2)*boundary_condition.value[0]
-        elif boundary_condition.identifier.index == 3:  # loop voltage
-            u = 1.0
-            v = 0.0
-            w = tau*boundary_condition.value[0]+psi0[-1]
-        elif boundary_condition.identifier.index == 5:  # generic boundary condition  y expressed as a1y'+a2y=a3.
-            v, u, w = boundary_condition.value
-        else:
-            # Current equation is not solved:
-            #  Interpretative value of safety factor should be given
-            # if any(qsf != 0.0):  # FIXME
-            # dy = 2.0*constants.pi*B0*rho_tor/qsf
+        # if boundary_condition.identifier.index == 1:  # poloidal flux
+        #     u = 1.0
+        #     v = 0.0
+        #     w = boundary_condition.value[0]
+        # elif boundary_condition.identifier.index == 2:  # ip
+        #     u = 0.0
+        #     v = 1.0
+        #     w =  constants.mu_0 * boundary_condition.value[0]/fpol[-1]
+        # elif boundary_condition.identifier.index == 3:  # loop voltage
+        #     u = 1.0
+        #     v = 0.0
+        #     w = tau*boundary_condition.value[0]+psi0[-1]
+        # elif boundary_condition.identifier.index == 5:  # generic boundary condition  y expressed as a1y'+a2y=a3.
+        #     v, u, w = boundary_condition.value
+        # else:
+        #     # Current equation is not solved:
+        #     #  Interpretative value of safety factor should be given
+        #     # if any(qsf != 0.0):  # FIXME
+        #     # dy = 2.0*constants.pi*B0*rho_tor/qsf
 
-            # a[-1] = 1.0*inv_tau
-            # b[-1] = 1.0*inv_tau
-            # # c[-1] = 1.0
-            # d[-1] = 0.0
-            # e[-1] = 0.0
-            # f[-1] = 0.0
+        #     # a[-1] = 1.0*inv_tau
+        #     # b[-1] = 1.0*inv_tau
+        #     # # c[-1] = 1.0
+        #     # d[-1] = 0.0
+        #     # e[-1] = 0.0
+        #     # f[-1] = 0.0
 
-            u = 1.0
-            v = 0.0
-            w = psi0[-1]  # core_profiles_next.profiles_1d.integral(2.0*constants.pi*B0/qsf, 0, 1.0)
+        #     u = 1.0
+        #     v = 0.0
+        #     w =  -constants.mu_0 * boundary_condition.value[0]/fpol[-1]
 
-        try:
+        Ip = sum(j_ni_exp)
+        #psi0_prime[-1]*d[-1]/constants.mu_0 * fpol[-1]
 
-            sol = self.solve_general_form(rho_tor_norm,
-                                          psi0, psi0_prime,
-                                          inv_tau,
-                                          (a, b, c, d, e, f, g),
-                                          ((0, 1, 0), (u, v, w))
-                                          )
-        except Exception as error:
-            logger.error(f"Unable to solve the 'current' transport equation! \n {error} ")
-        else:
-            if sol.success:
-                logger.debug(f"Solve transport equations: Current : {sol.message}")
-        finally:
-            core_profiles_next.profiles_1d.psi = Profile(sol.x, sol.y[0])
-            core_profiles_next.profiles_1d.psi_prime = Profile(sol.x, sol.y[1])
+        sol = self.solve_general_form(rho_tor_norm,
+                                      psi0, psi0_prime,
+                                      inv_tau,
+                                      (a, b, c, d, e, f, g),
+                                      ((0, 1, 0.0),
+                                       (1, 0, psi0[-1])),  # 　Ip  -constants.mu_0 * Ip/fpol[-1]
+                                      verbose=2,
+                                      max_nodes=2500
+                                      )
+
+        logger.debug(
+            f"Solve transport equations: Current : {'Done' if  sol.success else 'Failed' }  \n Message: {sol.message} ")
 
         core_profiles_next.profiles_1d.psi0 = psi0
+
         core_profiles_next.profiles_1d.psi0_prime = psi0_prime
 
+        j_total0 = - Profile(rho_tor_norm,  d * psi0_prime).derivative / c / vpr*(2.0*constants.pi)
+
+        j_total0[0] = 2*j_total0[1]-j_total0[2]
+        core_profiles_next.profiles_1d.j_total0 = j_total0
+        core_profiles_next.profiles_1d.j_ni_exp = j_ni_exp
+
+        if sol.success:
+            core_profiles_next.profiles_1d.psi = Profile(sol.x, sol.y[0])
+            core_profiles_next.profiles_1d.psi_prime = Profile(sol.x, sol.yp[0])
+            core_profiles_next.profiles_1d.dgamma_current = Profile(sol.x, sol.yp[1])
+
+            q1 = (constants.pi*2.0)*B0 * rho_tor * rho_tor_boundary / core_profiles_next.profiles_1d.psi_prime
+            # q1[0] = 2*q1[1]-q1[2]
+            q1[0] = Profile(rho_tor_norm[1:], q1[1:]).interpolate()(0)
+            # # logger.debug(q1)
+            # q1 = fpol*gm1/(4.0*constants.pi**2) * vpr * rho_tor_boundary/ core_profiles_next.profiles_1d.psi_prime
+            core_profiles_next.profiles_1d.q1 = q1
+        else:
+            psi_prime = (constants.pi*2.0)*B0 * rho_tor / qsf * rho_tor_boundary
+            core_profiles_next.profiles_1d.psi_prime = psi_prime
+            core_profiles_next.profiles_1d.psi = psi0[0] + Profile(rho_tor_norm, psi_prime).integral(0, rho_tor_norm)
+
+        core_profiles_next.profiles_1d.f_current = f*c
+
+        core_profiles_next.profiles_1d.q0 = qsf
+
+        dpsi_drho_tor = core_profiles_next.profiles_1d.psi_prime / rho_tor_boundary
+
+        core_profiles_next.profiles_1d.dpsi_drho_tor = dpsi_drho_tor
+
+        #
+
+        j_tor = (2.0*constants.pi*R0/constants.mu_0 / rho_tor_boundary) / vpr *\
+            Profile(rho_tor_norm, -fpol * core_profiles_next.profiles_1d.electrons.gamma.interpolate()(rho_tor_norm)).derivative
+
+        core_profiles_next.profiles_1d.j_tor = j_tor
+
+        j_parallel = (constants.pi*2.0 / (constants.mu_0*B0 * rho_tor_boundary)) * \
+            (fpol**2/vpr) * Profile(sol.x, -sol.yp[1]).interpolate()(rho_tor_norm)
+
+        core_profiles_next.profiles_1d.j_parallel = j_parallel
+
+        core_profiles_next.profiles_1d.e_field.parallel = (j_parallel-j_ni_exp -
+                                                           j_ni_exp*core_profiles_next.profiles_1d.psi)/conductivity_parallel
+
         core_profiles_next.profiles_1d.j_total = j_ni_exp
-
-        # core_profiles_next.profiles_1d.A = A
-        # core_profiles_next.profiles_1d.B = B
-        # core_profiles_next.profiles_1d.C = C
-
-        # core_profiles_next.profiles_1d.I = j_ni_exp*core_profiles_next.profiles_1d.volume
-
-        # New magnetic flux function and current density:
-        # intfun7 = core_profiles_next.profiles_1d.integral(c*((a*psi1 - b*psi0)*inv_tau  - f))
-        # # intfun7 = [func7.integral(0, r) for r in rho_tor_norm]
-
-        # dy = (intfun7 + e*psi1) / d
-
-        # # fun4 = fun2*dy
-        # # fun5 = fun2*dy*R0*B0/fpol
-
-        # dfun4 = UnivariateSpline(rho_tor, fun2*dy).derivative()(rho_tor)  # Derivation of function FUN4
-        # dfun5 = UnivariateSpline(rho_tor, fun2*dy*R0*B0/fpol).derivative()(rho_tor)   # Derivation of function FUN5
-
-        # # New profiles of plasma parameters obtained
-        # #     from current diffusion equation:
 
         # core_profiles_next.profiles_1d.q = 2.0*constants.pi*B0*rho_tor/psi_prime1
 
@@ -566,6 +581,21 @@ class TransportSolver(AttributeTree):
                          boundary_condition=None,
                          hyper_diff=[0.00, 1.0],
                          **kwargs):
+        r"""
+
+            Note:
+
+                .. math::
+                    \left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(V^{\prime}n_{s}\right)+\frac{\partial}{\partial\rho}\Gamma_{s}=\
+                    V^{\prime}\left(S_{s,exp}-S_{s,imp}\cdot n_{s}\right)
+                    :label: particle_density_transport
+
+                .. math::
+                    \Gamma_{s}\equiv-D_{s}\cdot\frac{\partial n_{s}}{\partial\rho}+v_{s}^{pinch}\cdot n_{s}
+                    :label: particle_density_gamma
+
+
+        """
 
         hyper_diff_exp = hyper_diff[0]
         hyper_diff_imp = hyper_diff[1]
@@ -578,6 +608,9 @@ class TransportSolver(AttributeTree):
             inv_tau = 0.0
         else:
             inv_tau = 1.0/tau
+
+        # $R_0$ characteristic major radius of the device   [m]
+        R0 = core_profiles_next.vacuum_toroidal_field.r0
 
         # $R_0$ characteristic major radius of the device   [m]
         R0 = core_profiles_next.vacuum_toroidal_field.r0
@@ -729,33 +762,17 @@ class TransportSolver(AttributeTree):
                                       tol=0.001, verbose=2, max_nodes=2500)
 
         logger.debug(
-            f"Solve transport equations: Electron density: {'Done' if  sol.success else 'Failed' }  \n Error Message: {sol.message} ")
+            f"Solve transport equations: Electron density: {'Done' if  sol.success else 'Failed' }  \n Message: {sol.message} ")
+
+        core_profiles_next.profiles_1d.electrons.density0 = ne0
+        core_profiles_next.profiles_1d.electrons.density0_prime = ne0_prime
+        core_profiles_next.profiles_1d.electrons.se_exp0 = se_exp*vpr
 
         if sol.success:
             core_profiles_next.profiles_1d.electrons.density = Profile(sol.x, sol.y[0])
             core_profiles_next.profiles_1d.electrons.density_prime = Profile(sol.x, sol.yp[0])
             core_profiles_next.profiles_1d.electrons.gamma = Profile(sol.x, sol.y[1])
-            core_profiles_next.profiles_1d.electrons.dgamma = Profile(sol.x, sol.yp[1])
-
-        core_profiles_next.profiles_1d.vpr = vpr
-        core_profiles_next.profiles_1d.gm3 = gm3
-
-        core_profiles_next.profiles_1d.electrons.density0 = ne0
-        core_profiles_next.profiles_1d.electrons.density0_prime = ne0_prime
-        core_profiles_next.profiles_1d.electrons.gamma0 = Profile(rho_tor_norm, -ne0_prime*d+c*ne0)
-
-        core_profiles_next.profiles_1d.electrons.dgamma0 = Profile(rho_tor_norm, -ne0_prime*d+c*ne0).derivative
-
-        # Profile(rho_tor_norm, -d*ne0_prime + e*ne0).derivative
-        core_profiles_next.profiles_1d.electrons.se_exp0 = vpr * se_exp*c
-
-        core_profiles_next.profiles_1d.a = a
-        core_profiles_next.profiles_1d.b = b
-        core_profiles_next.profiles_1d.c = c
-        core_profiles_next.profiles_1d.d = d
-        core_profiles_next.profiles_1d.e = e
-        core_profiles_next.profiles_1d.f = f
-        core_profiles_next.profiles_1d.g = g
+            core_profiles_next.profiles_1d.electrons.dgamma = Profile(sol.x, sol.yp[1]/rho_tor_boundary)
 
         if self._enable_quasi_neutrality:
             core_profiles_next.profiles_1d.n_i_total = core_profiles_next.profiles_1d.electrons.density
@@ -1020,9 +1037,14 @@ class TransportSolver(AttributeTree):
                     enable_quasi_neutrality=True,
                     **kwargs):
         r"""
-            .. math:: \left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(V^{\prime}n_{i}\right)+\
-                        \frac{\partial}{\partial\rho}\Gamma_{i}=V^{\prime}\left(S_{i,exp}-S_{i,imp}\cdot n_{i}\right)
-                :label: transport_ion_density
+            Note:
+                .. math:: \left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(V^{\prime}n_{i}\right)+\
+                            \frac{\partial}{\partial\rho}\Gamma_{i}=V^{\prime}\left(S_{i,exp}-S_{i,imp}\cdot n_{i}\right)
+                    :label: transport_ion_density
+
+                .. math::
+                    \Gamma_{s}\equiv-D_{i}\cdot\frac{\partial n_{i}}{\partial\rho}+v_{i}^{pinch}\cdot n_{i}
+                    :label: transport_ion_density_gamma
         """
 
         for iion, ion in enumerate(core_profiles_prev.profiles_1d.ion):
@@ -1063,19 +1085,22 @@ class TransportSolver(AttributeTree):
                      hyper_diff=[0, 0],
                      **kwargs):
         r"""heat transport equations
-            ion
 
-            .. math:: \frac{3}{2}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\
-                        \left(n_{i}T_{i}V^{\prime\frac{5}{3}}\right)+V^{\prime\frac{2}{3}}\frac{\partial}{\partial\rho}\left(q_{i}+T_{i}\gamma_{i}\right)=\
-                        V^{\prime\frac{5}{3}}\left[Q_{i,exp}-Q_{i,imp}\cdot T_{i}+Q_{ei}+Q_{zi}+Q_{\gamma i}\right]
-                :label: transport_ion_temperature
+            Note:
 
-            electron
+                ion
 
-            .. math:: \frac{3}{2}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\
-                        \left(n_{e}T_{e}V^{\prime\frac{5}{3}}\right)+V^{\prime\frac{2}{3}}\frac{\partial}{\partial\rho}\left(q_{e}+T_{e}\gamma_{e}\right)=
-                        V^{\prime\frac{5}{3}}\left[Q_{e,exp}-Q_{e,imp}\cdot T_{e}+Q_{ei}-Q_{\gamma i}\right]
-                :label: transport_electron_temperature
+                .. math:: \frac{3}{2}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\
+                            \left(n_{i}T_{i}V^{\prime\frac{5}{3}}\right)+V^{\prime\frac{2}{3}}\frac{\partial}{\partial\rho}\left(q_{i}+T_{i}\gamma_{i}\right)=\
+                            V^{\prime\frac{5}{3}}\left[Q_{i,exp}-Q_{i,imp}\cdot T_{i}+Q_{ei}+Q_{zi}+Q_{\gamma i}\right]
+                    :label: transport_ion_temperature
+
+                electron
+
+                .. math:: \frac{3}{2}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\
+                            \left(n_{e}T_{e}V^{\prime\frac{5}{3}}\right)+V^{\prime\frac{2}{3}}\frac{\partial}{\partial\rho}\left(q_{e}+T_{e}\gamma_{e}\right)=
+                            V^{\prime\frac{5}{3}}\left[Q_{e,exp}-Q_{e,imp}\cdot T_{e}+Q_{ei}-Q_{\gamma i}\right]
+                    :label: transport_electron_temperature
 
         """
 
@@ -1637,9 +1662,11 @@ class TransportSolver(AttributeTree):
                  hyper_diff=[0, 0],
                  **kwargs):
         r"""
-            .. math::  \left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(V^{\prime\frac{5}{3}}\left\langle R\right\rangle \
-                        m_{i}n_{i}u_{i,\varphi}\right)+\frac{\partial}{\partial\rho}\Phi_{i}=V^{\prime}\left[U_{i,\varphi,exp}-U_{i,\varphi}\cdot u_{i,\varphi}+U_{zi,\varphi}\right]
-                :label: transport_rotation
+            Note:
+
+                .. math::  \left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(V^{\prime\frac{5}{3}}\left\langle R\right\rangle \
+                            m_{i}n_{i}u_{i,\varphi}\right)+\frac{\partial}{\partial\rho}\Phi_{i}=V^{\prime}\left[U_{i,\varphi,exp}-U_{i,\varphi}\cdot u_{i,\varphi}+U_{zi,\varphi}\right]
+                    :label: transport_rotation
         """
 
         if core_transport is None:

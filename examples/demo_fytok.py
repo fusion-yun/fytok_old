@@ -53,6 +53,7 @@ if __name__ == "__main__":
 
     from fytok.Tokamak import Tokamak
     from spdm.util.logger import logger
+    from spdm.util.Profiles import Profile
     from spdm.data.Entry import open_entry
     from fytok.Plot import plot_profiles
     from spdm.util.AttributeTree import _next_
@@ -89,14 +90,21 @@ if __name__ == "__main__":
     def S_edge(rho, pos=0.7, w=0.03, S0=8.0e16): return np.piecewise(
         rho, [rho < pos, rho >= pos], [0, lambda x: (np.exp((x-pos)/w-10)*S0-1.0)])
 
-    fun = tok.equilibrium.profiles_1d.gm2*tok.equilibrium.profiles_1d.vprime * tok.equilibrium.profiles_1d.dpsi_drho_tor / \
-        tok.equilibrium.profiles_1d.fpol / (4.0*(constants.pi**2)*tok.equilibrium.profiles_1d.rho_tor[-1])
-    dfun = tok.equilibrium.profiles_1d.derivative(
-        fun)/(tok.equilibrium.global_quantities.psi_axis-tok.equilibrium.global_quantities.psi_boundary)
+    gamma = tok.equilibrium.profiles_1d.dvolume_drho_tor / (4.0*(constants.pi**2)) \
+        * tok.equilibrium.profiles_1d.gm2    \
+        / tok.equilibrium.profiles_1d.fpol \
+        * tok.equilibrium.profiles_1d.dpsi_drho_tor
 
-    j_total = -dfun*(tok.equilibrium.profiles_1d.fpol**2)/tok.equilibrium.profiles_1d.vprime/tok.equilibrium.profiles_1d.rho_tor / \
-        (constants.mu_0*tok.vacuum_toroidal_field.b0*constants.pi*2.0)
+    dgamma = Profile(tok.equilibrium.profiles_1d.rho_tor, gamma).derivative
+
+    j_total = dgamma  \
+        * (tok.equilibrium.profiles_1d.fpol**2) \
+        / (constants.mu_0*tok.vacuum_toroidal_field.b0) \
+        * (constants.pi*2.0) \
+        / tok.equilibrium.profiles_1d.dvolume_drho_tor
+
     j_total[0] = 2*j_total[1]-j_total[2]
+
     src.j_parallel = tok.equilibrium.profiles_1d.mapping("rho_tor_norm", j_total)
 
     src.electrons.particles = lambda rho: S_edge(rho)
@@ -143,11 +151,10 @@ if __name__ == "__main__":
     #                    # "psivals": psivals,
     #                    }
 
-    # plot_profiles(tok.equilibrium.profiles_1d,
-    #               profiles=["psi_norm", "phi", ["q", "q1"], "rho_tor",
-    #                         ["dpsi_drho_tor"],
-    #                         ["drho_tor_dpsi"]],
-    #               x_axis="psi_norm", grid=True)[1] .savefig("../output/eq_profiles_1d.svg")
+    plot_profiles(tok.equilibrium.profiles_1d,
+                  profiles=["psi_norm", "phi", ["q", "q1"], "rho_tor", "volume", "dvolume_drho_tor",
+                            ["dpsi_drho_tor"]],
+                  x_axis="rho_tor_norm", grid=True) .savefig("../output/eq_profiles_1d.svg")
 
     tok.update()
 
@@ -155,28 +162,17 @@ if __name__ == "__main__":
 
     plot_profiles(tok.core_profiles.profiles_1d,
                   profiles=[
-                      [{"name": "psi0", "opts": {"marker": "+", "label": r"$\psi^{-1}$"}},
+                      [{"name": "psi0", "opts": {"marker": "+", "label": r"$\psi_{0}$"}},
                        {"name": "psi", "opts": {"marker": "+", "label": r"$\psi$"}}],
-                      ["electrons.density0", "electrons.density"],
-                      ["electrons.density_prime", "electrons.density0_prime"],
+                      ["psi0_prime", "psi_prime" ],
+                      ["dgamma_current", "f_current"],
+                      ["j_total0", "j_ni_exp"],
+                      #   ["electrons.density0", "electrons.density"],
+                      #   ["electrons.density_prime", "electrons.density0_prime"],
                       ["electrons.dgamma", "electrons.se_exp0"],
-                      "electrons.gamma", "electrons.gamma0",
-                      "vpr",
-                      "gm3",
-                      "a",
-                      "b",
-                      "c",
-                      ["d",
-                       "e"],
-                      "f",
-                      "g",
-
-                      # ([
-                      #     {"name": "psi0_prime", "opts": {"marker": "+", "label": r"$d\psi^{-1}/d\rho_{tor,norm}$"}},
-                      #     {"name": "psi_prime",
-                      #      "opts": {"marker": "+", "label": r"$d\psi/d\rho_{tor,norm}$"}}
-                      # ], r"$[Wb/m]$"),
-                      "j_total"
+                        "j_tor", "j_parallel",
+                      #   "e_field.parallel",
+                      ["q0",   "q1"],
                   ],
                   x_axis="grid.rho_tor_norm", grid=True).savefig("../output/core_profiles.svg")
     # #
