@@ -275,7 +275,6 @@ class TransportSolver(AttributeTree):
 
                 .. math::
                     \begin{cases}
-
                         \frac{\partial Y\left(x,t\right)}{\partial\rho} & = \
                               -\frac{\Gamma\left(x,t\right)-e\left(x\right)\cdot Y\left(x,t\right)}{d\left(x\right)}\\
                         \frac{\partial\Gamma\left(x,t\right)}{\partial x} & = \
