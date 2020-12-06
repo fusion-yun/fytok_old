@@ -502,7 +502,7 @@ class TransportSolver(AttributeTree):
 
         core_profiles_next.profiles_1d.psi0_prime1 = Profile(rho_tor_norm, psi0).derivative
 
-        j_total0 = - Profile(rho_tor_norm,  d * psi0_prime).derivative / c / vpr*(2.0*constants.pi)
+        j_total0 =   Profile(rho_tor_norm,  d * psi0_prime).derivative / c / vpr*(2.0*constants.pi)
 
         j_total0[0] = 2*j_total0[1]-j_total0[2]
         core_profiles_next.profiles_1d.j_total0 = j_total0
