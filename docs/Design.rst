@@ -450,7 +450,7 @@ Tokamka 模拟器
 功能模块
 ^^^^^^^^^^^
 
-* Opreation 运行和控制系统: 与PCS系统的数据接口，例如，放电规划，控制信息等
+* Operation 运行和控制系统: 与PCS系统的数据接口，例如，放电规划，控制信息等
     包括 PulseSchedule , Controllers , SDN
 
 * Device and Magnetics Field 装置位形，磁场线圈: 装置位形和磁场线圈信息
@@ -466,7 +466,8 @@ Tokamka 模拟器
     包括 AMNSData, Radiation, Waves, CoreInstantChanges, Disruption, DistributionSources, Distributions, Gyrokinetics, MHD, MHDLinear, NTMS, Sawteeth, Turbulence
 
 * Diagnosis 诊断：实验数据库诊断数据接口，这部分数据默认为只读。
-    包括 Barometry Bolometer BremsstrahlungVisible CameraIR CameraVisible ChargeExchange ECE HardXRays Interferometer LangmuirProbes MSE NeutronDiagnostic Polarimeter ReflectometerProfile SoftXRays SpectrometerMass SpectrometerUV SpectrometerVisible SpectrometerXRayCrystal ThomsonScattering
+    包括 Barometry, Bolometer, BremsstrahlungVisible, CameraIR, CameraVisible, ChargeExchange, ECE, HardXRays, Interferometer, LangmuirProbes, MSE, NeutronDiagnostic, Polarimeter, 
+        ReflectometerProfile, SoftXRays, SpectrometerMass, SpectrometerUV, SpectrometerVisible, SpectrometerXRayCrystal, ThomsonScattering
 
 
 

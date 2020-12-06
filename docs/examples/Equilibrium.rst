@@ -19,7 +19,8 @@ Summary 概述
 >>> from fytok.Tokamak import Tokamak       # Tokamak module
 >>> import matplotlib.pyplot as plt
 >>> # 从efit_east tree 读取读取 shot=55555， time slice=100
->>> tok = Tokamak(open_entry("east+mdsplus://<MDSplus数据存储路径>/public_data/~t/?tree_name=efit_east", shot=55555, time_slice=100))
+>>> tok = Tokamak(open_entry("east+mdsplus://<MDSplus数据存储路径>/public_data/~t/?tree_name=efit_east", \
+    shot=55555, time_slice=100))
 >>> xpoints = [[p.r, p.z] for p in tok.equilibrium.boundary.x_point] # 从原始平衡中读取X点位置
 >>> lfcs_r = tok.equilibrium.boundary.outline.r  # 获取最外层闭合磁面
 >>> lfcs_z = tok.equilibrium.boundary.outline.z

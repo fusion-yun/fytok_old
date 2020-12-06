@@ -4,6 +4,8 @@ import sys
 import numpy as np
 import scipy.stats
 import scipy.constants as constants
+from scipy.interpolate import RectBivariateSpline, UnivariateSpline
+
 sys.path.append("/home/salmon/workspace/freegs/")
 sys.path.append("/home/salmon/workspace/fytok/python")
 sys.path.append("/home/salmon/workspace/SpDev/SpDB")
@@ -57,9 +59,12 @@ if __name__ == "__main__":
 
     tok = Tokamak(open_entry("east+mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east", shot=55555, time_slice=20))
 
-    def D(rho, rho_b=0.95): return np.piecewise(rho, [rho < rho_b, rho > rho_b], [lambda x:0.5 + (x**3), 0.1])
+    rho_b = 0.96
+    rho = np.linspace(0, 1.0, 129)
 
-    def v(rho, rho_b=0.95): return np.piecewise(rho, [rho < rho_b, rho > rho_b], [lambda x:(x**2)*0.4, 0.0])
+    def D(x): return 0.5 + (x**3) if x < rho_b else 0.1
+
+    def v(x): return -(x**2)*0.4 if x < rho_b else 0.1
 
     tok.core_transport[_next_] = {"identifier": {"name": "unspecified", "index": 0}}
 
@@ -78,28 +83,29 @@ if __name__ == "__main__":
 
     src = tok.core_sources[-1].profiles_1d
 
-    def S_pel(rho, pos=0.7, w=0.1, S0=1.0e19*80): return scipy.stats.norm.pdf((rho-0.7)/w) * \
+    def S_pel(rho, pos=0.7, w=0.1, S0=1.0e19): return scipy.stats.norm.pdf((rho-0.7)/w) * \
         np.sqrt(scipy.constants.pi*2.0)*S0
 
-    def S_edge(rho, pos=0.7, w=0.03, S0=1.0e19): return np.piecewise(
-        rho, [rho < pos, rho > pos], [0, lambda x: (np.exp((x-pos)/w-10)*S0-1.0)])
+    def S_edge(rho, pos=0.7, w=0.03, S0=8.0e16): return np.piecewise(
+        rho, [rho < pos, rho >= pos], [0, lambda x: (np.exp((x-pos)/w-10)*S0-1.0)])
 
     fun = tok.equilibrium.profiles_1d.gm2*tok.equilibrium.profiles_1d.vprime * tok.equilibrium.profiles_1d.dpsi_drho_tor / \
         tok.equilibrium.profiles_1d.fpol / (4.0*(constants.pi**2)*tok.equilibrium.profiles_1d.rho_tor[-1])
-    dfun = tok.equilibrium.profiles_1d.derivative(fun)
+    dfun = tok.equilibrium.profiles_1d.derivative(
+        fun)/(tok.equilibrium.global_quantities.psi_axis-tok.equilibrium.global_quantities.psi_boundary)
 
     j_total = -dfun*(tok.equilibrium.profiles_1d.fpol**2)/tok.equilibrium.profiles_1d.vprime/tok.equilibrium.profiles_1d.rho_tor / \
         (constants.mu_0*tok.vacuum_toroidal_field.b0*constants.pi*2.0)
     j_total[0] = 2*j_total[1]-j_total[2]
     src.j_parallel = tok.equilibrium.profiles_1d.mapping("rho_tor_norm", j_total)
 
-    src.electrons.particles = lambda rho: S_pel(rho)+S_pel(rho)
+    src.electrons.particles = lambda rho: S_edge(rho)
 
     plot_profiles(src, profiles=[
         "electrons.particles", "grid.rho_tor_norm"
     ], x_axis="grid.rho_tor_norm", grid=True).savefig("../output/core_sources.svg")
 
-    def ne(rho, rho_b=0.95, w=2.0, n_0=0.95e19): return np.piecewise(rho, [rho < rho_b, rho > rho_b], [
+    def ne(rho, rho_b=rho_b, w=2.0, n_0=0.95e19): return np.piecewise(rho, [rho < rho_b, rho > rho_b], [
         lambda x:n_0*((1-(x/w)**2)**2), lambda x:n_0*((1-(rho_b/w)**2)**2)*np.exp(-((x-rho_b)*20)**2)])
 
     tok.core_profiles.profiles_1d.electrons.density = ne
@@ -148,21 +154,30 @@ if __name__ == "__main__":
     # draw(tok).savefig("../output/tokamak1.svg", transparent=True)
 
     plot_profiles(tok.core_profiles.profiles_1d,
-                  profiles=[["electrons.density0", "electrons.density"],
-                            # "electrons.diff",
-                            # "electrons.vconv",
-                            # "electrons.se_exp",
-                            "A", "B", "C",  
-                            "a", "b", "c", "d", "e", "f",
-                            [{"name": "psi0", "opts": {"marker": "+", "label": r"$\psi^{-1}$"}},
-                             {"name": "psi", "opts": {"marker": "+", "label": r"$\psi$"}}],
-                            # ([
-                            #     {"name": "psi0_prime", "opts": {"marker": "+", "label": r"$d\psi^{-1}/d\rho_{tor,norm}$"}},
-                            #     {"name": "psi_prime",
-                            #      "opts": {"marker": "+", "label": r"$d\psi/d\rho_{tor,norm}$"}}
-                            # ], r"$[Wb/m]$"),
-                            "j_total"
-                            ],
+                  profiles=[
+                      [{"name": "psi0", "opts": {"marker": "+", "label": r"$\psi^{-1}$"}},
+                       {"name": "psi", "opts": {"marker": "+", "label": r"$\psi$"}}],
+                      ["electrons.density0", "electrons.density"],
+                      ["electrons.density_prime", "electrons.density0_prime"],
+                      ["electrons.dgamma", "electrons.se_exp0"],
+                      "electrons.gamma", "electrons.gamma0",
+                      "vpr",
+                      "gm3",
+                      "a",
+                      "b",
+                      "c",
+                      ["d",
+                       "e"],
+                      "f",
+                      "g",
+
+                      # ([
+                      #     {"name": "psi0_prime", "opts": {"marker": "+", "label": r"$d\psi^{-1}/d\rho_{tor,norm}$"}},
+                      #     {"name": "psi_prime",
+                      #      "opts": {"marker": "+", "label": r"$d\psi/d\rho_{tor,norm}$"}}
+                      # ], r"$[Wb/m]$"),
+                      "j_total"
+                  ],
                   x_axis="grid.rho_tor_norm", grid=True).savefig("../output/core_profiles.svg")
     # #
     # fig.tight_layout()

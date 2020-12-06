@@ -31,7 +31,7 @@ class Tokamak(AttributeTree):
 
     """
 
-    def __init__(self,  cache=None,  *args, time=0.0, rho_tor_norm=257,   **kwargs):
+    def __init__(self,  cache=None,  *args, time=0.0, rho_tor_norm=129,   **kwargs):
         super().__init__(*args, time=time, **kwargs)
         self.__dict__["_cache"] = cache or AttributeTree()
         self.__dict__["_time"] = time

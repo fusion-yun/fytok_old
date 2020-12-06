@@ -82,8 +82,8 @@ Background 背景
 +---------------------------------------------------------------+----------------------------------------------+------+-----------------------+----------------------+-----------------------------------------+
 
 
-在这些程序之外还有许多各有特色的输运程序，如TSC (US) :cite:`kessel_long_2006`, CORSIS(US) :cite:`crotinger_corsica_1997`, 
-METIS(FR) :cite:`artaud_metis_2018`等等。
+在这些程序之外还有许多各有特色的输运程序，如TSC (US) :cite:`kessel_long_2006`, CORSIS(US) :cite:`crotinger_corsica_1997` , 
+METIS(FR) :cite:`artaud_metis_2018` 等等。
 
 早期程序侧重于对于实验结果进行输运分析，如 TRANSP 或者 Automated System for TRansport Analysis (ASTRA)。后发展出能够
 完整再现放电过程中爬升、平顶、下降三段过程的能力，并开始用于验证等离子体控制系统（PCS），规划放电波形，成为
@@ -100,9 +100,9 @@ METIS(FR) :cite:`artaud_metis_2018`等等。
 前述“集成建模”程序大多为这三个项目支持下的成果。
 
 ITER作为磁约束聚变界最大的国际合作项目，为了支持自身等离子体运行和研究工作，于2011年启动Integrated Modelling & Analysis Suite(IMAS) 项目开发。
-IMAS在很大程度上复用了欧洲EU-ITM :cite:`falchetto_european_2014` 工作的成果，包括数据模型和工作流引擎 :cite:`imbeaux_design_2015`。
+IMAS在很大程度上复用了欧洲EU-ITM :cite:`falchetto_european_2014` 工作的成果，包括数据模型和工作流引擎 :cite:`imbeaux_design_2015` 。
 
-IMAS基础架构的骨干是标准化的 *物理数据模型*。IMAS的数据模型精确并且完备的定义了 |Tokamak| 物理数据的方方面面和完整的生命周期
+IMAS基础架构的骨干是标准化的 *物理数据模型* 。IMAS的数据模型精确并且完备的定义了 |Tokamak| 物理数据的方方面面和完整的生命周期
 过程。以数据字典（data dictionary）的方式明确规范了数据的表述方式，保障了全局范围的一致性。IMAS数据模型采用层次化的组织方式，
 其访问的入口称为 Interface Data Structure (IDS)。 每一个IDS表达一个相对独立的概念，例如，一个托卡马克子系统（诊断，
 加热系统等）的完整描述，或抽象物理概念（平衡，芯部等离子体分布，波传播等）。IDS可以单独使用，作为物理模块之间的数据接口，
