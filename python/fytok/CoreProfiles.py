@@ -513,14 +513,14 @@ class CoreProfiles(AttributeTree):
             poloidal velocity Click here for further documentation. {dynamic}[s ^ -1]"""
             return Profile(self.grid.rho_tor_norm, description={"name": "rotation_frequency_tor_sonic"})
 
-        @cached_property
-        def q(self):
-            """Safety factor(IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic}[-].
-            This quantity is COCOS-dependent, with the following transformation: """
-            q = (constants.pi*2.0)*self._b0*self.dpsi_drho_tor.x_axis*self.grid.rho_tor[-1]/self.dpsi_drho_tor
-            q._x_axis = self.dpsi_drho_tor.x_axis
-            q[0] = 2*q[1]-q[2]
-            return q
+        # @cached_property
+        # def q(self):
+        #     """Safety factor(IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic}[-].
+        #     This quantity is COCOS-dependent, with the following transformation: """
+        #     # q = (constants.pi*2.0)*self._b0*self.dpsi_drho_tor.x_axis*self.grid.rho_tor[-1]/self.dpsi_drho_tor
+        #     # q[0] = 2*q[1]-q[2]
+        #     # return Profile(self.dpsi_drho_tor.x_axis, q)
+        #     return Profile(self.grid.rho_tor_norm, 0, description={"name": "Safety factor"})
 
         @cached_property
         def magnetic_shear(self):

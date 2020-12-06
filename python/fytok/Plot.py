@@ -86,11 +86,8 @@ def plot_profiles(holder, profiles, axis=None, x_axis=None, prefix=None, grid=Fa
         for d in data:
             profile, opts = fetch_profile(holder, d,  prefix=prefix)
 
-            if isinstance(profile, Profile):
-                try:
-                    axis[idx].plot(profile.x_axis, profile, **opts)
-                except Exception as error:
-                    logger.error(f"Can not plot profile {type(profile)} {d}! [{error}]")
+            if isinstance(profile, Profile) and hasattr(profile, "x_axis"):
+                axis[idx].plot(profile.x_axis, profile, **opts)
             elif isinstance(profile, np.ndarray):
                 try:
                     if x_axis is not None:

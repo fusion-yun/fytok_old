@@ -526,7 +526,7 @@ class TransportSolver(AttributeTree):
             core_profiles_next.profiles_1d.j_tor = j_tor
 
             j_parallel = (constants.pi*2.0 / (constants.mu_0*B0 * rho_tor_boundary)) * \
-                (fpol**2/vpr) * Profile(sol.x, -sol.yp[1]).interpolate()(rho_tor_norm)
+                (fpol**2/vpr) * Profile(sol.x, -sol.yp[1])(rho_tor_norm)
 
             core_profiles_next.profiles_1d.j_parallel = j_parallel
 
