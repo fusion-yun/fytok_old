@@ -80,6 +80,7 @@ Infrastructure 基础架构
 ------------------------
 
 .. figure::   figures/FuYunSystem.svg
+    :align: center
 
     |FyTok| 基础环境架构
 
@@ -219,6 +220,7 @@ Mapping 数据映射
         通过模拟、建模、分析的过程生成的数据，可以进行读写操作。
 
 .. figure::   figures/DataMapping.svg
+    :align: center
 
     数据映射
 
@@ -441,11 +443,19 @@ Modules Design 模块
 模拟器核心模块Tokamak和Scenario。Tokamak负责整合管理装置在一个“时间片（time slice）”上各子系统的状态，执行系统间的相互约束关系。
 Scenario负责管理时间片（time slice）的演化。图 3 Simulator 功能模块 展示了 模拟功能模块的划分和部分依赖关系。
 
+.. figure::   figures/flow.png
+    :align: center
+
+    核心工作流
+
+
+
 Tokamak 模拟器
 ^^^^^^^^^^^^^^^^
 
 .. uml:: uml/fytok.uml
     :align: center
+    :caption: 整体模块划分
 
 功能模块
 ^^^^^^^^^^^
@@ -459,9 +469,9 @@ Operation 运行和控制系统
 
 .. uml:: uml/operation.uml
     :align: center
+    :caption: 运行和控制系统
 
-
-Device and Magnetics Field 装置位形，磁场线圈
+Device and Magnetic Field 装置位形，磁场线圈
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 装置位形和磁场线圈信息
@@ -469,13 +479,14 @@ Device and Magnetics Field 装置位形，磁场线圈
 
 .. uml:: uml/magnetics.uml
     :align: center
+    :caption:  装置位形，磁场线圈
 
-Confinement and transport 约束和输运
+Equilibrium and transport 平衡和输运
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 约束输运相关过程，涵盖芯部和边界输运，
 
-    包括 TransportSolver, FluxSurface, Equilibrium, RadialProfile, CoreProfiles, CoreSources, CoreTransport, EdgeProfiles, EdgeSources, EdgeTransport
+包括 TransportSolver, FluxSurface, Equilibrium, RadialProfile, CoreProfiles, CoreSources, CoreTransport, EdgeProfiles, EdgeSources, EdgeTransport
 
 Auxiliary 辅助系统，加热、驱动和加料：外部辅助系统，结果体现为输运过程的源项
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -484,26 +495,30 @@ Auxiliary 辅助系统，加热、驱动和加料：外部辅助系统，结果�
 
 .. uml:: uml/auxiliary.uml
     :align: center
+    :caption:  辅助系统，加热、驱动和加料
+
 
 Plasma 等离子体：
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 等离子体物理过程，主要反映较高精度模拟过程的，结果体现为输运系数
-    包括 AMNSData, Radiation, Waves, CoreInstantChanges, Disruption, DistributionSources, Distributions, Gyrokinetics, MHD, MHDLinear, NTMS, Sawteeth, Turbulence
+
+包括 AMNSData, Radiation, Waves, CoreInstantChanges, Disruption, DistributionSources, Distributions, Gyrokinetics, MHD, MHDLinear, NTMS, Sawteeth, Turbulence
 
 .. uml:: uml/plasma.uml
     :align: center
-
+    :caption:  等离子体
 
 Diagnosis 诊断：
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 实验数据库诊断数据接口，这部分数据默认为只读。
-    包括 Barometry, Bolometer, BremsstrahlungVisible, CameraIR, CameraVisible, ChargeExchange, ECE, HardXRays, Interferometer, LangmuirProbes, MSE, NeutronDiagnostic, Polarimeter, 
-        ReflectometerProfile, SoftXRays, SpectrometerMass, SpectrometerUV, SpectrometerVisible, SpectrometerXRayCrystal, ThomsonScattering
+
+包括 Barometry, Bolometer, BremsstrahlungVisible, CameraIR, CameraVisible, ChargeExchange, ECE, HardXRays, Interferometer, LangmuirProbes, MSE, NeutronDiagnostic, Polarimeter, 
+ReflectometerProfile, SoftXRays, SpectrometerMass, SpectrometerUV, SpectrometerVisible, SpectrometerXRayCrystal, ThomsonScattering
 
 .. uml:: uml/diagnosis.uml
     :align: center
-
+    :caption: 诊断
 
  

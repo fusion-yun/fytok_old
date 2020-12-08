@@ -4,7 +4,7 @@ Examples 实例
 ======================
 
 .. toctree::
-    :maxdepth: 4
+    :maxdepth: 1
     :glob:
 
     examples/*

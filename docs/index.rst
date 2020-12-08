@@ -11,17 +11,17 @@
     Introduction
     Requirements
     Design
+    .. Installation
+    .. QuickStart
+    .. Tutorial
+    .. UserGuide
+    .. DevGuide
     Examples
-    Installation
-    QuickStart
-    Tutorial
-    UserGuide
-    DevGuide
     APIReference
-    Changelog
-    TODO
+    .. Changelog
+    .. TODO
     Bibliography
-    Appendix
+    .. Appendix
 
 
 .. only:: html    

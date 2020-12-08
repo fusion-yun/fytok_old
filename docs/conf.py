@@ -115,4 +115,4 @@ todo_include_todos = True
 
 image_converter_args = ['-verbose']
 
-plantuml_output_format='svg'
+plantuml_output_format='png'
