@@ -59,11 +59,12 @@ class CoreProfiles(AttributeTree):
         def grid(self):
             return self._grid
 
-        def __missing__(self, key):
-            d = super().__missing__(key)
-            if d is None:
-                d = self._parent._tokamak.equilibrium.profiles_1d.mapping("rho_tor_norm", key, self.grid.rho_tor_norm)
-            return d
+        # def __missing__(self, key):
+        #     logger.debug(key)
+        #     d = super().__missing__(key)
+        #     if d is None:
+        #         d = self._parent._tokamak.equilibrium.profiles_1d.mapping("rho_tor_norm", key, self.grid.rho_tor_norm)
+        #     return d
 
         class TemperatureFit(AttributeTree):
             def __init__(self, *args, **kwargs):
@@ -521,6 +522,10 @@ class CoreProfiles(AttributeTree):
         #     # q[0] = 2*q[1]-q[2]
         #     # return Profile(self.dpsi_drho_tor.x_axis, q)
         #     return Profile(self.grid.rho_tor_norm, 0, description={"name": "Safety factor"})
+      
+        # @cached_property
+        # def dpsi_drho_tor(self):
+        #     return Profile(self.grid.rho_tor_norm, 0, description={"name": "dpsi_drho_tor"})
 
         @cached_property
         def magnetic_shear(self):

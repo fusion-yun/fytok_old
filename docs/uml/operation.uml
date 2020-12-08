@@ -1,0 +1,61 @@
+@startuml
+left to right direction
+skinparam classFontName 'Noto Sans Mono CJK SC Regular'
+
+package "Opreation 运行和控制系统" {
+    [Pulse Schedule] -->    [Controllers] 
+}
+
+package "Device and Magnetics Field 装置位形，磁场线圈"{
+    [Wall] 
+    [TF]                        --    Coils
+    [PF Active]                 --    Coils                    
+    [Iron Core]                 --    Coils
+    [Coils Non Axisymmetric]    --    Coils
+    [EMCoupling]                --    Coils
+
+    [Magnetics] 
+          
+}
+
+
+package "Confinement and transport 约束和输运" {
+   [TransportSolver]    -->  [CoreProfiles]
+   [Equilibrium]        --> [TransportSolver]
+   [CoreProfiles]       
+   [CoreSources]        --> [TransportSolver]
+   [CoreTransport]      --> [TransportSolver]
+  
+}
+
+package "Auxiliary 辅助系统，加热、驱动和加料" { 
+  "ControlAux"  
+} 
+
+package "Diagnosis 诊断" {
+
+    "Diagnosis"        
+
+}
+
+ 
+
+ 
+
+Coils       --> [Equilibrium]
+[Magnetics] --> [Equilibrium]
+
+
+[Scenario]          --> [Pulse Schedule]
+
+[Controllers]       --> Coils
+[Controllers]       --> ControlAux
+ControlAux --> [CoreSources]
+[Equilibrium]      --> [Controllers] 
+[CoreProfiles]     --> [Controllers] 
+
+[Equilibrium]      --> Diagnosis 
+[CoreProfiles]     --> Diagnosis 
+
+Diagnosis           --> [Controllers] 
+@enduml

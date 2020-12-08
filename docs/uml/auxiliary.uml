@@ -1,0 +1,46 @@
+@startuml
+left to right direction
+skinparam classFontName 'Noto Sans Mono CJK SC Regular'
+
+
+package "Auxiliary 辅助系统，加热、驱动和加料" {
+  [ECLaunchers]    
+  [ICAntennas]     
+  [LHAntennas]     
+  [NBI]            
+  [Pellets]         
+  [GasInjection]   
+
+
+
+}
+
+package "Confinement and transport 约束和输运" {
+   [CoreSources]        
+   [EdgeSources]
+}
+
+package "Opreation 运行和控制系统" {
+    [Pulse Schedule] 
+}
+
+package "Plasma 等离子体" {
+   
+    [Waves]  --> [CoreSources]
+}
+
+[Pulse Schedule]  --> [ECLaunchers]   
+[Pulse Schedule]  --> [ICAntennas]    
+[Pulse Schedule]  --> [LHAntennas]    
+[Pulse Schedule]  --> [NBI]           
+[Pulse Schedule]  --> [Pellets]       
+[Pulse Schedule]  --> [GasInjection]  
+[ECLaunchers]    -->  [Waves]
+[ICAntennas]     -->  [Waves]
+[LHAntennas]     -->  [Waves]
+[NBI]            -->  [CoreSources]
+[Pellets]        -->  [CoreSources]   
+[GasInjection]   -->  [EdgeSources]
+
+
+@enduml

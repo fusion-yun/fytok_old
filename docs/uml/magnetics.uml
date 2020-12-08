@@ -1,0 +1,47 @@
+@startuml
+left to right direction
+skinparam classFontName 'Noto Sans Mono CJK SC Regular'
+
+package "Device and Magnetics Field 装置位形，磁场线圈"{
+    [Wall] 
+    [TF]                         
+    [PF Active]                                      
+    [Iron Core]                  
+    [Coils Non Axisymmetric]     
+    [EMCoupling]                 
+
+    [Magnetics] 
+
+             
+}
+package "Opreation 运行和控制系统" {
+ [Pulse Schedule] 
+ [Controllers] 
+    
+}
+package "Confinement and transport 约束和输运" {
+   [Equilibrium]  
+}
+
+
+
+[Pulse Schedule]  --> [Controllers] 
+
+[Controllers] --> [TF]                       
+[Controllers] --> [PF Active]                
+[Controllers] --> [Iron Core]                
+[Controllers] --> [Coils Non Axisymmetric]   
+[Controllers] --> [EMCoupling]   
+
+
+[Wall]                    -->   [Equilibrium]
+[TF]                      -->   [Equilibrium]
+[PF Active]               -->   [Equilibrium]
+[Iron Core]               -->   [Equilibrium]
+[Coils Non Axisymmetric]  -->   [Equilibrium]
+[EMCoupling]              -->   [Equilibrium]
+[Magnetics]              -->    [Equilibrium]
+
+[Equilibrium]           --> [Controllers] 
+
+@enduml

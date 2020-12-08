@@ -1,0 +1,70 @@
+@startuml
+left to right direction
+skinparam classFontName 'Noto Sans Mono CJK SC Regular'
+
+package "Diagnosis 诊断" {
+
+    ProfileOut       <-- [Barometry]
+    ProfileOut       <-- [Bolometer]
+    ProfileOut       <-- [BremsstrahlungVisible]
+    ProfileOut       <-- [CameraIR]
+    ProfileOut       <-- [CameraVisible]
+    ProfileOut       <-- [ChargeExchange]
+    ProfileOut       <-- [ECE]
+    ProfileOut       <-- [HardXRays]
+    ProfileOut       <-- [Interferometer]
+    ProfileOut       <-- [LangmuirProbes]
+    ProfileOut       <-- [MSE]
+    ProfileOut       <-- [NeutronDiagnostic]
+    ProfileOut       <-- [Polarimeter]
+    ProfileOut       <-- [ReflectometerProfile]
+    ProfileOut       <-- [SoftXRays]
+    ProfileOut       <-- [SpectrometerMass]
+    ProfileOut       <-- [SpectrometerUV]
+    ProfileOut       <-- [SpectrometerVisible]
+    ProfileOut       <-- [SpectrometerXRayCrystal]
+    ProfileOut       <-- [ThomsonScattering]
+
+    [Barometry]                 -->     ProfileIn          
+    [Bolometer]                 -->     ProfileIn          
+    [BremsstrahlungVisible]     -->     ProfileIn                      
+    [CameraIR]                  -->     ProfileIn         
+    [CameraVisible]             -->     ProfileIn              
+    [ChargeExchange]            -->     ProfileIn               
+    [ECE]                       -->     ProfileIn      
+    [HardXRays]                 -->     ProfileIn          
+    [Interferometer]            -->     ProfileIn               
+    [LangmuirProbes]            -->     ProfileIn               
+    [MSE]                       -->     ProfileIn      
+    [NeutronDiagnostic]         -->     ProfileIn                  
+    [Polarimeter]               -->     ProfileIn            
+    [ReflectometerProfile]      -->     ProfileIn                     
+    [SoftXRays]                 -->     ProfileIn          
+    [SpectrometerMass]          -->     ProfileIn                 
+    [SpectrometerUV]            -->     ProfileIn               
+    [SpectrometerVisible]       -->     ProfileIn                    
+    [SpectrometerXRayCrystal]   -->     ProfileIn                        
+    [ThomsonScattering]         -->     ProfileIn                  
+
+}
+
+package "Opreation 运行和控制系统" {
+    [Controllers] 
+    
+}
+
+package "Confinement and transport 约束和输运" {
+   [Equilibrium]        
+   [CoreProfiles]       
+   [EdgeProfiles]
+  
+}
+
+[Equilibrium] --> ProfileIn
+[CoreProfiles] --> ProfileIn
+
+ProfileOut -> [CoreProfiles] 
+ProfileOut -> [EdgeProfiles] 
+ProfileOut -> [Controllers]
+
+@enduml

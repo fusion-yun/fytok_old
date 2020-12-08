@@ -1,6 +1,6 @@
 
-.. |Tokamak| replace:: 托克马克
+.. |Tokamak| replace:: 托卡马克
 
-.. |FyTok|  replace:: **数字托克马克**
+.. |FyTok|  replace:: **数字托卡马克**
 
 .. |FyDev|  replace:: |FyTok| 基础架构

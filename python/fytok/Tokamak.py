@@ -39,7 +39,7 @@ class Tokamak(AttributeTree):
         self._time = time
         self._core_profiles = None
         if rho_tor_norm is None:
-            self._rho_tor_norm = np.linspace(0, 1.0, 129)
+            self._rho_tor_norm = np.linspace(0, 1.0, 129) 
         else:
             self._rho_tor_norm = rho_tor_norm
 
@@ -224,19 +224,30 @@ class Tokamak(AttributeTree):
     def save(self, uri, *args, **kwargs):
         raise NotImplementedError()
 
+    def plot_machine(self, axis=None, *args, coils=True, wall=True, **kwargs):
+        if axis is None:
+            axis = plt.gca()
+        if wall:
+            self.wall.plot(axis, **kwargs.get("wall", {}))
+        if coils:
+            self.pf_active.plot(axis, **kwargs.get("pf_active", {}))
+        axis.axis("scaled")
+
     def plot(self, axis=None, *args,   **kwargs):
 
         if axis is None:
             axis = plt.gca()
 
         self.wall.plot(axis, **kwargs.get("wall", {}))
+
         self.pf_active.plot(axis, **kwargs.get("pf_active", {}))
-        self.equilibrium.plot_profiles2d(axis, **kwargs.get("equilibrium", {}))
+
+        # self.equilibrium.plot_profiles2d(axis, **kwargs.get("equilibrium", {}))
 
         axis.set_aspect('equal')
         axis.axis('scaled')
-        axis.set_xlabel(r"Major radius $R$ [m]")
-        axis.set_ylabel(r"Height $Z$ [m]")
-        axis.legend()
+        # axis.set_xlabel(r"Major radius $R$ [m]")
+        # axis.set_ylabel(r"Height $Z$ [m]")
+        # axis.legend()
 
         return axis

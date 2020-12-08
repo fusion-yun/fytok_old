@@ -815,7 +815,7 @@ class Equilibrium(AttributeTree):
             # z = self._equilibrium.cache.boundary.outline.z
 
             # if len(r) == 0 or len(z) == 0:
-            boundary = np.array([[r, z] for r, z in self.flux_surface.find_by_psinorm(1.0, self._ntheta)])
+            boundary = np.array([[r, z] for r, z in self._equilibrium.flux_surface.find_by_psinorm(1.0, self._ntheta)])
             r = boundary[:, 0]
             z = boundary[:, 1]
 
@@ -824,7 +824,7 @@ class Equilibrium(AttributeTree):
         @cached_property
         def x_point(self):
             res = AttributeTree()
-            _, xpt = self.flux_surface.critical_points
+            _, xpt = self._equilibrium.flux_surface.critical_points
             for p in xpt:
                 res[_next_] = p
             return res
@@ -832,7 +832,7 @@ class Equilibrium(AttributeTree):
         @cached_property
         def psi(self):
             """Value of the poloidal flux at which the boundary is taken  [Wb]"""
-            return self.flux_surface.psi_boundary
+            return self._equilibrium.flux_surface.psi_boundary
 
         @cached_property
         def psi_norm(self):
@@ -901,14 +901,7 @@ class Equilibrium(AttributeTree):
 
     ####################################################################################
     # Plot proflies
-    def plot_machine(self, axis=None, *args, coils=True, wall=True, **kwargs):
-        if axis is None:
-            axis = plt.gca()
-        if wall:
-            self._tokamak.wall.plot(axis, **kwargs.get("wall", {}))
-        if coils:
-            self._tokamak.pf_active.plot(axis, **kwargs.get("pf_active", {}))
-        axis.axis("scaled")
+
 
     def plot_profiles2d(self, axis=None, *args, profiles=[], vec_field=[], boundary=True, levels=32, oxpoints=True,   **kwargs):
         """learn from freegs
@@ -1041,7 +1034,7 @@ class Equilibrium(AttributeTree):
         x_axis, x_axis_opts = self.fetch_profile(x_axis)
 
         assert (x_axis.data is not NotImplemented)
-        nprofiles = len(profiles)
+        nprofiles = len(profiles) if profiles is not None else 0
         if profiles is None or nprofiles <= 1:
             fig, ax_right = plt.subplots(ncols=1, nrows=1, sharex=True)
         else:
@@ -1060,7 +1053,8 @@ class Equilibrium(AttributeTree):
         if surface_mesh:
             self.flux_surface.plot(ax_right)
         self.plot_profiles2d(ax_right, profiles=profiles_2d, vec_field=vec_field, **kwargs.get("equilibrium", {}))
-        self.plot_machine(ax_right, **kwargs.get("machine", {}))
+        
+        self._tokamak.plot_machine(ax_right, **kwargs.get("machine", {}))
 
         ax_right.legend()
         fig.tight_layout()

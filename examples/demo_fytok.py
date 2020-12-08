@@ -58,7 +58,9 @@ if __name__ == "__main__":
     from fytok.Plot import plot_profiles
     from spdm.util.AttributeTree import _next_
 
-    tok = Tokamak(open_entry("east+mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east", shot=55555, time_slice=20))
+    # tok = Tokamak(open_entry("east+mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east", shot=55555, time_slice=20))
+    
+    tok = Tokamak(open_entry("cfetr+mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east", shot=55555, time_slice=20))
 
     rho_b = 0.96
     rho = np.linspace(0, 1.0, 129)
@@ -76,9 +78,9 @@ if __name__ == "__main__":
     trans.electrons.particles.d = D
     trans.electrons.particles.v = v
 
-    plot_profiles(trans, profiles=[
-        ["electrons.particles.d", "electrons.particles.v"], "conductivity_parallel"
-    ], x_axis="grid_d.rho_tor_norm", grid=True).savefig("../output/core_tranport.svg")
+    # plot_profiles(trans, profiles=[
+    #     ["electrons.particles.d", "electrons.particles.v"], "conductivity_parallel"
+    # ], x_axis="grid_d.rho_tor_norm", grid=True).savefig("../output/core_tranport.svg")
 
     tok.core_sources[_next_] = {"identifier": {"name": "unspecified", "index": 0}}
 
@@ -109,9 +111,9 @@ if __name__ == "__main__":
 
     src.electrons.particles = lambda rho: S_edge(rho)
 
-    plot_profiles(src, profiles=[
-        "electrons.particles", "grid.rho_tor_norm"
-    ], x_axis="grid.rho_tor_norm", grid=True).savefig("../output/core_sources.svg")
+    # plot_profiles(src, profiles=[
+    #     "electrons.particles", "grid.rho_tor_norm"
+    # ], x_axis="grid.rho_tor_norm", grid=True).savefig("../output/core_sources.svg")
 
     def ne(rho, rho_b=rho_b, w=2.0, n_0=0.95e19): return np.piecewise(rho, [rho < rho_b, rho > rho_b], [
         lambda x:n_0*((1-(x/w)**2)**2), lambda x:n_0*((1-(rho_b/w)**2)**2)*np.exp(-((x-rho_b)*20)**2)])
@@ -120,24 +122,24 @@ if __name__ == "__main__":
 
     # draw(tok).savefig("../output/tokamak0.png", transparent=True)
 
-    # lfcs_r = tok.equilibrium.boundary.outline.r
-    # lfcs_z = tok.equilibrium.boundary.outline.z
-    # # psivals = [(R, Z, 0.0) for R, Z in zip(lfcs_r, lfcs_z)]
+    lfcs_r = tok.equilibrium.boundary.outline.r
+    lfcs_z = tok.equilibrium.boundary.outline.z
+    # psivals = [(R, Z, 0.0) for R, Z in zip(lfcs_r, lfcs_z)]
 
-    # xpoints = [[p.r, p.z] for p in tok.equilibrium.boundary.x_point]
+    xpoints = [[p.r, p.z] for p in tok.equilibrium.boundary.x_point]
 
-    # ir_min = np.argmin(lfcs_r)
-    # ir_max = np.argmax(lfcs_r)
-    # iz_min = np.argmin(lfcs_z)
-    # iz_max = np.argmax(lfcs_z)
+    ir_min = np.argmin(lfcs_r)
+    ir_max = np.argmax(lfcs_r)
+    iz_min = np.argmin(lfcs_z)
+    iz_max = np.argmax(lfcs_z)
 
-    # isoflux = [(lfcs_r[ir_min], lfcs_z[ir_min], lfcs_r[ir_max], lfcs_z[ir_max]),
-    #            (lfcs_r[iz_min], lfcs_z[iz_min], lfcs_r[iz_max], lfcs_z[iz_max])]  # (R1,Z1, R2,Z2) pair of locations
+    isoflux = [(lfcs_r[ir_min], lfcs_z[ir_min], lfcs_r[ir_max], lfcs_z[ir_max]),
+               (lfcs_r[iz_min], lfcs_z[iz_min], lfcs_r[iz_max], lfcs_z[iz_max])]  # (R1,Z1, R2,Z2) pair of locations
 
-    # xpoints[0][0] += 0.1
-    # xpoints[0][1] -= 0.1
-    # xpoints[1][0] += 0.1
-    # xpoints[1][1] += 0.1
+    xpoints[0][0] += 0.1
+    xpoints[0][1] -= 0.1
+    xpoints[1][0] += 0.1
+    xpoints[1][1] += 0.1
 
     # tok.equilibrium.update(
     #     constraints={
@@ -151,50 +153,45 @@ if __name__ == "__main__":
     #                    # "psivals": psivals,
     #                    }
 
-    plot_profiles(tok.equilibrium.profiles_1d,
-                  profiles=[["q", "q1"],
-                            "dpsi_drho_tor",
-                            "rho_tor",
-                            "fpol",
-                            "phi",
-                            "psi",
-                            "dvolume_dpsi",
-                            "dvolume_drho_tor",
-                            "drho_tor_dpsi",
-                            "gm1", "gm2", "gm3"
-                            ],
-                  x_axis="rho_tor_norm", grid=True) .savefig("../output/eq_profiles_1d.svg")
+    # plot_profiles(tok.equilibrium.profiles_1d,
+    #               profiles=[["q", "q1"],
+    #                         "rho_tor",
+    #                         "fpol",
+    #                         "phi",
+    #                         "psi",
+    #                         "dvolume_dpsi",
+    #                         "gm1", "gm2", "gm3"
+    #                         ],
+    #               x_axis="rho_tor_norm", grid=True) .savefig("../output/eq_profiles_1d.svg")
 
-    tok.update()
+    # tok.update()
 
     # draw(tok).savefig("../output/tokamak1.svg", transparent=True)
+    # plot_profiles(tok.core_profiles.profiles_1d,
+    #               profiles=[
+    #                   [{"name": "psi0", "opts": {"marker": "o", "label": r"$\psi_{0}$"}},
+    #                    {"name": "psi", "opts": {"marker": "+", "label": r"$\psi$"}}],
+    #                   ["psi0_prime", "psi0_prime1",  "psi1_prime", "psi1_prime1"],
+    #                   ["q0",  "q"],
+    #                   {"name": "dpsi_drho_tor", "opts": {"marker": "+"}},
+    #                   #   ["dgamma_current", "f_current"],
+    #                   #   ["j_total0", "j_ni_exp"],
+    #                   ["electrons.density0", "electrons.density"],
+    #                   ["electrons.density_prime", "electrons.density0_prime"],
+    #                   ["electrons.dgamma", "electrons.se_exp0"],
+    #                   "j_tor", "j_parallel",
+    #                   #   "e_field.parallel",
 
-    plot_profiles(tok.core_profiles.profiles_1d,
-                  profiles=[
-                      [{"name": "psi0", "opts": {"marker": "o", "label": r"$\psi_{0}$"}},
-                       {"name": "psi", "opts": {"marker": "+", "label": r"$\psi$"}}],
-                      ["psi0_prime", "psi0_prime1" ,  "psi1_prime", "psi1_prime1"],"dpsi_drho_tor",
-                      ["q0",   "q1"],"q",
-                      "grid.rho_tor",
-                      "dpsi_drho_tor",
-
-                      #   ["dgamma_current", "f_current"],
-                      #   ["j_total0", "j_ni_exp"],
-                      ["electrons.density0", "electrons.density"],
-                      ["electrons.density_prime", "electrons.density0_prime"],
-                      ["electrons.dgamma", "electrons.se_exp0"],
-                      "j_tor", "j_parallel",
-                      #   "e_field.parallel",
-
-                  ],
-                  x_axis="grid.rho_tor_norm", grid=True).savefig("../output/core_profiles.svg")
+    #               ],
+    #               x_axis="grid.rho_tor_norm", grid=True).savefig("../output/core_profiles.svg")
     # #
     # fig.tight_layout()
     # fig.subplots_adjust(hspace=0)
     # fig.align_ylabels()
     # fig.savefig("../output/core_profiles.svg", transparent=True)
 
-    # tok.equilibrium.plot().savefig("../output/tokamak1.svg", transparent=True)
+    tok.plot()
+    plt.savefig("../output/east.png", transparent=True)
     # bdr = np.array([p for p in tok.equilibrium.find_surface(0.6)])
 
     # tok.update(constraints={"psivals": psivals})
