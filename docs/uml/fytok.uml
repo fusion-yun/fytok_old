@@ -25,11 +25,10 @@ package "Device and Magnetics Field 装置位形，磁场线圈"{
 }
 
 
-package "Confinement and transport 约束和输运" {
+package "Equilibrium and transport 平衡和输运" {
    [TransportSolver]    -->  [CoreProfiles]
    [Equilibrium]        --> [FluxSurface]  
    [FluxSurface]        --> [TransportSolver]
-   [RadialProfile]
    [CoreProfiles]       --> [Equilibrium] 
    [CoreSources]        --> [TransportSolver]
    [CoreTransport]      --> [TransportSolver]

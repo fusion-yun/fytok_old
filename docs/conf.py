@@ -19,12 +19,12 @@ sys.path.append("../../SpDev/SpDB")
 
 # -- Project information -----------------------------------------------------
 
-project = 'FyTok'
+project = '数字托卡马克模拟器'
 copyright = '2020, 于治 YUZhi@ipp.ac.cn '
-author = 'Salmon (yuzhi@ipp.ac.cn)'
+author = '于治 (yuzhi@ipp.ac.cn)'
 
 # The full version, including alpha/beta/rc tags
-release = '0.0.0'
+release = '0.0.1'
 
 
 # -- General configuration ---------------------------------------------------

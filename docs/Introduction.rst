@@ -32,8 +32,6 @@ Purpose 目标
      * 物理模型改进和验证
      * 发展、验证 |Tokamak| 放电方案
 
-详见  :ref:`Requirements 需求`
-
  
 Background 背景
 =================

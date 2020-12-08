@@ -21,9 +21,12 @@
 >>> 
 >>> # 从efit_east tree 读取读取 shot=55555， time slice=100
 >>> 
->>> tok = Tokamak(open_entry("east+mdsplus://<MDSplus数据存储路径>/public_data/~t/?tree_name=efit_east", \
+>>> tok = Tokamak(open_entry("east+mdsplus://<MDSplus数据存储路径>/~t/?tree_name=efit_east", \
     shot=55555, time_slice=100))
->>> xpoints = [[p.r, p.z] for p in tok.equilibrium.boundary.x_point] # 从原始平衡中读取X点位置
+>>>
+>>> # 从原始平衡中读取X点位置
+>>> 
+>>> xpoints = [[p.r, p.z] for p in tok.equilibrium.boundary.x_point] 
 >>> lfcs_r = tok.equilibrium.boundary.outline.r  # 获取最外层闭合磁面
 >>> lfcs_z = tok.equilibrium.boundary.outline.z
 >>> ir_min = np.argmin(lfcs_r)
@@ -36,12 +39,16 @@
 >>> isoflux = [(lfcs_r[ir_min], lfcs_z[ir_min], lfcs_r[ir_max], lfcs_z[ir_max]),
                (lfcs_r[iz_min], lfcs_z[iz_min], lfcs_r[iz_max], lfcs_z[iz_max])]  # (R1,Z1, R2,Z2) pair of locations
 >>> 
->>> tok.equilibrium.update(    # 重构磁场
+>>> # 重构磁场
+>>>
+>>> tok.equilibrium.update(   
 >>>      constraints={
 >>>          "xpoints": xpoints,
 >>>          "isoflux": isoflux
 >>>      })
->>> 
->>> tok.equilibrium.plot_full().show() # 显示结果
+>>>
+>>> # 显示结果, 绘出磁轴和上下X-points
+>>>
+>>> tok.equilibrium.plot_full().show() 
 
 .. image::   ../figures/examples/tokamak.svg

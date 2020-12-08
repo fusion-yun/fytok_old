@@ -1,0 +1,39 @@
+@startuml
+left to right direction
+skinparam classFontName 'Noto Sans Mono CJK SC Regular'
+ 
+
+package "Equilibrium and transport 平衡和输运" {
+   [TransportSolver]    -->  [CoreProfiles]
+   [Equilibrium]        --> [FluxSurface]  
+   [FluxSurface]        --> [TransportSolver]
+   [CoreProfiles]       --> [Equilibrium] 
+   [CoreSources]        --> [TransportSolver]
+   [CoreTransport]      --> [TransportSolver]
+
+}
+ 
+ 
+Coils     --> [Equilibrium]
+Magnetics --> [Equilibrium]
+
+
+[MHD]         --> [CoreTransport] 
+[Turbulence]  --> [CoreTransport] 
+[NTM]         --> [CoreTransport] 
+
+[Waves]     --> [CoreSources] 
+Sources     --> [CoreSources] 
+Particles   --> [CoreSources]
+
+[CoreProfiles]  --> [MHD]        
+[CoreProfiles]  --> [Turbulence] 
+[CoreProfiles]  --> [NTM]        
+[CoreProfiles]  --> [Waves]        
+
+[Equilibrium]  --> [MHD]        
+[Equilibrium]  --> [Turbulence] 
+[Equilibrium]  --> [NTM]        
+[Equilibrium]  --> [Waves]    
+
+@enduml
