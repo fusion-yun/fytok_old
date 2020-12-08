@@ -1,0 +1,15 @@
+@startuml
+skinparam classFontName 'Noto Sans Mono CJK SC Regular'
+
+Equilibrium     -> PluginLib: 查找插件  FreeGS
+PluginLib       -> PluginFreeGS: 创建插件  pluginFreeGS
+PluginFreeGS    -> FreeGS:  生成外部模块  
+FreeGS          -> PluginFreeGS:  返回 freeGS
+PluginFreeGS    -> Equilibrium: 返回 pluginFreeGS
+Equilibrium     -> PluginFreeGS: 调用 update 
+PluginFreeGS    -> FreeGS: 调用 callSolver
+FreeGS          -> PluginFreeGS: 返回 psi 
+PluginFreeGS    -> Equilibrium: 返回 psi 
+
+
+@enduml
