@@ -42,7 +42,8 @@ extensions = ["sphinx.ext.napoleon",
               "sphinx.ext.autosectionlabel",
               "sphinxcontrib.bibtex",
               'sphinxcontrib.plantuml',
-              "recommonmark"]
+              "recommonmark",
+              "docxsphinx"]
 
 source_suffix = {
     '.rst': 'restructuredtext',

@@ -263,7 +263,7 @@ class FluxSurface(Profiles):
         r""".. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
             .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
         """
-        return (2*constants.pi) * np.sum(self.Jdl, axis=1)
+        return Profile((2*constants.pi) * np.sum(self.Jdl, axis=1), x_axis=self.psi_norm)
 
     @cached_property
     def volume(self):

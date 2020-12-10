@@ -443,7 +443,7 @@ Modules Design 模块
 模拟器核心模块Tokamak和Scenario。Tokamak负责整合管理装置在一个“时间片（time slice）”上各子系统的状态，执行系统间的相互约束关系。
 Scenario负责管理时间片（time slice）的演化。图 3 Simulator 功能模块 展示了 模拟功能模块的划分和部分依赖关系。
 
-.. figure::   figures/flow.png
+.. figure::   figures/flow.svg
     :align: center
 
     核心工作流

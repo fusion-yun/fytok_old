@@ -456,7 +456,7 @@ class CoreProfiles(AttributeTree):
         @cached_property
         def j_total(self):
             """Total parallel current density = average(jtot.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
-            return Profile(self.grid.rho_tor_norm, None, description={"name": "j_total"})
+            return Profile(None, self.grid.rho_tor_norm, description={"name": "j_total"})
 
         # @property
         # def current_parallel_inside(self):
@@ -466,7 +466,7 @@ class CoreProfiles(AttributeTree):
         @cached_property
         def j_tor(self):
             """Total toroidal current density = average(J_Tor/R) / average(1/R) {dynamic}[A/m ^ 2]"""
-            return Profile(self.grid.rho_tor_norm, None, description={"name": "j_tor"})
+            return Profile(None, self.grid.rho_tor_norm, description={"name": "j_tor"})
 
         @cached_property
         def j_ohmic(self):
@@ -504,7 +504,7 @@ class CoreProfiles(AttributeTree):
         @cached_property
         def phi_potential(self):
             """Electrostatic potential, averaged on the magnetic flux surface {dynamic}[V]"""
-            return Profile(self.grid.rho_tor_norm, description={"name": "phi_potential"})
+            return Profile(x_axis=self.grid.rho_tor_norm, description={"name": "phi_potential"})
 
         @cached_property
         def rotation_frequency_tor_sonic(self):
@@ -512,7 +512,7 @@ class CoreProfiles(AttributeTree):
             This quantity is the toroidal angular rotation frequency due to the ExB drift, introduced in formula(43) of Hinton and Wong,
             Physics of Fluids 3082 (1985), also referred to as sonic flow in regimes in which the toroidal velocity is dominant over the
             poloidal velocity Click here for further documentation. {dynamic}[s ^ -1]"""
-            return Profile(self.grid.rho_tor_norm, description={"name": "rotation_frequency_tor_sonic"})
+            return Profile(x_axis=self.grid.rho_tor_norm, description={"name": "rotation_frequency_tor_sonic"})
 
         # @cached_property
         # def q(self):
@@ -522,7 +522,7 @@ class CoreProfiles(AttributeTree):
         #     # q[0] = 2*q[1]-q[2]
         #     # return Profile(self.dpsi_drho_tor.x_axis, q)
         #     return Profile(self.grid.rho_tor_norm, 0, description={"name": "Safety factor"})
-      
+
         # @cached_property
         # def dpsi_drho_tor(self):
         #     return Profile(self.grid.rho_tor_norm, 0, description={"name": "dpsi_drho_tor"})

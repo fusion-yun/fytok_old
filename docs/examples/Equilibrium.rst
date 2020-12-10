@@ -51,4 +51,4 @@
 >>>
 >>> tok.equilibrium.plot_full().show() 
 
-.. image::   ../figures/examples/tokamak.svg
+.. image::   ../figures/examples/tokamak.png

@@ -56,7 +56,7 @@ def plot_profiles(holder, profiles, axis=None, x_axis=None, prefix=None, grid=Fa
     elif not isinstance(prefix, collections.abc.Sequence):
         prefix = [prefix]
 
-    if isinstance(x_axis, str):
+    if not isinstance(x_axis, np.ndarray):
         x_axis, x_axis_opts = fetch_profile(holder, x_axis, prefix=prefix)
     else:
         x_axis = None

@@ -4,7 +4,7 @@ import collections
 import numpy as np
 from spdm.util.AttributeTree import AttributeTree
 from spdm.util.logger import logger
-from spdm.util.Profiles import Profiles, make_x_axis
+from spdm.util.Profiles import Profiles, make_x_axis, Profile
 
 
 class RadialGrid:
@@ -34,7 +34,7 @@ class RadialGrid:
         """	Normalised toroidal flux coordinate. The normalizing value for rho_tor_norm,
         is the toroidal flux coordinate at the equilibrium boundary (LCFS or 99.x % of the LCFS in case of a
         fixed boundary equilibium calculation, see time_slice/boundary/b_flux_pol_norm in the equilibrium IDS) {dynamic} [-]"""
-        return self._rho_tor_norm
+        return Profile(self._rho_tor_norm, x_axis=self._rho_tor_norm, description={"name": "rho_tor_norm"})
 
     @cached_property
     def rho_tor(self):

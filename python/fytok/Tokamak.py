@@ -242,7 +242,7 @@ class Tokamak(AttributeTree):
 
         self.pf_active.plot(axis, **kwargs.get("pf_active", {}))
 
-        # self.equilibrium.plot_profiles2d(axis, **kwargs.get("equilibrium", {}))
+        self.equilibrium.plot_profiles2d(axis, **kwargs.get("equilibrium", {}))
 
         axis.set_aspect('equal')
         axis.axis('scaled')
