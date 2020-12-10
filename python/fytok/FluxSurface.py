@@ -278,7 +278,8 @@ class FluxSurface(Profiles):
             .. math:: q(\psi)=\frac{d\Phi}{d\psi}=\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
         """
         logger.debug(r"Calculate q as  F V^{\prime} \left\langle R^{-2}\right \rangle /(4 \pi^2) ")
-        return self.cocos_flag * self.fpol * np.sum(self.Jdl/self.R**2, axis=1) / (2*scipy.constants.pi)
+        return Profile(self.cocos_flag * self.fpol * np.sum(self.Jdl/self.R**2, axis=1) / (2*scipy.constants.pi),
+                       x_axis=self.psi_norm)
 
     @cached_property
     def phi(self):
@@ -312,7 +313,7 @@ class FluxSurface(Profiles):
         """
         res = self.q/(2.0*constants.pi*self._b0)
         res[1:] /= self.rho_tor[1:]
-        res[0] = Profile(self.rho_tor[1:5], res[1:5])(0)  # self.fpol[0]*self.gm1[0]/(2.0*constants.pi*self._b0)
+        res[0] = res[1:5](0)  # self.fpol[0]*self.gm1[0]/(2.0*constants.pi*self._b0)
         # return self.q/(2.0*constants.pi*self._b0)
         # res[0] = 2*res[1]-res[2]
         return res

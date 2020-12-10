@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
     def D(x): return 0.5 + (x**3) if x < rho_b else 0.1
 
-    def v(x): return -(x**2)*0.4 if x < rho_b else 0.1
+    def v(x): return -(x**2)*0.4 if x < rho_b else -0.0
 
     tok.core_transport[_next_] = {"identifier": {"name": "unspecified", "index": 0}}
 
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     def S_pel(rho, pos=0.7, w=0.1, S0=1.0e19): return scipy.stats.norm.pdf((rho-0.7)/w) * \
         np.sqrt(scipy.constants.pi*2.0)*S0
 
-    def S_edge(rho, pos=0.7, w=0.03, S0=8.0e16): return np.piecewise(
+    def S_edge(rho, pos=0.7, w=0.03, S0=8.0e20): return np.piecewise(
         rho, [rho < pos, rho >= pos], [0, lambda x: (np.exp((x-pos)/w-10)*S0-1.0)])
 
     gamma = tok.equilibrium.profiles_1d.dvolume_drho_tor  \
@@ -94,17 +94,18 @@ if __name__ == "__main__":
         * tok.equilibrium.profiles_1d.dpsi_drho_tor \
         / (4.0*(constants.pi**2))
 
-    dgamma = Profile(gamma, x_axis=tok.equilibrium.profiles_1d.rho_tor).derivative
-
-    j_total = dgamma  \
+    j_total = - gamma.derivative \
+        / tok.equilibrium.profiles_1d.rho_tor[-1]**2 \
+        * tok.equilibrium.profiles_1d.dpsi_drho_tor  \
         * (tok.equilibrium.profiles_1d.fpol**2) \
         / (constants.mu_0*tok.vacuum_toroidal_field.b0) \
-        * (constants.pi*2.0)
+        * (constants.pi)
+
     j_total[1:] /= tok.equilibrium.profiles_1d.dvolume_drho_tor[1:]
 
     j_total[0] = 2*j_total[1]-j_total[2]
 
-    src.j_parallel = tok.equilibrium.profiles_1d.mapping("rho_tor_norm", j_total)
+    src.j_parallel = Profile(j_total, tok.equilibrium.profiles_1d.rho_tor_norm)
 
     src.electrons.particles = lambda rho: S_edge(rho)
 
@@ -160,21 +161,30 @@ if __name__ == "__main__":
     draw(tok).savefig("../output/tokamak1.svg", transparent=True)
     plot_profiles(tok.core_profiles.profiles_1d,
                   profiles=[
-                      [{"name": "psi0", "opts": {"label": r"$\psi_{0}$"}},
-                       {"name": "psi", "opts": {"label": r"$\psi$"}}],
-                      [{"name": "q0", "opts": {"label": r"$q_{0}$"}},
-                       {"name": "q", "opts": {"label": r"$q$"}}],
-                      [{"name": "electrons.density0", "opts": {"label": r"$n_{e0}$"}},
-                       {"name": "electrons.density", "opts": {"label": r"$n_{e}$"}}],
-                      #   ["psi0_prime", "psi0_prime1",  "psi1_prime", "psi1_prime1"],
-                      #   ["q0",  "q"],
+                      [{"name": "psi0", "opts": {"marker": ".", "label": r"$\psi_{0}$"}},
+                       {"name": "psi", "opts":  {"marker": "+", "label": r"$\psi$"}}],
+                      [{"name": "q0", "opts": {"marker": ".", "label": r"$q_{0}$"}},
+                       {"name": "q", "opts":  {"marker": "+", "label": r"$q$"}}],
+                      {"name": "electrons.density0", "opts": {"marker": ".", "label": r"$n_{e0}$"}},
+                      {"name": "electrons.density", "opts":  {"marker": "+", "label": r"$n_{e}$"}},
+                      #   "a",
+                      #   "b",
+                      #   "c",
+                      #   "d",
+                      #   "e",
+                      #   "f", "g",
+                      ["psi0_prime", "psi0_prime1",  "psi1_prime", "psi1_prime1"],
                       #   {"name": "dpsi_drho_tor", "opts": {"marker": "+"}},
-                      #   ["dgamma_current", "f_current"],
-                      #   ["j_total0", "j_ni_exp"],
+                      ["dgamma_current", "f_current"],
+                      ["j_total0", "j_ni_exp"],
                       #   ["electrons.density0",
                       #    "electrons.density"],
-                      #   ["electrons.density_prime", "electrons.density0_prime"],
-                      #   ["electrons.dgamma", "electrons.se_exp0"],
+                      #   "electrons.diff",
+                      #   "electrons.vconv",
+                      #   "electrons.density0_prime", "electrons.density_prime",
+                      #   ["electrons.gamma0_prime", "electrons.se_exp0","f"],
+                      #   ["electrons.gamma0"],
+
                       #   "j_tor", "j_parallel",
                       #   "e_field.parallel",
 
