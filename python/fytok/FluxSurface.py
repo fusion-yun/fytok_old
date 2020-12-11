@@ -48,13 +48,13 @@ class FluxSurface(Profiles):
         """Initialize FluxSurface
 
         """
-        super().__init__(None, *args, x_axis=psi_norm, **kwargs)
+        super().__init__(None, *args, axis=psi_norm, **kwargs)
         self._limiter = limiter
         self._psirz = psirz
         self._r0 = r0
         self._b0 = b0
         self._ffprime = ffprime
-        self._psi_norm = self._x_axis
+        self._psi_norm = self._axis
 
         if callable(ffprime):
             self._ffprime = ffprime
@@ -263,7 +263,7 @@ class FluxSurface(Profiles):
         r""".. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
             .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
         """
-        return Profile((2*constants.pi) * np.sum(self.Jdl, axis=1), x_axis=self.psi_norm)
+        return Profile((2*constants.pi) * np.sum(self.Jdl, axis=1), axis=self.psi_norm)
 
     @cached_property
     def volume(self):
@@ -279,7 +279,7 @@ class FluxSurface(Profiles):
         """
         logger.debug(r"Calculate q as  F V^{\prime} \left\langle R^{-2}\right \rangle /(4 \pi^2) ")
         return Profile(self.cocos_flag * self.fpol * np.sum(self.Jdl/self.R**2, axis=1) / (2*scipy.constants.pi),
-                       x_axis=self.psi_norm)
+                       axis=self.psi_norm)
 
     @cached_property
     def phi(self):
@@ -290,7 +290,7 @@ class FluxSurface(Profiles):
             .. math ::
                 \Phi_{tor}\left(\psi\right)=\int_{0}^{\psi}qd\psi
         """
-        return self.integral(self.q, 0, self._psi_norm) * (self.psi_boundary-self.psi_axis)
+        return self.q.integral(0, self._psi_norm) * (self.psi_boundary-self.psi_axis)
 
     @cached_property
     def rho_tor(self):

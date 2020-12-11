@@ -131,11 +131,11 @@ class Equilibrium(AttributeTree):
     def time(self):
         return self._tokamak.time
 
-    def radial_grid(self, x_axis=129, primery_coordinate="rho_tor_norm"):
-        if isinstance(x_axis, RadialGrid):
-            return x_axis
+    def radial_grid(self, axis=129, primery_coordinate="rho_tor_norm"):
+        if isinstance(axis, RadialGrid):
+            return axis
         else:
-            return RadialGrid(x_axis, equilibrium=self)
+            return RadialGrid(axis, equilibrium=self)
 
     def _solve(self, *args, **kwargs):
         raise NotImplementedError()
@@ -196,7 +196,7 @@ class Equilibrium(AttributeTree):
         # logger.debug(self.profiles_1d._cache)
         return FluxSurface(self.profiles_2d.psirz,
                            psi_norm=self._psi_norm,
-                           ffprime=self.profiles_1d.interpolate("f_df_dpsi"),
+                           ffprime=self.profiles_1d.f_df_dpsi,
                            r0=self.vacuum_toroidal_field.r0, b0=self.vacuum_toroidal_field.b0,
                            coordinate_system=self.coordinate_system,
                            limiter=self._tokamak.wall.limiter_polygon)
@@ -432,7 +432,7 @@ class Equilibrium(AttributeTree):
 
             if type(psi_norm) is int:
                 psi_norm = np.linspace(0, 1.0, psi_norm, endpoint=False)
-            super().__init__(cache, *args, x_axis="psi_norm", **kwargs)
+            super().__init__(cache, *args, axis="psi_norm", **kwargs)
             self.__dict__["_equilibrium"] = equilibrium
 
         @property
@@ -902,7 +902,6 @@ class Equilibrium(AttributeTree):
     ####################################################################################
     # Plot proflies
 
-
     def plot_profiles2d(self, axis=None, *args, profiles=[], vec_field=[], boundary=True, levels=32, oxpoints=True,   **kwargs):
         """learn from freegs
         """
@@ -992,7 +991,7 @@ class Equilibrium(AttributeTree):
 
         return data, opts
 
-    def plot_profiles(self, axis, x_axis, profiles):
+    def plot_profiles(self, fig_axis, axis, profiles):
         if not isinstance(profiles, list):
             profiles = [profiles]
 
@@ -1011,38 +1010,38 @@ class Equilibrium(AttributeTree):
                 value, opts = self.fetch_profile(d)
 
                 if value is not NotImplemented and value is not None and len(value) > 0:
-                    axis[idx].plot(x_axis.data, value, **opts)
+                    fig_axis[idx].plot(axis.data, value, **opts)
                 else:
                     logger.error(f"Can not find profile '{d}'")
 
-            axis[idx].legend(fontsize=6)
+            fig_axis[idx].legend(fontsize=6)
 
             if ylabel:
-                axis[idx].set_ylabel(ylabel, fontsize=6).set_rotation(0)
-            axis[idx].labelsize = "media"
-            axis[idx].tick_params(labelsize=6)
-        return axis[-1]
+                fig_axis[idx].set_ylabel(ylabel, fontsize=6).set_rotation(0)
+            fig_axis[idx].labelsize = "media"
+            fig_axis[idx].tick_params(labelsize=6)
+        return fig_axis[-1]
 
     def plot(self, *args,
-             x_axis=("psi_norm",   r'$(\psi-\psi_{axis})/(\psi_{boundary}-\psi_{axis}) [-]$'),
+             axis=("psi_norm",   r'$(\psi-\psi_{axis})/(\psi_{boundary}-\psi_{axis}) [-]$'),
              profiles=None,
              profiles_2d=[],
              vec_field=[],
              surface_mesh=False,
              **kwargs):
 
-        x_axis, x_axis_opts = self.fetch_profile(x_axis)
+        axis, axis_opts = self.fetch_profile(axis)
 
-        assert (x_axis.data is not NotImplemented)
+        assert (axis.data is not NotImplemented)
         nprofiles = len(profiles) if profiles is not None else 0
         if profiles is None or nprofiles <= 1:
             fig, ax_right = plt.subplots(ncols=1, nrows=1, sharex=True)
         else:
             fig, axs = plt.subplots(ncols=2, nrows=nprofiles, sharex=True)
             # left
-            ax_left = self.plot_profiles(axs[:, 0], x_axis, profiles)
+            ax_left = self.plot_profiles(axs[:, 0], axis, profiles)
 
-            ax_left.set_xlabel(x_axis_opts.get("label", "[-]"), fontsize=6)
+            ax_left.set_xlabel(axis_opts.get("label", "[-]"), fontsize=6)
 
             # right
             gs = axs[0, 1].get_gridspec()
@@ -1053,7 +1052,7 @@ class Equilibrium(AttributeTree):
         if surface_mesh:
             self.flux_surface.plot(ax_right)
         self.plot_profiles2d(ax_right, profiles=profiles_2d, vec_field=vec_field, **kwargs.get("equilibrium", {}))
-        
+
         self._tokamak.plot_machine(ax_right, **kwargs.get("machine", {}))
 
         ax_right.legend()

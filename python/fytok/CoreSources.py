@@ -26,7 +26,7 @@ class CoreSources(AttributeTree):
 
     class Profiles1D(Profiles):
         def __init__(self, cache=None,  *args, parent=None,   **kwargs):
-            super().__init__(cache, * args, x_axis=parent._tokamak.grid.rho_tor_norm, **kwargs)
+            super().__init__(cache, * args, axis=parent._tokamak.grid.rho_tor_norm, **kwargs)
             self._parent = parent
 
         @property
@@ -35,7 +35,7 @@ class CoreSources(AttributeTree):
 
         class Electrons(Profiles):
             def __init__(self, cache=None,  *args, parent=None,   **kwargs):
-                super().__init__(cache, * args, x_axis=parent.grid.rho_tor_norm, **kwargs)
+                super().__init__(cache, * args, axis=parent.grid.rho_tor_norm, **kwargs)
                 self._parent = parent
 
             @cached_property

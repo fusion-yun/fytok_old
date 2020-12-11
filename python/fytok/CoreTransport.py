@@ -36,7 +36,7 @@ class CoreTransport(AttributeTree):
     class TransportCoeff(Profiles):
         def __init__(self, cache=None, *args, parent=None, **kwargs):
 
-            super().__init__(cache, *args, x_axis=parent.grid_d.rho_tor_norm, **kwargs)
+            super().__init__(cache, *args, axis=parent.grid_d.rho_tor_norm, **kwargs)
             self._parent = parent
             self.d = Profile(self._parent.grid_d.rho_tor_norm, self._cache.d, description={"name": "d"})
             self.v = Profile(self._parent.grid_v.rho_tor_norm, self._cache.v, description={"name": "v"})

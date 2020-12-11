@@ -49,7 +49,7 @@ class CoreProfiles(AttributeTree):
         def __init__(self, cache=None,  *args, parent=None, grid=None, **kwargs):
             if grid is None:
                 grid = parent._grid
-            super().__init__(cache, * args, x_axis=grid.rho_tor_norm, **kwargs)
+            super().__init__(cache, * args, axis=grid.rho_tor_norm, **kwargs)
             self.__dict__["_parent"] = parent
             self.__dict__["_grid"] = grid
             self.__dict__["_b0"] = parent._tokamak.vacuum_toroidal_field.b0
@@ -76,7 +76,7 @@ class CoreProfiles(AttributeTree):
 
         class Electrons(Profiles):
             def __init__(self, cache=None, *args, grid=None,  **kwargs):
-                super().__init__(cache, *args, x_axis=grid.rho_tor_norm, **kwargs)
+                super().__init__(cache, *args, axis=grid.rho_tor_norm, **kwargs)
                 self.__dict__['_grid'] = grid
                 self |= {
                     "temperature_validity": 0,
@@ -157,7 +157,7 @@ class CoreProfiles(AttributeTree):
 
         class Ion(Profiles):
             def __init__(self, cache=None,  *args, grid=None, z_ion=1, label=None, neutral_index=None,  **kwargs):
-                super().__init__(cache, *args, x_axis=grid.rho_tor_norm, **kwargs)
+                super().__init__(cache, *args, axis=grid.rho_tor_norm, **kwargs)
                 self.__dict__['_grid'] = grid
                 self |= {
                     "z_ion": "z_ion",
@@ -290,7 +290,7 @@ class CoreProfiles(AttributeTree):
 
         class Neutral(Profiles):
             def __init__(self, cache=None,  *args, grid=None, label=None, ion_index=None, **kwargs):
-                super().__init__(cache, *args, x_axis=grid.rho_tor_norm, **kwargs)
+                super().__init__(cache, *args, axis=grid.rho_tor_norm, **kwargs)
                 self.__dict__['_grid'] = grid
                 self |= {
                     "label": label,
@@ -492,7 +492,7 @@ class CoreProfiles(AttributeTree):
 
         class EField(Profiles):
             def __init__(self, cache=None,  *args, grid=None,    **kwargs):
-                super().__init__(cache, *args, x_axis=grid.rho_tor_norm, **kwargs)
+                super().__init__(cache, *args, axis=grid.rho_tor_norm, **kwargs)
                 self.__dict__['_grid'] = grid
 
         @cached_property
@@ -504,7 +504,7 @@ class CoreProfiles(AttributeTree):
         @cached_property
         def phi_potential(self):
             """Electrostatic potential, averaged on the magnetic flux surface {dynamic}[V]"""
-            return Profile(x_axis=self.grid.rho_tor_norm, description={"name": "phi_potential"})
+            return Profile(axis=self.grid.rho_tor_norm, description={"name": "phi_potential"})
 
         @cached_property
         def rotation_frequency_tor_sonic(self):
@@ -512,15 +512,15 @@ class CoreProfiles(AttributeTree):
             This quantity is the toroidal angular rotation frequency due to the ExB drift, introduced in formula(43) of Hinton and Wong,
             Physics of Fluids 3082 (1985), also referred to as sonic flow in regimes in which the toroidal velocity is dominant over the
             poloidal velocity Click here for further documentation. {dynamic}[s ^ -1]"""
-            return Profile(x_axis=self.grid.rho_tor_norm, description={"name": "rotation_frequency_tor_sonic"})
+            return Profile(axis=self.grid.rho_tor_norm, description={"name": "rotation_frequency_tor_sonic"})
 
         # @cached_property
         # def q(self):
         #     """Safety factor(IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic}[-].
         #     This quantity is COCOS-dependent, with the following transformation: """
-        #     # q = (constants.pi*2.0)*self._b0*self.dpsi_drho_tor.x_axis*self.grid.rho_tor[-1]/self.dpsi_drho_tor
+        #     # q = (constants.pi*2.0)*self._b0*self.dpsi_drho_tor.axis*self.grid.rho_tor[-1]/self.dpsi_drho_tor
         #     # q[0] = 2*q[1]-q[2]
-        #     # return Profile(self.dpsi_drho_tor.x_axis, q)
+        #     # return Profile(self.dpsi_drho_tor.axis, q)
         #     return Profile(self.grid.rho_tor_norm, 0, description={"name": "Safety factor"})
 
         # @cached_property
@@ -599,10 +599,10 @@ class CoreProfiles(AttributeTree):
     def global_quantities(self):
         return CoreProfiles.GlobalQuantities(self._cache.global_quantities, core_profiles=self)
 
-    def plot(self, profiles, axis=None, x_axis=None):
+    def plot(self, profiles, fig_axis=None, axis=None):
         return plot_profiles(
             self,
             profiles,
-            x_axis=x_axis or ("grid.rho_tor_norm", r"$\rho_{norm}$"),
+            axis=axis or ("grid.rho_tor_norm", r"$\rho_{norm}$"),
             prefix="profiles_1d",
-            axis=axis)
+            fig_axis=fig_axis)

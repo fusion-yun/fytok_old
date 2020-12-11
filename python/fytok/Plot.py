@@ -43,7 +43,7 @@ def fetch_profile(holder, desc, prefix=[]):
     return data, opts
 
 
-def plot_profiles(holder, profiles, axis=None, x_axis=None, prefix=None, grid=False):
+def plot_profiles(holder, profiles, fig_axis=None, axis=None, prefix=None, grid=False):
     if isinstance(profiles, str):
         profiles = [s.strip() for s in profiles.split(",")]
     elif not isinstance(profiles, collections.abc.Sequence):
@@ -56,21 +56,21 @@ def plot_profiles(holder, profiles, axis=None, x_axis=None, prefix=None, grid=Fa
     elif not isinstance(prefix, collections.abc.Sequence):
         prefix = [prefix]
 
-    if not isinstance(x_axis, np.ndarray):
-        x_axis, x_axis_opts = fetch_profile(holder, x_axis, prefix=prefix)
+    if not isinstance(axis, np.ndarray):
+        axis, axis_opts = fetch_profile(holder, axis, prefix=prefix)
     else:
-        x_axis = None
-        x_axis_opts = {}
+        axis = None
+        axis_opts = {}
 
     fig = None
-    if isinstance(axis, collections.abc.Sequence):
+    if isinstance(fig_axis, collections.abc.Sequence):
         pass
-    elif axis is None:
+    elif fig_axis is None:
         nprofiles = len(profiles)
-        fig, axis = plt.subplots(ncols=1, nrows=nprofiles, sharex=True, figsize=(10, 2*nprofiles))
+        fig, fig_axis = plt.subplots(ncols=1, nrows=nprofiles, sharex=True, figsize=(10, 2*nprofiles))
 
     elif len(profiles) == 1:
-        axis = [axis]
+        fig_axis = [fig_axis]
     else:
         raise RuntimeError(f"Too much profiles!")
 
@@ -86,12 +86,12 @@ def plot_profiles(holder, profiles, axis=None, x_axis=None, prefix=None, grid=Fa
         for d in data:
             profile, opts = fetch_profile(holder, d,  prefix=prefix)
 
-            if isinstance(profile, Profile) and hasattr(profile, "x_axis"):
-                axis[idx].plot(profile.x_axis, profile, **opts)
+            if isinstance(profile, Profile) and hasattr(profile, "axis"):
+                fig_axis[idx].plot(profile.axis, profile, **opts)
             elif isinstance(profile, np.ndarray):
                 try:
-                    if x_axis is not None:
-                        axis[idx].plot(x_axis, profile, **opts)
+                    if axis is not None:
+                        axis[idx].plot(axis, profile, **opts)
                     else:
                         axis[idx].plot(profile, **opts)
 
@@ -100,16 +100,16 @@ def plot_profiles(holder, profiles, axis=None, x_axis=None, prefix=None, grid=Fa
             else:
                 logger.error(f"Can not find profile '{d}'")
 
-        axis[idx].legend(fontsize=6)
+        fig_axis[idx].legend(fontsize=6)
 
         if grid:
-            axis[idx].grid()
+            fig_axis[idx].grid()
 
         if ylabel:
-            axis[idx].set_ylabel(ylabel, fontsize=6).set_rotation(0)
-        axis[idx].labelsize = "media"
-        axis[idx].tick_params(labelsize=6)
+            fig_axis[idx].set_ylabel(ylabel, fontsize=6).set_rotation(0)
+        fig_axis[idx].labelsize = "media"
+        fig_axis[idx].tick_params(labelsize=6)
 
-    axis[-1].set_xlabel(x_axis_opts.get("label", ""),  fontsize=6)
+    fig_axis[-1].set_xlabel(axis_opts.get("label", ""),  fontsize=6)
 
     return fig

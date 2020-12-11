@@ -16,8 +16,8 @@ sys.path.append("/home/salmon/workspace/SpDev/SpDB")
 def draw(tok):
 
     return tok.equilibrium.plot(
-        # x_axis=("psi_norm",   r'$(\psi-\psi_{axis})/(\psi_{boundary}-\psi_{axis}) [-]$'),
-        x_axis=("rho_tor_norm",  r"$\rho_{tor}/\rho_{bndry}$"),
+        # axis=("psi_norm",   r'$(\psi-\psi_{axis})/(\psi_{boundary}-\psi_{axis}) [-]$'),
+        axis=("rho_tor_norm",  r"$\rho_{tor}/\rho_{bndry}$"),
         profiles=[
             ({"name": "pprime", "opts": {"label": r"$p^{\prime}$"}}, r"$[Pa/Wb]$"),
             ({"name": "pressure", "opts": {"label": r"$p$"}}, r"$[Pa]$"),
@@ -63,11 +63,10 @@ if __name__ == "__main__":
     # tok = Tokamak(open_entry("cfetr+mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east", shot=55555, time_slice=20))
 
     rho_b = 0.96
-    rho = np.linspace(0, 1.0, 129)
+    rho_norm = np.linspace(0, 1.0, 129)
 
-    def D(x): return 0.5 + (x**3) if x < rho_b else 0.1
-
-    def v(x): return -(x**2)*0.4 if x < rho_b else -0.0
+    def D(r): return np.piecewise(r, [r < rho_b, r >= rho_b], [lambda x: (0.5 + (x**3)), 0.1])
+    def v(r): return np.piecewise(r, [r < rho_b, r >= rho_b], [lambda x: (x**2)*0.4, 0.0])
 
     tok.core_transport[_next_] = {"identifier": {"name": "unspecified", "index": 0}}
 
@@ -85,7 +84,7 @@ if __name__ == "__main__":
     def S_pel(rho, pos=0.7, w=0.1, S0=1.0e19): return scipy.stats.norm.pdf((rho-0.7)/w) * \
         np.sqrt(scipy.constants.pi*2.0)*S0
 
-    def S_edge(rho, pos=0.7, w=0.03, S0=8.0e20): return np.piecewise(
+    def S_edge(rho, pos=0.7, w=0.03, S0=5.0e15): return np.piecewise(
         rho, [rho < pos, rho >= pos], [0, lambda x: (np.exp((x-pos)/w-10)*S0-1.0)])
 
     gamma = tok.equilibrium.profiles_1d.dvolume_drho_tor  \
@@ -109,7 +108,7 @@ if __name__ == "__main__":
 
     src.electrons.particles = lambda rho: S_edge(rho)
 
-    def ne(rho, rho_b=rho_b, w=2.0, n_0=0.95e19): return np.piecewise(rho, [rho < rho_b, rho > rho_b], [
+    def ne(rho, rho_b=rho_b, w=2.0, n_0=1e20): return np.piecewise(rho, [rho < rho_b, rho > rho_b], [
         lambda x:n_0*((1-(x/w)**2)**2), lambda x:n_0*((1-(rho_b/w)**2)**2)*np.exp(-((x-rho_b)*20)**2)])
 
     tok.core_profiles.profiles_1d.electrons.density = ne
@@ -147,18 +146,18 @@ if __name__ == "__main__":
     #                         "dvolume_dpsi",
     #                         "gm1", "gm2", "gm3"
     #                         ],
-    #               x_axis="rho_tor_norm", grid=True) .savefig("../output/eq_profiles_1d.svg")
+    #               axis="rho_tor_norm", grid=True) .savefig("../output/eq_profiles_1d.svg")
     # plot_profiles(trans, profiles=[
     #     ["electrons.particles.d", "electrons.particles.v"], "conductivity_parallel"
-    # ], x_axis="grid_d.rho_tor_norm", grid=True).savefig("../output/core_tranport.svg")
+    # ], axis="grid_d.rho_tor_norm", grid=True).savefig("../output/core_tranport.svg")
     # plot_profiles(src, profiles=[
     #     "electrons.particles", "grid.rho_tor_norm"
-    # ], x_axis="grid.rho_tor_norm", grid=True).savefig("../output/core_sources.svg")
+    # ], axis="grid.rho_tor_norm", grid=True).savefig("../output/core_sources.svg")
     # draw(tok).savefig("../output/tokamak0.png", transparent=True)
 
     tok.update()
 
-    draw(tok).savefig("../output/tokamak1.svg", transparent=True)
+    # draw(tok).savefig("../output/tokamak1.svg", transparent=True)
     plot_profiles(tok.core_profiles.profiles_1d,
                   profiles=[
                       [{"name": "psi0", "opts": {"marker": ".", "label": r"$\psi_{0}$"}},
@@ -167,20 +166,27 @@ if __name__ == "__main__":
                        {"name": "q", "opts":  {"marker": "+", "label": r"$q$"}}],
                       {"name": "electrons.density0", "opts": {"marker": ".", "label": r"$n_{e0}$"}},
                       {"name": "electrons.density", "opts":  {"marker": "+", "label": r"$n_{e}$"}},
-                      #   "a",
-                      #   "b",
-                      #   "c",
-                      #   "d",
-                      #   "e",
-                      #   "f", "g",
-                      ["psi0_prime", "psi0_prime1",  "psi1_prime", "psi1_prime1"],
+                      [
+                          #   {"name": "electrons.density_flux0", "opts": {"label": r"$\Gamma_{e0}$"}},
+                          {"name": "electrons.density_flux", "opts": {"marker": "o", "label": r"$\Gamma_{e}$"}},
+                          {"name": "electrons.density_flux1", "opts": {"marker": "+", "label": r"$\Gamma_{e1}$"}}],
+                      #   {"name": "electrons.density_flux0_prime", "opts": {"label": r"$\Gamma_{e0}^{\prime}$"}},
+                      ["electrons.se_exp0",
+                       {"name": "electrons.density_flux_prime", "opts": {"marker": "o", "label": r"$\Gamma_{e}^{\prime}$"}},
+                       {"name": "electrons.density_flux1_prime", "opts": {"marker": "+", "label": r"$\Gamma_{e1}^{\prime}$"}}],
+
+                      #   {"name": "electrons.density0_prime", "opts": {"marker": ".", "label": r"$n^{\prime}_{e0}$"}},
+                      {"name": "electrons.density_prime", "opts":  {"marker": "+", "label": r"$n^{\prime}_{e}$"}},
+                      "d", "e",
+                      #   ["psi0_prime", "psi0_prime1",  "psi1_prime", "psi1_prime1"],
                       #   {"name": "dpsi_drho_tor", "opts": {"marker": "+"}},
-                      ["dgamma_current", "f_current"],
-                      ["j_total0", "j_ni_exp"],
+                      #   ["dgamma_current", "f_current"],
+                      #   ["j_total0", "j_ni_exp"],
                       #   ["electrons.density0",
                       #    "electrons.density"],
-                      #   "electrons.diff",
-                      #   "electrons.vconv",
+                      "electrons.diff",
+                      "electrons.diff0",
+                      "electrons.vconv",
                       #   "electrons.density0_prime", "electrons.density_prime",
                       #   ["electrons.gamma0_prime", "electrons.se_exp0","f"],
                       #   ["electrons.gamma0"],
@@ -189,7 +195,8 @@ if __name__ == "__main__":
                       #   "e_field.parallel",
 
                   ],
-                  x_axis={"name": "grid.rho_tor_norm", "opts": {"label": r"$\rho_{tor}/\rho_{tor,bdry}$"}}, grid=True).savefig("../output/core_profiles.svg")
+                  axis={"name": "grid.rho_tor_norm", "opts": {"label": r"$\rho_{tor}/\rho_{tor,bdry}$"}}, grid=True)\
+        .savefig("../output/core_profiles.svg")
     # #
     # fig.tight_layout()
     # fig.subplots_adjust(hspace=0)
