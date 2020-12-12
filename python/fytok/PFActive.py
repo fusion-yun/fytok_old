@@ -26,6 +26,19 @@ class PFActive(AttributeTree):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
+    def update(self, data):
+
+        data = dict(data)
+        
+        for c in self.coil:
+            d = data.get(c.name, None)
+            if d is None:
+                continue
+            
+            c.current = d.current
+
+        logger.debug(self.coil)
+
     @cached_property
     def coil(self):
         res = AttributeTree(default_factory_array=lambda _holder=self: PFActive.Coil(self))

@@ -5,9 +5,11 @@ from functools import cached_property
 
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.integrate
 from spdm.util.AttributeTree import AttributeTree, _last_, _next_
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
+from spdm.util.Profiles import Profile
 
 from fytok.CoreProfiles import CoreProfiles
 from fytok.CoreSources import CoreSources
@@ -17,10 +19,10 @@ from fytok.EdgeSources import EdgeSources
 from fytok.EdgeTransport import EdgeTransport
 from fytok.Equilibrium import Equilibrium
 from fytok.PFActive import PFActive
+from fytok.RadialGrid import RadialGrid
 from fytok.TF import TF
 from fytok.TransportSolver import TransportSolver
 from fytok.Wall import Wall
-from fytok.RadialGrid import RadialGrid
 
 
 class Tokamak(AttributeTree):
@@ -39,7 +41,7 @@ class Tokamak(AttributeTree):
         self._time = time
         self._core_profiles = None
         if rho_tor_norm is None:
-            self._rho_tor_norm = np.linspace(0, 1.0, 129) 
+            self._rho_tor_norm = np.linspace(0, 1.0, 129)
         else:
             self._rho_tor_norm = rho_tor_norm
 
@@ -242,7 +244,7 @@ class Tokamak(AttributeTree):
 
         self.pf_active.plot(axis, **kwargs.get("pf_active", {}))
 
-        self.equilibrium.plot_profiles2d(axis, **kwargs.get("equilibrium", {}))
+        self.equilibrium.plot(axis, **kwargs.get("equilibrium", {}))
 
         axis.set_aspect('equal')
         axis.axis('scaled')
@@ -251,3 +253,86 @@ class Tokamak(AttributeTree):
         # axis.legend()
 
         return axis
+
+    def add_dummy_profile(self, spec="electrons", rho_ped=0.95, n0=1.0e19, D_bdry=0.2):
+        r""" Setup dummy porfilse　
+                core_transport
+                core_sources
+                core_profiles
+        """
+        if isinstance(spec, list):
+            spec = [spec]
+
+        x = self.grid.rho_tor_norm
+
+        rho_bdry=rho_ped
+        
+        rho_src_bdry = 1.0-4*(1.0-rho_ped)
+
+        self.core_transport[_next_] = {"identifier": {"name": f"Dummy transport {spec}", "index": 0}}
+        self.core_sources[_next_] = {"identifier": {"name": f"Dummy source {spec}", "index": 0}}
+
+        trans = self.core_transport[-1].profiles_1d
+        sources = self.core_sources[-1].profiles_1d
+
+        trans.conductivity_parallel = 1.0e-8
+
+        # V=np.piecewise( x, [x < rho_ped,x > rho_ped], [lambda x:-(x**3)  , 0 ])
+
+        # S_pel = Profile(scipy.stats.norm.pdf((x-0.7)/0.1)*np.sqrt(scipy.constants.pi*2.0), axis=x)
+
+        # rho_bdry=0.95
+        # rho_src_bdry = 0.80
+        D_bdry=0.2
+
+        def s_edge(x):return 100*((x-rho_src_bdry)/(1.0-rho_src_bdry))**2
+
+        S_edge=Profile(np.piecewise(x, [x<rho_src_bdry, x >=rho_src_bdry],[0,s_edge]), axis=x)
+
+        def int_s_edge(x ):return scipy.integrate.quad(s_edge,rho_src_bdry,x)[0]
+
+        int_S_edge=Profile(np.piecewise(x, [x<rho_src_bdry, x >= rho_src_bdry], [0, lambda r:np.array([ int_s_edge(s) for s in r])]), axis=x)
+
+        def n_ped_prime(x): return scipy.integrate.quad(s_edge,rho_src_bdry,x )[0]
+
+        n_ped_bdr=((1-(rho_bdry/3)**2)**2) 
+
+        def n_core(x,  w=3): return ((1-(x/w)**2)**2) if x<rho_bdry else n_ped_bdr
+
+        def n_ped(s):return -scipy.integrate.quad(n_ped_prime,rho_src_bdry,s )[0] /D_bdry/n_ped_bdr if (s>rho_src_bdry) else 0  
+
+        self.core_profiles.profiles_1d.electrons.density = lambda s: n0 * n_core(s) * (1.0 + n_ped(s)) 
+
+        sources[spec].particles = Profile(np.piecewise(x, [x < rho_ped, x >= rho_ped], [0, s_edge]), axis=x)*n0
+
+        D = np.piecewise(x, [x < rho_ped, x > rho_ped], [lambda x:2.0 * D_bdry + (x**2), D_bdry])
+
+        trans[spec].particles.d = D
+
+        trans[spec].particles.d._interpolator = scipy.interpolate.interp1d
+
+        # trans[spec].particles.v = (trans[spec].particles.d
+        #                            * self.core_profiles.profiles_1d[spec].density.derivative
+        #                            + int_S_edge)\
+        #     / self.core_profiles.profiles_1d[spec].density
+
+        trans[spec].particles.v._interpolator = scipy.interpolate.interp1d
+
+        # gamma = tok.equilibrium.profiles_1d.dvolume_drho_tor  \
+        #     * tok.equilibrium.profiles_1d.gm2    \
+        #     / tok.equilibrium.profiles_1d.fpol \
+        #     * tok.equilibrium.profiles_1d.dpsi_drho_tor \
+        #     / (4.0*(constants.pi**2))
+
+        # j_total = - gamma.derivative \
+        #     / tok.equilibrium.profiles_1d.rho_tor[-1]**2 \
+        #     * tok.equilibrium.profiles_1d.dpsi_drho_tor  \
+        #     * (tok.equilibrium.profiles_1d.fpol**2) \
+        #     / (constants.mu_0*tok.vacuum_toroidal_field.b0) \
+        #     * (constants.pi)
+
+        # j_total[1:] /= tok.equilibrium.profiles_1d.dvolume_drho_tor[1:]
+
+        # j_total[0] = 2*j_total[1]-j_total[2]
+
+        # sources.j_parallel = Profile(j_total, tok.equilibrium.profiles_1d.rho_tor_norm)

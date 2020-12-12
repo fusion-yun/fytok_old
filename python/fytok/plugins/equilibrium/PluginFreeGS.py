@@ -27,12 +27,12 @@ class EquilibriumFreeGS(Equilibrium):
     def __init__(self,  config, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
 
-        eq_wall = freegs.machine.Wall(self.tokamak.wall.limiter.outline.r,
-                                      self.tokamak.wall.limiter.outline.z)
+        eq_wall = freegs.machine.Wall(self._tokamak.wall.limiter.outline.r,
+                                      self._tokamak.wall.limiter.outline.z)
 
         eq_coils = []
 
-        for coil in self.tokamak.pf_active.coil:
+        for coil in self._tokamak.pf_active.coil:
             t_coil = freegs.machine.Coil(
                 coil.r+coil.width/2,
                 coil.z+coil.height/2,
@@ -42,24 +42,16 @@ class EquilibriumFreeGS(Equilibrium):
         self._machine = freegs.machine.Machine(eq_coils, wall=eq_wall)
         self._backend = None
 
-    def _solve(self, profiles=None, constraints=None,  **kwargs):
-        if self._backend is None:
-            if "psi" in kwargs:
-                psi = kwargs["psi"]
-            else:
-                psi = self.profiles_2d.psi
-            if "current" in kwargs:
-                current = kwargs["current"]
-            else:
-                current = self.global_quantities.ip or 0.0
+    def update(self, profiles=None, constraints=None, Ip=None, fvac=None, B0=None, **kwargs):
 
+        if not hasattr(self, "_backend") or self._backend is None:
             self._backend = freegs.Equilibrium(
                 tokamak=self._machine,
                 Rmin=min(self.profiles_2d.grid.dim1), Rmax=max(self.profiles_2d.grid.dim1),
                 Zmin=min(self.profiles_2d.grid.dim2), Zmax=max(self.profiles_2d.grid.dim2),
                 nx=len(self.profiles_2d.grid.dim1), ny=len(self.profiles_2d.grid.dim2),
-                psi=psi,
-                current=current,
+                psi=self.profiles_2d.psi,
+                current=self.global_quantities.ip or 0.0,
                 boundary=freegs.boundary.freeBoundaryHagenow)
 
         if profiles is None:
@@ -67,7 +59,9 @@ class EquilibriumFreeGS(Equilibrium):
         elif not isinstance(profiles, collections.abc.Mapping):
             raise NotImplementedError()
 
-        fvac = self.vacuum_toroidal_field.b0 * self.vacuum_toroidal_field.r0
+        B0 = B0 or self.vacuum_toroidal_field.b0
+        
+        fvac = fvac or B0 * self.vacuum_toroidal_field.r0
 
         pprime = profiles.get("pprime", None)
         ffprime = profiles.get("ffprime", None)
@@ -75,64 +69,81 @@ class EquilibriumFreeGS(Equilibrium):
         #  Poloidal beta
         betap = profiles.get("betap", None) or self.global_quantities.beta_pol
         # Plasma current [Amps]
-        ip = profiles.get("ip", None) or self.global_quantities.ip
+        Ip = Ip or profiles.get("ip", None) or self.global_quantities.ip
 
         if not is_none(pprime) and not is_none(ffprime):
             profiles = freegs.jtor.ProfilesPprimeFfprime(pprime, ffprime, fvac)
             logger.debug("Create Profile: Specified profile functions p'(psi), ff'(psi)")
-        elif not is_none(ip) and not is_none(betap):
-            profiles = freegs.jtor.ConstrainBetapIp(betap, ip, fvac)
+        elif not is_none(Ip) and not is_none(betap):
+            profiles = freegs.jtor.ConstrainBetapIp(betap, Ip, fvac)
 
             logger.debug(f"""Create Profile: Constrain poloidal Beta and plasma current
                      Betap                      ={betap} [-],
-                     Plasma current Ip          ={ip} [Amps],
+                     Plasma current Ip          ={Ip} [Amps],
                      fvac                       ={fvac} [T.m]""")
         else:
             # Plasma pressure on axis [Pascals]
             pressure = profiles.get("pressure", None) or  \
                 self.global_quantities.beta_tor*(self.vacuum_toroidal_field.b0**2)/(2.0*scipy.constants.mu_0)
-            logger.debug(self.global_quantities.cache)
             if is_none(pressure):
                 raise RuntimeError(f"pressure is not defined!")
-            logger.debug((pressure, ip, fvac))
 
             Raxis = self.vacuum_toroidal_field.r0
-            profiles = freegs.jtor.ConstrainPaxisIp(pressure, ip, fvac, Raxis=Raxis)
+            profiles = freegs.jtor.ConstrainPaxisIp(pressure, Ip, fvac, Raxis=Raxis)
 
             logger.debug(f"""Create Profile: Constrain pressure on axis and plasma current
                      Plasma pressure on axis    ={pressure} [Pascals],
-                     Plasma current Ip          ={ip} [Amps],
+                     Plasma current Ip          ={Ip} [Amps],
                      fvac                       ={fvac} [T.m],
                      Raxis                      ={Raxis} [m]
                      """)
-        constraints = AttributeTree(constraints)
 
-        psivals = self.constraints.psivals or []
-        isoflux = self.constraints.isoflux or []
-        xpoints = self.constraints.xpoints or []
+        if constraints is None:
+            constraints = self.constraints
+        else:
+            constraints = AttributeTree(constraints)
 
-        constraints = freegs.control.constrain(psivals=psivals, isoflux=isoflux, xpoints=xpoints)
+        psivals = constraints.psivals or []
+        isoflux = constraints.isoflux or []
+        xpoints = constraints.xpoints or []
+
+        constraints = freegs.control.constrain(
+            psivals=psivals,
+            isoflux=isoflux,
+            xpoints=xpoints
+        )
 
         try:
             freegs.solve(self._backend, profiles, constraints)
         except ValueError as error:
             logger.error(f"Solve G-S equation failed [{self.__class__.__name__}]! {error}")
+        else:
+            # logger.debug(f"Solve G-S equation Done")
+            # super().update()
+            self.profiles_2d.update(solver="FreeGS", psi=self._backend.psiRZ)
+            self._tokamak.pf_active.update(self._backend.tokamak.coils)
+
+    def backend(self):
+        return self._backend
 
     def update_cache(self):
         psi_norm = self.profiles_1d.psi_norm
-        super().update_cache()
+        # super().update_cache()
         if hasattr(self._backend, "_profiles"):
-            self.cache.profiles_1d.dpressure_dpsi = self._backend.pprime(psi_norm)
-            self.cache.profiles_1d.f_df_dpsi = self._backend.ffprime(psi_norm)
-            self.cache.profiles_1d.f = self._backend.fpol(psi_norm)
-            self.cache.profiles_1d.pressure = self._backend.pressure(psi_norm)
-            x, q = self._backend.q()
-            self.cache.profiles_1d.q = UnivariateSpline(x, q)(psi_norm)
-
-            self.cache.profiles_2d.psi = self._backend.psiRZ(self.profiles_2d.r, self.profiles_2d.z)
-
-            self.cache.global_quantities.beta_pol = self._backend.poloidalBeta()
+            self._cache.profiles_1d.dpressure_dpsi = self._backend.pprime(psi_norm)
+            self._cache.profiles_1d.f_df_dpsi = self._backend.ffprime(psi_norm)
+            self._cache.profiles_1d.f = self._backend.fpol(psi_norm)
+            self._cache.profiles_1d.pressure = self._backend.pressure(psi_norm)
+            try:
+                x, q = self._backend.q()
+            except Exception:
+                pass
+            else:
+                self.cache.profiles_1d.q = UnivariateSpline(x, q)(psi_norm)
+                self.cache.global_quantities.beta_pol = self._backend.poloidalBeta()
             self.cache.global_quantities.ip = self._backend.plasmaCurrent()
+
+            self.profiles_2d.update(solver="FreeGS", psi=self._backend.psiRZ)
 
     # @property
     # def critical_points(self):

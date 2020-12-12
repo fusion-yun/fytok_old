@@ -118,7 +118,8 @@ class Equilibrium(AttributeTree):
         if isinstance(self._cache, LazyProxy):
             self._cache = self._cache()
         elif isinstance(self._cache, AttributeTree):
-            self._cache = self._cache
+            # self._cache = self._cache
+            pass
         else:
             self._cache = AttributeTree(self._cache)
         return self._cache
@@ -137,31 +138,28 @@ class Equilibrium(AttributeTree):
         else:
             return RadialGrid(axis, equilibrium=self)
 
-    def _solve(self, *args, **kwargs):
-        raise NotImplementedError()
-
     def update(self, *args, ** kwargs):
 
         # self.constraints.update(constraints)
 
-        logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] at: Start")
+        # logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] at: Start")
 
-        self._solve(*args, ** kwargs)
+        # self._solve(*args, ** kwargs)
 
-        logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] at: End")
+        logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] at: Done")
 
         self.update_cache()
 
     def update_cache(self):
         del self.global_quantities
         del self.profiles_1d
-        del self.profiles_2d
+        self.profiles_2d.update()
         del self.boundary
         del self.boundary_separatrix
         del self.flux_surface
 
-        # if isinstance(self._cache, LazyProxy):
-        #     self._cache = AttributeTree()
+        if isinstance(self._cache, LazyProxy):
+            self._cache = AttributeTree()
 
     @cached_property
     def profiles_1d(self):
@@ -683,26 +681,38 @@ class Equilibrium(AttributeTree):
         def __init__(self, cache, *args, grid=None, equilibrium=None,  ** kwargs):
             super().__init__(*args, **kwargs)
             self._equilibrium = equilibrium
+            if isinstance(cache, LazyProxy):
+                self._cache = cache()
+            else:
+                self._cache = AttributeTree(cache)
+            logger.debug(f"Create Equilibrium")
 
-        @cached_property
-        def psirz(self):
-            psi_value = self._equilibrium.cache.profiles_2d.psi
-            if not self.grid_type.index or self.grid_type.index == 1:  # rectangular	1
+        def update(self, **kwargs):
+            for k, v in kwargs.items():
+                self._cache[k] = v
+
+        def psirz(self, R, Z):
+
+            psi_value = self._cache.psi
+            if callable(psi_value):
+                psi_func = psi_value
+            elif not self.grid_type.index or self.grid_type.index == 1:  # rectangular	1
                 """Cylindrical R, Z ala eqdsk(R=dim1, Z=dim2). In this case the position arrays should not be filled
                  since they are redundant with grid/dim1 and dim2."""
 
-                psi_func = RectBivariateSpline(self.grid.dim1[1:-1], self.grid.dim2[1:-1],  psi_value[1:-1, 1:-1])
-
+                spl = RectBivariateSpline(self.grid.dim1[1:-1], self.grid.dim2[1:-1],  psi_value[1:-1, 1:-1])
+                psi_func = lambda *args: spl(*args, grid=False)
             elif self.grid_type.index >= 2 and self.grid_type.index < 91:  # inverse
                 """Rhopolar_polar 2D polar coordinates(rho=dim1, theta=dim2) with magnetic axis as centre of grid;
                 theta and values following the COCOS=11 convention;
                 the polar angle is theta=atan2(z-zaxis,r-raxis) """
-                psi_func = SmoothBivariateSpline(self.r.ravel(), self.z.ravel(), psi_value.ravel())
-
+                spl = SmoothBivariateSpline(self.r.ravel(), self.z.ravel(), psi_value.ravel())
+                psi_func = lambda *args: spl(*args, grid=False)
             else:
                 raise NotImplementedError()
 
-            return lambda *args, _func=psi_func, grid=False, **kwargs: _func(*args, grid=grid, **kwargs)
+            return psi_func(R, Z)
+            # return lambda *args, _func=psi_func, grid=False, **kwargs: _func(*args, grid=grid, **kwargs)
 
         @cached_property
         def grid_type(self):
@@ -741,7 +751,7 @@ class Equilibrium(AttributeTree):
             """Values of the Height on the grid  [m] """
             return self._rectangular.z
 
-        @cached_property
+        @property
         def psi(self):
             """Values of the poloidal flux at the grid in the poloidal plane  [Wb]. """
             return self.psirz(self.r, self.z)
@@ -902,7 +912,7 @@ class Equilibrium(AttributeTree):
     ####################################################################################
     # Plot proflies
 
-    def plot_profiles2d(self, axis=None, *args, profiles=[], vec_field=[], boundary=True, levels=32, oxpoints=True,   **kwargs):
+    def plot(self, axis=None, *args, profiles=[], vec_field=[], boundary=True, levels=32, oxpoints=True,   **kwargs):
         """learn from freegs
         """
         if axis is None:
@@ -910,8 +920,8 @@ class Equilibrium(AttributeTree):
 
         R = self.profiles_2d.r
         Z = self.profiles_2d.z
-        psi = self.profiles_2d.psi
-
+        # psi = self.profiles_2d.psi
+        psi = self.backend().psiRZ(self.profiles_2d.r, self.profiles_2d.z)
         # psi = (psi - self.global_quantities.psi_axis) / \
         #     (self.global_quantities.psi_boundary - self.global_quantities.psi_axis)
 
@@ -920,27 +930,27 @@ class Equilibrium(AttributeTree):
 
         axis.contour(R[1:-1, 1:-1], Z[1:-1, 1:-1], psi[1:-1, 1:-1], levels=levels, linewidths=0.2)
 
-        if boundary:
-            boundary_points = np.array([self.boundary.outline.r,
-                                        self.boundary.outline.z]).transpose([1, 0])
+        if oxpoints and len(self.boundary.x_point) > 0:
+            for idx, p in enumerate(self.boundary.x_point):
+                axis.plot(p.r, p.z, 'rx')
+                axis.text(p.r, p.z, idx)
+            axis.plot([], [], 'rx', label="X-Point")
 
-            axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
-                                       linewidth=0.5, fill=False, closed=True))
-            axis.plot([], [], 'r--', label="Separatrix")
+            if boundary:
+                boundary_points = np.array([self.boundary.outline.r,
+                                            self.boundary.outline.z]).transpose([1, 0])
 
-        for idx, p in enumerate(self.boundary.x_point):
-            axis.plot(p.r, p.z, 'rx')
-            axis.text(p.r, p.z, idx)
+                axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
+                                           linewidth=0.5, fill=False, closed=True))
+                axis.plot([], [], 'r--', label="Separatrix")
 
-        axis.plot([], [], 'rx', label="X-Point")
+            axis.plot(self.global_quantities.magnetic_axis.r,
+                      self.global_quantities.magnetic_axis.z, 'g.', label="Magnetic axis")
 
-        axis.plot(self.global_quantities.magnetic_axis.r,
-                  self.global_quantities.magnetic_axis.z, 'g.', label="Magnetic axis")
-
-        for k, opts in profiles:
-            d = self.profiles_2d[k]
-            if d is not NotImplemented and d is not None:
-                axis.contourf(R[1:-1, 1:-1], Z[1:-1, 1:-1], d[1:-1, 1:-1], **opts)
+        # for k, opts in profiles:
+        #     d = self.profiles_2d[k]
+        #     if d is not NotImplemented and d is not None:
+        #         axis.contourf(R[1:-1, 1:-1], Z[1:-1, 1:-1], d[1:-1, 1:-1], **opts)
         for u, v, opts in vec_field:
             uf = self.profiles_2d[u]
             vf = self.profiles_2d[v]
@@ -952,7 +962,6 @@ class Equilibrium(AttributeTree):
 
         axis.set_xlabel(r"Major radius $R$ [m]")
         axis.set_ylabel(r"Height $Z$ [m]")
-        axis.set_aspect('equal')
 
         return axis
 
@@ -1022,13 +1031,13 @@ class Equilibrium(AttributeTree):
             fig_axis[idx].tick_params(labelsize=6)
         return fig_axis[-1]
 
-    def plot(self, *args,
-             axis=("psi_norm",   r'$(\psi-\psi_{axis})/(\psi_{boundary}-\psi_{axis}) [-]$'),
-             profiles=None,
-             profiles_2d=[],
-             vec_field=[],
-             surface_mesh=False,
-             **kwargs):
+    def plot_full(self, *args,
+                  axis=("psi_norm",   r'$(\psi-\psi_{axis})/(\psi_{boundary}-\psi_{axis}) [-]$'),
+                  profiles=None,
+                  profiles_2d=[],
+                  vec_field=[],
+                  surface_mesh=False,
+                  **kwargs):
 
         axis, axis_opts = self.fetch_profile(axis)
 
@@ -1051,7 +1060,7 @@ class Equilibrium(AttributeTree):
 
         if surface_mesh:
             self.flux_surface.plot(ax_right)
-        self.plot_profiles2d(ax_right, profiles=profiles_2d, vec_field=vec_field, **kwargs.get("equilibrium", {}))
+        self.plot(ax_right, profiles=profiles_2d, vec_field=vec_field, **kwargs.get("equilibrium", {}))
 
         self._tokamak.plot_machine(ax_right, **kwargs.get("machine", {}))
 

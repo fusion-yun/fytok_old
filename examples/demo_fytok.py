@@ -59,59 +59,47 @@ if __name__ == "__main__":
     from spdm.util.AttributeTree import _next_
 
     tok = Tokamak(open_entry("east+mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east", shot=55555, time_slice=20))
+    
+    tok.add_dummy_profile()
 
     # tok = Tokamak(open_entry("cfetr+mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east", shot=55555, time_slice=20))
 
-    rho_b = 0.96
-    rho_norm = np.linspace(0, 1.0, 129)
+    # rho_b = 0.96
+    # rho_norm = np.linspace(0, 1.0, 129)
 
-    def D(r): return np.piecewise(r, [r < rho_b, r >= rho_b], [lambda x: (0.5 + (x**3)), 0.1])
-    def v(r): return np.piecewise(r, [r < rho_b, r >= rho_b], [lambda x: (x**2)*0.4, 0.0])
+    # def D(r): return np.piecewise(r, [r < rho_b, r >= rho_b], [lambda x: (0.2 + (x**3)), 0.1])
+    # def v(r): return np.piecewise(r, [r < rho_b, r >= rho_b], [lambda x: -(x**3)*0.3,  0])
 
-    tok.core_transport[_next_] = {"identifier": {"name": "unspecified", "index": 0}}
+    # tok.core_transport[_next_] = {"identifier": {"name": "unspecified", "index": 0}}
 
-    trans = tok.core_transport[-1].profiles_1d
+    # trans = tok.core_transport[-1].profiles_1d
 
-    trans.conductivity_parallel = 1.0e-8
+    # trans.conductivity_parallel = 1.0e-8
 
-    trans.electrons.particles.d = D
-    trans.electrons.particles.v = v
+    # trans.electrons.particles.d = D
+    # trans.electrons.particles.v = v
 
-    tok.core_sources[_next_] = {"identifier": {"name": "unspecified", "index": 0}}
+    # tok.core_sources[_next_] = {"identifier": {"name": "unspecified", "index": 0}}
 
-    src = tok.core_sources[-1].profiles_1d
+    # src = tok.core_sources[-1].profiles_1d
 
-    def S_pel(rho, pos=0.7, w=0.1, S0=1.0e19): return scipy.stats.norm.pdf((rho-0.7)/w) * \
-        np.sqrt(scipy.constants.pi*2.0)*S0
+    # def S_pel(rho, pos=0.7, w=0.1, S0=1.0e19): return scipy.stats.norm.pdf((rho-0.7)/w) * \
+    #     np.sqrt(scipy.constants.pi*2.0)*S0
 
-    def S_edge(rho, pos=0.7, w=0.03, S0=5.0e15): return np.piecewise(
-        rho, [rho < pos, rho >= pos], [0, lambda x: (np.exp((x-pos)/w-10)*S0-1.0)])
+    # def S_edge(rho, pos=0.7, w=0.03, S0=5.0e15): return np.piecewise(
+    #     rho, [rho < pos, rho >= pos], [0, lambda x: - (np.exp((x-pos)/w-10)*S0-1.0)])
 
-    gamma = tok.equilibrium.profiles_1d.dvolume_drho_tor  \
-        * tok.equilibrium.profiles_1d.gm2    \
-        / tok.equilibrium.profiles_1d.fpol \
-        * tok.equilibrium.profiles_1d.dpsi_drho_tor \
-        / (4.0*(constants.pi**2))
+    # src.electrons.particles = lambda rho: S_edge(rho)
 
-    j_total = - gamma.derivative \
-        / tok.equilibrium.profiles_1d.rho_tor[-1]**2 \
-        * tok.equilibrium.profiles_1d.dpsi_drho_tor  \
-        * (tok.equilibrium.profiles_1d.fpol**2) \
-        / (constants.mu_0*tok.vacuum_toroidal_field.b0) \
-        * (constants.pi)
+    # def n_core(x, n0, w): return n0*((1-(x/w)**2)**2)
+    # def n_ped(x, n0, rho_b): return n0*(1 - ((x-rho_b)*16)**2)
 
-    j_total[1:] /= tok.equilibrium.profiles_1d.dvolume_drho_tor[1:]
+    # def ne(rho, rho_b=rho_b, w=2.0, n0=1e20): return np.piecewise(
+    #     rho, [rho < rho_b, rho > rho_b],
+    #     [lambda x: n_core(x, n0, w),
+    #      lambda x: n_ped(x, n_core(rho_b, n0, w), rho_b)])
 
-    j_total[0] = 2*j_total[1]-j_total[2]
-
-    src.j_parallel = Profile(j_total, tok.equilibrium.profiles_1d.rho_tor_norm)
-
-    src.electrons.particles = lambda rho: S_edge(rho)
-
-    def ne(rho, rho_b=rho_b, w=2.0, n_0=1e20): return np.piecewise(rho, [rho < rho_b, rho > rho_b], [
-        lambda x:n_0*((1-(x/w)**2)**2), lambda x:n_0*((1-(rho_b/w)**2)**2)*np.exp(-((x-rho_b)*20)**2)])
-
-    tok.core_profiles.profiles_1d.electrons.density = ne
+    # tok.core_profiles.profiles_1d.electrons.density = ne
 
     # lfcs_r = tok.equilibrium.boundary.outline.r
     # lfcs_z = tok.equilibrium.boundary.outline.z
@@ -160,33 +148,46 @@ if __name__ == "__main__":
     # draw(tok).savefig("../output/tokamak1.svg", transparent=True)
     plot_profiles(tok.core_profiles.profiles_1d,
                   profiles=[
-                      [{"name": "psi0", "opts": {"marker": ".", "label": r"$\psi_{0}$"}},
+                      [{"name": "psi0_eq", "opts": {"marker": ".", "label": r"$\psi_{0}$"}},
                        {"name": "psi", "opts":  {"marker": "+", "label": r"$\psi$"}}],
                       [{"name": "q0", "opts": {"marker": ".", "label": r"$q_{0}$"}},
                        {"name": "q", "opts":  {"marker": "+", "label": r"$q$"}}],
+                      #   [
                       {"name": "electrons.density0", "opts": {"marker": ".", "label": r"$n_{e0}$"}},
                       {"name": "electrons.density", "opts":  {"marker": "+", "label": r"$n_{e}$"}},
+                      #   ],
+                      {"name": "electrons.density0_error", "opts":  {"label": r"$n_{e,error}$"}},
+
+                      {"name": "electrons.density_prime", "opts":  {"marker": "+", "label": r"$n^{\prime}_{e}$"}},
+                      "d", "e", "f", "g",
+                      "electrons.diff",
+                      "electrons.vconv",
                       [
                           #   {"name": "electrons.density_flux0", "opts": {"label": r"$\Gamma_{e0}$"}},
                           {"name": "electrons.density_flux", "opts": {"marker": "o", "label": r"$\Gamma_{e}$"}},
-                          {"name": "electrons.density_flux1", "opts": {"marker": "+", "label": r"$\Gamma_{e1}$"}}],
+                          {"name": "electrons.density_flux1", "opts": {"marker": "+", "label": r"$\Gamma_{e2}$"}},
+
+                      ],
+                      {"name": "electrons.density_flux_error", "opts": {"marker": "+", "label": r"$\Gamma_{e,error}$"}},
+
                       #   {"name": "electrons.density_flux0_prime", "opts": {"label": r"$\Gamma_{e0}^{\prime}$"}},
-                      ["electrons.se_exp0",
-                       {"name": "electrons.density_flux_prime", "opts": {"marker": "o", "label": r"$\Gamma_{e}^{\prime}$"}},
-                       {"name": "electrons.density_flux1_prime", "opts": {"marker": "+", "label": r"$\Gamma_{e1}^{\prime}$"}}],
+                      [
+                          {"name": "electrons.density_flux_prime", "opts": {
+                              "marker": "o", "label": r"$\Gamma_{e}^{\prime}$"}},
+                          {"name": "electrons.density_flux1_prime", "opts": {
+                           "marker": "+", "label": r"$\Gamma_{e1}^{\prime}$"}},
+                          "electrons.se_exp0",
+                      ],
 
                       #   {"name": "electrons.density0_prime", "opts": {"marker": ".", "label": r"$n^{\prime}_{e0}$"}},
-                      {"name": "electrons.density_prime", "opts":  {"marker": "+", "label": r"$n^{\prime}_{e}$"}},
-                      "d", "e",
+
                       #   ["psi0_prime", "psi0_prime1",  "psi1_prime", "psi1_prime1"],
                       #   {"name": "dpsi_drho_tor", "opts": {"marker": "+"}},
                       #   ["dgamma_current", "f_current"],
                       #   ["j_total0", "j_ni_exp"],
                       #   ["electrons.density0",
                       #    "electrons.density"],
-                      "electrons.diff",
-                      "electrons.diff0",
-                      "electrons.vconv",
+
                       #   "electrons.density0_prime", "electrons.density_prime",
                       #   ["electrons.gamma0_prime", "electrons.se_exp0","f"],
                       #   ["electrons.gamma0"],

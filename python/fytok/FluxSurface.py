@@ -313,9 +313,9 @@ class FluxSurface(Profiles):
         """
         res = self.q/(2.0*constants.pi*self._b0)
         res[1:] /= self.rho_tor[1:]
-        res[0] = res[1:5](0)  # self.fpol[0]*self.gm1[0]/(2.0*constants.pi*self._b0)
+        # res[0] = res[1:5](0)  # self.fpol[0]*self.gm1[0]/(2.0*constants.pi*self._b0)
         # return self.q/(2.0*constants.pi*self._b0)
-        # res[0] = 2*res[1]-res[2]
+        res[0] = 2*res[1]-res[2]
         return res
 
     @cached_property
