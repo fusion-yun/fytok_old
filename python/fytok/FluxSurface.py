@@ -271,13 +271,18 @@ class FluxSurface(Profiles):
         return self.integral(self.dvolume_dpsi, 0.0, self._psi_norm) * (self.psi_boundary-self.psi_axis)
 
     @cached_property
+    def dvolume_drho_tor(self)	:
+        """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
+        return self.dvolume_dpsi * self.dpsi_drho_tor
+
+    @cached_property
     def q(self):
         r"""Safety factor 
             (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)  [-].
 
             .. math:: q(\psi)=\frac{d\Phi}{d\psi}=\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
         """
-        logger.debug(r"Calculate q as  F V^{\prime} \left\langle R^{-2}\right \rangle /(4 \pi^2) ")
+        # logger.debug(r"Calculate q as  F V^{\prime} \left\langle R^{-2}\right \rangle /(4 \pi^2) ")
         return Profile(self.cocos_flag * self.fpol * np.sum(self.Jdl/self.R**2, axis=1) / (2*scipy.constants.pi),
                        axis=self.psi_norm)
 

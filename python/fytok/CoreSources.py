@@ -41,9 +41,9 @@ class CoreSources(AttributeTree):
             @cached_property
             def particles_decomposed(self):
                 return AttributeTree(
-                    implicit_part=Profile(self._parent.grid.rho_tor_norm, description={
+                    implicit_part=Profile(None, axis=self._parent.grid.rho_tor_norm, description={
                                           "name": "electrons.particles_decomposed.implicit_part"}),
-                    explicit_part=Profile(self._parent.grid.rho_tor_norm, description={
+                    explicit_part=Profile(None, axis=self._parent.grid.rho_tor_norm, description={
                                           "name": "electrons.particles_decomposed.explicit_part"})
                 )
 

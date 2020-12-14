@@ -37,8 +37,6 @@ class PFActive(AttributeTree):
             
             c.current = d.current
 
-        logger.debug(self.coil)
-
     @cached_property
     def coil(self):
         res = AttributeTree(default_factory_array=lambda _holder=self: PFActive.Coil(self))

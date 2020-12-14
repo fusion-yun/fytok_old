@@ -50,7 +50,7 @@ class EquilibriumFreeGS(Equilibrium):
                 Rmin=min(self.profiles_2d.grid.dim1), Rmax=max(self.profiles_2d.grid.dim1),
                 Zmin=min(self.profiles_2d.grid.dim2), Zmax=max(self.profiles_2d.grid.dim2),
                 nx=len(self.profiles_2d.grid.dim1), ny=len(self.profiles_2d.grid.dim2),
-                psi=self.profiles_2d.psi,
+                # psi=self.profiles_2d.psi,
                 current=self.global_quantities.ip or 0.0,
                 boundary=freegs.boundary.freeBoundaryHagenow)
 
@@ -123,8 +123,6 @@ class EquilibriumFreeGS(Equilibrium):
             self.profiles_2d.update(solver="FreeGS", psi=self._backend.psiRZ)
             self._tokamak.pf_active.update(self._backend.tokamak.coils)
 
-    def backend(self):
-        return self._backend
 
     def update_cache(self):
         psi_norm = self.profiles_1d.psi_norm

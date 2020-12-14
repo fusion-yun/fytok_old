@@ -24,6 +24,8 @@ def fetch_profile(holder, desc, prefix=[]):
 
     if isinstance(opts, str):
         opts = {"label": opts}
+    if 'label' not in opts:
+        opts["label"] = path
 
     if prefix is None:
         prefix = []
@@ -85,7 +87,6 @@ def plot_profiles(holder, profiles, fig_axis=None, axis=None, prefix=None, grid=
 
         for d in data:
             profile, opts = fetch_profile(holder, d,  prefix=prefix)
-
             if isinstance(profile, Profile) and hasattr(profile, "axis"):
                 fig_axis[idx].plot(profile.axis, profile, **opts)
             elif isinstance(profile, np.ndarray):

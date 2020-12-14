@@ -34,60 +34,26 @@ if __name__ == "__main__":
         ((1.93, -0.15),    (2.24, -0.52)),   # isoflux09
     ]
 
-    r = 0.2
-    pts = [((1.0-r)*b[0] + r*e[0], (1.0-r)*b[1] + r*e[1]) for b, e in control_line]
+    r = np.linspace(0.1, 1.0, 10, endpoint=False)
+
+    itime = 9
+
+    prefix = "../output/magnetic/{itime}.png"
+
+    s = r[itime]
+    logger.debug(s)
+    pts = [((1.0-s)*b[0] + s*e[0], (1.0-s)*b[1] + s*e[1]) for b, e in control_line]
 
     isoflux = [
         (*pts[0], *pts[3]),
         (*pts[1], *pts[4]),
         (*pts[2], *pts[5]),
-
     ]
+    logger.debug(isoflux)
 
-    for r0, z0, r1, z1 in isoflux:
-        plt.plot([r0, r1], [z0, z1])
+    # for r0, z0, r1, z1 in isoflux:
+    #     plt.plot([r0, r1], [z0, z1])
 
-    # xpoints = [(1.63, -0.83), (1.63, 0.83)]
-
-    # lfcs_r = tok.equilibrium.boundary.outline.r
-    # lfcs_z = tok.equilibrium.boundary.outline.z
-
-    # psivals = [(R, Z, 0.0) for R, Z in zip(lfcs_r, lfcs_z)]
-
-    # profiles = freegs.jtor.ConstrainPaxisIp(1e3,  # Plasma pressure on axis [Pascals]
-    #                                         1e6,  # Plasma current [Amps]
-    #                                         1.0)  # fvac = R*Bt
-
-    # constrain = freegs.control.constrain( isoflux=isoflux,
-    #     # psivals=psivals, xpoints=xpoints
-    #     )
-
-    # eq_wall = freegs.machine.Wall(tok.wall.limiter.outline.r,
-    #                                     tok.wall.limiter.outline.z)
-
-    # eq_coils = []
-
-    # for coil in tok.pf_active.coil:
-    #     t_coil = freegs.machine.Coil(
-    #         coil.r+coil.width/2,
-    #         coil.z+coil.height/2,
-    #         turns=coil.turns)
-    #     eq_coils.append((coil.name, t_coil))
-
-    # machine = freegs.machine.Machine(eq_coils, wall=eq_wall)
-
-    # eq = freegs.Equilibrium(
-    #     tokamak=machine,
-    #     Rmin=min(tok.equilibrium.profiles_2d.grid.dim1), Rmax=max(tok.equilibrium.profiles_2d.grid.dim1),
-    #     Zmin=min(tok.equilibrium.profiles_2d.grid.dim2), Zmax=max(tok.equilibrium.profiles_2d.grid.dim2),
-    #     nx=len(tok.equilibrium.profiles_2d.grid.dim1), ny=len(tok.equilibrium.profiles_2d.grid.dim2),
-    #     # psi=psi,
-    #     current=tok.equilibrium.profiles_2d.global_quantities.ip,
-    #     boundary=freegs.boundary.freeBoundaryHagenow)
-
-    # logger.debug(eq)
-
-    # freegs.solve(eq, profiles, constrain, show=True)
     R = tok.equilibrium.profiles_2d.r
     Z = tok.equilibrium.profiles_2d.z
 
@@ -98,22 +64,23 @@ if __name__ == "__main__":
             "isoflux": isoflux
         })
 
+    plt.cla()
+
     tok.wall.plot()
+
     tok.pf_active.plot()
 
-    # psi = self.profiles_2d.psi
+    for p0, p1 in control_line:
+        plt.plot([p0[0], p1[0]], [p0[1], p1[1]])
+
+    logger.debug(tok.equilibrium.boundary.x_point)
+
     psi = tok.equilibrium.profiles_2d.psi
 
-    
-    # psi = (psi - self.global_quantities.psi_axis) / \
-    #     (self.global_quantities.psi_boundary - self.global_quantities.psi_axis)
+    # plt.contour(R[1:-1, 1:-1], Z[1:-1, 1:-1], psi[1:-1, 1:-1], levels=20,  linewidths=0.2)
 
-    # if type(levels) is int:
-    #     levels = np.linspace(-2, 2,  levels)
+    tok.equilibrium.plot()
 
-    plt.contour(R[1:-1, 1:-1], Z[1:-1, 1:-1], psi[1:-1, 1:-1], levels=20,  linewidths=0.2)
-    # plt.plot(lfcs_r, lfcs_z)
-    # tok.equilibrium.plot(oxpoints=False, boundary=False)
     plt.gca().set_aspect('equal')
 
-    plt.savefig("../output/magnetic.svg")
+    plt.savefig(prefix.format(itime=itime))

@@ -24,11 +24,11 @@ class CoreTransport(AttributeTree):
     """
     IDS = "core_transport"
 
-    def __init__(self, cache=None, *args,   grid=None, tokamak=None,  **kwargs):
+    def __init__(self, cache=None, *args, tokamak=None,  **kwargs):
         super().__init__(*args, **kwargs)
         self._cache = cache or AttributeTree()
         self._tokamak = tokamak
-        self._grid = grid or tokamak.grid()
+        self._grid = self._tokamak.grid
 
     def update(self, *args, **kwargs):
         logger.debug("NOT　IMPLEMENTED!")
@@ -38,9 +38,10 @@ class CoreTransport(AttributeTree):
 
             super().__init__(cache, *args, axis=parent.grid_d.rho_tor_norm, **kwargs)
             self._parent = parent
-            self.d = Profile(self._parent.grid_d.rho_tor_norm, self._cache.d, description={"name": "d"})
-            self.v = Profile(self._parent.grid_v.rho_tor_norm, self._cache.v, description={"name": "v"})
-            self.flux = Profile(self._parent.grid_flux.rho_tor_norm, self._cache.flux, description={"name": "flux"})
+            self.d = Profile(self._cache.d, axis=self._parent.grid_d.rho_tor_norm,  description={"name": "d"})
+            self.v = Profile(self._cache.v, axis=self._parent.grid_v.rho_tor_norm, description={"name": "v"})
+            self.flux = Profile(self._cache.flux, axis=self._parent.grid_flux.rho_tor_norm,
+                                description={"name": "flux"})
 
     class Particle(AttributeTree):
         def __init__(self, cache=None, *args, parent=None, **kwargs):
@@ -68,13 +69,11 @@ class CoreTransport(AttributeTree):
             super().__init__(*args, **kwargs)
 
     class Profiles1D(Profiles):
-        def __init__(self, cache=None, *args, equilibrium=None, grid=None, **kwargs):
+        def __init__(self, cache=None, *args, equilibrium=None,  parent=None, **kwargs):
             super().__init__(cache, * args,  **kwargs)
+            self._parent = parent
             self.__dict__["_equilibrium"] = equilibrium
-            if isinstance(grid, RadialGrid):
-                self.__dict__["_grid_d"] = grid
-            else:
-                self.__dict__["_grid_d"] = self._equilibrium.radial_grid()
+            self.__dict__["_grid_d"] = self._parent._grid
 
         @property
         def grid_d(self):
@@ -133,7 +132,7 @@ class CoreTransport(AttributeTree):
         def conductivity_parallel(self):
             if "_conductivity_parallel" not in self.__dict__ or self.__dict__["_conductivity_parallel"] is None:
                 self.__dict__["_conductivity_parallel"] = Profile(
-                    self.grid_d.rho_tor_norm, None,  description={"name": "conductivity_parallel"})
+                    None, axis=self.grid_d.rho_tor_norm,  description={"name": "conductivity_parallel"})
             return self._conductivity_parallel
 
         @conductivity_parallel.setter
@@ -143,7 +142,7 @@ class CoreTransport(AttributeTree):
         @cached_property
         def e_field_radial(self):
             """ Radial component of the electric field (calculated e.g. by a neoclassical model) {dynamic} [V.m^-1]"""
-            return Profile(super().cache("e_field_radial"), self.grid_d.rho_tor_norm)
+            return Profile(super().cache("e_field_radial"), axis=self.grid_d.rho_tor_norm)
 
     @cached_property
     def profiles_1d(self):
@@ -151,4 +150,4 @@ class CoreTransport(AttributeTree):
         Fluxes and convection are positive (resp. negative) when outwards i.e. towards the LCFS 
         (resp. inwards i.e. towards the magnetic axes). {dynamic} """
 
-        return CoreTransport.Profiles1D(self._cache.profiles_1d, parent=self, grid=self._grid, equilibrium=self._tokamak.equilibrium)
+        return CoreTransport.Profiles1D(self._cache.profiles_1d, parent=self, equilibrium=self._tokamak.equilibrium)

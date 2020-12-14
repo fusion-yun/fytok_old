@@ -7,8 +7,7 @@ import copy
 from functools import cached_property
 
 import numpy as np
-import scipy
-from scipy import constants
+import scipy.constants
 from scipy.interpolate import RectBivariateSpline, UnivariateSpline
 from spdm.util.AttributeTree import AttributeTree, _last_, _next_
 from spdm.util.LazyProxy import LazyProxy
@@ -276,17 +275,34 @@ class TransportSolver(AttributeTree):
 
         a, b, c, d, e, f, g = coeff
 
-        logger.debug(type(d))
-
         D = d
         E = e
         F = (f + b*inv_tau*y0)*c
         G = (g + a*inv_tau)*c
 
+        logger.debug(e[-10:])
+
+        fix_boundary = False
+        dD = None
+        dE = None
+        if abs(D(x[0])) < TOLERANCE:
+            fix_boundary = True
+            dD = D.derivative
+            dE = E.derivative
+
         def fun(x, Y):
             y, gamma = Y
-            dy = -(gamma-E(x)*y)/D(x)
+            vD = D(x)
+            vE = E(x)
+            
             dgamma = F(x) - G(x) * y
+            if fix_boundary:
+                vD[0] = 1.0
+                dy = -(gamma-vE*y)/vD
+                dy[0] = (dgamma[0] - dE(0)*y[0])/(E(0)-dD(0))
+            else:
+                dy = -(gamma-vE*y)/vD
+
             return np.vstack((dy, dgamma))
 
         u0, v0, w0 = bc[0]
@@ -472,15 +488,15 @@ class TransportSolver(AttributeTree):
 
         b = conductivity_parallel * rho_tor
 
-        c = (constants.mu_0*B0 * rho_tor_boundary)/(fpol**2)
+        c = (scipy.constants.mu_0*B0 * rho_tor_boundary)/(fpol**2)
 
-        d = vpr*gm2 / fpol / (4.0*(constants.pi**2)*rho_tor_boundary)
+        d = vpr*gm2 / fpol / (4.0*(scipy.constants.pi**2)*rho_tor_boundary)
 
-        e = - (constants.mu_0 * B0 * k_phi) * (conductivity_parallel * rho_tor**2/fpol**2)
+        e = - (scipy.constants.mu_0 * B0 * k_phi) * (conductivity_parallel * rho_tor**2/fpol**2)
 
-        f = - vpr * j_ni_exp/(2.0*constants.pi)
+        f = - vpr * j_ni_exp/(2.0 * scipy.constants.pi)
 
-        g = vpr * j_ni_imp/(2.0*constants.pi)
+        g = vpr * j_ni_imp/(2.0 * scipy.constants.pi)
 
         # + rho_tor* conductivity_parallel*k_phi*(2.0-2.0*rho_tor *  fprime/fpol + rho_tor * conductivity_parallel_prime/conductivity_parallel)
 
@@ -505,7 +521,7 @@ class TransportSolver(AttributeTree):
         # elif boundary_condition.identifier.index == 2:  # ip
         #     u = 0.0
         #     v = 1.0
-        #     w =  constants.mu_0 * boundary_condition.value[0]/fpol[-1]
+        #     w =   scipy.constants.mu_0 * boundary_condition.value[0]/fpol[-1]
         # elif boundary_condition.identifier.index == 3:  # loop voltage
         #     u = 1.0
         #     v = 0.0
@@ -516,7 +532,7 @@ class TransportSolver(AttributeTree):
         #     # Current equation is not solved:
         #     #  Interpretative value of safety factor should be given
         #     # if any(qsf != 0.0):  # FIXME
-        #     # dy = 2.0*constants.pi*B0*rho_tor/qsf
+        #     # dy = 2.0* scipy.constants.pi*B0*rho_tor/qsf
 
         #     # a[-1] = 1.0*inv_tau
         #     # b[-1] = 1.0*inv_tau
@@ -527,17 +543,17 @@ class TransportSolver(AttributeTree):
 
         #     u = 1.0
         #     v = 0.0
-        #     w =  -constants.mu_0 * boundary_condition.value[0]/fpol[-1]
+        #     w =  - scipy.constants.mu_0 * boundary_condition.value[0]/fpol[-1]
 
         # Ip = sum(j_ni_exp)
-        # psi0_prime[-1]*d[-1]/constants.mu_0 * fpol[-1]
+        # psi0_prime[-1]*d[-1]/ scipy.constants.mu_0 * fpol[-1]
 
         sol = self.solve_general_form(rho_tor_norm,
                                       psi0, psi0_prime,
                                       inv_tau,
                                       (a, b, c, d, e, f, g),
                                       ((0, 1, 0.0),
-                                       (1, 0, psi0[-1])),  # 　Ip  -constants.mu_0 * Ip/fpol[-1]
+                                       (1, 0, psi0[-1])),  # 　Ip  - scipy.constants.mu_0 * Ip/fpol[-1]
                                       verbose=2,  max_nodes=2500
                                       )
         logger.debug(
@@ -553,7 +569,7 @@ class TransportSolver(AttributeTree):
         core_profiles_next.profiles_1d.q0 = Profile(
             equilibrium.profiles_1d.q, axis=equilibrium.profiles_1d.rho_tor_norm)
 
-        j_total0 = (d * psi0_prime).derivative / c / vpr*(2.0*constants.pi)
+        j_total0 = (d * psi0_prime).derivative / c / vpr*(2.0 * scipy.constants.pi)
 
         # j_total0[0] = 2*j_total0[1]-j_total0[2]
         core_profiles_next.profiles_1d.j_total0 = j_total0
@@ -567,22 +583,24 @@ class TransportSolver(AttributeTree):
             core_profiles_next.profiles_1d.dgamma_current = Profile(sol.yp[1], axis=sol.x)
             core_profiles_next.profiles_1d.dpsi_drho_tor = Profile(sol.yp[0]/rho_tor_boundary, axis=sol.x)
 
-            q = (constants.pi*2.0)*B0 * sol.x / sol.yp[0] * rho_tor_boundary**2
+            q = (scipy.constants.pi*2.0)*B0 * rho_tor_boundary**2 * sol.x
+            # /sol.yp[0]
+            q[1:] /= sol.yp[0][1:]
             q[0] = 2*q[1]-q[2]
 
             core_profiles_next.profiles_1d.q = Profile(q, axis=sol.x, description={"name": "q from transport"})
 
             core_profiles_next.profiles_1d.j_tor = (Profile(sol.y[1], axis=sol.x)*fpol).derivative / vpr\
-                * (-2.0*constants.pi*R0/constants.mu_0/rho_tor_boundary)
+                * (-2.0 * scipy.constants.pi*R0 / scipy.constants.mu_0/rho_tor_boundary)
 
-            core_profiles_next.profiles_1d.j_parallel = Profile(sol.yp[1], axis=sol.x) * (-constants.pi*2.0 / (constants.mu_0*B0 * rho_tor_boundary)) * \
+            core_profiles_next.profiles_1d.j_parallel = Profile(sol.yp[1], axis=sol.x) * (- scipy.constants.pi*2.0 / (scipy.constants.mu_0*B0 * rho_tor_boundary)) * \
                 (fpol**2/vpr)
 
             # core_profiles_next.profiles_1d.e_field.parallel = (j_parallel-j_ni_exp -
             #                                                    j_ni_exp*core_profiles_next.profiles_1d.psi)/conductivity_parallel
 
         else:
-            psi_prime = (constants.pi*2.0)*B0 * rho_tor / qsf * rho_tor_boundary
+            psi_prime = (scipy.constants.pi*2.0)*B0 * rho_tor / qsf * rho_tor_boundary
             core_profiles_next.profiles_1d.psi_prime = psi_prime
             core_profiles_next.profiles_1d.psi = psi0[0] + \
                 Profile(psi_prime, axis=rho_tor_norm).integral(0, rho_tor_norm)*2
@@ -591,27 +609,42 @@ class TransportSolver(AttributeTree):
 
         core_profiles_next.profiles_1d.j_total = j_ni_exp
 
-        # core_profiles_next.profiles_1d.q = 2.0*constants.pi*B0*rho_tor/psi_prime1
+        # core_profiles_next.profiles_1d.vpr = vpr
+        # core_profiles_next.profiles_1d.gm2 = gm2
+
+        # core_profiles_next.profiles_1d.a = a
+        # core_profiles_next.profiles_1d.b = b
+        # core_profiles_next.profiles_1d.c = c
+        # core_profiles_next.profiles_1d.d = d
+        # core_profiles_next.profiles_1d.e = e
+        # core_profiles_next.profiles_1d.f = f
+        # core_profiles_next.profiles_1d.g = g
+        # core_profiles_next.profiles_1d.dvolume_dpsi = Profile(equilibrium.profiles_1d.dvolume_dpsi,
+        #                                                       axis=equilibrium.profiles_1d.rho_tor_norm)
+        # core_profiles_next.profiles_1d.dpsi_drho_tor = Profile(equilibrium.profiles_1d.dpsi_drho_tor,
+        #                                                        axis=equilibrium.profiles_1d.rho_tor_norm)
+
+        # core_profiles_next.profiles_1d.q = 2.0* scipy.constants.pi*B0*rho_tor/psi_prime1
 
         # current density, toroidal,                        [A/m^2]
-        # j_tor = - 2.0*constants.pi*R0/constants.mu_0/vpr * dfun4
+        # j_tor = - 2.0* scipy.constants.pi*R0/ scipy.constants.mu_0/vpr * dfun4
         # core_profiles_next.profiles_1d.j_tor = j_tor
-        # j_par = - 2.0*constants.pi/R0/constants.mu_0/vpr * (fpol/B0)**2*dfun5
+        # j_par = - 2.0* scipy.constants.pi/R0/ scipy.constants.mu_0/vpr * (fpol/B0)**2*dfun5
         # core_profiles_next.profiles_1d.current_parallel_inside = j_par
 
         # # $E_\parallel$  parallel electric field,,          [V/m]
         # core_profiles_next.profiles_1d.e_field.parallel = (j_par - j_ni_exp - j_ni_imp*psi1) / conductivity_parallel
 
         # # Total Ohmic currents                              [A]
-        # # fun7 = vpr * j_par / 2.0 / constants.pi * B0 / fpol**2
+        # # fun7 = vpr * j_par / 2.0 /  scipy.constants.pi * B0 / fpol**2
         # core_profiles_next.profiles_1d.j_ohmic = fpol[-1]*core_profiles_next.profiles_1d.integral(
-        #     vpr * j_par / 2.0 / constants.pi * B0 / fpol**2, 0, 1)
+        #     vpr * j_par / 2.0 /  scipy.constants.pi * B0 / fpol**2, 0, 1)
 
         # core_profiles_next.profiles_1d.j_tor = j_tor
 
         # # Total non-inductive currents                       [A]
         # core_profiles_next.profiles_1d.j_non_inductive = fpol[-1] * core_profiles_next.profiles_1d.integral(
-        #     vpr * (j_ni_exp + j_ni_imp * psi1) / (2.0 * constants.pi) * B0 / fpol**2)
+        #     vpr * (j_ni_exp + j_ni_imp * psi1) / (2.0 *  scipy.constants.pi) * B0 / fpol**2)
 
         return True
 
@@ -623,7 +656,7 @@ class TransportSolver(AttributeTree):
                          core_transport=None,
                          core_sources=None,
                          boundary_condition=None,
-                         hyper_diff=[0, 0.0 ],
+                         hyper_diff=[0.0, 0.0],
                          **kwargs):
         r"""
 
@@ -698,7 +731,7 @@ class TransportSolver(AttributeTree):
             D = trans.profiles_1d.electrons.particles.d
 
             if isinstance(D, np.ndarray) or isinstance(D, (int, float)):
-                diff = diff + D
+                diff += D
 
             v = trans.profiles_1d.electrons.particles.v
             if isinstance(v, np.ndarray) or isinstance(v, (int, float)):
@@ -720,19 +753,25 @@ class TransportSolver(AttributeTree):
                 se_exp += se
 
         ne0 = core_profiles_prev.profiles_1d.electrons.density
-        ne0_prime = core_profiles_prev.profiles_1d.electrons.density.derivative
+
+        ne0_prime = core_profiles_prev.profiles_1d.electrons.density_prime
+
+        if ne0_prime is None:
+            ne0_prime = ne0.derivative
+
         diff_hyper = hyper_diff[0] + hyper_diff[1] * max(diff)
 
         H = vpr * gm3
-        dlnNe0 = ne0_prime/ne0
+
+        # dlnNe0 = ne0_prime/ne0
 
         a = vpr
         b = vprm
         c = rho_tor_boundary
         # def d(x, hyper_diff): return H(x) * (diff(x) + hyper_diff) / rho_tor_boundary
         # def e(x, hyper_diff): return H(x) * (vconv(x) + hyper_diff * dlnNe0(x)) - k_phi*rho_tor*vpr
-        d = H * (diff + diff_hyper) / rho_tor_boundary
-        e = H * (vconv + diff_hyper * dlnNe0) - k_phi*rho_tor*vpr
+        d = H * (diff) / rho_tor_boundary
+        e = H * (vconv) - k_phi*rho_tor*vpr
         f = vpr * se_exp
         g = vpr * se_imp
 
@@ -795,7 +834,8 @@ class TransportSolver(AttributeTree):
                                       (a, b, c, d, e, f, g),
                                       ((0, 1, e[0]), (1, 0, ne0[-1])),
                                       #   parameters=[diff_hyper],
-                                      tol=0.001, verbose=2, max_nodes=400
+                                      #   tol=0.001,
+                                      verbose=2, max_nodes=400
                                       )
 
         logger.debug(
@@ -804,22 +844,23 @@ class TransportSolver(AttributeTree):
 
         core_profiles_next.profiles_1d.electrons.density0 = ne0
         core_profiles_next.profiles_1d.electrons.density0_prime = ne0_prime
-        core_profiles_next.profiles_1d.electrons.density0_error = \
-            (- ne0_prime *  diff / rho_tor_boundary + ne0 * ( vconv  ) )
 
         core_profiles_next.profiles_1d.electrons.se_exp0 = f*c
         core_profiles_next.profiles_1d.electrons.se_exp0b = core_profiles_next.profiles_1d.electrons.density_flux0_prime
 
-        core_profiles_next.profiles_1d.electrons.diff = diff
-        core_profiles_next.profiles_1d.electrons.vconv = vconv
+        core_profiles_next.profiles_1d.electrons.diff_flux = - ne0_prime * d
+        core_profiles_next.profiles_1d.electrons.vconv_flux = ne0 * e
+        core_profiles_next.profiles_1d.electrons.density0_residual_left0 = (ne0 * e).derivative
+        core_profiles_next.profiles_1d.electrons.density0_residual_left1 = (- ne0_prime * d).derivative
+        core_profiles_next.profiles_1d.electrons.density0_residual_right = f*c
 
         # if sol.success:
         core_profiles_next.profiles_1d.electrons.density = Profile(sol.y[0], axis=sol.x)
         core_profiles_next.profiles_1d.electrons.density_prime = Profile(sol.yp[0], axis=sol.x)
         core_profiles_next.profiles_1d.electrons.density_flux = Profile(sol.y[1], axis=sol.x)
-        core_profiles_next.profiles_1d.electrons.density_flux_error = - core_profiles_next.profiles_1d.electrons.density_prime * \
-            H * diff_hyper / rho_tor_boundary + core_profiles_next.profiles_1d.electrons.density * \
-            (H * (diff_hyper * dlnNe0))
+        # core_profiles_next.profiles_1d.electrons.density_flux_error = - core_profiles_next.profiles_1d.electrons.density_prime * \
+        #     H * diff_hyper / rho_tor_boundary + core_profiles_next.profiles_1d.electrons.density * \
+        #     (H * (diff_hyper * dlnNe0))
         core_profiles_next.profiles_1d.electrons.density_flux1 = - core_profiles_next.profiles_1d.electrons.density_prime * d \
             + core_profiles_next.profiles_1d.electrons.density * e
 
@@ -829,8 +870,8 @@ class TransportSolver(AttributeTree):
         core_profiles_next.profiles_1d.a = a
         core_profiles_next.profiles_1d.b = b
         core_profiles_next.profiles_1d.c = c
-        core_profiles_next.profiles_1d.d = d(rho_tor_norm, 0)
-        core_profiles_next.profiles_1d.e = e(rho_tor_norm, 0)
+        core_profiles_next.profiles_1d.d = d
+        core_profiles_next.profiles_1d.e = e
         core_profiles_next.profiles_1d.f = f
         core_profiles_next.profiles_1d.g = g
         core_profiles_next.profiles_1d.gm3 = gm3

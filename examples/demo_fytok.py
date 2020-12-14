@@ -59,17 +59,14 @@ if __name__ == "__main__":
     from spdm.util.AttributeTree import _next_
 
     tok = Tokamak(open_entry("east+mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east", shot=55555, time_slice=20))
-    
-    tok.add_dummy_profile()
+
+    tok.create_dummy_profile()
 
     # tok = Tokamak(open_entry("cfetr+mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east", shot=55555, time_slice=20))
-
     # rho_b = 0.96
     # rho_norm = np.linspace(0, 1.0, 129)
-
     # def D(r): return np.piecewise(r, [r < rho_b, r >= rho_b], [lambda x: (0.2 + (x**3)), 0.1])
     # def v(r): return np.piecewise(r, [r < rho_b, r >= rho_b], [lambda x: -(x**3)*0.3,  0])
-
     # tok.core_transport[_next_] = {"identifier": {"name": "unspecified", "index": 0}}
 
     # trans = tok.core_transport[-1].profiles_1d
@@ -152,30 +149,41 @@ if __name__ == "__main__":
                        {"name": "psi", "opts":  {"marker": "+", "label": r"$\psi$"}}],
                       [{"name": "q0", "opts": {"marker": ".", "label": r"$q_{0}$"}},
                        {"name": "q", "opts":  {"marker": "+", "label": r"$q$"}}],
-                      #   [
-                      {"name": "electrons.density0", "opts": {"marker": ".", "label": r"$n_{e0}$"}},
-                      {"name": "electrons.density", "opts":  {"marker": "+", "label": r"$n_{e}$"}},
-                      #   ],
-                      {"name": "electrons.density0_error", "opts":  {"label": r"$n_{e,error}$"}},
-
-                      {"name": "electrons.density_prime", "opts":  {"marker": "+", "label": r"$n^{\prime}_{e}$"}},
-                      "d", "e", "f", "g",
-                      "electrons.diff",
-                      "electrons.vconv",
                       [
-                          #   {"name": "electrons.density_flux0", "opts": {"label": r"$\Gamma_{e0}$"}},
+                          {"name": "electrons.density0", "opts": {"marker": ".", "label": r"$n_{e0}$"}},
+                          {"name": "electrons.density", "opts":  {"marker": "+", "label": r"$n_{e}$"}},
+                      ],
+                      [
+                          {"name": "electrons.density0_residual_left0", "opts":  {"label": r"$n_{e,residual,left}$"}},
+                          {"name": "electrons.density0_residual_left1", "opts":  {"label": r"$n_{e,residual,left}$"}},
+                          {"name": "electrons.density0_residual_right", "opts":  {"label": r"$n_{e,residual,right}$"}}
+                      ],
+                      "electrons.se_exp0",
+
+                      [
+                          {"name": "electrons.density0_prime", "opts":  {"marker": "+", "label": r"$n^{\prime}_{e0}$"}},
+                          {"name": "electrons.density_prime", "opts":  {"marker": "+", "label": r"$n^{\prime}_{e}$"}},
+                      ],
+                      #   {"name": "vpr", "opts": {"marker": "*"}},
+                      #   "gm2", "dvolume_dpsi",
+                      #   {"name": "dpsi_drho_tor", "opts":{"marker": "*"}},
+                      #   "a", "b", "c",
+                      "d", "e", "f", "g",
+                      ["electrons.diff_flux",   "electrons.vconv_flux", ],
+                      [
+                          #       #   {"name": "electrons.density_flux0", "opts": {"label": r"$\Gamma_{e0}$"}},
                           {"name": "electrons.density_flux", "opts": {"marker": "o", "label": r"$\Gamma_{e}$"}},
-                          {"name": "electrons.density_flux1", "opts": {"marker": "+", "label": r"$\Gamma_{e2}$"}},
+                          #   {"name": "electrons.density_flux1", "opts": {"marker": "+", "label": r"$\Gamma_{e2}$"}},
 
                       ],
                       {"name": "electrons.density_flux_error", "opts": {"marker": "+", "label": r"$\Gamma_{e,error}$"}},
 
-                      #   {"name": "electrons.density_flux0_prime", "opts": {"label": r"$\Gamma_{e0}^{\prime}$"}},
+                      #   #   {"name": "electrons.density_flux0_prime", "opts": {"label": r"$\Gamma_{e0}^{\prime}$"}},
                       [
                           {"name": "electrons.density_flux_prime", "opts": {
                               "marker": "o", "label": r"$\Gamma_{e}^{\prime}$"}},
                           {"name": "electrons.density_flux1_prime", "opts": {
-                           "marker": "+", "label": r"$\Gamma_{e1}^{\prime}$"}},
+                              "marker": "+", "label": r"$\Gamma_{e1}^{\prime}$"}},
                           "electrons.se_exp0",
                       ],
 

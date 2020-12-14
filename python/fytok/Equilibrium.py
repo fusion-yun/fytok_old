@@ -691,28 +691,29 @@ class Equilibrium(AttributeTree):
             for k, v in kwargs.items():
                 self._cache[k] = v
 
-        def psirz(self, R, Z):
-
+        @property
+        def psirz(self):
             psi_value = self._cache.psi
+
             if callable(psi_value):
-                psi_func = psi_value
-            elif not self.grid_type.index or self.grid_type.index == 1:  # rectangular	1
+                psi_value = psi_value(self.r, self.z)
+
+            if not self.grid_type.index or self.grid_type.index == 1:  # rectangular	1
                 """Cylindrical R, Z ala eqdsk(R=dim1, Z=dim2). In this case the position arrays should not be filled
                  since they are redundant with grid/dim1 and dim2."""
 
-                spl = RectBivariateSpline(self.grid.dim1[1:-1], self.grid.dim2[1:-1],  psi_value[1:-1, 1:-1])
-                psi_func = lambda *args: spl(*args, grid=False)
+                psi_func = RectBivariateSpline(self.grid.dim1[1:-1], self.grid.dim2[1:-1],  psi_value[1:-1, 1:-1])
+                
             elif self.grid_type.index >= 2 and self.grid_type.index < 91:  # inverse
                 """Rhopolar_polar 2D polar coordinates(rho=dim1, theta=dim2) with magnetic axis as centre of grid;
                 theta and values following the COCOS=11 convention;
                 the polar angle is theta=atan2(z-zaxis,r-raxis) """
-                spl = SmoothBivariateSpline(self.r.ravel(), self.z.ravel(), psi_value.ravel())
-                psi_func = lambda *args: spl(*args, grid=False)
+                psi_func = SmoothBivariateSpline(self.r.ravel(), self.z.ravel(), psi_value.ravel())
+                # psi_func = lambda *args: spl(*args, grid=False)
             else:
                 raise NotImplementedError()
 
-            return psi_func(R, Z)
-            # return lambda *args, _func=psi_func, grid=False, **kwargs: _func(*args, grid=grid, **kwargs)
+            return lambda *args, _func=psi_func, grid=False, **kwargs: _func(*args, grid=grid, **kwargs)
 
         @cached_property
         def grid_type(self):
@@ -920,8 +921,8 @@ class Equilibrium(AttributeTree):
 
         R = self.profiles_2d.r
         Z = self.profiles_2d.z
-        # psi = self.profiles_2d.psi
-        psi = self.backend().psiRZ(self.profiles_2d.r, self.profiles_2d.z)
+        psi = self.profiles_2d.psi
+        # psi = self.backend().psiRZ(self.profiles_2d.r, self.profiles_2d.z)
         # psi = (psi - self.global_quantities.psi_axis) / \
         #     (self.global_quantities.psi_boundary - self.global_quantities.psi_axis)
 
