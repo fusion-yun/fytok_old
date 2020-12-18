@@ -270,6 +270,15 @@ class Tokamak(AttributeTree):
 
         D_bdry = 0.2
 
+        vpr = Profile(self.equilibrium.profiles_1d.dvolume_drho_tor * rho_tor_boundary,
+                      axis=self.equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)
+
+        gm3 = Profile(self.equilibrium.profiles_1d.gm3, axis=self.equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)
+
+        H = vpr * gm3
+
+        H[0] = H[1]*2-H[2]
+
         self.core_transport[_next_] = {"identifier": {"name": f"Dummy transport {spec}", "index": 0}}
 
         self.core_sources[_next_] = {"identifier": {"name": f"Dummy source {spec}", "index": 0}}
@@ -284,16 +293,16 @@ class Tokamak(AttributeTree):
             * self.equilibrium.profiles_1d.dpsi_drho_tor \
             / (4.0*(scipy.constants.pi**2))
 
-        j_total = - gamma.derivative \
+        j_total = -gamma.derivative  \
             / self.equilibrium.profiles_1d.rho_tor[-1]**2 \
             * self.equilibrium.profiles_1d.dpsi_drho_tor  \
             * (self.equilibrium.profiles_1d.fpol**2) \
             / (scipy.constants.mu_0*self.vacuum_toroidal_field.b0) \
             * (scipy.constants.pi)
 
-        j_total[1:] /= self.equilibrium.profiles_1d.dvolume_drho_tor[1:]
+        j_total.value[1:] /= self.equilibrium.profiles_1d.dvolume_drho_tor.value[1:]
 
-        j_total[0] = 2*j_total[1]-j_total[2]
+        j_total.value[0] = 2*j_total.value[1]-j_total.value[2]
 
         sources.j_parallel = j_total
 
@@ -303,21 +312,22 @@ class Tokamak(AttributeTree):
 
         n_core = Profile(n_core_func, axis=rho_tor_norm)
 
-        def int_s_edge_func(x): return -D_bdry * n_core.derivative(rho_bdry) / \
-            (rho_tor_boundary**2) * np.exp((x-1)*20)/np.exp((rho_bdry-1)*20)
+        def int_s_edge_func(x):
+            return -D_bdry * H(rho_bdry)*n_core.derivative(rho_bdry) / (rho_tor_boundary**2) \
+                * np.exp((x-rho_bdry)*20)
 
-        int_S_edge = np.array([int_s_edge_func(s) for s in rho_tor_norm])
+        int_S_edge = Profile(int_s_edge_func, axis=rho_tor_norm)
 
         # n_core = np.piecewise(x, [x<rho_bdry, x >= rho_bdry], [n_core_func, n_core_func(rho_bdry)])
 
         n_ped = n_core_func(rho_bdry)
 
-        def n_ped_func(x): return n_ped + scipy.integrate.quad(int_s_edge_func,
+        def n_ped_func(x): return n_ped + scipy.integrate.quad(lambda s: int_s_edge_func(s)/H(s),
                                                                rho_bdry, x)[0]*(-rho_tor_boundary**2/D_bdry)
 
-        sources[spec].particles = Profile(int_s_edge_func, axis=rho_tor_norm).derivative
+        sources[spec].particles = int_S_edge.derivative
 
-        self.core_profiles.profiles_1d[spec].density = lambda x: n_core_func(x) if x < rho_bdry else n_ped_func(x)
+        self.core_profiles.profiles_1d[spec].density = lambda x: n_core_func(x) if x <= rho_bdry else n_ped_func(x)
 
         ns = self.core_profiles.profiles_1d[spec].density
 
@@ -325,16 +335,5 @@ class Tokamak(AttributeTree):
 
         trans_particles.d = lambda x: 2.0 * D_bdry + (x**2) if x < rho_bdry else D_bdry
 
-        logger.debug(trans_particles.d.axis is ns.derivative.axis)
-
-        vpr = Profile(self.equilibrium.profiles_1d.dvolume_drho_tor,
-                      axis=self.equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm) * rho_tor_boundary
-
-        gm3 = Profile(self.equilibrium.profiles_1d.gm3, axis=self.equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)
-
-        H = vpr * gm3
-        H[0] = H[1]*2-H[2]
-        logger.debug(H)
-
         trans_particles.v = ((trans_particles.d * ns.derivative / rho_tor_boundary +
-                              int_S_edge * rho_tor_boundary/H) / ns) * (rho_tor_norm < rho_bdry)
+                              int_S_edge * rho_tor_boundary/H) / ns) * (rho_tor_norm <= rho_bdry)

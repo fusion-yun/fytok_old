@@ -37,10 +37,10 @@ def draw(tok):
             ({"name": "gm3", "opts": {"label": r"$gm3: \left\langle  |\nabla\rho |^{2}\right\rangle $"}},
              r"$\left[-\right]$"),
             # ({"name": "gm4", "opts": {"label": r"$gm4: \left\langle 1/B^{2} \right\rangle$"}},   r"$\left[T^{-2}\right]$"),
-            ({"name": "gm5", "opts": {"label": r"$gm5: \left\langle B^{2}\right\rangle$"}},  r"$\left[T^2\right]$"),
-            ({"name": "psi"}, r"$[Wb]$"),
-            ({"name": "dpsi_drho_tor"}, r"$[Wb]$"),
-            ({"name": "psi_norm", "opts": {"label": r"$\psi_{norm}$"}}, r"$[Wb]$")
+            # ({"name": "gm5", "opts": {"label": r"$gm5: \left\langle B^{2}\right\rangle$"}},  r"$\left[T^2\right]$"),
+            # ({"name": "psi"}, r"$[Wb]$"),
+            # ({"name": "dpsi_drho_tor"}, r"$[Wb]$"),
+            # ({"name": "psi_norm", "opts": {"label": r"$\psi_{norm}$"}}, r"$[Wb]$")
         ],
         # profiles_2d=[("phi", {})],
         vec_field=[("b_field_r", "b_field_z", {"linewidth": 0.5, "arrowsize": 0.2})],
@@ -154,9 +154,9 @@ if __name__ == "__main__":
                           {"name": "electrons.density", "opts":  {"marker": "+", "label": r"$n_{e}$"}},
                       ],
                       [
-                          {"name": "electrons.density0_residual_left0", "opts":  {"label": r"$n_{e,residual,left}$"}},
-                          {"name": "electrons.density0_residual_left1", "opts":  {"label": r"$n_{e,residual,left}$"}},
-                          {"name": "electrons.density0_residual_right", "opts":  {"label": r"$n_{e,residual,right}$"}}
+                          {"name": "electrons.density0_residual_left", "opts":  {"label": r"$n_{e,residual,left}$"}},
+                          #   {"name": "electrons.density0_residual_left1", "opts":  {"label": r"$n_{e,residual,left}$"}},
+                          {"name": "electrons.density0_residual_right", "opts":  {"label": r"$n_{e,residual,right}$"}},
                       ],
                       "electrons.se_exp0",
 
@@ -164,6 +164,8 @@ if __name__ == "__main__":
                           {"name": "electrons.density0_prime", "opts":  {"marker": "+", "label": r"$n^{\prime}_{e0}$"}},
                           {"name": "electrons.density_prime", "opts":  {"marker": "+", "label": r"$n^{\prime}_{e}$"}},
                       ],
+                      "electrons.diff", "electrons.vconv",
+
                       #   {"name": "vpr", "opts": {"marker": "*"}},
                       #   "gm2", "dvolume_dpsi",
                       #   {"name": "dpsi_drho_tor", "opts":{"marker": "*"}},

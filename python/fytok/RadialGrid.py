@@ -4,7 +4,7 @@ import collections
 import numpy as np
 from spdm.util.AttributeTree import AttributeTree
 from spdm.util.logger import logger
-from spdm.util.Profiles import Profiles, make_axis, Profile
+from spdm.util.Profiles import Profiles,   Profile
 
 
 class RadialGrid:

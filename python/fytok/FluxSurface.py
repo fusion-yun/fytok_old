@@ -23,7 +23,7 @@ from sympy import Point, Polygon
 
 
 class FluxSurface(Profiles):
-    r"""Flux surface average 
+    r"""Flux surface average
 
         .. math::
             V^{\prime}\left(\rho\right)=\frac{\partial V}{\partial\rho}=2\pi\int_{0}^{2\pi}\sqrt{g}d\theta=2\pi\oint\frac{R}{\left|\nabla\rho\right|}dl
@@ -31,7 +31,7 @@ class FluxSurface(Profiles):
         .. math::
             \left\langle\alpha\right\rangle\equiv\frac{2\pi}{V^{\prime}}\int_{0}^{2\pi}\alpha\sqrt{g}d\theta=\frac{2\pi}{V^{\prime}}\varoint\alpha\frac{R}{\left|\nabla\rho\right|}dl
 
-        grid_type : 
+        grid_type :
                    =1  rectangular	,
                        Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). In this case the position
                        arrays should not be filled since they are redundant with grid/dim1 and dim2.
@@ -49,19 +49,12 @@ class FluxSurface(Profiles):
 
         """
         super().__init__(None, *args, axis=psi_norm, **kwargs)
+        self._psi_norm = self._axis
         self._limiter = limiter
         self._psirz = psirz
         self._r0 = r0
         self._b0 = b0
-        self._ffprime = ffprime
-        self._psi_norm = self._axis
-
-        if callable(ffprime):
-            self._ffprime = ffprime
-        elif isinstance(ffprime, np.ndarray):
-            self._ffprime = UnivariateSpline(self._psi_norm, ffprime)
-        else:
-            raise TypeError(f"ffprime:{ffprime}")
+        self._ffprime = Profile(ffprime, axis=self._psi_norm)
 
         self.tolerance = tolerance
 
@@ -251,8 +244,8 @@ class FluxSurface(Profiles):
     @cached_property
     def fpol(self):
         """Diamagnetic function (F=R B_tor)  [T.m]."""
-        f2 = np.array([self._ffprime.integral(p, 1.0) for p in self._psi_norm]) * (self.psi_axis-self.psi_boundary)
-        return np.sqrt(f2 * 2.0 + (self._r0*self._b0)**2)
+        f2 = self._ffprime.integral.value * (self.psi_axis-self.psi_boundary)
+        return Profile(np.sqrt(f2 * 2.0 + (self._r0*self._b0)**2), axis=self._psi_norm)
 
     @cached_property
     def dvolume_dpsi(self):
@@ -268,7 +261,7 @@ class FluxSurface(Profiles):
     @cached_property
     def volume(self):
         """Volume enclosed in the flux surface[m ^ 3]"""
-        return self.integral(self.dvolume_dpsi, 0.0, self._psi_norm) * (self.psi_boundary-self.psi_axis)
+        return self.dvolume_dpsi.integral * (self.psi_boundary-self.psi_axis)
 
     @cached_property
     def dvolume_drho_tor(self)	:
@@ -277,30 +270,30 @@ class FluxSurface(Profiles):
 
     @cached_property
     def q(self):
-        r"""Safety factor 
+        r"""Safety factor
             (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)  [-].
 
             .. math:: q(\psi)=\frac{d\Phi}{d\psi}=\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
         """
         # logger.debug(r"Calculate q as  F V^{\prime} \left\langle R^{-2}\right \rangle /(4 \pi^2) ")
-        return Profile(self.cocos_flag * self.fpol * np.sum(self.Jdl/self.R**2, axis=1) / (2*scipy.constants.pi),
-                       axis=self.psi_norm)
+        return self.fpol * np.sum(self.Jdl/self.R**2, axis=1)*(self.cocos_flag / (2*scipy.constants.pi))
 
     @cached_property
     def phi(self):
-        r""" 
+        r"""
             Note:
                 !!! COORDINATE　DEPENDENT!!!
 
             .. math ::
                 \Phi_{tor}\left(\psi\right)=\int_{0}^{\psi}qd\psi
         """
-        return self.q.integral(0, self._psi_norm) * (self.psi_boundary-self.psi_axis)
+        return self.q.integral * (self.psi_boundary-self.psi_axis)
 
     @cached_property
     def rho_tor(self):
         """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0  [m]"""
-        return np.sqrt(self.phi)/np.sqrt(scipy.constants.pi * self._b0)
+        data = np.sqrt(self.phi.value)/np.sqrt(scipy.constants.pi * self._b0)
+        return Profile(data, axis=self._axis, description={"name": "rho_tor"})
 
     @cached_property
     def rho_tor_norm(self):
@@ -317,10 +310,10 @@ class FluxSurface(Profiles):
 
         """
         res = self.q/(2.0*constants.pi*self._b0)
-        res[1:] /= self.rho_tor[1:]
+        res.value[1:] /= self.rho_tor.value[1:]
         # res[0] = res[1:5](0)  # self.fpol[0]*self.gm1[0]/(2.0*constants.pi*self._b0)
         # return self.q/(2.0*constants.pi*self._b0)
-        res[0] = 2*res[1]-res[2]
+        res.value[0] = 2*res.value[1]-res.value[2]
         return res
 
     @cached_property

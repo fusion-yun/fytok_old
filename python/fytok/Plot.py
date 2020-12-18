@@ -88,7 +88,10 @@ def plot_profiles(holder, profiles, fig_axis=None, axis=None, prefix=None, grid=
         for d in data:
             profile, opts = fetch_profile(holder, d,  prefix=prefix)
             if isinstance(profile, Profile) and hasattr(profile, "axis"):
-                fig_axis[idx].plot(profile.axis, profile, **opts)
+                if profile.axis is not None and profile.value is not None:
+                    fig_axis[idx].plot(profile.axis, profile.value, **opts)
+                else:
+                    logger.debug((profile.axis, profile.value))
             elif isinstance(profile, np.ndarray):
                 try:
                     if axis is not None:

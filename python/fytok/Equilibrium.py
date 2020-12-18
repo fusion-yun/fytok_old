@@ -455,7 +455,7 @@ class Equilibrium(AttributeTree):
         @cached_property
         def pressure(self):
             """	Pressure  [Pa]"""
-            return self.integral("dpressure_dpsi",  self.psi_norm, 1.0)*(self._equilibrium.global_quantities.psi_axis - self._equilibrium.global_quantities.psi_boundary)
+            return self.dpressure_dpsi.inv_integral * (self._equilibrium.global_quantities.psi_axis - self._equilibrium.global_quantities.psi_boundary)
 
         @cached_property
         def pprime(self):
@@ -547,7 +547,7 @@ class Equilibrium(AttributeTree):
         def rho_tor_norm(self):
             """Normalised toroidal flux coordinate. The normalizing value for rho_tor_norm, is the toroidal flux coordinate at the equilibrium boundary
                 (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation)[-]"""
-            return self.rho_tor/self.rho_tor[-1]
+            return self.flux_surface.rho_tor_norm
 
         @cached_property
         def drho_tor_dpsi(self)	:
@@ -580,7 +580,7 @@ class Equilibrium(AttributeTree):
         @cached_property
         def dvolume_drho_tor(self)	:
             """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
-            return self.dvolume_dpsi * self.dpsi_drho_tor
+            return self.flux_surface.dvolume_dpsi
 
         @cached_property
         def rho_volume_norm(self)	:
@@ -703,7 +703,7 @@ class Equilibrium(AttributeTree):
                  since they are redundant with grid/dim1 and dim2."""
 
                 psi_func = RectBivariateSpline(self.grid.dim1[1:-1], self.grid.dim2[1:-1],  psi_value[1:-1, 1:-1])
-                
+
             elif self.grid_type.index >= 2 and self.grid_type.index < 91:  # inverse
                 """Rhopolar_polar 2D polar coordinates(rho=dim1, theta=dim2) with magnetic axis as centre of grid;
                 theta and values following the COCOS=11 convention;
