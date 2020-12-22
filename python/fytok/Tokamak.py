@@ -12,18 +12,18 @@ from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.util.Profiles import Profile
 
-from fytok.CoreProfiles import CoreProfiles
-from fytok.CoreSources import CoreSources
-from fytok.CoreTransport import CoreTransport
-from fytok.EdgeProfiles import EdgeProfiles
-from fytok.EdgeSources import EdgeSources
-from fytok.EdgeTransport import EdgeTransport
-from fytok.Equilibrium import Equilibrium
-from fytok.PFActive import PFActive
+from fytok.modules.device.PFActive import PFActive
+from fytok.modules.device.TF import TF
+from fytok.modules.device.Wall import Wall
+from fytok.modules.transport.CoreProfiles import CoreProfiles
+from fytok.modules.transport.CoreSources import CoreSources
+from fytok.modules.transport.CoreTransport import CoreTransport
+from fytok.modules.transport.EdgeProfiles import EdgeProfiles
+from fytok.modules.transport.EdgeSources import EdgeSources
+from fytok.modules.transport.EdgeTransport import EdgeTransport
+from fytok.modules.transport.Equilibrium import Equilibrium
+from fytok.modules.transport.TransportSolver import TransportSolver
 from fytok.RadialGrid import RadialGrid
-from fytok.TF import TF
-from fytok.TransportSolver import TransportSolver
-from fytok.Wall import Wall
 
 
 class Tokamak(AttributeTree):
