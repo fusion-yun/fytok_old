@@ -256,7 +256,8 @@ class FluxSurface(Profiles):
         r""".. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
             .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
         """
-        return Profile((2*constants.pi) * np.sum(self.Jdl, axis=1), axis=self.psi_norm)
+
+        return Profile((2.0*scipy.constants.pi)*np.sum(self.Jdl, axis=1), axis=self.psi_norm)
 
     @cached_property
     def volume(self):
@@ -276,7 +277,7 @@ class FluxSurface(Profiles):
             .. math:: q(\psi)=\frac{d\Phi}{d\psi}=\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
         """
         # logger.debug(r"Calculate q as  F V^{\prime} \left\langle R^{-2}\right \rangle /(4 \pi^2) ")
-        return self.fpol * np.sum(self.Jdl/self.R**2, axis=1)*(self.cocos_flag / (2*scipy.constants.pi))
+        return self.fpol * np.sum(self.Jdl/(self.R**2), axis=1)*(self.cocos_flag / (2*scipy.constants.pi))
 
     @cached_property
     def phi(self):
@@ -318,8 +319,15 @@ class FluxSurface(Profiles):
 
     @cached_property
     def dpsi_drho_tor(self)	:
-        """Derivative of Psi with respect to Rho_Tor[Wb/m]. """
-        return (2.0*constants.pi*self._b0)*self.rho_tor/self.q
+        """
+            Derivative of Psi with respect to Rho_Tor[Wb/m]. 
+            
+            Todo:
+                FIXME: dpsi_drho_tor(0) = ??? 
+        """
+        res = (2.0*constants.pi*self._b0)*self.rho_tor[:]/self.q[:]
+        res[0] = 2*res[1]-res[2]
+        return Profile(res, axis=self._psi_norm)
 
     @cached_property
     def gm1(self):

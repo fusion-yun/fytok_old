@@ -580,7 +580,7 @@ class Equilibrium(AttributeTree):
         @cached_property
         def dvolume_drho_tor(self)	:
             """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
-            return self.flux_surface.dvolume_dpsi
+            return self.flux_surface.dvolume_drho_tor
 
         @cached_property
         def rho_volume_norm(self)	:

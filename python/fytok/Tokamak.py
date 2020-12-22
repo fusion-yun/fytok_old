@@ -5,6 +5,7 @@ from functools import cached_property
 
 import matplotlib.pyplot as plt
 import numpy as np
+import numpy.ma
 import scipy.integrate
 from spdm.util.AttributeTree import AttributeTree, _last_, _next_
 from spdm.util.LazyProxy import LazyProxy
@@ -255,7 +256,7 @@ class Tokamak(AttributeTree):
 
         return axis
 
-    def create_dummy_profile(self, spec="electrons", rho_bdry=0.9, n0=1.0e19, D_bdry=0.2):
+    def create_dummy_profile(self, spec="electrons", rho_ped=0.9, n0=1.0e19, D_ped=0.2):
         r""" Setup dummy porfilse　
                 core_transport
                 core_sources
@@ -268,7 +269,7 @@ class Tokamak(AttributeTree):
 
         rho_tor_boundary = self.grid.rho_tor_boundary
 
-        D_bdry = 0.2
+        D_ped = 0.2
 
         vpr = Profile(self.equilibrium.profiles_1d.dvolume_drho_tor * rho_tor_boundary,
                       axis=self.equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)
@@ -304,36 +305,36 @@ class Tokamak(AttributeTree):
 
         j_total.value[0] = 2*j_total.value[1]-j_total.value[2]
 
-        sources.j_parallel = j_total
+        sources.j_parallel = j_total.value
 
         trans.conductivity_parallel = 1.0e-8
 
-        def n_core_func(x): return n0*((1-(x/3)**2)**2)
+        def n_core(x): return (1-(x/3)**2)**2
 
-        n_core = Profile(n_core_func, axis=rho_tor_norm)
+        def n_ped(x): return (1.0 + (1.0 - np.exp((x-rho_ped)/(1.0-rho_ped)))*np.exp(-1))
 
-        def int_s_edge_func(x):
-            return -D_bdry * H(rho_bdry)*n_core.derivative(rho_bdry) / (rho_tor_boundary**2) \
-                * np.exp((x-rho_bdry)*20)
+        def dn_core(x):return -4*x*(1-x**2/9)/9
+        # def dn_ped(x):return
 
-        int_S_edge = Profile(int_s_edge_func, axis=rho_tor_norm)
+        ns = n_core(rho_tor_norm)*(rho_tor_norm < rho_ped) + \
+            n_core(rho_ped) * n_ped(rho_tor_norm)*(rho_tor_norm >= rho_ped)
 
-        # n_core = np.piecewise(x, [x<rho_bdry, x >= rho_bdry], [n_core_func, n_core_func(rho_bdry)])
+        self.core_profiles.profiles_1d[spec].density = n0 * \
+            Profile(ns, axis=rho_tor_norm, description={"name": "density"})
 
-        n_ped = n_core_func(rho_bdry)
+        dn_ped = Profile(n_ped, axis=rho_tor_norm).derivative
 
-        def n_ped_func(x): return n_ped + scipy.integrate.quad(lambda s: int_s_edge_func(s)/H(s),
-                                                               rho_bdry, x)[0]*(-rho_tor_boundary**2/D_bdry)
+        # dn_core = Profile(n_core, axis=rho_tor_norm).derivative
 
-        sources[spec].particles = int_S_edge.derivative
+        # self.core_profiles.profiles_1d[spec].density_prime = dn_core * \
+        #     (rho_tor_norm < rho_ped) + dn_ped*(rho_tor_norm >= rho_ped)
 
-        self.core_profiles.profiles_1d[spec].density = lambda x: n_core_func(x) if x <= rho_bdry else n_ped_func(x)
-
-        ns = self.core_profiles.profiles_1d[spec].density
+        sources[spec].particles = - n0 * dn_ped.derivative * (D_ped/rho_tor_boundary) / vpr / rho_tor_boundary
 
         trans_particles = trans[spec].particles
 
-        trans_particles.d = lambda x: 2.0 * D_bdry + (x**2) if x < rho_bdry else D_bdry
+        trans_particles.d = lambda x: 2.0 * D_ped + (x**2) if x <= rho_ped else D_ped
 
-        trans_particles.v = ((trans_particles.d * ns.derivative / rho_tor_boundary +
-                              int_S_edge * rho_tor_boundary/H) / ns) * (rho_tor_norm <= rho_bdry)
+        trans_particles.v = (trans_particles.d *  dn_core(rho_tor_norm) / rho_tor_boundary + dn_ped) / \
+            n_core(rho_tor_norm) * (rho_tor_norm < rho_ped)
+        trans_particles.v = dn_ped
