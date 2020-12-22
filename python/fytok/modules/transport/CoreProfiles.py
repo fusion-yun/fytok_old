@@ -22,8 +22,8 @@ from spdm.util.Profiles import Profiles, Profile
 from spdm.util.sp_export import sp_find_module
 from sympy import Point, Polygon
 
-from fytok.Plot import plot_profiles
-from fytok.RadialGrid import RadialGrid
+from fytok.utilities.Plot import plot_profiles
+from fytok.utilities.RadialGrid import RadialGrid
 
 
 class CoreProfiles(AttributeTree):

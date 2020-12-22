@@ -1,9 +1,10 @@
-import matplotlib.pyplot as plt
 import pprint
 import sys
+
+import matplotlib.pyplot as plt
 import numpy as np
-import scipy.stats
 import scipy.constants as constants
+import scipy.stats
 from scipy.interpolate import RectBivariateSpline, UnivariateSpline
 
 sys.path.append("/home/salmon/workspace/freegs/")
@@ -51,12 +52,12 @@ def draw(tok):
 
 if __name__ == "__main__":
 
+    from fytok.utilities.Plot import plot_profiles
     from fytok.Tokamak import Tokamak
+    from spdm.data.Entry import open_entry
+    from spdm.util.AttributeTree import _next_
     from spdm.util.logger import logger
     from spdm.util.Profiles import Profile
-    from spdm.data.Entry import open_entry
-    from fytok.Plot import plot_profiles
-    from spdm.util.AttributeTree import _next_
 
     tok = Tokamak(open_entry("east+mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east", shot=55555, time_slice=20))
 
@@ -153,34 +154,35 @@ if __name__ == "__main__":
                           {"name": "rho_star", "opts": {"marker": ".", "label": r"$\rho^{\dagger}_{tor}$"}},
                           {"name": "rho_tor", "opts": {"marker": ".", "label": r"$\rho_{tor}$"}},
                       ],
-                      #   [
-                      {"name": "electrons.density0", "opts": {"marker": ".", "label": r"$n_{e0}$"}},
-                      {"name": "electrons.density", "opts":  {"marker": "+", "label": r"$n_{e}$"}},
-                      #   ],
+                      [
+                          {"name": "electrons.density0", "opts": {"marker": ".", "label": r"$n_{e0}$"}},
+                          # {"name": "electrons.density", "opts":  {"marker": "+", "label": r"$n_{e}$"}},
+                      ],
                       #   [
                       #       {"name": "electrons.density0_residual_left", "opts":  {"label": r"$n_{e,residual,left}$"}},
                       #       #   {"name": "electrons.density0_residual_left1", "opts":  {"label": r"$n_{e,residual,left}$"}},
                       #       {"name": "electrons.density0_residual_right", "opts":  {"label": r"$n_{e,residual,right}$"}},
                       #   ],
                       #   "electrons.se_exp0",
-
-                      #   [
-                      {"name": "electrons.density0_prime", "opts":  {"marker": "+", "label": r"$n^{\prime}_{e0}$"}},
-                      {"name": "electrons.density_prime", "opts":  {"marker": "+", "label": r"$n^{\prime}_{e}$"}},
-                      #   ],
-                    #   [
+                      [
+                          {"name": "electrons.density0_prime", "opts":  {"marker": "+", "label": r"$n^{\prime}_{e0}$"}},
+                          # {"name": "electrons.density_prime", "opts":  {"marker": "+", "label": r"$n^{\prime}_{e}$"}},
+                      ],
+                      [
                           {"name": "electrons.diff", "opts": {"marker": ".", "label": r"$D$"}},
                           {"name": "electrons.vconv", "opts": {"marker": ".", "label": r"$v$"}},
-                    #   ],
+                      ],
                       #   {"name": "vpr", "opts": {"marker": "*"}},
-                      #   "gm2", "dvolume_dpsi",
+                        "gm3", "vpr",
                       #   {"name": "dpsi_drho_tor", "opts":{"marker": "*"}},
                       #   "a", "b",  # "c",
                       "d", "e", "f", "g",
-                      # [
-                      "electrons.diff_flux",
-                      "electrons.vconv_flux",
-                      #   ],
+                      [
+                          "electrons.diff_flux",
+                          "electrons.vconv_flux",
+                          "electrons.s_exp_flux",
+                          "electrons.density_residual"
+                      ],
                       #   [
                       #       #       #   {"name": "electrons.density_flux0", "opts": {"label": r"$\Gamma_{e0}$"}},
                       #       {"name": "electrons.density_flux", "opts": {"marker": "o", "label": r"$\Gamma_{e}$"}},

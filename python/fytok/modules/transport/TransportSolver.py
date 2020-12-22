@@ -15,17 +15,14 @@ from spdm.util.logger import logger
 from spdm.util.sp_export import sp_find_module
 from spdm.util.Profiles import Profile
 
-from fytok.Equilibrium import Equilibrium
-
-from fytok.CoreProfiles import CoreProfiles
-from fytok.CoreSources import CoreSources
-from fytok.CoreTransport import CoreTransport
-
-from fytok.EdgeProfiles import EdgeProfiles
-from fytok.EdgeSources import EdgeSources
-from fytok.EdgeTransport import EdgeTransport
-
-from fytok.Misc import Identifier
+from .Equilibrium import Equilibrium
+from .CoreProfiles import CoreProfiles
+from .CoreSources import CoreSources
+from .CoreTransport import CoreTransport
+from .EdgeProfiles import EdgeProfiles
+from .EdgeSources import EdgeSources
+from .EdgeTransport import EdgeTransport
+from fytok.utilities.Misc import Identifier
 
 EPSILON = 1.0e-15
 TOLERANCE = 1.0e-6
@@ -764,7 +761,6 @@ class TransportSolver(AttributeTree):
 
         ne0_prime = core_profiles_prev.profiles_1d.electrons.density_prime
 
-        
         if ne0_prime is None:
             ne0_prime = ne0.derivative
 
@@ -857,10 +853,11 @@ class TransportSolver(AttributeTree):
         core_profiles_next.profiles_1d.electrons.se_exp0 = f*c
         core_profiles_next.profiles_1d.electrons.se_exp0b = core_profiles_next.profiles_1d.electrons.density_flux0_prime
 
-        core_profiles_next.profiles_1d.electrons.diff_flux = - ne0_prime * H*diff/rho_tor_boundary
-        core_profiles_next.profiles_1d.electrons.vconv_flux = ne0 * H * vconv
-        core_profiles_next.profiles_1d.electrons.density0_residual_left = (
-            H*(- ne0_prime * diff/rho_tor_boundary + ne0 * vconv)).derivative
+        core_profiles_next.profiles_1d.electrons.diff_flux = -d * ne0_prime  # * H*diff/rho_tor_boundary
+        core_profiles_next.profiles_1d.electrons.vconv_flux = e * ne0  # * H * vconv
+        core_profiles_next.profiles_1d.electrons.s_exp_flux = f.integral*(c**2)
+
+        core_profiles_next.profiles_1d.electrons.density_residual = -d * ne0_prime+e * ne0 - f.integral*(c**2)
         # core_profiles_next.profiles_1d.electrons.density0_residual_left1 = ().derivative
         core_profiles_next.profiles_1d.electrons.density0_residual_right = f*c
         core_profiles_next.profiles_1d.electrons.diff = diff[:]
@@ -872,11 +869,6 @@ class TransportSolver(AttributeTree):
         # core_profiles_next.profiles_1d.electrons.density_flux_error = - core_profiles_next.profiles_1d.electrons.density_prime * \
         #     H * diff_hyper / rho_tor_boundary + core_profiles_next.profiles_1d.electrons.density * \
         #     (H * (diff_hyper * dlnNe0))
-        core_profiles_next.profiles_1d.electrons.density_flux1 = - core_profiles_next.profiles_1d.electrons.density_prime * d \
-            + core_profiles_next.profiles_1d.electrons.density * e
-
-        core_profiles_next.profiles_1d.electrons.density_flux_prime = Profile(sol.yp[1], axis=sol.x)
-        core_profiles_next.profiles_1d.electrons.density_flux1_prime = core_profiles_next.profiles_1d.electrons.density_flux1.derivative
 
         core_profiles_next.profiles_1d.a = a(sol.x)
         core_profiles_next.profiles_1d.b = b(sol.x)
@@ -885,7 +877,10 @@ class TransportSolver(AttributeTree):
         core_profiles_next.profiles_1d.e = e(sol.x)
         core_profiles_next.profiles_1d.f = f(sol.x)
         core_profiles_next.profiles_1d.g = g(sol.x)
+
+        core_profiles_next.profiles_1d.vpr = vpr
         core_profiles_next.profiles_1d.gm3 = gm3
+
         if False:
             core_profiles_next.profiles_1d.n_i_total = core_profiles_next.profiles_1d.electrons.density
             # ni_tot_flux = core_transport.profiles_1d.electron.particles.flux

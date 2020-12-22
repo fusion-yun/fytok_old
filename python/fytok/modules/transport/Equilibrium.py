@@ -7,15 +7,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 import scipy.constants as constants
+from fytok.utilities.RadialGrid import RadialGrid
 from numpy import arctan2, cos, sin, sqrt
 from scipy.interpolate import (RectBivariateSpline, SmoothBivariateSpline,
                                UnivariateSpline)
 from scipy.optimize import root_scalar
 from spdm.data.Entry import open_entry
 from spdm.util.AttributeTree import AttributeTree, _next_
-from spdm.util.Interpolate import (Interpolate1D, Interpolate2D, derivate,
-                                   find_critical, find_root, integral,
-                                   interpolate)
+from spdm.util.Interpolate import find_critical, find_root
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.util.Profiles import Profiles
@@ -23,10 +22,9 @@ from spdm.util.sp_export import sp_find_module
 from spdm.util.utilities import first_not_empty
 from sympy import Point, Polygon
 
-from fytok.FluxSurface import FluxSurface
-from fytok.PFActive import PFActive
-from fytok.RadialGrid import RadialGrid
-from fytok.Wall import Wall
+from ..device.PFActive import PFActive
+from ..device.Wall import Wall
+from .FluxSurface import FluxSurface
 
 TOLERANCE = 1.0e-6
 

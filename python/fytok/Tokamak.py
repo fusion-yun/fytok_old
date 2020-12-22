@@ -12,18 +12,18 @@ from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.util.Profiles import Profile
 
-from fytok.modules.device.PFActive import PFActive
-from fytok.modules.device.TF import TF
-from fytok.modules.device.Wall import Wall
-from fytok.modules.transport.CoreProfiles import CoreProfiles
-from fytok.modules.transport.CoreSources import CoreSources
-from fytok.modules.transport.CoreTransport import CoreTransport
-from fytok.modules.transport.EdgeProfiles import EdgeProfiles
-from fytok.modules.transport.EdgeSources import EdgeSources
-from fytok.modules.transport.EdgeTransport import EdgeTransport
-from fytok.modules.transport.Equilibrium import Equilibrium
-from fytok.modules.transport.TransportSolver import TransportSolver
-from fytok.RadialGrid import RadialGrid
+from .modules.device.PFActive import PFActive
+from .modules.device.TF import TF
+from .modules.device.Wall import Wall
+from .modules.transport.CoreProfiles import CoreProfiles
+from .modules.transport.CoreSources import CoreSources
+from .modules.transport.CoreTransport import CoreTransport
+from .modules.transport.EdgeProfiles import EdgeProfiles
+from .modules.transport.EdgeSources import EdgeSources
+from .modules.transport.EdgeTransport import EdgeTransport
+from .modules.transport.Equilibrium import Equilibrium
+from .modules.transport.TransportSolver import TransportSolver
+from .utilities.RadialGrid import RadialGrid
 
 
 class Tokamak(AttributeTree):
@@ -274,7 +274,8 @@ class Tokamak(AttributeTree):
         vpr = Profile(self.equilibrium.profiles_1d.dvolume_drho_tor * rho_tor_boundary,
                       axis=self.equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)
 
-        gm3 = Profile(self.equilibrium.profiles_1d.gm3, axis=self.equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)
+        gm3 = Profile(self.equilibrium.profiles_1d.gm3,
+                      axis=self.equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)
 
         H = vpr * gm3
 
@@ -311,30 +312,42 @@ class Tokamak(AttributeTree):
 
         def n_core(x): return (1-(x/3)**2)**2
 
-        def n_ped(x): return (1.0 + (1.0 - np.exp((x-rho_ped)/(1.0-rho_ped)))*np.exp(-1))
+        def dn_core(x): return -4*x*(1-x**2/9)/9
 
-        def dn_core(x):return -4*x*(1-x**2/9)/9
-        # def dn_ped(x):return
+        # def n_ped(x): return n_core(rho_ped) - (1.0-rho_ped) * \
+        #     dn_core(rho_ped) * (1.0 - np.exp((x-rho_ped)/(1.0-rho_ped)))
+        
+        def int_edge_src(x): return  dn_core(rho_ped)
+
+        sources[spec].particles = -(D_ped/rho_tor_boundary**2)  \
+            * dn_core(rho_ped) \
+            * (1-rho_ped+rho_tor_norm)/(1-rho_ped)  \
+            * np.exp((rho_tor_norm-rho_ped)/(1.0-rho_ped)) \
+            / vpr
+
+        # sources[spec].particles[1:] /= vpr[1:]
+        # sources[spec].particles[0] = -2*dn_core(rho_ped) * np.exp(-rho_ped/(1-rho_ped))/(1-rho_ped)
+
+        n_ped = ((sources[spec].particles*vpr).integral/(-D_ped*H)*(rho_tor_boundary**2)).integral
+        n_ped += -n_ped(rho_ped) + n_core(rho_ped)
+
+        sources[spec].particles[:] *= n0
 
         ns = n_core(rho_tor_norm)*(rho_tor_norm < rho_ped) + \
-            n_core(rho_ped) * n_ped(rho_tor_norm)*(rho_tor_norm >= rho_ped)
+            n_ped * (rho_tor_norm >= rho_ped)
 
-        self.core_profiles.profiles_1d[spec].density = n0 * \
-            Profile(ns, axis=rho_tor_norm, description={"name": "density"})
-
-        dn_ped = Profile(n_ped, axis=rho_tor_norm).derivative
-
+        self.core_profiles.profiles_1d[spec].density = n0 * ns
+        # sources[spec].particles = -(D_ped/rho_tor_boundary**2) * \
+        #     (H*Profile(n_ped, axis=rho_tor_norm).derivative).derivative
         # dn_core = Profile(n_core, axis=rho_tor_norm).derivative
 
         # self.core_profiles.profiles_1d[spec].density_prime = dn_core * \
         #     (rho_tor_norm < rho_ped) + dn_ped*(rho_tor_norm >= rho_ped)
 
-        sources[spec].particles = - n0 * dn_ped.derivative * (D_ped/rho_tor_boundary) / vpr / rho_tor_boundary
-
         trans_particles = trans[spec].particles
 
         trans_particles.d = lambda x: 2.0 * D_ped + (x**2) if x <= rho_ped else D_ped
 
-        trans_particles.v = (trans_particles.d *  dn_core(rho_tor_norm) / rho_tor_boundary + dn_ped) / \
-            n_core(rho_tor_norm) * (rho_tor_norm < rho_ped)
-        trans_particles.v = dn_ped
+        trans_particles.v = (trans_particles.d * dn_core(rho_tor_norm)
+                             - D_ped*dn_core(rho_ped)*np.exp((rho_tor_norm-rho_ped)/(1.0-rho_ped))) \
+            / rho_tor_boundary / ns * (rho_tor_norm < rho_ped)
