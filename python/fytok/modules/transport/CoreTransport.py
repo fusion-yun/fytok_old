@@ -7,7 +7,7 @@ from spdm.util.logger import logger
 from spdm.util.Profiles import Profiles, Profile
 from spdm.util.LazyProxy import LazyProxy
 
-from fytok.utilities.RadialGrid import RadialGrid
+from fytok.util.RadialGrid import RadialGrid
 
 
 class CoreTransport(AttributeTree):

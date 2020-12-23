@@ -9,21 +9,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 import scipy.constants as constants
+from fytok.util.Interpolate import (Interpolate1D, Interpolate2D, derivate,
+                                    find_critical, find_root, integral,
+                                    interpolate)
+from fytok.util.Plot import plot_profiles
+from fytok.util.RadialGrid import RadialGrid
 from numpy import arctan2, cos, sin, sqrt
 from scipy.interpolate import (RectBivariateSpline, SmoothBivariateSpline,
                                UnivariateSpline)
 from spdm.util.AttributeTree import AttributeTree, _next_
-from spdm.util.Interpolate import (Interpolate1D, Interpolate2D, derivate,
-                                   find_critical, find_root, integral,
-                                   interpolate)
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
-from spdm.util.Profiles import Profiles, Profile
+from spdm.util.Profiles import Profile, Profiles
 from spdm.util.sp_export import sp_find_module
 from sympy import Point, Polygon
-
-from fytok.utilities.Plot import plot_profiles
-from fytok.utilities.RadialGrid import RadialGrid
 
 
 class CoreProfiles(AttributeTree):

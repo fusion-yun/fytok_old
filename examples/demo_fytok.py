@@ -52,7 +52,7 @@ def draw(tok):
 
 if __name__ == "__main__":
 
-    from fytok.utilities.Plot import plot_profiles
+    from fytok.util.Plot import plot_profiles
     from fytok.Tokamak import Tokamak
     from spdm.data.Entry import open_entry
     from spdm.util.AttributeTree import _next_

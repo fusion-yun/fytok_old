@@ -8,21 +8,21 @@ from functools import cached_property
 
 import numpy as np
 import scipy.constants
+from fytok.util.Misc import Identifier
 from scipy.interpolate import RectBivariateSpline, UnivariateSpline
 from spdm.util.AttributeTree import AttributeTree, _last_, _next_
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
-from spdm.util.sp_export import sp_find_module
 from spdm.util.Profiles import Profile
+from spdm.util.sp_export import sp_find_module
 
-from .Equilibrium import Equilibrium
 from .CoreProfiles import CoreProfiles
 from .CoreSources import CoreSources
 from .CoreTransport import CoreTransport
 from .EdgeProfiles import EdgeProfiles
 from .EdgeSources import EdgeSources
 from .EdgeTransport import EdgeTransport
-from fytok.utilities.Misc import Identifier
+from .Equilibrium import Equilibrium
 
 EPSILON = 1.0e-15
 TOLERANCE = 1.0e-6

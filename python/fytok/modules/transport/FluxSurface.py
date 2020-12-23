@@ -8,17 +8,17 @@ from functools import cached_property
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
-from scipy import constants
+from fytok.util.Interpolate import (Interpolate1D, Interpolate2D, derivate,
+                                    find_critical, find_root, integral,
+                                    interpolate)
 from numpy import arctan2, cos, sin, sqrt
+from scipy import constants
 from scipy.interpolate import (RectBivariateSpline, SmoothBivariateSpline,
                                UnivariateSpline)
 from scipy.optimize import root_scalar
 from spdm.util.AttributeTree import AttributeTree, _next_
-from spdm.util.Interpolate import (Interpolate1D, Interpolate2D, derivate,
-                                   find_critical, find_root, integral,
-                                   interpolate)
 from spdm.util.logger import logger
-from spdm.util.Profiles import Profiles, Profile
+from spdm.util.Profiles import Profile, Profiles
 from sympy import Point, Polygon
 
 

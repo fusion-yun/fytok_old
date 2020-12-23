@@ -23,7 +23,7 @@ from .modules.transport.EdgeSources import EdgeSources
 from .modules.transport.EdgeTransport import EdgeTransport
 from .modules.transport.Equilibrium import Equilibrium
 from .modules.transport.TransportSolver import TransportSolver
-from .utilities.RadialGrid import RadialGrid
+from .util.RadialGrid import RadialGrid
 
 
 class Tokamak(AttributeTree):

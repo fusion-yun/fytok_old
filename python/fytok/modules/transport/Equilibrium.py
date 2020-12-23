@@ -7,14 +7,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 import scipy.constants as constants
-from fytok.utilities.RadialGrid import RadialGrid
+from fytok.util.Interpolate import find_critical, find_root
+from fytok.util.RadialGrid import RadialGrid
 from numpy import arctan2, cos, sin, sqrt
 from scipy.interpolate import (RectBivariateSpline, SmoothBivariateSpline,
                                UnivariateSpline)
 from scipy.optimize import root_scalar
 from spdm.data.Entry import open_entry
 from spdm.util.AttributeTree import AttributeTree, _next_
-from spdm.util.Interpolate import find_critical, find_root
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.util.Profiles import Profiles
