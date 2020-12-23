@@ -314,35 +314,18 @@ class Tokamak(AttributeTree):
 
         def dn_core(x): return -4*x*(1-x**2/9)/9
 
-        # def n_ped(x): return n_core(rho_ped) - (1.0-rho_ped) * \
-        #     dn_core(rho_ped) * (1.0 - np.exp((x-rho_ped)/(1.0-rho_ped)))
-        
-        def int_edge_src(x): return  dn_core(rho_ped)
+        def n_ped(x): return n_core(rho_ped) - (1.0-rho_ped) * \
+            dn_core(rho_ped) * (1.0 - np.exp((x-rho_ped)/(1.0-rho_ped)))
 
-        sources[spec].particles = -(D_ped/rho_tor_boundary**2)  \
-            * dn_core(rho_ped) \
-            * (1-rho_ped+rho_tor_norm)/(1-rho_ped)  \
-            * np.exp((rho_tor_norm-rho_ped)/(1.0-rho_ped)) \
-            / vpr
-
-        # sources[spec].particles[1:] /= vpr[1:]
-        # sources[spec].particles[0] = -2*dn_core(rho_ped) * np.exp(-rho_ped/(1-rho_ped))/(1-rho_ped)
-
-        n_ped = ((sources[spec].particles*vpr).integral/(-D_ped*H)*(rho_tor_boundary**2)).integral
-        n_ped += -n_ped(rho_ped) + n_core(rho_ped)
-
-        sources[spec].particles[:] *= n0
+        def dn_ped(x): return dn_core(rho_ped) * np.exp((x-rho_ped)/(1.0-rho_ped))
 
         ns = n_core(rho_tor_norm)*(rho_tor_norm < rho_ped) + \
-            n_ped * (rho_tor_norm >= rho_ped)
+            n_ped(rho_tor_norm) * (rho_tor_norm >= rho_ped)
 
         self.core_profiles.profiles_1d[spec].density = n0 * ns
-        # sources[spec].particles = -(D_ped/rho_tor_boundary**2) * \
-        #     (H*Profile(n_ped, axis=rho_tor_norm).derivative).derivative
-        # dn_core = Profile(n_core, axis=rho_tor_norm).derivative
 
-        # self.core_profiles.profiles_1d[spec].density_prime = dn_core * \
-        #     (rho_tor_norm < rho_ped) + dn_ped*(rho_tor_norm >= rho_ped)
+        sources[spec].particles = -n0*(D_ped/rho_tor_boundary**2)  \
+            * (1-rho_ped+rho_tor_norm) * dn_ped(rho_tor_norm) / vpr
 
         trans_particles = trans[spec].particles
 

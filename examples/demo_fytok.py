@@ -156,7 +156,7 @@ if __name__ == "__main__":
                       ],
                       [
                           {"name": "electrons.density0", "opts": {"marker": ".", "label": r"$n_{e0}$"}},
-                          # {"name": "electrons.density", "opts":  {"marker": "+", "label": r"$n_{e}$"}},
+                          {"name": "electrons.density", "opts":  {"marker": "+", "label": r"$n_{e}$"}},
                       ],
                       #   [
                       #       {"name": "electrons.density0_residual_left", "opts":  {"label": r"$n_{e,residual,left}$"}},
@@ -166,17 +166,17 @@ if __name__ == "__main__":
                       #   "electrons.se_exp0",
                       [
                           {"name": "electrons.density0_prime", "opts":  {"marker": "+", "label": r"$n^{\prime}_{e0}$"}},
-                          # {"name": "electrons.density_prime", "opts":  {"marker": "+", "label": r"$n^{\prime}_{e}$"}},
+                          {"name": "electrons.density_prime", "opts":  {"marker": "+", "label": r"$n^{\prime}_{e}$"}},
                       ],
                       [
                           {"name": "electrons.diff", "opts": {"marker": ".", "label": r"$D$"}},
                           {"name": "electrons.vconv", "opts": {"marker": ".", "label": r"$v$"}},
                       ],
                       #   {"name": "vpr", "opts": {"marker": "*"}},
-                        "gm3", "vpr",
+                        # "gm3", "vpr",
                       #   {"name": "dpsi_drho_tor", "opts":{"marker": "*"}},
                       #   "a", "b",  # "c",
-                      "d", "e", "f", "g",
+                    #   "d", "e", "f", "g",
                       [
                           "electrons.diff_flux",
                           "electrons.vconv_flux",
