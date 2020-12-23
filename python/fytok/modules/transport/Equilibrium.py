@@ -85,7 +85,8 @@ class Equilibrium(AttributeTree):
 
         if backend != "":
             try:
-                plugin_name = f"{__package__}.plugins.equilibrium.Plugin{backend}"
+                path = __package__.split(".")
+                plugin_name = ".".join([path[0], "plugins", *path[1:], "equilibrium", f"Plugin{backend}"])
                 n_cls = sp_find_module(plugin_name, fragment=f"Equilibrium{backend}")
 
             except ModuleNotFoundError as error:

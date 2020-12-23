@@ -6,16 +6,16 @@ import freegs
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.constants
+from fytok.util.Interpolate import (Interpolate1D, Interpolate2D, derivate,
+                                    integral, interpolate)
 from scipy.interpolate import RectBivariateSpline, UnivariateSpline
 from spdm.util.AttributeTree import AttributeTree, _next_
-from spdm.util.Interpolate import (Interpolate1D, Interpolate2D, derivate,
-                                   integral, interpolate)
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.util.Profiles import Profiles
 
-from ...CoreProfiles import CoreProfiles
-from ...Equilibrium import Equilibrium
+from fytok.modules.transport.CoreProfiles import CoreProfiles
+from fytok.modules.transport.Equilibrium import Equilibrium
 
 
 def is_none(v):
@@ -60,7 +60,7 @@ class EquilibriumFreeGS(Equilibrium):
             raise NotImplementedError()
 
         B0 = B0 or self.vacuum_toroidal_field.b0
-        
+
         fvac = fvac or B0 * self.vacuum_toroidal_field.r0
 
         pprime = profiles.get("pprime", None)
@@ -122,7 +122,6 @@ class EquilibriumFreeGS(Equilibrium):
             # super().update()
             self.profiles_2d.update(solver="FreeGS", psi=self._backend.psiRZ)
             self._tokamak.pf_active.update(self._backend.tokamak.coils)
-
 
     def update_cache(self):
         psi_norm = self.profiles_1d.psi_norm
