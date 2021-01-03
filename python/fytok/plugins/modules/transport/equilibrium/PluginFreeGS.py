@@ -12,7 +12,7 @@ from scipy.interpolate import RectBivariateSpline, UnivariateSpline
 from spdm.util.AttributeTree import AttributeTree, _next_
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
-from spdm.util.Profiles import Profiles
+from spdm.data.Profile import Profiles
 
 from fytok.modules.transport.CoreProfiles import CoreProfiles
 from fytok.modules.transport.Equilibrium import Equilibrium

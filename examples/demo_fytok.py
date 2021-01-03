@@ -7,9 +7,9 @@ import scipy.constants as constants
 import scipy.stats
 from scipy.interpolate import RectBivariateSpline, UnivariateSpline
 
-sys.path.append("/home/salmon/workspace/freegs/")
-sys.path.append("/home/salmon/workspace/fytok/python")
-sys.path.append("/home/salmon/workspace/SpDev/SpDB")
+# sys.path.append("/home/salmon/workspace/freegs/")
+# sys.path.append("/home/salmon/workspace/fytok/python")
+# sys.path.append("/home/salmon/workspace/SpDev/SpDB/python")
 
 
 ##################################################################################################
@@ -57,9 +57,9 @@ if __name__ == "__main__":
     from spdm.data.Entry import open_entry
     from spdm.util.AttributeTree import _next_
     from spdm.util.logger import logger
-    from spdm.util.Profiles import Profile
+    from spdm.data.Profile import Profile
 
-    tok = Tokamak(open_entry("east+mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east", shot=55555, time_slice=20))
+    tok = Tokamak(open_entry("EAST+mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east", shot=55555, time_slice=20))
 
     tok.create_dummy_profile()
 

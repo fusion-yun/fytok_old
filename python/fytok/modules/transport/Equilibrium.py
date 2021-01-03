@@ -17,7 +17,7 @@ from spdm.data.Entry import open_entry
 from spdm.util.AttributeTree import AttributeTree, _next_
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
-from spdm.util.Profiles import Profiles
+from spdm.data.Profile import Profiles
 from spdm.util.sp_export import sp_find_module
 from spdm.util.utilities import first_not_empty
 from sympy import Point, Polygon
@@ -76,11 +76,12 @@ class Equilibrium(AttributeTree):
     IDS = "Equilibrium"
 
     @staticmethod
-    def __new__(cls,   config,  *args, **kwargs):
+    def __new__(cls,    *args, config=None,  **kwargs):
         if cls is not Equilibrium:
             return super(Equilibrium, cls).__new__(cls)
-
-        backend = str(config.engine or "FreeGS")
+        if config is None:
+            config={}
+        backend = config.get("engine", "FreeGS")
         n_cls = cls
 
         if backend != "":

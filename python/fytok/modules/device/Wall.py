@@ -14,14 +14,15 @@ class Wall(AttributeTree):
     """Wall
 
     """
-    IDS="wall"
-    def __init__(self, config, *args, **kwargs):
+    IDS = "wall"
+
+    def __init__(self,data=None,  *args,  **kwargs):
         super().__init__()
 
-        if isinstance(config, LazyProxy):
+        if isinstance(data, LazyProxy):
 
-            limiter = config.description_2d.limiter.unit.outline
-            vessel = config.description_2d.vessel.annular
+            limiter = data.description_2d.limiter.unit.outline
+            vessel = data.description_2d.vessel.annular
         else:
             limiter = None
             vessel = None
@@ -64,6 +65,7 @@ class Wall(AttributeTree):
     def limiter_polygon(self):
         limiter_points = np.array([self.limiter.outline.r,
                                    self.limiter.outline.z]).transpose([1, 0])
+        
         return Polygon(*map(Point, limiter_points))
 
     @cached_property

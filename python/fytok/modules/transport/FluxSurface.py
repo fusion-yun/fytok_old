@@ -18,7 +18,7 @@ from scipy.interpolate import (RectBivariateSpline, SmoothBivariateSpline,
 from scipy.optimize import root_scalar
 from spdm.util.AttributeTree import AttributeTree, _next_
 from spdm.util.logger import logger
-from spdm.util.Profiles import Profile, Profiles
+from spdm.data.Profile import Profile, Profiles
 from sympy import Point, Polygon
 
 

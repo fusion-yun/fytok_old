@@ -330,7 +330,7 @@ EAST　动态映射文件　``ids=equilibrium``
 .. code-block:: xml 
 
     <?xml version="1.0" encoding="UTF-8"?>
-    <equilibrium xmlns:spdb="http://hpc.ipp.ac.cn/SpDB">
+    <equilibrium xmlns:spdb="http://fusionyun.org/schema/">
         <ids_properties>
             <homogeneous_time dtype="int">0</homogeneous_time>
         </ids_properties>

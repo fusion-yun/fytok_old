@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tf xmlns:spdb="http://hpc.ipp.ac.cn/SpDB">
+<tf xmlns:spdb="http://fusionyun.org/schema/">
 
   <r0>
     <time><spdb:mdsplus>DATA(\TIME) </spdb:mdsplus></time>

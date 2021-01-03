@@ -10,7 +10,7 @@ import scipy.integrate
 from spdm.util.AttributeTree import AttributeTree, _last_, _next_
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
-from spdm.util.Profiles import Profile
+from spdm.data.Profile import Profile
 
 from .modules.device.PFActive import PFActive
 from .modules.device.TF import TF

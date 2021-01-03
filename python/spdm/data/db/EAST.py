@@ -6,7 +6,7 @@ from spdm.util.urilib import urisplit, uriunsplit
 
 from ..Collection import Collection
 # from spdm.data.plugins.PluginMapping import MappingCollection
-from spdm.data.plugins.PluginTokamak import TokamakCollection
+from .Tokamak import TokamakCollection
 
 
 class EASTCollection(TokamakCollection):

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from spdm.util.AttributeTree import AttributeTree
 from spdm.util.logger import logger
-from spdm.util.Profiles import Profile
+from spdm.data.Profile import Profile
 
 
 def fetch_profile(holder, desc, prefix=[]):

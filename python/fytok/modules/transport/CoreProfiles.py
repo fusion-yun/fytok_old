@@ -20,7 +20,7 @@ from scipy.interpolate import (RectBivariateSpline, SmoothBivariateSpline,
 from spdm.util.AttributeTree import AttributeTree, _next_
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
-from spdm.util.Profiles import Profile, Profiles
+from spdm.data.Profile import Profile, Profiles
 from spdm.util.sp_export import sp_find_module
 from sympy import Point, Polygon
 

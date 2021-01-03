@@ -4,7 +4,7 @@ from functools import cached_property, lru_cache
 import numpy as np
 from spdm.util.AttributeTree import AttributeTree
 from spdm.util.logger import logger
-from spdm.util.Profiles import Profiles, Profile
+from spdm.data.Profile import Profiles, Profile
 from spdm.util.LazyProxy import LazyProxy
 
 

@@ -13,7 +13,7 @@ from scipy.interpolate import RectBivariateSpline, UnivariateSpline
 from spdm.util.AttributeTree import AttributeTree, _last_, _next_
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
-from spdm.util.Profiles import Profile
+from spdm.data.Profile import Profile
 from spdm.util.sp_export import sp_find_module
 
 from .CoreProfiles import CoreProfiles

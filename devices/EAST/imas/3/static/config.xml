@@ -3,6 +3,6 @@
     <xi:include href="magnetics.xml" />
     <xi:include href="wall.xml" />
     <xi:include href="pf_active.xml" />
-    <xi:include href="tf.xml" />
+    <!-- <xi:include href="tf.xml" /> -->
 
 </mapping>

@@ -16,7 +16,7 @@ if __name__ == "__main__":
     from spdm.data.Collection import Collection
     from fytok.Tokamak import Tokamak
     from spdm.util.logger import logger
-    from spdm.util.Profiles import Profile
+    from spdm.data.Profile import Profile
     from spdm.data.Entry import open_entry
     from fytok.Plot import plot_profiles
     from spdm.util.AttributeTree import _next_
