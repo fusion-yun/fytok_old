@@ -556,7 +556,7 @@ class TransportSolver(AttributeTree):
                                        (1, 0, psi0[-1])),  # 　Ip  - scipy.constants.mu_0 * Ip/fpol[-1]
                                       verbose=2,  max_nodes=2500
                                       )
-        logger.debug(
+        logger.info(
             f"Solve transport equations: Current : {'Done' if  sol.success else 'Failed' }  \n Message: {sol.message} ")
 
         core_profiles_next.profiles_1d.psi0 = psi0
@@ -843,7 +843,7 @@ class TransportSolver(AttributeTree):
                                       verbose=2, max_nodes=400
                                       )
 
-        logger.debug(
+        logger.info(
             f"""Solve transport equations: Electron density: {'Done' if  sol.success else 'Failed' }
              Message: {sol.message} """)
 

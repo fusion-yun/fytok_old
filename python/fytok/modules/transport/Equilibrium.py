@@ -685,7 +685,8 @@ class Equilibrium(AttributeTree):
                 self._cache = cache()
             else:
                 self._cache = AttributeTree(cache)
-            logger.debug(f"Create Equilibrium")
+                
+            logger.info(f"Create Equilibrium")
 
         def update(self, **kwargs):
             for k, v in kwargs.items():
