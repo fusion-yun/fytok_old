@@ -29,8 +29,8 @@ from .util.RadialGrid import RadialGrid
 class Tokamak(AttributeTree):
     """Tokamak
         功能：
-                - 描述装置在单一时刻的状态，
-                - 在时间推进时，确定各个子系统之间的依赖和演化关系，
+            - 描述装置在单一时刻的状态，
+            - 在时间推进时，确定各个子系统之间的依赖和演化关系，
 
     """
 
@@ -256,8 +256,8 @@ class Tokamak(AttributeTree):
 
         return axis
 
-    def create_dummy_profile(self, spec="electrons", rho_ped=0.9, n0=1.0e19, D_ped=0.2):
-        r""" Setup dummy porfilse　
+    def initialize_profile(self, spec="electrons", rho_ped=0.9, n0=1.0e19, D_ped=0.2):
+        r""" Setup dummy profile　
                 core_transport
                 core_sources
                 core_profiles
@@ -324,13 +324,11 @@ class Tokamak(AttributeTree):
 
         self.core_profiles.profiles_1d[spec].density = n0 * ns
 
-        sources[spec].particles = -n0*(D_ped/rho_tor_boundary**2)  \
-            * (1-rho_ped+rho_tor_norm) * dn_ped(rho_tor_norm) / vpr
+        int_src = -D_ped * H * dn_ped(rho_tor_norm)/(rho_tor_boundary**2)
 
-        trans_particles = trans[spec].particles
+        sources[spec].particles = n0 * int_src.derivative/vpr
 
-        trans_particles.d = lambda x: 2.0 * D_ped + (x**2) if x <= rho_ped else D_ped
+        trans[spec].particles.d = lambda x: 2.0 * D_ped + (x**2) if x <= rho_ped else D_ped
 
-        trans_particles.v = (trans_particles.d * dn_core(rho_tor_norm)
-                             - D_ped*dn_core(rho_ped)*np.exp((rho_tor_norm-rho_ped)/(1.0-rho_ped))) \
-            / rho_tor_boundary / ns * (rho_tor_norm < rho_ped)
+        trans[spec].particles.v = (trans[spec].particles.d * dn_core(rho_tor_norm) - D_ped*dn_ped(rho_tor_norm)) \
+            / (rho_tor_boundary) / n_core(rho_tor_norm) * (rho_tor_norm < rho_ped)

@@ -154,3 +154,6 @@ class EquilibriumFreeGS(Equilibrium):
     #     if not opt or not xpt:
     #         raise RuntimeError(f"Can not find O-point or X-points!")
     #     return opt, xpt
+
+
+__SP_EXPORT__ = EquilibriumFreeGS

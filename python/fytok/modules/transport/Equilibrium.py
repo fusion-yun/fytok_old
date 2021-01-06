@@ -14,11 +14,12 @@ from scipy.interpolate import (RectBivariateSpline, SmoothBivariateSpline,
                                UnivariateSpline)
 from scipy.optimize import root_scalar
 from spdm.data.Entry import open_entry
+from spdm.data.Profile import Profiles
 from spdm.util.AttributeTree import AttributeTree, _next_
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
-from spdm.data.Profile import Profiles
 from spdm.util.sp_export import sp_find_module
+from spdm.util.SpObject import SpObject
 from spdm.util.utilities import first_not_empty
 from sympy import Point, Polygon
 
@@ -29,7 +30,7 @@ from .FluxSurface import FluxSurface
 TOLERANCE = 1.0e-6
 
 
-class Equilibrium(AttributeTree):
+class Equilibrium(AttributeTree, SpObject):
     r"""Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
 
         Reference:
@@ -80,7 +81,7 @@ class Equilibrium(AttributeTree):
         if cls is not Equilibrium:
             return super(Equilibrium, cls).__new__(cls)
         if config is None:
-            config={}
+            config = {}
         backend = config.get("engine", "FreeGS")
         n_cls = cls
 
@@ -93,6 +94,8 @@ class Equilibrium(AttributeTree):
             except ModuleNotFoundError as error:
                 logger.debug(error)
                 n_cls = cls
+            else:
+                logger.info(f"Load '{cls.__name__}' module {backend}!")
 
         return AttributeTree.__new__(n_cls)
 
@@ -685,7 +688,7 @@ class Equilibrium(AttributeTree):
                 self._cache = cache()
             else:
                 self._cache = AttributeTree(cache)
-                
+
             logger.info(f"Create Equilibrium")
 
         def update(self, **kwargs):

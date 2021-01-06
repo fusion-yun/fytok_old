@@ -850,14 +850,18 @@ class TransportSolver(AttributeTree):
         core_profiles_next.profiles_1d.electrons.density0 = ne0
         core_profiles_next.profiles_1d.electrons.density0_prime = ne0_prime
 
-        core_profiles_next.profiles_1d.electrons.se_exp0 = f*c
+        core_profiles_next.profiles_1d.electrons.se_exp0 = f
         core_profiles_next.profiles_1d.electrons.se_exp0b = core_profiles_next.profiles_1d.electrons.density_flux0_prime
 
         core_profiles_next.profiles_1d.electrons.diff_flux = -d * ne0_prime  # * H*diff/rho_tor_boundary
         core_profiles_next.profiles_1d.electrons.vconv_flux = e * ne0  # * H * vconv
-        core_profiles_next.profiles_1d.electrons.s_exp_flux = f.integral*(c**2)
+        core_profiles_next.profiles_1d.electrons.s_exp_flux = f.integral * c
 
-        core_profiles_next.profiles_1d.electrons.density_residual = -d * ne0_prime+e * ne0 - f.integral*(c**2)
+        core_profiles_next.profiles_1d.electrons.density_residual = \
+            core_profiles_next.profiles_1d.electrons.diff_flux\
+            + core_profiles_next.profiles_1d.electrons.vconv_flux\
+            - core_profiles_next.profiles_1d.electrons.s_exp_flux
+
         # core_profiles_next.profiles_1d.electrons.density0_residual_left1 = ().derivative
         core_profiles_next.profiles_1d.electrons.density0_residual_right = f*c
         core_profiles_next.profiles_1d.electrons.diff = diff[:]
