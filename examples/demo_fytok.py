@@ -55,8 +55,8 @@ if __name__ == "__main__":
                           {"name": "electrons.density_prime", "opts":  {"marker": "+", "label": r"$n^{\prime}_{e}$"}},
                       ],
                       [
-                          {"name": "electrons.diff", "opts": {"marker": ".", "label": r"$D$"}},
-                          {"name": "electrons.vconv", "opts": {"marker": ".", "label": r"$v$"}},
+                          {"name": "electrons.diff", "opts": {"label": r"$D$"}},
+                          {"name": "electrons.vconv", "opts": {"label": r"$v$"}},
                       ],
                       #   {"name": "vpr", "opts": {"marker": "*"}},
                       # "gm3", "vpr",

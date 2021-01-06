@@ -862,25 +862,24 @@ class TransportSolver(AttributeTree):
             + core_profiles_next.profiles_1d.electrons.vconv_flux\
             - core_profiles_next.profiles_1d.electrons.s_exp_flux
 
-        # core_profiles_next.profiles_1d.electrons.density0_residual_left1 = ().derivative
-        core_profiles_next.profiles_1d.electrons.density0_residual_right = f*c
         core_profiles_next.profiles_1d.electrons.diff = diff[:]
-        core_profiles_next.profiles_1d.electrons.vconv = trans.profiles_1d.electrons.particles.v[:]
+        core_profiles_next.profiles_1d.electrons.vconv = vconv[:]
         # if sol.success:
+
         core_profiles_next.profiles_1d.electrons.density = Profile(sol.y[0], axis=sol.x)
         core_profiles_next.profiles_1d.electrons.density_prime = Profile(sol.yp[0], axis=sol.x)
         core_profiles_next.profiles_1d.electrons.density_flux = Profile(sol.y[1], axis=sol.x)
+
         # core_profiles_next.profiles_1d.electrons.density_flux_error = - core_profiles_next.profiles_1d.electrons.density_prime * \
         #     H * diff_hyper / rho_tor_boundary + core_profiles_next.profiles_1d.electrons.density * \
         #     (H * (diff_hyper * dlnNe0))
-
-        core_profiles_next.profiles_1d.a = a(sol.x)
-        core_profiles_next.profiles_1d.b = b(sol.x)
+        # core_profiles_next.profiles_1d.a = a(sol.x)
+        # core_profiles_next.profiles_1d.b = b(sol.x)
         # core_profiles_next.profiles_1d.c =(sol.x)
-        core_profiles_next.profiles_1d.d = d(sol.x)
-        core_profiles_next.profiles_1d.e = e(sol.x)
-        core_profiles_next.profiles_1d.f = f(sol.x)
-        core_profiles_next.profiles_1d.g = g(sol.x)
+        # core_profiles_next.profiles_1d.d = d(sol.x)
+        # core_profiles_next.profiles_1d.e = e(sol.x)
+        # core_profiles_next.profiles_1d.f = f(sol.x)
+        # core_profiles_next.profiles_1d.g = g(sol.x)
 
         core_profiles_next.profiles_1d.vpr = vpr
         core_profiles_next.profiles_1d.gm3 = gm3

@@ -256,38 +256,12 @@ class Tokamak(AttributeTree):
 
         return axis
 
-    def initialize_profile(self, spec="electrons", rho_ped=0.9, n0=1.0e19, D_ped=0.2):
+    def initialize_profile(self, spec="electrons", n0=1.0e19, w_scale=5,  x_ped=0.9, d_ped=0.2):
         r""" Setup dummy profile　
                 core_transport
                 core_sources
                 core_profiles
         """
-        if isinstance(spec, list):
-            spec = [spec]
-
-        rho_tor_norm = self.grid.rho_tor_norm
-
-        rho_tor_boundary = self.grid.rho_tor_boundary
-
-        D_ped = 0.2
-
-        vpr = Profile(self.equilibrium.profiles_1d.dvolume_drho_tor * rho_tor_boundary,
-                      axis=self.equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)
-
-        gm3 = Profile(self.equilibrium.profiles_1d.gm3,
-                      axis=self.equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)
-
-        H = vpr * gm3
-
-        H[0] = H[1]*2-H[2]
-
-        self.core_transport[_next_] = {"identifier": {"name": f"Dummy transport {spec}", "index": 0}}
-
-        self.core_sources[_next_] = {"identifier": {"name": f"Dummy source {spec}", "index": 0}}
-
-        trans = self.core_transport[-1].profiles_1d
-
-        sources = self.core_sources[-1].profiles_1d
 
         gamma = self.equilibrium.profiles_1d.dvolume_drho_tor  \
             * self.equilibrium.profiles_1d.gm2    \
@@ -306,29 +280,56 @@ class Tokamak(AttributeTree):
 
         j_total.value[0] = 2*j_total.value[1]-j_total.value[2]
 
-        sources.j_parallel = j_total.value
+        self.core_transport[_next_] = {"identifier": {"name": f"Dummy transport {spec}", "index": 0}}
 
-        trans.conductivity_parallel = 1.0e-8
+        self.core_sources[_next_] = {"identifier": {"name": f"Dummy source {spec}", "index": 0}}
 
-        def n_core(x): return (1-(x/3)**2)**2
+        self.core_sources[-1].profiles_1d.j_parallel = j_total.value
 
-        def dn_core(x): return -4*x*(1-x**2/9)/9
+        self.core_sources[-1].profiles_1d.conductivity_parallel = 1.0e-8
 
-        def n_ped(x): return n_core(rho_ped) - (1.0-rho_ped) * \
-            dn_core(rho_ped) * (1.0 - np.exp((x-rho_ped)/(1.0-rho_ped)))
+        if isinstance(spec, str):
+            spec = {spec: {}}
+        elif not isinstance(spec, collections.abc.Mapping):
+            raise TypeError(type(spec))
 
-        def dn_ped(x): return dn_core(rho_ped) * np.exp((x-rho_ped)/(1.0-rho_ped))
+        rho_tor_norm = self.grid.rho_tor_norm
 
-        ns = n_core(rho_tor_norm)*(rho_tor_norm < rho_ped) + \
-            n_ped(rho_tor_norm) * (rho_tor_norm >= rho_ped)
+        rho_tor_boundary = self.grid.rho_tor_boundary
 
-        self.core_profiles.profiles_1d[spec].density = n0 * ns
+        vpr = Profile(self.equilibrium.profiles_1d.dvolume_drho_tor * rho_tor_boundary,
+                      axis=self.equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)
 
-        int_src = -D_ped * H * dn_ped(rho_tor_norm)/(rho_tor_boundary**2)
+        gm3 = Profile(self.equilibrium.profiles_1d.gm3,
+                      axis=self.equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)
 
-        sources[spec].particles = n0 * int_src.derivative/vpr
+        H = vpr * gm3
 
-        trans[spec].particles.d = lambda x: 2.0 * D_ped + (x**2) if x <= rho_ped else D_ped
+        for sp, desc in spec.items():
+            n_s = desc.get("n0", n0),
+            x_ped_s = desc.get("x_ped", x_ped)
+            d_ped_s = desc.get("d_ped", d_ped)
+            w_scale_s = desc.get("w_scale", w_scale)
 
-        trans[spec].particles.v = (trans[spec].particles.d * dn_core(rho_tor_norm) - D_ped*dn_ped(rho_tor_norm)) \
-            / (rho_tor_boundary) / n_core(rho_tor_norm) * (rho_tor_norm < rho_ped)
+            def n_core(x): return (1-(x/w_scale_s)**2)**2
+
+            def dn_core(x): return -4*x*(1-(x/w_scale_s)**2)/(w_scale_s**2)
+
+            def n_ped(x): return n_core(x_ped_s) - (1.0-x_ped_s) * dn_core(x_ped_s) \
+                * (1.0 - np.exp((x-x_ped_s)/(1.0-x_ped_s)))
+
+            def dn_ped(x): return dn_core(x_ped_s) * np.exp((x-x_ped_s)/(1.0-x_ped_s))
+
+            integral_src = -d_ped_s * H * dn_ped(rho_tor_norm)/(rho_tor_boundary**2)
+
+            self.core_transport[-1].profiles_1d[sp].particles.d = \
+                lambda x:   2.0 * d_ped_s + (x**2) if x <= x_ped_s else d_ped_s
+
+            self.core_transport[-1].profiles_1d[sp].particles.v = \
+                (self.core_transport[-1].profiles_1d[sp].particles.d * dn_core(rho_tor_norm) - d_ped_s*dn_ped(rho_tor_norm)) \
+                / (rho_tor_boundary) / n_core(rho_tor_norm) * (rho_tor_norm < x_ped_s)
+
+            self.core_sources[-1].profiles_1d[sp].particles = n_s * integral_src.derivative/vpr
+
+            self.core_profiles.profiles_1d[sp].density = n_s * (n_core(rho_tor_norm)*(rho_tor_norm < x_ped_s) +
+                                                               n_ped(rho_tor_norm) * (rho_tor_norm >= x_ped_s))
