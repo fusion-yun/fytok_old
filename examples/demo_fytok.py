@@ -70,7 +70,6 @@ if __name__ == "__main__":
                           "electrons.density_residual",
 
                       ],
-                      "electrons.se_exp0",
                       #   [
                       #       #       #   {"name": "electrons.density_flux0", "opts": {"label": r"$\Gamma_{e0}$"}},
                       #       {"name": "electrons.density_flux", "opts": {"marker": "o", "label": r"$\Gamma_{e}$"}},

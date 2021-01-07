@@ -148,56 +148,32 @@ class Tokamak(AttributeTree):
         return AttributeTree()
 
     # --------------------------------------------------------------------------
-    def update(self, *args,
-               time=None,
-               core_profiles=None,
-               max_iters=1,
-               tolerance=0.1,
-               ** kwargs):
+    def update(self, *args, time=None,   max_iters=1,  tolerance=0.1,   ** kwargs):
 
         convergence = False
 
         if time is None:
             time = self._time
 
-        if core_profiles is not None:
-            core_profiles_prev = CoreProfiles(core_profiles,  time=time, grid=self.grid, tokamak=self)
-        elif self._core_profiles is not None:
-            core_profiles_prev = self._core_profiles
-        else:
-            raise RuntimeError(f"Core profiles is not defined!")
-
+        core_profiles_prev = self.core_profiles  
+        
         for iter_count in range(max_iters):
-
             logger.debug(f"Iterator = {iter_count}")
-
-            # try:
-            #     profiles = core_profiles_prev.profiles_1d.interpolate(["dpressure_dpsi", "f_df_dpsi"])
-            # except Exception:
-            #     profiles = None
-
-            # self.equilibrium.update(profiles=profiles, constraints=self.constraints)
 
             for src in self.core_sources:
                 src.update(time=time, equilibrium=self.equilibrium)
 
             for trans in self.core_transport:
                 trans.update(time=time, equilibrium=self.equilibrium)
+            
+            core_profiles_next = self.transport.update(core_profiles_prev,
+                                                       equilibrium=self.equilibrium,
+                                                       core_transport=self.core_transport,
+                                                       core_sources=self.core_sources,
+                                                       boundary_condition=self.boundary_condition
+                                                       )
 
-            core_profiles_next = CoreProfiles(time=time,  grid=self.grid, tokamak=self)
-
-            assert(core_profiles_prev.profiles_1d.grid.rho_tor_norm.shape ==
-                   core_profiles_next.profiles_1d.grid.rho_tor_norm.shape)
-
-            self.transport.update(core_profiles_prev,
-                                  core_profiles_next,
-                                  equilibrium=self.equilibrium,
-                                  core_transport=self.core_transport,
-                                  core_sources=self.core_sources,
-                                  boundary_condition=self.boundary_condition
-                                  )
-
-            # .. todo:: inetgrate core and edge
+            # .. todo:: integrate core and edge
             # edge_profiles_old = copy(edge_profiles_iter)
 
             # edge_profiles_iter = self._transport_edge_solver(
@@ -210,16 +186,16 @@ class Tokamak(AttributeTree):
 
             if self.check_converge(core_profiles_prev, core_profiles_next, tolerance):
                 convergence = True
+                break
 
             core_profiles_prev = core_profiles_next
 
-            if convergence:
-                break
+            self.equilibrium.update(time=time, profiles=core_profiles_next, constraints=self.constraints)
 
         if not convergence:
             raise RuntimeError(f"Does not converge! iter_count={iter_count}")
         else:
-            self._core_profiles = core_profiles_prev
+            self._core_profiles = core_profiles_next
 
     def check_converge(self, core_profiles_prev, core_profiles_next, tolerance):
         return True
@@ -280,9 +256,9 @@ class Tokamak(AttributeTree):
 
         j_total.value[0] = 2*j_total.value[1]-j_total.value[2]
 
-        self.core_transport[_next_] = {"identifier": {"name": f"Dummy transport {spec}", "index": 0}}
+        self.core_transport[_next_] = {"identifier": {"name": f"Dummy transport", "index": 0}}
 
-        self.core_sources[_next_] = {"identifier": {"name": f"Dummy source {spec}", "index": 0}}
+        self.core_sources[_next_] = {"identifier": {"name": f"Dummy source", "index": 0}}
 
         self.core_sources[-1].profiles_1d.j_parallel = j_total.value
 
@@ -306,30 +282,35 @@ class Tokamak(AttributeTree):
         H = vpr * gm3
 
         for sp, desc in spec.items():
-            n_s = desc.get("n0", n0),
-            x_ped_s = desc.get("x_ped", x_ped)
-            d_ped_s = desc.get("d_ped", d_ped)
+            n_s = desc.get("density", n0)
+
             w_scale_s = desc.get("w_scale", w_scale)
 
             def n_core(x): return (1-(x/w_scale_s)**2)**2
 
             def dn_core(x): return -4*x*(1-(x/w_scale_s)**2)/(w_scale_s**2)
 
-            def n_ped(x): return n_core(x_ped_s) - (1.0-x_ped_s) * dn_core(x_ped_s) \
-                * (1.0 - np.exp((x-x_ped_s)/(1.0-x_ped_s)))
+            def n_ped(x): return n_core(x_ped) - (1.0-x_ped) * dn_core(x_ped) \
+                * (1.0 - np.exp((x-x_ped)/(1.0-x_ped)))
 
-            def dn_ped(x): return dn_core(x_ped_s) * np.exp((x-x_ped_s)/(1.0-x_ped_s))
+            def dn_ped(x): return dn_core(x_ped) * np.exp((x-x_ped)/(1.0-x_ped))
 
-            integral_src = -d_ped_s * H * dn_ped(rho_tor_norm)/(rho_tor_boundary**2)
+            integral_src = -d_ped * H * dn_ped(rho_tor_norm)/(rho_tor_boundary**2)
 
             self.core_transport[-1].profiles_1d[sp].particles.d = \
-                lambda x:   2.0 * d_ped_s + (x**2) if x <= x_ped_s else d_ped_s
+                lambda x:   2.0 * d_ped + (x**2) if x <= x_ped else d_ped
 
             self.core_transport[-1].profiles_1d[sp].particles.v = \
-                (self.core_transport[-1].profiles_1d[sp].particles.d * dn_core(rho_tor_norm) - d_ped_s*dn_ped(rho_tor_norm)) \
-                / (rho_tor_boundary) / n_core(rho_tor_norm) * (rho_tor_norm < x_ped_s)
+                (self.core_transport[-1].profiles_1d[sp].particles.d * dn_core(rho_tor_norm) - d_ped*dn_ped(rho_tor_norm)) \
+                / (rho_tor_boundary) / n_core(rho_tor_norm) * (rho_tor_norm < x_ped)
 
             self.core_sources[-1].profiles_1d[sp].particles = n_s * integral_src.derivative/vpr
 
-            self.core_profiles.profiles_1d[sp].density = n_s * (n_core(rho_tor_norm)*(rho_tor_norm < x_ped_s) +
-                                                               n_ped(rho_tor_norm) * (rho_tor_norm >= x_ped_s))
+            desc["density"] = n_s * (n_core(rho_tor_norm)*(rho_tor_norm < x_ped) +
+                                     n_ped(rho_tor_norm) * (rho_tor_norm >= x_ped))
+
+            
+            self.core_profiles.profiles_1d[sp] |= desc
+            logger.debug(self.core_profiles._grid)
+        if "electrons" not in spec:
+            raise NotImplementedError()

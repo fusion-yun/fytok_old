@@ -30,7 +30,7 @@ class CoreProfiles(AttributeTree):
     """
     IDS = "core_profiles"
 
-    def __init__(self, cache=None, *args, time=None, tokamak=None, grid=None, ** kwargs):
+    def __init__(self, cache=None, *args, time=None,  grid=None, ** kwargs):
         super().__init__(*args, ** kwargs)
 
         if isinstance(cache, LazyProxy) or isinstance(cache, AttributeTree):
@@ -38,11 +38,10 @@ class CoreProfiles(AttributeTree):
         else:
             self.__dict__["_cache"] = AttributeTree(cache)
 
-        self.__dict__["_tokamak"] = tokamak
-        self.__dict__["_time"] = time
-        self.__dict__["_grid"] = grid or tokamak.grid
+        self.__dict__["_time"] = time or 0.0
+        self.__dict__["_grid"] = grid
 
-        self.vacuum_toroidal_field = tokamak.vacuum_toroidal_field
+        # self.vacuum_toroidal_field = tokamak.vacuum_toroidal_field
 
     class Profiles1D(Profiles):
         def __init__(self, cache=None,  *args, parent=None, grid=None, **kwargs):
@@ -51,8 +50,8 @@ class CoreProfiles(AttributeTree):
             super().__init__(cache, * args, axis=grid.rho_tor_norm, **kwargs)
             self.__dict__["_parent"] = parent
             self.__dict__["_grid"] = grid
-            self.__dict__["_b0"] = parent._tokamak.vacuum_toroidal_field.b0
-            self.__dict__["_r0"] = parent._tokamak.vacuum_toroidal_field.r0
+            self.__dict__["_b0"] = parent.vacuum_toroidal_field.b0
+            self.__dict__["_r0"] = parent.vacuum_toroidal_field.r0
 
         @property
         def grid(self):
@@ -421,38 +420,38 @@ class CoreProfiles(AttributeTree):
                 res += ion.z_ion * ion.z_ion * ion.density
             return res/self.n_i_total
 
-        @ cached_property
+        @cached_property
         def zeff_fit(self):
             """Information on the fit used to obtain the zeff profile[-]  """
             return Profile(None, axis=self.grid.rho_tor_norm, description={"name": "zeff_fit"})
 
-        @ cached_property
+        @cached_property
         def momentum_tor(self):
             """Total plasma toroidal momentum, summed over ion species and electrons weighted by their density and major radius,
              i.e. sum_over_species(n*R*m*Vphi) {dynamic}[kg.m ^ -1.s ^ -1]"""
             return Profile(None, axis=self.grid.rho_tor_norm, description={"name": "momentum_tor"})
 
-        @ cached_property
+        @cached_property
         def pressure_ion_total(self):
             """Total(sum over ion species) thermal ion pressure {dynamic}[Pa]"""
             return Profile(None, axis=self.grid.rho_tor_norm, description={"name": "pressure_ion_total"})
 
-        @ cached_property
+        @cached_property
         def pressure_thermal(self):
             """Thermal pressure(electrons+ions) {dynamic}[Pa]"""
             return NotImplemented
 
-        @ cached_property
+        @cached_property
         def pressure_perpendicular(self):
             """Total perpendicular pressure(electrons+ions, thermal+non-thermal) {dynamic}[Pa]"""
             return NotImplemented
 
-        @ cached_property
+        @cached_property
         def pressure_parallel(self):
             """Total parallel pressure(electrons+ions, thermal+non-thermal) {dynamic}[Pa]"""
             return NotImplemented
 
-        @ cached_property
+        @cached_property
         def j_total(self):
             """Total parallel current density = average(jtot.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
             return Profile(None, axis=self.grid.rho_tor_norm, description={"name": "j_total"})
@@ -462,23 +461,23 @@ class CoreProfiles(AttributeTree):
         #     """Parallel current driven inside the flux surface. Cumulative surface integral of j_total {dynamic}[A]"""
         #     return NotImplemented
 
-        @ cached_property
+        @cached_property
         def j_tor(self):
             """Total toroidal current density = average(J_Tor/R) / average(1/R) {dynamic}[A/m ^ 2]"""
             return Profile(None, axis=self.grid.rho_tor_norm, description={"name": "j_tor"})
 
-        @ cached_property
+        @cached_property
         def j_ohmic(self):
             """Ohmic parallel current density = average(J_Ohmic.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
             return NotImplemented
 
-        @ cached_property
+        @cached_property
         def j_non_inductive(self):
             """Non-inductive(includes bootstrap) parallel current density = average(jni.B) / B0,
             where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
             return NotImplemented
 
-        @ cached_property
+        @cached_property
         def j_bootstrap(self):
             """Bootstrap current density = average(J_Bootstrap.B) / B0,
              where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
@@ -492,20 +491,20 @@ class CoreProfiles(AttributeTree):
         class EField(Profiles):
             def __init__(self, cache=None,  *args, grid=None,    **kwargs):
                 super().__init__(cache, *args, axis=grid.rho_tor_norm, **kwargs)
-                self.__dict__['_grid']=grid
+                self.__dict__['_grid'] = grid
 
-        @ cached_property
+        @cached_property
         def e_field(self):
             """Electric field, averaged on the magnetic surface. E.g for the parallel component, average(E.B) / B0,
              using core_profiles/vacuum_toroidal_field/b0[V.m ^ -1]  """
             return CoreProfiles.Profiles1D.EField(self._cache["e_field"], grid=self.grid)
 
-        @ cached_property
+        @cached_property
         def phi_potential(self):
             """Electrostatic potential, averaged on the magnetic flux surface {dynamic}[V]"""
             return Profile(None, axis=self.grid.rho_tor_norm, description={"name": "phi_potential"})
 
-        @ cached_property
+        @cached_property
         def rotation_frequency_tor_sonic(self):
             """Derivative of the flux surface averaged electrostatic potential with respect to the poloidal flux, multiplied by - 1.
             This quantity is the toroidal angular rotation frequency due to the ExB drift, introduced in formula(43) of Hinton and Wong,
@@ -526,7 +525,7 @@ class CoreProfiles(AttributeTree):
         # def dpsi_drho_tor(self):
         #     return Profile(self.grid.rho_tor_norm, 0, description={"name": "dpsi_drho_tor"})
 
-        @ cached_property
+        @cached_property
         def magnetic_shear(self):
             """Magnetic shear, defined as rho_tor/q . dq/drho_tor {dynamic}[-]"""
             return NotImplemented
@@ -534,67 +533,67 @@ class CoreProfiles(AttributeTree):
     class GlobalQuantities(AttributeTree):
         def __init__(self, cache=None, *args, core_profiles=None, **kwargs):
             super().__init__(*args, **kwargs)
-            self.__dict__["_core_profiles"]=core_profiles
+            self.__dict__["_core_profiles"] = core_profiles
 
-        @ cached_property
+        @cached_property
         def p(self):
             """ Total plasma current (toroidal component). Positive sign means anti-clockwise when viewed from above. {dynamic} [A]. """
             return NotImplemented
 
-        @ cached_property
+        @cached_property
         def current_non_inductive(self):
             """Total non-inductive current (toroidal component). Positive sign means anti-clockwise when viewed from above. {dynamic} [A]. """
             return NotImplemented
 
-        @ cached_property
+        @cached_property
         def current_bootstrap(self):
             """Bootstrap current (toroidal component). Positive sign means anti-clockwise when viewed from above. {dynamic} [A]. """
             return NotImplemented
 
-        @ cached_property
+        @cached_property
         def v_loop(self):
             """ LCFS loop voltage (positive value drives positive ohmic current that flows anti-clockwise when viewed from above) {dynamic} [V]. """
             return NotImplemented
 
-        @ cached_property
+        @cached_property
         def li_3(self):
             """ Internal inductance. The li_3 definition is used, i.e. li_3 = 2/R0/mu0^2/Ip^2 * int(Bp^2 dV). {dynamic} [-]"""
             return NotImplemented
 
-        @ cached_property
+        @cached_property
         def beta_tor(self):
             """ Toroidal beta, defined as the volume-averaged total perpendicular pressure divided by (B0^2/(2*mu0)), i.e. beta_toroidal = 2 mu0 int(p dV) / V / B0^2 {dynamic} [-]"""
             return NotImplemented
 
-        @ cached_property
+        @cached_property
         def beta_tor_norm(self):
             """Normalised toroidal beta, defined as 100 * beta_tor * a[m] * B0 [T] / ip [MA] {dynamic} [-]"""
             return NotImplemented
 
-        @ cached_property
+        @cached_property
         def beta_pol(self):
             """ Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip^2] {dynamic} [-]"""
             return NotImplemented
 
-        @ cached_property
+        @cached_property
         def energy_diamagnetic(self):
             """Plasma energy content = 3/2 * integral over the plasma volume of the total perpendicular pressure {dynamic} [J]"""
             return NotImplemented
 
-        @ cached_property
+        @cached_property
         def z_eff_resistive(self):
             """Volume average plasma effective charge, estimated from the flux consumption in the ohmic phase {dynamic} [-]"""
             return NotImplemented
 
-    @ property
+    @property
     def time(self):
         return self._time
 
-    @ cached_property
+    @cached_property
     def profiles_1d(self):
         return CoreProfiles.Profiles1D(self._cache.profiles_1d, parent=self)
 
-    @ cached_property
+    @cached_property
     def global_quantities(self):
         return CoreProfiles.GlobalQuantities(self._cache.global_quantities, core_profiles=self)
 

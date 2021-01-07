@@ -135,19 +135,21 @@ class Equilibrium(AttributeTree, SpObject):
     def time(self):
         return self._tokamak.time
 
-    def radial_grid(self, axis=129, primery_coordinate="rho_tor_norm"):
+    def radial_grid(self, axis=129, primary_coordinate="rho_tor_norm"):
         if isinstance(axis, RadialGrid):
             return axis
         else:
             return RadialGrid(axis, equilibrium=self)
 
-    def update(self, *args, ** kwargs):
+    def update(self, *args, time=None, ** kwargs):
 
         # self.constraints.update(constraints)
 
         # logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] at: Start")
 
         # self._solve(*args, ** kwargs)
+        if time is not None:
+            self.time = time
 
         logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] at: Done")
 

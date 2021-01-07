@@ -58,13 +58,10 @@ class TransportSolver(AttributeTree):
 
         return object.__new__(n_cls)
 
-    def __init__(self,  cache, *args, tokamak={},
-                 solver="electron",
-                 **kwargs):
+    def __init__(self,  cache, *args, tokamak={},  **kwargs):
         super().__init__(*args, **kwargs)
         self.__dict__['_cache'] = cache
         self._tokamak = tokamak
-        self._solver = solver
 
     @cached_property
     def solver(self) -> Identifier:
@@ -144,81 +141,6 @@ class TransportSolver(AttributeTree):
             momentum_tor=AttributeTree(),
             default_factory=lambda k, _holder=self: TransportSolver.BoundaryCondition(None, holder=_holder, key=k))
         return res
-
-    def update(self,
-               core_profiles_prev,
-               core_profiles_next,
-               *args,
-               equilibrium=None,
-               core_transport=None,
-               core_sources=None,
-               boundary_condition=None,
-               particle_transport="electron",
-               **kwargs):
-        """Solve transport equations
-        """
-
-        if equilibrium is None:
-            equilibrium = self._tokamak.equilibrium
-
-        if core_transport is None:
-            core_transport = self._tokamak.core_transport
-
-        if core_sources is None:
-            core_sources = self._tokamak.core_sources
-
-        if boundary_condition is None:
-            boundary_condition = self._tokamak.boundary_conditions
-
-        self.current(core_profiles_prev,
-                     core_profiles_next,
-                     equilibrium=equilibrium,
-                     core_sources=core_sources,
-                     core_transport=core_transport,
-                     boundary_condition=boundary_condition.current,
-                     ** kwargs)
-
-        if particle_transport == "electron":
-            self.electron_density(core_profiles_prev,
-                                  core_profiles_next,
-                                  equilibrium=equilibrium,
-                                  core_transport=core_transport,
-                                  core_sources=core_sources,
-                                  boundary_condition=boundary_condition,
-                                  **kwargs)
-        else:
-            self.ion_density(core_profiles_prev,
-                             core_profiles_next,
-                             equilibrium=equilibrium,
-                             core_transport=core_transport,
-                             core_sources=core_sources,
-                             boundary_condition=boundary_condition,
-                             **kwargs)
-
-        # self.temperatures(core_profiles_prev,
-        #                   core_profiles_next,
-        #                   equilibrium=equilibrium,
-        #                   core_transports=core_transport,
-        #                   core_sources=core_sources,
-        #                   boundary_condition=boundary_condition,
-        #                   **kwargs)
-
-        # if enable_rotation:
-        #     self.rotation(core_profiles_prev,
-        #                   core_profiles_next,
-        #                   equilibrium=equilibrium,
-        #                   core_transports=core_transport,
-        #                   core_sources=core_sources,
-        #                   boundary_condition=boundary_condition,
-        #                   **kwargs)
-
-        self.update_global_quantities(core_profiles_prev,  core_profiles_next)
-
-        return True
-
-    def update_global_quantities(self, core_profiles_prev,  core_profiles_next):
-        # self.core_profiles_prev.global_quantities = NotImplemented
-        pass
 
     def solve_general_form(self, x, y0, yp0, inv_tau, coeff,  bc, parameters=None, **kwargs):
         r"""solve standard form
@@ -368,16 +290,44 @@ class TransportSolver(AttributeTree):
 
         return scipy.integrate.solve_bvp(fun, bc_func, x, np.vstack((y0, gamma0)), p=parameters, **kwargs)
 
-    def current(self,
+    def update_global_quantities(self, core_profiles_prev,  core_profiles_next):
+        # self.core_profiles_prev.global_quantities = NotImplemented
+        pass
+
+    def update(self, core_profiles_prev,
+               equilibrium,
+               core_transport,
+               core_sources,
+               boundary_condition=None,
+               time=None, **kwargs):
+
+        core_profiles_next = CoreProfiles(time=time or equilibrium.time,  grid=core_profiles_prev.profiles_1d.grid)
+
+        self._update(core_profiles_prev,
+                     core_profiles_next,
+                     equilibrium=equilibrium,
+                     core_transport=core_transport,
+                     core_sources=core_sources,
+                     boundary_condition=boundary_condition,
+                     **kwargs
+                     )
+        return core_profiles_next
+
+    def _update(self,
                 core_profiles_prev,
                 core_profiles_next,
-                *,
+                *args,
                 equilibrium=None,
                 core_transport=None,
                 core_sources=None,
                 boundary_condition=None,
+                enable_ion_solver=False,
+                enable_rotation=False,
                 **kwargs):
-        r"""
+        r"""Solve transport equations
+
+
+            Current Equation
 
             Args:
                 core_profiles_prev  : profiles at :math:`t-1`
@@ -398,272 +348,7 @@ class TransportSolver(AttributeTree):
 
                 ..  math ::  \psi =\int_{0}^{\rho}\frac{2\pi B_{0}}{q}\rho d\rho
 
-        """
-
-        # -----------------------------------------------------------
-        # time step                                         [s]
-        tau = core_profiles_next.time - core_profiles_prev.time
-
-        if abs(tau) < EPSILON:
-            inv_tau = 0
-        else:
-            inv_tau = 1.0/tau
-
-        # $R_0$ characteristic major radius of the device   [m]
-        R0 = core_profiles_next.vacuum_toroidal_field.r0
-
-        # $B_0$ magnetic field measured at $R_0$            [T]
-        B0 = core_profiles_next.vacuum_toroidal_field.b0
-
-        # -----------------------------------------------------------
-        # Grid
-        # $rho_tor$ not  normalised minor radius                [m]
-        rho_tor = core_profiles_next.profiles_1d.grid.rho_tor
-
-        rho_tor_norm = core_profiles_next.profiles_1d.grid.rho_tor_norm
-
-        rho_tor_boundary = core_profiles_next.profiles_1d.grid.rho_tor[-1]
-
-        k_phi = ((core_profiles_next.vacuum_toroidal_field.b0 -
-                  core_profiles_prev.vacuum_toroidal_field.b0) /
-                 (core_profiles_next.vacuum_toroidal_field.b0 +
-                  core_profiles_prev.vacuum_toroidal_field.b0) +
-                 (core_profiles_next.profiles_1d.grid.rho_tor[-1] -
-                  core_profiles_prev.profiles_1d.grid.rho_tor[-1]) /
-                 (core_profiles_next.profiles_1d.grid.rho_tor[-1] +
-                  core_profiles_prev.profiles_1d.grid.rho_tor[-1]))*inv_tau
-
-        # -----------------------------------------------------------
-        # Equilibrium
-        # diamagnetic function,$F=R B_\phi$                 [T*m]
-        # equilibrium.profiles_1d.mapping("rho_tor_norm", "fpol")(rho_tor_norm)
-        fpol = Profile(equilibrium.profiles_1d.fpol, axis=equilibrium.profiles_1d.rho_tor_norm)
-        # fprime = core_profiles_next.profiles_1d.derivative("fpol")
-
-        # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        # equilibrium.profiles_1d.mapping("rho_tor_norm",   "dvolume_drho_tor")(rho_tor_norm)
-        vpr = Profile(equilibrium.profiles_1d.dvolume_drho_tor*rho_tor_boundary,
-                      axis=equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)
-
-        vppr = vpr.derivative/rho_tor_boundary
-        # $gm2 \euqiv \left\langle \left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle $  [m^-2]
-        gm2 = Profile(equilibrium.profiles_1d.gm2,
-                      axis=equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)  # equilibrium.profiles_1d.mapping("rho_tor_norm", "gm2")(rho_tor_norm)
-        gm1 = Profile(equilibrium.profiles_1d.gm1,
-                      axis=equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)  # equilibrium.profiles_1d.mapping("rho_tor_norm", "gm1")(rho_tor_norm)
-        # $\Psi$ flux function from current                 [Wb]
-        psi0 = Profile(equilibrium.profiles_1d.psi,
-                       axis=equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)  # equilibrium.profiles_1d.mapping("rho_tor_norm", "psi")(rho_tor_norm)
-        # $\frac{\partial\Psi}{\partial\rho_{tor,norm}}$               [Wb/m]
-        psi0_prime = psi0.derivative
-        # $q$ safety factor                                 [-]
-        qsf = Profile(equilibrium.profiles_1d.q,
-                      axis=equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)  # equilibrium.profiles_1d.mapping("rho_tor_norm", "q")(rho_tor_norm)
-
-        # plasma parallel conductivity,                     [(Ohm*m)^-1]
-        conductivity_parallel = Profile(0.0, axis=core_profiles_next.profiles_1d.grid.rho_tor_norm, description={
-                                        "name": "conductivity_parallel"})
-
-        for trans in core_transport:
-            sigma = trans.profiles_1d["conductivity_parallel"]
-            if isinstance(sigma, np.ndarray):
-                conductivity_parallel += sigma
-
-        # -----------------------------------------------------------
-        # Sources
-        # total non inductive current, PSI independent component,          [A/m^2]
-        j_ni_exp = core_profiles_next.profiles_1d._create(0.0, name="j_ni_exp")
-        for src in core_sources:
-            j = src.profiles_1d.j_parallel
-            if isinstance(j, np.ndarray):
-                j_ni_exp += j
-
-        # total non inductive current, component proportional to PSI,      [A/m^2/V/s]
-        j_ni_imp = 0.0  # sources.j_ni_imp if sources is not None else 0.0   # can not find data in imas dd
-
-        # for src in sources(equilibrium):
-        #     j_ni_exp += src.profiles_1d.j_parallel
-
-        a = conductivity_parallel * rho_tor
-
-        b = conductivity_parallel * rho_tor
-
-        c = (scipy.constants.mu_0*B0 * rho_tor_boundary)/(fpol**2)
-
-        d = vpr*gm2 / fpol / (4.0*(scipy.constants.pi**2)*rho_tor_boundary)
-
-        e = (- scipy.constants.mu_0 * B0 * k_phi) * (conductivity_parallel * rho_tor**2/fpol**2)
-
-        f = - vpr * j_ni_exp/(2.0 * scipy.constants.pi)
-
-        g = vpr * j_ni_imp/(2.0 * scipy.constants.pi)
-
-        # + rho_tor* conductivity_parallel*k_phi*(2.0-2.0*rho_tor *  fprime/fpol + rho_tor * conductivity_parallel_prime/conductivity_parallel)
-
-        # Boundary conditions for current diffusion equation in form:
-        #     u*Y + v*Y' = w
-
-        # -----------------------------------------------------------
-        # boundary condition, value
-        # Identifier of the boundary condition type.
-        #   ID =    1: poloidal flux;
-        #           2: ip;
-        #           3: loop voltage;
-        #           4: undefined;
-        #           5: generic boundary condition y expressed as a1y'+a2y=a3.
-        #           6: equation not solved; [eV]
-
-        # At the edge:
-        # if boundary_condition.identifier.index == 1:  # poloidal flux
-        #     u = 1.0
-        #     v = 0.0
-        #     w = boundary_condition.value[0]
-        # elif boundary_condition.identifier.index == 2:  # ip
-        #     u = 0.0
-        #     v = 1.0
-        #     w =   scipy.constants.mu_0 * boundary_condition.value[0]/fpol[-1]
-        # elif boundary_condition.identifier.index == 3:  # loop voltage
-        #     u = 1.0
-        #     v = 0.0
-        #     w = tau*boundary_condition.value[0]+psi0[-1]
-        # elif boundary_condition.identifier.index == 5:  # generic boundary condition  y expressed as a1y'+a2y=a3.
-        #     v, u, w = boundary_condition.value
-        # else:
-        #     # Current equation is not solved:
-        #     #  Interpretative value of safety factor should be given
-        #     # if any(qsf != 0.0):  # FIXME
-        #     # dy = 2.0* scipy.constants.pi*B0*rho_tor/qsf
-
-        #     # a[-1] = 1.0*inv_tau
-        #     # b[-1] = 1.0*inv_tau
-        #     # # c[-1] = 1.0
-        #     # d[-1] = 0.0
-        #     # e[-1] = 0.0
-        #     # f[-1] = 0.0
-
-        #     u = 1.0
-        #     v = 0.0
-        #     w =  - scipy.constants.mu_0 * boundary_condition.value[0]/fpol[-1]
-
-        # Ip = sum(j_ni_exp)
-        # psi0_prime[-1]*d[-1]/ scipy.constants.mu_0 * fpol[-1]
-
-        sol = self.solve_general_form(rho_tor_norm,
-                                      psi0, psi0_prime,
-                                      inv_tau,
-                                      (a, b, c, d, e, f, g),
-                                      ((0, 1, 0.0),
-                                       (1, 0, psi0[-1])),  # 　Ip  - scipy.constants.mu_0 * Ip/fpol[-1]
-                                      verbose=2,  max_nodes=2500
-                                      )
-        logger.info(
-            f"Solve transport equations: Current : {'Done' if  sol.success else 'Failed' }  \n Message: {sol.message} ")
-
-        core_profiles_next.profiles_1d.psi0 = psi0
-        core_profiles_next.profiles_1d.psi0_prime = psi0_prime
-        core_profiles_next.profiles_1d.psi0_eq = Profile(
-            equilibrium.profiles_1d.psi, axis=equilibrium.profiles_1d.rho_tor_norm)
-        core_profiles_next.profiles_1d.psi0_prime_eq = Profile(
-            equilibrium.profiles_1d.dpsi_drho_tor*rho_tor_boundary, axis=equilibrium.profiles_1d.rho_tor_norm)
-
-        core_profiles_next.profiles_1d.q0 = Profile(
-            equilibrium.profiles_1d.q, axis=equilibrium.profiles_1d.rho_tor_norm)
-
-        j_total0 = (d * psi0_prime).derivative / c / vpr*(2.0 * scipy.constants.pi)
-
-        # j_total0[0] = 2*j_total0[1]-j_total0[2]
-        core_profiles_next.profiles_1d.j_total0 = j_total0
-        core_profiles_next.profiles_1d.j_ni_exp = j_ni_exp
-
-        core_profiles_next.profiles_1d.rho_star = vpr/(4.0*(scipy.constants.pi**2)*R0)
-
-        core_profiles_next.profiles_1d.rho_tor = rho_tor_norm*equilibrium.profiles_1d.rho_tor[-1]
-
-        if sol.success:
-            core_profiles_next.profiles_1d.psi = Profile(sol.y[0], axis=sol.x)
-            core_profiles_next.profiles_1d.psi1_prime = core_profiles_next.profiles_1d.psi.derivative
-            core_profiles_next.profiles_1d.psi1_prime1 = Profile(sol.yp[0], axis=sol.x)
-
-            core_profiles_next.profiles_1d.dgamma_current = Profile(sol.yp[1], axis=sol.x)
-            core_profiles_next.profiles_1d.dpsi_drho_tor = Profile(sol.yp[0]/rho_tor_boundary, axis=sol.x)
-
-            q = (scipy.constants.pi*2.0)*B0 * rho_tor_boundary**2 * sol.x
-            # /sol.yp[0]
-            q[1:] /= sol.yp[0][1:]
-            q[0] = 2*q[1]-q[2]
-
-            core_profiles_next.profiles_1d.q = Profile(q, axis=sol.x, description={"name": "q from transport"})
-
-            core_profiles_next.profiles_1d.j_tor = (Profile(sol.y[1], axis=sol.x)*fpol).derivative / vpr\
-                * (-2.0 * scipy.constants.pi*R0 / scipy.constants.mu_0/rho_tor_boundary)
-
-            core_profiles_next.profiles_1d.j_parallel = Profile(sol.yp[1], axis=sol.x) * (- scipy.constants.pi*2.0 / (scipy.constants.mu_0*B0 * rho_tor_boundary)) * \
-                (fpol**2/vpr)
-
-            # core_profiles_next.profiles_1d.e_field.parallel = (j_parallel-j_ni_exp -
-            #                                                    j_ni_exp*core_profiles_next.profiles_1d.psi)/conductivity_parallel
-
-        else:
-            psi_prime = (scipy.constants.pi*2.0)*B0 * rho_tor / qsf * rho_tor_boundary
-            core_profiles_next.profiles_1d.psi_prime = psi_prime
-            core_profiles_next.profiles_1d.psi = psi0[0] + \
-                Profile(psi_prime, axis=rho_tor_norm).integral * 2
-
-        core_profiles_next.profiles_1d.f_current = f*c
-
-        core_profiles_next.profiles_1d.j_total = j_ni_exp
-
-        # core_profiles_next.profiles_1d.vpr = vpr
-        # core_profiles_next.profiles_1d.gm2 = gm2
-
-        # core_profiles_next.profiles_1d.a = a(sol.x)
-        # core_profiles_next.profiles_1d.b = b(sol.x)
-        # # core_profiles_next.profiles_1d.c =(sol.x)
-        # core_profiles_next.profiles_1d.d = d(sol.x)
-        # core_profiles_next.profiles_1d.e = e(sol.x)
-        # core_profiles_next.profiles_1d.f = f(sol.x)
-        # core_profiles_next.profiles_1d.g = g(sol.x)
-        # core_profiles_next.profiles_1d.dvolume_dpsi = Profile(equilibrium.profiles_1d.dvolume_dpsi,
-        #                                                       axis=equilibrium.profiles_1d.rho_tor_norm)
-        # core_profiles_next.profiles_1d.dpsi_drho_tor = Profile(equilibrium.profiles_1d.dpsi_drho_tor,
-        #                                                        axis=equilibrium.profiles_1d.rho_tor_norm)
-
-        # core_profiles_next.profiles_1d.q = 2.0* scipy.constants.pi*B0*rho_tor/psi_prime1
-
-        # current density, toroidal,                        [A/m^2]
-        # j_tor = - 2.0* scipy.constants.pi*R0/ scipy.constants.mu_0/vpr * dfun4
-        # core_profiles_next.profiles_1d.j_tor = j_tor
-        # j_par = - 2.0* scipy.constants.pi/R0/ scipy.constants.mu_0/vpr * (fpol/B0)**2*dfun5
-        # core_profiles_next.profiles_1d.current_parallel_inside = j_par
-
-        # # $E_\parallel$  parallel electric field,,          [V/m]
-        # core_profiles_next.profiles_1d.e_field.parallel = (j_par - j_ni_exp - j_ni_imp*psi1) / conductivity_parallel
-
-        # # Total Ohmic currents                              [A]
-        # # fun7 = vpr * j_par / 2.0 /  scipy.constants.pi * B0 / fpol**2
-        # core_profiles_next.profiles_1d.j_ohmic = fpol[-1]*core_profiles_next.profiles_1d.integral(
-        #     vpr * j_par / 2.0 /  scipy.constants.pi * B0 / fpol**2, 0, 1)
-
-        # core_profiles_next.profiles_1d.j_tor = j_tor
-
-        # # Total non-inductive currents                       [A]
-        # core_profiles_next.profiles_1d.j_non_inductive = fpol[-1] * core_profiles_next.profiles_1d.integral(
-        #     vpr * (j_ni_exp + j_ni_imp * psi1) / (2.0 *  scipy.constants.pi) * B0 / fpol**2)
-
-        return True
-
-    def electron_density(self,
-                         core_profiles_prev,
-                         core_profiles_next,
-                         *args,
-                         equilibrium=None,
-                         core_transport=None,
-                         core_sources=None,
-                         boundary_condition=None,
-                         hyper_diff=[0.0, 0.0],
-                         **kwargs):
-        r"""
-
+            Particle Transport
             Note:
 
                 .. math::
@@ -676,520 +361,7 @@ class TransportSolver(AttributeTree):
                     \Gamma_{s}\equiv-D_{s}\cdot\frac{\partial n_{s}}{\partial\rho}+v_{s}^{pinch}\cdot n_{s}
                     :label: particle_density_gamma
 
-
-        """
-
-        # time step                                         [s]
-        tau = core_profiles_next.time - core_profiles_prev.time
-
-        if abs(tau) < EPSILON:
-            inv_tau = 0.0
-        else:
-            inv_tau = 1.0/tau
-
-        # $R_0$ characteristic major radius of the device   [m]
-        R0 = core_profiles_next.vacuum_toroidal_field.r0
-
-        # $B_0$ magnetic field measured at $R_0$            [T]
-        B0 = core_profiles_next.vacuum_toroidal_field.b0
-
-        # Grid
-        # $rho_tor$ not  normalised minor radius                [m]
-        rho_tor = core_profiles_next.profiles_1d.grid.rho_tor
-        rho_tor_boundary = rho_tor[-1]
-
-        # $rho_tor_{norm}$ normalised minor radius                [-]
-        rho_tor_norm = core_profiles_next.profiles_1d.grid.rho_tor_norm
-
-        k_phi = ((core_profiles_next.vacuum_toroidal_field.b0 -
-                  core_profiles_prev.vacuum_toroidal_field.b0) /
-                 (core_profiles_next.vacuum_toroidal_field.b0 +
-                  core_profiles_prev.vacuum_toroidal_field.b0) +
-                 (core_profiles_next.profiles_1d.grid.rho_tor[-1] -
-                  core_profiles_prev.profiles_1d.grid.rho_tor[-1]) /
-                 (core_profiles_next.profiles_1d.grid.rho_tor[-1] +
-                  core_profiles_prev.profiles_1d.grid.rho_tor[-1]))*inv_tau
-
-        # -----------------------------------------------------------
-        # Equilibrium
-        # diamagnetic function,$F=R B_\phi$                 [T*m]
-        fpol = Profile(equilibrium.profiles_1d.fpol, axis=equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)
-
-        # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        vpr = Profile(equilibrium.profiles_1d.dvolume_drho_tor[:],
-                      axis=equilibrium.profiles_1d.rho_tor_norm[:])(rho_tor_norm) * rho_tor_boundary
-
-        core_profiles_next.profiles_1d.vprime = vpr
-
-        vprm = core_profiles_prev.profiles_1d.vprime
-        if vprm is None:
-            vprm = vpr
-
-        gm3 = Profile(equilibrium.profiles_1d.gm3, axis=equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)
-
-        diff = Profile(0.0, axis=core_profiles_next.profiles_1d.grid.rho_tor_norm, description={"name": "diff"})
-
-        vconv = Profile(0.0, axis=core_profiles_next.profiles_1d.grid.rho_tor_norm, description={"name": "vconv"})
-
-        for trans in core_transport:
-
-            D = trans.profiles_1d.electrons.particles.d
-
-            if isinstance(D, np.ndarray) or isinstance(D, (int, float)):
-                diff += D
-
-            v = trans.profiles_1d.electrons.particles.v
-            if isinstance(v, np.ndarray) or isinstance(v, (int, float)):
-                vconv += v
-
-        se_exp = Profile(0.0, axis=core_profiles_next.profiles_1d.grid.rho_tor_norm, description={"name": "se_exp"})
-        se_imp = Profile(0.0, axis=core_profiles_next.profiles_1d.grid.rho_tor_norm, description={"name": "se_imp"})
-
-        for src in core_sources:
-            # si = src.profiles_1d.electrons.particles_decomposed.implicit_part
-            # if isinstance(si, np.ndarray) or type(si) in (int, float):
-            #     se_imp += si
-
-            # se = src.profiles_1d.electrons.particles_decomposed.explicit_part
-            # if isinstance(se, np.ndarray) or type(se) in (int, float):
-            #     se_exp += se
-            se = src.profiles_1d.electrons.particles
-            if isinstance(se, np.ndarray) or type(se) in (int, float):
-                se_exp += se
-
-        ne0 = core_profiles_prev.profiles_1d.electrons.density
-
-        ne0_prime = core_profiles_prev.profiles_1d.electrons.density_prime
-
-        if ne0_prime is None:
-            ne0_prime = ne0.derivative
-
-        # diff_hyper = hyper_diff[0] + hyper_diff[1] * max(diff)
-
-        H = vpr * gm3
-
-        # dlnNe0 = ne0_prime/ne0
-
-        a = vpr
-        b = vprm
-        c = rho_tor_boundary
-        # def d(x, hyper_diff): return H(x) * (diff(x) + hyper_diff) / rho_tor_boundary
-        # def e(x, hyper_diff): return H(x) * (vconv(x) + hyper_diff * dlnNe0(x)) - k_phi*rho_tor*vpr
-        d = H * (diff) / rho_tor_boundary
-        e = H * (vconv) - k_phi*rho_tor*vpr
-        f = vpr * se_exp
-        g = vpr * se_imp
-
-        """
-            # Boundary conditions for electron diffusion equation in form:
-            #     V*Y' + U*Y =W
-            # On axis:
-            #     dNi/drho_tor(rho_tor=0)=0:  - this is Ne, not N
-            if(solver_type != 4):
-                v[0] = 1.
-                u[0] = 0.
-            else:
-                IF (DIFF[0]>1.0E-6) :
-            if((diff[0]+diff_hyper) > 1.0e-6):
-                #         V[0] = -DIFF[0]
-                v = -diff[0]-diff_hyper
-            else:
-                v = -1.0e-
-            #       U[0] = VCONV[0]
-                u = vconv[0]+diff_hyper*ne0_prime[0]/ne0[0]
-            w = 0
-            At the edge:
-                FIXED Ne
-            if(boundary_condition.type == 1):
-                v = 0.
-                u = 1.
-                w = boundary_condition[1, 0]
-            #       FIXED grad_Ne
-            elif(boundary_condition.type == 2):
-                v = 1.
-                u = 0.
-                w = -boundary_condition[1, 0
-            #       FIXED L_Ne
-            elif(boundary_condition.type == 3):
-                v = boundary_condition[1, 0]
-                u = 1.
-                w = 0
-            #       FIXED Flux_Ne
-            elif(boundary_condition.type == 4):
-                v = -vpr[-1]*gm3[-1]*diff[-1]
-                u = vpr[-1]*gm3[-1]*vconv[-1]
-                w = boundary_condition[1, 0
-            #       Generic boundary condition
-            elif(boundary_condition.type == 5):
-                v = boundary_condition[1, 0]
-                u = boundary_condition(2, 2)
-                w = boundary_condition(2, 3
-            # Density equation is not solved:
-            else:  # if(boundary_condition.type == 0):
-       
-
-            v = 0.0
-            u = 1.0
-            w = ne0[-1]
-        """
-
-        sol = self.solve_general_form(rho_tor_norm,
-                                      ne0, ne0_prime,
-                                      inv_tau,
-                                      (a, b, c, d, e, f, g),
-                                      ((0, 1, e[0]), (1, 0, ne0[-1])),
-                                      #   parameters=[diff_hyper],
-                                      tol=0.5,
-                                      verbose=2, max_nodes=400
-                                      )
-
-        logger.info(
-            f"""Solve transport equations: Electron density: {'Done' if  sol.success else 'Failed' }
-             Message: {sol.message} """)
-
-        core_profiles_next.profiles_1d.electrons.density0 = ne0
-        core_profiles_next.profiles_1d.electrons.density0_prime = ne0_prime
-
-        core_profiles_next.profiles_1d.electrons.se_exp0 = f
-        core_profiles_next.profiles_1d.electrons.se_exp0b = core_profiles_next.profiles_1d.electrons.density_flux0_prime
-
-        core_profiles_next.profiles_1d.electrons.diff_flux = -d * ne0_prime  # * H*diff/rho_tor_boundary
-        core_profiles_next.profiles_1d.electrons.vconv_flux = e * ne0  # * H * vconv
-        core_profiles_next.profiles_1d.electrons.s_exp_flux = f.integral * c
-
-        core_profiles_next.profiles_1d.electrons.density_residual = \
-            core_profiles_next.profiles_1d.electrons.diff_flux\
-            + core_profiles_next.profiles_1d.electrons.vconv_flux\
-            - core_profiles_next.profiles_1d.electrons.s_exp_flux
-
-        core_profiles_next.profiles_1d.electrons.diff = diff[:]
-        core_profiles_next.profiles_1d.electrons.vconv = vconv[:]
-        # if sol.success:
-
-        core_profiles_next.profiles_1d.electrons.density = Profile(sol.y[0], axis=sol.x)
-        core_profiles_next.profiles_1d.electrons.density_prime = Profile(sol.yp[0], axis=sol.x)
-        core_profiles_next.profiles_1d.electrons.density_flux = Profile(sol.y[1], axis=sol.x)
-
-        # core_profiles_next.profiles_1d.electrons.density_flux_error = - core_profiles_next.profiles_1d.electrons.density_prime * \
-        #     H * diff_hyper / rho_tor_boundary + core_profiles_next.profiles_1d.electrons.density * \
-        #     (H * (diff_hyper * dlnNe0))
-        # core_profiles_next.profiles_1d.a = a(sol.x)
-        # core_profiles_next.profiles_1d.b = b(sol.x)
-        # core_profiles_next.profiles_1d.c =(sol.x)
-        # core_profiles_next.profiles_1d.d = d(sol.x)
-        # core_profiles_next.profiles_1d.e = e(sol.x)
-        # core_profiles_next.profiles_1d.f = f(sol.x)
-        # core_profiles_next.profiles_1d.g = g(sol.x)
-
-        core_profiles_next.profiles_1d.vpr = vpr
-        core_profiles_next.profiles_1d.gm3 = gm3
-
-        if False:
-            core_profiles_next.profiles_1d.n_i_total = core_profiles_next.profiles_1d.electrons.density
-            # ni_tot_flux = core_transport.profiles_1d.electron.particles.flux
-            # ni_tot_energy_flux = core_transport.profiles_1d.electron.energy.flux
-
-            # for ion in core_profiles_prev.profiles_1d.ion:
-            #     ni_tot  -= ion.zion*ion.density_fast
-            #     if(profiles["NI_BND_TYPE"][iion] > 0.5):
-            #         ni_tot = ni_tot - profiles["ZION"][iion]*profiles["NI"][iion]
-            #         flux_ni_tot = flux_ni_tot - profiles["ZION"][iion]*profiles["FLUX_NI"][iion]
-            #         contrib_2_energy_flux_ni_tot = contrib_2_energy_flux_ni_tot - \
-            #             profiles["ZION"][iion] * profiles["CONTRIB_2_ENERGY_FLUX_NI"][iion]
-
-    def ion_density_one(self,
-                        iion,
-                        core_profiles_prev,
-                        core_profiles_next,
-                        *args,
-                        equilibrium=None,
-                        core_transport=None,
-                        core_sources=None,
-                        boundary_condition=None,
-                        hyper_diff=[0, 0],
-                        **kwargs):
-
-        # -----------------------------------------------------------
-        # time step                                         [s]
-        tau = core_profiles_next.time - core_profiles_prev.time
-
-        # $R_0$ characteristic major radius of the device   [m]
-        R0 = core_profiles_next.vacuum_toroidal_field.r0
-
-        # $B_0$ magnetic field measured at $R_0$            [T]
-        B0 = core_profiles_next.vacuum_toroidal_field.b0
-
-        # -----------------------------------------------------------
-        # Grid
-        # $rho_tor$ not  normalised minor radius                [m]
-        rho_tor = core_profiles_next.rho_tor
-
-        # $\Psi$ flux function from current                 [Wb]
-        psi0 = core_profiles_prev.profiles_1d.psi
-        # $\frac{\partial\Psi}{\partial\rho}$               [Wb/m]
-        psi_prime = core_profiles_prev.profiles_1d.psi_prime
-
-        # -----------------------------------------------------------
-        # Equilibrium
-        # diamagnetic function,$F=R B_\phi$                 [T*m]
-        fpol = core_profiles_next.fpol
-
-        # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        vpr = core_profiles_next.dvolume_dpsi
-
-        # $gm2 \euqiv \left\langle \left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle $  [m^-2]
-        gm2 = core_profiles_next.gm2
-
-        # $\left\langle \left|\nabla\rho\right|^{2}\right\rangle $  [-]
-        gm3 = core_profiles_next.gm3
-
-        # -----------------------------------------------------------
-        # Profile
-
-        # $q$ safety factor                                 [-]
-        qsf = core_profiles_next.q
-
-        # plasma parallel conductivity,                     [(Ohm*m)^-1]
-        conductivity_parallel = core_profiles_next.conductivity_parallel
-
-        hyper_diff_exp = hyper_diff[0]
-        hyper_diff_imp = hyper_diff[1]
-
-        ni0 = core_profiles_prev.profiles_1d.ion[iion].density
-
-        ni0p = core_profiles_prev.profiles_1d.ion[iion].density_drho_tor or derivative(ni0, rho_tor)
-
-        diff = np.zeros(shape=rho_tor.shape)
-        vconv = np.zeros(shape=rho_tor.shape)
-
-        for model in transports.model:
-            # c1[imodel] = transport["C1"][imodel]
-            diff += model.ion[iion].particles.d
-            vconv += model.ion[iion].particles.v
-
-        si_exp = np.zeros(shape=rho_tor.shape)
-        si_imp = np.zeros(shape=rho_tor.shape)
-
-        for source in sources.source:
-            si_imp += source.ion[iion].particles_decomposed.implicit_part
-            si_exp += source.ion[iion].particles_decomposed.explicit_part
-
-        # Coefficients for ion diffusion equation  in form:
-        #
-        #     (A*Y-B*Y(t-1))/H + 1/C * (-D*Y' + E*Y) = F - G*Y
-
-        diff_hyper = hyper_diff_exp + hyper_diff_imp*maxval(diff)
-
-        a = vpr
-        b = vprm
-        c = 1.
-        d = vpr*gm3*(diff+diff_hyper)
-        e = vpr*gm3*(vconv+diff_hyper*ni0p/ni0) - B0dot/2./B0*rho_tor*vpr
-        f = vpr*si_exp
-        g = vpr*si_imp
-        h = tau
-
-        u = [0, 0]
-        v = [0, 0]
-        w = [0, 0]
-
-        # Boundary conditions for ion diffusion equation in form:
-        #
-        #     V*Y' + U*Y =W
-        #
-        # On axis:
-        #       dNi/drho_tor(rho_tor=0)=0:
-        if(boundary_condition.type != 4):  # AF 11.Oct.2011
-            v[0] = 1.
-            u[0] = 0.
-        else:
-            if((diff[0]+diff_hyper) > 1.0e-6):
-                #         V[0] = -DIFF[0]
-                v[0] = -diff[0]-diff_hyper
-            else:
-                v[0] = -1.0e-6
-
-                #       U[0] = VCONV[0]
-                u[0] = vconv[0]+diff_hyper*dnim[0]/nim[0]
-            # AF 11.Oct.2011
-            w[0] = 0.
-
-        # At the edge:
-        #       FIXED Ni
-        if(boundary_condition.type == 1):
-            v = 0.
-            u = 1.
-            w = boundary_condition.value[1, 0]
-
-        #       FIXED grad_Ni
-        elif(boundary_condition.type == 2):
-            v = 1.
-            u = 0.
-            w = -boundary_condition.value[1, 0]
-
-        #       FIXED L_Ni
-        elif(boundary_condition.type == 3):
-            v = boundary_condition.value[1, 0]
-            u = 1.
-            w = 0.
-
-        #       FIXED Flux_Ni
-        elif(boundary_condition.type == 4):
-            #        V[1] = -G(NRHO)*DIFF(NRHO)
-            #        U[1] = G(NRHO)*VCONV(NRHO)
-            v = -vpr[-1]*gm3[-1]*diff[-1]
-            u = vpr[-1]*gm3[-1]*vconv[-1]
-            w = boundary_condition.value[1, 0]
-
-        #       Generic boundary condition
-        elif(boundary_condition.type == 5):
-            v, u, w = boundary_condition.value[1]
-
-        # Density equation is not solved:
-        if(boundary_condition.type == 0):
-            flag = 0
-
-            a[-1] = 1.0
-            b[-1] = 1.0
-            c[-1] = 1.0
-            d[-1] = 0.0
-            e[-1] = 0.0
-            f[-1] = 0.0
-            g[-1] = 0.0
-
-            v = 0.0
-            u = 1.0
-            w = ni0[-1]
-
-        # Solution of ion density diffusion equation:
-        try:
-            sol = self.solve_bvp(rho_tor, ni0, ni0p,
-                                 tau,
-                                 TransportSolver.COEFF(a, b, c, d, e, f, g),
-                                 TransportSolver.BCCOEFF(u, v, w)
-                                 )
-        except RuntimeError as error:
-            raise RuntimeError(f"Fail to solve ion density transport equation! \n {error} ")
-        else:
-            ni1 = sol.y[0]
-            ni1p = sol.yp[0]
-
-        # for irho_tor in range(rho_tor.shape[0]):
-            #        NI(IRHO)    = Y(IRHO)
-            #        DNI(IRHO)   = DY(IRHO)
-            #        IF (RHO(IRHO) #= 0.E0_R8) :
-            #           FUN1(IRHO)  = 1.e0_R8/RHO(IRHO)*(VPR(IRHO)*SI_EXP(IRHO)
-            #                +VPRM(IRHO)*NIM(IRHO)/TAU
-            #                -NI(IRHO)*VPR(IRHO)*(1.e0_R8/TAU+SI_IMP(IRHO)))
-            #        else:
-            #           FUN1(IRHO) = 1.e0_R8*(SI_EXP(IRHO)+NIM(IRHO)/TAU-NI(IRHO)
-            #                *(1.e0_R8/TAU+SI_IMP(IRHO)))
-            #
-
-        fun1 = vpr*si_exp + vprm*ni0*inv_tau - ni0*vpr*(1.*inv_tau+si_imp)
-
-        intfun1 = integral(fun1, rho_tor)
-
-        local_fun1_s4 = (si_exp[0] + ni0[0]*inv_tau - ni0[0]*(1.*inv_tau+si_imp[0]))/gm3[0]  # stripping G1
-        # stripped integral for the axis - from the INTEGR2 routine, first point only
-        local_intfun1_s4 = local_fun1_s4*rho_tor[0]/2.0
-
-        int_source = intfun1 + B0dot/2./B0*rho_tor*vpr*ni0
-        flux = vpr*gm3 * (ni1*vconv - ni1p*diff)
-
-        # Contribution to ion energy transport:
-        # flux_ni_conv = 0.
-
-        # for imodel in range(nmodel):
-        #     flux_ni_conv = flux_ni_conv + c1[imodel]*vpr*gm3 * (y*vconv_mod[imodel] - yp*diff_mod[imodel])
-
-        # # If equation is not solved, flux is determined
-        # #     by the integral of kwargs and transport coefficients
-        # #     are updated with effective values:
-        # if(boundary_condition.type == 0):
-        #     diff = 1.e-6
-        #     flux = int_source
-        #     flux_ni_conv = 1.5*int_source
-        #     if((vpr*gm3 != 0.0) and (yp != 0.0)):  # FIXME
-        #         diff = - flux / yp / (vpr*gm3)
-        #     if (abs(diff) >= nine_diff_limit):
-        #         diff = sign(nine_diff_limit, diff)
-        #         vconv = 0.0
-        #     if(diff <= 1.e-6 .AND. vpr*gm3 != 0):
-        #         diff = 1.e-6
-        #         vconv = (flux / (max(abs(vpr), 1.e-6)*gm3) + dy*diff) / max(abs(y), 1.e-6)
-
-        # Return new ion density and flux profiles to the work flow:
-        core_profiles_next.ion[iion].density = ni0
-        core_profiles_next.ion[iion].ddensity_rho_tor = ni0p
-        core_profiles_next.ion[iion].transport.d = diff
-        core_profiles_next.ion[iion].transport.v = vconv
-        core_profiles_next.ion[iion].transport.flux = flux
-        # core_profiles_next.ion[iion].transport.flux_conv = flux_ni_conv
-        core_profiles_next.ion[iion].source = si_exp - si_imp * ni0
-        core_profiles_next.ion[iion].int_source = integral(ni0*vpr, rho_tor)
-
-    def ion_density(self,
-                    core_profiles_prev,
-                    core_profiles_next,
-                    *args,
-                    equilibrium=None,
-                    core_transport=None,
-                    core_sources=None,
-                    boundary_condition=None,
-                    hyper_diff=[0, 0],
-                    enable_quasi_neutrality=True,
-                    **kwargs):
-        r"""
-            Note:
-                .. math:: \left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(V^{\prime}n_{i}\right)+\
-                            \frac{\partial}{\partial\rho}\Gamma_{i}=V^{\prime}\left(S_{i,exp}-S_{i,imp}\cdot n_{i}\right)
-                    :label: transport_ion_density
-
-                .. math::
-                    \Gamma_{s}\equiv-D_{i}\cdot\frac{\partial n_{i}}{\partial\rho}+v_{i}^{pinch}\cdot n_{i}
-                    :label: transport_ion_density_gamma
-        """
-
-        for iion, ion in enumerate(core_profiles_prev.profiles_1d.ion):
-            self.ion_density_one(self, iion,
-                                 core_profiles_next,
-                                 core_profiles_prev,
-                                 equilibrium=equilibrium,
-                                 core_transport=core_transport,
-                                 core_sources=core_sources,
-                                 boundary_condition=boundary_condition,
-                                 **kwargs
-                                 )
-
-        core_profiles_next.profiles_1d.electrons.density = core_profiles_next.profiles_1d.n_i_total
-
-        # core_profiles_next.profiles_1d.electrons.density_thermal =
-        # core_profiles_next.profiles_1d.electrons.density -
-        # core_profiles_next.profiles_1d.electrons.density_fast
-
-        if enable_quasi_neutrality:
-            ele_transport = core_transport[-1].profiles_1d.electrons
-            ele_transport.particles.flux[:] = 0.0
-            ele_transport.energy.flux[:] = 0.0
-
-            for trans in core_transport:
-                for ion in enumerate(trans.profiles_1d.ion):
-                    ele_transport.particles.flux += ion.z_ion * ion.particles.flux
-                    ele_transport.energy.flux += ion.z_ion * ion.energy.flux
-
-    def temperatures(self,
-                     core_profiles_prev,
-                     core_profiles_next,
-                     *args,
-                     equilibrium=None,
-                     collisions=None,
-                     core_transport=None,
-                     core_sources=None,
-                     boundary_conditions=None,
-                     hyper_diff=[0, 0],
-                     **kwargs):
-        r"""heat transport equations
+            Heat transport equations
 
             Note:
 
@@ -1208,64 +380,401 @@ class TransportSolver(AttributeTree):
                     :label: transport_electron_temperature
         """
 
-        hyper_diff_exp = hyper_diff[0]
-        hyper_diff_imp = hyper_diff[1]
-
+        # -----------------------------------------------------------
         # time step                                         [s]
         tau = core_profiles_next.time - core_profiles_prev.time
 
         if abs(tau) < EPSILON:
-            inv_tau = 0.0
+            inv_tau = 0
         else:
             inv_tau = 1.0/tau
 
         # $R_0$ characteristic major radius of the device   [m]
-        R0 = core_profiles_next.vacuum_toroidal_field.r0
-
-        # $R_0$ characteristic major radius of the device   [m]
-        R0 = core_profiles_next.vacuum_toroidal_field.r0
-
+        R0 = float(core_profiles_next.vacuum_toroidal_field.r0 or equilibrium.vacuum_toroidal_field.r0)
         # $B_0$ magnetic field measured at $R_0$            [T]
-        B0 = core_profiles_next.vacuum_toroidal_field.b0
+        B0 = float(core_profiles_next.vacuum_toroidal_field.b0 or equilibrium.vacuum_toroidal_field.b0)
+        B0m = float(core_profiles_prev.vacuum_toroidal_field.b0 or B0)
+
+        logger.debug(B0)
 
         # Grid
-        # $rho_tor$ not  normalised minor radius                [m]
+        # $rho_tor$ not  normalized minor radius                [m]
         rho_tor = core_profiles_next.profiles_1d.grid.rho_tor
         rho_tor_boundary = rho_tor[-1]
-
-        # $rho_tor_{norm}$ normalised minor radius                [-]
+        rho_tor_boundary_m = core_profiles_prev.profiles_1d.grid.rho_tor[-1]
+        # $rho_tor_{norm}$ normalized minor radius                [-]
         rho_tor_norm = core_profiles_next.profiles_1d.grid.rho_tor_norm
 
-        k_rho = ((core_profiles_next.profiles_1d.grid.rho_tor[-1] -
-                  core_profiles_prev.profiles_1d.grid.rho_tor[-1]) /
-                 (core_profiles_next.profiles_1d.grid.rho_tor[-1] +
-                  core_profiles_prev.profiles_1d.grid.rho_tor[-1]))*inv_tau
-        k_b0 = ((core_profiles_next.vacuum_toroidal_field.b0 -
-                 core_profiles_prev.vacuum_toroidal_field.b0) /
-                (core_profiles_next.vacuum_toroidal_field.b0 +
-                 core_profiles_prev.vacuum_toroidal_field.b0))*inv_tau
-        k_phi = k_rho + k_b0
+        k_phi = ((B0 - B0m) / (B0 + B0m) + (rho_tor_boundary - rho_tor_boundary_m) /
+                 (rho_tor_boundary + rho_tor_boundary_m))*inv_tau
 
         # -----------------------------------------------------------
         # Equilibrium
         # diamagnetic function,$F=R B_\phi$                 [T*m]
-        fpol = equilibrium.profiles_1d.mapping("rho_tor_norm", "fpol")(rho_tor_norm)
+        fpol = equilibrium.profiles_1d.fpol(rho_tor_norm)
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        vpr = equilibrium.profiles_1d.mapping("rho_tor_norm", "dvolume_drho_tor")(rho_tor_norm)
-        vprm = vpr  # profiles_prev.profiles_1d.dvolume_dpsi
-        dvpr = rho_tor/vpr * equilibrium.profiles_1d.dvolume_drho_tor.derivative*equilibrium.profiles_1d.dpsi_drho_tor
+        vpr = equilibrium.profiles_1d.dvolume_drho_tor(rho_tor_norm) * rho_tor_boundary
 
-        gm3 = equilibrium.profiles_1d.mapping("rho_tor_norm", "gm3")(rho_tor_norm)
+        vprm = core_profiles_prev.profiles_1d.vprime
 
-        u0, v0, w0 = (0, 1, 0)
-        u1, v1, w1 = (0, 1, 0)
+        if vprm is None:
+            vprm = vpr
 
-        spec_list = ["electrons"] + [["ion"][iion] for iion, ion_prev in enumerate(core_profiles_prev.profiles_1d.ion)]
+        # equilibrium.profiles_1d.mapping("rho_tor_norm", "gm1")(rho_tor_norm)
+        gm1 = equilibrium.profiles_1d.gm1(rho_tor_norm)
+        # equilibrium.profiles_1d.mapping("rho_tor_norm", "gm2")(rho_tor_norm)
+        gm2 = equilibrium.profiles_1d.gm2(rho_tor_norm)
 
-        logger.debug(spec_list)
+        gm3 = equilibrium.profiles_1d.gm3(rho_tor_norm)
 
-        for spec in spec_list:
+        vprm = core_profiles_prev.profiles_1d.vprime
+
+        if vprm is None:
+            vprm = vpr
+
+        diff_hyper = 0
+
+        if not enable_ion_solver:
+            spec = ["electrons"]
+        else:
+            raise NotImplementedError()
+
+        #　Current Equation
+        if True:
+
+            # $\Psi$ flux function from current                 [Wb]
+            psi0 = Profile(equilibrium.profiles_1d.psi,
+                           axis=equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)  # equilibrium.profiles_1d.mapping("rho_tor_norm", "psi")(rho_tor_norm)
+            # $\frac{\partial\Psi}{\partial\rho_{tor,norm}}$               [Wb/m]
+            psi0_prime = psi0.derivative
+            # $q$ safety factor                                 [-]
+            qsf = Profile(equilibrium.profiles_1d.q,
+                          axis=equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)  # equilibrium.profiles_1d.mapping("rho_tor_norm", "q")(rho_tor_norm)
+
+            # plasma parallel conductivity,                     [(Ohm*m)^-1]
+            conductivity_parallel = Profile(0.0, axis=core_profiles_next.profiles_1d.grid.rho_tor_norm, description={
+                "name": "conductivity_parallel"})
+
+            for trans in core_transport:
+                sigma = trans.profiles_1d["conductivity_parallel"]
+                if isinstance(sigma, np.ndarray):
+                    conductivity_parallel += sigma
+
+            # -----------------------------------------------------------
+            # Sources
+            # total non inductive current, PSI independent component,          [A/m^2]
+            j_ni_exp = core_profiles_next.profiles_1d._create(0.0, name="j_ni_exp")
+            for src in core_sources:
+                j = src.profiles_1d.j_parallel
+                if isinstance(j, np.ndarray):
+                    j_ni_exp += j
+
+            # total non inductive current, component proportional to PSI,      [A/m^2/V/s]
+            j_ni_imp = 0.0  # sources.j_ni_imp if sources is not None else 0.0   # can not find data in imas dd
+
+            # for src in sources(equilibrium):
+            #     j_ni_exp += src.profiles_1d.j_parallel
+
+            a = conductivity_parallel * rho_tor
+
+            b = conductivity_parallel * rho_tor
+
+            c = (scipy.constants.mu_0*B0 * rho_tor_boundary)/(fpol**2)
+
+            d = vpr*gm2 / fpol / (4.0*(scipy.constants.pi**2)*rho_tor_boundary)
+
+            e = (- scipy.constants.mu_0 * B0 * k_phi) * (conductivity_parallel * rho_tor**2/fpol**2)
+
+            f = - vpr * j_ni_exp/(2.0 * scipy.constants.pi)
+
+            g = vpr * j_ni_imp/(2.0 * scipy.constants.pi)
+
+            # + rho_tor* conductivity_parallel*k_phi*(2.0-2.0*rho_tor *  fprime/fpol + rho_tor * conductivity_parallel_prime/conductivity_parallel)
+
+            # Boundary conditions for current diffusion equation in form:
+            #     u*Y + v*Y' = w
+
+            # -----------------------------------------------------------
+            # boundary condition, value
+            # Identifier of the boundary condition type.
+            #   ID =    1: poloidal flux;
+            #           2: ip;
+            #           3: loop voltage;
+            #           4: undefined;
+            #           5: generic boundary condition y expressed as a1y'+a2y=a3.
+            #           6: equation not solved; [eV]
+
+            # At the edge:
+            # if boundary_condition.identifier.index == 1:  # poloidal flux
+            #     u = 1.0
+            #     v = 0.0
+            #     w = boundary_condition.value[0]
+            # elif boundary_condition.identifier.index == 2:  # ip
+            #     u = 0.0
+            #     v = 1.0
+            #     w =   scipy.constants.mu_0 * boundary_condition.value[0]/fpol[-1]
+            # elif boundary_condition.identifier.index == 3:  # loop voltage
+            #     u = 1.0
+            #     v = 0.0
+            #     w = tau*boundary_condition.value[0]+psi0[-1]
+            # elif boundary_condition.identifier.index == 5:  # generic boundary condition  y expressed as a1y'+a2y=a3.
+            #     v, u, w = boundary_condition.value
+            # else:
+            #     # Current equation is not solved:
+            #     #  Interpretative value of safety factor should be given
+            #     # if any(qsf != 0.0):  # FIXME
+            #     # dy = 2.0* scipy.constants.pi*B0*rho_tor/qsf
+
+            #     # a[-1] = 1.0*inv_tau
+            #     # b[-1] = 1.0*inv_tau
+            #     # # c[-1] = 1.0
+            #     # d[-1] = 0.0
+            #     # e[-1] = 0.0
+            #     # f[-1] = 0.0
+
+            #     u = 1.0
+            #     v = 0.0
+            #     w =  - scipy.constants.mu_0 * boundary_condition.value[0]/fpol[-1]
+
+            # Ip = sum(j_ni_exp)
+            # psi0_prime[-1]*d[-1]/ scipy.constants.mu_0 * fpol[-1]
+
+            sol = self.solve_general_form(rho_tor_norm,
+                                          psi0, psi0_prime,
+                                          inv_tau,
+                                          (a, b, c, d, e, f, g),
+                                          ((0, 1, 0.0),
+                                           (1, 0, psi0[-1])),  # 　Ip  - scipy.constants.mu_0 * Ip/fpol[-1]
+                                          verbose=2,  max_nodes=2500
+                                          )
+            logger.info(
+                f"Solve transport equations: Current : {'Done' if  sol.success else 'Failed' }  \n Message: {sol.message} ")
+
+            core_profiles_next.profiles_1d.psi0 = psi0
+            core_profiles_next.profiles_1d.psi0_prime = psi0_prime
+            core_profiles_next.profiles_1d.psi0_eq = Profile(
+                equilibrium.profiles_1d.psi, axis=equilibrium.profiles_1d.rho_tor_norm)
+            core_profiles_next.profiles_1d.psi0_prime_eq = Profile(
+                equilibrium.profiles_1d.dpsi_drho_tor*rho_tor_boundary, axis=equilibrium.profiles_1d.rho_tor_norm)
+
+            core_profiles_next.profiles_1d.q0 = Profile(
+                equilibrium.profiles_1d.q, axis=equilibrium.profiles_1d.rho_tor_norm)
+
+            j_total0 = (d * psi0_prime).derivative / c / vpr*(2.0 * scipy.constants.pi)
+
+            # j_total0[0] = 2*j_total0[1]-j_total0[2]
+            core_profiles_next.profiles_1d.j_total0 = j_total0
+            core_profiles_next.profiles_1d.j_ni_exp = j_ni_exp
+
+            core_profiles_next.profiles_1d.rho_star = vpr/(4.0*(scipy.constants.pi**2)*R0)
+
+            core_profiles_next.profiles_1d.rho_tor = rho_tor_norm*equilibrium.profiles_1d.rho_tor[-1]
+
+            if sol.success:
+                core_profiles_next.profiles_1d.psi = Profile(sol.y[0], axis=sol.x)
+                core_profiles_next.profiles_1d.psi1_prime = core_profiles_next.profiles_1d.psi.derivative
+                core_profiles_next.profiles_1d.psi1_prime1 = Profile(sol.yp[0], axis=sol.x)
+
+                core_profiles_next.profiles_1d.dgamma_current = Profile(sol.yp[1], axis=sol.x)
+                core_profiles_next.profiles_1d.dpsi_drho_tor = Profile(sol.yp[0]/rho_tor_boundary, axis=sol.x)
+
+                q = (scipy.constants.pi*2.0)*B0 * rho_tor_boundary**2 * sol.x
+                # /sol.yp[0]
+                q[1:] /= sol.yp[0][1:]
+                q[0] = 2*q[1]-q[2]
+
+                core_profiles_next.profiles_1d.q = Profile(q, axis=sol.x, description={"name": "q from transport"})
+
+                core_profiles_next.profiles_1d.j_tor = (Profile(sol.y[1], axis=sol.x)*fpol).derivative / vpr\
+                    * (-2.0 * scipy.constants.pi*R0 / scipy.constants.mu_0/rho_tor_boundary)
+
+                core_profiles_next.profiles_1d.j_parallel = Profile(sol.yp[1], axis=sol.x) * (- scipy.constants.pi*2.0 / (scipy.constants.mu_0*B0 * rho_tor_boundary)) * \
+                    (fpol**2/vpr)
+
+                # core_profiles_next.profiles_1d.e_field.parallel = (j_parallel-j_ni_exp -
+                #                                                    j_ni_exp*core_profiles_next.profiles_1d.psi)/conductivity_parallel
+
+            else:
+                psi_prime = (scipy.constants.pi*2.0)*B0 * rho_tor / qsf * rho_tor_boundary
+                core_profiles_next.profiles_1d.psi_prime = psi_prime
+                core_profiles_next.profiles_1d.psi = psi0[0] + \
+                    Profile(psi_prime, axis=rho_tor_norm).integral * 2
+
+            core_profiles_next.profiles_1d.f_current = f*c
+
+            core_profiles_next.profiles_1d.j_total = j_ni_exp
+
+            # core_profiles_next.profiles_1d.vpr = vpr
+            # core_profiles_next.profiles_1d.gm2 = gm2
+
+            # core_profiles_next.profiles_1d.a = a(sol.x)
+            # core_profiles_next.profiles_1d.b = b(sol.x)
+            # # core_profiles_next.profiles_1d.c =(sol.x)
+            # core_profiles_next.profiles_1d.d = d(sol.x)
+            # core_profiles_next.profiles_1d.e = e(sol.x)
+            # core_profiles_next.profiles_1d.f = f(sol.x)
+            # core_profiles_next.profiles_1d.g = g(sol.x)
+            # core_profiles_next.profiles_1d.dvolume_dpsi = Profile(equilibrium.profiles_1d.dvolume_dpsi,
+            #                                                       axis=equilibrium.profiles_1d.rho_tor_norm)
+            # core_profiles_next.profiles_1d.dpsi_drho_tor = Profile(equilibrium.profiles_1d.dpsi_drho_tor,
+            #                                                        axis=equilibrium.profiles_1d.rho_tor_norm)
+
+            # core_profiles_next.profiles_1d.q = 2.0* scipy.constants.pi*B0*rho_tor/psi_prime1
+
+            # current density, toroidal,                        [A/m^2]
+            # j_tor = - 2.0* scipy.constants.pi*R0/ scipy.constants.mu_0/vpr * dfun4
+            # core_profiles_next.profiles_1d.j_tor = j_tor
+            # j_par = - 2.0* scipy.constants.pi/R0/ scipy.constants.mu_0/vpr * (fpol/B0)**2*dfun5
+            # core_profiles_next.profiles_1d.current_parallel_inside = j_par
+
+            # # $E_\parallel$  parallel electric field,,          [V/m]
+            # core_profiles_next.profiles_1d.e_field.parallel = (j_par - j_ni_exp - j_ni_imp*psi1) / conductivity_parallel
+
+            # # Total Ohmic currents                              [A]
+            # # fun7 = vpr * j_par / 2.0 /  scipy.constants.pi * B0 / fpol**2
+            # core_profiles_next.profiles_1d.j_ohmic = fpol[-1]*core_profiles_next.profiles_1d.integral(
+            #     vpr * j_par / 2.0 /  scipy.constants.pi * B0 / fpol**2, 0, 1)
+
+            # core_profiles_next.profiles_1d.j_tor = j_tor
+
+            # # Total non-inductive currents                       [A]
+            # core_profiles_next.profiles_1d.j_non_inductive = fpol[-1] * core_profiles_next.profiles_1d.integral(
+            #     vpr * (j_ni_exp + j_ni_imp * psi1) / (2.0 *  scipy.constants.pi) * B0 / fpol**2)
+
+        # Particle Transport
+        for sp in spec:
+            diff = Profile(0.0, axis=rho_tor_norm, description={"name": "diff"})
+            vconv = Profile(0.0, axis=rho_tor_norm, description={"name": "vconv"})
+
+            for trans in core_transport:
+                D = trans.profiles_1d[sp].particles.d
+
+                if isinstance(D, np.ndarray) or isinstance(D, (int, float)):
+                    diff += D
+
+                v = trans.profiles_1d[sp].particles.v
+                if isinstance(v, np.ndarray) or isinstance(v, (int, float)):
+                    vconv += v
+
+            se_exp = Profile(0.0, axis=rho_tor_norm, description={"name": "se_exp"})
+            se_imp = Profile(0.0, axis=rho_tor_norm, description={"name": "se_imp"})
+
+            for src in core_sources:
+                si = src.profiles_1d[sp].particles_decomposed.implicit_part
+                if isinstance(si, np.ndarray) or type(si) in (int, float):
+                    se_imp += si
+
+                se = src.profiles_1d[sp].particles_decomposed.explicit_part
+                if isinstance(se, np.ndarray) or type(se) in (int, float):
+                    se_exp += se
+
+                se = src.profiles_1d[sp].particles
+                if isinstance(se, np.ndarray) or type(se) in (int, float):
+                    se_exp += se
+
+            ne0 = core_profiles_prev.profiles_1d[sp].density
+
+            ne0_prime = core_profiles_prev.profiles_1d[sp].density_prime
+
+            if ne0_prime is None:
+                ne0_prime = ne0.derivative
+
+            # diff_hyper = hyper_diff[0] + hyper_diff[1] * max(diff)
+
+            H = vpr * gm3
+
+            # dlnNe0 = ne0_prime/ne0
+
+            a = vpr
+            b = vprm
+            c = rho_tor_boundary
+            # def d(x, hyper_diff): return H(x) * (diff(x) + hyper_diff) / rho_tor_boundary
+            # def e(x, hyper_diff): return H(x) * (vconv(x) + hyper_diff * dlnNe0(x)) - k_phi*rho_tor*vpr
+            d = H * (diff) / rho_tor_boundary
+            e = H * (vconv) - k_phi*rho_tor*vpr
+            f = vpr * se_exp
+            g = vpr * se_imp
+
+            """
+                # Boundary conditions for electron diffusion equation in form:
+                #     V*Y' + U*Y =W
+                # On axis:
+                #     dNi/drho_tor(rho_tor=0)=0:  - this is Ne, not N
+                if(solver_type != 4):
+                    v[0] = 1.
+                    u[0] = 0.
+                else:
+                    IF (DIFF[0]>1.0E-6) :
+                if((diff[0]+diff_hyper) > 1.0e-6):
+                    #         V[0] = -DIFF[0]
+                    v = -diff[0]-diff_hyper
+                else:
+                    v = -1.0e-
+                #       U[0] = VCONV[0]
+                    u = vconv[0]+diff_hyper*ne0_prime[0]/ne0[0]
+                w = 0
+                At the edge:
+                    FIXED Ne
+                if(boundary_condition.type == 1):
+                    v = 0.
+                    u = 1.
+                    w = boundary_condition[1, 0]
+                #       FIXED grad_Ne
+                elif(boundary_condition.type == 2):
+                    v = 1.
+                    u = 0.
+                    w = -boundary_condition[1, 0
+                #       FIXED L_Ne
+                elif(boundary_condition.type == 3):
+                    v = boundary_condition[1, 0]
+                    u = 1.
+                    w = 0
+                #       FIXED Flux_Ne
+                elif(boundary_condition.type == 4):
+                    v = -vpr[-1]*gm3[-1]*diff[-1]
+                    u = vpr[-1]*gm3[-1]*vconv[-1]
+                    w = boundary_condition[1, 0
+                #       Generic boundary condition
+                elif(boundary_condition.type == 5):
+                    v = boundary_condition[1, 0]
+                    u = boundary_condition(2, 2)
+                    w = boundary_condition(2, 3
+                # Density equation is not solved:
+                else:  # if(boundary_condition.type == 0):
+
+
+                v = 0.0
+                u = 1.0
+                w = ne0[-1]
+            """
+
+            sol = self.solve_general_form(rho_tor_norm,
+                                          ne0, ne0_prime,
+                                          inv_tau,
+                                          (a, b, c, d, e, f, g),
+                                          ((0, 1, e[0]), (1, 0, ne0[-1])),
+                                          #   parameters=[diff_hyper],
+                                          tol=0.5,
+                                          verbose=2, max_nodes=400
+                                          )
+
+            logger.info(
+                f"""Solve transport equations: Electron density: {'Done' if  sol.success else 'Failed' }
+                Message: {sol.message} """)
+
+            diff_flux = -d * ne0_prime  # * H*diff/rho_tor_boundary
+            vconv_flux = e * ne0  # * H * vconv
+            s_exp_flux = f.integral * c
+
+            core_profiles_next.profiles_1d[sp] = {
+                "density0": ne0, "density0_prime": ne0_prime, "diff_flux": -d * ne0_prime  # * H*diff/rho_tor_boundary
+                , "vconv_flux": e * ne0  # * H * vconv
+                , "s_exp_flux": f.integral * c, "density_residual": diff_flux + vconv_flux - s_exp_flux, "diff": diff[:], "vconv": vconv[:], "density": Profile(sol.y[0], axis=sol.x), "density_prime": Profile(sol.yp[0], axis=sol.x), "density_flux": Profile(sol.y[1], axis=sol.x)
+            }
+
+        # Temperature equation
+        for sp in spec:
 
             """
              Boundary conditions for ion heat transport equation in form:
@@ -1333,15 +842,13 @@ class TransportSolver(AttributeTree):
             vconv = core_profiles_next.profiles_1d._create(0.0, name="vconv")
 
             for trans in core_transport:
-                d = trans.profiles_1d[spec].energy.d
+                d = trans.profiles_1d[sp].energy.d
                 if isinstance(d, np.ndarray) or type(d) in (int, float):
                     diff += d
 
-                v = trans.profiles_1d[spec].energy.v
+                v = trans.profiles_1d[sp].energy.v
                 if isinstance(v, np.ndarray) or type(v) in (int, float):
                     vconv += v
-
-            diff_hyper = hyper_diff_exp + hyper_diff_imp*max(diff)
 
             qs_exp = core_profiles_next.profiles_1d._create(0.0, name="se_exp")
             qs_imp = core_profiles_next.profiles_1d._create(0.0, name="se_imp")
@@ -1358,19 +865,23 @@ class TransportSolver(AttributeTree):
                 # se = src.profiles_1d.electrons.particles_decomposed.explicit_part
                 # if isinstance(se, np.ndarray) or type(se) in (int, float):
                 #     se_exp += se
-                se = src.profiles_1d[spec].energy
+                se = src.profiles_1d[sp].energy
                 if isinstance(se, np.ndarray) or type(se) in (int, float):
                     se_exp += se
 
-            sp_prev = core_profiles_prev.profiles_1d[spec]
-            sp_next = core_profiles_next.profiles_1d[spec]
+            sp_prev = core_profiles_prev.profiles_1d[sp]
+            sp_next = core_profiles_next.profiles_1d[sp]
 
             ts_prev = sp_prev.temperature
+
+            if not ts_prev:
+                logger.error("Temperature profile is not initialized!")
+                continue
 
             tsp_prev = sp_prev.temperature_prime
 
             if tsp_prev is None:
-                tsp_prev = Profile(rho_tor_norm, ts_prev).derivative
+                tsp_prev = Profile(ts_prev, axis=rho_tor_norm).derivative
 
             ns_next = sp_next.density
 
@@ -1409,6 +920,9 @@ class TransportSolver(AttributeTree):
                 sp_next.temperature = Profile(solution.x, solution.y[0])
                 sp_next.temperature_prime = Profile(solution.x, solution.y0[0])
                 sp_next.temperature_flux = Profile(solution.x, solution.y[1])
+
+        core_profiles_next.profiles_1d.vpr = vpr
+        core_profiles_next.profiles_1d.gm3 = gm3
 
     def rotation(self,
                  core_profiles_prev,
@@ -1752,13 +1266,12 @@ class TransportSolver(AttributeTree):
             intfun1 = integral(fun1, rho_tor)
             profiles["INT_SOURCE_MTOR"][iion] = intfun1
 
-        for irho_tor in range(rho_tor.shape[0]):
-            profiles["MTOR_TOT"] = mtor_tot
-            profiles["FLUX_MTOR_TOT"] = flux_mtor_tot
+        profiles["MTOR_TOT"] = mtor_tot
+        profiles["FLUX_MTOR_TOT"] = flux_mtor_tot
 
 
 # while time < end_time
-#     repeat
+#     repeat until converged
 #         calculate equilibrium
 #         begin parallel
 #             calculate source_1
@@ -1772,15 +1285,14 @@ class TransportSolver(AttributeTree):
 #             ···
 #             calculate transport_coefficients_n
 #         end parallel
-
+#
 #         begin parallel
 #             combine sources
 #             combine transport coefficients
 #         end parallel
-
+#
 #         calculate new profile
-
-#     until converged
-
+#
+#
 #     update time and time_step
 # terminate
