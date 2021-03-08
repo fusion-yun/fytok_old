@@ -2,7 +2,7 @@ import collections
 
 import matplotlib.pyplot as plt
 import numpy as np
-from spdm.util.AttributeTree import AttributeTree
+from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.logger import logger
 from spdm.data.Profile import Profile
 
@@ -16,7 +16,7 @@ def fetch_profile(holder, desc, prefix=[]):
         opts = desc.get("opts", {})
     elif isinstance(desc, tuple):
         path, opts = desc
-    elif isinstance(desc, AttributeTree):
+    elif isinstance(desc, PhysicalGraph):
         path = desc.data
         opts = desc.opts
     else:

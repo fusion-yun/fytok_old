@@ -2,11 +2,11 @@ from datetime import datetime
 from functools import cached_property
 
 import numpy as np
-from spdm.util.AttributeTree import AttributeTree
+from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.LazyProxy import LazyProxy
 
 
-class Identifier(AttributeTree):
+class Identifier(PhysicalGraph):
     def __init__(self, *args, name=None, index=0, description=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = name or ""
@@ -14,7 +14,7 @@ class Identifier(AttributeTree):
         self.description = ""
 
 
-class Signal(AttributeTree):
+class Signal(PhysicalGraph):
     def __init__(self,  *args, time=None, data=None, **kwargs):
         super().__init__(*args, **kwargs)
         if type(time) is int:
@@ -59,7 +59,7 @@ class Signal(AttributeTree):
         return NotImplemented
 
 
-class IDSProperties(AttributeTree):
+class IDSProperties(PhysicalGraph):
     def __init__(self, *args, **kwargs):
         super().__init__(self, *args, **kwargs)
 

@@ -10,7 +10,7 @@ import numpy as np
 import scipy.constants
 from fytok.util.Misc import Identifier
 from scipy.interpolate import RectBivariateSpline, UnivariateSpline
-from spdm.util.AttributeTree import AttributeTree, _last_, _next_
+from spdm.data.PhysicalGraph import PhysicalGraph, _last_, _next_
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.data.Profile import Profile
@@ -28,7 +28,7 @@ EPSILON = 1.0e-15
 TOLERANCE = 1.0e-6
 
 
-class TransportSolver(AttributeTree):
+class TransportSolver(PhysicalGraph):
     r"""
         Solve transport equations :math:`\rho=\sqrt{ \Phi/\pi B_{0}}`
 
@@ -95,7 +95,7 @@ class TransportSolver(AttributeTree):
             description=""
         ) if c is NotImplemented or c is None or len(c) == 0 else Identifier(c)
 
-    class BoundaryCondition(AttributeTree):
+    class BoundaryCondition(PhysicalGraph):
         def __init__(self, cache, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
@@ -132,13 +132,13 @@ class TransportSolver(AttributeTree):
     def boundary_conditions(self):
         """ Boundary conditions of the radial transport equations for various time slices.
             To be removed when the solver_1d structure is finalized. {dynamic}"""
-        res = AttributeTree(
-            current=AttributeTree(),
-            electrons=AttributeTree,
-            ions=AttributeTree(
+        res = PhysicalGraph(
+            current=PhysicalGraph(),
+            electrons=PhysicalGraph,
+            ions=PhysicalGraph(
                 default_factory_array=lambda _holder=self: TransportSolver.BoundaryCondition(None, parent=_holder)),
-            energy_ion_total=AttributeTree(),
-            momentum_tor=AttributeTree(),
+            energy_ion_total=PhysicalGraph(),
+            momentum_tor=PhysicalGraph(),
             default_factory=lambda k, _holder=self: TransportSolver.BoundaryCondition(None, holder=_holder, key=k))
         return res
 

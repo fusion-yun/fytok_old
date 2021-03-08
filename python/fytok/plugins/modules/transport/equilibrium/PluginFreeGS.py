@@ -9,7 +9,7 @@ import scipy.constants
 from fytok.util.Interpolate import (Interpolate1D, Interpolate2D, derivate,
                                     integral, interpolate)
 from scipy.interpolate import RectBivariateSpline, UnivariateSpline
-from spdm.util.AttributeTree import AttributeTree, _next_
+from spdm.data.PhysicalGraph import PhysicalGraph, _next_
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.data.Profile import Profiles
@@ -101,7 +101,7 @@ class EquilibriumFreeGS(Equilibrium):
         if constraints is None:
             constraints = self.constraints
         else:
-            constraints = AttributeTree(constraints)
+            constraints = PhysicalGraph(constraints)
 
         psivals = constraints.psivals or []
         isoflux = constraints.isoflux or []

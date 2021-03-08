@@ -5,13 +5,13 @@ from functools import cached_property, lru_cache
 
 import matplotlib.pyplot as plt
 import numpy as np
-from spdm.util.AttributeTree import AttributeTree
+from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.util.urilib import urisplit
 
 
-class TF(AttributeTree):
+class TF(PhysicalGraph):
     """TF　Coils
 
     """
@@ -29,10 +29,10 @@ class TF(AttributeTree):
     def cache(self):
         if isinstance(self._cache, LazyProxy):
             self._cache = self._cache()
-        elif isinstance(self._cache, AttributeTree):
+        elif isinstance(self._cache, PhysicalGraph):
             self._cache = self._cache
         else:
-            self._cache = AttributeTree(self._cache)
+            self._cache = PhysicalGraph(self._cache)
         return self._cache
 
     @cached_property

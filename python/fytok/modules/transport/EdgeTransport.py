@@ -1,6 +1,6 @@
-from spdm.util.AttributeTree import AttributeTree, _next_
+from spdm.data.PhysicalGraph import PhysicalGraph, _next_
 
-class EdgeTransport(AttributeTree):
+class EdgeTransport(PhysicalGraph):
     """Edge plasma transport. 
       
         Energy terms correspond to the full kinetic energy equation (i.e. the energy flux takes into account the energy transported by the particle flux)

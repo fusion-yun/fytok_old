@@ -4,13 +4,13 @@ from functools import cached_property
 
 import matplotlib.pyplot as plt
 import numpy as np
-from spdm.util.AttributeTree import AttributeTree, _next_
+from spdm.data.PhysicalGraph import PhysicalGraph, _next_
 from spdm.util.logger import logger
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.urilib import urisplit
 
 
-class PFActive(AttributeTree):
+class PFActive(PhysicalGraph):
     """
     """
 
@@ -18,11 +18,11 @@ class PFActive(AttributeTree):
         super().__init__(*args,  **kwargs)
         self.__dict__['_cache'] = cache
 
-    class Coil(AttributeTree):
+    class Coil(PhysicalGraph):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
-    class Circuit(AttributeTree):
+    class Circuit(PhysicalGraph):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
@@ -39,7 +39,7 @@ class PFActive(AttributeTree):
 
     @cached_property
     def coil(self):
-        res = AttributeTree(default_factory_array=lambda _holder=self: PFActive.Coil(self))
+        res = PhysicalGraph(default_factory_array=lambda _holder=self: PFActive.Coil(self))
         cache = self._cache.coil
 
         if isinstance(cache, LazyProxy):
@@ -56,8 +56,8 @@ class PFActive(AttributeTree):
                 next_coil.height = float(rect.height)
                 next_coil.turns = int(coil.element[0].turns_with_sign)
         else:
-            if not isinstance(cache, AttributeTree):
-                cache = AttributeTree(coil)
+            if not isinstance(cache, PhysicalGraph):
+                cache = PhysicalGraph(coil)
 
             for coil in cache:
                 res[_next_] = coil

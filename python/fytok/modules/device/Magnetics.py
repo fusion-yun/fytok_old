@@ -1,20 +1,20 @@
 from functools import cached_property
 
 import numpy as np
-from spdm.util.AttributeTree import AttributeTree, _next_
+from spdm.data.PhysicalGraph import PhysicalGraph, _next_
 from spdm.util.LazyProxy import LazyProxy
 
 from fytok.Misc import IDSProperties, Signal, Identifier
 
 
-class Magnetics(AttributeTree):
+class Magnetics(PhysicalGraph):
     """Magnetic diagnostics for equilibrium identification and plasma shape control.
 
     """
 
     def __init__(self, cache=None, *args,   ** kwargs):
         super().__init__(*args, ** kwargs)
-        self.__dict__['_cache'] = cache or AttributeTree()
+        self.__dict__['_cache'] = cache or PhysicalGraph()
 
     def __missing__(self, key):
         res = self._cache[key]
@@ -26,10 +26,10 @@ class Magnetics(AttributeTree):
     def ids_properties(self):
         return IDSProperties(self._cache.ids_properties)
 
-    class FluxLoop(AttributeTree):
+    class FluxLoop(PhysicalGraph):
         def __init__(self, cache=None, *args, **kwargs):
             super().__init__(*args, ** kwargs)
-            self.__dict__['_cache'] = cache or AttributeTree()
+            self.__dict__['_cache'] = cache or PhysicalGraph()
 
         @cached_property
         def name(self):
@@ -95,12 +95,12 @@ class Magnetics(AttributeTree):
     def flux_loop(self):
         """Flux loops; partial flux loops can be described   """
 
-        res = AttributeTree(default_factory_array=lambda _holder=self: Magnetics.FluxLoop(parent=_holder))
+        res = PhysicalGraph(default_factory_array=lambda _holder=self: Magnetics.FluxLoop(parent=_holder))
         for floop in self._cache.flux_loop:
             res[_next_] = floop
         return res
 
-    class MagneticProbe(AttributeTree):
+    class MagneticProbe(PhysicalGraph):
         def __init__(self, cache=None, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self.__dict__["_cache"] = cache
@@ -135,7 +135,7 @@ class Magnetics(AttributeTree):
         @cached_property
         def position(self):
             """R, Z, Phi position of the coil centre    structure    """
-            return AttributeTree(
+            return PhysicalGraph(
                 r=float(self._cache.position.r),
                 z=float(self._cache.position.z),
                 phi=float(self._cache.position.phi)
@@ -159,12 +159,12 @@ class Magnetics(AttributeTree):
         def indices_differential(self):
             """Indices (from the bpol_probe array of structure) of the two probes used to build the field difference field(second index) - field(first index).
             Use only if ../type/index = 6, leave empty otherwise {static}    INT_1D    1- 1...2"""
-            return AttributeTree(self._cache.toroidal_angle)
+            return PhysicalGraph(self._cache.toroidal_angle)
 
         @cached_property
         def bandwidth_3db(self):
             """3dB bandwith (first index : lower frequency bound, second index : upper frequency bound) {static} [Hz]    """
-            return AttributeTree(self._cache.bandwidth_3db)
+            return PhysicalGraph(self._cache.bandwidth_3db)
 
         @cached_property
         def area(self):
@@ -213,13 +213,13 @@ class Magnetics(AttributeTree):
         @cached_property
         def non_linear_response(self):
             """Non-linear response of the probe (typically in case of a Hall probe)"""
-            return AttributeTree(b_field_linear=self._cache.b_field_linear,
-                                 b_field_non_linear=AttributeTree(b_field_linear=self._cache.b_field_non_linear))
+            return PhysicalGraph(b_field_linear=self._cache.b_field_linear,
+                                 b_field_non_linear=PhysicalGraph(b_field_linear=self._cache.b_field_non_linear))
 
     @cached_property
     def b_field_pol_probe(self):
         """Poloidal field probes    struct_array [max_size=200] """
-        res = AttributeTree(default_factory_array=lambda _holder=self: Magnetics.MagneticProbe(parent=_holder))
+        res = PhysicalGraph(default_factory_array=lambda _holder=self: Magnetics.MagneticProbe(parent=_holder))
         for floop in self._cache.b_field_pol_probe:
             res[_next_] = floop
         return res
@@ -227,7 +227,7 @@ class Magnetics(AttributeTree):
     @cached_property
     def b_field_tor_probe(self):
         """Toroidal field probes    struct_array [max_size=20] """
-        res = AttributeTree(default_factory_array=lambda _holder=self: Magnetics.MagneticProbe(parent=_holder))
+        res = PhysicalGraph(default_factory_array=lambda _holder=self: Magnetics.MagneticProbe(parent=_holder))
         for floop in self._cache.b_field_tor_probe:
             res[_next_] = floop
         return res

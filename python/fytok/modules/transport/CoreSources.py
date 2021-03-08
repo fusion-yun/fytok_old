@@ -2,13 +2,13 @@
 from functools import cached_property, lru_cache
 
 import numpy as np
-from spdm.util.AttributeTree import AttributeTree
+from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.logger import logger
 from spdm.data.Profile import Profiles, Profile
 from spdm.util.LazyProxy import LazyProxy
 
 
-class CoreSources(AttributeTree):
+class CoreSources(PhysicalGraph):
     """CoreSources
     """
     IDS = "core_sources"
@@ -16,8 +16,8 @@ class CoreSources(AttributeTree):
     def __init__(self, cache=None, *args, tokamak=None,   **kwargs):
         super().__init__(*args, **kwargs)
         self._tokamak = tokamak
-        if not isinstance(cache, AttributeTree) or not isinstance(cache, LazyProxy):
-            self._cache = AttributeTree(cache)
+        if not isinstance(cache, PhysicalGraph) or not isinstance(cache, LazyProxy):
+            self._cache = PhysicalGraph(cache)
         else:
             self._cache = cache
 
@@ -40,7 +40,7 @@ class CoreSources(AttributeTree):
 
             @cached_property
             def particles_decomposed(self):
-                return AttributeTree(
+                return PhysicalGraph(
                     implicit_part=Profile(None, axis=self._parent.grid.rho_tor_norm, description={
                                           "name": "electrons.particles_decomposed.implicit_part"}),
                     explicit_part=Profile(None, axis=self._parent.grid.rho_tor_norm, description={

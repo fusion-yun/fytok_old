@@ -4,13 +4,13 @@ from copy import copy
 import matplotlib.pyplot as plt
 import numpy as np
 from spdm.util.LazyProxy import LazyProxy
-from spdm.util.AttributeTree import AttributeTree
+from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.logger import logger
 from functools import cached_property
 from sympy import Point, Polygon
 
 
-class Wall(AttributeTree):
+class Wall(PhysicalGraph):
     """Wall
 
     """

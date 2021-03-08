@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma
 import scipy.integrate
-from spdm.util.AttributeTree import AttributeTree, _last_, _next_
+from spdm.data.PhysicalGraph import PhysicalGraph, _last_, _next_
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.data.Profile import Profile
@@ -26,7 +26,7 @@ from .modules.transport.TransportSolver import TransportSolver
 from .util.RadialGrid import RadialGrid
 
 
-class Tokamak(AttributeTree):
+class Tokamak(PhysicalGraph):
     """Tokamak
         功能：
             - 描述装置在单一时刻的状态，
@@ -36,7 +36,7 @@ class Tokamak(AttributeTree):
 
     def __init__(self,  cache=None,  *args, time=0.0, rho_tor_norm=None,   **kwargs):
         super().__init__(*args, time=time, **kwargs)
-        self.__dict__["_cache"] = cache or AttributeTree()
+        self.__dict__["_cache"] = cache or {}
         self.__dict__["_time"] = time
 
         self._time = time
@@ -73,7 +73,7 @@ class Tokamak(AttributeTree):
             # logger.debug(self._cache.equilibrium.time_slice.profiles_1d.f)
             b0 = self._cache.equilibrium.time_slice.profiles_1d.f()[-1]/r0
 
-        return AttributeTree(r0=r0, b0=b0)
+        return PhysicalGraph(r0=r0, b0=b0)
 
     @cached_property
     def wall(self):
@@ -114,7 +114,7 @@ class Tokamak(AttributeTree):
     @cached_property
     def core_transport(self):
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return AttributeTree(default_factory_array=lambda _holder=self: CoreTransport(None, grid=_holder.grid, tokamak=_holder))
+        return PhysicalGraph(default_factory_array=lambda _holder=self: CoreTransport(None, grid=_holder.grid, tokamak=_holder))
 
     @cached_property
     def core_sources(self):
@@ -122,7 +122,7 @@ class Tokamak(AttributeTree):
             Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return AttributeTree(default_factory_array=lambda _holder=self: CoreSources(None, grid=_holder.grid, tokamak=_holder))
+        return PhysicalGraph(default_factory_array=lambda _holder=self: CoreSources(None, grid=_holder.grid, tokamak=_holder))
 
     @cached_property
     def edge_transports(self):
@@ -145,7 +145,7 @@ class Tokamak(AttributeTree):
 
     @cached_property
     def constraints(self):
-        return AttributeTree()
+        return PhysicalGraph()
 
     # --------------------------------------------------------------------------
     def update(self, *args, time=None,   max_iters=1,  tolerance=0.1,   ** kwargs):

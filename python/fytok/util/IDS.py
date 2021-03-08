@@ -1,10 +1,10 @@
-from spdm.util.AttributeTree import AttributeTree, _next_
+from spdm.data.PhysicalGraph import PhysicalGraph, _next_
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.util.sp_export import sp_find_module
 
 
-class IDS(AttributeTree):
+class IDS(PhysicalGraph):
     """%%%DESCRIPTION%%%.      
 
         .. todo:: '___NAME___' IS NOT IMPLEMENTED
@@ -27,11 +27,11 @@ class IDS(AttributeTree):
                 logger.debug(error)
                 n_cls = cls
 
-        return AttributeTree.__new__(n_cls)
+        return PhysicalGraph.__new__(n_cls)
 
     def __init__(self, cache=None, *args, equilibrium=None, rho_tor_norm=None, ** kwargs):
         super().__init__(*args, ** kwargs)
-        self.__dict__['_cache'] = cache or AttributeTree()
+        self.__dict__['_cache'] = cache or PhysicalGraph()
 
     def __missing__(self, key):
         res = self._cache[key]

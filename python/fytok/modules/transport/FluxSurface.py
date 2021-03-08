@@ -16,7 +16,7 @@ from scipy import constants
 from scipy.interpolate import (RectBivariateSpline, SmoothBivariateSpline,
                                UnivariateSpline)
 from scipy.optimize import root_scalar
-from spdm.util.AttributeTree import AttributeTree, _next_
+from spdm.data.PhysicalGraph import PhysicalGraph, _next_
 from spdm.util.logger import logger
 from spdm.data.Profile import Profile, Profiles
 from sympy import Point, Polygon
@@ -58,8 +58,8 @@ class FluxSurface(Profiles):
 
         self.tolerance = tolerance
 
-        if not isinstance(coordinate_system, AttributeTree):
-            coordinate_system = AttributeTree(coordinate_system)
+        if not isinstance(coordinate_system, PhysicalGraph):
+            coordinate_system = PhysicalGraph(coordinate_system)
         if not coordinate_system.grid.grid_type.index or coordinate_system.grid.grid_type.index == 1:
             self._coordinate_system = coordinate_system
         else:
@@ -91,9 +91,9 @@ class FluxSurface(Profiles):
                 continue
 
             if tag < 0.0:  # saddle/X-point
-                xpoints.append(AttributeTree(r=r, z=z, psi=float(psirz(r, z))))
+                xpoints.append(PhysicalGraph(r=r, z=z, psi=float(psirz(r, z))))
             else:  # extremum/ O-point
-                opoints.append(AttributeTree(r=r, z=z, psi=float(psirz(r, z))))
+                opoints.append(PhysicalGraph(r=r, z=z, psi=float(psirz(r, z))))
 
         if not opoints:
             raise RuntimeError(f"Can not find o-point!")

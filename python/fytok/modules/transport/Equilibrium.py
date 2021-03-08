@@ -15,7 +15,7 @@ from scipy.interpolate import (RectBivariateSpline, SmoothBivariateSpline,
 from scipy.optimize import root_scalar
 from spdm.data.Entry import open_entry
 from spdm.data.Profile import Profiles
-from spdm.util.AttributeTree import AttributeTree, _next_
+from spdm.data.PhysicalGraph import PhysicalGraph, _next_
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.util.sp_export import sp_find_module
@@ -30,7 +30,7 @@ from .FluxSurface import FluxSurface
 TOLERANCE = 1.0e-6
 
 
-class Equilibrium(AttributeTree, SpObject):
+class Equilibrium(PhysicalGraph, SpObject):
     r"""Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
 
         Reference:
@@ -97,7 +97,7 @@ class Equilibrium(AttributeTree, SpObject):
             else:
                 logger.info(f"Load '{cls.__name__}' module {backend}!")
 
-        return AttributeTree.__new__(n_cls)
+        return PhysicalGraph.__new__(n_cls)
 
     def __init__(self,   cache=None,  *args,  tokamak=None, psi_norm=None,   **kwargs):
         super().__init__(*args, **kwargs)
@@ -120,11 +120,11 @@ class Equilibrium(AttributeTree, SpObject):
     def cache(self):
         if isinstance(self._cache, LazyProxy):
             self._cache = self._cache()
-        elif isinstance(self._cache, AttributeTree):
+        elif isinstance(self._cache, PhysicalGraph):
             # self._cache = self._cache
             pass
         else:
-            self._cache = AttributeTree(self._cache)
+            self._cache = PhysicalGraph(self._cache)
         return self._cache
 
     @cached_property
@@ -164,7 +164,7 @@ class Equilibrium(AttributeTree, SpObject):
         del self.flux_surface
 
         if isinstance(self._cache, LazyProxy):
-            self._cache = AttributeTree()
+            self._cache = PhysicalGraph()
 
     @cached_property
     def profiles_1d(self):
@@ -204,7 +204,7 @@ class Equilibrium(AttributeTree, SpObject):
                            coordinate_system=self.coordinate_system,
                            limiter=self._tokamak.wall.limiter_polygon)
 
-    class CoordinateSystem(AttributeTree):
+    class CoordinateSystem(PhysicalGraph):
         """Definition of the 2D grid
 
            grid.dim1           :
@@ -242,21 +242,21 @@ class Equilibrium(AttributeTree, SpObject):
                 grid_type = self._equilibrium.cache.coordinate_system.grid_type or 1
 
             if type(grid_type) is int:
-                self.grid_type = AttributeTree(
+                self.grid_type = PhysicalGraph(
                     index=grid_type or 1,
                     type="rectangular",
                     description="""Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). In this case the position
                                 arrays should not be filled since they are redundant with grid/dim1 and dim2."""
                 )
             else:
-                self.grid_type = AttributeTree(grid_type)
+                self.grid_type = PhysicalGraph(grid_type)
 
             if grid is None:
                 self.grid = self._equilibrium.cache.coordinate_system.grid or [32, 128]
-            elif isinstance(grid, AttributeTree):
+            elif isinstance(grid, PhysicalGraph):
                 self.grid = grid
             elif isinstance(grid, list):
-                self.grid = AttributeTree(dim1=grid[0], dim2=grid[1])
+                self.grid = PhysicalGraph(dim1=grid[0], dim2=grid[1])
             else:
                 raise ValueError(f"Illegal grid! {grid}")
 
@@ -275,7 +275,7 @@ class Equilibrium(AttributeTree, SpObject):
 
             # TODO: not complete
 
-            return AttributeTree({
+            return PhysicalGraph({
                 "jacobian": jacobian,
                 "tensor_covariant": tensor_covariant,
                 "tensor_contravariant": tensor_contravariant
@@ -306,12 +306,12 @@ class Equilibrium(AttributeTree, SpObject):
             """Contravariant metric tensor on every point of the grid described by grid_type  [mixed]"""
             return self._metric.tensor_contravariant
 
-    class Constraints(AttributeTree):
+    class Constraints(PhysicalGraph):
         def __init__(self, *args, equilibrium=None, **kwargs):
             super().__init__(*args, **kwargs)
             self.__dict__['_equilibrium'] = equilibrium
 
-    class GlobalQuantities(AttributeTree):
+    class GlobalQuantities(PhysicalGraph):
         def __init__(self, cache=None, *args, equilibrium=None, **kwargs):
             super().__init__(*args, **kwargs)
             self.__dict__['_equilibrium'] = equilibrium
@@ -377,7 +377,7 @@ class Equilibrium(AttributeTree, SpObject):
         # @property
         # def magnetic_axis(self):
         #     """Magnetic axis position and toroidal field	structure"""
-        #     return AttributeTree({"r":  self._equilibrium.flux_surface.magnetic_axis.r,
+        #     return PhysicalGraph({"r":  self._equilibrium.flux_surface.magnetic_axis.r,
         #                           "z":  self._equilibrium.flux_surface.magnetic_axis.z,
         #                           "b_field_tor": NotImplemented  # self.profiles_2d.b_field_tor(opt[0][0], opt[0][1])
         #                           })
@@ -678,7 +678,7 @@ class Equilibrium(AttributeTree, SpObject):
             """Flux surface averaged 1/R[m ^ -1]          """
             return self.flux_surface.gm9
 
-    class Profiles2D(AttributeTree):
+    class Profiles2D(PhysicalGraph):
         """
             Equilibrium 2D profiles in the poloidal plane.
         """
@@ -689,7 +689,7 @@ class Equilibrium(AttributeTree, SpObject):
             if isinstance(cache, LazyProxy):
                 self._cache = cache()
             else:
-                self._cache = AttributeTree(cache)
+                self._cache = PhysicalGraph(cache)
 
             logger.info(f"Create Equilibrium")
 
@@ -725,7 +725,7 @@ class Equilibrium(AttributeTree, SpObject):
         def grid_type(self):
             res = self._equilibrium.cache.profiles_2d.grid_type
             if res is None:
-                res = AttributeTree({
+                res = PhysicalGraph({
                     "name": "rectangular",
                     "index": 1,
                     "description": """Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). In this case the position
@@ -735,7 +735,7 @@ class Equilibrium(AttributeTree, SpObject):
 
         @cached_property
         def grid(self):
-            return AttributeTree(
+            return PhysicalGraph(
                 dim1=self._equilibrium.cache.profiles_2d.grid.dim1,
                 dim2=self._equilibrium.cache.profiles_2d.grid.dim2
             )
@@ -744,7 +744,7 @@ class Equilibrium(AttributeTree, SpObject):
         def _rectangular(self):
             if not self.grid_type.index or self.grid_type.index == 1:
                 r, z = np.meshgrid(self.grid.dim1, self.grid.dim2, indexing='ij')
-                return AttributeTree(r=r, z=z)
+                return PhysicalGraph(r=r, z=z)
             else:
                 raise NotImplementedError()
 
@@ -813,7 +813,7 @@ class Equilibrium(AttributeTree, SpObject):
                     res[i, j] = func(self.psirz(self.r[i, j], self.z[i, j]))
             return res
 
-    class Boundary(AttributeTree):
+    class Boundary(PhysicalGraph):
         def __init__(self, *args, equilibrium=None,    ntheta=None, ** kwargs):
             super().__init__(*args, **kwargs)
             self._equilibrium = equilibrium
@@ -836,11 +836,11 @@ class Equilibrium(AttributeTree, SpObject):
             r = boundary[:, 0]
             z = boundary[:, 1]
 
-            return AttributeTree(r=r, z=z)
+            return PhysicalGraph(r=r, z=z)
 
         @cached_property
         def x_point(self):
-            res = AttributeTree()
+            res = PhysicalGraph()
             _, xpt = self._equilibrium.flux_surface.critical_points
             for p in xpt:
                 res[_next_] = p
@@ -860,7 +860,7 @@ class Equilibrium(AttributeTree, SpObject):
         @cached_property
         def geometric_axis(self):
             """RZ position of the geometric axis (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the boundary)"""
-            return AttributeTree(
+            return PhysicalGraph(
                 {
                     "r": (min(self.outline.r)+max(self.outline.r))/2,
                     "z": (min(self.outline.z)+max(self.outline.z))/2
@@ -911,7 +911,7 @@ class Equilibrium(AttributeTree, SpObject):
             """	RZ position of the active limiter point (point of the plasma boundary in contact with the limiter)"""
             return NotImplemented
 
-    class BoundarySeparatrix(AttributeTree):
+    class BoundarySeparatrix(PhysicalGraph):
         def __init__(self, *args, equilibrium=None, ** kwargs):
             super().__init__(*args, **kwargs)
             self._equilibrium = equilibrium
@@ -981,7 +981,7 @@ class Equilibrium(AttributeTree, SpObject):
             opts = d.get("opts", {})
         elif isinstance(d, tuple):
             data, opts = d
-        elif isinstance(d, AttributeTree):
+        elif isinstance(d, PhysicalGraph):
             data = d.data
             opts = d.opts
         else:

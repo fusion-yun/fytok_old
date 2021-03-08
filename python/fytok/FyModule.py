@@ -1,20 +1,19 @@
 from scipy.optimize import root_scalar
 from spdm.data.Entry import open_entry
-from spdm.data.Profile import Profiles
-from spdm.util.AttributeTree import AttributeTree, _next_
+from spdm.data.Node import Node, _next_
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.util.sp_export import sp_find_module
 from spdm.util.SpObject import SpObject
 
-class FyModule(AttributeTree, SpObject):
+
+class FyModule(Node, SpObject):
 
     @staticmethod
     def __new__(cls, *args, _metadata=None, **kwargs):
         if cls is not FyModule and _metadata is None:
             return object.__new__(cls)
-      
-         
+
         if config is None:
             config = {}
         backend = config.get("engine", "FreeGS")

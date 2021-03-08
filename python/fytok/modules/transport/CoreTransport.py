@@ -2,7 +2,7 @@
 from functools import cached_property, lru_cache
 
 import numpy as np
-from spdm.util.AttributeTree import AttributeTree
+from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.logger import logger
 from spdm.data.Profile import Profiles, Profile
 from spdm.util.LazyProxy import LazyProxy
@@ -10,7 +10,7 @@ from spdm.util.LazyProxy import LazyProxy
 from fytok.util.RadialGrid import RadialGrid
 
 
-class CoreTransport(AttributeTree):
+class CoreTransport(PhysicalGraph):
     r"""Core plasma transport of particles, energy, momentum and poloidal flux. The transport of particles, energy and momentum is described by
         diffusion coefficients,  :math:`D`, and convection velocities,  :math:`v`. These are defined by the total fluxes of particles, energy and momentum, across a
         flux surface given by : :math:`V^{\prime}\left[-DY^{\prime}\left|\nabla\rho_{tor,norm}\right|^{2}+vY\left|\nabla\rho_{tor,norm}\right|\right]`,
@@ -26,7 +26,7 @@ class CoreTransport(AttributeTree):
 
     def __init__(self, cache=None, *args, tokamak=None,  **kwargs):
         super().__init__(*args, **kwargs)
-        self._cache = cache or AttributeTree()
+        self._cache = cache or PhysicalGraph()
         self._tokamak = tokamak
         self._grid = self._tokamak.grid
 
@@ -43,10 +43,10 @@ class CoreTransport(AttributeTree):
             self.flux = Profile(self._cache.flux, axis=self._parent.grid_flux.rho_tor_norm,
                                 description={"name": "flux"})
 
-    class Particle(AttributeTree):
+    class Particle(PhysicalGraph):
         def __init__(self, cache=None, *args, parent=None, **kwargs):
             self._parent = parent
-            self._cache = cache or AttributeTree()
+            self._cache = cache or PhysicalGraph()
 
         @cached_property
         def particles(self):
@@ -102,7 +102,7 @@ class CoreTransport(AttributeTree):
         @cached_property
         def ion(self):
             """ Ion　: Transport coefficients related to the various ion species """
-            return AttributeTree(default_factory_array=lambda _holder=self: CoreTransport.Ion(parent=_holder))
+            return PhysicalGraph(default_factory_array=lambda _holder=self: CoreTransport.Ion(parent=_holder))
 
         @cached_property
         def electrons(self):
@@ -112,7 +112,7 @@ class CoreTransport(AttributeTree):
         @cached_property
         def neutral(self):
             """ Neutral : Transport coefficients related to the various neutral species"""
-            return AttributeTree(default_factory_array=lambda _holder=self: CoreTransport.Neutral(parent=_holder))
+            return PhysicalGraph(default_factory_array=lambda _holder=self: CoreTransport.Neutral(parent=_holder))
 
         @cached_property
         def total_ion_energy(self):

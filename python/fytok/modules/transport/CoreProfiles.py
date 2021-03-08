@@ -17,7 +17,7 @@ from fytok.util.RadialGrid import RadialGrid
 from numpy import arctan2, cos, sin, sqrt
 from scipy.interpolate import (RectBivariateSpline, SmoothBivariateSpline,
                                UnivariateSpline)
-from spdm.util.AttributeTree import AttributeTree, _next_
+from spdm.data.PhysicalGraph import PhysicalGraph, _next_
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.data.Profile import Profile, Profiles
@@ -25,7 +25,7 @@ from spdm.util.sp_export import sp_find_module
 from sympy import Point, Polygon
 
 
-class CoreProfiles(AttributeTree):
+class CoreProfiles(PhysicalGraph):
     """CoreProfiles
     """
     IDS = "core_profiles"
@@ -33,10 +33,10 @@ class CoreProfiles(AttributeTree):
     def __init__(self, cache=None, *args, time=None,  grid=None, ** kwargs):
         super().__init__(*args, ** kwargs)
 
-        if isinstance(cache, LazyProxy) or isinstance(cache, AttributeTree):
+        if isinstance(cache, LazyProxy) or isinstance(cache, PhysicalGraph):
             self.__dict__["_cache"] = cache
         else:
-            self.__dict__["_cache"] = AttributeTree(cache)
+            self.__dict__["_cache"] = PhysicalGraph(cache)
 
         self.__dict__["_time"] = time or 0.0
         self.__dict__["_grid"] = grid
@@ -64,11 +64,11 @@ class CoreProfiles(AttributeTree):
         #         d = self._parent._tokamak.equilibrium.profiles_1d.mapping("rho_tor_norm", key, self.grid.rho_tor_norm)
         #     return d
 
-        class TemperatureFit(AttributeTree):
+        class TemperatureFit(PhysicalGraph):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
 
-        class DensityFit(AttributeTree):
+        class DensityFit(PhysicalGraph):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
 
@@ -368,7 +368,7 @@ class CoreProfiles(AttributeTree):
         @cached_property
         def ion(self):
             """Quantities related to the different ion species"""
-            return AttributeTree(default_factory_array=lambda _holder=self: CoreProfiles.Profiles1D.Ion(None, parent=_holder, grid=_holder.grid))
+            return PhysicalGraph(default_factory_array=lambda _holder=self: CoreProfiles.Profiles1D.Ion(None, parent=_holder, grid=_holder.grid))
 
         @cached_property
         def electrons(self):
@@ -530,7 +530,7 @@ class CoreProfiles(AttributeTree):
             """Magnetic shear, defined as rho_tor/q . dq/drho_tor {dynamic}[-]"""
             return NotImplemented
 
-    class GlobalQuantities(AttributeTree):
+    class GlobalQuantities(PhysicalGraph):
         def __init__(self, cache=None, *args, core_profiles=None, **kwargs):
             super().__init__(*args, **kwargs)
             self.__dict__["_core_profiles"] = core_profiles
