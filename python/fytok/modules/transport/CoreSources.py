@@ -4,7 +4,6 @@ from functools import cached_property, lru_cache
 import numpy as np
 from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.logger import logger
-from spdm.data.Profile import Profiles, Profile
 from spdm.util.LazyProxy import LazyProxy
 
 
@@ -24,7 +23,7 @@ class CoreSources(PhysicalGraph):
     def update(self, *args, **kwargs):
         logger.debug("NOT　IMPLEMENTED!")
 
-    class Profiles1D(Profiles):
+    class Profiles1D(PhysicalGraph):
         def __init__(self, cache=None,  *args, parent=None,   **kwargs):
             super().__init__(cache, * args, axis=parent._tokamak.grid.rho_tor_norm, **kwargs)
             self._parent = parent
@@ -33,7 +32,7 @@ class CoreSources(PhysicalGraph):
         def grid(self):
             return self._parent._tokamak.grid
 
-        class Electrons(Profiles):
+        class Electrons(PhysicalGraph):
             def __init__(self, cache=None,  *args, parent=None,   **kwargs):
                 super().__init__(cache, * args, axis=parent.grid.rho_tor_norm, **kwargs)
                 self._parent = parent

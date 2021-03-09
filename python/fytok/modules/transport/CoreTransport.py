@@ -4,7 +4,6 @@ from functools import cached_property, lru_cache
 import numpy as np
 from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.logger import logger
-from spdm.data.Profile import Profiles, Profile
 from spdm.util.LazyProxy import LazyProxy
 
 from fytok.util.RadialGrid import RadialGrid
@@ -33,7 +32,7 @@ class CoreTransport(PhysicalGraph):
     def update(self, *args, **kwargs):
         logger.debug("NOT　IMPLEMENTED!")
 
-    class TransportCoeff(Profiles):
+    class TransportCoeff(PhysicalGraph):
         def __init__(self, cache=None, *args, parent=None, **kwargs):
 
             super().__init__(cache, *args, axis=parent.grid_d.rho_tor_norm, **kwargs)
@@ -68,7 +67,7 @@ class CoreTransport(PhysicalGraph):
         def __init__(self,   *args,  **kwargs):
             super().__init__(*args, **kwargs)
 
-    class Profiles1D(Profiles):
+    class Profiles1D(PhysicalGraph):
         def __init__(self, cache=None, *args, equilibrium=None,  parent=None, **kwargs):
             super().__init__(cache, * args,  **kwargs)
             self._parent = parent

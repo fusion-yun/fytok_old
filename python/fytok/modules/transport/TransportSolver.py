@@ -13,7 +13,6 @@ from scipy.interpolate import RectBivariateSpline, UnivariateSpline
 from spdm.data.PhysicalGraph import PhysicalGraph, _last_, _next_
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
-from spdm.data.Profile import Profile
 from spdm.util.sp_export import sp_find_module
 
 from .CoreProfiles import CoreProfiles

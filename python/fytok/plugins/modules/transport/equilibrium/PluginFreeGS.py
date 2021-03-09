@@ -12,7 +12,6 @@ from scipy.interpolate import RectBivariateSpline, UnivariateSpline
 from spdm.data.PhysicalGraph import PhysicalGraph, _next_
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
-from spdm.data.Profile import Profiles
 
 from fytok.modules.transport.CoreProfiles import CoreProfiles
 from fytok.modules.transport.Equilibrium import Equilibrium
@@ -24,20 +23,23 @@ def is_none(v):
 
 class EquilibriumFreeGS(Equilibrium):
 
-    def __init__(self,  config, *args, **kwargs):
-        super().__init__(config, *args, **kwargs)
+    def __init__(self,*args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-        eq_wall = freegs.machine.Wall(self._tokamak.wall.limiter.outline.r,
-                                      self._tokamak.wall.limiter.outline.z)
+        eq_wall = freegs.machine.Wall(self._parent.wall.limiter.unit.outline.r,
+                                      self._parent.wall.limiter.unit.outline.z)
 
         eq_coils = []
 
-        for coil in self._tokamak.pf_active.coil:
-            t_coil = freegs.machine.Coil(
-                coil.r+coil.width/2,
-                coil.z+coil.height/2,
-                turns=coil.turns)
-            eq_coils.append((coil.name, t_coil))
+        # for coil in self._parent.pf_active.coil:
+        #     rect = coil.element.geometry.rectangle
+        #     turns = coil.element.turns_with_sign
+
+        #     t_coil = freegs.machine.Coil(
+        #         rect.r+rect.width/2,
+        #         rect.z+rect.height/2,
+        #         turns=turns)
+        #     eq_coils.append((coil.name, t_coil))
 
         self._machine = freegs.machine.Machine(eq_coils, wall=eq_wall)
         self._backend = None
@@ -121,7 +123,7 @@ class EquilibriumFreeGS(Equilibrium):
             # logger.debug(f"Solve G-S equation Done")
             # super().update()
             self.profiles_2d.update(solver="FreeGS", psi=self._backend.psiRZ)
-            self._tokamak.pf_active.update(self._backend.tokamak.coils)
+            self._parent.pf_active.update(self._backend.tokamak.coils)
 
     def update_cache(self):
         psi_norm = self.profiles_1d.psi_norm

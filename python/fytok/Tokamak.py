@@ -10,7 +10,6 @@ import scipy.integrate
 from spdm.data.PhysicalGraph import PhysicalGraph, _last_, _next_
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
-from spdm.data.Profile import Profile
 
 from .modules.device.PFActive import PFActive
 from .modules.device.TF import TF
@@ -34,24 +33,18 @@ class Tokamak(PhysicalGraph):
 
     """
 
-    def __init__(self,  cache=None,  *args, time=0.0, rho_tor_norm=None,   **kwargs):
-        super().__init__(*args, time=time, **kwargs)
-        self.__dict__["_cache"] = cache or {}
-        self.__dict__["_time"] = time
-
+    def __init__(self,  data=None,  *args, time=0.0, rho_tor_norm=None,   **kwargs):
+        super().__init__(data, *args, time=time, **kwargs)
         self._time = time
         if rho_tor_norm is None:
             rho_tor_norm = np.sqrt(np.linspace(0, 1.0, 129))
         else:
             rho_tor_norm = rho_tor_norm
 
-        self._grid = RadialGrid(rho_tor_norm, equilibrium=self.equilibrium)
-
-        self._core_profiles = None
-
-        self._edge_profiles = None
+        # self._grid = RadialGrid(rho_tor_norm, parent=self.equilibrium)
 
     # --------------------------------------------------------------------------
+
     @property
     def time(self):
         return self._time
@@ -62,50 +55,52 @@ class Tokamak(PhysicalGraph):
 
     @cached_property
     def vacuum_toroidal_field(self):
-        r0 = float(self._cache.equilibrium.vacuum_toroidal_field.r0)
-        b0 = float(self._cache.equilibrium.vacuum_toroidal_field.b0)
+        r0 = float(self.equilibrium.vacuum_toroidal_field.r0)
+        b0 = float(self.equilibrium.vacuum_toroidal_field.b0)
 
         if not r0:
             lim_r = self.wall.limiter.outline.r
             r0 = (min(lim_r)+max(lim_r))*0.5
 
         if isinstance(self._cache, LazyProxy):
-            # logger.debug(self._cache.equilibrium.time_slice.profiles_1d.f)
-            b0 = self._cache.equilibrium.time_slice.profiles_1d.f()[-1]/r0
+            # logger.debug(self.equilibrium.time_slice.profiles_1d.f)
+            b0 = self.equilibrium.time_slice.profiles_1d.f()[-1]/r0
 
         return PhysicalGraph(r0=r0, b0=b0)
 
     @cached_property
     def wall(self):
-        return Wall(self._cache.wall, tokamak=self)
+        return Wall(self["wall"]["description_2d"], parent=self)
 
     @cached_property
     def tf(self):
-        return TF(self._cache.tf, tokamak=self)
+        return TF(self["tf"], parent=self)
 
     @cached_property
     def pf_active(self):
-        return PFActive(self._cache.pf_active, tokamak=self)
+        return PFActive(self["pf_active"], parent=self)
 
     # --------------------------------------------------------------------------
 
-    @cached_property
+    @property
     def equilibrium(self):
-        return Equilibrium(self._cache.equilibrium.time_slice, tokamak=self)
+        if not hasattr(self, "_equilibrium"):
+            self._equilibrium = Equilibrium(self["equilibrium"]["time_slice"], parent=self)
+        return self._equilibrium
 
     @property
     def core_profiles(self):
-        if self._core_profiles is None:
-            self._core_profiles = CoreProfiles(self._cache.core_profiles,
+        if not hasattr(self, "_core_profiles"):
+            self._core_profiles = CoreProfiles(self["core_profiles"],
                                                time=self.time,
                                                grid=self.grid,
-                                               tokamak=self)
+                                               parent=self)
         return self._core_profiles
 
     @property
     def edge_profiles(self):
-        if self._edge_profiles is None:
-            self._edge_profiles = EdgeProfiles(self._cache.edge_profiles,
+        if not hasattr(self, "_edge_profiles"):
+            self._edge_profiles = EdgeProfiles(self["edge_profiles"],
                                                time=self.time,
                                                grid=self.grid,
                                                vacuum_toroidal_field=self.vacuum_toroidal_field)
@@ -114,7 +109,7 @@ class Tokamak(PhysicalGraph):
     @cached_property
     def core_transport(self):
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return PhysicalGraph(default_factory_array=lambda _holder=self: CoreTransport(None, grid=_holder.grid, tokamak=_holder))
+        return PhysicalGraph(default_factory_array=lambda _holder=self: CoreTransport(None, grid=_holder.grid, parent=_holder))
 
     @cached_property
     def core_sources(self):
@@ -122,14 +117,14 @@ class Tokamak(PhysicalGraph):
             Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return PhysicalGraph(default_factory_array=lambda _holder=self: CoreSources(None, grid=_holder.grid, tokamak=_holder))
+        return PhysicalGraph(default_factory_array=lambda _holder=self: CoreSources(None, grid=_holder.grid, parent=_holder))
 
     @cached_property
     def edge_transports(self):
         """Edge plasma transport. Energy terms correspond to the full kinetic energy equation
          (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return EdgeTransport(self._cache.edge_transport.mode, tokamak=self)
+        return EdgeTransport(self["edge_transport"]["mode"], parent=self)
 
     @cached_property
     def edge_sources(self):
@@ -137,11 +132,11 @@ class Tokamak(PhysicalGraph):
          (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
 
-        return CoreSources(self._cache.edge_sources.mode, tokamak=self)
+        return CoreSources(self["edge_sources"]["mode"], parent=self)
 
     @cached_property
     def transport(self):
-        return TransportSolver(self._cache.transport, tokamak=self)
+        return TransportSolver(self["transport"], parent=self)
 
     @cached_property
     def constraints(self):
@@ -155,8 +150,8 @@ class Tokamak(PhysicalGraph):
         if time is None:
             time = self._time
 
-        core_profiles_prev = self.core_profiles  
-        
+        core_profiles_prev = self.core_profiles
+
         for iter_count in range(max_iters):
             logger.debug(f"Iterator = {iter_count}")
 
@@ -165,7 +160,7 @@ class Tokamak(PhysicalGraph):
 
             for trans in self.core_transport:
                 trans.update(time=time, equilibrium=self.equilibrium)
-            
+
             core_profiles_next = self.transport.update(core_profiles_prev,
                                                        equilibrium=self.equilibrium,
                                                        core_transport=self.core_transport,
@@ -309,7 +304,6 @@ class Tokamak(PhysicalGraph):
             desc["density"] = n_s * (n_core(rho_tor_norm)*(rho_tor_norm < x_ped) +
                                      n_ped(rho_tor_norm) * (rho_tor_norm >= x_ped))
 
-            
             self.core_profiles.profiles_1d[sp] |= desc
             logger.debug(self.core_profiles._grid)
         if "electrons" not in spec:

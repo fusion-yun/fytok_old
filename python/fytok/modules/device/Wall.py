@@ -16,56 +16,54 @@ class Wall(PhysicalGraph):
     """
     IDS = "wall"
 
-    def __init__(self,data=None,  *args,  **kwargs):
-        super().__init__()
+    def __init__(self, data=None,  *args,  **kwargs):
+        super().__init__(data, *args, **kwargs)
+        # if isinstance(data, LazyProxy):
+        #     limiter = data.description_2d.limiter.unit.outline()
+        #     vessel = data.description_2d.vessel.annular()
+        # else:
+        #     limiter = None
+        #     vessel = None
 
-        if isinstance(data, LazyProxy):
+        # if limiter is None:
+        #     pass
+        # elif isinstance(limiter, list):
+        #     self.limiter.outline.r = limiter[0]
+        #     self.limiter.outline.z = limiter[1]
+        # elif isinstance(limiter, collections.abc.Mapping):
+        #     self.limiter.outline.r = limiter["r"]
+        #     self.limiter.outline.z = limiter["z"]
+        # elif isinstance(limiter, LazyProxy):
+        #     self.limiter.outline.r = limiter.r
+        #     self.limiter.outline.z = limiter.z
+        # else:
+        #     raise TypeError(f"Unknown type {type(limiter)}")
 
-            limiter = data.description_2d.limiter.unit.outline
-            vessel = data.description_2d.vessel.annular
-        else:
-            limiter = None
-            vessel = None
-
-        if limiter is None:
-            pass
-        elif isinstance(limiter, list):
-            self.limiter.outline.r = limiter[0]
-            self.limiter.outline.z = limiter[1]
-        elif isinstance(limiter, collections.abc.Mapping):
-            self.limiter.outline.r = limiter["r"]
-            self.limiter.outline.z = limiter["z"]
-        elif isinstance(limiter, LazyProxy):
-            self.limiter.outline.r = limiter.r()
-            self.limiter.outline.z = limiter.z()
-        else:
-            raise TypeError(f"Unknown type {type(limiter)}")
-
-        if vessel is None:
-            pass
-        elif isinstance(vessel, list):
-            self.vessel.annular.outline_inner.r = vessel[0][0]
-            self.vessel.annular.outline_inner.z = vessel[0][1]
-            self.vessel.annular.outline_outer.r = vessel[1][0]
-            self.vessel.annular.outline_outer.z = vessel[1][1]
-        elif isinstance(limiter, collections.abc.Mapping):
-            self.vessel.annular.outline_inner.r = vessel["outline_inner"]["r"]
-            self.vessel.annular.outline_inner.z = vessel["outline_inner"]["z"]
-            self.vessel.annular.outline_outer.r = vessel["outline_outer"]["r"]
-            self.vessel.annular.outline_outer.z = vessel["outline_outer"]["z"]
-        elif isinstance(limiter, LazyProxy):
-            self.vessel.annular.outline_inner.r = vessel.outline_inner.r()
-            self.vessel.annular.outline_inner.z = vessel.outline_inner.z()
-            self.vessel.annular.outline_outer.r = vessel.outline_outer.r()
-            self.vessel.annular.outline_outer.z = vessel.outline_outer.z()
-        else:
-            raise TypeError(f"Unknown type {type(vessel)}")
+        # if vessel is None:
+        #     pass
+        # elif isinstance(vessel, list):
+        #     self.vessel.annular.outline_inner.r = vessel[0][0]
+        #     self.vessel.annular.outline_inner.z = vessel[0][1]
+        #     self.vessel.annular.outline_outer.r = vessel[1][0]
+        #     self.vessel.annular.outline_outer.z = vessel[1][1]
+        # elif isinstance(limiter, collections.abc.Mapping):
+        #     self.vessel.annular.outline_inner.r = vessel["outline_inner"]["r"]
+        #     self.vessel.annular.outline_inner.z = vessel["outline_inner"]["z"]
+        #     self.vessel.annular.outline_outer.r = vessel["outline_outer"]["r"]
+        #     self.vessel.annular.outline_outer.z = vessel["outline_outer"]["z"]
+        # elif isinstance(limiter, LazyProxy):
+        #     self.vessel.annular.outline_inner.r = vessel.outline_inner.r
+        #     self.vessel.annular.outline_inner.z = vessel.outline_inner.z
+        #     self.vessel.annular.outline_outer.r = vessel.outline_outer.r
+        #     self.vessel.annular.outline_outer.z = vessel.outline_outer.z
+        # else:
+        #     raise TypeError(f"Unknown type {type(vessel)}")
 
     @cached_property
     def limiter_polygon(self):
-        limiter_points = np.array([self.limiter.outline.r,
-                                   self.limiter.outline.z]).transpose([1, 0])
-        
+        limiter_points = np.array([self.limiter.unit.outline.r,
+                                   self.limiter.unit.outline.z]).transpose([1, 0])
+
         return Polygon(*map(Point, limiter_points))
 
     @cached_property

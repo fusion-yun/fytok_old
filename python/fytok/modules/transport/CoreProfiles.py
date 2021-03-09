@@ -18,9 +18,9 @@ from numpy import arctan2, cos, sin, sqrt
 from scipy.interpolate import (RectBivariateSpline, SmoothBivariateSpline,
                                UnivariateSpline)
 from spdm.data.PhysicalGraph import PhysicalGraph, _next_
+from spdm.data.Quantity import Quantity
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
-from spdm.data.Profile import Profile, Profiles
 from spdm.util.sp_export import sp_find_module
 from sympy import Point, Polygon
 
@@ -43,7 +43,7 @@ class CoreProfiles(PhysicalGraph):
 
         # self.vacuum_toroidal_field = tokamak.vacuum_toroidal_field
 
-    class Profiles1D(Profiles):
+    class Profiles1D(PhysicalGraph):
         def __init__(self, cache=None,  *args, parent=None, grid=None, **kwargs):
             if grid is None:
                 grid = parent._grid
@@ -72,7 +72,7 @@ class CoreProfiles(PhysicalGraph):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
 
-        class Electrons(Profiles):
+        class Electrons(PhysicalGraph):
             def __init__(self, cache=None, *args, grid=None,  **kwargs):
                 super().__init__(cache, *args, axis=grid.rho_tor_norm, **kwargs)
                 self.__dict__['_grid'] = grid
@@ -153,7 +153,7 @@ class CoreProfiles(PhysicalGraph):
             #     """Collisionality normalised to the bounce frequency {dynamic}[-]"""
             #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
 
-        class Ion(Profiles):
+        class Ion(PhysicalGraph):
             def __init__(self, cache=None,  *args, grid=None, z_ion=1, label=None, neutral_index=None,  **kwargs):
                 super().__init__(cache, *args, axis=grid.rho_tor_norm, **kwargs)
                 self.__dict__['_grid'] = grid
@@ -286,7 +286,7 @@ class CoreProfiles(PhysicalGraph):
             #     """Quantities related to the different states of the species (ionisation, energy, excitation, ...)  struct_array [max_size=unbounded]  1- 1...N"""
             #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
 
-        class Neutral(Profiles):
+        class Neutral(PhysicalGraph):
             def __init__(self, cache=None,  *args, grid=None, label=None, ion_index=None, **kwargs):
                 super().__init__(cache, *args, axis=grid.rho_tor_norm, **kwargs)
                 self.__dict__['_grid'] = grid
@@ -383,17 +383,17 @@ class CoreProfiles(PhysicalGraph):
         @cached_property
         def t_i_average(self):
             """Ion temperature(averaged on charge states and ion species) {dynamic}[eV]"""
-            return Profile(None, axis=self.grid.rho_tor_norm, description={"name": "t_i_average"})
+            return Quantity(None, axis=self.grid.rho_tor_norm, description={"name": "t_i_average"})
 
         @cached_property
         def t_i_average_fit(self):
             """Information on the fit used to obtain the t_i_average profile[eV]"""
-            return Profile(None, axis=self.grid.rho_tor_norm, description={"name": "t_i_average_fit"})
+            return Quantity(None, axis=self.grid.rho_tor_norm, description={"name": "t_i_average_fit"})
 
         @cached_property
         def n_i_total(self):
             """ total ion density(sum over species and charge states)   (thermal+non-thermal) {dynamic}[-]"""
-            res = Profile(None, axis=self.grid.rho_tor_norm,  description={"name": "n_i_total"})
+            res = Quantity(None, axis=self.grid.rho_tor_norm,  description={"name": "n_i_total"})
             for ion in self.ion:
                 logger.debug(ion)
                 res += ion.z_ion*(ion.density_thermal+ion.density_fast)
@@ -407,7 +407,7 @@ class CoreProfiles(PhysicalGraph):
         @cached_property
         def n_i_thermal_total(self):
             """Total ion thermal density(sum over species and charge states) {dynamic}[m ^ -3]"""
-            res = Profile(0.0, axis=self.grid.rho_tor_norm,  description={"name": "n_i_thermal_total"})
+            res = Quantity(0.0, axis=self.grid.rho_tor_norm,  description={"name": "n_i_thermal_total"})
             for ion in self.ion:
                 res += ion.z_ion * ion.density_thermal
             return res
@@ -415,7 +415,7 @@ class CoreProfiles(PhysicalGraph):
         @cached_property
         def zeff(self):
             """Effective charge {dynamic}[-]"""
-            res = Profile(0.0, axis=self.grid.rho_tor_norm,  description={"name": "zeff"})
+            res = Quantity(0.0, axis=self.grid.rho_tor_norm,  description={"name": "zeff"})
             for ion in self.ion:
                 res += ion.z_ion * ion.z_ion * ion.density
             return res/self.n_i_total
@@ -423,18 +423,18 @@ class CoreProfiles(PhysicalGraph):
         @cached_property
         def zeff_fit(self):
             """Information on the fit used to obtain the zeff profile[-]  """
-            return Profile(None, axis=self.grid.rho_tor_norm, description={"name": "zeff_fit"})
+            return Quantity(None, axis=self.grid.rho_tor_norm, description={"name": "zeff_fit"})
 
         @cached_property
         def momentum_tor(self):
             """Total plasma toroidal momentum, summed over ion species and electrons weighted by their density and major radius,
              i.e. sum_over_species(n*R*m*Vphi) {dynamic}[kg.m ^ -1.s ^ -1]"""
-            return Profile(None, axis=self.grid.rho_tor_norm, description={"name": "momentum_tor"})
+            return Quantity(None, axis=self.grid.rho_tor_norm, description={"name": "momentum_tor"})
 
         @cached_property
         def pressure_ion_total(self):
             """Total(sum over ion species) thermal ion pressure {dynamic}[Pa]"""
-            return Profile(None, axis=self.grid.rho_tor_norm, description={"name": "pressure_ion_total"})
+            return Quantity(None, axis=self.grid.rho_tor_norm, description={"name": "pressure_ion_total"})
 
         @cached_property
         def pressure_thermal(self):
@@ -454,7 +454,7 @@ class CoreProfiles(PhysicalGraph):
         @cached_property
         def j_total(self):
             """Total parallel current density = average(jtot.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
-            return Profile(None, axis=self.grid.rho_tor_norm, description={"name": "j_total"})
+            return Quantity(None, axis=self.grid.rho_tor_norm, description={"name": "j_total"})
 
         # @property
         # def current_parallel_inside(self):
@@ -464,7 +464,7 @@ class CoreProfiles(PhysicalGraph):
         @cached_property
         def j_tor(self):
             """Total toroidal current density = average(J_Tor/R) / average(1/R) {dynamic}[A/m ^ 2]"""
-            return Profile(None, axis=self.grid.rho_tor_norm, description={"name": "j_tor"})
+            return Quantity(None, axis=self.grid.rho_tor_norm, description={"name": "j_tor"})
 
         @cached_property
         def j_ohmic(self):
@@ -488,7 +488,7 @@ class CoreProfiles(PhysicalGraph):
         #     """Parallel conductivity {dynamic}[ohm ^ -1.m ^ -1]"""
         #     return NotImplemented
 
-        class EField(Profiles):
+        class EField(PhysicalGraph):
             def __init__(self, cache=None,  *args, grid=None,    **kwargs):
                 super().__init__(cache, *args, axis=grid.rho_tor_norm, **kwargs)
                 self.__dict__['_grid'] = grid
@@ -502,7 +502,7 @@ class CoreProfiles(PhysicalGraph):
         @cached_property
         def phi_potential(self):
             """Electrostatic potential, averaged on the magnetic flux surface {dynamic}[V]"""
-            return Profile(None, axis=self.grid.rho_tor_norm, description={"name": "phi_potential"})
+            return Quantity(None, axis=self.grid.rho_tor_norm, description={"name": "phi_potential"})
 
         @cached_property
         def rotation_frequency_tor_sonic(self):
@@ -510,7 +510,7 @@ class CoreProfiles(PhysicalGraph):
             This quantity is the toroidal angular rotation frequency due to the ExB drift, introduced in formula(43) of Hinton and Wong,
             Physics of Fluids 3082 (1985), also referred to as sonic flow in regimes in which the toroidal velocity is dominant over the
             poloidal velocity Click here for further documentation. {dynamic}[s ^ -1]"""
-            return Profile(None, axis=self.grid.rho_tor_norm, description={"name": "rotation_frequency_tor_sonic"})
+            return Quantity(None, axis=self.grid.rho_tor_norm, description={"name": "rotation_frequency_tor_sonic"})
 
         # @cached_property
         # def q(self):
@@ -518,12 +518,12 @@ class CoreProfiles(PhysicalGraph):
         #     This quantity is COCOS-dependent, with the following transformation: """
         #     # q = (constants.pi*2.0)*self._b0*self.dpsi_drho_tor.axis*self.grid.rho_tor[-1]/self.dpsi_drho_tor
         #     # q[0] = 2*q[1]-q[2]
-        #     # return Profile(self.dpsi_drho_tor.axis, q)
-        #     return Profile(self.grid.rho_tor_norm, 0, description={"name": "Safety factor"})
+        #     # return Quantity(self.dpsi_drho_tor.axis, q)
+        #     return Quantity(self.grid.rho_tor_norm, 0, description={"name": "Safety factor"})
 
         # @cached_property
         # def dpsi_drho_tor(self):
-        #     return Profile(self.grid.rho_tor_norm, 0, description={"name": "dpsi_drho_tor"})
+        #     return Quantity(self.grid.rho_tor_norm, 0, description={"name": "dpsi_drho_tor"})
 
         @cached_property
         def magnetic_shear(self):

@@ -3,8 +3,8 @@ import collections
 import matplotlib.pyplot as plt
 import numpy as np
 from spdm.data.PhysicalGraph import PhysicalGraph
+from spdm.data.Quantity import Quantity
 from spdm.util.logger import logger
-from spdm.data.Profile import Profile
 
 
 def fetch_profile(holder, desc, prefix=[]):
@@ -87,7 +87,7 @@ def plot_profiles(holder, profiles, fig_axis=None, axis=None, prefix=None, grid=
 
         for d in data:
             profile, opts = fetch_profile(holder, d,  prefix=prefix)
-            if isinstance(profile, Profile) and hasattr(profile, "axis"):
+            if isinstance(profile, Quantity) and hasattr(profile, "axis"):
                 if profile.axis is not None and profile.value is not None:
                     fig_axis[idx].plot(profile.axis, profile.value, **opts)
                 else:

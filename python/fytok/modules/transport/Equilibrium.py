@@ -13,16 +13,12 @@ from numpy import arctan2, cos, sin, sqrt
 from scipy.interpolate import (RectBivariateSpline, SmoothBivariateSpline,
                                UnivariateSpline)
 from scipy.optimize import root_scalar
-from spdm.data.Entry import open_entry
-from spdm.data.Profile import Profiles
 from spdm.data.PhysicalGraph import PhysicalGraph, _next_
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
-from spdm.util.sp_export import sp_find_module
-from spdm.util.SpObject import SpObject
 from spdm.util.utilities import first_not_empty
-from sympy import Point, Polygon
 
+from ...FyModule import FyModule
 from ..device.PFActive import PFActive
 from ..device.Wall import Wall
 from .FluxSurface import FluxSurface
@@ -30,14 +26,13 @@ from .FluxSurface import FluxSurface
 TOLERANCE = 1.0e-6
 
 
-class Equilibrium(PhysicalGraph, SpObject):
+class Equilibrium(PhysicalGraph, FyModule):
     r"""Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
 
         Reference:
             - O. Sauter and S. Yu Medvedev, "Tokamak coordinate conventions: COCOS", Computer Physics Communications 184, 2 (2013), pp. 293--302.
 
         COCOS  11
-
     """
     #    Top view
     #             ***************
@@ -74,35 +69,11 @@ class Equilibrium(PhysicalGraph, SpObject):
     #            Cylindrical coordinate      : (R,\phi,Z)
     #    Poloidal plane coordinate   : (\rho,\theta,\phi)
 
-    IDS = "Equilibrium"
+    IDS = "transport.equilibrium"
+    DEFAULT_PLUGIN = "FreeGS"
 
-    @staticmethod
-    def __new__(cls,    *args, config=None,  **kwargs):
-        if cls is not Equilibrium:
-            return super(Equilibrium, cls).__new__(cls)
-        if config is None:
-            config = {}
-        backend = config.get("engine", "FreeGS")
-        n_cls = cls
-
-        if backend != "":
-            try:
-                path = __package__.split(".")
-                plugin_name = ".".join([path[0], "plugins", *path[1:], "equilibrium", f"Plugin{backend}"])
-                n_cls = sp_find_module(plugin_name, fragment=f"Equilibrium{backend}")
-
-            except ModuleNotFoundError as error:
-                logger.debug(error)
-                n_cls = cls
-            else:
-                logger.info(f"Load '{cls.__name__}' module {backend}!")
-
-        return PhysicalGraph.__new__(n_cls)
-
-    def __init__(self,   cache=None,  *args,  tokamak=None, psi_norm=None,   **kwargs):
+    def __init__(self, *args,   psi_norm=None,   **kwargs):
         super().__init__(*args, **kwargs)
-        self.__dict__["_tokamak"] = tokamak
-        self.__dict__["_cache"] = cache
 
         if psi_norm is None:
             psi_norm = 129  # default number of magnetic flux surface
@@ -114,39 +85,24 @@ class Equilibrium(PhysicalGraph, SpObject):
         else:
             raise TypeError(f"psi_norm {psi_norm}")
 
-        self.__dict__["_psi_norm"] = psi_norm
+        self._psi_norm = psi_norm
 
-    @property
-    def cache(self):
-        if isinstance(self._cache, LazyProxy):
-            self._cache = self._cache()
-        elif isinstance(self._cache, PhysicalGraph):
-            # self._cache = self._cache
-            pass
-        else:
-            self._cache = PhysicalGraph(self._cache)
-        return self._cache
-
-    @cached_property
     def vacuum_toroidal_field(self):
-        return self._tokamak.vacuum_toroidal_field
+        return self._parent.vacuum_toroidal_field
 
     @property
     def time(self):
-        return self._tokamak.time
+        return self._parent.time
 
     def radial_grid(self, axis=129, primary_coordinate="rho_tor_norm"):
         if isinstance(axis, RadialGrid):
             return axis
         else:
-            return RadialGrid(axis, equilibrium=self)
+            return RadialGrid(axis, parent=self)
 
     def update(self, *args, time=None, ** kwargs):
-
         # self.constraints.update(constraints)
-
         # logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] at: Start")
-
         # self._solve(*args, ** kwargs)
         if time is not None:
             self.time = time
@@ -163,46 +119,44 @@ class Equilibrium(PhysicalGraph, SpObject):
         del self.boundary_separatrix
         del self.flux_surface
 
-        if isinstance(self._cache, LazyProxy):
-            self._cache = PhysicalGraph()
-
     @cached_property
     def profiles_1d(self):
-        return Equilibrium.Profiles1D(self._cache.profiles_1d, psi_norm=self._psi_norm, equilibrium=self)
+        return Equilibrium.Profiles1D(self["profiles_1d"], parent=self)
 
     @cached_property
     def profiles_2d(self):
-        return Equilibrium.Profiles2D(self._cache.profiles_2d, equilibrium=self)
+        return Equilibrium.Profiles2D(self["profiles_2d"], parent=self)
 
     @cached_property
     def global_quantities(self):
-        return Equilibrium.GlobalQuantities(equilibrium=self)
+        return Equilibrium.GlobalQuantities(parent=self)
 
     @cached_property
     def boundary(self):
-        return Equilibrium.Boundary(equilibrium=self)
+        return Equilibrium.Boundary(self["boundary"], parent=self)
 
     @cached_property
     def boundary_separatrix(self):
-        return Equilibrium.BoundarySeparatrix(equilibrium=self)
+        return Equilibrium.BoundarySeparatrix(self["boundary_separatrix"], parent=self)
 
     @cached_property
     def constraints(self):
-        return Equilibrium.Constraints(equilibrium=self)
+        return Equilibrium.Constraints(self["constraints"], parent=self)
 
     @cached_property
     def coordinate_system(self):
-        return Equilibrium.CoordinateSystem(equilibrium=self)
+        return Equilibrium.CoordinateSystem(self["coordinate_system"], parent=self)
 
     @cached_property
     def flux_surface(self):
-        # logger.debug(self.profiles_1d._cache)
         return FluxSurface(self.profiles_2d.psirz,
                            psi_norm=self._psi_norm,
                            ffprime=self.profiles_1d.f_df_dpsi,
-                           r0=self.vacuum_toroidal_field.r0, b0=self.vacuum_toroidal_field.b0,
+                           r0=self.vacuum_toroidal_field.r0,
+                           b0=self.vacuum_toroidal_field.b0,
                            coordinate_system=self.coordinate_system,
-                           limiter=self._tokamak.wall.limiter_polygon)
+                           limiter=self._parent.wall.limiter_polygon,
+                           parent=self)
 
     class CoordinateSystem(PhysicalGraph):
         """Definition of the 2D grid
@@ -233,13 +187,11 @@ class Equilibrium(PhysicalGraph, SpObject):
                 0x?4  : constant volume
         """
 
-        def __init__(self,  *args, grid=None, equilibrium=None,  grid_type=None, **kwargs):
-
+        def __init__(self,  *args, grid=None,   grid_type=None, **kwargs):
             super().__init__(*args, **kwargs)
-            self.__dict__['_equilibrium'] = equilibrium
 
             if grid_type is None:
-                grid_type = self._equilibrium.cache.coordinate_system.grid_type or 1
+                grid_type = self._parent.coordinate_system.grid_type or 1
 
             if type(grid_type) is int:
                 self.grid_type = PhysicalGraph(
@@ -252,7 +204,7 @@ class Equilibrium(PhysicalGraph, SpObject):
                 self.grid_type = PhysicalGraph(grid_type)
 
             if grid is None:
-                self.grid = self._equilibrium.cache.coordinate_system.grid or [32, 128]
+                self.grid = self._parent.coordinate_system.grid or [32, 128]
             elif isinstance(grid, PhysicalGraph):
                 self.grid = grid
             elif isinstance(grid, list):
@@ -307,45 +259,42 @@ class Equilibrium(PhysicalGraph, SpObject):
             return self._metric.tensor_contravariant
 
     class Constraints(PhysicalGraph):
-        def __init__(self, *args, equilibrium=None, **kwargs):
+        def __init__(self, *args,  **kwargs):
             super().__init__(*args, **kwargs)
-            self.__dict__['_equilibrium'] = equilibrium
 
     class GlobalQuantities(PhysicalGraph):
-        def __init__(self, cache=None, *args, equilibrium=None, **kwargs):
+        def __init__(self,  *args,  **kwargs):
             super().__init__(*args, **kwargs)
-            self.__dict__['_equilibrium'] = equilibrium
-            self.__dict__['_cache'] = cache
 
         @property
         def beta_pol(self):
             """Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip^2]  [-]"""
-            return self._equilibrium.cache.global_quantities.beta_pol
+            return self._parent.global_quantities.beta_pol
 
         @property
         def beta_tor(self):
             """Toroidal beta, defined as the volume-averaged total perpendicular pressure divided by (B0^2/(2*mu0)), i.e. beta_toroidal = 2 mu0 int(p dV) / V / B0^2  [-]"""
-            return self._equilibrium.cache.global_quantities.beta_tor
+            return self._parent.global_quantities.beta_tor
 
         @property
         def beta_normal(self):
             """Normalised toroidal beta, defined as 100 * beta_tor * a[m] * B0 [T] / ip [MA]  [-]"""
-            return self._equilibrium.cache.global_quantities.beta_normal
+            return self._parent.global_quantities.beta_normal
 
         @property
         def ip(self):
             """Plasma current (toroidal component). Positive sign means anti-clockwise when viewed from above.  [A]."""
-            return self._equilibrium.cache.global_quantities.ip
+            return self._parent.global_quantities.ip
 
         @property
         def li_3(self):
             """Internal inductance  [-]"""
-            return self._equilibrium.cache.global_quantities.li
+            return self._parent.global_quantities.li
 
         @property
         def volume(self):
             """Total plasma volume  [m^3]"""
-            return self._equilibrium.cache.global_quantities.volume
+            return self._parent.global_quantities.volume
 
         @property
         def area(self):
@@ -365,36 +314,36 @@ class Equilibrium(PhysicalGraph, SpObject):
         # @property
         # def psi_axis(self):
         #     """Poloidal flux at the magnetic axis  [Wb]."""
-        #     # return self._equilibrium.cache.global_quantities.psi_axis or
-        #     return self._equilibrium.flux_surface.psi_axis
+        #     # return self._parent.global_quantities.psi_axis or
+        #     return self._parent.flux_surface.psi_axis
 
         # @property
         # def psi_boundary(self):
         #     """Poloidal flux at the selected plasma boundary  [Wb]."""
-        #     # return self._equilibrium.cache.global_quantities.psi_boundary or
-        #     return self._equilibrium.flux_surface.psi_boundary
+        #     # return self._parent.global_quantities.psi_boundary or
+        #     return self._parent.flux_surface.psi_boundary
 
         # @property
         # def magnetic_axis(self):
         #     """Magnetic axis position and toroidal field	structure"""
-        #     return PhysicalGraph({"r":  self._equilibrium.flux_surface.magnetic_axis.r,
-        #                           "z":  self._equilibrium.flux_surface.magnetic_axis.z,
+        #     return PhysicalGraph({"r":  self._parent.flux_surface.magnetic_axis.r,
+        #                           "z":  self._parent.flux_surface.magnetic_axis.z,
         #                           "b_field_tor": NotImplemented  # self.profiles_2d.b_field_tor(opt[0][0], opt[0][1])
         #                           })
 
         @cached_property
         def magnetic_axis(self):
-            o, _ = self._equilibrium.flux_surface.critical_points
+            o, _ = self._parent.flux_surface.critical_points
             return o[0]
 
         @cached_property
         def x_points(self):
-            _, x = self._equilibrium.flux_surface.critical_points
+            _, x = self._parent.flux_surface.critical_points
             return x
 
         @cached_property
         def psi_axis(self):
-            o, _ = self._equilibrium.flux_surface.critical_points
+            o, _ = self._parent.flux_surface.critical_points
             return o[0].psi
 
         @cached_property
@@ -426,21 +375,20 @@ class Equilibrium(PhysicalGraph, SpObject):
             """Plasma energy content: 3/2 * int(p, dV) with p being the total pressure(thermal + fast particles)[J].  Time-dependent  Scalar [J]"""
             return NotImplemented
 
-    class Profiles1D(Profiles):
+    class Profiles1D(PhysicalGraph):
         """Equilibrium profiles (1D radial grid) as a function of the poloidal flux	"""
 
-        def __init__(self, cache,   *args,   equilibrium=None, psi_norm=None, ** kwargs):
+        def __init__(self, cache,   *args,   psi_norm=None, ** kwargs):
             if psi_norm is None:
                 psi_norm = 129
 
             if type(psi_norm) is int:
                 psi_norm = np.linspace(0, 1.0, psi_norm, endpoint=False)
             super().__init__(cache, *args, axis="psi_norm", **kwargs)
-            self.__dict__["_equilibrium"] = equilibrium
 
         @property
         def flux_surface(self):
-            return self._equilibrium.flux_surface
+            return self._parent.flux_surface
 
         @cached_property
         def psi_norm(self):
@@ -460,7 +408,7 @@ class Equilibrium(PhysicalGraph, SpObject):
         @cached_property
         def pressure(self):
             """	Pressure  [Pa]"""
-            return self.dpressure_dpsi.inv_integral * (self._equilibrium.global_quantities.psi_axis - self._equilibrium.global_quantities.psi_boundary)
+            return self.dpressure_dpsi.inv_integral * (self._parent.global_quantities.psi_axis - self._parent.global_quantities.psi_boundary)
 
         @cached_property
         def pprime(self):
@@ -499,7 +447,7 @@ class Equilibrium(PhysicalGraph, SpObject):
 
         @cached_property
         def fpol1(self):
-            return self._cache.f
+            return self.f
 
         @cached_property
         def j_tor(self):
@@ -522,7 +470,7 @@ class Equilibrium(PhysicalGraph, SpObject):
 
         @cached_property
         def q1(self):
-            return self._equilibrium.cache.profiles_1d.q*self.flux_surface.cocos_flag
+            return self._parent.profiles_1d.q*self.flux_surface.cocos_flag
 
         @cached_property
         def psi_norm1(self):
@@ -683,23 +631,12 @@ class Equilibrium(PhysicalGraph, SpObject):
             Equilibrium 2D profiles in the poloidal plane.
         """
 
-        def __init__(self, cache, *args, grid=None, equilibrium=None,  ** kwargs):
+        def __init__(self,  *args, grid=None,   ** kwargs):
             super().__init__(*args, **kwargs)
-            self._equilibrium = equilibrium
-            if isinstance(cache, LazyProxy):
-                self._cache = cache()
-            else:
-                self._cache = PhysicalGraph(cache)
-
-            logger.info(f"Create Equilibrium")
-
-        def update(self, **kwargs):
-            for k, v in kwargs.items():
-                self._cache[k] = v
 
         @property
         def psirz(self):
-            psi_value = self._cache.psi
+            psi_value = self["psi"]
 
             if callable(psi_value):
                 psi_value = psi_value(self.r, self.z)
@@ -723,7 +660,7 @@ class Equilibrium(PhysicalGraph, SpObject):
 
         @cached_property
         def grid_type(self):
-            res = self._equilibrium.cache.profiles_2d.grid_type
+            res = self["grid_type"]
             if res is None:
                 res = PhysicalGraph({
                     "name": "rectangular",
@@ -735,28 +672,25 @@ class Equilibrium(PhysicalGraph, SpObject):
 
         @cached_property
         def grid(self):
-            return PhysicalGraph(
-                dim1=self._equilibrium.cache.profiles_2d.grid.dim1,
-                dim2=self._equilibrium.cache.profiles_2d.grid.dim2
-            )
+            return PhysicalGraph(self["grid"])
 
         @cached_property
-        def _rectangular(self):
+        def _rectangle(self):
             if not self.grid_type.index or self.grid_type.index == 1:
                 r, z = np.meshgrid(self.grid.dim1, self.grid.dim2, indexing='ij')
-                return PhysicalGraph(r=r, z=z)
+                return PhysicalGraph({"r": r, "z": z})
             else:
                 raise NotImplementedError()
 
         @cached_property
         def r(self):
             """Values of the major radius on the grid  [m] """
-            return self._rectangular.r
+            return self._rectangle.r
 
         @cached_property
         def z(self):
             """Values of the Height on the grid  [m] """
-            return self._rectangular.z
+            return self._rectangle.z
 
         @property
         def psi(self):
@@ -772,7 +706,7 @@ class Equilibrium(PhysicalGraph, SpObject):
         def phi(self):
             """	Toroidal flux  [Wb]"""
             return self.apply_psifunc("phi")
-            # return self._equilibrium.profiles_1d.phi(self.psi(self.r, self.z))
+            # return self._parent.profiles_1d.phi(self.psi(self.r, self.z))
 
         @cached_property
         def j_tor(self):
@@ -801,7 +735,7 @@ class Equilibrium(PhysicalGraph, SpObject):
 
         def apply_psifunc(self, func):
             if isinstance(func, str):
-                func = self._equilibrium.profiles_1d.interpolate(func)
+                func = self._parent.profiles_1d.interpolate(func)
 
             NX = self.grid.dim1.shape[0]
             NY = self.grid.dim2.shape[0]
@@ -816,7 +750,7 @@ class Equilibrium(PhysicalGraph, SpObject):
     class Boundary(PhysicalGraph):
         def __init__(self, *args, equilibrium=None,    ntheta=None, ** kwargs):
             super().__init__(*args, **kwargs)
-            self._equilibrium = equilibrium
+            self._parent = equilibrium
             self._ntheta = ntheta or 129
 
         @cached_property
@@ -828,11 +762,11 @@ class Equilibrium(PhysicalGraph, SpObject):
         def outline(self):
             """RZ outline of the plasma boundary  """
 
-            # r = self._equilibrium.cache.boundary.outline.r
-            # z = self._equilibrium.cache.boundary.outline.z
+            # r = self._parent.boundary.outline.r
+            # z = self._parent.boundary.outline.z
 
             # if len(r) == 0 or len(z) == 0:
-            boundary = np.array([[r, z] for r, z in self._equilibrium.flux_surface.find_by_psinorm(1.0, self._ntheta)])
+            boundary = np.array([[r, z] for r, z in self._parent.flux_surface.find_by_psinorm(1.0, self._ntheta)])
             r = boundary[:, 0]
             z = boundary[:, 1]
 
@@ -841,7 +775,7 @@ class Equilibrium(PhysicalGraph, SpObject):
         @cached_property
         def x_point(self):
             res = PhysicalGraph()
-            _, xpt = self._equilibrium.flux_surface.critical_points
+            _, xpt = self._parent.flux_surface.critical_points
             for p in xpt:
                 res[_next_] = p
             return res
@@ -849,7 +783,7 @@ class Equilibrium(PhysicalGraph, SpObject):
         @cached_property
         def psi(self):
             """Value of the poloidal flux at which the boundary is taken  [Wb]"""
-            return self._equilibrium.flux_surface.psi_boundary
+            return self._parent.flux_surface.psi_boundary
 
         @cached_property
         def psi_norm(self):
@@ -914,7 +848,7 @@ class Equilibrium(PhysicalGraph, SpObject):
     class BoundarySeparatrix(PhysicalGraph):
         def __init__(self, *args, equilibrium=None, ** kwargs):
             super().__init__(*args, **kwargs)
-            self._equilibrium = equilibrium
+            self._parent = equilibrium
 
     ####################################################################################
     # Plot proflies
@@ -995,7 +929,7 @@ class Equilibrium(PhysicalGraph, SpObject):
             if len(nlist) == 1:
                 data = self.profiles_1d[nlist[0]]
             elif nlist[0] == 'cache':
-                data = self.cache.profiles_1d[nlist[1:]]
+                data = self.profiles_1d[nlist[1:]]
             else:
                 data = self.profiles_1d[nlist]
         elif isinstance(data, list):

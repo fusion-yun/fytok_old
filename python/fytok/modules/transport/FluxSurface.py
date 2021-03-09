@@ -17,12 +17,12 @@ from scipy.interpolate import (RectBivariateSpline, SmoothBivariateSpline,
                                UnivariateSpline)
 from scipy.optimize import root_scalar
 from spdm.data.PhysicalGraph import PhysicalGraph, _next_
+from spdm.data.Quantity import Quantity
 from spdm.util.logger import logger
-from spdm.data.Profile import Profile, Profiles
 from sympy import Point, Polygon
 
 
-class FluxSurface(Profiles):
+class FluxSurface(PhysicalGraph):
     r"""Flux surface average
 
         .. math::
@@ -38,7 +38,8 @@ class FluxSurface(Profiles):
     """
 
     def __init__(self,  psirz,
-                 coordinate_system, *args,
+                 *args,
+                 coordinate_system=None,
                  limiter=None,
                  r0=None,
                  b0=None,
@@ -49,12 +50,12 @@ class FluxSurface(Profiles):
 
         """
         super().__init__(None, *args, axis=psi_norm, **kwargs)
+        self._psirz = psirz
         self._psi_norm = self._axis
         self._limiter = limiter
-        self._psirz = psirz
         self._r0 = r0
         self._b0 = b0
-        self._ffprime = Profile(ffprime, axis=self._psi_norm)
+        self._ffprime = Quantity(ffprime, axis=self._psi_norm)
 
         self.tolerance = tolerance
 
@@ -321,7 +322,7 @@ class FluxSurface(Profiles):
     def dpsi_drho_tor(self)	:
         """
             Derivative of Psi with respect to Rho_Tor[Wb/m]. 
-            
+
             Todo:
                 FIXME: dpsi_drho_tor(0) = ??? 
         """

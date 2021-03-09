@@ -6,74 +6,50 @@ import matplotlib.pyplot as plt
 import numpy as np
 from spdm.data.PhysicalGraph import PhysicalGraph, _next_
 from spdm.util.logger import logger
-from spdm.util.LazyProxy import LazyProxy
-from spdm.util.urilib import urisplit
 
 
 class PFActive(PhysicalGraph):
     """
     """
 
-    def __init__(self, cache, *args,  **kwargs):
+    def __init__(self, *args,  **kwargs):
         super().__init__(*args,  **kwargs)
-        self.__dict__['_cache'] = cache
 
     class Coil(PhysicalGraph):
-        def __init__(self, *args, **kwargs):
+        def __init__(self,  *args, **kwargs):
             super().__init__(*args, **kwargs)
 
     class Circuit(PhysicalGraph):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
-    def update(self, data):
+    class Supply(PhysicalGraph):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
 
+    def update(self, data):
         data = dict(data)
-        
         for c in self.coil:
             d = data.get(c.name, None)
             if d is None:
                 continue
-            
+
             c.current = d.current
 
     @cached_property
     def coil(self):
-        res = PhysicalGraph(default_factory_array=lambda _holder=self: PFActive.Coil(self))
-        cache = self._cache.coil
-
-        if isinstance(cache, LazyProxy):
-            for coil in cache:
-                if coil.element.geometry.geometry_type != 2:
-                    raise NotImplementedError()
-                rect = coil.element.geometry.rectangle
-
-                next_coil = res[_next_]
-                next_coil.name = str(coil.name)
-                next_coil.r = float(rect.r)
-                next_coil.z = float(rect.z)
-                next_coil.width = float(rect.width)
-                next_coil.height = float(rect.height)
-                next_coil.turns = int(coil.element[0].turns_with_sign)
-        else:
-            if not isinstance(cache, PhysicalGraph):
-                cache = PhysicalGraph(coil)
-
-            for coil in cache:
-                res[_next_] = coil
-
-        return res
+        return PFActive.Coil(self["coil"], parent=self)
 
     @cached_property
     def circuit(self):
         """Circuits, connecting multiple PF coils to multiple supplies, 
             defining the current and voltage relationships in the system"""
-        return NotImplemented
+        return PFActive.Circuit(self["circuit"], parent=self)
 
     @cached_property
     def supply(self):
         """PF power supplies"""
-        return NotImplemented
+        return PFActive.Supply(self["supply"], parent=self)
 
     def plot(self, axis=None, *args, with_circuit=False, **kwargs):
 
