@@ -636,9 +636,10 @@ class Equilibrium(PhysicalGraph, FyModule):
 
         @property
         def psirz(self):
-            psi_value = self["psi"]
-
-            if callable(psi_value):
+            psi_value = self["psi"].__value__
+            if isinstance(psi_value, LazyProxy):
+                psi_value = psi_value.__fetch__()
+            elif callable(psi_value):
                 psi_value = psi_value(self.r, self.z)
 
             if not self.grid_type.index or self.grid_type.index == 1:  # rectangular	1
@@ -661,7 +662,7 @@ class Equilibrium(PhysicalGraph, FyModule):
         @cached_property
         def grid_type(self):
             res = self["grid_type"]
-            if res is None:
+            if res is None or len(res) == 0:
                 res = PhysicalGraph({
                     "name": "rectangular",
                     "index": 1,
