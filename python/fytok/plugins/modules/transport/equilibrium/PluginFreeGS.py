@@ -1,4 +1,5 @@
 import collections
+import pprint
 import sys
 from functools import cached_property
 
@@ -10,7 +11,6 @@ from fytok.util.Interpolate import (Interpolate1D, Interpolate2D, derivate,
                                     integral, interpolate)
 from scipy.interpolate import RectBivariateSpline, UnivariateSpline
 from spdm.data.PhysicalGraph import PhysicalGraph, _next_
-from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 
 from fytok.modules.transport.CoreProfiles import CoreProfiles
@@ -23,7 +23,7 @@ def is_none(v):
 
 class EquilibriumFreeGS(Equilibrium):
 
-    def __init__(self,*args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         eq_wall = freegs.machine.Wall(self._parent.wall.limiter.unit.outline.r,
@@ -31,15 +31,16 @@ class EquilibriumFreeGS(Equilibrium):
 
         eq_coils = []
 
-        # for coil in self._parent.pf_active.coil:
-        #     rect = coil.element.geometry.rectangle
-        #     turns = coil.element.turns_with_sign
+        for coil in self._parent["pf_active.coil"]:
 
-        #     t_coil = freegs.machine.Coil(
-        #         rect.r+rect.width/2,
-        #         rect.z+rect.height/2,
-        #         turns=turns)
-        #     eq_coils.append((coil.name, t_coil))
+            rect = coil.element.geometry.rectangle
+            turns = coil.element.turns_with_sign
+
+            t_coil = freegs.machine.Coil(
+                rect.r+rect.width/2,
+                rect.z+rect.height/2,
+                turns=turns)
+            eq_coils.append((coil.name, t_coil))
 
         self._machine = freegs.machine.Machine(eq_coils, wall=eq_wall)
         self._backend = None

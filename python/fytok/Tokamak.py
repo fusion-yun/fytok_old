@@ -85,7 +85,7 @@ class Tokamak(PhysicalGraph):
     @property
     def equilibrium(self):
         if not hasattr(self, "_equilibrium"):
-            self._equilibrium = Equilibrium(self["equilibrium.time_slice"], parent=self)
+            self._equilibrium = Equilibrium(self["equilibrium"]["time_slice"], parent=self)
         return self._equilibrium
 
     @property

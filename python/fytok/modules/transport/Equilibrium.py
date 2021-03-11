@@ -636,7 +636,7 @@ class Equilibrium(PhysicalGraph, FyModule):
 
         @property
         def psirz(self):
-            psi_value = self["psi"].__value__
+            psi_value = self["psi"]
             if isinstance(psi_value, LazyProxy):
                 psi_value = psi_value.__fetch__()
             elif callable(psi_value):
@@ -645,6 +645,7 @@ class Equilibrium(PhysicalGraph, FyModule):
             if not self.grid_type.index or self.grid_type.index == 1:  # rectangular	1
                 """Cylindrical R, Z ala eqdsk(R=dim1, Z=dim2). In this case the position arrays should not be filled
                  since they are redundant with grid/dim1 and dim2."""
+                logger.debug(type(self.grid))
 
                 psi_func = RectBivariateSpline(self.grid.dim1[1:-1], self.grid.dim2[1:-1],  psi_value[1:-1, 1:-1])
 
@@ -673,7 +674,7 @@ class Equilibrium(PhysicalGraph, FyModule):
 
         @cached_property
         def grid(self):
-            return PhysicalGraph(self["grid"])
+            return PhysicalGraph(self["grid"].__value__)
 
         @cached_property
         def _rectangle(self):

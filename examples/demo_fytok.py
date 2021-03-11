@@ -15,22 +15,19 @@ if __name__ == "__main__":
 
     db = MappingCollection(source="mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east",
                            mapping={"schema": "EAST", "version": "imas/3",
-                                    "path": "/home/salmon/workspace/fytok/external/SpDB/data/mapping"})
+                                    "path": "/home/salmon/workspace/fytok/data/mapping"})
 
     doc = db.open(shot=55555, time_slice=20)
+    tok = Tokamak(doc)
+    # logger.debug(type(doc.entry.lazy_entry.pf_active.coil.__fetch__()))
+    # logger.debug(type(tok["pf_active.coil"]))
+    for coil in tok["pf_active.coil"]:
+        logger.debug((coil))
 
-    # tok = Tokamak(open_entry("cfetr+mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east", shot=55555, time_slice=20))
-    # logger.debug(entry.wall.description_2d.limiter.unit.outline.r())
-    # logger.debug(entry.wall.description_2d.limiter.unit.outline.z())
-
-    # tok = Tokamak(entry)
     # logger.debug(tok.wall["limiter.unit.outline.r"])
     # logger.debug(tok.wall.limiter.unit.outline.r)
-
-    logger.debug("=======")
-
-    logger.debug(doc.entry['equilibrium.time_slice.profiles_2d.psi'])
-    # logger.debug(tok.equilibrium.profiles_2d.psi)
+    # logger.debug(tok.equilibrium.profiles_2d.grid.dim1)
+    logger.debug(type(tok["pf_active.coil"]))
 
     # tok.initialize_profile()
 

@@ -12,9 +12,6 @@ class PFActive(PhysicalGraph):
     """
     """
 
-    def __init__(self, *args,  **kwargs):
-        super().__init__(*args,  **kwargs)
-
     class Coil(PhysicalGraph):
         def __init__(self,  *args, **kwargs):
             super().__init__(*args, **kwargs)
@@ -27,14 +24,8 @@ class PFActive(PhysicalGraph):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
-    def update(self, data):
-        data = dict(data)
-        for c in self.coil:
-            d = data.get(c.name, None)
-            if d is None:
-                continue
-
-            c.current = d.current
+    def __init__(self, *args,  **kwargs):
+        super().__init__(*args,  **kwargs)
 
     @cached_property
     def coil(self):
