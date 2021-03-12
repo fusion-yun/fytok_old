@@ -17,19 +17,24 @@ if __name__ == "__main__":
                            mapping={"schema": "EAST", "version": "imas/3",
                                     "path": "/home/salmon/workspace/fytok/data/mapping"})
 
-    doc = db.open(shot=55555, time_slice=20)
-    tok = Tokamak(doc)
-    # logger.debug(type(doc.entry.lazy_entry.pf_active.coil.__fetch__()))
-    # logger.debug(type(tok["pf_active.coil"]))
-    for coil in tok["pf_active.coil"]:
-        logger.debug((coil))
+    doc = db.open(shot=55555, time_slice=slice(0, 10, 1))
 
-    # logger.debug(tok.wall["limiter.unit.outline.r"])
-    # logger.debug(tok.wall.limiter.unit.outline.r)
-    # logger.debug(tok.equilibrium.profiles_2d.grid.dim1)
-    logger.debug(type(tok["pf_active.coil"]))
+    tok = Tokamak(doc.entry)
+
+    logger.debug(tok.time)
+    logger.debug(tok.vacuum_toroidal_field)
+    logger.debug(tok.equilibrium.profiles_2d.grid.dim1)
 
     # tok.initialize_profile()
+
+    # logger.debug(type(tok.pf_active.coil))
+    # for coil in tok.pf_active.coil:
+    #     logger.debug((coil.element.geometry.rectangle))
+    # # logger.debug(doc.entry.get_value("pf_active.coil"))
+    # logger.debug(tok.wall["limiter.unit.outline.r"])
+    # logger.debug(tok.wall.limiter.unit.outline.r)
+    # logger.debug((tok.equilibrium.profiles_2d.grid_type))
+    # logger.debug((tok.pf_active.coil))
 
     # fig = plt.figure()
     # tok.plot(fig.gca())

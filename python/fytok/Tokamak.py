@@ -33,14 +33,16 @@ class Tokamak(PhysicalGraph):
 
     """
 
-    def __init__(self,  data=None,  *args, time=0.0, rho_tor_norm=None,   **kwargs):
-        super().__init__(data, *args, time=time, **kwargs)
-        self._time = time
+    def __init__(self,  data=None,  *args,  rho_tor_norm=None,   **kwargs):
+        super().__init__(data, *args,  **kwargs)
+
+        self._time = self["equilibrium.time"]
+        self._vacuum_toroidal_field = self["equilibrium.vacuum_toroidal_field"]
+
         if rho_tor_norm is None:
             rho_tor_norm = np.sqrt(np.linspace(0, 1.0, 129))
         else:
             rho_tor_norm = rho_tor_norm
-
         # self._grid = RadialGrid(rho_tor_norm, parent=self.equilibrium)
 
     # --------------------------------------------------------------------------
@@ -50,66 +52,39 @@ class Tokamak(PhysicalGraph):
         return self._time
 
     @property
-    def grid(self):
-        return self._grid
-
-    @cached_property
     def vacuum_toroidal_field(self):
-        r0 = float(self.equilibrium.vacuum_toroidal_field.r0)
-        b0 = float(self.equilibrium.vacuum_toroidal_field.b0)
-
-        if not r0:
-            lim_r = self.wall.limiter.outline.r
-            r0 = (min(lim_r)+max(lim_r))*0.5
-
-        if isinstance(self._cache, LazyProxy):
-            # logger.debug(self.equilibrium.time_slice.profiles_1d.f)
-            b0 = self.equilibrium.time_slice.profiles_1d.f()[-1]/r0
-
-        return PhysicalGraph(r0=r0, b0=b0)
+        return self._vacuum_toroidal_field
 
     @cached_property
     def wall(self):
-        return Wall(self["wall"]["description_2d"], parent=self)
+        return Wall(self.entry("wall.description_2d"), parent=self)
 
     @cached_property
     def tf(self):
-        return TF(self["tf"], parent=self)
+        return TF(self.entry("tf"), parent=self)
 
     @cached_property
     def pf_active(self):
-        return PFActive(self["pf_active"], parent=self)
+        return PFActive(self.entry("pf_active"), parent=self)
 
     # --------------------------------------------------------------------------
 
-    @property
+    @cached_property
     def equilibrium(self):
-        if not hasattr(self, "_equilibrium"):
-            self._equilibrium = Equilibrium(self["equilibrium"]["time_slice"], parent=self)
-        return self._equilibrium
+        return Equilibrium(self["equilibrium.time_slice"], parent=self)
 
-    @property
+    @cached_property
     def core_profiles(self):
-        if not hasattr(self, "_core_profiles"):
-            self._core_profiles = CoreProfiles(self["core_profiles"],
-                                               time=self.time,
-                                               grid=self.grid,
-                                               parent=self)
-        return self._core_profiles
+        return CoreProfiles(self.entry("core_profiles"),   parent=self)
 
-    @property
+    @cached_property
     def edge_profiles(self):
-        if not hasattr(self, "_edge_profiles"):
-            self._edge_profiles = EdgeProfiles(self["edge_profiles"],
-                                               time=self.time,
-                                               grid=self.grid,
-                                               vacuum_toroidal_field=self.vacuum_toroidal_field)
-        return self._edge_profiles
+        return EdgeProfiles(self.entry("edge_profiles"),   parent=self)
 
     @cached_property
     def core_transport(self):
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return PhysicalGraph(default_factory_array=lambda _holder=self: CoreTransport(None, grid=_holder.grid, parent=_holder))
+        return CoreTransport(self.entry("core_transport"),   parent=self)
 
     @cached_property
     def core_sources(self):
@@ -117,30 +92,29 @@ class Tokamak(PhysicalGraph):
             Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return PhysicalGraph(default_factory_array=lambda _holder=self: CoreSources(None, grid=_holder.grid, parent=_holder))
+        return CoreSources(self.entry("core_sources"),   parent=self)
 
     @cached_property
     def edge_transports(self):
         """Edge plasma transport. Energy terms correspond to the full kinetic energy equation
          (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return EdgeTransport(self["edge_transport"]["mode"], parent=self)
+        return EdgeTransport(self.entry("edge_transport.mode"), parent=self)
 
-    @cached_property
+    @ cached_property
     def edge_sources(self):
         """Edge plasma sources. Energy terms correspond to the full kinetic energy equation
          (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
+        return CoreSources(self.entry("edge_sources.mode"), parent=self)
 
-        return CoreSources(self["edge_sources"]["mode"], parent=self)
-
-    @cached_property
+    @ cached_property
     def transport(self):
-        return TransportSolver(self["transport"], parent=self)
+        return TransportSolver(self.entry("transport_solver"), parent=self)
 
-    @cached_property
+    @ cached_property
     def constraints(self):
-        return PhysicalGraph()
+        return PhysicalGraph(self.entry("constraints"), parent=self)
 
     # --------------------------------------------------------------------------
     def update(self, *args, time=None,   max_iters=1,  tolerance=0.1,   ** kwargs):

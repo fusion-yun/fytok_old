@@ -16,11 +16,8 @@ from scipy.optimize import root_scalar
 from spdm.data.PhysicalGraph import PhysicalGraph, _next_
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
-from spdm.util.utilities import first_not_empty
 
 from ...FyModule import FyModule
-from ..device.PFActive import PFActive
-from ..device.Wall import Wall
 from .FluxSurface import FluxSurface
 
 TOLERANCE = 1.0e-6
@@ -33,48 +30,49 @@ class Equilibrium(PhysicalGraph, FyModule):
             - O. Sauter and S. Yu Medvedev, "Tokamak coordinate conventions: COCOS", Computer Physics Communications 184, 2 (2013), pp. 293--302.
 
         COCOS  11
+
+        #    Top view
+        #             ***************
+        #            *               *
+        #           *   ***********   *
+        #          *   *           *   *
+        #         *   *             *   *
+        #         *   *             *   *
+        #     Ip  v   *             *   ^  \phi
+        #         *   *    Z o--->R *   *
+        #         *   *             *   *
+        #         *   *             *   *
+        #         *   *     Bpol    *   *
+        #          *   *     o     *   *
+        #           *   ***********   *
+        #            *               *
+        #             ***************
+        #               Bpol x
+        #            Poloidal view
+        #        ^Z
+        #        |
+        #        |       ************
+        #        |      *            *
+        #        |     *         ^    *
+        #        |     *   \rho /     *
+        #        |     *       /      *
+        #        +-----*------X-------*---->R
+        #        |     *  Ip, \phi   *
+        #        |     *              *
+        #        |      *            *
+        #        |       *****<******
+        #        |       Bpol,\theta
+        #        |
+        #            Cylindrical coordinate      : (R,\phi,Z)
+        #    Poloidal plane coordinate   : (\rho,\theta,\phi)
     """
-    #    Top view
-    #             ***************
-    #            *               *
-    #           *   ***********   *
-    #          *   *           *   *
-    #         *   *             *   *
-    #         *   *             *   *
-    #     Ip  v   *             *   ^  \phi
-    #         *   *    Z o--->R *   *
-    #         *   *             *   *
-    #         *   *             *   *
-    #         *   *     Bpol    *   *
-    #          *   *     o     *   *
-    #           *   ***********   *
-    #            *               *
-    #             ***************
-    #               Bpol x
-    #            Poloidal view
-    #        ^Z
-    #        |
-    #        |       ************
-    #        |      *            *
-    #        |     *         ^    *
-    #        |     *   \rho /     *
-    #        |     *       /      *
-    #        +-----*------X-------*---->R
-    #        |     *  Ip, \phi   *
-    #        |     *              *
-    #        |      *            *
-    #        |       *****<******
-    #        |       Bpol,\theta
-    #        |
-    #            Cylindrical coordinate      : (R,\phi,Z)
-    #    Poloidal plane coordinate   : (\rho,\theta,\phi)
 
     IDS = "transport.equilibrium"
+
     DEFAULT_PLUGIN = "FreeGS"
 
-    def __init__(self, *args,   psi_norm=None,   **kwargs):
+    def __init__(self, *args, psi_norm=None,  **kwargs):
         super().__init__(*args, **kwargs)
-
         if psi_norm is None:
             psi_norm = 129  # default number of magnetic flux surface
 
@@ -87,6 +85,7 @@ class Equilibrium(PhysicalGraph, FyModule):
 
         self._psi_norm = psi_norm
 
+    @property
     def vacuum_toroidal_field(self):
         return self._parent.vacuum_toroidal_field
 
@@ -121,31 +120,31 @@ class Equilibrium(PhysicalGraph, FyModule):
 
     @cached_property
     def profiles_1d(self):
-        return Equilibrium.Profiles1D(self["profiles_1d"], parent=self)
+        return Equilibrium.Profiles1D(self.entry("profiles_1d"), parent=self)
 
     @cached_property
     def profiles_2d(self):
-        return Equilibrium.Profiles2D(self["profiles_2d"], parent=self)
+        return Equilibrium.Profiles2D(self.entry("profiles_2d"), parent=self)
 
     @cached_property
     def global_quantities(self):
-        return Equilibrium.GlobalQuantities(parent=self)
+        return Equilibrium.GlobalQuantities(self.entry("global_quantities"), parent=self)
 
     @cached_property
     def boundary(self):
-        return Equilibrium.Boundary(self["boundary"], parent=self)
+        return Equilibrium.Boundary(self.entry("boundary"), parent=self)
 
     @cached_property
     def boundary_separatrix(self):
-        return Equilibrium.BoundarySeparatrix(self["boundary_separatrix"], parent=self)
+        return Equilibrium.BoundarySeparatrix(self.entry("boundary_separatrix"), parent=self)
 
     @cached_property
     def constraints(self):
-        return Equilibrium.Constraints(self["constraints"], parent=self)
+        return Equilibrium.Constraints(self.entry("constraints"), parent=self)
 
     @cached_property
     def coordinate_system(self):
-        return Equilibrium.CoordinateSystem(self["coordinate_system"], parent=self)
+        return Equilibrium.CoordinateSystem(self.entry("coordinate_system"), parent=self)
 
     @cached_property
     def flux_surface(self):
@@ -191,20 +190,20 @@ class Equilibrium(PhysicalGraph, FyModule):
             super().__init__(*args, **kwargs)
 
             if grid_type is None:
-                grid_type = self._parent.coordinate_system.grid_type or 1
+                grid_type = self._parent.grid_type or 1
 
             if type(grid_type) is int:
-                self.grid_type = PhysicalGraph(
+                self.__dict__["grid_type"] = PhysicalGraph(
                     index=grid_type or 1,
                     type="rectangular",
                     description="""Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). In this case the position
                                 arrays should not be filled since they are redundant with grid/dim1 and dim2."""
                 )
             else:
-                self.grid_type = PhysicalGraph(grid_type)
+                self.__dict__["grid_type"] = PhysicalGraph(grid_type)
 
             if grid is None:
-                self.grid = self._parent.coordinate_system.grid or [32, 128]
+                self.__dict__["grid"] = self._parent.grid  # or [32, 128]
             elif isinstance(grid, PhysicalGraph):
                 self.grid = grid
             elif isinstance(grid, list):
@@ -431,7 +430,7 @@ class Equilibrium(PhysicalGraph, FyModule):
         @cached_property
         def f_df_dpsi(self):
             """	Derivative of F w.r.t. Psi, multiplied with F  [T^2.m^2/Wb]. """
-            res = self.cache("f_df_dpsi")
+            res = self["f_df_dpsi"].__value__
             if not isinstance(res, np.ndarray):
                 raise LookupError(f"f_df_dpsi")
             return res
@@ -631,23 +630,22 @@ class Equilibrium(PhysicalGraph, FyModule):
             Equilibrium 2D profiles in the poloidal plane.
         """
 
-        def __init__(self,  *args, grid=None,   ** kwargs):
+        def __init__(self,  *args, ** kwargs):
             super().__init__(*args, **kwargs)
 
-        @property
+        @cached_property
         def psirz(self):
             psi_value = self["psi"]
-            if isinstance(psi_value, LazyProxy):
-                psi_value = psi_value.__fetch__()
-            elif callable(psi_value):
+
+            if callable(psi_value):
                 psi_value = psi_value(self.r, self.z)
 
             if not self.grid_type.index or self.grid_type.index == 1:  # rectangular	1
                 """Cylindrical R, Z ala eqdsk(R=dim1, Z=dim2). In this case the position arrays should not be filled
                  since they are redundant with grid/dim1 and dim2."""
-                logger.debug(type(self.grid))
-
-                psi_func = RectBivariateSpline(self.grid.dim1[1:-1], self.grid.dim2[1:-1],  psi_value[1:-1, 1:-1])
+                dim1 = self.grid.dim1[1:-1]
+                dim2 = self.grid.dim2[1:-1]
+                psi_func = RectBivariateSpline(dim1, dim2,  psi_value[1:-1, 1:-1])
 
             elif self.grid_type.index >= 2 and self.grid_type.index < 91:  # inverse
                 """Rhopolar_polar 2D polar coordinates(rho=dim1, theta=dim2) with magnetic axis as centre of grid;
@@ -673,10 +671,6 @@ class Equilibrium(PhysicalGraph, FyModule):
             return res
 
         @cached_property
-        def grid(self):
-            return PhysicalGraph(self["grid"].__value__)
-
-        @cached_property
         def _rectangle(self):
             if not self.grid_type.index or self.grid_type.index == 1:
                 r, z = np.meshgrid(self.grid.dim1, self.grid.dim2, indexing='ij')
@@ -694,7 +688,7 @@ class Equilibrium(PhysicalGraph, FyModule):
             """Values of the Height on the grid  [m] """
             return self._rectangle.z
 
-        @property
+        @cached_property
         def psi(self):
             """Values of the poloidal flux at the grid in the poloidal plane  [Wb]. """
             return self.psirz(self.r, self.z)
@@ -750,9 +744,8 @@ class Equilibrium(PhysicalGraph, FyModule):
             return res
 
     class Boundary(PhysicalGraph):
-        def __init__(self, *args, equilibrium=None,    ntheta=None, ** kwargs):
+        def __init__(self, *args,   ntheta=None, ** kwargs):
             super().__init__(*args, **kwargs)
-            self._parent = equilibrium
             self._ntheta = ntheta or 129
 
         @cached_property
@@ -848,9 +841,8 @@ class Equilibrium(PhysicalGraph, FyModule):
             return NotImplemented
 
     class BoundarySeparatrix(PhysicalGraph):
-        def __init__(self, *args, equilibrium=None, ** kwargs):
+        def __init__(self, *args,  ** kwargs):
             super().__init__(*args, **kwargs)
-            self._parent = equilibrium
 
     ####################################################################################
     # Plot proflies
