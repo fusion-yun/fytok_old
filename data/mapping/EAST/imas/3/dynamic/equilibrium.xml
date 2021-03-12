@@ -59,8 +59,8 @@
                     they are redundant with grid/dim1 and dim2.</description>
             </grid_type> 
             <grid>
-                <dim1><spdb:mdsplus>SIZE(DATA(\PPRIME)[*,{time_slice}])</spdb:mdsplus></dim1>
-                <dim2><spdb:mdsplus>DATA(\NBDRY)[{time_slice}]</spdb:mdsplus></dim2>
+                <dim1><spdb:mdsplus>DATA(\R)[*]</spdb:mdsplus></dim1>
+                <dim2><spdb:mdsplus>DATA(\Z)[*]</spdb:mdsplus></dim2>
             </grid>
             <!-- <r><spdb:mdsplus>DATA(\R)</spdb:mdsplus></r>
             <z><spdb:mdsplus>DATA(\Z)</spdb:mdsplus></z> -->

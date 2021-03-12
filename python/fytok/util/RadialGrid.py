@@ -28,6 +28,9 @@ class RadialGrid(PhysicalGraph):
 
         self._rho_tor_norm = rho_tor_norm
 
+    def reset(self, npoints, primary_coordinates=None):
+        pass
+
     @cached_property
     def rho_tor_norm(self):
         """	Normalised toroidal flux coordinate. The normalizing value for rho_tor_norm,

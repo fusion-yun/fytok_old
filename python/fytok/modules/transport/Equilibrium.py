@@ -74,17 +74,7 @@ class Equilibrium(PhysicalGraph, FyModule):
 
     def __init__(self, *args, psi_norm=None,  **kwargs):
         super().__init__(*args, **kwargs)
-        if psi_norm is None:
-            psi_norm = 129  # default number of magnetic flux surface
-
-        if isinstance(psi_norm, int):
-            psi_norm = np.linspace(0.0, 1.0, psi_norm)
-        elif isinstance(psi_norm, np.ndarray):
-            pass
-        else:
-            raise TypeError(f"psi_norm {psi_norm}")
-
-        self._psi_norm = psi_norm
+        self.radial_grid.reset(psi_norm, primary_coordinates="psi_norm")
 
     @property
     def vacuum_toroidal_field(self):
@@ -94,18 +84,16 @@ class Equilibrium(PhysicalGraph, FyModule):
     def time(self):
         return self._parent.time
 
-    def radial_grid(self, axis=129, primary_coordinate="rho_tor_norm"):
-        if isinstance(axis, RadialGrid):
-            return axis
-        else:
-            return RadialGrid(axis, parent=self)
+    @property
+    def radial_grid(self):
+        return RadialGrid(parent=self)
 
     def update(self, *args, time=None, ** kwargs):
         # self.constraints.update(constraints)
         # logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] at: Start")
         # self._solve(*args, ** kwargs)
         if time is not None:
-            self.time = time
+            self._time = time
 
         logger.debug(f"Solve Equilibrium [{self.__class__.__name__}] at: Done")
 
@@ -150,11 +138,9 @@ class Equilibrium(PhysicalGraph, FyModule):
     @cached_property
     def flux_surface(self):
         return FluxSurface(self.profiles_2d.psirz,
-                           psi_norm=self._psi_norm,
+                           radial_grid=self.radial_grid,
                            ffprime=self.profiles_1d.f_df_dpsi,
-                           r0=self.vacuum_toroidal_field.r0,
-                           b0=self.vacuum_toroidal_field.b0,
-                           coordinate_system=self.coordinate_system,
+                           vacuum_toroidal_field=self.vacuum_toroidal_field,
                            limiter=self._parent.wall.limiter_polygon,
                            parent=self)
 
@@ -187,21 +173,20 @@ class Equilibrium(PhysicalGraph, FyModule):
                 0x?4  : constant volume
         """
 
-        def __init__(self,  *args, grid=None,   grid_type=None, **kwargs):
+        def __init__(self,  *args,  **kwargs):
             super().__init__(*args, **kwargs)
 
-            if grid_type is None:
-                grid_type = self._parent.grid_type or 1
-
-            if type(grid_type) is int:
-                self.__dict__["grid_type"] = PhysicalGraph(
-                    index=grid_type or 1,
-                    type="rectangular",
-                    description="""Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). In this case the position
-                                arrays should not be filled since they are redundant with grid/dim1 and dim2."""
-                )
-            else:
-                self.__dict__["grid_type"] = PhysicalGraph(grid_type)
+            # if grid_type is None:
+            #     grid_type = self._parent.grid_type or 1
+            # if type(grid_type) is int:
+            #     self.__dict__["grid_type"] = PhysicalGraph(
+            #         index=grid_type or 1,
+            #         type="rectangular",
+            #         description="""Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). In this case the position
+            #                     arrays should not be filled since they are redundant with grid/dim1 and dim2."""
+            #     )
+            # else:
+            #     self.__dict__["grid_type"] = PhysicalGraph(grid_type)
 
             # if grid is None:
             #     self.__dict__["grid"] = self._parent.grid  # or [32, 128]
@@ -219,7 +204,21 @@ class Equilibrium(PhysicalGraph, FyModule):
             #     self.grid.dim2 = np.linspace(
             #         0, scipy.constants.pi*2.0,  self.grid.dim2, endpoint=False) + scipy.constants.pi / self.grid.dim2
 
-        
+        @cached_property
+        def grid_type(self):
+            res = self["grid_type"]
+            if not res:
+                res = PhysicalGraph({
+                    "name": "rectangular",
+                    "index": 1,
+                    "description": """Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). In this case the position
+            arrays should not be filled since they are redundant with grid/dim1 and dim2."""}, parent=self)
+
+            return res
+
+        @cached_property
+        def grid(self):
+            return self["grid"]
 
         @cached_property
         def _metric(self):
@@ -658,17 +657,32 @@ class Equilibrium(PhysicalGraph, FyModule):
             # return Quantity(self["psi"], coordinates=coordinates)
             return Quantity(psi_value, coordinates=coordinates, unit="Wb")
 
-        @cached_property
+        @property
         def grid_type(self):
             res = self["grid_type"]
-            if res is None or len(res) == 0:
+            if not res:
                 res = PhysicalGraph({
                     "name": "rectangular",
                     "index": 1,
                     "description": """Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). In this case the position
-            arrays should not be filled since they are redundant with grid/dim1 and dim2."""})
+            arrays should not be filled since they are redundant with grid/dim1 and dim2."""}, parent=self)
 
             return res
+
+            # return self._parent.coordinate_system.grid_type
+
+        @property
+        def grid(self):
+            return self["grid"]
+            # return self._parent.coordinate_system.grid
+
+            # res = self["grid_type"]
+            # if res is None or len(res) == 0:
+            #     res = PhysicalGraph({
+            #         "name": "rectangular",
+            #         "index": 1,
+            #         "description": """Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). In this case the position
+            # arrays should not be filled since they are redundant with grid/dim1 and dim2."""})
 
         @cached_property
         def _rectangle(self):

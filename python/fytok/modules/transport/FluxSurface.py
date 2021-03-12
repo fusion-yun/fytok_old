@@ -37,34 +37,26 @@ class FluxSurface(PhysicalGraph):
                        arrays should not be filled since they are redundant with grid/dim1 and dim2.
     """
 
-    def __init__(self,  psirz,
-                 *args,
-                 coordinate_system=None,
-                 limiter=None,
-                 r0=None,
-                 b0=None,
-                 ffprime=None,
-                 psi_norm=129,
-                 tolerance=1.0e-6,   ** kwargs):
-        """Initialize FluxSurface
-
+    def __init__(self,  psirz,  *args, tolerance=1.0e-9,  ** kwargs):
         """
-        super().__init__(None, *args,  **kwargs)
-        self.__dict__["_psirz"] = psirz
-        self.__dict__["_psi_norm"] = psi_norm
-        self.__dict__["_limiter"] = limiter
-        self.__dict__["_r0"] = r0
-        self.__dict__["_b0"] = b0
-        # self.__dict__["_ffprime"] = Quantity(ffprime, coordinates=psi_norm)
+            Initialize FluxSurface
+        """
 
+        super().__init__(None, *args,  **kwargs)
         self.__dict__["tolerance"] = tolerance
 
-        if not isinstance(coordinate_system, PhysicalGraph):
-            coordinate_system = PhysicalGraph(coordinate_system)
-        if not coordinate_system.grid.grid_type.index or coordinate_system.grid.grid_type.index == 1:
-            self._coordinate_system = coordinate_system
-        else:
-            raise NotImplementedError(f"coordinate_system type error! {coordinate_system}")
+        # self.__dict__["_psirz"] = psirz
+        # self.__dict__["_psi_norm"] = psi_norm
+        # self.__dict__["_limiter"] = limiter
+        # self.__dict__["_r0"] = r0
+        # self.__dict__["_b0"] = b0
+        # self.__dict__["_ffprime"] = Quantity(ffprime, coordinates=psi_norm)
+        # if not isinstance(coordinate_system, PhysicalGraph):
+        #     coordinate_system = PhysicalGraph(coordinate_system)
+        # if not coordinate_system.grid.grid_type.index or coordinate_system.grid.grid_type.index == 1:
+        #     self._coordinate_system = coordinate_system
+        # else:
+        #     raise NotImplementedError(f"coordinate_system type error! {coordinate_system}")
 
     @cached_property
     def critical_points(self):
@@ -174,13 +166,13 @@ class FluxSurface(PhysicalGraph):
 
     @cached_property
     def surface_mesh(self):
-        if not self._coordinate_system.grid_type.index:
+        if not self._parent.coordinate_system.grid_type.index:
             pass
-        elif self._coordinate_system.grid_type.index > 1:
+        elif self._parent.coordinate_system.grid_type.index > 1:
             raise ValueError(f"Unknown grid type {self._coordinate_system.grid_type}")
 
-        npsi = self._coordinate_system.grid.dim1
-        ntheta = self._coordinate_system.grid.dim2
+        npsi = self._parent.coordinate_system.grid.dim1
+        ntheta = self._parent.coordinate_system.grid.dim2
 
         # TODO: Using futures.ThreadPoolExecutor() cannot improve performance. Why ?
         return np.array([[[r, z] for r, z in self.find_by_psinorm(psival, ntheta)] for psival in npsi])

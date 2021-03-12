@@ -27,7 +27,8 @@ if __name__ == "__main__":
     # logger.debug(tok.equilibrium.profiles_2d.coordinate_system)
     # logger.debug(tok.equilibrium.profiles_1d.ffprime)
     # logger.debug(tok.equilibrium.coordinate_system)
-    logger.debug(tok.equilibrium.flux_surface)
+    # logger.debug(tok.equilibrium.flux_surface)
+    logger.debug(tok.equilibrium.profiles_2d.grid_type)
 
     # tok.initialize_profile()
 
