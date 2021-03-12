@@ -31,7 +31,7 @@ class EquilibriumFreeGS(Equilibrium):
 
         eq_coils = []
 
-        for coil in self._parent["pf_active.coil"]:
+        for coil in self._parent.pf_active.coil:
 
             rect = coil.element.geometry.rectangle
             turns = coil.element.turns_with_sign

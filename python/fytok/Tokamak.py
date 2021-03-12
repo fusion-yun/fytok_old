@@ -33,16 +33,16 @@ class Tokamak(PhysicalGraph):
 
     """
 
-    def __init__(self,  data=None,  *args,  rho_tor_norm=None,   **kwargs):
+    def __init__(self,  data=None,  *args, **kwargs):
         super().__init__(data, *args,  **kwargs)
 
         self._time = self["equilibrium.time"]
         self._vacuum_toroidal_field = self["equilibrium.vacuum_toroidal_field"]
 
-        if rho_tor_norm is None:
-            rho_tor_norm = np.sqrt(np.linspace(0, 1.0, 129))
-        else:
-            rho_tor_norm = rho_tor_norm
+        # if rho_tor_norm is None:
+        #     rho_tor_norm = np.sqrt(np.linspace(0, 1.0, 129))
+        # else:
+        #     rho_tor_norm = rho_tor_norm
         # self._grid = RadialGrid(rho_tor_norm, parent=self.equilibrium)
 
     # --------------------------------------------------------------------------
@@ -57,7 +57,7 @@ class Tokamak(PhysicalGraph):
 
     @cached_property
     def wall(self):
-        return Wall(self.entry("wall.description_2d"), parent=self)
+        return Wall(self["wall.description_2d"], parent=self)
 
     @cached_property
     def tf(self):
@@ -75,16 +75,16 @@ class Tokamak(PhysicalGraph):
 
     @cached_property
     def core_profiles(self):
-        return CoreProfiles(self.entry("core_profiles"),   parent=self)
+        return CoreProfiles(self["core_profiles"],   parent=self)
 
     @cached_property
     def edge_profiles(self):
-        return EdgeProfiles(self.entry("edge_profiles"),   parent=self)
+        return EdgeProfiles(self["edge_profiles"],   parent=self)
 
     @cached_property
     def core_transport(self):
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return CoreTransport(self.entry("core_transport"),   parent=self)
+        return CoreTransport(self["core_transport"],   parent=self)
 
     @cached_property
     def core_sources(self):
@@ -92,29 +92,29 @@ class Tokamak(PhysicalGraph):
             Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return CoreSources(self.entry("core_sources"),   parent=self)
+        return CoreSources(self["core_sources"],   parent=self)
 
     @cached_property
     def edge_transports(self):
         """Edge plasma transport. Energy terms correspond to the full kinetic energy equation
          (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return EdgeTransport(self.entry("edge_transport.mode"), parent=self)
+        return EdgeTransport(self["edge_transport.mode"], parent=self)
 
     @ cached_property
     def edge_sources(self):
         """Edge plasma sources. Energy terms correspond to the full kinetic energy equation
          (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return CoreSources(self.entry("edge_sources.mode"), parent=self)
+        return CoreSources(self["edge_sources.mode"], parent=self)
 
     @ cached_property
     def transport(self):
-        return TransportSolver(self.entry("transport_solver"), parent=self)
+        return TransportSolver(self["transport_solver"], parent=self)
 
     @ cached_property
     def constraints(self):
-        return PhysicalGraph(self.entry("constraints"), parent=self)
+        return PhysicalGraph(self["constraints"], parent=self)
 
     # --------------------------------------------------------------------------
     def update(self, *args, time=None,   max_iters=1,  tolerance=0.1,   ** kwargs):

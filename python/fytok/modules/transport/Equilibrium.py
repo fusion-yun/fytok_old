@@ -14,6 +14,7 @@ from scipy.interpolate import (RectBivariateSpline, SmoothBivariateSpline,
                                UnivariateSpline)
 from scipy.optimize import root_scalar
 from spdm.data.PhysicalGraph import PhysicalGraph, _next_
+from spdm.data.Quantity import Quantity
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 
@@ -120,31 +121,31 @@ class Equilibrium(PhysicalGraph, FyModule):
 
     @cached_property
     def profiles_1d(self):
-        return Equilibrium.Profiles1D(self.entry("profiles_1d"), parent=self)
+        return Equilibrium.Profiles1D(self["profiles_1d"], parent=self)
 
     @cached_property
     def profiles_2d(self):
-        return Equilibrium.Profiles2D(self.entry("profiles_2d"), parent=self)
+        return Equilibrium.Profiles2D(self["profiles_2d"], parent=self)
 
     @cached_property
     def global_quantities(self):
-        return Equilibrium.GlobalQuantities(self.entry("global_quantities"), parent=self)
+        return Equilibrium.GlobalQuantities(self["global_quantities"], parent=self)
 
     @cached_property
     def boundary(self):
-        return Equilibrium.Boundary(self.entry("boundary"), parent=self)
+        return Equilibrium.Boundary(self["boundary"], parent=self)
 
     @cached_property
     def boundary_separatrix(self):
-        return Equilibrium.BoundarySeparatrix(self.entry("boundary_separatrix"), parent=self)
+        return Equilibrium.BoundarySeparatrix(self["boundary_separatrix"], parent=self)
 
     @cached_property
     def constraints(self):
-        return Equilibrium.Constraints(self.entry("constraints"), parent=self)
+        return Equilibrium.Constraints(self["constraints"], parent=self)
 
     @cached_property
     def coordinate_system(self):
-        return Equilibrium.CoordinateSystem(self.entry("coordinate_system"), parent=self)
+        return Equilibrium.CoordinateSystem(self["coordinate_system"], parent=self)
 
     @cached_property
     def flux_surface(self):
@@ -202,21 +203,23 @@ class Equilibrium(PhysicalGraph, FyModule):
             else:
                 self.__dict__["grid_type"] = PhysicalGraph(grid_type)
 
-            if grid is None:
-                self.__dict__["grid"] = self._parent.grid  # or [32, 128]
-            elif isinstance(grid, PhysicalGraph):
-                self.grid = grid
-            elif isinstance(grid, list):
-                self.grid = PhysicalGraph(dim1=grid[0], dim2=grid[1])
-            else:
-                raise ValueError(f"Illegal grid! {grid}")
+            # if grid is None:
+            #     self.__dict__["grid"] = self._parent.grid  # or [32, 128]
+            # elif isinstance(grid, PhysicalGraph):
+            #     self.grid = grid
+            # elif isinstance(grid, list):
+            #     self.grid = PhysicalGraph(dim1=grid[0], dim2=grid[1])
+            # else:
+            #     raise ValueError(f"Illegal grid! {grid}")
 
-            if type(self.grid.dim1) is int or np.issubdtype(self.grid.dim1, np.integer):
-                self.grid.dim1 = np.linspace(1.0/(self.grid.dim1+1), 1.0,  self.grid.dim1, endpoint=False)
+            # if type(self.grid.dim1) is int or np.issubdtype(self.grid.dim1, np.integer):
+            #     self.grid.dim1 = np.linspace(1.0/(self.grid.dim1+1), 1.0,  self.grid.dim1, endpoint=False)
 
-            if type(self.grid.dim2) is int or np.issubdtype(self.grid.dim2, np.integer):
-                self.grid.dim2 = np.linspace(
-                    0, scipy.constants.pi*2.0,  self.grid.dim2, endpoint=False) + scipy.constants.pi / self.grid.dim2
+            # if type(self.grid.dim2) is int or np.issubdtype(self.grid.dim2, np.integer):
+            #     self.grid.dim2 = np.linspace(
+            #         0, scipy.constants.pi*2.0,  self.grid.dim2, endpoint=False) + scipy.constants.pi / self.grid.dim2
+
+        
 
         @cached_property
         def _metric(self):
@@ -377,13 +380,8 @@ class Equilibrium(PhysicalGraph, FyModule):
     class Profiles1D(PhysicalGraph):
         """Equilibrium profiles (1D radial grid) as a function of the poloidal flux	"""
 
-        def __init__(self, cache,   *args,   psi_norm=None, ** kwargs):
-            if psi_norm is None:
-                psi_norm = 129
-
-            if type(psi_norm) is int:
-                psi_norm = np.linspace(0, 1.0, psi_norm, endpoint=False)
-            super().__init__(cache, *args, axis="psi_norm", **kwargs)
+        def __init__(self, *args, ** kwargs):
+            super().__init__(*args, **kwargs)
 
         @property
         def flux_surface(self):
@@ -430,10 +428,7 @@ class Equilibrium(PhysicalGraph, FyModule):
         @cached_property
         def f_df_dpsi(self):
             """	Derivative of F w.r.t. Psi, multiplied with F  [T^2.m^2/Wb]. """
-            res = self["f_df_dpsi"].__value__
-            if not isinstance(res, np.ndarray):
-                raise LookupError(f"f_df_dpsi")
-            return res
+            return self["f_df_dpsi"]
 
         @cached_property
         def f(self):
@@ -635,28 +630,33 @@ class Equilibrium(PhysicalGraph, FyModule):
 
         @cached_property
         def psirz(self):
-            psi_value = self["psi"]
-
-            if callable(psi_value):
-                psi_value = psi_value(self.r, self.z)
+            psi_value = self["psi"].__fetch__()
 
             if not self.grid_type.index or self.grid_type.index == 1:  # rectangular	1
                 """Cylindrical R, Z ala eqdsk(R=dim1, Z=dim2). In this case the position arrays should not be filled
                  since they are redundant with grid/dim1 and dim2."""
+                psi_value = psi_value[1:-1, 1:-1]
                 dim1 = self.grid.dim1[1:-1]
                 dim2 = self.grid.dim2[1:-1]
-                psi_func = RectBivariateSpline(dim1, dim2,  psi_value[1:-1, 1:-1])
+                coordinates = {"r": dim1, "z": dim2}
+                # psi_func = RectBivariateSpline(dim1, dim2,  ])
 
             elif self.grid_type.index >= 2 and self.grid_type.index < 91:  # inverse
                 """Rhopolar_polar 2D polar coordinates(rho=dim1, theta=dim2) with magnetic axis as centre of grid;
                 theta and values following the COCOS=11 convention;
                 the polar angle is theta=atan2(z-zaxis,r-raxis) """
-                psi_func = SmoothBivariateSpline(self.r.ravel(), self.z.ravel(), psi_value.ravel())
+
+                coordinates = {"r": self.r.ravel(),  "z": self.z.ravel()}
+                psi_value = psi_value.ravel()
+                # psi_func = SmoothBivariateSpline(self.r.ravel(), self.z.ravel(), psi_value.ravel())
                 # psi_func = lambda *args: spl(*args, grid=False)
             else:
                 raise NotImplementedError()
 
-            return lambda *args, _func=psi_func, grid=False, **kwargs: _func(*args, grid=grid, **kwargs)
+            # return lambda *args, _func=psi_func, grid=False, **kwargs: _func(*args, grid=grid, **kwargs)
+
+            # return Quantity(self["psi"], coordinates=coordinates)
+            return Quantity(psi_value, coordinates=coordinates, unit="Wb")
 
         @cached_property
         def grid_type(self):

@@ -49,15 +49,15 @@ class FluxSurface(PhysicalGraph):
         """Initialize FluxSurface
 
         """
-        super().__init__(None, *args, axis=psi_norm, **kwargs)
-        self._psirz = psirz
-        self._psi_norm = self._axis
-        self._limiter = limiter
-        self._r0 = r0
-        self._b0 = b0
-        self._ffprime = Quantity(ffprime, axis=self._psi_norm)
+        super().__init__(None, *args,  **kwargs)
+        self.__dict__["_psirz"] = psirz
+        self.__dict__["_psi_norm"] = psi_norm
+        self.__dict__["_limiter"] = limiter
+        self.__dict__["_r0"] = r0
+        self.__dict__["_b0"] = b0
+        # self.__dict__["_ffprime"] = Quantity(ffprime, coordinates=psi_norm)
 
-        self.tolerance = tolerance
+        self.__dict__["tolerance"] = tolerance
 
         if not isinstance(coordinate_system, PhysicalGraph):
             coordinate_system = PhysicalGraph(coordinate_system)
@@ -258,7 +258,7 @@ class FluxSurface(PhysicalGraph):
             .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
         """
 
-        return Profile((2.0*scipy.constants.pi)*np.sum(self.Jdl, axis=1), axis=self.psi_norm)
+        return Quantity((2.0*scipy.constants.pi)*np.sum(self.Jdl, axis=1), coordinates=self.psi_norm)
 
     @cached_property
     def volume(self):

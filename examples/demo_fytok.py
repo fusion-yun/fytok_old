@@ -17,17 +17,21 @@ if __name__ == "__main__":
                            mapping={"schema": "EAST", "version": "imas/3",
                                     "path": "/home/salmon/workspace/fytok/data/mapping"})
 
-    doc = db.open(shot=55555, time_slice=slice(0, 10, 1))
+    doc = db.open(shot=55555, time_slice=10)
 
     tok = Tokamak(doc.entry)
 
-    logger.debug(tok.time)
-    logger.debug(tok.vacuum_toroidal_field)
-    logger.debug(tok.equilibrium.profiles_2d.grid.dim1)
+    # logger.debug(tok.equilibrium.profiles_2d.psirz)
+    # logger.debug(tok.equilibrium.profiles_2d.psirz.unit)
+    # logger.debug(tok.equilibrium.profiles_2d.psirz.coordinates)
+    # logger.debug(tok.equilibrium.profiles_2d.coordinate_system)
+    # logger.debug(tok.equilibrium.profiles_1d.ffprime)
+    # logger.debug(tok.equilibrium.coordinate_system)
+    logger.debug(tok.equilibrium.flux_surface)
 
     # tok.initialize_profile()
 
-    # logger.debug(type(tok.pf_active.coil))
+    # # logger.debug(type(tok.pf_active.coil))
     # for coil in tok.pf_active.coil:
     #     logger.debug((coil.element.geometry.rectangle))
     # # logger.debug(doc.entry.get_value("pf_active.coil"))
