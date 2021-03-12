@@ -1,25 +1,99 @@
 
 import collections
-import functools
 import inspect
-from concurrent import futures
 from functools import cached_property
 
-import matplotlib.pyplot as plt
 import numpy as np
-import scipy
-from fytok.util.Interpolate import (Interpolate1D, Interpolate2D, derivate,
-                                    find_critical, find_root, integral,
-                                    interpolate)
 from numpy import arctan2, cos, sin, sqrt
-from scipy import constants
-from scipy.interpolate import (RectBivariateSpline, SmoothBivariateSpline,
-                               UnivariateSpline)
-from scipy.optimize import root_scalar
+from scipy.constants
+from scipy.ndimage.filters import maximum_filter, minimum_filter
+from scipy.ndimage.morphology import binary_erosion, generate_binary_structure
+from scipy.optimize import fsolve, root_scalar
 from spdm.data.PhysicalGraph import PhysicalGraph, _next_
 from spdm.data.Quantity import Quantity
 from spdm.util.logger import logger
-from sympy import Point, Polygon
+from sympy import Point
+
+
+def find_peaks_2d_image(image):
+    """
+    Takes an image and detect the peaks usingthe local maximum filter.
+    Returns a boolean mask of the peaks (i.e. 1 when
+    the pixel's value is the neighborhood maximum, 0 otherwise)
+    """
+
+    # define an 8-connected neighborhood
+    neighborhood = generate_binary_structure(2, 2)
+
+    # apply the local maximum filter; all pixel of maximal value
+    # in their neighborhood are set to 1
+    local_max = maximum_filter(image, footprint=neighborhood) == image
+    # local_max is a mask that contains the peaks we are
+    # looking for, but also the background.
+    # In order to isolate the peaks we must remove the background from the mask.
+
+    # we create the mask of the background
+    background = (image == 0)
+
+    # a little technicality: we must erode the background in order to
+    # successfully subtract it form local_max, otherwise a line will
+    # appear along the background border (artifact of the local maximum filter)
+    eroded_background = binary_erosion(background, structure=neighborhood, border_value=1)
+
+    # we obtain the final mask, containing only peaks,
+    # by removing the background from the local_max mask (xor operation)
+    detected_peaks = local_max ^ eroded_background
+
+    idxs = np.where(detected_peaks)
+
+    for n in range(len(idxs[0])):
+        yield idxs[0][n], idxs[1][n]
+
+
+def find_critical(fun2d: Quantity, X, Y):
+
+    fxy2 = fun2d.diff(X, Y, dx=1)**2+fun2d.diff(X, Y, dy=1)**2
+
+    span = 1
+    for ix, iy in find_peaks_2d_image(-fxy2[span:-span, span:-span]):
+        ix += span
+        iy += span
+        x = X[ix, iy]
+        y = Y[ix, iy]
+
+        if abs(fxy2[ix+span, iy+span]) > 1.0e-5:  # FIXME: replace magnetic number
+            xmin = X[ix-1, iy]
+            xmax = X[ix+1, iy]
+            ymin = Y[ix, iy-1]
+            ymax = Y[ix, iy+1]
+
+            def f(r):
+                if r[0] < xmin or r[0] > xmax or r[1] < ymin or r[1] > ymax:
+                    raise LookupError(r)
+                fx = fun2d.diff(r[0], r[1], dx=1)
+                fy = fun2d.diff(r[0], r[1], dy=1)
+
+                return fx, fy
+
+            def fprime(r):
+                fxx = fun2d.diff(r[0], r[1], dx=2)
+                fyy = fun2d.diff(r[0], r[1], dy=2)
+                fxy = fun2d.diff(r[0], r[1], dy=1, dx=1)
+
+                return [[fxx, fxy], [fxy, fyy]]  # FIXME: not sure, need double check
+
+            try:
+                x1, y1 = fsolve(f, [x, y],   fprime=fprime)
+            except LookupError:
+                continue
+            else:
+                x = x1
+                y = y1
+
+        # D = fxx * fyy - (fxy)^2
+        D = fun2d.diff(x, y, dx=2) * fun2d.diff(x, y, dy=2) - (fun2d.diff(x, y,  dx=1, dy=1))**2
+
+        yield x, y, D
 
 
 class FluxSurface(PhysicalGraph):
@@ -37,17 +111,25 @@ class FluxSurface(PhysicalGraph):
                        arrays should not be filled since they are redundant with grid/dim1 and dim2.
     """
 
-    def __init__(self,  psirz,  *args, tolerance=1.0e-9,  ** kwargs):
+    def __init__(self,  psirz,
+                 *args,
+                 radial_grid=None,
+                 vacuum_toroidal_field=None,
+                 limiter=None,
+                 tolerance=1.0e-9,
+                 **kwargs):
         """
             Initialize FluxSurface
         """
+        super().__init__(None, *args, **kwargs)
 
-        super().__init__(None, *args,  **kwargs)
         self.__dict__["tolerance"] = tolerance
+        self.__dict__["_psirz"] = psirz
+        self.__dict__["_radial_grid"] = radial_grid
+        self.__dict__["_limiter"] = limiter
+        self.__dict__["_vacuum_toroidal_field"] = vacuum_toroidal_field
 
-        # self.__dict__["_psirz"] = psirz
         # self.__dict__["_psi_norm"] = psi_norm
-        # self.__dict__["_limiter"] = limiter
         # self.__dict__["_r0"] = r0
         # self.__dict__["_b0"] = b0
         # self.__dict__["_ffprime"] = Quantity(ffprime, coordinates=psi_norm)
@@ -64,10 +146,12 @@ class FluxSurface(PhysicalGraph):
         opoints = []
         xpoints = []
 
-        if not self._limiter:
-            raise RuntimeError(f"Missing 'limiter'!")
+        limiter = self._limiter or self._parent._parent.wall.limiter_polygon
 
-        bounds = [v for v in map(float, self._limiter.bounds)]
+        # if not self._limiter:
+        #     raise RuntimeError(f"Missing 'limiter'!")
+
+        bounds = [v for v in map(float, limiter.bounds)]
 
         NX = 128
         NY = int(NX*(bounds[3] - bounds[1])/(bounds[2] - bounds[0])+0.5)
@@ -80,13 +164,13 @@ class FluxSurface(PhysicalGraph):
 
         for r, z, tag in find_critical(psirz, X, Y):
             # Remove points outside the vacuum wall
-            if not self._limiter and self._limiter.encloses(Point(r, z)):
+            if not limiter.encloses(Point(r, z)):
                 continue
-
+            p = PhysicalGraph({"r": r, "z": z, "psi": psirz(r, z)})
             if tag < 0.0:  # saddle/X-point
-                xpoints.append(PhysicalGraph(r=r, z=z, psi=float(psirz(r, z))))
+                xpoints.append(p)
             else:  # extremum/ O-point
-                opoints.append(PhysicalGraph(r=r, z=z, psi=float(psirz(r, z))))
+                opoints.append(p)
 
         if not opoints:
             raise RuntimeError(f"Can not find o-point!")
@@ -121,7 +205,7 @@ class FluxSurface(PhysicalGraph):
     def find_by_psi(self, psival, ntheta=64):
 
         if type(ntheta) is int:
-            dim_theta = np.linspace(0, constants.pi*2.0,  ntheta, endpoint=False)
+            dim_theta = np.linspace(0, scipy.constants.pi*2.0,  ntheta, endpoint=False)
         elif isinstance(ntheta, collections.abc.Sequence) or isinstance(ntheta, np.ndarray):
             dim_theta = ntheta
         else:
@@ -136,7 +220,7 @@ class FluxSurface(PhysicalGraph):
             R1 = x_points[0].r
             Z1 = x_points[0].z
 
-            theta0 = arctan2(R1 - R0, Z1 - Z0)  # + constants.pi/npoints  # avoid x-point
+            theta0 = arctan2(R1 - R0, Z1 - Z0)  # + scipy.constants.pi/npoints  # avoid x-point
             Rm = sqrt((R1-R0)**2+(Z1-Z0)**2)
         else:
             theta0 = 0
@@ -303,10 +387,10 @@ class FluxSurface(PhysicalGraph):
                                         =\frac{q}{2\pi B_{0}\rho_{tor}}
 
         """
-        res = self.q/(2.0*constants.pi*self._b0)
+        res = self.q/(2.0*scipy.constants.pi*self._b0)
         res.value[1:] /= self.rho_tor.value[1:]
-        # res[0] = res[1:5](0)  # self.fpol[0]*self.gm1[0]/(2.0*constants.pi*self._b0)
-        # return self.q/(2.0*constants.pi*self._b0)
+        # res[0] = res[1:5](0)  # self.fpol[0]*self.gm1[0]/(2.0*scipy.constants.pi*self._b0)
+        # return self.q/(2.0*scipy.constants.pi*self._b0)
         res.value[0] = 2*res.value[1]-res.value[2]
         return res
 
@@ -318,7 +402,7 @@ class FluxSurface(PhysicalGraph):
             Todo:
                 FIXME: dpsi_drho_tor(0) = ??? 
         """
-        res = (2.0*constants.pi*self._b0)*self.rho_tor[:]/self.q[:]
+        res = (2.0*scipy.constants.pi*self._b0)*self.rho_tor[:]/self.q[:]
         res[0] = 2*res[1]-res[2]
         return Profile(res, axis=self._psi_norm)
 
@@ -369,9 +453,9 @@ class FluxSurface(PhysicalGraph):
 
     def average(self, func, *args, **kwargs):
         if inspect.isfunction(func):
-            res = (2*constants.pi) * np.sum(func(self.R, self.Z, *args, **kwargs)*self.Jdl, axis=1) / self.vprime
+            res = (2*scipy.constants.pi) * np.sum(func(self.R, self.Z, *args, **kwargs)*self.Jdl, axis=1) / self.vprime
         else:
-            res = (2*constants.pi) * np.sum(func * self.Jdl, axis=1) / self.vprime
+            res = (2*scipy.constants.pi) * np.sum(func * self.Jdl, axis=1) / self.vprime
         # res[0] = res[1]
         return res
 

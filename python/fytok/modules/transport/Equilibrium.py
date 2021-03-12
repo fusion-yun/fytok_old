@@ -635,27 +635,23 @@ class Equilibrium(PhysicalGraph, FyModule):
                 """Cylindrical R, Z ala eqdsk(R=dim1, Z=dim2). In this case the position arrays should not be filled
                  since they are redundant with grid/dim1 and dim2."""
                 psi_value = psi_value[1:-1, 1:-1]
-                dim1 = self.grid.dim1[1:-1]
-                dim2 = self.grid.dim2[1:-1]
-                coordinates = {"r": dim1, "z": dim2}
-                # psi_func = RectBivariateSpline(dim1, dim2,  ])
-
+                R = self.grid.dim1[1:-1]
+                Z = self.grid.dim2[1:-1]
             elif self.grid_type.index >= 2 and self.grid_type.index < 91:  # inverse
                 """Rhopolar_polar 2D polar coordinates(rho=dim1, theta=dim2) with magnetic axis as centre of grid;
                 theta and values following the COCOS=11 convention;
                 the polar angle is theta=atan2(z-zaxis,r-raxis) """
-
-                coordinates = {"r": self.r.ravel(),  "z": self.z.ravel()}
                 psi_value = psi_value.ravel()
-                # psi_func = SmoothBivariateSpline(self.r.ravel(), self.z.ravel(), psi_value.ravel())
-                # psi_func = lambda *args: spl(*args, grid=False)
+                R = self.r.ravel()
+                Z = self.z.ravel()
             else:
                 raise NotImplementedError()
 
-            # return lambda *args, _func=psi_func, grid=False, **kwargs: _func(*args, grid=grid, **kwargs)
-
-            # return Quantity(self["psi"], coordinates=coordinates)
-            return Quantity(psi_value, coordinates=coordinates, unit="Wb")
+            return Quantity(psi_value,
+                            r=Quantity(R, unit="m"),
+                            z=Quantity(Z, unit="m"),
+                            coordinates="r,z",
+                            unit="Wb")
 
         @property
         def grid_type(self):

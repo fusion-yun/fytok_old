@@ -28,9 +28,9 @@ if __name__ == "__main__":
     # logger.debug(tok.equilibrium.profiles_1d.ffprime)
     # logger.debug(tok.equilibrium.coordinate_system)
     # logger.debug(tok.equilibrium.flux_surface)
-    logger.debug(tok.equilibrium.profiles_2d.grid_type)
+    logger.debug(tok.equilibrium.flux_surface.critical_points)
 
-    # tok.initialize_profile()
+    tok.initialize_profile()
 
     # # logger.debug(type(tok.pf_active.coil))
     # for coil in tok.pf_active.coil:
