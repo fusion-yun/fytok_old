@@ -48,12 +48,12 @@ class PFActive(PhysicalGraph):
             axis = plt.gca()
 
         for coil in self.coil:
-            axis.add_patch(
-                plt.Rectangle(
-                    (coil.r-coil.width/2.0,
-                     coil.z-coil.height/2.0),
-                    coil.width,
-                    coil.height,
-                    fill=False))
+            geo = coil.element.geometry.rectangle
+            axis.add_patch(plt.Rectangle((geo.r-geo.width/2.0,  geo.z-geo.height/2.0),
+                                         geo.width,  geo.height,
+                                         **collections.ChainMap(kwargs,  {"fill": False})))
+            axis.text(geo.r, geo.z, str(coil.name),
+                      horizontalalignment='center',
+                      verticalalignment='center')
 
         return axis

@@ -4,15 +4,15 @@ import inspect
 from functools import cached_property
 
 import numpy as np
+import scipy.constants
 from numpy import arctan2, cos, sin, sqrt
-from scipy.constants
 from scipy.ndimage.filters import maximum_filter, minimum_filter
 from scipy.ndimage.morphology import binary_erosion, generate_binary_structure
 from scipy.optimize import fsolve, root_scalar
+from spdm.data.Field import Field
 from spdm.data.PhysicalGraph import PhysicalGraph, _next_
 from spdm.data.Quantity import Quantity
 from spdm.util.logger import logger
-from sympy import Point
 
 
 def find_peaks_2d_image(image):
@@ -50,18 +50,17 @@ def find_peaks_2d_image(image):
         yield idxs[0][n], idxs[1][n]
 
 
-def find_critical(fun2d: Quantity, X, Y):
+def find_critical(fun2d: Field):
 
-    fxy2 = fun2d.diff(X, Y, dx=1)**2+fun2d.diff(X, Y, dy=1)**2
-
+    fxy2 = fun2d.derivative(dx=1)**2+fun2d.derivative(dy=1)**2
+    X, Y = fun2d.coordinates.mesh.mesh
     span = 1
     for ix, iy in find_peaks_2d_image(-fxy2[span:-span, span:-span]):
         ix += span
         iy += span
         x = X[ix, iy]
         y = Y[ix, iy]
-
-        if abs(fxy2[ix+span, iy+span]) > 1.0e-5:  # FIXME: replace magnetic number
+        if abs(fxy2[ix, iy]) > 1.0e-5:  # FIXME: replace magnetic number
             xmin = X[ix-1, iy]
             xmax = X[ix+1, iy]
             ymin = Y[ix, iy-1]
@@ -70,15 +69,15 @@ def find_critical(fun2d: Quantity, X, Y):
             def f(r):
                 if r[0] < xmin or r[0] > xmax or r[1] < ymin or r[1] > ymax:
                     raise LookupError(r)
-                fx = fun2d.diff(r[0], r[1], dx=1)
-                fy = fun2d.diff(r[0], r[1], dy=1)
+                fx = fun2d.derivative(r[0], r[1], dx=1)
+                fy = fun2d.derivative(r[0], r[1], dy=1)
 
                 return fx, fy
 
             def fprime(r):
-                fxx = fun2d.diff(r[0], r[1], dx=2)
-                fyy = fun2d.diff(r[0], r[1], dy=2)
-                fxy = fun2d.diff(r[0], r[1], dy=1, dx=1)
+                fxx = fun2d.derivative(r[0], r[1], dx=2)
+                fyy = fun2d.derivative(r[0], r[1], dy=2)
+                fxy = fun2d.derivative(r[0], r[1], dy=1, dx=1)
 
                 return [[fxx, fxy], [fxy, fyy]]  # FIXME: not sure, need double check
 
@@ -91,7 +90,7 @@ def find_critical(fun2d: Quantity, X, Y):
                 y = y1
 
         # D = fxx * fyy - (fxy)^2
-        D = fun2d.diff(x, y, dx=2) * fun2d.diff(x, y, dy=2) - (fun2d.diff(x, y,  dx=1, dy=1))**2
+        D = fun2d.derivative(x, y, dx=2) * fun2d.derivative(x, y, dy=2) - (fun2d.derivative(x, y,  dx=1, dy=1))**2
 
         yield x, y, D
 
@@ -111,13 +110,7 @@ class FluxSurface(PhysicalGraph):
                        arrays should not be filled since they are redundant with grid/dim1 and dim2.
     """
 
-    def __init__(self,  psirz,
-                 *args,
-                 radial_grid=None,
-                 vacuum_toroidal_field=None,
-                 limiter=None,
-                 tolerance=1.0e-9,
-                 **kwargs):
+    def __init__(self,  psirz: Field, *args,  vacuum_toroidal_field=None,  wall=None,  tolerance=1.0e-9,  **kwargs):
         """
             Initialize FluxSurface
         """
@@ -125,13 +118,12 @@ class FluxSurface(PhysicalGraph):
 
         self.__dict__["tolerance"] = tolerance
         self.__dict__["_psirz"] = psirz
-        self.__dict__["_radial_grid"] = radial_grid
-        self.__dict__["_limiter"] = limiter
-        self.__dict__["_vacuum_toroidal_field"] = vacuum_toroidal_field
+        self.__dict__["_wall"] = wall or self._parent._parent.wall
+        self.__dict__["_vacuum_toroidal_field"] = vacuum_toroidal_field or self._parent.vacuum_toroidal_field
 
         # self.__dict__["_psi_norm"] = psi_norm
-        # self.__dict__["_r0"] = r0
-        # self.__dict__["_b0"] = b0
+        # self.__dict__["_vacuum_toroidal_field.r0"] = r0
+        # self.__dict__["_vacuum_toroidal_field.b0"] = b0
         # self.__dict__["_ffprime"] = Quantity(ffprime, coordinates=psi_norm)
         # if not isinstance(coordinate_system, PhysicalGraph):
         #     coordinate_system = PhysicalGraph(coordinate_system)
@@ -142,31 +134,15 @@ class FluxSurface(PhysicalGraph):
 
     @cached_property
     def critical_points(self):
-        psirz = self._psirz
         opoints = []
         xpoints = []
 
-        limiter = self._limiter or self._parent._parent.wall.limiter_polygon
-
-        # if not self._limiter:
-        #     raise RuntimeError(f"Missing 'limiter'!")
-
-        bounds = [v for v in map(float, limiter.bounds)]
-
-        NX = 128
-        NY = int(NX*(bounds[3] - bounds[1])/(bounds[2] - bounds[0])+0.5)
-
-        X, Y = np.meshgrid(np.linspace(bounds[0], bounds[2], NX),
-                           np.linspace(bounds[1], bounds[3], NY), indexing="ij")
-
-        Rmid = float(bounds[2] + bounds[0])/2.0
-        Zmid = float(bounds[3] + bounds[1])/2.0
-
-        for r, z, tag in find_critical(psirz, X, Y):
+        for r, z, tag in find_critical(self._psirz):
             # Remove points outside the vacuum wall
-            if not limiter.encloses(Point(r, z)):
+            if not self._wall.in_limiter(r, z):
                 continue
-            p = PhysicalGraph({"r": r, "z": z, "psi": psirz(r, z)})
+            p = PhysicalGraph({"r": r, "z": z, "psi": self._psirz(r, z)})
+            
             if tag < 0.0:  # saddle/X-point
                 xpoints.append(p)
             else:  # extremum/ O-point
@@ -175,7 +151,12 @@ class FluxSurface(PhysicalGraph):
         if not opoints:
             raise RuntimeError(f"Can not find o-point!")
         else:
+            bbox = self._psirz.coordinates.mesh.bbox
+            Rmid = (bbox[0][0] + bbox[0][1])/2.0
+            Zmid = (bbox[1][0] + bbox[1][1])/2.0
+
             opoints.sort(key=lambda x: (x.r - Rmid)**2 + (x.z - Zmid)**2)
+
             psi_axis = opoints[0].psi
 
             xpoints.sort(key=lambda x: (x.psi - psi_axis)**2)
@@ -322,7 +303,7 @@ class FluxSurface(PhysicalGraph):
     def fpol(self):
         """Diamagnetic function (F=R B_tor)  [T.m]."""
         f2 = self._ffprime.integral.value * (self.psi_axis-self.psi_boundary)
-        return Profile(np.sqrt(f2 * 2.0 + (self._r0*self._b0)**2), axis=self._psi_norm)
+        return Profile(np.sqrt(f2 * 2.0 + (self._vacuum_toroidal_field.r0*self._vacuum_toroidal_field.b0)**2), axis=self._psi_norm)
 
     @cached_property
     def dvolume_dpsi(self):
@@ -370,7 +351,7 @@ class FluxSurface(PhysicalGraph):
     @cached_property
     def rho_tor(self):
         """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0  [m]"""
-        data = np.sqrt(self.phi.value)/np.sqrt(scipy.constants.pi * self._b0)
+        data = np.sqrt(self.phi.value)/np.sqrt(scipy.constants.pi * self._vacuum_toroidal_field.b0)
         return Profile(data, axis=self._axis, description={"name": "rho_tor"})
 
     @cached_property
@@ -387,10 +368,10 @@ class FluxSurface(PhysicalGraph):
                                         =\frac{q}{2\pi B_{0}\rho_{tor}}
 
         """
-        res = self.q/(2.0*scipy.constants.pi*self._b0)
+        res = self.q/(2.0*scipy.constants.pi*self._vacuum_toroidal_field.b0)
         res.value[1:] /= self.rho_tor.value[1:]
-        # res[0] = res[1:5](0)  # self.fpol[0]*self.gm1[0]/(2.0*scipy.constants.pi*self._b0)
-        # return self.q/(2.0*scipy.constants.pi*self._b0)
+        # res[0] = res[1:5](0)  # self.fpol[0]*self.gm1[0]/(2.0*scipy.constants.pi*self._vacuum_toroidal_field.b0)
+        # return self.q/(2.0*scipy.constants.pi*self._vacuum_toroidal_field.b0)
         res.value[0] = 2*res.value[1]-res.value[2]
         return res
 
@@ -402,7 +383,7 @@ class FluxSurface(PhysicalGraph):
             Todo:
                 FIXME: dpsi_drho_tor(0) = ??? 
         """
-        res = (2.0*scipy.constants.pi*self._b0)*self.rho_tor[:]/self.q[:]
+        res = (2.0*scipy.constants.pi*self._vacuum_toroidal_field.b0)*self.rho_tor[:]/self.q[:]
         res[0] = 2*res[1]-res[2]
         return Profile(res, axis=self._psi_norm)
 

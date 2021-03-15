@@ -7,12 +7,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 import scipy.constants as constants
-from fytok.util.Interpolate import find_critical, find_root
 from fytok.util.RadialGrid import RadialGrid
 from numpy import arctan2, cos, sin, sqrt
-from scipy.interpolate import (RectBivariateSpline, SmoothBivariateSpline,
-                               UnivariateSpline)
 from scipy.optimize import root_scalar
+from spdm.data.Coordinates import Coordinates
+from spdm.data.Field import Field
 from spdm.data.PhysicalGraph import PhysicalGraph, _next_
 from spdm.data.Quantity import Quantity
 from spdm.util.LazyProxy import LazyProxy
@@ -137,44 +136,52 @@ class Equilibrium(PhysicalGraph, FyModule):
 
     @cached_property
     def flux_surface(self):
-        return FluxSurface(self.profiles_2d.psirz,
-                           radial_grid=self.radial_grid,
-                           ffprime=self.profiles_1d.f_df_dpsi,
-                           vacuum_toroidal_field=self.vacuum_toroidal_field,
-                           limiter=self._parent.wall.limiter_polygon,
+        return FluxSurface(self.profiles_2d.psi, wall=self._parent.wall,
+                           vacuum_toroidal_field=self._parent.vacuum_toroidal_field,
                            parent=self)
 
-    class CoordinateSystem(PhysicalGraph):
-        """Definition of the 2D grid
+    class CoordinateSystem(PhysicalGraph, Coordinates):
+        """
+            Definition of the 2D grid
 
-           grid.dim1           :
-                First dimension values  [mixed]
-           grid.dim2           :
-                Second dimension values  [mixed]
-           grid.volume_element :
-                Elementary plasma volume of plasma enclosed in the cell formed by the nodes [dim1(i) dim2(j)], [dim1(i+1) dim2(j)], [dim1(i) dim2(j+1)] and [dim1(i+1) dim2(j+1)]  [m^3]
+            grid.dim1           :
+                    First dimension values  [mixed]
+            grid.dim2           :
+                    Second dimension values  [mixed]
+            grid.volume_element :
+                    Elementary plasma volume of plasma enclosed in the cell formed by the nodes [dim1(i) dim2(j)], [dim1(i+1) dim2(j)], [dim1(i) dim2(j+1)] and [dim1(i+1) dim2(j+1)]  [m^3]
 
-           grid_type.name      :
-                name
+            grid_type.name      :
+                    name
 
-           grid_type.index     :
-                0xFF (rho theta)
-                theta
-                0x0?  : rho= psi,  poloidal flux function
-                0x1?  : rho= V, volume within surface
-                0x2?  : rho= sqrt(V)
-                0x3?  : rho= Phi, toroidal flux with in surface
-                0x4?  : rho= sqrt(Phi/B0/pi)
-                theta
-                0x?0  : poloidal angle
-                0x?1  : constant arch length
-                0x?2  : straight filed lines
-                0x?3  : constant area
-                0x?4  : constant volume
+            grid_type.index     :
+                    0xFF (rho theta)
+                    theta
+                    0x0?  : rho= psi,  poloidal flux function
+                    0x1?  : rho= V, volume within surface
+                    0x2?  : rho= sqrt(V)
+                    0x3?  : rho= Phi, toroidal flux with in surface
+                    0x4?  : rho= sqrt(Phi/B0/pi)
+                    theta
+                    0x?0  : poloidal angle
+                    0x?1  : constant arch length
+                    0x?2  : straight filed lines
+                    0x?3  : constant area
+                    0x?4  : constant volume
         """
 
         def __init__(self,  *args,  **kwargs):
-            super().__init__(*args, **kwargs)
+            PhysicalGraph.__init__(self, *args,  **kwargs)
+            if self["grid_type.index "] == 0:
+                Coordinates.__init__(
+                    self,
+                    self["grid.dim1"].__fetch__(),
+                    self["grid.dim2"].__fetch__(),
+                    name=self["grid_type.name"],
+                    grid_index=self.grid_type.index,
+                    unit="m")
+            else:
+                raise NotImplementedError(self)
 
             # if grid_type is None:
             #     grid_type = self._parent.grid_type or 1
@@ -204,21 +211,57 @@ class Equilibrium(PhysicalGraph, FyModule):
             #     self.grid.dim2 = np.linspace(
             #         0, scipy.constants.pi*2.0,  self.grid.dim2, endpoint=False) + scipy.constants.pi / self.grid.dim2
 
-        @cached_property
-        def grid_type(self):
-            res = self["grid_type"]
-            if not res:
-                res = PhysicalGraph({
-                    "name": "rectangular",
-                    "index": 1,
-                    "description": """Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). In this case the position
-            arrays should not be filled since they are redundant with grid/dim1 and dim2."""}, parent=self)
-
-            return res
+        # @cached_property
+        # def grid_type(self):
+        #     res = self["grid_type"]
+        #     if not res:
+        #         res = PhysicalGraph({
+        #             "name": "rectangular",
+        #             "index": 1,
+        #             "description": """Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). In this case the position
+        #     arrays should not be filled since they are redundant with grid/dim1 and dim2."""}, parent=self)
+        #     res = self["grid_type"]
+        #     if not res:
+        #         res = {
+        #             "name": "rectangular",
+        #             "index": 1,
+        #             "description": """Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). In this case the position
+        #     arrays should not be filled since they are redundant with grid/dim1 and dim2."""}
+        #     return PhysicalGraph(res, parent=self)
+        #     # return self._parent.coordinate_system.grid_type
 
         @cached_property
         def grid(self):
-            return self["grid"]
+            #  {"name": name,
+            #  "units": units,
+            #  "type_index": self.grid_type.index,
+            #  "r": R,
+            #  "z": Z}
+
+            # name = "x,y"
+            # units = "m"
+
+            coord = None
+            if not self.grid_type.index or self.grid_type.index == 1:  # rectangular	1
+                """Cylindrical R, Z ala eqdsk(R=dim1, Z=dim2). In this case the position arrays should not be filled
+                 since they are redundant with grid/dim1 and dim2."""
+                R = self.grid.dim1
+                Z = self.grid.dim2
+                name = "r,z"
+                units = "m"
+            elif self.grid_type.index >= 2 and self.grid_type.index < 91:  # inverse
+                """Rhopolar_polar 2D polar coordinates(rho=dim1, theta=dim2) with magnetic axis as centre of grid;
+                theta and values following the COCOS=11 convention;
+                the polar angle is theta=atan2(z-zaxis,r-raxis) """
+                psi_value = psi_value.ravel()
+                R = self.r.ravel()
+                Z = self.z.ravel()
+                name = "rho,theta"
+                units = "m,radian"
+            else:
+                raise NotImplementedError()
+
+            return coord
 
         @cached_property
         def _metric(self):
@@ -237,12 +280,12 @@ class Equilibrium(PhysicalGraph, FyModule):
         @cached_property
         def r(self):
             """	Values of the major radius on the grid  [m]"""
-            return self._mesh.r
+            return self._mesh.mesh[0]
 
         @cached_property
         def z(self):
             """Values of the Height on the grid  [m]"""
-            return self._mesh.z
+            return self._mesh.mesh[1]
 
         @cached_property
         def jacobian(self):
@@ -627,81 +670,28 @@ class Equilibrium(PhysicalGraph, FyModule):
         def __init__(self,  *args, ** kwargs):
             super().__init__(*args, **kwargs)
 
-        @cached_property
-        def psirz(self):
-            psi_value = self["psi"].__fetch__()
-
-            if not self.grid_type.index or self.grid_type.index == 1:  # rectangular	1
-                """Cylindrical R, Z ala eqdsk(R=dim1, Z=dim2). In this case the position arrays should not be filled
-                 since they are redundant with grid/dim1 and dim2."""
-                psi_value = psi_value[1:-1, 1:-1]
-                R = self.grid.dim1[1:-1]
-                Z = self.grid.dim2[1:-1]
-            elif self.grid_type.index >= 2 and self.grid_type.index < 91:  # inverse
-                """Rhopolar_polar 2D polar coordinates(rho=dim1, theta=dim2) with magnetic axis as centre of grid;
-                theta and values following the COCOS=11 convention;
-                the polar angle is theta=atan2(z-zaxis,r-raxis) """
-                psi_value = psi_value.ravel()
-                R = self.r.ravel()
-                Z = self.z.ravel()
-            else:
-                raise NotImplementedError()
-
-            return Quantity(psi_value,
-                            r=Quantity(R, unit="m"),
-                            z=Quantity(Z, unit="m"),
-                            coordinates="r,z",
-                            unit="Wb")
-
         @property
         def grid_type(self):
-            res = self["grid_type"]
-            if not res:
-                res = PhysicalGraph({
-                    "name": "rectangular",
-                    "index": 1,
-                    "description": """Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). In this case the position
-            arrays should not be filled since they are redundant with grid/dim1 and dim2."""}, parent=self)
-
-            return res
-
-            # return self._parent.coordinate_system.grid_type
+            return self._parent.coordinate_system.grid_type
 
         @property
         def grid(self):
-            return self["grid"]
-            # return self._parent.coordinate_system.grid
+            return self._parent.coordinate_system.grid
 
-            # res = self["grid_type"]
-            # if res is None or len(res) == 0:
-            #     res = PhysicalGraph({
-            #         "name": "rectangular",
-            #         "index": 1,
-            #         "description": """Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). In this case the position
-            # arrays should not be filled since they are redundant with grid/dim1 and dim2."""})
-
-        @cached_property
-        def _rectangle(self):
-            if not self.grid_type.index or self.grid_type.index == 1:
-                r, z = np.meshgrid(self.grid.dim1, self.grid.dim2, indexing='ij')
-                return PhysicalGraph({"r": r, "z": z})
-            else:
-                raise NotImplementedError()
-
-        @cached_property
+        @property
         def r(self):
             """Values of the major radius on the grid  [m] """
-            return self._rectangle.r
+            return self._parent.coordinate_system.r
 
-        @cached_property
+        @property
         def z(self):
             """Values of the Height on the grid  [m] """
-            return self._rectangle.z
+            return self._parent.coordinate_system.z
 
         @cached_property
         def psi(self):
             """Values of the poloidal flux at the grid in the poloidal plane  [Wb]. """
-            return self.psirz(self.r, self.z)
+            return Field(self["psi"].__fetch__(), coordinates=self._parent.coordinate_system, unit="Wb")
 
         @cached_property
         def theta(self):
@@ -754,9 +744,9 @@ class Equilibrium(PhysicalGraph, FyModule):
             return res
 
     class Boundary(PhysicalGraph):
-        def __init__(self, *args,   ntheta=None, ** kwargs):
+        def __init__(self, *args, ntheta=129, ** kwargs):
             super().__init__(*args, **kwargs)
-            self._ntheta = ntheta or 129
+            self._ntheta = ntheta
 
         @cached_property
         def type(self):
@@ -767,23 +757,16 @@ class Equilibrium(PhysicalGraph, FyModule):
         def outline(self):
             """RZ outline of the plasma boundary  """
 
-            # r = self._parent.boundary.outline.r
-            # z = self._parent.boundary.outline.z
-
-            # if len(r) == 0 or len(z) == 0:
             boundary = np.array([[r, z] for r, z in self._parent.flux_surface.find_by_psinorm(1.0, self._ntheta)])
             r = boundary[:, 0]
             z = boundary[:, 1]
 
-            return PhysicalGraph(r=r, z=z)
+            return PhysicalGraph({"r": r, "z": z})
 
         @cached_property
         def x_point(self):
-            res = PhysicalGraph()
             _, xpt = self._parent.flux_surface.critical_points
-            for p in xpt:
-                res[_next_] = p
-            return res
+            return xpt
 
         @cached_property
         def psi(self):
@@ -865,7 +848,7 @@ class Equilibrium(PhysicalGraph, FyModule):
 
         R = self.profiles_2d.r
         Z = self.profiles_2d.z
-        psi = self.profiles_2d.psi
+        psi = self.profiles_2d.psi(R, Z)
         # psi = self.backend().psiRZ(self.profiles_2d.r, self.profiles_2d.z)
         # psi = (psi - self.global_quantities.psi_axis) / \
         #     (self.global_quantities.psi_boundary - self.global_quantities.psi_axis)
@@ -878,8 +861,14 @@ class Equilibrium(PhysicalGraph, FyModule):
         if oxpoints and len(self.boundary.x_point) > 0:
             for idx, p in enumerate(self.boundary.x_point):
                 axis.plot(p.r, p.z, 'rx')
-                axis.text(p.r, p.z, idx)
+                axis.text(p.r, p.z, idx,
+                          horizontalalignment='center',
+                          verticalalignment='center')
+                          
             axis.plot([], [], 'rx', label="X-Point")
+
+            axis.plot(self.global_quantities.magnetic_axis.r,
+                      self.global_quantities.magnetic_axis.z, 'g.', label="Magnetic axis")
 
             if boundary:
                 boundary_points = np.array([self.boundary.outline.r,
@@ -888,9 +877,6 @@ class Equilibrium(PhysicalGraph, FyModule):
                 axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
                                            linewidth=0.5, fill=False, closed=True))
                 axis.plot([], [], 'r--', label="Separatrix")
-
-            axis.plot(self.global_quantities.magnetic_axis.r,
-                      self.global_quantities.magnetic_axis.z, 'g.', label="Magnetic axis")
 
         # for k, opts in profiles:
         #     d = self.profiles_2d[k]
@@ -904,9 +890,6 @@ class Equilibrium(PhysicalGraph, FyModule):
 
                             vf[1:-1, 1:-1].transpose(1, 0),
                             uf[1:-1, 1:-1].transpose(1, 0), **opts)
-
-        axis.set_xlabel(r"Major radius $R$ [m]")
-        axis.set_ylabel(r"Height $Z$ [m]")
 
         return axis
 

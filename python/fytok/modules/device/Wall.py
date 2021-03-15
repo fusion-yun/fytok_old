@@ -16,8 +16,58 @@ class Wall(PhysicalGraph):
     """
     IDS = "wall"
 
-    def __init__(self, data=None,  *args,  **kwargs):
-        super().__init__(data, *args, **kwargs)
+    def __init__(self, *args,  **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @cached_property
+    def limiter_polygon(self):
+        limiter_points = np.array([self.limiter.unit.outline.r,
+                                   self.limiter.unit.outline.z]).transpose([1, 0])
+
+        return Polygon(*map(Point, limiter_points))
+
+    @cached_property
+    def vessel_polygon(self):
+        vessel_inner_points = np.array([self.vessel.annular.outline_inner.r,
+                                        self.vessel.annular.outline_inner.z]).transpose([1, 0])
+
+        vessel_outer_points = np.array([self.vessel.annular.outline_outer.r,
+                                        self.vessel.annular.outline_outer.z]).transpose([1, 0])
+
+        return Polygon(*map(Point, vessel_inner_points)), Polygon(*map(Point, vessel_outer_points))
+
+    def in_limiter(self, *x):
+        return self.limiter_polygon.encloses(Point(*x))
+
+    def in_vessel(self, *x):
+        return self.vessel_polygon.encloses(Point(*x))
+
+    def plot(self, axis=None, *args, **kwargs):
+
+        if axis is None:
+            axis = plt.gca()
+
+        vessel_inner_points = np.array([self.vessel.annular.outline_inner.r,
+                                        self.vessel.annular.outline_inner.z]).transpose([1, 0])
+
+        vessel_outer_points = np.array([self.vessel.annular.outline_outer.r,
+                                        self.vessel.annular.outline_outer.z]).transpose([1, 0])
+
+        limiter_points = np.array([self.limiter.unit.outline.r, self.limiter.unit.outline.z]).transpose([1, 0])
+
+        axis.add_patch(plt.Polygon(limiter_points,  **
+                                   collections.ChainMap(kwargs.get("limiter", {}), {"fill": False, "closed": True})))
+
+        axis.add_patch(plt.Polygon(vessel_outer_points, **collections.ChainMap(kwargs.get("vessel_outer", {}),
+                                                                               kwargs.get("vessel", {}),
+                                                                               {"fill": False, "closed": True})))
+
+        axis.add_patch(plt.Polygon(vessel_inner_points, **collections.ChainMap(kwargs.get("vessel_inner", {}),
+                                                                               kwargs.get("vessel", {}),
+                                                                               {"fill": False, "closed": True})))
+
+        return axis
+
         # if isinstance(data, LazyProxy):
         #     limiter = data.description_2d.limiter.unit.outline()
         #     vessel = data.description_2d.vessel.annular()
@@ -58,39 +108,3 @@ class Wall(PhysicalGraph):
         #     self.vessel.annular.outline_outer.z = vessel.outline_outer.z
         # else:
         #     raise TypeError(f"Unknown type {type(vessel)}")
-
-    @cached_property
-    def limiter_polygon(self):
-        limiter_points = np.array([self.limiter.unit.outline.r,
-                                   self.limiter.unit.outline.z]).transpose([1, 0])
-
-        return Polygon(*map(Point, limiter_points))
-
-    @cached_property
-    def vessel_polygon(self):
-        vessel_inner_points = np.array([self.vessel.annular.outline_inner.r,
-                                        self.vessel.annular.outline_inner.z]).transpose([1, 0])
-
-        vessel_outer_points = np.array([self.vessel.annular.outline_outer.r,
-                                        self.vessel.annular.outline_outer.z]).transpose([1, 0])
-
-        return Polygon(*map(Point, vessel_inner_points)), Polygon(*map(Point, vessel_outer_points))
-
-    def plot(self, axis=None, *args, **kwargs):
-
-        if axis is None:
-            axis = plt.gca()
-
-        vessel_inner_points = np.array([self.vessel.annular.outline_inner.r,
-                                        self.vessel.annular.outline_inner.z]).transpose([1, 0])
-
-        vessel_outer_points = np.array([self.vessel.annular.outline_outer.r,
-                                        self.vessel.annular.outline_outer.z]).transpose([1, 0])
-
-        limiter_points = np.array([self.limiter.outline.r, self.limiter.outline.z]).transpose([1, 0])
-
-        axis.add_patch(plt.Polygon(limiter_points, fill=False, closed=True))
-        axis.add_patch(plt.Polygon(vessel_outer_points, fill=False, closed=True))
-        axis.add_patch(plt.Polygon(vessel_inner_points, fill=False, closed=True))
-
-        return axis

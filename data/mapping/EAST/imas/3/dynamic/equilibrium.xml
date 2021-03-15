@@ -144,18 +144,16 @@
         </profiles_1d>
 
         <profiles_2d>   
+            <!-- <grid>
+                <dim1><spdb:mdsplus>DATA(\R)[*]</spdb:mdsplus></dim1>
+                <dim2><spdb:mdsplus>DATA(\Z)[*]</spdb:mdsplus></dim2>
+            </grid> -->
+
             <!-- <r dtype="NONE"/> -->
 
             <!-- <z dtype="NONE"/> -->
 
             <psi><spdb:mdsplus>DATA(\PSIRZ)[*,*,{time_slice}]</spdb:mdsplus></psi>
-
-            <grid>
-                <dim1><spdb:mdsplus>DATA(\R)[*]</spdb:mdsplus></dim1>
-                <dim2><spdb:mdsplus>DATA(\Z)[*]</spdb:mdsplus></dim2>
-            </grid>
-
-            
 
             <!-- <theta dtype="NONE"/> -->
 
@@ -171,7 +169,7 @@
 
             <!-- <b_field_tor dtype="NONE"/> -->
 
-        </profiles_2d>  
+        </profiles_2d>
     
     </time_slice>
 </equilibrium>

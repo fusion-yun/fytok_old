@@ -28,9 +28,10 @@ if __name__ == "__main__":
     # logger.debug(tok.equilibrium.profiles_1d.ffprime)
     # logger.debug(tok.equilibrium.coordinate_system)
     # logger.debug(tok.equilibrium.flux_surface)
-    logger.debug(tok.equilibrium.flux_surface.critical_points)
 
-    tok.initialize_profile()
+    logger.debug(type(tok.equilibrium.coordinate_system))
+
+    logger.debug(tok.equilibrium.flux_surface.critical_points)
 
     # # logger.debug(type(tok.pf_active.coil))
     # for coil in tok.pf_active.coil:
@@ -41,10 +42,16 @@ if __name__ == "__main__":
     # logger.debug((tok.equilibrium.profiles_2d.grid_type))
     # logger.debug((tok.pf_active.coil))
 
-    # fig = plt.figure()
-    # tok.plot(fig.gca())
-    # fig.savefig("../output/tokamak.svg")
-    # tok.update()
+    fig = plt.figure()
+
+    axis = tok.plot(fig.gca(),
+                    wall={"limiter": {"edgecolor": "green"},
+                          "vessel": {"edgecolor": "blue"}},
+                    pf_active={"facecolor": 'red'})
+
+    fig.savefig("/home/salmon/workspace/output/tokamak.svg")
+
+    # tok.initialize_profile()
 
     # # draw(tok).savefig("../output/tokamak1.svg", transparent=True)
     # plot_profiles(tok.core_profiles.profiles_1d,

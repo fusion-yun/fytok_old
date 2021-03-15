@@ -61,11 +61,11 @@ class Tokamak(PhysicalGraph):
 
     @cached_property
     def tf(self):
-        return TF(self.entry("tf"), parent=self)
+        return TF(self["tf"], parent=self)
 
     @cached_property
     def pf_active(self):
-        return PFActive(self.entry("pf_active"), parent=self)
+        return PFActive(self["pf_active"], parent=self)
 
     # --------------------------------------------------------------------------
 
@@ -173,14 +173,15 @@ class Tokamak(PhysicalGraph):
     def save(self, uri, *args, **kwargs):
         raise NotImplementedError()
 
-    def plot_machine(self, axis=None, *args, coils=True, wall=True, **kwargs):
+    def plot_machine(self, axis=None, *args,  **kwargs):
         if axis is None:
             axis = plt.gca()
-        if wall:
-            self.wall.plot(axis, **kwargs.get("wall", {}))
-        if coils:
-            self.pf_active.plot(axis, **kwargs.get("pf_active", {}))
-        axis.axis("scaled")
+
+        self.wall.plot(axis, **kwargs.get("wall", {}))
+
+        self.pf_active.plot(axis, **kwargs.get("pf_active", {}))
+
+        return axis
 
     def plot(self, axis=None, *args,   **kwargs):
 
@@ -195,10 +196,9 @@ class Tokamak(PhysicalGraph):
 
         axis.set_aspect('equal')
         axis.axis('scaled')
-        # axis.set_xlabel(r"Major radius $R$ [m]")
-        # axis.set_ylabel(r"Height $Z$ [m]")
+        axis.set_xlabel(r"Major radius $R$ [m]")
+        axis.set_ylabel(r"Height $Z$ [m]")
         # axis.legend()
-
         return axis
 
     def initialize_profile(self, spec="electrons", n0=1.0e19, w_scale=5,  x_ped=0.9, d_ped=0.2):
