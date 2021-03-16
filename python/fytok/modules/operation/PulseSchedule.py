@@ -1,6 +1,6 @@
 from functools import cached_property
 import numpy as np
-from spdm.data.PhysicalGraph import PhysicalGraph, _next_
+from spdm.data.PhysicalGraph import PhysicalGraph
 from fytok.Misc import Signal
 
 
@@ -13,10 +13,8 @@ class PulseSchedule(PhysicalGraph):
     """
     IDS = "pulse_schedule"
 
-    def __init__(self, cache=None, *args, tokamak=None, **kwargs):
+    def __init__(self,  *args,  **kwargs):
         super().__init__(*args, **kwargs)
-        self.__dict__["_cache"] = cache
-        self.__dict__["_tokamak"] = tokamak
 
     @cached_property
     def ids_properties(self):
@@ -49,9 +47,8 @@ class PulseSchedule(PhysicalGraph):
         return NotImplemented
 
     class Reference(PhysicalGraph):
-        def __init__(self, cache=None, *args, name=None, time=None, data=None, **kwargs):
+        def __init__(self, *args, name=None, time=None, data=None, **kwargs):
             super().__init__(*args, **kwargs)
-            self.__dict__["_name"] = name
             self.__dict__["_signal"] = Signal(time=time, data=data)
 
         @property
@@ -84,10 +81,9 @@ class PulseSchedule(PhysicalGraph):
         return PhysicalGraph(default_factory_array=lambda _holder=self: PulseSchedule.Event(None, parent=_holder))
 
     class FluxControl(PhysicalGraph):
-        def __init__(self, cache=None, *args, time=None, **kwargs):
+        def __init__(self,   *args, time=None, **kwargs):
             super().__init__(*args, **kwargs)
             self.__dict__["_time"] = time
-            self.__dict__["_cache"] = cache
 
         @cached_property
         def i_plasma(self):
@@ -120,10 +116,9 @@ class PulseSchedule(PhysicalGraph):
         return PulseSchedule.FluxControl(self._cache.flux_control, time=self.time)
 
     class PositionControl(PhysicalGraph):
-        def __init__(self, cache=None, *args, time=None, **kwargs):
+        def __init__(self,  *args, time=None, **kwargs):
             super().__init__(*args, **kwargs)
             self.__dict__["_time"] = time
-            self.__dict__["_cache"] = cache
 
         @cached_property
         def mode(self):

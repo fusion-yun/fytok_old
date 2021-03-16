@@ -1,5 +1,5 @@
 from functools import cached_property
-from spdm.data.PhysicalGraph import PhysicalGraph, _next_
+from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.util.sp_export import sp_find_module

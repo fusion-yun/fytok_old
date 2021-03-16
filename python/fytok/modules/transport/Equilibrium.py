@@ -1,20 +1,15 @@
 import collections
-import functools
-import inspect
-from functools import cached_property, lru_cache
+from functools import cached_property
 
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
-import scipy.constants as constants
 from fytok.util.RadialGrid import RadialGrid
-from numpy import arctan2, cos, sin, sqrt
-from scipy.optimize import root_scalar
 from spdm.data.Coordinates import Coordinates
 from spdm.data.Field import Field
-from spdm.data.PhysicalGraph import PhysicalGraph, _next_
+from spdm.data.Node import Node
+from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.data.Quantity import Quantity
-from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 
 from ...FyModule import FyModule
@@ -108,7 +103,7 @@ class Equilibrium(PhysicalGraph, FyModule):
 
     @cached_property
     def profiles_1d(self):
-        return Equilibrium.Profiles1D(self["profiles_1d"], parent=self)
+        return Equilibrium.Profiles1D(self["profiles_1d"].__fetch__(), parent=self)
 
     @cached_property
     def profiles_2d(self):
@@ -136,8 +131,10 @@ class Equilibrium(PhysicalGraph, FyModule):
 
     @cached_property
     def flux_surface(self):
-        return FluxSurface(self.profiles_2d.psi, wall=self._parent.wall,
-                           vacuum_toroidal_field=self._parent.vacuum_toroidal_field,
+        return FluxSurface(self.profiles_2d.psi,
+                           wall=self._parent.wall,
+                           vacuum_toroidal_field=self.vacuum_toroidal_field,
+                           #    ffprime=self.profiles_1d.ffprime,
                            parent=self)
 
     class CoordinateSystem(PhysicalGraph, Coordinates):
@@ -229,39 +226,35 @@ class Equilibrium(PhysicalGraph, FyModule):
         #     arrays should not be filled since they are redundant with grid/dim1 and dim2."""}
         #     return PhysicalGraph(res, parent=self)
         #     # return self._parent.coordinate_system.grid_type
-
-        @cached_property
-        def grid(self):
-            #  {"name": name,
-            #  "units": units,
-            #  "type_index": self.grid_type.index,
-            #  "r": R,
-            #  "z": Z}
-
-            # name = "x,y"
-            # units = "m"
-
-            coord = None
-            if not self.grid_type.index or self.grid_type.index == 1:  # rectangular	1
-                """Cylindrical R, Z ala eqdsk(R=dim1, Z=dim2). In this case the position arrays should not be filled
-                 since they are redundant with grid/dim1 and dim2."""
-                R = self.grid.dim1
-                Z = self.grid.dim2
-                name = "r,z"
-                units = "m"
-            elif self.grid_type.index >= 2 and self.grid_type.index < 91:  # inverse
-                """Rhopolar_polar 2D polar coordinates(rho=dim1, theta=dim2) with magnetic axis as centre of grid;
-                theta and values following the COCOS=11 convention;
-                the polar angle is theta=atan2(z-zaxis,r-raxis) """
-                psi_value = psi_value.ravel()
-                R = self.r.ravel()
-                Z = self.z.ravel()
-                name = "rho,theta"
-                units = "m,radian"
-            else:
-                raise NotImplementedError()
-
-            return coord
+        # @cached_property
+        # def grid(self):
+        #     #  {"name": name,
+        #     #  "units": units,
+        #     #  "type_index": self.grid_type.index,
+        #     #  "r": R,
+        #     #  "z": Z}
+        #     # name = "x,y"
+        #     # units = "m"
+        #     coord = None
+        #     if not self.grid_type.index or self.grid_type.index == 1:  # rectangular	1
+        #         """Cylindrical R, Z ala eqdsk(R=dim1, Z=dim2). In this case the position arrays should not be filled
+        #          since they are redundant with grid/dim1 and dim2."""
+        #         R = self.grid.dim1
+        #         Z = self.grid.dim2
+        #         name = "r,z"
+        #         units = "m"
+        #     elif self.grid_type.index >= 2 and self.grid_type.index < 91:  # inverse
+        #         """Rhopolar_polar 2D polar coordinates(rho=dim1, theta=dim2) with magnetic axis as centre of grid;
+        #         theta and values following the COCOS=11 convention;
+        #         the polar angle is theta=atan2(z-zaxis,r-raxis) """
+        #         psi_value = psi_value.ravel()
+        #         R = self.r.ravel()
+        #         Z = self.z.ravel()
+        #         name = "rho,theta"
+        #         units = "m,radian"
+        #     else:
+        #         raise NotImplementedError()
+        #     return coord
 
         @cached_property
         def _metric(self):
@@ -424,25 +417,22 @@ class Equilibrium(PhysicalGraph, FyModule):
 
         def __init__(self, *args, ** kwargs):
             super().__init__(*args, **kwargs)
+            self._psi_norm = np.linspace(0, 1.0, len(self["q"]))
 
         @property
-        def flux_surface(self):
-            return self._parent.flux_surface
-
-        @cached_property
         def psi_norm(self):
             """Normalized poloidal flux  [Wb]. """
-            return self.flux_surface.psi_norm
+            return self._psi_norm
 
         @cached_property
         def psi(self):
             """Poloidal flux  [Wb]. """
-            return self.flux_surface.psi
+            return Node.__getitem__(self, "psi")
 
-        @cached_property
-        def phi(self):
-            """Toroidal flux  [Wb] """
-            return self.flux_surface.phi
+        # @cached_property
+        # def phi(self):
+        #     """Toroidal flux  [Wb] """
+        #     return self._parent.flux_surface.phi
 
         @cached_property
         def pressure(self):
@@ -462,28 +452,26 @@ class Equilibrium(PhysicalGraph, FyModule):
                 raise LookupError("dpressure_dpsi")
             return res
 
-        @cached_property
+        @property
         def ffprime(self):
             """	Derivative of F w.r.t. Psi, multiplied with F  [T^2.m^2/Wb]. """
-            return self.f_df_dpsi
+            return Quantity(self["f_df_dpsi"], coordinates=self._psi_norm)
 
-        @cached_property
-        def f_df_dpsi(self):
-            """	Derivative of F w.r.t. Psi, multiplied with F  [T^2.m^2/Wb]. """
-            return self["f_df_dpsi"]
+        # @cached_property
+        # def f_df_dpsi(self):
+        #     """	Derivative of F w.r.t. Psi, multiplied with F  [T^2.m^2/Wb]. """
+        #     return self["f_df_dpsi"]
 
-        @cached_property
+        @property
         def f(self):
             """Diamagnetic function (F=R B_Phi)  [T.m]."""
-            return self.flux_surface.fpol
+            return self.fpol
 
         @cached_property
         def fpol(self):
-            return self.f
-
-        @cached_property
-        def fpol1(self):
-            return self.f
+            f2 = self.ffprime.integral * (self._parent.global_quantities.psi_axis -
+                                          self._parent.global_quantities.psi_boundary)
+            return np.sqrt(f2 * 2.0 + (self.vacuum_toroidal_field.r0*self.vacuum_toroidal_field.b0)**2)
 
         @cached_property
         def j_tor(self):
@@ -502,11 +490,11 @@ class Equilibrium(PhysicalGraph, FyModule):
 
                 .. math:: q(\psi) =\frac{F V^{\prime} \left\langle R^{-2}\right \rangle }{4 \pi^2}
             """
-            return self.flux_surface.q
+            return self._parent.flux_surface.q
 
         @cached_property
         def q1(self):
-            return self._parent.profiles_1d.q*self.flux_surface.cocos_flag
+            return self._parent.profiles_1d.q*self._parent.flux_surface.cocos_flag
 
         @cached_property
         def psi_norm1(self):
@@ -530,46 +518,46 @@ class Equilibrium(PhysicalGraph, FyModule):
         @cached_property
         def rho_tor(self):
             """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0[m]"""
-            return self.flux_surface.rho_tor
+            return self._parent.flux_surface.rho_tor
 
         @cached_property
         def rho_tor_norm(self):
             """Normalised toroidal flux coordinate. The normalizing value for rho_tor_norm, is the toroidal flux coordinate at the equilibrium boundary
                 (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation)[-]"""
-            return self.flux_surface.rho_tor_norm
+            return self._parent.flux_surface.rho_tor_norm
 
         @cached_property
         def drho_tor_dpsi(self)	:
-            return self.flux_surface.drho_tor_dpsi
+            return self._parent.flux_surface.drho_tor_dpsi
 
         @cached_property
         def dpsi_drho_tor(self)	:
             """Derivative of Psi with respect to Rho_Tor[Wb/m]. """
-            return self.flux_surface.dpsi_drho_tor
+            return self._parent.flux_surface.dpsi_drho_tor
 
         @cached_property
         def vprime(self):
-            return self.flux_surface.vprime
+            return self._parent.flux_surface.vprime
 
         @cached_property
         def dvolume_dpsi(self):
             """Radial derivative of the volume enclosed in the flux surface with respect to Psi[m ^ 3.Wb ^ -1]. """
-            return self.flux_surface.dvolume_dpsi
+            return self._parent.flux_surface.dvolume_dpsi
 
         @cached_property
         def dvolume_dpsi_norm(self):
             """Radial derivative of the volume enclosed in the flux surface with respect to Psi[m ^ 3.Wb ^ -1]. """
-            return self.flux_surface.dvolume_dpsi_norm
+            return self._parent.flux_surface.dvolume_dpsi_norm
 
         @cached_property
         def volume(self):
             """Volume enclosed in the flux surface[m ^ 3]"""
-            return self.flux_surface.volume
+            return self._parent.flux_surface.volume
 
         @cached_property
         def dvolume_drho_tor(self)	:
             """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
-            return self.flux_surface.dvolume_drho_tor
+            return self._parent.flux_surface.dvolume_drho_tor
 
         @cached_property
         def rho_volume_norm(self)	:
@@ -620,47 +608,47 @@ class Equilibrium(PhysicalGraph, FyModule):
         @cached_property
         def gm1(self):
             """Flux surface averaged 1/R ^ 2  [m ^ -2]  """
-            return self.flux_surface.gm1
+            return self._parent.flux_surface.gm1
 
         @cached_property
         def gm2(self):
             r"""Flux surface averaged .. math:: \left | \nabla \rho_{tor}\right|^2/R^2  [m^-2] """
-            return self.flux_surface.gm2
+            return self._parent.flux_surface.gm2
 
         @cached_property
         def gm3(self):
             r"""Flux surface averaged .. math:: \left | \nabla \rho_{tor}\right|^2  [-]	"""
-            return self.flux_surface.gm3
+            return self._parent.flux_surface.gm3
 
         @cached_property
         def gm4(self):
             """Flux surface averaged 1/B ^ 2  [T ^ -2]	"""
-            return self.flux_surface.gm4
+            return self._parent.flux_surface.gm4
 
         @cached_property
         def gm5(self):
             """Flux surface averaged B ^ 2  [T ^ 2]	"""
-            return self.flux_surface.gm5
+            return self._parent.flux_surface.gm5
 
         @cached_property
         def gm6(self):
             r"""Flux surface averaged  .. math:: \left | \nabla \rho_{tor}\right|^2/B^2  [T^-2]	"""
-            return self.flux_surface.gm6
+            return self._parent.flux_surface.gm6
 
         @cached_property
         def gm7(self):
             r"""Flux surface averaged .. math: : \left | \nabla \rho_{tor}\right |  [-]	"""
-            return self.flux_surface.gm7
+            return self._parent.flux_surface.gm7
 
         @cached_property
         def gm8(self):
             """Flux surface averaged R[m]	"""
-            return self.flux_surface.gm8
+            return self._parent.flux_surface.gm8
 
         @cached_property
         def gm9(self):
             """Flux surface averaged 1/R[m ^ -1]          """
-            return self.flux_surface.gm9
+            return self._parent.flux_surface.gm9
 
     class Profiles2D(PhysicalGraph):
         """
@@ -839,7 +827,6 @@ class Equilibrium(PhysicalGraph, FyModule):
 
     ####################################################################################
     # Plot proflies
-
     def plot(self, axis=None, *args, profiles=[], vec_field=[], boundary=True, levels=32, oxpoints=True,   **kwargs):
         """learn from freegs
         """
@@ -849,12 +836,6 @@ class Equilibrium(PhysicalGraph, FyModule):
         R = self.profiles_2d.r
         Z = self.profiles_2d.z
         psi = self.profiles_2d.psi(R, Z)
-        # psi = self.backend().psiRZ(self.profiles_2d.r, self.profiles_2d.z)
-        # psi = (psi - self.global_quantities.psi_axis) / \
-        #     (self.global_quantities.psi_boundary - self.global_quantities.psi_axis)
-
-        # if type(levels) is int:
-        #     levels = np.linspace(-2, 2,  levels)
 
         axis.contour(R[1:-1, 1:-1], Z[1:-1, 1:-1], psi[1:-1, 1:-1], levels=levels, linewidths=0.2)
 
@@ -864,7 +845,7 @@ class Equilibrium(PhysicalGraph, FyModule):
                 axis.text(p.r, p.z, idx,
                           horizontalalignment='center',
                           verticalalignment='center')
-                          
+
             axis.plot([], [], 'rx', label="X-Point")
 
             axis.plot(self.global_quantities.magnetic_axis.r,
@@ -882,12 +863,12 @@ class Equilibrium(PhysicalGraph, FyModule):
         #     d = self.profiles_2d[k]
         #     if d is not NotImplemented and d is not None:
         #         axis.contourf(R[1:-1, 1:-1], Z[1:-1, 1:-1], d[1:-1, 1:-1], **opts)
+
         for u, v, opts in vec_field:
             uf = self.profiles_2d[u]
             vf = self.profiles_2d[v]
             axis.streamplot(self.profiles_2d.grid.dim1[1:-1],
                             self.profiles_2d.grid.dim2[1:-1],
-
                             vf[1:-1, 1:-1].transpose(1, 0),
                             uf[1:-1, 1:-1].transpose(1, 0), **opts)
 

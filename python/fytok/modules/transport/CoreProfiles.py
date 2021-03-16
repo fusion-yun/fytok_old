@@ -1,28 +1,14 @@
 
-import collections
-import functools
-import inspect
-import numbers
+
 from functools import cached_property, lru_cache
 
-import matplotlib.pyplot as plt
-import numpy as np
-import scipy
-import scipy.constants as constants
-from fytok.util.Interpolate import (Interpolate1D, Interpolate2D, derivate,
-                                    find_critical, find_root, integral,
-                                    interpolate)
+
 from fytok.util.Plot import plot_profiles
 from fytok.util.RadialGrid import RadialGrid
 from numpy import arctan2, cos, sin, sqrt
-from scipy.interpolate import (RectBivariateSpline, SmoothBivariateSpline,
-                               UnivariateSpline)
-from spdm.data.PhysicalGraph import PhysicalGraph, _next_
+from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.data.Quantity import Quantity
-from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
-from spdm.util.sp_export import sp_find_module
-from sympy import Point, Polygon
 
 
 class CoreProfiles(PhysicalGraph):
@@ -30,32 +16,18 @@ class CoreProfiles(PhysicalGraph):
     """
     IDS = "core_profiles"
 
-    def __init__(self, cache=None, *args, time=None,  grid=None, ** kwargs):
+    def __init__(self,   *args,  ** kwargs):
         super().__init__(*args, ** kwargs)
-
-        if isinstance(cache, LazyProxy) or isinstance(cache, PhysicalGraph):
-            self.__dict__["_cache"] = cache
-        else:
-            self.__dict__["_cache"] = PhysicalGraph(cache)
-
-        self.__dict__["_time"] = time or 0.0
-        self.__dict__["_grid"] = grid
 
         # self.vacuum_toroidal_field = tokamak.vacuum_toroidal_field
 
     class Profiles1D(PhysicalGraph):
-        def __init__(self, cache=None,  *args, parent=None, grid=None, **kwargs):
-            if grid is None:
-                grid = parent._grid
-            super().__init__(cache, * args, axis=grid.rho_tor_norm, **kwargs)
-            self.__dict__["_parent"] = parent
-            self.__dict__["_grid"] = grid
-            self.__dict__["_b0"] = parent.vacuum_toroidal_field.b0
-            self.__dict__["_r0"] = parent.vacuum_toroidal_field.r0
+        def __init__(self,    *args,   **kwargs):
+            super().__init__(* args,  **kwargs)
 
         @property
         def grid(self):
-            return self._grid
+            return self._paremt.grid
 
         # def __missing__(self, key):
         #     logger.debug(key)

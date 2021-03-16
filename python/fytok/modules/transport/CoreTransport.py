@@ -3,8 +3,8 @@ from functools import cached_property, lru_cache
 
 import numpy as np
 from spdm.data.PhysicalGraph import PhysicalGraph
+from spdm.data.Field import Field
 from spdm.util.logger import logger
-from spdm.util.LazyProxy import LazyProxy
 
 from fytok.util.RadialGrid import RadialGrid
 
@@ -23,24 +23,20 @@ class CoreTransport(PhysicalGraph):
     """
     IDS = "core_transport"
 
-    def __init__(self, cache=None, *args, tokamak=None,  **kwargs):
+    def __init__(self,  *args,   **kwargs):
         super().__init__(*args, **kwargs)
-        self._cache = cache or PhysicalGraph()
-        self._tokamak = tokamak
-        self._grid = self._tokamak.grid
 
     def update(self, *args, **kwargs):
         logger.debug("NOT　IMPLEMENTED!")
 
     class TransportCoeff(PhysicalGraph):
-        def __init__(self, cache=None, *args, parent=None, **kwargs):
+        def __init__(self,   *args, **kwargs):
 
-            super().__init__(cache, *args, axis=parent.grid_d.rho_tor_norm, **kwargs)
-            self._parent = parent
-            self.d = Profile(self._cache.d, axis=self._parent.grid_d.rho_tor_norm,  description={"name": "d"})
-            self.v = Profile(self._cache.v, axis=self._parent.grid_v.rho_tor_norm, description={"name": "v"})
-            self.flux = Profile(self._cache.flux, axis=self._parent.grid_flux.rho_tor_norm,
-                                description={"name": "flux"})
+            super().__init__(*args,   **kwargs)
+            self.d = Field(self["d"], coordinates=self._parent.grid_d.rho_tor_norm,  description={"name": "d"})
+            self.v = Field(self["v"], coordinates=self._parent.grid_v.rho_tor_norm, description={"name": "v"})
+            self.flux = Field(self["flux"], coordinates=self._parent.grid_flux.rho_tor_norm,
+                              description={"name": "flux"})
 
     class Particle(PhysicalGraph):
         def __init__(self, cache=None, *args, parent=None, **kwargs):
@@ -68,11 +64,8 @@ class CoreTransport(PhysicalGraph):
             super().__init__(*args, **kwargs)
 
     class Profiles1D(PhysicalGraph):
-        def __init__(self, cache=None, *args, equilibrium=None,  parent=None, **kwargs):
-            super().__init__(cache, * args,  **kwargs)
-            self._parent = parent
-            self.__dict__["_equilibrium"] = equilibrium
-            self.__dict__["_grid_d"] = self._parent._grid
+        def __init__(self,   *args,  **kwargs):
+            super().__init__(* args,  **kwargs)
 
         @property
         def grid_d(self):
@@ -149,4 +142,4 @@ class CoreTransport(PhysicalGraph):
         Fluxes and convection are positive (resp. negative) when outwards i.e. towards the LCFS 
         (resp. inwards i.e. towards the magnetic axes). {dynamic} """
 
-        return CoreTransport.Profiles1D(self._cache.profiles_1d, parent=self, equilibrium=self._tokamak.equilibrium)
+        return CoreTransport.Profiles1D(self["profiles_1d"], parent=self)

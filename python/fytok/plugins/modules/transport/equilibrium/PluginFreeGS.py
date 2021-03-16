@@ -10,7 +10,7 @@ import scipy.constants
 from fytok.util.Interpolate import (Interpolate1D, Interpolate2D, derivate,
                                     integral, interpolate)
 from scipy.interpolate import RectBivariateSpline, UnivariateSpline
-from spdm.data.PhysicalGraph import PhysicalGraph, _next_
+from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.logger import logger
 
 from fytok.modules.transport.CoreProfiles import CoreProfiles

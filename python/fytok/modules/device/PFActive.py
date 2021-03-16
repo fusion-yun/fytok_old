@@ -3,8 +3,7 @@ from copy import copy
 from functools import cached_property
 
 import matplotlib.pyplot as plt
-import numpy as np
-from spdm.data.PhysicalGraph import PhysicalGraph, _next_
+from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.logger import logger
 
 

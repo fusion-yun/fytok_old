@@ -9,8 +9,9 @@ from numpy import arctan2, cos, sin, sqrt
 from scipy.ndimage.filters import maximum_filter, minimum_filter
 from scipy.ndimage.morphology import binary_erosion, generate_binary_structure
 from scipy.optimize import fsolve, root_scalar
+from spdm.data.Coordinates import Coordinates
 from spdm.data.Field import Field
-from spdm.data.PhysicalGraph import PhysicalGraph, _next_
+from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.data.Quantity import Quantity
 from spdm.util.logger import logger
 
@@ -110,27 +111,59 @@ class FluxSurface(PhysicalGraph):
                        arrays should not be filled since they are redundant with grid/dim1 and dim2.
     """
 
-    def __init__(self,  psirz: Field, *args,  vacuum_toroidal_field=None,  wall=None,  tolerance=1.0e-9,  **kwargs):
+    def __init__(self,
+                 psirz: Field,
+                 *args,
+                 vacuum_toroidal_field=None,
+                 wall=None,
+                 ffprime=None,
+                 psi_norm=None,
+                 tolerance=1.0e-9,
+                 **kwargs):
         """
             Initialize FluxSurface
         """
         super().__init__(None, *args, **kwargs)
 
-        self.__dict__["tolerance"] = tolerance
-        self.__dict__["_psirz"] = psirz
-        self.__dict__["_wall"] = wall or self._parent._parent.wall
-        self.__dict__["_vacuum_toroidal_field"] = vacuum_toroidal_field or self._parent.vacuum_toroidal_field
+        self.__dict__["_tolerance"] = tolerance
+        self.__dict__["_wall"] = wall
+        self.__dict__["_vacuum_toroidal_field"] = vacuum_toroidal_field
 
-        # self.__dict__["_psi_norm"] = psi_norm
-        # self.__dict__["_vacuum_toroidal_field.r0"] = r0
-        # self.__dict__["_vacuum_toroidal_field.b0"] = b0
-        # self.__dict__["_ffprime"] = Quantity(ffprime, coordinates=psi_norm)
-        # if not isinstance(coordinate_system, PhysicalGraph):
-        #     coordinate_system = PhysicalGraph(coordinate_system)
-        # if not coordinate_system.grid.grid_type.index or coordinate_system.grid.grid_type.index == 1:
-        #     self._coordinate_system = coordinate_system
-        # else:
-        #     raise NotImplementedError(f"coordinate_system type error! {coordinate_system}")
+        if not isinstance(psirz, Field):
+            raise TypeError(psirz)
+
+        self.__dict__["_psirz"] = psirz
+
+        psi_norm = psi_norm or 128
+        if isinstance(psi_norm, int):
+            psi_norm = np.linspace(0, 1.0, psi_norm)
+        elif isinstance(psi_norm, np.ndarray):
+            pass
+        elif not psi_norm:
+            raise TypeError(type(psi_norm))
+
+        if not ffprime:
+            pass
+        else:
+            if not isinstance(ffprime, np.ndarray):
+                raise TypeError(type(ffprime))
+
+            if not psi_norm:
+                if isinstance(ffprime, Field):
+                    psi_norm = ffprime.coordinates.mesh.axis[0]
+                elif isinstance(ffprime, np.ndarray):
+                    psi_norm = np.ndarray(0, 1.0, len(ffprime))
+                else:
+                    raise TypeError(type(ffprime))
+            elif len(psi_norm) == len(ffprime):
+                pass
+            elif isinstance(ffprime, Field):
+                ffprime = ffprime(psi_norm)
+            else:
+                raise TypeError(type(ffprime))
+            self.__dict__["_ffprime"] = ffprime
+
+        self.__dict__["_psi_norm"] = psi_norm
 
     @cached_property
     def critical_points(self):
@@ -142,7 +175,7 @@ class FluxSurface(PhysicalGraph):
             if not self._wall.in_limiter(r, z):
                 continue
             p = PhysicalGraph({"r": r, "z": z, "psi": self._psirz(r, z)})
-            
+
             if tag < 0.0:  # saddle/X-point
                 xpoints.append(p)
             else:  # extremum/ O-point
@@ -261,11 +294,11 @@ class FluxSurface(PhysicalGraph):
 
     @cached_property
     def R(self):
-        return self.surface_mesh[:, :, 0]
+        return self._psirz.coordinates.mesh.mesh[0]
 
     @cached_property
     def Z(self):
-        return self.surface_mesh[:, :, 1]
+        return self._psirz.coordinates.mesh.mesh[1]
 
     @cached_property
     def grad_psi(self):
@@ -291,19 +324,22 @@ class FluxSurface(PhysicalGraph):
         return (self.grad_psi2+self.fpol.reshape((-1, 1))**2)/(self.R**2)
 
     #################################
+
+    @property
+    def vacuum_toroidal_field(self):
+        return self._vacuum_toroidal_field
+
+    @property
+    def ffprime(self):
+        return self._ffprime
+
     @cached_property
     def psi_norm(self):
         return self._psi_norm
 
     @cached_property
     def psi(self):
-        return self._psi_norm * (self.psi_boundary-self.psi_axis)+self.psi_axis
-
-    @cached_property
-    def fpol(self):
-        """Diamagnetic function (F=R B_tor)  [T.m]."""
-        f2 = self._ffprime.integral.value * (self.psi_axis-self.psi_boundary)
-        return Profile(np.sqrt(f2 * 2.0 + (self._vacuum_toroidal_field.r0*self._vacuum_toroidal_field.b0)**2), axis=self._psi_norm)
+        return Field(self.psi_norm * (self.psi_boundary-self.psi_axis) + self.psi_axis, coordinates=self.psi_norm, unit="Wb")
 
     @cached_property
     def dvolume_dpsi(self):
@@ -314,8 +350,7 @@ class FluxSurface(PhysicalGraph):
         r""".. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
             .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
         """
-
-        return Quantity((2.0*scipy.constants.pi)*np.sum(self.Jdl, axis=1), coordinates=self.psi_norm)
+        return Field((2.0*scipy.constants.pi)*np.sum(self.Jdl, axis=1), coordinates=self.psi_norm)
 
     @cached_property
     def volume(self):
@@ -351,8 +386,8 @@ class FluxSurface(PhysicalGraph):
     @cached_property
     def rho_tor(self):
         """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0  [m]"""
-        data = np.sqrt(self.phi.value)/np.sqrt(scipy.constants.pi * self._vacuum_toroidal_field.b0)
-        return Profile(data, axis=self._axis, description={"name": "rho_tor"})
+        data = np.sqrt(self.phi)/np.sqrt(scipy.constants.pi * self.vacuum_toroidal_field.b0)
+        return Field(data, coordinates=self.psi_norm, unit="m")
 
     @cached_property
     def rho_tor_norm(self):
@@ -368,11 +403,11 @@ class FluxSurface(PhysicalGraph):
                                         =\frac{q}{2\pi B_{0}\rho_{tor}}
 
         """
-        res = self.q/(2.0*scipy.constants.pi*self._vacuum_toroidal_field.b0)
-        res.value[1:] /= self.rho_tor.value[1:]
-        # res[0] = res[1:5](0)  # self.fpol[0]*self.gm1[0]/(2.0*scipy.constants.pi*self._vacuum_toroidal_field.b0)
-        # return self.q/(2.0*scipy.constants.pi*self._vacuum_toroidal_field.b0)
-        res.value[0] = 2*res.value[1]-res.value[2]
+        res = self.q/(2.0*scipy.constants.pi*self.vacuum_toroidal_field.b0)
+        res[1:] /= self.rho_tor[1:]
+        # res[0] = res[1:5](0)  # self.fpol[0]*self.gm1[0]/(2.0*scipy.constants.pi*self.vacuum_toroidal_field.b0)
+        # return self.q/(2.0*scipy.constants.pi*self.vacuum_toroidal_field.b0)
+        res[0] = 2*res[1]-res[2]
         return res
 
     @cached_property
@@ -383,9 +418,9 @@ class FluxSurface(PhysicalGraph):
             Todo:
                 FIXME: dpsi_drho_tor(0) = ??? 
         """
-        res = (2.0*scipy.constants.pi*self._vacuum_toroidal_field.b0)*self.rho_tor[:]/self.q[:]
+        res = (2.0*scipy.constants.pi*self.vacuum_toroidal_field.b0)*self.rho_tor[:]/self.q[:]
         res[0] = 2*res[1]-res[2]
-        return Profile(res, axis=self._psi_norm)
+        return Field(res, coordinates=self.psi_norm, unit="Wb/m")
 
     @cached_property
     def gm1(self):
@@ -440,12 +475,4 @@ class FluxSurface(PhysicalGraph):
         # res[0] = res[1]
         return res
 
-    def apply(self, func, R, Z, *args, **kwargs):
-        pval = self._psirz(R, Z, *args, **kwargs)
-        if isinstance(pval, np.ndarray):
-            pass
-        return func(pval)
-
-    def plot(self, axis):
-        axis.plot(self.R, self.Z, "b--", linewidth=0.1)
-        axis.plot(self.R.transpose(1, 0), self.Z.transpose(1, 0), "b--", linewidth=0.1)
+ 

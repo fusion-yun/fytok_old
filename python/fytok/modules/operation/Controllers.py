@@ -2,7 +2,7 @@
 from functools import cached_property
 
 import numpy as np
-from spdm.data.PhysicalGraph import PhysicalGraph, _next_
+from spdm.data.PhysicalGraph import PhysicalGraph
 
 from fytok.Misc import IDSProperties, Signal
 

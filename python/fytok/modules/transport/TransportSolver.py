@@ -9,11 +9,8 @@ from functools import cached_property
 import numpy as np
 import scipy.constants
 from fytok.util.Misc import Identifier
-from scipy.interpolate import RectBivariateSpline, UnivariateSpline
-from spdm.data.PhysicalGraph import PhysicalGraph, _last_, _next_
-from spdm.util.LazyProxy import LazyProxy
+from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.logger import logger
-from spdm.util.sp_export import sp_find_module
 
 from .CoreProfiles import CoreProfiles
 from .CoreSources import CoreSources
@@ -36,31 +33,8 @@ class TransportSolver(PhysicalGraph):
     """
     IDS = "transport_solver_numerics"
 
-    @staticmethod
-    def __new__(cls,  cache, *args, **kwargs):
-        if cls is not TransportSolver:
-            return super(TransportSolver, cls).__new__(cls)
-
-        backend = cache.solver.name
-        if isinstance(backend, LazyProxy):
-            backend = backend()
-
-        if backend is NotImplemented or not backend:
-            n_cls = cls
-        else:
-            plugin_name = f"{__package__}.plugins.transport_solver.Plugin{backend}"
-
-            n_cls = sp_find_module(plugin_name, fragment=f"TransportSolver{backend}")
-
-            if n_cls is None:
-                raise ModuleNotFoundError(f"Can not find plugin {plugin_name}#TransportSolver{backend}")
-
-        return object.__new__(n_cls)
-
-    def __init__(self,  cache, *args, tokamak={},  **kwargs):
+    def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.__dict__['_cache'] = cache
-        self._tokamak = tokamak
 
     @cached_property
     def solver(self) -> Identifier:
@@ -87,7 +61,7 @@ class TransportSolver(PhysicalGraph):
 
                 description	:   Verbose description
         """
-        c = self._cache.primary_coordinate
+        c = self["primary_coordinate"]
         return Identifier(
             name="rho_tor_norm",
             index=1,
@@ -95,7 +69,7 @@ class TransportSolver(PhysicalGraph):
         ) if c is NotImplemented or c is None or len(c) == 0 else Identifier(c)
 
     class BoundaryCondition(PhysicalGraph):
-        def __init__(self, cache, *args, **kwargs):
+        def __init__(self,   *args, **kwargs):
             super().__init__(*args, **kwargs)
 
         @cached_property

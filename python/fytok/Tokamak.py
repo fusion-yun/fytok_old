@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma
 import scipy.integrate
-from spdm.data.PhysicalGraph import PhysicalGraph, _last_, _next_
+from spdm.data.Node import Node,  _next_
+from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 

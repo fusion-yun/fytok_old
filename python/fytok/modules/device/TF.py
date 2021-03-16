@@ -15,30 +15,15 @@ class TF(PhysicalGraph):
     """TF　Coils
 
     """
-    IDS="tf"
+    IDS = "tf"
 
-    def __init__(self,   config,  *args,  tokamak=None,  **kwargs):
+    def __init__(self,  *args,    **kwargs):
         super().__init__(*args, **kwargs)
-        self.tokamak = tokamak
-        self.load(config)
-
-    def load(self, config):
-        self._cache = config
-
-    @property
-    def cache(self):
-        if isinstance(self._cache, LazyProxy):
-            self._cache = self._cache()
-        elif isinstance(self._cache, PhysicalGraph):
-            self._cache = self._cache
-        else:
-            self._cache = PhysicalGraph(self._cache)
-        return self._cache
 
     @cached_property
     def r0(self):
         """Reference major radius of the device (from the official description of the device).
-           
+
            This node is the placeholder for this official machine description quantity
             (typically the middle of the vessel at the equatorial midplane, although the exact
             definition may depend on the device) {static} [m]"""

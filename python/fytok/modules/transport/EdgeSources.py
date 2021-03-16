@@ -1,4 +1,4 @@
-from spdm.data.PhysicalGraph import PhysicalGraph, _next_
+from spdm.data.PhysicalGraph import PhysicalGraph
 
 class EdgeSources(PhysicalGraph):
     """Edge plasma sources. 
