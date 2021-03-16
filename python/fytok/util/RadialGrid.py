@@ -1,8 +1,9 @@
 
-from functools import cached_property, lru_cache
+from functools import cached_property 
 import collections
 import numpy as np
 from spdm.data.PhysicalGraph import PhysicalGraph
+from spdm.data.Field import Field
 from spdm.util.logger import logger
 
 
@@ -36,7 +37,7 @@ class RadialGrid(PhysicalGraph):
         """	Normalised toroidal flux coordinate. The normalizing value for rho_tor_norm,
         is the toroidal flux coordinate at the equilibrium boundary (LCFS or 99.x % of the LCFS in case of a
         fixed boundary equilibium calculation, see time_slice/boundary/b_flux_pol_norm in the equilibrium IDS) {dynamic} [-]"""
-        return Quantity(self._rho_tor_norm, axis=self._rho_tor_norm, description={"name": "rho_tor_norm"})
+        return Field(self._rho_tor_norm, axis=self._rho_tor_norm, description={"name": "rho_tor_norm"})
 
     @cached_property
     def rho_tor(self):

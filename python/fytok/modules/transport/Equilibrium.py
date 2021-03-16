@@ -134,7 +134,7 @@ class Equilibrium(PhysicalGraph, FyModule):
         return FluxSurface(self.profiles_2d.psi,
                            wall=self._parent.wall,
                            vacuum_toroidal_field=self.vacuum_toroidal_field,
-                           #    ffprime=self.profiles_1d.ffprime,
+                           ffprime=self.profiles_1d.ffprime,
                            parent=self)
 
     class CoordinateSystem(PhysicalGraph, Coordinates):
@@ -455,7 +455,7 @@ class Equilibrium(PhysicalGraph, FyModule):
         @property
         def ffprime(self):
             """	Derivative of F w.r.t. Psi, multiplied with F  [T^2.m^2/Wb]. """
-            return Quantity(self["f_df_dpsi"], coordinates=self._psi_norm)
+            return Field(self["f_df_dpsi"], coordinates=self._psi_norm, unit="T^2.m^2/Wb")
 
         # @cached_property
         # def f_df_dpsi(self):

@@ -1,19 +1,27 @@
 
+from spdm.data.Quantity import Quantity
+from spdm.data.PhysicalGraph import PhysicalGraph
+from spdm.data.Field import Field
+from spdm.data.Coordinates import Coordinates
+from scipy.optimize import fsolve, root_scalar
+from scipy.ndimage.morphology import binary_erosion, generate_binary_structure
+from scipy.ndimage.filters import maximum_filter, minimum_filter
+from numpy import arctan2, cos, sin, sqrt
 import collections
 import inspect
 from functools import cached_property
 
 import numpy as np
 import scipy.constants
-from numpy import arctan2, cos, sin, sqrt
-from scipy.ndimage.filters import maximum_filter, minimum_filter
-from scipy.ndimage.morphology import binary_erosion, generate_binary_structure
-from scipy.optimize import fsolve, root_scalar
-from spdm.data.Coordinates import Coordinates
-from spdm.data.Field import Field
-from spdm.data.PhysicalGraph import PhysicalGraph
-from spdm.data.Quantity import Quantity
+from packaging import version
 from spdm.util.logger import logger
+
+
+if version.parse(scipy.__version__) <= version.parse("1.4.1"):
+    from scipy.integrate import cumtrapz as cumtrapz
+else:
+    from scipy.integrate import cumulative_trapezoid as cumtrapz
+logger.debug(f"SciPy Version: {scipy.__version__}")
 
 
 def find_peaks_2d_image(image):
@@ -134,7 +142,7 @@ class FluxSurface(PhysicalGraph):
 
         self.__dict__["_psirz"] = psirz
 
-        psi_norm = psi_norm or 128
+        psi_norm = psi_norm or len(self._psirz.coordinates.mesh.axis[0])
         if isinstance(psi_norm, int):
             psi_norm = np.linspace(0, 1.0, psi_norm)
         elif isinstance(psi_norm, np.ndarray):
@@ -142,13 +150,13 @@ class FluxSurface(PhysicalGraph):
         elif not psi_norm:
             raise TypeError(type(psi_norm))
 
-        if not ffprime:
+        if ffprime is None:
             pass
         else:
             if not isinstance(ffprime, np.ndarray):
                 raise TypeError(type(ffprime))
 
-            if not psi_norm:
+            if psi_norm is None:
                 if isinstance(ffprime, Field):
                     psi_norm = ffprime.coordinates.mesh.axis[0]
                 elif isinstance(ffprime, np.ndarray):
@@ -334,6 +342,12 @@ class FluxSurface(PhysicalGraph):
         return self._ffprime
 
     @cached_property
+    def fpol(self):
+        f2 = cumtrapz(self.ffprime, self.psi_norm, initial=0) \
+            * (self.psi_axis - self.psi_boundary) * 2.0
+        return np.sqrt(f2 + (self.vacuum_toroidal_field.r0*self.vacuum_toroidal_field.b0)**2)
+
+    @cached_property
     def psi_norm(self):
         return self._psi_norm
 
@@ -355,7 +369,7 @@ class FluxSurface(PhysicalGraph):
     @cached_property
     def volume(self):
         """Volume enclosed in the flux surface[m ^ 3]"""
-        return self.dvolume_dpsi.integral * (self.psi_boundary-self.psi_axis)
+        return Field(cumtrapz(self.dvolume_dpsi, self.psi_norm, initial=0) * (self.psi_boundary-self.psi_axis), coordinates=self.psi_norm, unit="m**3")
 
     @cached_property
     def dvolume_drho_tor(self)	:
@@ -366,7 +380,6 @@ class FluxSurface(PhysicalGraph):
     def q(self):
         r"""Safety factor
             (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)  [-].
-
             .. math:: q(\psi)=\frac{d\Phi}{d\psi}=\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
         """
         # logger.debug(r"Calculate q as  F V^{\prime} \left\langle R^{-2}\right \rangle /(4 \pi^2) ")
@@ -381,7 +394,7 @@ class FluxSurface(PhysicalGraph):
             .. math ::
                 \Phi_{tor}\left(\psi\right)=\int_{0}^{\psi}qd\psi
         """
-        return self.q.integral * (self.psi_boundary-self.psi_axis)
+        return Field(cumtrapz(self.q, self.psi_norm) * (self.psi_boundary-self.psi_axis), coordinates=self.psi_norm, unit="Wb")
 
     @cached_property
     def rho_tor(self):
@@ -474,5 +487,3 @@ class FluxSurface(PhysicalGraph):
             res = (2*scipy.constants.pi) * np.sum(func * self.Jdl, axis=1) / self.vprime
         # res[0] = res[1]
         return res
-
- 

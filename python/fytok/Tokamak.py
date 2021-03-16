@@ -7,9 +7,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma
 import scipy.integrate
-from spdm.data.Node import Node,  _next_
+from spdm.data.Field import Field
+from spdm.data.Node import Node, _next_
 from spdm.data.PhysicalGraph import PhysicalGraph
-from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 
 from .modules.device.PFActive import PFActive
@@ -37,14 +37,8 @@ class Tokamak(PhysicalGraph):
     def __init__(self,  data=None,  *args, **kwargs):
         super().__init__(data, *args,  **kwargs)
 
-        self._time = self["equilibrium.time"]
-        self._vacuum_toroidal_field = self["equilibrium.vacuum_toroidal_field"]
-
-        # if rho_tor_norm is None:
-        #     rho_tor_norm = np.sqrt(np.linspace(0, 1.0, 129))
-        # else:
-        #     rho_tor_norm = rho_tor_norm
-        # self._grid = RadialGrid(rho_tor_norm, parent=self.equilibrium)
+        self._time = PhysicalGraph(self["equilibrium.time"].__fetch__())
+        self._vacuum_toroidal_field = PhysicalGraph(self["equilibrium.vacuum_toroidal_field"].__fetch__())
 
     # --------------------------------------------------------------------------
 
@@ -243,11 +237,11 @@ class Tokamak(PhysicalGraph):
 
         rho_tor_boundary = self.grid.rho_tor_boundary
 
-        vpr = Profile(self.equilibrium.profiles_1d.dvolume_drho_tor * rho_tor_boundary,
-                      axis=self.equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)
+        vpr = Field(self.equilibrium.profiles_1d.dvolume_drho_tor * rho_tor_boundary,
+                    coordinates=self.equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)
 
-        gm3 = Profile(self.equilibrium.profiles_1d.gm3,
-                      axis=self.equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)
+        gm3 = Field(self.equilibrium.profiles_1d.gm3,
+                    coordinates=self.equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)
 
         H = vpr * gm3
 

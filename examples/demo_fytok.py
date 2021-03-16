@@ -17,31 +17,28 @@ if __name__ == "__main__":
     tok = Tokamak(doc.entry)
 
     # fig = plt.figure()
-
     # tok.plot(fig.gca(),
     #             wall={"limiter": {"edgecolor": "green"},
     #                 "vessel": {"edgecolor": "blue"}},
     #             pf_active={"facecolor": 'red'})
-
     # fig.savefig("/home/salmon/workspace/output/tokamak.svg")
-
     # psi_norm = tok.equilibrium.flux_surface.psi_norm
 
-    fig = plt.figure()
-
-    plt.plot(tok.equilibrium.flux_surface.psi_norm, tok.equilibrium.flux_surface.ffprime)
-
-    #     plt.contour(tok.equilibrium.flux_surface.Jdl[1:-1, 1:-1])
-    plt.savefig("/home/salmon/workspace/output/profiles_1d.svg")
+    # fig = plt.figure()
+    # plt.plot(tok.equilibrium.flux_surface.psi_norm, tok.equilibrium.flux_surface.ffprime)
+    # #     plt.contour(tok.equilibrium.flux_surface.Jdl[1:-1, 1:-1])
+    # plt.savefig("/home/salmon/workspace/output/profiles_1d.svg")
     # tok.initialize_profile()
 
-    # plot_profiles(
-    #     tok.equilibrium.flux_surface,
-    #     profiles=[
-    #         {"name": "psi_norm"}
-    #     ],
-    #     axis={"name": "rho_tor_norm", "opts": {"label": r"$\rho_{tor}/\rho_{tor,bdry}$"}}, grid=True)\
-    # ).savefig("/home/salmon/workspace/output/core_profiles.svg")
+    plot_profiles(
+        tok.equilibrium.flux_surface,
+        [{"name": "ffprime"},
+         {"name": "fpol"},
+         {"name": "q"},
+         ],
+        axis={"name": "psi_norm", "opts": {"label": r"$\bar{\psi}$"}}, grid=True)\
+        .savefig("/home/salmon/workspace/output/profiles_1d.svg")
+
     # plot_profiles(tok.core_profiles.profiles_1d,
     #               profiles=[
     #                   [{"name": "psi0_eq", "opts": {"marker": ".", "label": r"$\psi_{0}$"}},

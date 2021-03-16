@@ -3,8 +3,9 @@ import collections
 import matplotlib.pyplot as plt
 import numpy as np
 from spdm.data.PhysicalGraph import PhysicalGraph
-from spdm.data.Quantity import Quantity
+from spdm.data.Field import Field
 from spdm.util.logger import logger
+from spdm.util.utilities import try_get
 
 
 def fetch_profile(holder, desc, prefix=[]):
@@ -35,12 +36,13 @@ def fetch_profile(holder, desc, prefix=[]):
     if isinstance(path, str):
         path = path.split(".")
 
-    path = prefix+path
-
     if isinstance(path, np.ndarray):
         data = path
     else:
-        data = holder[path]
+        path = prefix+path
+        path = ".".join(path)
+
+        data = try_get(holder, path, None)
 
     return data, opts
 
@@ -70,11 +72,11 @@ def plot_profiles(holder, profiles, fig_axis=None, axis=None, prefix=None, grid=
     elif fig_axis is None:
         nprofiles = len(profiles)
         fig, fig_axis = plt.subplots(ncols=1, nrows=nprofiles, sharex=True, figsize=(10, 2*nprofiles))
-
-    elif len(profiles) == 1:
-        fig_axis = [fig_axis]
     else:
         raise RuntimeError(f"Too much profiles!")
+
+    if not isinstance(fig_axis, (collections.abc.Sequence, np.ndarray)):
+        fig_axis = [fig_axis]
 
     for idx, data in enumerate(profiles):
         ylabel = None
@@ -87,17 +89,19 @@ def plot_profiles(holder, profiles, fig_axis=None, axis=None, prefix=None, grid=
 
         for d in data:
             profile, opts = fetch_profile(holder, d,  prefix=prefix)
-            if isinstance(profile, Quantity) and hasattr(profile, "axis"):
-                if profile.axis is not None and profile.value is not None:
-                    fig_axis[idx].plot(profile.axis, profile.value, **opts)
-                else:
-                    logger.debug((profile.axis, profile.value))
+            if isinstance(profile, Field):
+                #     if len(profile.coordinates.mesh.axis[0]) == len(profile):
+                fig_axis[idx].plot(*profile.unpack(), **opts)
+                #     else:
+                #         fig_axis[idx].plot(profile, **opts)
+                # else:
+                #     logger.debug((profile.coordinates, profile))
             elif isinstance(profile, np.ndarray):
                 try:
                     if axis is not None:
-                        axis[idx].plot(axis, profile, **opts)
+                        fig_axis[idx].plot(axis, profile, **opts)
                     else:
-                        axis[idx].plot(profile, **opts)
+                        fig_axis[idx].plot(profile, **opts)
 
                 except Exception as error:
                     logger.error(f"Can not plot profile! [{error}]")
