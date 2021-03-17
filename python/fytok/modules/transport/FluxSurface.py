@@ -23,6 +23,10 @@ else:
 logger.debug(f"SciPy Version: {scipy.__version__}")
 
 
+def power2(a):
+    return np.inner(a, a)
+
+
 def find_peaks_2d_image(image):
     """
     Takes an image and detect the peaks usingthe local maximum filter.
@@ -304,14 +308,16 @@ class FluxSurface(PhysicalGraph):
         return self._psirz(r, z, dx=1), self._psirz(r, z, dy=1)
 
     def jacobian(self, r, z):
-        return (r / np.linalg.norm(self.grad_psi(r, z)))
+        br, bz = self.grad_psi(r, z)
+        return r / np.sqrt(br**2+bz**2)
 
     def psi_norm_rz(self, r, z):
         psi = self._psirz(r, z)
         return (psi-self.psi_boundary)/(self.psi_axis-self.psi_boundary)
 
     def B2(self, r, z):
-        return (self.grad_psi2(r, z)+self.fpol(self.psi_norm_rz(r, z))**2)/(r**2)
+        br, bz = self.grad_psi(r, z)
+        return ((br**2+bz**2)+self.fpol(self.psi_norm_rz(r, z))**2)/(r**2)
 
     #################################
 
@@ -325,8 +331,7 @@ class FluxSurface(PhysicalGraph):
 
     @cached_property
     def fpol(self):
-        f2 = cumtrapz(self.ffprime, self.psi_norm, initial=0) \
-            * (self.psi_axis - self.psi_boundary) * 2.0
+        f2 = cumtrapz(self.ffprime, self.psi_norm, initial=0) * (self.psi_axis - self.psi_boundary) * 2.0
         return np.sqrt(f2 + (self.vacuum_toroidal_field.r0*self.vacuum_toroidal_field.b0)**2)
 
     @cached_property
@@ -342,16 +347,12 @@ class FluxSurface(PhysicalGraph):
         return self.vprime*self.cocos_flag
 
     @cached_property
-    def field_line_length(self):
-        return [self.rz_mesh.axis(idx, axis=0).integrate(None) for idx in range(len(self.psi_norm))]
-
-    @cached_property
     def vprime(self):
         r"""
             .. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
             .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
         """
-        return self.average(self.jacobian)[0]
+        return self.average(self.jacobian)
 
     @cached_property
     def volume(self):
@@ -370,7 +371,7 @@ class FluxSurface(PhysicalGraph):
             .. math:: q(\psi)=\frac{d\Phi}{d\psi}=\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
         """
 
-        return self.average(lambda r, z: self.jacobian(r, z)/r**2)[0] * (self.cocos_flag / (2*scipy.constants.pi)) * self.fpol
+        return self.average(lambda r, z: self.jacobian(r, z)/r**2) * (self.cocos_flag / (2*scipy.constants.pi)) * self.fpol
 
     @cached_property
     def phi(self):
@@ -413,10 +414,10 @@ class FluxSurface(PhysicalGraph):
     @cached_property
     def dpsi_drho_tor(self)	:
         """
-            Derivative of Psi with respect to Rho_Tor[Wb/m]. 
+            Derivative of Psi with respect to Rho_Tor[Wb/m].
 
             Todo:
-                FIXME: dpsi_drho_tor(0) = ??? 
+                FIXME: dpsi_drho_tor(0) = ???
         """
         res = (2.0*scipy.constants.pi*self.vacuum_toroidal_field.b0)*self.rho_tor[:]/self.q[:]
         res[0] = 2*res[1]-res[2]
@@ -425,51 +426,51 @@ class FluxSurface(PhysicalGraph):
     @cached_property
     def gm1(self):
         r""".. math:: \left\langle\frac{1}{R^{2}}\right\rangle """
-        return self.average(1.0/self.R**2)
+        return self.average(lambda r, z: 1.0/r**2)
 
     @cached_property
     def gm2(self):
         r""".. math:: \left\langle\left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle """
-        return self.average(self.grad_psi2/(self.R**2))*(self.drho_tor_dpsi**2)
+        return self.average(lambda r, z: power2(self.grad_psi(r, z)/(r**2)))*(self.drho_tor_dpsi**2)
 
     @cached_property
     def gm3(self):
         r""".. math:: {\left\langle \left|\nabla\rho\right|^{2}\right\rangle}"""
-        return self.average(self.grad_psi2)*(self.drho_tor_dpsi**2)
+        return self.average(lambda r, z: power2(self.grad_psi(r, z)))*(self.drho_tor_dpsi**2)
 
     @cached_property
     def gm4(self):
         r""".. math:: \left\langle \frac{1}{B^{2}}\right\rangle """
-        return self.average(1/self.B2)
+        return self.average(lambda r, z: 1.0/self.B2(r, z))
 
     @cached_property
     def gm5(self):
         r""".. math:: \left\langle B^{2}\right\rangle """
-        return self.average(self.B2)
+        return self.average(lambda r, z: self.B2(r, z))
 
     @cached_property
     def gm6(self):
         r""".. math:: \left\langle \frac{\left|\nabla\rho\right|^{2}}{B^{2}}\right\rangle """
-        return self.average(self.grad_psi2/self.B2) * (self.drho_tor_dpsi**2)
+        return self.average(lambda r, z: power2(self.grad_psi(r, z))/self.B2(r, z)) * (self.drho_tor_dpsi**2)
 
     @cached_property
     def gm7(self):
         r""".. math:: \left\langle \left|\nabla\rho\right|\right\rangle """
-        return self.average(np.sqrt(self.grad_psi2)) * self.drho_tor_dpsi
+        return self.average(lambda r, z: np.linalg.norm(self.grad_psi(r, z))) * self.drho_tor_dpsi
 
     @cached_property
     def gm8(self):
         r""".. math:: \left\langle R\right\rangle """
-        return self.average(lambda r, z: r)[0]
+        return self.average(lambda r, z: r)
 
     @cached_property
     def gm9(self):
         r""".. math:: \left\langle \frac{1}{R}\right\rangle """
-        return self.average(lambda r, z: 1.0/r)[0]
+        return self.average(lambda r, z: 1.0/r)
 
     def average(self, func, *args, dims=None, **kwargs):
         dims = dims or range(len(self.psi_norm))
-        return np.asarray([self.rz_mesh.axis(idx, axis=0).integrate(func, *args, **kwargs) for idx in dims]).T
+        return np.asarray([self.rz_mesh.axis(idx, axis=0).integrate(func, *args, **kwargs)[0] for idx in dims])
         # if inspect.isfunction(func):
         #     res = (2*scipy.constants.pi) * np.sum(func(self.R, self.Z, *args, **kwargs)*self.Jdl, axis=1) / self.vprime
         # else:

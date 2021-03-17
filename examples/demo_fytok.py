@@ -46,8 +46,17 @@ if __name__ == "__main__":
 
     psi_norm = tok.equilibrium.flux_surface.psi_norm
     fig = plt.figure()
-    plt.plot(psi_norm, tok.equilibrium.flux_surface.rz_mesh.axis(10, axis=0).apply(lambda r, z: 1.0/r, psi_norm))
-    plt.savefig("/home/salmon/workspace/output/profiles_1da.svg")
+    # plt.plot(psi_norm, tok.equilibrium.flux_surface.rz_mesh.axis(10, axis=0).apply(lambda r, z: 1.0/r, psi_norm))
+    r, z = tok.equilibrium.flux_surface.rz_mesh.points
+    # br, bz = tok.equilibrium.flux_surface.grad_psi(r, z)
+    jacob = tok.equilibrium.flux_surface.jacobian(r, z)
+    # plt.contourf(r, z, r/np.sqrt(br**2+bz**2))
+    plt.contourf(r, z, jacob)
+    plt.savefig("/home/salmon/workspace/output/contour1.svg")
+
+    plt.figure()
+    plt.contourf(r, z, jacob)
+    plt.savefig("/home/salmon/workspace/output/contour2.svg")
 
     # tok.initialize_profile()
 
@@ -56,8 +65,7 @@ if __name__ == "__main__":
             {"name": "ffprime"},
             {"name": "fpol"},
             {"name": "q"},
-            {"name": "gm8"},
-            #  {"name": "volume"},
+            {"name": "volume"},
         ],
         axis={"name": "psi_norm", "opts": {"label": r"$\bar{\psi}$"}},
         grid=True)\
