@@ -1,21 +1,20 @@
 
-from spdm.data.Quantity import Quantity
-from spdm.data.PhysicalGraph import PhysicalGraph
-from spdm.data.Field import Field
-from spdm.data.Coordinates import Coordinates
-from scipy.optimize import fsolve, root_scalar
-from scipy.ndimage.morphology import binary_erosion, generate_binary_structure
-from scipy.ndimage.filters import maximum_filter, minimum_filter
-from numpy import arctan2, cos, sin, sqrt
 import collections
 import inspect
 from functools import cached_property
 
 import numpy as np
 import scipy.constants
+from numpy import arctan2, cos, sin, sqrt
 from packaging import version
+from scipy.ndimage.filters import maximum_filter, minimum_filter
+from scipy.ndimage.morphology import binary_erosion, generate_binary_structure
+from scipy.optimize import fsolve, root_scalar
+from spdm.data.Field import Field
+from spdm.data.mesh.CurvilinearMesh import CurvilinearMesh
+from spdm.data.mesh.RectilinearMesh import RectilinearMesh
+from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.logger import logger
-
 
 if version.parse(scipy.__version__) <= version.parse("1.4.1"):
     from scipy.integrate import cumtrapz as cumtrapz
@@ -62,7 +61,7 @@ def find_peaks_2d_image(image):
 def find_critical(fun2d: Field):
 
     fxy2 = fun2d.derivative(dx=1)**2+fun2d.derivative(dy=1)**2
-    X, Y = fun2d.coordinates.mesh.mesh
+    X, Y = fun2d.coordinates.mesh.points
     span = 1
     for ix, iy in find_peaks_2d_image(-fxy2[span:-span, span:-span]):
         ix += span
@@ -126,6 +125,7 @@ class FluxSurface(PhysicalGraph):
                  wall=None,
                  ffprime=None,
                  psi_norm=None,
+                 ntheta=129,
                  tolerance=1.0e-9,
                  **kwargs):
         """
@@ -142,36 +142,37 @@ class FluxSurface(PhysicalGraph):
 
         self.__dict__["_psirz"] = psirz
 
-        psi_norm = psi_norm or len(self._psirz.coordinates.mesh.axis[0])
-        if isinstance(psi_norm, int):
-            psi_norm = np.linspace(0, 1.0, psi_norm)
-        elif isinstance(psi_norm, np.ndarray):
-            pass
-        elif not psi_norm:
-            raise TypeError(type(psi_norm))
-
         if ffprime is None:
             pass
         else:
             if not isinstance(ffprime, np.ndarray):
                 raise TypeError(type(ffprime))
+            elif not isinstance(ffprime, Field):
+                ffprime = Field(ffprime, coordinates=np.linspace(0, 1.0, len(ffprime)))
 
             if psi_norm is None:
-                if isinstance(ffprime, Field):
-                    psi_norm = ffprime.coordinates.mesh.axis[0]
-                elif isinstance(ffprime, np.ndarray):
-                    psi_norm = np.ndarray(0, 1.0, len(ffprime))
-                else:
-                    raise TypeError(type(ffprime))
-            elif len(psi_norm) == len(ffprime):
-                pass
-            elif isinstance(ffprime, Field):
-                ffprime = ffprime(psi_norm)
+                psi_norm = ffprime.coordinates.mesh.points
             else:
-                raise TypeError(type(ffprime))
+                if isinstance(psi_norm, int):
+                    psi_norm = np.linspace(0, 1.0, psi_norm)
+                if not isinstance(psi_norm, np.ndarray):
+                    raise TypeError(type(psi_norm))
+                ffprime = ffprime(psi_norm)
+
             self.__dict__["_ffprime"] = ffprime
 
+        if isinstance(psi_norm, int):
+            psi_norm = np.linspace(0, 1.0, psi_norm)
+        elif not isinstance(psi_norm, np.ndarray):
+            raise TypeError(type(psi_norm))
+
+        if isinstance(ntheta, int):
+            ntheta = np.linspace(0, scipy.constants.pi*2.0, ntheta)
+        elif not isinstance(ntheta, np.ndarray):
+            raise TypeError(type(ntheta))
+
         self.__dict__["_psi_norm"] = psi_norm
+        self.__dict__["_theta"] = ntheta
 
     @cached_property
     def critical_points(self):
@@ -206,7 +207,7 @@ class FluxSurface(PhysicalGraph):
 
     @cached_property
     def cocos_flag(self):
-        return 1 if self.psi_boundary > self.psi_axis else -1
+        return 1.0 if self.psi_boundary > self.psi_axis else -1.0
 
     @cached_property
     def psi_axis(self):
@@ -225,10 +226,7 @@ class FluxSurface(PhysicalGraph):
         yield from self.find_by_psi(psival*(self.psi_boundary-self.psi_axis)+self.psi_axis, *args, **kwargs)
 
     def find_by_psi(self, psival, ntheta=64):
-
-        if type(ntheta) is int:
-            dim_theta = np.linspace(0, scipy.constants.pi*2.0,  ntheta, endpoint=False)
-        elif isinstance(ntheta, collections.abc.Sequence) or isinstance(ntheta, np.ndarray):
+        if isinstance(ntheta, collections.abc.Sequence) or isinstance(ntheta, np.ndarray):
             dim_theta = ntheta
         else:
             dim_theta = [ntheta]
@@ -271,26 +269,20 @@ class FluxSurface(PhysicalGraph):
             yield r1, z1
 
     @cached_property
-    def surface_mesh(self):
-        if not self._parent.coordinate_system.grid_type.index:
-            pass
-        elif self._parent.coordinate_system.grid_type.index > 1:
-            raise ValueError(f"Unknown grid type {self._coordinate_system.grid_type}")
+    def psi_theta_mesh(self):
+        return RectilinearMesh(self.psi_norm, self._theta, name="psi_norm,theta", unit="1,radian",  cycle=[False, True])
 
-        npsi = self._parent.coordinate_system.grid.dim1
-        ntheta = self._parent.coordinate_system.grid.dim2
-
+    @cached_property
+    def rz_mesh(self):
         # TODO: Using futures.ThreadPoolExecutor() cannot improve performance. Why ?
-        return np.array([[[r, z] for r, z in self.find_by_psinorm(psival, ntheta)] for psival in npsi])
+        rz = np.array([[[r, z] for r, z in self.find_by_psinorm(psival, self._theta)] for psival in self.psi_norm])
+        return CurvilinearMesh(rz[:, :, 0], rz[:, :, 1], name="R,Z", unit="m", cycle=[False, True])
 
         # RZ = np.full([npsi.shape[0], ntheta.shape[0], 2], np.nan)
-
         # def func(psival, ntheta=ntheta):
         #     return [[r, z] for r, z in self.find_by_psinorm(psival, ntheta)]
-
         # # We can use a with statement to ensure threads are cleaned up promptly
         # with futures.ThreadPoolExecutor( ) as executor:
-
         #     # Start the load operations and mark each future with its URL
         #     future_to_i = {executor.submit(func, psi): i for i, psi in enumerate(npsi)}
         #     for future in futures.as_completed(future_to_i):
@@ -302,34 +294,24 @@ class FluxSurface(PhysicalGraph):
 
     @cached_property
     def R(self):
-        return self._psirz.coordinates.mesh.mesh[0]
+        return self.rz_mesh.points[0]
 
     @cached_property
     def Z(self):
-        return self._psirz.coordinates.mesh.mesh[1]
+        return self.rz_mesh.points[1]
 
-    @cached_property
-    def grad_psi(self):
-        return self._psirz(self.R, self.Z, dx=1), self._psirz(self.R, self.Z, dy=1)
+    def grad_psi(self, r, z):
+        return self._psirz(r, z, dx=1), self._psirz(r, z, dy=1)
 
-    @cached_property
-    def dl(self):
-        dR = (np.roll(self.R, 1, axis=1) - np.roll(self.R, -1, axis=1))/2.0
-        dZ = (np.roll(self.Z, 1, axis=1) - np.roll(self.Z, -1, axis=1))/2.0
-        return sqrt(dR ** 2 + dZ ** 2)
+    def jacobian(self, r, z):
+        return (r / np.linalg.norm(self.grad_psi(r, z)))
 
-    @cached_property
-    def grad_psi2(self):
-        dpsi_dr, dpsi_dz = self.grad_psi
-        return dpsi_dr**2 + dpsi_dz**2
+    def psi_norm_rz(self, r, z):
+        psi = self._psirz(r, z)
+        return (psi-self.psi_boundary)/(self.psi_axis-self.psi_boundary)
 
-    @cached_property
-    def Jdl(self):
-        return (self.R / np.sqrt(self.grad_psi2)) * self.dl
-
-    @cached_property
-    def B2(self):
-        return (self.grad_psi2+self.fpol.reshape((-1, 1))**2)/(self.R**2)
+    def B2(self, r, z):
+        return (self.grad_psi2(r, z)+self.fpol(self.psi_norm_rz(r, z))**2)/(r**2)
 
     #################################
 
@@ -360,11 +342,16 @@ class FluxSurface(PhysicalGraph):
         return self.vprime*self.cocos_flag
 
     @cached_property
+    def field_line_length(self):
+        return [self.rz_mesh.axis(idx, axis=0).integrate(None) for idx in range(len(self.psi_norm))]
+
+    @cached_property
     def vprime(self):
-        r""".. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
+        r"""
+            .. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
             .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
         """
-        return Field((2.0*scipy.constants.pi)*np.sum(self.Jdl, axis=1), coordinates=self.psi_norm)
+        return self.average(self.jacobian)[0]
 
     @cached_property
     def volume(self):
@@ -382,8 +369,8 @@ class FluxSurface(PhysicalGraph):
             (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)  [-].
             .. math:: q(\psi)=\frac{d\Phi}{d\psi}=\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
         """
-        # logger.debug(r"Calculate q as  F V^{\prime} \left\langle R^{-2}\right \rangle /(4 \pi^2) ")
-        return self.fpol * np.sum(self.Jdl/(self.R**2), axis=1)*(self.cocos_flag / (2*scipy.constants.pi))
+
+        return self.average(lambda r, z: self.jacobian(r, z)/r**2)[0] * (self.cocos_flag / (2*scipy.constants.pi)) * self.fpol
 
     @cached_property
     def phi(self):
@@ -473,17 +460,19 @@ class FluxSurface(PhysicalGraph):
     @cached_property
     def gm8(self):
         r""".. math:: \left\langle R\right\rangle """
-        return self.average(self.R)
+        return self.average(lambda r, z: r)[0]
 
     @cached_property
     def gm9(self):
         r""".. math:: \left\langle \frac{1}{R}\right\rangle """
-        return self.average(1.0/self.R)
+        return self.average(lambda r, z: 1.0/r)[0]
 
-    def average(self, func, *args, **kwargs):
-        if inspect.isfunction(func):
-            res = (2*scipy.constants.pi) * np.sum(func(self.R, self.Z, *args, **kwargs)*self.Jdl, axis=1) / self.vprime
-        else:
-            res = (2*scipy.constants.pi) * np.sum(func * self.Jdl, axis=1) / self.vprime
-        # res[0] = res[1]
-        return res
+    def average(self, func, *args, dims=None, **kwargs):
+        dims = dims or range(len(self.psi_norm))
+        return np.asarray([self.rz_mesh.axis(idx, axis=0).integrate(func, *args, **kwargs) for idx in dims]).T
+        # if inspect.isfunction(func):
+        #     res = (2*scipy.constants.pi) * np.sum(func(self.R, self.Z, *args, **kwargs)*self.Jdl, axis=1) / self.vprime
+        # else:
+        #     res = (2*scipy.constants.pi) * np.sum(func * self.Jdl, axis=1) / self.vprime
+        # # res[0] = res[1]
+        # return res

@@ -91,7 +91,7 @@ def plot_profiles(holder, profiles, fig_axis=None, axis=None, prefix=None, grid=
             profile, opts = fetch_profile(holder, d,  prefix=prefix)
             if isinstance(profile, Field):
                 #     if len(profile.coordinates.mesh.axis[0]) == len(profile):
-                fig_axis[idx].plot(*profile.unpack(), **opts)
+                fig_axis[idx].plot(axis, profile(axis), **opts)
                 #     else:
                 #         fig_axis[idx].plot(profile, **opts)
                 # else:

@@ -1,6 +1,6 @@
 import pprint
 import sys
-
+import numpy as np
 import matplotlib.pyplot as plt
 from fytok.Tokamak import Tokamak
 from fytok.util.Plot import plot_profiles
@@ -16,27 +16,51 @@ if __name__ == "__main__":
 
     tok = Tokamak(doc.entry)
 
-    # fig = plt.figure()
-    # tok.plot(fig.gca(),
-    #             wall={"limiter": {"edgecolor": "green"},
-    #                 "vessel": {"edgecolor": "blue"}},
-    #             pf_active={"facecolor": 'red'})
+    fig = plt.figure()
+    tok.plot(fig.gca(),
+             wall={"limiter": {"edgecolor": "green"},
+                   "vessel": {"edgecolor": "blue"}},
+             pf_active={"facecolor": 'red'})
     # fig.savefig("/home/salmon/workspace/output/tokamak.svg")
-    # psi_norm = tok.equilibrium.flux_surface.psi_norm
 
-    # fig = plt.figure()
-    # plt.plot(tok.equilibrium.flux_surface.psi_norm, tok.equilibrium.flux_surface.ffprime)
-    # #     plt.contour(tok.equilibrium.flux_surface.Jdl[1:-1, 1:-1])
-    # plt.savefig("/home/salmon/workspace/output/profiles_1d.svg")
+    # # plt.plot(tok.equilibrium.flux_surface.psi_norm, tok.equilibrium.flux_surface.ffprime)
+    # plt.contourf(tok.equilibrium.flux_surface.R, tok.equilibrium.flux_surface.Z, tok.equilibrium.flux_surface.dl)
+    # ax0 = tok.equilibrium.flux_surface.surface_mesh.axis(10, axis=0)
+    # ax1 = tok.equilibrium.flux_surface.surface_mesh.axis(10, axis=1)
+    u = np.linspace(0, 1.0, 128)
+
+    for idx in range(0, 128, 8):
+        ax1 = tok.equilibrium.flux_surface.rz_mesh.axis(idx, axis=0)
+        plt.plot(*ax1(u), "b")
+
+    for idx in range(0, 128, 8):
+        ax1 = tok.equilibrium.flux_surface.rz_mesh.axis(idx, axis=1)
+        plt.plot(* ax1(u), "r")
+
+        # plt.plot(* ax1(np.linspace(0, 1.0, 128)))
+
+    # plt.plot(*tok.equilibrium.flux_surface.surface_mesh.xy, "+")
+
+    # plt.contourf(tok.equilibrium.flux_surface.R, tok.equilibrium.flux_surface.Z, tok.equilibrium.flux_surface.Z)
+    plt.savefig("/home/salmon/workspace/output/contour.svg")
+
+    psi_norm = tok.equilibrium.flux_surface.psi_norm
+    fig = plt.figure()
+    plt.plot(psi_norm, tok.equilibrium.flux_surface.rz_mesh.axis(10, axis=0).apply(lambda r, z: 1.0/r, psi_norm))
+    plt.savefig("/home/salmon/workspace/output/profiles_1da.svg")
+
     # tok.initialize_profile()
 
     plot_profiles(
-        tok.equilibrium.flux_surface,
-        [{"name": "ffprime"},
-         {"name": "fpol"},
-         {"name": "q"},
-         ],
-        axis={"name": "psi_norm", "opts": {"label": r"$\bar{\psi}$"}}, grid=True)\
+        tok.equilibrium.flux_surface, [
+            {"name": "ffprime"},
+            {"name": "fpol"},
+            {"name": "q"},
+            {"name": "gm8"},
+            #  {"name": "volume"},
+        ],
+        axis={"name": "psi_norm", "opts": {"label": r"$\bar{\psi}$"}},
+        grid=True)\
         .savefig("/home/salmon/workspace/output/profiles_1d.svg")
 
     # plot_profiles(tok.core_profiles.profiles_1d,

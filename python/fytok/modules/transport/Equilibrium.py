@@ -273,12 +273,12 @@ class Equilibrium(PhysicalGraph, FyModule):
         @cached_property
         def r(self):
             """	Values of the major radius on the grid  [m]"""
-            return self._mesh.mesh[0]
+            return self._mesh.points[0]
 
         @cached_property
         def z(self):
             """Values of the Height on the grid  [m]"""
-            return self._mesh.mesh[1]
+            return self._mesh.points[1]
 
         @cached_property
         def jacobian(self):
