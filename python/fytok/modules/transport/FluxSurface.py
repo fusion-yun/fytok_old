@@ -214,14 +214,7 @@ class FluxSurface:
     def grid_shape(self):
         return self._grid_shape
 
-    def flux_mesh(self, grid_index, grid_shape=None):
-        grid_shape = grid_shape or self._grid_shape
-
-        u = None
-        v = None
-        radial_label = int(grid_index/10)
-        polar_label = int(grid_index % 10)
-
+    def reconstruct(self,  radial_label=1, poloidal_angle_label=3, shape=None):
         r"""
             radial label (dim1)
                 1x      :  psi
@@ -229,17 +222,7 @@ class FluxSurface:
                 3x      :  sqrt[Phi/Phi_edge]
                 4x      :  sqrt[psi-psi_axis]
                 5x      :  sqrt[Phi/pi/B0]
-        """
-        if radial_label == 1:
-            u = np.linspace(0, 1.0, grid_shape[0])
-        elif radial_label in (2, 4):
-            u = np.linspace(0, 1.0, grid_shape[0])**2
-        elif radial_label in (3, 5):
-            raise NotImplementedError(f"grid index = {grid_index}")
-        else:
-            raise NotImplementedError(f"grid index = {grid_index}")
 
-        r"""
             poloidal angle label (dim2)
                 x1      :  the straight-field line
                 x2      :  the equal arc poloidal angle
@@ -248,20 +231,46 @@ class FluxSurface:
                 x5      :  Fourier modes in the equal arc poloidal angle
                 x6      :  Fourier modes in the polar poloidal angl
         """
-        if polar_label == 0:
-            raise NotImplementedError(f"grid index = {grid_index}")
-        elif polar_label == 1:
-            raise NotImplementedError(f" the straight-field line:{grid_index}")
-        elif polar_label == 2:
-            raise NotImplementedError(f" the equal arc poloidal angle:{grid_index}")
-        elif polar_label == 3:  # the polar poloidal angle
-            v = np.linspace(0, 1.0, grid_shape[1])*scipy.constants.pi*2.0
-        elif polar_label == 4:
-            raise NotImplementedError(f"Fourier modes in the straight-field line poloidal angle :{grid_index}")
-        elif polar_label == 5:
-            raise NotImplementedError(f"Fourier modes in the equal arc poloidal angle  :{grid_index}")
+
+        grid_shape = shape or self._grid_shape
+
+        u = None
+        v = None
+
+        if radial_label == 1:
+            u = np.linspace(0, 1.0, grid_shape[0])
+            # raise NotImplementedError(f"psi")
+        elif radial_label == 2:
+            u = np.linspace(0, 1.0, grid_shape[0])**2
+            # raise NotImplementedError(f"sqrt[(psi-psi_axis)/(psi_edge-psi_axis)]")
+        elif radial_label == 3:
+            raise NotImplementedError(f"sqrt[Phi/Phi_edge]")
+        elif radial_label == 4:
+            u = np.linspace(0, 1.0, grid_shape[0])**2
+            # raise NotImplementedError(f"sqrt[psi-psi_axis]")
+        elif radial_label == 5:
+            raise NotImplementedError(f"sqrt[Phi/pi/B0]")
         else:
-            raise NotImplementedError(f"grid index = {grid_index}")
+            raise NotImplementedError(f"unknown")
+
+        if poloidal_angle_label == 0:
+            raise NotImplementedError(f"the straight-field line")
+        elif poloidal_angle_label == 1:
+            raise NotImplementedError(f" the straight-field line")
+        elif poloidal_angle_label == 2:
+            raise NotImplementedError(f" the equal arc poloidal angle")
+        elif poloidal_angle_label == 3:  # the polar poloidal angle
+            v = np.linspace(0, 1.0, grid_shape[1])*scipy.constants.pi*2.0
+        elif poloidal_angle_label == 4:
+            raise NotImplementedError(
+                f"Fourier modes in the straight-field line poloidal angle ")
+        elif poloidal_angle_label == 5:
+            raise NotImplementedError(f"Fourier modes in the equal arc poloidal angle  ")
+        else:
+            raise NotImplementedError(f"unknown")
+
+        if self._mesh is None and poloidal_angle_label == 3:
+            mesh = self._mesh
 
     def find_by_psinorm(self, u, v=128):
         o_points, x_points = self.critical_points
@@ -324,6 +333,7 @@ class FluxSurface:
             u = np.linspace(0, 1.0, self._grid_shape[0])
             v = np.linspace(0, 1.0, self._grid_shape[1])
             rz = np.asarray([[r, z] for r, z in self.find_by_psinorm(u, v)]).reshape(self._grid_shape+[2])
+            self._psi_norm = u
             self._mesh = CurvilinearMesh([rz[:, :, 0], rz[:, :, 1]], [u, v], cycle=[False, True])
 
         return self._mesh
