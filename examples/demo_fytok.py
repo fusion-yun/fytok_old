@@ -1,73 +1,107 @@
-import pprint
-import sys
-import numpy as np
+
+
 import matplotlib.pyplot as plt
+import numpy as np
 from fytok.Tokamak import Tokamak
-from fytok.util.Plot import plot_profiles
-from spdm.util.logger import logger
 from spdm.data.Collection import Collection
+from spdm.data.Function import Function
+from spdm.util.logger import logger
+from spdm.util.plot_profiles import plot_profiles
+
 if __name__ == "__main__":
     db = Collection(schema="mapping",
                     source="mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east",
                     mapping={"schema": "EAST", "version": "imas/3",
                              "path": "/home/salmon/workspace/fytok/data/mapping"})
 
-    doc = db.open(shot=55555, time_slice=10)
+    doc = db.open(shot=55555, time_slice=20)
 
     tok = Tokamak(doc.entry)
 
     fig = plt.figure()
+
     tok.plot(fig.gca(),
              wall={"limiter": {"edgecolor": "green"},
                    "vessel": {"edgecolor": "blue"}},
              pf_active={"facecolor": 'red'})
+
     # fig.savefig("/home/salmon/workspace/output/tokamak.svg")
 
-    # # plt.plot(tok.equilibrium.flux_surface.psi_norm, tok.equilibrium.flux_surface.ffprime)
-    # plt.contourf(tok.equilibrium.flux_surface.R, tok.equilibrium.flux_surface.Z, tok.equilibrium.flux_surface.dl)
-    # ax0 = tok.equilibrium.flux_surface.surface_mesh.axis(10, axis=0)
-    # ax1 = tok.equilibrium.flux_surface.surface_mesh.axis(10, axis=1)
-    u = np.linspace(0, 1.0, 128)
-
-    for idx in range(0, 128, 8):
+    for idx in range(0,  tok.equilibrium.flux_surface.rz_mesh.shape[0], 8):
         ax1 = tok.equilibrium.flux_surface.rz_mesh.axis(idx, axis=0)
-        plt.plot(*ax1(u), "b")
+        plt.plot(*ax1.points, "b")
 
-    for idx in range(0, 128, 8):
+    for idx in range(0, tok.equilibrium.flux_surface.rz_mesh.shape[1], 8):
         ax1 = tok.equilibrium.flux_surface.rz_mesh.axis(idx, axis=1)
-        plt.plot(* ax1(u), "r")
+        plt.plot(*ax1.points, "r")
 
-        # plt.plot(* ax1(np.linspace(0, 1.0, 128)))
+    # r = tok.equilibrium.flux_surface.rz_mesh.points[0]
+    # z = tok.equilibrium.flux_surface.rz_mesh.points[1]
+    # grad_psi = np.linalg.norm(tok.equilibrium.flux_surface.grad_psi(r, z), axis=0)
+    # plt.contourf(r[:, :], z[:, :],  grad_psi[:, :])
 
-    # plt.plot(*tok.equilibrium.flux_surface.surface_mesh.xy, "+")
-
-    # plt.contourf(tok.equilibrium.flux_surface.R, tok.equilibrium.flux_surface.Z, tok.equilibrium.flux_surface.Z)
     plt.savefig("/home/salmon/workspace/output/contour.svg")
 
-    psi_norm = tok.equilibrium.flux_surface.psi_norm
-    fig = plt.figure()
-    # plt.plot(psi_norm, tok.equilibrium.flux_surface.rz_mesh.axis(10, axis=0).apply(lambda r, z: 1.0/r, psi_norm))
-    r, z = tok.equilibrium.flux_surface.rz_mesh.points
-    # br, bz = tok.equilibrium.flux_surface.grad_psi(r, z)
-    jacob = tok.equilibrium.flux_surface.jacobian(r, z)
-    # plt.contourf(r, z, r/np.sqrt(br**2+bz**2))
-    plt.contourf(r, z, jacob)
-    plt.savefig("/home/salmon/workspace/output/contour1.svg")
+    # psi_norm = tok.equilibrium.flux_surface.psi_norm
+    # fig = plt.figure()
+    # # plt.plot(psi_norm, tok.equilibrium.flux_surface.rz_mesh.axis(10, axis=0).apply(lambda r, z: 1.0/r, psi_norm))
+    # r, z = tok.equilibrium.flux_surface.rz_mesh.points
+    # # br, bz = tok.equilibrium.flux_surface.grad_psi(r, z)
+    # jacob = tok.equilibrium.flux_surface.jacobian(r, z)
+    # # plt.contourf(r, z, r/np.sqrt(br**2+bz**2))
+    # plt.contourf(r, z, jacob)
+    # plt.savefig("/home/salmon/workspace/output/contour1.svg")
 
-    plt.figure()
-    plt.contourf(r, z, jacob)
-    plt.savefig("/home/salmon/workspace/output/contour2.svg")
+    # plt.figure()
+    # plt.contourf(r, z, jacob)
+    # plt.savefig("/home/salmon/workspace/output/contour2.svg")
 
     # tok.initialize_profile()
+    # fig = plt.figure()
+    # u = np.linspace(0, 1.0, 128, endpoint=False)
+    # idx = 124
 
-    plot_profiles(
-        tok.equilibrium.flux_surface, [
-            {"name": "ffprime"},
-            {"name": "fpol"},
-            {"name": "q"},
-            {"name": "volume"},
+    # # plt.plot(tok.equilibrium.flux_surface.Jdl[120](u))
+    # plt.plot(u, tok.equilibrium.flux_surface.Jdl[idx](u))
+    # logger.debug(scipy.integrate.romberg(tok.equilibrium.flux_surface.Jdl[idx], 0, 1.0))
+
+    # plt.savefig("/home/salmon/workspace/output/profiles_1d.svg")
+    # logger.debug(tok.equilibrium.profiles_1d["f"])
+    # logger.debug(tok.equilibrium.profiles_1d.fpol)
+    # logger.debug(tok.equilibrium.profiles_1d["f_df_dpsi"])
+
+    psi_axis = tok.equilibrium.global_quantities.psi_axis
+    psi_boundary = tok.equilibrium.global_quantities.psi_boundary
+
+    ffprime = tok.equilibrium["profiles_1d.f_df_dpsi"].__fetch__()
+    fpol = tok.equilibrium["profiles_1d.f"].__fetch__()
+
+    psi_norm = np.linspace(0, 1, len(ffprime))
+
+    logger.debug((
+        tok.vacuum_toroidal_field.r0,
+        tok.vacuum_toroidal_field.b0,
+        tok.vacuum_toroidal_field.r0*tok.vacuum_toroidal_field.b0,
+        fpol[0]/tok.vacuum_toroidal_field.b0,
+        fpol[0]))
+
+    plot_profiles([
+        [
+            #(tok.equilibrium.flux_surface.ffprime, r"$ff^{\prime}$"),
+            (Function(psi_norm, ffprime), r"$ff^{\prime}_0$"),
+            (Function(psi_norm, (fpol**2)/(psi_boundary-psi_axis)*0.5).derivative, r"$d(f^{2}_0)$"),
         ],
-        axis={"name": "psi_norm", "opts": {"label": r"$\bar{\psi}$"}},
+
+        [(fpol**2,  r"$f_{pol}^2$"),
+         (2.0*Function(psi_norm, ffprime).antiderivative*(psi_boundary-psi_axis)+fpol[0]**2, r"$\int ff^{\prime}$")],
+
+
+        # (tok.equilibrium.flux_surface.vprime, "vprime"),
+        # {"name": "volume"},
+        # [{"name": "q"},
+        #  {"name": "safety_factor"}]
+    ],
+        x_axis=(psi_norm,   {"label": r"$\bar{\psi}$"}),
         grid=True)\
         .savefig("/home/salmon/workspace/output/profiles_1d.svg")
 

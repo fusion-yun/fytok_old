@@ -66,7 +66,8 @@ class Tokamak(PhysicalGraph):
 
     @cached_property
     def equilibrium(self):
-        return Equilibrium(self["equilibrium.time_slice"], parent=self)
+        return Equilibrium(self["equilibrium.time_slice"],
+                           vacuum_toroidal_field=self["equilibrium.vacuum_toroidal_field"].__fetch__(), parent=self)
 
     @cached_property
     def core_profiles(self):

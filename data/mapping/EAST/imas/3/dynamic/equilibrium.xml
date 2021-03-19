@@ -5,8 +5,10 @@
     </ids_properties>
     <time><spdb:mdsplus > DATA(\TIME)[{time_slice}]</spdb:mdsplus></time>
     <vacuum_toroidal_field>
-            <r0><spdb:mdsplus>DATA(\BCENTR)[{time_slice}]</spdb:mdsplus></r0>                
-            <b0><spdb:mdsplus>DATA(\RBCENT)[{time_slice}]</spdb:mdsplus></b0>
+            <r0><spdb:mdsplus>DATA(\RMAXIS)[{time_slice}]</spdb:mdsplus></r0>                
+            <b0><spdb:mdsplus>DATA(\BCENTR)[{time_slice}]</spdb:mdsplus></b0>
+            <rb><spdb:mdsplus>DATA(\FPOL)[0,{time_slice}]</spdb:mdsplus></b0>
+
     </vacuum_toroidal_field>
     <time_slice id="*">
         <boundary>

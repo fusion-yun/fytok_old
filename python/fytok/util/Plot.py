@@ -4,120 +4,92 @@ import matplotlib.pyplot as plt
 import numpy as np
 from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.data.Field import Field
+from spdm.data.Function import Function
 from spdm.util.logger import logger
 from spdm.util.utilities import try_get
 
 
-def fetch_profile(holder, desc, prefix=[]):
+def parse_profile(desc, holder=None, **kwargs):
     if isinstance(desc, str):
-        path = desc
+        data = desc
         opts = {"label": desc}
     elif isinstance(desc, collections.abc.Mapping):
-        path = desc.get("name", None)
+        data = desc.get("name", None)
+        if data is None:
+            data = desc.get("data", None)
         opts = desc.get("opts", {})
     elif isinstance(desc, tuple):
-        path, opts = desc
+        data, opts = desc
     elif isinstance(desc, PhysicalGraph):
-        path = desc.data
+        data = desc.data
         opts = desc.opts
     else:
         raise TypeError(f"Illegal profile type! {desc}")
 
     if isinstance(opts, str):
         opts = {"label": opts}
-    if 'label' not in opts:
-        opts["label"] = path
 
-    if prefix is None:
-        prefix = []
-    elif isinstance(prefix, str):
-        prefix = prefix.split(".")
+    opts.setdefault("label", "unnamed")
 
-    if isinstance(path, str):
-        path = path.split(".")
-
-    if isinstance(path, np.ndarray):
-        data = path
-    else:
-        path = prefix+path
-        path = ".".join(path)
-
-        data = try_get(holder, path, None)
+    if not isinstance(data, np.ndarray):
+        data = try_get(holder, data, None)
 
     return data, opts
 
 
-def plot_profiles(holder, profiles, fig_axis=None, axis=None, prefix=None, grid=False):
-    if isinstance(profiles, str):
-        profiles = [s.strip() for s in profiles.split(",")]
-    elif not isinstance(profiles, collections.abc.Sequence):
-        profiles = [profiles]
+def plot_profiles(profile_list, *args, sub_plot=None, x_axis=None, fontsize=6,  grid=False, **kwargs):
+    if not isinstance(profile_list, collections.abc.Sequence):
+        profile_list = [profile_list]
 
-    if prefix is None:
-        prefix = []
-    elif isinstance(prefix, str):
-        prefix = prefix.split(".")
-    elif not isinstance(prefix, collections.abc.Sequence):
-        prefix = [prefix]
+    profile_list += args
 
-    if not isinstance(axis, np.ndarray):
-        axis, axis_opts = fetch_profile(holder, axis, prefix=prefix)
+    if not isinstance(x_axis, np.ndarray):
+        x_axis, x_axis_opts = parse_profile(x_axis, **kwargs)
     else:
-        axis = None
-        axis_opts = {}
+        x_axis = None
+        x_axis_opts = {}
 
-    fig = None
-    if isinstance(fig_axis, collections.abc.Sequence):
-        pass
-    elif fig_axis is None:
-        nprofiles = len(profiles)
-        fig, fig_axis = plt.subplots(ncols=1, nrows=nprofiles, sharex=True, figsize=(10, 2*nprofiles))
-    else:
-        raise RuntimeError(f"Too much profiles!")
+    nprofiles = len(profile_list)
 
-    if not isinstance(fig_axis, (collections.abc.Sequence, np.ndarray)):
-        fig_axis = [fig_axis]
+    fig, sub_plot = plt.subplots(ncols=1, nrows=nprofiles, sharex=True, figsize=(10, 2*nprofiles))
 
-    for idx, data in enumerate(profiles):
-        ylabel = None
-        opts = {}
-        if isinstance(data, tuple):
-            data, ylabel = data
+    if not isinstance(sub_plot,  collections.abc.Sequence):
+        sub_plot = [sub_plot]
 
-        if not isinstance(data, list):
-            data = [data]
+    for idx, profile_grp in enumerate(profile_list):
+        grp_opts = {}
 
-        for d in data:
-            profile, opts = fetch_profile(holder, d,  prefix=prefix)
-            if isinstance(profile, Field):
-                #     if len(profile.coordinates.mesh.axis[0]) == len(profile):
-                fig_axis[idx].plot(axis, profile(axis), **opts)
-                #     else:
-                #         fig_axis[idx].plot(profile, **opts)
-                # else:
-                #     logger.debug((profile.coordinates, profile))
+        if isinstance(tuple, profile_grp):
+            profile_grp, grp_opts = profile_grp
+
+        if not isinstance(profile_grp, list):
+            profile_grp = [profile_grp]
+
+        for p_desc in profile_grp:
+            profile, opts = parse_profile(p_desc, **kwargs)
+            if isinstance(profile, (Field, Function)):
+                sub_plot[idx].plot(x_axis, profile(x_axis), **opts)
             elif isinstance(profile, np.ndarray):
                 try:
-                    if axis is not None:
-                        fig_axis[idx].plot(axis, profile, **opts)
+                    if x_axis is not None and x_axis.shape == profile.shape:
+                        sub_plot[idx].plot(x_axis, profile, **opts)
                     else:
-                        fig_axis[idx].plot(profile, **opts)
-
+                        sub_plot[idx].plot(profile, **opts)
                 except Exception as error:
                     logger.error(f"Can not plot profile! [{error}]")
             else:
-                logger.error(f"Can not find profile '{d}'")
+                logger.error(f"Can not plot profile '{p_desc}'")
 
-        fig_axis[idx].legend(fontsize=6)
+        sub_plot[idx].legend(fontsize=fontsize)
 
         if grid:
-            fig_axis[idx].grid()
+            sub_plot[idx].grid()
 
-        if ylabel:
-            fig_axis[idx].set_ylabel(ylabel, fontsize=6).set_rotation(0)
-        fig_axis[idx].labelsize = "media"
-        fig_axis[idx].tick_params(labelsize=6)
+        if "ylabel" in grp_opts:
+            sub_plot[idx].set_ylabel(grp_opts["ylabel"], fontsize=fontsize).set_rotation(0)
+        sub_plot[idx].labelsize = "media"
+        sub_plot[idx].tick_params(labelsize=fontsize)
 
-    fig_axis[-1].set_xlabel(axis_opts.get("label", ""),  fontsize=6)
+    sub_plot[-1].set_xlabel(x_axis_opts.get("label", ""),  fontsize=fontsize)
 
     return fig
