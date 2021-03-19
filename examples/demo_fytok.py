@@ -14,7 +14,7 @@ if __name__ == "__main__":
                     mapping={"schema": "EAST", "version": "imas/3",
                              "path": "/home/salmon/workspace/fytok/data/mapping"})
 
-    doc = db.open(shot=55555, time_slice=20)
+    doc = db.open(shot=55555, time_slice=40)
 
     tok = Tokamak(doc.entry)
 
@@ -27,13 +27,13 @@ if __name__ == "__main__":
 
     # fig.savefig("/home/salmon/workspace/output/tokamak.svg")
 
-    for idx in range(0,  tok.equilibrium.flux_surface.rz_mesh.shape[0], 8):
-        ax1 = tok.equilibrium.flux_surface.rz_mesh.axis(idx, axis=0)
-        plt.plot(*ax1.points, "b")
+    for idx in range(0,  tok.equilibrium.flux_surface.mesh.shape[0], 8):
+        ax1 = tok.equilibrium.flux_surface.mesh.axis(idx, axis=0)
+        plt.plot(*ax1.points, "b", linewidth=0.2)
 
-    for idx in range(0, tok.equilibrium.flux_surface.rz_mesh.shape[1], 8):
-        ax1 = tok.equilibrium.flux_surface.rz_mesh.axis(idx, axis=1)
-        plt.plot(*ax1.points, "r")
+    for idx in range(0, tok.equilibrium.flux_surface.mesh.shape[1], 8):
+        ax1 = tok.equilibrium.flux_surface.mesh.axis(idx, axis=1)
+        plt.plot(*ax1.points, "r", linewidth=0.2)
 
     # r = tok.equilibrium.flux_surface.rz_mesh.points[0]
     # z = tok.equilibrium.flux_surface.rz_mesh.points[1]
@@ -78,10 +78,13 @@ if __name__ == "__main__":
 
     psi_norm = np.linspace(0, 1, len(ffprime))
 
+    fvac = fpol[0]
+
     logger.debug((
         tok.vacuum_toroidal_field.r0,
         tok.vacuum_toroidal_field.b0,
         tok.vacuum_toroidal_field.r0*tok.vacuum_toroidal_field.b0,
+        tok.vacuum_toroidal_field.rb,
         fpol[0]/tok.vacuum_toroidal_field.b0,
         fpol[0]))
 

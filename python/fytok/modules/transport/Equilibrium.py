@@ -133,11 +133,13 @@ class Equilibrium(PhysicalGraph, FyModule):
     @cached_property
     def flux_surface(self):
         ffprime = self["profiles_1d.f_df_dpsi"].__fetch__()
-        return FluxSurface(self.profiles_2d.psi,
-                           wall=self._parent.wall,
-                           vacuum_toroidal_field=self.vacuum_toroidal_field,
-                           ffprime=Function(np.linspace(0, 1.0, len(ffprime)), ffprime),
-                           parent=self)
+        ffprime = Function(np.linspace(0, 1.0, len(ffprime)), ffprime)
+        return FluxSurface(
+            self.profiles_2d.psi,
+            wall=self._parent.wall,
+            fvac=self.vacuum_toroidal_field.fvac,
+            ffprime=ffprime,
+            parent=self)
 
     class CoordinateSystem(PhysicalGraph, Coordinates):
         """
@@ -572,11 +574,7 @@ class Equilibrium(PhysicalGraph, FyModule):
         @cached_property
         def outline(self):
             """RZ outline of the plasma boundary  """
-
-            boundary = np.array([[r, z] for r, z in self._parent.flux_surface.find_by_psinorm(1.0, self._ntheta)])
-            r = boundary[:, 0]
-            z = boundary[:, 1]
-
+            r, z = self._parent.flux_surface.mesh.axis(-1, axis=0).geo_object.points
             return PhysicalGraph({"r": r, "z": z})
 
         @cached_property

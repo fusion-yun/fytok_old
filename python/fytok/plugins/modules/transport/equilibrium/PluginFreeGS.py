@@ -7,14 +7,10 @@ import freegs
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.constants
-from fytok.util.Interpolate import (Interpolate1D, Interpolate2D, derivate,
-                                    integral, interpolate)
-from scipy.interpolate import RectBivariateSpline, UnivariateSpline
+from fytok.modules.transport.Equilibrium import Equilibrium
 from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.logger import logger
-
-from fytok.modules.transport.CoreProfiles import CoreProfiles
-from fytok.modules.transport.Equilibrium import Equilibrium
+from spdm.data.Function import Function
 
 
 def is_none(v):
@@ -139,7 +135,7 @@ class EquilibriumFreeGS(Equilibrium):
             except Exception:
                 pass
             else:
-                self.cache.profiles_1d.q = UnivariateSpline(x, q)(psi_norm)
+                self.cache.profiles_1d.q = Function(x, q)
                 self.cache.global_quantities.beta_pol = self._backend.poloidalBeta()
             self.cache.global_quantities.ip = self._backend.plasmaCurrent()
 

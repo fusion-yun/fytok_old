@@ -2,6 +2,7 @@
 import collections
 import inspect
 from functools import cached_property
+from itertools import cycle
 
 import numpy as np
 import scipy.constants
@@ -108,9 +109,24 @@ def find_critical(fun2d: Field):
 
         yield x, y, D
 
+    # RZ = np.full([npsi.shape[0], ntheta.shape[0], 2], np.nan)
+    # def func(psival, ntheta=ntheta):
+    #     return [[r, z] for r, z in self.find_by_psinorm(psival, ntheta)]
+    # # We can use a with statement to ensure threads are cleaned up promptly
+    # with futures.ThreadPoolExecutor( ) as executor:
+    #     # Start the load operations and mark each future with its URL
+    #     future_to_i = {executor.submit(func, psi): i for i, psi in enumerate(npsi)}
+    #     for future in futures.as_completed(future_to_i):
+    #         i = future_to_i[future]
+    #         try:
+    #             RZ[i] = future.result()
+    #         except Exception as exc:
+    #             print('%r generated an exception: %s' % (i, exc))
 
-class FluxSurface(PhysicalGraph):
-    r"""Flux surface average
+
+class FluxSurface:
+    r"""
+        Flux surface average
 
         .. math::
             V^{\prime}\left(\rho\right)=\frac{\partial V}{\partial\rho}=2\pi\int_{0}^{2\pi}\sqrt{g}d\theta=2\pi\oint\frac{R}{\left|\nabla\rho\right|}dl
@@ -124,56 +140,36 @@ class FluxSurface(PhysicalGraph):
                        arrays should not be filled since they are redundant with grid/dim1 and dim2.
     """
 
-    def __init__(self,
-                 psirz: Field,
-                 *args,
-                 vacuum_toroidal_field=None,
+    def __init__(self, psirz: Field, *args,
                  wall=None,
+                 fvac=None,
                  ffprime=None,
-                 psi_norm=None,
+                 grid_index=23,
+                 grid_shape=[64, 128],
                  tolerance=1.0e-9,
                  **kwargs):
         """
             Initialize FluxSurface
         """
-        super().__init__(None, *args, **kwargs)
-        if not isinstance(psirz, Field):
+
+        if not isinstance(psirz, (Field, Function)):
             raise TypeError(psirz)
-        self.__dict__["_tolerance"] = tolerance
-        self.__dict__["_wall"] = wall
-        self.__dict__["_vacuum_toroidal_field"] = vacuum_toroidal_field
-        self.__dict__["_ffprime"] = ffprime
 
-        self.__dict__["_psirz"] = psirz
+        self._psirz = psirz
 
-        psi_norm = psi_norm or 64
-        if isinstance(psi_norm, int):
-            psi_norm = np.linspace(0, 1.0, psi_norm)
-        elif not isinstance(psi_norm, np.ndarray):
-            raise TypeError(type(psi_norm))
+        self._tolerance = tolerance
+        self._wall = wall
+        self._fvac = fvac
+        self._ffprime = ffprime
 
-        self.__dict__["_psi_norm"] = psi_norm
-        # if ffprime is None:
-        #     pass
-        # else:
-        #     if not isinstance(ffprime, np.ndarray):
-        #         raise TypeError(type(ffprime))
-        #     elif not isinstance(ffprime, Field):
-        #         ffprime = Field(ffprime, coordinates=np.linspace(0, 1.0, len(ffprime)))
+        self._mesh = self.construct_flux_surface_mesh(
+            np.linspace(0, 1.0, grid_shape[0]),
+            np.linspace(0, 1.0, grid_shape[1])
+        )
 
-        #     if psi_norm is None:
-        #         psi_norm = ffprime.coordinates.mesh.points
-        #     else:
-        #         if isinstance(psi_norm, int):
-        #             psi_norm = np.linspace(0, 1.0, psi_norm)
-        #         if not isinstance(psi_norm, np.ndarray):
-        #             raise TypeError(type(psi_norm))
-        #         ffprime = ffprime(psi_norm)
-
-        # if isinstance(ntheta, int):
-        #     ntheta = np.linspace(0, scipy.constants.pi*2.0, ntheta)
-        # elif not isinstance(ntheta, np.ndarray):
-        #     raise TypeError(type(ntheta))
+    @property
+    def grid_index(self):
+        return self._grid_index
 
     @cached_property
     def critical_points(self):
@@ -212,50 +208,86 @@ class FluxSurface(PhysicalGraph):
 
     @cached_property
     def psi_axis(self):
-        o, _ = self.critical_points
-        return o[0].psi
+        return self.critical_points[0][0].psi
 
     @cached_property
     def psi_boundary(self):
         _, x = self.critical_points
-        if len(x) > 0:
-            return x[0].psi
-        else:
+        if len(x) == 0:
             raise ValueError(f"No x-point")
+        return x[0].psi
 
-    def find_by_psinorm(self, psinorm, *args, **kwargs):
-        return self.find_by_psi(psinorm*(self.psi_boundary-self.psi_axis) + self.psi_axis, *args, **kwargs)
+    def construct_flux_mesh(self, grid_index, grid_shape):
+        u = None
+        v = None
+        radial_label = int(grid_index/10)
+        polar_label = int(grid_index % 10)
 
-    def find_by_psi(self, psival, ntheta=100):
-        if isinstance(ntheta, int):
-            dim_theta = np.linspace(0, 2.0*scipy.constants.pi, ntheta)
-        elif isinstance(ntheta, collections.abc.Sequence) or isinstance(ntheta, np.ndarray):
-            dim_theta = ntheta
+        r"""
+            radial label (dim1)
+                1x      :  psi
+                2x      :  sqrt[(psi-psi_axis)/(psi_edge-psi_axis)]
+                3x      :  sqrt[Phi/Phi_edge]
+                4x      :  sqrt[psi-psi_axis]
+                5x      :  sqrt[Phi/pi/B0]
+        """
+        if radial_label == 1:
+            u = np.linspace(0, 1.0, grid_shape[0])
+        elif radial_label in (2, 4):
+            u = np.linspace(0, 1.0, grid_shape[0])**2
+        elif radial_label in (3, 5):
+            raise NotImplementedError(f"grid index = {grid_index}")
         else:
-            dim_theta = [ntheta]
+            raise NotImplementedError(f"grid index = {grid_index}")
+
+        r"""
+            poloidal angle label (dim2)
+                x1      :  the straight-field line
+                x2      :  the equal arc poloidal angle
+                x3      :  the polar poloidal angle
+                x4      :  Fourier modes in the straight-field line poloidal angle
+                x5      :  Fourier modes in the equal arc poloidal angle
+                x6      :  Fourier modes in the polar poloidal angl
+        """
+        if polar_label == 0:
+            raise NotImplementedError(f"grid index = {grid_index}")
+        elif polar_label == 1:
+            raise NotImplementedError(f" the straight-field line:{grid_index}")
+        elif polar_label == 2:
+            raise NotImplementedError(f" the equal arc poloidal angle:{grid_index}")
+        elif polar_label == 3:  # the polar poloidal angle
+            v = np.linspace(0, 1.0, grid_shape[1])*scipy.constants.pi*2.0
+        elif polar_label == 4:
+            raise NotImplementedError(f"Fourier modes in the straight-field line poloidal angle :{grid_index}")
+        elif polar_label == 5:
+            raise NotImplementedError(f"Fourier modes in the equal arc poloidal angle  :{grid_index}")
+        else:
+            raise NotImplementedError(f"grid index = {grid_index}")
+
+    def construct_flux_surface_mesh(self, u, v):
 
         o_points, x_points = self.critical_points
 
-        R0 = o_points[0].r
-        Z0 = o_points[0].z
+        if len(o_points) == 0:
+            raise RuntimeError(f"Can not find O-point!")
+        else:
+            R0 = o_points[0].r
+            Z0 = o_points[0].z
+            psi0 = o_points[0].psi
 
-        if len(x_points) > 0:
+        if len(x_points) == 0:
+            R1 = R0
+            Z1 = self._psirz.coordinates.bbox[1][1]
+            psi1 = 0.0
+        else:
             R1 = x_points[0].r
             Z1 = x_points[0].z
+            psi1 = x_points[0].psi
 
-            theta0 = arctan2(R1 - R0, Z1 - Z0)  # + scipy.constants.pi/npoints  # avoid x-point
-            Rm = sqrt((R1-R0)**2+(Z1-Z0)**2)
-        else:
-            theta0 = 0
-            Rm = R0
+        theta0 = arctan2(R1 - R0, Z1 - Z0)
+        Rm = sqrt((R1-R0)**2+(Z1-Z0)**2)
 
-        for t in dim_theta:
-            theta = t+theta0
-            r0 = R0
-            z0 = Z0
-            r1 = R0 + Rm * sin(theta)
-            z1 = Z0 + Rm * cos(theta)
-
+        def find(psival, r0, z0, r1, z1):
             if not np.isclose(self._psirz(r1, z1), psival):
                 try:
                     sol = root_scalar(lambda r: self._psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1) - psival,
@@ -269,35 +301,26 @@ class FluxSurface(PhysicalGraph):
                 r1 = (1.0-sol.root)*r0+sol.root*r1
                 z1 = (1.0-sol.root)*z0+sol.root*z1
 
-            yield r1, z1
+            return r1, z1
 
-    @cached_property
-    def rz_mesh(self):
-        # TODO: Using futures.ThreadPoolExecutor() cannot improve performance. Why ?
-        rz = np.array([[[r, z] for r, z in self.find_by_psi(psival, ntheta=128)] for psival in self.psi])
-        return CurvilinearMesh(rz[:, :, 0], rz[:, :, 1], name="R,Z", unit="m", cycle=[False, True])
+        rz = np.asarray([[find(p*(psi1-psi0)+psi0, R0, Z0,
+                               R0+Rm*sin(t*scipy.constants.pi*2.0+theta0),
+                               Z0+Rm*cos(t*scipy.constants.pi*2.0+theta0)) for t in v] for p in u])
 
-        # RZ = np.full([npsi.shape[0], ntheta.shape[0], 2], np.nan)
-        # def func(psival, ntheta=ntheta):
-        #     return [[r, z] for r, z in self.find_by_psinorm(psival, ntheta)]
-        # # We can use a with statement to ensure threads are cleaned up promptly
-        # with futures.ThreadPoolExecutor( ) as executor:
-        #     # Start the load operations and mark each future with its URL
-        #     future_to_i = {executor.submit(func, psi): i for i, psi in enumerate(npsi)}
-        #     for future in futures.as_completed(future_to_i):
-        #         i = future_to_i[future]
-        #         try:
-        #             RZ[i] = future.result()
-        #         except Exception as exc:
-        #             print('%r generated an exception: %s' % (i, exc))
+        return CurvilinearMesh([rz[:, :, 0], rz[:, :, 1]], [u, v], cycle=[False, True])
 
-    @cached_property
+         
+    @property
+    def mesh(self):
+        return self._mesh
+
     def R(self):
-        return self.rz_mesh.points[0]
+        return self._mesh.points[0]
 
     @cached_property
     def Z(self):
-        return self.rz_mesh.points[1]
+        return self._mesh.points[1]
+
     #################################
 
     def grad_psi(self, r, z):
@@ -313,32 +336,17 @@ class FluxSurface(PhysicalGraph):
 
     @cached_property
     def _grad_psi(self):
-        r = self.rz_mesh.points[0]
-        z = self.rz_mesh.points[1]
+        r = self.mesh.points[0]
+        z = self.mesh.points[1]
         return self._psirz(r, z, dx=1), self._psirz(r, z, dy=1)
-
-    @cached_property
-    def Jdl(self):
-        def J(r, z, _grad_psi=self.grad_psi): return r / np.linalg.norm(_grad_psi(r, z))
-        # return [self.rz_mesh.axis(idx, axis=0).make_one_form(J) for idx in range(self.rz_mesh.shape[0])]
-        res = [self.rz_mesh.axis(idx, axis=0).pullback(J, form=1) for idx in range(self.rz_mesh.shape[0])]
-        return res
-
-    @cached_property
-    def vprime(self):
-        r"""
-            .. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
-            .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
-        """
-        return np.asarray([self.Jdl[idx].integrate() for idx in range(self.rz_mesh.shape[0])]) * (2*scipy.constants.pi)
 
     def average(self, func, *args, **kwargs):
         r"""
             .. math:: \left\langle \alpha\right\rangle \equiv\frac{2\pi}{V^{\prime}}\oint\alpha\frac{Rdl}{\left|\nabla\psi\right|}
         """
 
-        d = np.asarray([scipy.integrate.romberg(lambda u, _axis=self.rz_mesh.axis(idx, axis=0), _J=self.Jdl[idx]:  _axis.pullback(func, u) * _J(u),
-                                                0.0, 1.0) for idx in range(self.rz_mesh.shape[0])])
+        d = np.asarray([scipy.integrate.romberg(lambda u, _axis=self.mesh.axis(idx, axis=0), _J=self.Jdl[idx]:  _axis.pullback(func, u) * _J(u),
+                                                0.0, 1.0) for idx in range(self.mesh.shape[0])])
 
         return (2*scipy.constants.pi) * d / self.vprime
 
@@ -348,46 +356,10 @@ class FluxSurface(PhysicalGraph):
         #     res = (2*scipy.constants.pi) * np.sum(func * self.Jdl, axis=1) / self.vprime
         # # res[0] = res[1]
         # return res
+
     #################################
 
     @property
-    def vacuum_toroidal_field(self):
-        return self._vacuum_toroidal_field
-
-    @property
-    def ffprime(self):
-        """	Derivative of F w.r.t. Psi, multiplied with F  [T^2.m^2/Wb]. """
-        return self._ffprime
-
-    @property
-    def f_df_dpsi(self):
-        """	Derivative of F w.r.t. Psi, multiplied with F  [T^2.m^2/Wb]. """
-        return self._ffprime
-
-    @cached_property
-    def fpol(self):
-        psi_axis = self._parent.global_quantities.psi_axis
-        psi_boundary = self._parent.global_quantities.psi_boundary
-        f2 = -self._ffprime.antiderivative(self.psi_norm)*(psi_boundary-psi_axis)
-
-        # (self.vacuum_toroidal_field.r0*self.vacuum_toroidal_field.b0)**2
-        return Function(self.psi_norm, np.sqrt(f2))
-
-    @property
-    def f(self):
-        """Diamagnetic function (F=R B_Phi)  [T.m]."""
-        return self.fpol
-
-    @cached_property
-    def q(self):
-        r"""Safety factor
-            (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)  [-].
-
-            .. math:: q(\psi) =\frac{F V^{\prime} \left\langle R^{-2}\right \rangle }{4 \pi^2}
-        """
-        return Function(self.psi, self["q"])
-
-    @cached_property
     def psi_norm(self):
         return self._psi_norm
 
@@ -396,7 +368,25 @@ class FluxSurface(PhysicalGraph):
         return self.psi_norm * (self.psi_boundary-self.psi_axis) + self.psi_axis
 
     @cached_property
+    def Jdl(self):
+        def J(r, z, _grad_psi=self.grad_psi): return r / np.linalg.norm(_grad_psi(r, z))
+        # return [self.mesh.axis(idx, axis=0).make_one_form(J) for idx in range(self.mesh.shape[0])]
+        res = [self.mesh.axis(idx, axis=0).pullback(J, form=1) for idx in range(self.mesh.shape[0])]
+        return res
+
+    @cached_property
+    def vprime(self):
+        r"""
+            .. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
+            .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
+        """
+        return np.asarray([self.Jdl[idx].integrate() for idx in range(self.mesh.shape[0])]) * (2*scipy.constants.pi)
+
+    @cached_property
     def dvolume_dpsi(self):
+        r"""
+            Radial derivative of the volume enclosed in the flux surface with respect to Psi[m ^ 3.Wb ^ -1].
+        """
         return self.vprime*self.cocos_flag
 
     @cached_property
@@ -405,18 +395,53 @@ class FluxSurface(PhysicalGraph):
         return self.dvolume_dpsi.antiderivative
 
     @cached_property
+    def ffprime(self):
+        """	Derivative of F w.r.t. Psi, multiplied with F  [T^2.m^2/Wb]. """
+        d = self["_ffprime"]
+        if isinstance(d, Function):
+            return Function(self.psi_norm, d(self.psi_norm))
+        elif isinstance(d, np.ndarray) and len(d) == len(self.psi_norm):
+            return Function(self.psi_norm, d)
+        else:
+            raise TypeError(type(d))
+
+    @property
+    def f_df_dpsi(self):
+        """	Derivative of F w.r.t. Psi, multiplied with F  [T^2.m^2/Wb]. """
+        return self.ffprime
+
+    @cached_property
+    def fpol(self):
+        """Diamagnetic function (F=R B_Phi)  [T.m]."""
+
+        psi_axis = self.vacuum_toroidal_field.psi_axis
+        psi_boundary = self.vacuum_toroidal_field.psi_boundary
+        f2 = self.ffprime.antiderivative * (2.0*(psi_boundary-psi_axis)) + self._fvac**2
+        return Function(self.psi_norm, np.sqrt(f2), unit="T.m")
+
+    @property
+    def f(self):
+        """Diamagnetic function (F=R B_Phi)  [T.m]."""
+        return self.fpol
+
+    @cached_property
+    def q(self):
+        r"""
+            Safety factor
+            (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)  [-].
+            .. math:: q(\psi)=\frac{d\Phi}{d\psi}=\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
+        """
+        return self.average(lambda r, z: 1.0/r**2) * (1.0 / (2*scipy.constants.pi)) * self.fpol
+
+    @cached_property
     def dvolume_drho_tor(self)	:
         """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
         return self.dvolume_dpsi * self.dpsi_drho_tor
 
     @cached_property
-    def q(self):
-        r"""Safety factor
-            (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)  [-].
-            .. math:: q(\psi)=\frac{d\Phi}{d\psi}=\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
-        """
-
-        return self.average(lambda r, z: 1.0/r**2) * (1.0 / (2*scipy.constants.pi)) * self.fpol
+    def dvolume_dpsi_norm(self):
+        """Radial derivative of the volume enclosed in the flux surface with respect to Psi[m ^ 3.Wb ^ -1]. """
+        return NotImplemented
 
     @cached_property
     def phi(self):
@@ -504,7 +529,7 @@ class FluxSurface(PhysicalGraph):
     def gm5(self):
         r"""
             Flux surface averaged B ^ 2  [T ^ 2]
-            .. math:: \left\langle B^{2}\right\rangle 
+            .. math:: \left\langle B^{2}\right\rangle
         """
         return self.average(lambda r, z: self.B2(r, z))
 
@@ -512,7 +537,7 @@ class FluxSurface(PhysicalGraph):
     def gm6(self):
         r"""
             Flux surface averaged  .. math:: \left | \nabla \rho_{tor}\right|^2/B^2  [T^-2]
-            .. math:: \left\langle \frac{\left|\nabla\rho\right|^{2}}{B^{2}}\right\rangle 
+            .. math:: \left\langle \frac{\left|\nabla\rho\right|^{2}}{B^{2}}\right\rangle
         """
         return self.average(lambda r, z: power2(self.grad_psi(r, z))/self.B2(r, z)) * (self.drho_tor_dpsi**2)
 
@@ -520,7 +545,7 @@ class FluxSurface(PhysicalGraph):
     def gm7(self):
         r"""
             Flux surface averaged .. math: : \left | \nabla \rho_{tor}\right |  [-]
-            .. math:: \left\langle \left|\nabla\rho\right|\right\rangle 
+            .. math:: \left\langle \left|\nabla\rho\right|\right\rangle
         """
         return self.average(lambda r, z: np.linalg.norm(self.grad_psi(r, z))) * self.drho_tor_dpsi
 
@@ -528,7 +553,7 @@ class FluxSurface(PhysicalGraph):
     def gm8(self):
         r"""
             Flux surface averaged R[m]
-            .. math:: \left\langle R\right\rangle 
+            .. math:: \left\langle R\right\rangle
         """
         return self.average(lambda r, z: r)
 
@@ -536,7 +561,7 @@ class FluxSurface(PhysicalGraph):
     def gm9(self):
         r"""
             Flux surface averaged 1/R[m ^ -1]
-            .. math:: \left\langle \frac{1}{R}\right\rangle 
+            .. math:: \left\langle \frac{1}{R}\right\rangle
         """
         return self.average(lambda r, z: 1.0/r)
 
@@ -573,21 +598,6 @@ class FluxSurface(PhysicalGraph):
     @cached_property
     def dpsi_drho_tor(self)	:
         """Derivative of Psi with respect to Rho_Tor[Wb/m]. """
-        return NotImplemented
-
-    @cached_property
-    def dvolume_dpsi(self):
-        """Radial derivative of the volume enclosed in the flux surface with respect to Psi[m ^ 3.Wb ^ -1]. """
-        return self.vprime
-
-    @cached_property
-    def dvolume_dpsi_norm(self):
-        """Radial derivative of the volume enclosed in the flux surface with respect to Psi[m ^ 3.Wb ^ -1]. """
-        return NotImplemented
-
-    @cached_property
-    def volume(self):
-        """Volume enclosed in the flux surface[m ^ 3]"""
         return NotImplemented
 
     @cached_property
