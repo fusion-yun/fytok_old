@@ -84,7 +84,7 @@ if __name__ == "__main__":
         tok.vacuum_toroidal_field.r0,
         tok.vacuum_toroidal_field.b0,
         tok.vacuum_toroidal_field.r0*tok.vacuum_toroidal_field.b0,
-        tok.vacuum_toroidal_field.rb,
+        tok.vacuum_toroidal_field.fvac,
         fpol[0]/tok.vacuum_toroidal_field.b0,
         fpol[0]))
 

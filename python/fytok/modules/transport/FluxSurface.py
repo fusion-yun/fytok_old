@@ -144,7 +144,6 @@ class FluxSurface:
                  wall=None,
                  fvac=None,
                  ffprime=None,
-                 grid_index=23,
                  grid_shape=[64, 128],
                  tolerance=1.0e-9,
                  **kwargs):
@@ -154,18 +153,12 @@ class FluxSurface:
 
         if not isinstance(psirz, (Field, Function)):
             raise TypeError(psirz)
-
         self._psirz = psirz
-
-        self._tolerance = tolerance
         self._wall = wall
         self._fvac = fvac
         self._ffprime = ffprime
-
-        self._mesh = self.construct_flux_surface_mesh(
-            np.linspace(0, 1.0, grid_shape[0]),
-            np.linspace(0, 1.0, grid_shape[1])
-        )
+        self._grid_shape = grid_shape
+        self._mesh = None
 
     @property
     def grid_index(self):
@@ -217,7 +210,13 @@ class FluxSurface:
             raise ValueError(f"No x-point")
         return x[0].psi
 
-    def construct_flux_mesh(self, grid_index, grid_shape):
+    @property
+    def grid_shape(self):
+        return self._grid_shape
+
+    def flux_mesh(self, grid_index, grid_shape=None):
+        grid_shape = grid_shape or self._grid_shape
+
         u = None
         v = None
         radial_label = int(grid_index/10)
@@ -264,8 +263,7 @@ class FluxSurface:
         else:
             raise NotImplementedError(f"grid index = {grid_index}")
 
-    def construct_flux_surface_mesh(self, u, v):
-
+    def find_by_psinorm(self, u, v=128):
         o_points, x_points = self.critical_points
 
         if len(o_points) == 0:
@@ -287,31 +285,47 @@ class FluxSurface:
         theta0 = arctan2(R1 - R0, Z1 - Z0)
         Rm = sqrt((R1-R0)**2+(Z1-Z0)**2)
 
-        def find(psival, r0, z0, r1, z1):
-            if not np.isclose(self._psirz(r1, z1), psival):
-                try:
-                    sol = root_scalar(lambda r: self._psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1) - psival,
-                                      bracket=[0, 1], method='brentq')
-                except ValueError as error:
-                    raise ValueError(f"Find root fialed! {error}")
+        if isinstance(u, int):
+            u = np.linspace(0, 1.0, u)
+        elif not isinstance(u, (np.ndarray, collections.abc.Sequence)):
+            u = [u]
 
-                if not sol.converged:
-                    raise ValueError(f"Find root fialed!")
+        if isinstance(v, int):
+            v = np.linspace(0, 1.0, v)
+        elif not isinstance(v, (np.ndarray, collections.abc.Sequence)):
+            v = [v]
 
-                r1 = (1.0-sol.root)*r0+sol.root*r1
-                z1 = (1.0-sol.root)*z0+sol.root*z1
+        for p in u:
+            for t in v:
 
-            return r1, z1
+                psival = p*(psi1-psi0)+psi0
+                r0 = R0
+                z0 = Z0
+                r1 = R0+Rm*sin(t*scipy.constants.pi*2.0+theta0)
+                z1 = Z0+Rm*cos(t*scipy.constants.pi*2.0+theta0)
+                if not np.isclose(self._psirz(r1, z1), psival):
+                    try:
+                        sol = root_scalar(lambda r: self._psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1) - psival,
+                                          bracket=[0, 1], method='brentq')
+                    except ValueError as error:
+                        raise ValueError(f"Find root fialed! {error}")
 
-        rz = np.asarray([[find(p*(psi1-psi0)+psi0, R0, Z0,
-                               R0+Rm*sin(t*scipy.constants.pi*2.0+theta0),
-                               Z0+Rm*cos(t*scipy.constants.pi*2.0+theta0)) for t in v] for p in u])
+                    if not sol.converged:
+                        raise ValueError(f"Find root fialed!")
 
-        return CurvilinearMesh([rz[:, :, 0], rz[:, :, 1]], [u, v], cycle=[False, True])
+                    r1 = (1.0-sol.root)*r0+sol.root*r1
+                    z1 = (1.0-sol.root)*z0+sol.root*z1
 
-         
+                yield r1, z1
+
     @property
     def mesh(self):
+        if self._mesh is None:
+            u = np.linspace(0, 1.0, self._grid_shape[0])
+            v = np.linspace(0, 1.0, self._grid_shape[1])
+            rz = np.asarray([[r, z] for r, z in self.find_by_psinorm(u, v)]).reshape(self._grid_shape+[2])
+            self._mesh = CurvilinearMesh([rz[:, :, 0], rz[:, :, 1]], [u, v], cycle=[False, True])
+
         return self._mesh
 
     def R(self):

@@ -574,8 +574,8 @@ class Equilibrium(PhysicalGraph, FyModule):
         @cached_property
         def outline(self):
             """RZ outline of the plasma boundary  """
-            r, z = self._parent.flux_surface.mesh.axis(-1, axis=0).geo_object.points
-            return PhysicalGraph({"r": r, "z": z})
+            RZ = np.asarray([[r, z] for r, z in self._parent.flux_surface.find_by_psinorm(1.0)])
+            return PhysicalGraph({"r": RZ[:, 0], "z": RZ[:, 1]})
 
         @cached_property
         def x_point(self):
