@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     # fig.savefig("/home/salmon/workspace/output/tokamak.svg")
 
-    for idx in range(0,  tok.equilibrium.flux_surface.mesh.shape[0], 8):
+    for idx in range(tok.equilibrium.flux_surface.mesh.shape[0]):
         ax1 = tok.equilibrium.flux_surface.mesh.axis(idx, axis=0)
         plt.plot(*ax1.points, "b", linewidth=0.2)
 
@@ -80,14 +80,6 @@ if __name__ == "__main__":
 
     fvac = fpol[0]
 
-    logger.debug((
-        tok.vacuum_toroidal_field.r0,
-        tok.vacuum_toroidal_field.b0,
-        tok.vacuum_toroidal_field.r0*tok.vacuum_toroidal_field.b0,
-        tok.vacuum_toroidal_field.fvac,
-        fpol[0]/tok.vacuum_toroidal_field.b0,
-        fpol[0]))
-
     plot_profiles([
         [
             #(tok.equilibrium.flux_surface.ffprime, r"$ff^{\prime}$"),
@@ -95,16 +87,16 @@ if __name__ == "__main__":
             (Function(psi_norm, (fpol**2)/(psi_boundary-psi_axis)*0.5).derivative, r"$d(f^{2}_0)$"),
         ],
 
-        [(fpol**2,  r"$f_{pol}^2$"),
-         (2.0*Function(psi_norm, ffprime).antiderivative*(psi_boundary-psi_axis)+fpol[0]**2, r"$\int ff^{\prime}$")],
+        [(Function(psi_norm, fpol**2),  r"$f_{pol}^2$"),
+         (Function(psi_norm, 2.0*Function(psi_norm, ffprime).antiderivative*(psi_boundary-psi_axis)+fpol[0]**2), r"$\int ff^{\prime}$")],
 
-
+        (tok.equilibrium.flux_surface.vprime, r"$V^{\prime}$"),
         # (tok.equilibrium.flux_surface.vprime, "vprime"),
         # {"name": "volume"},
         # [{"name": "q"},
         #  {"name": "safety_factor"}]
     ],
-        x_axis=(psi_norm,   {"label": r"$\bar{\psi}$"}),
+        x_axis=(tok.equilibrium.flux_surface.psi_norm,   {"label": r"$\bar{\psi}$"}),
         grid=True)\
         .savefig("/home/salmon/workspace/output/profiles_1d.svg")
 

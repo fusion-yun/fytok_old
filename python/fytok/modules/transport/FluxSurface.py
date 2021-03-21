@@ -138,14 +138,20 @@ class FluxSurface:
                    =1  rectangular	,
                        Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). In this case the position
                        arrays should not be filled since they are redundant with grid/dim1 and dim2.
+
+        radial_label    : 0 < psi_norm < 1  , np.linspace(0,1)
+
+        poloidal_angle_label : 0 <= theta < 2pi , perdical , np.linspace(0,2pi,endpoint=False)
+
     """
 
     def __init__(self, psirz: Field, *args,
-                 wall=None,
                  fvac=None,
                  ffprime=None,
-                 grid_shape=[64, 128],
-                 tolerance=1.0e-9,
+                 psi_norm=64,
+                 theta=128,
+                 #  radial_label=None,
+                 #  poloidal_angle_label=None,
                  **kwargs):
         """
             Initialize FluxSurface
@@ -154,15 +160,26 @@ class FluxSurface:
         if not isinstance(psirz, (Field, Function)):
             raise TypeError(psirz)
         self._psirz = psirz
-        self._wall = wall
         self._fvac = fvac
         self._ffprime = ffprime
-        self._grid_shape = grid_shape
-        self._mesh = None
 
-    @property
-    def grid_index(self):
-        return self._grid_index
+        if psi_norm is None:
+            psi_norm = 128
+
+        if isinstance(psi_norm, int):
+            self._psi_norm = np.linspace(0.01, 0.99, psi_norm)
+        elif isinstance(psi_norm, np.ndarray):
+            self._psi_norm = psi_norm
+
+        if theta is None:
+            theta = 128
+
+        if isinstance(theta, int):
+            self._theta = np.linspace(0.0, scipy.constants.pi*2.0, theta, endpoint=False)
+        elif isinstance(theta, np.ndarray):
+            self._theta = theta
+
+        self._mesh = None
 
     @cached_property
     def critical_points(self):
@@ -170,9 +187,6 @@ class FluxSurface:
         xpoints = []
 
         for r, z, tag in find_critical(self._psirz):
-            # Remove points outside the vacuum wall
-            if not self._wall.in_limiter(r, z):
-                continue
             p = PhysicalGraph({"r": r, "z": z, "psi": self._psirz(r, z)})
 
             if tag < 0.0:  # saddle/X-point
@@ -210,10 +224,6 @@ class FluxSurface:
             raise ValueError(f"No x-point")
         return x[0].psi
 
-    @property
-    def grid_shape(self):
-        return self._grid_shape
-
     def reconstruct(self,  radial_label=1, poloidal_angle_label=3, shape=None):
         r"""
             radial label (dim1)
@@ -229,7 +239,7 @@ class FluxSurface:
                 x3      :  the polar poloidal angle
                 x4      :  Fourier modes in the straight-field line poloidal angle
                 x5      :  Fourier modes in the equal arc poloidal angle
-                x6      :  Fourier modes in the polar poloidal angl
+                x6      :  Fourier modes in the polar poloidal angle
         """
 
         grid_shape = shape or self._grid_shape
@@ -283,8 +293,8 @@ class FluxSurface:
             psi0 = o_points[0].psi
 
         if len(x_points) == 0:
-            R1 = R0
-            Z1 = self._psirz.coordinates.bbox[1][1]
+            R1 = self._psirz.coordinates.bbox[1][0]
+            Z1 = Z0
             psi1 = 0.0
         else:
             R1 = x_points[0].r
@@ -294,24 +304,22 @@ class FluxSurface:
         theta0 = arctan2(R1 - R0, Z1 - Z0)
         Rm = sqrt((R1-R0)**2+(Z1-Z0)**2)
 
-        if isinstance(u, int):
-            u = np.linspace(0, 1.0, u)
-        elif not isinstance(u, (np.ndarray, collections.abc.Sequence)):
+        if not isinstance(u, (np.ndarray, collections.abc.Sequence)):
             u = [u]
 
         if isinstance(v, int):
-            v = np.linspace(0, 1.0, v)
-        elif not isinstance(v, (np.ndarray, collections.abc.Sequence)):
+            v = np.linspace(0, 2.0*scipy.constants.pi, v, endpoint=False)
+      
+        if not isinstance(v, (np.ndarray, collections.abc.Sequence)):
             v = [v]
 
         for p in u:
             for t in v:
-
                 psival = p*(psi1-psi0)+psi0
                 r0 = R0
                 z0 = Z0
-                r1 = R0+Rm*sin(t*scipy.constants.pi*2.0+theta0)
-                z1 = Z0+Rm*cos(t*scipy.constants.pi*2.0+theta0)
+                r1 = R0+Rm*sin(t+theta0)
+                z1 = Z0+Rm*cos(t+theta0)
                 if not np.isclose(self._psirz(r1, z1), psival):
                     try:
                         sol = root_scalar(lambda r: self._psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1) - psival,
@@ -330,18 +338,19 @@ class FluxSurface:
     @property
     def mesh(self):
         if self._mesh is None:
-            u = np.linspace(0, 1.0, self._grid_shape[0])
-            v = np.linspace(0, 1.0, self._grid_shape[1])
-            rz = np.asarray([[r, z] for r, z in self.find_by_psinorm(u, v)]).reshape(self._grid_shape+[2])
-            self._psi_norm = u
+            u = self._psi_norm
+            v = self._theta
+            rz = np.asarray([[r, z] for r, z in self.find_by_psinorm(u, v)]).reshape([len(u), len(v), 2])
+
             self._mesh = CurvilinearMesh([rz[:, :, 0], rz[:, :, 1]], [u, v], cycle=[False, True])
 
         return self._mesh
 
+    @property
     def R(self):
         return self._mesh.points[0]
 
-    @cached_property
+    @property
     def Z(self):
         return self._mesh.points[1]
 
@@ -357,6 +366,15 @@ class FluxSurface:
     def B2(self, r, z):
         br, bz = self.grad_psi(r, z)
         return ((br**2+bz**2)+self.fpol(self.psi_norm_rz(r, z))**2)/(r**2)
+
+    @cached_property
+    def J(self):
+        r"""
+            .. math:: V^{\prime} =   R / |\nabla \psi|  
+        """
+        shape = self.mesh.shape
+
+        return np.asarray([[r / np.linalg.norm(self.grad_psi(r, z)) for r, z in self.mesh.axis(idx, axis=0).points.T] for idx in range(shape[0])])
 
     @cached_property
     def _grad_psi(self):
@@ -392,19 +410,16 @@ class FluxSurface:
         return self.psi_norm * (self.psi_boundary-self.psi_axis) + self.psi_axis
 
     @cached_property
-    def Jdl(self):
-        def J(r, z, _grad_psi=self.grad_psi): return r / np.linalg.norm(_grad_psi(r, z))
-        # return [self.mesh.axis(idx, axis=0).make_one_form(J) for idx in range(self.mesh.shape[0])]
-        res = [self.mesh.axis(idx, axis=0).pullback(J, form=1) for idx in range(self.mesh.shape[0])]
-        return res
-
-    @cached_property
     def vprime(self):
         r"""
             .. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
             .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
         """
-        return np.asarray([self.Jdl[idx].integrate() for idx in range(self.mesh.shape[0])]) * (2*scipy.constants.pi)
+        d = np.asarray([np.sum(0.5*(np.roll(self.J[idx], 1, axis=0)+self.J[idx]) * self.mesh.axis(idx, axis=0).geo_object.dl)
+                        for idx in range(self.mesh.shape[0])]) * (2*scipy.constants.pi)
+        # d = np.asarray([np.sum(self.mesh.axis(idx, axis=0).geo_object.dl) for idx in range(self.mesh.shape[0])])
+
+        return Function(self.psi_norm, d)
 
     @cached_property
     def dvolume_dpsi(self):

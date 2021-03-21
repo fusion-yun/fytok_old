@@ -665,7 +665,11 @@ class Equilibrium(PhysicalGraph, FyModule):
 
         axis.contour(R[1:-1, 1:-1], Z[1:-1, 1:-1], psi[1:-1, 1:-1], levels=levels, linewidths=0.2)
 
-        if oxpoints and len(self.boundary.x_point) > 0:
+        if oxpoints:
+            axis.plot(self.global_quantities.magnetic_axis.r,
+                      self.global_quantities.magnetic_axis.z, 'g.', label="Magnetic axis")
+
+        if len(self.boundary.x_point) > 0:
             for idx, p in enumerate(self.boundary.x_point):
                 axis.plot(p.r, p.z, 'rx')
                 axis.text(p.r, p.z, idx,
@@ -674,16 +678,13 @@ class Equilibrium(PhysicalGraph, FyModule):
 
             axis.plot([], [], 'rx', label="X-Point")
 
-            axis.plot(self.global_quantities.magnetic_axis.r,
-                      self.global_quantities.magnetic_axis.z, 'g.', label="Magnetic axis")
+        # if boundary:
+        boundary_points = np.array([self.boundary.outline.r,
+                                    self.boundary.outline.z]).transpose([1, 0])
 
-            if boundary:
-                boundary_points = np.array([self.boundary.outline.r,
-                                            self.boundary.outline.z]).transpose([1, 0])
-
-                axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
-                                           linewidth=0.5, fill=False, closed=True))
-                axis.plot([], [], 'r--', label="Separatrix")
+        axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
+                                   linewidth=0.5, fill=False, closed=True))
+        axis.plot([], [], 'r--', label="Separatrix")
 
         # for k, opts in profiles:
         #     d = self.profiles_2d[k]
