@@ -491,7 +491,7 @@ class FluxSurface:
             (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)  [-].
             .. math:: q(\psi)=\frac{d\Phi}{d\psi}=\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
         """
-        return Function(self.psi_norm, self._surface_integral(1.0/(self.R*self.norm_grad_psi)) * self.fpol / (scipy.constants.pi*2))
+        return Function(self.psi_norm, self.surface_average(1.0/(self.R**2)) * self.fpol * self.vprime / (scipy.constants.pi*2)**2)
 
     @cached_property
     def dvolume_drho_tor(self)	:
@@ -525,6 +525,10 @@ class FluxSurface:
         return Function(self.psi_norm, self.rho_tor/self.rho_tor[-1])
 
     @cached_property
+    def norm_grad_rho_tor(self):
+        return self.norm_grad_psi*self.drho_tor_dpsi
+
+    @cached_property
     def drho_tor_dpsi(self)	:
         r"""
             .. math ::
@@ -553,7 +557,7 @@ class FluxSurface:
             Flux surface averaged 1/R ^ 2  [m ^ -2]
             .. math:: \left\langle\frac{1}{R^{2}}\right\rangle
         """
-        return self.surface_average(1.0/(self.R*self.norm_grad_psi))
+        return self.surface_average(1.0/(self.R**2))
 
     @cached_property
     def gm2(self):
@@ -561,7 +565,7 @@ class FluxSurface:
             Flux surface averaged .. math:: \left | \nabla \rho_{tor}\right|^2/R^2  [m^-2]
             .. math:: \left\langle\left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle
         """
-        return self.surface_average(self.norm_grad_psi**2/(self.R**2))*(self.drho_tor_dpsi**2)
+        return self.surface_average((self.norm_grad_rho_tor/self.R)**2)
 
     @cached_property
     def gm3(self):
@@ -569,7 +573,7 @@ class FluxSurface:
             Flux surface averaged .. math:: \left | \nabla \rho_{tor}\right|^2  [-]
             .. math:: {\left\langle \left|\nabla\rho\right|^{2}\right\rangle}
         """
-        return self.surface_average((self.norm_grad_psi**2)*(self.drho_tor_dpsi**2))
+        return self.surface_average(self.norm_grad_rho_tor**2)
 
     @cached_property
     def gm4(self):
@@ -593,7 +597,7 @@ class FluxSurface:
             Flux surface averaged  .. math:: \left | \nabla \rho_{tor}\right|^2/B^2  [T^-2]
             .. math:: \left\langle \frac{\left|\nabla\rho\right|^{2}}{B^{2}}\right\rangle
         """
-        return self.surface_average(self.norm_grad_psi**2/self.B2 * (self.drho_tor_dpsi**2))
+        return self.surface_average(self.norm_grad_rho_tor**2/self.B2)
 
     @cached_property
     def gm7(self):
@@ -601,7 +605,7 @@ class FluxSurface:
             Flux surface averaged .. math: : \left | \nabla \rho_{tor}\right |  [-]
             .. math:: \left\langle \left|\nabla\rho\right|\right\rangle
         """
-        return self.surface_average(self.norm_grad_psi * self.drho_tor_dpsi)
+        return self.surface_average(self.norm_grad_rho_tor)
 
     @cached_property
     def gm8(self):
