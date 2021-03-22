@@ -24,10 +24,10 @@ if __name__ == "__main__":
              wall={"limiter": {"edgecolor": "green"},
                    "vessel": {"edgecolor": "blue"}},
              pf_active={"facecolor": 'red'},
-             equilibrium={"mesh": True}
+             equilibrium={"mesh": False}
              )
 
-    # fig.gca().contourf(tok.equilibrium.flux_surface.R, tok.equilibrium.flux_surface.Z, tok.equilibrium.flux_surface.dl)
+    fig.gca().contourf(tok.equilibrium.flux_surface.R, tok.equilibrium.flux_surface.Z, tok.equilibrium.flux_surface.dl)
 
     # fig.savefig("/home/salmon/workspace/output/tokamak.svg")
 
@@ -84,27 +84,27 @@ if __name__ == "__main__":
 
     fvac = fpol[0]
 
-    # plot_profiles([
-    #     [
-    #         # (tok.equilibrium.flux_surface.ffprime, r"$ff^{\prime}$"),
-    #         (Function(psi_norm, ffprime), r"$ff^{\prime}_0$"),
-    #         (Function(psi_norm, (fpol**2)/(psi_boundary-psi_axis)*0.5).derivative, r"$d(f^{2}_0)$"),
-    #     ],
+    plot_profiles([
+        [
+            # (tok.equilibrium.flux_surface.ffprime, r"$ff^{\prime}$"),
+            (Function(psi_norm, ffprime), r"$ff^{\prime}_0$"),
+            (Function(psi_norm, (fpol**2)/(psi_boundary-psi_axis)*0.5).derivative, r"$d(f^{2}_0)$"),
+        ],
 
-    #     [(Function(psi_norm, fpol**2),  r"$f_{pol}^2$"),
-    #      (Function(psi_norm, 2.0*Function(psi_norm, ffprime).antiderivative*(psi_boundary-psi_axis)+fpol[0]**2), r"$\int ff^{\prime}$")],
+        [(Function(psi_norm, fpol**2),  r"$f_{pol}^2$"),
+         (Function(psi_norm, 2.0*Function(psi_norm, ffprime).antiderivative*(psi_boundary-psi_axis)+fpol[0]**2), r"$\int ff^{\prime}$")],
 
-    #     (tok.equilibrium.flux_surface.vprime, r"$V^{\prime}$"),
-    #     # (tok.equilibrium.flux_surface.volume, r"$V$"),
+        (tok.equilibrium.flux_surface.vprime, r"$V^{\prime}$"),
+        (tok.equilibrium.flux_surface.volume, r"$V$"),
 
-    #     # (tok.equilibrium.flux_surface.vprime, "vprime"),
-    #     # {"name": "volume"},
-    #     # [{"name": "q"},
-    #     #  {"name": "safety_factor"}]
-    # ],
-    #     x_axis=(tok.equilibrium.flux_surface.psi_norm,   {"label": r"$\bar{\psi}$"}),
-    #     grid=True)\
-    #     .savefig("/home/salmon/workspace/output/profiles_1d.svg")
+        # (tok.equilibrium.flux_surface.vprime, "vprime"),
+        # {"name": "volume"},
+        # [{"name": "q"},
+        #  {"name": "safety_factor"}]
+    ],
+        x_axis=(tok.equilibrium.flux_surface.psi_norm,   {"label": r"$\bar{\psi}$"}),
+        grid=True)\
+        .savefig("/home/salmon/workspace/output/profiles_1d.svg")
 
     # plot_profiles(tok.core_profiles.profiles_1d,
     #               profiles=[

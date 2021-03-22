@@ -450,10 +450,10 @@ class FluxSurface:
             .. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
             .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
         """
-        # J = self.R/self.norm_grad_psi
-        # return Function(self.psi_norm,  np.sum(0.5*(np.roll(J, 1, axis=1)+J) * self.dl, axis=1) * (2*scipy.constants.pi))
-        d = np.sum(self.dl, axis=1)
-        return Function(self.psi_norm,  d * (2*scipy.constants.pi))
+        J = self.R/self.norm_grad_psi
+        return Function(self.psi_norm,  np.sum(0.5*(np.roll(J, 1, axis=1)+J) * self.dl, axis=1) * (2*scipy.constants.pi))
+        # d = np.sum(self.dl, axis=1)
+        # return Function(self.psi_norm,  d * (2*scipy.constants.pi))
 
     @cached_property
     def dvolume_dpsi(self):
