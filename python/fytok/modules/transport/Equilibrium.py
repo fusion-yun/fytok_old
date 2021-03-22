@@ -653,7 +653,7 @@ class Equilibrium(PhysicalGraph, FyModule):
 
     ####################################################################################
     # Plot proflies
-    def plot(self, axis=None, *args, profiles=[], vec_field=[], boundary=True, levels=32, oxpoints=True,   **kwargs):
+    def plot(self, axis=None, *args, profiles=[], vec_field=[], mesh=True, boundary=True, levels=32, oxpoints=True,   **kwargs):
         """learn from freegs
         """
         if axis is None:
@@ -667,7 +667,11 @@ class Equilibrium(PhysicalGraph, FyModule):
 
         if oxpoints:
             axis.plot(self.global_quantities.magnetic_axis.r,
-                      self.global_quantities.magnetic_axis.z, 'g.', label="Magnetic axis")
+                      self.global_quantities.magnetic_axis.z,
+                      'g.',
+                      linewidth=0.5,
+                      markersize=2,
+                      label="Magnetic axis")
 
         if len(self.boundary.x_point) > 0:
             for idx, p in enumerate(self.boundary.x_point):
@@ -678,13 +682,22 @@ class Equilibrium(PhysicalGraph, FyModule):
 
             axis.plot([], [], 'rx', label="X-Point")
 
-        # if boundary:
-        boundary_points = np.array([self.boundary.outline.r,
-                                    self.boundary.outline.z]).transpose([1, 0])
+        if boundary:
+            boundary_points = np.vstack([self.boundary.outline.r,
+                                         self.boundary.outline.z]).T
 
-        axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
-                                   linewidth=0.5, fill=False, closed=True))
-        axis.plot([], [], 'r--', label="Separatrix")
+            axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
+                                       linewidth=0.5, fill=False, closed=True))
+            axis.plot([], [], 'r--', label="Separatrix")
+
+        if not not mesh:
+            for idx in range(0, self.flux_surface.mesh.shape[0], 4):
+                ax0 = self.flux_surface.mesh.axis(idx, axis=0)
+                axis.add_patch(plt.Polygon(ax0.xy.T, fill=False, closed=True, color="b", linewidth=0.2))
+
+            for idx in range(0, self.flux_surface.mesh.shape[1], 4):
+                ax1 = self.flux_surface.mesh.axis(idx, axis=1)
+                axis.plot(ax1.xy[0], ax1.xy[1],  "r", linewidth=0.2)
 
         # for k, opts in profiles:
         #     d = self.profiles_2d[k]

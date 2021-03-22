@@ -13,9 +13,9 @@ from scipy.ndimage.filters import maximum_filter, minimum_filter
 from scipy.ndimage.morphology import binary_erosion, generate_binary_structure
 from scipy.optimize import fsolve, root_scalar
 from spdm.data.Field import Field
+from spdm.data.mesh import Mesh
 from spdm.data.Function import Function
 from spdm.data.mesh.CurvilinearMesh import CurvilinearMesh
-from spdm.data.mesh.RectilinearMesh import RectilinearMesh
 from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.logger import logger
 
@@ -23,7 +23,8 @@ if version.parse(scipy.__version__) <= version.parse("1.4.1"):
     from scipy.integrate import cumtrapz as cumtrapz
 else:
     from scipy.integrate import cumulative_trapezoid as cumtrapz
-logger.debug(f"SciPy Version: {scipy.__version__}")
+
+logger.debug(f"Using SciPy Version: {scipy.__version__}")
 
 
 def power2(a):
@@ -134,52 +135,35 @@ class FluxSurface:
         .. math::
             \left\langle\alpha\right\rangle\equiv\frac{2\pi}{V^{\prime}}\int_{0}^{2\pi}\alpha\sqrt{g}d\theta=\frac{2\pi}{V^{\prime}}\varoint\alpha\frac{R}{\left|\nabla\rho\right|}dl
 
-        grid_type :
-                   =1  rectangular	,
-                       Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). In this case the position
-                       arrays should not be filled since they are redundant with grid/dim1 and dim2.
 
-        radial_label    : 0 < psi_norm < 1  , np.linspace(0,1)
-
-        poloidal_angle_label : 0 <= theta < 2pi , perdical , np.linspace(0,2pi,endpoint=False)
+        psi_norm    : 0 < psi_norm < 1   , np.linspace(0,1)
+        theta       : 0 <= theta   < 2pi , perdical , np.linspace(0,2pi,endpoint=False)
 
     """
 
     def __init__(self, psirz: Field, *args,
                  fvac=None,
                  ffprime=None,
-                 psi_norm=64,
-                 theta=128,
-                 #  radial_label=None,
-                 #  poloidal_angle_label=None,
-                 **kwargs):
+                 psi_norm=None,
+                 grid_type=None,
+                 grid_shape=[64, 128],
+                 ** kwargs):
         """
             Initialize FluxSurface
         """
 
         if not isinstance(psirz, (Field, Function)):
             raise TypeError(psirz)
+
         self._psirz = psirz
+        self._mesh = None
+        self._grid_type = grid_type
+        self._grid_shape = grid_shape
+
         self._fvac = fvac
         self._ffprime = ffprime
 
-        if psi_norm is None:
-            psi_norm = 128
-
-        if isinstance(psi_norm, int):
-            self._psi_norm = np.linspace(0.01, 0.99, psi_norm)
-        elif isinstance(psi_norm, np.ndarray):
-            self._psi_norm = psi_norm
-
-        if theta is None:
-            theta = 128
-
-        if isinstance(theta, int):
-            self._theta = np.linspace(0.0, scipy.constants.pi*2.0, theta, endpoint=False)
-        elif isinstance(theta, np.ndarray):
-            self._theta = theta
-
-        self._mesh = None
+        self._psi_norm = psi_norm if psi_norm is not None else [0.01, 0.99]
 
     @cached_property
     def critical_points(self):
@@ -224,65 +208,7 @@ class FluxSurface:
             raise ValueError(f"No x-point")
         return x[0].psi
 
-    def reconstruct(self,  radial_label=1, poloidal_angle_label=3, shape=None):
-        r"""
-            radial label (dim1)
-                1x      :  psi
-                2x      :  sqrt[(psi-psi_axis)/(psi_edge-psi_axis)]
-                3x      :  sqrt[Phi/Phi_edge]
-                4x      :  sqrt[psi-psi_axis]
-                5x      :  sqrt[Phi/pi/B0]
-
-            poloidal angle label (dim2)
-                x1      :  the straight-field line
-                x2      :  the equal arc poloidal angle
-                x3      :  the polar poloidal angle
-                x4      :  Fourier modes in the straight-field line poloidal angle
-                x5      :  Fourier modes in the equal arc poloidal angle
-                x6      :  Fourier modes in the polar poloidal angle
-        """
-
-        grid_shape = shape or self._grid_shape
-
-        u = None
-        v = None
-
-        if radial_label == 1:
-            u = np.linspace(0, 1.0, grid_shape[0])
-            # raise NotImplementedError(f"psi")
-        elif radial_label == 2:
-            u = np.linspace(0, 1.0, grid_shape[0])**2
-            # raise NotImplementedError(f"sqrt[(psi-psi_axis)/(psi_edge-psi_axis)]")
-        elif radial_label == 3:
-            raise NotImplementedError(f"sqrt[Phi/Phi_edge]")
-        elif radial_label == 4:
-            u = np.linspace(0, 1.0, grid_shape[0])**2
-            # raise NotImplementedError(f"sqrt[psi-psi_axis]")
-        elif radial_label == 5:
-            raise NotImplementedError(f"sqrt[Phi/pi/B0]")
-        else:
-            raise NotImplementedError(f"unknown")
-
-        if poloidal_angle_label == 0:
-            raise NotImplementedError(f"the straight-field line")
-        elif poloidal_angle_label == 1:
-            raise NotImplementedError(f" the straight-field line")
-        elif poloidal_angle_label == 2:
-            raise NotImplementedError(f" the equal arc poloidal angle")
-        elif poloidal_angle_label == 3:  # the polar poloidal angle
-            v = np.linspace(0, 1.0, grid_shape[1])*scipy.constants.pi*2.0
-        elif poloidal_angle_label == 4:
-            raise NotImplementedError(
-                f"Fourier modes in the straight-field line poloidal angle ")
-        elif poloidal_angle_label == 5:
-            raise NotImplementedError(f"Fourier modes in the equal arc poloidal angle  ")
-        else:
-            raise NotImplementedError(f"unknown")
-
-        if self._mesh is None and poloidal_angle_label == 3:
-            mesh = self._mesh
-
-    def find_by_psinorm(self, u, v=128):
+    def find_by_psinorm(self, u, v=None):
         o_points, x_points = self.critical_points
 
         if len(o_points) == 0:
@@ -307,10 +233,9 @@ class FluxSurface:
         if not isinstance(u, (np.ndarray, collections.abc.Sequence)):
             u = [u]
 
-        if isinstance(v, int):
-            v = np.linspace(0, 2.0*scipy.constants.pi, v, endpoint=False)
-      
-        if not isinstance(v, (np.ndarray, collections.abc.Sequence)):
+        if v is None:
+            v = np.linspace(0, 2.0*scipy.constants.pi, self._grid_shape[1], endpoint=False)
+        elif not isinstance(v, (np.ndarray, collections.abc.Sequence)):
             v = [v]
 
         for p in u:
@@ -335,52 +260,162 @@ class FluxSurface:
 
                 yield r1, z1
 
+    def construct_flux_mesh(self,  psi_norm=None,    grid_shape=None):
+        grid_shape = grid_shape or self._grid_shape
+        psi_norm = psi_norm or self._psi_norm
+
+        if len(psi_norm) == 2:
+            psi_norm = np.linspace(*psi_norm, grid_shape[0])
+        elif not isinstance(psi_norm, np.ndarray):
+            raise TypeError(type(psi_norm))
+
+        u = psi_norm
+
+        v = np.linspace(0.0, 1.0,  grid_shape[1])
+        rz = []
+        for p in psi_norm:
+            d = [[r, z] for r, z in self.find_by_psinorm(p, v[:-1]*scipy.constants.pi*2.0)]
+            rz.append(d+d[:1])
+
+        rz = np.asarray(rz)
+        return CurvilinearMesh([rz[:, :, 0], rz[:, :, 1]], [u, v], cycle=[False, True])
+
+    def reconstruct_radial_label(self, radial_label, psi_norm=None):
+        if psi_norm is None:
+            psi_norm = np.linspace(0.0, 1.0, self.grid_shape[0])
+        elif isinstance(psi_norm, int):
+            psi_norm = np.linspace(0.0, 1.0, psi_norm)
+
+        if radial_label == 0:
+            raise NotImplemented()
+        elif radial_label == 1:  # psi
+            u = psi_norm*(self.psi_boundary-self.psi_axis)+self.psi_axis
+        elif radial_label == 2:  # sqrt[(psi-psi_axis)/(psi_edge-psi_axis)]
+            u = np.sqrt(psi_norm)
+        elif radial_label == 3:  # sqrt[Phi/Phi_edge]
+            u = np.linspace(0, 1.0, grid_shape[0])*self.phi(1.0)
+            psi_norm = self.phi.invert(u)
+        elif radial_label == 4:  # sqrt[psi-psi_axis]
+            u = psi_norm*(self.psi_boundary-self.psi_axis)
+        elif radial_label == 5:  # sqrt[Phi/pi/B0]
+            raise NotImplementedError(f"")
+        else:
+            raise NotImplementedError(f"unknown")
+
+        return self.construct_flux_mesh(psi_norm)
+
+    def reconstruct_poloidal_angle_label(self, poloidal_angle_label, ntheta=None, mesh=None):
+        r"""
+            radial label (dim1)
+                1x      :  psi
+                2x      :  sqrt[(psi-psi_axis)/(psi_edge-psi_axis)]
+                3x      :  sqrt[Phi/Phi_edge]
+                4x      :  sqrt[psi-psi_axis]
+                5x      :  sqrt[Phi/pi/B0]
+
+            poloidal angle label (dim2)
+                x1      :  the straight-field line
+                x2      :  the equal arc poloidal angle
+                x3      :  the polar poloidal angle
+                x4      :  Fourier modes in the straight-field line poloidal angle
+                x5      :  Fourier modes in the equal arc poloidal angle
+                x6      :  Fourier modes in the polar poloidal angle
+
+            @startuml
+            [*] --> poloidal_angle
+
+            poloidal_angle       --> equal_arc
+            poloidal_angle       --> straight_field_line
+
+
+
+            straight_field_line --> [*]
+
+            @enduml
+        """
+
+        mesh = mesh or self.mesh
+
+        assert(isinstance(mesh, Mesh))
+
+        u, _ = mesh.uv
+
+        v = np.linspace(0.0, 1.0, ntheta or self._grid_shape[1], endpoint=False)  # *scipy.constants.pi*2.0
+
+        npsi = len(u)
+
+        if poloidal_angle_label == 0:
+            raise NotImplementedError()
+        elif poloidal_angle_label == 1:  # the straight-field line
+            def _map(idx):
+                axis = mesh.axis(idx, axis=0)
+                arc_length = axis.dl.antiderivative
+                return axis.point(arc_length.invert(v*arc_length(1.0)))
+
+        elif poloidal_angle_label == 2:  # the equal arc poloidal angle
+            def _map(idx):
+                axis = mesh.axis(idx, axis=0)
+                arc_length = axis.dl.antiderivative
+                return axis.point(arc_length.invert(v*arc_length(1.0)))
+
+            rz = np.asarray([_map(idx) for idx in range(npsi)])
+
+        elif poloidal_angle_label == 3:  # the polar poloidal angle
+            def func(r, z):
+                return r
+        elif poloidal_angle_label == 4:
+            raise NotImplementedError(f"Fourier modes in the straight-field line poloidal angle ")
+        elif poloidal_angle_label == 5:
+            raise NotImplementedError(f"Fourier modes in the equal arc poloidal angle  ")
+        else:
+            raise NotImplementedError(f"unknown")
+
+        return CurvilinearMesh([rz[:, :, 0], rz[:, :, 1]], [u, v], cycle=[False, True])
+
     @property
     def mesh(self):
         if self._mesh is None:
-            u = self._psi_norm
-            v = self._theta
-            rz = np.asarray([[r, z] for r, z in self.find_by_psinorm(u, v)]).reshape([len(u), len(v), 2])
-
-            self._mesh = CurvilinearMesh([rz[:, :, 0], rz[:, :, 1]], [u, v], cycle=[False, True])
-
+            self._mesh = self.construct_flux_mesh()
         return self._mesh
 
     @property
     def R(self):
-        return self._mesh.points[0]
+        return self.mesh.xy[0]
 
     @property
     def Z(self):
-        return self._mesh.points[1]
+        return self.mesh.xy[1]
 
     #################################
-
-    def grad_psi(self, r, z):
-        return self._psirz(r, z, dx=1), self._psirz(r, z, dy=1)
 
     def psi_norm_rz(self, r, z):
         psi = self._psirz(r, z)
         return (psi-self.psi_boundary)/(self.psi_axis-self.psi_boundary)
 
-    def B2(self, r, z):
-        br, bz = self.grad_psi(r, z)
-        return ((br**2+bz**2)+self.fpol(self.psi_norm_rz(r, z))**2)/(r**2)
-
     @cached_property
-    def J(self):
-        r"""
-            .. math:: V^{\prime} =   R / |\nabla \psi|  
-        """
-        shape = self.mesh.shape
-
-        return np.asarray([[r / np.linalg.norm(self.grad_psi(r, z)) for r, z in self.mesh.axis(idx, axis=0).points.T] for idx in range(shape[0])])
-
-    @cached_property
-    def _grad_psi(self):
-        r = self.mesh.points[0]
-        z = self.mesh.points[1]
+    def grad_psi(self):
+        r = self.mesh.xy[0]
+        z = self.mesh.xy[1]
         return self._psirz(r, z, dx=1), self._psirz(r, z, dy=1)
+
+    @cached_property
+    def B2(self):
+        r = self.mesh.xy[0]
+        z = self.mesh.xy[1]
+        return (self.norm_grad_psi**2)+(self.fpol(self.psi_norm_rz(r, z))**2)/(r**2)
+
+    @cached_property
+    def norm_grad_psi(self):
+        r"""
+            .. math:: V^{\prime} =   R / |\nabla \psi|
+        """
+        grad_psi_r, grad_psi_z = self.grad_psi
+        return np.sqrt(grad_psi_r**2+grad_psi_z**2)
+
+    @cached_property
+    def dl(self):
+        # logger.debug([len(self.mesh.axis(idx, axis=0).geo_object.dl) for idx in range(self.mesh.shape[0])])
+        return np.asarray([self.mesh.axis(idx, axis=0).geo_object.dl(self.mesh.uv[1]) for idx in range(self.mesh.shape[0])])
 
     def average(self, func, *args, **kwargs):
         r"""
@@ -403,7 +438,7 @@ class FluxSurface:
 
     @property
     def psi_norm(self):
-        return self._psi_norm
+        return self.mesh.uv[0]
 
     @cached_property
     def psi(self):
@@ -415,11 +450,10 @@ class FluxSurface:
             .. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
             .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
         """
-        d = np.asarray([np.sum(0.5*(np.roll(self.J[idx], 1, axis=0)+self.J[idx]) * self.mesh.axis(idx, axis=0).geo_object.dl)
-                        for idx in range(self.mesh.shape[0])]) * (2*scipy.constants.pi)
-        # d = np.asarray([np.sum(self.mesh.axis(idx, axis=0).geo_object.dl) for idx in range(self.mesh.shape[0])])
-
-        return Function(self.psi_norm, d)
+        # J = self.R/self.norm_grad_psi
+        # return Function(self.psi_norm,  np.sum(0.5*(np.roll(J, 1, axis=1)+J) * self.dl, axis=1) * (2*scipy.constants.pi))
+        d = np.sum(self.dl, axis=1)
+        return Function(self.psi_norm,  d * (2*scipy.constants.pi))
 
     @cached_property
     def dvolume_dpsi(self):
@@ -431,7 +465,7 @@ class FluxSurface:
     @cached_property
     def volume(self):
         """Volume enclosed in the flux surface[m ^ 3]"""
-        return self.dvolume_dpsi.antiderivative
+        return self.vprime.antiderivative
 
     @cached_property
     def ffprime(self):

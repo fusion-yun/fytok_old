@@ -5,7 +5,6 @@ from functools import cached_property
 
 import matplotlib.pyplot as plt
 import numpy as np
-import numpy.ma
 import scipy.integrate
 from spdm.data.Field import Field
 from spdm.data.Node import Node, _next_
