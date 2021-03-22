@@ -133,12 +133,11 @@ class Equilibrium(PhysicalGraph, FyModule):
     @cached_property
     def flux_surface(self):
         ffprime = self["profiles_1d.f_df_dpsi"].__fetch__()
-        ffprime = Function(np.linspace(0, 1.0, len(ffprime)), ffprime)
         return FluxSurface(
             self.profiles_2d.psi,
             wall=self._parent.wall,
             fvac=self.vacuum_toroidal_field.fvac,
-            ffprime=ffprime,
+            ffprime=Function(np.linspace(0, 1.0, len(ffprime)), ffprime),
             parent=self)
 
     class CoordinateSystem(PhysicalGraph, Coordinates):

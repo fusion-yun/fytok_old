@@ -162,7 +162,6 @@ class FluxSurface:
 
         self._fvac = fvac
         self._ffprime = ffprime
-
         self._psi_norm = psi_norm if psi_norm is not None else [0.01, 0.99]
 
     @cached_property
@@ -414,25 +413,15 @@ class FluxSurface:
 
     @cached_property
     def dl(self):
-        # logger.debug([len(self.mesh.axis(idx, axis=0).geo_object.dl) for idx in range(self.mesh.shape[0])])
         return np.asarray([self.mesh.axis(idx, axis=0).geo_object.dl(self.mesh.uv[1]) for idx in range(self.mesh.shape[0])])
 
     def average(self, func, *args, **kwargs):
         r"""
             .. math:: \left\langle \alpha\right\rangle \equiv\frac{2\pi}{V^{\prime}}\oint\alpha\frac{Rdl}{\left|\nabla\psi\right|}
         """
+        J = func(self.R, self.Z)*self.R/self.norm_grad_psi
 
-        d = np.asarray([scipy.integrate.romberg(lambda u, _axis=self.mesh.axis(idx, axis=0), _J=self.Jdl[idx]:  _axis.pullback(func, u) * _J(u),
-                                                0.0, 1.0) for idx in range(self.mesh.shape[0])])
-
-        return (2*scipy.constants.pi) * d / self.vprime
-
-        # if inspect.isfunction(func):
-        #     res = (2*scipy.constants.pi) * np.sum(func(self.R, self.Z, *args, **kwargs)*self.Jdl, axis=1) / self.vprime
-        # else:
-        #     res = (2*scipy.constants.pi) * np.sum(func * self.Jdl, axis=1) / self.vprime
-        # # res[0] = res[1]
-        # return res
+        return np.sum(0.5*(np.roll(J, 1, axis=1)+J) * self.dl, axis=1) * (2*scipy.constants.pi) / self.vprime
 
     #################################
 
@@ -451,9 +440,8 @@ class FluxSurface:
             .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
         """
         J = self.R/self.norm_grad_psi
-        return Function(self.psi_norm,  np.sum(0.5*(np.roll(J, 1, axis=1)+J) * self.dl, axis=1) * (2*scipy.constants.pi))
-        # d = np.sum(self.dl, axis=1)
-        # return Function(self.psi_norm,  d * (2*scipy.constants.pi))
+
+        return Function(self.psi_norm, np.sum(0.5*(np.roll(J, 1, axis=1)+J) * self.dl, axis=1) * (2*scipy.constants.pi))
 
     @cached_property
     def dvolume_dpsi(self):
@@ -470,13 +458,15 @@ class FluxSurface:
     @cached_property
     def ffprime(self):
         """	Derivative of F w.r.t. Psi, multiplied with F  [T^2.m^2/Wb]. """
-        d = self["_ffprime"]
+        d = self._ffprime
         if isinstance(d, Function):
-            return Function(self.psi_norm, d(self.psi_norm))
+            res = Function(self.psi_norm, d(self.psi_norm))
         elif isinstance(d, np.ndarray) and len(d) == len(self.psi_norm):
-            return Function(self.psi_norm, d)
+            res = Function(self.psi_norm, d)
         else:
             raise TypeError(type(d))
+
+        return res
 
     @property
     def f_df_dpsi(self):
@@ -486,9 +476,8 @@ class FluxSurface:
     @cached_property
     def fpol(self):
         """Diamagnetic function (F=R B_Phi)  [T.m]."""
-
-        psi_axis = self.vacuum_toroidal_field.psi_axis
-        psi_boundary = self.vacuum_toroidal_field.psi_boundary
+        psi_axis = self.psi_axis
+        psi_boundary = self.psi_boundary
         f2 = self.ffprime.antiderivative * (2.0*(psi_boundary-psi_axis)) + self._fvac**2
         return Function(self.psi_norm, np.sqrt(f2), unit="T.m")
 
@@ -504,7 +493,8 @@ class FluxSurface:
             (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)  [-].
             .. math:: q(\psi)=\frac{d\Phi}{d\psi}=\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
         """
-        return self.average(lambda r, z: 1.0/r**2) * (1.0 / (2*scipy.constants.pi)) * self.fpol
+        d = self.average(lambda r, z: 1.0/r**2)
+        return Function(self.psi_norm, d * self.vprime * self.fpol / 4 / (scipy.constants.pi**2))
 
     @cached_property
     def dvolume_drho_tor(self)	:

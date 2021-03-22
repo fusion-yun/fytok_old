@@ -91,11 +91,15 @@ if __name__ == "__main__":
             (Function(psi_norm, (fpol**2)/(psi_boundary-psi_axis)*0.5).derivative, r"$d(f^{2}_0)$"),
         ],
 
-        [(Function(psi_norm, fpol**2),  r"$f_{pol}^2$"),
-         (Function(psi_norm, 2.0*Function(psi_norm, ffprime).antiderivative*(psi_boundary-psi_axis)+fpol[0]**2), r"$\int ff^{\prime}$")],
+        # [(Function(psi_norm, fpol**2),  r"$f_{pol}^2$"),
+        #  (Function(psi_norm, 2.0*Function(psi_norm, ffprime).antiderivative*(psi_boundary-psi_axis)+fpol[0]**2), r"$\int ff^{\prime}$")],
 
+        (tok.equilibrium.flux_surface.ffprime, r"$ff^{\prime}$"),
+        (tok.equilibrium.flux_surface.fpol, r"$f_{pol}$"),
         (tok.equilibrium.flux_surface.vprime, r"$V^{\prime}$"),
         (tok.equilibrium.flux_surface.volume, r"$V$"),
+        (tok.equilibrium.flux_surface.q,        r"$q$"),
+        (tok.equilibrium.flux_surface.phi, r"$\phi$"),
 
         # (tok.equilibrium.flux_surface.vprime, "vprime"),
         # {"name": "volume"},
