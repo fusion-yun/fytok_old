@@ -415,14 +415,14 @@ class FluxSurface:
     def dl(self):
         return np.asarray([self.mesh.axis(idx, axis=0).geo_object.dl(self.mesh.uv[1]) for idx in range(self.mesh.shape[0])])
 
-    def average(self, func, *args, **kwargs):
+    def _surface_integral(self, J, *args, **kwargs):
         r"""
             .. math:: \left\langle \alpha\right\rangle \equiv\frac{2\pi}{V^{\prime}}\oint\alpha\frac{Rdl}{\left|\nabla\psi\right|}
         """
-        J = func(self.R, self.Z)*self.R/self.norm_grad_psi
+        return np.sum(0.5*(np.roll(J, 1, axis=1)+J) * self.dl, axis=1)
 
-        return np.sum(0.5*(np.roll(J, 1, axis=1)+J) * self.dl, axis=1) * (2*scipy.constants.pi) / self.vprime
-
+    def surface_average(self, J, *args, **kwargs):
+        return Function(self.psi_norm, self._surface_integral(J, *args, **kwargs) / self.vprime * (2*scipy.constants.pi))
     #################################
 
     @property
@@ -439,9 +439,7 @@ class FluxSurface:
             .. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
             .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
         """
-        J = self.R/self.norm_grad_psi
-
-        return Function(self.psi_norm, np.sum(0.5*(np.roll(J, 1, axis=1)+J) * self.dl, axis=1) * (2*scipy.constants.pi))
+        return Function(self.psi_norm, self._surface_integral(self.R/self.norm_grad_psi) * (2*scipy.constants.pi))
 
     @cached_property
     def dvolume_dpsi(self):
@@ -493,8 +491,7 @@ class FluxSurface:
             (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)  [-].
             .. math:: q(\psi)=\frac{d\Phi}{d\psi}=\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
         """
-        d = self.average(lambda r, z: 1.0/r**2)
-        return Function(self.psi_norm, d * self.vprime * self.fpol / 4 / (scipy.constants.pi**2))
+        return Function(self.psi_norm, self._surface_integral(1.0/(self.R*self.norm_grad_psi)) * self.fpol / (scipy.constants.pi*2))
 
     @cached_property
     def dvolume_drho_tor(self)	:
@@ -520,12 +517,12 @@ class FluxSurface:
     @cached_property
     def rho_tor(self):
         """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0  [m]"""
-        data = np.sqrt(self.phi)/np.sqrt(scipy.constants.pi * self.vacuum_toroidal_field.b0)
+        data = np.sqrt(self.phi/(scipy.constants.pi * self.b0))
         return Function(self.psi_norm, data, unit="m")
 
     @cached_property
     def rho_tor_norm(self):
-        return self.rho_tor/self.rho_tor[-1]
+        return Function(self.psi_norm, self.rho_tor/self.rho_tor[-1])
 
     @cached_property
     def drho_tor_dpsi(self)	:
@@ -537,12 +534,8 @@ class FluxSurface:
                                         =\frac{q}{2\pi B_{0}\rho_{tor}}
 
         """
-        res = self.q/(2.0*scipy.constants.pi*self.vacuum_toroidal_field.b0)
-        res[1:] /= self.rho_tor[1:]
-        # res[0] = res[1:5](0)  # self.fpol[0]*self.gm1[0]/(2.0*scipy.constants.pi*self.vacuum_toroidal_field.b0)
-        # return self.q/(2.0*scipy.constants.pi*self.vacuum_toroidal_field.b0)
-        res[0] = 2*res[1]-res[2]
-        return res
+
+        return Function(self.psi_norm, self.q/(2.0*scipy.constants.pi*self.b0))
 
     @cached_property
     def dpsi_drho_tor(self)	:
@@ -552,9 +545,7 @@ class FluxSurface:
             Todo:
                 FIXME: dpsi_drho_tor(0) = ???
         """
-        res = (2.0*scipy.constants.pi*self.vacuum_toroidal_field.b0)*self.rho_tor[:]/self.q[:]
-        res[0] = 2*res[1]-res[2]
-        return Function(self.psi, res, unit="Wb/m")
+        return Function(self.psi_norm, (2.0*scipy.constants.pi*self.b0)*self.rho_tor/self.q, unit="Wb/m")
 
     @cached_property
     def gm1(self):
@@ -562,7 +553,7 @@ class FluxSurface:
             Flux surface averaged 1/R ^ 2  [m ^ -2]
             .. math:: \left\langle\frac{1}{R^{2}}\right\rangle
         """
-        return self.average(lambda r, z: 1.0/r**2)
+        return self.surface_average(1.0/(self.R*self.norm_grad_psi))
 
     @cached_property
     def gm2(self):
@@ -570,7 +561,7 @@ class FluxSurface:
             Flux surface averaged .. math:: \left | \nabla \rho_{tor}\right|^2/R^2  [m^-2]
             .. math:: \left\langle\left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle
         """
-        return self.average(lambda r, z: power2(self.grad_psi(r, z)/(r**2)))*(self.drho_tor_dpsi**2)
+        return self.surface_average(self.norm_grad_psi**2/(self.R**2))*(self.drho_tor_dpsi**2)
 
     @cached_property
     def gm3(self):
@@ -578,7 +569,7 @@ class FluxSurface:
             Flux surface averaged .. math:: \left | \nabla \rho_{tor}\right|^2  [-]
             .. math:: {\left\langle \left|\nabla\rho\right|^{2}\right\rangle}
         """
-        return self.average(lambda r, z: power2(self.grad_psi(r, z)))*(self.drho_tor_dpsi**2)
+        return self.surface_average((self.norm_grad_psi**2)*(self.drho_tor_dpsi**2))
 
     @cached_property
     def gm4(self):
@@ -586,7 +577,7 @@ class FluxSurface:
             Flux surface averaged 1/B ^ 2  [T ^ -2]
             .. math:: \left\langle \frac{1}{B^{2}}\right\rangle
         """
-        return self.average(lambda r, z: 1.0/self.B2(r, z))
+        return self.surface_average(1.0/self.B2)
 
     @cached_property
     def gm5(self):
@@ -594,7 +585,7 @@ class FluxSurface:
             Flux surface averaged B ^ 2  [T ^ 2]
             .. math:: \left\langle B^{2}\right\rangle
         """
-        return self.average(lambda r, z: self.B2(r, z))
+        return self.surface_average(self.B2)
 
     @cached_property
     def gm6(self):
@@ -602,7 +593,7 @@ class FluxSurface:
             Flux surface averaged  .. math:: \left | \nabla \rho_{tor}\right|^2/B^2  [T^-2]
             .. math:: \left\langle \frac{\left|\nabla\rho\right|^{2}}{B^{2}}\right\rangle
         """
-        return self.average(lambda r, z: power2(self.grad_psi(r, z))/self.B2(r, z)) * (self.drho_tor_dpsi**2)
+        return self.surface_average(self.norm_grad_psi**2/self.B2 * (self.drho_tor_dpsi**2))
 
     @cached_property
     def gm7(self):
@@ -610,7 +601,7 @@ class FluxSurface:
             Flux surface averaged .. math: : \left | \nabla \rho_{tor}\right |  [-]
             .. math:: \left\langle \left|\nabla\rho\right|\right\rangle
         """
-        return self.average(lambda r, z: np.linalg.norm(self.grad_psi(r, z))) * self.drho_tor_dpsi
+        return self.surface_average(self.norm_grad_psi * self.drho_tor_dpsi)
 
     @cached_property
     def gm8(self):
@@ -618,7 +609,7 @@ class FluxSurface:
             Flux surface averaged R[m]
             .. math:: \left\langle R\right\rangle
         """
-        return self.average(lambda r, z: r)
+        return self.surface_average(self.R)
 
     @cached_property
     def gm9(self):
@@ -626,12 +617,12 @@ class FluxSurface:
             Flux surface averaged 1/R[m ^ -1]
             .. math:: \left\langle \frac{1}{R}\right\rangle
         """
-        return self.average(lambda r, z: 1.0/r)
+        return self.surface_average(1.0/self.R)
 
     @cached_property
     def magnetic_shear(self):
         """Magnetic shear, defined as rho_tor/q . dq/drho_tor[-]	 """
-        return self.rho_tor/self.q * self.q.derivative
+        return Function(self.psi_norm, self.rho_tor/self.q * self.q.derivative)
 
     @cached_property
     def r_inboard(self):
@@ -641,31 +632,6 @@ class FluxSurface:
     @cached_property
     def r_outboard(self):
         """Radial coordinate(major radius) on the outboard side of the magnetic axis[m]"""
-        return NotImplemented
-
-    @cached_property
-    def rho_tor(self):
-        """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0[m]"""
-        return NotImplemented
-
-    @cached_property
-    def rho_tor_norm(self):
-        """Normalised toroidal flux coordinate. The normalizing value for rho_tor_norm, is the toroidal flux coordinate at the equilibrium boundary
-            (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation)[-]"""
-        return NotImplemented
-
-    @cached_property
-    def drho_tor_dpsi(self)	:
-        return NotImplemented
-
-    @cached_property
-    def dpsi_drho_tor(self)	:
-        """Derivative of Psi with respect to Rho_Tor[Wb/m]. """
-        return NotImplemented
-
-    @cached_property
-    def dvolume_drho_tor(self)	:
-        """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
         return NotImplemented
 
     @cached_property
