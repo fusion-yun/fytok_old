@@ -200,9 +200,10 @@ class Tokamak(PhysicalGraph):
             * self.equilibrium.profiles_1d.dpsi_drho_tor \
             / (4.0*(scipy.constants.pi**2))
 
-        norm_rho_tor = np.linspace(0, 1.0, len(gamma))
+        rho_tor_norm = np.linspace(0, 1.0, len(gamma))
 
-        gamma = Function(norm_rho_tor, gamma)
+        gamma = Function(rho_tor_norm, gamma)
+
         j_total = -gamma.derivative  \
             / self.equilibrium.profiles_1d.rho_tor[-1]**2 \
             * self.equilibrium.profiles_1d.dpsi_drho_tor  \
@@ -216,26 +217,30 @@ class Tokamak(PhysicalGraph):
 
         self.core_transport[_next_] = {"identifier": {"name": f"Dummy transport", "index": 0}}
 
-        self.core_sources[_next_] = {"identifier": {"name": f"Dummy source", "index": 0}}
+        self.core_sources[_next_] = {"identifier": {"name": f"Dummy source", "index": 0},
+                                     "profiles_1d": {"j_parallel": j_total,
+                                                     "conductivity_parallel": 1.0e-8
+                                                     }
+                                     }
 
-        self.core_sources[-1].profiles_1d.j_parallel = j_total
+        # self.core_sources[-1]["profiles_1d.j_parallel"] = j_total
 
-        self.core_sources[-1].profiles_1d.conductivity_parallel = 1.0e-8
+        # self.core_sources[-1]["profiles_1d.conductivity_parallel"] = 1.0e-8
 
         if isinstance(spec, str):
             spec = {spec: {}}
         elif not isinstance(spec, collections.abc.Mapping):
             raise TypeError(type(spec))
 
-        rho_tor_norm = self.grid.rho_tor_norm
+        # rho_tor_norm = self.grid.rho_tor_norm
 
-        rho_tor_boundary = self.grid.rho_tor_boundary
+        rho_tor_boundary = self.equilibrium.magnetic_flux_coordinates.rho_tor[-1]
 
-        vpr = Field(self.equilibrium.profiles_1d.dvolume_drho_tor * rho_tor_boundary,
-                    coordinates=self.equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)
+        psi_norm = self.equilibrium.magnetic_flux_coordinates.rho_tor_norm.invert(rho_tor_norm)
 
-        gm3 = Field(self.equilibrium.profiles_1d.gm3,
-                    coordinates=self.equilibrium.profiles_1d.rho_tor_norm)(rho_tor_norm)
+        vpr = self.equilibrium.magnetic_flux_coordinates.dvolume_drho_tor(psi_norm)
+
+        gm3 = self.equilibrium.magnetic_flux_coordinates.gm3(psi_norm)
 
         H = vpr * gm3
 
@@ -248,26 +253,25 @@ class Tokamak(PhysicalGraph):
 
             def dn_core(x): return -4*x*(1-(x/w_scale_s)**2)/(w_scale_s**2)
 
-            def n_ped(x): return n_core(x_ped) - (1.0-x_ped) * dn_core(x_ped) \
-                * (1.0 - np.exp((x-x_ped)/(1.0-x_ped)))
+            def n_ped(x): return n_core(x_ped) - (1.0-x_ped) * dn_core(x_ped) * (1.0 - np.exp((x-x_ped)/(1.0-x_ped)))
 
             def dn_ped(x): return dn_core(x_ped) * np.exp((x-x_ped)/(1.0-x_ped))
 
             integral_src = -d_ped * H * dn_ped(rho_tor_norm)/(rho_tor_boundary**2)
 
-            self.core_transport[-1].profiles_1d[sp].particles.d = \
+            self.core_transport.entry[-1].profiles_1d[sp].particles.d = \
                 lambda x:   2.0 * d_ped + (x**2) if x <= x_ped else d_ped
 
-            self.core_transport[-1].profiles_1d[sp].particles.v = \
-                (self.core_transport[-1].profiles_1d[sp].particles.d * dn_core(rho_tor_norm) - d_ped*dn_ped(rho_tor_norm)) \
+            self.core_transport.entry[-1].profiles_1d[sp].particles.v = \
+                (self.core_transport.entry[-1].profiles_1d[sp].particles.d * dn_core(rho_tor_norm) - d_ped*dn_ped(rho_tor_norm)) \
                 / (rho_tor_boundary) / n_core(rho_tor_norm) * (rho_tor_norm < x_ped)
 
-            self.core_sources[-1].profiles_1d[sp].particles = n_s * integral_src.derivative/vpr
+            self.core_sources.entry[-1].profiles_1d[sp].particles = n_s * integral_src.derivative/vpr
 
             desc["density"] = n_s * (n_core(rho_tor_norm)*(rho_tor_norm < x_ped) +
                                      n_ped(rho_tor_norm) * (rho_tor_norm >= x_ped))
 
             self.core_profiles.profiles_1d[sp] |= desc
-            logger.debug(self.core_profiles._grid)
+      
         if "electrons" not in spec:
             raise NotImplementedError()

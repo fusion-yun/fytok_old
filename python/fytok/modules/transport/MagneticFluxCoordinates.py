@@ -496,7 +496,7 @@ class MagneticFluxCoordinates:
     @cached_property
     def dvolume_drho_tor(self)	:
         """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
-        return self.dvolume_dpsi * self.dpsi_drho_tor
+        return Function(self.psi_norm, self.dvolume_dpsi * self.dpsi_drho_tor)
 
     @cached_property
     def dvolume_dpsi_norm(self):

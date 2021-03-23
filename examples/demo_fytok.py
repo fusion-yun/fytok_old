@@ -78,7 +78,7 @@ if __name__ == "__main__":
         grid=True)\
         .savefig("/home/salmon/workspace/output/profiles_1d.svg")
 
-    tok.initialize_profile()
+    # tok.initialize_profile()
 
     
     # plot_profiles(tok.core_profiles.profiles_1d,
