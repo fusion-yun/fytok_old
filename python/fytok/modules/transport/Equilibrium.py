@@ -13,12 +13,12 @@ from spdm.util.logger import logger
 from spdm.util.utilities import try_get
 
 from ...FyModule import FyModule
-from .FluxSurface import FluxSurface
+from .MagneticFluxCoordinates import MagneticFluxCoordinates
 
 TOLERANCE = 1.0e-6
 
 
-class Equilibrium(PhysicalGraph, FyModule):
+class Equilibrium(PhysicalGraph):
     r"""Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
 
         Reference:
@@ -66,9 +66,8 @@ class Equilibrium(PhysicalGraph, FyModule):
 
     DEFAULT_PLUGIN = "FreeGS"
 
-    def __init__(self, *args, psi_norm=None, vacuum_toroidal_field=None,  **kwargs):
+    def __init__(self, *args,  vacuum_toroidal_field=None,  **kwargs):
         super().__init__(*args, **kwargs)
-        self.radial_grid.reset(psi_norm, primary_coordinates="psi_norm")
         self._vacuum_toroidal_field = PhysicalGraph(vacuum_toroidal_field)
 
     @property
@@ -100,7 +99,7 @@ class Equilibrium(PhysicalGraph, FyModule):
         self.profiles_2d.update()
         del self.boundary
         del self.boundary_separatrix
-        del self.flux_surface
+        del self.magnetic_flux_coordinates
 
     @cached_property
     def profiles_1d(self):
@@ -131,11 +130,12 @@ class Equilibrium(PhysicalGraph, FyModule):
         return Equilibrium.CoordinateSystem(self["coordinate_system"], parent=self)
 
     @cached_property
-    def flux_surface(self):
+    def magnetic_flux_coordinates(self):
         ffprime = self["profiles_1d.f_df_dpsi"].__fetch__()
-        return FluxSurface(
+        return MagneticFluxCoordinates(
             self.profiles_2d.psi,
             wall=self._parent.wall,
+            b0=self.vacuum_toroidal_field.b0,
             fvac=self.vacuum_toroidal_field.fvac,
             ffprime=Function(np.linspace(0, 1.0, len(ffprime)), ffprime),
             parent=self)
@@ -368,24 +368,24 @@ class Equilibrium(PhysicalGraph, FyModule):
         # @property
         # def magnetic_axis(self):
         #     """Magnetic axis position and toroidal field	structure"""
-        #     return PhysicalGraph({"r":  self._parent.flux_surface.magnetic_axis.r,
-        #                           "z":  self._parent.flux_surface.magnetic_axis.z,
+        #     return PhysicalGraph({"r":  self._parent.magnetic_flux_coordinates.magnetic_axis.r,
+        #                           "z":  self._parent.magnetic_flux_coordinates.magnetic_axis.z,
         #                           "b_field_tor": NotImplemented  # self.profiles_2d.b_field_tor(opt[0][0], opt[0][1])
         #                           })
 
         # @cached_property
         # def magnetic_axis(self):
-        #     o, _ = self._parent.flux_surface.critical_points
+        #     o, _ = self._parent.magnetic_flux_coordinates.critical_points
         #     return o[0]
 
         # @cached_property
         # def x_points(self):
-        #     _, x = self._parent.flux_surface.critical_points
+        #     _, x = self._parent.magnetic_flux_coordinates.critical_points
         #     return x
 
         # @cached_property
         # def psi_axis(self):
-        #     o, _ = self._parent.flux_surface.critical_points
+        #     o, _ = self._parent.magnetic_flux_coordinates.critical_points
         #     return o[0].psi
 
         # @cached_property
@@ -427,7 +427,7 @@ class Equilibrium(PhysicalGraph, FyModule):
         def __getattr__(self, k):
             res = super().__getattr__(k)
             if res is None:
-                res = self._parent.flux_surface.__getattr__(k)
+                res = try_get(self._parent.magnetic_flux_coordinates, k)
             return res
 
         @property
@@ -443,7 +443,7 @@ class Equilibrium(PhysicalGraph, FyModule):
         # @cached_property
         # def phi(self):
         #     """Toroidal flux  [Wb] """
-        #     return self._parent.flux_surface.phi
+        #     return self._parent.magnetic_flux_coordinates.phi
 
         @cached_property
         def pprime(self):
@@ -573,18 +573,18 @@ class Equilibrium(PhysicalGraph, FyModule):
         @cached_property
         def outline(self):
             """RZ outline of the plasma boundary  """
-            RZ = np.asarray([[r, z] for r, z in self._parent.flux_surface.find_by_psinorm(1.0)])
+            RZ = np.asarray([[r, z] for r, z in self._parent.magnetic_flux_coordinates.find_by_psinorm(1.0)])
             return PhysicalGraph({"r": RZ[:, 0], "z": RZ[:, 1]})
 
         @cached_property
         def x_point(self):
-            _, xpt = self._parent.flux_surface.critical_points
+            _, xpt = self._parent.magnetic_flux_coordinates.critical_points
             return xpt
 
         @cached_property
         def psi(self):
             """Value of the poloidal flux at which the boundary is taken  [Wb]"""
-            return self._parent.flux_surface.psi_boundary
+            return self._parent.magnetic_flux_coordinates.psi_boundary
 
         @cached_property
         def psi_norm(self):
@@ -690,12 +690,12 @@ class Equilibrium(PhysicalGraph, FyModule):
             axis.plot([], [], 'r--', label="Separatrix")
 
         if not not mesh:
-            for idx in range(0, self.flux_surface.mesh.shape[0], 4):
-                ax0 = self.flux_surface.mesh.axis(idx, axis=0)
+            for idx in range(0, self.magnetic_flux_coordinates.mesh.shape[0], 4):
+                ax0 = self.magnetic_flux_coordinates.mesh.axis(idx, axis=0)
                 axis.add_patch(plt.Polygon(ax0.xy.T, fill=False, closed=True, color="b", linewidth=0.2))
 
-            for idx in range(0, self.flux_surface.mesh.shape[1], 4):
-                ax1 = self.flux_surface.mesh.axis(idx, axis=1)
+            for idx in range(0, self.magnetic_flux_coordinates.mesh.shape[1], 4):
+                ax1 = self.magnetic_flux_coordinates.mesh.axis(idx, axis=1)
                 axis.plot(ax1.xy[0], ax1.xy[1],  "r", linewidth=0.2)
 
         # for k, opts in profiles:
@@ -807,7 +807,7 @@ class Equilibrium(PhysicalGraph, FyModule):
             ax_right = fig.add_subplot(gs[:, 1])
 
         if surface_mesh:
-            self.flux_surface.plot(ax_right)
+            self.magnetic_flux_coordinates.plot(ax_right)
         self.plot(ax_right, profiles=profiles_2d, vec_field=vec_field, **kwargs.get("equilibrium", {}))
 
         self._tokamak.plot_machine(ax_right, **kwargs.get("machine", {}))

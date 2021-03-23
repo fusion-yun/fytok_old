@@ -27,52 +27,10 @@ if __name__ == "__main__":
              equilibrium={"mesh": False}
              )
 
-    fig.gca().contourf(tok.equilibrium.flux_surface.R, tok.equilibrium.flux_surface.Z, tok.equilibrium.flux_surface.dl)
-
-    # fig.savefig("/home/salmon/workspace/output/tokamak.svg")
-
-    # for idx in range(tok.equilibrium.flux_surface.mesh.shape[0]):
-    #     ax1 = tok.equilibrium.flux_surface.mesh.axis(idx, axis=0)
-    #     fig.gca().add_patch(plt.Polygon(ax1.points, fill=False, closed=True, color="b", linewidth=0.2))
-
-    # for idx in range(0, tok.equilibrium.flux_surface.mesh.shape[1], 8):
-    #     ax1 = tok.equilibrium.flux_surface.mesh.axis(idx, axis=1)
-    #     plt.plot(*ax1.points.T,  "r", linewidth=0.2)
-
-    # r = tok.equilibrium.flux_surface.rz_mesh.points[0]
-    # z = tok.equilibrium.flux_surface.rz_mesh.points[1]
-    # grad_psi = np.linalg.norm(tok.equilibrium.flux_surface.grad_psi(r, z), axis=0)
-    # plt.contourf(r[:, :], z[:, :],  grad_psi[:, :])
+    fig.gca().contourf(tok.equilibrium.magnetic_flux_coordinates.R,
+                       tok.equilibrium.magnetic_flux_coordinates.Z, tok.equilibrium.magnetic_flux_coordinates.B2)
 
     plt.savefig("/home/salmon/workspace/output/contour.svg")
-
-    # psi_norm = tok.equilibrium.flux_surface.psi_norm
-    # fig = plt.figure()
-    # # plt.plot(psi_norm, tok.equilibrium.flux_surface.rz_mesh.axis(10, axis=0).apply(lambda r, z: 1.0/r, psi_norm))
-    # r, z = tok.equilibrium.flux_surface.rz_mesh.points
-    # # br, bz = tok.equilibrium.flux_surface.grad_psi(r, z)
-    # jacob = tok.equilibrium.flux_surface.jacobian(r, z)
-    # # plt.contourf(r, z, r/np.sqrt(br**2+bz**2))
-    # plt.contourf(r, z, jacob)
-    # plt.savefig("/home/salmon/workspace/output/contour1.svg")
-
-    # plt.figure()
-    # plt.contourf(r, z, jacob)
-    # plt.savefig("/home/salmon/workspace/output/contour2.svg")
-
-    # tok.initialize_profile()
-    # fig = plt.figure()
-    # u = np.linspace(0, 1.0, 128, endpoint=False)
-    # idx = 124
-
-    # # plt.plot(tok.equilibrium.flux_surface.Jdl[120](u))
-    # plt.plot(u, tok.equilibrium.flux_surface.Jdl[idx](u))
-    # logger.debug(scipy.integrate.romberg(tok.equilibrium.flux_surface.Jdl[idx], 0, 1.0))
-
-    # plt.savefig("/home/salmon/workspace/output/profiles_1d.svg")
-    # logger.debug(tok.equilibrium.profiles_1d["f"])
-    # logger.debug(tok.equilibrium.profiles_1d.fpol)
-    # logger.debug(tok.equilibrium.profiles_1d["f_df_dpsi"])
 
     psi_axis = tok.equilibrium.global_quantities.psi_axis
     psi_boundary = tok.equilibrium.global_quantities.psi_boundary
@@ -86,30 +44,43 @@ if __name__ == "__main__":
 
     plot_profiles([
         [
-            # (tok.equilibrium.flux_surface.ffprime, r"$ff^{\prime}$"),
+            # (tok.equilibrium.magnetic_flux_coordinates.ffprime, r"$ff^{\prime}$"),
             (Function(psi_norm, ffprime), r"$ff^{\prime}_0$"),
             (Function(psi_norm, (fpol**2)/(psi_boundary-psi_axis)*0.5).derivative, r"$d(f^{2}_0)$"),
         ],
 
-        # [(Function(psi_norm, fpol**2),  r"$f_{pol}^2$"),
-        #  (Function(psi_norm, 2.0*Function(psi_norm, ffprime).antiderivative*(psi_boundary-psi_axis)+fpol[0]**2), r"$\int ff^{\prime}$")],
+        [(Function(psi_norm, fpol**2),  r"$f_{pol}^2$"),
+         (Function(psi_norm, 2.0*Function(psi_norm, ffprime).antiderivative*(psi_boundary-psi_axis)+fpol[0]**2), r"$\int ff^{\prime}$")],
 
-        (tok.equilibrium.flux_surface.ffprime, r"$ff^{\prime}$"),
-        (tok.equilibrium.flux_surface.fpol, r"$f_{pol}$"),
-        (tok.equilibrium.flux_surface.vprime, r"$V^{\prime}$"),
-        (tok.equilibrium.flux_surface.volume, r"$V$"),
-        (tok.equilibrium.flux_surface.q,        r"$q$"),
-        (tok.equilibrium.flux_surface.phi, r"$\phi$"),
+        (tok.equilibrium.magnetic_flux_coordinates.ffprime, r"$ff^{\prime}$"),
+        (tok.equilibrium.magnetic_flux_coordinates.fpol, r"$f_{pol}$"),
+        (tok.equilibrium.magnetic_flux_coordinates.vprime, r"$V^{\prime}$"),
+        (tok.equilibrium.magnetic_flux_coordinates.volume, r"$V$"),
+        (tok.equilibrium.magnetic_flux_coordinates.q,        r"$q$"),
+        (tok.equilibrium.magnetic_flux_coordinates.phi, r"$\phi$"),
 
-        # (tok.equilibrium.flux_surface.vprime, "vprime"),
+        (tok.equilibrium.magnetic_flux_coordinates.gm1, r"$gm1$"),
+        (tok.equilibrium.magnetic_flux_coordinates.gm2, r"$gm2$"),
+        (tok.equilibrium.magnetic_flux_coordinates.gm3, r"$gm3$"),
+        (tok.equilibrium.magnetic_flux_coordinates.gm4, r"$gm4$"),
+        (tok.equilibrium.magnetic_flux_coordinates.gm5, r"$gm5$"),
+        (tok.equilibrium.magnetic_flux_coordinates.gm6, r"$gm6$"),
+        (tok.equilibrium.magnetic_flux_coordinates.gm7, r"$gm7$"),
+        (tok.equilibrium.magnetic_flux_coordinates.gm8, r"$gm8$"),
+        (tok.equilibrium.magnetic_flux_coordinates.gm9, r"$gm9$"),
+
+        # (tok.equilibrium.magnetic_flux_coordinates.vprime, "vprime"),
         # {"name": "volume"},
         # [{"name": "q"},
         #  {"name": "safety_factor"}]
     ],
-        x_axis=(tok.equilibrium.flux_surface.psi_norm,   {"label": r"$\bar{\psi}$"}),
+        x_axis=(tok.equilibrium.magnetic_flux_coordinates.psi_norm,   {"label": r"$\bar{\psi}$"}),
         grid=True)\
         .savefig("/home/salmon/workspace/output/profiles_1d.svg")
 
+    tok.initialize_profile()
+
+    
     # plot_profiles(tok.core_profiles.profiles_1d,
     #               profiles=[
     #                   [{"name": "psi0_eq", "opts": {"marker": ".", "label": r"$\psi_{0}$"}},

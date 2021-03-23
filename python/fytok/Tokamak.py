@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.integrate
 from spdm.data.Field import Field
+from spdm.data.Function import Function
 from spdm.data.Node import Node, _next_
 from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.logger import logger
@@ -168,16 +169,6 @@ class Tokamak(PhysicalGraph):
     def save(self, uri, *args, **kwargs):
         raise NotImplementedError()
 
-    def plot_machine(self, axis=None, *args,  **kwargs):
-        if axis is None:
-            axis = plt.gca()
-
-        self.wall.plot(axis, **kwargs.get("wall", {}))
-
-        self.pf_active.plot(axis, **kwargs.get("pf_active", {}))
-
-        return axis
-
     def plot(self, axis=None, *args,   **kwargs):
 
         if axis is None:
@@ -209,6 +200,9 @@ class Tokamak(PhysicalGraph):
             * self.equilibrium.profiles_1d.dpsi_drho_tor \
             / (4.0*(scipy.constants.pi**2))
 
+        norm_rho_tor = np.linspace(0, 1.0, len(gamma))
+
+        gamma = Function(norm_rho_tor, gamma)
         j_total = -gamma.derivative  \
             / self.equilibrium.profiles_1d.rho_tor[-1]**2 \
             * self.equilibrium.profiles_1d.dpsi_drho_tor  \
@@ -216,15 +210,15 @@ class Tokamak(PhysicalGraph):
             / (scipy.constants.mu_0*self.vacuum_toroidal_field.b0) \
             * (scipy.constants.pi)
 
-        j_total.value[1:] /= self.equilibrium.profiles_1d.dvolume_drho_tor.value[1:]
+        j_total[1:] /= self.equilibrium.profiles_1d.dvolume_drho_tor[1:]
 
-        j_total.value[0] = 2*j_total.value[1]-j_total.value[2]
+        j_total[0] = 2*j_total[1]-j_total[2]
 
         self.core_transport[_next_] = {"identifier": {"name": f"Dummy transport", "index": 0}}
 
         self.core_sources[_next_] = {"identifier": {"name": f"Dummy source", "index": 0}}
 
-        self.core_sources[-1].profiles_1d.j_parallel = j_total.value
+        self.core_sources[-1].profiles_1d.j_parallel = j_total
 
         self.core_sources[-1].profiles_1d.conductivity_parallel = 1.0e-8
 

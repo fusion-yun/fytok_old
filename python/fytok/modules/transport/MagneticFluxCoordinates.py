@@ -125,9 +125,9 @@ def find_critical(fun2d: Field):
     #             print('%r generated an exception: %s' % (i, exc))
 
 
-class FluxSurface:
+class MagneticFluxCoordinates:
     r"""
-        Flux surface average
+        Magnetic Flux Coordinates
 
         .. math::
             V^{\prime}\left(\rho\right)=\frac{\partial V}{\partial\rho}=2\pi\int_{0}^{2\pi}\sqrt{g}d\theta=2\pi\oint\frac{R}{\left|\nabla\rho\right|}dl
@@ -135,13 +135,14 @@ class FluxSurface:
         .. math::
             \left\langle\alpha\right\rangle\equiv\frac{2\pi}{V^{\prime}}\int_{0}^{2\pi}\alpha\sqrt{g}d\theta=\frac{2\pi}{V^{\prime}}\varoint\alpha\frac{R}{\left|\nabla\rho\right|}dl
 
-
-        psi_norm    : 0 < psi_norm < 1   , np.linspace(0,1)
-        theta       : 0 <= theta   < 2pi , perdical , np.linspace(0,2pi,endpoint=False)
-
+        Magnetic Flux Coordinates
+        psi         :                     ,  flux function , $B \cdot \nabla \psi=0$ need not to be the poloidal flux funcion $\Psi$
+        theta       : 0 <= theta   < 2*pi ,  poloidal angle
+        phi         : 0 <= phi     < 2*pi ,  toroidal angle
     """
 
     def __init__(self, psirz: Field, *args,
+                 b0=None,
                  fvac=None,
                  ffprime=None,
                  psi_norm=None,
@@ -160,6 +161,7 @@ class FluxSurface:
         self._grid_type = grid_type
         self._grid_shape = grid_shape
 
+        self._b0 = b0
         self._fvac = fvac
         self._ffprime = ffprime
         self._psi_norm = psi_norm if psi_norm is not None else [0.01, 0.99]
@@ -195,6 +197,10 @@ class FluxSurface:
     @cached_property
     def cocos_flag(self):
         return 1.0 if self.psi_boundary > self.psi_axis else -1.0
+
+    @property
+    def b0(self):
+        return self._b0
 
     @cached_property
     def psi_axis(self):
@@ -386,11 +392,6 @@ class FluxSurface:
         return self.mesh.xy[1]
 
     #################################
-
-    def psi_norm_rz(self, r, z):
-        psi = self._psirz(r, z)
-        return (psi-self.psi_boundary)/(self.psi_axis-self.psi_boundary)
-
     @cached_property
     def grad_psi(self):
         r = self.mesh.xy[0]
@@ -400,8 +401,7 @@ class FluxSurface:
     @cached_property
     def B2(self):
         r = self.mesh.xy[0]
-        z = self.mesh.xy[1]
-        return (self.norm_grad_psi**2)+(self.fpol(self.psi_norm_rz(r, z))**2)/(r**2)
+        return (self.norm_grad_psi**2) + self.fpol.reshape(list(self.drho_tor_dpsi.shape)+[1]) ** 2/(r**2)
 
     @cached_property
     def norm_grad_psi(self):
@@ -517,8 +517,7 @@ class FluxSurface:
     @cached_property
     def rho_tor(self):
         """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0  [m]"""
-        data = np.sqrt(self.phi/(scipy.constants.pi * self.b0))
-        return Function(self.psi_norm, data, unit="m")
+        return Function(self.psi_norm,  np.sqrt(self.phi/(scipy.constants.pi * self.b0)), unit="m")
 
     @cached_property
     def rho_tor_norm(self):
@@ -526,7 +525,7 @@ class FluxSurface:
 
     @cached_property
     def norm_grad_rho_tor(self):
-        return self.norm_grad_psi*self.drho_tor_dpsi
+        return self.norm_grad_psi * self.drho_tor_dpsi.reshape(list(self.drho_tor_dpsi.shape)+[1])
 
     @cached_property
     def drho_tor_dpsi(self)	:
@@ -538,7 +537,6 @@ class FluxSurface:
                                         =\frac{q}{2\pi B_{0}\rho_{tor}}
 
         """
-
         return Function(self.psi_norm, self.q/(2.0*scipy.constants.pi*self.b0))
 
     @cached_property
