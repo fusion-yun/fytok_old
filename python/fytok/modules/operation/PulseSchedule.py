@@ -1,7 +1,6 @@
 from functools import cached_property
 import numpy as np
 from spdm.data.PhysicalGraph import PhysicalGraph
-from fytok.Misc import Signal
 
 
 class PulseSchedule(PhysicalGraph):
