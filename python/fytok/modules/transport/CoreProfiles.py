@@ -1,7 +1,4 @@
-
-
-from functools import cached_property, lru_cache
-
+from functools import cached_property 
 
 from fytok.util.Plot import plot_profiles
 from fytok.util.RadialGrid import RadialGrid
@@ -16,7 +13,7 @@ class CoreProfiles(PhysicalGraph):
     """
     IDS = "core_profiles"
 
-    def __init__(self,   *args,  ** kwargs):
+    def __init__(self, *args,  ** kwargs):
         super().__init__(*args, ** kwargs)
 
         # self.vacuum_toroidal_field = tokamak.vacuum_toroidal_field
@@ -563,11 +560,11 @@ class CoreProfiles(PhysicalGraph):
 
     @cached_property
     def profiles_1d(self):
-        return CoreProfiles.Profiles1D(self._cache.profiles_1d, parent=self)
+        return CoreProfiles.Profiles1D(self["profiles_1d"], parent=self)
 
     @cached_property
     def global_quantities(self):
-        return CoreProfiles.GlobalQuantities(self._cache.global_quantities, core_profiles=self)
+        return CoreProfiles.GlobalQuantities(self["global_quantities"], core_profiles=self)
 
     def plot(self, profiles, fig_axis=None, axis=None):
         return plot_profiles(

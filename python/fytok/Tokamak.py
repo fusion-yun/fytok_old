@@ -80,7 +80,7 @@ class Tokamak(PhysicalGraph):
     @cached_property
     def core_transport(self):
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return CoreTransport(self["core_transport"],   parent=self)
+        return CoreTransport(self["core_transport"] or [],   parent=self)
 
     @cached_property
     def core_sources(self):
@@ -88,7 +88,7 @@ class Tokamak(PhysicalGraph):
             Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return CoreSources(self["core_sources"],   parent=self)
+        return CoreSources(self["core_sources"] or [],   parent=self)
 
     @cached_property
     def edge_transports(self):
@@ -97,18 +97,18 @@ class Tokamak(PhysicalGraph):
         """
         return EdgeTransport(self["edge_transport.mode"], parent=self)
 
-    @ cached_property
+    @cached_property
     def edge_sources(self):
         """Edge plasma sources. Energy terms correspond to the full kinetic energy equation
          (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
         return CoreSources(self["edge_sources.mode"], parent=self)
 
-    @ cached_property
+    @cached_property
     def transport(self):
         return TransportSolver(self["transport_solver"], parent=self)
 
-    @ cached_property
+    @cached_property
     def constraints(self):
         return PhysicalGraph(self["constraints"], parent=self)
 
@@ -194,10 +194,10 @@ class Tokamak(PhysicalGraph):
                 core_profiles
         """
 
-        gamma = self.equilibrium.profiles_1d.dvolume_drho_tor  \
-            * self.equilibrium.profiles_1d.gm2    \
-            / self.equilibrium.profiles_1d.fpol \
-            * self.equilibrium.profiles_1d.dpsi_drho_tor \
+        gamma = self.equilibrium.magnetic_flux_coordinates.dvolume_drho_tor  \
+            * self.equilibrium.magnetic_flux_coordinates.gm2    \
+            / self.equilibrium.magnetic_flux_coordinates.fpol \
+            * self.equilibrium.magnetic_flux_coordinates.dpsi_drho_tor \
             / (4.0*(scipy.constants.pi**2))
 
         rho_tor_norm = np.linspace(0, 1.0, len(gamma))
@@ -205,13 +205,13 @@ class Tokamak(PhysicalGraph):
         gamma = Function(rho_tor_norm, gamma)
 
         j_total = -gamma.derivative  \
-            / self.equilibrium.profiles_1d.rho_tor[-1]**2 \
-            * self.equilibrium.profiles_1d.dpsi_drho_tor  \
-            * (self.equilibrium.profiles_1d.fpol**2) \
+            / self.equilibrium.magnetic_flux_coordinates.rho_tor[-1]**2 \
+            * self.equilibrium.magnetic_flux_coordinates.dpsi_drho_tor  \
+            * (self.equilibrium.magnetic_flux_coordinates.fpol**2) \
             / (scipy.constants.mu_0*self.vacuum_toroidal_field.b0) \
             * (scipy.constants.pi)
 
-        j_total[1:] /= self.equilibrium.profiles_1d.dvolume_drho_tor[1:]
+        j_total[1:] /= self.equilibrium.magnetic_flux_coordinates.dvolume_drho_tor[1:]
 
         j_total[0] = 2*j_total[1]-j_total[2]
 
@@ -257,21 +257,20 @@ class Tokamak(PhysicalGraph):
 
             def dn_ped(x): return dn_core(x_ped) * np.exp((x-x_ped)/(1.0-x_ped))
 
-            integral_src = -d_ped * H * dn_ped(rho_tor_norm)/(rho_tor_boundary**2)
+            integral_src = Function(rho_tor_norm, -d_ped * H * dn_ped(rho_tor_norm)/(rho_tor_boundary**2))
 
-            self.core_transport.entry[-1].profiles_1d[sp].particles.d = \
-                lambda x:   2.0 * d_ped + (x**2) if x <= x_ped else d_ped
+            self.core_transport[-1].profiles_1d[sp].particles.d = lambda x: 2.0 * d_ped + (x**2)
 
-            self.core_transport.entry[-1].profiles_1d[sp].particles.v = \
-                (self.core_transport.entry[-1].profiles_1d[sp].particles.d * dn_core(rho_tor_norm) - d_ped*dn_ped(rho_tor_norm)) \
+            self.core_transport[-1].profiles_1d[sp].particles.v = \
+                (self.core_transport[-1].profiles_1d[sp].particles.d(rho_tor_norm) * dn_core(rho_tor_norm) - d_ped*dn_ped(rho_tor_norm)) \
                 / (rho_tor_boundary) / n_core(rho_tor_norm) * (rho_tor_norm < x_ped)
 
-            self.core_sources.entry[-1].profiles_1d[sp].particles = n_s * integral_src.derivative/vpr
+            self.core_sources[-1].profiles_1d[sp].particles = n_s * integral_src.derivative/vpr
 
             desc["density"] = n_s * (n_core(rho_tor_norm)*(rho_tor_norm < x_ped) +
                                      n_ped(rho_tor_norm) * (rho_tor_norm >= x_ped))
 
             self.core_profiles.profiles_1d[sp] |= desc
-      
+
         if "electrons" not in spec:
             raise NotImplementedError()

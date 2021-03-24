@@ -1,5 +1,3 @@
-
-
 import matplotlib.pyplot as plt
 import numpy as np
 from fytok.Tokamak import Tokamak
@@ -28,7 +26,7 @@ if __name__ == "__main__":
              )
 
     fig.gca().contourf(tok.equilibrium.magnetic_flux_coordinates.R,
-                       tok.equilibrium.magnetic_flux_coordinates.Z, tok.equilibrium.magnetic_flux_coordinates.B2)
+                       tok.equilibrium.magnetic_flux_coordinates.Z, tok.equilibrium.magnetic_flux_coordinates.dl)
 
     plt.savefig("/home/salmon/workspace/output/contour.svg")
 
@@ -78,7 +76,7 @@ if __name__ == "__main__":
         grid=True)\
         .savefig("/home/salmon/workspace/output/profiles_1d.svg")
 
-    # tok.initialize_profile()
+    tok.initialize_profile()
 
     
     # plot_profiles(tok.core_profiles.profiles_1d,
