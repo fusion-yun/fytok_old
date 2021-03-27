@@ -32,10 +32,15 @@ if __name__ == "__main__":
         levels=32,
         linewidths=0.1
     )
+
     tok.plot(fig.gca(),
              wall={"limiter": {"edgecolor": "green"}, "vessel": {"edgecolor": "blue"}},
              pf_active={"facecolor": 'red'},
-             equilibrium={"boundary": False, "mesh": False}
+             equilibrium={"boundary": True, "mesh": True}
              )
+
+    # bdry = np.asarray([[r, z] for r, z in tok.equilibrium.magnetic_flux_coordinates.find_by_psinorm(1.0)]).T
+
+    # fig.gca().plot(bdry[ 0], bdry[1])
 
     plt.savefig("/home/salmon/workspace/output/iter_contour.svg")

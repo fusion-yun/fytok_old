@@ -26,6 +26,7 @@ logger.debug(f"Using SciPy Version: {scipy.__version__}")
 def power2(a):
     return np.inner(a, a)
 
+
 class MagneticFluxCoordinates:
     r"""
         Magnetic Flux Coordinates
@@ -75,7 +76,7 @@ class MagneticFluxCoordinates:
 
         for r, z, psi, D in self._psirz.find_peak():
             p = PhysicalGraph({"r": r, "z": z, "psi": psi})
-            
+
             if D < 0.0:  # saddle/X-point
                 xpoints.append(p)
             else:  # extremum/ O-point
@@ -88,7 +89,7 @@ class MagneticFluxCoordinates:
         if not opoints:
             raise RuntimeError(f"Can not find o-point!")
         else:
-            
+
             bbox = self._psirz.coordinates.mesh.bbox
             Rmid = (bbox[0][0] + bbox[0][1])/2.0
             Zmid = (bbox[1][0] + bbox[1][1])/2.0
@@ -153,16 +154,16 @@ class MagneticFluxCoordinates:
         for p in u:
             for t in v:
                 psival = p*(psi1-psi0)+psi0
-                
+
                 r0 = R0
                 z0 = Z0
                 r1 = R0+Rm*sin(t+theta0)
                 z1 = Z0+Rm*cos(t+theta0)
+                
                 if not np.isclose(self._psirz(r1, z1), psival):
                     try:
-                        def func(r): return self._psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1) - psival
-
-                        sol = root_scalar(func,  bracket=[0, 2], method='brentq')
+                        def func(r): return float(self._psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1)) - psival
+                        sol = root_scalar(func,  bracket=[0, 1], method='brentq')
                     except ValueError as error:
                         raise ValueError(f"Find root fialed! {error} {psival}")
 
@@ -286,33 +287,33 @@ class MagneticFluxCoordinates:
 
         return CurvilinearMesh([rz[:, :, 0], rz[:, :, 1]], [u, v], cycle=[False, True])
 
-    @property
+    @ property
     def mesh(self):
         if self._mesh is None:
             self._mesh = self.construct_flux_mesh()
         return self._mesh
 
-    @property
+    @ property
     def R(self):
         return self.mesh.xy[0]
 
-    @property
+    @ property
     def Z(self):
         return self.mesh.xy[1]
 
     #################################
-    @cached_property
+    @ cached_property
     def grad_psi(self):
         r = self.mesh.xy[0]
         z = self.mesh.xy[1]
         return self._psirz(r, z, dx=1), self._psirz(r, z, dy=1)
 
-    @cached_property
+    @ cached_property
     def B2(self):
         r = self.mesh.xy[0]
         return (self.norm_grad_psi**2) + self.fpol.reshape(list(self.drho_tor_dpsi.shape)+[1]) ** 2/(r**2)
 
-    @cached_property
+    @ cached_property
     def norm_grad_psi(self):
         r"""
             .. math:: V^{\prime} =   R / |\nabla \psi|
@@ -320,7 +321,7 @@ class MagneticFluxCoordinates:
         grad_psi_r, grad_psi_z = self.grad_psi
         return np.sqrt(grad_psi_r**2+grad_psi_z**2)
 
-    @cached_property
+    @ cached_property
     def dl(self):
         return np.asarray([self.mesh.axis(idx, axis=0).geo_object.dl(self.mesh.uv[1]) for idx in range(self.mesh.shape[0])])
 
@@ -334,15 +335,15 @@ class MagneticFluxCoordinates:
         return Function(self.psi_norm, self._surface_integral(J, *args, **kwargs) / self.vprime * (2*scipy.constants.pi))
     #################################
 
-    @property
+    @ property
     def psi_norm(self):
         return self.mesh.uv[0]
 
-    @cached_property
+    @ cached_property
     def psi(self):
         return self.psi_norm * (self.psi_boundary-self.psi_axis) + self.psi_axis
 
-    @cached_property
+    @ cached_property
     def vprime(self):
         r"""
             .. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
@@ -350,19 +351,19 @@ class MagneticFluxCoordinates:
         """
         return Function(self.psi_norm, self._surface_integral(self.R/self.norm_grad_psi) * (2*scipy.constants.pi))
 
-    @cached_property
+    @ cached_property
     def dvolume_dpsi(self):
         r"""
             Radial derivative of the volume enclosed in the flux surface with respect to Psi[m ^ 3.Wb ^ -1].
         """
         return self.vprime*self.cocos_flag
 
-    @cached_property
+    @ cached_property
     def volume(self):
         """Volume enclosed in the flux surface[m ^ 3]"""
         return self.vprime.antiderivative
 
-    @cached_property
+    @ cached_property
     def ffprime(self):
         """	Derivative of F w.r.t. Psi, multiplied with F  [T^2.m^2/Wb]. """
         d = self._ffprime
@@ -375,12 +376,12 @@ class MagneticFluxCoordinates:
 
         return res
 
-    @property
+    @ property
     def f_df_dpsi(self):
         """	Derivative of F w.r.t. Psi, multiplied with F  [T^2.m^2/Wb]. """
         return self.ffprime
 
-    @cached_property
+    @ cached_property
     def fpol(self):
         """Diamagnetic function (F=R B_Phi)  [T.m]."""
         psi_axis = self.psi_axis
@@ -388,12 +389,12 @@ class MagneticFluxCoordinates:
         f2 = self.ffprime.antiderivative * (2.0*(psi_boundary-psi_axis)) + self._fvac**2
         return Function(self.psi_norm, np.sqrt(f2), unit="T.m")
 
-    @property
+    @ property
     def f(self):
         """Diamagnetic function (F=R B_Phi)  [T.m]."""
         return self.fpol
 
-    @cached_property
+    @ cached_property
     def q(self):
         r"""
             Safety factor
@@ -402,17 +403,17 @@ class MagneticFluxCoordinates:
         """
         return Function(self.psi_norm, self.surface_average(1.0/(self.R**2)) * self.fpol * self.vprime / (scipy.constants.pi*2)**2)
 
-    @cached_property
+    @ cached_property
     def dvolume_drho_tor(self)	:
         """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
         return Function(self.psi_norm, self.dvolume_dpsi * self.dpsi_drho_tor)
 
-    @cached_property
+    @ cached_property
     def dvolume_dpsi_norm(self):
         """Radial derivative of the volume enclosed in the flux surface with respect to Psi[m ^ 3.Wb ^ -1]. """
         return NotImplemented
 
-    @cached_property
+    @ cached_property
     def phi(self):
         r"""
             Note:
@@ -423,20 +424,20 @@ class MagneticFluxCoordinates:
         """
         return self.q.antiderivative
 
-    @cached_property
+    @ cached_property
     def rho_tor(self):
         """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0  [m]"""
         return Function(self.psi_norm,  np.sqrt(self.phi/(scipy.constants.pi * self.b0)), unit="m")
 
-    @cached_property
+    @ cached_property
     def rho_tor_norm(self):
         return Function(self.psi_norm, self.rho_tor/self.rho_tor[-1])
 
-    @cached_property
+    @ cached_property
     def norm_grad_rho_tor(self):
         return self.norm_grad_psi * self.drho_tor_dpsi.reshape(list(self.drho_tor_dpsi.shape)+[1])
 
-    @cached_property
+    @ cached_property
     def drho_tor_dpsi(self)	:
         r"""
             .. math ::
@@ -448,7 +449,7 @@ class MagneticFluxCoordinates:
         """
         return Function(self.psi_norm, self.q/(2.0*scipy.constants.pi*self.b0))
 
-    @cached_property
+    @ cached_property
     def dpsi_drho_tor(self)	:
         """
             Derivative of Psi with respect to Rho_Tor[Wb/m].
@@ -458,7 +459,7 @@ class MagneticFluxCoordinates:
         """
         return Function(self.psi_norm, (2.0*scipy.constants.pi*self.b0)*self.rho_tor/self.q, unit="Wb/m")
 
-    @cached_property
+    @ cached_property
     def gm1(self):
         r"""
             Flux surface averaged 1/R ^ 2  [m ^ -2]
@@ -466,7 +467,7 @@ class MagneticFluxCoordinates:
         """
         return self.surface_average(1.0/(self.R**2))
 
-    @cached_property
+    @ cached_property
     def gm2(self):
         r"""
             Flux surface averaged .. math:: \left | \nabla \rho_{tor}\right|^2/R^2  [m^-2]
@@ -474,7 +475,7 @@ class MagneticFluxCoordinates:
         """
         return self.surface_average((self.norm_grad_rho_tor/self.R)**2)
 
-    @cached_property
+    @ cached_property
     def gm3(self):
         r"""
             Flux surface averaged .. math:: \left | \nabla \rho_{tor}\right|^2  [-]
@@ -482,7 +483,7 @@ class MagneticFluxCoordinates:
         """
         return self.surface_average(self.norm_grad_rho_tor**2)
 
-    @cached_property
+    @ cached_property
     def gm4(self):
         r"""
             Flux surface averaged 1/B ^ 2  [T ^ -2]
@@ -490,7 +491,7 @@ class MagneticFluxCoordinates:
         """
         return self.surface_average(1.0/self.B2)
 
-    @cached_property
+    @ cached_property
     def gm5(self):
         r"""
             Flux surface averaged B ^ 2  [T ^ 2]
@@ -498,7 +499,7 @@ class MagneticFluxCoordinates:
         """
         return self.surface_average(self.B2)
 
-    @cached_property
+    @ cached_property
     def gm6(self):
         r"""
             Flux surface averaged  .. math:: \left | \nabla \rho_{tor}\right|^2/B^2  [T^-2]
@@ -506,7 +507,7 @@ class MagneticFluxCoordinates:
         """
         return self.surface_average(self.norm_grad_rho_tor**2/self.B2)
 
-    @cached_property
+    @ cached_property
     def gm7(self):
         r"""
             Flux surface averaged .. math: : \left | \nabla \rho_{tor}\right |  [-]
@@ -514,7 +515,7 @@ class MagneticFluxCoordinates:
         """
         return self.surface_average(self.norm_grad_rho_tor)
 
-    @cached_property
+    @ cached_property
     def gm8(self):
         r"""
             Flux surface averaged R[m]
@@ -522,7 +523,7 @@ class MagneticFluxCoordinates:
         """
         return self.surface_average(self.R)
 
-    @cached_property
+    @ cached_property
     def gm9(self):
         r"""
             Flux surface averaged 1/R[m ^ -1]
@@ -530,58 +531,58 @@ class MagneticFluxCoordinates:
         """
         return self.surface_average(1.0/self.R)
 
-    @cached_property
+    @ cached_property
     def magnetic_shear(self):
         """Magnetic shear, defined as rho_tor/q . dq/drho_tor[-]	 """
         return Function(self.psi_norm, self.rho_tor/self.q * self.q.derivative)
 
-    @cached_property
+    @ cached_property
     def r_inboard(self):
         """Radial coordinate(major radius) on the inboard side of the magnetic axis[m]"""
         return NotImplemented
 
-    @cached_property
+    @ cached_property
     def r_outboard(self):
         """Radial coordinate(major radius) on the outboard side of the magnetic axis[m]"""
         return NotImplemented
 
-    @cached_property
+    @ cached_property
     def rho_volume_norm(self)	:
         """Normalised square root of enclosed volume(radial coordinate). The normalizing value is the enclosed volume at the equilibrium boundary
             (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation)[-]"""
         return NotImplemented
 
-    @cached_property
+    @ cached_property
     def area(self):
         """Cross-sectional area of the flux surface[m ^ 2]"""
         return NotImplemented
 
-    @cached_property
+    @ cached_property
     def darea_dpsi(self):
         """Radial derivative of the cross-sectional area of the flux surface with respect to psi[m ^ 2.Wb ^ -1]. """
         return NotImplemented
 
-    @cached_property
+    @ cached_property
     def darea_drho_tor(self)	:
         """Radial derivative of the cross-sectional area of the flux surface with respect to rho_tor[m]"""
         return NotImplemented
 
-    @cached_property
+    @ cached_property
     def surface(self):
         """Surface area of the toroidal flux surface[m ^ 2]"""
         return NotImplemented
 
-    @cached_property
+    @ cached_property
     def trapped_fraction(self)	:
         """Trapped particle fraction[-]"""
         return NotImplemented
 
-    @cached_property
+    @ cached_property
     def b_field_max(self):
         """Maximum(modulus(B)) on the flux surface(always positive, irrespective of the sign convention for the B-field direction)[T]"""
         return NotImplemented
 
-    @cached_property
+    @ cached_property
     def beta_pol(self):
         """Poloidal beta profile. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip ^ 2][-]"""
         return NotImplemented
