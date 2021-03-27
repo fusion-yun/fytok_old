@@ -30,8 +30,8 @@ class Tokamak(PhysicalGraph):
     def __init__(self,  data=None,  *args, **kwargs):
         super().__init__(data, *args,  **kwargs)
 
-        self._time = PhysicalGraph(self["equilibrium.time"].__fetch__())
-        self._vacuum_toroidal_field = PhysicalGraph(self["equilibrium.vacuum_toroidal_field"].__fetch__())
+        # self._time = PhysicalGraph(self["equilibrium.time"].__fetch__())
+        # self._vacuum_toroidal_field = PhysicalGraph(self["equilibrium.vacuum_toroidal_field"].__fetch__())
 
     # --------------------------------------------------------------------------
 
@@ -61,7 +61,7 @@ class Tokamak(PhysicalGraph):
     def equilibrium(self):
         return Equilibrium(self["equilibrium.time_slice"],
                            vacuum_toroidal_field=self["equilibrium.vacuum_toroidal_field"].__fetch__(),
-                            parent=self)
+                           parent=self)
 
     @cached_property
     def core_profiles(self):
@@ -107,11 +107,14 @@ class Tokamak(PhysicalGraph):
         if axis is None:
             axis = plt.gca()
 
-        self.wall.plot(axis, **kwargs.get("wall", {}))
+        if kwargs.get("wall", True) is not False:
+            self.wall.plot(axis, **kwargs.get("wall", {}))
 
-        self.pf_active.plot(axis, **kwargs.get("pf_active", {}))
+        if kwargs.get("pf_active", True) is not False:
+            self.pf_active.plot(axis, **kwargs.get("pf_active", {}))
 
-        self.equilibrium.plot(axis, **kwargs.get("equilibrium", {}))
+        if kwargs.get("equilibrium", True) is not False:
+            self.equilibrium.plot(axis, **kwargs.get("equilibrium", {}))
 
         axis.set_aspect('equal')
         axis.axis('scaled')

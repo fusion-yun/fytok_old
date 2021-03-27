@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from fytok.util.RadialGrid import RadialGrid
+from spdm.data.AttributeTree import AttributeTree
 from spdm.data.Coordinates import Coordinates
 from spdm.data.Field import Field
 from spdm.data.Function import Function
@@ -12,7 +13,6 @@ from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.logger import logger
 from spdm.util.utilities import try_get
 
-from ...FyModule import FyModule
 from .MagneticFluxCoordinates import MagneticFluxCoordinates
 
 TOLERANCE = 1.0e-6
@@ -103,7 +103,7 @@ class Equilibrium(PhysicalGraph):
 
     @cached_property
     def profiles_1d(self):
-        return Equilibrium.Profiles1D(self["profiles_1d"].__fetch__(), parent=self)
+        return Equilibrium.Profiles1D(self["profiles_1d"], parent=self)
 
     @cached_property
     def profiles_2d(self):
@@ -111,7 +111,7 @@ class Equilibrium(PhysicalGraph):
 
     @cached_property
     def global_quantities(self):
-        return Equilibrium.GlobalQuantities(self["global_quantities"].__fetch__(), parent=self)
+        return Equilibrium.GlobalQuantities(self["global_quantities"], parent=self)
 
     @cached_property
     def boundary(self):
@@ -131,7 +131,7 @@ class Equilibrium(PhysicalGraph):
 
     @cached_property
     def magnetic_flux_coordinates(self):
-        ffprime = self["profiles_1d.f_df_dpsi"].__fetch__()
+        ffprime = self["profiles_1d.f_df_dpsi"]
         return MagneticFluxCoordinates(
             self.profiles_2d.psi,
             wall=self._parent.wall,
@@ -489,26 +489,27 @@ class Equilibrium(PhysicalGraph):
 
         @property
         def grid_type(self):
-            return self._parent.coordinate_system.grid_type
+            return self["grid_type"]
 
-        @property
+        @cached_property
         def grid(self):
-            return self._parent.coordinate_system.grid
+            return AttributeTree(self["grid"])
 
         @property
         def r(self):
             """Values of the major radius on the grid  [m] """
-            return self._parent.coordinate_system.r
+            return self["r"]
 
         @property
         def z(self):
             """Values of the Height on the grid  [m] """
-            return self._parent.coordinate_system.z
+            return self["z"]
 
         @cached_property
         def psi(self):
             """Values of the poloidal flux at the grid in the poloidal plane  [Wb]. """
-            return Field(self["psi"].__fetch__(), coordinates=self._parent.coordinate_system, unit="Wb")
+
+            return Field(self["psi"], coordinates=Coordinates(self.grid.dim1, self.grid.dim2), unit="Wb")
 
         @cached_property
         def theta(self):
@@ -658,13 +659,13 @@ class Equilibrium(PhysicalGraph):
         if axis is None:
             axis = plt.gca()
 
-        R = self.profiles_2d.r
-        Z = self.profiles_2d.z
-        psi = self.profiles_2d.psi(R, Z)
+        # R = self.profiles_2d.r
+        # Z = self.profiles_2d.z
+        # psi = self.profiles_2d.psi(R, Z)
 
-        axis.contour(R[1:-1, 1:-1], Z[1:-1, 1:-1], psi[1:-1, 1:-1], levels=levels, linewidths=0.2)
+        # axis.contour(R[1:-1, 1:-1], Z[1:-1, 1:-1], psi[1:-1, 1:-1], levels=levels, linewidths=0.2)
 
-        if oxpoints:
+        if oxpoints is not False:
             axis.plot(self.global_quantities.magnetic_axis.r,
                       self.global_quantities.magnetic_axis.z,
                       'g.',
@@ -672,16 +673,16 @@ class Equilibrium(PhysicalGraph):
                       markersize=2,
                       label="Magnetic axis")
 
-        if len(self.boundary.x_point) > 0:
-            for idx, p in enumerate(self.boundary.x_point):
-                axis.plot(p.r, p.z, 'rx')
-                axis.text(p.r, p.z, idx,
-                          horizontalalignment='center',
-                          verticalalignment='center')
+            if len(self.boundary.x_point) > 0:
+                for idx, p in enumerate(self.boundary.x_point):
+                    axis.plot(p.r, p.z, 'rx')
+                    axis.text(p.r, p.z, idx,
+                              horizontalalignment='center',
+                              verticalalignment='center')
 
-            axis.plot([], [], 'rx', label="X-Point")
+                axis.plot([], [], 'rx', label="X-Point")
 
-        if boundary:
+        if boundary is not False:
             boundary_points = np.vstack([self.boundary.outline.r,
                                          self.boundary.outline.z]).T
 
@@ -689,7 +690,7 @@ class Equilibrium(PhysicalGraph):
                                        linewidth=0.5, fill=False, closed=True))
             axis.plot([], [], 'r--', label="Separatrix")
 
-        if not not mesh:
+        if mesh is not False:
             for idx in range(0, self.magnetic_flux_coordinates.mesh.shape[0], 4):
                 ax0 = self.magnetic_flux_coordinates.mesh.axis(idx, axis=0)
                 axis.add_patch(plt.Polygon(ax0.xy.T, fill=False, closed=True, color="b", linewidth=0.2))

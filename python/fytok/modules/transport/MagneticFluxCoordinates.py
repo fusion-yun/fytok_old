@@ -1,129 +1,30 @@
-
 import collections
-import inspect
 from functools import cached_property
-from itertools import cycle
 
 import numpy as np
 import scipy.constants
 import scipy.integrate
 from numpy import arctan2, cos, sin, sqrt
 from packaging import version
-from scipy.ndimage.filters import maximum_filter, minimum_filter
-from scipy.ndimage.morphology import binary_erosion, generate_binary_structure
-from scipy.optimize import fsolve, root_scalar
+
 from spdm.data.Field import Field
-from spdm.data.mesh import Mesh
 from spdm.data.Function import Function
+from spdm.data.mesh import Mesh
 from spdm.data.mesh.CurvilinearMesh import CurvilinearMesh
 from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.logger import logger
+from scipy.optimize import fsolve, root_scalar
 
-if version.parse(scipy.__version__) <= version.parse("1.4.1"):
-    from scipy.integrate import cumtrapz as cumtrapz
-else:
-    from scipy.integrate import cumulative_trapezoid as cumtrapz
+# if version.parse(scipy.__version__) <= version.parse("1.4.1"):
+#     from scipy.integrate import cumtrapz as cumtrapz
+# else:
+#     from scipy.integrate import cumulative_trapezoid as cumtrapz
 
 logger.debug(f"Using SciPy Version: {scipy.__version__}")
 
 
 def power2(a):
     return np.inner(a, a)
-
-
-def find_peaks_2d_image(image):
-    """
-    Takes an image and detect the peaks usingthe local maximum filter.
-    Returns a boolean mask of the peaks (i.e. 1 when
-    the pixel's value is the neighborhood maximum, 0 otherwise)
-    """
-
-    # define an 8-connected neighborhood
-    neighborhood = generate_binary_structure(2, 2)
-
-    # apply the local maximum filter; all pixel of maximal value
-    # in their neighborhood are set to 1
-    local_max = maximum_filter(image, footprint=neighborhood) == image
-    # local_max is a mask that contains the peaks we are
-    # looking for, but also the background.
-    # In order to isolate the peaks we must remove the background from the mask.
-
-    # we create the mask of the background
-    background = (image == 0)
-
-    # a little technicality: we must erode the background in order to
-    # successfully subtract it form local_max, otherwise a line will
-    # appear along the background border (artifact of the local maximum filter)
-    eroded_background = binary_erosion(background, structure=neighborhood, border_value=1)
-
-    # we obtain the final mask, containing only peaks,
-    # by removing the background from the local_max mask (xor operation)
-    detected_peaks = local_max ^ eroded_background
-
-    idxs = np.where(detected_peaks)
-
-    for n in range(len(idxs[0])):
-        yield idxs[0][n], idxs[1][n]
-
-
-def find_critical(fun2d: Field):
-
-    fxy2 = fun2d.derivative(dx=1)**2+fun2d.derivative(dy=1)**2
-    X, Y = fun2d.coordinates.mesh.points
-    span = 1
-    for ix, iy in find_peaks_2d_image(-fxy2[span:-span, span:-span]):
-        ix += span
-        iy += span
-        x = X[ix, iy]
-        y = Y[ix, iy]
-        if abs(fxy2[ix, iy]) > 1.0e-5:  # FIXME: replace magnetic number
-            xmin = X[ix-1, iy]
-            xmax = X[ix+1, iy]
-            ymin = Y[ix, iy-1]
-            ymax = Y[ix, iy+1]
-
-            def f(r):
-                if r[0] < xmin or r[0] > xmax or r[1] < ymin or r[1] > ymax:
-                    raise LookupError(r)
-                fx = fun2d.derivative(r[0], r[1], dx=1)
-                fy = fun2d.derivative(r[0], r[1], dy=1)
-
-                return fx, fy
-
-            def fprime(r):
-                fxx = fun2d.derivative(r[0], r[1], dx=2)
-                fyy = fun2d.derivative(r[0], r[1], dy=2)
-                fxy = fun2d.derivative(r[0], r[1], dy=1, dx=1)
-
-                return [[fxx, fxy], [fxy, fyy]]  # FIXME: not sure, need double check
-
-            try:
-                x1, y1 = fsolve(f, [x, y],   fprime=fprime)
-            except LookupError:
-                continue
-            else:
-                x = x1
-                y = y1
-
-        # D = fxx * fyy - (fxy)^2
-        D = fun2d.derivative(x, y, dx=2) * fun2d.derivative(x, y, dy=2) - (fun2d.derivative(x, y,  dx=1, dy=1))**2
-
-        yield x, y, D
-
-    # RZ = np.full([npsi.shape[0], ntheta.shape[0], 2], np.nan)
-    # def func(psival, ntheta=ntheta):
-    #     return [[r, z] for r, z in self.find_by_psinorm(psival, ntheta)]
-    # # We can use a with statement to ensure threads are cleaned up promptly
-    # with futures.ThreadPoolExecutor( ) as executor:
-    #     # Start the load operations and mark each future with its URL
-    #     future_to_i = {executor.submit(func, psi): i for i, psi in enumerate(npsi)}
-    #     for future in futures.as_completed(future_to_i):
-    #         i = future_to_i[future]
-    #         try:
-    #             RZ[i] = future.result()
-    #         except Exception as exc:
-    #             print('%r generated an exception: %s' % (i, exc))
-
 
 class MagneticFluxCoordinates:
     r"""
@@ -148,6 +49,7 @@ class MagneticFluxCoordinates:
                  psi_norm=None,
                  grid_type=None,
                  grid_shape=[64, 128],
+                 parent=None,
                  ** kwargs):
         """
             Initialize FluxSurface
@@ -155,7 +57,7 @@ class MagneticFluxCoordinates:
 
         if not isinstance(psirz, (Field, Function)):
             raise TypeError(psirz)
-
+        self._parent = parent
         self._psirz = psirz
         self._mesh = None
         self._grid_type = grid_type
@@ -171,17 +73,22 @@ class MagneticFluxCoordinates:
         opoints = []
         xpoints = []
 
-        for r, z, tag in find_critical(self._psirz):
-            p = PhysicalGraph({"r": r, "z": z, "psi": self._psirz(r, z)})
-
-            if tag < 0.0:  # saddle/X-point
+        for r, z, psi, D in self._psirz.find_peak():
+            p = PhysicalGraph({"r": r, "z": z, "psi": psi})
+            
+            if D < 0.0:  # saddle/X-point
                 xpoints.append(p)
             else:  # extremum/ O-point
                 opoints.append(p)
 
+        # wall = getattr(self._parent._parent, "wall", None)
+        # if wall is not None:
+        #     xpoints = [p for p in xpoints if wall.in_limiter(p.r, p.z)]
+
         if not opoints:
             raise RuntimeError(f"Can not find o-point!")
         else:
+            
             bbox = self._psirz.coordinates.mesh.bbox
             Rmid = (bbox[0][0] + bbox[0][1])/2.0
             Zmid = (bbox[1][0] + bbox[1][1])/2.0
@@ -246,16 +153,18 @@ class MagneticFluxCoordinates:
         for p in u:
             for t in v:
                 psival = p*(psi1-psi0)+psi0
+                
                 r0 = R0
                 z0 = Z0
                 r1 = R0+Rm*sin(t+theta0)
                 z1 = Z0+Rm*cos(t+theta0)
                 if not np.isclose(self._psirz(r1, z1), psival):
                     try:
-                        sol = root_scalar(lambda r: self._psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1) - psival,
-                                          bracket=[0, 1], method='brentq')
+                        def func(r): return self._psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1) - psival
+
+                        sol = root_scalar(func,  bracket=[0, 2], method='brentq')
                     except ValueError as error:
-                        raise ValueError(f"Find root fialed! {error}")
+                        raise ValueError(f"Find root fialed! {error} {psival}")
 
                     if not sol.converged:
                         raise ValueError(f"Find root fialed!")

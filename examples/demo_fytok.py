@@ -8,15 +8,14 @@ from spdm.util.logger import logger
 from spdm.util.plot_profiles import plot_profiles
 
 if __name__ == "__main__":
-    # db = Collection(schema="mapping",
-    #                 source="mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east",
-    #                 mapping={"schema": "EAST", "version": "imas/3",
-    #                          "path": "/home/salmon/workspace/fytok/data/mapping"})
+    db = Collection(schema="mapping",
+                    source="mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east",
+                    mapping={"schema": "EAST", "version": "imas/3",
+                             "path": "/home/salmon/workspace/fytok/data/mapping"})
 
-    # doc = db.open(shot=55555, time_slice=40)
+    doc = db.open(shot=55555, time_slice=40)
 
-    doc = File("/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1", format="geqdsk")
-
+ 
     scenario = Scenario({"tokamak": doc.entry})
 
     fig = plt.figure()
