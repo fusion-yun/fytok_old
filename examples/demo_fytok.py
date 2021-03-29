@@ -17,11 +17,11 @@ if __name__ == "__main__":
     # doc = db.open(shot=55555, time_slice=40)
 
     device = File("/home/salmon/workspace/fytok/data/mapping/ITER/imas/3/static/config.xml").entry
-
     equilibrium = File(
-        # "/home/salmon/workspace/fytok/examples/data/g063982.04800",
-        "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
-        format="geqdsk").entry
+        "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1", format="geqdsk").entry
+
+    # device = File("/home/salmon/workspace/fytok/data/mapping/EAST/imas/3/static/config.xml").entry
+    # equilibrium = File("/home/salmon/workspace/fytok/examples/data/g063982.04800",  format="geqdsk").entry
 
     scenario = Scenario({"tokamak": {
         "wall":  device.wall,
@@ -57,42 +57,45 @@ if __name__ == "__main__":
 
     fvac = fpol[0]
 
-    # plot_profiles(
-    #     [
-    #         [
-    #             # (tok.equilibrium.magnetic_flux_coordinates.ffprime, r"$ff^{\prime}$"),
-    #             (Function(psi_norm, ffprime), r"$ff^{\prime}_0$"),
-    #             (Function(psi_norm, (fpol**2)/(psi_boundary-psi_axis)*0.5).derivative, r"$d(f^{2}_0)$"),
-    #         ],
+    plot_profiles(
+        [
+            [
+                # (tok.equilibrium.profiles_1d.ffprime, r"$ff^{\prime}$"),
+                (Function(psi_norm, ffprime), r"$ff^{\prime}_0$"),
+                # (Function(psi_norm, (fpol**2)/(psi_boundary-psi_axis)*0.5).derivative, r"$d(f^{2}_0)$"),
+                (scenario.tokamak.equilibrium.profiles_1d.ffprime, r"$ff^{\prime}$"),
+            ],
 
-    #         [(Function(psi_norm, fpol**2),  r"$f_{pol}^2$"),
-    #          (Function(psi_norm, 2.0*Function(psi_norm, ffprime).antiderivative*(psi_boundary-psi_axis)+fpol[0]**2), r"$\int ff^{\prime}$")],
+            [(Function(psi_norm, fpol),  r"$f_{pol} $"),
+             (Function(psi_norm, np.sqrt(2.0*Function(psi_norm, ffprime).antiderivative * \
+                                         (psi_boundary-psi_axis)+fpol[0]**2)), r"$f_{pol}$"),
+             (scenario.tokamak.equilibrium.profiles_1d.fpol, r"$f_{pol}$"), ],
 
-    #         (scenario.tokamak.equilibrium.magnetic_flux_coordinates.ffprime, r"$ff^{\prime}$"),
-    #         (scenario.tokamak.equilibrium.magnetic_flux_coordinates.fpol, r"$f_{pol}$"),
-    #         (scenario.tokamak.equilibrium.magnetic_flux_coordinates.vprime, r"$V^{\prime}$"),
-    #         (scenario.tokamak.equilibrium.magnetic_flux_coordinates.volume, r"$V$"),
-    #         (scenario.tokamak.equilibrium.magnetic_flux_coordinates.q,        r"$q$"),
-    #         (scenario.tokamak.equilibrium.magnetic_flux_coordinates.phi, r"$\phi$"),
+            # (scenario.tokamak.equilibrium.profiles_1d.ffprime, r"$ff^{\prime}$"),
 
-    #         (scenario.tokamak.equilibrium.magnetic_flux_coordinates.gm1, r"$gm1$"),
-    #         (scenario.tokamak.equilibrium.magnetic_flux_coordinates.gm2, r"$gm2$"),
-    #         (scenario.tokamak.equilibrium.magnetic_flux_coordinates.gm3, r"$gm3$"),
-    #         (scenario.tokamak.equilibrium.magnetic_flux_coordinates.gm4, r"$gm4$"),
-    #         (scenario.tokamak.equilibrium.magnetic_flux_coordinates.gm5, r"$gm5$"),
-    #         (scenario.tokamak.equilibrium.magnetic_flux_coordinates.gm6, r"$gm6$"),
-    #         (scenario.tokamak.equilibrium.magnetic_flux_coordinates.gm7, r"$gm7$"),
-    #         (scenario.tokamak.equilibrium.magnetic_flux_coordinates.gm8, r"$gm8$"),
-    #         (scenario.tokamak.equilibrium.magnetic_flux_coordinates.gm9, r"$gm9$"),
+            (scenario.tokamak.equilibrium.profiles_1d.vprime, r"$V^{\prime}$"),
+            (scenario.tokamak.equilibrium.profiles_1d.volume, r"$V$"),
+            (scenario.tokamak.equilibrium.profiles_1d.q,      r"$q$"),
+            (scenario.tokamak.equilibrium.profiles_1d.phi,    r"$\phi$"),
 
-    #         # (tok.equilibrium.magnetic_flux_coordinates.vprime, "vprime"),
-    #         # {"name": "volume"},
-    #         # [{"name": "q"},
-    #         #  {"name": "safety_factor"}]
-    #     ],
-    #     x_axis=(scenario.tokamak.equilibrium.magnetic_flux_coordinates.psi_norm,
-    #             {"label": r"$\bar{\psi}$"}), grid=True)\
-    #     .savefig("/home/salmon/workspace/output/profiles_1d.svg")
+            (scenario.tokamak.equilibrium.profiles_1d.gm1, r"$gm1$"),
+            (scenario.tokamak.equilibrium.profiles_1d.gm2, r"$gm2$"),
+            (scenario.tokamak.equilibrium.profiles_1d.gm3, r"$gm3$"),
+            (scenario.tokamak.equilibrium.profiles_1d.gm4, r"$gm4$"),
+            (scenario.tokamak.equilibrium.profiles_1d.gm5, r"$gm5$"),
+            (scenario.tokamak.equilibrium.profiles_1d.gm6, r"$gm6$"),
+            (scenario.tokamak.equilibrium.profiles_1d.gm7, r"$gm7$"),
+            (scenario.tokamak.equilibrium.profiles_1d.gm8, r"$gm8$"),
+            (scenario.tokamak.equilibrium.profiles_1d.gm9, r"$gm9$"),
+
+            # (tok.equilibrium.profiles_1d.vprime, "vprime"),
+            # {"name": "volume"},
+            # [{"name": "q"},
+            #  {"name": "safety_factor"}]
+        ],
+        x_axis=(scenario.tokamak.equilibrium.profiles_1d.psi_norm,
+                {"label": r"$\bar{\psi}$"}), grid=True)\
+        .savefig("/home/salmon/workspace/output/profiles_1d.svg")
 
     # scenario.initialize({
     #     "particle": {
