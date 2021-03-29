@@ -23,7 +23,7 @@ class Scenario(PhysicalGraph):
     def __init__(self,  *args,  **kwargs):
         super().__init__(*args, **kwargs)
 
-    @cached_property
+    @cached_property    
     def tokamak(self):
         return Tokamak(self["tokamak"], parent=self)
 
@@ -101,12 +101,17 @@ class Scenario(PhysicalGraph):
 
         pedestal_top = conf.pedestal_top or 0.88
 
-        rho_tor_norm_core = np.linspace(0.0, pedestal_top, npoints, endpoint=False),
-        rho_tor_norm_edge = np.linspace(pedestal_top, 1.0, (1.0-pedestal_top)*npoints)
+        rho_tor_norm_core = np.linspace(0.0, pedestal_top, npoints, endpoint=False)
+        rho_tor_norm_edge = np.linspace(pedestal_top, 1.0, int((1.0-pedestal_top)*npoints))
+        # logger.debug((rho_tor_norm_core, rho_tor_norm_edge))
 
         rho_tor_norm = np.hstack([rho_tor_norm_core, rho_tor_norm_edge])
 
+        logger.debug(rho_tor_norm.shape)
+
         p_src = Function(rho_tor_norm, conf.particle.source.S0 * conf.particle.source.profile(rho_tor_norm))
+
+        logger.debug(conf.particle_diffusivity.D0 )
 
         p_diff = Function(rho_tor_norm,
                           np.hstack([conf.particle_diffusivity.D0 + conf.particle_diffusivity.D1 * rho_tor_norm_core**2,

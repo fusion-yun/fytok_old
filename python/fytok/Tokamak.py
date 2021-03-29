@@ -27,8 +27,8 @@ class Tokamak(PhysicalGraph):
 
     """
 
-    def __init__(self,  data=None,  *args, **kwargs):
-        super().__init__(data, *args,  **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args,  **kwargs)
 
         # self._time = PhysicalGraph(self["equilibrium.time"].__fetch__())
         # self._vacuum_toroidal_field = PhysicalGraph(self["equilibrium.vacuum_toroidal_field"].__fetch__())
@@ -59,9 +59,10 @@ class Tokamak(PhysicalGraph):
 
     @cached_property
     def equilibrium(self):
-        return Equilibrium(self["equilibrium.time_slice"],
-                           vacuum_toroidal_field=self["equilibrium.vacuum_toroidal_field"].__fetch__(),
-                           parent=self)
+        eq = self["equilibrium"]
+        if eq["time_slice"] != None:
+            eq = eq["time_slice"]
+        return Equilibrium(eq, parent=self)
 
     @cached_property
     def core_profiles(self):
