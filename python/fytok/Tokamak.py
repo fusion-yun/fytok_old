@@ -75,7 +75,7 @@ class Tokamak(PhysicalGraph):
     @cached_property
     def core_transport(self):
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return CoreTransport(self["core_transport"] or [],   parent=self)
+        return CoreTransport(self["core_transport"],   parent=self)
 
     @cached_property
     def core_sources(self):
@@ -83,7 +83,7 @@ class Tokamak(PhysicalGraph):
             Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return CoreSources(self["core_sources"] or [],   parent=self)
+        return CoreSources(self["core_sources"],   parent=self)
 
     @cached_property
     def edge_transports(self):

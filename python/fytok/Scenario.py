@@ -23,7 +23,7 @@ class Scenario(PhysicalGraph):
     def __init__(self,  *args,  **kwargs):
         super().__init__(*args, **kwargs)
 
-    @cached_property    
+    @cached_property
     def tokamak(self):
         return Tokamak(self["tokamak"], parent=self)
 
@@ -97,35 +97,33 @@ class Scenario(PhysicalGraph):
                 core_profiles
         """
 
-        conf = AttributeTree(spec)
+        if not isinstance(spec, AttributeTree):
+            spec = AttributeTree(spec)
 
-        pedestal_top = conf.pedestal_top or 0.88
+        pedestal_top = spec.pedestal_top or 0.88
 
-        rho_tor_norm_core = np.linspace(0.0, pedestal_top, npoints, endpoint=False)
-        rho_tor_norm_edge = np.linspace(pedestal_top, 1.0, int((1.0-pedestal_top)*npoints))
-        # logger.debug((rho_tor_norm_core, rho_tor_norm_edge))
+        rho_core = np.linspace(0.0, pedestal_top, npoints, endpoint=False)
+        rho_edge = np.linspace(pedestal_top, 1.0, int((1.0-pedestal_top)*npoints))
+        # logger.debug((rho_core, rho_edge))
 
-        rho_tor_norm = np.hstack([rho_tor_norm_core, rho_tor_norm_edge])
+        rho = np.hstack([rho_core, rho_edge])
 
-        logger.debug(rho_tor_norm.shape)
+        p_src = Function(rho, spec.particle.source.S0 * spec.particle.source.profile(rho))
 
-        p_src = Function(rho_tor_norm, conf.particle.source.S0 * conf.particle.source.profile(rho_tor_norm))
+        d = np.hstack([spec.particle.diffusivity.D0 + spec.particle.diffusivity.D1 * rho_core**2,
+                       np.full(len(rho_edge), spec.particle.diffusivity.D0)])
 
-        logger.debug(conf.particle_diffusivity.D0 )
+        p_diff = Function(rho, d)
 
-        p_diff = Function(rho_tor_norm,
-                          np.hstack([conf.particle_diffusivity.D0 + conf.particle_diffusivity.D1 * rho_tor_norm_core**2,
-                                     np.full(len(rho_tor_norm_edge), conf.particle_diffusivity.D0)]))
-
-        p_pinch = Function(rho_tor_norm, p_diff*(rho_tor_norm**2) *
-                           conf.particle.pinch_number.V0/self.tokamak.vacuum_toroidal_field.r0)
+        p_pinch = Function(rho, p_diff*(rho**2) *
+                           spec.particle.pinch_number.V0/self.tokamak.equilibrium.vacuum_toroidal_field.r0)
 
         # gamma = self.tokamak.equilibrium.magnetic_flux_coordinates.dvolume_drho_tor  \
         #     * self.tokamak.equilibrium.magnetic_flux_coordinates.gm2    \
         #     / self.tokamak.equilibrium.magnetic_flux_coordinates.fpol \
         #     * self.tokamak.equilibrium.magnetic_flux_coordinates.dpsi_drho_tor \
         #     / (4.0*(scipy.constants.pi**2))
-        # gamma = Function(rho_tor_norm, gamma)
+        # gamma = Function(rho, gamma)
         # j_total = -gamma.derivative  \
         #     / self.tokamak.equilibrium.magnetic_flux_coordinates.rho_tor[-1]**2 \
         #     * self.tokamak.equilibrium.magnetic_flux_coordinates.dpsi_drho_tor  \
@@ -144,46 +142,33 @@ class Scenario(PhysicalGraph):
 
         # self.core_sources[-1]["profiles_1d.j_parallel"] = j_total
         # self.core_sources[-1]["profiles_1d.conductivity_parallel"] = 1.0e-8
-        # rho_tor_norm = self.grid.rho_tor_norm
+        # rho = self.grid.rho
 
-        rho_tor_boundary = self.tokamak.equilibrium.magnetic_flux_coordinates.rho_tor[-1]
+        rho_tor_boundary = self.tokamak.equilibrium.profiles_1d.rho_tor[-1]
 
-        psi_norm = self.tokamak.equilibrium.magnetic_flux_coordinates.rho_tor_norm.invert(rho_tor_norm)
+        psi_norm = self.tokamak.equilibrium.profiles_1d.rho.invert(rho)
 
-        vpr = self.tokamak.equilibrium.magnetic_flux_coordinates.dvolume_drho_tor(psi_norm)
+        vpr = self.tokamak.equilibrium.profiles_1d.dvolume_drho_tor(psi_norm)
 
-        gm3 = self.tokamak.equilibrium.magnetic_flux_coordinates.gm3(psi_norm)
+        gm3 = self.tokamak.equilibrium.profiles_1d.gm3(psi_norm)
 
         H = vpr * gm3
 
-        for sp, desc in spec.items():
-            n_s = desc.get("density", n0)
-
-            w_scale_s = desc.get("w_scale", w_scale)
-
-            def n_core(x): return (1-(x/w_scale_s)**2)**2
-
-            def dn_core(x): return -4*x*(1-(x/w_scale_s)**2)/(w_scale_s**2)
-
-            def n_ped(x): return n_core(x_ped) - (1.0-x_ped) * dn_core(x_ped) * (1.0 - np.exp((x-x_ped)/(1.0-x_ped)))
-
-            def dn_ped(x): return dn_core(x_ped) * np.exp((x-x_ped)/(1.0-x_ped))
-
-            integral_src = Function(rho_tor_norm, -d_ped * H * dn_ped(rho_tor_norm)/(rho_tor_boundary**2))
-
-            self.tokamak.core_transport.profiles_1d[sp].particles.d = lambda x: 2.0 * d_ped + (x**2)
-
-            self.tokamak.core_transport.profiles_1d[sp].particles.v = (self.core_transport.profiles_1d[sp].particles.d(rho_tor_norm) * dn_core(rho_tor_norm) - d_ped*dn_ped(rho_tor_norm)) \
-                / (rho_tor_boundary) / n_core(rho_tor_norm) * (rho_tor_norm < x_ped)
-
-            self.tokamak.core_sources.profiles_1d[sp].particles = n_s * integral_src.derivative/vpr
-
-            desc["density"] = n_s * (n_core(rho_tor_norm)*(rho_tor_norm < x_ped) +
-                                     n_ped(rho_tor_norm) * (rho_tor_norm >= x_ped))
-
-            self.core_profiles.profiles_1d[sp] |= desc
-
-            logger.debug(self.core_sources)
-
-        if "electrons" not in spec:
-            raise NotImplementedError()
+        # for sp, desc in spec.items():
+        #     n_s = desc.get("density", n0)
+        #     w_scale_s = desc.get("w_scale", w_scale)
+        #     def n_core(x): return (1-(x/w_scale_s)**2)**2
+        #     def dn_core(x): return -4*x*(1-(x/w_scale_s)**2)/(w_scale_s**2)
+        #     def n_ped(x): return n_core(x_ped) - (1.0-x_ped) * dn_core(x_ped) * (1.0 - np.exp((x-x_ped)/(1.0-x_ped)))
+        #     def dn_ped(x): return dn_core(x_ped) * np.exp((x-x_ped)/(1.0-x_ped))
+        #     integral_src = Function(rho, -d_ped * H * dn_ped(rho)/(rho_tor_boundary**2))
+        #     self.tokamak.core_transport.profiles_1d[sp].particles.d = lambda x: 2.0 * d_ped + (x**2)
+        #     self.tokamak.core_transport.profiles_1d[sp].particles.v = (self.core_transport.profiles_1d[sp].particles.d(rho) * dn_core(rho) - d_ped*dn_ped(rho)) \
+        #         / (rho_tor_boundary) / n_core(rho) * (rho < x_ped)
+        #     self.tokamak.core_sources.profiles_1d[sp].particles = n_s * integral_src.derivative/vpr
+        #     desc["density"] = n_s * (n_core(rho)*(rho < x_ped) +
+        #                              n_ped(rho) * (rho >= x_ped))
+        #     self.core_profiles.profiles_1d[sp] |= desc
+        #     logger.debug(self.core_sources)
+        # if "electrons" not in spec:
+        #     raise NotImplementedError()

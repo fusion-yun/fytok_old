@@ -47,29 +47,30 @@ if __name__ == "__main__":
 
     plt.savefig("/home/salmon/workspace/output/contour.svg")
 
-    psi_axis = scenario.tokamak.equilibrium.global_quantities.psi_axis
-    psi_boundary = scenario.tokamak.equilibrium.global_quantities.psi_boundary
+    # psi_axis = scenario.tokamak.equilibrium.global_quantities.psi_axis
+    # psi_boundary = scenario.tokamak.equilibrium.global_quantities.psi_boundary
 
-    ffprime = scenario.tokamak.equilibrium.profiles_1d.f_df_dpsi
-    fpol = scenario.tokamak.equilibrium.profiles_1d.f
+    # ffprime = scenario.tokamak.equilibrium.profiles_1d.f_df_dpsi
+    # fpol = scenario.tokamak.equilibrium.profiles_1d.f
 
-    psi_norm = np.linspace(0, 1, len(ffprime))
+    # psi_norm = np.linspace(0, 1, len(ffprime))
 
-    fvac = fpol[0]
+    # fvac = fpol[0]
 
     plot_profiles(
         [
             [
                 # (tok.equilibrium.profiles_1d.ffprime, r"$ff^{\prime}$"),
-                (Function(psi_norm, ffprime), r"$ff^{\prime}_0$"),
+                # (Function(psi_norm, ffprime), r"$ff^{\prime}_0$"),
                 # (Function(psi_norm, (fpol**2)/(psi_boundary-psi_axis)*0.5).derivative, r"$d(f^{2}_0)$"),
                 (scenario.tokamak.equilibrium.profiles_1d.ffprime, r"$ff^{\prime}$"),
             ],
 
-            [(Function(psi_norm, fpol),  r"$f_{pol} $"),
-             (Function(psi_norm, np.sqrt(2.0*Function(psi_norm, ffprime).antiderivative * \
-                                         (psi_boundary-psi_axis)+fpol[0]**2)), r"$f_{pol}$"),
-             (scenario.tokamak.equilibrium.profiles_1d.fpol, r"$f_{pol}$"), ],
+            [
+                # (Function(psi_norm, fpol),  r"$f_{pol} $"),
+                #  (Function(psi_norm, np.sqrt(2.0*Function(psi_norm, ffprime).antiderivative * \
+                #                              (psi_boundary-psi_axis)+fpol[0]**2)), r"$f_{pol}$"),
+                (scenario.tokamak.equilibrium.profiles_1d.fpol, r"$f_{pol}$"), ],
 
             # (scenario.tokamak.equilibrium.profiles_1d.ffprime, r"$ff^{\prime}$"),
 
@@ -77,6 +78,7 @@ if __name__ == "__main__":
             (scenario.tokamak.equilibrium.profiles_1d.volume, r"$V$"),
             (scenario.tokamak.equilibrium.profiles_1d.q,      r"$q$"),
             (scenario.tokamak.equilibrium.profiles_1d.phi,    r"$\phi$"),
+            (scenario.tokamak.equilibrium.profiles_1d.rho_tor_norm, r"$\bar{\rho_{tor}}$"),
 
             (scenario.tokamak.equilibrium.profiles_1d.gm1, r"$gm1$"),
             (scenario.tokamak.equilibrium.profiles_1d.gm2, r"$gm2$"),
