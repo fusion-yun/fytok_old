@@ -4,8 +4,6 @@ from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.data.Function import Function
 from spdm.util.logger import logger
 
-from fytok.util.RadialGrid import RadialGrid
-
 
 class CoreTransport(PhysicalGraph):
     r"""Core plasma transport of particles, energy, momentum and poloidal flux. The transport of particles, energy and momentum is described by
@@ -24,19 +22,23 @@ class CoreTransport(PhysicalGraph):
     def __init__(self,  *args,   **kwargs):
         super().__init__(*args, **kwargs)
 
-    def update(self, *args, **kwargs):
-        logger.debug("NOT　IMPLEMENTED!")
+    def update(self, *args, time=None, ** kwargs):
+        logger.debug(f"Update {self.__class__.__name__} [time={time}] at: Do nothing")
+
+    @property
+    def grid(self):
+        return self._parent.radial_grid
 
     class TransportCoeff(PhysicalGraph):
         def __init__(self,   *args, **kwargs):
             super().__init__(*args,   **kwargs)
             self.d = Function(self._parent.grid_d.rho_tor_norm, self["d"])
-            self.v = Function(self._parent.grid_d.rho_tor_norm, self["v"])
+            self.v = Function(self._parent.grid_v.rho_tor_norm, self["v"])
             self.flux = Function(self._parent.grid_flux.rho_tor_norm, self["flux"])
 
     class Particle(PhysicalGraph):
-        def __init__(self, cache=None, *args,  **kwargs):
-            pass
+        def __init__(self, *args,  **kwargs):
+            super().__init__(*args, **kwargs)
 
         @cached_property
         def particles(self):
@@ -58,79 +60,62 @@ class CoreTransport(PhysicalGraph):
         def __init__(self,   *args,  **kwargs):
             super().__init__(*args, **kwargs)
 
-    class Profiles1D(PhysicalGraph):
-        def __init__(self,   *args,  **kwargs):
-            super().__init__(* args,  **kwargs)
+    @property
+    def grid_d(self):
+        """Grid for effective diffusivities and parallel conductivity"""
+        return self._parent.radial_grid
 
-        @property
-        def grid_d(self):
-            """Grid for effective diffusivities and parallel conductivity"""
-            return self._grid_d
+    @property
+    def grid_v(self):
+        """ Grid for effective convections
+            Todo :
+                FIXME
+        """
+        return self._parent.radial_grid
 
-        @property
-        def grid_v(self):
-            """ Grid for effective convections
-                Todo :
-                    FIXME
-            """
-            return self._grid_d
-
-        @property
-        def grid_flux(self):
-            """ Grid for fluxes
-                Todo :
-                    FIXME
-            """
-            return self._grid_d
-
-        @cached_property
-        def ion(self):
-            """ Ion　: Transport coefficients related to the various ion species """
-            return CoreTransport.Ion(self['ion'], parent=self)
-
-        @cached_property
-        def electrons(self):
-            """ Electrons :　Transport quantities related to the electrons"""
-            return CoreTransport.Electrons(self['electrons'], parent=self)
-
-        @cached_property
-        def neutral(self):
-            """ Neutral : Transport coefficients related to the various neutral species"""
-            return CoreTransport.Neutral(self['neutral'], parent=self)
-
-        @cached_property
-        def total_ion_energy(self):
-            """
-                CoreTransport.TransportCoeff : Transport coefficients for the total (summed over ion species) energy equation
-            """
-            return CoreTransport.TransportCoeff(self["total_ion_energy"], parent=self)
-
-        @cached_property
-        def momentum_tor(self):
-            """
-                CoreTransport.TransportCoeff : Transport coefficients for total toroidal momentum equation
-            """
-            return CoreTransport.TransportCoeff(self["momentum_tor"], parent=self)
-
-        @property
-        def conductivity_parallel(self):
-            if "_conductivity_parallel" not in self.__dict__ or self.__dict__["_conductivity_parallel"] is None:
-                self.__dict__["_conductivity_parallel"] = Function(self.grid_d.rho_tor_norm)
-            return self._conductivity_parallel
-
-        @conductivity_parallel.setter
-        def conductivity_parallel(self, v):
-            self._conductivity_parallel.assign(v)
-
-        @cached_property
-        def e_field_radial(self):
-            """ Radial component of the electric field (calculated e.g. by a neoclassical model) {dynamic} [V.m^-1]"""
-            return Function(self.grid_d.rho_tor_norm, self["e_field_radial"])
+    @property
+    def grid_flux(self):
+        """ Grid for fluxes
+            Todo :
+                FIXME
+        """
+        return self._parent.radial_grid
 
     @cached_property
-    def profiles_1d(self):
-        """ CoreTransport.Profiles1D : Transport coefficient profiles for various time slices.
-        Fluxes and convection are positive (resp. negative) when outwards i.e. towards the LCFS
-        (resp. inwards i.e. towards the magnetic axes). {dynamic} """
+    def ion(self):
+        """ Ion　: Transport coefficients related to the various ion species """
+        return CoreTransport.Ion(self['ion'], parent=self)
 
-        return CoreTransport.Profiles1D(self["profiles_1d"], parent=self)
+    @cached_property
+    def electrons(self):
+        """ Electrons :　Transport quantities related to the electrons"""
+        return CoreTransport.Electrons(self['electrons'], parent=self)
+
+    @cached_property
+    def neutral(self):
+        """ Neutral : Transport coefficients related to the various neutral species"""
+        return CoreTransport.Neutral(self['neutral'], parent=self)
+
+    @cached_property
+    def total_ion_energy(self):
+        """
+            CoreTransport.TransportCoeff : Transport coefficients for the total 
+             (summed over ion species) energy equation
+        """
+        return CoreTransport.TransportCoeff(self["total_ion_energy"], parent=self)
+
+    @cached_property
+    def momentum_tor(self):
+        """
+            CoreTransport.TransportCoeff : Transport coefficients for total toroidal momentum equation
+        """
+        return CoreTransport.TransportCoeff(self["momentum_tor"], parent=self)
+
+    @cached_property
+    def conductivity_parallel(self):
+        return Function(self.grid_d.rho_tor_norm, self["conductivity_parallel"] or 0.0)
+
+    @cached_property
+    def e_field_radial(self):
+        """ Radial component of the electric field (calculated e.g. by a neoclassical model) {dynamic} [V.m^-1]"""
+        return Function(self.grid_d.rho_tor_norm, self["e_field_radial"])

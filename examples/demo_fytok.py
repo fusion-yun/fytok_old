@@ -1,7 +1,7 @@
 from math import log
 import matplotlib.pyplot as plt
 import numpy as np
-from fytok.Scenario import Scenario
+from fytok.Tokamak import Tokamak
 from spdm.data.Collection import Collection
 from spdm.data.File import File
 from spdm.data.Function import Function
@@ -23,7 +23,11 @@ if __name__ == "__main__":
     # device = File("/home/salmon/workspace/fytok/data/mapping/EAST/imas/3/static/config.xml").entry
     # equilibrium = File("/home/salmon/workspace/fytok/examples/data/g063982.04800",  format="geqdsk").entry
 
-    scenario = Scenario({"tokamak": {
+    tok = Tokamak({
+        "radial_grid": {
+            "axis": 128,
+            "label": "rho_tor_norm"
+        },
         "wall":  device.wall,
         "pf_active": device.pf_active,
         "equilibrium": {
@@ -31,81 +35,96 @@ if __name__ == "__main__":
             "profiles_1d": equilibrium.profiles_1d,
             "profiles_2d": equilibrium.profiles_2d,
             "coordinate_system": {"grid": {"dim1": 64, "dim2": 128}}
+        },
+        "core_profiles":
+            {
 
+                "ion": [{
+
+                }]
         }
-    }})
+    })
 
     fig = plt.figure()
 
-    scenario.tokamak.plot(fig.gca(),
-                          wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
-                          pf_active={"facecolor": 'red'},
-                          equilibrium={"mesh": True, "boundary": True}
-                          )
+    tok.plot(fig.gca(),
+             wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
+             pf_active={"facecolor": 'red'},
+             equilibrium={"mesh": True, "boundary": True}
+             )
     r, z = np.meshgrid(equilibrium.profiles_2d.grid.dim1, equilibrium.profiles_2d.grid.dim2, indexing="ij")
     fig.gca().contour(r, z,  equilibrium.profiles_2d.psi, levels=32,  linewidths=0.2)
 
     plt.savefig("/home/salmon/workspace/output/contour.svg")
 
-    # psi_axis = scenario.tokamak.equilibrium.global_quantities.psi_axis
-    # psi_boundary = scenario.tokamak.equilibrium.global_quantities.psi_boundary
+    # psi_axis = tok.equilibrium.global_quantities.psi_axis
+    # psi_boundary = tok.equilibrium.global_quantities.psi_boundary
 
-    # ffprime = scenario.tokamak.equilibrium.profiles_1d.f_df_dpsi
-    # fpol = scenario.tokamak.equilibrium.profiles_1d.f
+    # ffprime = tok.equilibrium.profiles_1d.f_df_dpsi
+    # fpol = tok.equilibrium.profiles_1d.f
 
     # psi_norm = np.linspace(0, 1, len(ffprime))
 
     # fvac = fpol[0]
 
-    plot_profiles(
-        [
-            [
-                # (tok.equilibrium.profiles_1d.ffprime, r"$ff^{\prime}$"),
-                # (Function(psi_norm, ffprime), r"$ff^{\prime}_0$"),
-                # (Function(psi_norm, (fpol**2)/(psi_boundary-psi_axis)*0.5).derivative, r"$d(f^{2}_0)$"),
-                (scenario.tokamak.equilibrium.profiles_1d.ffprime, r"$ff^{\prime}$"),
-            ],
+    # plot_profiles(
+    #     [
+    #         # [
+    #         #     # (tok.equilibrium.profiles_1d.ffprime, r"$ff^{\prime}$"),
+    #         #     # (Function(psi_norm, ffprime), r"$ff^{\prime}_0$"),
+    #         #     # (Function(psi_norm, (fpol**2)/(psi_boundary-psi_axis)*0.5).derivative, r"$d(f^{2}_0)$"),
+    #         #     (tok.equilibrium.profiles_1d.ffprime, r"$ff^{\prime}$"),
+    #         # ],
 
-            [
-                # (Function(psi_norm, fpol),  r"$f_{pol} $"),
-                #  (Function(psi_norm, np.sqrt(2.0*Function(psi_norm, ffprime).antiderivative * \
-                #                              (psi_boundary-psi_axis)+fpol[0]**2)), r"$f_{pol}$"),
-                (scenario.tokamak.equilibrium.profiles_1d.fpol, r"$f_{pol}$"), ],
+    #         # [
+    #         #     # (Function(psi_norm, fpol),  r"$f_{pol} $"),
+    #         #     #  (Function(psi_norm, np.sqrt(2.0*Function(psi_norm, ffprime).antiderivative * \
+    #         #     #                              (psi_boundary-psi_axis)+fpol[0]**2)), r"$f_{pol}$"),
+    #         #     (tok.equilibrium.profiles_1d.fpol, r"$f_{pol}$"), ],
 
-            # (scenario.tokamak.equilibrium.profiles_1d.ffprime, r"$ff^{\prime}$"),
+    #         # # (tok.equilibrium.profiles_1d.ffprime, r"$ff^{\prime}$"),
 
-            (scenario.tokamak.equilibrium.profiles_1d.vprime, r"$V^{\prime}$"),
-            (scenario.tokamak.equilibrium.profiles_1d.volume, r"$V$"),
-            (scenario.tokamak.equilibrium.profiles_1d.q,      r"$q$"),
-            (scenario.tokamak.equilibrium.profiles_1d.phi,    r"$\phi$"),
-            (scenario.tokamak.equilibrium.profiles_1d.rho_tor_norm, r"$\bar{\rho_{tor}}$"),
+    #         (tok.equilibrium.profiles_1d.vprime, r"$V^{\prime}$"),
+    #         # (tok.equilibrium.profiles_1d.volume, r"$V$"),
+    #         # (tok.equilibrium.profiles_1d.q,      r"$q$"),
+    #         (tok.equilibrium.profiles_1d.phi,    r"$\phi$"),
+    #         (tok.equilibrium.profiles_1d.rho_tor_norm, r"$\rho_{N}$"),
 
-            (scenario.tokamak.equilibrium.profiles_1d.gm1, r"$gm1$"),
-            (scenario.tokamak.equilibrium.profiles_1d.gm2, r"$gm2$"),
-            (scenario.tokamak.equilibrium.profiles_1d.gm3, r"$gm3$"),
-            (scenario.tokamak.equilibrium.profiles_1d.gm4, r"$gm4$"),
-            (scenario.tokamak.equilibrium.profiles_1d.gm5, r"$gm5$"),
-            (scenario.tokamak.equilibrium.profiles_1d.gm6, r"$gm6$"),
-            (scenario.tokamak.equilibrium.profiles_1d.gm7, r"$gm7$"),
-            (scenario.tokamak.equilibrium.profiles_1d.gm8, r"$gm8$"),
-            (scenario.tokamak.equilibrium.profiles_1d.gm9, r"$gm9$"),
+    #         # rtok.equilibrium.profiles_1d.gm1, r"$gm1$"),
+    #         # (tok.equilibrium.profiles_1d.gm2, r"$gm2$"),
+    #         # (tok.equilibrium.profiles_1d.gm3, r"$gm3$"),
+    #         # (tok.equilibrium.profiles_1d.gm4, r"$gm4$"),
+    #         # (tok.equilibrium.profiles_1d.gm5, r"$gm5$"),
+    #         # (tok.equilibrium.profiles_1d.gm6, r"$gm6$"),
+    #         # (tok.equilibrium.profiles_1d.gm7, r"$gm7$"),
+    #         # (tok.equilibrium.profiles_1d.gm8, r"$gm8$"),
+    #         # (tok.equilibrium.profiles_1d.gm9, r"$gm9$"),
 
-            # (tok.equilibrium.profiles_1d.vprime, "vprime"),
-            # {"name": "volume"},
-            # [{"name": "q"},
-            #  {"name": "safety_factor"}]
-        ],
-        x_axis=(scenario.tokamak.equilibrium.profiles_1d.psi_norm,
-                {"label": r"$\bar{\psi}$"}), grid=True)\
-        .savefig("/home/salmon/workspace/output/profiles_1d.svg")
+    #         # (tok.equilibrium.profiles_1d.vprime, "vprime"),
+    #         # {"name": "volume"},
+    #         # [{"name": "q"},
+    #         #  {"name": "safety_factor"}]
+    #     ],
+    #     x_axis=(tok.equilibrium.profiles_1d.psi_norm, {"label": r"$\bar{\psi}$"}), \
+    #     # x_axis=(tok.equilibrium.profiles_1d.rho_tor_norm, {"label": r"$\rho_{N}$"}) , # asd
+    #       grid = True) .savefig("/home/salmon/workspace/output/profiles_1d.svg")
 
-    # scenario.initialize({
+    # tok.initialize({
     #     "particle": {
     #         "source": {"S0": 7.5e20, "profile": lambda x: np.exp(15.0*(x-1.0))},
     #         "diffusivity": {"D0": 0.5, "D1": 1.0, "D2": 1.1},
     #         "pinch_number": {"V0": 1.385}
     #     }
     # })
+
+    plot_profiles(
+        [
+            (tok.core_profiles.grid.psi_norm, r"$\psi_{N}$"),
+            (tok.core_profiles.grid.rho_tor, r"$\rho_{tor}$"),
+
+        ],
+        x_axis=(tok.core_profiles.grid.rho_tor_norm,   {"label": r"$\rho_{N}$"}),  # asd
+        grid=True) .savefig("/home/salmon/workspace/output/profiles_1d.svg")
 
     # plot_profiles(tok.core_profiles.profiles_1d,
     #               profiles=[
