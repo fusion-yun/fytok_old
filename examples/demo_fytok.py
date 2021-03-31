@@ -85,20 +85,21 @@ if __name__ == "__main__":
     #         # # (tok.equilibrium.profiles_1d.ffprime, r"$ff^{\prime}$"),
 
     #         (tok.equilibrium.profiles_1d.vprime, r"$V^{\prime}$"),
-    #         # (tok.equilibrium.profiles_1d.volume, r"$V$"),
-    #         # (tok.equilibrium.profiles_1d.q,      r"$q$"),
+    #         (tok.equilibrium.profiles_1d.volume, r"$V$"),
+    #         (tok.equilibrium.profiles_1d.q,      r"$q$"),
+    #         (tok.equilibrium.profiles_1d.fpol,   r"$fpol$"),
     #         (tok.equilibrium.profiles_1d.phi,    r"$\phi$"),
     #         (tok.equilibrium.profiles_1d.rho_tor_norm, r"$\rho_{N}$"),
 
-    #         # rtok.equilibrium.profiles_1d.gm1, r"$gm1$"),
-    #         # (tok.equilibrium.profiles_1d.gm2, r"$gm2$"),
-    #         # (tok.equilibrium.profiles_1d.gm3, r"$gm3$"),
-    #         # (tok.equilibrium.profiles_1d.gm4, r"$gm4$"),
-    #         # (tok.equilibrium.profiles_1d.gm5, r"$gm5$"),
-    #         # (tok.equilibrium.profiles_1d.gm6, r"$gm6$"),
-    #         # (tok.equilibrium.profiles_1d.gm7, r"$gm7$"),
-    #         # (tok.equilibrium.profiles_1d.gm8, r"$gm8$"),
-    #         # (tok.equilibrium.profiles_1d.gm9, r"$gm9$"),
+    #         (tok.equilibrium.profiles_1d.gm1, r"$gm1$"),
+    #         (tok.equilibrium.profiles_1d.gm2, r"$gm2$"),
+    #         (tok.equilibrium.profiles_1d.gm3, r"$gm3$"),
+    #         (tok.equilibrium.profiles_1d.gm4, r"$gm4$"),
+    #         (tok.equilibrium.profiles_1d.gm5, r"$gm5$"),
+    #         (tok.equilibrium.profiles_1d.gm6, r"$gm6$"),
+    #         (tok.equilibrium.profiles_1d.gm7, r"$gm7$"),
+    #         (tok.equilibrium.profiles_1d.gm8, r"$gm8$"),
+    #         (tok.equilibrium.profiles_1d.gm9, r"$gm9$"),
 
     #         # (tok.equilibrium.profiles_1d.vprime, "vprime"),
     #         # {"name": "volume"},
@@ -107,7 +108,7 @@ if __name__ == "__main__":
     #     ],
     #     x_axis=(tok.equilibrium.profiles_1d.psi_norm, {"label": r"$\bar{\psi}$"}), \
     #     # x_axis=(tok.equilibrium.profiles_1d.rho_tor_norm, {"label": r"$\rho_{N}$"}) , # asd
-    #       grid = True) .savefig("/home/salmon/workspace/output/profiles_1d.svg")
+    #     grid=True) .savefig("/home/salmon/workspace/output/profiles_1d.svg")
 
     tok.initialize({
         "pedestal_top": 0.88,  # \frac{\Phi}{\Phi_a}=0.88
@@ -132,22 +133,27 @@ if __name__ == "__main__":
     psi_norm = tok.core_profiles.grid.psi_norm
     # vpr = Function(tok.equilibrium.profiles_1d.rho_tor_norm,
     #                tok.equilibrium.profiles_1d.vprime)(tok.core_profiles.grid.rho_tor)
+
+    # logger.debug(tok.equilibrium.profiles_1d.phi.view(np.ndarray))
     plot_profiles(
         [
             (tok.core_profiles.grid.psi_norm, r"$\psi_{N}$"),
-            (tok.core_profiles.grid.rho_tor, r"$\rho_{tor}$"),
+            (tok.equilibrium.profiles_1d.phi.pullback(psi_norm, rho_tor_norm), r"$\phi$"),
+            [(tok.equilibrium.profiles_1d.rho_tor.pullback(psi_norm, rho_tor_norm), r"$\rho_{tor}$"),
+             (tok.core_profiles.grid.rho_tor, r"$\rho_{tor}$")],
+            (tok.core_profiles.grid.rho_tor_norm, r"$\rho_{tor,N}$"),
             # [
             #     (tok.core_transport[0].electrons.particles.d, r"$d_{e}$"),
             #     (tok.core_transport[0].electrons.particles.v, r"$v_{e}$"),
             # ],
             # (tok.core_sources[0].electrons.particles, r"$S_{e}$"),
 
-            # # [
-            # #     (tok.core_transport[0].electrons.particles.d *
-            # #      tok.core_profiles.electrons.density.derivative, r"$d_{e}$"),
-            # #     (tok.core_transport[0].electrons.particles.v *
-            # #      tok.core_profiles.electrons.density, r"$v_{e}$"),
-            # # ],
+            # [
+            #     (tok.core_transport[0].electrons.particles.d *
+            #      tok.core_profiles.electrons.density.derivative, r"$d_{e}$"),
+            #     (tok.core_transport[0].electrons.particles.v *
+            #      tok.core_profiles.electrons.density, r"$v_{e}$"),
+            # ],
             [(tok.core_profiles.electrons.density, r"$n_{e}$"),
              #  (0.95e18*((1-r**4)**2), r"$n_{e0}$"),
              ],

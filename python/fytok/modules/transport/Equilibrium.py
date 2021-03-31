@@ -515,7 +515,7 @@ class Equilibrium(PhysicalGraph):
             f2 = self.ffprime.antiderivative
             f2 *= (2.0*(psi_boundary-psi_axis))
             f2 += self._fvac**2
-            return Function(self._psi_norm, np.sqrt(f2))
+            return Function(self._psi_norm,  np.sqrt(f2))
 
         @property
         def f(self):
@@ -525,7 +525,7 @@ class Equilibrium(PhysicalGraph):
         @cached_property
         def dphi_dpsi(self):
             return Function(self._psi_norm, self._parent.coordinate_system.surface_average(1.0/(self._parent.coordinate_system.r**2))
-                            * self.fpol * self.vprime / (scipy.constants.pi*2)**2)
+                            * self.fpol * self.dvolume_dpsi / (scipy.constants.pi*2)**2)
 
         @property
         def q(self):
@@ -560,7 +560,7 @@ class Equilibrium(PhysicalGraph):
                 .. math ::
                     \Phi_{tor}\left(\psi\right)=\int_{0}^{\psi}qd\psi
             """
-            return self.dphi_dpsi.antiderivative
+            return self.dphi_dpsi.antiderivative * self._parent.global_quantities.cocos_flag
 
         @cached_property
         def rho_tor(self):
