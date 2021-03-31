@@ -170,11 +170,10 @@ class Tokamak(PhysicalGraph):
         # j_total[1:] /= self.equilibrium.magnetic_flux_coordinates.dvolume_drho_tor[1:]
         # j_total[0] = 2*j_total[1]-j_total[2]
 
-        pedestal_top = spec.pedestal_top or 0.88
+        r_ped = np.sqrt(spec.pedestal_top or 0.88)
+        # rho_core = np.linspace(0.0, r_ped, npoints, endpoint=False)
 
-        # rho_core = np.linspace(0.0, pedestal_top, npoints, endpoint=False)
-
-        # rho_edge = np.linspace(pedestal_top, 1.0, int((1.0-pedestal_top)*npoints))
+        # rho_edge = np.linspace(r_ped, 1.0, int((1.0-r_ped)*npoints))
 
         # rho = np.hstack([rho_core, rho_edge])
 
@@ -182,10 +181,10 @@ class Tokamak(PhysicalGraph):
 
         self._radial_grid = {"axis": rho, "label": "rho_tor_norm"}
 
-        p_src = Function(rho, spec.electron.density.source.S0 * np.exp(15.0*(rho-1.0)))
+        p_src = Function(rho, spec.electron.density.source.S0 * np.exp(15.0*(rho**2-1.0)))
 
-        d = np.piecewise(rho, [rho < pedestal_top, rho >= pedestal_top],
-                         [lambda x:spec.electron.density.diffusivity.D0 + spec.electron.density.diffusivity.D1 * x**2,
+        d = np.piecewise(rho, [rho < r_ped, rho >= r_ped],
+                         [lambda x:spec.electron.density.diffusivity.D0 + spec.electron.density.diffusivity.D1 * (x**4),
                           lambda x:spec.electron.density.diffusivity.D0])
 
         p_diff = Function(rho, d)
@@ -195,7 +194,7 @@ class Tokamak(PhysicalGraph):
 
         # def n_core(x): return (1-x**4)**2
         # def dn_core(x): return -4*x*(1-x**2)
-        # def n_ped(x, r_ped=pedestal_top): return n_core(r_ped) - (1.0-r_ped)/2.0 * \
+        # def n_ped(x, r_ped=r_ped): return n_core(r_ped) - (1.0-r_ped)/2.0 * \
         #     dn_core(r_ped) * (1.0 - np.exp(2.0*(x-r_ped)/(1.0-r_ped)))
         # #     def dn_ped(x): return dn_core(x_ped) * np.exp((x-x_ped)/(1.0-x_ped))
 
@@ -221,15 +220,15 @@ class Tokamak(PhysicalGraph):
         # self.core_sources[-1]["profiles_1d.conductivity_parallel"] = 1.0e-8
         # rho = self.grid.rho
 
-        rho_tor_boundary = self.equilibrium.profiles_1d.rho_tor[-1]
+        # rho_tor_boundary = self.equilibrium.profiles_1d.rho_tor[-1]
 
-        vpr = Function(self.equilibrium.profiles_1d.rho_tor_norm,
-                       self.equilibrium.profiles_1d.dvolume_drho_tor)
+        # vpr = Function(self.equilibrium.profiles_1d.rho_tor_norm,
+        #                self.equilibrium.profiles_1d.dvolume_drho_tor)
 
-        gm3 = Function(self.equilibrium.profiles_1d.rho_tor_norm,
-                       self.equilibrium.profiles_1d.gm3)
+        # gm3 = Function(self.equilibrium.profiles_1d.rho_tor_norm,
+        #                self.equilibrium.profiles_1d.gm3)
 
-        H = vpr * gm3
+        # H = vpr * gm3
 
         # for sp, desc in spec.items():
         #     n_s = desc.get("density", n0)
@@ -275,10 +274,12 @@ class Tokamak(PhysicalGraph):
             if kwargs.get("edge_sources", False) is not False:
                 self.edge_sources.update(time=self.time, **kwargs.get("edge_sources", {}))
 
-            core_profiles_next = self.transport_solver.update(core_profiles_prev, **kwargs.get("transport_solver", {}))
+            core_profiles_next = self.transport_solver.solve(core_profiles_prev, **kwargs.get("transport_solver", {}))
 
         #    if core_profiles_next.conv(core_profiles_prev) < tolerance:
         #         break
+            core_profiles_prev = core_profiles_next
+
         self._core_profiles = core_profiles_next
 
     def plot(self, axis=None, *args,   **kwargs):

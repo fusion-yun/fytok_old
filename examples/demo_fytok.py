@@ -110,13 +110,14 @@ if __name__ == "__main__":
     #       grid = True) .savefig("/home/salmon/workspace/output/profiles_1d.svg")
 
     tok.initialize({
-        "pedestal_top": 0.88,
+        "pedestal_top": 0.88,  # \frac{\Phi}{\Phi_a}=0.88
         "electron": {
             "density": {
                 "n0": 0.95e19,
-                "source": {"S0": 7.5e17},  # S0 7.5e20
+                "source": {"S0": 7.5e20},  # S0 7.5e20
                 "diffusivity": {"D0": 0.5, "D1": 1.0, "D2": 1.1},
-                "pinch_number": {"V0": 1.385}
+                "pinch_number": {"V0": 1.385},
+                "boundary_condition": {"value": 4.6e19}
             },
             "temperature": {
                 "T0": 0.95e19,
@@ -124,35 +125,50 @@ if __name__ == "__main__":
             }}
     })
 
-    tok.update(transport_solver={})
+    # tok.update(transport_solver={})
 
     # rho_tor_bdry = tok.core_profiles.grid.rho_tor[-1]
-    # r = tok.core_profiles.grid.rho_tor_norm
+    rho_tor_norm = tok.core_profiles.grid.rho_tor_norm
+    psi_norm = tok.core_profiles.grid.psi_norm
     # vpr = Function(tok.equilibrium.profiles_1d.rho_tor_norm,
     #                tok.equilibrium.profiles_1d.vprime)(tok.core_profiles.grid.rho_tor)
     plot_profiles(
         [
             (tok.core_profiles.grid.psi_norm, r"$\psi_{N}$"),
             (tok.core_profiles.grid.rho_tor, r"$\rho_{tor}$"),
-            [
-                (tok.core_transport[0].electrons.particles.d, r"$d_{e}$"),
-                (tok.core_transport[0].electrons.particles.v, r"$v_{e}$"),
-            ],
-            (tok.core_sources[0].electrons.particles, r"$S_{e}$"),
+            # [
+            #     (tok.core_transport[0].electrons.particles.d, r"$d_{e}$"),
+            #     (tok.core_transport[0].electrons.particles.v, r"$v_{e}$"),
+            # ],
+            # (tok.core_sources[0].electrons.particles, r"$S_{e}$"),
 
-            [
-                (tok.core_transport[0].electrons.particles.d *
-                 tok.core_profiles.electrons.density.derivative, r"$d_{e}$"),
-                (tok.core_transport[0].electrons.particles.v *
-                 tok.core_profiles.electrons.density, r"$v_{e}$"),
-            ],
-            (tok.core_profiles.electrons.density, r"$n_{e}$"),
-
+            # # [
+            # #     (tok.core_transport[0].electrons.particles.d *
+            # #      tok.core_profiles.electrons.density.derivative, r"$d_{e}$"),
+            # #     (tok.core_transport[0].electrons.particles.v *
+            # #      tok.core_profiles.electrons.density, r"$v_{e}$"),
+            # # ],
+            [(tok.core_profiles.electrons.density, r"$n_{e}$"),
+             #  (0.95e18*((1-r**4)**2), r"$n_{e0}$"),
+             ],
+            # (tok.core_profiles.electrons.density.derivative, r"$n_{e}^{\prime}$"),
+            (tok.equilibrium.profiles_1d.q.pullback(psi_norm, rho_tor_norm), r"$q$"),
+            (tok.equilibrium.profiles_1d.vprime.pullback(psi_norm, rho_tor_norm), r"$V^{\prime}$"),
+            (tok.equilibrium.profiles_1d.dphi_dpsi.pullback(psi_norm, rho_tor_norm), r"$\frac{d\phi}{d\psi}$"),
+            (tok.equilibrium.profiles_1d.drho_tor_dpsi.pullback(
+                psi_norm, rho_tor_norm), r"$\frac{d\rho_{tor}}{d\psi}$"),
+            (tok.equilibrium.profiles_1d.dpsi_drho_tor.pullback(
+                psi_norm, rho_tor_norm), r"$\frac{d\psi}{d\rho_{tor}}$"),
+            (tok.equilibrium.profiles_1d.dvolume_drho_tor_norm.pullback(
+                psi_norm, rho_tor_norm), r"$\frac{dV}{d\rho_{N}}$"),
+            # (tok.equilibrium.profiles_1d.drho_tor_dpsi.pullback(
+            #     psi_norm, rho_tor_norm), r"$\frac{d\rho_{tor}}{d\psi}$"),
+            (tok.equilibrium.profiles_1d.gm3.pullback(psi_norm, rho_tor_norm), r"$gm3$")
 
             # (tok.core_profiles.electrons.temperature, r"$T_{e}$"),
 
         ],
-        x_axis=(tok.core_profiles.grid.rho_tor_norm,   {"label": r"$\rho_{N}$"}),  # asd
+        x_axis=(rho_tor_norm,   {"label": r"$\rho_{N}$"}),  # asd
         grid=True) .savefig("/home/salmon/workspace/output/profiles_1d.svg")
 
     # plot_profiles(tok.core_profiles.profiles_1d,

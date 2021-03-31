@@ -523,14 +523,18 @@ class Equilibrium(PhysicalGraph):
             return self.fpol
 
         @cached_property
+        def dphi_dpsi(self):
+            return Function(self._psi_norm, self._parent.coordinate_system.surface_average(1.0/(self._parent.coordinate_system.r**2))
+                            * self.fpol * self.vprime / (scipy.constants.pi*2)**2)
+
+        @property
         def q(self):
             r"""
                 Safety factor
                 (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)  [-].
                 .. math:: q(\psi)=\frac{d\Phi}{d\psi}=\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
             """
-            return Function(self._psi_norm, self._parent.coordinate_system.surface_average(1.0/(self._parent.coordinate_system.r**2))
-                            * self.fpol * self.vprime / (scipy.constants.pi*2)**2)
+            return self.dphi_dpsi
 
         @cached_property
         def dvolume_drho_tor(self)	:
@@ -538,9 +542,14 @@ class Equilibrium(PhysicalGraph):
             return Function(self._psi_norm, self.dvolume_dpsi * self.dpsi_drho_tor)
 
         @cached_property
+        def dvolume_drho_tor_norm(self)	:
+            """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
+            return Function(self._psi_norm, self.dvolume_dpsi * self.dpsi_drho_tor)
+
+        @cached_property
         def dvolume_dpsi_norm(self):
             """Radial derivative of the volume enclosed in the flux surface with respect to Psi[m ^ 3.Wb ^ -1]. """
-            return NotImplemented
+            return Function(self._psi_norm, self.dvolume_dpsi*self.psi[-1])
 
         @cached_property
         def phi(self):
@@ -551,7 +560,7 @@ class Equilibrium(PhysicalGraph):
                 .. math ::
                     \Phi_{tor}\left(\psi\right)=\int_{0}^{\psi}qd\psi
             """
-            return Function(self._psi_norm, self.q.antiderivative)
+            return self.dphi_dpsi.antiderivative
 
         @cached_property
         def rho_tor(self):
@@ -570,19 +579,20 @@ class Equilibrium(PhysicalGraph):
                     \frac{d\rho_{tor}}{d\psi}=\frac{d}{d\psi}\sqrt{\frac{\Phi_{tor}}{\pi B_{0}}} \
                                             =\frac{1}{2\sqrt{\pi B_{0}\Phi_{tor}}}\frac{d\Phi_{tor}}{d\psi} \
                                             =\frac{q}{2\pi B_{0}\rho_{tor}}
-
             """
-            return Function(self._psi_norm, self.q/(2.0*scipy.constants.pi*self._parent.vacuum_toroidal_field.b0))
+            d = self.dphi_dpsi[1:]/self.rho_tor[1:]
+            return Function(self._psi_norm, np.hstack([d[:1], d])/(2.0*scipy.constants.pi*self._parent.vacuum_toroidal_field.b0))
 
         @cached_property
         def dpsi_drho_tor(self)	:
             """
                 Derivative of Psi with respect to Rho_Tor[Wb/m].
-
-                Todo:
-                    FIXME: dpsi_drho_tor(0) = ???
             """
             return Function(self._psi_norm,  (2.0*scipy.constants.pi*self._parent.vacuum_toroidal_field.b0)*self.rho_tor/self.q)
+
+        @cached_property
+        def dpsi_norm_drho_tor_norm(self):
+            return Function(self._psi_norm,   self.dpsi_drho_tor * self.rho_tor[-1])
 
         @cached_property
         def norm_grad_rho_tor(self):
