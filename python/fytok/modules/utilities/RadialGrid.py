@@ -1,26 +1,45 @@
 import collections
+from external.SpDB.python.spdm.util.utilities import try_get
 from functools import cached_property
 
-import matplotlib.pyplot as plt
 import numpy as np
-
 from spdm.data.Function import Function
-from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.logger import logger
 
 
 class RadialGrid:
     def __init__(self, axis: np.ndarray = None, label: str = "rho_tor_norm", equilibrium=None) -> None:
-        self._parent = equilibrium
+        self._equilibrium = equilibrium
         if label == "psi_norm":
-            self._psi_norm = axis if axis is None else self._parent.profiles_1d.psi_norm
+            self._psi_norm = axis
         else:
-            if axis == None:
-                axis = np.linspace(0, 1.0, len(self._parent.profiles_1d.psi_norm))
-            attr = getattr(self._parent.profiles_1d, label, None)
+            if not isinstance(axis, np.ndarray) and axis == None:
+                axis = np.linspace(0, 1.0, len(self._equilibrium.profiles_1d.psi_norm))
+            attr = try_get(self._equilibrium.profiles_1d, label, None)
             if attr is None:
                 raise AttributeError(f"Can not find attribute {label}!")
-            self._psi_norm = Function(attr, self._parent.profiles_1d.psi_norm)(axis)
+            self._psi_norm = Function(attr, self._equilibrium.profiles_1d.psi_norm)(axis)
+
+        self._vacuum_toroidal_field = self._equilibrium.vacuum_toroidal_field
+
+    @property
+    def vacuum_toroidal_field(self):
+        return self._vacuum_toroidal_field
+
+    @cached_property
+    def psi_magnetic_axis(self):
+        """Poloidal flux at the magnetic axis  [Wb]."""
+        o, _ = self._equilibrium.critical_points
+        return o[0].psi
+
+    @cached_property
+    def psi_boundary(self):
+        """Poloidal flux at the selected plasma boundary  [Wb]."""
+        _, x = self._equilibrium.critical_points
+        if len(x) > 0:
+            return x[0].psi
+        else:
+            raise ValueError(f"No x-point")
 
     @cached_property
     def psi_norm(self):
@@ -32,46 +51,31 @@ class RadialGrid:
 
     @cached_property
     def rho_tor_norm(self):
-        return self._parent.profiles_1d.rho_tor_norm(self._psi_norm)
+        return self._equilibrium.profiles_1d.rho_tor_norm(self._psi_norm)
 
     @cached_property
     def rho_tor(self):
-        return self._parent.profiles_1d.rho_tor(self._psi_norm)
+        return self._equilibrium.profiles_1d.rho_tor(self._psi_norm)
 
     @cached_property
     def rho_pol_norm(self):
-        return self._parent.profiles_1d.rho_pol_norm(self._psi_norm)
+        return self._equilibrium.profiles_1d.rho_pol_norm(self._psi_norm)
 
     @cached_property
     def psi(self):
-        return self._parent.profiles_1d.psi(self._psi_norm)
+        return self._equilibrium.profiles_1d.psi(self._psi_norm)
 
     @cached_property
     def volume(self):
-        return self._parent.profiles_1d.volume(self._psi_norm)
+        return self._equilibrium.profiles_1d.volume(self._psi_norm)
 
     @cached_property
     def area(self):
-        return self._parent.profiles_1d.area(self._psi_norm)
+        return self._equilibrium.profiles_1d.area(self._psi_norm)
 
     @cached_property
     def surface(self):
-        return self._parent.profiles_1d.surface(self._psi_norm)
-
-    @cached_property
-    def psi_magnetic_axis(self):
-        """Poloidal flux at the magnetic axis  [Wb]."""
-        o, _ = self._parent.critical_points
-        return o[0].psi
-
-    @cached_property
-    def psi_boundary(self):
-        """Poloidal flux at the selected plasma boundary  [Wb]."""
-        _, x = self._parent.critical_points
-        if len(x) > 0:
-            return x[0].psi
-        else:
-            raise ValueError(f"No x-point")
+        return self._equilibrium.profiles_1d.surface(self._psi_norm)
 
 # class RadialGrid(PhysicalGraph):
 #     """Radial grid	"""

@@ -1,7 +1,10 @@
 from functools import cached_property, lru_cache
+from fytok.modules.utilities.RadialGrid import RadialGrid
+
 import numpy as np
-from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.data.Function import Function
+from spdm.data.List import List
+from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.logger import logger
 
 
@@ -19,34 +22,57 @@ class CoreTransport(PhysicalGraph):
     """
     IDS = "core_transport"
 
-    def __init__(self,  *args,   **kwargs):
+    def __init__(self, grid: RadialGrid,  *args, time=None,   **kwargs):
         super().__init__(*args, **kwargs)
+        self._time = time or 0.0
+        self._grid = grid
 
     def update(self, *args, time=None, ** kwargs):
         logger.debug(f"Update {self.__class__.__name__} [time={time}] at: Do nothing")
+        self._time = time
 
     @property
-    def grid(self):
-        return self._parent.radial_grid
+    def time(self) -> float:
+        return self._time
 
-    class TransportCoeff(PhysicalGraph):
+    @property
+    def grid(self) -> RadialGrid:
+        return self._grid
+
+    class ParticleTransportCoeff(PhysicalGraph):
         def __init__(self,   *args, **kwargs):
             super().__init__(*args,   **kwargs)
             self.d = Function(self._parent.grid_d.rho_tor_norm, self["d"])
             self.v = Function(self._parent.grid_v.rho_tor_norm, self["v"])
+
+        @cached_property
+        def flux(self):
+            self.flux = Function(self._parent.grid_flux.rho_tor_norm, self["flux"])
+
+    class EngeryTransportCoeff(PhysicalGraph):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args,   **kwargs)
+            logger.debug(self["d"].shape)
+            self.d = Function(self._parent.grid_d.rho_tor_norm, self["d"])
+            self.v = Function(self._parent.grid_v.rho_tor_norm, self["v"])
+
+        @cached_property
+        def flux(self):
             self.flux = Function(self._parent.grid_flux.rho_tor_norm, self["flux"])
 
     class Particle(PhysicalGraph):
-        def __init__(self, *args,  **kwargs):
+        def __init__(self, *args, profile=None, **kwargs):
             super().__init__(*args, **kwargs)
+            self._profile = profile
 
         @cached_property
         def particles(self):
-            return CoreTransport.TransportCoeff(self["particles"], parent=self._parent)
+
+            return CoreTransport.ParticleTransportCoeff(self["particles"], profile=self._profile, parent=self._parent)
 
         @cached_property
         def energy(self):
-            return CoreTransport.TransportCoeff(self["energy"], parent=self._parent)
+            return CoreTransport.EngeryTransportCoeff(self["energy"], profile=self._profile,  parent=self._parent)
 
     class Ion(Particle):
         def __init__(self,   *args,  **kwargs):
@@ -82,19 +108,20 @@ class CoreTransport(PhysicalGraph):
         return self._parent.radial_grid
 
     @cached_property
-    def ion(self):
-        """ Ion　: Transport coefficients related to the various ion species """
-        return CoreTransport.Ion(self['ion'], parent=self)
-
-    @cached_property
     def electrons(self):
         """ Electrons :　Transport quantities related to the electrons"""
+
         return CoreTransport.Electrons(self['electrons'], parent=self)
+
+    @cached_property
+    def ion(self):
+        """ Ion　: Transport coefficients related to the various ion species """
+        return List(self['ion'], default_factory=CoreTransport.Ion, parent=self)
 
     @cached_property
     def neutral(self):
         """ Neutral : Transport coefficients related to the various neutral species"""
-        return CoreTransport.Neutral(self['neutral'], parent=self)
+        return List(self['neutral'], default_factory=CoreTransport.Neutral,  parent=self)
 
     @cached_property
     def total_ion_energy(self):
@@ -102,14 +129,14 @@ class CoreTransport(PhysicalGraph):
             CoreTransport.TransportCoeff : Transport coefficients for the total 
              (summed over ion species) energy equation
         """
-        return CoreTransport.TransportCoeff(self["total_ion_energy"], parent=self)
+        return CoreTransport.EngeryTransportCoeff(self["total_ion_energy"], parent=self)
 
     @cached_property
     def momentum_tor(self):
         """
             CoreTransport.TransportCoeff : Transport coefficients for total toroidal momentum equation
         """
-        return CoreTransport.TransportCoeff(self["momentum_tor"], parent=self)
+        return CoreTransport.ParticleTransportCoeff(self["momentum_tor"], parent=self)
 
     @cached_property
     def conductivity_parallel(self):

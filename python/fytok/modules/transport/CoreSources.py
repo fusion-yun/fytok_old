@@ -13,40 +13,42 @@ class CoreSources(PhysicalGraph):
     """
     IDS = "core_sources"
 
-    def __init__(self,  *args,   **kwargs):
+    def __init__(self,  grid: RadialGrid,  *args, time=None,   **kwargs):
         super().__init__(*args, **kwargs)
+        self._time = time or 0.0
+        self._grid = grid
 
     def update(self, *args, time=None, ** kwargs):
         logger.debug(f"Update {self.__class__.__name__} [time={time}] at: Do nothing")
 
     @property
+    def time(self) -> float:
+        return self._time
+
+    @property
     def grid(self) -> RadialGrid:
-        return self._parent.radial_grid
+        return self._grid
 
-    class SourceCoeff(PhysicalGraph):
-        def __init__(self,   *args, **kwargs):
-            super().__init__(*args,   **kwargs)
-
-    class Particle(SourceCoeff):
+    class Particle(PhysicalGraph):
         def __init__(self, *args,  **kwargs):
             super().__init__(*args, **kwargs)
 
         @cached_property
         def particles(self):
-            return Function(self._parent.grid.rho_tor_norm, self["particles"] or 0.0, parent=self._parent)
+            return Function(self._parent.grid.rho_tor_norm, self["particles"], parent=self._parent)
 
         @cached_property
         def energy(self):
-            return Function(self._parent.grid.rho_tor_norm, self["energy"] or 0.0, parent=self._parent)
+            return Function(self._parent.grid.rho_tor_norm, self["energy"], parent=self._parent)
 
         @cached_property
         def momentum(self):
             return PhysicalGraph({
-                "radial": Function(self._parent.grid.rho_tor_norm, self["momentum.radial"] or 0.0, parent=self._parent),
-                "diamagnetic": Function(self._parent.grid.rho_tor_norm, self["momentum.diamagnetic"] or 0.0, parent=self._parent),
-                "parallel": Function(self._parent.grid.rho_tor_norm, self["momentum.parallel"] or 0.0, parent=self._parent),
-                "poloidal": Function(self._parent.grid.rho_tor_norm, self["momentum.poloidal"] or 0.0, parent=self._parent),
-                "toroidal": Function(self._parent.grid.rho_tor_norm, self["momentum.toroidal"] or 0.0, parent=self._parent)
+                "radial": Function(self._parent.grid.rho_tor_norm, self["momentum.radial"], parent=self._parent),
+                "diamagnetic": Function(self._parent.grid.rho_tor_norm, self["momentum.diamagnetic"], parent=self._parent),
+                "parallel": Function(self._parent.grid.rho_tor_norm, self["momentum.parallel"], parent=self._parent),
+                "poloidal": Function(self._parent.grid.rho_tor_norm, self["momentum.poloidal"], parent=self._parent),
+                "toroidal": Function(self._parent.grid.rho_tor_norm, self["momentum.toroidal"], parent=self._parent)
             })
 
     class Electrons(Particle):
@@ -75,27 +77,27 @@ class CoreSources(PhysicalGraph):
 
     @cached_property
     def total_ion_energy(self):
-        res = Function(self.grid.rho_tor_norm,  0.0, parent=self._parent)
+        res = Function(self.grid.rho_tor_norm,  0.0)
         for ion in self.ion:
             res += ion.energy
         return res
 
     @cached_property
     def total_ion_power_inside(self):
-        raise NotImplemented
+        return NotImplemented
 
     @cached_property
     def torque_tor_inside(self):
-        raise NotImplemented
+        return NotImplemented
 
     @cached_property
     def j_parallel(self):
-        raise Function(self.grid.rho_tor_norm, self["j_parallel"] or 0.0, parent=self._parent)
+        return Function(self.grid.rho_tor_norm, self["j_parallel"])
 
     @cached_property
     def current_parallel_inside(self):
-        raise Function(self.grid.rho_tor_norm, self["current_parallel_inside"] or 0.0, parent=self._parent)
+        return Function(self.grid.rho_tor_norm, self["current_parallel_inside"])
 
     @cached_property
     def conductivity_parallel(self):
-        raise Function(self.grid.rho_tor_norm, self["conductivity_parallel"] or 0.0, parent=self._parent)
+        return Function(self.grid.rho_tor_norm, self["conductivity_parallel"])

@@ -109,18 +109,47 @@ if __name__ == "__main__":
     #     # x_axis=(tok.equilibrium.profiles_1d.rho_tor_norm, {"label": r"$\rho_{N}$"}) , # asd
     #       grid = True) .savefig("/home/salmon/workspace/output/profiles_1d.svg")
 
-    # tok.initialize({
-    #     "particle": {
-    #         "source": {"S0": 7.5e20, "profile": lambda x: np.exp(15.0*(x-1.0))},
-    #         "diffusivity": {"D0": 0.5, "D1": 1.0, "D2": 1.1},
-    #         "pinch_number": {"V0": 1.385}
-    #     }
-    # })
+    tok.initialize({
+        "pedestal_top": 0.88,
+        "electron": {
+            "density": {
+                "n0": 0.95e19,
+                "source": {"S0": 7.5e17},  # S0 7.5e20
+                "diffusivity": {"D0": 0.5, "D1": 1.0, "D2": 1.1},
+                "pinch_number": {"V0": 1.385}
+            },
+            "temperature": {
+                "T0": 0.95e19,
+                "profile": lambda r: (1-r**2)**2,
+            }}
+    })
 
+    tok.update(transport_solver={})
+
+    # rho_tor_bdry = tok.core_profiles.grid.rho_tor[-1]
+    # r = tok.core_profiles.grid.rho_tor_norm
+    # vpr = Function(tok.equilibrium.profiles_1d.rho_tor_norm,
+    #                tok.equilibrium.profiles_1d.vprime)(tok.core_profiles.grid.rho_tor)
     plot_profiles(
         [
             (tok.core_profiles.grid.psi_norm, r"$\psi_{N}$"),
             (tok.core_profiles.grid.rho_tor, r"$\rho_{tor}$"),
+            [
+                (tok.core_transport[0].electrons.particles.d, r"$d_{e}$"),
+                (tok.core_transport[0].electrons.particles.v, r"$v_{e}$"),
+            ],
+            (tok.core_sources[0].electrons.particles, r"$S_{e}$"),
+
+            [
+                (tok.core_transport[0].electrons.particles.d *
+                 tok.core_profiles.electrons.density.derivative, r"$d_{e}$"),
+                (tok.core_transport[0].electrons.particles.v *
+                 tok.core_profiles.electrons.density, r"$v_{e}$"),
+            ],
+            (tok.core_profiles.electrons.density, r"$n_{e}$"),
+
+
+            # (tok.core_profiles.electrons.temperature, r"$T_{e}$"),
 
         ],
         x_axis=(tok.core_profiles.grid.rho_tor_norm,   {"label": r"$\rho_{N}$"}),  # asd

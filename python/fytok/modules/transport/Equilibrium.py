@@ -2,7 +2,6 @@ import collections
 from functools import cached_property
 
 import matplotlib.pyplot as plt
-from fytok.modules.utilities.RadialGrid import RadialGrid
 import numpy as np
 import scipy
 from numpy import arctan2, cos, sin, sqrt
@@ -10,9 +9,10 @@ from numpy.lib.arraysetops import isin
 from scipy.optimize import fsolve, root_scalar
 from spdm.data.Field import Field
 from spdm.data.Function import Function
+from spdm.data.mesh.CurvilinearMesh import CurvilinearMesh
 from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.logger import logger
-from spdm.data.mesh.CurvilinearMesh import CurvilinearMesh
+
 
 TOLERANCE = 1.0e-6
 
@@ -65,10 +65,12 @@ class Equilibrium(PhysicalGraph):
 
     DEFAULT_PLUGIN = "FreeGS"
 
-    def __init__(self, eq, *args,   **kwargs):
+    def __init__(self, eq, *args, time=None,   **kwargs):
         if eq["time_slice"] != None:
             eq = eq["time_slice"]
+
         super().__init__(eq, *args, **kwargs)
+        self._time = time or self["time"] or self._parent.time
 
     @property
     def vacuum_toroidal_field(self):
@@ -76,10 +78,11 @@ class Equilibrium(PhysicalGraph):
 
     @property
     def time(self):
-        return self._parent.time
+        return self._time
 
     def update(self, *args, time=None, ** kwargs):
         logger.debug(f"Update {self.__class__.__name__} [time={time}] at: Do nothing")
+        self._time = time
         # self.update_cache()
 
     def update_cache(self):
@@ -89,9 +92,6 @@ class Equilibrium(PhysicalGraph):
         del self.boundary
         del self.boundary_separatrix
         del self.coordinate_system
-
-    def radial_grid(self, *args, **kwargs):
-        return RadialGrid(*args, equilibrium=self, **kwargs)
 
     @cached_property
     def psirz(self):

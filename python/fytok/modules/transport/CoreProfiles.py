@@ -1,9 +1,12 @@
+import collections
 from functools import cached_property
 
 from numpy import arctan2, cos, sin, sqrt
 from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.data.Function import Function
 from spdm.util.logger import logger
+from spdm.data.List import List
+from ..utilities.RadialGrid import RadialGrid
 
 
 class CoreProfiles(PhysicalGraph):
@@ -11,14 +14,23 @@ class CoreProfiles(PhysicalGraph):
     """
     IDS = "core_profiles"
 
-    def __init__(self, d, *args,  ** kwargs):
-        if d["profiles_1d"] != None:
-            d = d["profiles_1d"]
-        super().__init__(d, *args, ** kwargs)
+    def __init__(self,   grid: RadialGrid, *args, time=None,  ** kwargs):
+        if len(args) > 0:
+            if args[0]["profiles_1d"] != None:
+                args[0] = args[0]["profiles_1d"]
+            time = time or args[0]["time"]
+
+        super().__init__(*args, ** kwargs)
+        self._time = time or 0.0
+        self._grid = grid
+
+    @property
+    def time(self):
+        return self._time
 
     @property
     def grid(self):
-        return self._parent.radial_grid
+        return self._grid
 
     class TemperatureFit(PhysicalGraph):
         def __init__(self, *args, **kwargs):
@@ -29,13 +41,9 @@ class CoreProfiles(PhysicalGraph):
             super().__init__(*args, **kwargs)
 
     class Electrons(PhysicalGraph):
-        def __init__(self, cache=None, *args, grid=None,  **kwargs):
-            super().__init__(cache, *args, axis=grid.rho_tor_norm, **kwargs)
-            self.__dict__['_grid'] = grid
-            self |= {
-                "temperature_validity": 0,
-                "density_validity": 0
-            }
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
         # @property
         # def temperature(self):
         #     """Temperature {dynamic} [eV]"""
@@ -110,18 +118,17 @@ class CoreProfiles(PhysicalGraph):
         #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
 
     class Ion(PhysicalGraph):
-        def __init__(self, cache=None,  *args, grid=None, z_ion=1, label=None, neutral_index=None,  **kwargs):
-            super().__init__(cache, *args, axis=grid.rho_tor_norm, **kwargs)
-            self.__dict__['_grid'] = grid
-            self |= {
-                "z_ion": "z_ion",
-                "label": "label",
-                "neutral_index": "neutral_index",
-                "element": [],
-                "state": [],
-                "temperature_validity": 0,
-                "density_validity": 0
-            }
+        def __init__(self,   *args, grid=None, z_ion=1, label=None, neutral_index=None,  **kwargs):
+            super().__init__(*args,  **kwargs)
+            # self |= {
+            #     "z_ion": "z_ion",
+            #     "label": "label",
+            #     "neutral_index": "neutral_index",
+            #     "element": [],
+            #     "state": [],
+            #     "temperature_validity": 0,
+            #     "density_validity": 0
+            # }
 
         # @property
         # def z_ion(self):
@@ -322,19 +329,19 @@ class CoreProfiles(PhysicalGraph):
         #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
 
     @cached_property
-    def ion(self):
-        """Quantities related to the different ion species"""
-        return PhysicalGraph([CoreProfiles.Ion(d,  parent=self) for d in self["ion"]],  parent=self)
-
-    @cached_property
     def electrons(self):
         """Quantities related to the electrons"""
-        return PhysicalGraph([CoreProfiles.Electrons(d,  parent=self) for d in self["electrons"]],  parent=self)
+        return CoreProfiles.Electrons(self["electrons"] or {},  parent=self)
+
+    @cached_property
+    def ion(self):
+        """Quantities related to the different ion species"""
+        return List(self["ion"], default_fatory=CoreProfiles.Ion,  parent=self)
 
     @cached_property
     def neutral(self):
         """Quantities related to the different neutral species"""
-        return PhysicalGraph([CoreProfiles.Neutral(d,  parent=self) for d in self["neutral"]],  parent=self)
+        return List(self["neutral"], default_fatory=CoreProfiles.Neutral,  parent=self)
 
     @cached_property
     def t_i_average(self):
@@ -351,7 +358,6 @@ class CoreProfiles(PhysicalGraph):
         """ total ion density(sum over species and charge states)   (thermal+non-thermal) {dynamic}[-]"""
         res = Function(self.grid.rho_tor_norm, 0.0, description={"name": "n_i_total"})
         for ion in self.ion:
-            logger.debug(ion)
             res += ion.z_ion*(ion.density_thermal+ion.density_fast)
         return res
 
@@ -407,20 +413,20 @@ class CoreProfiles(PhysicalGraph):
         """Total parallel pressure(electrons+ions, thermal+non-thermal) {dynamic}[Pa]"""
         return NotImplemented
 
-    @cached_property
-    def j_total(self):
-        """Total parallel current density = average(jtot.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
-        return Function(self.grid.rho_tor_norm, 0.0, description={"name": "j_total"})
+    # @cached_property
+    # def j_total(self):
+    #     """Total parallel current density = average(jtot.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
+    #     return Function(self.grid.rho_tor_norm, 0.0, description={"name": "j_total"})
 
     # @property
     # def current_parallel_inside(self):
     #     """Parallel current driven inside the flux surface. Cumulative surface integral of j_total {dynamic}[A]"""
     #     return NotImplemented
 
-    @cached_property
-    def j_tor(self):
-        """Total toroidal current density = average(J_Tor/R) / average(1/R) {dynamic}[A/m ^ 2]"""
-        return Function(self.grid.rho_tor_norm, 0.0, description={"name": "j_tor"})
+    # @cached_property
+    # def j_tor(self):
+    #     """Total toroidal current density = average(J_Tor/R) / average(1/R) {dynamic}[A/m ^ 2]"""
+    #     return Function(self.grid.rho_tor_norm, 0.0, description={"name": "j_tor"})
 
     @cached_property
     def j_ohmic(self):
