@@ -127,7 +127,7 @@ class TransportSolver(PhysicalGraph):
             To be removed when the solver_1d structure is finalized. {dynamic}"""
         return TransportSolver.BoundaryCondition(self["boundary_conditions"])
 
-    def solve_general_form(self, x, y0, yp0, inv_tau, coeff,  bc,   **kwargs):
+    def solve_general_form(self, x, y0, gamma0, inv_tau, coeff,  bc,   **kwargs):
         r"""
             solve standard form
 
@@ -166,10 +166,8 @@ class TransportSolver(PhysicalGraph):
 
                 .. math::
                     \begin{cases}
-                        \frac{\partial Y\left(x,t\right)}{\partial\rho} & = \
-                              -\frac{\Gamma\left(x,t\right)-e\left(x\right)\cdot Y\left(x,t\right)}{d\left(x\right)}\\
-                        \frac{\partial\Gamma\left(x,t\right)}{\partial x} & = \
-                             c\left(x\right)\left[f\left(x\right)-g\left(x\right)\cdot Y\left(x,t\right)-\
+                        \frac{\partial Y\left(x,t\right)}{\partial\rho} & =  -\frac{\Gamma\left(x,t\right)-e\left(x\right)\cdot Y\left(x,t\right)}{d\left(x\right)}\\
+                        \frac{\partial\Gamma\left(x,t\right)}{\partial x} & =    c\left(x\right)\left[f\left(x\right)-g\left(x\right)\cdot Y\left(x,t\right)-\
                                  \frac{a\left(x\right)\cdot Y\left(x,t\right)-b\left(x\right)\cdot Y\left(x,t-1\right)}{\tau}\right]
                     \end{cases}
                     :label: generalized_trans_eq_first_order
@@ -222,15 +220,14 @@ class TransportSolver(PhysicalGraph):
                 P=[[u(a),u(b)],[v(a),v(b)],[w(a),w(b)]]
             """
 
-            ya, ypa = Ya
-            yb, ypb = Yb
-            return (u0 * ya + v0 * ypa - w0,
-                    u1 * yb + v1 * ypb - w1)
+            ya, gammaa = Ya
+            yb, gammab = Yb
 
-        if yp0 is None:
-            yp0 = Function(x, y0).derivative
+            return (u0 * ya + v0 * gammaa - w0,
+                    u1 * yb + v1 * gammab - w1)
 
-        gamma0 = -yp0*D(x) + y0*E(x)
+        if gamma0 is None:
+            gamma0 = - Function(x, y0).derivative*D(x) + y0*E(x)
 
         return scipy.integrate.solve_bvp(fun, bc_func, x, np.vstack([y0, gamma0]), **kwargs)
 
@@ -619,22 +616,18 @@ class TransportSolver(PhysicalGraph):
 
             if not isinstance(ne0, np.ndarray) and ne0 == None:
                 ne0 = np.zeros(rho_tor_norm.shape)
-                # ne0_prime = np.zeros(rho_tor_norm.shape)
-            # else:
-                # ne0_prime = ne0.derivative
-
-            # diff_hyper = hyper_diff[0] + hyper_diff[1] * max(diff)
 
             H = vpr * gm3
+
             # dlnNe0 = ne0_prime/ne0
 
             a = vpr
             b = vprm
             c = rho_tor_boundary
-            d = H * (diff) / rho_tor_boundary
-            e = H * (vconv) - k_phi*rho_tor*vpr
-            f = vpr * se_exp
-            g = vpr * se_imp
+            d = H * diff / rho_tor_boundary
+            e = H * vconv - k_phi*rho_tor*vpr
+            f = Function(rho_tor_norm, vpr * se_exp)
+            g = Function(rho_tor_norm, vpr * se_imp)
 
             """
                 # Boundary conditions for electron diffusion equation in form:
@@ -694,35 +687,41 @@ class TransportSolver(PhysicalGraph):
                                           None,
                                           inv_tau,
                                           (a, b, c, d, e, f, g),
-                                          ((0, 1, 0), (1, 0, 4.9e19)),
+                                          ((-e[0], 1, 0), (1, 0, 4.9e18)),
                                           #   parameters=[diff_hyper],
-                                          tol=0.5,
+                                          #   tol=0.5,
                                           verbose=2,
-                                          max_nodes=400
+                                          max_nodes=140
                                           )
 
+            logger.info(f"""Solve transport equations: Electron density: { 'Success' if sol.success else 'Failed' } """)
+
             if not sol.success:
-                raise RuntimeError(sol.message)
-
-            logger.info(f"""Solve transport equations: Electron density: Done """)
-
-            # diff_flux = -d * ne0_prime  # * H*diff/rho_tor_boundary
-            vconv_flux = e * ne0  # * H * vconv
-            s_exp_flux = Function(rho_tor_norm, f).antiderivative * c
+                logger.debug(sol.message)
+            # else:
+                # diff_flux = -d * ne0_prime  # * H*diff/rho_tor_boundary
+            ne0 = Function(sol.x, sol.y[0])
+            ne0_prime = Function(sol.x, sol.yp[0])
+            s_exp_flux = Function(sol.x, f(sol.x)-g(sol.x)*ne0).antiderivative(sol.x) * c
+            diff_flux = Function(sol.x, -d(sol.x) * ne0_prime)  # * H * vconv
+            vconv_flux = Function(sol.x, e(sol.x) * ne0)  # * H * vconv
 
             core_profiles_next[sp] = {
-                "density": ne0,
-                # "diff_flux": -d * ne0_prime,  # * H*diff/rho_tor_boundary
-                "vconv_flux": e * ne0,  # * H * vconv
+                # "density_prime": -d * ne0_prime,  # * H*diff/rho_tor_boundary
+                "diff_flux": diff_flux,
+                "vconv_flux": vconv_flux,
                 "s_exp_flux": s_exp_flux,
-                # "density_residual": diff_flux + vconv_flux - s_exp_flux,
+                "residual": (diff_flux + vconv_flux - s_exp_flux),
                 "diff": Function(rho_tor_norm, diff),
                 "vconv": Function(rho_tor_norm, vconv),
-                "density": Function(sol.x, sol.y[0]),
-                "density_flux": Function(sol.x, sol.y[1])
+                "density": ne0,
+                "density_prime": ne0_prime,
+                "gamma": Function(sol.x, sol.y[1]),
+                "gamma_prime": Function(sol.x, sol.yp[1]),
+                "rms_residuals": sol.rms_residuals
             }
 
-        # Temperature equation
+            # Temperature equation
         if False:
             for sp in spec:
 

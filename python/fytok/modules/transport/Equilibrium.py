@@ -560,7 +560,7 @@ class Equilibrium(PhysicalGraph):
                 .. math ::
                     \Phi_{tor}\left(\psi\right)=\int_{0}^{\psi}qd\psi
             """
-            return self.dphi_dpsi.antiderivative * self._parent.global_quantities.cocos_flag
+            return self.dphi_dpsi.antiderivative 
 
         @cached_property
         def rho_tor(self):

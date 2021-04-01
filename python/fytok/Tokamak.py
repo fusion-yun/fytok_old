@@ -177,20 +177,20 @@ class Tokamak(PhysicalGraph):
 
         # rho = np.hstack([rho_core, rho_edge])
 
-        rho = np.linspace(0.0, 1.0, npoints)
+        rho_n = np.linspace(0.0, 1.0, npoints)
 
-        self._radial_grid = {"axis": rho, "label": "rho_tor_norm"}
+        self._radial_grid = {"axis": rho_n, "label": "rho_tor_norm"}
 
-        p_src = Function(rho, spec.electron.density.source.S0 * np.exp(15.0*(rho**2-1.0)))
+        p_src = Function(rho_n, spec.electron.density.source.S0 * np.exp(15.0*(rho_n**2-1.0)))
 
-        d = np.piecewise(rho, [rho < r_ped, rho >= r_ped],
+        d = np.piecewise(rho_n, [rho_n < r_ped, rho_n >= r_ped],
                          [lambda x:spec.electron.density.diffusivity.D0 + spec.electron.density.diffusivity.D1 * (x**4),
-                          lambda x:spec.electron.density.diffusivity.D0])
+                          lambda x:spec.electron.density.diffusivity.D2])
 
-        p_diff = Function(rho, d)
+        D_diff = Function(rho_n, d)
 
-        p_pinch = Function(rho, p_diff*(rho**2) *
-                           spec.electron.density.pinch_number.V0/self.equilibrium.vacuum_toroidal_field.r0)
+        v_pincg = Function(rho_n, D_diff * rho_n * spec.electron.density.pinch_number.V0 /
+                           self.equilibrium.vacuum_toroidal_field.r0)
 
         # def n_core(x): return (1-x**4)**2
         # def dn_core(x): return -4*x*(1-x**2)
@@ -198,13 +198,14 @@ class Tokamak(PhysicalGraph):
         #     dn_core(r_ped) * (1.0 - np.exp(2.0*(x-r_ped)/(1.0-r_ped)))
         # #     def dn_ped(x): return dn_core(x_ped) * np.exp((x-x_ped)/(1.0-x_ped))
 
-        self.core_profiles.electrons.density = Function(rho, spec.electron.density.n0 * (1-rho**4)**2)
+        self.core_profiles.electrons.density = Function(rho_n, np.full(rho_n.shape, spec.electron.density.n0))
+        #Function(rho_n, spec.electron.density.n0 * (1-rho_n**4)**2)
 
         self.core_transport[_next_] = {
             "electrons": {
                 "particles": {
-                    "d": p_diff,
-                    "v": p_pinch,
+                    "d": D_diff,
+                    "v": -v_pincg,
                 }
             }
         }

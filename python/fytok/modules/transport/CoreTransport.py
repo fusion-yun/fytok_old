@@ -42,12 +42,18 @@ class CoreTransport(PhysicalGraph):
     class ParticleTransportCoeff(PhysicalGraph):
         def __init__(self,   *args, **kwargs):
             super().__init__(*args,   **kwargs)
-            self.d = Function(self._parent.grid_d.rho_tor_norm, self["d"])
-            self.v = Function(self._parent.grid_v.rho_tor_norm, self["v"])
+
+        @cached_property
+        def d(self):
+            return Function(self._parent.grid_d.rho_tor_norm, self["d"])
+
+        @cached_property
+        def v(self):
+            return Function(self._parent.grid_d.rho_tor_norm, self["v"])
 
         @cached_property
         def flux(self):
-            self.flux = Function(self._parent.grid_flux.rho_tor_norm, self["flux"])
+            return Function(self._parent.grid_flux.rho_tor_norm, self["flux"])
 
     class EngeryTransportCoeff(PhysicalGraph):
         def __init__(self, *args, **kwargs):
