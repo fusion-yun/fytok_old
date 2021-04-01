@@ -138,13 +138,17 @@ if __name__ == "__main__":
         [
             (tok.core_profiles.electrons.density,           r"$n_{e}$"),
             (tok.core_profiles.electrons.density_prime,     r"$n_{e}^{\prime}$"),
-            (tok.core_profiles.electrons.gamma,             r"$\Gamma_{e}$"),
-            (tok.core_profiles.electrons.gamma_prime,       r"$\Gamma_{e}^{\prime}$"),
+            (tok.core_profiles.electrons.n_gamma,             r"$\Gamma_{e}$"),
+            (tok.core_profiles.electrons.n_gamma_prime,       r"$\Gamma_{e}^{\prime}$"),
             [
-                (tok.core_profiles.electrons.s_exp_flux,    {"color": "green", "label": r"Source"}),
-                (tok.core_profiles.electrons.diff_flux,     {"color": "black", "label": r"Diffusive flux"}),
-                (tok.core_profiles.electrons.vconv_flux,    {"color": "red", "label": r"Convective flux"}),
-                (tok.core_profiles.electrons.residual,      {"color": "blue", "label": r"Residual"})
+                (tok.core_transport[0].electrons.particles.d, r"$d_{e}$"),
+                (tok.core_transport[0].electrons.particles.v, r"$v_{e}$"),
+            ],
+            [
+                (tok.core_profiles.electrons.n_s_exp_flux,    {"color": "green", "label": r"Source"}),
+                (tok.core_profiles.electrons.n_diff_flux,     {"color": "black", "label": r"Diffusive flux"}),
+                (tok.core_profiles.electrons.n_vconv_flux,    {"color": "red", "label": r"Convective flux"}),
+                (tok.core_profiles.electrons.n_residual,      {"color": "blue", "label": r"Residual"})
             ]
         ],
         x_axis=(tok.core_profiles.electrons.density.x,   {"label": r"$\rho_{N}$"}),  # asd
@@ -160,12 +164,6 @@ if __name__ == "__main__":
                 (tok.core_transport[0].electrons.particles.d, r"$d_{e}$"),
                 (np.abs(tok.core_transport[0].electrons.particles.v), r"$v_{e}$"),
             ],
-
-
-            [(tok.core_profiles.electrons.density, r"$n_{e}$"),
-             #  (0.95e18*((1-r**4)**2), r"$n_{e0}$"),
-             ],
-            # (tok.core_profiles.electrons.density.derivative, r"$n_{e}^{\prime}$"),
             (tok.equilibrium.profiles_1d.q.pullback(psi_norm, rho_tor_norm), r"$q$"),
             (tok.equilibrium.profiles_1d.vprime.pullback(psi_norm, rho_tor_norm), r"$V^{\prime}$"),
             (tok.equilibrium.profiles_1d.dphi_dpsi.pullback(psi_norm, rho_tor_norm), r"$\frac{d\phi}{d\psi}$"),
@@ -175,8 +173,7 @@ if __name__ == "__main__":
                 psi_norm, rho_tor_norm), r"$\frac{d\psi}{d\rho_{tor}}$"),
             (tok.equilibrium.profiles_1d.dvolume_drho_tor_norm.pullback(
                 psi_norm, rho_tor_norm), r"$\frac{dV}{d\rho_{N}}$"),
-            # (tok.equilibrium.profiles_1d.drho_tor_dpsi.pullback(
-            #     psi_norm, rho_tor_norm), r"$\frac{d\rho_{tor}}{d\psi}$"),
+            # (tok.equilibrium.profiles_1d.drho_tor_dpsi.pullback(psi_norm, rho_tor_norm), r"$\frac{d\rho_{tor}}{d\psi}$"),
             (tok.equilibrium.profiles_1d.gm3.pullback(psi_norm, rho_tor_norm), r"$gm3$")
 
             # (tok.core_profiles.electrons.temperature, r"$T_{e}$"),

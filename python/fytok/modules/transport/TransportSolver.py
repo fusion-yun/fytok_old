@@ -11,6 +11,7 @@ import scipy.constants
 from fytok.util.Misc import Identifier
 from spdm.data.Function import Function
 from spdm.data.PhysicalGraph import PhysicalGraph
+from spdm.data.AttributeTree import AttributeTree
 from spdm.util.logger import logger
 from spdm.util.utilities import try_get
 from .CoreProfiles import CoreProfiles
@@ -127,7 +128,7 @@ class TransportSolver(PhysicalGraph):
             To be removed when the solver_1d structure is finalized. {dynamic}"""
         return TransportSolver.BoundaryCondition(self["boundary_conditions"])
 
-    def solve_general_form(self, x, y0, gamma0, inv_tau, coeff,  bc,   **kwargs):
+    def solve_general_form(self, x, y0, gamma0, inv_tau, coeff,  bc,  hyper_diff=[0.0, 0.0],  **kwargs):
         r"""
             solve standard form
 
@@ -173,40 +174,22 @@ class TransportSolver(PhysicalGraph):
                     :label: generalized_trans_eq_first_order
 
         """
-        # if parameters is not None:
-        #     return self.solve_general_form_with_parameter(x, y0, yp0, inv_tau, coeff,  bc, parameters, **kwargs)
 
         a, b, c, d, e, f, g = coeff
+
+        hyper_diff_exp, hyper_diff_imp = hyper_diff
+        hyper_diff = hyper_diff_exp+hyper_diff_imp*max(d)
 
         D = Function(x, d)
         E = Function(x, e)
         F = Function(x, (f + b*inv_tau*y0)*c)
         G = Function(x, (g + a*inv_tau)*c)
 
-        # fix_boundary = False
-        # dD = None
-        # dE = None
-
-        # if abs(D(x[0])) < TOLERANCE:
-        #     fix_boundary = True
-        #     dD = D.derivative
-        #     if isinstance(E, Function):
-        #         dE = E.derivative
-        #     else:
-        #         dE = 0.0
-
         def fun(x, Y):
             y, gamma = Y
+            yp = Function(x, y).derivative
             dgamma = F(x) - G(x) * y
-            vD = D(x)
-            vD[0] = 1.0
-            dy = -(gamma-E(x)*y)/vD
-            dy[0] = 0.0
-            # if fix_boundary:
-            #     vD[0] = 1.0
-            #     dy = -(gamma-vE*y)/vD
-            #     dy[0] = (dgamma[0] - dE(0)*y[0])/(E(0)-dD(0))
-            # else:
+            dy = (-gamma + E(x)*y+hyper_diff * yp)/(D(x)+hyper_diff)
             return np.vstack((dy, dgamma))
 
         u0, v0, w0 = bc[0]
@@ -229,52 +212,28 @@ class TransportSolver(PhysicalGraph):
         if gamma0 is None:
             gamma0 = - Function(x, y0).derivative*D(x) + y0*E(x)
 
-        return scipy.integrate.solve_bvp(fun, bc_func, x, np.vstack([y0, gamma0]), **kwargs)
+        sol = scipy.integrate.solve_bvp(fun, bc_func, x, np.vstack([y0, gamma0]),  **kwargs)
 
-    def solve_general_form_with_parameter(self, x, y0, yp0, inv_tau, coeff,  bc, parameters=None, **kwargs):
-        a, b, c, d, e, f, g = coeff
+        y1 = Function(sol.x, sol.y[0])
+        yp1 = Function(sol.x, sol.yp[0])
+        s_exp_flux = Function(sol.x, f(sol.x)-g(sol.x)*y1).antiderivative(sol.x) * c
+        diff_flux = Function(sol.x, -d(sol.x) * yp1)
+        vconv_flux = Function(sol.x, e(sol.x) * y1)
 
-        def D(x, p): return d(x) if isinstance(d, Function) else d(x, p)
-        def E(x, p): return e(x) if isinstance(e, Function) else e(x, p)
-        F = (f + b*inv_tau*y0)*c
-        G = (g + a*inv_tau)*c
+        profiles = AttributeTree({
+            "diff_flux": diff_flux,
+            "vconv_flux": vconv_flux,
+            "s_exp_flux": s_exp_flux,
+            "residual": (diff_flux + vconv_flux - s_exp_flux),
 
-        def fun(x, Y, p):
-            y, gamma = Y
-            dy = -(gamma-E(x, p)*y)/D(x, p)
-            dgamma = F(x) - G(x) * y
-            return np.vstack((dy, dgamma))
+            "density": y1,
+            "density_prime": yp1,
+            "gamma": Function(sol.x, sol.y[1]),
+            "gamma_prime": Function(sol.x, sol.yp[1]),
+        })
+        return sol, profiles
 
-        u0, v0, w0 = bc[0]
-        u1, v1, w1 = bc[1]
-
-        def bc_func(Ya, Yb, p):
-            r"""
-                u*y(b)+v*\Gamma(b)=w
-                Ya=[y(a),y'(a)]
-                Yb=[y(b),y'(b)]
-                P=[[u(a),u(b)],[v(a),v(b)],[w(a),w(b)]]
-            """
-
-            y0, gamma0 = Ya
-            y1, gamma1 = Yb
-            return (u0 * y0 + v0 * gamma0 - w0,
-                    u1 * y1 + v1 * gamma1 - w1,
-                    gamma1-E(1.0, p)(1.0)*y1)
-
-        if yp0 is None:
-            yp0 = Function(y0, axis=x).derivative
-
-        if not isinstance(parameters, collections.abc.Sequence):
-            parameters = [parameters]
-
-        gamma0 = -yp0*D(x, parameters) + y0*E(x, parameters)
-
-        return scipy.integrate.solve_bvp(fun, bc_func, x, np.vstack((y0, gamma0)), p=parameters, **kwargs)
-
-    def update_global_quantities(self, core_profiles_prev,  core_profiles_next):
-        # self.core_profiles_prev.global_quantities = NotImplemented
-        pass
+ 
 
     def solve(self, core_profiles_prev: CoreProfiles, bc=None,   enable_ion_solver=False, **kwargs):
         r"""
@@ -581,6 +540,7 @@ class TransportSolver(PhysicalGraph):
             # core_profiles_next.j_non_inductive = fpol[-1] * core_profiles_next.integral(
             #     vpr * (j_ni_exp + j_ni_imp * psi1) / (2.0 *  scipy.constants.pi) * B0 / fpol**2)
 
+        diff_hyper = 1000
         # Particle Transport
         for sp in spec:
             diff = np.zeros(rho_tor_norm.shape)
@@ -619,13 +579,11 @@ class TransportSolver(PhysicalGraph):
 
             H = vpr * gm3
 
-            # dlnNe0 = ne0_prime/ne0
-
             a = vpr
             b = vprm
             c = rho_tor_boundary
-            d = H * diff / rho_tor_boundary
-            e = H * vconv - k_phi*rho_tor*vpr
+            d = Function(rho_tor_norm,  H * diff / c)
+            e = Function(rho_tor_norm,  H * vconv - k_phi*rho_tor*vpr)
             f = Function(rho_tor_norm, vpr * se_exp)
             g = Function(rho_tor_norm, vpr * se_imp)
 
@@ -682,44 +640,59 @@ class TransportSolver(PhysicalGraph):
                 w = ne0[-1]
             """
 
-            sol = self.solve_general_form(rho_tor_norm,
-                                          ne0,
-                                          None,
-                                          inv_tau,
-                                          (a, b, c, d, e, f, g),
-                                          ((-e[0], 1, 0), (1, 0, 4.9e18)),
-                                          #   parameters=[diff_hyper],
-                                          #   tol=0.5,
-                                          verbose=2,
-                                          max_nodes=140
-                                          )
+            sol, profiles = self.solve_general_form(rho_tor_norm,
+                                                    ne0,
+                                                    None,
+                                                    inv_tau,
+                                                    (a, b, c, d, e, f, g),
+                                                    ((-e[0], 1, 0), (1, 0, 4.9e18)),
+                                                    hyper_diff=[1000.0, 0.10],
+                                                    #   tol=0.5,
+                                                    verbose=2,
+                                                    max_nodes=10000
+                                                    )
 
             logger.info(f"""Solve transport equations: Electron density: { 'Success' if sol.success else 'Failed' } """)
 
             if not sol.success:
                 logger.debug(sol.message)
-            # else:
-                # diff_flux = -d * ne0_prime  # * H*diff/rho_tor_boundary
-            ne0 = Function(sol.x, sol.y[0])
-            ne0_prime = Function(sol.x, sol.yp[0])
-            s_exp_flux = Function(sol.x, f(sol.x)-g(sol.x)*ne0).antiderivative(sol.x) * c
-            diff_flux = Function(sol.x, -d(sol.x) * ne0_prime)  # * H * vconv
-            vconv_flux = Function(sol.x, e(sol.x) * ne0)  # * H * vconv
 
             core_profiles_next[sp] = {
-                # "density_prime": -d * ne0_prime,  # * H*diff/rho_tor_boundary
-                "diff_flux": diff_flux,
-                "vconv_flux": vconv_flux,
-                "s_exp_flux": s_exp_flux,
-                "residual": (diff_flux + vconv_flux - s_exp_flux),
-                "diff": Function(rho_tor_norm, diff),
-                "vconv": Function(rho_tor_norm, vconv),
-                "density": ne0,
-                "density_prime": ne0_prime,
-                "gamma": Function(sol.x, sol.y[1]),
-                "gamma_prime": Function(sol.x, sol.yp[1]),
-                "rms_residuals": sol.rms_residuals
+                "n_diff_flux": profiles.diff_flux,
+                "n_vconv_flux": profiles.vconv_flux,
+                "n_s_exp_flux": profiles.s_exp_flux,
+                "n_residual": profiles.residual,
+                "n_diff": Function(rho_tor_norm, diff),
+                "n_vconv": Function(rho_tor_norm, vconv),
+                "density":  profiles.density,
+                "density_prime": profiles.density_prime,
+                "n_gamma": profiles.gamma,
+                "n_gamma_prime": profiles.gamma_prime,
+                "n_rms_residuals":  profiles.rms_residuals
             }
+
+            # else:
+            # diff_flux = -d * ne0_prime  # * H*diff/rho_tor_boundary
+            # ne0 = Function(sol.x, sol.y[0])
+            # ne0_prime = Function(sol.x, sol.yp[0])
+            # s_exp_flux = Function(sol.x, f(sol.x)-g(sol.x)*ne0).antiderivative(sol.x) * c
+            # diff_flux = Function(sol.x, -d(sol.x) * ne0_prime)  # * H * vconv
+            # vconv_flux = Function(sol.x, e(sol.x) * ne0)  # * H * vconv
+
+            # {
+            #     # "density_prime": -d * ne0_prime,  # * H*diff/rho_tor_boundary
+            #     "diff_flux": diff_flux,
+            #     "vconv_flux": vconv_flux,
+            #     "s_exp_flux": s_exp_flux,
+            #     "residual": (diff_flux + vconv_flux - s_exp_flux),
+            #     "diff": Function(rho_tor_norm, diff),
+            #     "vconv": Function(rho_tor_norm, vconv),
+            #     "density": ne0,
+            #     "density_prime": ne0_prime,
+            #     "gamma": Function(sol.x, sol.y[1]),
+            #     "gamma_prime": Function(sol.x, sol.yp[1]),
+            #     "rms_residuals": sol.rms_residuals
+            # }
 
             # Temperature equation
         if False:
