@@ -36,13 +36,7 @@ if __name__ == "__main__":
             "profiles_2d": equilibrium.profiles_2d,
             "coordinate_system": {"grid": {"dim1": 64, "dim2": 128}}
         },
-        "core_profiles":
-            {
-
-                "ion": [{
-
-                }]
-        }
+        # "core_profiles":{ion": [{}]}
     })
 
     fig = plt.figure()

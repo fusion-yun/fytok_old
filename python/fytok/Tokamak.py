@@ -188,9 +188,9 @@ class Tokamak(PhysicalGraph):
                           lambda x:spec.electron.density.diffusivity.D2])
 
         D_diff = Function(rho_n, d)
-
-        v_pincg = Function(rho_n, D_diff * rho_n * spec.electron.density.pinch_number.V0 /
-                           self.equilibrium.vacuum_toroidal_field.r0)
+        _v = - D_diff * rho_n * spec.electron.density.pinch_number.V0 / self.equilibrium.vacuum_toroidal_field.r0
+       
+        v_pinch = Function(rho_n, _v)
 
         # def n_core(x): return (1-x**4)**2
         # def dn_core(x): return -4*x*(1-x**2)
@@ -205,7 +205,7 @@ class Tokamak(PhysicalGraph):
             "electrons": {
                 "particles": {
                     "d": D_diff,
-                    "v": -v_pincg,
+                    "v": v_pinch,
                 }
             }
         }

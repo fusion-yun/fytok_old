@@ -512,9 +512,7 @@ class Equilibrium(PhysicalGraph):
             """Diamagnetic function (F=R B_Phi)  [T.m]."""
             psi_axis = self._parent.global_quantities.psi_axis
             psi_boundary = self._parent.global_quantities.psi_boundary
-            f2 = self.ffprime.antiderivative
-            f2 *= (2.0*(psi_boundary-psi_axis))
-            f2 += self._fvac**2
+            f2 = self.ffprime.antiderivative * (2.0*(psi_boundary-psi_axis))+self._fvac**2
             return Function(self._psi_norm,  np.sqrt(f2))
 
         @property
@@ -560,7 +558,7 @@ class Equilibrium(PhysicalGraph):
                 .. math ::
                     \Phi_{tor}\left(\psi\right)=\int_{0}^{\psi}qd\psi
             """
-            return self.dphi_dpsi.antiderivative 
+            return self.dphi_dpsi.antiderivative
 
         @cached_property
         def rho_tor(self):
@@ -580,7 +578,8 @@ class Equilibrium(PhysicalGraph):
                                             =\frac{1}{2\sqrt{\pi B_{0}\Phi_{tor}}}\frac{d\Phi_{tor}}{d\psi} \
                                             =\frac{q}{2\pi B_{0}\rho_{tor}}
             """
-            d = self.dphi_dpsi[1:]/self.rho_tor[1:]
+            logger.debug(type(self.dphi_dpsi[1:]))
+            d = (self.dphi_dpsi[1:])/(self.rho_tor[1:])
             return Function(self._psi_norm, np.hstack([d[:1], d])/(2.0*scipy.constants.pi*self._parent.vacuum_toroidal_field.b0))
 
         @cached_property
