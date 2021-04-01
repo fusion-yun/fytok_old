@@ -578,7 +578,6 @@ class Equilibrium(PhysicalGraph):
                                             =\frac{1}{2\sqrt{\pi B_{0}\Phi_{tor}}}\frac{d\Phi_{tor}}{d\psi} \
                                             =\frac{q}{2\pi B_{0}\rho_{tor}}
             """
-            logger.debug(type(self.dphi_dpsi[1:]))
             d = (self.dphi_dpsi[1:])/(self.rho_tor[1:])
             return Function(self._psi_norm, np.hstack([d[:1], d])/(2.0*scipy.constants.pi*self._parent.vacuum_toroidal_field.b0))
 
