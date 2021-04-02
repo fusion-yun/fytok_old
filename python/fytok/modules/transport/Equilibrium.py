@@ -594,7 +594,7 @@ class Equilibrium(PhysicalGraph):
 
         @cached_property
         def norm_grad_rho_tor(self):
-            return self._parent.coordinate_system.norm_grad_psi * self.drho_tor_dpsi.reshape(list(self.drho_tor_dpsi.shape)+[1])
+            return self._parent.coordinate_system.norm_grad_psi * self.drho_tor_dpsi.view(np.ndarray).reshape(list(self.drho_tor_dpsi.shape)+[1])
 
         @cached_property
         def gm1(self):

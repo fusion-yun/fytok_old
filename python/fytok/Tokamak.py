@@ -181,19 +181,16 @@ class Tokamak(PhysicalGraph):
 
         self._radial_grid = {"axis": rho_n, "label": "rho_tor_norm"}
 
-        p_src = Function(rho_n, spec.electron.density.source.S0 * np.exp(15.0*(rho_n**2-1.0)))
+        p_src = Function(rho_n, lambda x: spec.electron.density.source.S0 * np.exp(15.0*(x**2-1.0)))
 
         D0 = spec.electron.density.diffusivity.D0
         D1 = spec.electron.density.diffusivity.D1
         D2 = spec.electron.density.diffusivity.D2
-        V0_r = spec.electron.density.pinch_number.V0 / self.equilibrium.vacuum_toroidal_field.r0
-       
+
         D_diff = Function(rho_n, [lambda r:r < r_ped, lambda r:r >= r_ped],
                           [lambda x:D0 + D1 * (x**4), lambda x: D2])
 
-        v_pinch = Function(rho_n,  [lambda r:r < r_ped, lambda r:r >= r_ped],
-                           [lambda x: -(D0 + D1 * (x**4)) * x * V0_r, lambda x: - D2 * x * V0_r])
-
+        v_pinch = -D_diff*rho_n * spec.electron.density.pinch_number.V0 / self.equilibrium.vacuum_toroidal_field.r0
         # def n_core(x): return (1-x**4)**2
         # def dn_core(x): return -4*x*(1-x**2)
         # def n_ped(x, r_ped=r_ped): return n_core(r_ped) - (1.0-r_ped)/2.0 * \

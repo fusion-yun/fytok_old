@@ -180,10 +180,10 @@ class TransportSolver(PhysicalGraph):
         hyper_diff_exp, hyper_diff_imp = hyper_diff
         hyper_diff = hyper_diff_exp+hyper_diff_imp*max(d)
 
-        D = Function(x, d)
-        E = Function(x, e)
-        F = Function(x, (f + b*inv_tau*y0)*c)
-        G = Function(x, (g + a*inv_tau)*c)
+        D = d
+        E = e
+        F = (f + b*inv_tau*y0)*c
+        G = (g + a*inv_tau)*c
 
         def fun(x, Y):
             y, gamma = Y
@@ -218,13 +218,13 @@ class TransportSolver(PhysicalGraph):
         yp1 = Function(sol.x, sol.yp[0])
         s_exp_flux = Function(sol.x, f(sol.x)-g(sol.x)*y1).antiderivative(sol.x) * c
         diff_flux = Function(sol.x, -d(sol.x) * yp1)
-        vconv_flux = Function(sol.x, e(sol.x) * y1)
+        conv_flux = Function(sol.x, e(sol.x) * y1)
 
         profiles = AttributeTree({
             "diff_flux": diff_flux,
-            "vconv_flux": vconv_flux,
+            "conv_flux": conv_flux,
             "s_exp_flux": s_exp_flux,
-            "residual": (diff_flux + vconv_flux - s_exp_flux),
+            "residual": (diff_flux + conv_flux - s_exp_flux),
 
             "density": y1,
             "density_prime": yp1,
@@ -232,8 +232,6 @@ class TransportSolver(PhysicalGraph):
             "gamma_prime": Function(sol.x, sol.yp[1]),
         })
         return sol, profiles
-
- 
 
     def solve(self, core_profiles_prev: CoreProfiles, bc=None,   enable_ion_solver=False, **kwargs):
         r"""
@@ -323,7 +321,7 @@ class TransportSolver(PhysicalGraph):
         fpol = self.equilibrium.profiles_1d.fpol.pullback(psi_norm, rho_tor_norm)
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        vpr = self.equilibrium.profiles_1d.dvolume_drho_tor_norm.pullback(psi_norm, rho_tor_norm)
+        vpr = (self.equilibrium.profiles_1d.vprime/self.equilibrium.profiles_1d.q).pullback(psi_norm, rho_tor_norm)
 
         vprm = core_profiles_prev.vprime
 
@@ -544,7 +542,7 @@ class TransportSolver(PhysicalGraph):
         # Particle Transport
         for sp in spec:
             diff = np.zeros(rho_tor_norm.shape)
-            vconv = np.zeros(rho_tor_norm.shape)
+            conv = np.zeros(rho_tor_norm.shape)
 
             for trans in self.core_transport:
                 D = trans[sp].particles.d
@@ -554,7 +552,7 @@ class TransportSolver(PhysicalGraph):
 
                 v = trans[sp].particles.v
                 if isinstance(v, np.ndarray) or isinstance(v, (int, float)):
-                    vconv += v
+                    conv += v
 
             se_exp = np.zeros(rho_tor_norm.shape)
             se_imp = np.zeros(rho_tor_norm.shape)
@@ -582,10 +580,10 @@ class TransportSolver(PhysicalGraph):
             a = vpr
             b = vprm
             c = rho_tor_boundary
-            d = Function(rho_tor_norm,  H * diff / c)
-            e = Function(rho_tor_norm,  H * vconv - k_phi*rho_tor*vpr)
-            f = Function(rho_tor_norm, vpr * se_exp)
-            g = Function(rho_tor_norm, vpr * se_imp)
+            d = H * diff / c
+            e = H * conv - k_phi*rho_tor*vpr
+            f = vpr * se_exp
+            g = vpr * se_imp
 
             """
                 # Boundary conditions for electron diffusion equation in form:
@@ -603,7 +601,7 @@ class TransportSolver(PhysicalGraph):
                 else:
                     v = -1.0e-
                 #       U[0] = VCONV[0]
-                    u = vconv[0]+diff_hyper*ne0_prime[0]/ne0[0]
+                    u = conv[0]+diff_hyper*ne0_prime[0]/ne0[0]
                 w = 0
                 At the edge:
                     FIXED Ne
@@ -624,7 +622,7 @@ class TransportSolver(PhysicalGraph):
                 #       FIXED Flux_Ne
                 elif(boundary_condition.type == 4):
                     v = -vpr[-1]*gm3[-1]*diff[-1]
-                    u = vpr[-1]*gm3[-1]*vconv[-1]
+                    u = vpr[-1]*gm3[-1]*conv[-1]
                     w = boundary_condition[1, 0
                 #       Generic boundary condition
                 elif(boundary_condition.type == 5):
@@ -646,10 +644,10 @@ class TransportSolver(PhysicalGraph):
                                                     inv_tau,
                                                     (a, b, c, d, e, f, g),
                                                     ((-e[0], 1, 0), (1, 0, 4.9e18)),
-                                                    hyper_diff=[1000.0, 0.10],
+                                                    hyper_diff=[100.0, 0.0],
                                                     #   tol=0.5,
                                                     verbose=2,
-                                                    max_nodes=10000
+                                                    max_nodes=1000
                                                     )
 
             logger.info(f"""Solve transport equations: Electron density: { 'Success' if sol.success else 'Failed' } """)
@@ -659,16 +657,17 @@ class TransportSolver(PhysicalGraph):
 
             core_profiles_next[sp] = {
                 "n_diff_flux": profiles.diff_flux,
-                "n_vconv_flux": profiles.vconv_flux,
+                "n_conv_flux": profiles.conv_flux,
                 "n_s_exp_flux": profiles.s_exp_flux,
                 "n_residual": profiles.residual,
                 "n_diff": Function(rho_tor_norm, diff),
-                "n_vconv": Function(rho_tor_norm, vconv),
+                "n_conv": Function(rho_tor_norm, conv),
                 "density":  profiles.density,
                 "density_prime": profiles.density_prime,
                 "n_gamma": profiles.gamma,
                 "n_gamma_prime": profiles.gamma_prime,
-                "n_rms_residuals":  profiles.rms_residuals
+                "n_rms_residuals":  profiles.rms_residuals,
+                "vpr": vpr
             }
 
             # else:
@@ -676,17 +675,17 @@ class TransportSolver(PhysicalGraph):
             # ne0 = Function(sol.x, sol.y[0])
             # ne0_prime = Function(sol.x, sol.yp[0])
             # s_exp_flux = Function(sol.x, f(sol.x)-g(sol.x)*ne0).antiderivative(sol.x) * c
-            # diff_flux = Function(sol.x, -d(sol.x) * ne0_prime)  # * H * vconv
-            # vconv_flux = Function(sol.x, e(sol.x) * ne0)  # * H * vconv
+            # diff_flux = Function(sol.x, -d(sol.x) * ne0_prime)  # * H * conv
+            # conv_flux = Function(sol.x, e(sol.x) * ne0)  # * H * conv
 
             # {
             #     # "density_prime": -d * ne0_prime,  # * H*diff/rho_tor_boundary
             #     "diff_flux": diff_flux,
-            #     "vconv_flux": vconv_flux,
+            #     "conv_flux": conv_flux,
             #     "s_exp_flux": s_exp_flux,
-            #     "residual": (diff_flux + vconv_flux - s_exp_flux),
+            #     "residual": (diff_flux + conv_flux - s_exp_flux),
             #     "diff": Function(rho_tor_norm, diff),
-            #     "vconv": Function(rho_tor_norm, vconv),
+            #     "conv": Function(rho_tor_norm, conv),
             #     "density": ne0,
             #     "density_prime": ne0_prime,
             #     "gamma": Function(sol.x, sol.y[1]),
@@ -711,7 +710,7 @@ class TransportSolver(PhysicalGraph):
                         v[iion][0] = -(diff_ti[0]+diff_hyper)*ni[0]
                     else:
                         v[iion][0] = -1.0e-6*ni[0]
-                    u[iion][0] = (vconv_ti[0]+diff_hyper*ti0p[0]/ti0[0])*ni[0]+local_flux_ni_conv_s4[iion]
+                    u[iion][0] = (conv_ti[0]+diff_hyper*ti0p[0]/ti0[0])*ni[0]+local_flux_ni_conv_s4[iion]
                 w[iion][0] = 0.0
                 # At the edge:
                 #       FIXED Ti
@@ -732,7 +731,7 @@ class TransportSolver(PhysicalGraph):
                 #       FIXED Flux_Ti
                 elif(ti_bnd_type(2, iion) == 4):
                     v[iion][1] = -vpr[-1]*gm3[-1]*diff_ti[-1]*ni[-1]
-                    u[iion][1] = vpr[-1]*gm3[-1]*vconv_ti[-1]*ni[-1]+flux_ni[-1]
+                    u[iion][1] = vpr[-1]*gm3[-1]*conv_ti[-1]*ni[-1]+flux_ni[-1]
                     w[iion][1] = ti_bnd[1, 0]
                 #       Generic boundary condition
                 elif(ti_bnd_type(2, iion) == 5):
@@ -761,7 +760,7 @@ class TransportSolver(PhysicalGraph):
                 """
 
                 diff = core_profiles_next._create(0.0, name="diff")
-                vconv = core_profiles_next._create(0.0, name="vconv")
+                conv = core_profiles_next._create(0.0, name="conv")
 
                 for trans in self.core_transport:
                     d = trans[sp].energy.d
@@ -770,7 +769,7 @@ class TransportSolver(PhysicalGraph):
 
                     v = trans[sp].energy.v
                     if isinstance(v, np.ndarray) or type(v) in (int, float):
-                        vconv += v
+                        conv += v
 
                 qs_exp = core_profiles_next._create(0.0, name="se_exp")
                 qs_imp = core_profiles_next._create(0.0, name="se_imp")
@@ -819,7 +818,7 @@ class TransportSolver(PhysicalGraph):
 
                 d = vpr*gm3 / rho_tor_boundary * ns_next * (diff + diff_hyper)
 
-                e = vpr*gm3 * ns_next * (vconv + diff_hyper*tsp_prev/ts_prev) + \
+                e = vpr*gm3 * ns_next * (conv + diff_hyper*tsp_prev/ts_prev) + \
                     ns_flux_next - vpr * (3/2)*k_phi * rho_tor * ns_next
 
                 f = vpr * (qs_exp)
@@ -962,7 +961,7 @@ class TransportSolver(PhysicalGraph):
             flux_ni = profiles["FLUX_NI"][iion]
 
             diff = transport["DIFF_VTOR"][iion]
-            vconv = transport["VCONV_VTOR"][iion]
+            conv = transport["VCONV_VTOR"][iion]
 
             ui_exp = kwargs["UI_EXP"][iion]
             ui_imp = kwargs["UI_IMP"][iion]
@@ -988,7 +987,7 @@ class TransportSolver(PhysicalGraph):
             c = 1.
             # AF, 14.May.2011 - multipication by G2, which in analytics is 1
             d = vpr*gm3*ni*mion*diff*gm8
-            e = (vpr*gm3*ni*vconv + flux_ni - B0dot/2./B0*rho_tor*ni*vpr) * gm8*mion
+            e = (vpr*gm3*ni*conv + flux_ni - B0dot/2./B0*rho_tor*ni*vpr) * gm8*mion
             f = vpr*(ui_exp + uzi)
             g = vpr*(ui_imp + wzi)
 
@@ -1009,7 +1008,7 @@ class TransportSolver(PhysicalGraph):
                 else:
                     v[0] = -1.0e-6*ni[0]
 
-                u[0] = vconv[0]*ni[0] + local_flux_ni_s4[iion]
+                u[0] = conv[0]*ni[0] + local_flux_ni_s4[iion]
             w[0] = 0.
 
             # At the edge:
@@ -1034,7 +1033,7 @@ class TransportSolver(PhysicalGraph):
             #     FIXED Flux_Mtor,i
             if(vtor_bnd_type[1] == 4):
                 v = -vpr[-1]*gm3[-1]*gm8[-1]*diff[-1]*ni[-1]*mion
-                u = vpr[-1]*gm3[-1]*gm8[-1]*vconv[-1] * \
+                u = vpr[-1]*gm3[-1]*gm8[-1]*conv[-1] * \
                     ni[-1]*mion + gm8[-1]*flux_ni[-1]*mion
                 w = vtor_bnd[1, 0]
 
@@ -1113,7 +1112,7 @@ class TransportSolver(PhysicalGraph):
             flux_mtor = profiles["FLUX_MTOR"][iion]
             flux_ni = profiles["FLUX_NI"][iion]
             diff = transport["DIFF_VTOR"][iion]
-            vconv = transport["VCONV_VTOR"][iion]
+            conv = transport["VCONV_VTOR"][iion]
             ui_exp = kwargs["UI_EXP"][iion]
             ui_imp = kwargs["UI_IMP"][iion]
             wzi = collisions["WZI"][iion]
@@ -1147,7 +1146,7 @@ class TransportSolver(PhysicalGraph):
             flux_mtor_conv = gm8*mion*flux_ni*y
 
             flux_mtor_cond = vpr*gm3*gm8*mion*ni                          \
-                * (y*vconv - dy*diff)
+                * (y*conv - dy*diff)
 
             flux_mtor = flux_mtor_conv + flux_mtor_cond
 
@@ -1163,11 +1162,11 @@ class TransportSolver(PhysicalGraph):
 
                 if((vpr*gm3*gm8*mion*ni != 0.0) and (dy != 0.0)):
                     diff = - flux_mtor_cond / dy / (vpr*gm3*gm8*mion*ni)
-                    vconv = 0.0
+                    conv = 0.0
                 if(diff <= 1.e-6):
                     diff = 1.e-6
-                    vconv = (flux_mtor_cond / (max(abs(vpr), 1.e-6)*gm3*gm8
-                                               * mion*ni) + dy*diff) / max(abs(y), 1.e-6)
+                    conv = (flux_mtor_cond / (max(abs(vpr), 1.e-6)*gm3*gm8
+                                              * mion*ni) + dy*diff) / max(abs(y), 1.e-6)
 
                 flux_mtor_tot = flux_mtor_tot + flux_mtor
 
@@ -1179,7 +1178,7 @@ class TransportSolver(PhysicalGraph):
                 #        PROFILES["WTOR(IRHO,IION)            = WTOR(IRHO)
                 profiles["MTOR"][iion] = mtor
                 profiles["DIFF_VTOR"][iion] = diff
-                profiles["VCONV_VTOR"][iion] = vconv
+                profiles["VCONV_VTOR"][iion] = conv
                 profiles["FLUX_MTOR"][iion] = flux_mtor
                 profiles["FLUX_MTOR_CONV"][iion] = flux_mtor_conv
                 profiles["FLUX_MTOR_COND"][iion] = flux_mtor_cond

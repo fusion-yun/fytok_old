@@ -108,11 +108,11 @@ if __name__ == "__main__":
         "pedestal_top": 0.88,  # \frac{\Phi}{\Phi_a}=0.88
         "electron": {
             "density": {
-                "n0": 0.95e22,
+                "n0": 1e20,
                 "source": {"S0": 7.5e20},  # S0 7.5e20
                 "diffusivity": {"D0": 0.5, "D1": 1.0, "D2": 0.11},
                 "pinch_number": {"V0": 1.385},
-                "boundary_condition": {"value": 4.6e19}
+                "boundary_condition": {"value": 4.6e18}
             },
             "temperature": {
                 "T0": 0.95e19,
@@ -127,26 +127,52 @@ if __name__ == "__main__":
     psi_norm = tok.core_profiles.grid.psi_norm
     # vpr = Function(tok.equilibrium.profiles_1d.rho_tor_norm,
     #                tok.equilibrium.profiles_1d.vprime)(tok.core_profiles.grid.rho_tor)
-
+    # logger.debug(tok.core_profiles.electrons.density.x)
+    x = tok.core_profiles.electrons.density.x
+    dx = (np.roll(x, -1)-x)
+    dx[-1] = dx[-2]
+    logger.debug(tok.core_profiles.electrons.dy)
     plot_profiles(
         [
-            (tok.core_profiles.electrons.density,           r"$n_{e}$"),
-            (tok.core_profiles.electrons.density_prime,     r"$n_{e}^{\prime}$"),
+            # (1.0/dx,                                          {"marker": ".", "label": r"$1/dx$"}),
+            (tok.core_profiles.electrons.density,             r"$n_{e}$"),
+            [(tok.core_profiles.electrons.density.derivative, {"color": "green", "label":  r"$n_{e}^{\prime}$"}),
+             (tok.core_profiles.electrons.density_prime,      {"color": "black", "label":  r"$n_{e}^{\prime}$"})],
+            (tok.core_profiles.electrons.density.derivative - \
+             tok.core_profiles.electrons.density_prime,       r"$\Delta n_{e}^{\prime}$"),
+
             (tok.core_profiles.electrons.n_gamma,             r"$\Gamma_{e}$"),
             (tok.core_profiles.electrons.n_gamma_prime,       r"$\Gamma_{e}^{\prime}$"),
-            [
-                (tok.core_transport[0].electrons.particles.d, r"$d_{e}$"),
-                (tok.core_transport[0].electrons.particles.v, r"$v_{e}$"),
-            ],
+            # (tok.core_profiles.electrons.n_rms_residuals,     {"marker": ".", "label":  r"residuals"}),
+            # [
+            #     (tok.core_profiles.electrons.n_diff,          {"color": "green", "label": r"D"}),
+            #     (np.abs(tok.core_profiles.electrons.n_conv),  {"color": "black",  "label": r"v"}),
+            # ],
+            (tok.core_profiles.electrons.n_diff.derivative,   {"color": "green", "label": r"$D^{\prime}$"}),
+
             [
                 (tok.core_profiles.electrons.n_s_exp_flux,    {"color": "green", "label": r"Source"}),
                 (tok.core_profiles.electrons.n_diff_flux,     {"color": "black", "label": r"Diffusive flux"}),
-                (tok.core_profiles.electrons.n_vconv_flux,    {"color": "red", "label": r"Convective flux"}),
-                (tok.core_profiles.electrons.n_residual,      {"color": "blue", "label": r"Residual"})
-            ]
+                (tok.core_profiles.electrons.n_conv_flux,     {"color": "blue",  "label": r"Convective flux"}),
+                (tok.core_profiles.electrons.n_residual,      {"color": "red",   "label": r"Residual"})
+            ],
+            # (tok.core_profiles.electrons.residuals_y,         r"$dn_{residuals}$"),
+            # (tok.core_profiles.electrons.residuals_gamma,     r"$dgamma_{residuals}$"),
+            (tok.core_profiles.electrons.vpr,                 r"$vpr$"),
+            # (tok.core_profiles.electrons.gm3,                 r"$gm3$"),
+            # (tok.core_profiles.electrons.n_a,                 r"$a$"),
+            # (tok.core_profiles.electrons.n_b,                 r"$b$"),
+            # (tok.core_profiles.electrons.n_c,       r"$c$"),
+            # (tok.core_profiles.electrons.n_d,                 r"$d$"),
+            # (tok.core_profiles.electrons.n_e,                 r"$e$"),
+            # (tok.core_profiles.electrons.n_f,                 r"$f$"),
+            # (tok.core_profiles.electrons.n_g,                 r"$g$"),
+
         ],
-        x_axis=(tok.core_profiles.electrons.density.x,   {"label": r"$\rho_{N}$"}),  # asd
+        x_axis=(tok.core_profiles.electrons.density.x,   {"label": r"$\rho_{N}$"}),  # x axis,
+        # index_slice=slice(-60,-10, 1),
         grid=True) .savefig("/home/salmon/workspace/output/electron_1d.svg")
+
     plot_profiles(
         [
             (tok.core_profiles.grid.psi_norm, r"$\psi_{N}$"),
@@ -211,7 +237,7 @@ if __name__ == "__main__":
     #                   #   "d", "e", "f", "g",
     #                   [
     #                       "electrons.diff_flux",
-    #                       "electrons.vconv_flux",
+    #                       "electrons.conv_flux",
     #                       "electrons.s_exp_flux",
     #                       "electrons.density_residual",
     #                   ],
