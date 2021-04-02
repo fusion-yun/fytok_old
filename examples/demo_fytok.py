@@ -49,7 +49,7 @@ if __name__ == "__main__":
     r, z = np.meshgrid(equilibrium.profiles_2d.grid.dim1, equilibrium.profiles_2d.grid.dim2, indexing="ij")
     fig.gca().contour(r, z,  equilibrium.profiles_2d.psi, levels=32,  linewidths=0.2)
 
-    plt.savefig("/home/salmon/workspace/output/contour.svg")
+    plt.savefig("/home/salmon/workspace/output/contour.svg", transparent=True)
 
     # psi_axis = tok.equilibrium.global_quantities.psi_axis
     # psi_boundary = tok.equilibrium.global_quantities.psi_boundary
@@ -134,12 +134,12 @@ if __name__ == "__main__":
     logger.debug(tok.core_profiles.electrons.dy)
     plot_profiles(
         [
-            # (1.0/dx,                                          {"marker": ".", "label": r"$1/dx$"}),
+            (1.0/dx,                                          {"marker": ".", "label": r"$1/dx$"}),
             (tok.core_profiles.electrons.density,             r"$n_{e}$"),
             [(tok.core_profiles.electrons.density.derivative, {"color": "green", "label":  r"$n_{e}^{\prime}$"}),
              (tok.core_profiles.electrons.density_prime,      {"color": "black", "label":  r"$n_{e}^{\prime}$"})],
             (tok.core_profiles.electrons.density.derivative - \
-             tok.core_profiles.electrons.density_prime,       r"$\Delta n_{e}^{\prime}$"),
+             tok.core_profiles.electrons.density_prime,        {"marker": ".", "label": r"$\Delta n_{e}^{\prime}$"}),
 
             (tok.core_profiles.electrons.n_gamma,             r"$\Gamma_{e}$"),
             (tok.core_profiles.electrons.n_gamma_prime,       r"$\Gamma_{e}^{\prime}$"),
@@ -170,8 +170,8 @@ if __name__ == "__main__":
 
         ],
         x_axis=(tok.core_profiles.electrons.density.x,   {"label": r"$\rho_{N}$"}),  # x axis,
-        # index_slice=slice(-60,-10, 1),
-        grid=True) .savefig("/home/salmon/workspace/output/electron_1d.svg")
+        # index_slice=slice(-100,None, 1),
+        grid=True) .savefig("/home/salmon/workspace/output/electron_1d.svg", transparent=True)
 
     plot_profiles(
         [
@@ -200,7 +200,7 @@ if __name__ == "__main__":
 
         ],
         x_axis=(rho_tor_norm,   {"label": r"$\rho_{N}$"}),  # asd
-        grid=True) .savefig("/home/salmon/workspace/output/profiles_1d.svg")
+        grid=True) .savefig("/home/salmon/workspace/output/profiles_1d.svg", transparent=True)
 
     # plot_profiles(tok.core_profiles.profiles_1d,
     #               profiles=[

@@ -14,6 +14,7 @@ from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.data.AttributeTree import AttributeTree
 from spdm.util.logger import logger
 from spdm.util.utilities import try_get
+from spdm.numerical.bvp import solve_bvp
 from .CoreProfiles import CoreProfiles
 from .CoreSources import CoreSources
 from .CoreTransport import CoreTransport
@@ -177,8 +178,11 @@ class TransportSolver(PhysicalGraph):
 
         a, b, c, d, e, f, g = coeff
 
-        hyper_diff_exp, hyper_diff_imp = hyper_diff
-        hyper_diff = hyper_diff_exp+hyper_diff_imp*max(d)
+        if isinstance(hyper_diff, collections.abc.MutableSequence):
+            hyper_diff_exp, hyper_diff_imp = hyper_diff
+            hyper_diff = hyper_diff_exp+hyper_diff_imp*max(d)
+        elif hyper_diff is None:
+            hyper_diff = 0.0
 
         D = d
         E = e
@@ -212,7 +216,7 @@ class TransportSolver(PhysicalGraph):
         if gamma0 is None:
             gamma0 = - Function(x, y0).derivative*D(x) + y0*E(x)
 
-        sol = scipy.integrate.solve_bvp(fun, bc_func, x, np.vstack([y0, gamma0]),  **kwargs)
+        sol = solve_bvp(fun, bc_func, x, np.vstack([y0, gamma0]),  **kwargs)
 
         y1 = Function(sol.x, sol.y[0])
         yp1 = Function(sol.x, sol.yp[0])
@@ -643,11 +647,12 @@ class TransportSolver(PhysicalGraph):
                                                     None,
                                                     inv_tau,
                                                     (a, b, c, d, e, f, g),
-                                                    ((-e[0], 1, 0), (1, 0, 4.9e18)),
-                                                    hyper_diff=[100.0, 0.0],
-                                                    #   tol=0.5,
+                                                    ((-e[0], 1, 0), (1, 0, 4.9e19)),
+                                                    hyper_diff=[0.0, 0.0],
+                                                    tol=1e-6,
                                                     verbose=2,
-                                                    max_nodes=1000
+                                                    max_nodes=1000,
+                                                    ignore_x=[np.sqrt(0.88)]
                                                     )
 
             logger.info(f"""Solve transport equations: Electron density: { 'Success' if sol.success else 'Failed' } """)
