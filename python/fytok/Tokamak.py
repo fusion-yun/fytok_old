@@ -5,11 +5,12 @@ from functools import cached_property
 import matplotlib.pyplot as plt
 import numpy as np
 from spdm.data.AttributeTree import AttributeTree
-from spdm.data.Function import Function
-from spdm.data.PhysicalGraph import PhysicalGraph
-from spdm.util.logger import logger
 from spdm.data.List import List
 from spdm.data.Node import Node, _next_
+from spdm.data.PhysicalGraph import PhysicalGraph
+from spdm.numerical.Function import Function
+from spdm.util.logger import logger
+
 from .modules.device.PFActive import PFActive
 from .modules.device.TF import TF
 from .modules.device.Wall import Wall

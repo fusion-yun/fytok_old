@@ -2,7 +2,7 @@ import collections
 from functools import cached_property
 
 import numpy as np
-from spdm.data.Function import Function
+from spdm.numerical.Function import Function
 from spdm.util.logger import logger
 from spdm.util.utilities import try_get
 

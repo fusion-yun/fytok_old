@@ -8,7 +8,7 @@ from numpy import arctan2, cos, sin, sqrt
 from numpy.lib.arraysetops import isin
 from scipy.optimize import fsolve, root_scalar
 from spdm.data.Field import Field
-from spdm.data.Function import Function
+from spdm.numerical.Function import Function
 from spdm.data.mesh.CurvilinearMesh import CurvilinearMesh
 from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.logger import logger

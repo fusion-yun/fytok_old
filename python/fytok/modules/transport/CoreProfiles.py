@@ -3,7 +3,7 @@ from functools import cached_property
 
 from numpy import arctan2, cos, sin, sqrt
 from spdm.data.PhysicalGraph import PhysicalGraph
-from spdm.data.Function import Function
+from spdm.numerical.Function import Function
 from spdm.util.logger import logger
 from spdm.data.List import List
 from ..utilities.RadialGrid import RadialGrid

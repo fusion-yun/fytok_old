@@ -9,7 +9,7 @@ from functools import cached_property
 import numpy as np
 import scipy.constants
 from fytok.util.Misc import Identifier
-from spdm.data.Function import Function
+from spdm.numerical.Function import Function
 from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.data.AttributeTree import AttributeTree
 from spdm.util.logger import logger

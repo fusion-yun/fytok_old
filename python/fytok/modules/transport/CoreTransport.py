@@ -2,7 +2,7 @@ from functools import cached_property, lru_cache
 from fytok.modules.utilities.RadialGrid import RadialGrid
 
 import numpy as np
-from spdm.data.Function import Function
+from spdm.numerical.Function import Function
 from spdm.data.List import List
 from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.logger import logger

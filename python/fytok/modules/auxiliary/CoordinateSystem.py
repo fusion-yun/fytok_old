@@ -9,7 +9,7 @@ from packaging import version
 from scipy.optimize import fsolve, root_scalar
 from spdm.data.Coordinates import Coordinates
 from spdm.data.Field import Field
-from spdm.data.Function import Function
+from spdm.numerical.Function import Function
 from spdm.data.mesh import Mesh
 from spdm.data.mesh.CurvilinearMesh import CurvilinearMesh
 from spdm.data.mesh.RectilinearMesh import RectilinearMesh

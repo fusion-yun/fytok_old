@@ -3,7 +3,7 @@ import numpy as np
 from spdm.data.Collection import Collection
 from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.data.File import File
-from spdm.data.Function import Function
+from spdm.numerical.Function import Function
 from spdm.util.logger import logger
 from spdm.util.plot_profiles import plot_profiles
 from fytok.Tokamak import Tokamak

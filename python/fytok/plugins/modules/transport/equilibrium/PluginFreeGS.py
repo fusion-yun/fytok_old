@@ -10,7 +10,7 @@ import scipy.constants
 from fytok.modules.transport.Equilibrium import Equilibrium
 from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.logger import logger
-from spdm.data.Function import Function
+from spdm.numerical.Function import Function
 
 
 def is_none(v):
