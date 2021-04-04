@@ -33,22 +33,21 @@ class MagneticSurfaceCoordinateSystem:
         phi         : 0 <= phi     < 2*pi ,  toroidal angle
     """
 
-    def __init__(self, psirz: Field, ffprime: Function, fvac: float, **kwargs):
+    def __init__(self, uv, psirz: Field, ffprime: Function, fvac: float, **kwargs):
         """
             Initialize FluxSurface
         """
-        super().__init__(self)
+        super().__init__()
+        self._uv = uv
         self._ffprime = ffprime
         self._fvac = fvac
         self._psirz = psirz
+        self._mesh = None
 
     @cached_property
     def critical_points(self):
         opoints = []
         xpoints = []
-
-        logger.debug(type(self._psirz))
-
         for r, z, psi, D in self._psirz.find_peak():
             p = PhysicalGraph({"r": r, "z": z, "psi": psi})
 
@@ -131,42 +130,24 @@ class MagneticSurfaceCoordinateSystem:
 
                 yield r1, z1
 
-    @cached_property
+    def create_mesh(self, u, v, *args, type_index=13):
+        if type_index == 13:
+            rz = np.asarray([[r, z] for r, z in self.find_flux_surface(u, v[:-1])]).reshape(len(u), len(v)-1, 2)
+            r = np.hstack([rz[:, :, 0], rz[:, :1, 0]])
+            z = np.hstack([rz[:, :, 1], rz[:, :1, 1]])
+
+            mesh = CurvilinearMesh([r, z], [u, v], cycle=[False, True])
+        else:
+            raise NotImplementedError(f"TODO: reconstruct mesh {type_index}")
+
+        return mesh
+
+    @property
     def mesh(self):
-        if self.grid_type.index != None and int(self.grid_type.index) < 10 or str(self.grid_type.name) == "rectangle":
-            return NotImplemented
+        if self._mesh is None:
+            self._mesh = self.create_mesh(*self._uv, type_index=13)
 
-        dim1 = self.grid.dim1
-        dim2 = self.grid.dim2
-
-        if dim1 == None:
-            u = np.linspace(0.01,  0.99,  64)
-        elif isinstance(dim2, int):
-            u = np.linspace(0.01,  0.99,  dim1)
-        elif isinstance(dim2, np.ndarray):
-            u = dim1
-        else:
-            u = np.asarray([dim1])
-
-        if dim2 == None:
-            v = np.linspace(0.0,  scipy.constants.pi*2.0,  128)
-        elif isinstance(dim2, int):
-            v = np.linspace(0.0,  scipy.constants.pi*2.0,  dim2)
-        elif isinstance(dim2, np.ndarray):
-            v = dim2
-        else:
-            v = np.asarray([dim2])
-
-        rz = np.asarray([[r, z] for r, z in self.find_flux_surface(u, v[:-1])]).reshape(len(u), len(v)-1, 2)
-        r = np.hstack([rz[:, :, 0], rz[:, :1, 0]])
-        z = np.hstack([rz[:, :, 1], rz[:, :1, 1]])
-
-        mesh = CurvilinearMesh([r, z], [u, v], cycle=[False, True])
-
-        if self.grid_type.index == None or self.grid_type.index == 13:
-            return mesh
-        else:
-            raise NotImplementedError("TODO: reconstruct mesh ")
+        return self._mesh
 
     @property
     def r(self):
@@ -312,7 +293,44 @@ class Equilibrium(PhysicalGraph):
             eq = eq["time_slice"]
 
         super().__init__(eq, *args, **kwargs)
+
         self._time = time or self["time"] or self._parent.time
+
+        ffprime = self["profiles_1d.f_df_dpsi"]
+
+        self._ffprime = Function(np.linspace(0, 1.0, len(ffprime)), ffprime)
+
+        self._fvac = self["vacuum_toroidal_field.r0"]*self["vacuum_toroidal_field.b0"]
+
+        self._psirz = Field(self["profiles_2d.psi"], self["profiles_2d.grid.dim1"],
+                            self["profiles_2d.grid.dim2"], mesh_type="rectilinear")
+
+        dim1 = self["coordinate_system.grid.dim1"]
+
+        dim2 = self["coordinate_system.grid.dim2"]
+
+        if isinstance(dim1, np.ndarray):
+            u = dim1
+        elif dim1 == None:
+            u = np.linspace(0.01,  0.99,  len(self._ffprime))
+        elif isinstance(dim2, int):
+            u = np.linspace(0.01,  0.99,  dim1)
+        elif isinstance(dim2, np.ndarray):
+            u = dim1
+        else:
+            u = np.asarray([dim1])
+        if isinstance(dim2, np.ndarray):
+            v = dim2
+        elif dim2 == None:
+            v = np.linspace(0.0,  scipy.constants.pi*2.0,  128)
+        elif isinstance(dim2, int):
+            v = np.linspace(0.0,  scipy.constants.pi*2.0,  dim2)
+        elif isinstance(dim2, np.ndarray):
+            v = dim2
+        else:
+            v = np.asarray([dim2])
+
+        self._uv = [u, v]
 
     @property
     def vacuum_toroidal_field(self):
@@ -325,59 +343,46 @@ class Equilibrium(PhysicalGraph):
     def update(self, *args, time=None, ** kwargs):
         logger.debug(f"Update {self.__class__.__name__} [time={time}] at: Do nothing")
         self._time = time
-        # self.update_cache()
 
-    def update_cache(self):
         del self.global_quantities
         del self.profiles_1d
-        self.profiles_2d.update()
+        del self.profiles_2d
         del self.boundary
         del self.boundary_separatrix
         del self.coordinate_system
 
     @cached_property
-    def profiles_1d(self):
-        return Equilibrium.Profiles1D(self["profiles_1d"], self.coordinate_system, parent=self)
-
-    @cached_property
-    def profiles_2d(self):
-        return Equilibrium.Profiles2D(self["profiles_2d"], parent=self)
-
-    @cached_property
-    def global_quantities(self):
-        return Equilibrium.GlobalQuantities(self["global_quantities"], parent=self)
-
-    @cached_property
-    def boundary(self):
-        return Equilibrium.Boundary(self["boundary"], parent=self)
-
-    @cached_property
-    def boundary_separatrix(self):
-        return Equilibrium.BoundarySeparatrix(self["boundary_separatrix"], parent=self)
+    def coordinate_system(self):
+        return MagneticSurfaceCoordinateSystem(self._uv, self._psirz, self._ffprime,  self._fvac)
 
     @cached_property
     def constraints(self):
-        return Equilibrium.Constraints(self["constraints"], parent=self)
+        return PhysicalGraph(self["constraints"], parent=self)
 
     @cached_property
-    def coordinate_system(self):
-        ffprime = self["profiles_1d.f_df_dpsi"]
-        ffprime = Function(np.linspace(0, 1.0, len(ffprime)), ffprime)
-        fvac = self.vacuum_toroidal_field.r0*self.vacuum_toroidal_field.b0
-        mesh_type = self["profiles_2d.grid_type.name"] or "rectilinear"
-        dim1 = self["profiles_2d.grid.dim1"]
-        dim2 = self["profiles_2d.grid.dim2"]
-        psirz = Field(self["profiles_2d.psi"], dim1, dim2, mesh_type=mesh_type)
+    def profiles_1d(self):
+        return Equilibrium.Profiles1D(self.coordinate_system,  parent=self)
 
-        return MagneticSurfaceCoordinateSystem(psirz, ffprime,  fvac)
+    @cached_property
+    def profiles_2d(self):
+        return Equilibrium.Profiles2D(self.coordinate_system,  parent=self)
 
-    class Constraints(PhysicalGraph):
-        def __init__(self, *args,  **kwargs):
-            super().__init__(*args, **kwargs)
+    @cached_property
+    def global_quantities(self):
+        return Equilibrium.GlobalQuantities(self.coordinate_system,  parent=self)
+
+    @cached_property
+    def boundary(self):
+        return Equilibrium.Boundary(self.coordinate_system,   parent=self)
+
+    @cached_property
+    def boundary_separatrix(self):
+        return Equilibrium.BoundarySeparatrix(self.coordinate_system,   parent=self)
 
     class GlobalQuantities(PhysicalGraph):
-        def __init__(self,  *args,  **kwargs):
+        def __init__(self, coord: MagneticSurfaceCoordinateSystem,    *args,  **kwargs):
             super().__init__(*args, **kwargs)
+            self._coord = coord
 
         @property
         def beta_pol(self):
@@ -435,19 +440,19 @@ class Equilibrium(PhysicalGraph):
 
         @cached_property
         def x_points(self):
-            _, x = self._parent.coordinate_system.critical_points
+            _, x = self._coord.critical_points
             return x
 
         @cached_property
         def psi_axis(self):
             """Poloidal flux at the magnetic axis  [Wb]."""
-            o, _ = self._parent.coordinate_system.critical_points
+            o, _ = self._coord.critical_points
             return o[0].psi
 
         @cached_property
         def psi_boundary(self):
             """Poloidal flux at the selected plasma boundary  [Wb]."""
-            _, x = self._parent.coordinate_system.critical_points
+            _, x = self._coord.critical_points
             if len(x) > 0:
                 return x[0].psi
             else:
@@ -482,13 +487,13 @@ class Equilibrium(PhysicalGraph):
     class Profiles1D(PhysicalGraph):
         """Equilibrium profiles (1D radial grid) as a function of the poloidal flux	"""
 
-        def __init__(self, d, surface_coordinate_system,  *args, **kwargs):
-            super().__init__(d, *args, **kwargs)
-            self._coord = surface_coordinate_system or self._parent.coordinate_system
+        def __init__(self, coord: MagneticSurfaceCoordinateSystem,  *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self._coord = coord or self._parent.coordinate_system
 
             self._psi_norm = self._coord.mesh.uv[0]
-            self._psi_axis = self._parent.global_quantities.psi_axis
-            self._psi_boundary = self._parent.global_quantities.psi_boundary
+            self._psi_axis = self._coord.psi_axis
+            self._psi_boundary = self._coord.psi_boundary
 
         @property
         def psi_norm(self):
@@ -746,26 +751,27 @@ class Equilibrium(PhysicalGraph):
             Equilibrium 2D profiles in the poloidal plane.
         """
 
-        def __init__(self,  *args, ** kwargs):
+        def __init__(self, coord: MagneticSurfaceCoordinateSystem, *args, ** kwargs):
             super().__init__(*args, **kwargs)
+            self._coord = coord
 
         @property
         def grid_type(self):
-            return self._parent.coordinate_system.grid_type
+            return self._coord.grid_type
 
         @cached_property
         def grid(self):
-            return self._parent.coordinate_system.grid
+            return self._coord.grid
 
         @property
         def r(self):
             """Values of the major radius on the grid  [m] """
-            return self._parent.coordinate_system.r
+            return self._coord.r
 
         @property
         def z(self):
             """Values of the Height on the grid  [m] """
-            return self._parent.coordinate_system.z
+            return self._coord.z
 
         @cached_property
         def psi(self):
@@ -795,22 +801,22 @@ class Equilibrium(PhysicalGraph):
         @cached_property
         def b_field_r(self):
             """R component of the poloidal magnetic field  [T]"""
-            return - self.psirz(self.r, self.z, dy=1)/self.r
+            return Field(self._coord.Br, self._coord.r, self._coord.z, mesh_type="curvilinear")
 
         @cached_property
         def b_field_z(self):
             """Z component of the poloidal magnetic field  [T]"""
-            return self.psirz(self.r, self.z, dx=1)/self.r
+            return Field(self._coord.Bz, self._coord.r, self._coord.z, mesh_type="curvilinear")
 
         @cached_property
         def b_field_tor(self):
             """Toroidal component of the magnetic field  [T]"""
-            return self._parent.profiles_1d.fpol.reshape(list(self._parent.profiles_1d.fpol.shape)+[1])/self.r
+            return Field(self._coord.Btor, self._coord.r, self._coord.z, mesh_type="curvilinear")
 
     class Boundary(PhysicalGraph):
-        def __init__(self, *args, ntheta=129, ** kwargs):
+        def __init__(self, coord: MagneticSurfaceCoordinateSystem,   *args,  ** kwargs):
             super().__init__(*args, **kwargs)
-            self._ntheta = ntheta
+            self._coord = coord
 
         @cached_property
         def type(self):
@@ -820,7 +826,7 @@ class Equilibrium(PhysicalGraph):
         @cached_property
         def outline(self):
             """RZ outline of the plasma boundary  """
-            RZ = np.asarray([[r, z] for r, z in self._parent.coordinate_system.find_flux_surface(1.0)])
+            RZ = np.asarray([[r, z] for r, z in self._coord.find_flux_surface(1.0)])
             return PhysicalGraph({"r": RZ[:, 0], "z": RZ[:, 1]})
 
         @cached_property
@@ -894,7 +900,7 @@ class Equilibrium(PhysicalGraph):
             return NotImplemented
 
     class BoundarySeparatrix(PhysicalGraph):
-        def __init__(self, *args,  ** kwargs):
+        def __init__(self, coord: MagneticSurfaceCoordinateSystem,  *args,  ** kwargs):
             super().__init__(*args, **kwargs)
 
     ####################################################################################
