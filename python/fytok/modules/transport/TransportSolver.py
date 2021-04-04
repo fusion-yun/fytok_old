@@ -191,9 +191,12 @@ class TransportSolver(PhysicalGraph):
 
         def fun(x, Y):
             y, gamma = Y
-            yp = Function(x, y).derivative
-            dgamma = F(x) - G(x) * y
-            dy = (-gamma + E(x)*y+hyper_diff * yp)/(D(x)+hyper_diff)
+            try:
+                yp = Function(x, y).derivative
+                dgamma = F(x) - G(x) * y
+                dy = (-gamma + E(x)*y+hyper_diff * yp)/(D(x)+hyper_diff)
+            except RuntimeWarning as error:
+                raise RuntimeError(y)
             return np.vstack((dy, dgamma))
 
         u0, v0, w0 = bc[0]
@@ -325,8 +328,8 @@ class TransportSolver(PhysicalGraph):
         fpol = self.equilibrium.profiles_1d.fpol.pullback(psi_norm, rho_tor_norm)
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        vpr = (self.equilibrium.profiles_1d.dvolume_drho_tor*self.equilibrium.profiles_1d.rho_tor[-1]).pullback(psi_norm, rho_tor_norm)
-        
+        vpr = (self.equilibrium.profiles_1d.dvolume_dpsi).pullback(psi_norm, rho_tor_norm)
+
         vprm = core_profiles_prev.vprime
 
         if vprm == None:
@@ -337,9 +340,11 @@ class TransportSolver(PhysicalGraph):
         gm2 = self.equilibrium.profiles_1d.gm2.pullback(psi_norm, rho_tor_norm)
 
         gm3 = self.equilibrium.profiles_1d.gm3.pullback(psi_norm, rho_tor_norm)
-        
+
         H = vpr * gm3
-        
+
+        logger.debug(vpr[:10])
+
         diff_hyper = 0
 
         if not enable_ion_solver:
@@ -580,8 +585,6 @@ class TransportSolver(PhysicalGraph):
 
             if not isinstance(ne0, np.ndarray) and ne0 == None:
                 ne0 = np.zeros(rho_tor_norm.shape)
-
-        
 
             a = vpr
             b = vprm

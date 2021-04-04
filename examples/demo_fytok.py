@@ -200,7 +200,9 @@ if __name__ == "__main__":
             ],
             # (tok.core_profiles.electrons.residuals_y,         r"$dn_{residuals}$"),
             # (tok.core_profiles.electrons.residuals_gamma,     r"$dgamma_{residuals}$"),
-            (tok.equilibrium.profiles_1d.q,                   r"$q$"),
+            [(tok.equilibrium.profiles_1d.q,                   r"$q$"),
+             (tok.equilibrium.profiles_1d.dphi_dpsi,           r"$\frac{d\phi}{d\psi}$")],
+            
             (tok.equilibrium.profiles_1d.vprime,              r"$V^{\prime}_{\psi_N}$"),
             (tok.core_profiles.electrons.vpr,                 r"$vpr$"),
             # (tok.core_profiles.electrons.gm3,                 r"$gm3$"),

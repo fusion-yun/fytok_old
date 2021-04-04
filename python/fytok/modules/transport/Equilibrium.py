@@ -94,13 +94,6 @@ class Equilibrium(PhysicalGraph):
         del self.coordinate_system
 
     @cached_property
-    def psirz(self):
-        mesh_type = self["profiles_2d.grid_type.name"] or "rectilinear"
-        dim1 = self["profiles_2d.grid.dim1"]
-        dim2 = self["profiles_2d.grid.dim2"]
-        return Field(self["profiles_2d.psi"], dim1, dim2, mesh_type=mesh_type)
-
-    @cached_property
     def critical_points(self):
         opoints = []
         xpoints = []
@@ -188,6 +181,23 @@ class Equilibrium(PhysicalGraph):
                 yield r1, z1
 
     @cached_property
+    def psirz(self):
+        mesh_type = self["profiles_2d.grid_type.name"] or "rectilinear"
+        dim1 = self["profiles_2d.grid.dim1"]
+        dim2 = self["profiles_2d.grid.dim2"]
+        return Field(self["profiles_2d.psi"], dim1, dim2, mesh_type=mesh_type)
+
+    @cached_property
+    def fvac(self):
+        return self.vacuum_toroidal_field.r0*self.vacuum_toroidal_field.b0
+
+    @cached_property
+    def ffprime(self):
+        """	Derivative of F w.r.t. Psi, multiplied with F  [T^2.m^2/Wb]. """
+        ffprime = self["profiles_1d.f_df_dpsi"]
+        return Function(np.linspace(0, 1.0, len(ffprime)), ffprime)
+
+    @cached_property
     def profiles_1d(self):
         return Equilibrium.Profiles1D(self["profiles_1d"], self.coordinate_system, parent=self)
 
@@ -213,7 +223,7 @@ class Equilibrium(PhysicalGraph):
 
     @cached_property
     def coordinate_system(self):
-        return Equilibrium.CoordinateSystem(self["coordinate_system"], parent=self)
+        return Equilibrium.CoordinateSystem(self["coordinate_system"], self.psirz, self.ffprime, self.fvac, parent=self)
 
     class CoordinateSystem(PhysicalGraph):
         r"""
@@ -231,11 +241,14 @@ class Equilibrium(PhysicalGraph):
             phi         : 0 <= phi     < 2*pi ,  toroidal angle
         """
 
-        def __init__(self,  *args,   ** kwargs):
+        def __init__(self, d, psirz, ffprime, fvac, *args,   ** kwargs):
             """
                 Initialize FluxSurface
             """
-            super().__init__(self, *args,   **kwargs)
+            super().__init__(self, d, *args,   **kwargs)
+            self._ffprime = ffprime
+            self._fvac = fvac
+            self._psirz = psirz
 
         @cached_property
         def mesh(self):
@@ -290,39 +303,57 @@ class Equilibrium(PhysicalGraph):
         def psi(self):
             return self.psi_norm * (self.psi_boundary-self.psi_axis) + self.psi_axis
 
+        def psirz(self, r, z, *args, **kwargs):
+            return self._psirz(r, z, *args, **kwargs)
+
+        @cached_property
+        def fpol(self):
+            """Diamagnetic function (F=R B_Phi)  [T.m]."""
+            psi_axis = self.psi[0]
+            psi_boundary = self.psi[-1]
+            f2 = self._ffprime.antiderivative * (2.0*(psi_boundary-psi_axis))+self._fvac**2
+            return np.sqrt(f2(self._psi_norm))
+
         @cached_property
         def dl(self):
             return np.asarray([self.mesh.axis(idx, axis=0).geo_object.dl(self.mesh.uv[1]) for idx in range(self.mesh.shape[0])])
 
         @cached_property
-        def grad_psi(self):
-            return self._parent.psirz(self.r, self.z, dx=1), self._parent.psirz(self.r, self.z, dy=1)
+        def Br(self):
+            return -self.psirz(self.r, self.z, dy=1)/self.r
 
         @cached_property
-        def norm_grad_psi(self):
+        def Bz(self):
+            return self.psirz(self.r, self.z, dx=1)/self.r
+
+        @cached_property
+        def Btor(self):
+            return self.fpol.reshape(self.mesh.shape[0], 1) / self.r
+
+        @cached_property
+        def Bpol(self):
             r"""
                 .. math:: V^{\prime} =   R / |\nabla \psi|
             """
-            grad_psi_r, grad_psi_z = self.grad_psi
-            return np.sqrt(grad_psi_r**2+grad_psi_z**2)
+            return np.sqrt(self.Br**2+self.Bz**2)
 
         @cached_property
-        def jacobian(self):
-            return self.r/self.norm_grad_psi
+        def B2(self):
+            return (self.Bpol**2 + self.Btor**2)
 
-        def _surface_integral(self, J=None, *args, **kwargs):
+        def surface_integral(self, alpha=None, *args, **kwargs):
             r"""
                 .. math:: \left\langle \alpha\right\rangle \equiv\frac{2\pi}{V^{\prime}}\oint\alpha\frac{Rdl}{\left|\nabla\psi\right|}
             """
-            if J is None:
-                J = self.jacobian
+            if alpha is None:
+                alpha = 1.0/self.Bpol
             else:
-                J = J*self.jacobian
+                alpha = alpha/self.Bpol
 
-            return np.sum(0.5*(np.roll(J, 1, axis=1)+J) * self.dl, axis=1)
+            return np.sum(0.5*(np.roll(alpha, 1, axis=1)+alpha) * self.dl, axis=1)*(2*scipy.constants.pi)
 
         def surface_average(self,  *args, **kwargs):
-            return self._surface_integral(*args, **kwargs) / self.dvolume_dpsi * (2*scipy.constants.pi)
+            return self.surface_integral(*args, **kwargs) / self.dvolume_dpsi * (2*scipy.constants.pi)
 
         @cached_property
         def dvolume_dpsi(self):
@@ -331,7 +362,7 @@ class Equilibrium(PhysicalGraph):
                 .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
             """
 
-            return Function(self.psi_norm, self._surface_integral() * (2*scipy.constants.pi))
+            return Function(self.psi_norm, self.surface_integral())
 
     class Constraints(PhysicalGraph):
         def __init__(self, *args,  **kwargs):
@@ -447,7 +478,7 @@ class Equilibrium(PhysicalGraph):
         def __init__(self, d, surface_coordinate_system,  *args, **kwargs):
             super().__init__(d, *args, **kwargs)
             self._coord = surface_coordinate_system or self._parent.coordinate_system
-            self._fvac = self._parent.vacuum_toroidal_field.r0*self._parent.vacuum_toroidal_field.b0
+
             self._psi_norm = self._coord.mesh.uv[0]
             self._psi_axis = self._parent.global_quantities.psi_axis
             self._psi_boundary = self._parent.global_quantities.psi_boundary
@@ -506,10 +537,7 @@ class Equilibrium(PhysicalGraph):
         @cached_property
         def fpol(self):
             """Diamagnetic function (F=R B_Phi)  [T.m]."""
-            psi_axis = self._psi_axis
-            psi_boundary = self._psi_boundary
-            f2 = self.ffprime.antiderivative * (2.0*(psi_boundary-psi_axis))+self._fvac**2
-            return Function(self._psi_norm,  np.sqrt(f2))
+            return self._coord.fpol
 
         @property
         def f(self):
@@ -518,7 +546,7 @@ class Equilibrium(PhysicalGraph):
 
         @cached_property
         def dphi_dpsi(self):
-            return Function(self._psi_norm, self._coord.surface_average(1.0/(self._coord.r**2)) * self.fpol * self.dvolume_dpsi / (scipy.constants.pi*2)**2)
+            return self.gm1 * self.fpol * self.dvolume_dpsi / (scipy.constants.pi*2)**2
 
         @property
         def q(self):
@@ -527,15 +555,13 @@ class Equilibrium(PhysicalGraph):
                 (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)  [-].
                 .. math:: q(\psi)=\frac{d\Phi}{d\psi}=\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
             """
-            return self.dphi_dpsi
+            # return self.dphi_dpsi
+            return Function(self._psi_norm, self.fpol * self._coord.surface_integral(1.0/(self._coord.r**2))/(2*scipy.constants.pi))
 
         @cached_property
         def dvolume_drho_tor(self)	:
             """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
             return self.dvolume_dpsi * self.dpsi_drho_tor
-
-     
-
 
         @cached_property
         def phi(self):
@@ -546,7 +572,7 @@ class Equilibrium(PhysicalGraph):
                 .. math ::
                     \Phi_{tor}\left(\psi\right)=\int_{0}^{\psi}qd\psi
             """
-            return self.dphi_dpsi.antiderivative
+            return (self.fpol*self.dvolume_dpsi*self.gm1/(2.0*scipy.constants.pi)).antiderivative
 
         @cached_property
         def rho_tor(self):
@@ -578,12 +604,7 @@ class Equilibrium(PhysicalGraph):
 
         @cached_property
         def norm_grad_rho_tor(self):
-            return self._coord.norm_grad_psi * self.drho_tor_dpsi.view(np.ndarray).reshape(list(self.drho_tor_dpsi.shape)+[1])
-
-        @cached_property
-        def B2(self):
-            return (self._coord.norm_grad_psi**2) + \
-                self.fpol.reshape(list(self.drho_tor_dpsi.shape)+[1]) ** 2/(self._coord.r**2)
+            return self._coord.Bpol * self._coord.r * self.drho_tor_dpsi.view(np.ndarray).reshape(list(self.drho_tor_dpsi.shape)+[1])
 
         @cached_property
         def gm1(self):
@@ -732,12 +753,12 @@ class Equilibrium(PhysicalGraph):
         @property
         def r(self):
             """Values of the major radius on the grid  [m] """
-            return self._parent.coordinate_system.mesh.xy[0]
+            return self._parent.coordinate_system.r
 
         @property
         def z(self):
             """Values of the Height on the grid  [m] """
-            return self._parent.coordinate_system.mesh.xy[1]
+            return self._parent.coordinate_system.z
 
         @cached_property
         def psi(self):
@@ -767,31 +788,17 @@ class Equilibrium(PhysicalGraph):
         @cached_property
         def b_field_r(self):
             """R component of the poloidal magnetic field  [T]"""
-            return self.psirz(self.r, self.z, dx=1)/(self.r*scipy.constants.pi*2.0)
+            return - self.psirz(self.r, self.z, dy=1)/self.r
 
         @cached_property
         def b_field_z(self):
             """Z component of the poloidal magnetic field  [T]"""
-            return - self.psirz(self.r, self.z, dy=1)/(self.r*scipy.constants.pi*2.0)
+            return self.psirz(self.r, self.z, dx=1)/self.r
 
         @cached_property
         def b_field_tor(self):
             """Toroidal component of the magnetic field  [T]"""
-            return self.apply_psifunc("fpol")/self.r
-
-        def apply_psifunc(self, func, *args, **kwargs):
-            if isinstance(func, str):
-                func = self._parent.profiles_1d.interpolate(func)
-
-            NX = self.grid.dim1.shape[0]
-            NY = self.grid.dim2.shape[0]
-
-            res = np.full([NX, NY], np.nan)
-
-            for i in range(NX):
-                for j in range(NY):
-                    res[i, j] = func(self.psirz(self.r[i, j], self.z[i, j]))
-            return res
+            return self._parent.profiles_1d.fpol.reshape(list(self._parent.profiles_1d.fpol.shape)+[1])/self.r
 
     class Boundary(PhysicalGraph):
         def __init__(self, *args, ntheta=129, ** kwargs):
