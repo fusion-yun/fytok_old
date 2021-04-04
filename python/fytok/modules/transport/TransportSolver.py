@@ -216,7 +216,7 @@ class TransportSolver(PhysicalGraph):
         if gamma0 is None:
             gamma0 = - Function(x, y0).derivative*D(x) + y0*E(x)
 
-        sol = solve_bvp(fun, bc_func, x, np.vstack([y0, gamma0]),  **kwargs)
+        sol = solve_bvp(fun, bc_func, x, np.vstack([y0.view(np.ndarray), gamma0.view(np.ndarray)]),  **kwargs)
 
         y1 = Function(sol.x, sol.y[0])
         yp1 = Function(sol.x, sol.yp[0])
@@ -325,8 +325,8 @@ class TransportSolver(PhysicalGraph):
         fpol = self.equilibrium.profiles_1d.fpol.pullback(psi_norm, rho_tor_norm)
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        vpr = (self.equilibrium.profiles_1d.vprime/self.equilibrium.profiles_1d.q).pullback(psi_norm, rho_tor_norm)
-
+        vpr = (self.equilibrium.profiles_1d.dvolume_drho_tor*self.equilibrium.profiles_1d.rho_tor[-1]).pullback(psi_norm, rho_tor_norm)
+        
         vprm = core_profiles_prev.vprime
 
         if vprm == None:
@@ -337,7 +337,9 @@ class TransportSolver(PhysicalGraph):
         gm2 = self.equilibrium.profiles_1d.gm2.pullback(psi_norm, rho_tor_norm)
 
         gm3 = self.equilibrium.profiles_1d.gm3.pullback(psi_norm, rho_tor_norm)
-
+        
+        H = vpr * gm3
+        
         diff_hyper = 0
 
         if not enable_ion_solver:
@@ -579,7 +581,7 @@ class TransportSolver(PhysicalGraph):
             if not isinstance(ne0, np.ndarray) and ne0 == None:
                 ne0 = np.zeros(rho_tor_norm.shape)
 
-            H = vpr * gm3
+        
 
             a = vpr
             b = vprm
