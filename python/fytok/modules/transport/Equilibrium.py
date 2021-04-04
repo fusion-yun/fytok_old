@@ -94,110 +94,6 @@ class Equilibrium(PhysicalGraph):
         del self.coordinate_system
 
     @cached_property
-    def critical_points(self):
-        opoints = []
-        xpoints = []
-
-        for r, z, psi, D in self.psirz.find_peak():
-            p = PhysicalGraph({"r": r, "z": z, "psi": psi})
-
-            if D < 0.0:  # saddle/X-point
-                xpoints.append(p)
-            else:  # extremum/ O-point
-                opoints.append(p)
-
-        # wall = getattr(self._parent._parent, "wall", None)
-        # if wall is not None:
-        #     xpoints = [p for p in xpoints if wall.in_limiter(p.r, p.z)]
-
-        if not opoints:
-            raise RuntimeError(f"Can not find o-point!")
-        else:
-
-            bbox = self.psirz.coordinates.mesh.bbox
-            Rmid = (bbox[0][0] + bbox[0][1])/2.0
-            Zmid = (bbox[1][0] + bbox[1][1])/2.0
-
-            opoints.sort(key=lambda x: (x.r - Rmid)**2 + (x.z - Zmid)**2)
-
-            psi_axis = opoints[0].psi
-
-            xpoints.sort(key=lambda x: (x.psi - psi_axis)**2)
-
-        return opoints, xpoints
-
-    def find_flux_surface(self, u, v=None):
-        o_points, x_points = self.critical_points
-
-        if len(o_points) == 0:
-            raise RuntimeError(f"Can not find O-point!")
-        else:
-            R0 = o_points[0].r
-            Z0 = o_points[0].z
-            psi0 = o_points[0].psi
-
-        if len(x_points) == 0:
-            R1 = self._psirz.coordinates.bbox[1][0]
-            Z1 = Z0
-            psi1 = 0.0
-        else:
-            R1 = x_points[0].r
-            Z1 = x_points[0].z
-            psi1 = x_points[0].psi
-
-        theta0 = arctan2(R1 - R0, Z1 - Z0)
-        Rm = sqrt((R1-R0)**2+(Z1-Z0)**2)
-
-        if not isinstance(u, (np.ndarray, collections.abc.Sequence)):
-            u = [u]
-
-        if v is None:
-            v = np.linspace(0, 2.0*scipy.constants.pi, 128, endpoint=False)
-        elif not isinstance(v, (np.ndarray, collections.abc.Sequence)):
-            v = [v]
-
-        for p in u:
-            for t in v:
-                psival = p*(psi1-psi0)+psi0
-
-                r0 = R0
-                z0 = Z0
-                r1 = R0+Rm*sin(t+theta0)
-                z1 = Z0+Rm*cos(t+theta0)
-
-                if not np.isclose(self.psirz(r1, z1), psival):
-                    try:
-                        def func(r): return float(self.psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1)) - psival
-                        sol = root_scalar(func,  bracket=[0, 1], method='brentq')
-                    except ValueError as error:
-                        raise ValueError(f"Find root fialed! {error} {psival}")
-
-                    if not sol.converged:
-                        raise ValueError(f"Find root fialed!")
-
-                    r1 = (1.0-sol.root)*r0+sol.root*r1
-                    z1 = (1.0-sol.root)*z0+sol.root*z1
-
-                yield r1, z1
-
-    @cached_property
-    def psirz(self):
-        mesh_type = self["profiles_2d.grid_type.name"] or "rectilinear"
-        dim1 = self["profiles_2d.grid.dim1"]
-        dim2 = self["profiles_2d.grid.dim2"]
-        return Field(self["profiles_2d.psi"], dim1, dim2, mesh_type=mesh_type)
-
-    @cached_property
-    def fvac(self):
-        return self.vacuum_toroidal_field.r0*self.vacuum_toroidal_field.b0
-
-    @cached_property
-    def ffprime(self):
-        """	Derivative of F w.r.t. Psi, multiplied with F  [T^2.m^2/Wb]. """
-        ffprime = self["profiles_1d.f_df_dpsi"]
-        return Function(np.linspace(0, 1.0, len(ffprime)), ffprime)
-
-    @cached_property
     def profiles_1d(self):
         return Equilibrium.Profiles1D(self["profiles_1d"], self.coordinate_system, parent=self)
 
@@ -223,7 +119,15 @@ class Equilibrium(PhysicalGraph):
 
     @cached_property
     def coordinate_system(self):
-        return Equilibrium.CoordinateSystem(self["coordinate_system"], self.psirz, self.ffprime, self.fvac, parent=self)
+        ffprime = self["profiles_1d.f_df_dpsi"]
+        ffprime = Function(np.linspace(0, 1.0, len(ffprime)), ffprime)
+        fvac = self.vacuum_toroidal_field.r0*self.vacuum_toroidal_field.b0
+        mesh_type = self["profiles_2d.grid_type.name"] or "rectilinear"
+        dim1 = self["profiles_2d.grid.dim1"]
+        dim2 = self["profiles_2d.grid.dim2"]
+        psirz = Field(self["profiles_2d.psi"], dim1, dim2, mesh_type=mesh_type)
+
+        return Equilibrium.CoordinateSystem(psirz, ffprime,  fvac, parent=self)
 
     class CoordinateSystem(PhysicalGraph):
         r"""
@@ -241,14 +145,103 @@ class Equilibrium(PhysicalGraph):
             phi         : 0 <= phi     < 2*pi ,  toroidal angle
         """
 
-        def __init__(self, d, psirz, ffprime, fvac, *args,   ** kwargs):
+        def __init__(self, psirz, ffprime, fvac, *args,   ** kwargs):
             """
                 Initialize FluxSurface
             """
-            super().__init__(self, d, *args,   **kwargs)
+            super().__init__(self, *args,   **kwargs)
             self._ffprime = ffprime
             self._fvac = fvac
             self._psirz = psirz
+
+        @cached_property
+        def critical_points(self):
+            opoints = []
+            xpoints = []
+
+            logger.debug(type(self._psirz))
+
+            for r, z, psi, D in self._psirz.find_peak():
+                p = PhysicalGraph({"r": r, "z": z, "psi": psi})
+
+                if D < 0.0:  # saddle/X-point
+                    xpoints.append(p)
+                else:  # extremum/ O-point
+                    opoints.append(p)
+
+            # wall = getattr(self._parent._parent, "wall", None)
+            # if wall is not None:
+            #     xpoints = [p for p in xpoints if wall.in_limiter(p.r, p.z)]
+
+            if not opoints:
+                raise RuntimeError(f"Can not find o-point!")
+            else:
+
+                bbox = self._psirz.coordinates.mesh.bbox
+                Rmid = (bbox[0][0] + bbox[0][1])/2.0
+                Zmid = (bbox[1][0] + bbox[1][1])/2.0
+
+                opoints.sort(key=lambda x: (x.r - Rmid)**2 + (x.z - Zmid)**2)
+
+                psi_axis = opoints[0].psi
+
+                xpoints.sort(key=lambda x: (x.psi - psi_axis)**2)
+
+            return opoints, xpoints
+
+        def find_flux_surface(self, u, v=None):
+            o_points, x_points = self.critical_points
+
+            if len(o_points) == 0:
+                raise RuntimeError(f"Can not find O-point!")
+            else:
+                R0 = o_points[0].r
+                Z0 = o_points[0].z
+                psi0 = o_points[0].psi
+
+            if len(x_points) == 0:
+                R1 = self.psirz.coordinates.bbox[1][0]
+                Z1 = Z0
+                psi1 = 0.0
+            else:
+                R1 = x_points[0].r
+                Z1 = x_points[0].z
+                psi1 = x_points[0].psi
+
+            theta0 = arctan2(R1 - R0, Z1 - Z0)
+            Rm = sqrt((R1-R0)**2+(Z1-Z0)**2)
+
+            if not isinstance(u, (np.ndarray, collections.abc.Sequence)):
+                u = [u]
+
+            if v is None:
+                v = np.linspace(0, 2.0*scipy.constants.pi, 128, endpoint=False)
+            elif not isinstance(v, (np.ndarray, collections.abc.Sequence)):
+                v = [v]
+
+            for p in u:
+                for t in v:
+                    psival = p*(psi1-psi0)+psi0
+
+                    r0 = R0
+                    z0 = Z0
+                    r1 = R0+Rm*sin(t+theta0)
+                    z1 = Z0+Rm*cos(t+theta0)
+
+                    if not np.isclose(self.psirz(r1, z1), psival):
+                        try:
+                            def func(r): return float(self.psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1)) - psival
+                            sol = root_scalar(func,  bracket=[0, 1], method='brentq')
+                        except ValueError as error:
+                            raise ValueError(f"Find root fialed! {error} {psival}")
+
+                        if not sol.converged:
+                            raise ValueError(f"Find root fialed!")
+
+                        r1 = (1.0-sol.root)*r0+sol.root*r1
+                        z1 = (1.0-sol.root)*z0+sol.root*z1
+
+                    yield r1, z1
 
         @cached_property
         def mesh(self):
@@ -276,7 +269,7 @@ class Equilibrium(PhysicalGraph):
             else:
                 v = np.asarray([dim2])
 
-            rz = np.asarray([[r, z] for r, z in self._parent.find_flux_surface(u, v[:-1])]).reshape(len(u), len(v)-1, 2)
+            rz = np.asarray([[r, z] for r, z in self.find_flux_surface(u, v[:-1])]).reshape(len(u), len(v)-1, 2)
             r = np.hstack([rz[:, :, 0], rz[:, :1, 0]])
             z = np.hstack([rz[:, :, 1], rz[:, :1, 1]])
 
@@ -295,6 +288,21 @@ class Equilibrium(PhysicalGraph):
         def z(self):
             return self.mesh.xy[1]
 
+        @cached_property
+        def psi_axis(self):
+            """Poloidal flux at the magnetic axis  [Wb]."""
+            o, _ = self.critical_points
+            return o[0].psi
+
+        @cached_property
+        def psi_boundary(self):
+            """Poloidal flux at the selected plasma boundary  [Wb]."""
+            _, x = self.critical_points
+            if len(x) > 0:
+                return x[0].psi
+            else:
+                raise ValueError(f"No x-point")
+
         @property
         def psi_norm(self):
             return self.mesh.uv[0]
@@ -309,10 +317,8 @@ class Equilibrium(PhysicalGraph):
         @cached_property
         def fpol(self):
             """Diamagnetic function (F=R B_Phi)  [T.m]."""
-            psi_axis = self.psi[0]
-            psi_boundary = self.psi[-1]
-            f2 = self._ffprime.antiderivative * (2.0*(psi_boundary-psi_axis))+self._fvac**2
-            return np.sqrt(f2(self._psi_norm))
+            f2 = self._ffprime.antiderivative * (2.0*(self.psi_boundary-self.psi_axis))+self._fvac**2
+            return Function(self.psi_norm, np.sqrt(f2(self.psi_norm)))
 
         @cached_property
         def dl(self):
@@ -428,19 +434,19 @@ class Equilibrium(PhysicalGraph):
 
         @cached_property
         def x_points(self):
-            _, x = self._parent.critical_points
+            _, x = self._parent.coordinate_system.critical_points
             return x
 
         @cached_property
         def psi_axis(self):
             """Poloidal flux at the magnetic axis  [Wb]."""
-            o, _ = self._parent.critical_points
+            o, _ = self._parent.coordinate_system.critical_points
             return o[0].psi
 
         @cached_property
         def psi_boundary(self):
             """Poloidal flux at the selected plasma boundary  [Wb]."""
-            _, x = self._parent.critical_points
+            _, x = self._parent.coordinate_system.critical_points
             if len(x) > 0:
                 return x[0].psi
             else:
@@ -813,7 +819,7 @@ class Equilibrium(PhysicalGraph):
         @cached_property
         def outline(self):
             """RZ outline of the plasma boundary  """
-            RZ = np.asarray([[r, z] for r, z in self._parent.find_flux_surface(1.0)])
+            RZ = np.asarray([[r, z] for r, z in self._parent.coordinate_system.find_flux_surface(1.0)])
             return PhysicalGraph({"r": RZ[:, 0], "z": RZ[:, 1]})
 
         @cached_property
@@ -905,7 +911,7 @@ class Equilibrium(PhysicalGraph):
         # axis.contour(R[1:-1, 1:-1], Z[1:-1, 1:-1], psi[1:-1, 1:-1], levels=levels, linewidths=0.2)
 
         if oxpoints is not False:
-            o_point, x_point = self.critical_points
+            o_point, x_point = self.coordinate_system.critical_points
             axis.plot(o_point[0].r,
                       o_point[0].z,
                       'g.',
