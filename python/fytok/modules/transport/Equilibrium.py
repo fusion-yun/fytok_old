@@ -17,6 +17,248 @@ from spdm.util.logger import logger
 TOLERANCE = 1.0e-6
 
 
+class MagneticSurfaceCoordinateSystem:
+    r"""
+        Flux surface coordinate system on a square grid of flux and poloidal angle
+
+        .. math::
+            V^{\prime}\left(\rho\right)=\frac{\partial V}{\partial\rho}=2\pi\int_{0}^{2\pi}\sqrt{g}d\theta=2\pi\oint\frac{R}{\left|\nabla\rho\right|}dl
+
+        .. math::
+            \left\langle\alpha\right\rangle\equiv\frac{2\pi}{V^{\prime}}\int_{0}^{2\pi}\alpha\sqrt{g}d\theta=\frac{2\pi}{V^{\prime}}\varoint\alpha\frac{R}{\left|\nabla\rho\right|}dl
+
+        Magnetic Flux Coordinates
+        psi         :                     ,  flux function , $B \cdot \nabla \psi=0$ need not to be the poloidal flux funcion $\Psi$
+        theta       : 0 <= theta   < 2*pi ,  poloidal angle
+        phi         : 0 <= phi     < 2*pi ,  toroidal angle
+    """
+
+    def __init__(self, psirz: Field, ffprime: Function, fvac: float, **kwargs):
+        """
+            Initialize FluxSurface
+        """
+        super().__init__(self)
+        self._ffprime = ffprime
+        self._fvac = fvac
+        self._psirz = psirz
+
+    @cached_property
+    def critical_points(self):
+        opoints = []
+        xpoints = []
+
+        logger.debug(type(self._psirz))
+
+        for r, z, psi, D in self._psirz.find_peak():
+            p = PhysicalGraph({"r": r, "z": z, "psi": psi})
+
+            if D < 0.0:  # saddle/X-point
+                xpoints.append(p)
+            else:  # extremum/ O-point
+                opoints.append(p)
+
+        # wall = getattr(self._parent._parent, "wall", None)
+        # if wall is not None:
+        #     xpoints = [p for p in xpoints if wall.in_limiter(p.r, p.z)]
+
+        if not opoints:
+            raise RuntimeError(f"Can not find o-point!")
+        else:
+
+            bbox = self._psirz.coordinates.mesh.bbox
+            Rmid = (bbox[0][0] + bbox[0][1])/2.0
+            Zmid = (bbox[1][0] + bbox[1][1])/2.0
+
+            opoints.sort(key=lambda x: (x.r - Rmid)**2 + (x.z - Zmid)**2)
+
+            psi_axis = opoints[0].psi
+
+            xpoints.sort(key=lambda x: (x.psi - psi_axis)**2)
+
+        return opoints, xpoints
+
+    def find_flux_surface(self, u, v=None):
+        o_points, x_points = self.critical_points
+
+        if len(o_points) == 0:
+            raise RuntimeError(f"Can not find O-point!")
+        else:
+            R0 = o_points[0].r
+            Z0 = o_points[0].z
+            psi0 = o_points[0].psi
+
+        if len(x_points) == 0:
+            R1 = self.psirz.coordinates.bbox[1][0]
+            Z1 = Z0
+            psi1 = 0.0
+        else:
+            R1 = x_points[0].r
+            Z1 = x_points[0].z
+            psi1 = x_points[0].psi
+
+        theta0 = arctan2(R1 - R0, Z1 - Z0)
+        Rm = sqrt((R1-R0)**2+(Z1-Z0)**2)
+
+        if not isinstance(u, (np.ndarray, collections.abc.Sequence)):
+            u = [u]
+
+        if v is None:
+            v = np.linspace(0, 2.0*scipy.constants.pi, 128, endpoint=False)
+        elif not isinstance(v, (np.ndarray, collections.abc.Sequence)):
+            v = [v]
+
+        for p in u:
+            for t in v:
+                psival = p*(psi1-psi0)+psi0
+
+                r0 = R0
+                z0 = Z0
+                r1 = R0+Rm*sin(t+theta0)
+                z1 = Z0+Rm*cos(t+theta0)
+
+                if not np.isclose(self.psirz(r1, z1), psival):
+                    try:
+                        def func(r): return float(self.psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1)) - psival
+                        sol = root_scalar(func,  bracket=[0, 1], method='brentq')
+                    except ValueError as error:
+                        raise ValueError(f"Find root fialed! {error} {psival}")
+
+                    if not sol.converged:
+                        raise ValueError(f"Find root fialed!")
+
+                    r1 = (1.0-sol.root)*r0+sol.root*r1
+                    z1 = (1.0-sol.root)*z0+sol.root*z1
+
+                yield r1, z1
+
+    @cached_property
+    def mesh(self):
+        if self.grid_type.index != None and int(self.grid_type.index) < 10 or str(self.grid_type.name) == "rectangle":
+            return NotImplemented
+
+        dim1 = self.grid.dim1
+        dim2 = self.grid.dim2
+
+        if dim1 == None:
+            u = np.linspace(0.01,  0.99,  64)
+        elif isinstance(dim2, int):
+            u = np.linspace(0.01,  0.99,  dim1)
+        elif isinstance(dim2, np.ndarray):
+            u = dim1
+        else:
+            u = np.asarray([dim1])
+
+        if dim2 == None:
+            v = np.linspace(0.0,  scipy.constants.pi*2.0,  128)
+        elif isinstance(dim2, int):
+            v = np.linspace(0.0,  scipy.constants.pi*2.0,  dim2)
+        elif isinstance(dim2, np.ndarray):
+            v = dim2
+        else:
+            v = np.asarray([dim2])
+
+        rz = np.asarray([[r, z] for r, z in self.find_flux_surface(u, v[:-1])]).reshape(len(u), len(v)-1, 2)
+        r = np.hstack([rz[:, :, 0], rz[:, :1, 0]])
+        z = np.hstack([rz[:, :, 1], rz[:, :1, 1]])
+
+        mesh = CurvilinearMesh([r, z], [u, v], cycle=[False, True])
+
+        if self.grid_type.index == None or self.grid_type.index == 13:
+            return mesh
+        else:
+            raise NotImplementedError("TODO: reconstruct mesh ")
+
+    @property
+    def r(self):
+        return self.mesh.xy[0]
+
+    @property
+    def z(self):
+        return self.mesh.xy[1]
+
+    @cached_property
+    def psi_axis(self):
+        """Poloidal flux at the magnetic axis  [Wb]."""
+        o, _ = self.critical_points
+        return o[0].psi
+
+    @cached_property
+    def psi_boundary(self):
+        """Poloidal flux at the selected plasma boundary  [Wb]."""
+        _, x = self.critical_points
+        if len(x) > 0:
+            return x[0].psi
+        else:
+            raise ValueError(f"No x-point")
+
+    @property
+    def psi_norm(self):
+        return self.mesh.uv[0]
+
+    @cached_property
+    def psi(self):
+        return self.psi_norm * (self.psi_boundary-self.psi_axis) + self.psi_axis
+
+    def psirz(self, r, z, *args, **kwargs):
+        return self._psirz(r, z, *args, **kwargs)
+
+    @cached_property
+    def fpol(self):
+        """Diamagnetic function (F=R B_Phi)  [T.m]."""
+        f2 = self._ffprime.antiderivative * (2.0*(self.psi_boundary-self.psi_axis))+self._fvac**2
+        return Function(self.psi_norm, np.sqrt(f2(self.psi_norm)))
+
+    @cached_property
+    def dl(self):
+        return np.asarray([self.mesh.axis(idx, axis=0).geo_object.dl(self.mesh.uv[1]) for idx in range(self.mesh.shape[0])])
+
+    @cached_property
+    def Br(self):
+        return -self.psirz(self.r, self.z, dy=1)/self.r
+
+    @cached_property
+    def Bz(self):
+        return self.psirz(self.r, self.z, dx=1)/self.r
+
+    @cached_property
+    def Btor(self):
+        return self.fpol.reshape(self.mesh.shape[0], 1) / self.r
+
+    @cached_property
+    def Bpol(self):
+        r"""
+            .. math:: V^{\prime} =   R / |\nabla \psi|
+        """
+        return np.sqrt(self.Br**2+self.Bz**2)
+
+    @cached_property
+    def B2(self):
+        return (self.Bpol**2 + self.Btor**2)
+
+    def surface_integral(self, alpha=None, *args, **kwargs):
+        r"""
+            .. math:: \left\langle \alpha\right\rangle \equiv\frac{2\pi}{V^{\prime}}\oint\alpha\frac{Rdl}{\left|\nabla\psi\right|}
+        """
+        if alpha is None:
+            alpha = 1.0/self.Bpol
+        else:
+            alpha = alpha/self.Bpol
+
+        return np.sum(0.5*(np.roll(alpha, 1, axis=1)+alpha) * self.dl, axis=1)*(2*scipy.constants.pi)
+
+    def surface_average(self,  *args, **kwargs):
+        return self.surface_integral(*args, **kwargs) / self.dvolume_dpsi * (2*scipy.constants.pi)
+
+    @cached_property
+    def dvolume_dpsi(self):
+        r"""
+            .. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
+            .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
+        """
+
+        return Function(self.psi_norm, self.surface_integral())
+
+
 class Equilibrium(PhysicalGraph):
     r"""Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
 
@@ -127,248 +369,7 @@ class Equilibrium(PhysicalGraph):
         dim2 = self["profiles_2d.grid.dim2"]
         psirz = Field(self["profiles_2d.psi"], dim1, dim2, mesh_type=mesh_type)
 
-        return Equilibrium.CoordinateSystem(psirz, ffprime,  fvac, parent=self)
-
-    class CoordinateSystem(PhysicalGraph):
-        r"""
-            Flux surface coordinate system on a square grid of flux and poloidal angle
-
-            .. math::
-                V^{\prime}\left(\rho\right)=\frac{\partial V}{\partial\rho}=2\pi\int_{0}^{2\pi}\sqrt{g}d\theta=2\pi\oint\frac{R}{\left|\nabla\rho\right|}dl
-
-            .. math::
-                \left\langle\alpha\right\rangle\equiv\frac{2\pi}{V^{\prime}}\int_{0}^{2\pi}\alpha\sqrt{g}d\theta=\frac{2\pi}{V^{\prime}}\varoint\alpha\frac{R}{\left|\nabla\rho\right|}dl
-
-            Magnetic Flux Coordinates
-            psi         :                     ,  flux function , $B \cdot \nabla \psi=0$ need not to be the poloidal flux funcion $\Psi$
-            theta       : 0 <= theta   < 2*pi ,  poloidal angle
-            phi         : 0 <= phi     < 2*pi ,  toroidal angle
-        """
-
-        def __init__(self, psirz, ffprime, fvac, *args,   ** kwargs):
-            """
-                Initialize FluxSurface
-            """
-            super().__init__(self, *args,   **kwargs)
-            self._ffprime = ffprime
-            self._fvac = fvac
-            self._psirz = psirz
-
-        @cached_property
-        def critical_points(self):
-            opoints = []
-            xpoints = []
-
-            logger.debug(type(self._psirz))
-
-            for r, z, psi, D in self._psirz.find_peak():
-                p = PhysicalGraph({"r": r, "z": z, "psi": psi})
-
-                if D < 0.0:  # saddle/X-point
-                    xpoints.append(p)
-                else:  # extremum/ O-point
-                    opoints.append(p)
-
-            # wall = getattr(self._parent._parent, "wall", None)
-            # if wall is not None:
-            #     xpoints = [p for p in xpoints if wall.in_limiter(p.r, p.z)]
-
-            if not opoints:
-                raise RuntimeError(f"Can not find o-point!")
-            else:
-
-                bbox = self._psirz.coordinates.mesh.bbox
-                Rmid = (bbox[0][0] + bbox[0][1])/2.0
-                Zmid = (bbox[1][0] + bbox[1][1])/2.0
-
-                opoints.sort(key=lambda x: (x.r - Rmid)**2 + (x.z - Zmid)**2)
-
-                psi_axis = opoints[0].psi
-
-                xpoints.sort(key=lambda x: (x.psi - psi_axis)**2)
-
-            return opoints, xpoints
-
-        def find_flux_surface(self, u, v=None):
-            o_points, x_points = self.critical_points
-
-            if len(o_points) == 0:
-                raise RuntimeError(f"Can not find O-point!")
-            else:
-                R0 = o_points[0].r
-                Z0 = o_points[0].z
-                psi0 = o_points[0].psi
-
-            if len(x_points) == 0:
-                R1 = self.psirz.coordinates.bbox[1][0]
-                Z1 = Z0
-                psi1 = 0.0
-            else:
-                R1 = x_points[0].r
-                Z1 = x_points[0].z
-                psi1 = x_points[0].psi
-
-            theta0 = arctan2(R1 - R0, Z1 - Z0)
-            Rm = sqrt((R1-R0)**2+(Z1-Z0)**2)
-
-            if not isinstance(u, (np.ndarray, collections.abc.Sequence)):
-                u = [u]
-
-            if v is None:
-                v = np.linspace(0, 2.0*scipy.constants.pi, 128, endpoint=False)
-            elif not isinstance(v, (np.ndarray, collections.abc.Sequence)):
-                v = [v]
-
-            for p in u:
-                for t in v:
-                    psival = p*(psi1-psi0)+psi0
-
-                    r0 = R0
-                    z0 = Z0
-                    r1 = R0+Rm*sin(t+theta0)
-                    z1 = Z0+Rm*cos(t+theta0)
-
-                    if not np.isclose(self.psirz(r1, z1), psival):
-                        try:
-                            def func(r): return float(self.psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1)) - psival
-                            sol = root_scalar(func,  bracket=[0, 1], method='brentq')
-                        except ValueError as error:
-                            raise ValueError(f"Find root fialed! {error} {psival}")
-
-                        if not sol.converged:
-                            raise ValueError(f"Find root fialed!")
-
-                        r1 = (1.0-sol.root)*r0+sol.root*r1
-                        z1 = (1.0-sol.root)*z0+sol.root*z1
-
-                    yield r1, z1
-
-        @cached_property
-        def mesh(self):
-            if self.grid_type.index != None and int(self.grid_type.index) < 10 or str(self.grid_type.name) == "rectangle":
-                return NotImplemented
-
-            dim1 = self.grid.dim1
-            dim2 = self.grid.dim2
-
-            if dim1 == None:
-                u = np.linspace(0.01,  0.99,  64)
-            elif isinstance(dim2, int):
-                u = np.linspace(0.01,  0.99,  dim1)
-            elif isinstance(dim2, np.ndarray):
-                u = dim1
-            else:
-                u = np.asarray([dim1])
-
-            if dim2 == None:
-                v = np.linspace(0.0,  scipy.constants.pi*2.0,  128)
-            elif isinstance(dim2, int):
-                v = np.linspace(0.0,  scipy.constants.pi*2.0,  dim2)
-            elif isinstance(dim2, np.ndarray):
-                v = dim2
-            else:
-                v = np.asarray([dim2])
-
-            rz = np.asarray([[r, z] for r, z in self.find_flux_surface(u, v[:-1])]).reshape(len(u), len(v)-1, 2)
-            r = np.hstack([rz[:, :, 0], rz[:, :1, 0]])
-            z = np.hstack([rz[:, :, 1], rz[:, :1, 1]])
-
-            mesh = CurvilinearMesh([r, z], [u, v], cycle=[False, True])
-
-            if self.grid_type.index == None or self.grid_type.index == 13:
-                return mesh
-            else:
-                raise NotImplementedError("TODO: reconstruct mesh ")
-
-        @property
-        def r(self):
-            return self.mesh.xy[0]
-
-        @property
-        def z(self):
-            return self.mesh.xy[1]
-
-        @cached_property
-        def psi_axis(self):
-            """Poloidal flux at the magnetic axis  [Wb]."""
-            o, _ = self.critical_points
-            return o[0].psi
-
-        @cached_property
-        def psi_boundary(self):
-            """Poloidal flux at the selected plasma boundary  [Wb]."""
-            _, x = self.critical_points
-            if len(x) > 0:
-                return x[0].psi
-            else:
-                raise ValueError(f"No x-point")
-
-        @property
-        def psi_norm(self):
-            return self.mesh.uv[0]
-
-        @cached_property
-        def psi(self):
-            return self.psi_norm * (self.psi_boundary-self.psi_axis) + self.psi_axis
-
-        def psirz(self, r, z, *args, **kwargs):
-            return self._psirz(r, z, *args, **kwargs)
-
-        @cached_property
-        def fpol(self):
-            """Diamagnetic function (F=R B_Phi)  [T.m]."""
-            f2 = self._ffprime.antiderivative * (2.0*(self.psi_boundary-self.psi_axis))+self._fvac**2
-            return Function(self.psi_norm, np.sqrt(f2(self.psi_norm)))
-
-        @cached_property
-        def dl(self):
-            return np.asarray([self.mesh.axis(idx, axis=0).geo_object.dl(self.mesh.uv[1]) for idx in range(self.mesh.shape[0])])
-
-        @cached_property
-        def Br(self):
-            return -self.psirz(self.r, self.z, dy=1)/self.r
-
-        @cached_property
-        def Bz(self):
-            return self.psirz(self.r, self.z, dx=1)/self.r
-
-        @cached_property
-        def Btor(self):
-            return self.fpol.reshape(self.mesh.shape[0], 1) / self.r
-
-        @cached_property
-        def Bpol(self):
-            r"""
-                .. math:: V^{\prime} =   R / |\nabla \psi|
-            """
-            return np.sqrt(self.Br**2+self.Bz**2)
-
-        @cached_property
-        def B2(self):
-            return (self.Bpol**2 + self.Btor**2)
-
-        def surface_integral(self, alpha=None, *args, **kwargs):
-            r"""
-                .. math:: \left\langle \alpha\right\rangle \equiv\frac{2\pi}{V^{\prime}}\oint\alpha\frac{Rdl}{\left|\nabla\psi\right|}
-            """
-            if alpha is None:
-                alpha = 1.0/self.Bpol
-            else:
-                alpha = alpha/self.Bpol
-
-            return np.sum(0.5*(np.roll(alpha, 1, axis=1)+alpha) * self.dl, axis=1)*(2*scipy.constants.pi)
-
-        def surface_average(self,  *args, **kwargs):
-            return self.surface_integral(*args, **kwargs) / self.dvolume_dpsi * (2*scipy.constants.pi)
-
-        @cached_property
-        def dvolume_dpsi(self):
-            r"""
-                .. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
-                .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
-            """
-
-            return Function(self.psi_norm, self.surface_integral())
+        return MagneticSurfaceCoordinateSystem(psirz, ffprime,  fvac)
 
     class Constraints(PhysicalGraph):
         def __init__(self, *args,  **kwargs):
