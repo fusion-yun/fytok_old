@@ -295,8 +295,10 @@ class Equilibrium(PhysicalGraph):
 
         ffprime = self["profiles_1d.f_df_dpsi"]
 
-        self._ffprime = Function(np.linspace(0, 1.0, len(ffprime)), ffprime)
-
+        if isinstance(ffprime, np.ndarray):
+            self._ffprime = Function(np.linspace(0, 1.0, len(ffprime)), ffprime)
+        else:
+            self._ffprime = None
         self._fvac = self["vacuum_toroidal_field.r0"]*self["vacuum_toroidal_field.b0"]
 
         psirz = kwargs.get("psirz", None)
@@ -343,6 +345,9 @@ class Equilibrium(PhysicalGraph):
     @property
     def time(self):
         return self._time
+
+    def solve(self, *args, **kwargs):
+        raise NotImplementedError()
 
     def update(self, *args, time=None, ** kwargs):
         logger.debug(f"Update {self.__class__.__name__} [time={time}] at: Do nothing")

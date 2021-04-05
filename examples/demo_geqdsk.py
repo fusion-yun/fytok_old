@@ -14,14 +14,17 @@ if __name__ == "__main__":
 
     equilibrium = File(
         # "/home/salmon/workspace/fytok/examples/data/g063982.04800",
-        "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
+        # "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
+        "/home/salmon/workspace/data/Limiter plasmas-7.5MA li=1.1/Limiter plasmas 7.5MA-EQDSK/Limiter_7.5MA_outbord.EQDSK",
         format="geqdsk")
 
     tok = Tokamak({
         "wall":  device.entry.wall,
         "pf_active": device.entry.pf_active,
-        "equilibrium": {"time_slice": equilibrium.entry.equilibrium}
+        "equilibrium": equilibrium.entry.equilibrium
     })
+
+    logger.debug(equilibrium.entry.equilibrium)
 
     fig = plt.figure()
 

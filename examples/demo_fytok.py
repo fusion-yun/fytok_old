@@ -18,7 +18,9 @@ if __name__ == "__main__":
 
     device = File("/home/salmon/workspace/fytok/data/mapping/ITER/imas/3/static/config.xml").entry
     equilibrium = File(
-        "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1", format="geqdsk").entry
+        # "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
+        "/home/salmon/workspace/data/Limiter plasmas-7.5MA li=1.1/Limiter plasmas 7.5MA-EQDSK/Limiter_7.5MA_outbord.EQDSK",
+         format="geqdsk").entry
 
     # device = File("/home/salmon/workspace/fytok/data/mapping/EAST/imas/3/static/config.xml").entry
     # equilibrium = File("/home/salmon/workspace/fytok/examples/data/g063982.04800",  format="geqdsk").entry
