@@ -288,11 +288,8 @@ class Equilibrium(PhysicalGraph):
 
     DEFAULT_PLUGIN = "FreeGS"
 
-    def __init__(self, eq, *args, time=None,   **kwargs):
-        if eq["time_slice"] != None:
-            eq = eq["time_slice"]
-
-        super().__init__(eq, *args, **kwargs)
+    def __init__(self,  *args, time=None,   **kwargs):
+        super().__init__(*args, **kwargs)
 
         self._time = time or self["time"] or self._parent.time
 
@@ -302,11 +299,17 @@ class Equilibrium(PhysicalGraph):
 
         self._fvac = self["vacuum_toroidal_field.r0"]*self["vacuum_toroidal_field.b0"]
 
-        self._psirz = Field(self["profiles_2d.psi"], self["profiles_2d.grid.dim1"],
-                            self["profiles_2d.grid.dim2"], mesh_type="rectilinear")
+        psirz = kwargs.get("psirz", None)
+
+        if not isinstance(psirz, Field):
+            psirz = Field(self["profiles_2d.psi"],
+                          self["profiles_2d.grid.dim1"],
+                          self["profiles_2d.grid.dim2"],
+                          mesh_type="rectilinear")
+
+        self._psirz = psirz
 
         dim1 = self["coordinate_system.grid.dim1"]
-
         dim2 = self["coordinate_system.grid.dim2"]
 
         if isinstance(dim1, np.ndarray):
@@ -319,6 +322,7 @@ class Equilibrium(PhysicalGraph):
             u = dim1
         else:
             u = np.asarray([dim1])
+
         if isinstance(dim2, np.ndarray):
             v = dim2
         elif dim2 == None:

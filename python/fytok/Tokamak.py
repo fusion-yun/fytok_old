@@ -84,7 +84,13 @@ class Tokamak(PhysicalGraph):
     @property
     def equilibrium(self) -> Equilibrium:
         if self._equilibrium is None:
-            self._equilibrium = Equilibrium(self["equilibrium"],
+
+            if self["equilibrium.time_slice"] == None:
+                eq = self["equilibrium"]
+            else:
+                eq = self["equilibrium.time_slice"]
+
+            self._equilibrium = Equilibrium(eq,
                                             time=self.time,
                                             vacuum_toroidal_field=self.vacuum_toroidal_field,
                                             constraints=self.constraints,
