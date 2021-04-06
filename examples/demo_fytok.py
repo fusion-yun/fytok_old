@@ -39,7 +39,7 @@ if __name__ == "__main__":
             "global_quantities": equilibrium.global_quantities,
             "profiles_1d": equilibrium.profiles_1d,
             "profiles_2d": equilibrium.profiles_2d,
-            "coordinate_system": {"grid": {"dim1": 64, "dim2": 1024}}
+            "coordinate_system": {"grid": {"dim1": 64, "dim2": 256}}
         },
         # "core_profiles":{ion": [{}]}
     })
@@ -97,7 +97,7 @@ if __name__ == "__main__":
 
             [
                 (tok.equilibrium.profiles_1d.fpol, r"$fpol$"),
-                (Function(equilibrium.profiles_1d.psi_norm, equilibrium.profiles_1d.f), r"$f_{pol0}$"),
+                (Function(equilibrium.profiles_1d.psi_norm, np.abs(equilibrium.profiles_1d.f)), r"$\left|f_{pol0}\right|$"),
             ],
 
             [
@@ -140,11 +140,11 @@ if __name__ == "__main__":
     # x = tok.core_profiles.electrons.density.x
     # dx = (np.roll(x, -1)-x)
     # dx[-1] = dx[-2]
-
+    # logger.debug(tok.core_profiles.electrons.density.x)
     plot_profiles(
         [
             # (1.0/dx,                                          {"marker": ".", "label": r"$1/dx$"}),
-
+            (tok.core_profiles.electrons.density.x,           r"$rho_{tor,N}$"),
             (tok.core_profiles.electrons.density,             r"$n_{e}$"),
             [(tok.core_profiles.electrons.density.derivative, {"color": "green", "label":  r"$n_{e}^{\prime}$"}),
              (tok.core_profiles.electrons.density_prime,      {"color": "black", "label":  r"$n_{e}^{\prime}$"})],

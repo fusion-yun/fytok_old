@@ -183,14 +183,18 @@ class MagneticSurfaceCoordinateSystem:
     def psirz(self, r, z, *args, **kwargs):
         return self._psirz(r, z, *args, **kwargs)
 
+    @cached_property
+    def cocos_flag(self):
+        return 1.0 if self.psi_boundary > self.psi_axis else -1.0
+
     @property
     def ffprime(self):
         return self._ffprime
 
     @cached_property
     def fpol(self):
+        """Diamagnetic function (F=R B_Phi)  [T.m]."""
         fpol2 = self.ffprime.antiderivative * (2 * (self.psi_boundary - self.psi_axis))
-
         return Function(self.psi_norm,  np.sqrt(fpol2 - fpol2[-1] + self._fvac**2))
 
     @cached_property
@@ -468,10 +472,6 @@ class Equilibrium(PhysicalGraph):
             else:
                 raise ValueError(f"No x-point")
 
-        @cached_property
-        def cocos_flag(self):
-            return 1.0 if self.psi_boundary > self.psi_axis else -1.0
-
         @property
         def q_axis(self):
             """q at the magnetic axis  [-]."""
@@ -583,6 +583,11 @@ class Equilibrium(PhysicalGraph):
         def dvolume_drho_tor(self)	:
             """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
             return self.dvolume_dpsi * self.dpsi_drho_tor
+
+        @cached_property
+        def dvolume_drho_tor_norm(self)	:
+            """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
+            return self.dvolume_drho_tor*self.rho_tor[-1]
 
         @cached_property
         def rho_tor(self):

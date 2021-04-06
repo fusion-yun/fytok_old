@@ -328,7 +328,7 @@ class TransportSolver(PhysicalGraph):
         fpol = self.equilibrium.profiles_1d.fpol.pullback(psi_norm, rho_tor_norm)
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        vpr = (self.equilibrium.profiles_1d.dvolume_dpsi).pullback(psi_norm, rho_tor_norm)
+        vpr = self.equilibrium.profiles_1d.dvolume_drho_tor_norm.pullback(psi_norm, rho_tor_norm)
 
         vprm = core_profiles_prev.vprime
 
@@ -650,9 +650,9 @@ class TransportSolver(PhysicalGraph):
                                                     None,
                                                     inv_tau,
                                                     (a, b, c, d, e, f, g),
-                                                    ((-e[0], 1, 0), (1, 0, 4.9e19)),
+                                                    ((e[0], 1, 0), (1, 0, 4.9e19)),
                                                     hyper_diff=[10.0, 0.0],
-                                                    tol=1e-6,
+                                                    tol=1e-7,
                                                     verbose=2,
                                                     max_nodes=1000,
                                                     ignore_x=[np.sqrt(0.88)]
