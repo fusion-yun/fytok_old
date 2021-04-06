@@ -607,8 +607,8 @@ class Equilibrium(PhysicalGraph):
                                             =\frac{1}{2\sqrt{\pi B_{0}\Phi_{tor}}}\frac{d\Phi_{tor}}{d\psi} \
                                             =\frac{q}{2\pi B_{0}\rho_{tor}}
             """
-            d = (self.dphi_dpsi[1:])/(self.rho_tor[1:])
-            return Function(self._psi_norm, np.hstack([d[:1], d])/(4.0*scipy.constants.pi*self._b0))
+            d = (self.dphi_dpsi[1:])/(self.rho_tor[1:])/(4.0*scipy.constants.pi*self._b0)
+            return Function(self._psi_norm, np.hstack([d[:1], d]))
 
         @cached_property
         def dpsi_drho_tor(self)	:

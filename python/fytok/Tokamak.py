@@ -84,7 +84,7 @@ class Tokamak(PhysicalGraph):
                 eq = self["equilibrium.time_slice"]
             else:
                 eq = self["equilibrium"]
-            
+
             self._equilibrium = Equilibrium(eq,
                                             time=self.time,
                                             vacuum_toroidal_field=self.vacuum_toroidal_field,
@@ -199,6 +199,7 @@ class Tokamak(PhysicalGraph):
                           [lambda x:D0 + D1 * (x**4), lambda x: D2])
 
         v_pinch = -D_diff*rho_n * spec.electron.density.pinch_number.V0 / self.equilibrium.vacuum_toroidal_field.r0
+
         # def n_core(x): return (1-x**4)**2
         # def dn_core(x): return -4*x*(1-x**2)
         # def n_ped(x, r_ped=r_ped): return n_core(r_ped) - (1.0-r_ped)/2.0 * \
@@ -206,6 +207,7 @@ class Tokamak(PhysicalGraph):
         # #     def dn_ped(x): return dn_core(x_ped) * np.exp((x-x_ped)/(1.0-x_ped))
 
         self.core_profiles.electrons.density = Function(rho_n, np.full(rho_n.shape, spec.electron.density.n0))
+
         # Function(rho_n, spec.electron.density.n0 * (1-rho_n**4)**2)
 
         self.core_transport[_next_] = {
