@@ -1,6 +1,8 @@
 from math import log
+
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.constants
 from fytok.Tokamak import Tokamak
 from spdm.data.Collection import Collection
 from spdm.data.File import File
@@ -24,7 +26,7 @@ if __name__ == "__main__":
         # "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
         "/home/salmon/workspace/data/15MA inductive - burn/Increased domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16VVHR.txt",
         # "/home/salmon/workspace/data/Limiter plasmas-7.5MA li=1.1/Limiter plasmas 7.5MA-EQDSK/Limiter_7.5MA_outbord.EQDSK",
-    format="geqdsk").entry
+        format="geqdsk").entry
 
     tok = Tokamak({
         "radial_grid": {
@@ -177,14 +179,19 @@ if __name__ == "__main__":
                  r"$\frac{d\phi}{d\psi}$"),
             ],
 
-            (tok.equilibrium.profiles_1d.vprime.pullback(psi_norm, rho_tor_norm),
-             r"$V^{\prime}_{\psi_N}$"),
+            (tok.equilibrium.profiles_1d.volume.pullback(psi_norm, rho_tor_norm),        r"$V$"),
+
+            (tok.equilibrium.profiles_1d.vprime.pullback(psi_norm, rho_tor_norm),        r"$V^{\prime}$"),
 
             (tok.equilibrium.profiles_1d.dvolume_drho_tor.pullback(psi_norm, rho_tor_norm),
              r"$\frac{dV}{d\rho_{tor}}$"),
 
-            (tok.equilibrium.profiles_1d.rho_tor.pullback(psi_norm, rho_tor_norm),             r"$\rho_{tor}$"),
+            [
+                (tok.equilibrium.profiles_1d.rho_tor.pullback(psi_norm, rho_tor_norm),             r"$\rho_{tor}$"),
+                (tok.equilibrium.profiles_1d.dvolume_drho_tor.pullback(psi_norm, rho_tor_norm) / ((scipy.constants.pi**3) *8.0 * tok.equilibrium.vacuum_toroidal_field.r0),
+                    r"$\frac{dV/d\rho_{tor}}{4\pi^2 R_0}$"),
 
+            ],
 
             [
                 (tok.equilibrium.profiles_1d.dvolume_drho_tor_norm.pullback(psi_norm, rho_tor_norm),

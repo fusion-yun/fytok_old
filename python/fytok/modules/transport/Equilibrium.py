@@ -233,10 +233,10 @@ class MagneticSurfaceCoordinateSystem:
         else:
             alpha = alpha/self.Bpol
 
-        return np.sum(0.5*(np.roll(alpha, 1, axis=1)+alpha) * self.dl, axis=1)
+        return np.sum(0.5*(np.roll(alpha, 1, axis=1)+alpha) * self.dl, axis=1) * (2*scipy.constants.pi)
 
     def surface_average(self,  *args, **kwargs):
-        return self.surface_integral(*args, **kwargs) / self.dvolume_dpsi * (2*scipy.constants.pi)
+        return self.surface_integral(*args, **kwargs) / self.dvolume_dpsi
 
     @cached_property
     def dvolume_dpsi(self):
@@ -544,7 +544,7 @@ class Equilibrium(PhysicalGraph):
         @cached_property
         def volume(self):
             """Volume enclosed in the flux surface[m ^ 3]"""
-            return self.dvolume_dpsi.antiderivative/(self._psi_boundary - self._psi_axis)
+            return self.dvolume_dpsi.antiderivative * (self._psi_boundary - self._psi_axis)
 
         @cached_property
         def ffprime(self):
@@ -577,7 +577,7 @@ class Equilibrium(PhysicalGraph):
                 (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)  [-].
                 .. math:: q(\psi)=\frac{d\Phi}{d\psi}=\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
             """
-            return Function(self._psi_norm, self.fpol * self._coord.surface_integral(1.0/(self._coord.r**2))/(2*scipy.constants.pi))
+            return Function(self._psi_norm, self.fpol * self._coord.surface_integral(1.0/(self._coord.r**2))/(2*scipy.constants.pi)**2)
 
         @cached_property
         def dvolume_drho_tor(self)	:
@@ -607,7 +607,7 @@ class Equilibrium(PhysicalGraph):
                                             =\frac{1}{2\sqrt{\pi B_{0}\Phi_{tor}}}\frac{d\Phi_{tor}}{d\psi} \
                                             =\frac{q}{2\pi B_{0}\rho_{tor}}
             """
-            d = (self.dphi_dpsi[1:])/(self.rho_tor[1:])/(4.0*scipy.constants.pi*self._b0)
+            d = self.dphi_dpsi[1:]/self.rho_tor[1:]/(2.0*scipy.constants.pi*self._b0)
             return Function(self._psi_norm, np.hstack([d[:1], d]))
 
         @cached_property
@@ -615,7 +615,7 @@ class Equilibrium(PhysicalGraph):
             """
                 Derivative of Psi with respect to Rho_Tor[Wb/m].
             """
-            return (4.0*scipy.constants.pi*self._b0)*self.rho_tor/self.dphi_dpsi
+            return (2.0*scipy.constants.pi*self._b0)*self.rho_tor/self.dphi_dpsi
 
         @cached_property
         def norm_grad_rho_tor(self):
