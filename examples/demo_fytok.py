@@ -97,7 +97,8 @@ if __name__ == "__main__":
 
             [
                 (tok.equilibrium.profiles_1d.fpol, r"$fpol$"),
-                (Function(equilibrium.profiles_1d.psi_norm, np.abs(equilibrium.profiles_1d.f)), r"$\left|f_{pol0}\right|$"),
+                (Function(equilibrium.profiles_1d.psi_norm, np.abs(
+                    equilibrium.profiles_1d.f)), r"$\left|f_{pol0}\right|$"),
             ],
 
             [
@@ -154,10 +155,11 @@ if __name__ == "__main__":
             (tok.core_profiles.electrons.n_gamma,             r"$\Gamma_{e}$"),
             (tok.core_profiles.electrons.n_gamma_prime,       r"$\Gamma_{e}^{\prime}$"),
             # (tok.core_profiles.electrons.n_rms_residuals,     {"marker": ".", "label":  r"residuals"}),
-            # [
-            #     (tok.core_profiles.electrons.n_diff,          {"color": "green", "label": r"D"}),
-            #     (np.abs(tok.core_profiles.electrons.n_conv),  {"color": "black",  "label": r"v"}),
-            # ],
+            [
+                (tok.core_profiles.electrons.n_diff,          {"color": "green", "label": r"D"}),
+                (np.abs(tok.core_profiles.electrons.n_conv),  {"color": "black",  "label": r"v"}),
+            ],
+
             (tok.core_profiles.electrons.n_diff.derivative,   {"color": "green", "label": r"$D^{\prime}$"}),
 
             [

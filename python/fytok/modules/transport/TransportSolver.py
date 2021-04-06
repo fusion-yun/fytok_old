@@ -178,11 +178,10 @@ class TransportSolver(PhysicalGraph):
 
         a, b, c, d, e, f, g = coeff
 
-        if isinstance(hyper_diff, collections.abc.MutableSequence):
+        if hyper_diff is not None:
+            # if isinstance(hyper_diff, collections.abc.MutableSequence):
             hyper_diff_exp, hyper_diff_imp = hyper_diff
             hyper_diff = hyper_diff_exp+hyper_diff_imp*max(d)
-        elif hyper_diff is None:
-            hyper_diff = 0.0
 
         D = d
         E = e
@@ -191,10 +190,16 @@ class TransportSolver(PhysicalGraph):
 
         def fun(x, Y):
             y, gamma = Y
+
             try:
-                yp = Function(x, y).derivative
+                if hyper_diff is not None:
+                    yp = Function(x, y).derivative
+                    dy = (-gamma + E(x)*y+hyper_diff * yp)/(D(x)+hyper_diff)
+                else:
+                    dy = (-gamma + E(x)*y)/D(x)
+
                 dgamma = F(x) - G(x) * y
-                dy = (-gamma + E(x)*y+hyper_diff * yp)/(D(x)+hyper_diff)
+
             except RuntimeWarning as error:
                 raise RuntimeError(y)
             return np.vstack((dy, dgamma))
@@ -332,7 +337,7 @@ class TransportSolver(PhysicalGraph):
 
         vprm = core_profiles_prev.vprime
 
-        if vprm == None:
+        if not isinstance(vprm, np.ndarray) or vprm == None:
             vprm = vpr
 
         gm1 = self.equilibrium.profiles_1d.gm1.pullback(psi_norm, rho_tor_norm)
@@ -668,8 +673,8 @@ class TransportSolver(PhysicalGraph):
                 "n_conv_flux": profiles.conv_flux,
                 "n_s_exp_flux": profiles.s_exp_flux,
                 "n_residual": profiles.residual,
-                "n_diff": Function(rho_tor_norm, diff),
-                "n_conv": Function(rho_tor_norm, conv),
+                "n_diff": diff,
+                "n_conv": conv,
                 "density":  profiles.density,
                 "density_prime": profiles.density_prime,
                 "n_gamma": profiles.gamma,
