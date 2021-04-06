@@ -15,11 +15,6 @@ class CoreProfiles(PhysicalGraph):
     IDS = "core_profiles"
 
     def __init__(self,   grid: RadialGrid, *args, time=None,  ** kwargs):
-        if len(args) > 0:
-            if args[0]["profiles_1d"] != None:
-                args[0] = args[0]["profiles_1d"]
-            time = time or args[0]["time"]
-
         super().__init__(*args, ** kwargs)
         self._time = time or 0.0
         self._grid = grid

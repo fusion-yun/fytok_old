@@ -41,10 +41,6 @@ class Tokamak(PhysicalGraph):
         self._time = 0.0
         self._radial_grid = radial_grid or self["grid"]
 
-        # self._time = PhysicalGraph(self["equilibrium.time"].__fetch__())
-        # self._vacuum_toroidal_field = PhysicalGraph(self["equilibrium.vacuum_toroidal_field"].__fetch__())
-
-    # --------------------------------------------------------------------------
     @property
     def radial_grid(self):
         if isinstance(self._radial_grid, collections.abc.Mapping):
@@ -84,12 +80,11 @@ class Tokamak(PhysicalGraph):
     @property
     def equilibrium(self) -> Equilibrium:
         if self._equilibrium is None:
-
-            if self["equilibrium.time_slice"] == None:
-                eq = self["equilibrium"]
-            else:
+            if self["equilibrium.time_slice"] != None:
                 eq = self["equilibrium.time_slice"]
-
+            else:
+                eq = self["equilibrium"]
+            
             self._equilibrium = Equilibrium(eq,
                                             time=self.time,
                                             vacuum_toroidal_field=self.vacuum_toroidal_field,
@@ -103,7 +98,13 @@ class Tokamak(PhysicalGraph):
     @property
     def core_profiles(self):
         if self._core_profiles is None:
-            self._core_profiles = CoreProfiles(self.radial_grid, self["core_profiles"],   time=self.time, parent=self)
+            if self["core_profiles.profiles_1d"] != None:
+                core_profiles = self["core_profiles.profiles_1d"]
+            else:
+                core_profiles = self["core_profiles"]
+
+            self._core_profiles = CoreProfiles(self.radial_grid, core_profiles,  time=self.time, parent=self)
+
         return self._core_profiles
 
     @cached_property

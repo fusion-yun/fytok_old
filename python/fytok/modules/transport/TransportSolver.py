@@ -343,8 +343,6 @@ class TransportSolver(PhysicalGraph):
 
         H = vpr * gm3
 
-        logger.debug(vpr[:10])
-
         diff_hyper = 0
 
         if not enable_ion_solver:
@@ -653,7 +651,7 @@ class TransportSolver(PhysicalGraph):
                                                     inv_tau,
                                                     (a, b, c, d, e, f, g),
                                                     ((-e[0], 1, 0), (1, 0, 4.9e19)),
-                                                    hyper_diff=[0.0, 0.0],
+                                                    hyper_diff=[10.0, 0.0],
                                                     tol=1e-6,
                                                     verbose=2,
                                                     max_nodes=1000,

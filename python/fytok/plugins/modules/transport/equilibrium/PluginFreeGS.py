@@ -126,18 +126,18 @@ class EquilibriumFreeGS(Equilibrium):
         psi_norm = self.profiles_1d.psi_norm
         # super().update_cache()
         if hasattr(self._backend, "_profiles"):
-            self._cache.profiles_1d.dpressure_dpsi = self._backend.pprime(psi_norm)
-            self._cache.profiles_1d.f_df_dpsi = self._backend.ffprime(psi_norm)
-            self._cache.profiles_1d.f = self._backend.fpol(psi_norm)
-            self._cache.profiles_1d.pressure = self._backend.pressure(psi_norm)
+            self.profiles_1d.dpressure_dpsi = self._backend.pprime(psi_norm)
+            self.profiles_1d.f_df_dpsi = self._backend.ffprime(psi_norm)
+            self.profiles_1d.f = self._backend.fpol(psi_norm)
+            self.profiles_1d.pressure = self._backend.pressure(psi_norm)
             try:
                 x, q = self._backend.q()
             except Exception:
                 pass
             else:
-                self.cache.profiles_1d.q = Function(x, q)
-                self.cache.global_quantities.beta_pol = self._backend.poloidalBeta()
-            self.cache.global_quantities.ip = self._backend.plasmaCurrent()
+                self.profiles_1d.q = Function(x, q)
+                self.global_quantities.beta_pol = self._backend.poloidalBeta()
+            self.global_quantities.ip = self._backend.plasmaCurrent()
 
             self.profiles_2d.update(solver="FreeGS", psi=self._backend.psiRZ)
 
