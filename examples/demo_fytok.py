@@ -2,6 +2,7 @@ from math import log
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import scipy.constants
 from fytok.Tokamak import Tokamak
 from spdm.data.Collection import Collection
@@ -28,6 +29,8 @@ if __name__ == "__main__":
         # "/home/salmon/workspace/data/Limiter plasmas-7.5MA li=1.1/Limiter plasmas 7.5MA-EQDSK/Limiter_7.5MA_outbord.EQDSK",
         format="geqdsk").entry
 
+    profile = pd.read_csv('/home/salmon/workspace/data/15MA inductive - burn/profile.txt', sep='\t')
+
     tok = Tokamak({
         "radial_grid": {
             "axis": 128,
@@ -44,14 +47,17 @@ if __name__ == "__main__":
         },
         # "core_profiles":{ion": [{}]}
     })
-
+    rho_tor_norm = np.linspace(0, 1.0, 128)
+    r_ped = np.sqrt(0.9)
     tok.initialize({
-        "pedestal_top": 0.88,  # \frac{\Phi}{\Phi_a}=0.88
+        "r_ped": r_ped,  # \frac{\Phi}{\Phi_a}=0.88
         "electron": {
             "density": {
                 "n0": 1e20,
                 "source": {"S0": 7.5e20},  # S0 7.5e20
-                "diffusivity": {"D0": 0.5, "D1": 1.0, "D2": 0.11},
+                "diffusivity":  Function(rho_tor_norm, [lambda r:r < r_ped, lambda r:r >= r_ped], [lambda x:0.2 + 0.6*(x**2), lambda x: 0.2]),
+                # {"D0": 0.2, "D1": 3.0, "D2": 0.11},
+                # "diffusivity": Function(profile["x"].values, profile["He"].values),
                 "pinch_number": {"V0": 1.385},
                 "boundary_condition": {"value": 4.6e18}
             },
@@ -149,7 +155,10 @@ if __name__ == "__main__":
         [
             # (1.0/dx,                                          {"marker": ".", "label": r"$1/dx$"}),
             (tok.core_profiles.electrons.density.x,           r"$rho_{tor,N}$"),
-            (tok.core_profiles.electrons.density,             r"$n_{e}$"),
+            [
+                (Function(profile["x"].values, profile["NE"].values*1.0e19),             r"$n_{e0}$"),
+                (tok.core_profiles.electrons.density,             r"$n_{e}$"),
+            ],
             [(tok.core_profiles.electrons.density.derivative, {"color": "green", "label":  r"$n_{e}^{\prime}$"}),
              (tok.core_profiles.electrons.density_prime,      {"color": "black", "label":  r"$n_{e}^{\prime}$"})],
             (tok.core_profiles.electrons.density.derivative - \
@@ -161,6 +170,7 @@ if __name__ == "__main__":
             [
                 (tok.core_profiles.electrons.n_diff,          {"color": "green", "label": r"D"}),
                 (np.abs(tok.core_profiles.electrons.n_conv),  {"color": "black",  "label": r"v"}),
+                (Function(profile["x"].values, profile["He"].values), r"$D_e$")
             ],
 
             # (tok.core_profiles.electrons.n_diff.derivative,   {"color": "green", "label": r"$D^{\prime}$"}),
@@ -177,6 +187,8 @@ if __name__ == "__main__":
                 (tok.equilibrium.profiles_1d.q.pullback(psi_norm, rho_tor_norm),                   r"$q$"),
                 (tok.equilibrium.profiles_1d.dphi_dpsi.pullback(psi_norm, rho_tor_norm),
                  r"$\frac{d\phi}{d\psi}$"),
+                (Function(profile["x"].values, profile["q"].values),             r"$q_{0}$"),
+
             ],
 
             (tok.equilibrium.profiles_1d.volume.pullback(psi_norm, rho_tor_norm),        r"$V$"),
@@ -188,7 +200,7 @@ if __name__ == "__main__":
 
             [
                 (tok.equilibrium.profiles_1d.rho_tor.pullback(psi_norm, rho_tor_norm),             r"$\rho_{tor}$"),
-                (tok.equilibrium.profiles_1d.dvolume_drho_tor.pullback(psi_norm, rho_tor_norm) / ((scipy.constants.pi**3) *8.0 * tok.equilibrium.vacuum_toroidal_field.r0),
+                (tok.equilibrium.profiles_1d.dvolume_drho_tor.pullback(psi_norm, rho_tor_norm) / ((scipy.constants.pi**3) * 8.0 * tok.equilibrium.vacuum_toroidal_field.r0),
                     r"$\frac{dV/d\rho_{tor}}{4\pi^2 R_0}$"),
 
             ],
