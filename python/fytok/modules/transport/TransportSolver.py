@@ -179,14 +179,11 @@ class TransportSolver(PhysicalGraph):
         a, b, c, d, e, f, g = coeff
 
         if hyper_diff is not None:
-            # if isinstance(hyper_diff, collections.abc.MutableSequence):
             hyper_diff_exp, hyper_diff_imp = hyper_diff
             hyper_diff = hyper_diff_exp+hyper_diff_imp*max(d)
 
-        hyper_diff = 0.001
-
-        F = (f + b*inv_tau*y0)*c
-        G = (g + a*inv_tau)*c
+        F = (f + b*inv_tau*y0) * c
+        G = (g + a*inv_tau) * c
 
         def fun(x, Y):
             y, gamma = Y
@@ -197,6 +194,11 @@ class TransportSolver(PhysicalGraph):
                     dy = (-gamma + e(x)*y+hyper_diff * yp)/(d(x)+hyper_diff)
                 else:
                     dy = (-gamma + e(x)*y)/d(x)
+                # D = d(x)
+                # E = e(x)
+                # dy = (-gamma+E*y).view(np.ndarray)
+                # dy[1:] = dy[1:]/D[1:]
+                # dy[0] = dy[1]
                 dgamma = F(x) - G(x) * y
             except RuntimeWarning as error:
                 raise RuntimeError(error)
@@ -582,7 +584,10 @@ class TransportSolver(PhysicalGraph):
                 if isinstance(se, np.ndarray) or type(se) in (int, float):
                     se_exp += se
 
-            ne0 = try_get(core_profiles_prev, sp).density
+            p = try_get(core_profiles_prev, sp)
+
+            ne0 = p.density
+
             # ne0_prime = try_get(core_profiles_prev, sp).density_prime
 
             if not isinstance(ne0, np.ndarray) and ne0 == None:
@@ -594,7 +599,7 @@ class TransportSolver(PhysicalGraph):
             a = vpr
             b = vprm
             c = rho_tor_boundary
-            d = H * diff / c
+            d = H * diff / rho_tor_boundary 
             e = H * conv - k_phi * rho_tor * vpr
             f = vpr * se_exp
             g = vpr * se_imp
@@ -657,8 +662,8 @@ class TransportSolver(PhysicalGraph):
                                                     None,  # ne0_prime,
                                                     inv_tau,
                                                     (a, b, c, d, e, f, g),
-                                                    ((e[0], -1, 0), (1, 0, 4.6e19)),
-                                                    hyper_diff=[1.0, 0.0],
+                                                    ((0, -1, 0), (1, 0, 4.6e19)),
+                                                    hyper_diff=[0, 0.0001],
                                                     tol=1e-3,
                                                     verbose=2,
                                                     max_nodes=1000,
@@ -669,7 +674,12 @@ class TransportSolver(PhysicalGraph):
 
             if not sol.success:
                 logger.debug(sol.message)
-
+            # logger.debug(c)
+            # S = f.antiderivative(sol.x)*c
+            # D = d(sol.x)
+            # S = Function(sol.x[1:], -S[1:]/D[1:])
+            # S = Function(sol.x, S.antiderivative(sol.x))
+            # S = S-S[-1] + 4.6e19
             core_profiles_next[sp] = {
                 "d": d,
                 "e": e,
@@ -684,7 +694,8 @@ class TransportSolver(PhysicalGraph):
                 "n_gamma": profiles.gamma,
                 "n_gamma_prime": profiles.gamma_prime,
                 "n_rms_residuals":  profiles.rms_residuals,
-                "vpr": vpr
+                "vpr": vpr,
+                # "source": S,
             }
 
             # else:

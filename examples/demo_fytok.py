@@ -23,8 +23,8 @@ if __name__ == "__main__":
 
     device = File("/home/salmon/workspace/fytok/data/mapping/ITER/imas/3/static/config.xml").entry
     equilibrium = File(
-        "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
-        # "/home/salmon/workspace/data/15MA inductive - burn/Increased domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16VVHR.txt",
+        # "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
+        "/home/salmon/workspace/data/15MA inductive - burn/Increased domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16VVHR.txt",
         # "/home/salmon/workspace/data/Limiter plasmas-7.5MA li=1.1/Limiter plasmas 7.5MA-EQDSK/Limiter_7.5MA_outbord.EQDSK",
         format="geqdsk").entry
 
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     rho_tor_norm = np.linspace(0, 1.0, 128)
 
     r_ped = np.sqrt(0.88)
-    n_src = Function(rho_tor_norm, lambda x: 4e20 * np.exp(15.0*(x**2-1.0)))
+    n_src = Function(rho_tor_norm, lambda x: 7.5e20 * np.exp(15.0*(x**2-1.0)))
     diff = Function(rho_tor_norm,
                     [lambda r:r < r_ped, lambda r:r >= r_ped],
                     [lambda x:0.5 + (x**4), lambda x: 0.11])
@@ -61,7 +61,7 @@ if __name__ == "__main__":
         "r_ped": r_ped,  # \frac{\Phi}{\Phi_a}=0.88
         "electron": {
             "density": {
-                "n0": Function(rho_tor_norm, np.full(rho_tor_norm.shape, 1e20)),
+                "n0": Function(rho_tor_norm, np.full(rho_tor_norm.shape, 1e19)),
                 "source": n_src,
                 "diffusivity":  diff,
                 "pinch": conv,
@@ -105,15 +105,13 @@ if __name__ == "__main__":
     plot_profiles(
         [
             (tok.equilibrium.profiles_1d.phi,                   r"$\phi$"),
-            (tok.equilibrium.profiles_1d.rho_tor,               r"$\rho_{tor}$"),
-            (tok.equilibrium.profiles_1d.rho_tor_norm,          r"$\rho_{tor,N}$"),
 
+            (tok.equilibrium.profiles_1d.rho_tor_norm,          r"$\rho_{tor,N}$"),
             # [
             #     (tok.equilibrium.profiles_1d.fpol,              r"$fpol$"),
             #     (Function(equilibrium.profiles_1d.psi_norm,
             #               np.abs(equilibrium.profiles_1d.f)),   r"$\left|f_{pol0}\right|$"),
             # ],
-
             # [
             #     (Function(equilibrium.profiles_1d.psi_norm, equilibrium.profiles_1d.q), r"$q_0$"),
             #     (tok.equilibrium.profiles_1d.q,                 r"$q$"),
@@ -124,16 +122,25 @@ if __name__ == "__main__":
             (tok.equilibrium.profiles_1d.dvolume_drho_tor_norm, r"$\frac{dV}{d\rho_{N}}$"),
             [
                 (tok.equilibrium.profiles_1d.rho_tor,           r"$\rho_{tor}$"),
+                (Function(profile["Fp"].values, profile["rho"].values),             r"$\rho_{tor,0}$"),
                 (tok.equilibrium.profiles_1d.dvolume_drho_tor / ((scipy.constants.pi**2) * 4.0 * tok.equilibrium.vacuum_toroidal_field.r0),
                     r"$\frac{dV/d\rho_{tor}}{4\pi^2 R_0}$"),
             ],
+            [
+                (tok.equilibrium.profiles_1d.q,                    r"$q$"),
+                (Function(profile["Fp"].values, profile["q"].values),    r"$q_{0}$"),
+
+            ],
+
             (tok.equilibrium.profiles_1d.dpsi_drho_tor,         r"$\frac{d\psi}{d\rho_{tor}}$"),
             (tok.equilibrium.profiles_1d.drho_tor_dpsi,         r"$\frac{d\rho_{tor}}{d\psi}$"),
 
             (tok.equilibrium.profiles_1d.gm1,                   r"$\left<\frac{1}{R^2}\right>$"),
-            (tok.equilibrium.profiles_1d.gm2,                   r"$\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
+            (tok.equilibrium.profiles_1d.gm2,
+             r"$\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
             (tok.equilibrium.profiles_1d.gm3,                   r"$\left<\left|\nabla \rho\right|^2\right>$"),
             (tok.equilibrium.profiles_1d.gm7,                   r"$\left<\left|\nabla \rho\right|\right>$"),
+            (tok.equilibrium.profiles_1d.gm3*tok.equilibrium.profiles_1d.dvolume_drho_tor_norm,                   r"$H$"),
 
             # (tok.equilibrium.profiles_1d.dphi_dpsi, r"$\frac{d\phi}{d\psi}$"),
             # (tok.equilibrium.profiles_1d.drho_tor_dpsi, r"$\frac{d\rho_{tor}}{d\psi}$"),
@@ -153,20 +160,24 @@ if __name__ == "__main__":
 
     plot_profiles(
         [
-            # (1.0/dx,                                          {"marker": ".", "label": r"$1/dx$"}),
-            (tok.core_profiles.electrons.density.x,           r"$rho_{tor,N}$"),
-            (tok.core_profiles.electrons.density,             r"$n_{e}$"),
-            [(tok.core_profiles.electrons.density.derivative, {"color": "green", "label":  r"$n_{e}^{\prime}$"}),
-             (tok.core_profiles.electrons.density_prime,      {"color": "black", "label":  r"$n_{e}^{\prime}$"})],
-            (tok.core_profiles.electrons.density.derivative - \
-             tok.core_profiles.electrons.density_prime,        {"marker": ".", "label": r"$\Delta n_{e}^{\prime}$"}),
+            # (tok.core_profiles.electrons.density.x,           r"$rho_{tor,N}$"),
+            [
+                (tok.core_profiles.electrons.density,             r"$n_{e}$"),
+                # (tok.core_profiles.electrons.source,              {"color": "green", "label": r"$S_{edge}$"}),
+            ],
 
-            (tok.core_profiles.electrons.n_gamma,             r"$\Gamma_{e}$"),
-            (tok.core_profiles.electrons.n_gamma_prime,       r"$\Gamma_{e}^{\prime}$"),
-            # (tok.core_profiles.electrons.n_rms_residuals,     {"marker": ".", "label":  r"residuals"}),
+            # [(tok.core_profiles.electrons.density.derivative, {"color": "green", "label":  r"$n_{e}^{\prime}$"}),
+            #  (tok.core_profiles.electrons.density_prime,      {"color": "black", "label":  r"$n_{e}^{\prime}$"})],
+            # # (tok.core_profiles.electrons.density.derivative - \
+            # #  tok.core_profiles.electrons.density_prime,       {"marker": ".", "label": r"$\Delta n_{e}^{\prime}$"}),
+            # # (tok.core_profiles.electrons.n_gamma,             r"$\Gamma_{e}$"),
+            # # (tok.core_profiles.electrons.n_gamma_prime,       r"$\Gamma_{e}^{\prime}$"),
+            # # (tok.core_profiles.electrons.n_rms_residuals,     {"marker": ".", "label":  r"residuals"}),
+
+
             [
                 (tok.core_profiles.electrons.n_diff,          {"color": "green", "label": r"D"}),
-                (np.abs(tok.core_profiles.electrons.n_conv),  {"color": "black",  "label": r"v"}),
+                (np.abs(tok.core_profiles.electrons.n_conv),  {"color": "black",  "label": r"$\left|v\right|$"}),
             ],
 
             [
@@ -179,12 +190,16 @@ if __name__ == "__main__":
                 (tok.core_profiles.electrons.d,               {"color": "green", "label": r"D"}),
                 (tok.core_profiles.electrons.e,               {"color": "black", "label": r"V"}),
             ],
-
+            # # [
+            # #     (tok.equilibrium.profiles_1d.dvolume_drho_tor_norm.pullback(psi_norm, rho_tor_norm),
+            # #         r"$\frac{dV}{d\rho_{tor,N}}$"),
+            # (tok.core_profiles.electrons.vpr,                 r"$vpr$"),
             # [
-            #     (tok.equilibrium.profiles_1d.dvolume_drho_tor_norm.pullback(psi_norm, rho_tor_norm),
-            #         r"$\frac{dV}{d\rho_{tor,N}}$"),
-            #     (tok.core_profiles.electrons.vpr,                 r"$vpr$"),
+            #     (tok.core_profiles.electrons.source,          r"$S$"),
+            #     (tok.core_profiles.electrons.n_gamma_prime/tok.equilibrium.profiles_1d.rho_tor[-1],   r"$\Gamma_{e}^{\prime}$"),
+
             # ],
+            # # ],
         ],
         x_axis=(tok.core_profiles.electrons.density.x,   {"label": r"$\rho_{N}$"}),  # x axis,
         # index_slice=slice(-100,None, 1),
