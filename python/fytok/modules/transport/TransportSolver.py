@@ -183,8 +183,8 @@ class TransportSolver(PhysicalGraph):
             hyper_diff_exp, hyper_diff_imp = hyper_diff
             hyper_diff = hyper_diff_exp+hyper_diff_imp*max(d)
 
-        D = d
-        E = e
+        hyper_diff = 0.001
+
         F = (f + b*inv_tau*y0)*c
         G = (g + a*inv_tau)*c
 
@@ -194,14 +194,12 @@ class TransportSolver(PhysicalGraph):
             try:
                 if hyper_diff is not None:
                     yp = Function(x, y).derivative
-                    dy = (-gamma + E(x)*y+hyper_diff * yp)/(D(x)+hyper_diff)
+                    dy = (-gamma + e(x)*y+hyper_diff * yp)/(d(x)+hyper_diff)
                 else:
-                    dy = (-gamma + E(x)*y)/D(x)
-
+                    dy = (-gamma + e(x)*y)/d(x)
                 dgamma = F(x) - G(x) * y
-
             except RuntimeWarning as error:
-                raise RuntimeError(y)
+                raise RuntimeError(error)
             return np.vstack((dy, dgamma))
 
         u0, v0, w0 = bc[0]
@@ -222,15 +220,13 @@ class TransportSolver(PhysicalGraph):
                     u1 * yb + v1 * gammab - w1)
 
         if gamma0 is None:
-            gamma0 = - Function(x, y0).derivative*D(x) + y0*E(x)
+            gamma0 = - Function(x, y0).derivative*d(x) + y0*e(x)
 
         sol = solve_bvp(fun, bc_func, x, np.vstack([y0.view(np.ndarray), gamma0.view(np.ndarray)]),  **kwargs)
 
-        y1 = Function(sol.x, sol.y[0])
-        yp1 = Function(sol.x, sol.yp[0])
-        s_exp_flux = Function(sol.x, f(sol.x)-g(sol.x)*y1).antiderivative(sol.x) * c
-        diff_flux = Function(sol.x, -d(sol.x) * yp1)
-        conv_flux = Function(sol.x, e(sol.x) * y1)
+        s_exp_flux = Function(sol.x, F(sol.x)-G(sol.x) * sol.y[0]).antiderivative(sol.x)
+        diff_flux = Function(sol.x, -d(sol.x) * sol.yp[0])
+        conv_flux = Function(sol.x, e(sol.x) * sol.y[0])
 
         profiles = AttributeTree({
             "diff_flux": diff_flux,
@@ -238,8 +234,8 @@ class TransportSolver(PhysicalGraph):
             "s_exp_flux": s_exp_flux,
             "residual": (diff_flux + conv_flux - s_exp_flux),
 
-            "density": y1,
-            "density_prime": yp1,
+            "density": Function(sol.x, sol.y[0]),
+            "density_prime":  Function(sol.x, sol.yp[0]),
             "gamma": Function(sol.x, sol.y[1]),
             "gamma_prime": Function(sol.x, sol.yp[1]),
         })
@@ -321,9 +317,12 @@ class TransportSolver(PhysicalGraph):
         rho_tor = core_profiles_next.grid.rho_tor
         rho_tor_boundary = rho_tor[-1]
         rho_tor_boundary_m = core_profiles_prev.grid.rho_tor[-1]
+
         # $rho_tor_{norm}$ normalized minor radius                [-]
         rho_tor_norm = core_profiles_next.grid.rho_tor_norm
+
         psi_norm = core_profiles_next.grid.psi_norm
+
         k_phi = ((B0 - B0m) / (B0 + B0m) + (rho_tor_boundary - rho_tor_boundary_m) /
                  (rho_tor_boundary + rho_tor_boundary_m))*inv_tau
 
@@ -347,8 +346,6 @@ class TransportSolver(PhysicalGraph):
         gm3 = self.equilibrium.profiles_1d.gm3.pullback(psi_norm, rho_tor_norm)
 
         H = vpr * gm3
-
-        diff_hyper = 0
 
         if not enable_ion_solver:
             spec = ["electrons"]
@@ -515,6 +512,8 @@ class TransportSolver(PhysicalGraph):
 
             core_profiles_next.j_total = j_ni_exp
 
+            dpsi_drho_tor_norm = psi_prime
+
             # core_profiles_next.vpr = vpr
             # core_profiles_next.gm2 = gm2
 
@@ -552,7 +551,6 @@ class TransportSolver(PhysicalGraph):
             # core_profiles_next.j_non_inductive = fpol[-1] * core_profiles_next.integral(
             #     vpr * (j_ni_exp + j_ni_imp * psi1) / (2.0 *  scipy.constants.pi) * B0 / fpol**2)
 
-        diff_hyper = 1000
         # Particle Transport
         for sp in spec:
             diff = np.zeros(rho_tor_norm.shape)
@@ -585,15 +583,19 @@ class TransportSolver(PhysicalGraph):
                     se_exp += se
 
             ne0 = try_get(core_profiles_prev, sp).density
+            # ne0_prime = try_get(core_profiles_prev, sp).density_prime
 
             if not isinstance(ne0, np.ndarray) and ne0 == None:
                 ne0 = np.zeros(rho_tor_norm.shape)
+
+            # if not isinstance(ne0_prime, np.ndarray) and ne0_prime == None:
+            #     ne0_prime = None
 
             a = vpr
             b = vprm
             c = rho_tor_boundary
             d = H * diff / c
-            e = H * conv - k_phi*rho_tor*vpr
+            e = H * conv - k_phi * rho_tor * vpr
             f = vpr * se_exp
             g = vpr * se_imp
 
@@ -652,12 +654,12 @@ class TransportSolver(PhysicalGraph):
 
             sol, profiles = self.solve_general_form(rho_tor_norm,
                                                     ne0,
-                                                    None,
+                                                    None,  # ne0_prime,
                                                     inv_tau,
                                                     (a, b, c, d, e, f, g),
-                                                    ((-e[0], 1, 0), (1, 0, 4.9e19)),
+                                                    ((e[0], -1, 0), (1, 0, 4.6e19)),
                                                     hyper_diff=[1.0, 0.0],
-                                                    tol=1e-7,
+                                                    tol=1e-3,
                                                     verbose=2,
                                                     max_nodes=1000,
                                                     ignore_x=[np.sqrt(0.88)]
@@ -669,6 +671,8 @@ class TransportSolver(PhysicalGraph):
                 logger.debug(sol.message)
 
             core_profiles_next[sp] = {
+                "d": d,
+                "e": e,
                 "n_diff_flux": profiles.diff_flux,
                 "n_conv_flux": profiles.conv_flux,
                 "n_s_exp_flux": profiles.s_exp_flux,
@@ -707,6 +711,7 @@ class TransportSolver(PhysicalGraph):
             # }
 
             # Temperature equation
+
         if False:
             for sp in spec:
 

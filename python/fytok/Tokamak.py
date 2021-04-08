@@ -189,35 +189,33 @@ class Tokamak(PhysicalGraph):
 
         self._radial_grid = {"axis": rho_n, "label": "rho_tor_norm"}
 
-        p_src = Function(rho_n, lambda x: spec.electron.density.source.S0 * np.exp(15.0*(x**2-1.0)))
-        
-        if isinstance(spec.electron.density.diffusivity, Function):
-            D_diff = spec.electron.density.diffusivity
-        elif isinstance(spec.electron.density.diffusivity, AttributeTree):
-            D_diff = Function(rho_n,  spec.electron.density.diffusivity[0], spec.electron.density.diffusivity[1])
-        elif callable(spec.electron.density.diffusivity):
-            D_diff = Function(rho_n, spec.electron.density.diffusivity)
-        else:
-            raise NotImplementedError(type(spec.electron.density.diffusivity))
-            # D0 = spec.electron.density.diffusivity.D0
-            # D1 = spec.electron.density.diffusivity.D1
-            # D2 = spec.electron.density.diffusivity.D2
+        p_src = spec.electron.density.source
 
-            # D_diff = Function(rho_n, [lambda r:r < r_ped, lambda r:r >= r_ped],
-            #                   [lambda x:D0 + D1 * (x**2), lambda x: D2])
+        D_diff = spec.electron.density.diffusivity
 
-        v_pinch = -D_diff*rho_n * spec.electron.density.pinch_number.V0 / \
-            self.equilibrium.vacuum_toroidal_field.r0
+        v_pinch = spec.electron.density.pinch
 
-        logger.debug((len(rho_n), len(v_pinch), type(D_diff)))
+        # if isinstance(spec.electron.density.diffusivity, Function):
 
+        # elif isinstance(spec.electron.density.diffusivity, AttributeTree):
+        #     D_diff = Function(rho_n,  spec.electron.density.diffusivity[0], spec.electron.density.diffusivity[1])
+        # elif callable(spec.electron.density.diffusivity):
+        #     D_diff = Function(rho_n, spec.electron.density.diffusivity)
+        # else:
+        #     raise NotImplementedError(type(spec.electron.density.diffusivity))
+        # D0 = spec.electron.density.diffusivity.D0
+        # D1 = spec.electron.density.diffusivity.D1
+        # D2 = spec.electron.density.diffusivity.D2
+        # D_diff = Function(rho_n, [lambda r:r < r_ped, lambda r:r >= r_ped],
+        #                   [lambda x:D0 + D1 * (x**2), lambda x: D2])
+        # v_pinch = -D_diff*rho_n * spec.electron.density.pinch_number.V0 /   self.equilibrium.vacuum_toroidal_field.r0
         # def n_core(x): return (1-x**4)**2
         # def dn_core(x): return -4*x*(1-x**2)
         # def n_ped(x, r_ped=r_ped): return n_core(r_ped) - (1.0-r_ped)/2.0 * \
         #     dn_core(r_ped) * (1.0 - np.exp(2.0*(x-r_ped)/(1.0-r_ped)))
         # #     def dn_ped(x): return dn_core(x_ped) * np.exp((x-x_ped)/(1.0-x_ped))
 
-        self.core_profiles.electrons.density = Function(rho_n, np.full(rho_n.shape, spec.electron.density.n0))
+        self.core_profiles.electrons.density = spec.electron.density.n0
 
         # Function(rho_n, spec.electron.density.n0 * (1-rho_n**4)**2)
 

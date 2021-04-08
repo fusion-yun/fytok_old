@@ -3,6 +3,7 @@ from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.data.mesh.CurvilinearMesh import CurvilinearMesh
 from spdm.numerical.Function import Function
 from spdm.data.Field import Field
+from spdm.util.utilities import try_get
 from scipy.optimize import fsolve, root_scalar
 from numpy.lib.arraysetops import isin
 from numpy import arctan2, cos, sin, sqrt
@@ -222,7 +223,11 @@ class MagneticSurfaceCoordinateSystem:
 
     @cached_property
     def B2(self):
-        return (self.Bpol**2 + self.Btor**2)
+        return (self.Br**2+self.Bz**2 + self.Btor**2)
+
+    @cached_property
+    def norm_grad_psi(self):
+        return np.sqrt(self.psirz(self.r, self.z, dx=1)**2+self.psirz(self.r, self.z, dy=1)**2)
 
     def surface_integral(self, alpha=None, *args, **kwargs):
         r"""
@@ -233,7 +238,7 @@ class MagneticSurfaceCoordinateSystem:
         else:
             alpha = alpha/self.Bpol
 
-        return np.sum(0.5*(np.roll(alpha, 1, axis=1)+alpha) * self.dl, axis=1) * (2*scipy.constants.pi)
+        return np.sum((np.roll(alpha, 1, axis=1)+alpha) * self.dl, axis=1) * (0.5*2*scipy.constants.pi)
 
     def surface_average(self,  *args, **kwargs):
         return self.surface_integral(*args, **kwargs) / self.dvolume_dpsi
@@ -524,7 +529,7 @@ class Equilibrium(PhysicalGraph):
                 .. math ::
                     \Phi_{tor}\left(\psi\right)=\int_{0}^{\psi}qd\psi
             """
-            return self.q.antiderivative * (self._psi_boundary-self._psi_axis)
+            return self.q.antiderivative * ((self._psi_boundary-self._psi_axis)*(2.0*scipy.constants.pi))
 
         @cached_property
         def vprime(self):
@@ -532,7 +537,7 @@ class Equilibrium(PhysicalGraph):
                 .. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
                 .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
             """
-            return self._coord.dvolume_dpsi
+            return self._coord.dvolume_dpsi*(self._psi_boundary-self._psi_axis)
 
         @cached_property
         def dvolume_dpsi(self):
@@ -544,7 +549,7 @@ class Equilibrium(PhysicalGraph):
         @cached_property
         def volume(self):
             """Volume enclosed in the flux surface[m ^ 3]"""
-            return self.dvolume_dpsi.antiderivative * (self._psi_boundary - self._psi_axis)
+            return self.vprime.antiderivative
 
         @cached_property
         def ffprime(self):
@@ -568,7 +573,7 @@ class Equilibrium(PhysicalGraph):
 
         @cached_property
         def dphi_dpsi(self):
-            return self.gm1 * self.fpol * self.dvolume_dpsi / (scipy.constants.pi*2)**2
+            return self.gm1 * self.fpol * self.dvolume_dpsi / ((scipy.constants.pi*2)**2)
 
         @property
         def q(self):
@@ -580,16 +585,6 @@ class Equilibrium(PhysicalGraph):
             return Function(self._psi_norm, self.fpol * self._coord.surface_integral(1.0/(self._coord.r**2))/(2*scipy.constants.pi)**2)
 
         @cached_property
-        def dvolume_drho_tor(self)	:
-            """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
-            return self.dvolume_dpsi * self.dpsi_drho_tor
-
-        @cached_property
-        def dvolume_drho_tor_norm(self)	:
-            """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
-            return self.dvolume_drho_tor*self.rho_tor[-1]
-
-        @cached_property
         def rho_tor(self):
             """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0  [m]"""
             return np.sqrt(self.phi/(scipy.constants.pi * self._b0))
@@ -599,16 +594,15 @@ class Equilibrium(PhysicalGraph):
             return np.sqrt(self.phi/self.phi[-1])
 
         @cached_property
-        def drho_tor_dpsi(self)	:
+        def drho_tor_dpsi(self):
             r"""
                 .. math ::
-
                     \frac{d\rho_{tor}}{d\psi}=\frac{d}{d\psi}\sqrt{\frac{\Phi_{tor}}{\pi B_{0}}} \
                                             =\frac{1}{2\sqrt{\pi B_{0}\Phi_{tor}}}\frac{d\Phi_{tor}}{d\psi} \
                                             =\frac{q}{2\pi B_{0}\rho_{tor}}
             """
-            d = self.dphi_dpsi[1:]/self.rho_tor[1:]/(2.0*scipy.constants.pi*self._b0)
-            return Function(self._psi_norm, np.hstack([d[:1], d]))
+            return Function(self.psi_norm,
+                            Function(self.psi_norm[1:], self.q[1:]/self.rho_tor[1:])(self.psi_norm).view(np.ndarray)/(scipy.constants.pi * self._b0))
 
         @cached_property
         def dpsi_drho_tor(self)	:
@@ -618,8 +612,18 @@ class Equilibrium(PhysicalGraph):
             return (2.0*scipy.constants.pi*self._b0)*self.rho_tor/self.dphi_dpsi
 
         @cached_property
+        def dvolume_drho_tor(self)	:
+            """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
+            return (4*scipy.constants.pi**2*self._b0)*self.rho_tor/(self.fpol*self.gm1)
+
+        @cached_property
+        def dvolume_drho_tor_norm(self)	:
+            """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
+            return self.dvolume_drho_tor*self.rho_tor[-1]
+
+        @cached_property
         def norm_grad_rho_tor(self):
-            return self._coord.Bpol * self._coord.r * self.drho_tor_dpsi.view(np.ndarray).reshape(list(self.drho_tor_dpsi.shape)+[1])
+            return self._coord.norm_grad_psi * self.drho_tor_dpsi.view(np.ndarray).reshape(list(self.drho_tor_dpsi.shape)+[1])
 
         @cached_property
         def gm1(self):
@@ -635,7 +639,8 @@ class Equilibrium(PhysicalGraph):
                 Flux surface averaged .. math:: \left | \nabla \rho_{tor}\right|^2/R^2  [m^-2]
                 .. math:: \left\langle\left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle
             """
-            return Function(self._psi_norm, self._coord.surface_average((self.norm_grad_rho_tor/self._coord.r)**2))
+            d = self._coord.surface_average((self.norm_grad_rho_tor/self._coord.r)**2)
+            return Function(self._psi_norm, Function(self._psi_norm[1:], d[1:])(self._psi_norm))
 
         @cached_property
         def gm3(self):
@@ -643,7 +648,8 @@ class Equilibrium(PhysicalGraph):
                 Flux surface averaged .. math:: \left | \nabla \rho_{tor}\right|^2  [-]
                 .. math:: {\left\langle \left|\nabla\rho\right|^{2}\right\rangle}
             """
-            return Function(self._psi_norm, self._coord.surface_average(self.norm_grad_rho_tor**2))
+            d = self._coord.surface_average(self.norm_grad_rho_tor**2)
+            return Function(self._psi_norm, Function(self._psi_norm[1:], d[1:])(self._psi_norm))
 
         @cached_property
         def gm4(self):
@@ -675,7 +681,8 @@ class Equilibrium(PhysicalGraph):
                 Flux surface averaged .. math: : \left | \nabla \rho_{tor}\right |  [-]
                 .. math:: \left\langle \left|\nabla\rho\right|\right\rangle
             """
-            return Function(self._psi_norm, self._coord.surface_average(self.norm_grad_rho_tor))
+            d = self._coord.surface_average(self.norm_grad_rho_tor)
+            return Function(self._psi_norm, Function(self._psi_norm[1:], d[1:])(self._psi_norm))
 
         @cached_property
         def gm8(self):
@@ -908,7 +915,14 @@ class Equilibrium(PhysicalGraph):
 
     ####################################################################################
     # Plot proflies
-    def plot(self, axis=None, *args, profiles=[], vec_field=[], mesh=True, boundary=True, levels=32, oxpoints=True,   **kwargs):
+    def plot(self, axis=None, *args,
+             scalar_field=[],
+             vector_field=[],
+             mesh=True,
+             boundary=True,
+             contour_=False,
+             levels=32, oxpoints=True,
+             **kwargs):
         """learn from freegs
         """
         if axis is None:
@@ -955,21 +969,27 @@ class Equilibrium(PhysicalGraph):
                 ax1 = self.coordinate_system.mesh.axis(idx, axis=1)
                 axis.plot(ax1.xy[0], ax1.xy[1],  "r", linewidth=0.2)
 
-        if isinstance(self._psirz, Field):
-            self._psirz.plot(axis, levels=levels, **kwargs)
+        for s, opts in scalar_field:
+            if s == "psirz":
+                self._psirz.plot(axis, **opts)
+            else:
+                if "." not in s:
+                    sf = f"profiles_2d.{s}"
+                # self.coordinate_system.norm_grad_psi
+                sf = try_get(self, s, None)
+                if isinstance(sf, Field):
+                    sf.plot(axis, **opts)
+                elif isinstance(sf, np.ndarray):
+                    axis.contour(self.profiles_2d.r, self.profiles_2d.z, sf, **opts)
+                else:
+                    logger.error(f"Can not find field {sf} {type(sf)}!")
 
-        # for k, opts in profiles:
-        #     d = self.profiles_2d[k]
-        #     if d is not NotImplemented and d is not None:
-        #         axis.contourf(R[1:-1, 1:-1], Z[1:-1, 1:-1], d[1:-1, 1:-1], **opts)
-
-        for u, v, opts in vec_field:
+        for u, v, opts in vector_field:
             uf = self.profiles_2d[u]
             vf = self.profiles_2d[v]
-            axis.streamplot(self.profiles_2d.grid.dim1[1:-1],
-                            self.profiles_2d.grid.dim2[1:-1],
-                            vf[1:-1, 1:-1].transpose(1, 0),
-                            uf[1:-1, 1:-1].transpose(1, 0), **opts)
+            axis.streamplot(self.profiles_2d.grid.dim1,
+                            self.profiles_2d.grid.dim2,
+                            vf, uf, **opts)
 
         return axis
 
