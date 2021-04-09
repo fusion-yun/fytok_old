@@ -268,9 +268,11 @@ class Tokamak(PhysicalGraph):
         # if "electrons" not in spec:
         #     raise NotImplementedError()
 
-    def update(self, time=None, tolerance=1.0e-6, max_step=1,  **kwargs):
+    def update(self, time=None, boundary_conditions=None, tolerance=1.0e-6, max_step=1,  **kwargs):
         if time is not None:
             self._time = time
+
+        bdry_cond = boundary_conditions(boundary_conditions)
 
         core_profiles_prev = self.core_profiles
 
@@ -293,7 +295,10 @@ class Tokamak(PhysicalGraph):
             if kwargs.get("edge_sources", False) is not False:
                 self.edge_sources.update(time=self.time, **kwargs.get("edge_sources", {}))
 
-            core_profiles_next = self.transport_solver.solve(core_profiles_prev, **kwargs.get("transport_solver", {}))
+            core_profiles_next = self.transport_solver.solve(core_profiles_prev,
+                                                             time=self.time,
+                                                             boundary_conditions=bdry_cond,
+                                                             **kwargs.get("transport_solver", {}))
 
         #    if core_profiles_next.conv(core_profiles_prev) < tolerance:
         #         break

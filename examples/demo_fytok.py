@@ -68,7 +68,6 @@ if __name__ == "__main__":
                 "source": n_src,
                 "diffusivity":  diff,
                 "pinch": -conv,
-                "boundary_condition": {"value": 4.6e19}
             },
             "temperature": {
                 "T0": 0.95e19,
@@ -94,7 +93,6 @@ if __name__ == "__main__":
 
     plot_profiles(
         [
-            (tok.equilibrium.profiles_1d.phi,                   r"$\Phi$"),
 
             [
                 (tok.equilibrium.profiles_1d.ffprime,            r"$ff^{\prime}$"),
@@ -110,18 +108,18 @@ if __name__ == "__main__":
                 (tok.equilibrium.profiles_1d.q,                    r"$q$"),
                 (tok.equilibrium.profiles_1d.dphi_dpsi,                    r"$\frac{d\phi}{d\psi}$"),
                 (Function(equilibrium.profiles_1d.psi_norm, equilibrium.profiles_1d.q), r"$q_0$"),
-                (Function(profile["Fp"].values, profile["q"].values),             r"$q_{1}$"),
+                # (Function(profile["Fp"].values, profile["q"].values),             r"$q_{1}$"),
 
             ],
             [
                 (tok.equilibrium.profiles_1d.rho_tor,           r"$\rho_{tor}$"),
-                (Function(profile["Fp"].values, profile["rho"].values),             r"$\rho_{tor,0}$"),
+                # (Function(profile["Fp"].values, profile["rho"].values),             r"$\rho_{tor,0}$"),
                 (tok.equilibrium.profiles_1d.dvolume_drho_tor / ((scipy.constants.pi**2) * 4.0 * tok.equilibrium.vacuum_toroidal_field.r0),
                     r"$\frac{dV/d\rho_{tor}}{4\pi^2 R_0}$"),
             ],
 
-            (tok.equilibrium.profiles_1d.dpsi_drho_tor,         r"$\frac{d\psi}{d\rho_{tor}}$"),
-
+            # (tok.equilibrium.profiles_1d.phi,                   r"$\Phi$"),
+            # (tok.equilibrium.profiles_1d.dpsi_drho_tor,         r"$\frac{d\psi}{d\rho_{tor}}$"),
             # [
             #     (Function(equilibrium.profiles_1d.psi_norm, equilibrium.profiles_1d.q), r"$q_0$"),
             #     (tok.equilibrium.profiles_1d.q,                 r"$q$"),
@@ -130,25 +128,20 @@ if __name__ == "__main__":
             [
                 (tok.equilibrium.profiles_1d.volume,                r"$V$"),
                 (Function(tok.equilibrium.profiles_1d.rho_tor, tok.equilibrium.profiles_1d.dvolume_drho_tor).antiderivative,
-                 r"$\int d\rho_{tor} \frac{dV}{d\rho_{tor}}$"),
+                 r"$\int \frac{dV}{d\rho_{tor}}  d\rho_{tor}$"),
                 (tok.equilibrium.profiles_1d.dvolume_dpsi.antiderivative * \
                  (tok.equilibrium.global_quantities.psi_boundary - tok.equilibrium.global_quantities.psi_axis),\
-                 r"$\int d\psi \frac{dV}{d\psi}$"),
+                 r"$\int \frac{dV}{d\psi}  d\psi$"),
             ],
-            (tok.equilibrium.profiles_1d.dvolume_drho_tor,      r"$\frac{dV}{d\rho}$"),
-
-
+            # (tok.equilibrium.profiles_1d.dvolume_drho_tor,      r"$\frac{dV}{d\rho}$"),
             # (tok.equilibrium.profiles_1d.dpsi_drho_tor,         r"$\frac{d\psi}{d\rho_{tor}}$"),
             # (tok.equilibrium.profiles_1d.drho_tor_dpsi,         r"$\frac{d\rho_{tor}}{d\psi}$"),
-
-            (tok.equilibrium.profiles_1d.gm1,                   r"$\left<\frac{1}{R^2}\right>$"),
-            (tok.equilibrium.profiles_1d.gm2,       r"$\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
-            (tok.equilibrium.profiles_1d.gm3,                   r"$\left<\left|\nabla \rho\right|^2\right>$"),
-            (tok.equilibrium.profiles_1d.gm7,                   r"$\left<\left|\nabla \rho\right|\right>$"),
-
+            # (tok.equilibrium.profiles_1d.gm1,                   r"$\left<\frac{1}{R^2}\right>$"),
+            # (tok.equilibrium.profiles_1d.gm2,       r"$\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
+            # (tok.equilibrium.profiles_1d.gm3,                   r"$\left<\left|\nabla \rho\right|^2\right>$"),
+            # (tok.equilibrium.profiles_1d.gm7,                   r"$\left<\left|\nabla \rho\right|\right>$"),
             # (tok.equilibrium.profiles_1d.dphi_dpsi, r"$\frac{d\phi}{d\psi}$"),
             # (tok.equilibrium.profiles_1d.drho_tor_dpsi, r"$\frac{d\rho_{tor}}{d\psi}$"),
-
             # (tok.core_profiles.electrons.temperature, r"$T_{e}$"),
 
         ],
@@ -157,7 +150,36 @@ if __name__ == "__main__":
         x_axis=(tok.equilibrium.profiles_1d.psi_norm,  {"label": r"$\psi_{N}$"}),  # asd
         grid=True) .savefig("/home/salmon/workspace/output/profiles_1d.svg", transparent=True)
 
-    tok.update(transport_solver={})
+    tok.update(
+        boundary_condition={
+            "electrons": {
+                "particles": {
+                    "identifier": {"index": 1},
+                    "value": (1, 0, 4.6e19)
+                },
+                "energy": {
+                    "identifier": {"index": 1},
+                    "value": (1, 0, 4.6e19)
+                }
+            },
+            "ion": [
+                {
+                    "label": "H",
+                    "a": 1.0,
+                    "z_ion": 1,
+                    "particles": {
+                        "identifier": {"index": 1},
+                        "value": (1, 0, 4.6e19)
+                    },
+                    "energy": {
+                        "identifier": {"index": 1},
+                        "value": (1, 0, 4.6e19)
+                    }
+                }
+            ]
+        }
+
+    )
 
     psi_norm = tok.equilibrium.profiles_1d.psi_norm
     rho_tor_norm = tok.equilibrium.profiles_1d.rho_tor_norm

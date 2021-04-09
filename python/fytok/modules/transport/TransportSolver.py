@@ -238,7 +238,10 @@ class TransportSolver(PhysicalGraph):
         })
         return sol, profiles
 
-    def solve(self, core_profiles_prev: CoreProfiles, bc=None,   enable_ion_solver=False, **kwargs):
+    def solve(self, core_profiles_prev: CoreProfiles,
+              time=None,
+              boundary_conditions=None,
+              enable_ion_solver=False, **kwargs):
         r"""
             Solve transport equations
 
@@ -295,8 +298,10 @@ class TransportSolver(PhysicalGraph):
                             V^{\prime\frac{5}{3}}\left[Q_{e,exp}-Q_{e,imp}\cdot T_{e}+Q_{ei}-Q_{\gamma i}\right]
                     :label: transport_electron_temperature
         """
+        if time is None:
+            time = self.equilibrium.time
 
-        core_profiles_next = CoreProfiles(self._parent.radial_grid, time=self.equilibrium.time,   parent=self._parent)
+        core_profiles_next = CoreProfiles(self._parent.radial_grid, time=time,   parent=self._parent)
 
         tau = core_profiles_next.time - core_profiles_prev.time
 
