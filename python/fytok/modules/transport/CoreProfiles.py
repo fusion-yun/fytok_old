@@ -58,10 +58,10 @@ class CoreProfiles(PhysicalGraph):
             """Information on the fit used to obtain the temperature profile [eV]  """
             return CoreProfiles.DensityFit(self._grid)
 
-        # @property
+        # @cached_property
         # def density(self):
         #     """Density (thermal+non-thermal) {dynamic} [m^-3]"""
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return Function(self.grid.psi_norm, self["density"])
 
         # @property
         # def density_validity(self):

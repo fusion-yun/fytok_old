@@ -129,7 +129,7 @@ class TransportSolver(PhysicalGraph):
             To be removed when the solver_1d structure is finalized. {dynamic}"""
         return TransportSolver.BoundaryCondition(self["boundary_conditions"])
 
-    def solve_general_form(self, x, y0, gamma0, inv_tau, coeff,  bc,  hyper_diff=[0.0, 0.0],  **kwargs):
+    def solve_general_form(self, x0, y0, gamma0, inv_tau, coeff,  bc,  hyper_diff=[0.0, 0.0],  **kwargs):
         r"""
             solve standard form
 
@@ -182,24 +182,19 @@ class TransportSolver(PhysicalGraph):
             hyper_diff_exp, hyper_diff_imp = hyper_diff
             hyper_diff = hyper_diff_exp+hyper_diff_imp*max(d)
 
-        F = (f + b*inv_tau*y0) * c
-        G = (g + a*inv_tau) * c
+        def S(x, y):
+            return (f(x) - g(x) * y)*c - (a(x) * y - b(x) * y0(x)) * inv_tau * c
 
         def fun(x, Y):
             y, gamma = Y
 
             try:
-                if hyper_diff is not None:
-                    yp = Function(x, y).derivative
-                    dy = (-gamma + e(x)*y+hyper_diff * yp)/(d(x)+hyper_diff)
-                else:
-                    dy = (-gamma + e(x)*y)/d(x)
-                # D = d(x)
-                # E = e(x)
-                # dy = (-gamma+E*y).view(np.ndarray)
-                # dy[1:] = dy[1:]/D[1:]
-                # dy[0] = dy[1]
-                dgamma = F(x) - G(x) * y
+                yp = Function(x, y).derivative
+
+                dy = (-gamma + e(x)*y + hyper_diff * yp)/(d(x)+hyper_diff)
+
+                dgamma = S(x, y)
+
             except RuntimeWarning as error:
                 raise RuntimeError(error)
             return np.vstack((dy, dgamma))
@@ -222,11 +217,11 @@ class TransportSolver(PhysicalGraph):
                     u1 * yb + v1 * gammab - w1)
 
         if gamma0 is None:
-            gamma0 = - Function(x, y0).derivative*d(x) + y0*e(x)
+            gamma0 = -d(x0) * Function(x0, y0).derivative + e(x0)*y0
 
-        sol = solve_bvp(fun, bc_func, x, np.vstack([y0.view(np.ndarray), gamma0.view(np.ndarray)]),  **kwargs)
+        sol = solve_bvp(fun, bc_func, x0, np.vstack([y0.view(np.ndarray), gamma0.view(np.ndarray)]),  **kwargs)
 
-        s_exp_flux = Function(sol.x, F(sol.x)-G(sol.x) * sol.y[0]).antiderivative(sol.x)
+        s_exp_flux = Function(sol.x,  S(sol.x, sol.y[0])).antiderivative(sol.x)
         diff_flux = Function(sol.x, -d(sol.x) * sol.yp[0])
         conv_flux = Function(sol.x, e(sol.x) * sol.y[0])
 
@@ -325,8 +320,11 @@ class TransportSolver(PhysicalGraph):
 
         psi_norm = core_profiles_next.grid.psi_norm
 
-        k_phi = ((B0 - B0m) / (B0 + B0m) + (rho_tor_boundary - rho_tor_boundary_m) /
-                 (rho_tor_boundary + rho_tor_boundary_m))*inv_tau
+        k_B = (B0 - B0m) / (B0 + B0m) * inv_tau*2.
+
+        k_rho_bdry = (rho_tor_boundary - rho_tor_boundary_m) / (rho_tor_boundary + rho_tor_boundary_m)*inv_tau*2.0
+
+        k_phi = k_B + k_rho_bdry
 
         # -----------------------------------------------------------
         # Equilibrium
@@ -334,7 +332,7 @@ class TransportSolver(PhysicalGraph):
         fpol = self.equilibrium.profiles_1d.fpol.pullback(psi_norm, rho_tor_norm)
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        vpr = self.equilibrium.profiles_1d.dvolume_drho_tor_norm.pullback(psi_norm, rho_tor_norm)
+        vpr = self.equilibrium.profiles_1d.dvolume_drho_tor.pullback(psi_norm, rho_tor_norm)
 
         vprm = core_profiles_prev.vprime
 
@@ -347,7 +345,9 @@ class TransportSolver(PhysicalGraph):
 
         gm3 = self.equilibrium.profiles_1d.gm3.pullback(psi_norm, rho_tor_norm)
 
-        H = vpr * gm3
+        core_profiles_next.vprime = vpr
+
+        core_profiles_next.gm3 = gm3
 
         if not enable_ion_solver:
             spec = ["electrons"]
@@ -586,7 +586,7 @@ class TransportSolver(PhysicalGraph):
 
             p = try_get(core_profiles_prev, sp)
 
-            ne0 = p.density
+            ne0 = Function(core_profiles_prev.grid.psi_norm, p.density)
 
             # ne0_prime = try_get(core_profiles_prev, sp).density_prime
 
@@ -599,10 +599,10 @@ class TransportSolver(PhysicalGraph):
             a = vpr
             b = vprm
             c = rho_tor_boundary
-            d = H * diff / rho_tor_boundary 
-            e = H * conv - k_phi * rho_tor * vpr
+            d = vpr * gm3 * diff / rho_tor_boundary
+            e = vpr * gm3 * conv - vpr * rho_tor * k_phi
             f = vpr * se_exp
-            g = vpr * se_imp
+            g = vpr * (se_imp + k_rho_bdry)
 
             """
                 # Boundary conditions for electron diffusion equation in form:
@@ -659,7 +659,7 @@ class TransportSolver(PhysicalGraph):
 
             sol, profiles = self.solve_general_form(rho_tor_norm,
                                                     ne0,
-                                                    None,  # ne0_prime,
+                                                    None,
                                                     inv_tau,
                                                     (a, b, c, d, e, f, g),
                                                     ((0, -1, 0), (1, 0, 4.6e19)),
@@ -674,12 +674,7 @@ class TransportSolver(PhysicalGraph):
 
             if not sol.success:
                 logger.debug(sol.message)
-            # logger.debug(c)
-            # S = f.antiderivative(sol.x)*c
-            # D = d(sol.x)
-            # S = Function(sol.x[1:], -S[1:]/D[1:])
-            # S = Function(sol.x, S.antiderivative(sol.x))
-            # S = S-S[-1] + 4.6e19
+
             core_profiles_next[sp] = {
                 "d": d,
                 "e": e,
@@ -694,7 +689,6 @@ class TransportSolver(PhysicalGraph):
                 "n_gamma": profiles.gamma,
                 "n_gamma_prime": profiles.gamma_prime,
                 "n_rms_residuals":  profiles.rms_residuals,
-                "vpr": vpr,
                 # "source": S,
             }
 
@@ -870,9 +864,6 @@ class TransportSolver(PhysicalGraph):
                     sp_next.temperature = Function(solution.x, solution.y[0])
                     sp_next.temperature_prime = Function(solution.x, solution.y0[0])
                     sp_next.temperature_flux = Function(solution.x, solution.y[1])
-
-        core_profiles_next.vpr = vpr
-        core_profiles_next.gm3 = gm3
 
         return core_profiles_next
 
