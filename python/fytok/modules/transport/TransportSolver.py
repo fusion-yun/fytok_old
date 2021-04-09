@@ -676,8 +676,7 @@ class TransportSolver(PhysicalGraph):
                 logger.debug(sol.message)
 
             core_profiles_next[sp] = {
-                "d": d,
-                "e": e,
+
                 "n_diff_flux": profiles.diff_flux,
                 "n_conv_flux": profiles.conv_flux,
                 "n_s_exp_flux": profiles.s_exp_flux,
@@ -689,7 +688,6 @@ class TransportSolver(PhysicalGraph):
                 "n_gamma": profiles.gamma,
                 "n_gamma_prime": profiles.gamma_prime,
                 "n_rms_residuals":  profiles.rms_residuals,
-                # "source": S,
             }
 
             # else:

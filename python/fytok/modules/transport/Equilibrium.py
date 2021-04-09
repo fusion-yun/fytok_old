@@ -578,7 +578,6 @@ class Equilibrium(PhysicalGraph):
         def phi(self):
             r"""
                 Note:
-                    !!! COORDINATE　DEPENDENT!!!
                 .. math ::
                     \Phi_{tor}\left(\psi\right)=\int_{0}^{\psi}qd\psi
             """
@@ -603,8 +602,6 @@ class Equilibrium(PhysicalGraph):
                                             =\frac{q}{2\pi B_{0}\rho_{tor}}
             """
             return self.rho_tor.derivative/(self._psi_boundary-self._psi_axis)
-            # return Function(self.psi_norm,
-            #                 Function(self.psi_norm[1:], self.q[1:]/self.rho_tor[1:])(self.psi_norm).view(np.ndarray)*(self._psi_boundary-self._psi_axis)/(scipy.constants.pi * self._b0))
 
         @ cached_property
         def dpsi_drho_tor(self)	:
@@ -636,7 +633,7 @@ class Equilibrium(PhysicalGraph):
                 Flux surface averaged .. math:: \left | \nabla \rho_{tor}\right|^2/R^2  [m^-2]
                 .. math:: \left\langle\left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle
             """
-            d=self._coord.surface_average((self.norm_grad_rho_tor/self._coord.r)**2)
+            d = self._coord.surface_average((self.norm_grad_rho_tor/self._coord.r)**2)
             return Function(self._psi_norm, Function(self._psi_norm[1:], d[1:])(self._psi_norm))
 
         @ cached_property
@@ -645,7 +642,7 @@ class Equilibrium(PhysicalGraph):
                 Flux surface averaged .. math:: \left | \nabla \rho_{tor}\right|^2  [-]
                 .. math:: {\left\langle \left|\nabla\rho\right|^{2}\right\rangle}
             """
-            d=self._coord.surface_average(self.norm_grad_rho_tor**2)
+            d = self._coord.surface_average(self.norm_grad_rho_tor**2)
             return Function(self._psi_norm, Function(self._psi_norm[1:], d[1:])(self._psi_norm))
 
         @ cached_property
@@ -678,7 +675,7 @@ class Equilibrium(PhysicalGraph):
                 Flux surface averaged .. math: : \left | \nabla \rho_{tor}\right |  [-]
                 .. math:: \left\langle \left|\nabla\rho\right|\right\rangle
             """
-            d=self._coord.surface_average(self.norm_grad_rho_tor)
+            d = self._coord.surface_average(self.norm_grad_rho_tor)
             return Function(self._psi_norm, Function(self._psi_norm[1:], d[1:])(self._psi_norm))
 
         @ cached_property
@@ -760,7 +757,7 @@ class Equilibrium(PhysicalGraph):
 
         def __init__(self, coord: MagneticSurfaceCoordinateSystem, *args, ** kwargs):
             super().__init__(*args, **kwargs)
-            self._coord=coord
+            self._coord = coord
 
         @ property
         def grid_type(self):
@@ -823,7 +820,7 @@ class Equilibrium(PhysicalGraph):
     class Boundary(PhysicalGraph):
         def __init__(self, coord: MagneticSurfaceCoordinateSystem,   *args,  ** kwargs):
             super().__init__(*args, **kwargs)
-            self._coord=coord
+            self._coord = coord
 
         @ cached_property
         def type(self):
@@ -833,12 +830,12 @@ class Equilibrium(PhysicalGraph):
         @ cached_property
         def outline(self):
             """RZ outline of the plasma boundary  """
-            RZ=np.asarray([[r, z] for r, z in self._coord.find_flux_surface(1.0)])
+            RZ = np.asarray([[r, z] for r, z in self._coord.find_flux_surface(1.0)])
             return PhysicalGraph({"r": RZ[:, 0], "z": RZ[:, 1]})
 
         @ cached_property
         def x_point(self):
-            _, xpt=self._parent.critical_points
+            _, xpt = self._parent.critical_points
             return xpt
 
         @ cached_property
@@ -923,7 +920,7 @@ class Equilibrium(PhysicalGraph):
         """learn from freegs
         """
         if axis is None:
-            axis=plt.gca()
+            axis = plt.gca()
 
         # R = self.profiles_2d.r
         # Z = self.profiles_2d.z
@@ -932,7 +929,7 @@ class Equilibrium(PhysicalGraph):
         # axis.contour(R[1:-1, 1:-1], Z[1:-1, 1:-1], psi[1:-1, 1:-1], levels=levels, linewidths=0.2)
 
         if oxpoints is not False:
-            o_point, x_point=self.coordinate_system.critical_points
+            o_point, x_point = self.coordinate_system.critical_points
             axis.plot(o_point[0].r,
                       o_point[0].z,
                       'g.',
@@ -950,7 +947,7 @@ class Equilibrium(PhysicalGraph):
                 axis.plot([], [], 'rx', label="X-Point")
 
         if boundary is not False:
-            boundary_points=np.vstack([self.boundary.outline.r,
+            boundary_points = np.vstack([self.boundary.outline.r,
                                          self.boundary.outline.z]).T
 
             axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
@@ -959,11 +956,11 @@ class Equilibrium(PhysicalGraph):
 
         if mesh is not False:
             for idx in range(0, self.coordinate_system.mesh.shape[0], 4):
-                ax0=self.coordinate_system.mesh.axis(idx, axis=0)
+                ax0 = self.coordinate_system.mesh.axis(idx, axis=0)
                 axis.add_patch(plt.Polygon(ax0.xy.T, fill=False, closed=True, color="b", linewidth=0.2))
 
             for idx in range(0, self.coordinate_system.mesh.shape[1], 4):
-                ax1=self.coordinate_system.mesh.axis(idx, axis=1)
+                ax1 = self.coordinate_system.mesh.axis(idx, axis=1)
                 axis.plot(ax1.xy[0], ax1.xy[1],  "r", linewidth=0.2)
 
         for s, opts in scalar_field:
@@ -971,9 +968,9 @@ class Equilibrium(PhysicalGraph):
                 self._psirz.plot(axis, **opts)
             else:
                 if "." not in s:
-                    sf=f"profiles_2d.{s}"
+                    sf = f"profiles_2d.{s}"
                 # self.coordinate_system.norm_grad_psi
-                sf=try_get(self, s, None)
+                sf = try_get(self, s, None)
                 if isinstance(sf, Field):
                     sf.plot(axis, **opts)
                 elif isinstance(sf, np.ndarray):
@@ -982,8 +979,8 @@ class Equilibrium(PhysicalGraph):
                     logger.error(f"Can not find field {sf} {type(sf)}!")
 
         for u, v, opts in vector_field:
-            uf=self.profiles_2d[u]
-            vf=self.profiles_2d[v]
+            uf = self.profiles_2d[u]
+            vf = self.profiles_2d[v]
             axis.streamplot(self.profiles_2d.grid.dim1,
                             self.profiles_2d.grid.dim2,
                             vf, uf, **opts)
@@ -992,32 +989,32 @@ class Equilibrium(PhysicalGraph):
 
     def fetch_profile(self, d):
         if isinstance(d, str):
-            data=d
-            opts={"label": d}
+            data = d
+            opts = {"label": d}
         elif isinstance(d, collections.abc.Mapping):
-            data=d.get("name", None)
-            opts=d.get("opts", {})
+            data = d.get("name", None)
+            opts = d.get("opts", {})
         elif isinstance(d, tuple):
-            data, opts=d
+            data, opts = d
         elif isinstance(d, PhysicalGraph):
-            data=d.data
-            opts=d.opts
+            data = d.data
+            opts = d.opts
         else:
             raise TypeError(f"Illegal profile type! {d}")
 
         if isinstance(opts, str):
-            opts={"label": opts}
+            opts = {"label": opts}
 
         if isinstance(data, str):
-            nlist=data.split(".")
+            nlist = data.split(".")
             if len(nlist) == 1:
-                data=self.profiles_1d[nlist[0]]
+                data = self.profiles_1d[nlist[0]]
             elif nlist[0] == 'cache':
-                data=self.profiles_1d[nlist[1:]]
+                data = self.profiles_1d[nlist[1:]]
             else:
-                data=self.profiles_1d[nlist]
+                data = self.profiles_1d[nlist]
         elif isinstance(data, list):
-            data=np.array(data)
+            data = np.array(data)
         elif isinstance(d, np.ndarray):
             pass
         else:
@@ -1027,21 +1024,21 @@ class Equilibrium(PhysicalGraph):
 
     def plot_profiles(self, fig_axis, axis, profiles):
         if not isinstance(profiles, list):
-            profiles=[profiles]
+            profiles = [profiles]
 
         for idx, data in enumerate(profiles):
-            ylabel=None
-            opts={}
+            ylabel = None
+            opts = {}
             if isinstance(data, tuple):
-                data, ylabel=data
+                data, ylabel = data
             if isinstance(data, str):
-                ylabel=data
+                ylabel = data
 
             if not isinstance(data, list):
-                data=[data]
+                data = [data]
 
             for d in data:
-                value, opts=self.fetch_profile(d)
+                value, opts = self.fetch_profile(d)
 
                 if value is not NotImplemented and value is not None and len(value) > 0:
                     fig_axis[idx].plot(axis.data, value, **opts)
@@ -1052,7 +1049,7 @@ class Equilibrium(PhysicalGraph):
 
             if ylabel:
                 fig_axis[idx].set_ylabel(ylabel, fontsize=6).set_rotation(0)
-            fig_axis[idx].labelsize="media"
+            fig_axis[idx].labelsize = "media"
             fig_axis[idx].tick_params(labelsize=6)
         return fig_axis[-1]
 
@@ -1064,24 +1061,24 @@ class Equilibrium(PhysicalGraph):
                   surface_mesh=False,
                   **kwargs):
 
-        axis, axis_opts=self.fetch_profile(axis)
+        axis, axis_opts = self.fetch_profile(axis)
 
         assert (axis.data is not NotImplemented)
-        nprofiles=len(profiles) if profiles is not None else 0
+        nprofiles = len(profiles) if profiles is not None else 0
         if profiles is None or nprofiles <= 1:
-            fig, ax_right=plt.subplots(ncols=1, nrows=1, sharex=True)
+            fig, ax_right = plt.subplots(ncols=1, nrows=1, sharex=True)
         else:
-            fig, axs=plt.subplots(ncols=2, nrows=nprofiles, sharex=True)
+            fig, axs = plt.subplots(ncols=2, nrows=nprofiles, sharex=True)
             # left
-            ax_left=self.plot_profiles(axs[:, 0], axis, profiles)
+            ax_left = self.plot_profiles(axs[:, 0], axis, profiles)
 
             ax_left.set_xlabel(axis_opts.get("label", "[-]"), fontsize=6)
 
             # right
-            gs=axs[0, 1].get_gridspec()
+            gs = axs[0, 1].get_gridspec()
             for ax in axs[:, 1]:
                 ax.remove()  # remove the underlying axes
-            ax_right=fig.add_subplot(gs[:, 1])
+            ax_right = fig.add_subplot(gs[:, 1])
 
         if surface_mesh:
             self.coordinate_system.plot(ax_right)

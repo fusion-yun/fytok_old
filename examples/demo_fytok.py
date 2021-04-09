@@ -46,8 +46,6 @@ if __name__ == "__main__":
         # "core_profiles":{ion": [{}]}
     })
 
-    logger.debug((equilibrium.vacuum_toroidal_field.b0, equilibrium.vacuum_toroidal_field.r0))
-
     rho_tor_norm = np.linspace(0, 1.0, 128)
 
     r_ped = np.sqrt(0.88)
@@ -60,7 +58,7 @@ if __name__ == "__main__":
                     [lambda r:r < r_ped, lambda r:r >= r_ped],
                     [lambda x:0.5 + (x**2), lambda x: 0.11])
 
-    conv = diff*rho_tor_norm * 1.385 / equilibrium.vacuum_toroidal_field.r0
+    conv = diff * rho_tor_norm * 1.385 / equilibrium.vacuum_toroidal_field.r0
 
     tok.initialize({
         "r_ped": r_ped,  # \frac{\Phi}{\Phi_a}=0.88
@@ -98,7 +96,6 @@ if __name__ == "__main__":
         [
             (tok.equilibrium.profiles_1d.phi,                   r"$\Phi$"),
 
-            # (tok.equilibrium.profiles_1d.rho_tor_norm,          r"$\rho_{tor,N}$"),
             [
                 (tok.equilibrium.profiles_1d.ffprime,            r"$ff^{\prime}$"),
                 (Function(equilibrium.profiles_1d.psi_norm,
@@ -121,13 +118,8 @@ if __name__ == "__main__":
                 (Function(profile["Fp"].values, profile["rho"].values),             r"$\rho_{tor,0}$"),
                 (tok.equilibrium.profiles_1d.dvolume_drho_tor / ((scipy.constants.pi**2) * 4.0 * tok.equilibrium.vacuum_toroidal_field.r0),
                     r"$\frac{dV/d\rho_{tor}}{4\pi^2 R_0}$"),
+            ],
 
-            ],
-            [
-                (tok.equilibrium.profiles_1d.rho_tor.derivative/(tok.equilibrium.global_quantities.psi_boundary - \
-                                                                 tok.equilibrium.global_quantities.psi_axis), r"$\frac{d\rho_{tor}}{d\psi}$"),
-                (tok.equilibrium.profiles_1d.drho_tor_dpsi,         r"$\frac{d\rho_{tor}}{d\psi}$"),
-            ],
             (tok.equilibrium.profiles_1d.dpsi_drho_tor,         r"$\frac{d\psi}{d\rho_{tor}}$"),
 
             # [
@@ -135,13 +127,19 @@ if __name__ == "__main__":
             #     (tok.equilibrium.profiles_1d.q,                 r"$q$"),
             #     (tok.equilibrium.profiles_1d.dphi_dpsi,         r"$\frac{d\phi}{d\psi}$"),
             # ],
-            (tok.equilibrium.profiles_1d.volume,                r"$V$"),
-            (tok.equilibrium.profiles_1d.vprime,                r"$V^{\prime}$"),
+            [
+                (tok.equilibrium.profiles_1d.volume,                r"$V$"),
+                (Function(tok.equilibrium.profiles_1d.rho_tor, tok.equilibrium.profiles_1d.dvolume_drho_tor).antiderivative,
+                 r"$\int d\rho_{tor} \frac{dV}{d\rho_{tor}}$"),
+                (tok.equilibrium.profiles_1d.dvolume_dpsi.antiderivative * \
+                 (tok.equilibrium.global_quantities.psi_boundary - tok.equilibrium.global_quantities.psi_axis),\
+                 r"$\int d\psi \frac{dV}{d\psi}$"),
+            ],
             (tok.equilibrium.profiles_1d.dvolume_drho_tor,      r"$\frac{dV}{d\rho}$"),
 
 
-            (tok.equilibrium.profiles_1d.dpsi_drho_tor,         r"$\frac{d\psi}{d\rho_{tor}}$"),
-            (tok.equilibrium.profiles_1d.drho_tor_dpsi,         r"$\frac{d\rho_{tor}}{d\psi}$"),
+            # (tok.equilibrium.profiles_1d.dpsi_drho_tor,         r"$\frac{d\psi}{d\rho_{tor}}$"),
+            # (tok.equilibrium.profiles_1d.drho_tor_dpsi,         r"$\frac{d\rho_{tor}}{d\psi}$"),
 
             (tok.equilibrium.profiles_1d.gm1,                   r"$\left<\frac{1}{R^2}\right>$"),
             (tok.equilibrium.profiles_1d.gm2,       r"$\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
@@ -164,14 +162,22 @@ if __name__ == "__main__":
     psi_norm = tok.equilibrium.profiles_1d.psi_norm
     rho_tor_norm = tok.equilibrium.profiles_1d.rho_tor_norm
     rho_tor_bdry = tok.core_profiles.grid.rho_tor[-1]
-    logger.debug(rho_tor_bdry)
+
     plot_profiles(
         [
-            # (tok.core_profiles.electrons.density.x,           r"$rho_{tor,N}$"),
-            # [
-            #     (tok.core_profiles.electrons.density/1.0e19,             r"$n_{e}$"),
-            #     # (tok.core_profiles.electrons.source,              {"color": "green", "label": r"$S_{edge}$"}),
-            # ],
+            # (tok.core_profiles.electrons.source,              {"color": "green", "label": r"$S_{edge}$"}),
+            [
+                (tok.core_profiles.electrons.n_diff,          {"color": "green", "label": r"D"}),
+                (Function(profile["x"].values, profile["Dn"].values),                         r"$D$"),
+
+                (np.abs(tok.core_profiles.electrons.n_conv),  {"color": "black",  "label": r"$\left|v\right|$"}),
+            ],
+
+            [
+                (tok.core_profiles.electrons.density,                           r"$n_{e}$"),
+                # (Function(profile["x"].values, profile["NE"].values*1e19),                         r"$n_{e,0}$"),
+            ],
+
             # [
             #     (tok.core_profiles.electrons.density.derivative, {"color": "green", "label":  r"$n_{e}^{\prime}$"}),
             #     (tok.core_profiles.electrons.density_prime,      {"color": "black", "label":  r"$n_{e}^{\prime}$"}),
@@ -179,23 +185,14 @@ if __name__ == "__main__":
             # (tok.core_profiles.electrons.n_gamma,             r"$\Gamma_{e}$"),
             # (tok.core_profiles.electrons.n_gamma_prime,       r"$\Gamma_{e}^{\prime}$"),
             # (tok.core_profiles.electrons.n_rms_residuals,     {"marker": ".", "label":  r"residuals"}),
-            # [
-            #     (tok.core_profiles.electrons.n_diff,          {"color": "green", "label": r"D"}),
-            #     (np.abs(tok.core_profiles.electrons.n_conv),  {"color": "black",  "label": r"$\left|v\right|$"}),
-            # ],
+
             [
                 (tok.core_profiles.electrons.n_s_exp_flux,    {"color": "green", "label": r"Source"}),
                 (tok.core_profiles.electrons.n_diff_flux,     {"color": "black", "label": r"Diffusive flux"}),
                 (tok.core_profiles.electrons.n_conv_flux,     {"color": "red",  "label": r"Convective flux"}),
                 (tok.core_profiles.electrons.n_residual,      {"color": "blue",   "label": r"Residual"}),
-                # ((tok.core_profiles.vprime*n_src*rho_tor_bdry).antiderivative,             r"$\int S$"),
             ],
-            # [
-            #     (tok.core_profiles.electrons.d,               {"color": "green", "label": r"D"}),
-            #     (tok.core_profiles.electrons.e,               {"color": "black", "label": r"V"}),
-            # ],
 
-            # (tok.core_profiles.vprime.antiderivative*rho_tor_bdry,             r"$V$"),
 
         ],
         x_axis=(tok.core_profiles.electrons.density.x,   {"label": r"$\rho_{N}$"}),  # x axis,
