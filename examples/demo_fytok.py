@@ -41,7 +41,7 @@ if __name__ == "__main__":
             "global_quantities": equilibrium.global_quantities,
             "profiles_1d": equilibrium.profiles_1d,
             "profiles_2d": equilibrium.profiles_2d,
-            "coordinate_system": {"grid": {"dim1": 64, "dim2": 128}}
+            "coordinate_system": {"grid": {"dim1": 64, "dim2": 256}}
         },
         # "core_profiles":{ion": [{}]}
     })
@@ -157,6 +157,10 @@ if __name__ == "__main__":
 
     tok.update(
         boundary_conditions={
+            "current": {
+                "identifier": {"index": 1},
+                "value": tok.equilibrium.global_quantities.psi_boundary
+            },
             "electrons": {
                 "particles": {
                     "identifier": {"index": 1},
@@ -164,7 +168,7 @@ if __name__ == "__main__":
                 },
                 "energy": {
                     "identifier": {"index": 1},
-                    "value": (1, 0, 4.6e19)
+                    "value": 0.0
                 }
             },
             "ion": [

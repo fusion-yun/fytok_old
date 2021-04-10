@@ -9,13 +9,17 @@ from spdm.util.logger import logger
 
 
 class CoreTransport(PhysicalGraph):
-    r"""Core plasma transport of particles, energy, momentum and poloidal flux. The transport of particles, energy and momentum is described by
+    r"""
+        Core plasma transport of particles, energy, momentum and poloidal flux. The transport of particles, energy and momentum is described by
         diffusion coefficients,  :math:`D`, and convection velocities,  :math:`v`. These are defined by the total fluxes of particles, energy and momentum, across a
         flux surface given by : :math:`V^{\prime}\left[-DY^{\prime}\left|\nabla\rho_{tor,norm}\right|^{2}+vY\left|\nabla\rho_{tor,norm}\right|\right]`,
-        where  :math:`Y` represents the particles, energy and momentum density, respectively, while  :math:`V` is the volume inside a flux surface, the primes denote derivatives with respect to :math:`\rho_{tor,norm}` and
-        :math:`\left\langle X\right\rangle` is the flux surface average of a quantity  :math:`X`. This formulation remains valid when changing simultaneously  :math:`\rho_{tor,norm}` into :math:`\rho_{tor}`
+        where  :math:`Y` represents the particles, energy and momentum density, respectively, while  :math:`V` is the volume inside a flux surface, the primes denote 
+        derivatives with respect to :math:`\rho_{tor,norm}` and
+        :math:`\left\langle X\right\rangle` is the flux surface average of a quantity  :math:`X`. This formulation remains valid when changing simultaneously  
+        :math:`\rho_{tor,norm}` into :math:`\rho_{tor}`
         in the gradient terms and in the derivatives denoted by the prime. The average flux stored in the IDS as sibling of  :math:`D` and  :math:`v` is the total
-        flux described above divided by the flux surface area :math:`V^{\prime}\left\langle \left|\nabla\rho_{tor,norm}\right|\right\rangle` . Note that the energy flux includes the energy transported by the particle flux.
+        flux described above divided by the flux surface area :math:`V^{\prime}\left\langle \left|\nabla\rho_{tor,norm}\right|\right\rangle` . 
+        Note that the energy flux includes the energy transported by the particle flux.
 
         Attributes :
             profiles_1d
@@ -73,7 +77,6 @@ class CoreTransport(PhysicalGraph):
 
         @cached_property
         def particles(self):
-
             return CoreTransport.ParticleTransportCoeff(self["particles"], profile=self._profile, parent=self._parent)
 
         @cached_property
@@ -146,7 +149,7 @@ class CoreTransport(PhysicalGraph):
 
     @cached_property
     def conductivity_parallel(self):
-        return Function(self.grid_d.rho_tor_norm, self["conductivity_parallel"] or 0.0)
+        return Function(self.grid_d.rho_tor_norm, self["current.conductivity_parallel"])
 
     @cached_property
     def e_field_radial(self):
