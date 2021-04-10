@@ -301,6 +301,11 @@ class TransportSolver(PhysicalGraph):
         if time is None:
             time = self.equilibrium.time
 
+        if not isinstance(boundary_conditions, AttributeTree):
+            bc = AttributeTree(boundary_conditions)
+        else:
+            bc = boundary_conditions
+
         core_profiles_next = CoreProfiles(self._parent.radial_grid, time=time,   parent=self._parent)
 
         tau = core_profiles_next.time - core_profiles_prev.time
@@ -593,13 +598,13 @@ class TransportSolver(PhysicalGraph):
 
             ne0 = Function(core_profiles_prev.grid.psi_norm, p.density)
 
-            # ne0_prime = try_get(core_profiles_prev, sp).density_prime
+            gamma0 = try_get(core_profiles_prev, sp).n_gamma
 
             if not isinstance(ne0, np.ndarray) and ne0 == None:
                 ne0 = np.zeros(rho_tor_norm.shape)
 
-            # if not isinstance(ne0_prime, np.ndarray) and ne0_prime == None:
-            #     ne0_prime = None
+            if not isinstance(gamma0, np.ndarray):
+                gamma0 = None
 
             a = vpr
             b = vprm
@@ -609,70 +614,30 @@ class TransportSolver(PhysicalGraph):
             f = vpr * se_exp
             g = vpr * (se_imp + k_rho_bdry)
 
-            """
-                # Boundary conditions for electron diffusion equation in form:
-                #     V*Y' + U*Y =W
-                # On axis:
-                #     dNi/drho_tor(rho_tor=0)=0:  - this is Ne, not N
-                if(solver_type != 4):
-                    v[0] = 1.
-                    u[0] = 0.
-                else:
-                    IF (DIFF[0]>1.0E-6) :
-                if((diff[0]+diff_hyper) > 1.0e-6):
-                    #         V[0] = -DIFF[0]
-                    v = -diff[0]-diff_hyper
-                else:
-                    v = -1.0e-
-                #       U[0] = VCONV[0]
-                    u = conv[0]+diff_hyper*ne0_prime[0]/ne0[0]
-                w = 0
-                At the edge:
-                    FIXED Ne
-                if(boundary_condition.type == 1):
-                    v = 0.
-                    u = 1.
-                    w = boundary_condition[1, 0]
-                #       FIXED grad_Ne
-                elif(boundary_condition.type == 2):
-                    v = 1.
-                    u = 0.
-                    w = -boundary_condition[1, 0
-                #       FIXED L_Ne
-                elif(boundary_condition.type == 3):
-                    v = boundary_condition[1, 0]
-                    u = 1.
-                    w = 0
-                #       FIXED Flux_Ne
-                elif(boundary_condition.type == 4):
-                    v = -vpr[-1]*gm3[-1]*diff[-1]
-                    u = vpr[-1]*gm3[-1]*conv[-1]
-                    w = boundary_condition[1, 0
-                #       Generic boundary condition
-                elif(boundary_condition.type == 5):
-                    v = boundary_condition[1, 0]
-                    u = boundary_condition(2, 2)
-                    w = boundary_condition(2, 3
-                # Density equation is not solved:
-                else:  # if(boundary_condition.type == 0):
+            sp_bc = bc[sp]["particles"]
 
-
-                v = 0.0
-                u = 1.0
-                w = ne0[-1]
-            """
+            # Boundary conditions for electron diffusion equation in form:
+            #      U*Y + V*Gamma =W
+            # On axis:
+            #     dNi/drho_tor(rho_tor=0)=0:  - this is Ne, not N
+            if sp_bc.identifier.index == 1:
+                u = 1
+                v = 0
+                w = sp_bc.value
+            else:
+                raise NotImplementedError(sp_bc)
 
             sol, profiles = self.solve_general_form(rho_tor_norm,
                                                     ne0,
-                                                    None,
+                                                    gamma0,
                                                     inv_tau,
                                                     (a, b, c, d, e, f, g),
-                                                    ((0, -1, 0), (1, 0, 4.6e19)),
+                                                    ((e[0], -1, 0), (u, v, w)),
                                                     hyper_diff=[0, 0.0001],
                                                     tol=1e-3,
                                                     verbose=2,
                                                     max_nodes=1000,
-                                                    ignore_x=[np.sqrt(0.88)]
+                                                    ignore_x=[d.x[np.argmax(np.abs(d.derivative))]]
                                                     )
 
             logger.info(f"""Solve transport equations: Electron density: { 'Success' if sol.success else 'Failed' } """)

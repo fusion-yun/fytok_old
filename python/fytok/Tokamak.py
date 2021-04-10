@@ -273,7 +273,7 @@ class Tokamak(PhysicalGraph):
             self._time = time
 
         bdry_cond = AttributeTree(boundary_conditions)
-
+        
         core_profiles_prev = self.core_profiles
 
         for nstep in range(max_step):
