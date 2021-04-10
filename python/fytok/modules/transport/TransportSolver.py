@@ -640,7 +640,7 @@ class TransportSolver(PhysicalGraph):
                                                     ignore_x=[d.x[np.argmax(np.abs(d.derivative))]]
                                                     )
 
-            logger.info(f"""Solve transport equations: Electron density: { 'Success' if sol.success else 'Failed' } """)
+            logger.info(f"""Solve transport equations: {sp.capitalize()} density: { 'Success' if sol.success else 'Failed' } """)
 
             if not sol.success:
                 logger.debug(sol.message)
