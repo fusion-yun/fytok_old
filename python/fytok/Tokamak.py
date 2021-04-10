@@ -220,7 +220,7 @@ class Tokamak(PhysicalGraph):
         # Function(rho_n, spec.electron.density.n0 * (1-rho_n**4)**2)
 
         self.core_transport[_next_] = {
-            "currrent": {
+            "current": {
                 "conductivity_parallel": np.ones(rho_n.shape)
             },
             "electrons": {
@@ -235,7 +235,8 @@ class Tokamak(PhysicalGraph):
             "electrons": {
                 "particles": p_src
             },
-            # "j_parallel": j_total, "conductivity_parallel": 1.0e-8
+            "j_parallel": np.ones(rho_n.shape),
+            "conductivity_parallel": 1.0e-8
         }
 
         # self.core_sources[-1]["profiles_1d.j_parallel"] = j_total

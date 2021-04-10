@@ -72,7 +72,11 @@ if __name__ == "__main__":
             "temperature": {
                 "T0": 0.95e19,
                 "profile": lambda r: (1-r**2)**2,
-            }}
+            }
+        },
+        "current": {
+            "conductivity_parallel": np.ones(rho_tor_norm.shape)
+        }
     })
 
     fig = plt.figure()
@@ -197,10 +201,10 @@ if __name__ == "__main__":
         [
             # (tok.core_profiles.electrons.source,              {"color": "green", "label": r"$S_{edge}$"}),
             [
-                (tok.core_profiles.electrons.n_diff,          {"color": "green", "label": r"D"}),
+                (tok.core_profiles.electrons.diff,          {"color": "green", "label": r"D"}),
                 (Function(profile["x"].values, profile["Dn"].values),                         r"$D$"),
 
-                (np.abs(tok.core_profiles.electrons.n_conv),  {"color": "black",  "label": r"$\left|v\right|$"}),
+                (np.abs(tok.core_profiles.electrons.conv),  {"color": "black",  "label": r"$\left|v\right|$"}),
             ],
 
             [
@@ -217,10 +221,10 @@ if __name__ == "__main__":
             # (tok.core_profiles.electrons.n_rms_residuals,     {"marker": ".", "label":  r"residuals"}),
 
             [
-                (tok.core_profiles.electrons.n_s_exp_flux,    {"color": "green", "label": r"Source"}),
-                (tok.core_profiles.electrons.n_diff_flux,     {"color": "black", "label": r"Diffusive flux"}),
-                (tok.core_profiles.electrons.n_conv_flux,     {"color": "red",  "label": r"Convective flux"}),
-                (tok.core_profiles.electrons.n_residual,      {"color": "blue",   "label": r"Residual"}),
+                (tok.core_profiles.electrons.s_exp_flux,    {"color": "green", "label": r"Source"}),
+                (tok.core_profiles.electrons.diff_flux,     {"color": "black", "label": r"Diffusive flux"}),
+                (tok.core_profiles.electrons.conv_flux,     {"color": "red",  "label": r"Convective flux"}),
+                (tok.core_profiles.electrons.residual,      {"color": "blue",   "label": r"Residual"}),
             ],
 
 

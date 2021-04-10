@@ -26,7 +26,7 @@ class CoreTransport(PhysicalGraph):
     """
     IDS = "core_transport"
 
-    def __init__(self, grid: RadialGrid,  *args, time=None,   **kwargs):
+    def __init__(self, grid: RadialGrid, *args, time=None,   **kwargs):
         super().__init__(*args, **kwargs)
         self._time = time or 0.0
         self._grid = grid
@@ -149,7 +149,7 @@ class CoreTransport(PhysicalGraph):
 
     @cached_property
     def conductivity_parallel(self):
-        return Function(self.grid_d.rho_tor_norm, self["current.conductivity_parallel"])
+        return Function(self.grid_d.rho_tor_norm, self["current"]["conductivity_parallel"])
 
     @cached_property
     def e_field_radial(self):
