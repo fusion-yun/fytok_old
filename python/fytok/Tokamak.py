@@ -272,7 +272,7 @@ class Tokamak(PhysicalGraph):
         if time is not None:
             self._time = time
 
-        bdry_cond = boundary_conditions(boundary_conditions)
+        bdry_cond = AttributeTree(boundary_conditions)
 
         core_profiles_prev = self.core_profiles
 

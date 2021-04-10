@@ -1,21 +1,24 @@
-from spdm.util.logger import logger
-from spdm.data.PhysicalGraph import PhysicalGraph
-from spdm.data.mesh.CurvilinearMesh import CurvilinearMesh
-from spdm.numerical.Function import Function
-from spdm.data.Field import Field
-from spdm.util.utilities import try_get
-from scipy.optimize import fsolve, root_scalar
-from numpy.lib.arraysetops import isin
-from numpy import arctan2, cos, sin, sqrt
-import scipy
-import numpy as np
-import matplotlib.pyplot as plt
 import collections
 from functools import cached_property
-import scipy.integrate
 
+import matplotlib.pyplot as plt
+import numpy as np
+import scipy
+import scipy.integrate
+from numpy import arctan2, cos, sin, sqrt
+from numpy.lib.arraysetops import isin
+from scipy.optimize import fsolve, root_scalar
+from spdm.data.Field import Field
+from spdm.data.mesh.CurvilinearMesh import CurvilinearMesh
+from spdm.data.PhysicalGraph import PhysicalGraph
+from spdm.geometry.Point import Point
+from spdm.geometry.CubicSplineCurve import CubicSplineCurve
+from spdm.numerical.Function import Function
+from spdm.util.logger import logger
+from spdm.util.utilities import try_get
 
 TOLERANCE = 1.0e-6
+EPS = np.finfo(float).eps
 
 
 class MagneticSurfaceCoordinateSystem:
@@ -134,29 +137,47 @@ class MagneticSurfaceCoordinateSystem:
     def create_mesh(self, u, v, *args, type_index=13):
         if type_index == 13:
             rz = np.asarray([[r, z] for r, z in self.find_flux_surface(u, v[:-1])]).reshape(len(u), len(v)-1, 2)
-            r = np.hstack([rz[:, :, 0], rz[:, :1, 0]])
-            z = np.hstack([rz[:, :, 1], rz[:, :1, 1]])
-
-            mesh = CurvilinearMesh([r, z], [u, v], cycle=[False, True])
+            rz = np.hstack((rz, rz[:, :1, :]))
+            mesh = CurvilinearMesh(rz, [u, v], cycle=[False, True])
         else:
             raise NotImplementedError(f"TODO: reconstruct mesh {type_index}")
 
         return mesh
 
+    @cached_property
+    def surface_mesh(self):
+        def find_surface(psi_norm, npoints):
+            if np.abs(psi_norm) <= EPS:
+                o, _ = self.critical_points
+                return Point(*o)
+            else:
+                npoints = max(4, npoints)
+                u = np.linspace(0, 1.0, npoints, endpoint=False)
+                xy = np.asarray([[r, z] for r, z in self.find_flux_surface(psi_norm,  u*scipy.constants.pi*2)])
+                return CubicSplineCurve(u, xy, is_closed=True)
+
+        u, v = self._uv
+
+        npoints = len(v)
+
+        return [find_surface(p, int(npoints*p) if p > EPS else 0) for p in u]
+
+    def surface_integrate2(self, fun, *args, **kwargs):
+        return np.asarray([surf.integrate(fun, *args, **kwargs) for surf in self.surface_mesh])
+
     @property
     def mesh(self):
         if self._mesh is None:
             self._mesh = self.create_mesh(*self._uv, type_index=13)
-
         return self._mesh
 
     @property
     def r(self):
-        return self.mesh.xy[0]
+        return self.mesh.xy[:, :, 0]
 
     @property
     def z(self):
-        return self.mesh.xy[1]
+        return self.mesh.xy[:, :, 1]
 
     @cached_property
     def psi_axis(self):
@@ -229,7 +250,7 @@ class MagneticSurfaceCoordinateSystem:
     def norm_grad_psi(self):
         return np.sqrt(self.psirz(self.r, self.z, dx=1)**2+self.psirz(self.r, self.z, dy=1)**2)
 
-    def surface_integral(self, alpha=None, *args, **kwargs):
+    def surface_integrate(self, alpha=None, *args, **kwargs):
         r"""
             .. math:: \left\langle \alpha\right\rangle \equiv\frac{2\pi}{V^{\prime}}\oint\alpha\frac{Rdl}{\left|\nabla\psi\right|}
         """
@@ -237,11 +258,10 @@ class MagneticSurfaceCoordinateSystem:
             alpha = 1.0/self.Bpol
         else:
             alpha = alpha/self.Bpol
-
         return np.sum((np.roll(alpha, 1, axis=1)+alpha) * self.dl, axis=1) * (0.5*2*scipy.constants.pi)
 
     def surface_average(self,  *args, **kwargs):
-        return self.surface_integral(*args, **kwargs) / self.dvolume_dpsi
+        return self.surface_integrate(*args, **kwargs) / self.dvolume_dpsi
 
     @cached_property
     def dvolume_dpsi(self):
@@ -249,8 +269,7 @@ class MagneticSurfaceCoordinateSystem:
             .. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
             .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
         """
-
-        return Function(self.psi_norm, self.surface_integral())
+        return Function(self.psi_norm, self.surface_integrate())
 
 
 class Equilibrium(PhysicalGraph):
@@ -581,7 +600,7 @@ class Equilibrium(PhysicalGraph):
                 .. math ::
                     \Phi_{tor}\left(\psi\right)=\int_{0}^{\psi}qd\psi
             """
-            return Function(self.psi_norm, self.fpol*self._coord.surface_integral(1.0/(self._coord.r**2)) *
+            return Function(self.psi_norm, self.fpol*self._coord.surface_integrate(1.0/(self._coord.r**2)) *
                             ((self._psi_boundary-self._psi_axis) / (2.0*scipy.constants.pi))).antiderivative
 
         @cached_property

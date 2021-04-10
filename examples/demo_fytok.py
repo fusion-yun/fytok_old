@@ -143,6 +143,11 @@ if __name__ == "__main__":
             # (tok.equilibrium.profiles_1d.dphi_dpsi, r"$\frac{d\phi}{d\psi}$"),
             # (tok.equilibrium.profiles_1d.drho_tor_dpsi, r"$\frac{d\rho_{tor}}{d\psi}$"),
             # (tok.core_profiles.electrons.temperature, r"$T_{e}$"),
+            # [
+            #     (tok.equilibrium.coordinate_system.surface_integrate2(
+            #         lambda r, z:1.0/r**2), r"$\left<\frac{1}{R^2}\right>$"),
+            #     (tok.equilibrium.profiles_1d.gm1, r"$\left<\frac{1}{R^2}\right>$"),
+            # ]
 
         ],
         # x_axis=(tok.equilibrium.profiles_1d.rho_tor_norm,   {"label": r"$\rho_{N}$"}),  # asd
