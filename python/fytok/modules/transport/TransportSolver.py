@@ -131,7 +131,7 @@ class TransportSolver(PhysicalGraph):
             To be removed when the solver_1d structure is finalized. {dynamic}"""
         return TransportSolver.BoundaryCondition(self["boundary_conditions"])
 
-    def solve_general_form(self, x0, y0, gamma0, inv_tau, coeff,  bc,  hyper_diff=[0.0, 0.0],  **kwargs):
+    def solve_general_form(self, x0, y0, gamma0,   coeff,  bc,  hyper_diff=[0.0, 0.0],  **kwargs):
         r"""
             solve standard form
 
@@ -175,9 +175,8 @@ class TransportSolver(PhysicalGraph):
                                  \frac{a\left(x\right)\cdot Y\left(x,t\right)-b\left(x\right)\cdot Y\left(x,t-1\right)}{\tau}\right]
                     \end{cases}
                     :label: generalized_trans_eq_first_order
-
         """
-        a, b, c, d, e, f, g = coeff
+        a, b, d, e, f, g = coeff
 
         if not isinstance(y0, Function):
             y0 = Function(x0, y0)
@@ -187,7 +186,7 @@ class TransportSolver(PhysicalGraph):
             hyper_diff = hyper_diff_exp+hyper_diff_imp*max(d)
 
         def S(x, y):
-            return (f(x) - g(x) * y)*c - (a(x) * y - b(x) * y0(x)) * inv_tau * c
+            return f(x) - g(x) * y - (a(x) * y - b(x) * y0(x)) 
 
         def fun(x, Y):
             y, gamma = Y
@@ -405,19 +404,19 @@ class TransportSolver(PhysicalGraph):
             # total non inductive current, component proportional to PSI,      [A/m^2/V/s]
             j_ni_imp = 0.0  # sources.j_ni_imp if sources is not None else 0.0   # can not find data in imas dd
 
-            a = conductivity_parallel * rho_tor
-
-            b = conductivity_parallel * rho_tor
-
             c = (scipy.constants.mu_0*B0 * rho_tor_boundary)/(fpol**2)
+
+            a = conductivity_parallel * rho_tor * c * inv_tau
+
+            b = conductivity_parallel * rho_tor * c * inv_tau
 
             d = vpr*gm2 / fpol / ((TWOPI**2)*rho_tor_boundary)
 
             e = (- scipy.constants.mu_0 * B0 * k_phi) * (conductivity_parallel * rho_tor**2/fpol**2)
 
-            f = - vpr * j_ni_exp/TWOPI
+            f = - vpr * j_ni_exp/TWOPI * c
 
-            g = vpr * j_ni_imp/TWOPI
+            g = vpr * j_ni_imp/TWOPI * c
 
             # Boundary conditions for current diffusion equation in form:
             #     u*Y + v*Y' = w
@@ -473,8 +472,7 @@ class TransportSolver(PhysicalGraph):
             sol, profiles = self.solve_general_form(rho_tor_norm,
                                                     psi0,
                                                     None,
-                                                    inv_tau,
-                                                    (a, b, c, d, e, f, g),
+                                                    (a, b,  d, e, f, g),
                                                     ((0, 1, 0.0), (u, v, w)),
                                                     hyper_diff=[0, 0.0001],
                                                     verbose=2,
@@ -552,13 +550,13 @@ class TransportSolver(PhysicalGraph):
             if not isinstance(gamma0, np.ndarray):
                 gamma0 = None
 
-            a = vpr
-            b = vprm
-            c = rho_tor_boundary
+            a = vpr * rho_tor_boundary * inv_tau
+            b = vprm * rho_tor_boundary * inv_tau
+
             d = vpr * gm3 * diff / rho_tor_boundary
             e = vpr * gm3 * conv - vpr * rho_tor * k_phi
-            f = vpr * se_exp
-            g = vpr * (se_imp + k_rho_bdry)
+            f = rho_tor_boundary * vpr * se_exp
+            g = rho_tor_boundary * vpr * (se_imp + k_rho_bdry)
 
             sp_bc = bc[sp]["particles"]
 
@@ -577,8 +575,7 @@ class TransportSolver(PhysicalGraph):
             sol, profiles = self.solve_general_form(rho_tor_norm,
                                                     ne0,
                                                     gamma0,
-                                                    inv_tau,
-                                                    (a, b, c, d, e, f, g),
+                                                    (a, b,  d, e, f, g),
                                                     ((e[0], -1, 0), (u, v, w)),
                                                     hyper_diff=[0, 0.0001],
                                                     tol=1e-3,

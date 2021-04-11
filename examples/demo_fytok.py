@@ -75,7 +75,7 @@ if __name__ == "__main__":
             }
         },
         "current": {
-            "conductivity_parallel": np.ones(rho_tor_norm.shape)
+            "conductivity_parallel": Function(rho_tor_norm, np.ones(rho_tor_norm.shape))
         }
     })
 
