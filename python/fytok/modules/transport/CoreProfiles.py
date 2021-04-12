@@ -10,45 +10,40 @@ from spdm.util.logger import logger
 from ..utilities.RadialGrid import RadialGrid
 
 
-class CoreProfiles(PhysicalGraph):
-    """CoreProfiles
-    """
-    IDS = "core_profiles"
-
-    def __init__(self,  *args,  grid: RadialGrid = None, time=None,  ** kwargs):
-        super().__init__(*args, ** kwargs)
-        self._time = time or 0.0
+class Profiles(PhysicalGraph):
+    def __init__(self, *args, grid=None, **kwargs):
+        super().__init__(*args, **kwargs)
         self._grid = grid
-
-    @property
-    def time(self):
-        return self._time
 
     @property
     def grid(self):
         return self._grid
 
     def __post_process__(self, value, *args, **kwargs):
-        if isinstance(value, Function):
+        if isinstance(value, (Function, str)):
             return value
-        elif isinstance(value, (int, float, np.ndarray)):
-            return Function(self.grid.rho_tor_norm, value)
+        elif isinstance(value, (collections.abc.Mapping, collections.abc.MutableSequence)):
+            return super().__post_process__(value, *args, **kwargs)
+        elif isinstance(value, np.ndarray) and self._grid.rho_tor_norm.shape != value.shape:
+            return value
+        elif isinstance(value, (int, float, np.ndarray)) or callable(value):
+            return Function(self._grid.rho_tor_norm, value)
         else:
             return super().__post_process__(value, *args, **kwargs)
 
-    class Profiles(PhysicalGraph):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
 
-        def __post_process__(self, value, *args, **kwargs):
-            if isinstance(value, (Function, str)):
-                return value
-            elif isinstance(value, (collections.abc.Mapping, collections.abc.MutableSequence)):
-                return super().__post_process__(value, *args, **kwargs)
-            elif isinstance(value, np.ndarray) and self._parent.grid.rho_tor_norm.shape != value.shape:
-                return value
-            else:
-                return Function(self._parent.grid.rho_tor_norm, value)
+class CoreProfiles(Profiles):
+    """CoreProfiles
+    """
+    IDS = "core_profiles"
+
+    def __init__(self,  *args,   time=None,  ** kwargs):
+        super().__init__(*args, ** kwargs)
+        self._time = time or 0.0
+
+    @property
+    def time(self):
+        return self._time
 
     class TemperatureFit(Profiles):
         def __init__(self, *args, **kwargs):
@@ -349,17 +344,17 @@ class CoreProfiles(PhysicalGraph):
     @cached_property
     def electrons(self):
         """Quantities related to the electrons"""
-        return CoreProfiles.Electrons(self["electrons"] or {},  parent=self)
+        return CoreProfiles.Electrons(self["electrons"], grid=self.grid,  parent=self)
 
     @cached_property
     def ion(self):
         """Quantities related to the different ion species"""
-        return List(self["ion"], default_fatory=CoreProfiles.Ion,  parent=self)
+        return List(self["ion"], default_fatory=lambda d: CoreProfiles.Ion(d, grid=self.grid, parent=self),  parent=self)
 
     @cached_property
     def neutral(self):
         """Quantities related to the different neutral species"""
-        return List(self["neutral"], default_fatory=CoreProfiles.Neutral,  parent=self)
+        return List(self["neutral"],  default_fatory=lambda d: CoreProfiles.Neutral(d, grid=self.grid, parent=self), parent=self)
 
     @cached_property
     def t_i_average(self):
