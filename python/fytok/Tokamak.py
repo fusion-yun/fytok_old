@@ -4,6 +4,8 @@ from functools import cached_property
 
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy
+import scipy.constants
 from spdm.data.AttributeTree import AttributeTree
 from spdm.data.List import List
 from spdm.data.Node import Node, _next_
@@ -23,6 +25,8 @@ from .modules.transport.EdgeTransport import EdgeTransport
 from .modules.transport.Equilibrium import Equilibrium
 from .modules.transport.TransportSolver import TransportSolver
 from .modules.utilities.RadialGrid import RadialGrid
+
+TWOPI = scipy.constants.pi*2.0
 
 
 class Tokamak(PhysicalGraph):
@@ -55,7 +59,7 @@ class Tokamak(PhysicalGraph):
 
     @cached_property
     def vacuum_toroidal_field(self):
-        return self["vacuum_toroidal_field"]
+        return self["equilibrium.vacuum_toroidal_field"]
 
     @cached_property
     def wall(self) -> Wall:
@@ -259,100 +263,26 @@ class Tokamak(PhysicalGraph):
         # axis.legend()
         return axis
 
-#  def initialize(self, spec=None, npoints=128):
-#         r"""
-#             Setup dummy profile　
-#                 core_transport
-#                 core_sources
-#                 core_profiles
-#         """
+    # def initialize(self):
+    #     r"""
+    #         Set initial conditions self-consistently
 
-#         if not isinstance(spec, AttributeTree):
-#             spec = AttributeTree(spec)
+    #     """
 
-#         # gamma = self.equilibrium.magnetic_flux_coordinates.dvolume_drho_tor  \
-#         #     * self.equilibrium.magnetic_flux_coordinates.gm2    \
-#         #     / self.equilibrium.magnetic_flux_coordinates.fpol \
-#         #     * self.equilibrium.magnetic_flux_coordinates.dpsi_drho_tor \
-#         #     / (4.0*(scipy.constants.pi**2))
-#         # gamma = Function(rho, gamma)
-#         # j_total = -gamma.derivative  \
-#         #     / self.equilibrium.magnetic_flux_coordinates.rho_tor[-1]**2 \
-#         #     * self.equilibrium.magnetic_flux_coordinates.dpsi_drho_tor  \
-#         #     * (self.equilibrium.magnetic_flux_coordinates.fpol**2) \
-#         #     / (scipy.constants.mu_0*self.vacuum_toroidal_field.b0) \
-#         #     * (scipy.constants.pi)
-#         # j_total[1:] /= self.equilibrium.magnetic_flux_coordinates.dvolume_drho_tor[1:]
-#         # j_total[0] = 2*j_total[1]-j_total[2]
+    #     gamma = self.equilibrium.profiles_1d.dvolume_drho_tor  \
+    #         * self.equilibrium.profiles_1d.gm2    \
+    #         / self.equilibrium.profiles_1d.fpol \
+    #         * self.equilibrium.profiles_1d.dpsi_drho_tor \
+    #         / (TWOPI**2)
 
-#         r_ped = spec.r_ped
-#         # rho_core = np.linspace(0.0, r_ped, npoints, endpoint=False)
+    #     j_total = -gamma.derivative  \
+    #         / self.equilibrium.profiles_1d.rho_tor[-1]**2 \
+    #         * self.equilibrium.profiles_1d.dpsi_drho_tor  \
+    #         * (self.equilibrium.profiles_1d.fpol**2) \
+    #         / (scipy.constants.mu_0*self.vacuum_toroidal_field.b0) \
+    #         * (scipy.constants.pi)
 
-#         # rho_edge = np.linspace(r_ped, 1.0, int((1.0-r_ped)*npoints))
+    #     j_total[1:] /= self.equilibrium.profiles_1d.dvolume_drho_tor[1:]
+    #     j_total[0] = 2*j_total[1]-j_total[2]
 
-#         # rho = np.hstack([rho_core, rho_edge])
-
-#         rho_n = np.linspace(0.0, 1.0, npoints)
-
-#         self._radial_grid = {"axis": rho_n, "label": "rho_tor_norm"}
-
-#         p_src = spec.electrons.density.source
-
-#         D_diff = spec.electrons.density.diffusivity
-
-#         v_pinch = spec.electrons.density.pinch
-
-#         del self.core_profiles
-#         del self.core_transport
-#         del self.core_sources
-
-#         self["core_profiles"] = {
-#             "electrons": {
-#                 "density": spec.electrons.density.n0,
-#                 "temperature": 1.0
-#             }
-#         }
-
-#         self["core_transport"] = {
-#             "current": {"conductivity_parallel": np.ones(rho_n.shape)},
-#             "electrons": {"particles": {"d": D_diff, "v": v_pinch}}
-#         }
-
-#         self["core_sources"] = {
-#             "electrons": {"particles": p_src},
-#             "j_parallel": np.ones(rho_n.shape),
-#             "conductivity_parallel": 1.0e-8
-#         }
-
-#         # self.core_sources[-1]["profiles_1d.j_parallel"] = j_total
-#         # self.core_sources[-1]["profiles_1d.conductivity_parallel"] = 1.0e-8
-#         # rho = self.grid.rho
-
-#         # rho_tor_boundary = self.equilibrium.profiles_1d.rho_tor[-1]
-
-#         # vpr = Function(self.equilibrium.profiles_1d.rho_tor_norm,
-#         #                self.equilibrium.profiles_1d.dvolume_drho_tor)
-
-#         # gm3 = Function(self.equilibrium.profiles_1d.rho_tor_norm,
-#         #                self.equilibrium.profiles_1d.gm3)
-
-#         # H = vpr * gm3
-
-#         # for sp, desc in spec.items():
-#         #     n_s = desc.get("density", n0)
-#         #     w_scale_s = desc.get("w_scale", w_scale)
-#         #     def n_core(x): return (1-(x/w_scale_s)**2)**2
-#         #     def dn_core(x): return -4*x*(1-(x/w_scale_s)**2)/(w_scale_s**2)
-#         #     def n_ped(x): return n_core(x_ped) - (1.0-x_ped) * dn_core(x_ped) * (1.0 - np.exp((x-x_ped)/(1.0-x_ped)))
-#         #     def dn_ped(x): return dn_core(x_ped) * np.exp((x-x_ped)/(1.0-x_ped))
-#         #     integral_src = Function(rho, -d_ped * H * dn_ped(rho)/(rho_tor_boundary**2))
-#         #     self.core_transport.profiles_1d[sp].particles.d = lambda x: 2.0 * d_ped + (x**2)
-#         #     self.core_transport.profiles_1d[sp].particles.v = (self.core_transport.profiles_1d[sp].particles.d(rho) * dn_core(rho) - d_ped*dn_ped(rho)) \
-#         #         / (rho_tor_boundary) / n_core(rho) * (rho < x_ped)
-#         #     self.core_sources.profiles_1d[sp].particles = n_s * integral_src.derivative/vpr
-#         #     desc["density"] = n_s * (n_core(rho)*(rho < x_ped) +
-#         #                              n_ped(rho) * (rho >= x_ped))
-#         #     self.core_profiles.profiles_1d[sp] |= desc
-#         #     logger.debug(self.core_sources)
-#         # if "electrons" not in spec:
-#         #     raise NotImplementedError()
+    #     self.core_sources["j_parallel"] = j_total

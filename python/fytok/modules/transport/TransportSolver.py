@@ -307,6 +307,7 @@ class TransportSolver(PhysicalGraph):
             # -----------------------------------------------------------
             # Sources
             # total non inductive current, PSI independent component,          [A/m^2]
+
             j_ni_exp = core_sources.j_parallel
 
             # total non inductive current, component proportional to PSI,      [A/m^2/V/s]
@@ -351,10 +352,10 @@ class TransportSolver(PhysicalGraph):
                 raise NotImplementedError(sp_bc)
 
             # $\Psi$ flux function from current                 [Wb]
-            psi0 = core_profiles_prev.psi(psi_norm)
+            psi0 = core_profiles_prev.psi
 
             # $\frac{\partial\Psi}{\partial\rho_{tor,norm}}$               [Wb/m]
-            gamma0 = core_profiles_prev.dpsi_drho_tor_norm(psi_norm)
+            gamma0 = core_profiles_prev.dpsi_drho_tor_norm
 
             if not isinstance(gamma0, np.ndarray):
                 gamma0 = -d * Function(rho_tor_norm, psi0).derivative + e * psi0
@@ -424,7 +425,7 @@ class TransportSolver(PhysicalGraph):
             else:
                 raise NotImplementedError(sp_bc)
 
-            ne0 = core_profiles_prev[sp].density
+            ne0 = try_get(core_profiles_prev, sp).density
 
             if rho_tor_norm is not ne0.x:
                 ne0 = Function(rho_tor_norm, ne0(rho_tor_norm))

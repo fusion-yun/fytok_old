@@ -29,10 +29,8 @@ if __name__ == "__main__":
 
     # profile = pd.read_csv('/home/salmon/workspace/data/15MA inductive - burn/profile.txt', sep='\t')
 
-    rho_tor_norm = np.linspace(0, 1.0, 128)
-
     tok = Tokamak({
-        "radial_grid": {"axis": 128, "primary": "rho_tor_norm"},
+        "radial_grid": {"axis": 64, "primary": "rho_tor_norm"},
         "wall":  device.wall,
         "pf_active": device.pf_active,
         "equilibrium": {
@@ -44,11 +42,11 @@ if __name__ == "__main__":
         },
         "core_profiles": {
             "electrons": {
-                "density":  Function(rho_tor_norm,   1e19),
-                "temperature": Function(rho_tor_norm, lambda x: (1-x**2)**2)
+                "density":     1e19,
+                "temperature": lambda x: (1-x**2)**2
             },
             "conductivity_parallel": 1.0,
-            "psi": Function(rho_tor_norm, 1.0),
+            "psi":   1.0,
         }
     })
 
@@ -134,6 +132,9 @@ if __name__ == "__main__":
         x_axis=(tok.equilibrium.profiles_1d.psi_norm,  {"label": r"$\psi_{N}$"}),  # asd
         grid=True) .savefig("/home/salmon/workspace/output/profiles_1d.svg", transparent=True)
 
+    psi_norm = tok.radial_grid.psi_norm
+    rho_tor_norm = tok.radial_grid.rho_tor_norm
+
     r_ped = np.sqrt(0.88)
 
     n_src = Function(rho_tor_norm, lambda x: 7.5e20 * np.exp(15.0*(x**2-1.0)))
@@ -144,8 +145,22 @@ if __name__ == "__main__":
 
     v_pinch = diff * rho_tor_norm * 1.385 / equilibrium.vacuum_toroidal_field.r0
 
-    tok.update(
+    gamma = tok.equilibrium.profiles_1d.dvolume_drho_tor  \
+        * tok.equilibrium.profiles_1d.gm2    \
+        / tok.equilibrium.profiles_1d.fpol \
+        * tok.equilibrium.profiles_1d.dpsi_drho_tor \
+        / ((scipy.constants.pi*2.0)**2)
 
+    j_parallel = -gamma.derivative  \
+        / tok.equilibrium.profiles_1d.rho_tor[-1]**2 \
+        * tok.equilibrium.profiles_1d.dpsi_drho_tor  \
+        * (tok.equilibrium.profiles_1d.fpol**2) \
+        / (scipy.constants.mu_0*tok.vacuum_toroidal_field.b0) \
+        * (scipy.constants.pi)
+
+    # j_parallel = Function(gamma.x,  j_parallel )
+
+    tok.update(
         core_transport={
             "conductivity_parallel": 1.0,
             "electrons": {"particles": {
@@ -157,7 +172,7 @@ if __name__ == "__main__":
             "electrons": {
                 "particles": n_src
             },
-            "j_parallel": 1.0,
+            "j_parallel": j_parallel.pullback(psi_norm, rho_tor_norm).view(np.ndarray),
             "conductivity_parallel": 1.0e-8
         },
 

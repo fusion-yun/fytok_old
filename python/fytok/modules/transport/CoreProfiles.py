@@ -1,7 +1,7 @@
 import collections
 from functools import cached_property
 
-from numpy import arctan2, cos, sin, sqrt
+import numpy as np
 from spdm.data.List import List
 from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.numerical.Function import Function
@@ -28,16 +28,37 @@ class CoreProfiles(PhysicalGraph):
     def grid(self):
         return self._grid
 
+    def __post_process__(self, value, *args, **kwargs):
+        if isinstance(value, Function):
+            return value
+        elif isinstance(value, (int, float, np.ndarray)):
+            return Function(self.grid.rho_tor_norm, value)
+        else:
+            return super().__post_process__(value, *args, **kwargs)
 
-    class TemperatureFit(PhysicalGraph):
+    class Profiles(PhysicalGraph):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
-    class DensityFit(PhysicalGraph):
+        def __post_process__(self, value, *args, **kwargs):
+            if isinstance(value, (Function, str)):
+                return value
+            elif isinstance(value, (collections.abc.Mapping, collections.abc.MutableSequence)):
+                return super().__post_process__(value, *args, **kwargs)
+            elif isinstance(value, np.ndarray) and self._parent.grid.rho_tor_norm.shape != value.shape:
+                return value
+            else:
+                return Function(self._parent.grid.rho_tor_norm, value)
+
+    class TemperatureFit(Profiles):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
-    class Electrons(PhysicalGraph):
+    class DensityFit(Profiles):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+    class Electrons(Profiles):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
@@ -488,7 +509,3 @@ class CoreProfiles(PhysicalGraph):
     def magnetic_shear(self):
         """Magnetic shear, defined as rho_tor/q . dq/drho_tor {dynamic}[-]"""
         return NotImplemented
-
-    @property
-    def time(self):
-        return self._time
