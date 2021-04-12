@@ -1,3 +1,4 @@
+import collections
 from functools import cached_property, lru_cache
 from fytok.modules.utilities.RadialGrid import RadialGrid
 
@@ -26,7 +27,7 @@ class CoreTransport(PhysicalGraph):
     """
     IDS = "core_transport"
 
-    def __init__(self, grid: RadialGrid, *args, time=None,   **kwargs):
+    def __init__(self,  *args, grid: RadialGrid = None, time=None,   **kwargs):
         super().__init__(*args, **kwargs)
         self._time = time or 0.0
         self._grid = grid
@@ -34,6 +35,10 @@ class CoreTransport(PhysicalGraph):
     def update(self, *args, time=None, ** kwargs):
         logger.debug(f"Update {self.__class__.__name__} [time={time}] at: Do nothing")
         self._time = time
+        if len(args) > 0 and isinstance(args[0], collections.abc.Mapping):
+            self |= args[0]
+        if time is not None:
+            self._time = time
 
     @property
     def time(self) -> float:
@@ -62,7 +67,6 @@ class CoreTransport(PhysicalGraph):
     class EngeryTransportCoeff(PhysicalGraph):
         def __init__(self, *args, **kwargs):
             super().__init__(*args,   **kwargs)
-            logger.debug(self["d"].shape)
             self.d = Function(self._parent.grid_d.rho_tor_norm, self["d"])
             self.v = Function(self._parent.grid_v.rho_tor_norm, self["v"])
 
@@ -98,7 +102,7 @@ class CoreTransport(PhysicalGraph):
     @property
     def grid_d(self):
         """Grid for effective diffusivities and parallel conductivity"""
-        return self._parent.radial_grid
+        return self._grid
 
     @property
     def grid_v(self):
@@ -106,7 +110,7 @@ class CoreTransport(PhysicalGraph):
             Todo :
                 FIXME
         """
-        return self._parent.radial_grid
+        return self._grid
 
     @property
     def grid_flux(self):
@@ -114,7 +118,7 @@ class CoreTransport(PhysicalGraph):
             Todo :
                 FIXME
         """
-        return self._parent.radial_grid
+        return self._grid
 
     @cached_property
     def electrons(self):

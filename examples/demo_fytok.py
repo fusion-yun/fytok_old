@@ -29,6 +29,20 @@ if __name__ == "__main__":
 
     profile = pd.read_csv('/home/salmon/workspace/data/15MA inductive - burn/profile.txt', sep='\t')
 
+    rho_tor_norm = np.linspace(0, 1.0, 128)
+
+    r_ped = np.sqrt(0.88)
+
+    ne0 = Function(rho_tor_norm, np.full(rho_tor_norm.shape, 1e19))
+
+    n_src = Function(rho_tor_norm, lambda x: 7.5e20 * np.exp(15.0*(x**2-1.0)))
+
+    diff = Function(rho_tor_norm,
+                    [lambda r:r < r_ped, lambda r:r >= r_ped],
+                    [lambda x:0.5 + (x**2), lambda x: 0.11])
+
+    conv = diff * rho_tor_norm * 1.385 / equilibrium.vacuum_toroidal_field.r0
+    
     tok = Tokamak({
         "radial_grid": {
             "axis": 128,
@@ -43,22 +57,11 @@ if __name__ == "__main__":
             "profiles_2d": equilibrium.profiles_2d,
             "coordinate_system": {"grid": {"dim1": 64, "dim2": 256}}
         },
+        "core_transport": {
+            "current": {"conductivity_parallel": Function(rho_tor_norm, np.ones(rho_tor_norm.shape))}
+        }
         # "core_profiles":{ion": [{}]}
     })
-
-    rho_tor_norm = np.linspace(0, 1.0, 128)
-
-    r_ped = np.sqrt(0.88)
-
-    ne0 = Function(rho_tor_norm, np.full(rho_tor_norm.shape, 1e19))
-
-    n_src = Function(rho_tor_norm, lambda x: 7.5e20 * np.exp(15.0*(x**2-1.0)))
-
-    diff = Function(rho_tor_norm,
-                    [lambda r:r < r_ped, lambda r:r >= r_ped],
-                    [lambda x:0.5 + (x**2), lambda x: 0.11])
-
-    conv = diff * rho_tor_norm * 1.385 / equilibrium.vacuum_toroidal_field.r0
 
     tok.initialize({
         "r_ped": r_ped,  # \frac{\Phi}{\Phi_a}=0.88

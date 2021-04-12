@@ -96,60 +96,53 @@ class Tokamak(PhysicalGraph):
         return self._equilibrium
 
     @property
-    def core_profiles(self):
+    def core_profiles(self) -> CoreProfiles:
         if self._core_profiles is None:
             if self["core_profiles.profiles_1d"] != None:
                 core_profiles = self["core_profiles.profiles_1d"]
             else:
                 core_profiles = self["core_profiles"]
 
-            self._core_profiles = CoreProfiles(self.radial_grid, core_profiles,  time=self.time, parent=self)
+            self._core_profiles = CoreProfiles(core_profiles,  grid=self.radial_grid, time=self.time, parent=self)
 
         return self._core_profiles
 
     @cached_property
-    def core_transport(self):
+    def core_transport(self) -> CoreTransport:
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return List(self["core_transport"],
-                    default_factory=lambda d, *args, **kwargs: CoreTransport(self.radial_grid, d, time=self.time, *args, **kwargs), parent=self)
+        return CoreTransport(self["core_transport"], grid=self.radial_grid, time=self.time, parent=self)
 
     @cached_property
-    def core_sources(self):
+    def core_sources(self) -> CoreSources:
         """Core plasma thermal source terms (for the transport equations of the thermal species).
             Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return List(self["core_sources"],
-                    default_factory=lambda d, *args, **kwargs: CoreSources(self.radial_grid, d, time=self.time, *args, **kwargs), parent=self)
+        return CoreSources(self["core_sources"],  grid=self.radial_grid, time=self.time, parent=self)
 
     @cached_property
-    def edge_profiles(self):
+    def edge_profiles(self) -> EdgeProfiles:
         return EdgeProfiles(self["edge_profiles"], parent=self)
 
     @cached_property
-    def edge_transport(self):
+    def edge_transport(self) -> EdgeTransport:
         """Edge plasma transport. Energy terms correspond to the full kinetic energy equation
          (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
         return EdgeTransport(self["edge_transport.mode"], parent=self)
 
     @cached_property
-    def edge_sources(self):
+    def edge_sources(self) -> EdgeSources:
         """Edge plasma sources. Energy terms correspond to the full kinetic energy equation
          (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
         return EdgeSources(self["edge_sources.mode"], parent=self)
 
     @cached_property
-    def transport_solver(self):
+    def transport_solver(self) -> TransportSolver:
         return TransportSolver(self["transport_solver"],
                                time=self.time,
-                               vacuum_toroidal_field=self.vacuum_toroidal_field,
-                               equilibrium=self.equilibrium,
-                               core_transport=self.core_transport,
-                               edge_transport=self.edge_transport,
-                               core_sources=self.core_sources,
-                               edge_sources=self.edge_sources,
+                               grid=self.radial_grid,
                                parent=self)
 
     def initialize(self, spec=None, npoints=128):
@@ -195,46 +188,21 @@ class Tokamak(PhysicalGraph):
 
         v_pinch = spec.electron.density.pinch
 
-        # if isinstance(spec.electron.density.diffusivity, Function):
-
-        # elif isinstance(spec.electron.density.diffusivity, AttributeTree):
-        #     D_diff = Function(rho_n,  spec.electron.density.diffusivity[0], spec.electron.density.diffusivity[1])
-        # elif callable(spec.electron.density.diffusivity):
-        #     D_diff = Function(rho_n, spec.electron.density.diffusivity)
-        # else:
-        #     raise NotImplementedError(type(spec.electron.density.diffusivity))
-        # D0 = spec.electron.density.diffusivity.D0
-        # D1 = spec.electron.density.diffusivity.D1
-        # D2 = spec.electron.density.diffusivity.D2
-        # D_diff = Function(rho_n, [lambda r:r < r_ped, lambda r:r >= r_ped],
-        #                   [lambda x:D0 + D1 * (x**2), lambda x: D2])
-        # v_pinch = -D_diff*rho_n * spec.electron.density.pinch_number.V0 /   self.equilibrium.vacuum_toroidal_field.r0
-        # def n_core(x): return (1-x**4)**2
-        # def dn_core(x): return -4*x*(1-x**2)
-        # def n_ped(x, r_ped=r_ped): return n_core(r_ped) - (1.0-r_ped)/2.0 * \
-        #     dn_core(r_ped) * (1.0 - np.exp(2.0*(x-r_ped)/(1.0-r_ped)))
-        # #     def dn_ped(x): return dn_core(x_ped) * np.exp((x-x_ped)/(1.0-x_ped))
-
         self.core_profiles.electrons.density = spec.electron.density.n0
 
-        # Function(rho_n, spec.electron.density.n0 * (1-rho_n**4)**2)
+        if hasattr(self, 'core_transport'):
+            del self.core_transport
 
-        self.core_transport[_next_] = {
-            "current": {
-                "conductivity_parallel": np.ones(rho_n.shape)
-            },
-            "electrons": {
-                "particles": {
-                    "d": D_diff,
-                    "v": v_pinch,
-                }
-            }
+        if hasattr(self, 'core_sources'):
+            del self.core_sources
+
+        self["core_transport"] = {
+            "current": {"conductivity_parallel": np.ones(rho_n.shape)},
+            "electrons": {"particles": {"d": D_diff, "v": v_pinch}}
         }
 
-        self.core_sources[_next_] = {
-            "electrons": {
-                "particles": p_src
-            },
+        self["core_sources"] = {
+            "electrons": {"particles": p_src},
             "j_parallel": np.ones(rho_n.shape),
             "conductivity_parallel": 1.0e-8
         }
@@ -284,8 +252,10 @@ class Tokamak(PhysicalGraph):
             logger.debug(f"time={self.time}  iterator step {nstep}/{max_step}")
 
             if kwargs.get("equilibrium", False) is not False:
-                self.equilibrium.update(time=self.time, core_profiles=self.core_profiles,
-                                        **kwargs.get("equilibrium", {}))
+                self.equilibrium.update(
+                    time=self.time,
+                    core_profiles=self.core_profiles,
+                    **kwargs.get("equilibrium", {}))
 
             if kwargs.get("core_transport", False) is not False:
                 self.core_transport.update(time=self.time, **kwargs.get("core_transport", {}))
@@ -299,10 +269,18 @@ class Tokamak(PhysicalGraph):
             if kwargs.get("edge_sources", False) is not False:
                 self.edge_sources.update(time=self.time, **kwargs.get("edge_sources", {}))
 
-            core_profiles_next = self.transport_solver.solve(core_profiles_prev,
-                                                             time=self.time,
-                                                             boundary_conditions=bdry_cond,
-                                                             **kwargs.get("transport_solver", {}))
+            core_profiles_next = self.transport_solver.solve(
+                core_profiles_prev,
+                time=self.time,
+                equilibrium=self.equilibrium,
+                vacuum_toroidal_field=self.vacuum_toroidal_field,
+                core_transport=self.core_transport,
+                core_sources=self.core_sources,
+                boundary_conditions=bdry_cond,
+                edge_transport=self.edge_transport,
+                edge_sources=self.edge_sources,
+                **kwargs.get("transport_solver", {})
+            )
 
         #    if core_profiles_next.conv(core_profiles_prev) < tolerance:
         #         break

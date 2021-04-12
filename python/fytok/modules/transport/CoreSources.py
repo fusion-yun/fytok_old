@@ -1,7 +1,7 @@
 
 from functools import cached_property, lru_cache
 from fytok.modules.utilities.RadialGrid import RadialGrid
-
+import collections
 import numpy as np
 from spdm.numerical.Function import Function
 from spdm.data.PhysicalGraph import PhysicalGraph
@@ -13,13 +13,17 @@ class CoreSources(PhysicalGraph):
     """
     IDS = "core_sources"
 
-    def __init__(self,  grid: RadialGrid,  *args, time=None,   **kwargs):
+    def __init__(self, *args, grid: RadialGrid = None, time=None,   **kwargs):
         super().__init__(*args, **kwargs)
         self._time = time or 0.0
         self._grid = grid
 
     def update(self, *args, time=None, ** kwargs):
         logger.debug(f"Update {self.__class__.__name__} [time={time}] at: Do nothing")
+        if len(args) > 0 and isinstance(args[0], collections.abc.Mapping):
+            self |= args[0]
+        if time is not None:
+            self._time = time
 
     @property
     def time(self) -> float:

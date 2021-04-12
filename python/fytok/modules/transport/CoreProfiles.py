@@ -14,7 +14,7 @@ class CoreProfiles(PhysicalGraph):
     """
     IDS = "core_profiles"
 
-    def __init__(self,   grid: RadialGrid, *args, time=None,  ** kwargs):
+    def __init__(self,  *args,  grid: RadialGrid = None, time=None,  ** kwargs):
         super().__init__(*args, ** kwargs)
         self._time = time or 0.0
         self._grid = grid
@@ -446,15 +446,15 @@ class CoreProfiles(PhysicalGraph):
     #     return NotImplemented
 
     class EField(PhysicalGraph):
-        def __init__(self, cache=None,  *args, grid=None,    **kwargs):
-            super().__init__(cache, *args, axis=grid.rho_tor_norm, **kwargs)
+        def __init__(self, *args, grid=None, **kwargs):
+            super().__init__(*args, grid=grid.rho_tor_norm, **kwargs)
             self.__dict__['_grid'] = grid
 
     @cached_property
     def e_field(self):
         """Electric field, averaged on the magnetic surface. E.g for the parallel component, average(E.B) / B0,
             using core_profiles/vacuum_toroidal_field/b0[V.m ^ -1]  """
-        return CoreProfiles.Profiles1D.EField(self._cache["e_field"], grid=self.grid)
+        return CoreProfiles.EField(self["e_field"], grid=self.grid)
 
     @cached_property
     def phi_potential(self):
