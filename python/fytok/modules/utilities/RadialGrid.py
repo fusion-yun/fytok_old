@@ -12,7 +12,9 @@ class RadialGrid:
     def __init__(self, *args, **kwargs) -> None:
         self.update(*args, **kwargs)
 
-    def update(self, axis: np.ndarray = None, label: str = "rho_tor_norm", equilibrium=None, **kwargs):
+    def update(self, axis: np.ndarray = None, label: str = "rho_tor_norm",
+               psi_norm=None,
+               equilibrium=None, **kwargs):
 
         self._equilibrium = equilibrium
 

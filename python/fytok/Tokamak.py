@@ -216,7 +216,7 @@ class Tokamak(PhysicalGraph):
 
             # TODO: Update Edge
 
-            logger.warning(f"TODO: implemented EdgeTransport")
+            logger.warning(f"TODO: EdgeTransport")
 
             # self.edge_transport.update(time=time, equilibrium=self.equilibrium, core_profiles_prev=self.core_profiles)
 

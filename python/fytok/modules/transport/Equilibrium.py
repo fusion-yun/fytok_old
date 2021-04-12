@@ -20,6 +20,8 @@ from spdm.util.utilities import try_get
 TOLERANCE = 1.0e-6
 EPS = np.finfo(float).eps
 
+TWOPI = 2.0*scipy.constants.pi
+
 
 class MagneticSurfaceCoordinateSystem:
     r"""
@@ -107,7 +109,7 @@ class MagneticSurfaceCoordinateSystem:
             u = [u]
 
         if v is None:
-            v = np.linspace(0, 2.0*scipy.constants.pi, 128, endpoint=False)
+            v = np.linspace(0, TWOPI, 128, endpoint=False)
         elif not isinstance(v, (np.ndarray, collections.abc.Sequence)):
             v = [v]
 
@@ -136,7 +138,7 @@ class MagneticSurfaceCoordinateSystem:
                 yield r1, z1
 
     def create_mesh(self, u, v, *args, type_index=13):
-        logger.debug(f"create mesh! type indx={type_index}")
+        logger.debug(f"create mesh! type index={type_index}")
         if type_index == 13:
             rz = np.asarray([[r, z] for r, z in self.find_flux_surface(u, v[:-1])]).reshape(len(u), len(v)-1, 2)
             rz = np.hstack((rz, rz[:, :1, :]))
@@ -378,7 +380,7 @@ class Equilibrium(PhysicalGraph):
 
     def update(self, *args, test_convergence=False,  ** kwargs):
         logger.debug(f"Update {self.__class__.__name__} ")
-
+        logger.warning(f"TODO: not implemented!")
         # del self.global_quantities
         # del self.profiles_1d
         # del self.profiles_2d
@@ -601,7 +603,7 @@ class Equilibrium(PhysicalGraph):
                     \Phi_{tor}\left(\psi\right)=\int_{0}^{\psi}qd\psi
             """
             return Function(self.psi_norm, self.fpol*self._coord.surface_integrate(1.0/(self._coord.r**2)) *
-                            ((self._psi_boundary-self._psi_axis) / (2.0*scipy.constants.pi))).antiderivative
+                            ((self._psi_boundary-self._psi_axis) / (TWOPI))).antiderivative
 
         @cached_property
         def rho_tor(self):
@@ -627,7 +629,7 @@ class Equilibrium(PhysicalGraph):
             """
                 Derivative of Psi with respect to Rho_Tor[Wb/m].
             """
-            return (2.0*scipy.constants.pi*self._b0)*self.rho_tor/self.dphi_dpsi
+            return (TWOPI*self._b0)*self.rho_tor/self.dphi_dpsi
 
         @cached_property
         def dvolume_drho_tor(self)	:

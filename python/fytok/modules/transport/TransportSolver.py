@@ -46,7 +46,7 @@ class TransportSolver(PhysicalGraph):
     def radial_grid(self):
         return self._grid
 
-    def solve_general_form(self, x0, y0, gamma0,   coeff,  bc,  hyper_diff=[0.0, 0.0],  **kwargs):
+    def solve_general_form(self, x0, y0, flux0,   coeff,  bc,  hyper_diff=[0.0, 0.0],  **kwargs):
         r"""
             solve standard form
 
@@ -134,10 +134,10 @@ class TransportSolver(PhysicalGraph):
             return (u0 * ya + v0 * gammaa - w0,
                     u1 * yb + v1 * gammab - w1)
 
-        if gamma0 is None:
-            gamma0 = -d(x0) * y0.derivative + e(x0)*y0
+        if flux0 is None:
+            flux0 = -d(x0) * y0.derivative + e(x0)*y0
 
-        sol = solve_bvp(fun, bc_func, x0, np.vstack([y0.view(np.ndarray), gamma0.view(np.ndarray)]),  **kwargs)
+        sol = solve_bvp(fun, bc_func, x0, np.vstack([y0.view(np.ndarray), flux0.view(np.ndarray)]),  **kwargs)
 
         s_exp_flux = Function(sol.x,  S(sol.x, sol.y[0])).antiderivative(sol.x)
         diff_flux = Function(sol.x, -d(sol.x) * sol.yp[0])
@@ -154,6 +154,10 @@ class TransportSolver(PhysicalGraph):
             "gamma": Function(sol.x, sol.y[1]),
             "gamma_prime": Function(sol.x, sol.yp[1]),
         })
+
+        if not sol.success:
+            logger.warning(sol.message)
+
         return sol, profiles
 
     def solve(self,
@@ -294,14 +298,6 @@ class TransportSolver(PhysicalGraph):
 
         #　Current Equation
         if True:
-            # $\Psi$ flux function from current                 [Wb]
-            psi0 = try_get(core_profiles_prev, "psi", None)
-
-            if not isinstance(psi0, np.ndarray):
-                psi0 = np.ones(rho_tor_norm.shape)
-
-            # $\frac{\partial\Psi}{\partial\rho_{tor,norm}}$               [Wb/m]
-            psi0_prime = None
 
             # -----------------------------------------------------------------
             # Transport
@@ -354,9 +350,18 @@ class TransportSolver(PhysicalGraph):
             else:
                 raise NotImplementedError(sp_bc)
 
+            # $\Psi$ flux function from current                 [Wb]
+            psi0 = core_profiles_prev.psi
+
+            # $\frac{\partial\Psi}{\partial\rho_{tor,norm}}$               [Wb/m]
+            gamma0 = core_profiles_prev.dpsi_drho_tor_norm
+
+            if not isinstance(gamma0, np.ndarray):
+                gamma0 = -d * psi0.derivative + e * psi0
+
             sol, profiles = self.solve_general_form(rho_tor_norm,
                                                     psi0,
-                                                    None,
+                                                    gamma0,
                                                     (a, b,  d, e, f, g),
                                                     ((e[0], -1, 0.0), (u, v, w)),
                                                     hyper_diff=[0, 0.0001],
@@ -364,30 +369,27 @@ class TransportSolver(PhysicalGraph):
                                                     verbose=verbose,
                                                     max_nodes=max_nodes)
 
-            logger.info(f"Solve transport equations: Current {'Success' if sol.success else 'Failed'} ")
-
-            if not sol.success:
-                logger.warning(sol.message)
+            logger.info(f"Solve transport equations: Current [{'Success' if sol.success else 'Failed'}]")
 
             if sol.success:
-                core_profiles_next.psi = profiles.y
-                core_profiles_next.dpsi_drho_tor = profiles.yp
-                core_profiles_next.dgamma_current = profiles.gamma
-                core_profiles_next.j_tor = (profiles.y*fpol).derivative / vpr * \
-                    (-TWOPI*R0 / scipy.constants.mu_0/rho_tor_boundary)
+                core_profiles_next.psi = profiles.y[0]
+                core_profiles_next.dpsi_drho_tor_norm = profiles.yp[0]
+                # core_profiles_next.dgamma_current = profiles.gamma
+                # core_profiles_next.j_tor = (profiles.y*fpol).derivative / vpr * \
+                #     (-TWOPI*R0 / scipy.constants.mu_0/rho_tor_boundary)
 
-                core_profiles_next.j_parallel = profiles.gamma * \
-                    (- TWOPI / (scipy.constants.mu_0 * B0 * rho_tor_boundary)) * fpol**2/vpr
+                # core_profiles_next.j_parallel = profiles.gamma * \
+                #     (- TWOPI / (scipy.constants.mu_0 * B0 * rho_tor_boundary)) * fpol**2/vpr
 
-                core_profiles_next.e_field.parallel = (core_profiles_next.j_parallel-j_ni_exp -
-                                                       j_ni_exp*core_profiles_next.psi)/conductivity_parallel
+                # core_profiles_next.e_field.parallel = (core_profiles_next.j_parallel-j_ni_exp -
+                #                                        j_ni_exp*core_profiles_next.psi)/conductivity_parallel
             else:
                 psi_prime = (scipy.constants.pi*2.0)*B0 * rho_tor / qsf * rho_tor_boundary
-                core_profiles_next.psi_prime = psi_prime
+                core_profiles_next.dpsi_drho_tor_norm = psi_prime
                 core_profiles_next.psi = psi0[0] + psi_prime.antiderivative * 2
 
-            core_profiles_next.f_current = f*c
-            core_profiles_next.j_total = j_ni_exp
+            # core_profiles_next.f_current = f*c
+            # core_profiles_next.j_total = j_ni_exp
 
         # Particle Transport
         for sp in spec:
@@ -401,19 +403,6 @@ class TransportSolver(PhysicalGraph):
             if core_sources[sp].particles_decomposed != None:
                 se_exp += core_sources[sp].particles_decomposed.explicit_part
                 se_imp += core_sources[sp].particles_decomposed.implicit_part
-
-            ne0 = core_profiles_prev[sp].density
-
-            if rho_tor_norm is not ne0.x:
-                ne0 = ne0(rho_tor_norm)
-
-            gamma0 = core_profiles_prev[sp].gamma
-
-            if not isinstance(ne0, np.ndarray):
-                ne0 = np.zeros(rho_tor_norm.shape)
-
-            if not isinstance(gamma0, np.ndarray):
-                gamma0 = None
 
             a = rho_tor_boundary * vpr * inv_tau
             b = rho_tor_boundary * vprm * inv_tau
@@ -435,6 +424,16 @@ class TransportSolver(PhysicalGraph):
             else:
                 raise NotImplementedError(sp_bc)
 
+            ne0 = core_profiles_prev[sp].density
+
+            if rho_tor_norm is not ne0.x:
+                ne0 = Function(rho_tor_norm, ne0(rho_tor_norm))
+
+            gamma0 = core_profiles_prev[sp].gamma
+
+            if not isinstance(gamma0, np.ndarray):
+                gamma0 = -d * ne0.derivative + e * ne0
+
             sol, profiles = self.solve_general_form(
                 rho_tor_norm,
                 ne0,
@@ -449,10 +448,7 @@ class TransportSolver(PhysicalGraph):
             )
 
             logger.info(
-                f"Solve transport equations: {sp.capitalize()} particle {'Success' if sol.success else 'Failed'} ")
-
-            if not sol.success:
-                logger.warning(sol.message)
+                f"Solve transport equations: {sp.capitalize()} particle [{'Success' if sol.success else 'Failed'}] ")
 
             core_profiles_next[sp] = {
                 "diff": diff,
@@ -479,10 +475,10 @@ class TransportSolver(PhysicalGraph):
             }
         # if False:
         # Energy Transport
-        for sp in []:  # spec:
+        for sp in spec:
 
             diff = core_transport[sp].energy.d
-            conv = core_transport[sp].energy.v
+            v_pinch = core_transport[sp].energy.v
 
             qs_exp = core_sources[sp].energy
             qs_imp = 0.0
@@ -499,18 +495,9 @@ class TransportSolver(PhysicalGraph):
             sp_prev = core_profiles_prev[sp]
             sp_next = core_profiles_next[sp]
 
-            ts_prev = sp_prev.temperature
-
-            tsp_prev = sp_prev.temperature_prime
-
-            if tsp_prev is None:
-                tsp_prev = Function(rho_tor_norm, ts_prev).derivative
-
-            ns_next = sp_next.density
-
             ns_prev = sp_prev.density
-
-            ns_flux_next = sp_next.gamma
+            ns_next = sp_next.density
+            Gs_next = sp_next.gamma
 
             a = (3/2) * ns_next * vpr * rho_tor_boundary * inv_tau
 
@@ -518,13 +505,13 @@ class TransportSolver(PhysicalGraph):
 
             d = vpr * gm3 * ns_next * diff / rho_tor_boundary
 
-            e = vpr * gm3 * ns_next * conv + ns_flux_next - vpr * (3/2)*k_phi * rho_tor * ns_next
+            e = vpr * gm3 * ns_next * v_pinch + sp_prev.gamma - vpr * (3/2)*k_phi * rho_tor * ns_next
 
             f = vpr * (qs_exp) * rho_tor_boundary
 
             g = vpr * (qs_imp + (3*k_rho_bdry - k_phi * vpr.derivative)*ns_next) * rho_tor_boundary
 
-            sp_bc = bc[sp]["energy"]
+            sp_bc = boundary_conditions[sp]["energy"]
 
             if sp_bc.identifier.index == 1:
                 u = 1
@@ -533,10 +520,13 @@ class TransportSolver(PhysicalGraph):
             else:
                 raise NotImplementedError(sp_bc)
 
+            Ts_prev = sp_prev.temperature
+            Hs_prev = sp_prev.head_flux or None
+
             sol, profiles = self.solve_general_form(
                 rho_tor_norm,
-                ts_prev,
-                tsp_prev,
+                Ts_prev,
+                Hs_prev,
                 (a, b, d, e, f, g),
                 ((e[0], -1,  0), (u, v, w)),
                 hyper_diff=[0, 0.0001],
@@ -553,8 +543,7 @@ class TransportSolver(PhysicalGraph):
 
             core_profiles_next[sp] |= {
                 "temperature": profiles.y,
-                "temperature_prime": profiles.yp,
-                "temperature_flux": profiles.gamma
+                "heat_flux": profiles.gamma
             }
 
         # Rotation Transport
