@@ -42,6 +42,7 @@ class MagneticSurfaceCoordinateSystem:
             Initialize FluxSurface
         """
         super().__init__()
+
         self._mesh = None
         self._uv = uv
         self._psirz = psirz
@@ -135,6 +136,8 @@ class MagneticSurfaceCoordinateSystem:
                 yield r1, z1
 
     def create_mesh(self, u, v, *args, type_index=13):
+        logger.debug(f"create mesh! type indx={type_index}")
+
         if type_index == 13:
             rz = np.asarray([[r, z] for r, z in self.find_flux_surface(u, v[:-1])]).reshape(len(u), len(v)-1, 2)
             rz = np.hstack((rz, rz[:, :1, :]))
@@ -172,6 +175,7 @@ class MagneticSurfaceCoordinateSystem:
 
     @property
     def mesh(self):
+
         if self._mesh is None:
             self._mesh = self.create_mesh(*self._uv, type_index=13)
         return self._mesh
@@ -323,14 +327,10 @@ class Equilibrium(PhysicalGraph):
 
     IDS = "transport.equilibrium"
 
-    def __init__(self,  *args, uv=None, time=None,   **kwargs):
+    def __init__(self,  *args, uv=None, psirz=None,   **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._time = time or self["time"] or self._parent.time
-
         self._vacuum_toroidal_field = self["vacuum_toroidal_field"]
-
-        psirz = kwargs.get("psirz", None)
 
         if not isinstance(psirz, Field):
             psirz = Field(self["profiles_2d.psi"],
@@ -374,23 +374,18 @@ class Equilibrium(PhysicalGraph):
     def vacuum_toroidal_field(self):
         return self._vacuum_toroidal_field
 
-    @property
-    def time(self):
-        return self._time
-
     def solve(self, *args, **kwargs):
         raise NotImplementedError()
 
-    def update(self, *args, time=None, ** kwargs):
-        logger.debug(f"Update {self.__class__.__name__} [time={time}] at: Do nothing")
-        self._time = time
+    def update(self, *args,  ** kwargs):
+        logger.debug(f"Update {self.__class__.__name__} ")
 
-        del self.global_quantities
-        del self.profiles_1d
-        del self.profiles_2d
-        del self.boundary
-        del self.boundary_separatrix
-        del self.coordinate_system
+        # del self.global_quantities
+        # del self.profiles_1d
+        # del self.profiles_2d
+        # del self.boundary
+        # del self.boundary_separatrix
+        # del self.coordinate_system
 
     @cached_property
     def coordinate_system(self):

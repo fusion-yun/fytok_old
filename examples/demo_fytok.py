@@ -35,14 +35,6 @@ if __name__ == "__main__":
 
     ne0 = Function(rho_tor_norm, np.full(rho_tor_norm.shape, 1e19))
 
-    n_src = Function(rho_tor_norm, lambda x: 7.5e20 * np.exp(15.0*(x**2-1.0)))
-
-    diff = Function(rho_tor_norm,
-                    [lambda r:r < r_ped, lambda r:r >= r_ped],
-                    [lambda x:0.5 + (x**2), lambda x: 0.11])
-
-    conv = diff * rho_tor_norm * 1.385 / equilibrium.vacuum_toroidal_field.r0
-    
     tok = Tokamak({
         "radial_grid": {
             "axis": 128,
@@ -57,28 +49,14 @@ if __name__ == "__main__":
             "profiles_2d": equilibrium.profiles_2d,
             "coordinate_system": {"grid": {"dim1": 64, "dim2": 256}}
         },
-        "core_transport": {
-            "current": {"conductivity_parallel": Function(rho_tor_norm, np.ones(rho_tor_norm.shape))}
-        }
-        # "core_profiles":{ion": [{}]}
-    })
-
-    tok.initialize({
-        "r_ped": r_ped,  # \frac{\Phi}{\Phi_a}=0.88
-        "electron": {
-            "density": {
-                "n0": ne0,
-                "source": n_src,
-                "diffusivity":  diff,
-                "pinch": -conv,
+        "core_profiles": {
+            "electrons": {
+                "density":  Function(rho_tor_norm, np.full(rho_tor_norm.shape, 1e19)),
+                "temperature": Function(rho_tor_norm, lambda x: (1-x**2)**2)
             },
-            "temperature": {
-                "T0": 0.95e19,
-                "profile": lambda r: (1-r**2)**2,
+            "current": {
+                "conductivity_parallel": Function(rho_tor_norm, np.ones(rho_tor_norm.shape))
             }
-        },
-        "current": {
-            "conductivity_parallel": Function(rho_tor_norm, np.ones(rho_tor_norm.shape))
         }
     })
 
@@ -162,7 +140,27 @@ if __name__ == "__main__":
         x_axis=(tok.equilibrium.profiles_1d.psi_norm,  {"label": r"$\psi_{N}$"}),  # asd
         grid=True) .savefig("/home/salmon/workspace/output/profiles_1d.svg", transparent=True)
 
+    n_src = Function(rho_tor_norm, lambda x: 7.5e20 * np.exp(15.0*(x**2-1.0)))
+
+    diff = Function(rho_tor_norm,
+                    [lambda r:r < r_ped, lambda r:r >= r_ped],
+                    [lambda x:0.5 + (x**2), lambda x: 0.11])
+
+    v_pinch = diff * rho_tor_norm * 1.385 / equilibrium.vacuum_toroidal_field.r0
+
     tok.update(
+
+        core_transport={
+            "conductivity_parallel": 1.0,
+            "electrons": {"particles": {"d": diff, "v":  v_pinch}}
+        },
+
+        core_sources={
+            "electrons": {"particles": n_src},
+            "j_parallel": 1.0,
+            "conductivity_parallel": 1.0e-8
+        },
+
         boundary_conditions={
             "current": {
                 "identifier": {"index": 1},
@@ -196,44 +194,48 @@ if __name__ == "__main__":
         }
     )
 
-    psi_norm = tok.equilibrium.profiles_1d.psi_norm
-    rho_tor_norm = tok.equilibrium.profiles_1d.rho_tor_norm
-    rho_tor_bdry = tok.core_profiles.grid.rho_tor[-1]
+    # psi_norm = tok.equilibrium.profiles_1d.psi_norm
+    # rho_tor_norm = tok.equilibrium.profiles_1d.rho_tor_norm
+    # rho_tor_bdry = tok.core_profiles.grid.rho_tor[-1]
 
-    plot_profiles(
-        [
-            # (tok.core_profiles.electrons.source,              {"color": "green", "label": r"$S_{edge}$"}),
-            [
-                (tok.core_profiles.electrons.diff,          {"color": "green", "label": r"D"}),
-                (Function(profile["x"].values, profile["Dn"].values),                         r"$D$"),
+    # plot_profiles(
+    #     [
+    #         # (tok.core_profiles.electrons.source,              {"color": "green", "label": r"$S_{edge}$"}),
+    #         [
+    #             (tok.core_profiles.electrons.diff,          {"color": "green", "label": r"D"}),
+    #             (Function(profile["x"].values, profile["Dn"].values),                         r"$D$"),
+    #             (np.abs(tok.core_profiles.electrons.conv),  {"color": "black",  "label": r"$\left|v\right|$"}),
+    #         ],
+    #         # (tok.core_profiles.vprime,          r"vprime"),
+    #         # (tok.core_profiles.gm3,             r"gm3"),
+    #         # (tok.core_profiles.electrons.a,      r"a"),
+    #         # (tok.core_profiles.electrons.b,      r"b"),
+    #         # (tok.core_profiles.electrons.d,      r"d"),
+    #         # (tok.core_profiles.electrons.e,      r"e"),
+    #         # (tok.core_profiles.electrons.f,      r"f"),
+    #         # (tok.core_profiles.electrons.g,      r"g"),
+    #         [
+    #             (tok.core_profiles.electrons.density,                           r"$n_{e}$"),
+    #             # (Function(profile["x"].values, profile["NE"].values*1e19),                         r"$n_{e,0}$"),
+    #         ],
 
-                (np.abs(tok.core_profiles.electrons.conv),  {"color": "black",  "label": r"$\left|v\right|$"}),
-            ],
+    #         # [
+    #         #     (tok.core_profiles.electrons.density.derivative, {"color": "green", "label":  r"$n_{e}^{\prime}$"}),
+    #         #     (tok.core_profiles.electrons.density_prime,      {"color": "black", "label":  r"$n_{e}^{\prime}$"}),
+    #         # ],
+    #         # (tok.core_profiles.electrons.n_gamma,             r"$\Gamma_{e}$"),
+    #         # (tok.core_profiles.electrons.n_gamma_prime,       r"$\Gamma_{e}^{\prime}$"),
 
-            [
-                (tok.core_profiles.electrons.density,                           r"$n_{e}$"),
-                # (Function(profile["x"].values, profile["NE"].values*1e19),                         r"$n_{e,0}$"),
-            ],
+    #         [
+    #             (tok.core_profiles.electrons.s_exp_flux,    {"color": "green", "label": r"Source"}),
+    #             (tok.core_profiles.electrons.diff_flux,     {"color": "black", "label": r"Diffusive flux"}),
+    #             (tok.core_profiles.electrons.conv_flux,     {"color": "red",  "label": r"Convective flux"}),
+    #             (tok.core_profiles.electrons.residual,      {"color": "blue",   "label": r"Residual"}),
+    #         ],
 
-            # [
-            #     (tok.core_profiles.electrons.density.derivative, {"color": "green", "label":  r"$n_{e}^{\prime}$"}),
-            #     (tok.core_profiles.electrons.density_prime,      {"color": "black", "label":  r"$n_{e}^{\prime}$"}),
-            # ],
-            # (tok.core_profiles.electrons.n_gamma,             r"$\Gamma_{e}$"),
-            # (tok.core_profiles.electrons.n_gamma_prime,       r"$\Gamma_{e}^{\prime}$"),
-            # (tok.core_profiles.electrons.n_rms_residuals,     {"marker": ".", "label":  r"residuals"}),
-
-            [
-                (tok.core_profiles.electrons.s_exp_flux,    {"color": "green", "label": r"Source"}),
-                (tok.core_profiles.electrons.diff_flux,     {"color": "black", "label": r"Diffusive flux"}),
-                (tok.core_profiles.electrons.conv_flux,     {"color": "red",  "label": r"Convective flux"}),
-                (tok.core_profiles.electrons.residual,      {"color": "blue",   "label": r"Residual"}),
-            ],
-
-
-        ],
-        x_axis=(tok.core_profiles.electrons.density.x,   {"label": r"$\rho_{N}$"}),  # x axis,
-        # index_slice=slice(-100,None, 1),
-        grid=True) .savefig("/home/salmon/workspace/output/electron_1d.svg", transparent=True)
+    #     ],
+    #     x_axis=(tok.core_profiles.electrons.density.x,   {"label": r"$\rho_{N}$"}),  # x axis,
+    #     # index_slice=slice(-100,None, 1),
+    #     grid=True) .savefig("/home/salmon/workspace/output/electron_1d.svg", transparent=True)
 
     logger.info("Done")

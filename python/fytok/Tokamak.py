@@ -33,12 +33,9 @@ class Tokamak(PhysicalGraph):
 
     """
 
-    def __init__(self, *args, radial_grid=None,  **kwargs):
+    def __init__(self, *args, time=None,  radial_grid=None, **kwargs):
         super().__init__(*args,  **kwargs)
-        self._equilibrium = None
-        self._core_profiles = None
-        self._edge_profiles = None
-        self._time = 0.0
+        self._time = time or 0.0
         self._radial_grid = radial_grid or self["grid"]
 
     @property
@@ -56,56 +53,57 @@ class Tokamak(PhysicalGraph):
     def time(self):
         return self._time
 
-    @property
+    @cached_property
     def vacuum_toroidal_field(self):
-        return self._vacuum_toroidal_field
+        return self["vacuum_toroidal_field"]
 
     @cached_property
-    def wall(self):
-        return Wall(self["wall.description_2d"], parent=self)
+    def wall(self) -> Wall:
+        if self["wall.description_2d"] is not None:
+            return Wall(self["wall.description_2d"], parent=self)
+        else:
+            return Wall(self["wall"], parent=self)
 
     @cached_property
-    def tf(self):
+    def tf(self) -> TF:
         return TF(self["tf"], parent=self)
 
     @cached_property
-    def pf_active(self):
+    def pf_active(self) -> PFActive:
         return PFActive(self["pf_active"], parent=self)
 
     # --------------------------------------------------------------------------
+
+    @cached_property
+    def boundary_conditions(self):
+        return PhysicalGraph(self["boundary_conditions"], parent=self)
+
     @cached_property
     def constraints(self):
         return PhysicalGraph(self["constraints"], parent=self)
 
-    @property
+    @cached_property
     def equilibrium(self) -> Equilibrium:
-        if self._equilibrium is None:
-            if self["equilibrium.time_slice"] != None:
-                eq = self["equilibrium.time_slice"]
-            else:
-                eq = self["equilibrium"]
+        if self["equilibrium.time_slice"] != None:
+            eq = self["equilibrium.time_slice"]
+        else:
+            eq = self["equilibrium"]
 
-            self._equilibrium = Equilibrium(eq,
-                                            time=self.time,
-                                            vacuum_toroidal_field=self.vacuum_toroidal_field,
-                                            constraints=self.constraints,
-                                            wall=self.wall,
-                                            pf_active=self.pf_active,
-                                            tf=self.tf,
-                                            parent=self)
-        return self._equilibrium
+        return Equilibrium(eq,
+                           vacuum_toroidal_field=self.vacuum_toroidal_field,
+                           constraints=self.constraints,
+                           wall=self.wall,
+                           pf_active=self.pf_active,
+                           tf=self.tf,
+                           parent=self)
 
-    @property
+    @cached_property
     def core_profiles(self) -> CoreProfiles:
-        if self._core_profiles is None:
-            if self["core_profiles.profiles_1d"] != None:
-                core_profiles = self["core_profiles.profiles_1d"]
-            else:
-                core_profiles = self["core_profiles"]
-
-            self._core_profiles = CoreProfiles(core_profiles,  grid=self.radial_grid, time=self.time, parent=self)
-
-        return self._core_profiles
+        if self["core_profiles.profiles_1d"] != None:
+            core_profiles = self["core_profiles.profiles_1d"]
+        else:
+            core_profiles = self["core_profiles"]
+        return CoreProfiles(core_profiles,  grid=self.radial_grid, time=self.time, parent=self)
 
     @cached_property
     def core_transport(self) -> CoreTransport:
@@ -145,148 +143,89 @@ class Tokamak(PhysicalGraph):
                                grid=self.radial_grid,
                                parent=self)
 
-    def initialize(self, spec=None, npoints=128):
-        r"""
-            Setup dummy profile　
-                core_transport
-                core_sources
-                core_profiles
-        """
+    def update(self,
+               time=None,
+               vacuum_toroidal_field=None,
+               constraints=None,
+               equilibrium=None,
+               core_transport=None,
+               core_sources=None,
+               boundary_conditions=None,
+               tolerance=1.0e-6,
+               max_step=1,
+               **kwargs):
 
-        if not isinstance(spec, AttributeTree):
-            spec = AttributeTree(spec)
-
-        # gamma = self.equilibrium.magnetic_flux_coordinates.dvolume_drho_tor  \
-        #     * self.equilibrium.magnetic_flux_coordinates.gm2    \
-        #     / self.equilibrium.magnetic_flux_coordinates.fpol \
-        #     * self.equilibrium.magnetic_flux_coordinates.dpsi_drho_tor \
-        #     / (4.0*(scipy.constants.pi**2))
-        # gamma = Function(rho, gamma)
-        # j_total = -gamma.derivative  \
-        #     / self.equilibrium.magnetic_flux_coordinates.rho_tor[-1]**2 \
-        #     * self.equilibrium.magnetic_flux_coordinates.dpsi_drho_tor  \
-        #     * (self.equilibrium.magnetic_flux_coordinates.fpol**2) \
-        #     / (scipy.constants.mu_0*self.vacuum_toroidal_field.b0) \
-        #     * (scipy.constants.pi)
-        # j_total[1:] /= self.equilibrium.magnetic_flux_coordinates.dvolume_drho_tor[1:]
-        # j_total[0] = 2*j_total[1]-j_total[2]
-
-        r_ped = spec.r_ped
-        # rho_core = np.linspace(0.0, r_ped, npoints, endpoint=False)
-
-        # rho_edge = np.linspace(r_ped, 1.0, int((1.0-r_ped)*npoints))
-
-        # rho = np.hstack([rho_core, rho_edge])
-
-        rho_n = np.linspace(0.0, 1.0, npoints)
-
-        self._radial_grid = {"axis": rho_n, "label": "rho_tor_norm"}
-
-        p_src = spec.electron.density.source
-
-        D_diff = spec.electron.density.diffusivity
-
-        v_pinch = spec.electron.density.pinch
-
-        self.core_profiles.electrons.density = spec.electron.density.n0
-
-        if hasattr(self, 'core_transport'):
-            del self.core_transport
-
-        if hasattr(self, 'core_sources'):
-            del self.core_sources
-
-        self["core_transport"] = {
-            "current": {"conductivity_parallel": np.ones(rho_n.shape)},
-            "electrons": {"particles": {"d": D_diff, "v": v_pinch}}
-        }
-
-        self["core_sources"] = {
-            "electrons": {"particles": p_src},
-            "j_parallel": np.ones(rho_n.shape),
-            "conductivity_parallel": 1.0e-8
-        }
-
-        # self.core_sources[-1]["profiles_1d.j_parallel"] = j_total
-        # self.core_sources[-1]["profiles_1d.conductivity_parallel"] = 1.0e-8
-        # rho = self.grid.rho
-
-        # rho_tor_boundary = self.equilibrium.profiles_1d.rho_tor[-1]
-
-        # vpr = Function(self.equilibrium.profiles_1d.rho_tor_norm,
-        #                self.equilibrium.profiles_1d.dvolume_drho_tor)
-
-        # gm3 = Function(self.equilibrium.profiles_1d.rho_tor_norm,
-        #                self.equilibrium.profiles_1d.gm3)
-
-        # H = vpr * gm3
-
-        # for sp, desc in spec.items():
-        #     n_s = desc.get("density", n0)
-        #     w_scale_s = desc.get("w_scale", w_scale)
-        #     def n_core(x): return (1-(x/w_scale_s)**2)**2
-        #     def dn_core(x): return -4*x*(1-(x/w_scale_s)**2)/(w_scale_s**2)
-        #     def n_ped(x): return n_core(x_ped) - (1.0-x_ped) * dn_core(x_ped) * (1.0 - np.exp((x-x_ped)/(1.0-x_ped)))
-        #     def dn_ped(x): return dn_core(x_ped) * np.exp((x-x_ped)/(1.0-x_ped))
-        #     integral_src = Function(rho, -d_ped * H * dn_ped(rho)/(rho_tor_boundary**2))
-        #     self.core_transport.profiles_1d[sp].particles.d = lambda x: 2.0 * d_ped + (x**2)
-        #     self.core_transport.profiles_1d[sp].particles.v = (self.core_transport.profiles_1d[sp].particles.d(rho) * dn_core(rho) - d_ped*dn_ped(rho)) \
-        #         / (rho_tor_boundary) / n_core(rho) * (rho < x_ped)
-        #     self.core_sources.profiles_1d[sp].particles = n_s * integral_src.derivative/vpr
-        #     desc["density"] = n_s * (n_core(rho)*(rho < x_ped) +
-        #                              n_ped(rho) * (rho >= x_ped))
-        #     self.core_profiles.profiles_1d[sp] |= desc
-        #     logger.debug(self.core_sources)
-        # if "electrons" not in spec:
-        #     raise NotImplementedError()
-
-    def update(self, time=None, boundary_conditions=None, tolerance=1.0e-6, max_step=1,  **kwargs):
         if time is not None:
-            self._time = time
+            time = self._time
 
-        bdry_cond = AttributeTree(boundary_conditions)
+        if vacuum_toroidal_field is not None:
+            del self.vacuum_toroidal_field
+            self["vacuum_toroidal_field"] = vacuum_toroidal_field
+
+        if constraints is not None:
+            del self.constraints
+            self["constraints"] = constraints
+
+        if equilibrium is not None:
+            del self.equilibrium
+            self["equilibrium"] = equilibrium
+
+        if core_transport is not None:
+            del self.core_transport
+            self["core_transport"] = core_transport
+
+        if core_sources is not None:
+            del self.core_sources
+            self["core_sources"] = core_sources
+
+        if boundary_conditions is not None:
+            del self.boundary_conditions
+            self["boundary_conditions"] = boundary_conditions
 
         core_profiles_prev = self.core_profiles
 
         for nstep in range(max_step):
-            logger.debug(f"time={self.time}  iterator step {nstep}/{max_step}")
+            logger.debug(f"time={time}  iterator step {nstep}/{max_step}")
 
-            if kwargs.get("equilibrium", False) is not False:
-                self.equilibrium.update(
-                    time=self.time,
-                    core_profiles=self.core_profiles,
-                    **kwargs.get("equilibrium", {}))
+            self.constraints.update(time=time)
 
-            if kwargs.get("core_transport", False) is not False:
-                self.core_transport.update(time=self.time, **kwargs.get("core_transport", {}))
+            self.equilibrium.update(
+                vacuum_toroidal_field=self.vacuum_toroidal_field,
+                constraints=self.constraints,
+                core_profiles=self.core_profiles,
+            )
 
-            if kwargs.get("core_sources", False) is not False:
-                self.core_sources.update(time=self.time, **kwargs.get("core_sources", {}))
+            self.core_transport.update(time=time, equilibrium=self.equilibrium, core_profiles=self.core_profiles)
 
-            if kwargs.get("edge_transport", False) is not False:
-                self.edge_transport.update(time=self.time, **kwargs.get("edge_transport", {}))
+            self.core_sources.update(time=time, equilibrium=self.equilibrium, core_profiles=self.core_profiles)
 
-            if kwargs.get("edge_sources", False) is not False:
-                self.edge_sources.update(time=self.time, **kwargs.get("edge_sources", {}))
+            # TODO: using EdgeProfile update  self.boundary_conditions
 
             core_profiles_next = self.transport_solver.solve(
                 core_profiles_prev,
-                time=self.time,
+                time=time,
                 equilibrium=self.equilibrium,
                 vacuum_toroidal_field=self.vacuum_toroidal_field,
                 core_transport=self.core_transport,
                 core_sources=self.core_sources,
-                boundary_conditions=bdry_cond,
-                edge_transport=self.edge_transport,
-                edge_sources=self.edge_sources,
+                boundary_conditions=self.boundary_conditions,
+                tolerance=tolerance,
+                verbose=0,
                 **kwargs.get("transport_solver", {})
             )
+
+            # TODO: Update Edge
+
+            logger.warning(f"TODO: implemented EdgeTransport")
+            # self.edge_transport.update(time=time, equilibrium=self.equilibrium, core_profiles_prev=self.core_profiles)
+            # self.edge_sources.update(time=time, equilibrium=self.equilibrium, core_profiles_prev=self.core_profiles)
 
         #    if core_profiles_next.conv(core_profiles_prev) < tolerance:
         #         break
             core_profiles_prev = core_profiles_next
 
-        self._core_profiles = core_profiles_next
+        self.__dict__["core_profiles"] = core_profiles_next
+        self._time = time
 
     def plot(self, axis=None, *args,   **kwargs):
 
@@ -308,3 +247,101 @@ class Tokamak(PhysicalGraph):
         axis.set_ylabel(r"Height $Z$ [m]")
         # axis.legend()
         return axis
+
+#  def initialize(self, spec=None, npoints=128):
+#         r"""
+#             Setup dummy profile　
+#                 core_transport
+#                 core_sources
+#                 core_profiles
+#         """
+
+#         if not isinstance(spec, AttributeTree):
+#             spec = AttributeTree(spec)
+
+#         # gamma = self.equilibrium.magnetic_flux_coordinates.dvolume_drho_tor  \
+#         #     * self.equilibrium.magnetic_flux_coordinates.gm2    \
+#         #     / self.equilibrium.magnetic_flux_coordinates.fpol \
+#         #     * self.equilibrium.magnetic_flux_coordinates.dpsi_drho_tor \
+#         #     / (4.0*(scipy.constants.pi**2))
+#         # gamma = Function(rho, gamma)
+#         # j_total = -gamma.derivative  \
+#         #     / self.equilibrium.magnetic_flux_coordinates.rho_tor[-1]**2 \
+#         #     * self.equilibrium.magnetic_flux_coordinates.dpsi_drho_tor  \
+#         #     * (self.equilibrium.magnetic_flux_coordinates.fpol**2) \
+#         #     / (scipy.constants.mu_0*self.vacuum_toroidal_field.b0) \
+#         #     * (scipy.constants.pi)
+#         # j_total[1:] /= self.equilibrium.magnetic_flux_coordinates.dvolume_drho_tor[1:]
+#         # j_total[0] = 2*j_total[1]-j_total[2]
+
+#         r_ped = spec.r_ped
+#         # rho_core = np.linspace(0.0, r_ped, npoints, endpoint=False)
+
+#         # rho_edge = np.linspace(r_ped, 1.0, int((1.0-r_ped)*npoints))
+
+#         # rho = np.hstack([rho_core, rho_edge])
+
+#         rho_n = np.linspace(0.0, 1.0, npoints)
+
+#         self._radial_grid = {"axis": rho_n, "label": "rho_tor_norm"}
+
+#         p_src = spec.electrons.density.source
+
+#         D_diff = spec.electrons.density.diffusivity
+
+#         v_pinch = spec.electrons.density.pinch
+
+#         del self.core_profiles
+#         del self.core_transport
+#         del self.core_sources
+
+#         self["core_profiles"] = {
+#             "electrons": {
+#                 "density": spec.electrons.density.n0,
+#                 "temperature": 1.0
+#             }
+#         }
+
+#         self["core_transport"] = {
+#             "current": {"conductivity_parallel": np.ones(rho_n.shape)},
+#             "electrons": {"particles": {"d": D_diff, "v": v_pinch}}
+#         }
+
+#         self["core_sources"] = {
+#             "electrons": {"particles": p_src},
+#             "j_parallel": np.ones(rho_n.shape),
+#             "conductivity_parallel": 1.0e-8
+#         }
+
+#         # self.core_sources[-1]["profiles_1d.j_parallel"] = j_total
+#         # self.core_sources[-1]["profiles_1d.conductivity_parallel"] = 1.0e-8
+#         # rho = self.grid.rho
+
+#         # rho_tor_boundary = self.equilibrium.profiles_1d.rho_tor[-1]
+
+#         # vpr = Function(self.equilibrium.profiles_1d.rho_tor_norm,
+#         #                self.equilibrium.profiles_1d.dvolume_drho_tor)
+
+#         # gm3 = Function(self.equilibrium.profiles_1d.rho_tor_norm,
+#         #                self.equilibrium.profiles_1d.gm3)
+
+#         # H = vpr * gm3
+
+#         # for sp, desc in spec.items():
+#         #     n_s = desc.get("density", n0)
+#         #     w_scale_s = desc.get("w_scale", w_scale)
+#         #     def n_core(x): return (1-(x/w_scale_s)**2)**2
+#         #     def dn_core(x): return -4*x*(1-(x/w_scale_s)**2)/(w_scale_s**2)
+#         #     def n_ped(x): return n_core(x_ped) - (1.0-x_ped) * dn_core(x_ped) * (1.0 - np.exp((x-x_ped)/(1.0-x_ped)))
+#         #     def dn_ped(x): return dn_core(x_ped) * np.exp((x-x_ped)/(1.0-x_ped))
+#         #     integral_src = Function(rho, -d_ped * H * dn_ped(rho)/(rho_tor_boundary**2))
+#         #     self.core_transport.profiles_1d[sp].particles.d = lambda x: 2.0 * d_ped + (x**2)
+#         #     self.core_transport.profiles_1d[sp].particles.v = (self.core_transport.profiles_1d[sp].particles.d(rho) * dn_core(rho) - d_ped*dn_ped(rho)) \
+#         #         / (rho_tor_boundary) / n_core(rho) * (rho < x_ped)
+#         #     self.core_sources.profiles_1d[sp].particles = n_s * integral_src.derivative/vpr
+#         #     desc["density"] = n_s * (n_core(rho)*(rho < x_ped) +
+#         #                              n_ped(rho) * (rho >= x_ped))
+#         #     self.core_profiles.profiles_1d[sp] |= desc
+#         #     logger.debug(self.core_sources)
+#         # if "electrons" not in spec:
+#         #     raise NotImplementedError()

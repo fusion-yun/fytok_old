@@ -19,9 +19,7 @@ class CoreSources(PhysicalGraph):
         self._grid = grid
 
     def update(self, *args, time=None, ** kwargs):
-        logger.debug(f"Update {self.__class__.__name__} [time={time}] at: Do nothing")
-        if len(args) > 0 and isinstance(args[0], collections.abc.Mapping):
-            self |= args[0]
+        logger.debug(f"Update {self.__class__.__name__}")
         if time is not None:
             self._time = time
 

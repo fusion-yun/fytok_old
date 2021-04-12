@@ -33,10 +33,7 @@ class CoreTransport(PhysicalGraph):
         self._grid = grid
 
     def update(self, *args, time=None, ** kwargs):
-        logger.debug(f"Update {self.__class__.__name__} [time={time}] at: Do nothing")
-        self._time = time
-        if len(args) > 0 and isinstance(args[0], collections.abc.Mapping):
-            self |= args[0]
+        logger.debug(f"Update {self.__class__.__name__}")
         if time is not None:
             self._time = time
 
@@ -153,7 +150,7 @@ class CoreTransport(PhysicalGraph):
 
     @cached_property
     def conductivity_parallel(self):
-        return Function(self.grid_d.rho_tor_norm, self["current"]["conductivity_parallel"])
+        return Function(self.grid_d.rho_tor_norm, self["conductivity_parallel"])
 
     @cached_property
     def e_field_radial(self):
