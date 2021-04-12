@@ -32,10 +32,7 @@ if __name__ == "__main__":
     rho_tor_norm = np.linspace(0, 1.0, 128)
 
     tok = Tokamak({
-        "radial_grid": {
-            "axis": 128,
-            "label": "rho_tor_norm"
-        },
+        "radial_grid": {"axis": 128, "primary": "rho_tor_norm"},
         "wall":  device.wall,
         "pf_active": device.pf_active,
         "equilibrium": {
@@ -47,10 +44,11 @@ if __name__ == "__main__":
         },
         "core_profiles": {
             "electrons": {
-                "density":  Function(rho_tor_norm, np.full(rho_tor_norm.shape, 1e19)),
+                "density":  Function(rho_tor_norm,   1e19),
                 "temperature": Function(rho_tor_norm, lambda x: (1-x**2)**2)
             },
-            "conductivity_parallel": 1.0
+            "conductivity_parallel": 1.0,
+            "psi": Function(rho_tor_norm, 1.0),
         }
     })
 
@@ -196,13 +194,17 @@ if __name__ == "__main__":
         }
     )
 
-    # psi_norm = tok.equilibrium.profiles_1d.psi_norm
-    # rho_tor_norm = tok.equilibrium.profiles_1d.rho_tor_norm
+    psi_norm = tok.equilibrium.profiles_1d.psi_norm
+    rho_tor_norm = tok.equilibrium.profiles_1d.rho_tor_norm
     # rho_tor_bdry = tok.core_profiles.grid.rho_tor[-1]
 
     plot_profiles(
         [
             # (tok.core_profiles.electrons.source,              {"color": "green", "label": r"$S_{edge}$"}),
+            [
+                (tok.core_profiles.psi,              r"$\psi^{+}$"),
+                (tok.equilibrium.profiles_1d.psi.pullback(psi_norm, rho_tor_norm),              r"$\psi^{-}$"),
+            ],
             [
                 (tok.core_profiles.electrons.diff,          {"color": "green", "label": r"D"}),
                 # (Function(profile["x"].values, profile["Dn"].values),                         r"$D$"),

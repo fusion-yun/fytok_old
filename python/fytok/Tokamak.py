@@ -36,16 +36,16 @@ class Tokamak(PhysicalGraph):
     def __init__(self, *args, time=None,  radial_grid=None, **kwargs):
         super().__init__(*args,  **kwargs)
         self._time = time or 0.0
-        self._radial_grid = radial_grid or self["grid"]
+        self._radial_grid = radial_grid or self["radial_grid"]
 
     @property
     def radial_grid(self):
-        if isinstance(self._radial_grid, collections.abc.Mapping):
-            self._radial_grid = RadialGrid(self._radial_grid["axis"],
-                                           label=self._radial_grid["label"],
+        if not isinstance(self._radial_grid, RadialGrid):
+            self._radial_grid = RadialGrid(self._radial_grid.npoints,
+                                           primary=self._radial_grid.primary,
                                            equilibrium=self.equilibrium)
-        elif self._radial_grid == None:
-            self._radial_grid = RadialGrid(equilibrium=self.equilibrium)
+        # elif self._radial_grid == None:
+        #     self._radial_grid = RadialGrid(equilibrium=self.equilibrium)
 
         return self._radial_grid
 

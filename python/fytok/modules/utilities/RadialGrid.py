@@ -3,32 +3,46 @@ from functools import cached_property
 from operator import eq
 
 import numpy as np
+from numpy.lib.shape_base import _apply_over_axes_dispatcher
 from spdm.numerical.Function import Function
 from spdm.util.logger import logger
 from spdm.util.utilities import try_get
 
 
 class RadialGrid:
-    def __init__(self, *args, **kwargs) -> None:
-        self.update(*args, **kwargs)
-
-    def update(self, axis: np.ndarray = None, label: str = "rho_tor_norm",
-               psi_norm=None,
-               equilibrium=None, **kwargs):
+    def __init__(self,   axis=None, primary="rho_tor_norm", time=None, equilibrium=None, **kwargs) -> None:
 
         self._equilibrium = equilibrium
+        self._time = time or equilibrium.time
 
-        if label == "psi_norm":
+        axis = axis or 128
+
+        if isinstance(axis, int):
+            axis = np.linspace(0, 1.0, axis)
+        # elif not isinstance(axis, np.ndarray) and axis == None:
+        #     axis = np.linspace(0, 1.0, len(self._equilibrium.profiles_1d.psi_norm))
+
+        if primary == "psi_norm":
             self._psi_norm = axis
         else:
-            if not isinstance(axis, np.ndarray) and axis == None:
-                axis = np.linspace(0, 1.0, len(self._equilibrium.profiles_1d.psi_norm))
-            attr = try_get(self._equilibrium.profiles_1d, label, None)
+            attr = try_get(self._equilibrium.profiles_1d, primary, None)
             if attr is None:
-                raise AttributeError(f"Can not find attribute {label}!")
+                raise AttributeError(f"Can not find attribute {primary}!")
+
             self._psi_norm = Function(attr, self._equilibrium.profiles_1d.psi_norm)(axis)
 
         self._vacuum_toroidal_field = self._equilibrium.vacuum_toroidal_field
+
+    def update(self, time, *args, **kwargs):
+        pass
+        # self._time = time
+        # del self.psi_magnetic_axis
+        # del self.psi_axis
+        # del self.psi_boundary
+
+    @property
+    def time(self):
+        return self._time
 
     @property
     def vacuum_toroidal_field(self):
