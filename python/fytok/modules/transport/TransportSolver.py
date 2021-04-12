@@ -168,7 +168,7 @@ class TransportSolver(PhysicalGraph):
               tolerance=1.0e-3,
               max_nodes=1000,
               verbose=2,
-              **kwargs):
+              **kwargs) -> CoreProfiles:
         r"""
             Solve transport equations
 
@@ -307,7 +307,7 @@ class TransportSolver(PhysicalGraph):
             # Transport
             # plasma parallel conductivity,                                 [(Ohm*m)^-1]
             conductivity_parallel = core_transport.conductivity_parallel
-            
+
             # -----------------------------------------------------------
             # Sources
             # total non inductive current, PSI independent component,          [A/m^2]

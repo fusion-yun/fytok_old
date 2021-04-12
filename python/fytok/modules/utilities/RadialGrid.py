@@ -1,5 +1,6 @@
 import collections
 from functools import cached_property
+from operator import eq
 
 import numpy as np
 from spdm.numerical.Function import Function
@@ -8,8 +9,13 @@ from spdm.util.utilities import try_get
 
 
 class RadialGrid:
-    def __init__(self, axis: np.ndarray = None, label: str = "rho_tor_norm", equilibrium=None) -> None:
+    def __init__(self, *args, **kwargs) -> None:
+        self.update(*args, **kwargs)
+
+    def update(self, axis: np.ndarray = None, label: str = "rho_tor_norm", equilibrium=None, **kwargs):
+
         self._equilibrium = equilibrium
+
         if label == "psi_norm":
             self._psi_norm = axis
         else:

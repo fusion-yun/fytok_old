@@ -137,7 +137,6 @@ class MagneticSurfaceCoordinateSystem:
 
     def create_mesh(self, u, v, *args, type_index=13):
         logger.debug(f"create mesh! type indx={type_index}")
-
         if type_index == 13:
             rz = np.asarray([[r, z] for r, z in self.find_flux_surface(u, v[:-1])]).reshape(len(u), len(v)-1, 2)
             rz = np.hstack((rz, rz[:, :1, :]))
@@ -377,7 +376,7 @@ class Equilibrium(PhysicalGraph):
     def solve(self, *args, **kwargs):
         raise NotImplementedError()
 
-    def update(self, *args,  ** kwargs):
+    def update(self, *args, test_convergence=False,  ** kwargs):
         logger.debug(f"Update {self.__class__.__name__} ")
 
         # del self.global_quantities
@@ -386,6 +385,7 @@ class Equilibrium(PhysicalGraph):
         # del self.boundary
         # del self.boundary_separatrix
         # del self.coordinate_system
+        return test_convergence
 
     @cached_property
     def coordinate_system(self):

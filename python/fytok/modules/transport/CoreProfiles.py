@@ -2,10 +2,11 @@ import collections
 from functools import cached_property
 
 from numpy import arctan2, cos, sin, sqrt
+from spdm.data.List import List
 from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.numerical.Function import Function
 from spdm.util.logger import logger
-from spdm.data.List import List
+
 from ..utilities.RadialGrid import RadialGrid
 
 
@@ -26,6 +27,7 @@ class CoreProfiles(PhysicalGraph):
     @property
     def grid(self):
         return self._grid
+
 
     class TemperatureFit(PhysicalGraph):
         def __init__(self, *args, **kwargs):

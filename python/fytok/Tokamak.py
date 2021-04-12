@@ -187,17 +187,17 @@ class Tokamak(PhysicalGraph):
         for nstep in range(max_step):
             logger.debug(f"time={time}  iterator step {nstep}/{max_step}")
 
-            self.constraints.update(time=time)
+            self.radial_grid.update(time=time, equilibrium=self.equilibrium)
 
-            self.equilibrium.update(
-                vacuum_toroidal_field=self.vacuum_toroidal_field,
-                constraints=self.constraints,
-                core_profiles=self.core_profiles,
-            )
+            self.core_transport.update(time=time,
+                                       radial_grid=self.radial_grid,
+                                       equilibrium=self.equilibrium,
+                                       core_profiles=self.core_profiles)
 
-            self.core_transport.update(time=time, equilibrium=self.equilibrium, core_profiles=self.core_profiles)
-
-            self.core_sources.update(time=time, equilibrium=self.equilibrium, core_profiles=self.core_profiles)
+            self.core_sources.update(time=time,
+                                     radial_grid=self.radial_grid,
+                                     equilibrium=self.equilibrium,
+                                     core_profiles=self.core_profiles)
 
             # TODO: using EdgeProfile update  self.boundary_conditions
 
@@ -217,11 +217,22 @@ class Tokamak(PhysicalGraph):
             # TODO: Update Edge
 
             logger.warning(f"TODO: implemented EdgeTransport")
+
             # self.edge_transport.update(time=time, equilibrium=self.equilibrium, core_profiles_prev=self.core_profiles)
+
             # self.edge_sources.update(time=time, equilibrium=self.equilibrium, core_profiles_prev=self.core_profiles)
 
-        #    if core_profiles_next.conv(core_profiles_prev) < tolerance:
-        #         break
+            self.constraints.update(time=time)
+
+            if self.equilibrium.update(
+                vacuum_toroidal_field=self.vacuum_toroidal_field,
+                psi=core_profiles_next.psi,
+                constraints=self.constraints,
+                core_profiles=core_profiles_next,
+                test_convergence=True
+            ):
+                break
+
             core_profiles_prev = core_profiles_next
 
         self.__dict__["core_profiles"] = core_profiles_next
