@@ -7,7 +7,7 @@ from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.numerical.Function import Function
 from spdm.util.logger import logger
 
-from ..utilities.RadialGrid import RadialGrid
+from ...RadialGrid import RadialGrid
 
 
 class Profiles(PhysicalGraph):

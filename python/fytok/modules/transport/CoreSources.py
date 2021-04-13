@@ -1,11 +1,13 @@
 
-from functools import cached_property, lru_cache
-from fytok.modules.utilities.RadialGrid import RadialGrid
 import collections
+from functools import cached_property, lru_cache
+
 import numpy as np
-from spdm.numerical.Function import Function
 from spdm.data.PhysicalGraph import PhysicalGraph
+from spdm.numerical.Function import Function
 from spdm.util.logger import logger
+
+from ...RadialGrid import RadialGrid
 
 
 class CoreSources(PhysicalGraph):
@@ -41,7 +43,11 @@ class CoreSources(PhysicalGraph):
 
         @cached_property
         def energy(self):
-            return Function(self._parent.grid.rho_tor_norm, self["energy"], parent=self._parent)
+            d = self["energy"]
+            if not isinstance(d, Function):
+                return Function(self._parent.grid.rho_tor_norm, self["energy"], parent=self._parent)
+            else:
+                return d
 
         @cached_property
         def momentum(self):

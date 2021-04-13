@@ -1,12 +1,13 @@
 import collections
 from functools import cached_property, lru_cache
-from fytok.modules.utilities.RadialGrid import RadialGrid
 
 import numpy as np
-from spdm.numerical.Function import Function
 from spdm.data.List import List
 from spdm.data.PhysicalGraph import PhysicalGraph
+from spdm.numerical.Function import Function
 from spdm.util.logger import logger
+
+from ...RadialGrid import RadialGrid
 
 
 class CoreTransport(PhysicalGraph):

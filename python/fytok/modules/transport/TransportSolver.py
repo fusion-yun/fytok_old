@@ -22,7 +22,7 @@ from .EdgeProfiles import EdgeProfiles
 from .EdgeSources import EdgeSources
 from .EdgeTransport import EdgeTransport
 from .Equilibrium import Equilibrium
-from ..utilities.RadialGrid import RadialGrid
+from ...RadialGrid import RadialGrid
 EPSILON = 1.0e-15
 TOLERANCE = 1.0e-6
 
@@ -139,7 +139,7 @@ class TransportSolver(PhysicalGraph):
 
         sol = solve_bvp(fun, bc_func, x0, np.vstack([y0.view(np.ndarray), flux0.view(np.ndarray)]),  **kwargs)
 
-        s_exp_flux = Function(sol.x,  S(sol.x, sol.y[0])).antiderivative(sol.x)
+        s_exp_flux = Function(sol.x,  Function(sol.x,  S(sol.x, sol.y[0])).antiderivative)
         diff_flux = Function(sol.x, -d(sol.x) * sol.yp[0])
         conv_flux = Function(sol.x, e(sol.x) * sol.y[0])
 
@@ -168,10 +168,10 @@ class TransportSolver(PhysicalGraph):
               core_transport: CoreTransport,
               core_sources: CoreSources,
               boundary_conditions: PhysicalGraph,
-              enable_ion_solver: bool = False,
               tolerance=1.0e-3,
               max_nodes=1000,
               verbose=2,
+              enable_ion_solver: bool = False,
               **kwargs) -> CoreProfiles:
         r"""
             Solve transport equations
@@ -291,14 +291,8 @@ class TransportSolver(PhysicalGraph):
 
         core_profiles_next.gm3 = gm3
 
-        if not enable_ion_solver:
-            spec = ["electrons"]
-        else:
-            raise NotImplementedError()
-
         #　Current Equation
         if True:
-
             # -----------------------------------------------------------------
             # Transport
             # plasma parallel conductivity,                                 [(Ohm*m)^-1]
@@ -392,18 +386,18 @@ class TransportSolver(PhysicalGraph):
             # core_profiles_next.f_current = f*c
             # core_profiles_next.j_total = j_ni_exp
 
-        # Particle Transport
-        for sp in spec:
+        def particle_transport(core_profiles_next, core_profiles_prev, trans, source, boundary_conditions):
+            # Particle Transport
 
-            diff = core_transport[sp].particles.d
-            conv = core_transport[sp].particles.v
+            diff = trans.particles.d
+            conv = trans.particles.v
 
-            se_exp = core_sources[sp].particles
+            se_exp = source.particles
             se_imp = 0.0
 
-            if core_sources[sp].particles_decomposed != None:
-                se_exp += core_sources[sp].particles_decomposed.explicit_part
-                se_imp += core_sources[sp].particles_decomposed.implicit_part
+            if source.particles_decomposed != None:
+                se_exp += source.particles_decomposed.explicit_part
+                se_imp += source.particles_decomposed.implicit_part
 
             a = rho_tor_boundary * vpr * inv_tau
             b = rho_tor_boundary * vprm * inv_tau
@@ -412,7 +406,7 @@ class TransportSolver(PhysicalGraph):
             f = rho_tor_boundary * vpr * se_exp
             g = rho_tor_boundary * vpr * (se_imp + k_rho_bdry)
 
-            sp_bc = boundary_conditions[sp]["particles"]
+            sp_bc = boundary_conditions.particles
 
             # Boundary conditions for electron diffusion equation in form:
             #      U*Y + V*Gamma =W
@@ -425,12 +419,12 @@ class TransportSolver(PhysicalGraph):
             else:
                 raise NotImplementedError(sp_bc)
 
-            ne0 = try_get(core_profiles_prev, sp).density
+            ne0 = core_profiles_prev.density
 
             if rho_tor_norm is not ne0.x:
                 ne0 = Function(rho_tor_norm, ne0(rho_tor_norm))
 
-            gamma0 = core_profiles_prev[sp].gamma
+            gamma0 = core_profiles_prev.gamma
 
             if not isinstance(gamma0, np.ndarray):
                 gamma0 = -d * ne0.derivative + e * ne0
@@ -449,64 +443,58 @@ class TransportSolver(PhysicalGraph):
             )
 
             logger.info(
-                f"Solve transport equations: {sp.capitalize()} particle [{'Success' if sol.success else 'Failed'}] ")
+                f"Solve transport equations: {core_profiles_prev.label.capitalize()} particle [{'Success' if sol.success else 'Failed'}] ")
 
-            core_profiles_next[sp] = {
-                "diff": diff,
-                "conv": conv,
+            core_profiles_next["diff"] = diff
+            core_profiles_next["conv"] = conv
+            core_profiles_next["diff_flux"] = profiles.diff_flux
+            core_profiles_next["conv_flux"] = profiles.conv_flux
+            core_profiles_next["s_exp_flux"] = profiles.s_exp_flux
+            core_profiles_next["residual"] = profiles.residual
+            core_profiles_next["density"] = profiles.y
+            core_profiles_next["density_prime"] = profiles.yp
+            core_profiles_next["density_flux"] = profiles.flux
+            core_profiles_next["density_flux_prime"] = profiles.flux_prime
+            core_profiles_next["n_rms_residuals"] = profiles.rms_residuals
 
-                "diff_flux": profiles.diff_flux,
-                "conv_flux": profiles.conv_flux,
-                "s_exp_flux": profiles.s_exp_flux,
-                "residual": profiles.residual,
-
-                "density":  profiles.y,
-                "density_prime": profiles.yp,
-                "density_flux": profiles.gamma,
-                "density_flux_prime": profiles.gamma_prime,
-                "n_rms_residuals":  profiles.rms_residuals,
-            }
-
-        # Energy Transport
-        for sp in []:  # spec:
-
-            diff = core_transport[sp].energy.d
-            v_pinch = core_transport[sp].energy.v
-
-            qs_exp = core_sources[sp].energy
+        def energy_transport(core_profiles_next, core_profiles_prev, trans, source, boundary_conditions):
+            # energy transport
+            diff = trans.energy.d
+            v_pinch = trans.energy.v
+            qs_exp = source.energy
             qs_imp = 0.0
+            logger.debug(qs_exp)
 
-            if core_sources[sp].energy_decomposed != None:
-                qs_imp = core_sources[sp].energy_decomposed.implicit_part
-                qs_exp = core_sources[sp].energy_decomposed.explicit_part
-            # FIXME: Collisions is not implemented
-            # qs_exp += qei + qzi + qgi
-            # qi_imp += vei + vzi
-            logger.warning(
-                f"Energy Transport: Collisions is not implemented! [qs_exp += qei + qzi + qgi, qi_imp += vei + vzi] ")
+            if source.energy_decomposed != None:
+                qs_exp += source.energy_decomposed.explicit_part
+                qs_imp += source.energy_decomposed.implicit_part
+            # # FIXME: Collisions is not implemented
+            # # qs_exp += qei + qzi + qgi
+            # # qi_imp += vei + vzi
+            # logger.warning(
+            #     f"Energy Transport: Collisions is not implemented! [qs_exp += qei + qzi + qgi, qi_imp += vei + vzi] ")
 
-            sp_prev = core_profiles_prev[sp]
-            sp_next = core_profiles_next[sp]
+            density_prev = core_profiles_prev.density
 
-            density_prev = sp_prev["density"]
+            density_next = core_profiles_next.density
 
-            density_next = sp_next["density"]
-
-            density_flux_next = sp_next["density_flux"]
+            density_flux_next = core_profiles_next.density_flux
 
             a = (3/2) * density_next * vpr * rho_tor_boundary * inv_tau
 
             b = (3/2) * density_prev * (vprm**(5/3)/vpr**(2/3)) * rho_tor_boundary * inv_tau
+            b = Function(rho_tor_norm, np.hstack(([0], b[1:])))
 
             d = vpr * gm3 * density_next * diff / rho_tor_boundary
 
-            e = vpr * gm3 * density_next * v_pinch + density_flux_next - vpr * (3/2)*k_phi * rho_tor * density_next
+            e = vpr * gm3 * density_next * v_pinch + (5/2) * density_flux_next - \
+                vpr * (3/2)*k_phi * rho_tor * density_next
 
             f = vpr * (qs_exp) * rho_tor_boundary
 
             g = vpr * (qs_imp + (3*k_rho_bdry - k_phi * vpr.derivative)*density_next) * rho_tor_boundary
 
-            sp_bc = boundary_conditions[sp]["energy"]
+            sp_bc = boundary_conditions.energy
 
             if sp_bc.identifier.index == 1:
                 u = 1
@@ -515,64 +503,91 @@ class TransportSolver(PhysicalGraph):
             else:
                 raise NotImplementedError(sp_bc)
 
-            Ts_prev = sp_prev.temperature
-            Hs_prev = sp_prev.head_flux or None
+            Ts_prev = core_profiles_prev.temperature
+            Hs_prev = core_profiles_prev.head_flux or None
 
             sol, profiles = self.solve_general_form(
                 rho_tor_norm,
                 Ts_prev,
-                Hs_prev,
+                None,
                 (a, b, d, e, f, g),
                 ((e[0], -1,  0), (u, v, w)),
                 hyper_diff=[0, 0.0001],
                 tolerance=tolerance,
                 verbose=verbose,
                 max_nodes=max_nodes,
-                ignore_x=[d.x[np.argmax(np.abs(d.derivative))]]
+                ignore_x=[d.x[np.argmax(np.abs(d.derivative))]],
                 ** kwargs
             )
+            logger.info(
+                f"Solve transport equations: {core_profiles_prev.label.capitalize()} energy [{'Success' if sol.success else 'Failed'}] ")
 
-            logger.debug(
-                f"Solve transport equations: Temperature {sp_next.label}: [{'Done' if  sol.success else 'Failed' }]")
+            core_profiles_next["temperature"] = profiles.y
+            core_profiles_next["temperature_prime"] = profiles.yp
+            core_profiles_next["heat_flux"] = profiles.flux
+            core_profiles_next["T_a"] = a
+            core_profiles_next["T_b"] = b
+            core_profiles_next["T_d"] = d
+            core_profiles_next["T_e"] = e
+            core_profiles_next["T_diff_flux"] = profiles.diff_flux
+            core_profiles_next["T_conv_flux"] = profiles.conv_flux
+            core_profiles_next["T_s_exp_flux"] = profiles.s_exp_flux
+            core_profiles_next["T_residual"] = profiles.residual
 
-            core_profiles_next[sp]["temperature"] = profiles.y,
-            core_profiles_next[sp]["heat_flux"] = profiles.flux
-
-        # Rotation Transport
-        if False:
+        def rotation_transport(core_profiles_next, core_profiles_prev, trans, source, boundary_conditions):
             r"""
-                Note:
-
-                    .. math::  \left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(V^{\prime\frac{5}{3}}\left\langle R\right\rangle \
-                                m_{i}n_{i}u_{i,\varphi}\right)+\frac{\partial}{\partial\rho}\Phi_{i}=V^{\prime}\left[U_{i,\varphi,exp}-U_{i,\varphi}\cdot u_{i,\varphi}+U_{zi,\varphi}\right]
-                        :label: transport_rotation
+                Rotation Transport
+                .. math::  \left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(V^{\prime\frac{5}{3}}\left\langle R\right\rangle \
+                            m_{i}n_{i}u_{i,\varphi}\right)+\frac{\partial}{\partial\rho}\Phi_{i}=V^{\prime}\left[U_{i,\varphi,exp}-U_{i,\varphi}\cdot u_{i,\varphi}+U_{zi,\varphi}\right]
+                    :label: transport_rotation
             """
             raise NotImplementedError("Rotation")
 
+        if enable_ion_solver:
+            raise NotImplementedError()
+
+        else:
+            core_profiles_next["electrons"] = {"label": "electrons"}
+            particle_transport(
+                core_profiles_next.electrons,
+                core_profiles_prev.electrons,
+                core_transport.electrons,
+                core_sources.electrons,
+                boundary_conditions.electrons
+            )
+            energy_transport(
+                core_profiles_next.electrons,
+                core_profiles_prev.electrons,
+                core_transport.electrons,
+                core_sources.electrons,
+                boundary_conditions.electrons
+            )
+
         return core_profiles_next
-# while time < end_time
-#     repeat until converged
-#         calculate equilibrium
-#         begin parallel
-#             calculate source_1
-#             calculate source_2
-#             calculate source_3
-#             ···
-#             calculate source_n
-#             calculate transport_coefficients_1
-#             calculate transport_coefficients_2
-#             calculate transport_coefficients_3
-#             ···
-#             calculate transport_coefficients_n
-#         end parallel
-#
-#         begin parallel
-#             combine sources
-#             combine transport coefficients
-#         end parallel
-#
-#         calculate new profile
-#
-#
-#     update time and time_step
-# terminate
+
+        # while time < end_time
+        #     repeat until converged
+        #         calculate equilibrium
+        #         begin parallel
+        #             calculate source_1
+        #             calculate source_2
+        #             calculate source_3
+        #             ···
+        #             calculate source_n
+        #             calculate transport_coefficients_1
+        #             calculate transport_coefficients_2
+        #             calculate transport_coefficients_3
+        #             ···
+        #             calculate transport_coefficients_n
+        #         end parallel
+        #
+        #         begin parallel
+        #             combine sources
+        #             combine transport coefficients
+        #         end parallel
+        #
+        #         calculate new profile
+        #
+        #
+        #     update time and time_step
+        # terminate

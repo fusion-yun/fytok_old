@@ -24,7 +24,7 @@ from .modules.transport.EdgeSources import EdgeSources
 from .modules.transport.EdgeTransport import EdgeTransport
 from .modules.transport.Equilibrium import Equilibrium
 from .modules.transport.TransportSolver import TransportSolver
-from .modules.utilities.RadialGrid import RadialGrid
+from .RadialGrid import RadialGrid
 
 TWOPI = scipy.constants.pi*2.0
 
@@ -41,6 +41,7 @@ class Tokamak(PhysicalGraph):
         super().__init__(*args,  **kwargs)
         self._time = time or 0.0
         self._radial_grid = radial_grid or self["radial_grid"]
+        self._species = {}
 
     @property
     def radial_grid(self):
@@ -139,6 +140,9 @@ class Tokamak(PhysicalGraph):
          (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
         return EdgeSources(self["edge_sources.mode"], parent=self)
+
+    def particle_species(self):
+        pass
 
     @cached_property
     def transport_solver(self) -> TransportSolver:

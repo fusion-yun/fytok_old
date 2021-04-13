@@ -2,8 +2,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from fytok.Tokamak import Tokamak
 import scipy.constants
+from fytok.Tokamak import Tokamak
 from spdm.data.Collection import Collection
 from spdm.data.File import File
 from spdm.numerical.Function import Function
@@ -22,12 +22,12 @@ if __name__ == "__main__":
 
     device = File("/home/salmon/workspace/fytok/data/mapping/ITER/imas/3/static/config.xml").entry
     equilibrium = File(
-        "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
-        # "/home/salmon/workspace/data/15MA inductive - burn/Increased domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16VVHR.txt",
+        # "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
+        "/home/salmon/workspace/data/15MA inductive - burn/Increased domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16VVHR.txt",
         # "/home/salmon/workspace/data/Limiter plasmas-7.5MA li=1.1/Limiter plasmas 7.5MA-EQDSK/Limiter_7.5MA_outbord.EQDSK",
         format="geqdsk").entry
 
-    # profile = pd.read_csv('/home/salmon/workspace/data/15MA inductive - burn/profile.txt', sep='\t')
+    profile = pd.read_csv('/home/salmon/workspace/data/15MA inductive - burn/profile.txt', sep='\t')
 
     tok = Tokamak({
         "radial_grid": {"axis": 64, "primary": "rho_tor_norm"},
@@ -42,6 +42,7 @@ if __name__ == "__main__":
         },
         "core_profiles": {
             "electrons": {
+                "label": "electrons",
                 "density":     1e19,
                 "temperature": lambda x: (1-x**2)**2
             },
@@ -159,18 +160,20 @@ if __name__ == "__main__":
         * (scipy.constants.pi)
 
     # j_parallel = Function(gamma.x,  j_parallel )
-
+    T_src = Function(profile['x'].values, profile['Joh'].values)
     tok.update(
         core_transport={
             "conductivity_parallel": 1.0,
-            "electrons": {"particles": {
-                "d": diff,
-                "v": - v_pinch}}
+            "electrons": {
+                "particles": {"d": diff,  "v": - v_pinch},
+                "energy": {"d":  diff*10,  "v": -v_pinch*10},
+            }
         },
 
         core_sources={
             "electrons": {
-                "particles": n_src
+                "particles": n_src,
+                "energy":  T_src,
             },
             "j_parallel": j_parallel.pullback(psi_norm, rho_tor_norm).view(np.ndarray),
             "conductivity_parallel": 1.0e-8
@@ -225,31 +228,34 @@ if __name__ == "__main__":
                 # (Function(profile["x"].values, profile["Dn"].values),                         r"$D$"),
                 (np.abs(tok.core_profiles.electrons.conv),  {"color": "black",  "label": r"$\left|v\right|$"}),
             ],
-            # (tok.core_profiles.vprime,          r"vprime"),
-            # (tok.core_profiles.gm3,             r"gm3"),
-            # # (tok.core_profiles.electrons.a,      r"a"),
-            # # (tok.core_profiles.electrons.b,      r"b"),
+
+            (tok.core_profiles.electrons.density,                           r"$n_{e}$"),
+            # (tok.core_profiles.electrons.density_flux,                           r"$\Gamma_{e}$"),
             # [
-            #     (tok.core_profiles.electrons.d,      r"d"),
-            #     (tok.core_profiles.electrons.e,      r"e"),
+            #     (tok.core_profiles.electrons.density.derivative, {"color": "green", "label":  r"$n_{e}^{\prime}$"}),
+            #     (tok.core_profiles.electrons.density_prime,      {"color": "black", "label":  r"$n_{e}^{\prime}$"}),
             # ],
-            # (tok.core_profiles.electrons.f,      r"f"),
-            # (tok.core_profiles.electrons.g,      r"g"),
-            [
-                (tok.core_profiles.electrons.density,                           r"$n_{e}$"),
-                # (Function(profile["x"].values, profile["NE"].values*1e19),                         r"$n_{e,0}$"),
-            ],
-
-            [
-                (tok.core_profiles.electrons.density.derivative, {"color": "green", "label":  r"$n_{e}^{\prime}$"}),
-                (tok.core_profiles.electrons.density_prime,      {"color": "black", "label":  r"$n_{e}^{\prime}$"}),
-            ],
-
             [
                 (tok.core_profiles.electrons.s_exp_flux,    {"color": "green", "label": r"Source"}),
                 (tok.core_profiles.electrons.diff_flux,     {"color": "black", "label": r"Diffusive flux"}),
                 (tok.core_profiles.electrons.conv_flux,     {"color": "red",  "label": r"Convective flux"}),
                 (tok.core_profiles.electrons.residual,      {"color": "blue",   "label": r"Residual"}),
+            ],
+
+            (tok.core_profiles.electrons.temperature,                           r"$T_{e}$"),
+            (tok.core_profiles.electrons.temperature_prime,                     r"$T_{e}^{\prime}$"),
+            (tok.core_profiles.electrons.heat_flux,                             r"$q_{e}$"),
+
+            (tok.core_profiles.electrons.T_d,                           r"$T_d$"),
+            (tok.core_profiles.electrons.T_e,                           r"$T_e$"),
+            [
+                (tok.core_profiles.electrons.T_s_exp_flux,    {"color": "green", "label": r"Source"}),
+                (tok.core_profiles.electrons.T_diff_flux,     {"color": "black", "label": r"Diffusive flux"}),
+                (tok.core_profiles.electrons.T_conv_flux,     {"color": "red",  "label": r"Convective flux"}),
+                (tok.core_profiles.electrons.T_residual,      {"color": "blue",   "label": r"Residual"}),
+                (tok.core_profiles.electrons.temperature * \
+                 tok.core_profiles.electrons.density_flux,                           r"$\gamma_{e}$"),
+
             ],
 
         ],
