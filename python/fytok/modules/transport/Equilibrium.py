@@ -11,6 +11,7 @@ from scipy.optimize import fsolve, root_scalar
 from spdm.data.Field import Field
 from spdm.data.mesh.CurvilinearMesh import CurvilinearMesh
 from spdm.data.PhysicalGraph import PhysicalGraph
+from spdm.data.AttributeTree import AttributeTree
 from spdm.geometry.Point import Point
 from spdm.geometry.CubicSplineCurve import CubicSplineCurve
 from spdm.numerical.Function import Function
@@ -204,6 +205,11 @@ class MagneticSurfaceCoordinateSystem:
         else:
             raise ValueError(f"No x-point")
 
+    @cached_property
+    def geometric_axis(self):
+        rz = np.asarray([(s.bbox[0]+self.b[1])*0.5 for s in self.surface_mesh]).T
+        return AttributeTree({"r": rz[0], "z": rz[1]})
+
     @property
     def psi_norm(self):
         return self.mesh.uv[0]
@@ -235,15 +241,15 @@ class MagneticSurfaceCoordinateSystem:
 
     @cached_property
     def Br(self):
-        return -self.psirz(self.r, self.z, dy=1)/self.r
+        return -self.psirz(self.r, self.z, dy=1).view(np.ndarray)/self.r
 
     @cached_property
     def Bz(self):
-        return self.psirz(self.r, self.z, dx=1)/self.r
+        return self.psirz(self.r, self.z, dx=1).view(np.ndarray)/self.r
 
     @cached_property
     def Btor(self):
-        return self.fpol.reshape(self.mesh.shape[0], 1) / self.r
+        return 1.0 / self.r.view(np.ndarray) * self.fpol.reshape(self.mesh.shape[0], 1).view(np.ndarray)
 
     @cached_property
     def Bpol(self):
@@ -442,7 +448,7 @@ class Equilibrium(PhysicalGraph):
         @property
         def ip(self):
             """Plasma current (toroidal component). Positive sign means anti-clockwise when viewed from above.  [A]."""
-            return NotImplemented
+            return self._parent.profiles_1d.plasma_current[-1]
 
         @property
         def li_3(self):
@@ -583,10 +589,28 @@ class Equilibrium(PhysicalGraph):
             return self.fpol
 
         @cached_property
+        def dpressure_dpsi(self):
+            return Function(self["psi_norm"], self["dpressure_dpsi"])
+
+        @cached_property
+        def j_tor(self):
+            r"""Flux surface averaged toroidal current density = average(j_tor/R) / average(1/R) {dynamic} [A.m^-2]. """
+            d = (self.gm2*self.dvolume_drho_tor*self.dpsi_drho_tor).derivative / \
+                self.dvolume_dpsi*self._r0/scipy.constants.mu_0
+            return Function(self.psi_norm, d.view(np.ndarray))
+
+        @ cached_property
+        def j_parallel(self):
+            r"""Flux surface averaged parallel current density = average(j.B) / B0, where B0 = Equilibrium/Global/Toroidal_Field/B0 {dynamic} [A/m^2]. """
+            d = (-1/self._b0) * (self.fpol*self.dpressure_dpsi +
+                                 self.gm5*self.f_df_dpsi/self.fpol/scipy.constants.mu_0)
+            return Function(self.psi_norm, d.view(np.ndarray))
+
+        @ cached_property
         def dphi_dpsi(self):
             return self.gm1 * self.fpol * self.dvolume_dpsi / (4*scipy.constants.pi**2)
 
-        @property
+        @ property
         def q(self):
             r"""
                 Safety factor
@@ -595,7 +619,7 @@ class Equilibrium(PhysicalGraph):
             """
             return Function(self.psi_norm, self.fpol * self.dvolume_dpsi*self._coord.surface_average(1.0/(self._coord.r**2))/(4*scipy.constants.pi**2))
 
-        @cached_property
+        @ cached_property
         def phi(self):
             r"""
                 Note:
@@ -636,6 +660,17 @@ class Equilibrium(PhysicalGraph):
             """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
             return (4*scipy.constants.pi**2*self._b0)*self.rho_tor/(self.fpol*self.gm1)
 
+        @property
+        def geometric_axis(self):
+            return self._coord.geometric_axis
+
+        @cached_property
+        def plasma_current(self):
+            r"""
+                Ip
+            """
+            return self.dpsi_drho_tor*self.gm2*self.dvolume_drho_tor/(TWOPI**2)/scipy.constants.mu_0
+
         @cached_property
         def norm_grad_rho_tor(self):
             return self._coord.norm_grad_psi * self.drho_tor_dpsi.view(np.ndarray).reshape(list(self.drho_tor_dpsi.shape)+[1])
@@ -672,7 +707,7 @@ class Equilibrium(PhysicalGraph):
                 Flux surface averaged 1/B ^ 2  [T ^ -2]
                 .. math:: \left\langle \frac{1}{B^{2}}\right\rangle
             """
-            return Function(self._psi_norm, self._coord.surface_average(1.0/self.B2))
+            return Function(self._psi_norm, self._coord.surface_average(1.0/self._coord.B2))
 
         @cached_property
         def gm5(self):
@@ -680,7 +715,7 @@ class Equilibrium(PhysicalGraph):
                 Flux surface averaged B ^ 2  [T ^ 2]
                 .. math:: \left\langle B^{2}\right\rangle
             """
-            return Function(self._psi_norm, self._coord.surface_average(self.B2))
+            return Function(self._psi_norm, self._coord.surface_average(self._coord.B2))
 
         @cached_property
         def gm6(self):
@@ -688,7 +723,7 @@ class Equilibrium(PhysicalGraph):
                 Flux surface averaged  .. math:: \left | \nabla \rho_{tor}\right|^2/B^2  [T^-2]
                 .. math:: \left\langle \frac{\left|\nabla\rho\right|^{2}}{B^{2}}\right\rangle
             """
-            return Function(self._psi_norm, self._coord.surface_average(self.norm_grad_rho_tor**2/self.B2))
+            return Function(self._psi_norm, self._coord.surface_average(self.norm_grad_rho_tor**2/self._coord.B2))
 
         @cached_property
         def gm7(self):

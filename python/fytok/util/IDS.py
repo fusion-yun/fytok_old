@@ -29,14 +29,8 @@ class IDS(PhysicalGraph):
 
         return PhysicalGraph.__new__(n_cls)
 
-    def __init__(self, cache=None, *args, equilibrium=None, rho_tor_norm=None, ** kwargs):
+    def __init__(self, *args, ** kwargs):
         super().__init__(*args, ** kwargs)
-        self.__dict__['_cache'] = cache or PhysicalGraph()
 
-    def __missing__(self, key):
-        res = self._cache[key]
-        if isinstance(res, LazyProxy):
-            res = res()
-        return res
 
 

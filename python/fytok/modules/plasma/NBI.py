@@ -1,6 +1,6 @@
 
 # This is file is generated from template
-from fytok.IDS import IDS
+from ...util.IDS import IDS
 
 class NBI(IDS):
     r"""Neutral Beam Injection systems and description of the fast neutrals that arrive into the torus
