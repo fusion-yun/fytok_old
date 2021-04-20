@@ -130,7 +130,7 @@ class CoreProfiles(Profiles):
         #     """Collisionality normalised to the bounce frequency {dynamic}[-]"""
         #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
 
-    class Ion(PhysicalGraph):
+    class Ion(Profiles):
         def __init__(self,   *args, grid=None, z_ion=1, label=None, neutral_index=None,  **kwargs):
             super().__init__(*args,  **kwargs)
             # self |= {
@@ -262,7 +262,7 @@ class CoreProfiles(Profiles):
         #     """Quantities related to the different states of the species (ionisation, energy, excitation, ...)  struct_array [max_size=unbounded]  1- 1...N"""
         #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
 
-    class Neutral(PhysicalGraph):
+    class Neutral(Profiles):
         def __init__(self, cache=None,  *args, grid=None, label=None, ion_index=None, **kwargs):
             super().__init__(cache, *args, axis=grid.rho_tor_norm, **kwargs)
             self.__dict__['_grid'] = grid

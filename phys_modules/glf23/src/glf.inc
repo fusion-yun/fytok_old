@@ -5,6 +5,7 @@ c 14-june-00 added ngrow_k_gf
 c 13-june-00 added ipert_gf
 c 03-aug-99 added jeigen
 c---------------------------------------------------------------------
+      
       integer nmode
       parameter (nmode=20)
       integer iflagin_gf(30), ngrow_k_gf(0:nmode)
@@ -12,7 +13,7 @@ c---------------------------------------------------------------------
      & , lprint_gf, ikymax_gf, eigen_gf
      & , i_err, first_order_gf, ipert_gf
 
-      double precision yparam_k_gf(nmode,nmode)
+      REAL(KIND=8) yparam_k_gf(nmode,nmode)
      & , gamma_k_gf(1:4,nmode),freq_k_gf(1:4,nmode)
      & , phi_norm_k_gf(1:4,nmode)
      & , xparam_gf(30)
@@ -33,7 +34,7 @@ c---------------------------------------------------------------------
      & , eta_per_gf,eta_phi_gf,chie_e_gf
      & , cnorm_gf,xkymin_gf,xkymax_gf,amassgas_gf,amassimp_gf,zimp_gf
 
-      double complex zevec_k_gf(nmode,12,12)
+      complex(KIND=8)  zevec_k_gf(nmode,12,12)
      & , zomega_k_gf(nmode,12)
 
       common /glf/ zevec_k_gf, zomega_k_gf

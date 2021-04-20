@@ -117,13 +117,16 @@ MODULE NCLASS_MOD
         REAL(KIND=rspec), PRIVATE, PARAMETER :: &
          one=1.0_rspec,       & !REAL 1
          zero=0.0_rspec         !REAL 0
-  
+
+
+     
+
   !-------------------------------------------------------------------------------
   ! Public procedures
   !-------------------------------------------------------------------------------
-        CONTAINS
+  CONTAINS
   
-  SUBROUTINE NCLASS(m_i,m_z,                                               &
+  SUBROUTINE NCLASS(m_i,m_z,  mxms,                                              &
        &                  p_b2,p_bm2,p_eb,p_fhat,p_fm,p_ft,p_grbm2,              &
        &                  p_grphi,p_gr2phi,p_ngrth,amu_i,grt_i,temp_i,           &
        &                  den_iz,fex_iz,grp_iz,ipr,                              &
@@ -261,10 +264,13 @@ MODULE NCLASS_MOD
   !  XI_S(s)             -charge weighted density factor of s [-]
   !  TAU_SS(s1,s2)       -90 degree scattering time [s]
   !-------------------------------------------------------------------------------
+
+      
+
   !Declaration of input variables
         INTEGER, INTENT(IN) ::                                                   &
-       & m_i,m_z,ipr
-  
+       & m_i,m_z, mxms, ipr
+
         REAL(KIND=rspec), INTENT(IN) ::                                          &
        & p_b2,p_bm2,p_eb,p_fhat,p_fm(:),p_ft,p_grbm2,p_grphi,p_gr2phi,           &
        & p_ngrth,                                                                &
@@ -274,7 +280,8 @@ MODULE NCLASS_MOD
   !Declaration of output variables
         INTEGER, INTENT(OUT) ::                                                  &
        & iflag
-  
+
+      
   !Declaration of optional input variables
         LOGICAL, INTENT(IN), OPTIONAL ::                                         &
        & L_BANANA,L_PFIRSCH,L_POTATO
@@ -285,35 +292,36 @@ MODULE NCLASS_MOD
         REAL(KIND=rspec), INTENT(IN), OPTIONAL ::                                &
        & C_DEN,C_POTB,C_POTL
   
+
   !Declaration of optional output variables
         REAL(KIND=rspec), INTENT(OUT), OPTIONAL ::                               &
        & P_ETAP,P_JBBS,P_JBEX,P_JBOH
   
         INTEGER, INTENT(OUT), OPTIONAL ::                                        &
-       & M_S,JM_S(:),JZ_S(:)
+       & M_S,JM_S(mxms),JZ_S(mxms)
   
         REAL(KIND=rspec), INTENT(OUT), OPTIONAL ::                               &
-       & BSJBP_S(:),BSJBT_S(:)
+       & BSJBP_S(mxms),BSJBT_S(mxms)
   
         REAL(KIND=rspec), INTENT(OUT), OPTIONAL ::                               &
-       & DP_SS(:,:),DT_SS(:,:),                                                  &
-       & GFL_S(:,:),DN_S(:),VNEB_S(:),VNEX_S(:),VNNT_S(:)
+       & DP_SS(mxms,mxms),DT_SS(mxms,mxms),                                                  &
+       & GFL_S(5 ,mxms),DN_S(mxms),VNEB_S(mxms),VNEX_S(mxms),VNNT_S(mxms)
   
         REAL(KIND=rspec), INTENT(OUT), OPTIONAL ::                               &
-       & UPAR_S(:,:,:),UTHETA_S(:,:,:)
+       & UPAR_S(3,3,mxms),UTHETA_S(3,3,mxms)
   
         REAL(KIND=rspec), INTENT(OUT), OPTIONAL ::                               &
-       & CHIP_SS(:,:),CHIT_SS(:,:),                                              &
-       & QFL_S(:,:),CHI_S(:),VQEB_S(:),VQEX_S(:),VQNT_S(:)
+       & CHIP_SS(mxms,mxms),CHIT_SS(mxms,mxms),                                              &
+       & QFL_S(5 ,mxms),CHI_S(mxms),VQEB_S(mxms),VQEX_S(mxms),VQNT_S(mxms)
   
         REAL(KIND=rspec), INTENT(OUT), OPTIONAL ::                               &
-       & CAPM_II(:,:,:,:),CAPN_II(:,:,:,:),CALM_I(:,:,:),CALN_II(:,:,:,:)
+       & CAPM_II(3,3,m_i,m_i),  CAPN_II(3,3,m_i,m_i), CALM_I (3,3,m_i),  CALN_II(3,3,m_i,m_i)
   
         REAL(KIND=rspec), INTENT(OUT), OPTIONAL ::                               &
-       & YMU_S(:,:,:)
+       & YMU_S(3,3,mxms)
   
         REAL(KIND=rspec), INTENT(OUT), OPTIONAL ::                               &
-       & SQZ_S(:),XI_S(:),TAU_SS(:,:)
+       & SQZ_S(mxms),XI_S(mxms),TAU_SS(mxms,mxms)
   
   !Declaration of local variables
         INTEGER ::                                                               &
@@ -1449,8 +1457,8 @@ MODULE NCLASS_MOD
        & m_i,m_z
   
         REAL(KIND=rspec), INTENT(IN) ::                                          &
-       & amu_i(:),                                                               &
-       & den_iz(:,:)
+       & amu_i(m_i),                                                               &
+       & den_iz(m_i,m_z)
   
   !Declaration of output variables
         INTEGER, INTENT(OUT) ::                                                  &

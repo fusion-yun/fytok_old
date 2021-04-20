@@ -44,14 +44,14 @@ C-----------------------------------------------------------------------
  
       IMPLICIT NONE
       INTEGER N, NA
-      double precision AR(N,NA),AI(N,NA),BR(N,NA),BI(N,NA)
+      REAL(KIND=8) AR(N,NA),AI(N,NA),BR(N,NA),BI(N,NA)
  
 C-----------------------------------------------------------------------
 C DECALRATIONS FOR OUTPUT VARIABLES
 C-----------------------------------------------------------------------
  
-      double precision ALFR(N),ALFI(N),BETA(N)
-      double precision ZVR(N,NA), ZVI(N,NA)
+      REAL(KIND=8) ALFR(N),ALFI(N),BETA(N)
+      REAL(KIND=8) ZVR(N,NA), ZVI(N,NA)
       INTEGER IFAIL
  
 C-----------------------------------------------------------------------
@@ -59,8 +59,8 @@ C LOCAL VARIABLES
 C-----------------------------------------------------------------------
  
       LOGICAL WANTX
-      double precision EPS1
-      double precision ZERO,ZONE
+      REAL(KIND=8) EPS1
+      REAL(KIND=8) ZERO,ZONE
  
 C-----------------------------------------------------------------------
 C START OF ACTUAL CODING
@@ -82,11 +82,11 @@ C
 C
       IMPLICIT NONE
       INTEGER I,J,K,L,N,K1,LB,L1,NM,NK1,NM1
-      double precision AR(NM,N),AI(NM,N),BR(NM,N),BI(NM,N),
+      REAL(KIND=8) AR(NM,N),AI(NM,N),BR(NM,N),BI(NM,N),
      &       ZR(NM,N),ZI(NM,N)
-      double precision R,S,T,TI,U1,U2,XI,XR,YI,YR,RHO,U1I
+      REAL(KIND=8) R,S,T,TI,U1,U2,XI,XR,YI,YR,RHO,U1I
       LOGICAL MATZ
-      double precision ZERO,ZONE
+      REAL(KIND=8) ZERO,ZONE
 C
 C     THIS SUBROUTINE IS A COMPLEX ANALOGUE OF THE FIRST STEP OF THE
 C     QZ ALGORITHM FOR SOLVING GENERALIZED MATRIX EIGENVALUE PROBLEMS,
@@ -369,18 +369,18 @@ C
       IMPLICIT NONE
       INTEGER I,J,K,L,N,EN,K1,K2,LL,L1,NA,NM,ITS,KM1,LM1,
      X        ENM2,IERR,LOR1,ENORN
-      double precision AR(NM,N),AI(NM,N),BR(NM,N),BI(NM,N),
+      REAL(KIND=8) AR(NM,N),AI(NM,N),BR(NM,N),BI(NM,N),
      X       ALFR(N),ALFI(N),
      X       BETA(N),ZR(NM,N),ZI(NM,N)
-      double precision R,S,A1,A2,EP,SH,U1,U2,XI,XR,YI,YR,
+      REAL(KIND=8) R,S,A1,A2,EP,SH,U1,U2,XI,XR,YI,YR,
      X       ANI,A1I,A33,A34,A43,A44,
      X       BNI,B11,B33,B44,SHI,U1I,A33I,A34I,A43I,A44I,B33I,B44I,
      X       EPSA,EPSB,EPS1,ANORM,BNORM,B3344,B3344I
       INTEGER max
       LOGICAL MATZ
-      double COMPLEX Z3
+      COMPLEX(KIND=8) Z3
 C
-      double precision ZERO,ZONE,ZTWO
+      REAL(KIND=8) ZERO,ZONE,ZTWO
 C
 C
 C
@@ -754,12 +754,12 @@ C
 C
       IMPLICIT NONE
       INTEGER I,J,K,M,N,EN,II,JJ,NA,NM,NN
-      double precision AR(NM,N),AI(NM,N),BR(NM,N),BI(NM,N),
+      REAL(KIND=8) AR(NM,N),AI(NM,N),BR(NM,N),BI(NM,N),
      X       ALFR(N),ALFI(N),
      X       BETA(N),ZR(NM,N),ZI(NM,N)
-      double precision R,T,RI,TI,XI,ALMI,ALMR,BETM,EPSB
-      double COMPLEX Z3
-      double precision ZERO
+      REAL(KIND=8) R,T,RI,TI,XI,ALMI,ALMR,BETM,EPSB
+      COMPLEX(KIND=8) Z3
+      REAL(KIND=8) ZERO
 C
 C
 C
