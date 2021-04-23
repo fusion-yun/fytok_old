@@ -1,3 +1,4 @@
+import scipy.constants
 from fytok.modules.transport.CoreProfiles import CoreProfiles
 from fytok.modules.transport.CoreTransport import CoreTransport
 from fytok.modules.transport.Equilibrium import Equilibrium
@@ -237,67 +238,90 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
 
         (
             iflag,  # " int"
-            p_etap,  # " float"
-            p_jbbs,  # " float"
-            p_jbex,  # " float"
-            p_jboh,  # " float"
-            m_s,  # " int"
-            jm_s,  # " rank-1 array('i') with bounds (mxms)"
-            jz_s,  # " rank-1 array('i') with bounds (mxms)"
-            bsjbp_s,  # " rank-1 array('d') with bounds (mxms)"
-            bsjbt_s,  # " rank-1 array('d') with bounds (mxms)"
-            gfl_s,  # " rank-2 array('d') with bounds (5,mxms)"
-            dn_s,  # " rank-1 array('d') with bounds (mxms)"
-            vnnt_s,  # " rank-1 array('d') with bounds (mxms)"
-            vneb_s,  # " rank-1 array('d') with bounds (mxms)"
-            vnex_s,  # " rank-1 array('d') with bounds (mxms)"
-            dp_ss,  # " rank-2 array('d') with bounds (mxms,mxms)"
-            dt_ss,  # " rank-2 array('d') with bounds (mxms,mxms)"
-            upar_s,  # " rank-3 array('d') with bounds (3,3,mxms)"
-            utheta_s,  # " rank-3 array('d') with bounds (3,3,mxms)"
-            qfl_s,  # " rank-2 array('d') with bounds (5,mxms)"
-            chi_s,  # " rank-1 array('d') with bounds (mxms)"
-            vqnt_s,  # " rank-1 array('d') with bounds (mxms)"
-            vqeb_s,  # " rank-1 array('d') with bounds (mxms)"
-            vqex_s,  # " rank-1 array('d') with bounds (mxms)"
-            chip_ss,  # " rank-2 array('d') with bounds (mxms,mxms)"
-            chit_ss,  # " rank-2 array('d') with bounds (mxms,mxms)"
-            calm_i,  # " rank-3 array('d') with bounds (3,3,m_i)"
-            caln_ii,  # " rank-4 array('d') with bounds (3,3,m_i,m_i)"
-            capm_ii,  # " rank-4 array('d') with bounds (3,3,m_i,m_i)"
-            capn_ii,  # " rank-4 array('d') with bounds (3,3,m_i,m_i)"
+            p_etap,     # - parallel electrical resistivity [Ohm*m]
+            p_jbbs,     # - <J_bs.B> [A*T/m**2]
+            p_jbex,     # - <J_ex.B> current response to fex_iz [A*T/m**2]
+            p_jboh,     # - <J_OH.B> Ohmic current [A*T/m**2]
+            m_s,        # - number of species [ms>1]
+            jm_s,       # - isotope number of s [-]
+            jz_s,       # - charge state of s [-]
+            bsjbp_s,    # - <J_bs.B> driven by unit p'/p of s [A*T*rho/m**2]
+            bsjbt_s,    # - <J_bs.B> driven by unit T'/T of s [A*T*rho/m**2]
+            gfl_s,      # - radial particle flux comps of s [rho/m**3/s]
+                        #   m=1, banana-plateau, p' and T'
+                        #   m=2, Pfirsch-Schluter
+                        #   m=3, classical
+                        #   m=4, banana-plateau, <E.B>
+                        #   m=5, banana-plateau, external parallel force fex_iz
+            dn_s,       # -diffusion coefficients (diag comp) [rho**2/s]
+            vnnt_s,     # -convection velocity (off diag p',T' comps) [rho/s]
+            vneb_s,     # -<E.B> particle convection velocity [rho/s]
+            vnex_s,     # -external force particle convection velocity [rho/s]
+            dp_ss,      # -diffusion coefficient of s2 on p'/p of s1 [rho**2/s]
+            dt_ss,      # -diffusion coefficient of s2 on T'/T of s1 [rho**2/s]
+                        # ---------------------------------------------------------
+                        #          Momentum equation
+            upar_s,     # UPAR_S(3,m,s)-parallel flow of s from force m [T*m/s]
+                        #                m=1, p', T', Phi'
+                        #                m=2, <E.B>
+                        #                m=3, fex_iz
+            utheta_s,   # UTHETA_S(3,m,s)-poloidal flow of s from force m [m/s/T]
+                        #                  m=1, p', T'
+                        #                  m=2, <E.B>
+                        #                  m=3, fex_iz
+                        # ---------------------------------------------------------
+                        #           Energy equation
+            qfl_s,      # " rank-2 array('d') with bounds (5,mxms)"
+            chi_s,      # " rank-1 array('d') with bounds (mxms)"
+            vqnt_s,     # " rank-1 array('d') with bounds (mxms)"
+            vqeb_s,     # " rank-1 array('d') with bounds (mxms)"
+            vqex_s,     # " rank-1 array('d') with bounds (mxms)"
+            chip_ss,    # " rank-2 array('d') with bounds (mxms,mxms)"
+            chit_ss,    # " rank-2 array('d') with bounds (mxms,mxms)"
+                        # ---------------------------------------------------------
+                        #           Friction coefficients
+            calm_i,     # " rank-3 array('d') with bounds (3,3,m_i)"
+            caln_ii,    # " rank-4 array('d') with bounds (3,3,m_i,m_i)"
+            capm_ii,    # " rank-4 array('d') with bounds (3,3,m_i,m_i)"
+            capn_ii,    # " rank-4 array('d') with bounds (3,3,m_i,m_i)"
+                        # ---------------------------------------------------------
+                        #           Viscosity coefficients
             ymu_s,      # " rank-3 array('d') with bounds (3,3,mxms)"
+                        # ---------------------------------------------------------
+                        #           Miscellaneous
             sqz_s,      # " rank-1 array('d') with bounds (mxms)"
             xi_s,       # " rank-1 array('d') with bounds (mxms)"
             tau_ss,     # " rank-2 array('d') with bounds (mxms,mxms)")
         ) = nclass_mod.nclass(
-            m_i,  # " input int'
-            m_z,  # " input int'
-            mxms,  # " input int'
-            p_b2[i],  # " input float'
-            p_bm2[i],  # " input float'
-            p_eb[i],  # " input float'
-            p_fhat[i],  # " input float'
-            p_fm[i],  # " input rank-1 array('d') with bounds (f2py_p_fm_d0)"
-            p_ft[i],  # " input float'
-            p_grbm2[i],  # " input float'
-            p_grphi[i],  # " input float'
-            p_gr2phi[i],  # " input float'
-            p_ngrth[i],  # " input float'
-            amu_i,  # " input rank-1 array('d') with bounds (f2py_amu_i_d0)"
-            grt_i[i],  # " input rank-1 array('d') with bounds (f2py_grt_i_d0)"
-            temp_i[i],  # " input rank-1 array('d') with bounds (f2py_temp_i_d0)"
-            den_iz[i],  # " input rank-2 array('d') with bounds   (f2py_den_iz_d0,f2py_den_iz_d1)'
-            fex_iz[i],  # " input rank-3 array('d') with bounds   (f2py_fex_iz_d0,f2py_fex_iz_d1,f2py_fex_iz_d2)'
-            grp_iz[i],  # " input rank-2 array('d') with bounds   (f2py_grp_iz_d0,f2py_grp_iz_d1)'
-            ipr,  # " input int'
-            l_banana,       # 'input int"
-            l_pfirsch,      # 'input int"
-            l_potato,       # 'input int"
-            k_order,        # 'input int"
-            c_den[i],          # 'input float"
-            c_potb[i],         # 'input float"
-            c_potl[i],         # 'input float"
+            m_i,            # number of isotopes (> 1) [-]
+            m_z,            # highest charge state [-]
+            p_b2[i],        # <B**2> [T**2]
+            p_bm2[i],       # <1/B**2> [/T**2]
+            p_eb[i],        # <E.B> [V*T/m]
+            p_fhat[i],      # mu_0*F/(dPsi/dr) [rho/m]
+            p_fm[i],        # poloidal moments of drift factor for PS [/m**2]
+            p_ft[i],        # trapped fraction [-]
+            p_grbm2[i],     # <grad(rho)**2/B**2> [rho**2/m**2/T**2]
+            p_grphi[i],     # potential gradient Phi' [V/rho]
+            p_gr2phi[i],    # second potential gradient Psi'(Phi'/Psi')' [V/rho**2]
+            p_ngrth[i],     # <n.grad(Theta)> [/m]
+            amu_i[:],       # atomic mass number [-]
+            grt_i[i, :],     # temperature gradient [keV/rho]
+            temp_i[i, :],    # temperature [keV]
+            den_iz[i, :],   # density [/m**3]
+            fex_iz[:, i, :],  # moments of external parallel force [T*n/m**3]
+            grp_iz[i, :],   # pressure gradient [keV/m**3/rho]
+            ipr,            #
+            l_banana,       # option to include banana viscosity [logical]
+            l_pfirsch,      # option to include Pfirsch-Schluter viscosity [logical]
+            l_potato,       # option to include potato orbits [logical]
+            k_order,        # order of v moments to be solved [-]
+                            #            =2 u and q (default)
+                            #            =3 u, q, and u2
+                            #            =else error
+            c_den[i],       # C_DEN-density cutoff below which species is ignored (default 1.e10) [/m**3]
+            c_potb[i],      # C_POTB-kappa(0)*Bt(0)/[2*q(0)**2] [T]
+            c_potl[i],      # C_POTL-q(0)*R(0) [m]
         )
 
         # Update utheta with edotb rescaling

@@ -8,13 +8,12 @@ if __name__ == "__main__":
     iflag = 1
     m_s = 1
     pprint.pprint(nclass.nclass_mod.nclass.__doc__)
-    m_i = 3
-    m_z = 2
+    m_i = 1
+    m_z = 1
     maxms = 5
     d = nclass.nclass_mod.nclass(
         m_i,                             # m_i                 -number of isotopes (> 1) [-]
         m_z,                             # m_z                 -highest charge state [-]
-        maxms,
         0.10,                           # p_b2                -<B**2> [T**2]
         0.10,                           # p_bm2               -<1/B**2> [/T**2]
         0.10,                           # p_eb                -<E.B> [V*T/m]
@@ -58,7 +57,7 @@ if __name__ == "__main__":
      SQZ_S, XI_S, TAU_SS
      ) = d
 
-    pprint.pprint(iflag)
+    pprint.pprint(TAU_SS.shape)
     # iflag=iflag,
     # p_etap=0.2,                # P_ETAP,
     # 0.2,                # P_JBBS,
