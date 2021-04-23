@@ -66,7 +66,7 @@ if __name__ == "__main__":
              )
 
     plt.savefig("/home/salmon/workspace/output/contour.svg", transparent=True)
-
+    logger.debug(tok.equilibrium.boundary.shape_property)
     plot_profiles(
         [
             [
@@ -146,7 +146,7 @@ if __name__ == "__main__":
     psi_norm = tok.radial_grid.psi_norm
     rho_tor_norm = tok.radial_grid.rho_tor_norm
 
-    r_ped = 0.96 # np.sqrt(0.88)
+    r_ped = 0.96  # np.sqrt(0.88)
 
     n_src = Function(rho_tor_norm, lambda x: 30e20 * np.exp(15.0*(x**2-1.0)))
 
@@ -214,7 +214,7 @@ if __name__ == "__main__":
     rho_tor_norm = tok.equilibrium.profiles_1d.rho_tor_norm
     psi_prev = tok.equilibrium.profiles_1d.psi.pullback(psi_norm, rho_tor_norm)
     psi_next = tok.core_profiles.psi
-   
+
     plot_profiles(
         [
             [

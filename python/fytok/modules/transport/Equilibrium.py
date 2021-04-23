@@ -297,20 +297,21 @@ class MagneticSurfaceCoordinateSystem:
     def bbox(self, s=None):
         rz = np.asarray([(s.bbox[0]+self.bbox[1])*0.5 for s in self.surface_mesh]).T
 
-    def geometry_property(self, psi=None):
+    def shape_property(self, psi=None):
         def shape_box(s: Curve):
-            r, z = s.xy
+            logger.debug(type(s))
+            r, z = s.xy()
             rmin = np.min(r)
             rmax = np.max(r)
             zmin = np.min(z)
             zmax = np.max(z)
             rzmin = r[np.argmin(z)]
             rzmax = r[np.argmax(z)]
-            r_inboard = s(scipy.constants.pi).x
-            r_outboard = s(0).x
+            r_inboard = s.point(scipy.constants.pi)[0]
+            r_outboard = s.point(0)[0]
             return rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard
 
-        sbox = np.asarray([[*shape_box(s)] for s in self.find_surface(psi)])
+        sbox = np.asarray([[*shape_box(s)] for s in self.find_surface([psi])])
 
         if sbox.shape[0] == 1:
             rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard = sbox[0]
