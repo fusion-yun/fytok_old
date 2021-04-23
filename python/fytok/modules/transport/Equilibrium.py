@@ -726,6 +726,13 @@ class Equilibrium(PhysicalGraph):
             return (TWOPI*self._b0)*self.rho_tor/self.dphi_dpsi
 
         @cached_property
+        def dpsi_drho_tor_norm(self)	:
+            """
+                Derivative of Psi with respect to Rho_Tor[Wb/m].
+            """
+            return self.dpsi_drho_tor*self.rho_tor[-1]
+
+        @cached_property
         def dvolume_drho_tor(self)	:
             """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
             return (4*scipy.constants.pi**2*self._b0)*self.rho_tor/(self.fpol*self.gm1)
