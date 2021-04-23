@@ -1,7 +1,7 @@
 import sys
 import pprint
 import numpy as np
-sys.path.append("/home/salmon/workspace/fytok/phys_modules/nclass")
+sys.path.append("/home/salmon/workspace/fytok/phys_modules/")
 import nclass
 
 if __name__ == "__main__":

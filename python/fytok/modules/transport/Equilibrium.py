@@ -287,6 +287,31 @@ class MagneticSurfaceCoordinateSystem:
         """
         return Function(self.psi_norm, self.surface_integrate())
 
+    @cached_property
+    def r_inboard(self):
+        """Radial coordinate(major radius) on the inboard side of the magnetic axis[m]"""
+        return NotImplemented
+
+    @cached_property
+    def r_outboard(self):
+        """Radial coordinate(major radius) on the outboard side of the magnetic axis[m]"""
+        return NotImplemented
+
+    @cached_property
+    def elongation(self):
+        """Elongation Click here for further documentation. {dynamic} [-]"""
+        return NotImplemented
+
+    @cached_property
+    def triangularity_upper(self)	:
+        """Upper triangularity w.r.t. magnetic axis Click here for further documentation. {dynamic} [-]"""
+        return NotImplemented
+
+    @cached_property
+    def triangularity_lower(self)	:
+        """Lower triangularity w.r.t. magnetic axis Click here for further documentation. {dynamic} [-]"""
+        return NotImplemented
+
 
 class Equilibrium(PhysicalGraph):
     r"""Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
@@ -758,12 +783,27 @@ class Equilibrium(PhysicalGraph):
         @cached_property
         def r_inboard(self):
             """Radial coordinate(major radius) on the inboard side of the magnetic axis[m]"""
-            return NotImplemented
+            return Function(self._psi_norm, self._coord.r_inboard)
 
         @cached_property
         def r_outboard(self):
             """Radial coordinate(major radius) on the outboard side of the magnetic axis[m]"""
-            return NotImplemented
+            return Function(self._psi_norm, self._coord.r_outboard)
+
+        @cached_property
+        def elongation(self):
+            """Elongation Click here for further documentation. {dynamic} [-]"""
+            return Function(self._psi_norm, self._coord.elongation)
+
+        @cached_property
+        def triangularity_upper(self)	:
+            """Upper triangularity w.r.t. magnetic axis Click here for further documentation. {dynamic} [-]"""
+            return Function(self._psi_norm, self._coord.triangularity_upper)
+
+        @cached_property
+        def triangularity_lower(self)	:
+            """Lower triangularity w.r.t. magnetic axis Click here for further documentation. {dynamic} [-]"""
+            return Function(self._psi_norm, self._coord.triangularity_lower)
 
         @cached_property
         def rho_volume_norm(self)	:

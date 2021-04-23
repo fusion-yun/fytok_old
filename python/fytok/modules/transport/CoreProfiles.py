@@ -45,14 +45,6 @@ class CoreProfiles(Profiles):
     def time(self):
         return self._time
 
-    class TemperatureFit(Profiles):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-
-    class DensityFit(Profiles):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-
     class Electrons(Profiles):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
@@ -60,7 +52,7 @@ class CoreProfiles(Profiles):
         # @property
         # def temperature(self):
         #     """Temperature {dynamic} [eV]"""
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
         # @property
         # def temperature_validity(self):
@@ -69,18 +61,15 @@ class CoreProfiles(Profiles):
         #     1: valid and certified by the RO;
         #     - 1 means problem identified in the data processing (request verification by the RO),
         #     -2: invalid data, should not be used {dynamic}"""
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
-
-        @cached_property
-        def temperature_fit(self):
-            """Information on the fit used to obtain the temperature profile [eV]  """
-            return CoreProfiles.DensityFit(self._grid)
-
+        #     return NotImplemented
+        # @cached_property
+        # def temperature_fit(self):
+        #     """Information on the fit used to obtain the temperature profile [eV]  """
+        #     return NotImplemented
         # @cached_property
         # def density(self):
         #     """Density (thermal+non-thermal) {dynamic} [m^-3]"""
         #     return Function(self.grid.psi_norm, self["density"])
-
         # @property
         # def density_validity(self):
         #     """Indicator of the validity of the density profile.
@@ -88,47 +77,47 @@ class CoreProfiles(Profiles):
         #     1: valid and certified by the RO;
         #     - 1 means problem identified in the data processing (request verification by the RO),
         #     -2: invalid data, should not be used {dynamic}"""
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
-
-        @cached_property
-        def density_fit(self):
-            """Information on the fit used to obtain the density profile [m^-3]"""
-            return CoreProfiles.DensityFit(self._grid)
-
+        #     return NotImplemented
+        # @cached_property
+        # def density_fit(self):
+        #     """Information on the fit used to obtain the density profile [m^-3]"""
+        #     return NotImplemented
         # @property
         # def density_thermal(self):
         #     """Density of thermal particles {dynamic} [m^-3]"""
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
-
+        #     return NotImplemented
         # @property
         # def density_fast(self):
         #     """Density of fast (non-thermal) particles {dynamic} [m^-3]"""
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
-        # @property
-        # def pressure(self):
-        #     """Pressure(thermal+non-thermal) {dynamic}[Pa]"""
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        @cached_property
+        def pressure(self):
+            """Pressure(thermal+non-thermal) {dynamic}[Pa]"""
+            if self.pressure_fast_perpendicular is not NotImplemented:
+                return self.pressure_thermal+self.pressure_fast_perpendicular+self.pressure_fast_parallel
+            else:
+                return self.pressure_thermal
 
-        # @property
-        # def pressure_thermal(self):
-        #     """Pressure(thermal) associated with random motion ~average((v-average(v)) ^ 2) {dynamic}[Pa]"""
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        @cached_property
+        def pressure_thermal(self):
+            """Pressure(thermal) associated with random motion ~average((v-average(v)) ^ 2) {dynamic}[Pa]"""
+            return self.density*self.temperature
 
-        # @property
-        # def pressure_fast_perpendicular(self):
-        #     """Fast(non-thermal) perpendicular pressure {dynamic}[Pa]"""
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        @cached_property
+        def pressure_fast_perpendicular(self):
+            """Fast(non-thermal) perpendicular pressure {dynamic}[Pa]"""
+            return NotImplemented
 
-        # @property
-        # def pressure_fast_parallel(self):
-        #     """Fast(non-thermal) parallel pressure {dynamic}[Pa]"""
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        @cached_property
+        def pressure_fast_parallel(self):
+            """Fast(non-thermal) parallel pressure {dynamic}[Pa]"""
+            return NotImplemented
 
-        # @property
-        # def collisionality_norm(self):
-        #     """Collisionality normalised to the bounce frequency {dynamic}[-]"""
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        @cached_property
+        def collisionality_norm(self):
+            """Collisionality normalised to the bounce frequency {dynamic}[-]"""
+            return NotImplemented
 
     class Ion(Profiles):
         def __init__(self,   *args, grid=None, z_ion=1, label=None, neutral_index=None,  **kwargs):
@@ -147,34 +136,34 @@ class CoreProfiles(Profiles):
         # def z_ion(self):
         #     """Ion charge (of the dominant ionisation state; lumped ions are allowed),
         #     volume averaged over plasma radius {dynamic} [Elementary Charge Unit]  FLT_0D  """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
         # @property
         # def label(self):
         #     """String identifying ion (e.g. H+, D+, T+, He+2, C+, ...) {dynamic}    """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
         # @property
         # def neutral_index(self):
         #     """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
         # @property
         # def z_ion_1d(self):
         #     """Average charge of the ion species (sum of states charge weighted by state density and
         #     divided by ion density) {dynamic} [-]  """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
         # @property
         # def z_ion_square_1d(self):
         #     """Average square charge of the ion species (sum of states square charge weighted by
         #     state density and divided by ion density) {dynamic} [-]  """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
         # @property
         # def temperature(self):
         #     """Temperature (average over charge states when multiple charge states are considered) {dynamic} [eV]  """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
         # @property
         # def temperature_validity(self):
@@ -183,17 +172,17 @@ class CoreProfiles(Profiles):
         #     1: valid and certified by the RO;
         #     - 1 means problem identified in the data processing (request verification by the RO),
         #     -2: invalid data, should not be used {dynamic}    """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
-        @cached_property
-        def temperature_fit(self):
-            """Information on the fit used to obtain the temperature profile [eV]    """
-            return CoreProfiles.TemperatureFit(self._grid)
+        # @cached_property
+        # def temperature_fit(self):
+        #     """Information on the fit used to obtain the temperature profile [eV]    """
+        #     return NotImplemented
 
         # @property
         # def density(self):
         #     """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
         # @property
         # def density_validity(self):
@@ -202,65 +191,68 @@ class CoreProfiles(Profiles):
         #      1: valid and certified by the RO;
         #      - 1 means problem identified in the data processing (request verification by the RO),
         #      -2: invalid data, should not be used {dynamic}    """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
-        @cached_property
-        def density_fit(self):
-            """Information on the fit used to obtain the density profile [m^-3]    """
-            return CoreProfiles.DensityFit(self._grid)
+        # @cached_property
+        # def density_fit(self):
+        #     """Information on the fit used to obtain the density profile [m^-3]    """
+        #     return NotImplemented
 
         # @property
         # def density_thermal(self):
         #     """Density (thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
         # @property
         # def density_fast(self):
         #     """Density of fast (non-thermal) particles (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
-        # @property
-        # def pressure(self):
-        #     """Pressure (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        @cached_property
+        def pressure(self):
+            """Pressure (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
+            if self.pressure_fast_perpendicular is not NotImplemented:
+                return self.pressure_thermal+self.pressure_fast_perpendicular+self.pressure_fast_parallel
+            else:
+                return self.pressure_thermal
 
-        # @property
-        # def pressure_thermal(self):
-        #     """Pressure (thermal) associated with random motion ~average((v-average(v))^2)
-        #     (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        @cached_property
+        def pressure_thermal(self):
+            """Pressure (thermal) associated with random motion ~average((v-average(v))^2)
+            (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
+            return self.density*self.temperature
 
-        # @property
-        # def pressure_fast_perpendicular(self):
-        #     """Fast (non-thermal) perpendicular pressure (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        @cached_property
+        def pressure_fast_perpendicular(self):
+            """Fast (non-thermal) perpendicular pressure (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
+            return NotImplemented
 
-        # @property
-        # def pressure_fast_parallel(self):
-        #     """Fast (non-thermal) parallel pressure (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        @cached_property
+        def pressure_fast_parallel(self):
+            """Fast (non-thermal) parallel pressure (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
+            return NotImplemented
 
         # @property
         # def rotation_frequency_tor(self):
         #     """Toroidal rotation frequency (i.e. toroidal velocity divided by the major radius at which the toroidal velocity is taken)
         #     (average over charge states when multiple charge states are considered) {dynamic} [rad.s^-1]  """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
         # @property
         # def velocity(self):
         #     """Velocity (average over charge states when multiple charge states are considered) at the position of maximum major
         #     radius on every flux surface [m.s^-1]    """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
         # @property
         # def multiple_states_flag(self):
         #     """Multiple states calculation flag : 0-Only one state is considered; 1-Multiple states are considered and are described in the state  {dynamic}    """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
         # @property
         # def state(self):
         #     """Quantities related to the different states of the species (ionisation, energy, excitation, ...)  struct_array [max_size=unbounded]  1- 1...N"""
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
     class Neutral(Profiles):
         def __init__(self, cache=None,  *args, grid=None, label=None, ion_index=None, **kwargs):
@@ -277,69 +269,69 @@ class CoreProfiles(Profiles):
         # @property
         # def element(self):
         #     """List of elements forming the atom or molecule  struct_array [max_size=unbounded]  1- 1...N"""
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
         # @property
         # def label(self):
         #     """String identifying the species (e.g. H, D, T, He, C, D2, DT, CD4, ...) {dynamic}  STR_0D  """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
         # @property
         # def ion_index(self):
         #     """Index of the corresponding ion species in the ../../ion array {dynamic}  INT_0D  """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
         # @property
         # def temperature(self):
         #     """Temperature (average over charge states when multiple charge states are considered) {dynamic} [eV]  """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
         # @property
         # def density(self):
         #     """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
         # @property
         # def density_thermal(self):
         #     """Density (thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
         # @property
         # def density_fast(self):
         #     """Density of fast (non-thermal) particles (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
         # @property
         # def pressure(self):
         #     """Pressure (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
         # @property
         # def pressure_thermal(self):
         #     """Pressure (thermal) associated with random motion ~average((v-average(v))^2)
         #     (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
         # @property
         # def pressure_fast_perpendicular(self):
         #     """Fast (non-thermal) perpendicular pressure (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
         # @property
         # def pressure_fast_parallel(self):
         #     """Fast (non-thermal) parallel pressure (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
         # @property
         # def multiple_states_flag(self):
         #     """Multiple states calculation flag : 0-Only one state is considered; 1-Multiple states are considered and are described in the
         #     state structure {dynamic}  INT_0D  """
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
         # @property
         # def state(self):
         #     """Quantities related to the different states of the species (energy, excitation, ...)  struct_array [max_size=unbounded]  1- 1...N"""
-        #     return self._core_profiles.cache[self.__class__.__name__, inspect.currentframe().f_code.co_name]
+        #     return NotImplemented
 
     @cached_property
     def electrons(self):
@@ -477,7 +469,7 @@ class CoreProfiles(Profiles):
     @cached_property
     def phi_potential(self):
         """Electrostatic potential, averaged on the magnetic flux surface {dynamic}[V]"""
-        return Function(self.grid.rho_tor_norm, 0.0, description={"name": "phi_potential"})
+        return NotImplemented  # Function(self.grid.rho_tor_norm, 0.0, description={"name": "phi_potential"})
 
     @cached_property
     def rotation_frequency_tor_sonic(self):
@@ -485,7 +477,7 @@ class CoreProfiles(Profiles):
         This quantity is the toroidal angular rotation frequency due to the ExB drift, introduced in formula(43) of Hinton and Wong,
         Physics of Fluids 3082 (1985), also referred to as sonic flow in regimes in which the toroidal velocity is dominant over the
         poloidal velocity Click here for further documentation. {dynamic}[s ^ -1]"""
-        return Function(self.grid.rho_tor_norm, 0.0, description={"name": "rotation_frequency_tor_sonic"})
+        return NotImplemented  # Function(self.grid.rho_tor_norm, 0.0, description={"name": "rotation_frequency_tor_sonic"})
 
     # @cached_property
     # def q(self):
