@@ -1,3 +1,4 @@
+import numpy as np
 import scipy.constants
 from fytok.modules.transport.CoreProfiles import CoreProfiles
 from fytok.modules.transport.CoreTransport import CoreTransport
@@ -7,8 +8,6 @@ from .nclass_mod import nclass_mod
 
 
 def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core_transport: CoreTransport):
-
-    rho_tor_norm = core_profiles.grid.rho_tor_norm
 
     # ----------------------------------------------------------------------
     # Model options
@@ -20,14 +19,7 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
     # kboot   = core_transport.codeparam.parameters[1]
     kboot = 0
     #    by default :     kboot = 0nMaxSpec
-    # ----------------------------------------------------
-    #  kpotato       :  option to include potato orbits (-)
-    #                   = 0 -> off
-    #                   =   -> else on
-    # -----------------------------------------------------
-    # kpotato =  core_transport.codeparam.parameters[2]
-    kpotato = 1
-    #     by default :     kpotato = 1
+
     # -------------------------------------------------------
     #  k_order        : order of v moments to be solved (-)
     #                   = 2 -> u and q
@@ -35,20 +27,22 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
     #                   =   -> else error
     # -------------------------------------------------------
     k_order = 3
-    #      by default :     k_order = 3
+
+    # ----------------------------------------------------
+    #  l_potato       :  option to include potato orbits (-)
+    #                   = 0 -> off
+    #                   =   -> else on
+    l_potato = 1
     # ------------------------------------------------
-    #  kbanana       : option to include banana viscosity (-)
+    #  l_banana       : option to include banana viscosity (-)
     #                 = 0 -> off
     #                 =   -> else on
-    # ------------------------------------------------
-    kbanana = 1
-    #      by default :     kbanana = 1
+    l_banana = 1
     # ------------------------------------------------------------------
-    #  kpfirsch      : option to include Pfirsch-Schluter viscosity (-)
+    #  l_pfirsch      : option to include Pfirsch-Schluter viscosity (-)
     #                 = 0 -> off
     #                 =   -> else on
-    # ------------------------------------------------------------------
-    kpfirsch = 1
+    l_pfirsch = 1
 
     m_i = 1+len(core_profiles.ion)
     m_z = max([ion.z_charge for ion in core_profiles.ion])
@@ -64,17 +58,7 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
     n0 = np.sum([ion.density for ion in core_profiles.ion])
 
     psi_norm = equilibrium.profiles_1d.psi_norm
-
-    p_b2 = equilibrium.profiles_1d.gm5
-    p_bm2 = equilibrium.profiles_1d.gm4
-    p_eb = None
-    p_fpol = equilibrium.profiles_1d.fpol
-    p_fhat = (scipy.constants.mu_0*equilibrium.profiles_1d.fpol * equilibrium.profiles_1d.dpsi_drho_tor)
-    p_fm = np.ndarray([3], dtype=float)
-    p_grbm2 = equilibrium.profiles_1d.gm6
-    p_grphi = (equilibrium.profiles_1d.dphi_dpsi * equilibrium.profiles_1d.dpsi_drho_tor)
-    p_gr2phi = ((equilibrium.profiles_1d.dpsi_drho_tor**2) * equilibrium.profiles_1d.dphi_dpsi.derivative)
-    p_ngrth = None
+    rho_tor_norm = core_profiles.grid.rho_tor_norm
 
     amu_i = None
     grt_i = None
@@ -85,15 +69,13 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
     b0 = equilibrium.vacuum_toroidal_field.b0
     r0 = equilibrium.vacuum_toroidal_field.r0
 
-    rkappa0 = equilibrium.profiles_1d.elongation
+    rkappa0 = equilibrium.boundary.elongation
 
     p_eb_pr = core_profiles.e_field.parallel
 
     p_eb_pr = p_eb_pr * b0
     c_potb = rkappa0*bt0/2/q0/q0
     c_potl = q0*xr0
-
-    gr2phi = psidrho * gr2phi
 
     n_ion = len(core_profiles.ion)
     # Get some control variables from the control structure
@@ -133,15 +115,13 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
     #    RETURN
     # END if
 
-    den_riz = 0.0
-    den_r = 0.0
+    temp_i = np.vstack([core_profiles.electrons.temperature, *[ion.temperature for ion in core_profiles.ion]])
+    density_i = np.vstack([core_profiles.electrons.temperature, *[ion.temperature for ion in core_profiles.ion]])
 
     # Electron density, temperature and mass
-    den_riz[:, 1, 1] = core_profiles.electrons.density
-    den_r[:, 1, 1] = profiles.ne[:]
-    temp_ri[:, 1] = core_profiles.electrons.temperature
-    temp_r[:, 1] = profiles.te[:]
-    amu_i[1] = z_electronmass  # Electron mass in amu
+
+    amu_i = [scipy.constants.m_e/scipy.constants.m_u     # Electron mass in amu
+             * [ion.z for ion in core_profiles.ion]]
 
     # Ion densities, temperatures and mass
     # DO I = 1, profiles_rm.nmain
@@ -165,73 +145,24 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
     # END DO
     # END DO
     # m_s = m_i # Only valid for scs ions
-    a1 = geometry_rm.a0
 
-    # DO k = 1, m_s  # Over species
-
-    #    im = jif_s[k]
-    #     iza = jzf_s[k]
-
-    #     DO i = 1, profiles_rm.nr  # Over radial grid
-
-    #        if[i == 1] THEN
-
-    #            grt_ri[i, im] = 0.0
-    #             grn_riz[i, im, iza] = 0.0
-    #             grp_riz[i, im, iza] = 0.0
-
-    #         ELSE
-
-    #            dr = (profiles.rho[i] - profiles.rho[i - 1])
-    #             grt_ri[i, im] = (temp_r[i, im] - temp_r[i - 1, im])/dr
-    #             grn_riz[i, im, iza] = (den_r[i, im, iza] - den_r[i - 1, im, iza])/dr
-    #             grp_riz[i, im, iza] = (den_r[i, im, iza]*temp_r[i, im] &
-    #                                    - den_r[i - 1, im, iza]*temp_r[i - 1, im])/dr
-
-    #         END if
-
-    #     # END DO  # Over radial grid
-
-    # END DO  # Over species
-
-    c_potb = geometry_rm.kappa[1]*b0/2.0/geometry_rm.q[1]
-    c_potl = r0*geometry_rm.q[1]
-
-    jdotb_rm = geometry_rm.jdotb[:]*b0
-
-    # pis  jdotb_rm[1] = jdotb_rm[2]
-    # pis  jdotb_rm(geometry_rm.nr) = jdotb_rm(geometry_rm.nr-1]
+    a1 = equilibrium.boundary.minor_radius
+    kappa = equilibrium.boundary.elongation
+    c_potb = kappa*b0/2.0/equilibrium.profiles_1d.q[0]
+    c_potl = r0*equilibrium.profiles_1d.q[0]
 
     # Set input for NCLASS
-    # DO I = 1, profiles_rm.nr
+
     for i, x in enumerate(core_transport.grid_d.rho_tor_norm):
+        x_psi = core_transport.grid_d.psi_norm(x)
 
         # Geometry and electrical field calculations
-        # p_b2 = geometry_rm.b2[i]
-        # p_bm2 = geometry_rm.bm2[i]
-        # p_fhat = geometry_rm.fhat[i]
-        # p_fm  = geometry_rm.fm[i, :]
-        # p_grbm2 = geometry_rm.gr2bm2[i]
-        # p_ngrth = geometry_rm.grth[i]
-        # p_ft = max(geometry_rm.f_t[i], epsilon[1.0]]
-
+        grad_rho_tor2 = equilibrium.profiles_1d.gm3(x_psi)
+        fpol = equilibrium.profiles_1d.fpol(x_psi)
+        dpsi_drho_tor = equilibrium.profiles_1d.dpsi_drho_tor(x_psi)
+        jparallel = equilibrium.profiles_1d.j_parallel(x_psi)*b0
         # Parallel and radial electric field
-        # p_eb = 1.0  # rescale with total inductive current after call to NCLASS optin note taken here
-
-        e_r[1] = p_fpol[i]/r0/p_fhat[i]*profiles_rm.vtor[i, 1]
-        e_r[2] = -geometry_rm.f[i]/r0*profiles_rm.vpol[i, 1]  # pistemp check fr ninimp version
-        e_r[3] = grp_riz[i, jif_s[2], jzf_s[2]]*z_kev2joule/jzf_s[2]/z_electroncharge/den_riz[i, jif_s[2], jzf_s[2])
-
-        profiles_rm.e_rad[i] = e_r[1] + e_r[2] + e_r[3]
-
-        # p_grphi = -profiles_rm.e_rad[i]
-        # p_gr2phi = 0.0
-
         # Local variables for transport coefficients
-        d_n[:] = 0.0
-        v_eb[:] = 0.0
-        v_nt[:] = 0.0
-
         #-------------#
         #Call NCLASS  #
         #-------------#
@@ -247,7 +178,7 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
             jz_s,       # - charge state of s [-]
             bsjbp_s,    # - <J_bs.B> driven by unit p'/p of s [A*T*rho/m**2]
             bsjbt_s,    # - <J_bs.B> driven by unit T'/T of s [A*T*rho/m**2]
-            gfl_s,      # - radial particle flux comps of s [rho/m**3/s]
+            glf_s,      # - radial particle flux comps of s [rho/m**3/s]
                         #   m=1, banana-plateau, p' and T'
                         #   m=2, Pfirsch-Schluter
                         #   m=3, classical
@@ -271,43 +202,49 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
                         #                  m=3, fex_iz
                         # ---------------------------------------------------------
                         #           Energy equation
-            qfl_s,      # " rank-2 array('d') with bounds (5,mxms)"
-            chi_s,      # " rank-1 array('d') with bounds (mxms)"
-            vqnt_s,     # " rank-1 array('d') with bounds (mxms)"
-            vqeb_s,     # " rank-1 array('d') with bounds (mxms)"
-            vqex_s,     # " rank-1 array('d') with bounds (mxms)"
-            chip_ss,    # " rank-2 array('d') with bounds (mxms,mxms)"
-            chit_ss,    # " rank-2 array('d') with bounds (mxms,mxms)"
+            qfl_s,      # -radial heat conduction flux comps of s [W*rho/m**3]
+                        #             m=1, banana-plateau, p' and T'
+                        #             m=2, Pfirsch-Schluter
+                        #             m=3, classical
+                        #             m=4, banana-plateau, <E.B>
+                        #             m=5, banana-plateau, external parallel force fex_iz
+            chi_s,      # -conduction coefficients (diag comp) [rho**2/s]
+            vqnt_s,     # -conduction velocity (off diag p',T' comps) [rho/s]
+            vqeb_s,     # -<E.B> heat convection velocity [rho/s]
+            vqex_s,     # -external force heat convection velocity [rho/s]
+            chip_ss,    # -heat cond coefficient of s2 on p'/p of s1 [rho**2/s]
+            chit_ss,    # -heat cond coefficient of s2 on T'/T of s1 [rho**2/s]
                         # ---------------------------------------------------------
                         #           Friction coefficients
-            calm_i,     # " rank-3 array('d') with bounds (3,3,m_i)"
-            caln_ii,    # " rank-4 array('d') with bounds (3,3,m_i,m_i)"
-            capm_ii,    # " rank-4 array('d') with bounds (3,3,m_i,m_i)"
-            capn_ii,    # " rank-4 array('d') with bounds (3,3,m_i,m_i)"
+            calm_i,     # test particle (tp) friction matrix [-]
+            caln_ii,    # field particle (fp) friction matrix [-]
+            capm_ii,    # tp eff friction matrix [kg/m**3/s]
+            capn_ii,    # fp eff friction matrix [kg/m**3/s]
                         # ---------------------------------------------------------
                         #           Viscosity coefficients
-            ymu_s,      # " rank-3 array('d') with bounds (3,3,mxms)"
+            ymu_s,      # normalized viscosity for s [kg/m**3/s]
                         # ---------------------------------------------------------
                         #           Miscellaneous
-            sqz_s,      # " rank-1 array('d') with bounds (mxms)"
-            xi_s,       # " rank-1 array('d') with bounds (mxms)"
-            tau_ss,     # " rank-2 array('d') with bounds (mxms,mxms)")
+            sqz_s,      # orbit squeezing factor for s [-]
+            xi_s,       # charge weighted density factor of s [-]
+            tau_ss,     # 90 degree scattering time [s]
         ) = nclass_mod.nclass(
-            m_i,            # number of isotopes (> 1) [-]
-            m_z,            # highest charge state [-]
-            p_b2[i],        # <B**2> [T**2]
-            p_bm2[i],       # <1/B**2> [/T**2]
-            p_eb[i],        # <E.B> [V*T/m]
-            p_fhat[i],      # mu_0*F/(dPsi/dr) [rho/m]
-            p_fm[i],        # poloidal moments of drift factor for PS [/m**2]
-            p_ft[i],        # trapped fraction [-]
-            p_grbm2[i],     # <grad(rho)**2/B**2> [rho**2/m**2/T**2]
-            p_grphi[i],     # potential gradient Phi' [V/rho]
-            p_gr2phi[i],    # second potential gradient Psi'(Phi'/Psi')' [V/rho**2]
-            p_ngrth[i],     # <n.grad(Theta)> [/m]
-            amu_i[:],       # atomic mass number [-]
-            grt_i[i, :],     # temperature gradient [keV/rho]
-            temp_i[i, :],    # temperature [keV]
+            m_i,                                                       # number of isotopes (> 1) [-]
+            m_z,                                                       # highest charge state [-]
+            equilibrium.profiles_1d.gm5(x_psi),                        # <B**2> [T**2]
+            equilibrium.profiles_1d.gm4(x_psi),                        # <1/B**2> [1/T**2]
+            p_eb[i],                                                   # <E.B> [V*T/m]
+            scipy.constants.mu_0*fpol / dpsi_drho_tor,               # mu_0*F/(dPsi/dr) [rho/m]
+            p_fm[i],                                                   # poloidal moments of drift factor for PS [/m**2]
+            equilibrium.profiles_1d.trapped_fraction(x_psi),           # trapped fraction [-]
+            equilibrium.profiles_1d.gm6(x_psi),                        # <grad(rho)**2/B**2> [rho**2/m**2/T**2]
+            equilibrium.profiles_1d.dphi_dpsi(x_psi) * dpsi_drho_tor,  # potential gradient Phi' [V/rho]
+            ((dpsi_drho_tor**2) *                                      # second potential gradient Psi'(Phi'/Psi')' [V/rho**2]
+                equilibrium.profiles_1d.dphi_dpsi.derivative(x_psi)),  #
+            p_ngrth[i],                                                # <n.grad(Theta)> [/m]
+            amu_i[:],                                                  # atomic mass number [-]
+            grt_i[i, :],                                               # temperature gradient [keV/rho]
+            temp_i[i, :],                                              # temperature [keV]
             den_iz[i, :],   # density [/m**3]
             fex_iz[:, i, :],  # moments of external parallel force [T*n/m**3]
             grp_iz[i, :],   # pressure gradient [keV/m**3/rho]
@@ -326,56 +263,56 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
 
         # Update utheta with edotb rescaling
 
-        utheta_s[:, 2, :] = p_etap*(jdotb_rm[i] - p_jbbs)*utheta_s[:, 2, :]
+        utheta_s[:, 2, :] = p_etap*(jparallel - p_jbbs)*utheta_s[:, 2, :]
 
         # Ion heatfluxes
         for k, sp in enumerate(core_transport.ion):
             # Ion heat flux
-            sp.chi[i, k] = sp.chi[i, k] + chii[k + 1]/geometry_rm.grho2[i]
+            sp.chi[i, k] += chi_s[k + 1]/grad_rho_tor2
 
-            sp.Vt[i, k] = sp.VT[i, k] + vq_nt[k + 1] + vq_eb[k + 1]*p_etap*(jdotb_rm[i] - p_jbbs)
+            sp.Vt[i, k] += vqnt_s[k + 1] + vqeb_s[k + 1]*p_etap*(jparallel - p_jbbs)
 
-            sp.heat_fluxes[i, k] = sp.heat_fluxes[i, k] + SUM(QFL_S[:, k + 1])
+            sp.heat_fluxes[i, k] += np.sum(qfl_s[:, k + 1])
 
-            sp.chieff[i, k] = sp.chieff[i, k] + chii[k + 1]/geometry_rm.grho2[i]
+            sp.chieff[i, k] += chi_s[k + 1]/grad_rho_tor2
 
             # ion particle fluxes
-            sp.d[i, k] = sp.d[i, k] + d_n[k + 1]/geometry_rm.grho2[i]
+            sp.d[i, k] += + dn_s[k + 1]/grad_rho_tor2
 
-            sp.vp[i, k] = sp.vp[i, k] + v_nt[k + 1] + v_eb[k + 1]*p_etap*(jdotb_rm[i] - p_jbbs)
+            sp.vp[i, k] += vnnt_s[k + 1] + vneb_s[k + 1]*p_etap*(jparallel - p_jbbs)
 
-            sp.particle_fluxes[i, k] = sp.particle_fluxes[i, k] + SUM(GFL_S[:, k + 1])
+            sp.particle_fluxes[i, k] += np.sum(glf_s[:, k + 1])
 
-            sp.deff[i, k] = sp.deff[i, k] + d_n[k + 1]/geometry_rm.grho2[i]
+            sp.deff[i, k] += dn_s[k + 1]/grad_rho_tor2
 
         # Ionic rotational  momentum transport
-        sp.chimom[i, k] = sp.chimom[i, k] + 0.0  # Need to set
+        sp.chimom[i, k] += 0.0  # Need to set
 
         # update poloidal velocities
 
-        profiles_rm.vpol[i, k] = SUM(utheta_s[1, 1:3, k + 1])*geometry_rm.f[i] / r0/geometry_rm.fhat[i]
+        profiles_rm.vpol[i, k] = np.sum(utheta_s[1, 1:3, k + 1])*fpol[i] / r0/fhat
 
         # Update toroidal velocities
         if k != 1:  # THEN
-            profiles_rm.vtor[i, k] = r0*geometry_rm.fhat[i]/geometry_rm.f[i]*profiles_rm.e_rad[i] +\
-                geometry_rm.fhat[i]*profiles_rm.vpol[i, k] - r0 * \
-                geometry_rm.fhat[i]/geometry_rm.f[i]*e_r[3]
+            profiles_rm.vtor[i, k] = r0*p_fpolhat[i]/p_fpol[i]*profiles_rm.e_rad[i] +\
+                p_fpolhat[i]*profiles_rm.vpol[i, k] - r0 * \
+                p_fpolhat[i]/p_fpol[i]*e_r[3]
             # end if
         # END DO
 
         # Add in electrons last in array
         k = k + 1
-        core_transport.chi[i, k] = core_transport.chi[i, k] + chii[1]/geometry_rm.grho2[i]
-        core_transport.Vt[i, k] = core_transport.Vt[i, k] + vq_nt[1] + vq_eb[1]*p_etap*(jdotb_rm[i] - p_jbbs)
-        core_transport.heat_fluxes[i, k] = core_transport.heat_fluxes[i, k] + SUM(QFL_S[:, 1])
+        core_transport.chi[i, k] += chi_s[0]/grad_rho_tor2
+        core_transport.Vt[i, k] += vqnt_s[0] + vqeb_s[0]*p_etap*(jparallel - p_jbbs)
+        core_transport.heat_fluxes[i, k] += np.sum(qfl_s[:, 1])
 
-        core_transport.chieff[i, k] = core_transport.chieff[i, k] + chii[1]/geometry_rm.grho2[i]  # need to set 0.0
+        core_transport.chieff[i, k] = core_transport.chieff[i, k] + chi_s[1]/grad_rho_tor2  # need to set 0.0
 
-        core_transport.d[i, k] = core_transport.d[i, k] + d_n[1]/geometry_rm.grho2[i]
-        core_transport.Vp[i, k] = core_transport.Vp[i, k] + v_nt[1] + v_eb[1]*p_etap*(jdotb_rm[i] - p_jbbs)
-        core_transport.particle_fluxes[i, k] = core_transport.particle_fluxes[i, k] + SUM(GFL_S[:, 1])
+        core_transport.d[i, k] += dn_s[0]/grad_rho_tor2
+        core_transport.Vp[i, k] += vnnt_s[0] + vneb_s[1]*p_etap*(jparallel - p_jbbs)
+        core_transport.particle_fluxes[i, k] += np.sum(glf_s[:, 1])
 
-        core_transport.deff[i, k] = core_transport.deff[i, k] + d_n[1]/geometry_rm.grho2[i]  # need to set
+        core_transport.deff[i, k] += dn_s[1]/grad_rho_tor2  # need to set
 
         # rotational momentum transport
         core_transport.chimom[i, k] = 0.0
@@ -385,28 +322,27 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
         core_transport.jboot[i] = p_jbbs/b0
 
         # Recalculate E_r for storage
-        e_r[1] = geometry_rm.f[i]/r0/geometry_rm.fhat[i]*profiles_rm.vtor[i, 1]
-        e_r[2] = -geometry_rm.f[i]/r0*profiles_rm.vpol[i, 1]
+        e_r[1] = p_fpol[i]/r0/fhat*profiles_rm.vtor[i, 1]
+        e_r[2] = -p_fpol[i]/r0*profiles_rm.vpol[i, 1]
         profiles_rm.e_rad[i] = e_r[1] + e_r[2] + e_r[3]
     # END DO
 
     # Extend to edge values
-    core_transport.rho[profiles.nr] = (profiles.rho[profiles.nr] + profiles.rho[profiles.nr - 1])/2
-    core_transport.chi[profiles.nr, :] = core_transport.chi[profiles.nr - 1, :]
-    core_transport.Vt[profiles.nr, :] = core_transport.Vt[profiles.nr - 1, :]
-    core_transport.heat_fluxes[profiles.nr, :] = core_transport.heat_fluxes[profiles.nr - 1, :]
-    core_transport.chieff[profiles.nr, :] = core_transport.chieff[profiles.nr - 1, :]
+    core_transport.chi[-1, :] = core_transport.chi[-1 - 1, :]
+    core_transport.Vt[-1, :] = core_transport.Vt[-1 - 1, :]
+    core_transport.heat_fluxes[-1, :] = core_transport.heat_fluxes[-1 - 1, :]
+    core_transport.chieff[-1, :] = core_transport.chieff[-1 - 1, :]
 
-    core_transport.d[profiles.nr, :] = core_transport.d[profiles.nr - 1, :]
-    core_transport.Vp[profiles.nr, :] = core_transport.Vp[profiles.nr - 1, :]
-    core_transport.particle_fluxes[profiles.nr, :] = core_transport.particle_fluxes[profiles.nr - 1, :]
-    core_transport.deff[profiles.nr, :] = core_transport.deff[profiles.nr - 1, :]
+    core_transport.d[-1, :] = core_transport.d[-1 - 1, :]
+    core_transport.Vp[-1, :] = core_transport.Vp[-1 - 1, :]
+    core_transport.particle_fluxes[-1, :] = core_transport.particle_fluxes[-1 - 1, :]
+    core_transport.deff[-1, :] = core_transport.deff[-1 - 1, :]
 
     # rotational  momentum core_transport
-    core_transport.chimom[profiles.nr, :] = core_transport.chimom[profiles.nr - 1, :]
+    core_transport.chimom[-1, :] = core_transport.chimom[-1 - 1, :]
 
-    core_transport.resistivity[profiles.nr] = core_transport.resistivity[profiles.nr - 1]
-    core_transport.jboot[profiles.nr] = core_transport.jboot[profiles.nr - 1]
+    core_transport.resistivity[-1] = core_transport.resistivity[-1 - 1]
+    core_transport.jboot[-1] = core_transport.jboot[-1 - 1]
 
     # Copy local values to profiles
 
@@ -420,7 +356,7 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
     # Free temporary memory holders
     # DEALLOCATE(den_riz, temp_ri, den_r, temp_r, grn_riz, grp_riz, &
     #            grt_ri, v_eb, v_nt, amu_i, cur_rm, jdotb_rm, &
-    #            gfl_s, jz_s, utheta_s, STAT=istat)
+    #            glf_s, jz_s, utheta_s, STAT=istat)
 
     # Note dimensioning of d_n, v_eb, v_nt is only valid when no mcs ions are present
     # if istat != 0:  # THEN
