@@ -28,7 +28,7 @@ class RadialGrid:
             attr = try_get(self._equilibrium.profiles_1d, primary, None)
             if attr is None:
                 raise AttributeError(f"Can not find attribute {primary}!")
-
+            
             self._psi_norm = Function(attr, self._equilibrium.profiles_1d.psi_norm)(axis)
 
         self._vacuum_toroidal_field = self._equilibrium.vacuum_toroidal_field

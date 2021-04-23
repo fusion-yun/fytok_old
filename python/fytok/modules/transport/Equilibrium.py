@@ -85,7 +85,7 @@ class MagneticSurfaceCoordinateSystem:
 
         return opoints, xpoints
 
-    def find_flux_surface(self, u, v=None):
+    def flux_surface_map(self, u, v=None):
         o_points, x_points = self.critical_points
 
         if len(o_points) == 0:
@@ -99,39 +99,39 @@ class MagneticSurfaceCoordinateSystem:
             R1 = self.psirz.coordinates.bbox[1][0]
             Z1 = Z0
             psi1 = 0.0
-            theta0 = 0
+            # theta0 = 0
         else:
             R1 = x_points[0].r
             Z1 = x_points[0].z
             psi1 = x_points[0].psi
-            theta0 = arctan2(R1 - R0, Z1 - Z0)
+            # theta0 = arctan2(R1 - R0, Z1 - Z0)
         Rm = sqrt((R1-R0)**2+(Z1-Z0)**2)
 
         if not isinstance(u, (np.ndarray, collections.abc.MutableSequence)):
             u = [u]
-
+        u = np.asarray(u)
         if v is None:
-            v = np.linspace(theta0, theta0+TWOPI, 128, endpoint=False)
-        elif isinstance(v, int):
-            v = np.linspace(theta0, theta0+TWOPI, v, endpoint=False)
+            v = self._uv[1]
         elif not isinstance(v, (np.ndarray, collections.abc.MutableSequence)):
-            v = [v]
+            v = np.asarray([v])
 
-        for p in u:
-            for t in v:
-                psival = p*(psi1-psi0)+psi0
+        theta = v*TWOPI
+        psi = u*(psi1-psi0)+psi0
+
+        for psi_val in psi:
+            for theta_val in theta:
 
                 r0 = R0
                 z0 = Z0
-                r1 = R0+Rm*sin(t)
-                z1 = Z0+Rm*cos(t)
+                r1 = R0+Rm*sin(theta_val)
+                z1 = Z0+Rm*cos(theta_val)
 
-                if not np.isclose(self.psirz(r1, z1), psival):
+                if not np.isclose(self.psirz(r1, z1), psi_val):
                     try:
-                        def func(r): return float(self.psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1)) - psival
+                        def func(r): return float(self.psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1)) - psi_val
                         sol = root_scalar(func,  bracket=[0, 1], method='brentq')
                     except ValueError as error:
-                        raise ValueError(f"Find root fialed! {error} {psival}")
+                        raise ValueError(f"Find root fialed! {error} {psi_val}")
 
                     if not sol.converged:
                         raise ValueError(f"Find root fialed!")
@@ -144,7 +144,7 @@ class MagneticSurfaceCoordinateSystem:
     def create_mesh(self, u, v, *args, type_index=13):
         logger.debug(f"create mesh! type index={type_index}")
         if type_index == 13:
-            rz = np.asarray([[r, z] for r, z in self.find_flux_surface(u, v[:-1])]).reshape(len(u), len(v)-1, 2)
+            rz = np.asarray([[r, z] for r, z in self.flux_surface_map(u, v[:-1])]).reshape(len(u), len(v)-1, 2)
             rz = np.hstack((rz, rz[:, :1, :]))
             mesh = CurvilinearMesh(rz, [u, v], cycle=[False, True])
         else:
@@ -152,28 +152,31 @@ class MagneticSurfaceCoordinateSystem:
 
         return mesh
 
-    def find_surface(self, psi_norm, ntheta=128):
+    def create_surface(self, psi_norm, v=None):
         if isinstance(psi_norm, CubicSplineCurve):
             return psi_norm
         elif psi_norm is None:
-            return [self.find_surface(p) for p in self.psi_norm]
+            return [self.create_surface(p) for p in self.psi_norm]
         elif isinstance(psi_norm, collections.abc.MutableSequence):
-            return [self.find_surface(p) for p in psi_norm]
+            return [self.create_surface(p) for p in psi_norm]
         elif isinstance(psi_norm, int):
             psi_norm = self.psi_norm[psi_norm]
 
         if np.abs(psi_norm) <= EPS:
             o, _ = self.critical_points
             return Point(*o)
+        if v is None:
+            v = self._uv[1]
+        else:
+            v = np.asarray(v)
 
-        v = np.linspace(0, 1.0, ntheta)
-        xy = np.asarray([[r, z] for r, z in self.find_flux_surface(psi_norm,  v[:-1]*scipy.constants.pi*2)])
+        xy = np.asarray([[r, z] for r, z in self.flux_surface_map(psi_norm,  v[:-1])])
         xy = np.vstack((xy, xy[:1, :]))
         return CubicSplineCurve(v, xy, is_closed=True)
 
     @cached_property
     def surface_mesh(self):
-        return [self.find_surface(p) for p in self._uv[0]]
+        return self.create_surface(*self._uv)
 
     def br(self, r, z):
         return -self.psirz(r,  z, dy=1)/r
@@ -299,7 +302,6 @@ class MagneticSurfaceCoordinateSystem:
 
     def shape_property(self, psi=None):
         def shape_box(s: Curve):
-            logger.debug(type(s))
             r, z = s.xy()
             rmin = np.min(r)
             rmax = np.max(r)
@@ -311,7 +313,7 @@ class MagneticSurfaceCoordinateSystem:
             r_outboard = s.point(0)[0]
             return rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard
 
-        sbox = np.asarray([[*shape_box(s)] for s in self.find_surface([psi])])
+        sbox = np.asarray([[*shape_box(s)] for s in self.create_surface([psi])])
 
         if sbox.shape[0] == 1:
             rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard = sbox[0]
@@ -355,7 +357,7 @@ class MagneticSurfaceCoordinateSystem:
 
     @cached_property
     def boundary(self):
-        return self.find_surface(1.0)
+        return self.create_surface(1.0)
 
 
 class Equilibrium(PhysicalGraph):
@@ -981,7 +983,7 @@ class Equilibrium(PhysicalGraph):
     class Boundary(PhysicalGraph):
         def __init__(self, coord: MagneticSurfaceCoordinateSystem,   *args,  ** kwargs):
             super().__init__(*args, **kwargs)
-            self._coord = coord or self._parent.coordiante_system
+            self._coord = coord or self._parent.coordinate_system
 
         @cached_property
         def type(self):
@@ -991,7 +993,7 @@ class Equilibrium(PhysicalGraph):
         @cached_property
         def outline(self):
             """RZ outline of the plasma boundary  """
-            RZ = np.asarray([[r, z] for r, z in self._coord.find_flux_surface(1.0)])
+            RZ = np.asarray([[r, z] for r, z in self._coord.flux_surface_map(1.0)])
             return PhysicalGraph({"r": RZ[:, 0], "z": RZ[:, 1]})
 
         @cached_property
