@@ -149,6 +149,7 @@ if __name__ == "__main__":
             x_axis=(tok.equilibrium.profiles_1d.psi_norm,  {"label": r"$\psi_{N}$"}),  # asd
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/profiles_1d.svg", transparent=True)
 
+    if True:
         psi_norm = tok.radial_grid.psi_norm
         rho_tor_norm = tok.radial_grid.rho_tor_norm
 
@@ -165,6 +166,7 @@ if __name__ == "__main__":
         j_parallel = tok.equilibrium.profiles_1d.j_parallel.pullback(psi_norm, rho_tor_norm)
         Qoh = Function(profile['x'].values, profile['Poh'].values*1e6/scipy.constants.elementary_charge)
         conductivity_parallel = 2.0e-9
+
         tok.update(
             core_transport={
                 "conductivity_parallel": conductivity_parallel,
@@ -216,6 +218,7 @@ if __name__ == "__main__":
             }
         )
 
+    if True:
         psi_norm = tok.equilibrium.profiles_1d.psi_norm
         rho_tor_norm = tok.equilibrium.profiles_1d.rho_tor_norm
         psi_prev = tok.equilibrium.profiles_1d.psi.pullback(psi_norm, rho_tor_norm)

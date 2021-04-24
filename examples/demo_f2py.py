@@ -7,7 +7,7 @@ import nclass
 if __name__ == "__main__":
     iflag = 1
     m_s = 1
-    pprint.pprint(nclass.nclass_mod.nclass.__doc__)
+    print(nclass.nclass_mod.nclass.__doc__)
     m_i = 1
     m_z = 1
     maxms = 5

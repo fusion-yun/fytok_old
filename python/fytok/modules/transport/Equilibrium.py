@@ -313,7 +313,7 @@ class MagneticSurfaceCoordinateSystem:
             pass
         elif not isinstance(psi, (np.ndarray, collections.abc.MutableSequence)):
             psi = [psi]
-        logger.debug(psi)
+        
         sbox = np.asarray([[*shape_box(s)] for s in self.create_surface(psi)])
 
         if sbox.shape[0] == 1:

@@ -8,28 +8,30 @@ from spdm.numerical.Function import Function
 from spdm.util.logger import logger
 
 from ...RadialGrid import RadialGrid
+from ...Profiles import Profiles
 
 
-class Profiles(PhysicalGraph):
-    def __init__(self, *args, grid=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._grid = grid
+# class Profiles(PhysicalGraph):
+#     def __init__(self, *args, grid=None, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self._grid = grid or self._parent.radial_grid
+#         assert(self._grid is not None)
 
-    @property
-    def grid(self):
-        return self._grid
+#     @property
+#     def grid(self):
+#         return self._grid
 
-    def __post_process__(self, value, *args, **kwargs):
-        if isinstance(value, (Function, str)):
-            return value
-        elif isinstance(value, (collections.abc.Mapping, collections.abc.MutableSequence)):
-            return super().__post_process__(value, *args, **kwargs)
-        elif isinstance(value, np.ndarray) and self._grid.rho_tor_norm.shape != value.shape:
-            return value
-        elif isinstance(value, (int, float, np.ndarray)) or callable(value):
-            return Function(self._grid.rho_tor_norm, value)
-        else:
-            return super().__post_process__(value, *args, **kwargs)
+#     def __post_process__(self, value, *args, **kwargs):
+#         if isinstance(value, (Function, str)):
+#             return value
+#         elif isinstance(value, (collections.abc.Mapping, collections.abc.MutableSequence)):
+#             return super().__post_process__(value, *args, **kwargs)
+#         elif isinstance(value, np.ndarray) and self._grid.rho_tor_norm.shape != value.shape:
+#             return value
+#         elif isinstance(value, (int, float, np.ndarray)) or callable(value):
+#             return Function(self._grid.rho_tor_norm, value)
+#         else:
+#             return super().__post_process__(value, *args, **kwargs)
 
 
 class CoreProfiles(Profiles):
@@ -37,8 +39,8 @@ class CoreProfiles(Profiles):
     """
     IDS = "core_profiles"
 
-    def __init__(self,  *args,   time=None,  ** kwargs):
-        super().__init__(*args, ** kwargs)
+    def __init__(self,  *args,   time=None, ** kwargs):
+        super().__init__(*args,  ** kwargs)
         self._time = time or 0.0
 
     @property
@@ -120,33 +122,27 @@ class CoreProfiles(Profiles):
             return NotImplemented
 
     class Ion(Profiles):
-        def __init__(self,   *args, grid=None, z_ion=1, label=None, neutral_index=None,  **kwargs):
+        def __init__(self,   *args,   z_ion=1, label=None, neutral_index=None,  **kwargs):
             super().__init__(*args,  **kwargs)
-            # self |= {
-            #     "z_ion": "z_ion",
-            #     "label": "label",
-            #     "neutral_index": "neutral_index",
-            #     "element": [],
-            #     "state": [],
-            #     "temperature_validity": 0,
-            #     "density_validity": 0
-            # }
+            self._label = label or self["label"]
+            self._z_ion = z_ion or self["z_ion"]
+            self._neutral_index = neutral_index or self["neutral_index"]
 
-        # @property
-        # def z_ion(self):
-        #     """Ion charge (of the dominant ionisation state; lumped ions are allowed),
-        #     volume averaged over plasma radius {dynamic} [Elementary Charge Unit]  FLT_0D  """
-        #     return NotImplemented
+        @property
+        def z_ion(self):
+            """Ion charge (of the dominant ionisation state; lumped ions are allowed),
+            volume averaged over plasma radius {dynamic} [Elementary Charge Unit]  FLT_0D  """
+            return self._z_ion
 
-        # @property
-        # def label(self):
-        #     """String identifying ion (e.g. H+, D+, T+, He+2, C+, ...) {dynamic}    """
-        #     return NotImplemented
+        @property
+        def label(self):
+            """String identifying ion (e.g. H+, D+, T+, He+2, C+, ...) {dynamic}    """
+            return self._label
 
-        # @property
-        # def neutral_index(self):
-        #     """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
-        #     return NotImplemented
+        @property
+        def neutral_index(self):
+            """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
+            return self._neutral_index
 
         # @property
         # def z_ion_1d(self):
@@ -160,10 +156,10 @@ class CoreProfiles(Profiles):
         #     state density and divided by ion density) {dynamic} [-]  """
         #     return NotImplemented
 
-        # @property
-        # def temperature(self):
-        #     """Temperature (average over charge states when multiple charge states are considered) {dynamic} [eV]  """
-        #     return NotImplemented
+        @cached_property
+        def temperature(self):
+            """Temperature (average over charge states when multiple charge states are considered) {dynamic} [eV]  """
+            return Function(self.grid.rho_tor_norm, self["temperature"] or 0.0)
 
         # @property
         # def temperature_validity(self):
@@ -179,10 +175,10 @@ class CoreProfiles(Profiles):
         #     """Information on the fit used to obtain the temperature profile [eV]    """
         #     return NotImplemented
 
-        # @property
-        # def density(self):
-        #     """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        #     return NotImplemented
+        @cached_property
+        def density(self):
+            """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
+            return Function(self.grid.rho_tor_norm, self["density"] or 0.0)
 
         # @property
         # def density_validity(self):
@@ -341,12 +337,12 @@ class CoreProfiles(Profiles):
     @cached_property
     def ion(self):
         """Quantities related to the different ion species"""
-        return List(self["ion"], default_fatory=lambda d: CoreProfiles.Ion(d, grid=self.grid, parent=self),  parent=self)
+        return List(self["ion"], default_factory=lambda d, grid=self._grid, parent=self, **kwargs: CoreProfiles.Ion(d, grid=grid, parent=parent, **kwargs),  parent=self)
 
     @cached_property
     def neutral(self):
         """Quantities related to the different neutral species"""
-        return List(self["neutral"],  default_fatory=lambda d: CoreProfiles.Neutral(d, grid=self.grid, parent=self), parent=self)
+        return List(self["neutral"],  default_factory=lambda d: CoreProfiles.Neutral(d, grid=self.grid, parent=self), parent=self)
 
     @cached_property
     def t_i_average(self):
@@ -455,16 +451,19 @@ class CoreProfiles(Profiles):
     #     """Parallel conductivity {dynamic}[ohm ^ -1.m ^ -1]"""
     #     return NotImplemented
 
-    class EField(PhysicalGraph):
-        def __init__(self, *args, grid=None, **kwargs):
-            super().__init__(*args, grid=grid.rho_tor_norm, **kwargs)
-            self.__dict__['_grid'] = grid
+    class EField(Profiles):
+        def __init__(self, *args,   **kwargs):
+            super().__init__(*args,   **kwargs)
+
+        @cached_property
+        def parallel(self):
+            return Function(self.grid.psi_norm, self["parallel"] or 0.0)
 
     @cached_property
     def e_field(self):
         """Electric field, averaged on the magnetic surface. E.g for the parallel component, average(E.B) / B0,
             using core_profiles/vacuum_toroidal_field/b0[V.m ^ -1]  """
-        return CoreProfiles.EField(self["e_field"], grid=self.grid)
+        return CoreProfiles.EField(self["e_field"], grid=self.grid, parent=self)
 
     @cached_property
     def phi_potential(self):
