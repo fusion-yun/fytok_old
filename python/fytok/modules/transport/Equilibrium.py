@@ -99,12 +99,12 @@ class MagneticSurfaceCoordinateSystem:
             R1 = self.psirz.coordinates.bbox[1][0]
             Z1 = Z0
             psi1 = 0.0
-            # theta0 = 0
+            theta0 = 0
         else:
             R1 = x_points[0].r
             Z1 = x_points[0].z
             psi1 = x_points[0].psi
-            # theta0 = arctan2(R1 - R0, Z1 - Z0)
+            theta0 = arctan2(Z1 - Z0, R1 - R0)
         Rm = sqrt((R1-R0)**2+(Z1-Z0)**2)
 
         if not isinstance(u, (np.ndarray, collections.abc.MutableSequence)):
@@ -115,16 +115,15 @@ class MagneticSurfaceCoordinateSystem:
         elif not isinstance(v, (np.ndarray, collections.abc.MutableSequence)):
             v = np.asarray([v])
 
-        theta = v*TWOPI
+        theta = v*TWOPI  # +theta0
         psi = u*(psi1-psi0)+psi0
 
         for psi_val in psi:
             for theta_val in theta:
-
                 r0 = R0
                 z0 = Z0
-                r1 = R0+Rm*sin(theta_val)
-                z1 = Z0+Rm*cos(theta_val)
+                r1 = R0+Rm * cos(theta_val)
+                z1 = Z0+Rm * sin(theta_val)
 
                 if not np.isclose(self.psirz(r1, z1), psi_val):
                     try:
@@ -190,12 +189,9 @@ class MagneticSurfaceCoordinateSystem:
     def surface_integrate2(self, fun, *args, **kwargs):
         return np.asarray([surf.integrate(lambda r, z: fun(r, z, *args, **kwargs)/self.bpol(r, z)) * (2*scipy.constants.pi) for surf in self.surface_mesh])
 
-    @property
+    @cached_property
     def mesh(self):
-
-        if self._mesh is None:
-            self._mesh = self.create_mesh(*self._uv, type_index=13)
-        return self._mesh
+        return self.create_mesh(*self._uv, type_index=13)
 
     @property
     def r(self):
@@ -309,11 +305,16 @@ class MagneticSurfaceCoordinateSystem:
             zmax = np.max(z)
             rzmin = r[np.argmin(z)]
             rzmax = r[np.argmax(z)]
-            r_inboard = s.point(scipy.constants.pi)[0]
+            r_inboard = s.point(0.5)[0]
             r_outboard = s.point(0)[0]
             return rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard
 
-        sbox = np.asarray([[*shape_box(s)] for s in self.create_surface([psi])])
+        if psi is None:
+            pass
+        elif not isinstance(psi, (np.ndarray, collections.abc.MutableSequence)):
+            psi = [psi]
+        logger.debug(psi)
+        sbox = np.asarray([[*shape_box(s)] for s in self.create_surface(psi)])
 
         if sbox.shape[0] == 1:
             rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard = sbox[0]
@@ -439,9 +440,9 @@ class Equilibrium(PhysicalGraph):
             if isinstance(dim2, np.ndarray):
                 v = dim2
             elif dim2 == None:
-                v = np.linspace(0.0,  scipy.constants.pi*2.0,  128)
+                v = np.linspace(0.0,  1.0,  128)
             elif isinstance(dim2, int):
-                v = np.linspace(0.0,  scipy.constants.pi*2.0,  dim2)
+                v = np.linspace(0.0, 1.0,  dim2)
             elif isinstance(dim2, np.ndarray):
                 v = dim2
             else:
@@ -751,6 +752,11 @@ class Equilibrium(PhysicalGraph):
                 "z": Function(self.psi_norm, self.shape_property.geometric_axis.z),
             })
 
+        @property
+        def minor_radius(self):
+            """Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary) [m]	"""
+            return self.shape_property.minor_radius
+
         @cached_property
         def r_inboard(self):
             """Radial coordinate(major radius) on the inboard side of the magnetic axis[m]"""
@@ -1016,42 +1022,42 @@ class Equilibrium(PhysicalGraph):
         def shape_property(self):
             return self._coord.shape_property(1.0)
 
-        @cached_property
+        @property
         def geometric_axis(self):
             """RZ position of the geometric axis (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the boundary)"""
             return self.shape_property.geometric_axis
 
-        @cached_property
+        @property
         def minor_radius(self):
             """Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary) [m]	"""
             return self.shape_property.minor_radius
 
-        @cached_property
+        @property
         def elongation(self):
             """Elongation of the plasma boundary. [-]	"""
             return self.shape_property.elongation
 
-        @cached_property
+        @property
         def elongation_upper(self):
             """Elongation(upper half w.r.t. geometric axis) of the plasma boundary. [-]	"""
             return self.shape_property.elongation_upper
 
-        @cached_property
+        @property
         def elongation_lower(self):
             """Elongation(lower half w.r.t. geometric axis) of the plasma boundary. [-]	"""
             return self.shape_property.elongation_lower
 
-        @cached_property
+        @property
         def triangularity(self):
             """Triangularity of the plasma boundary. [-]	"""
             return self.shape_property.triangularity
 
-        @cached_property
+        @property
         def triangularity_upper(self):
             """Upper triangularity of the plasma boundary. [-]	"""
             return self.shape_property.triangularity_upper
 
-        @cached_property
+        @property
         def triangularity_lower(self):
             """Lower triangularity of the plasma boundary. [-]"""
             return self.shape_property.triangularity_lower
@@ -1120,11 +1126,11 @@ class Equilibrium(PhysicalGraph):
         if mesh is not False:
             for idx in range(0, self.coordinate_system.mesh.shape[0], 4):
                 ax0 = self.coordinate_system.mesh.axis(idx, axis=0)
-                axis.add_patch(plt.Polygon(ax0.xy.T, fill=False, closed=True, color="b", linewidth=0.2))
+                axis.add_patch(plt.Polygon(ax0.xy, fill=False, closed=True, color="b", linewidth=0.2))
 
             for idx in range(0, self.coordinate_system.mesh.shape[1], 4):
                 ax1 = self.coordinate_system.mesh.axis(idx, axis=1)
-                axis.plot(ax1.xy[0], ax1.xy[1],  "r", linewidth=0.2)
+                axis.plot(ax1.xy[:, 0], ax1.xy[:, 1],  "r", linewidth=0.2)
 
         for s, opts in scalar_field:
             if s == "psirz":

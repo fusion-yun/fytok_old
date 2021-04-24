@@ -25,11 +25,12 @@ class RadialGrid:
         if primary == "psi_norm":
             self._psi_norm = axis
         else:
-            attr = try_get(self._equilibrium.profiles_1d, primary, None)
-            if attr is None:
+            x = try_get(self._equilibrium.profiles_1d, primary, None)
+            if x is None:
                 raise AttributeError(f"Can not find attribute {primary}!")
-            
-            self._psi_norm = Function(attr, self._equilibrium.profiles_1d.psi_norm)(axis)
+            fun = Function(x, self._equilibrium.profiles_1d.psi_norm)
+            logger.debug(fun(1.0))
+            self._psi_norm = fun(axis)
 
         self._vacuum_toroidal_field = self._equilibrium.vacuum_toroidal_field
 
