@@ -492,8 +492,7 @@ class Equilibrium(PhysicalGraph):
             p_axis = try_get(self.profiles_1d, primary_axis)
             if not isinstance(p_axis, np.ndarray):
                 raise NotImplementedError(primary_axis)
-            psi_norm = Function(p_axis, self.psi_norm)(np.linspace(p_axis[0], p_axis[-1], p_axis.shape[0]))
-
+            psi_norm = Function(p_axis,psi_norm)(np.linspace(p_axis[0], p_axis[-1], p_axis.shape[0]))
         return RadialGrid(psi_norm, equilibrium=self)
 
     @cached_property

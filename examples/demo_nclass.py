@@ -140,7 +140,19 @@ if __name__ == "__main__":
         # x_axis=(tok.equilibrium.profiles_1d.phi,   {"label": r"$\Phi$"}),  # asd
         x_axis=(tok.equilibrium.profiles_1d.psi_norm,  {"label": r"$\psi_{N}$"}),  # asd
         grid=True, fontsize=16
-        ) .savefig("/home/salmon/workspace/output/profiles_1d_2.svg", transparent=True)
+    ) .savefig("/home/salmon/workspace/output/profiles_1d_eq.svg", transparent=True)
+
+    plot_profiles(
+        [
+            (tok.core_profiles.electrons.density,          {"color": "green", "label":  r"n_e"}),
+            (tok.core_profiles.electrons.temperature,          {"color": "green", "label":  r"T_e"}),
+            (tok.core_profiles.ion[0].density,          {
+             "color": "green", "label":  f"n_{tok.core_profiles.ion[0].label}"}),
+            (tok.core_profiles.ion[0].temperature,          {
+             "color": "green", "label":  f"T_{tok.core_profiles.ion[0].label}"}),
+        ],
+        x_axis=(tok.core_profiles.grid.rho_tor_norm,   {"label": r"$\sqrt{\Phi/\Phi_{bdry}}$"}),  # x axis,
+        grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_fprofile.svg", transparent=True)
 
     # for ion in tok.core_profiles.ion:
     #     logger.debug((ion.label, ion.z_ion))

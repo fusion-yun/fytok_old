@@ -42,7 +42,8 @@ class CoreProfiles(Profiles):
     def __init__(self,  *args,   time=None,  grid=None, ** kwargs):
         super().__init__(*args,  ** kwargs)
         self._time = time or 0.0
-        self._grid = grid or RadialGrid(self["grid"])
+        self._grid = grid 
+        logger.debug(type(grid))
 
     @property
     def time(self):
@@ -164,7 +165,7 @@ class CoreProfiles(Profiles):
         @cached_property
         def temperature(self):
             """Temperature (average over charge states when multiple charge states are considered) {dynamic} [eV]  """
-            return Function(self.grid.rho_tor_norm, self["temperature"] or 0.0)
+            return Function(self.axis, self["temperature"] or 0.0)
 
         # @property
         # def temperature_validity(self):
@@ -183,7 +184,7 @@ class CoreProfiles(Profiles):
         @cached_property
         def density(self):
             """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-            return Function(self.grid.rho_tor_norm, self["density"] or 0.0)
+            return Function(self.axis, self["density"] or 0.0)
 
         # @property
         # def density_validity(self):

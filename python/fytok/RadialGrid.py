@@ -6,6 +6,8 @@ from spdm.util.logger import logger
 from spdm.data.AttributeTree import AttributeTree
 from spdm.numerical.Function import Function
 
+from spdm.util.utilities import try_get
+
 
 class RadialGrid:
     r"""
@@ -15,7 +17,7 @@ class RadialGrid:
     def __init__(self, psi_norm, *args, equilibrium=None, **kwargs) -> None:
         self._data = kwargs
         if equilibrium is not None:
-            self._equilibrium = equilibrium.profiles_1d
+            self._equilibrium = equilibrium
             self._vacuum_toroidal_field = equilibrium.vacuum_toroidal_field
             self._psi_axis = equilibrium.boundary.psi_axis
             self._psi_boundary = equilibrium.boundary.psi_boundary
@@ -28,7 +30,7 @@ class RadialGrid:
                                           "b0": NotImplemented}))
             self._psi_axis = kwargs.get("psi_axis", NotImplemented)
             self._psi_boundary = kwargs.get("psi_boundary", NotImplemented)
-
+        assert(self._equilibrium != None)
         if isinstance(psi_norm, int):
             self._psi_norm = np.linspace(0, 1.0, psi_norm)
         elif isinstance(psi_norm, np.ndarray):
@@ -40,15 +42,17 @@ class RadialGrid:
     def _try_get(self, k):
         d = self._data.get(k, None)
         if d is None:
-            d = getattr(self._equilibrium, k, None)
+            d = try_get(self._equilibrium.profiles_1d, k, None)
 
         if isinstance(d, Function):
             if d.x is not self._psi_norm:
                 d = d(self._psi_norm)
-        elif d is None:
-            raise AttributeError(f"Can not find {k}!")
-        elif not isinstance(d, np.ndarray) or d.shape != self._psi_norm.shape:
-            raise RuntimeError(f"Illegal shape! {k}")
+        elif d is None or (not isinstance(d, np.ndarray) and d == None):
+            raise AttributeError(f"Can not find {k} in {type(self._equilibrium)}!")
+        elif not isinstance(d, np.ndarray):
+            raise TypeError(type(d))
+        elif d.shape != self._psi_norm.shape:
+            raise RuntimeError(f"Illegal shape! {k} {d.shape }!={self._psi_norm.shape}")
 
         return d.view(np.ndarray)
 
@@ -84,9 +88,8 @@ class RadialGrid:
             at the equilibrium boundary (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation, 
             see time_slice/boundary/b_flux_pol_norm in the equilibrium IDS) {dynamic} [-]
         """
-        d = self._try_get("rho_tor_norm")
-        
-        return d
+        return self._try_get("rho_tor_norm")
+
     @cached_property
     def rho_tor(self):
         r"""Toroidal flux coordinate. rho_tor = sqrt(b_flux_tor/(pi*b0)) ~ sqrt(pi*r^2*b0/(pi*b0)) ~ r [m]. 

@@ -79,7 +79,7 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
     # Electron,Ion densities, temperatures and mass
 
     Ts = [core_profiles.electrons.temperature, *[ion.temperature for ion in core_profiles.ion]]
-
+    logger.debug([T.x for T in Ts])
     dTs = [t.derivative for t in Ts]
 
     ns = [core_profiles.electrons.density, *[ion.density for ion in core_profiles.ion]]
