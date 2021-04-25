@@ -413,8 +413,6 @@ class Equilibrium(PhysicalGraph):
     def __init__(self,  *args, uv=None, psirz=None,   **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._vacuum_toroidal_field = self["vacuum_toroidal_field"]
-
         if not isinstance(psirz, Field):
             psirz = Field(self["profiles_2d.psi"],
                           self["profiles_2d.grid.dim1"],
@@ -422,6 +420,11 @@ class Equilibrium(PhysicalGraph):
                           mesh_type="rectilinear")
 
         self._psirz = psirz
+
+        self._ffprime = Function(self["profiles_1d.psi_norm"], self["profiles_1d.f_df_dpsi"])
+        self._pprime = Function(self["profiles_1d.psi_norm"], self["profiles_1d.dpressure_dpsi"])
+        self._r0 = self["vacuum_toroidal_field.r0"]
+        self._b0 = self["vacuum_toroidal_field.b0"]
 
         if uv is not None:
             self._uv = uv
@@ -453,9 +456,9 @@ class Equilibrium(PhysicalGraph):
 
             self._uv = [u, v]
 
-    @property
+    @cached_property
     def vacuum_toroidal_field(self):
-        return self._vacuum_toroidal_field
+        return AttributeTree({"r0": self._r0, "b0": self._b0})
 
     def solve(self, *args, **kwargs):
         raise NotImplementedError()
@@ -473,9 +476,7 @@ class Equilibrium(PhysicalGraph):
 
     @cached_property
     def coordinate_system(self):
-        fvac = np.abs(self["vacuum_toroidal_field.r0"] * self["vacuum_toroidal_field.b0"])
-        ffprime = Function(self["profiles_1d.psi_norm"], self["profiles_1d.f_df_dpsi"])
-        return MagneticSurfaceCoordinateSystem(self._uv, self._psirz,  ffprime, fvac)
+        return MagneticSurfaceCoordinateSystem(self._uv, self._psirz, self._ffprime, self._r0*self._b0)
 
     @cached_property
     def constraints(self):
@@ -492,7 +493,7 @@ class Equilibrium(PhysicalGraph):
             p_axis = try_get(self.profiles_1d, primary_axis)
             if not isinstance(p_axis, np.ndarray):
                 raise NotImplementedError(primary_axis)
-            psi_norm = Function(p_axis,psi_norm)(np.linspace(p_axis[0], p_axis[-1], p_axis.shape[0]))
+            psi_norm = Function(p_axis, psi_norm)(np.linspace(p_axis[0], p_axis[-1], p_axis.shape[0]))
         return RadialGrid(psi_norm, equilibrium=self)
 
     @cached_property
@@ -663,7 +664,7 @@ class Equilibrium(PhysicalGraph):
         @cached_property
         def ffprime(self):
             """	Derivative of F w.r.t. Psi, multiplied with F[T ^ 2.m ^ 2/Wb]. """
-            return Function(self.psi_norm, self._coord.ffprime(self.psi_norm))
+            return self._parent._ffprime  # Function(self.psi_norm, self._coord.ffprime(self.psi_norm))
 
         @property
         def f_df_dpsi(self):
@@ -682,7 +683,7 @@ class Equilibrium(PhysicalGraph):
 
         @cached_property
         def dpressure_dpsi(self):
-            return Function(self.psi_norm, self["dpressure_dpsi"])
+            return self._parent._pprime
 
         @cached_property
         def j_tor(self):

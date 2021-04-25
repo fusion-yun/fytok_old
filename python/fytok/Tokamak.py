@@ -44,7 +44,7 @@ class Tokamak(PhysicalGraph):
 
     @cached_property
     def radial_grid(self):
-        return RadialGrid(self["radial_grid"], equilibrium=self.equilibrium)
+        return self.equilibrium.radial_grid(**self["radial_grid"]._data)
 
     @property
     def time(self):
@@ -257,7 +257,7 @@ class Tokamak(PhysicalGraph):
         axis.set_xlabel(r"Major radius $R$ [m]")
         axis.set_ylabel(r"Height $Z$ [m]")
         # axis.legend()
-        
+
         return axis
 
     # def initialize(self):

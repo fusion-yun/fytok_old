@@ -72,7 +72,7 @@ class CoreTransport(PhysicalGraph):
 
         @cached_property
         def flux(self):
-            self.flux = Function(self._parent.grid_flux.rho_tor_norm, self["flux"])
+            return Function(self._parent.grid_flux.rho_tor_norm, self["flux"])
 
     class Ion(Profiles):
         def __init__(self,   *args,  **kwargs):

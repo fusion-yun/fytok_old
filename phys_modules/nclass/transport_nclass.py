@@ -79,7 +79,6 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
     # Electron,Ion densities, temperatures and mass
 
     Ts = [core_profiles.electrons.temperature, *[ion.temperature for ion in core_profiles.ion]]
-    logger.debug([T.x for T in Ts])
     dTs = [t.derivative for t in Ts]
 
     ns = [core_profiles.electrons.density, *[ion.density for ion in core_profiles.ion]]
@@ -266,16 +265,16 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
             sp.energy.v[ipr] += vqnt_s[k + 1] + vqeb_s[k + 1]*p_etap*(jparallel - p_jbbs)
             sp.energy.flux[ipr] += np.sum(qfl_s[:, k + 1])
             # sp.chieff[ipr] += chi_s[k + 1]/grad_rho_tor2
-
+            logger.debug((ipr, k, dn_s, grad_rho_tor2))
             # ion particle fluxes
-            sp.particle.d[ipr] += dn_s[k + 1]/grad_rho_tor2
-            sp.particle.v[ipr] += vnnt_s[k + 1] + vneb_s[k + 1]*p_etap*(jparallel - p_jbbs)
-            sp.particle.flux[ipr] += np.sum(glf_s[:, k + 1])
+            sp.particles.d[ipr] += dn_s[k + 1]/grad_rho_tor2
+            sp.particles.v[ipr] += vnnt_s[k + 1] + vneb_s[k + 1]*p_etap*(jparallel - p_jbbs)
+            sp.particles.flux[ipr] += np.sum(glf_s[:, k + 1])
 
             # sp.deff[ipr] += dn_s[k + 1]/grad_rho_tor2
 
-        # Ionic rotational  momentum transport
-            sp.momentum_tor.d[ipr] += 0.0  # Need to set
+            # Ionic rotational  momentum transport
+            # sp.momentum.d[ipr] += 0.0  # Need to set
 
         # update poloidal velocities
         # rotation_frequency_tor_sonic
@@ -292,7 +291,7 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
         core_transport.electrons.energy.v[ipr] += vqnt_s[0] + vqeb_s[0]*p_etap*(jparallel - p_jbbs)
         core_transport.electrons.energy.flux[ipr] += np.sum(qfl_s[:, 1])
 
-        core_transport.chieff[ipr] += chi_s[1]/grad_rho_tor2  # need to set 0.0
+        # core_transport.chieff[ipr] += chi_s[1]/grad_rho_tor2  # need to set 0.0
 
         core_transport.electrons.particles.d[ipr] += dn_s[0]/grad_rho_tor2
         core_transport.electrons.particles.v[ipr] += vnnt_s[0] + vneb_s[1]*p_etap*(jparallel - p_jbbs)
@@ -304,7 +303,7 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
         core_transport.momentum_tor.d[ipr] = 0.0
 
         # resistivity and <j dot B>
-        core_transport.conductivity_parallel[ipr] = 1.0 / p_etap
+        # core_transport.conductivity_parallel[ipr] = 1.0 / p_etap
         core_profiles.j_bootstrap[ipr] = p_jbbs/b0
 
         # Recalculate E_r for storage

@@ -42,7 +42,7 @@ class CoreProfiles(Profiles):
     def __init__(self,  *args,   time=None,  grid=None, ** kwargs):
         super().__init__(*args,  ** kwargs)
         self._time = time or 0.0
-        self._grid = grid 
+        self._grid = grid
         logger.debug(type(grid))
 
     @property
@@ -450,7 +450,7 @@ class CoreProfiles(Profiles):
     def j_bootstrap(self):
         """Bootstrap current density = average(J_Bootstrap.B) / B0,
             where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
-        return NotImplemented
+        return Function(self.axis, self["j_bootstrap"] or 0.0)
 
     # @property
     # def conductivity_parallel(self):
@@ -463,13 +463,13 @@ class CoreProfiles(Profiles):
 
         @cached_property
         def parallel(self):
-            return Function(self.grid.psi_norm, self["parallel"] or 0.0)
+            return Function(self.axis, self["parallel"] or 0.0)
 
     @cached_property
     def e_field(self):
         """Electric field, averaged on the magnetic surface. E.g for the parallel component, average(E.B) / B0,
             using core_profiles/vacuum_toroidal_field/b0[V.m ^ -1]  """
-        return CoreProfiles.EField(self["e_field"], grid=self.grid, parent=self)
+        return CoreProfiles.EField(self["e_field"], axis=self.grid.rho_tor_norm, parent=self)
 
     @cached_property
     def phi_potential(self):

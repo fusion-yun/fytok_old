@@ -25,7 +25,7 @@ if __name__ == "__main__":
     profile = pd.read_csv('/home/salmon/workspace/data/15MA inductive - burn/profile.txt', sep='\t')
 
     tok = Tokamak({
-        "radial_grid": {"axis": 64, "primary": "rho_tor_norm"},
+        "radial_grid": {"axis": 64},
         "wall":  device.wall,
         "pf_active": device.pf_active,
         "equilibrium": {
@@ -60,6 +60,7 @@ if __name__ == "__main__":
 
     plot_profiles(
         [
+            (tok.equilibrium.profiles_1d.dpressure_dpsi,            r"$dP/d\psi$"),
             [
                 (tok.equilibrium.profiles_1d.ffprime,            r"$ff^{\prime}$"),
                 (Function(equilibrium.profiles_1d.psi_norm,
