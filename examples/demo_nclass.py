@@ -145,4 +145,4 @@ if __name__ == "__main__":
     # for ion in tok.core_profiles.ion:
     #     logger.debug((ion.label, ion.z_ion))
 
-    # core_transport = nclass.transport_nclass(tok.equilibrium, tok.core_profiles, tok.core_transport)
+    core_transport = nclass.transport_nclass(tok.equilibrium, tok.core_profiles, tok.core_transport)
