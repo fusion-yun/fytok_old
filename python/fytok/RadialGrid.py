@@ -9,9 +9,10 @@ from spdm.numerical.Function import Function
 
 class RadialGrid:
     r"""
-    
+
     """
-    def __init__(self, psi_norm=None, *args, equilibrium=None, **kwargs) -> None:
+
+    def __init__(self, psi_norm, *args, equilibrium=None, **kwargs) -> None:
         self._data = kwargs
         if equilibrium is not None:
             self._equilibrium = equilibrium.profiles_1d
@@ -20,7 +21,6 @@ class RadialGrid:
             self._psi_boundary = equilibrium.boundary.psi_boundary
             if psi_norm is None:
                 psi_norm = equilibrium.profiles_1d.psi_norm
-
         else:
             self._equilibrium = None
             self._vacuum_toroidal_field = AttributeTree(kwargs.get(
@@ -34,7 +34,8 @@ class RadialGrid:
         elif isinstance(psi_norm, np.ndarray):
             self._psi_norm = psi_norm
         else:
-            raise ValueError(f"psi_norm is not defined")
+            self._psi_norm = np.linspace(0, 1.0, 128)
+            # raise ValueError(f"psi_norm is not defined")
 
     def _try_get(self, k):
         d = self._data.get(k, None)
@@ -83,8 +84,9 @@ class RadialGrid:
             at the equilibrium boundary (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation, 
             see time_slice/boundary/b_flux_pol_norm in the equilibrium IDS) {dynamic} [-]
         """
-        return self._try_get("rho_tor_norm")
-
+        d = self._try_get("rho_tor_norm")
+        
+        return d
     @cached_property
     def rho_tor(self):
         r"""Toroidal flux coordinate. rho_tor = sqrt(b_flux_tor/(pi*b0)) ~ sqrt(pi*r^2*b0/(pi*b0)) ~ r [m]. 

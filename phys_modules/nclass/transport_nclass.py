@@ -78,14 +78,14 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
 
     # Electron,Ion densities, temperatures and mass
 
-    temperature = [core_profiles.electrons.temperature, *[ion.temperature for ion in core_profiles.ion]]
+    Ts = [core_profiles.electrons.temperature, *[ion.temperature for ion in core_profiles.ion]]
 
-    dTemperature = [t.derivative for t in temperature]
+    dTs = [t.derivative for t in Ts]
 
-    density = [core_profiles.electrons.density, *[ion.density for ion in core_profiles.ion]]
+    ns = [core_profiles.electrons.density, *[ion.density for ion in core_profiles.ion]]
 
-    dPressure = [core_profiles.electrons.pressure.derivative*equilibrium.profiles_1d.dpsi_drho_tor_norm,
-                 *[ion.pressure.derivative*equilibrium.profiles_1d.dpsi_drho_tor_norm for ion in core_profiles.ion]]
+    dPs = [core_profiles.electrons.pressure.derivative*equilibrium.profiles_1d.dpsi_drho_tor_norm,
+           *[ion.pressure.derivative*equilibrium.profiles_1d.dpsi_drho_tor_norm for ion in core_profiles.ion]]
 
     amu = [scipy.constants.m_e/scipy.constants.m_u,   # Electron mass in amu
            * [ion.z_ion for ion in core_profiles.ion]]
@@ -236,11 +236,11 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
             ((dpsi_drho_tor**2) * dq_drho_tor(x_psi)),        # Psi'(Phi'/Psi')' [V/rho**2]
             p_ngrth,                                          # <n.grad(Theta)> [/m]
             amu,                                              # atomic mass number [-]
-            [dT(x_psi) for dT in dTemperature],               # temperature gradient [keV/rho]
-            [T(x_psi) for T in temperature],                  # temperature [keV]
-            [n(x_psi) for n in density],                      # density [/m**3]
+            [dT(x_psi) for dT in dTs],                        # temperature gradient [keV/rho]
+            [T(x_psi) for T in Ts],                           # temperature [keV]
+            [n(x_psi) for n in ns],                           # density [/m**3]
             fex_iz[:, :],                                     # moments of external parallel force [T*n/m**3]
-            [dp(x_psi) for dp in dPressure],                  # pressure gradient [keV/m**3/rho]
+            [dp(x_psi) for dp in dPs],                        # pressure gradient [keV/m**3/rho]
             ipr,                                              #
             l_banana,                                         # option to include banana viscosity [logical]
             l_pfirsch,                                        # option to include Pfirsch-Schluter viscosity [logical]

@@ -12,7 +12,8 @@ from spdm.data.Node import Node, _next_
 from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.numerical.Function import Function
 from spdm.util.logger import logger
-
+import getpass
+import datetime
 from .modules.device.PFActive import PFActive
 from .modules.device.TF import TF
 from .modules.device.Wall import Wall
@@ -40,19 +41,10 @@ class Tokamak(PhysicalGraph):
     def __init__(self, *args, time=None,  radial_grid=None, **kwargs):
         super().__init__(*args,  **kwargs)
         self._time = time or 0.0
-        self._radial_grid = radial_grid or self["radial_grid"]
-        self._species = {}
 
-    @property
+    @cached_property
     def radial_grid(self):
-        if not isinstance(self._radial_grid, RadialGrid):
-            self._radial_grid = RadialGrid(self._radial_grid.npoints,
-                                           primary=self._radial_grid.primary,
-                                           equilibrium=self.equilibrium)
-        # elif self._radial_grid == None:
-        #     self._radial_grid = RadialGrid(equilibrium=self.equilibrium)
-
-        return self._radial_grid
+        return RadialGrid(self["radial_grid"], equilibrium=self.equilibrium)
 
     @property
     def time(self):
@@ -108,7 +100,7 @@ class Tokamak(PhysicalGraph):
             core_profiles = self["core_profiles.profiles_1d"]
         else:
             core_profiles = self["core_profiles"]
-        return CoreProfiles(core_profiles,  grid=self.radial_grid, time=self.time, parent=self)
+        return CoreProfiles(core_profiles,  grid=self.equilibrium.radial_grid("rho_tor_norm"), time=self.time, parent=self)
 
     @cached_property
     def core_transport(self) -> CoreTransport:
@@ -246,7 +238,7 @@ class Tokamak(PhysicalGraph):
         self.__dict__["core_profiles"] = core_profiles_next
         self._time = time
 
-    def plot(self, axis=None, *args,   **kwargs):
+    def plot(self, axis=None, *args, title=None,   **kwargs):
 
         if axis is None:
             axis = plt.gca()
@@ -265,6 +257,7 @@ class Tokamak(PhysicalGraph):
         axis.set_xlabel(r"Major radius $R$ [m]")
         axis.set_ylabel(r"Height $Z$ [m]")
         # axis.legend()
+        
         return axis
 
     # def initialize(self):

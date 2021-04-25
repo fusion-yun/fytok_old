@@ -29,7 +29,7 @@ class CoreTransport(PhysicalGraph):
     """
     IDS = "core_transport"
 
-    def __init__(self,   grid: RadialGrid, *args, time=None,   **kwargs):
+    def __init__(self,  *args, grid: RadialGrid = None,  time=None,   **kwargs):
         super().__init__(*args, **kwargs)
         self._grid = grid
         self._time = time or 0.0
@@ -102,13 +102,7 @@ class CoreTransport(PhysicalGraph):
         def __init__(self,   *args,  **kwargs):
             super().__init__(*args, **kwargs)
 
-    @property
-    def grid_flux(self):
-        """ Grid for fluxes
-            Todo :
-                FIXME
-        """
-        return self._grid
+
 
     @cached_property
     def electrons(self):

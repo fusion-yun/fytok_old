@@ -1,5 +1,4 @@
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.constants
@@ -8,7 +7,7 @@ from spdm.data.Collection import Collection
 from spdm.data.File import File
 from spdm.numerical.Function import Function
 from spdm.util.logger import logger
-from spdm.util.plot_profiles import plot_profiles
+from spdm.util.plot_profiles import plot_profiles, sp_figure
 
 if __name__ == "__main__":
 
@@ -51,21 +50,17 @@ if __name__ == "__main__":
             "psi":   1.0,
         }
     })
-    fig = plt.figure()
 
-    tok.plot(fig.gca(),
-             wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
-             pf_active={"facecolor": 'red'},
-             equilibrium={"mesh": True, "boundary": True,
-                          "scalar_field": [
-                              #   ("coordinate_system.norm_grad_psi", {"levels": 32, "linewidths": 0.1}),
-                              ("psirz", {"levels": 32, "linewidths": 0.1}),
-                          ],
-                          }
-             )
-
-    plt.savefig("/home/salmon/workspace/output/contour.svg", transparent=True)
-    logger.debug(tok.equilibrium.boundary.shape_property)
+    sp_figure(tok,
+              wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
+              pf_active={"facecolor": 'red'},
+              equilibrium={"mesh": True, "boundary": True,
+                           "scalar_field": [
+                               #   ("coordinate_system.norm_grad_psi", {"levels": 32, "linewidths": 0.1}),
+                               ("psirz", {"levels": 32, "linewidths": 0.1}),
+                           ],
+                           }
+              ) .savefig("/home/salmon/workspace/output/contour.svg", transparent=True)
 
     if True:
         plot_profiles(
@@ -89,20 +84,22 @@ if __name__ == "__main__":
                 [
                     (tok.equilibrium.profiles_1d.rho_tor,           r"$\rho_{tor}$"),
                     (Function(profile["Fp"].values, profile["rho"].values),             r"$\rho_{tor}^{\star}$"),
-                    # (tok.equilibrium.profiles_1d.dvolume_drho_tor / ((scipy.constants.pi**2) * 4.0 * tok.equilibrium.vacuum_toroidal_field.r0),
-                    #     r"$\frac{dV/d\rho_{tor}}{4\pi^2 R_0}$"),
+                    #     # (tok.equilibrium.profiles_1d.dvolume_drho_tor / ((scipy.constants.pi**2) * 4.0 * tok.equilibrium.vacuum_toroidal_field.r0),
+                    #     #     r"$\frac{dV/d\rho_{tor}}{4\pi^2 R_0}$"),
                 ],
-                [
-                    # (tok.equilibrium.profiles_1d.j_tor, r"$j_{tor}$"),
-                    (tok.equilibrium.profiles_1d.j_parallel,                          r"$j_{\parallel}$"),
-                    (Function(profile["Fp"].values, profile["Jtot"].values*1e6),      r"$j_{\parallel}^{\star}$"),
-                ],
-                [
-                    (tok.equilibrium.profiles_1d.geometric_axis.r,                   r"$geometric_{axis.r}$"),
-                    (tok.equilibrium.profiles_1d.r_inboard,                          r"$r_{inboard}$"),
-                    (tok.equilibrium.profiles_1d.r_outboard,                         r"$r_{outboard}$"),
+                (tok.equilibrium.profiles_1d.rho_tor_norm,           r"$\rho_{tor}/\rho_{tor,0}$"),
 
-                ],
+                # [
+                #     # (tok.equilibrium.profiles_1d.j_tor, r"$j_{tor}$"),
+                #     (tok.equilibrium.profiles_1d.j_parallel,                          r"$j_{\parallel}$"),
+                #     (Function(profile["Fp"].values, profile["Jtot"].values*1e6),      r"$j_{\parallel}^{\star}$"),
+                # ],
+                # [
+                #     (tok.equilibrium.profiles_1d.geometric_axis.r,                   r"$geometric_{axis.r}$"),
+                #     (tok.equilibrium.profiles_1d.r_inboard,                          r"$r_{inboard}$"),
+                #     (tok.equilibrium.profiles_1d.r_outboard,                         r"$r_{outboard}$"),
+
+                # ],
                 # [
                 # (Function(profile["Fp"].values, (profile["Jtot"].values-profile["Jbs"].values-- \
                 #                                  profile["Jext"].values)**2),                   r"$j_{total}^2$"),
@@ -149,7 +146,7 @@ if __name__ == "__main__":
             x_axis=(tok.equilibrium.profiles_1d.psi_norm,  {"label": r"$\psi_{N}$"}),  # asd
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/profiles_1d.svg", transparent=True)
 
-    if True:
+    if False:
         psi_norm = tok.radial_grid.psi_norm
         rho_tor_norm = tok.radial_grid.rho_tor_norm
 
@@ -218,7 +215,7 @@ if __name__ == "__main__":
             }
         )
 
-    if True:
+    if False:
         psi_norm = tok.equilibrium.profiles_1d.psi_norm
         rho_tor_norm = tok.equilibrium.profiles_1d.rho_tor_norm
         psi_prev = tok.equilibrium.profiles_1d.psi.pullback(psi_norm, rho_tor_norm)
