@@ -313,7 +313,7 @@ class MagneticSurfaceCoordinateSystem:
             pass
         elif not isinstance(psi, (np.ndarray, collections.abc.MutableSequence)):
             psi = [psi]
-        
+
         sbox = np.asarray([[*shape_box(s)] for s in self.create_surface(psi)])
 
         if sbox.shape[0] == 1:
@@ -907,7 +907,7 @@ class Equilibrium(PhysicalGraph):
         @cached_property
         def trapped_fraction(self)	:
             """Trapped particle fraction[-]"""
-            return NotImplemented
+            return Function(self.rho_tor_norm, self["trapped_fraction"] or 0.0)
 
         @cached_property
         def b_field_max(self):

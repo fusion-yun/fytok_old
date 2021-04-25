@@ -4,6 +4,8 @@ from fytok.modules.transport.CoreProfiles import CoreProfiles
 from fytok.modules.transport.CoreTransport import CoreTransport
 from fytok.modules.transport.Equilibrium import Equilibrium
 from spdm.numerical.Function import Function
+from spdm.util.logger import logger
+
 from .nclass_mod import nclass_mod
 
 
@@ -55,23 +57,16 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
     #  p_gr2phi       : radial electric field gradient Psi'(Phi'/Psi')' (V/rho**2)
     # -----------------------------------------------------------------------------
 
-    n0 = np.sum([ion.density for ion in core_profiles.ion])
-
     psi_norm = equilibrium.profiles_1d.psi_norm
     rho_tor_norm = core_profiles.grid.rho_tor_norm
     rho_tor = core_profiles.grid.rho_tor
     rho_tor_bdry = rho_tor[-1]
 
     bt0_pr = equilibrium.profiles_1d.fpol * equilibrium.profiles_1d.gm1 / equilibrium.profiles_1d.gm9
-
     gph_pr = equilibrium.profiles_1d.gm1*equilibrium.profiles_1d.vprime * rho_tor_bdry
-
-    q0 = equilibrium.profiles_1d.q
 
     b0 = equilibrium.vacuum_toroidal_field.b0
     r0 = equilibrium.vacuum_toroidal_field.r0
-
-    rkappa0 = equilibrium.boundary.elongation
 
     r_inboard = equilibrium.profiles_1d.r_inboard
     r_outboard = equilibrium.profiles_1d.r_outboard
@@ -81,8 +76,6 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
     #  external poloidal current has a flux surface (A)|
     xfs_pr = 2.0*scipy.constants.pi*xr0_pr*bt0_pr/scipy.constants.mu_0
 
-    p_eb_pr = core_profiles.e_field.parallel
-
     # Electron,Ion densities, temperatures and mass
 
     temperature = [core_profiles.electrons.temperature, *[ion.temperature for ion in core_profiles.ion]]
@@ -91,8 +84,6 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
 
     density = [core_profiles.electrons.density, *[ion.density for ion in core_profiles.ion]]
 
-    dDensity = [n.derivative for n in density]
-
     dPressure = [core_profiles.electrons.pressure.derivative*equilibrium.profiles_1d.dpsi_drho_tor_norm,
                  *[ion.pressure.derivative*equilibrium.profiles_1d.dpsi_drho_tor_norm for ion in core_profiles.ion]]
 
@@ -100,14 +91,16 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
            * [ion.z_ion for ion in core_profiles.ion]]
 
     q = equilibrium.profiles_1d.q
-
     dq_drho_tor = equilibrium.profiles_1d.q.derivative*equilibrium.profiles_1d.dpsi_drho_tor
     dphi_drho_tor = equilibrium.profiles_1d.dphi_dpsi*equilibrium.profiles_1d.dpsi_drho_tor
     fpol = equilibrium.profiles_1d.fpol
     kappa = equilibrium.profiles_1d.elongation
+
     c_potb = kappa[0]*b0/2.0/q[0]
     c_potl = r0*q[0]
+
     psi_norm = Function(core_transport.grid_d.rho_tor_norm, core_transport.grid_d.psi_norm)
+
     # Set input for NCLASS
 
     for ipr, x in enumerate(core_transport.grid_d.rho_tor_norm):
@@ -138,9 +131,6 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
 
         if (xgph == 0):
             xgph = 0.01
-
-        c_potb = rkappa0*b0/2/q0/q0
-        c_potl = q0*xr0
 
         p_fm = [0.0,  0.0, 0.0]
 
@@ -279,12 +269,10 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
 
             # ion particle fluxes
             sp.particle.d[ipr] += dn_s[k + 1]/grad_rho_tor2
-
             sp.particle.v[ipr] += vnnt_s[k + 1] + vneb_s[k + 1]*p_etap*(jparallel - p_jbbs)
-
             sp.particle.flux[ipr] += np.sum(glf_s[:, k + 1])
 
-            sp.deff[ipr] += dn_s[k + 1]/grad_rho_tor2
+            # sp.deff[ipr] += dn_s[k + 1]/grad_rho_tor2
 
         # Ionic rotational  momentum transport
             sp.momentum_tor.d[ipr] += 0.0  # Need to set
