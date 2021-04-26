@@ -149,17 +149,17 @@ class CoreProfiles(Profiles):
             """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
             return self._neutral_index
 
-        # @property
-        # def z_ion_1d(self):
-        #     """Average charge of the ion species (sum of states charge weighted by state density and
-        #     divided by ion density) {dynamic} [-]  """
-        #     return NotImplemented
+        @cached_property
+        def z_ion_1d(self):
+            """Average charge of the ion species (sum of states charge weighted by state density and
+            divided by ion density) {dynamic} [-]  """
+            return NotImplemented
 
-        # @property
-        # def z_ion_square_1d(self):
-        #     """Average square charge of the ion species (sum of states square charge weighted by
-        #     state density and divided by ion density) {dynamic} [-]  """
-        #     return NotImplemented
+        @cached_property
+        def z_ion_square_1d(self):
+            """Average square charge of the ion species (sum of states square charge weighted by
+            state density and divided by ion density) {dynamic} [-]  """
+            return NotImplemented
 
         @cached_property
         def temperature(self):
@@ -194,20 +194,20 @@ class CoreProfiles(Profiles):
         #      -2: invalid data, should not be used {dynamic}    """
         #     return NotImplemented
 
-        # @cached_property
-        # def density_fit(self):
-        #     """Information on the fit used to obtain the density profile [m^-3]    """
-        #     return NotImplemented
+        @cached_property
+        def density_fit(self):
+            """Information on the fit used to obtain the density profile [m^-3]    """
+            return NotImplemented
 
-        # @property
-        # def density_thermal(self):
-        #     """Density (thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        #     return NotImplemented
+        @property
+        def density_thermal(self):
+            """Density (thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
+            return NotImplemented
 
-        # @property
-        # def density_fast(self):
-        #     """Density of fast (non-thermal) particles (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        #     return NotImplemented
+        @property
+        def density_fast(self):
+            """Density of fast (non-thermal) particles (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
+            return NotImplemented
 
         @cached_property
         def pressure(self):
@@ -233,27 +233,27 @@ class CoreProfiles(Profiles):
             """Fast (non-thermal) parallel pressure (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
             return NotImplemented
 
-        # @property
-        # def rotation_frequency_tor(self):
-        #     """Toroidal rotation frequency (i.e. toroidal velocity divided by the major radius at which the toroidal velocity is taken)
-        #     (average over charge states when multiple charge states are considered) {dynamic} [rad.s^-1]  """
-        #     return NotImplemented
+        @property
+        def rotation_frequency_tor(self):
+            """Toroidal rotation frequency (i.e. toroidal velocity divided by the major radius at which the toroidal velocity is taken)
+            (average over charge states when multiple charge states are considered) {dynamic} [rad.s^-1]  """
+            return NotImplemented
 
-        # @property
-        # def velocity(self):
-        #     """Velocity (average over charge states when multiple charge states are considered) at the position of maximum major
-        #     radius on every flux surface [m.s^-1]    """
-        #     return NotImplemented
+        @property
+        def velocity(self):
+            """Velocity (average over charge states when multiple charge states are considered) at the position of maximum major
+            radius on every flux surface [m.s^-1]    """
+            return NotImplemented
 
-        # @property
-        # def multiple_states_flag(self):
-        #     """Multiple states calculation flag : 0-Only one state is considered; 1-Multiple states are considered and are described in the state  {dynamic}    """
-        #     return NotImplemented
+        @cached_property
+        def multiple_states_flag(self):
+            """Multiple states calculation flag : 0-Only one state is considered; 1-Multiple states are considered and are described in the state  {dynamic}    """
+            return self["multiple_states_flag"] or 0
 
-        # @property
-        # def state(self):
-        #     """Quantities related to the different states of the species (ionisation, energy, excitation, ...)  struct_array [max_size=unbounded]  1- 1...N"""
-        #     return NotImplemented
+        @cached_property
+        def state(self):
+            """Quantities related to the different states of the species (ionisation, energy, excitation, ...)  struct_array [max_size=unbounded]  1- 1...N"""
+            return self["state"] 
 
     class Neutral(Profiles):
         def __init__(self, cache=None,  *args, grid=None, label=None, ion_index=None, **kwargs):
