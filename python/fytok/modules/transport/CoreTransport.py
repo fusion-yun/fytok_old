@@ -3,15 +3,15 @@ from functools import cached_property, lru_cache
 
 import numpy as np
 from spdm.data.List import List
-from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.data.Function import Function
+from spdm.data.AttributeTree import AttributeTree
 from spdm.util.logger import logger
 
 from ...Profiles import Profiles
 from ...RadialGrid import RadialGrid
 
 
-class CoreTransport(PhysicalGraph):
+class CoreTransport(AttributeTree):
     r"""
         Core plasma transport of particles, energy, momentum and poloidal flux. The transport of particles, energy and momentum is described by
         diffusion coefficients,  :math:`D`, and convection velocities,  :math:`v`. These are defined by the total fluxes of particles, energy and momentum, across a
@@ -38,6 +38,14 @@ class CoreTransport(PhysicalGraph):
         logger.debug(f"Update {self.__class__.__name__}")
         if time is not None:
             self._time = time
+
+    @cached_property
+    def identifier(self):
+        return AttributeTree({
+            "index": self["identifier.index"] or 0,
+            "name": self["identifier.name"] or "",
+            "description": self["identifier.description"] or "",
+        }, parent=self)
 
     @property
     def time(self) -> float:
