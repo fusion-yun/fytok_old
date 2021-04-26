@@ -10,7 +10,7 @@ from spdm.data.AttributeTree import AttributeTree
 from spdm.data.List import List
 from spdm.data.Node import Node, _next_
 from spdm.data.PhysicalGraph import PhysicalGraph
-from spdm.numerical.Function import Function
+from spdm.data.Function import Function
 from spdm.util.logger import logger
 import getpass
 import datetime

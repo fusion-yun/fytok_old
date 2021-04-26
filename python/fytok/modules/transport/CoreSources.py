@@ -4,7 +4,7 @@ from functools import cached_property, lru_cache
 import numpy as np
 import scipy.constants
 from spdm.data.PhysicalGraph import PhysicalGraph
-from spdm.numerical.Function import Function
+from spdm.data.Function import Function
 from spdm.util.logger import logger
 
 from ...RadialGrid import RadialGrid

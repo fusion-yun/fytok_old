@@ -5,7 +5,7 @@ import scipy.constants
 from fytok.Tokamak import Tokamak
 from spdm.data.Collection import Collection
 from spdm.data.File import File
-from spdm.numerical.Function import Function
+from spdm.data.Function import Function
 from spdm.util.logger import logger
 from spdm.util.plot_profiles import plot_profiles, sp_figure
 

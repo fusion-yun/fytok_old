@@ -5,7 +5,7 @@ import scipy.constants
 from fytok.Tokamak import Tokamak
 from spdm.data.Collection import Collection
 from spdm.data.File import File
-from spdm.numerical.Function import Function
+from spdm.data.Function import Function
 from spdm.util.logger import logger
 from spdm.util.plot_profiles import plot_profiles
 import sys
@@ -43,14 +43,18 @@ if __name__ == "__main__":
             },
             "ion": [
                 {
-                    "label": "H+",
+                    "label": "H^+",
                     "z_ion": 1,
-                    "neutral_index": 1
+                    "neutral_index": 1,
+                    "density":     0.5e19,
+                    "temperature": lambda x: (1-x**2)**2
                 },
                 {
-                    "label": "D+",
+                    "label": "D^+",
                     "z_ion": 1,
-                    "neutral_index": 2
+                    "neutral_index": 2,
+                    "density":     0.5e19,
+                    "temperature": lambda x: (1-x**2)**2
                 }
             ],
             "conductivity_parallel": 1.0,
@@ -60,19 +64,19 @@ if __name__ == "__main__":
 
     plot_profiles(
         [
-            (tok.equilibrium.profiles_1d.dpressure_dpsi,            r"$dP/d\psi$"),
+            (tok.equilibrium.profiles_1d.dpressure_dpsi,         r"$dP/d\psi$"),
             [
                 (tok.equilibrium.profiles_1d.ffprime,            r"$ff^{\prime}$"),
                 (Function(equilibrium.profiles_1d.psi_norm,
-                          equilibrium.profiles_1d.f_df_dpsi),   r"$ff^{\prime}_{0}$"),
+                          equilibrium.profiles_1d.f_df_dpsi),    r"$ff^{\prime}_{0}$"),
             ],
             [
-                (tok.equilibrium.profiles_1d.fpol,              r"$fpol$"),
+                (tok.equilibrium.profiles_1d.fpol,               r"$fpol$"),
                 (Function(equilibrium.profiles_1d.psi_norm,
-                          np.abs(equilibrium.profiles_1d.f)),   r"$\left|f_{pol0}\right|$"),
+                          np.abs(equilibrium.profiles_1d.f)),    r"$\left|f_{pol0}\right|$"),
             ],
             [
-                (tok.equilibrium.profiles_1d.q,                    r"$q$"),
+                (tok.equilibrium.profiles_1d.q,                  r"$q$"),
                 # (tok.equilibrium.profiles_1d.dphi_dpsi,                    r"$\frac{d\phi}{d\psi}$"),
                 # (Function(equilibrium.profiles_1d.psi_norm, equilibrium.profiles_1d.q), r"$q_0$"),
                 (Function(profile["Fp"].values, profile["q"].values),             r"$q^{\star}$"),
@@ -139,23 +143,43 @@ if __name__ == "__main__":
         ],
         # x_axis=(tok.equilibrium.profiles_1d.rho_tor_norm,   {"label": r"$\rho_{N}$"}),  # asd
         # x_axis=(tok.equilibrium.profiles_1d.phi,   {"label": r"$\Phi$"}),  # asd
-        x_axis=(tok.equilibrium.profiles_1d.psi_norm,  {"label": r"$\psi_{N}$"}),  # asd
+        x_axis=(tok.equilibrium.profiles_1d.psi_norm,    r"$\psi_{N}$"),  # asd
         grid=True, fontsize=16
-    ) .savefig("/home/salmon/workspace/output/profiles_1d_eq.svg", transparent=True)
+    ) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
     plot_profiles(
         [
-            (tok.core_profiles.electrons.density,          {"color": "green", "label":  r"n_e"}),
-            (tok.core_profiles.electrons.temperature,          {"color": "green", "label":  r"T_e"}),
-            (tok.core_profiles.ion[0].density,          {
-             "color": "green", "label":  f"n_{tok.core_profiles.ion[0].label}"}),
-            (tok.core_profiles.ion[0].temperature,          {
-             "color": "green", "label":  f"T_{tok.core_profiles.ion[0].label}"}),
+            (tok.core_profiles.electrons.density,       r"$n_e$"),
+            (tok.core_profiles.electrons.temperature,   r"$T_e$"),
+            (tok.core_profiles.ion[0].density,          f"$n_{{{tok.core_profiles.ion[0].label}}}$"),
+            (tok.core_profiles.ion[0].temperature,      f"$T_{{{tok.core_profiles.ion[0].label}}}$"),
         ],
-        x_axis=(tok.core_profiles.grid.rho_tor_norm,   {"label": r"$\sqrt{\Phi/\Phi_{bdry}}$"}),  # x axis,
-        grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_fprofile.svg", transparent=True)
-
-    # for ion in tok.core_profiles.ion:
-    #     logger.debug((ion.label, ion.z_ion))
+        x_axis=(tok.core_profiles.grid.rho_tor_norm,    r"$\sqrt{\Phi/\Phi_{bdry}}$"),  # x axis,
+        grid=True, fontsize=10
+    ) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
     core_transport = nclass.transport_nclass(tok.equilibrium, tok.core_profiles, tok.core_transport)
+    logger.debug(len(tok.core_transport.ion))
+    for ion in tok.core_transport.ion:
+        logger.debug((ion.label,ion.z_ion))
+
+    # plot_profiles(
+    #     [
+    #         #         [
+    #         (tok.core_transport.electrons.particles.d,   r"$D_e$"),
+    #         (tok.core_transport.electrons.particles.v,   r"$V_e$"),
+    #         (tok.core_transport.electrons.particles.flux, r"$\Gamma_e$"),
+
+    #         #         ],
+    #         #         [
+    #         (tok.core_transport.electrons.energy.d,      r"$\chi_e$"),
+    #         (tok.core_transport.electrons.energy.v,      r"$v_{Te}$"),
+    #         (tok.core_transport.electrons.energy.flux,   r"$q_e$"),
+
+    #         #         ],
+    #         [(ion.particles.d,           f"$D_{{{ion.label}}}$") for ion in tok.core_transport.ion],
+    #         [(ion.particles.v,           f"$v_{{{ion.label}}}$") for ion in tok.core_transport.ion],
+    #         [(ion.particles.flux,        f"$flux_{{{ion.label}}}$") for ion in tok.core_transport.ion],
+    #     ],
+    #     x_axis=(tok.core_transport.grid_v.rho_tor_norm,   r"$\sqrt{\Phi/\Phi_{bdry}}$"),  # x axis,
+    #     grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)

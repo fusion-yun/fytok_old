@@ -3,9 +3,9 @@ import scipy.constants
 from fytok.modules.transport.CoreProfiles import CoreProfiles
 from fytok.modules.transport.CoreTransport import CoreTransport
 from fytok.modules.transport.Equilibrium import Equilibrium
-from spdm.numerical.Function import Function
+from spdm.data.Function import Function
 from spdm.util.logger import logger
-
+from spdm.data.Node import _next_
 from .nclass_mod import nclass_mod
 
 
@@ -47,6 +47,7 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
     l_pfirsch = 1
 
     m_i = 1+len(core_profiles.ion)
+
     m_z = max([ion.z_ion for ion in core_profiles.ion])
     # ------------------------------------------------------------------------
     #  c_den          : density cutoff below which species is ignored (/m**3)
@@ -99,6 +100,16 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
     c_potl = r0*q[0]
 
     psi_norm = Function(core_transport.grid_d.rho_tor_norm, core_transport.grid_d.psi_norm)
+
+    for p_ion in core_profiles.ion:
+        core_transport.ion[_next_] = {
+            "label": p_ion.label,
+            "z_ion": p_ion.z_ion,
+            "neutral_index": p_ion.neutral_index,
+            "element": p_ion.element,
+            "multiple_states_flag": p_ion.multiple_states_flag,
+            "state": p_ion.state
+        }
 
     # Set input for NCLASS
 
@@ -159,6 +170,8 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
                 p_fm[0] = 1*a**(2*1)*(1.0 + 1*b)/c
                 p_fm[2] = 2*a**(2*2)*(1.0 + 2*b)/c
                 p_fm[1] = 3*a**(2*3)*(1.0 + 3*b)/c
+
+        logger.debug((m_i, m_z))
 
         (
             iflag,  # " int"
@@ -265,7 +278,6 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core
             sp.energy.v[ipr] += vqnt_s[k + 1] + vqeb_s[k + 1]*p_etap*(jparallel - p_jbbs)
             sp.energy.flux[ipr] += np.sum(qfl_s[:, k + 1])
             # sp.chieff[ipr] += chi_s[k + 1]/grad_rho_tor2
-            logger.debug((ipr, k, dn_s, grad_rho_tor2))
             # ion particle fluxes
             sp.particles.d[ipr] += dn_s[k + 1]/grad_rho_tor2
             sp.particles.v[ipr] += vnnt_s[k + 1] + vneb_s[k + 1]*p_etap*(jparallel - p_jbbs)

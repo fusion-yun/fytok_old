@@ -4,7 +4,7 @@ from functools import cached_property
 import numpy as np
 import scipy
 from spdm.data.AttributeTree import AttributeTree
-from spdm.numerical.Function import Function
+from spdm.data.Function import Function
 from spdm.data.Node import Node, _next_
 from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.util.logger import logger

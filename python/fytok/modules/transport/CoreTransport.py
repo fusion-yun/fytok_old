@@ -4,7 +4,7 @@ from functools import cached_property, lru_cache
 import numpy as np
 from spdm.data.List import List
 from spdm.data.PhysicalGraph import PhysicalGraph
-from spdm.numerical.Function import Function
+from spdm.data.Function import Function
 from spdm.util.logger import logger
 
 from ...Profiles import Profiles
@@ -75,8 +75,27 @@ class CoreTransport(PhysicalGraph):
             return Function(self._parent.grid_flux.rho_tor_norm, self["flux"])
 
     class Ion(Profiles):
-        def __init__(self,   *args,  **kwargs):
+        def __init__(self,   *args,   z_ion=1, label=None, neutral_index=None,  **kwargs):
             super().__init__(*args, **kwargs)
+            self._label = label or self._data.get("label", None)
+            self._z_ion = z_ion or self._data.get("z_ion", None)
+            self._neutral_index = neutral_index or self._data.get("neutral_index", None)
+
+        @property
+        def z_ion(self):
+            """Ion charge (of the dominant ionisation state; lumped ions are allowed),
+            volume averaged over plasma radius {dynamic} [Elementary Charge Unit]  FLT_0D  """
+            return self._z_ion
+
+        @property
+        def label(self):
+            """String identifying ion (e.g. H+, D+, T+, He+2, C+, ...) {dynamic}    """
+            return self._label
+
+        @property
+        def neutral_index(self):
+            """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
+            return self._neutral_index
 
         @cached_property
         def particles(self):
@@ -101,8 +120,6 @@ class CoreTransport(PhysicalGraph):
     class Neutral(Profiles):
         def __init__(self,   *args,  **kwargs):
             super().__init__(*args, **kwargs)
-
-
 
     @cached_property
     def electrons(self):

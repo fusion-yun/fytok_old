@@ -16,7 +16,7 @@ from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.geometry.CubicSplineCurve import CubicSplineCurve
 from spdm.geometry.Curve import Curve
 from spdm.geometry.Point import Point
-from spdm.numerical.Function import Function
+from spdm.data.Function import Function
 from spdm.util.logger import logger
 from spdm.util.utilities import try_get
 

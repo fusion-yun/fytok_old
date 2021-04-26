@@ -4,7 +4,7 @@ from functools import cached_property
 import numpy as np
 from spdm.data.List import List
 from spdm.data.PhysicalGraph import PhysicalGraph
-from spdm.numerical.Function import Function
+from spdm.data.Function import Function
 from spdm.util.logger import logger
 
 from ...RadialGrid import RadialGrid
@@ -43,7 +43,6 @@ class CoreProfiles(Profiles):
         super().__init__(*args,  ** kwargs)
         self._time = time or 0.0
         self._grid = grid
-        logger.debug(type(grid))
 
     @property
     def time(self):
@@ -130,9 +129,9 @@ class CoreProfiles(Profiles):
     class Ion(Profiles):
         def __init__(self,   *args,   z_ion=1, label=None, neutral_index=None,  **kwargs):
             super().__init__(*args,  **kwargs)
-            self._label = label or self["label"]
-            self._z_ion = z_ion or self["z_ion"]
-            self._neutral_index = neutral_index or self["neutral_index"]
+            self._label = label or self._data.get("label", None)
+            self._z_ion = z_ion or self._data.get("z_ion", None)
+            self._neutral_index = neutral_index or self._data.get("neutral_index", None)
 
         @property
         def z_ion(self):
@@ -165,7 +164,7 @@ class CoreProfiles(Profiles):
         @cached_property
         def temperature(self):
             """Temperature (average over charge states when multiple charge states are considered) {dynamic} [eV]  """
-            return Function(self.axis, self["temperature"] or 0.0)
+            return Function(self.axis, self["temperature"])
 
         # @property
         # def temperature_validity(self):
@@ -184,7 +183,7 @@ class CoreProfiles(Profiles):
         @cached_property
         def density(self):
             """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-            return Function(self.axis, self["density"] or 0.0)
+            return Function(self.axis, self["density"])
 
         # @property
         # def density_validity(self):
@@ -450,7 +449,7 @@ class CoreProfiles(Profiles):
     def j_bootstrap(self):
         """Bootstrap current density = average(J_Bootstrap.B) / B0,
             where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
-        return Function(self.axis, self["j_bootstrap"] or 0.0)
+        return Function(self.axis, self["j_bootstrap"])
 
     # @property
     # def conductivity_parallel(self):
@@ -463,7 +462,7 @@ class CoreProfiles(Profiles):
 
         @cached_property
         def parallel(self):
-            return Function(self.axis, self["parallel"] or 0.0)
+            return Function(self.axis, self["parallel"])
 
     @cached_property
     def e_field(self):
