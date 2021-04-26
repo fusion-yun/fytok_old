@@ -43,15 +43,18 @@ if __name__ == "__main__":
             },
             "ion": [
                 {
+
                     "label": "H^+",
                     "z_ion": 1,
                     "neutral_index": 1,
+                    "element": [{"a": 1, "z_n": 1, "atoms_n": 1}],
                     "density":     0.5e19,
                     "temperature": lambda x: (1-x**2)**2
                 },
                 {
                     "label": "D^+",
                     "z_ion": 1,
+                    "element": [{"a": 2, "z_n": 1, "atoms_n": 1}],
                     "neutral_index": 2,
                     "density":     0.5e19,
                     "temperature": lambda x: (1-x**2)**2
@@ -159,7 +162,7 @@ if __name__ == "__main__":
     ) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
     core_transport = nclass.transport_nclass(tok.equilibrium, tok.core_profiles, tok.core_transport)
-    
+
     logger.debug(tok.core_transport.identifier)
 
     plot_profiles(
