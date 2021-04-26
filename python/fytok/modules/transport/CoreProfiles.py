@@ -39,7 +39,7 @@ class CoreProfiles(Profiles):
     """
     IDS = "core_profiles"
 
-    def __init__(self,  *args,   time=None,  grid=None, ** kwargs):
+    def __init__(self,  *args,   time=None,  grid: RadialGrid = None, ** kwargs):
         super().__init__(*args,  ** kwargs)
         self._time = time or 0.0
         self._grid = grid
@@ -253,7 +253,7 @@ class CoreProfiles(Profiles):
         @cached_property
         def state(self):
             """Quantities related to the different states of the species (ionisation, energy, excitation, ...)  struct_array [max_size=unbounded]  1- 1...N"""
-            return self["state"] 
+            return self["state"]
 
     class Neutral(Profiles):
         def __init__(self, cache=None,  *args, grid=None, label=None, ion_index=None, **kwargs):

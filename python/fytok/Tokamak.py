@@ -38,13 +38,13 @@ class Tokamak(PhysicalGraph):
 
     """
 
-    def __init__(self, *args, time=None,  radial_grid=None, **kwargs):
+    def __init__(self, *args, time=None,    **kwargs):
         super().__init__(*args,  **kwargs)
         self._time = time or 0.0
 
-    @cached_property
-    def radial_grid(self):
-        return self.equilibrium.radial_grid(**self["radial_grid"]._data)
+    # @cached_property
+    # def radial_grid(self):
+    #     return self.equilibrium.radial_grid(**self["radial_grid"]._data)
 
     @property
     def time(self):
@@ -187,15 +187,13 @@ class Tokamak(PhysicalGraph):
         for nstep in range(max_step):
             logger.debug(f"time={time}  iterator step {nstep}/{max_step}")
 
-            self.radial_grid.update(time=time, equilibrium=self.equilibrium)
+            # self.radial_grid.update(time=time, equilibrium=self.equilibrium)
 
             self.core_transport.update(time=time,
-                                       radial_grid=self.radial_grid,
                                        equilibrium=self.equilibrium,
                                        core_profiles=self.core_profiles)
 
             self.core_sources.update(time=time,
-                                     radial_grid=self.radial_grid,
                                      equilibrium=self.equilibrium,
                                      core_profiles=self.core_profiles)
 

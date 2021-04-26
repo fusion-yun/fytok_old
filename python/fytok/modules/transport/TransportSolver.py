@@ -232,7 +232,7 @@ class TransportSolver(PhysicalGraph):
         if time is None:
             time = equilibrium.time
 
-        core_profiles_next = CoreProfiles(grid=self.radial_grid, time=time)
+        core_profiles_next = CoreProfiles(grid=equilibrium.radial_grid("rho_tor_norm", axis=128), time=time)
 
         tau = core_profiles_next.time - core_profiles_prev.time
 
@@ -242,6 +242,7 @@ class TransportSolver(PhysicalGraph):
         R0 = core_profiles_next.grid.vacuum_toroidal_field.r0
 
         # $B_0$ magnetic field measured at $R_0$            [T]
+
         B0 = core_profiles_next.grid.vacuum_toroidal_field.b0
 
         B0m = core_profiles_prev.grid.vacuum_toroidal_field.b0
@@ -250,9 +251,9 @@ class TransportSolver(PhysicalGraph):
         # $rho_tor$ not  normalized minor radius                [m]
         rho_tor = core_profiles_next.grid.rho_tor
 
-        rho_tor_boundary = core_profiles_next.grid.rho_tor_boundary
+        rho_tor_boundary = core_profiles_next.grid.rho_tor[-1]
 
-        rho_tor_boundary_m = core_profiles_prev.grid.rho_tor_boundary
+        rho_tor_boundary_m = core_profiles_prev.grid.rho_tor[-1]
 
         # $rho_tor_{norm}$ normalized minor radius                [-]
         rho_tor_norm = core_profiles_next.grid.rho_tor_norm

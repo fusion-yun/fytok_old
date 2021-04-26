@@ -32,6 +32,7 @@ class CoreTransport(AttributeTree):
     def __init__(self,  *args, grid: RadialGrid = None,  time=None,   **kwargs):
         super().__init__(*args, **kwargs)
         self._grid = grid
+        logger.debug(type(self._grid))
         self._time = time or 0.0
 
     def update(self, *args, time=None, ** kwargs):
