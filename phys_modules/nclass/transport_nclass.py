@@ -9,10 +9,19 @@ from spdm.data.Node import _next_
 from .nclass_mod import nclass_mod
 
 
-def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, core_transport: CoreTransport):
-    core_transport.identifier.name = "neoclassical"
-    core_transport.identifier.index = 5
-    core_transport.identifier.description = "by NCLASS"
+def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, axis=None) -> CoreTransport:
+
+    core_transport = CoreTransport({
+        "identifier": {
+            "name": "neoclassical",
+            "index": 5,
+            "description": "by NCLASS"
+        }
+    },
+        grid=equilibrium.radial_grid("rho_tor_norm", axis=axis),
+        time=equilibrium.time,
+    )
+    logger.debug(core_transport.identifier)
 
     # ----------------------------------------------------------------------
     # Model options

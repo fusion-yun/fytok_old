@@ -42,9 +42,9 @@ class CoreTransport(AttributeTree):
     @cached_property
     def identifier(self):
         return AttributeTree({
-            "index": self["identifier.index"] or 0,
-            "name": self["identifier.name"] or "",
-            "description": self["identifier.description"] or "",
+            "index": self["identifier"]["index"] or 0,
+            "name": self["identifier"]["name"] or "",
+            "description": self["identifier"]["description"] or "",
         }, parent=self)
 
     @property

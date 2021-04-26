@@ -161,28 +161,28 @@ if __name__ == "__main__":
         grid=True, fontsize=10
     ) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
-    core_transport = nclass.transport_nclass(tok.equilibrium, tok.core_profiles, tok.core_transport)
+    core_transport = nclass.transport_nclass(tok.equilibrium, tok.core_profiles)
 
-    logger.debug(tok.core_transport.identifier)
+    logger.debug(core_transport.identifier)
 
     plot_profiles(
         [
             #         [
-            (tok.core_transport.electrons.particles.d,   r"$D_e$"),
-            (tok.core_transport.electrons.particles.v,   r"$V_e$"),
-            (tok.core_transport.electrons.particles.flux, r"$\Gamma_e$"),
+            (core_transport.electrons.particles.d,   r"$D_e$"),
+            (core_transport.electrons.particles.v,   r"$V_e$"),
+            (core_transport.electrons.particles.flux, r"$\Gamma_e$"),
 
             #         ],
             #         [
-            (tok.core_transport.electrons.energy.d,      r"$\chi_e$"),
-            (tok.core_transport.electrons.energy.v,      r"$v_{Te}$"),
-            (tok.core_transport.electrons.energy.flux,   r"$q_e$"),
+            (core_transport.electrons.energy.d,      r"$\chi_e$"),
+            (core_transport.electrons.energy.v,      r"$v_{Te}$"),
+            (core_transport.electrons.energy.flux,   r"$q_e$"),
 
             #         ],
-            [(ion.particles.d,           f"$D_{{{ion.label}}}$") for ion in tok.core_transport.ion],
-            [(ion.particles.v,           f"$v_{{{ion.label}}}$") for ion in tok.core_transport.ion],
-            [(ion.particles.flux,        f"$flux_{{{ion.label}}}$") for ion in tok.core_transport.ion],
+            [(ion.particles.d,           f"$D_{{{ion.label}}}$") for ion in core_transport.ion],
+            [(ion.particles.v,           f"$v_{{{ion.label}}}$") for ion in core_transport.ion],
+            [(ion.particles.flux,        f"$flux_{{{ion.label}}}$") for ion in core_transport.ion],
         ],
-        x_axis=(tok.core_transport.grid_v.rho_tor_norm,   r"$\sqrt{\Phi/\Phi_{bdry}}$"),  # x axis,
-        annotation=tok.core_transport.identifier.name,
+        x_axis=(core_transport.grid_v.rho_tor_norm,   r"$\sqrt{\Phi/\Phi_{bdry}}$"),  # x axis,
+        annotation=core_transport.identifier.name,
         grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
