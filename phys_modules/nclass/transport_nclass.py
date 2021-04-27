@@ -11,21 +11,22 @@ from .nclass_mod import nclass_mod
 
 def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, grid: np.ndarray = None) -> CoreTransport:
 
-    core_transport = CoreTransport({
-        "identifier": {
-            "name": "neoclassical",
-            "index": 5,
-            "description": "by NCLASS"
+    core_transport = CoreTransport(
+        {
+            "identifier": {
+                "name": "neoclassical",
+                "index": 5,
+                "description": "by NCLASS"
+            },
+            "ion": [{
+                "label": p_ion.label,
+                "z_ion": p_ion.z_ion,
+                "neutral_index": p_ion.neutral_index,
+                "element": p_ion.element,
+                "multiple_states_flag": p_ion.multiple_states_flag,
+                "state": p_ion.state
+            } for p_ion in core_profiles.ion]
         },
-        "ion": [{
-            "label": p_ion.label,
-            "z_ion": p_ion.z_ion,
-            "neutral_index": p_ion.neutral_index,
-            "element": p_ion.element,
-            "multiple_states_flag": p_ion.multiple_states_flag,
-            "state": p_ion.state
-        } for p_ion in core_profiles.ion]
-    },
         grid=equilibrium.radial_grid("rho_tor_norm", axis=grid),
         time=equilibrium.time,
     )
@@ -136,7 +137,7 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, grid
         #Call NCLASS  #
         #-------------#
         qsf = q(x_psi)
-        fex_iz = np.ndarray([3, 3])
+        fex_iz = np.zeros([3, 3])
         fex_iz[0, 1] = 0.0
         fex_iz[1, 1] = 0.0
         fex_iz[2, 1] = 0.0
@@ -179,6 +180,45 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, grid
                 p_fm[0] = 1*a**(2*1)*(1.0 + 1*b)/c
                 p_fm[2] = 2*a**(2*2)*(1.0 + 2*b)/c
                 p_fm[1] = 3*a**(2*3)*(1.0 + 3*b)/c
+
+        inputs = (
+            m_i,                                              # number of isotopes (> 1) [-]
+            m_z,                                              # highest charge state [-]
+            equilibrium.profiles_1d.gm5(x_psi),               # <B**2> [T**2]
+            equilibrium.profiles_1d.gm4(x_psi),               # <1/B**2> [1/T**2]
+            core_profiles.e_field.parallel(x_psi)*b0,         # <E.B> [V*T/m]
+            scipy.constants.mu_0*fpol(x_psi) / dpsi_drho_tor,  # mu_0*F/(dPsi/dr) [rho/m]
+            p_fm,                                             # poloidal moments of drift factor for PS [/m**2]
+            equilibrium.profiles_1d.trapped_fraction(x_psi),  # trapped fraction [-]
+            equilibrium.profiles_1d.gm6(x_psi),               # <grad(rho)**2/B**2> [rho**2/m**2/T**2]
+            dphi_drho_tor(x_psi),                             # potential gradient Phi' [V/rho]
+            ((dpsi_drho_tor**2) * dq_drho_tor(x_psi)),        # Psi'(Phi'/Psi')' [V/rho**2]
+            p_ngrth,                                          # <n.grad(Theta)> [/m]
+            amu,                                              # atomic mass number [-]
+            [dT(x_psi) for dT in dTs],                        # temperature gradient [keV/rho]
+            [T(x_psi) for T in Ts],                           # temperature [keV]
+            [n(x_psi) for n in ns],                           # density [/m**3]
+            fex_iz[:, :],                                     # moments of external parallel force [T*n/m**3]
+            [dp(x_psi) for dp in dPs],                        # pressure gradient [keV/m**3/rho]
+            ipr,                                              #
+            l_banana,                                         # option to include banana viscosity [logical]
+            # option to include Pfirsch-Schluter viscosity [logical]
+            l_pfirsch,
+            l_potato,                                         # option to include potato orbits [logical]
+            k_order,                                          # order of v moments to be solved [-]
+                                                              #            =2 u and q (default)
+                                                              #            =3 u, q, and u2
+                                                              #            =else error
+            # density cutoff below which species is ignored (default 1.e10) [/m**3]
+            c_den,
+            c_potb,                                           # kappa(0)*Bt(0)/[2*q(0)**2] [T]
+            c_potl,                                           # q(0)*R(0) [m]
+        )
+
+        outputs = nclass_mod.nclass(*inputs)
+
+        logger.debug((inputs))
+        # logger.debug(outputs)
 
         (
             iflag,  # " int"
@@ -241,42 +281,9 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, grid
             sqz_s,      # orbit squeezing factor for s [-]
             xi_s,       # charge weighted density factor of s [-]
             tau_ss,     # 90 degree scattering time [s]
-        ) = nclass_mod.nclass(
-            m_i,                                              # number of isotopes (> 1) [-]
-            m_z,                                              # highest charge state [-]
-            equilibrium.profiles_1d.gm5(x_psi),               # <B**2> [T**2]
-            equilibrium.profiles_1d.gm4(x_psi),               # <1/B**2> [1/T**2]
-            core_profiles.e_field.parallel(x_psi)*b0,         # <E.B> [V*T/m]
-            scipy.constants.mu_0*fpol(x_psi) / dpsi_drho_tor,  # mu_0*F/(dPsi/dr) [rho/m]
-            p_fm,                                             # poloidal moments of drift factor for PS [/m**2]
-            equilibrium.profiles_1d.trapped_fraction(x_psi),  # trapped fraction [-]
-            equilibrium.profiles_1d.gm6(x_psi),               # <grad(rho)**2/B**2> [rho**2/m**2/T**2]
-            dphi_drho_tor(x_psi),                             # potential gradient Phi' [V/rho]
-            ((dpsi_drho_tor**2) * dq_drho_tor(x_psi)),        # Psi'(Phi'/Psi')' [V/rho**2]
-            p_ngrth,                                          # <n.grad(Theta)> [/m]
-            amu,                                              # atomic mass number [-]
-            [dT(x_psi) for dT in dTs],                        # temperature gradient [keV/rho]
-            [T(x_psi) for T in Ts],                           # temperature [keV]
-            [n(x_psi) for n in ns],                           # density [/m**3]
-            fex_iz[:, :],                                     # moments of external parallel force [T*n/m**3]
-            [dp(x_psi) for dp in dPs],                        # pressure gradient [keV/m**3/rho]
-            ipr,                                              #
-            l_banana,                                         # option to include banana viscosity [logical]
-            # option to include Pfirsch-Schluter viscosity [logical]
-            l_pfirsch,
-            l_potato,                                         # option to include potato orbits [logical]
-            k_order,                                          # order of v moments to be solved [-]
-                                                              #            =2 u and q (default)
-                                                              #            =3 u, q, and u2
-                                                              #            =else error
-            # density cutoff below which species is ignored (default 1.e10) [/m**3]
-            c_den,
-            c_potb,                                           # kappa(0)*Bt(0)/[2*q(0)**2] [T]
-            c_potl,                                           # q(0)*R(0) [m]
-        )
+        ) = outputs
 
         # Update utheta with edotb rescaling
-
         utheta_s[:, 2, :] = p_etap*(jparallel - p_jbbs)*utheta_s[:, 2, :]
 
         # Ion heatfluxes

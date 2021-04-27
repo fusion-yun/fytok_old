@@ -9,6 +9,7 @@ from spdm.util.logger import logger
 
 from ...Profiles import Profiles
 from ...RadialGrid import RadialGrid
+from .ParticleSpecies import Species
 
 
 class CoreTransport(AttributeTree):
@@ -32,7 +33,8 @@ class CoreTransport(AttributeTree):
     def __init__(self,  *args, grid: RadialGrid = None,  time=None,   **kwargs):
         super().__init__(*args, **kwargs)
         self._grid = grid
-        logger.debug(type(self._grid))
+        logger.debug(f"Create CoreTransport {type(self._grid)}")
+        assert(self._grid is not None)
         self._time = time or 0.0
 
     def update(self, *args, time=None, ** kwargs):
@@ -83,37 +85,6 @@ class CoreTransport(AttributeTree):
         def flux(self):
             return Function(self._parent.grid_flux.rho_tor_norm, self["flux"])
 
-    class Ion(Profiles):
-        def __init__(self,   *args,   z_ion=1, label=None, neutral_index=None,  **kwargs):
-            super().__init__(*args, **kwargs)
-            self._label = label or self._data.get("label", None)
-            self._z_ion = z_ion or self._data.get("z_ion", None)
-            self._neutral_index = neutral_index or self._data.get("neutral_index", None)
-
-        @property
-        def z_ion(self):
-            """Ion charge (of the dominant ionisation state; lumped ions are allowed),
-            volume averaged over plasma radius {dynamic} [Elementary Charge Unit]  FLT_0D  """
-            return self._z_ion
-
-        @property
-        def label(self):
-            """String identifying ion (e.g. H+, D+, T+, He+2, C+, ...) {dynamic}    """
-            return self._label
-
-        @property
-        def neutral_index(self):
-            """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
-            return self._neutral_index
-
-        @cached_property
-        def particles(self):
-            return CoreTransport.TransportCoeff(self["particles"], parent=self._parent)
-
-        @cached_property
-        def energy(self):
-            return CoreTransport.TransportCoeff(self["energy"],  parent=self._parent)
-
     class Electrons(Profiles):
         def __init__(self,   *args,  **kwargs):
             super().__init__(*args, **kwargs)
@@ -126,9 +97,73 @@ class CoreTransport(AttributeTree):
         def energy(self):
             return CoreTransport.TransportCoeff(self["energy"],  parent=self._parent)
 
-    class Neutral(Profiles):
+    class Ion(Species):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+        @property
+        def z_ion(self):
+            """Ion charge (of the dominant ionisation state; lumped ions are allowed),
+            volume averaged over plasma radius {dynamic} [Elementary Charge Unit]  FLT_0D  """
+            return self["z_ion"]
+
+        @property
+        def neutral_index(self):
+            """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
+            return self["neutral_index"]
+
+        @cached_property
+        def particles(self):
+            return CoreTransport.TransportCoeff(self["particles"], parent=self._parent)
+
+        @cached_property
+        def energy(self):
+            return CoreTransport.TransportCoeff(self["energy"],  parent=self._parent)
+
+        class Momentum(Profiles):
+            def __init__(self, *args,  **kwargs):
+                super().__init__(*args,  **kwargs)
+
+            @cached_property
+            def radial(self):
+                return CoreTransport.TransportCoeff(self["radial"], parent=self._parent)
+
+            @cached_property
+            def diamagnetic(self):
+                return CoreTransport.TransportCoeff(self["diamagnetic"], parent=self._parent)
+
+            @cached_property
+            def parallel(self):
+                return CoreTransport.TransportCoeff(self["parallel"], parent=self._parent)
+
+            @cached_property
+            def poloidal(self):
+                return CoreTransport.TransportCoeff(self["poloidal"], parent=self._parent)
+
+            @cached_property
+            def toroidal(self):
+                return CoreTransport.TransportCoeff(self["toroidal"], parent=self._parent)
+
+        @cached_property
+        def momentum(self):
+            return CoreTransport.Ion.Momentum(self["momentum"],  parent=self._parent)
+
+    class Neutral(Species):
         def __init__(self,   *args,  **kwargs):
             super().__init__(*args, **kwargs)
+
+        @property
+        def ion_index(self):
+            """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
+            return self["ion_index"]
+
+        @cached_property
+        def particles(self):
+            return CoreTransport.TransportCoeff(self["particles"], parent=self._parent)
+
+        @cached_property
+        def energy(self):
+            return CoreTransport.TransportCoeff(self["energy"],  parent=self._parent)
 
     @cached_property
     def electrons(self):

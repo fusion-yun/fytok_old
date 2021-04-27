@@ -1,14 +1,14 @@
 import collections
-from functools import cached_property
 
 import numpy as np
-from numpy.lib.arraysetops import isin
-from spdm.data.PhysicalGraph import PhysicalGraph
+from spdm.data.Group import Group
 from spdm.data.Function import Function
 from spdm.util.logger import logger
+from spdm.data.AttributeTree import as_attribute_tree
 
 
-class Profiles(PhysicalGraph):
+@as_attribute_tree
+class Profiles(Group):
     def __init__(self,   *args, axis=None, ** kwargs):
         super().__init__(*args, **kwargs)
         if axis is None:
@@ -24,12 +24,12 @@ class Profiles(PhysicalGraph):
     def axis(self):
         return self._axis
 
-    def __post_process__(self, value, *args, **kwargs):
-        if isinstance(value, (collections.abc.Mapping, collections.abc.MutableSequence)):
-            return super().__post_process__(value, *args, **kwargs)
-        elif isinstance(value, Function) or (isinstance(value, np.ndarray) and self._axis.shape != value.shape):
-            return value
-        elif isinstance(value, (int, float, np.ndarray)) or callable(value):
-            return Function(self._axis, value)
+    def __post_process__(self, d, *args, parent=None, **kwargs):
+        if isinstance(d, Function):
+            return d
+        elif isinstance(d, (int, float, np.ndarray)):
+            return Function(self._axis, d)
+        elif d is None or d == None:
+            return Function(self._axis, 0.0)
         else:
-            return super().__post_process__(value, *args, **kwargs)
+            return super().__post_process__(d, *args, parent=parent,  **kwargs)

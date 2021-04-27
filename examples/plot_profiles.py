@@ -23,7 +23,7 @@ if __name__ == "__main__":
                 (profile["Jrf"].values,         r"$j_{rf}^{\star}$"),
                 (profile["Jext"].values
                  - profile["Jnb"].values
-                 - profile["Jrf"].values,       {"color": "red", "linestyle": "dashed", "label": r"$J_{ext}-J_{nb}-J_{rf}$"}),
+                 - profile["Jrf"].values,       r"$J_{ext}-J_{nb}-J_{rf}$", {"color": "red", "linestyle": "dashed"}),
             ],
 
             [
@@ -35,7 +35,7 @@ if __name__ == "__main__":
                 (profile["Jnoh"].values
                  - profile["Jbs"].values
                  - profile["Jnb"].values
-                 - profile["Jrf"].values,        {"color": "red", "linestyle": "dashed", "label": r"$J_{noh}^{\star}-J_{bs}^{\star}-J_{nb}^{\star}-J_{rf}^{\star}$"}),
+                 - profile["Jrf"].values,       r"$J_{noh}^{\star}-J_{bs}^{\star}-J_{nb}^{\star}-J_{rf}^{\star}$",  {"color": "red", "linestyle": "dashed"}),
             ],
 
             [
@@ -45,7 +45,7 @@ if __name__ == "__main__":
                 (profile["Jnoh"].values,        r"$j_{noh}^{\star}$"),
                 (profile["Jtot"].values
                  - profile["Jnoh"].values
-                 - profile["Joh"].values,        {"color": "red", "linestyle": "dashed", "label": r"$j_{\parallel}^{\star}-j_{oh}^{\star}-j_{noh}^{\star}$"}),
+                 - profile["Joh"].values,       r"$j_{\parallel}^{\star}-j_{oh}^{\star}-j_{noh}^{\star}$", {"color": "red", "linestyle": "dashed"}),
 
             ],
 
@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
                 (profile["Paux"].values
                  - profile["Pex"].values
-                 - profile["Pnbe"].values,        {"color": "red", "linestyle": "dashed", "label": r"rms"}),
+                 - profile["Pnbe"].values,      r"rms",  {"color": "red", "linestyle": "dashed"}),
 
             ],
 
@@ -68,7 +68,7 @@ if __name__ == "__main__":
                 (profile["Pdte"].values,        r"heating of elecrons by alphas"),
                 (profile["Pdt"].values
                  - profile["Pdti"].values
-                 - profile["Pdte"].values,     {"color": "red", "linestyle": "dashed", "label": r"rms"}),
+                 - profile["Pdte"].values,     r"rms", {"color": "red", "linestyle": "dashed"}),
 
             ],
             [
@@ -80,7 +80,7 @@ if __name__ == "__main__":
                 (profile["Prad"].values
                     - profile["Psyn"].values
                     - profile["Pbrm"].values
-                    - profile["Plin"].values,     {"color": "red", "linestyle": "dashed", "label": r"rms"}),
+                    - profile["Plin"].values,     r"rms", {"color": "red", "linestyle": "dashed"}),
 
             ],
             [
@@ -95,6 +95,6 @@ if __name__ == "__main__":
 
 
         ],
-        x_axis=(profile["x"].values,   {"label": r"$\rho_{N}$"}),  # x axis,
+        x_axis=(profile["x"].values,   r"$\rho_{N}$"),  # x axis,
         # index_slice=slice(-100,None, 1),
         grid=True) .savefig("/home/salmon/workspace/output/profiles_exp.svg", transparent=True)

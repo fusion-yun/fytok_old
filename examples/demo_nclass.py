@@ -27,7 +27,6 @@ if __name__ == "__main__":
     tok = Tokamak({
         "radial_grid": {"axis": 64},
         "wall":  device.wall,
-        "pf_active": device.pf_active,
         "equilibrium": {
             "vacuum_toroidal_field": equilibrium.vacuum_toroidal_field,
             "global_quantities": equilibrium.global_quantities,
@@ -149,6 +148,8 @@ if __name__ == "__main__":
         x_axis=(tok.equilibrium.profiles_1d.psi_norm,    r"$\psi_{N}$"),  # asd
         grid=True, fontsize=16
     ) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
+    
+    logger.debug(tok.core_profiles.electrons.density)
 
     plot_profiles(
         [
@@ -171,7 +172,6 @@ if __name__ == "__main__":
             (core_transport.electrons.particles.d,   r"$D_e$"),
             (core_transport.electrons.particles.v,   r"$V_e$"),
             (core_transport.electrons.particles.flux, r"$\Gamma_e$"),
-
             #         ],
             #         [
             (core_transport.electrons.energy.d,      r"$\chi_e$"),

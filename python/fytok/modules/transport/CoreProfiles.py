@@ -9,7 +9,7 @@ from spdm.util.logger import logger
 
 from ...RadialGrid import RadialGrid
 from ...Profiles import Profiles
-
+from .ParticleSpecies import Species
 
 # class Profiles(PhysicalGraph):
 #     def __init__(self, *args, grid=None, **kwargs):
@@ -126,28 +126,20 @@ class CoreProfiles(Profiles):
             """Collisionality normalised to the bounce frequency {dynamic}[-]"""
             return NotImplemented
 
-    class Ion(Profiles):
-        def __init__(self,   *args,   z_ion=1, label=None, neutral_index=None,  **kwargs):
+    class Ion(Species):
+        def __init__(self,   *args,      **kwargs):
             super().__init__(*args,  **kwargs)
-            self._label = label or self._data.get("label", None)
-            self._z_ion = z_ion or self._data.get("z_ion", None)
-            self._neutral_index = neutral_index or self._data.get("neutral_index", None)
 
-        @property
+        @cached_property
         def z_ion(self):
             """Ion charge (of the dominant ionisation state; lumped ions are allowed),
             volume averaged over plasma radius {dynamic} [Elementary Charge Unit]  FLT_0D  """
-            return self._z_ion
+            return self["z_ion"]
 
-        @property
-        def label(self):
-            """String identifying ion (e.g. H+, D+, T+, He+2, C+, ...) {dynamic}    """
-            return self._label
-
-        @property
+        @cached_property
         def neutral_index(self):
             """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
-            return self._neutral_index
+            return self["neutral_index"]
 
         @cached_property
         def z_ion_1d(self):
@@ -161,10 +153,10 @@ class CoreProfiles(Profiles):
             state density and divided by ion density) {dynamic} [-]  """
             return NotImplemented
 
-        @cached_property
-        def temperature(self):
-            """Temperature (average over charge states when multiple charge states are considered) {dynamic} [eV]  """
-            return Function(self.axis, self["temperature"])
+        # @cached_property
+        # def temperature(self):
+        #     """Temperature (average over charge states when multiple charge states are considered) {dynamic} [eV]  """
+        #     return Function(self.axis, self["temperature"])
 
         # @property
         # def temperature_validity(self):
@@ -255,18 +247,14 @@ class CoreProfiles(Profiles):
             """Quantities related to the different states of the species (ionisation, energy, excitation, ...)  struct_array [max_size=unbounded]  1- 1...N"""
             return self["state"]
 
-    class Neutral(Profiles):
-        def __init__(self, cache=None,  *args, grid=None, label=None, ion_index=None, **kwargs):
-            super().__init__(cache, *args, axis=grid.rho_tor_norm, **kwargs)
-            self.__dict__['_grid'] = grid
-            self |= {
-                "label": label,
-                "element": [],
-                "state": [],
-                "temperature_validity": 0,
-                "density_validity": 0
-            }
+    class Neutral(Species):
+        def __init__(self,    *args, **kwargs):
+            super().__init__(*args,  **kwargs)
 
+        @property
+        def ion_index(self):
+            """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
+            return self["ion_index"]
         # @property
         # def element(self):
         #     """List of elements forming the atom or molecule  struct_array [max_size=unbounded]  1- 1...N"""
