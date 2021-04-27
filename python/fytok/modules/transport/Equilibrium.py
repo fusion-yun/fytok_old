@@ -1100,8 +1100,8 @@ class Equilibrium(AttributeTree):
             return np.asarray(d)
 
     @cached_property
-    def time_slice(self):
-        return List(self["time_slice"], default_factory=EquilibriumTimeSlice, parent=self)
+    def time_slice(self) -> List[EquilibriumTimeSlice]:
+        return List[EquilibriumTimeSlice](self["time_slice"],  parent=self)
 
     @cached_property
     def grid_gdd(self):
