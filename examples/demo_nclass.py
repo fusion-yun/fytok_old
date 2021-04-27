@@ -35,32 +35,34 @@ if __name__ == "__main__":
             "coordinate_system": {"grid": {"dim1": 64, "dim2": 512}}
         },
         "core_profiles": {
-            "electrons": {
-                "label": "electrons",
-                "density":     1e19,
-                "temperature": lambda x: (1-x**2)**2
-            },
-            "ion": [
-                {
-
-                    "label": "H^+",
-                    "z_ion": 1,
-                    "neutral_index": 1,
-                    "element": [{"a": 1, "z_n": 1, "atoms_n": 1}],
-                    "density":     0.5e19,
+            "profiles_1d": {
+                "electrons": {
+                    "label": "electrons",
+                    "density":     1e19,
                     "temperature": lambda x: (1-x**2)**2
                 },
-                {
-                    "label": "D^+",
-                    "z_ion": 1,
-                    "element": [{"a": 2, "z_n": 1, "atoms_n": 1}],
-                    "neutral_index": 2,
-                    "density":     0.5e19,
-                    "temperature": lambda x: (1-x**2)**2
-                }
-            ],
-            "conductivity_parallel": 1.0,
-            "psi":   1.0,
+                "ion": [
+                    {
+
+                        "label": "H^+",
+                        "z_ion": 1,
+                        "neutral_index": 1,
+                        "element": [{"a": 1, "z_n": 1, "atoms_n": 1}],
+                        "density":     0.5e19,
+                        "temperature": lambda x: (1-x**2)**2
+                    },
+                    {
+                        "label": "D^+",
+                        "z_ion": 1,
+                        "element": [{"a": 2, "z_n": 1, "atoms_n": 1}],
+                        "neutral_index": 2,
+                        "density":     0.5e19,
+                        "temperature": lambda x: (1-x**2)**2
+                    }
+                ],
+                "conductivity_parallel": 1.0,
+                "psi":   1.0,
+            }
         }
     })
 
@@ -151,12 +153,14 @@ if __name__ == "__main__":
 
     plot_profiles(
         [
-            (tok.core_profiles.electrons.density,       r"$n_e$"),
-            (tok.core_profiles.electrons.temperature,   r"$T_e$"),
-            (tok.core_profiles.ion[0].density,          f"$n_{{{tok.core_profiles.ion[0].label}}}$"),
-            (tok.core_profiles.ion[0].temperature,      f"$T_{{{tok.core_profiles.ion[0].label}}}$"),
+            (tok.core_profiles.profiles_1d.electrons.density,       r"$n_e$"),
+            (tok.core_profiles.profiles_1d.electrons.temperature,   r"$T_e$"),
+            (tok.core_profiles.profiles_1d.ion[0].density,
+             f"$n_{{{tok.core_profiles.profiles_1d.ion[0].label}}}$"),
+            (tok.core_profiles.profiles_1d.ion[0].temperature,
+             f"$T_{{{tok.core_profiles.profiles_1d.ion[0].label}}}$"),
         ],
-        x_axis=(tok.core_profiles.grid.rho_tor_norm,    r"$\sqrt{\Phi/\Phi_{bdry}}$"),  # x axis,
+        x_axis=(tok.core_profiles.profiles_1d.grid.rho_tor_norm,    r"$\sqrt{\Phi/\Phi_{bdry}}$"),  # x axis,
         grid=True, fontsize=10
     ) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
@@ -167,30 +171,30 @@ if __name__ == "__main__":
     plot_profiles(
         [
             [
-                (core_transport.electrons.particles.flux, r"$\Gamma_e$"),
-                *[(ion.particles.flux,        f"$\Gamma_{{{ion.label}}}$") for ion in core_transport.ion],
+                (core_transport.profiles_1d.electrons.particles.flux, r"$\Gamma_e$"),
+                *[(ion.particles.flux,        f"$\Gamma_{{{ion.label}}}$") for ion in core_transport.profiles_1d.ion],
             ],
             [
-                (core_transport.electrons.particles.d,   r"$D_e$"),
-                *[(ion.particles.d,           f"$D_{{{ion.label}}}$") for ion in core_transport.ion],
+                (core_transport.profiles_1d.electrons.particles.d,   r"$D_e$"),
+                *[(ion.particles.d,           f"$D_{{{ion.label}}}$") for ion in core_transport.profiles_1d.ion],
             ],
             [
-                (core_transport.electrons.particles.v,   r"$v_e$"),
-                * [(ion.particles.v,           f"$v_{{{ion.label}}}$") for ion in core_transport.ion],
+                (core_transport.profiles_1d.electrons.particles.v,   r"$v_e$"),
+                * [(ion.particles.v,           f"$v_{{{ion.label}}}$") for ion in core_transport.profiles_1d.ion],
             ],
             [
-                (core_transport.electrons.energy.flux,   r"$q_e$"),
-                *[(ion.energy.flux,        f"$q_{{{ion.label}}}$") for ion in core_transport.ion],
+                (core_transport.profiles_1d.electrons.energy.flux,   r"$q_e$"),
+                *[(ion.energy.flux,        f"$q_{{{ion.label}}}$") for ion in core_transport.profiles_1d.ion],
             ],
             [
-                (core_transport.electrons.energy.d,      r"$\chi_e$"),
-                *[(ion.energy.d,           f"$\chi_{{{ion.label}}}$") for ion in core_transport.ion],
+                (core_transport.profiles_1d.electrons.energy.d,      r"$\chi_e$"),
+                *[(ion.energy.d,           f"$\chi_{{{ion.label}}}$") for ion in core_transport.profiles_1d.ion],
             ],
             [
-                (core_transport.electrons.energy.v,      r"$v_{Te}$"),
-                *[(ion.energy.v,           f"$v_{{T,{ion.label}}}$") for ion in core_transport.ion],
+                (core_transport.profiles_1d.electrons.energy.v,      r"$v_{Te}$"),
+                *[(ion.energy.v,           f"$v_{{T,{ion.label}}}$") for ion in core_transport.profiles_1d.ion],
             ]
         ],
-        x_axis=(core_transport.grid_v.rho_tor_norm,   r"$\sqrt{\Phi/\Phi_{bdry}}$"),  # x axis,
+        x_axis=(core_transport.profiles_1d.grid_v.rho_tor_norm,   r"$\sqrt{\Phi/\Phi_{bdry}}$"),  # x axis,
         annotation=core_transport.identifier.name,
         grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)

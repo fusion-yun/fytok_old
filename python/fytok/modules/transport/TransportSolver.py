@@ -5,6 +5,7 @@
 import collections
 import copy
 from functools import cached_property
+from math import log
 
 import numpy as np
 import scipy.constants
@@ -167,7 +168,7 @@ class TransportSolver(PhysicalGraph):
               equilibrium: Equilibrium,
               core_transport: CoreTransport,
               core_sources: CoreSources,
-              boundary_conditions: PhysicalGraph,
+              boundary_conditions: AttributeTree,
               tolerance=1.0e-3,
               max_nodes=1000,
               verbose=2,
@@ -232,33 +233,31 @@ class TransportSolver(PhysicalGraph):
         if time is None:
             time = equilibrium.time
 
-        core_profiles_next = CoreProfiles(grid=equilibrium.radial_grid("rho_tor_norm", axis=128), time=time)
+        core_profiles_next = CoreProfiles(vacuum_toroidal_field=equilibrium.vacuum_toroidal_field,
+                                          grid=equilibrium.radial_grid("rho_tor_norm", axis=128), time=time)
 
-        tau = core_profiles_next.time - core_profiles_prev.time
+        tau = core_profiles_next.profiles_1d.time - core_profiles_prev.profiles_1d.time
 
         inv_tau = 0 if abs(tau) < EPSILON else 1.0/tau
 
         # $R_0$ characteristic major radius of the device   [m]
-        R0 = core_profiles_next.grid.vacuum_toroidal_field.r0
+        R0 = core_profiles_next.vacuum_toroidal_field.r0
 
         # $B_0$ magnetic field measured at $R_0$            [T]
+        B0 = core_profiles_next.vacuum_toroidal_field.b0
 
-        B0 = core_profiles_next.grid.vacuum_toroidal_field.b0
+        B0m = core_profiles_prev.vacuum_toroidal_field.b0
+        # $rho_tor_{norm}$ normalized minor radius                [-]
+        rho_tor_norm = core_profiles_next.profiles_1d.grid.rho_tor_norm
 
-        B0m = core_profiles_prev.grid.vacuum_toroidal_field.b0
-
+        psi_norm = core_profiles_next.profiles_1d.grid.psi_norm
         # Grid
         # $rho_tor$ not  normalized minor radius                [m]
-        rho_tor = core_profiles_next.grid.rho_tor
+        rho_tor = core_transport.profiles_1d.grid_v.rho_tor
 
-        rho_tor_boundary = core_profiles_next.grid.rho_tor[-1]
+        rho_tor_boundary = core_profiles_next.profiles_1d.grid.rho_tor[-1]
 
-        rho_tor_boundary_m = core_profiles_prev.grid.rho_tor[-1]
-
-        # $rho_tor_{norm}$ normalized minor radius                [-]
-        rho_tor_norm = core_profiles_next.grid.rho_tor_norm
-
-        psi_norm = core_profiles_next.grid.psi_norm
+        rho_tor_boundary_m = core_profiles_prev.profiles_1d.grid.rho_tor[-1]
 
         k_B = (B0 - B0m) / (B0 + B0m) * inv_tau * 2.0
 
@@ -274,7 +273,7 @@ class TransportSolver(PhysicalGraph):
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
         vpr = equilibrium.profiles_1d.dvolume_drho_tor.pullback(psi_norm, rho_tor_norm)
 
-        vprm = core_profiles_prev.vprime
+        vprm = core_profiles_prev.profiles_1d.vprime
 
         if not isinstance(vprm, np.ndarray) or vprm == None:
             vprm = vpr
@@ -288,15 +287,19 @@ class TransportSolver(PhysicalGraph):
 
         gm3 = equilibrium.profiles_1d.gm3.pullback(psi_norm, rho_tor_norm)
 
-        core_profiles_next.vprime = vpr
+        core_profiles_next.profiles_1d.vprime = vpr
 
         #　Current Equation
-        def current_transport(core_profiles_next, core_profiles_prev, core_transport, core_sources, boundary_conditions):
+        def current_transport(core_profiles_next: CoreProfiles,
+                              core_profiles_prev: CoreProfiles,
+                              core_transport: CoreTransport,
+                              core_sources: CoreSources,
+                              boundary_conditions):
 
             # -----------------------------------------------------------------
             # Transport
             # plasma parallel conductivity,                                 [(Ohm*m)^-1]
-            conductivity_parallel = core_transport.conductivity_parallel
+            conductivity_parallel = core_transport.profiles_1d.conductivity_parallel
 
             # -----------------------------------------------------------
             # Sources
@@ -345,10 +348,10 @@ class TransportSolver(PhysicalGraph):
                 raise NotImplementedError(boundary_conditions)
 
             # $\Psi$ flux function from current                 [Wb]
-            psi0 = core_profiles_prev.psi
+            psi0 = core_profiles_prev.profiles_1d.psi
 
             # $\frac{\partial\Psi}{\partial\rho_{tor,norm}}$               [Wb/m]
-            gamma0 = core_profiles_prev.dpsi_drho_tor_norm
+            gamma0 = core_profiles_prev.profiles_1d.dpsi_drho_tor_norm
 
             if not isinstance(gamma0, np.ndarray):
                 gamma0 = -d * Function(rho_tor_norm, psi0).derivative + e * psi0
@@ -367,26 +370,30 @@ class TransportSolver(PhysicalGraph):
             logger.info(f"Solve transport equations: Current [{'Success' if sol.success else 'Failed'}]")
 
             if sol.success:
-                core_profiles_next.psi = profiles.y
-                core_profiles_next.dpsi_drho_tor_norm = profiles.yp
-                # core_profiles_next.dgamma_current = profiles.gamma
-                # core_profiles_next.j_tor = (profiles.y*fpol).derivative / vpr * \
+                core_profiles_next.profiles_1d.psi = profiles.y
+                core_profiles_next.profiles_1d.dpsi_drho_tor_norm = profiles.yp
+                # core_profiles_next.profiles_1d.dgamma_current = profiles.gamma
+                # core_profiles_next.profiles_1d.j_tor = (profiles.y*fpol).derivative / vpr * \
                 #     (-TWOPI*R0 / scipy.constants.mu_0/rho_tor_boundary)
 
-                # core_profiles_next.j_parallel = profiles.gamma * \
+                # core_profiles_next.profiles_1d.j_parallel = profiles.gamma * \
                 #     (- TWOPI / (scipy.constants.mu_0 * B0 * rho_tor_boundary)) * fpol**2/vpr
 
-                # core_profiles_next.e_field.parallel = (core_profiles_next.j_parallel-j_exp -
-                #                                        j_exp*core_profiles_next.psi)/conductivity_parallel
+                # core_profiles_next.profiles_1d.e_field.parallel = (core_profiles_next.profiles_1d.j_parallel-j_exp -
+                #                                        j_exp*core_profiles_next.profiles_1d.psi)/conductivity_parallel
             else:
                 psi_prime = (scipy.constants.pi*2.0)*B0 * rho_tor / qsf * rho_tor_boundary
-                core_profiles_next.dpsi_drho_tor_norm = psi_prime
-                core_profiles_next.psi = psi0[0] + psi_prime.antiderivative * 2
+                core_profiles_next.profiles_1d.dpsi_drho_tor_norm = psi_prime
+                core_profiles_next.profiles_1d.psi = psi0[0] + psi_prime.antiderivative * 2
 
-            # core_profiles_next.f_current = f*c
-            # core_profiles_next.j_total = j_exp
+            # core_profiles_next.profiles_1d.f_current = f*c
+            # core_profiles_next.profiles_1d.j_total = j_exp
 
-        def particle_transport(core_profiles_next, core_profiles_prev, trans, source, boundary_conditions):
+        def electron_particle_transport(core_profiles_next: CoreProfiles.Profiles1D.Electrons,
+                                        core_profiles_prev: CoreProfiles.Profiles1D.Electrons,
+                                        trans: CoreTransport.Profiles1D.Electrons,
+                                        source: CoreSources.Profiles1D.Electrons,
+                                        boundary_conditions):
             # Particle Transport
 
             diff = trans.particles.d
@@ -419,12 +426,12 @@ class TransportSolver(PhysicalGraph):
             else:
                 raise NotImplementedError(sp_bc)
 
-            ne0 = core_profiles_prev.density
+            ne0 = core_profiles_prev.profiles_1d.density
 
             if rho_tor_norm is not ne0.x:
                 ne0 = Function(rho_tor_norm, ne0(rho_tor_norm))
 
-            gamma0 = core_profiles_prev.gamma
+            gamma0 = core_profiles_prev.profiles_1d.gamma
 
             if not isinstance(gamma0, np.ndarray):
                 gamma0 = -d * ne0.derivative + e * ne0
@@ -443,7 +450,81 @@ class TransportSolver(PhysicalGraph):
             )
 
             logger.info(
-                f"Solve transport equations: {core_profiles_prev.label.capitalize()} particle [{'Success' if sol.success else 'Failed'}] ")
+                f"Solve transport equations: {core_profiles_prev.profiles_1d.label.capitalize()} particle [{'Success' if sol.success else 'Failed'}] ")
+
+            core_profiles_next["diff"] = diff
+            core_profiles_next["conv"] = conv
+            core_profiles_next["diff_flux"] = profiles.diff_flux
+            core_profiles_next["conv_flux"] = profiles.conv_flux
+            core_profiles_next["s_exp_flux"] = profiles.s_exp_flux
+            core_profiles_next["residual"] = profiles.residual
+            core_profiles_next["density"] = profiles.y
+            core_profiles_next["density_prime"] = profiles.yp
+            core_profiles_next["density_flux"] = profiles.flux
+            core_profiles_next["density_flux_prime"] = profiles.flux_prime
+
+        def ion_particle_transport(core_profiles_next: CoreProfiles.Profiles1D.Ion,
+                                   core_profiles_prev: CoreProfiles.Profiles1D.Ion,
+                                   trans: CoreTransport.Profiles1D.Ion,
+                                   source: CoreSources.Profiles1D.Ion,
+                                   boundary_conditions):
+            # Particle Transport
+
+            diff = trans.particles.d
+            conv = trans.particles.v
+
+            se_exp = source.particles
+            se_imp = 0.0
+
+            if source.particles_decomposed != None:
+                se_exp += source.particles_decomposed.explicit_part
+                se_imp += source.particles_decomposed.implicit_part
+
+            a = rho_tor_boundary * vpr * inv_tau
+            b = rho_tor_boundary * vprm * inv_tau
+            d = vpr * gm3 * diff / rho_tor_boundary
+            e = vpr * gm3 * conv - vpr * rho_tor * k_phi
+            f = rho_tor_boundary * vpr * se_exp
+            g = rho_tor_boundary * vpr * (se_imp + k_rho_bdry)
+
+            sp_bc = boundary_conditions.particles
+
+            # Boundary conditions for electron diffusion equation in form:
+            #      U*Y + V*Gamma =W
+            # On axis:
+            #     dNi/drho_tor(rho_tor=0)=0:  - this is Ne, not N
+            if sp_bc.identifier.index == 1:
+                u = 1
+                v = 0
+                w = sp_bc.value
+            else:
+                raise NotImplementedError(sp_bc)
+
+            ne0 = core_profiles_prev.profiles_1d.density
+
+            if rho_tor_norm is not ne0.x:
+                ne0 = Function(rho_tor_norm, ne0(rho_tor_norm))
+
+            gamma0 = core_profiles_prev.profiles_1d.gamma
+
+            if not isinstance(gamma0, np.ndarray):
+                gamma0 = -d * ne0.derivative + e * ne0
+
+            sol, profiles = self.solve_general_form(
+                rho_tor_norm,
+                ne0,
+                gamma0,
+                (a, b,  d, e, f, g),
+                ((e[0], -1, 0), (u, v, w)),
+                hyper_diff=[0, 0.0001],
+                tolerance=tolerance,
+                verbose=verbose,
+                max_nodes=max_nodes,
+                ignore_x=[d.x[np.argmax(np.abs(d.derivative))]]
+            )
+
+            logger.info(
+                f"Solve transport equations: {core_profiles_prev.profiles_1d.label.capitalize()} particle [{'Success' if sol.success else 'Failed'}] ")
 
             core_profiles_next["diff"] = diff
             core_profiles_next["conv"] = conv
@@ -551,22 +632,21 @@ class TransportSolver(PhysicalGraph):
         )
         if enable_ion_solver:
             raise NotImplementedError()
-
         else:
-            core_profiles_next["electrons"] = {"label": "electrons"}
+            core_profiles_next.profiles_1d.electrons = {"label": "electrons"}
 
-            particle_transport(
-                core_profiles_next.electrons,
-                core_profiles_prev.electrons,
-                core_transport.electrons,
-                core_sources.electrons,
+            electron_particle_transport(
+                core_profiles_next.profiles_1d.electrons,
+                core_profiles_prev.profiles_1d.electrons,
+                core_transport.profiles_1d.electrons,
+                core_sources.profiles_1d.electrons,
                 boundary_conditions.electrons
             )
             energy_transport(
-                core_profiles_next.electrons,
-                core_profiles_prev.electrons,
-                core_transport.electrons,
-                core_sources.electrons,
+                core_profiles_next.profiles_1d.electrons,
+                core_profiles_prev.profiles_1d.electrons,
+                core_transport.profiles_1d.electrons,
+                core_sources.profiles_1d.electrons,
                 boundary_conditions.electrons
             )
 

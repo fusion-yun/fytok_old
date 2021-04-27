@@ -96,16 +96,15 @@ class Tokamak(PhysicalGraph):
 
     @cached_property
     def core_profiles(self) -> CoreProfiles:
-        if self["core_profiles.profiles_1d"] != None:
-            core_profiles = self["core_profiles.profiles_1d"]
-        else:
-            core_profiles = self["core_profiles"]
-        return CoreProfiles(core_profiles,  grid=self.equilibrium.radial_grid("rho_tor_norm"), time=self.time, parent=self)
+        return CoreProfiles(self["core_profiles"],
+                            vacuum_toroidal_field=self.equilibrium.vacuum_toroidal_field,
+                            grid=self.equilibrium.radial_grid("rho_tor_norm"),
+                            time=self.time, parent=self)
 
     @cached_property
     def core_transport(self) -> CoreTransport:
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return CoreTransport(self["core_transport"], grid=self.radial_grid, time=self.time, parent=self)
+        return CoreTransport(self.__raw_get__("core_transport"), grid=self.equilibrium.radial_grid("rho_tor_norm"), time=self.time, parent=self)
 
     @cached_property
     def core_sources(self) -> CoreSources:
@@ -113,18 +112,18 @@ class Tokamak(PhysicalGraph):
             Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return CoreSources(self["core_sources"],  grid=self.radial_grid, time=self.time, parent=self)
+        return CoreSources(self.__raw_get__("core_sources"),  grid=self.radial_grid, time=self.time, parent=self)
 
     @cached_property
     def edge_profiles(self) -> EdgeProfiles:
-        return EdgeProfiles(self["edge_profiles"], parent=self)
+        return EdgeProfiles(self.__raw_get__("edge_profiles"), parent=self)
 
     @cached_property
     def edge_transport(self) -> EdgeTransport:
         """Edge plasma transport. Energy terms correspond to the full kinetic energy equation
          (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return EdgeTransport(self["edge_transport.mode"], parent=self)
+        return EdgeTransport(self.__raw_get__("edge_transport.mode"), parent=self)
 
     @cached_property
     def edge_sources(self) -> EdgeSources:
@@ -189,13 +188,13 @@ class Tokamak(PhysicalGraph):
 
             # self.radial_grid.update(time=time, equilibrium=self.equilibrium)
 
-            self.core_transport.update(time=time,
-                                       equilibrium=self.equilibrium,
-                                       core_profiles=self.core_profiles)
+            # self.core_transport.update(time=time,
+            #                            equilibrium=self.equilibrium,
+            #                            core_profiles=self.core_profiles)
 
-            self.core_sources.update(time=time,
-                                     equilibrium=self.equilibrium,
-                                     core_profiles=self.core_profiles)
+            # self.core_sources.update(time=time,
+            #                          equilibrium=self.equilibrium,
+            #                          core_profiles=self.core_profiles)
 
             # TODO: using EdgeProfile update  self.boundary_conditions
 
@@ -224,7 +223,7 @@ class Tokamak(PhysicalGraph):
 
             if self.equilibrium.update(
                 vacuum_toroidal_field=self.vacuum_toroidal_field,
-                psi=core_profiles_next.psi,
+                psi=core_profiles_next.profiles_1d.psi,
                 constraints=self.constraints,
                 core_profiles=core_profiles_next,
                 test_convergence=True

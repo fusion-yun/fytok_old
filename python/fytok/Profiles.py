@@ -12,8 +12,6 @@ class Profiles(AttributeTree):
         super().__init__(*args, **kwargs)
         if axis is None:
             self._axis = np.linspace(0, 1.0, 128)
-        elif isinstance(axis, int):
-            self._axis = np.linspace(0, 1.0, axis)
         elif isinstance(axis, np.ndarray):
             self._axis = axis.view(np.ndarray)
         else:
@@ -24,7 +22,9 @@ class Profiles(AttributeTree):
         return self._axis
 
     def __post_process__(self, d, *args, parent=None, **kwargs):
-        if isinstance(d, Function):
+        if not isinstance(self._axis, np.ndarray):
+            return super().__post_process__(d, *args, parent=parent,  **kwargs)
+        elif isinstance(d, Function):
             return d
         elif isinstance(d, (int, float, np.ndarray)) or callable(d):
             return Function(self._axis, d)
