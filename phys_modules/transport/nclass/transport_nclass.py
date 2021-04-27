@@ -9,6 +9,21 @@ from spdm.data.Node import _next_
 from .nclass_mod import nclass_mod
 
 
+NCLASS_MSG = [
+    "iflag=-4 warning: no viscosity",
+    "iflag=-3 warning: no banana viscosity",
+    "iflag=-2 warning: no Pfirsch-Schluter viscosity",
+    "iflag=-1 warning: no potato orbit viscosity",
+    "iflag=0 no warnings or errors               ",
+    "iflag=1 error: order of v moments to be solved must be 2 or 3",
+    "iflag=2 error: number of species must be 1< m_i < mx_mi+1",
+    "iflag=3 error: number of species must be 0 < m_z < mx_mz+1",
+    "iflag=4 error: number of species must be 1 < m_s < mx_ms+1",
+    "iflag=5 error: inversion of flow matrix failed",
+    "iflag=6 error: trapped fraction must be 0.0.le.p_ft.le.1.0",
+]
+
+
 def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, grid: np.ndarray = None) -> CoreTransport:
 
     core_transport = CoreTransport(
@@ -122,6 +137,7 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, grid
 
     psi_norm = Function(core_transport.grid_d.rho_tor_norm, core_transport.grid_d.psi_norm)
 
+    flag = True
     # Set input for NCLASS
     for ipr, x in enumerate(core_transport.grid_d.rho_tor_norm):
         x_psi = psi_norm(x)
@@ -282,20 +298,40 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, grid
             tau_ss,     # 90 degree scattering time [s]
         ) = outputs
 
+        if iflag != 0:
+            msg = NCLASS_MSG[iflag+4]
+            if iflag < 0:
+                logger.warning(f"NCLASS (i={ipr}) {msg} ")
+            else:
+                logger.error(f"NCLASS (i={ipr}) {msg} ")
+            if flag is True:
+                flag = []
+            flag.append((ipr, msg))
+
         # Update utheta with edotb rescaling
         utheta_s[:, 2, :] = p_etap*(jparallel - p_jbbs)*utheta_s[:, 2, :]
 
+        # Electron particle flux
+        core_transport.electrons.particles.flux[ipr] = np.sum(glf_s[:, 0])
+        core_transport.electrons.particles.d[ipr] = dn_s[0]/grad_rho_tor2
+        core_transport.electrons.particles.v[ipr] = vnnt_s[0] + vneb_s[0]*p_etap*(jparallel - p_jbbs)
+        # Electrons  heat flux
+        core_transport.electrons.energy.flux[ipr] = np.sum(qfl_s[:, 0])
+        core_transport.electrons.energy.d[ipr] = chi_s[0]/grad_rho_tor2
+        core_transport.electrons.energy.v[ipr] = vqnt_s[0] + vqeb_s[0]*p_etap*(jparallel - p_jbbs)
+
+        # core_transport.chieff[ipr] = chi_s[1]/grad_rho_tor2  # need to set 0.0
+
         # Ion heatfluxes
         for k, sp in enumerate(core_transport.ion):
-            # Ion heat flux
-            sp.energy.d[ipr] = chi_s[k + 1]/grad_rho_tor2
-            sp.energy.v[ipr] = vqnt_s[k + 1] + vqeb_s[k + 1]*p_etap*(jparallel - p_jbbs)
-            sp.energy.flux[ipr] = np.sum(qfl_s[:, k + 1])
-            # sp.chieff[ipr] = chi_s[k + 1]/grad_rho_tor2
             # ion particle fluxes
+            sp.particles.flux[ipr] = np.sum(glf_s[:, k + 1])
             sp.particles.d[ipr] = dn_s[k + 1]/grad_rho_tor2
             sp.particles.v[ipr] = vnnt_s[k + 1] + vneb_s[k + 1]*p_etap*(jparallel - p_jbbs)
-            sp.particles.flux[ipr] = np.sum(glf_s[:, k + 1])
+            # Ion heat flux
+            sp.energy.flux[ipr] = np.sum(qfl_s[:, k + 1])
+            sp.energy.d[ipr] = chi_s[k + 1]/grad_rho_tor2
+            sp.energy.v[ipr] = vqnt_s[k + 1] + vqeb_s[k + 1]*p_etap*(jparallel - p_jbbs)
 
             # sp.deff[ipr] = dn_s[k + 1]/grad_rho_tor2
 
@@ -311,17 +347,6 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, grid
             # profiles_rm.vtor[ipr] = r0*p_fpolhat[i]/p_fpol[i]*profiles_rm.e_rad[i] +\
             #     p_fpolhat[i]*profiles_rm.vpol[ipr] - r0 * \
             #     p_fpolhat[i]/p_fpol[i]*e_r[3]
-
-        # Add in electrons last in array
-        core_transport.electrons.energy.d[ipr] = chi_s[0]/grad_rho_tor2
-        core_transport.electrons.energy.v[ipr] = vqnt_s[0] + vqeb_s[0]*p_etap*(jparallel - p_jbbs)
-        core_transport.electrons.energy.flux[ipr] = np.sum(qfl_s[:, 1])
-
-        # core_transport.chieff[ipr] = chi_s[1]/grad_rho_tor2  # need to set 0.0
-
-        core_transport.electrons.particles.d[ipr] = dn_s[0]/grad_rho_tor2
-        core_transport.electrons.particles.v[ipr] = vnnt_s[0] + vneb_s[1]*p_etap*(jparallel - p_jbbs)
-        core_transport.electrons.particles.flux[ipr] = np.sum(glf_s[:, 1])
 
         # core_transport.electrons.particles.d.eff[ipr] = dn_s[1]/grad_rho_tor2  # need to set
 

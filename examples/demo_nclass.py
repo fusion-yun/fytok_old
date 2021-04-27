@@ -13,7 +13,7 @@ import sys
 
 if __name__ == "__main__":
     sys.path.append("/home/salmon/workspace/fytok/phys_modules/")
-    import nclass
+    import transport.nclass as nclass
 
     device = File("/home/salmon/workspace/fytok/data/mapping/ITER/imas/3/static/config.xml").entry
     equilibrium = File(
@@ -148,7 +148,7 @@ if __name__ == "__main__":
         x_axis=(tok.equilibrium.profiles_1d.psi_norm,    r"$\psi_{N}$"),  # asd
         grid=True, fontsize=16
     ) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
-    
+
     plot_profiles(
         [
             (tok.core_profiles.electrons.density,       r"$n_e$"),
@@ -166,20 +166,30 @@ if __name__ == "__main__":
 
     plot_profiles(
         [
-            #         [
-            (core_transport.electrons.particles.d,   r"$D_e$"),
-            (core_transport.electrons.particles.v,   r"$V_e$"),
-            (core_transport.electrons.particles.flux, r"$\Gamma_e$"),
-            #         ],
-            #         [
-            (core_transport.electrons.energy.d,      r"$\chi_e$"),
-            (core_transport.electrons.energy.v,      r"$v_{Te}$"),
-            (core_transport.electrons.energy.flux,   r"$q_e$"),
-
-            #         ],
-            [(ion.particles.d,           f"$D_{{{ion.label}}}$") for ion in core_transport.ion],
-            [(ion.particles.v,           f"$v_{{{ion.label}}}$") for ion in core_transport.ion],
-            [(ion.particles.flux,        f"$flux_{{{ion.label}}}$") for ion in core_transport.ion],
+            [
+                (core_transport.electrons.particles.flux, r"$\Gamma_e$"),
+                *[(ion.particles.flux,        f"$\Gamma_{{{ion.label}}}$") for ion in core_transport.ion],
+            ],
+            [
+                (core_transport.electrons.particles.d,   r"$D_e$"),
+                *[(ion.particles.d,           f"$D_{{{ion.label}}}$") for ion in core_transport.ion],
+            ],
+            [
+                (core_transport.electrons.particles.v,   r"$v_e$"),
+                * [(ion.particles.v,           f"$v_{{{ion.label}}}$") for ion in core_transport.ion],
+            ],
+            [
+                (core_transport.electrons.energy.flux,   r"$q_e$"),
+                *[(ion.energy.flux,        f"$q_{{{ion.label}}}$") for ion in core_transport.ion],
+            ],
+            [
+                (core_transport.electrons.energy.d,      r"$\chi_e$"),
+                *[(ion.energy.d,           f"$\chi_{{{ion.label}}}$") for ion in core_transport.ion],
+            ],
+            [
+                (core_transport.electrons.energy.v,      r"$v_{Te}$"),
+                *[(ion.energy.v,           f"$v_{{T,{ion.label}}}$") for ion in core_transport.ion],
+            ]
         ],
         x_axis=(core_transport.grid_v.rho_tor_norm,   r"$\sqrt{\Phi/\Phi_{bdry}}$"),  # x axis,
         annotation=core_transport.identifier.name,

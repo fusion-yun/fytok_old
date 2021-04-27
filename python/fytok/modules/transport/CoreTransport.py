@@ -24,8 +24,6 @@ class CoreTransport(AttributeTree):
         in the gradient terms and in the derivatives denoted by the prime. The average flux stored in the IDS as sibling of  :math:`D` and  :math:`v` is the total
         flux described above divided by the flux surface area :math:`V^{\prime}\left\langle \left|\nabla\rho_{tor,norm}\right|\right\rangle` . 
         Note that the energy flux includes the energy transported by the particle flux.
-
-
     """
     IDS = "core_transport"
 
