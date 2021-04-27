@@ -17,12 +17,12 @@ class CoreTransport(AttributeTree):
         Core plasma transport of particles, energy, momentum and poloidal flux. The transport of particles, energy and momentum is described by
         diffusion coefficients,  :math:`D`, and convection velocities,  :math:`v`. These are defined by the total fluxes of particles, energy and momentum, across a
         flux surface given by : :math:`V^{\prime}\left[-DY^{\prime}\left|\nabla\rho_{tor,norm}\right|^{2}+vY\left|\nabla\rho_{tor,norm}\right|\right]`,
-        where  :math:`Y` represents the particles, energy and momentum density, respectively, while  :math:`V` is the volume inside a flux surface, the primes denote 
+        where  :math:`Y` represents the particles, energy and momentum density, respectively, while  :math:`V` is the volume inside a flux surface, the primes denote
         derivatives with respect to :math:`\rho_{tor,norm}` and
-        :math:`\left\langle X\right\rangle` is the flux surface average of a quantity  :math:`X`. This formulation remains valid when changing simultaneously  
+        :math:`\left\langle X\right\rangle` is the flux surface average of a quantity  :math:`X`. This formulation remains valid when changing simultaneously
         :math:`\rho_{tor,norm}` into :math:`\rho_{tor}`
         in the gradient terms and in the derivatives denoted by the prime. The average flux stored in the IDS as sibling of  :math:`D` and  :math:`v` is the total
-        flux described above divided by the flux surface area :math:`V^{\prime}\left\langle \left|\nabla\rho_{tor,norm}\right|\right\rangle` . 
+        flux described above divided by the flux surface area :math:`V^{\prime}\left\langle \left|\nabla\rho_{tor,norm}\right|\right\rangle` .
         Note that the energy flux includes the energy transported by the particle flux.
     """
     IDS = "core_transport"
@@ -34,6 +34,10 @@ class CoreTransport(AttributeTree):
     @cached_property
     def identifier(self):
         return self["identifier"]
+
+    @property
+    def time(self):
+        return np.asarray([profile.time for profile in self.profiles_1d])
 
     class Profiles1D(AttributeTree):
         def __init__(self, *args, grid=None,  **kwargs):
@@ -192,4 +196,4 @@ class CoreTransport(AttributeTree):
 
     @cached_property
     def profiles_1d(self):
-        return CoreTransport.Profiles1D(self["profiles_1d"], parent=self)
+        return List(self["profiles_1d"], default_factory=CoreTransport.Profiles1D, parent=self)

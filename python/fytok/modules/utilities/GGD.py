@@ -1,11 +1,9 @@
 from functools import cached_property
-from spdm.data.PhysicalGraph import PhysicalGraph
-from spdm.util.LazyProxy import LazyProxy
+from spdm.data.AttributeTree import AttributeTree
 from spdm.util.logger import logger
-from spdm.util.sp_export import sp_find_module
 
 
-class GGD(PhysicalGraph):
+class GGD(AttributeTree):
     r"""General Grid Define
     """
 
@@ -16,20 +14,20 @@ class GGD(PhysicalGraph):
     def identifier(self):
         return NotImplemented
 
-    class Space(PhysicalGraph):
+    class Space(AttributeTree):
         def __init__(self, cache, *args, **kwargs):
             super().__init(*args, **kwargs)
 
     @cached_property
     def space(self):
         """Set of grid spaces"""
-        return PhysicalGraph(default_factory_array=lambda _holder=self: Mesh.Space(None, parent=_holder))
+        return AttributeTree(default_factory_array=lambda _holder=self: Mesh.Space(None, parent=_holder))
 
-    class GridSubset(PhysicalGraph):
+    class GridSubset(AttributeTree):
         def __init__(self, cache, *args, **kwargs):
             super().__init(*args, **kwargs)
 
     @cached_property
     def grid_subset(self):
         """Grid subsets"""
-        return PhysicalGraph(default_factory_array=lambda _holder=self: Mesh.Space(None, parent=_holder))
+        return AttributeTree(default_factory_array=lambda _holder=self: Mesh.Space(None, parent=_holder))

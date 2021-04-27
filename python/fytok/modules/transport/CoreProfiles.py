@@ -39,15 +39,14 @@ class CoreProfiles(Profiles):
     """
     IDS = "core_profiles"
 
-    def __init__(self,  *args, vacuum_toroidal_field=None,   time=None,  grid: RadialGrid = None, ** kwargs):
+    def __init__(self,  *args, vacuum_toroidal_field=None,   grid: RadialGrid = None, ** kwargs):
         super().__init__(*args,  ** kwargs)
-        self._time = time or 0.0
         self._grid = grid
         self._vacuum_toroidal_field = vacuum_toroidal_field or AttributeTree(self.__raw_get__("vacuum_toroidal_field"))
 
     @property
     def time(self):
-        return self._time
+        return np.asarray([profile.time for profile in self.profiles_1d])
 
     @property
     def vacuum_toroidal_field(self) -> AttributeTree:
@@ -55,10 +54,11 @@ class CoreProfiles(Profiles):
 
     class Profiles1D(Profiles):
         def __init__(self, *args, grid=None, time=None, **kwargs):
+            grid = grid or self._parent._grid
+            assert(self._grid is not None)
             super().__init__(*args, axis=grid.rho_tor_norm, **kwargs)
             self._grid = grid
-            assert(self._grid is not None)
-            self._time = time
+            self._time = time or 0.0
 
         @property
         def time(self):
@@ -508,13 +508,10 @@ class CoreProfiles(Profiles):
 
     @cached_property
     def profiles_1d(self):
-        if isinstance(self.time, (np.ndarray, collections.abc.MutableSequence)):
-            raise NotImplemented
-        else:
-            return CoreProfiles.Profiles1D(self["profiles_1d"], grid=self._grid, time=self._time, parent=self)
+        return List(self["profiles_1d"], default_factory=CoreProfiles.Profiles1D,  parent=self)
 
     class GlobalQuantities(Profiles):
-        def __init__(self, *args, axis, **kwargs):
+        def __init__(self, *args, axis=None, **kwargs):
             super().__init__(*args, axis=axis, **kwargs)
 
     @cached_property

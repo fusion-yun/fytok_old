@@ -11,16 +11,16 @@ from numpy.lib.arraysetops import isin
 from scipy.optimize import fsolve, root_scalar
 from spdm.data.AttributeTree import AttributeTree
 from spdm.data.Field import Field
+from spdm.data.Function import Function
 from spdm.data.mesh.CurvilinearMesh import CurvilinearMesh
-from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.geometry.CubicSplineCurve import CubicSplineCurve
 from spdm.geometry.Curve import Curve
 from spdm.geometry.Point import Point
-from spdm.data.Function import Function
 from spdm.util.logger import logger
 from spdm.util.utilities import try_get
-
+from spdm.data.List import List
 from ...Profiles import Profiles
+from ..utilities.GGD import GGD
 
 TOLERANCE = 1.0e-6
 EPS = np.finfo(float).eps
@@ -61,7 +61,7 @@ class MagneticSurfaceCoordinateSystem:
         opoints = []
         xpoints = []
         for r, z, psi, D in self._psirz.find_peak():
-            p = PhysicalGraph({"r": r, "z": z, "psi": psi})
+            p = {"r": r, "z": z, "psi": psi}
 
             if D < 0.0:  # saddle/X-point
                 xpoints.append(p)
@@ -364,54 +364,15 @@ class MagneticSurfaceCoordinateSystem:
         return self.create_surface(1.0)
 
 
-class Equilibrium(PhysicalGraph):
-    r"""Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
-
-        Reference:
-            - O. Sauter and S. Yu Medvedev, "Tokamak coordinate conventions: COCOS", Computer Physics Communications 184, 2 (2013), pp. 293--302.
-
-        COCOS  11
-
-        #    Top view
-        #             ***************
-        #            *               *
-        #           *   ***********   *
-        #          *   *           *   *
-        #         *   *             *   *
-        #         *   *             *   *
-        #     Ip  v   *             *   ^  \phi
-        #         *   *    Z o--->R *   *
-        #         *   *             *   *
-        #         *   *             *   *
-        #         *   *     Bpol    *   *
-        #          *   *     o     *   *
-        #           *   ***********   *
-        #            *               *
-        #             ***************
-        #               Bpol x
-        #            Poloidal view
-        #        ^Z
-        #        |
-        #        |       ************
-        #        |      *            *
-        #        |     *         ^    *
-        #        |     *   \rho /     *
-        #        |     *       /      *
-        #        +-----*------X-------*---->R
-        #        |     *  Ip, \phi   *
-        #        |     *              *
-        #        |      *            *
-        #        |       *****<******
-        #        |       Bpol,\theta
-        #        |
-        #            Cylindrical coordinate      : (R,\phi,Z)
-        #    Poloidal plane coordinate   : (\rho,\theta,\phi)
-    """
-
-    IDS = "transport.equilibrium"
-
-    def __init__(self,  *args, uv=None, psirz=None,   **kwargs):
+class EquilibriumTimeSlice(AttributeTree):
+    def __init__(self, *args, time=None, R0=None, B0=None,
+                 pprime=None, ffprime=None,
+                 uv=None, psirz=None,  **kwargs):
         super().__init__(*args, **kwargs)
+        self._time = time or self["time"] or 0.0
+
+        self._r0 = R0 or self._parent.vacuum_toroidal_field.r0
+        self._b0 = B0 or self._parent.vacuum_toroidal_field.b0(self._time)
 
         if not isinstance(psirz, Field):
             psirz = Field(self["profiles_2d.psi"],
@@ -421,10 +382,10 @@ class Equilibrium(PhysicalGraph):
 
         self._psirz = psirz
 
-        self._ffprime = Function(self["profiles_1d.psi_norm"], self["profiles_1d.f_df_dpsi"])
-        self._pprime = Function(self["profiles_1d.psi_norm"], self["profiles_1d.dpressure_dpsi"])
-        self._r0 = self["vacuum_toroidal_field.r0"]
-        self._b0 = self["vacuum_toroidal_field.b0"]
+        self._ffprime = ffprime if ffprime is not None else Function(
+            self["profiles_1d.psi_norm"], self["profiles_1d.f_df_dpsi"])
+        self._pprime = pprime if pprime is not None else Function(
+            self["profiles_1d.psi_norm"], self["profiles_1d.dpressure_dpsi"])
 
         if uv is not None:
             self._uv = uv
@@ -457,30 +418,12 @@ class Equilibrium(PhysicalGraph):
             self._uv = [u, v]
 
     @cached_property
-    def vacuum_toroidal_field(self):
-        return AttributeTree({"r0": self._r0, "b0": self._b0})
-
-    def solve(self, *args, **kwargs):
-        raise NotImplementedError()
-
-    def update(self, *args, test_convergence=False,  ** kwargs):
-        logger.debug(f"Update {self.__class__.__name__} ")
-        logger.warning(f"TODO: not implemented!")
-        # del self.global_quantities
-        # del self.profiles_1d
-        # del self.profiles_2d
-        # del self.boundary
-        # del self.boundary_separatrix
-        # del self.coordinate_system
-        return test_convergence
-
-    @cached_property
     def coordinate_system(self):
         return MagneticSurfaceCoordinateSystem(self._uv, self._psirz, self._ffprime, self._r0*self._b0)
 
     @cached_property
     def constraints(self):
-        return PhysicalGraph(self["constraints"], parent=self)
+        return self["constraints"]
 
     def radial_grid(self, primary_axis=None, axis=None):
         """ """
@@ -516,7 +459,7 @@ class Equilibrium(PhysicalGraph):
     def boundary_separatrix(self):
         return Equilibrium.BoundarySeparatrix(self.coordinate_system,   parent=self)
 
-    class GlobalQuantities(PhysicalGraph):
+    class GlobalQuantities(Profiles):
         def __init__(self, coord: MagneticSurfaceCoordinateSystem,    *args,  **kwargs):
             super().__init__(*args, **kwargs)
             self._coord = coord
@@ -570,11 +513,11 @@ class Equilibrium(PhysicalGraph):
         def magnetic_axis(self):
             """Magnetic axis position and toroidal field	structure"""
             return self._coord.magnetic_axis
-            # return PhysicalGraph({"r":  self["magnetic_axis.r"],
+            # return  {"r":  self["magnetic_axis.r"],
             #                       "z":  self["magnetic_axis.z"],
             #                       # self.profiles_2d.b_field_tor(opt[0][0], opt[0][1])
             #                       "b_field_tor": self["magnetic_axis.b_field_tor"]
-            #                       })
+            #                       }
 
         @cached_property
         def x_points(self):
@@ -766,10 +709,10 @@ class Equilibrium(PhysicalGraph):
 
         @cached_property
         def geometric_axis(self):
-            return PhysicalGraph({
+            return {
                 "r": Function(self.psi_norm, self.shape_property.geometric_axis.r),
                 "z": Function(self.psi_norm, self.shape_property.geometric_axis.z),
-            })
+            }
 
         @property
         def minor_radius(self):
@@ -938,7 +881,7 @@ class Equilibrium(PhysicalGraph):
             """Poloidal beta profile. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip ^ 2][-]"""
             return NotImplemented
 
-    class Profiles2D(PhysicalGraph):
+    class Profiles2D(Profiles):
         """
             Equilibrium 2D profiles in the poloidal plane.
         """
@@ -1005,7 +948,7 @@ class Equilibrium(PhysicalGraph):
             """Toroidal component of the magnetic field  [T]"""
             return Field(self._coord.Btor, self._coord.r, self._coord.z, mesh_type="curvilinear")
 
-    class Boundary(PhysicalGraph):
+    class Boundary(Profiles):
         def __init__(self, coord: MagneticSurfaceCoordinateSystem,   *args,  ** kwargs):
             super().__init__(*args, **kwargs)
             self._coord = coord or self._parent.coordinate_system
@@ -1019,7 +962,7 @@ class Equilibrium(PhysicalGraph):
         def outline(self):
             """RZ outline of the plasma boundary  """
             RZ = np.asarray([[r, z] for r, z in self._coord.flux_surface_map(1.0)])
-            return PhysicalGraph({"r": RZ[:, 0], "z": RZ[:, 1]})
+            return {"r": RZ[:, 0], "z": RZ[:, 1]}
 
         @cached_property
         def x_point(self):
@@ -1091,12 +1034,82 @@ class Equilibrium(PhysicalGraph):
             """	RZ position of the active limiter point (point of the plasma boundary in contact with the limiter)"""
             return NotImplemented
 
-    class BoundarySeparatrix(PhysicalGraph):
+    class BoundarySeparatrix(Profiles):
         def __init__(self, coord: MagneticSurfaceCoordinateSystem,  *args,  ** kwargs):
             super().__init__(*args, **kwargs)
 
+
+class Equilibrium(AttributeTree):
+    r"""Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
+
+        Reference:
+            - O. Sauter and S. Yu Medvedev, "Tokamak coordinate conventions: COCOS", Computer Physics Communications 184, 2 (2013), pp. 293--302.
+
+        COCOS  11
+
+        #    Top view
+        #             ***************
+        #            *               *
+        #           *   ***********   *
+        #          *   *           *   *
+        #         *   *             *   *
+        #         *   *             *   *
+        #     Ip  v   *             *   ^  \phi
+        #         *   *    Z o--->R *   *
+        #         *   *             *   *
+        #         *   *             *   *
+        #         *   *     Bpol    *   *
+        #          *   *     o     *   *
+        #           *   ***********   *
+        #            *               *
+        #             ***************
+        #               Bpol x
+        #            Poloidal view
+        #        ^Z
+        #        |
+        #        |       ************
+        #        |      *            *
+        #        |     *         ^    *
+        #        |     *   \rho /     *
+        #        |     *       /      *
+        #        +-----*------X-------*---->R
+        #        |     *  Ip, \phi   *
+        #        |     *              *
+        #        |      *            *
+        #        |       *****<******
+        #        |       Bpol,\theta
+        #        |
+        #            Cylindrical coordinate      : (R,\phi,Z)
+        #    Poloidal plane coordinate   : (\rho,\theta,\phi)
+    """
+    IDS = "transport.equilibrium"
+
+    def __init__(self,  *args,  **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @cached_property
+    def vacuum_toroidal_field(self):
+        return self["vacuum_toroidal_field"]  # AttributeTree({"r0": self._r0, "b0": self._b0})
+
+    @cached_property
+    def time(self):
+        d = self["time"]
+        if d == None:
+            return np.asarray([profile.time for profile in self.time_slice])
+        else:
+            return np.asarray(d)
+
+    @cached_property
+    def time_slice(self):
+        return List(self["time_slice"], default_factory=EquilibriumTimeSlice, parent=self)
+
+    @cached_property
+    def grid_gdd(self):
+        return List(self["time_slice"], default_factory=GGD, parent=self)
+
     ####################################################################################
     # Plot proflies
+
     def plot(self, axis=None, *args,
              scalar_field=[],
              vector_field=[],
@@ -1184,7 +1197,7 @@ class Equilibrium(PhysicalGraph):
             opts = d.get("opts", {})
         elif isinstance(d, tuple):
             data, opts = d
-        elif isinstance(d, PhysicalGraph):
+        elif isinstance(d, AttributeTree):
             data = d.data
             opts = d.opts
         else:

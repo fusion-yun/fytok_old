@@ -4,12 +4,11 @@ from functools import cached_property, lru_cache
 import numpy as np
 import scipy.constants
 from spdm.data.Function import Function
+from spdm.data.List import List
 from spdm.util.logger import logger
 
-from ...RadialGrid import RadialGrid
-from .CoreProfiles import CoreProfiles
-from .Equilibrium import Equilibrium
 from ...Profiles import Profiles
+from ...RadialGrid import RadialGrid
 
 
 class CoreSources(Profiles):
@@ -17,24 +16,13 @@ class CoreSources(Profiles):
     """
     IDS = "core_sources"
 
-    def __init__(self, *args, grid: RadialGrid = None, time=None,   **kwargs):
+    def __init__(self, *args, grid: RadialGrid = None, **kwargs):
         super().__init__(*args, **kwargs)
-        self._time = time or 0.0
         self._grid = grid
 
-    def update(self, *args,
-               time=None,
-               radial_grid: RadialGrid = None,
-               core_profile_prev: CoreProfiles = None,
-               equilibrium: Equilibrium = None,
-               ** kwargs):
-        logger.debug(f"Update {self.__class__.__name__}")
-        if time is not None:
-            self._time = time
-        if radial_grid is not None:
-            self._grid = radial_grid
-        self._core_profile = core_profile_prev
-        self._equlibrium = equilibrium
+    @property
+    def time(self):
+        return np.asarray([profile.time for profile in self.profiles_1d])
 
     class Profiles1D(Profiles):
         def __init__(self, *args, axis=None, **kwargs):
@@ -210,4 +198,4 @@ class CoreSources(Profiles):
 
     @cached_property
     def profiles_1d(self):
-        return CoreSources.Profiles1D(self["profiles_1d"], parent=self)
+        return List(self["profiles_1d"], default_factory=CoreSources.Profiles1D, parent=self)

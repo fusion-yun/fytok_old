@@ -50,7 +50,6 @@ class Tokamak(PhysicalGraph):
     def time(self):
         return self._time
 
-    @cached_property
     def vacuum_toroidal_field(self):
         return self["equilibrium.vacuum_toroidal_field"]
 
