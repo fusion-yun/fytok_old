@@ -149,8 +149,6 @@ if __name__ == "__main__":
         grid=True, fontsize=16
     ) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
     
-    logger.debug(tok.core_profiles.electrons.density)
-
     plot_profiles(
         [
             (tok.core_profiles.electrons.density,       r"$n_e$"),

@@ -217,7 +217,6 @@ def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, grid
 
         outputs = nclass_mod.nclass(*inputs)
 
-        logger.debug((inputs))
         # logger.debug(outputs)
 
         (

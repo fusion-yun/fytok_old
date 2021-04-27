@@ -134,12 +134,12 @@ class CoreProfiles(Profiles):
         def z_ion(self):
             """Ion charge (of the dominant ionisation state; lumped ions are allowed),
             volume averaged over plasma radius {dynamic} [Elementary Charge Unit]  FLT_0D  """
-            return self["z_ion"]
+            return self.__raw_get__("z_ion")
 
         @cached_property
         def neutral_index(self):
             """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
-            return self["neutral_index"]
+            return self.__raw_get__("neutral_index")
 
         @cached_property
         def z_ion_1d(self):
@@ -172,10 +172,10 @@ class CoreProfiles(Profiles):
         #     """Information on the fit used to obtain the temperature profile [eV]    """
         #     return NotImplemented
 
-        @cached_property
-        def density(self):
-            """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-            return Function(self.axis, self["density"])
+        # @cached_property
+        # def density(self):
+        #     """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
+        #     return Function(self.axis, self["density"])
 
         # @property
         # def density_validity(self):
@@ -240,7 +240,7 @@ class CoreProfiles(Profiles):
         @cached_property
         def multiple_states_flag(self):
             """Multiple states calculation flag : 0-Only one state is considered; 1-Multiple states are considered and are described in the state  {dynamic}    """
-            return self["multiple_states_flag"] or 0
+            return self.__raw_get__("multiple_states_flag")
 
         @cached_property
         def state(self):
@@ -254,7 +254,7 @@ class CoreProfiles(Profiles):
         @property
         def ion_index(self):
             """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
-            return self["ion_index"]
+            return self.__raw_get__("ion_index")
         # @property
         # def element(self):
         #     """List of elements forming the atom or molecule  struct_array [max_size=unbounded]  1- 1...N"""

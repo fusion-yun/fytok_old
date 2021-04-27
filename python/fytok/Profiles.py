@@ -4,11 +4,10 @@ import numpy as np
 from spdm.data.Group import Group
 from spdm.data.Function import Function
 from spdm.util.logger import logger
-from spdm.data.AttributeTree import as_attribute_tree
+from spdm.data.AttributeTree import AttributeTree
 
 
-@as_attribute_tree
-class Profiles(Group):
+class Profiles(AttributeTree):
     def __init__(self,   *args, axis=None, ** kwargs):
         super().__init__(*args, **kwargs)
         if axis is None:
@@ -27,7 +26,7 @@ class Profiles(Group):
     def __post_process__(self, d, *args, parent=None, **kwargs):
         if isinstance(d, Function):
             return d
-        elif isinstance(d, (int, float, np.ndarray)):
+        elif isinstance(d, (int, float, np.ndarray)) or callable(d):
             return Function(self._axis, d)
         elif d is None or d == None:
             return Function(self._axis, 0.0)

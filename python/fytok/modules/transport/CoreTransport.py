@@ -25,30 +25,18 @@ class CoreTransport(AttributeTree):
         flux described above divided by the flux surface area :math:`V^{\prime}\left\langle \left|\nabla\rho_{tor,norm}\right|\right\rangle` . 
         Note that the energy flux includes the energy transported by the particle flux.
 
-        Attributes :
-            profiles_1d
+
     """
     IDS = "core_transport"
 
     def __init__(self,  *args, grid: RadialGrid = None,  time=None,   **kwargs):
         super().__init__(*args, **kwargs)
         self._grid = grid
-        logger.debug(f"Create CoreTransport {type(self._grid)}")
-        assert(self._grid is not None)
         self._time = time or 0.0
-
-    def update(self, *args, time=None, ** kwargs):
-        logger.debug(f"Update {self.__class__.__name__}")
-        if time is not None:
-            self._time = time
 
     @cached_property
     def identifier(self):
-        return AttributeTree({
-            "index": self["identifier"]["index"] or 0,
-            "name": self["identifier"]["name"] or "",
-            "description": self["identifier"]["description"] or "",
-        }, parent=self)
+        return self["identifier"]
 
     @property
     def time(self) -> float:
@@ -105,12 +93,12 @@ class CoreTransport(AttributeTree):
         def z_ion(self):
             """Ion charge (of the dominant ionisation state; lumped ions are allowed),
             volume averaged over plasma radius {dynamic} [Elementary Charge Unit]  FLT_0D  """
-            return self["z_ion"]
+            return self.__raw_get__("z_ion")
 
         @property
         def neutral_index(self):
             """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
-            return self["neutral_index"]
+            return self.__raw_get__("neutral_index")
 
         @cached_property
         def particles(self):
@@ -155,7 +143,7 @@ class CoreTransport(AttributeTree):
         @property
         def ion_index(self):
             """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
-            return self["ion_index"]
+            return self.__raw_get__("ion_index")
 
         @cached_property
         def particles(self):
@@ -192,9 +180,9 @@ class CoreTransport(AttributeTree):
 
     @cached_property
     def conductivity_parallel(self):
-        return Function(self.grid_d.rho_tor_norm, self["conductivity_parallel"] or 0.0)
+        return Function(self.grid_d.rho_tor_norm, self["conductivity_parallel"])
 
     @cached_property
     def e_field_radial(self):
         """ Radial component of the electric field (calculated e.g. by a neoclassical model) {dynamic} [V.m^-1]"""
-        return Function(self.grid_flux.rho_tor_norm, self["e_field_radial"] or 0.0)
+        return Function(self.grid_flux.rho_tor_norm, self["e_field_radial"])
