@@ -2,17 +2,19 @@ import collections
 from functools import cached_property, lru_cache
 
 import numpy as np
-from spdm.data.Node import List
+from spdm.data.AttributeTree import as_attribute_tree
 from spdm.data.Function import Function
-from spdm.data.Node import Dict
+from spdm.data.Node import Dict, List
+from spdm.data.Profiles import Profiles
 from spdm.util.logger import logger
 
-from spdm.data.Profiles import Profiles
-from ...RadialGrid import RadialGrid
+from ..utilities.IDS import IDS
+from ..utilities.RadialGrid import RadialGrid
 from .ParticleSpecies import Species
 
 
-class CoreTransport(Dict):
+@as_attribute_tree
+class CoreTransport(IDS):
     r"""
         Core plasma transport of particles, energy, momentum and poloidal flux. The transport of particles, energy and momentum is described by
         diffusion coefficients,  :math:`D`, and convection velocities,  :math:`v`. These are defined by the total fluxes of particles, energy and momentum, across a

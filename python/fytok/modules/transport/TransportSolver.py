@@ -12,10 +12,11 @@ import scipy.constants
 from fytok.util.Misc import Identifier
 from spdm.data.Function import Function
 from spdm.data.Node import Dict
-from spdm.data.Node import Dict
+from spdm.numerical.bvp import solve_bvp
 from spdm.util.logger import logger
 from spdm.util.utilities import try_get
-from spdm.numerical.bvp import solve_bvp
+
+from ..utilities.RadialGrid import RadialGrid
 from .CoreProfiles import CoreProfiles
 from .CoreSources import CoreSources
 from .CoreTransport import CoreTransport
@@ -23,7 +24,7 @@ from .EdgeProfiles import EdgeProfiles
 from .EdgeSources import EdgeSources
 from .EdgeTransport import EdgeTransport
 from .Equilibrium import Equilibrium
-from ...RadialGrid import RadialGrid
+
 EPSILON = 1.0e-15
 TOLERANCE = 1.0e-6
 

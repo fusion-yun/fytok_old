@@ -1,21 +1,34 @@
 import collections
 from copy import copy
+from functools import cached_property
 
 import matplotlib.pyplot as plt
 import numpy as np
+from spdm.data.AttributeTree import as_attribute_tree
 from spdm.data.Node import Dict
 from spdm.util.logger import logger
-from functools import cached_property
 from sympy import Point, Polygon
+from ..utilities.IDS import IDS
 
 
-class Wall(Dict):
+@as_attribute_tree
+class Wall(IDS):
     """Wall
 
     """
     IDS = "wall"
 
     def __init__(self, *args,  **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @cached_property
+    def description_2d(self):
+        return WallDescription2D(self["description_2d"], parent=self)
+
+
+class WallDescription2D(Dict):
+
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     @cached_property

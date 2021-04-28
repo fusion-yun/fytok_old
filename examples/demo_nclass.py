@@ -25,13 +25,14 @@ if __name__ == "__main__":
 
     profile = pd.read_csv('/home/salmon/workspace/data/15MA inductive - burn/profile.txt', sep='\t')
 
-    logger.debug(len(equilibrium.time_slice))
-
     equilibrium.time_slice[-1].coordinate_system = {"grid": {"dim1": 64, "dim2": 512}}
 
     tok = Tokamak({
         "radial_grid": {"axis": 64},
         "wall":  device.wall,
+        "pf_active": device.pf_active,
+        "tf": device.tf,
+        "magnetics": device.magnetics,
         "equilibrium": equilibrium,
         "core_profiles": {
             "profiles_1d": [{
@@ -64,8 +65,6 @@ if __name__ == "__main__":
             }]
         }
     })
-
-    logger.debug(len(tok.equilibrium.time_slice))
 
     eq = tok.equilibrium.time_slice[-1]
 

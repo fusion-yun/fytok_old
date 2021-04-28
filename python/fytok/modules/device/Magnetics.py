@@ -2,10 +2,14 @@ from functools import cached_property
 
 import numpy as np
 from fytok.Misc import Identifier, IDSProperties, Signal
+from spdm.data.AttributeTree import as_attribute_tree
 from spdm.data.Node import Dict
 
+from ..utilities.IDS import IDS
 
-class Magnetics(Dict):
+
+@as_attribute_tree
+class Magnetics(IDS):
     """Magnetic diagnostics for equilibrium identification and plasma shape control.
 
     """

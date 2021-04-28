@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 import scipy.integrate
-from fytok.RadialGrid import RadialGrid
 from numpy import arctan2, cos, sin, sqrt
 from scipy.optimize import fsolve, root_scalar
 from spdm.data.AttributeTree import as_attribute_tree
@@ -20,8 +19,10 @@ from spdm.geometry.Point import Point
 from spdm.util.logger import logger
 from spdm.util.utilities import try_get
 
-from ..utilities.Misc import VacuumToroidalField
 from ..utilities.GGD import GGD
+from ..utilities.IDS import IDS
+from ..utilities.Misc import VacuumToroidalField
+from ..utilities.RadialGrid import RadialGrid
 
 TOLERANCE = 1.0e-6
 EPS = np.finfo(float).eps
@@ -364,6 +365,7 @@ class MagneticSurfaceCoordinateSystem:
     @cached_property
     def boundary(self):
         return self.create_surface(1.0)
+
 
 @as_attribute_tree
 class EquilibriumGlobalQuantities(Profiles):
@@ -1068,7 +1070,7 @@ class EquilibriumTimeSlice(Dict):
 
 
 @as_attribute_tree
-class Equilibrium(Dict):
+class Equilibrium(IDS):
     r"""Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
 
         Reference:

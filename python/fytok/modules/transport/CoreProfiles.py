@@ -1,17 +1,17 @@
 import collections
-from external.SpDB.python.spdm.data.AttributeTree import as_attribute_tree
 from functools import cached_property
 
 import numpy as np
-from spdm.data.Node import Dict
+from external.SpDB.python.spdm.data.AttributeTree import as_attribute_tree
 from spdm.data.Function import Function
-from spdm.data.Node import List
+from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
 from spdm.util.logger import logger
 
-from ...RadialGrid import RadialGrid
-from .ParticleSpecies import Species
+from ..utilities.IDS import IDS
 from ..utilities.Misc import VacuumToroidalField
+from ..utilities.RadialGrid import RadialGrid
+from .ParticleSpecies import Species
 
 
 @as_attribute_tree
@@ -472,6 +472,7 @@ class CoreProfiles1D(Profiles):
         """Magnetic shear, defined as rho_tor/q . dq/drho_tor {dynamic}[-]"""
         return NotImplemented
 
+
 @as_attribute_tree
 class CoreProfilesGlobalQuantities(Profiles):
     def __init__(self, *args, axis=None, **kwargs):
@@ -479,7 +480,7 @@ class CoreProfilesGlobalQuantities(Profiles):
 
 
 @as_attribute_tree
-class CoreProfiles(Profiles):
+class CoreProfiles(IDS):
     """CoreProfiles
     """
     IDS = "core_profiles"

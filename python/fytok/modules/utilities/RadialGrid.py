@@ -2,13 +2,12 @@ import collections
 from functools import cached_property
 
 import numpy as np
-from spdm.util.logger import logger
-from spdm.data.Node import Dict
 from spdm.data.Function import Function
-
+from spdm.data.Node import Dict
+from spdm.util.logger import logger
 from spdm.util.utilities import try_get
 
-from .modules.utilities.Misc import VacuumToroidalField
+from .Misc import VacuumToroidalField
 
 
 class RadialGrid:
@@ -19,7 +18,7 @@ class RadialGrid:
     def __init__(self, psi_norm, *args, vacuum_toroidal_field: VacuumToroidalField = None, equilibrium=None, **kwargs) -> None:
         self._data = kwargs
         if equilibrium is not None:
-            
+
             self._vacuum_toroidal_field = vacuum_toroidal_field
             self._equilibrium = equilibrium
             self._psi_axis = equilibrium.boundary.psi_axis

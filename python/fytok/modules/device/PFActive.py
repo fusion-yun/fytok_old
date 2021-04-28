@@ -3,11 +3,14 @@ from copy import copy
 from functools import cached_property
 
 import matplotlib.pyplot as plt
+from spdm.data.AttributeTree import as_attribute_tree
 from spdm.data.Node import Dict
 from spdm.util.logger import logger
+from ..utilities.IDS import IDS
 
 
-class PFActive(Dict):
+@as_attribute_tree
+class PFActive(IDS):
     """
     """
 

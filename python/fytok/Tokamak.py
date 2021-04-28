@@ -24,12 +24,12 @@ from .modules.transport.EdgeSources import EdgeSources
 from .modules.transport.EdgeTransport import EdgeTransport
 from .modules.transport.Equilibrium import Equilibrium
 from .modules.transport.TransportSolver import TransportSolver
-from .RadialGrid import RadialGrid
 from .modules.utilities.Misc import VacuumToroidalField
+from .modules.utilities.RadialGrid import RadialGrid
+
 TWOPI = scipy.constants.pi*2.0
 
 
-@as_attribute_tree
 class Tokamak(Dict):
     """Tokamak
         功能：
@@ -56,10 +56,7 @@ class Tokamak(Dict):
 
     @cached_property
     def wall(self) -> Wall:
-        if self["wall.description_2d"] is not None:
-            return Wall(self["wall.description_2d"], parent=self)
-        else:
-            return Wall(self["wall"], parent=self)
+        return Wall(self["wall"], parent=self)
 
     @cached_property
     def tf(self) -> TF:
@@ -99,7 +96,9 @@ class Tokamak(Dict):
     @cached_property
     def core_transport(self) -> CoreTransport:
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return CoreTransport(self.__raw_get__("core_transport"), grid=self.equilibrium.time_slice[-1].radial_grid("rho_tor_norm"), time=self.time, parent=self)
+        return CoreTransport(self["core_transport"],
+                             grid=self.equilibrium.time_slice[-1].radial_grid("rho_tor_norm"),
+                             time=self.time, parent=self)
 
     @cached_property
     def core_sources(self) -> CoreSources:
@@ -107,25 +106,27 @@ class Tokamak(Dict):
             Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return CoreSources(self.__raw_get__("core_sources"),  grid=self.radial_grid, time=self.time, parent=self)
+        return CoreSources(self["core_sources"],
+                           grid=self.equilibrium.time_slice[-1].radial_grid("rho_tor_norm"),
+                           time=self.time, parent=self)
 
     @cached_property
     def edge_profiles(self) -> EdgeProfiles:
-        return EdgeProfiles(self.__raw_get__("edge_profiles"), parent=self)
+        return EdgeProfiles(self["edge_profiles"], parent=self)
 
     @cached_property
     def edge_transport(self) -> EdgeTransport:
         """Edge plasma transport. Energy terms correspond to the full kinetic energy equation
          (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return EdgeTransport(self.__raw_get__("edge_transport.mode"), parent=self)
+        return EdgeTransport(self["edge_transport"], parent=self)
 
     @cached_property
     def edge_sources(self) -> EdgeSources:
         """Edge plasma sources. Energy terms correspond to the full kinetic energy equation
          (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return EdgeSources(self["edge_sources.mode"], parent=self)
+        return EdgeSources(self["edge_sources"], parent=self)
 
     def particle_species(self):
         pass

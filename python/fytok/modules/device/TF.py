@@ -5,13 +5,15 @@ from functools import cached_property, lru_cache
 
 import matplotlib.pyplot as plt
 import numpy as np
+from spdm.data.AttributeTree import as_attribute_tree
 from spdm.data.Node import Dict
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.util.urilib import urisplit
+from ..utilities.IDS import IDS
 
-
-class TF(Dict):
+@as_attribute_tree
+class TF(IDS):
     """TF　Coils
 
     """
