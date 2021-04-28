@@ -14,11 +14,11 @@ class RadialGrid:
 
     """
 
-    def __init__(self, psi_norm, *args, equilibrium=None, **kwargs) -> None:
+    def __init__(self, psi_norm, *args, vacuum_toroidal_field=None, equilibrium=None, **kwargs) -> None:
         self._data = kwargs
         if equilibrium is not None:
+            self._vacuum_toroidal_field = vacuum_toroidal_field
             self._equilibrium = equilibrium
-            self._vacuum_toroidal_field = equilibrium.vacuum_toroidal_field
             self._psi_axis = equilibrium.boundary.psi_axis
             self._psi_boundary = equilibrium.boundary.psi_boundary
             if psi_norm is None:

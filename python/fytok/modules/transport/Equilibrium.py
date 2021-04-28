@@ -20,6 +20,7 @@ from spdm.util.logger import logger
 from spdm.util.utilities import try_get
 from spdm.data.Node import List
 from spdm.data.Profiles import Profiles
+from spdm.data.Node import Dict
 from ..utilities.GGD import GGD
 
 TOLERANCE = 1.0e-6
@@ -60,8 +61,9 @@ class MagneticSurfaceCoordinateSystem:
     def critical_points(self):
         opoints = []
         xpoints = []
+        OXPoint = collections.namedtuple('OXPoint', "r z psi")
         for r, z, psi, D in self._psirz.find_peak():
-            p = {"r": r, "z": z, "psi": psi}
+            p = OXPoint(r, z, psi)
 
             if D < 0.0:  # saddle/X-point
                 xpoints.append(p)
@@ -364,15 +366,603 @@ class MagneticSurfaceCoordinateSystem:
         return self.create_surface(1.0)
 
 
-class EquilibriumTimeSlice(AttributeTree):
+class EquilibriumGlobalQuantities(Profiles):
+    def __init__(self, coord: MagneticSurfaceCoordinateSystem,    *args,  **kwargs):
+        super().__init__(*args, **kwargs)
+        self._coord = coord
+
+    @property
+    def beta_pol(self):
+        """Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip ^ 2][-]"""
+        return NotImplemented
+
+    @property
+    def beta_tor(self):
+        """Toroidal beta, defined as the volume-averaged total perpendicular pressure divided by(B0 ^ 2/(2*mu0)), i.e. beta_toroidal = 2 mu0 int(p dV) / V / B0 ^ 2  [-]"""
+        return NotImplemented
+
+    @property
+    def beta_normal(self):
+        """Normalised toroidal beta, defined as 100 * beta_tor * a[m] * B0[T] / ip[MA][-]"""
+        return NotImplemented
+
+    @property
+    def ip(self):
+        """Plasma current(toroidal component). Positive sign means anti-clockwise when viewed from above.  [A]."""
+        return self._parent.profiles_1d.plasma_current[-1]
+
+    @property
+    def li_3(self):
+        """Internal inductance[-]"""
+        return NotImplemented
+
+    @property
+    def volume(self):
+        """Total plasma volume[m ^ 3]"""
+        return NotImplemented
+
+    @property
+    def area(self):
+        """Area of the LCFS poloidal cross section[m ^ 2]"""
+        return NotImplemented
+
+    @property
+    def surface(self):
+        """Surface area of the toroidal flux surface[m ^ 2]"""
+        return NotImplemented
+
+    @property
+    def length_pol(self):
+        """Poloidal length of the magnetic surface[m]"""
+        return NotImplemented
+
+    @property
+    def magnetic_axis(self):
+        """Magnetic axis position and toroidal field	structure"""
+        return self._coord.magnetic_axis
+        # return  {"r":  self["magnetic_axis.r"],
+        #                       "z":  self["magnetic_axis.z"],
+        #                       # self.profiles_2d.b_field_tor(opt[0][0], opt[0][1])
+        #                       "b_field_tor": self["magnetic_axis.b_field_tor"]
+        #                       }
+
+    @cached_property
+    def x_points(self):
+        _, x = self._coord.critical_points
+        return x
+
+    @cached_property
+    def psi_axis(self):
+        """Poloidal flux at the magnetic axis[Wb]."""
+        o, _ = self._coord.critical_points
+        return o[0].psi
+
+    @cached_property
+    def psi_boundary(self):
+        """Poloidal flux at the selected plasma boundary[Wb]."""
+        _, x = self._coord.critical_points
+        if len(x) > 0:
+            return x[0].psi
+        else:
+            raise ValueError(f"No x-point")
+
+    @property
+    def q_axis(self):
+        """q at the magnetic axis[-]."""
+        return NotImplemented
+
+    @property
+    def q_95(self):
+        """q at the 95 % poloidal flux surface
+        (IMAS uses COCOS=11: only positive when toroidal current
+        and magnetic field are in same direction)[-]."""
+        return NotImplemented
+
+    @property
+    def q_min(self):
+        """Minimum q value and position structure"""
+        return NotImplemented
+
+    @property
+    def energy_mhd(self):
+        """Plasma energy content: 3/2 * int(p, dV) with p being the total pressure(thermal + fast particles)[J].  Time-dependent  Scalar[J]"""
+        return NotImplemented
+
+
+class EquilibriumProfiles1D(Profiles):
+    """Equilibrium profiles(1D radial grid) as a function of the poloidal flux	"""
+
+    def __init__(self,  *args,  coord: MagneticSurfaceCoordinateSystem,  **kwargs):
+        if coord is None:
+            coord = self._parent.coordinate_system
+
+        super().__init__(*args, axis=coord.psi_norm, **kwargs)
+
+        self._coord = coord
+        self._b0 = np.abs(self._parent._b0)
+        self._r0 = self._parent._r0
+
+    @property
+    def psi_norm(self):
+        """Normalized poloidal flux[Wb]. """
+        return self._coord.psi_norm
+
+    @cached_property
+    def psi(self):
+        """Poloidal flux[Wb]. """
+        return Function(self.psi_norm, self.psi_norm * (self._coord.psi_boundary - self._coord.psi_axis) + self._coord.psi_axis)
+
+    @cached_property
+    def vprime(self):
+        r"""
+            .. math: : V^{\prime} =  2 \pi  \int{R / |\nabla \psi | * dl }
+            .. math: : V^{\prime}(psi) = 2 \pi  \int{dl * R / |\nabla \psi|}
+        """
+        return Function(self.psi_norm, self._coord.dvolume_dpsi*(self._coord.psi_boundary-self._coord.psi_axis))
+
+    @cached_property
+    def dvolume_dpsi(self):
+        r"""
+            Radial derivative of the volume enclosed in the flux surface with respect to Psi[m ^ 3.Wb ^ -1].
+        """
+        return Function(self.psi_norm, self._coord.dvolume_dpsi)
+
+    @cached_property
+    def volume(self):
+        """Volume enclosed in the flux surface[m ^ 3]"""
+        return self.vprime.antiderivative
+
+    @cached_property
+    def ffprime(self):
+        """	Derivative of F w.r.t. Psi, multiplied with F[T ^ 2.m ^ 2/Wb]. """
+        return self._parent._ffprime  # Function(self.psi_norm, self._coord.ffprime(self.psi_norm))
+
+    @property
+    def f_df_dpsi(self):
+        """	Derivative of F w.r.t. Psi, multiplied with F[T ^ 2.m ^ 2/Wb]. """
+        return self.ffprime
+
+    @cached_property
+    def fpol(self):
+        """Diamagnetic function(F=R B_Phi)[T.m]."""
+        return Function(self.psi_norm, self._coord.fpol(self.psi_norm))
+
+    @property
+    def f(self):
+        """Diamagnetic function(F=R B_Phi)[T.m]."""
+        return self.fpol
+
+    @cached_property
+    def dpressure_dpsi(self):
+        return self._parent._pprime
+
+    @cached_property
+    def j_tor(self):
+        r"""Flux surface averaged toroidal current density = average(j_tor/R) / average(1/R) {dynamic}[A.m ^ -2]. """
+        d = (self.gm2*self.dvolume_drho_tor*self.dpsi_drho_tor).derivative / \
+            self.dvolume_dpsi*self._r0/scipy.constants.mu_0
+        return Function(self.psi_norm, d.view(np.ndarray))
+
+    @cached_property
+    def j_parallel(self):
+        r"""Flux surface averaged parallel current density = average(j.B) / B0, where B0 = Equilibrium/Global/Toroidal_Field/B0 {dynamic}[A/m ^ 2]. """
+        d = (-1/self._b0) * (self.fpol*self.dpressure_dpsi +
+                             self.gm5*self.f_df_dpsi/self.fpol/scipy.constants.mu_0)
+        return Function(self.psi_norm, d.view(np.ndarray))
+
+    @cached_property
+    def dphi_dpsi(self):
+        return self.gm1 * self.fpol * self.dvolume_dpsi / (4*scipy.constants.pi**2)
+
+    @property
+    def q(self):
+        r"""
+            Safety factor
+            (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)[-].
+            .. math: : q(\psi) =\frac{d\Phi}{d\psi} =\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
+        """
+        return Function(self.psi_norm, self.fpol * self.dvolume_dpsi*self._coord.surface_average(1.0/(self._coord.r**2))/(4*scipy.constants.pi**2))
+
+    @cached_property
+    def phi(self):
+        r"""
+            Note:
+            .. math::
+                \Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi
+        """
+        return Function(self.psi_norm, self.fpol*self._coord.surface_integrate(1.0/(self._coord.r**2)) *
+                        ((self._coord.psi_boundary-self._coord.psi_axis) / (TWOPI))).antiderivative
+
+    @cached_property
+    def rho_tor(self):
+        """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0[m]"""
+        return np.sqrt(self.phi/(scipy.constants.pi * self._b0))
+
+    @cached_property
+    def rho_tor_norm(self):
+        return np.sqrt(self.phi/self.phi[-1])
+
+    @cached_property
+    def drho_tor_dpsi(self):
+        r"""
+            .. math::
+                \frac{d\rho_{tor}}{d\psi} =\frac{d}{d\psi}\sqrt{\frac{\Phi_{tor}}{\pi B_{0}}} \
+                                        =\frac{1}{2\sqrt{\pi B_{0}\Phi_{tor}}}\frac{d\Phi_{tor}}{d\psi} \
+                                        =\frac{q}{2\pi B_{0}\rho_{tor}}
+        """
+        return self.rho_tor.derivative/(self._coord.psi_boundary-self._coord.psi_axis)
+
+    @cached_property
+    def dpsi_drho_tor(self)	:
+        """
+            Derivative of Psi with respect to Rho_Tor[Wb/m].
+        """
+        return (TWOPI*self._b0)*self.rho_tor/self.dphi_dpsi
+
+    @cached_property
+    def dpsi_drho_tor_norm(self)	:
+        """
+            Derivative of Psi with respect to Rho_Tor[Wb/m].
+        """
+        return self.dpsi_drho_tor*self.rho_tor[-1]
+
+    @cached_property
+    def dvolume_drho_tor(self)	:
+        """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
+        return (4*scipy.constants.pi**2*self._b0)*self.rho_tor/(self.fpol*self.gm1)
+
+    @cached_property
+    def shape_property(self):
+        return self._coord.shape_property()
+
+    @cached_property
+    def geometric_axis(self):
+        return {
+            "r": Function(self.psi_norm, self.shape_property.geometric_axis.r),
+            "z": Function(self.psi_norm, self.shape_property.geometric_axis.z),
+        }
+
+    @property
+    def minor_radius(self):
+        """Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary) [m]	"""
+        return self.shape_property.minor_radius
+
+    @cached_property
+    def r_inboard(self):
+        """Radial coordinate(major radius) on the inboard side of the magnetic axis[m]"""
+        return Function(self.psi_norm, self.shape_property.r_inboard)
+
+    @cached_property
+    def r_outboard(self):
+        """Radial coordinate(major radius) on the outboard side of the magnetic axis[m]"""
+        return Function(self.psi_norm, self.shape_property.r_outboard)
+
+    @cached_property
+    def elongation(self):
+        """Elongation. {dynamic}[-]"""
+        return Function(self.psi_norm, self.shape_property.elongation)
+
+    @cached_property
+    def triangularity(self)	:
+        """Upper triangularity w.r.t. magnetic axis. {dynamic}[-]"""
+        return Function(self.psi_norm, self.shape_property.triangularity)
+
+    @cached_property
+    def triangularity_upper(self)	:
+        """Upper triangularity w.r.t. magnetic axis. {dynamic}[-]"""
+        return Function(self.psi_norm, self.shape_property.triangularity_upper)
+
+    @cached_property
+    def triangularity_lower(self)	:
+        """Lower triangularity w.r.t. magnetic axis. {dynamic}[-]"""
+        return Function(self.psi_norm, self.shape_property.triangularity_lower)
+
+    @cached_property
+    def plasma_current(self):
+        r"""
+            Ip
+        """
+        return self.dpsi_drho_tor*self.gm2*self.dvolume_drho_tor/(TWOPI**2)/scipy.constants.mu_0
+
+    @cached_property
+    def norm_grad_rho_tor(self):
+        return self._coord.norm_grad_psi * self.drho_tor_dpsi.view(np.ndarray).reshape(list(self.drho_tor_dpsi.shape)+[1])
+
+    @cached_property
+    def gm1(self):
+        r"""
+            Flux surface averaged 1/R ^ 2  [m ^ -2]
+            .. math: : \left\langle\frac{1}{R^{2}}\right\rangle
+        """
+        return Function(self.psi_norm, self._coord.surface_average(1.0/(self._coord.r**2)))
+
+    @cached_property
+    def gm2(self):
+        r"""
+            Flux surface averaged .. math: : \left | \nabla \rho_{tor}\right|^2/R^2  [m^-2]
+            .. math:: \left\langle\left |\frac{\nabla\rho}{R}\right|^{2}\right\rangle
+        """
+        d = self._coord.surface_average((self.norm_grad_rho_tor/self._coord.r)**2)
+        return Function(self.psi_norm, Function(self.psi_norm[1:], d[1:])(self.psi_norm))
+
+    @cached_property
+    def gm3(self):
+        r"""
+            Flux surface averaged .. math: : \left | \nabla \rho_{tor}\right|^2  [-]
+            .. math:: {\left\langle \left |\nabla\rho\right|^{2}\right\rangle}
+        """
+        d = self._coord.surface_average(self.norm_grad_rho_tor**2)
+        return Function(self.psi_norm, Function(self.psi_norm[1:], d[1:])(self.psi_norm))
+
+    @cached_property
+    def gm4(self):
+        r"""
+            Flux surface averaged 1/B ^ 2  [T ^ -2]
+            .. math: : \left\langle \frac{1}{B^{2}}\right\rangle
+        """
+        return Function(self.psi_norm, self._coord.surface_average(1.0/self._coord.B2))
+
+    @cached_property
+    def gm5(self):
+        r"""
+            Flux surface averaged B ^ 2  [T ^ 2]
+            .. math: : \left\langle B^{2}\right\rangle
+        """
+        return Function(self.psi_norm, self._coord.surface_average(self._coord.B2))
+
+    @cached_property
+    def gm6(self):
+        r"""
+            Flux surface averaged  .. math: : \left | \nabla \rho_{tor}\right|^2/B^2  [T^-2]
+            .. math:: \left\langle \frac{\left |\nabla\rho\right|^{2}}{B^{2}}\right\rangle
+        """
+        return Function(self.psi_norm, self._coord.surface_average(self.norm_grad_rho_tor**2/self._coord.B2))
+
+    @cached_property
+    def gm7(self):
+        r"""
+            Flux surface averaged .. math:: \left | \nabla \rho_{tor}\right |  [-]
+            .. math: : \left\langle \left |\nabla\rho\right |\right\rangle
+        """
+        d = self._coord.surface_average(self.norm_grad_rho_tor)
+        return Function(self.psi_norm, Function(self.psi_norm[1:], d[1:])(self.psi_norm))
+
+    @cached_property
+    def gm8(self):
+        r"""
+            Flux surface averaged R[m]
+            .. math: : \left\langle R\right\rangle
+        """
+        return Function(self.psi_norm, self._coord.surface_average(self._coord.r))
+
+    @cached_property
+    def gm9(self):
+        r"""
+            Flux surface averaged 1/R[m ^ -1]
+            .. math: : \left\langle \frac{1}{R}\right\rangle
+        """
+        return Function(self.psi_norm, self._coord.surface_average(1.0/self._coord.r))
+
+    @cached_property
+    def magnetic_shear(self):
+        """Magnetic shear, defined as rho_tor/q . dq/drho_tor[-]	 """
+        return Function(self.psi_norm, self.rho_tor/self.q * self.q.derivative)
+
+    @cached_property
+    def rho_volume_norm(self)	:
+        """Normalised square root of enclosed volume(radial coordinate). The normalizing value is the enclosed volume at the equilibrium boundary
+            (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation)[-]"""
+        return NotImplemented
+
+    @cached_property
+    def area(self):
+        """Cross-sectional area of the flux surface[m ^ 2]"""
+        return NotImplemented
+
+    @cached_property
+    def darea_dpsi(self):
+        """Radial derivative of the cross-sectional area of the flux surface with respect to psi[m ^ 2.Wb ^ -1]. """
+        return NotImplemented
+
+    @cached_property
+    def darea_drho_tor(self)	:
+        """Radial derivative of the cross-sectional area of the flux surface with respect to rho_tor[m]"""
+        return NotImplemented
+
+    @cached_property
+    def surface(self):
+        """Surface area of the toroidal flux surface[m ^ 2]"""
+        return NotImplemented
+
+    @cached_property
+    def trapped_fraction(self)	:
+        """Trapped particle fraction[-]"""
+        return Function(self.psi_norm, self["trapped_fraction"] or 0.0)
+
+    @cached_property
+    def b_field_max(self):
+        """Maximum(modulus(B)) on the flux surface(always positive, irrespective of the sign convention for the B-field direction)[T]"""
+        return NotImplemented
+
+    @cached_property
+    def beta_pol(self):
+        """Poloidal beta profile. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip ^ 2][-]"""
+        return NotImplemented
+
+
+class EquilibriumProfiles2D(Profiles):
+    """
+        Equilibrium 2D profiles in the poloidal plane.
+    """
+
+    def __init__(self, coord: MagneticSurfaceCoordinateSystem, *args, ** kwargs):
+        super().__init__(*args, **kwargs)
+        self._coord = coord
+
+    @property
+    def grid_type(self):
+        return self._coord.grid_type
+
+    @cached_property
+    def grid(self):
+        return self._coord.grid
+
+    @property
+    def r(self):
+        """Values of the major radius on the grid  [m] """
+        return self._coord.r
+
+    @property
+    def z(self):
+        """Values of the Height on the grid  [m] """
+        return self._coord.z
+
+    @cached_property
+    def psi(self):
+        """Values of the poloidal flux at the grid in the poloidal plane  [Wb]. """
+        return self.apply_psifunc(lambda p: p, unit="Wb")
+
+    @cached_property
+    def theta(self):
+        """	Values of the poloidal angle on the grid  [rad] """
+        return NotImplementedError()
+
+    @cached_property
+    def phi(self):
+        """	Toroidal flux  [Wb]"""
+        return self.apply_psifunc("phi")
+
+    @cached_property
+    def j_tor(self):
+        """	Toroidal plasma current density  [A.m^-2]"""
+        return self.apply_psifunc("j_tor")
+
+    @cached_property
+    def j_parallel(self):
+        """	Parallel (to magnetic field) plasma current density  [A.m^-2]"""
+        return self.apply_psifunc("j_parallel")
+
+    @cached_property
+    def b_field_r(self):
+        """R component of the poloidal magnetic field  [T]"""
+        return Field(self._coord.Br, self._coord.r, self._coord.z, mesh_type="curvilinear")
+
+    @cached_property
+    def b_field_z(self):
+        """Z component of the poloidal magnetic field  [T]"""
+        return Field(self._coord.Bz, self._coord.r, self._coord.z, mesh_type="curvilinear")
+
+    @cached_property
+    def b_field_tor(self):
+        """Toroidal component of the magnetic field  [T]"""
+        return Field(self._coord.Btor, self._coord.r, self._coord.z, mesh_type="curvilinear")
+
+
+class EquilibriumBoundary(Profiles):
+    def __init__(self, coord: MagneticSurfaceCoordinateSystem,   *args,  ** kwargs):
+        super().__init__(*args, **kwargs)
+        self._coord = coord or self._parent.coordinate_system
+
+    @cached_property
+    def type(self):
+        """0 (limiter) or 1 (diverted)  """
+        return 1
+
+    @cached_property
+    def outline(self):
+        """RZ outline of the plasma boundary  """
+        RZ = np.asarray([[r, z] for r, z in self._coord.flux_surface_map(1.0)])
+        return {"r": RZ[:, 0], "z": RZ[:, 1]}
+
+    @cached_property
+    def x_point(self):
+        _, xpt = self._parent.critical_points
+        return xpt
+
+    @cached_property
+    def psi(self):
+        """Value of the poloidal flux at which the boundary is taken  [Wb]"""
+        return self._parent.psi_boundary
+
+    @cached_property
+    def psi_norm(self):
+        """Value of the normalised poloidal flux at which the boundary is taken (typically 99.x %),
+            the flux being normalised to its value at the separatrix """
+        return self.psi*0.99
+
+    @cached_property
+    def shape_property(self):
+        return self._coord.shape_property(1.0)
+
+    @property
+    def geometric_axis(self):
+        """RZ position of the geometric axis (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the boundary)"""
+        return self.shape_property.geometric_axis
+
+    @property
+    def minor_radius(self):
+        """Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary) [m]	"""
+        return self.shape_property.minor_radius
+
+    @property
+    def elongation(self):
+        """Elongation of the plasma boundary. [-]	"""
+        return self.shape_property.elongation
+
+    @property
+    def elongation_upper(self):
+        """Elongation(upper half w.r.t. geometric axis) of the plasma boundary. [-]	"""
+        return self.shape_property.elongation_upper
+
+    @property
+    def elongation_lower(self):
+        """Elongation(lower half w.r.t. geometric axis) of the plasma boundary. [-]	"""
+        return self.shape_property.elongation_lower
+
+    @property
+    def triangularity(self):
+        """Triangularity of the plasma boundary. [-]	"""
+        return self.shape_property.triangularity
+
+    @property
+    def triangularity_upper(self):
+        """Upper triangularity of the plasma boundary. [-]	"""
+        return self.shape_property.triangularity_upper
+
+    @property
+    def triangularity_lower(self):
+        """Lower triangularity of the plasma boundary. [-]"""
+        return self.shape_property.triangularity_lower
+
+    @cached_property
+    def strike_point(self)	:
+        """Array of strike points, for each of them the RZ position is given	struct_array [max_size=unbounded]	1- 1...N"""
+        return NotImplemented
+
+    @cached_property
+    def active_limiter_point(self):
+        """	RZ position of the active limiter point (point of the plasma boundary in contact with the limiter)"""
+        return NotImplemented
+
+
+class EquilibriumBoundarySeparatrix(Profiles):
+    def __init__(self, coord: MagneticSurfaceCoordinateSystem,  *args,  ** kwargs):
+        super().__init__(*args, **kwargs)
+
+
+class EquilibriumTimeSlice(Dict):
+    """
+       Time slice of   Equilibrium
+    """
+
     def __init__(self, *args, time=None, R0=None, B0=None,
                  pprime=None, ffprime=None,
                  uv=None, psirz=None,  **kwargs):
         super().__init__(*args, **kwargs)
-        self._time = time or self["time"] or 0.0
+        self._time = time or 0.0
 
         self._r0 = R0 or self._parent.vacuum_toroidal_field.r0
-        self._b0 = B0 or self._parent.vacuum_toroidal_field.b0(self._time)
+        self._b0 = B0 or self._parent.vacuum_toroidal_field.b0
 
         if not isinstance(psirz, Field):
             psirz = Field(self["profiles_2d.psi"],
@@ -417,14 +1007,6 @@ class EquilibriumTimeSlice(AttributeTree):
 
             self._uv = [u, v]
 
-    @cached_property
-    def coordinate_system(self):
-        return MagneticSurfaceCoordinateSystem(self._uv, self._psirz, self._ffprime, self._r0*self._b0)
-
-    @cached_property
-    def constraints(self):
-        return self["constraints"]
-
     def radial_grid(self, primary_axis=None, axis=None):
         """ """
         psi_norm = self.profiles_1d.psi_norm
@@ -440,603 +1022,32 @@ class EquilibriumTimeSlice(AttributeTree):
         return RadialGrid(psi_norm, equilibrium=self)
 
     @cached_property
+    def coordinate_system(self):
+        return MagneticSurfaceCoordinateSystem(self._uv, self._psirz, self._ffprime, self._r0*self._b0)
+
+    @cached_property
+    def constraints(self):
+        return self["constraints"]
+
+    @cached_property
     def profiles_1d(self):
-        return Equilibrium.Profiles1D(self["profiles_1d"], coord=self.coordinate_system, parent=self)
+        return EquilibriumProfiles1D(self["profiles_1d"], coord=self.coordinate_system, parent=self)
 
     @cached_property
     def profiles_2d(self):
-        return Equilibrium.Profiles2D(self.coordinate_system,  parent=self)
+        return EquilibriumProfiles2D(self.coordinate_system,  parent=self)
 
     @cached_property
     def global_quantities(self):
-        return Equilibrium.GlobalQuantities(self.coordinate_system,  parent=self)
+        return EquilibriumGlobalQuantities(self.coordinate_system,  parent=self)
 
     @cached_property
     def boundary(self):
-        return Equilibrium.Boundary(self.coordinate_system,   parent=self)
+        return EquilibriumBoundary(self.coordinate_system,   parent=self)
 
     @cached_property
     def boundary_separatrix(self):
-        return Equilibrium.BoundarySeparatrix(self.coordinate_system,   parent=self)
-
-    class GlobalQuantities(Profiles):
-        def __init__(self, coord: MagneticSurfaceCoordinateSystem,    *args,  **kwargs):
-            super().__init__(*args, **kwargs)
-            self._coord = coord
-
-        @property
-        def beta_pol(self):
-            """Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip ^ 2][-]"""
-            return NotImplemented
-
-        @property
-        def beta_tor(self):
-            """Toroidal beta, defined as the volume-averaged total perpendicular pressure divided by(B0 ^ 2/(2*mu0)), i.e. beta_toroidal = 2 mu0 int(p dV) / V / B0 ^ 2  [-]"""
-            return NotImplemented
-
-        @property
-        def beta_normal(self):
-            """Normalised toroidal beta, defined as 100 * beta_tor * a[m] * B0[T] / ip[MA][-]"""
-            return NotImplemented
-
-        @property
-        def ip(self):
-            """Plasma current(toroidal component). Positive sign means anti-clockwise when viewed from above.  [A]."""
-            return self._parent.profiles_1d.plasma_current[-1]
-
-        @property
-        def li_3(self):
-            """Internal inductance[-]"""
-            return NotImplemented
-
-        @property
-        def volume(self):
-            """Total plasma volume[m ^ 3]"""
-            return NotImplemented
-
-        @property
-        def area(self):
-            """Area of the LCFS poloidal cross section[m ^ 2]"""
-            return NotImplemented
-
-        @property
-        def surface(self):
-            """Surface area of the toroidal flux surface[m ^ 2]"""
-            return NotImplemented
-
-        @property
-        def length_pol(self):
-            """Poloidal length of the magnetic surface[m]"""
-            return NotImplemented
-
-        @property
-        def magnetic_axis(self):
-            """Magnetic axis position and toroidal field	structure"""
-            return self._coord.magnetic_axis
-            # return  {"r":  self["magnetic_axis.r"],
-            #                       "z":  self["magnetic_axis.z"],
-            #                       # self.profiles_2d.b_field_tor(opt[0][0], opt[0][1])
-            #                       "b_field_tor": self["magnetic_axis.b_field_tor"]
-            #                       }
-
-        @cached_property
-        def x_points(self):
-            _, x = self._coord.critical_points
-            return x
-
-        @cached_property
-        def psi_axis(self):
-            """Poloidal flux at the magnetic axis[Wb]."""
-            o, _ = self._coord.critical_points
-            return o[0].psi
-
-        @cached_property
-        def psi_boundary(self):
-            """Poloidal flux at the selected plasma boundary[Wb]."""
-            _, x = self._coord.critical_points
-            if len(x) > 0:
-                return x[0].psi
-            else:
-                raise ValueError(f"No x-point")
-
-        @property
-        def q_axis(self):
-            """q at the magnetic axis[-]."""
-            return NotImplemented
-
-        @property
-        def q_95(self):
-            """q at the 95 % poloidal flux surface
-            (IMAS uses COCOS=11: only positive when toroidal current
-            and magnetic field are in same direction)[-]."""
-            return NotImplemented
-
-        @property
-        def q_min(self):
-            """Minimum q value and position structure"""
-            return NotImplemented
-
-        @property
-        def energy_mhd(self):
-            """Plasma energy content: 3/2 * int(p, dV) with p being the total pressure(thermal + fast particles)[J].  Time-dependent  Scalar[J]"""
-            return NotImplemented
-
-    class Profiles1D(Profiles):
-        """Equilibrium profiles(1D radial grid) as a function of the poloidal flux	"""
-
-        def __init__(self,  *args,  coord: MagneticSurfaceCoordinateSystem,  **kwargs):
-            if coord is None:
-                coord = self._parent.coordinate_system
-
-            super().__init__(*args, axis=coord.psi_norm, **kwargs)
-
-            self._coord = coord
-            self._b0 = np.abs(self._parent.vacuum_toroidal_field.b0)
-            self._r0 = self._parent.vacuum_toroidal_field.r0
-
-        @property
-        def psi_norm(self):
-            """Normalized poloidal flux[Wb]. """
-            return self._coord.psi_norm
-
-        @cached_property
-        def psi(self):
-            """Poloidal flux[Wb]. """
-            return Function(self.psi_norm, self.psi_norm * (self._coord.psi_boundary - self._coord.psi_axis) + self._coord.psi_axis)
-
-        @cached_property
-        def vprime(self):
-            r"""
-                .. math: : V^{\prime} =  2 \pi  \int{R / |\nabla \psi | * dl }
-                .. math: : V^{\prime}(psi) = 2 \pi  \int{dl * R / |\nabla \psi|}
-            """
-            return Function(self.psi_norm, self._coord.dvolume_dpsi*(self._coord.psi_boundary-self._coord.psi_axis))
-
-        @cached_property
-        def dvolume_dpsi(self):
-            r"""
-                Radial derivative of the volume enclosed in the flux surface with respect to Psi[m ^ 3.Wb ^ -1].
-            """
-            return Function(self.psi_norm, self._coord.dvolume_dpsi)
-
-        @cached_property
-        def volume(self):
-            """Volume enclosed in the flux surface[m ^ 3]"""
-            return self.vprime.antiderivative
-
-        @cached_property
-        def ffprime(self):
-            """	Derivative of F w.r.t. Psi, multiplied with F[T ^ 2.m ^ 2/Wb]. """
-            return self._parent._ffprime  # Function(self.psi_norm, self._coord.ffprime(self.psi_norm))
-
-        @property
-        def f_df_dpsi(self):
-            """	Derivative of F w.r.t. Psi, multiplied with F[T ^ 2.m ^ 2/Wb]. """
-            return self.ffprime
-
-        @cached_property
-        def fpol(self):
-            """Diamagnetic function(F=R B_Phi)[T.m]."""
-            return Function(self.psi_norm, self._coord.fpol(self.psi_norm))
-
-        @property
-        def f(self):
-            """Diamagnetic function(F=R B_Phi)[T.m]."""
-            return self.fpol
-
-        @cached_property
-        def dpressure_dpsi(self):
-            return self._parent._pprime
-
-        @cached_property
-        def j_tor(self):
-            r"""Flux surface averaged toroidal current density = average(j_tor/R) / average(1/R) {dynamic}[A.m ^ -2]. """
-            d = (self.gm2*self.dvolume_drho_tor*self.dpsi_drho_tor).derivative / \
-                self.dvolume_dpsi*self._r0/scipy.constants.mu_0
-            return Function(self.psi_norm, d.view(np.ndarray))
-
-        @cached_property
-        def j_parallel(self):
-            r"""Flux surface averaged parallel current density = average(j.B) / B0, where B0 = Equilibrium/Global/Toroidal_Field/B0 {dynamic}[A/m ^ 2]. """
-            d = (-1/self._b0) * (self.fpol*self.dpressure_dpsi +
-                                 self.gm5*self.f_df_dpsi/self.fpol/scipy.constants.mu_0)
-            return Function(self.psi_norm, d.view(np.ndarray))
-
-        @cached_property
-        def dphi_dpsi(self):
-            return self.gm1 * self.fpol * self.dvolume_dpsi / (4*scipy.constants.pi**2)
-
-        @property
-        def q(self):
-            r"""
-                Safety factor
-                (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)[-].
-                .. math: : q(\psi) =\frac{d\Phi}{d\psi} =\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
-            """
-            return Function(self.psi_norm, self.fpol * self.dvolume_dpsi*self._coord.surface_average(1.0/(self._coord.r**2))/(4*scipy.constants.pi**2))
-
-        @cached_property
-        def phi(self):
-            r"""
-                Note:
-                .. math::
-                    \Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi
-            """
-            return Function(self.psi_norm, self.fpol*self._coord.surface_integrate(1.0/(self._coord.r**2)) *
-                            ((self._coord.psi_boundary-self._coord.psi_axis) / (TWOPI))).antiderivative
-
-        @cached_property
-        def rho_tor(self):
-            """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0[m]"""
-            return np.sqrt(self.phi/(scipy.constants.pi * self._b0))
-
-        @cached_property
-        def rho_tor_norm(self):
-            return np.sqrt(self.phi/self.phi[-1])
-
-        @cached_property
-        def drho_tor_dpsi(self):
-            r"""
-                .. math::
-                    \frac{d\rho_{tor}}{d\psi} =\frac{d}{d\psi}\sqrt{\frac{\Phi_{tor}}{\pi B_{0}}} \
-                                            =\frac{1}{2\sqrt{\pi B_{0}\Phi_{tor}}}\frac{d\Phi_{tor}}{d\psi} \
-                                            =\frac{q}{2\pi B_{0}\rho_{tor}}
-            """
-            return self.rho_tor.derivative/(self._coord.psi_boundary-self._coord.psi_axis)
-
-        @cached_property
-        def dpsi_drho_tor(self)	:
-            """
-                Derivative of Psi with respect to Rho_Tor[Wb/m].
-            """
-            return (TWOPI*self._b0)*self.rho_tor/self.dphi_dpsi
-
-        @cached_property
-        def dpsi_drho_tor_norm(self)	:
-            """
-                Derivative of Psi with respect to Rho_Tor[Wb/m].
-            """
-            return self.dpsi_drho_tor*self.rho_tor[-1]
-
-        @cached_property
-        def dvolume_drho_tor(self)	:
-            """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
-            return (4*scipy.constants.pi**2*self._b0)*self.rho_tor/(self.fpol*self.gm1)
-
-        @cached_property
-        def shape_property(self):
-            return self._coord.shape_property()
-
-        @cached_property
-        def geometric_axis(self):
-            return {
-                "r": Function(self.psi_norm, self.shape_property.geometric_axis.r),
-                "z": Function(self.psi_norm, self.shape_property.geometric_axis.z),
-            }
-
-        @property
-        def minor_radius(self):
-            """Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary) [m]	"""
-            return self.shape_property.minor_radius
-
-        @cached_property
-        def r_inboard(self):
-            """Radial coordinate(major radius) on the inboard side of the magnetic axis[m]"""
-            return Function(self.psi_norm, self.shape_property.r_inboard)
-
-        @cached_property
-        def r_outboard(self):
-            """Radial coordinate(major radius) on the outboard side of the magnetic axis[m]"""
-            return Function(self.psi_norm, self.shape_property.r_outboard)
-
-        @cached_property
-        def elongation(self):
-            """Elongation. {dynamic}[-]"""
-            return Function(self.psi_norm, self.shape_property.elongation)
-
-        @cached_property
-        def triangularity(self)	:
-            """Upper triangularity w.r.t. magnetic axis. {dynamic}[-]"""
-            return Function(self.psi_norm, self.shape_property.triangularity)
-
-        @cached_property
-        def triangularity_upper(self)	:
-            """Upper triangularity w.r.t. magnetic axis. {dynamic}[-]"""
-            return Function(self.psi_norm, self.shape_property.triangularity_upper)
-
-        @cached_property
-        def triangularity_lower(self)	:
-            """Lower triangularity w.r.t. magnetic axis. {dynamic}[-]"""
-            return Function(self.psi_norm, self.shape_property.triangularity_lower)
-
-        @cached_property
-        def plasma_current(self):
-            r"""
-                Ip
-            """
-            return self.dpsi_drho_tor*self.gm2*self.dvolume_drho_tor/(TWOPI**2)/scipy.constants.mu_0
-
-        @cached_property
-        def norm_grad_rho_tor(self):
-            return self._coord.norm_grad_psi * self.drho_tor_dpsi.view(np.ndarray).reshape(list(self.drho_tor_dpsi.shape)+[1])
-
-        @cached_property
-        def gm1(self):
-            r"""
-                Flux surface averaged 1/R ^ 2  [m ^ -2]
-                .. math: : \left\langle\frac{1}{R^{2}}\right\rangle
-            """
-            return Function(self.psi_norm, self._coord.surface_average(1.0/(self._coord.r**2)))
-
-        @cached_property
-        def gm2(self):
-            r"""
-                Flux surface averaged .. math: : \left | \nabla \rho_{tor}\right|^2/R^2  [m^-2]
-                .. math:: \left\langle\left |\frac{\nabla\rho}{R}\right|^{2}\right\rangle
-            """
-            d = self._coord.surface_average((self.norm_grad_rho_tor/self._coord.r)**2)
-            return Function(self.psi_norm, Function(self.psi_norm[1:], d[1:])(self.psi_norm))
-
-        @cached_property
-        def gm3(self):
-            r"""
-                Flux surface averaged .. math: : \left | \nabla \rho_{tor}\right|^2  [-]
-                .. math:: {\left\langle \left |\nabla\rho\right|^{2}\right\rangle}
-            """
-            d = self._coord.surface_average(self.norm_grad_rho_tor**2)
-            return Function(self.psi_norm, Function(self.psi_norm[1:], d[1:])(self.psi_norm))
-
-        @cached_property
-        def gm4(self):
-            r"""
-                Flux surface averaged 1/B ^ 2  [T ^ -2]
-                .. math: : \left\langle \frac{1}{B^{2}}\right\rangle
-            """
-            return Function(self.psi_norm, self._coord.surface_average(1.0/self._coord.B2))
-
-        @cached_property
-        def gm5(self):
-            r"""
-                Flux surface averaged B ^ 2  [T ^ 2]
-                .. math: : \left\langle B^{2}\right\rangle
-            """
-            return Function(self.psi_norm, self._coord.surface_average(self._coord.B2))
-
-        @cached_property
-        def gm6(self):
-            r"""
-                Flux surface averaged  .. math: : \left | \nabla \rho_{tor}\right|^2/B^2  [T^-2]
-                .. math:: \left\langle \frac{\left |\nabla\rho\right|^{2}}{B^{2}}\right\rangle
-            """
-            return Function(self.psi_norm, self._coord.surface_average(self.norm_grad_rho_tor**2/self._coord.B2))
-
-        @cached_property
-        def gm7(self):
-            r"""
-                Flux surface averaged .. math:: \left | \nabla \rho_{tor}\right |  [-]
-                .. math: : \left\langle \left |\nabla\rho\right |\right\rangle
-            """
-            d = self._coord.surface_average(self.norm_grad_rho_tor)
-            return Function(self.psi_norm, Function(self.psi_norm[1:], d[1:])(self.psi_norm))
-
-        @cached_property
-        def gm8(self):
-            r"""
-                Flux surface averaged R[m]
-                .. math: : \left\langle R\right\rangle
-            """
-            return Function(self.psi_norm, self._coord.surface_average(self._coord.r))
-
-        @cached_property
-        def gm9(self):
-            r"""
-                Flux surface averaged 1/R[m ^ -1]
-                .. math: : \left\langle \frac{1}{R}\right\rangle
-            """
-            return Function(self.psi_norm, self._coord.surface_average(1.0/self._coord.r))
-
-        @cached_property
-        def magnetic_shear(self):
-            """Magnetic shear, defined as rho_tor/q . dq/drho_tor[-]	 """
-            return Function(self.psi_norm, self.rho_tor/self.q * self.q.derivative)
-
-        @cached_property
-        def rho_volume_norm(self)	:
-            """Normalised square root of enclosed volume(radial coordinate). The normalizing value is the enclosed volume at the equilibrium boundary
-                (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation)[-]"""
-            return NotImplemented
-
-        @cached_property
-        def area(self):
-            """Cross-sectional area of the flux surface[m ^ 2]"""
-            return NotImplemented
-
-        @cached_property
-        def darea_dpsi(self):
-            """Radial derivative of the cross-sectional area of the flux surface with respect to psi[m ^ 2.Wb ^ -1]. """
-            return NotImplemented
-
-        @cached_property
-        def darea_drho_tor(self)	:
-            """Radial derivative of the cross-sectional area of the flux surface with respect to rho_tor[m]"""
-            return NotImplemented
-
-        @cached_property
-        def surface(self):
-            """Surface area of the toroidal flux surface[m ^ 2]"""
-            return NotImplemented
-
-        @cached_property
-        def trapped_fraction(self)	:
-            """Trapped particle fraction[-]"""
-            return Function(self.psi_norm, self["trapped_fraction"] or 0.0)
-
-        @cached_property
-        def b_field_max(self):
-            """Maximum(modulus(B)) on the flux surface(always positive, irrespective of the sign convention for the B-field direction)[T]"""
-            return NotImplemented
-
-        @cached_property
-        def beta_pol(self):
-            """Poloidal beta profile. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip ^ 2][-]"""
-            return NotImplemented
-
-    class Profiles2D(Profiles):
-        """
-            Equilibrium 2D profiles in the poloidal plane.
-        """
-
-        def __init__(self, coord: MagneticSurfaceCoordinateSystem, *args, ** kwargs):
-            super().__init__(*args, **kwargs)
-            self._coord = coord
-
-        @property
-        def grid_type(self):
-            return self._coord.grid_type
-
-        @cached_property
-        def grid(self):
-            return self._coord.grid
-
-        @property
-        def r(self):
-            """Values of the major radius on the grid  [m] """
-            return self._coord.r
-
-        @property
-        def z(self):
-            """Values of the Height on the grid  [m] """
-            return self._coord.z
-
-        @cached_property
-        def psi(self):
-            """Values of the poloidal flux at the grid in the poloidal plane  [Wb]. """
-            return self.apply_psifunc(lambda p: p, unit="Wb")
-
-        @cached_property
-        def theta(self):
-            """	Values of the poloidal angle on the grid  [rad] """
-            return NotImplementedError()
-
-        @cached_property
-        def phi(self):
-            """	Toroidal flux  [Wb]"""
-            return self.apply_psifunc("phi")
-
-        @cached_property
-        def j_tor(self):
-            """	Toroidal plasma current density  [A.m^-2]"""
-            return self.apply_psifunc("j_tor")
-
-        @cached_property
-        def j_parallel(self):
-            """	Parallel (to magnetic field) plasma current density  [A.m^-2]"""
-            return self.apply_psifunc("j_parallel")
-
-        @cached_property
-        def b_field_r(self):
-            """R component of the poloidal magnetic field  [T]"""
-            return Field(self._coord.Br, self._coord.r, self._coord.z, mesh_type="curvilinear")
-
-        @cached_property
-        def b_field_z(self):
-            """Z component of the poloidal magnetic field  [T]"""
-            return Field(self._coord.Bz, self._coord.r, self._coord.z, mesh_type="curvilinear")
-
-        @cached_property
-        def b_field_tor(self):
-            """Toroidal component of the magnetic field  [T]"""
-            return Field(self._coord.Btor, self._coord.r, self._coord.z, mesh_type="curvilinear")
-
-    class Boundary(Profiles):
-        def __init__(self, coord: MagneticSurfaceCoordinateSystem,   *args,  ** kwargs):
-            super().__init__(*args, **kwargs)
-            self._coord = coord or self._parent.coordinate_system
-
-        @cached_property
-        def type(self):
-            """0 (limiter) or 1 (diverted)  """
-            return 1
-
-        @cached_property
-        def outline(self):
-            """RZ outline of the plasma boundary  """
-            RZ = np.asarray([[r, z] for r, z in self._coord.flux_surface_map(1.0)])
-            return {"r": RZ[:, 0], "z": RZ[:, 1]}
-
-        @cached_property
-        def x_point(self):
-            _, xpt = self._parent.critical_points
-            return xpt
-
-        @cached_property
-        def psi(self):
-            """Value of the poloidal flux at which the boundary is taken  [Wb]"""
-            return self._parent.psi_boundary
-
-        @cached_property
-        def psi_norm(self):
-            """Value of the normalised poloidal flux at which the boundary is taken (typically 99.x %),
-                the flux being normalised to its value at the separatrix """
-            return self.psi*0.99
-
-        @cached_property
-        def shape_property(self):
-            return self._coord.shape_property(1.0)
-
-        @property
-        def geometric_axis(self):
-            """RZ position of the geometric axis (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the boundary)"""
-            return self.shape_property.geometric_axis
-
-        @property
-        def minor_radius(self):
-            """Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary) [m]	"""
-            return self.shape_property.minor_radius
-
-        @property
-        def elongation(self):
-            """Elongation of the plasma boundary. [-]	"""
-            return self.shape_property.elongation
-
-        @property
-        def elongation_upper(self):
-            """Elongation(upper half w.r.t. geometric axis) of the plasma boundary. [-]	"""
-            return self.shape_property.elongation_upper
-
-        @property
-        def elongation_lower(self):
-            """Elongation(lower half w.r.t. geometric axis) of the plasma boundary. [-]	"""
-            return self.shape_property.elongation_lower
-
-        @property
-        def triangularity(self):
-            """Triangularity of the plasma boundary. [-]	"""
-            return self.shape_property.triangularity
-
-        @property
-        def triangularity_upper(self):
-            """Upper triangularity of the plasma boundary. [-]	"""
-            return self.shape_property.triangularity_upper
-
-        @property
-        def triangularity_lower(self):
-            """Lower triangularity of the plasma boundary. [-]"""
-            return self.shape_property.triangularity_lower
-
-        @cached_property
-        def strike_point(self)	:
-            """Array of strike points, for each of them the RZ position is given	struct_array [max_size=unbounded]	1- 1...N"""
-            return NotImplemented
-
-        @cached_property
-        def active_limiter_point(self):
-            """	RZ position of the active limiter point (point of the plasma boundary in contact with the limiter)"""
-            return NotImplemented
-
-    class BoundarySeparatrix(Profiles):
-        def __init__(self, coord: MagneticSurfaceCoordinateSystem,  *args,  ** kwargs):
-            super().__init__(*args, **kwargs)
+        return EquilibriumBoundarySeparatrix(self.coordinate_system,   parent=self)
 
 
 class Equilibrium(AttributeTree):
@@ -1089,7 +1100,7 @@ class Equilibrium(AttributeTree):
 
     @cached_property
     def vacuum_toroidal_field(self):
-        return self["vacuum_toroidal_field"]  # AttributeTree({"r0": self._r0, "b0": self._b0})
+        return self["vacuum_toroidal_field"]
 
     @cached_property
     def time(self):
@@ -1101,11 +1112,11 @@ class Equilibrium(AttributeTree):
 
     @cached_property
     def time_slice(self) -> List[EquilibriumTimeSlice]:
-        return List[EquilibriumTimeSlice](self["time_slice"],  parent=self)
+        return List[EquilibriumTimeSlice](self["time_slice"], default_factory=EquilibriumTimeSlice,  parent=self)
 
     @cached_property
-    def grid_gdd(self):
-        return List(self["time_slice"], default_factory=GGD, parent=self)
+    def grid_gdd(self) -> List[GGD]:
+        return List[GGD](self["time_slice"], default_factory=GGD,  parent=self)
 
     ####################################################################################
     # Plot proflies

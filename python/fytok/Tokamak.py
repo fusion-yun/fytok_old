@@ -77,12 +77,7 @@ class Tokamak(AttributeTree):
 
     @cached_property
     def equilibrium(self) -> Equilibrium:
-        if self["equilibrium.time_slice"] != None:
-            eq = self["equilibrium.time_slice"]
-        else:
-            eq = self["equilibrium"]
-
-        return Equilibrium(eq,
+        return Equilibrium(self["equilibrium"],
                            vacuum_toroidal_field=self.vacuum_toroidal_field,
                            constraints=self.constraints,
                            wall=self.wall,
@@ -93,14 +88,14 @@ class Tokamak(AttributeTree):
     @cached_property
     def core_profiles(self) -> CoreProfiles:
         return CoreProfiles(self["core_profiles"],
-                            vacuum_toroidal_field=self.equilibrium.vacuum_toroidal_field,
-                            grid=self.equilibrium.radial_grid("rho_tor_norm"),
+                            vacuum_toroidal_field=self.vacuum_toroidal_field,
+                            grid=self.equilibrium.time_slice[-1].radial_grid("rho_tor_norm"),
                             time=self.time, parent=self)
 
     @cached_property
     def core_transport(self) -> CoreTransport:
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return CoreTransport(self.__raw_get__("core_transport"), grid=self.equilibrium.radial_grid("rho_tor_norm"), time=self.time, parent=self)
+        return CoreTransport(self.__raw_get__("core_transport"), grid=self.equilibrium.time_slice[-1].radial_grid("rho_tor_norm"), time=self.time, parent=self)
 
     @cached_property
     def core_sources(self) -> CoreSources:

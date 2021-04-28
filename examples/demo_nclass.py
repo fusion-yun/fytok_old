@@ -25,22 +25,16 @@ if __name__ == "__main__":
 
     profile = pd.read_csv('/home/salmon/workspace/data/15MA inductive - burn/profile.txt', sep='\t')
 
-    eq_slice = equilibrium.time_slice[-1]
-    logger.debug(type(eq_slice))
+    logger.debug(len(equilibrium.time_slice))
+
+    equilibrium.time_slice[-1].coordinate_system = {"grid": {"dim1": 64, "dim2": 512}}
+
     tok = Tokamak({
         "radial_grid": {"axis": 64},
         "wall":  device.wall,
-        "equilibrium": {
-            "vacuum_toroidal_field": equilibrium.vacuum_toroidal_field,
-            "time_slice": {
-                "global_quantities": eq_slice.global_quantities,
-                "profiles_1d": eq_slice.profiles_1d,
-                "profiles_2d": eq_slice.profiles_2d,
-                "coordinate_system": {"grid": {"dim1": 64, "dim2": 512}}
-            }
-        },
+        "equilibrium": equilibrium,
         "core_profiles": {
-            "profiles_1d": {
+            "profiles_1d": [{
                 "electrons": {
                     "label": "electrons",
                     "density":     1e19,
@@ -67,26 +61,24 @@ if __name__ == "__main__":
                 ],
                 "conductivity_parallel": 1.0,
                 "psi":   1.0,
-            }
+            }]
         }
     })
 
-    eq = tok.equilibrium.time_slice[-1]
+    logger.debug(len(tok.equilibrium.time_slice))
 
-    logger.debug(type(eq))
+    eq = tok.equilibrium.time_slice[-1]
 
     plot_profiles(
         [
             (eq.profiles_1d.dpressure_dpsi,         r"$dP/d\psi$"),
             [
                 (eq.profiles_1d.ffprime,            r"$ff^{\prime}$"),
-                (Function(equilibrium.profiles_1d.psi_norm,
-                          equilibrium.profiles_1d.f_df_dpsi),    r"$ff^{\prime}_{0}$"),
+                (Function(eq.profiles_1d.psi_norm,  eq.profiles_1d.f_df_dpsi),    r"$ff^{\prime}_{0}$"),
             ],
             [
                 (eq.profiles_1d.fpol,               r"$fpol$"),
-                (Function(equilibrium.profiles_1d.psi_norm,
-                          np.abs(equilibrium.profiles_1d.f)),    r"$\left|f_{pol0}\right|$"),
+                (Function(eq.profiles_1d.psi_norm, np.abs(eq.profiles_1d.f)),    r"$\left|f_{pol0}\right|$"),
             ],
             [
                 (eq.profiles_1d.q,                  r"$q$"),
@@ -159,17 +151,18 @@ if __name__ == "__main__":
         x_axis=(eq.profiles_1d.psi_norm,    r"$\psi_{N}$"),  # asd
         grid=True, fontsize=16
     ) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
-if False:
+
+    core_profile = tok.core_profiles.profiles_1d[-1]
     plot_profiles(
         [
-            (tok.core_profiles.profiles_1d.electrons.density,       r"$n_e$"),
-            (tok.core_profiles.profiles_1d.electrons.temperature,   r"$T_e$"),
-            (tok.core_profiles.profiles_1d.ion[0].density,
-             f"$n_{{{tok.core_profiles.profiles_1d.ion[0].label}}}$"),
-            (tok.core_profiles.profiles_1d.ion[0].temperature,
-             f"$T_{{{tok.core_profiles.profiles_1d.ion[0].label}}}$"),
+            (core_profile.electrons.density,       r"$n_e$"),
+            (core_profile.electrons.temperature,   r"$T_e$"),
+            (core_profile.ion[0].density,
+             f"$n_{{{core_profile.ion[0].label}}}$"),
+            (core_profile.ion[0].temperature,
+             f"$T_{{{core_profile.ion[0].label}}}$"),
         ],
-        x_axis=(tok.core_profiles.profiles_1d.grid.rho_tor_norm,    r"$\sqrt{\Phi/\Phi_{bdry}}$"),  # x axis,
+        x_axis=(core_profile.grid.rho_tor_norm,    r"$\sqrt{\Phi/\Phi_{bdry}}$"),  # x axis,
         grid=True, fontsize=10
     ) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
