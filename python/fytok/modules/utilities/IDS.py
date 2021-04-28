@@ -1,10 +1,9 @@
-from spdm.data.Node import Dict
-from spdm.util.LazyProxy import LazyProxy
+from spdm.data.AttributeTree import AttributeTree
 from spdm.util.logger import logger
 from spdm.util.sp_export import sp_find_module
 
 
-class IDS(Dict):
+class IDS(AttributeTree):
     """%%%DESCRIPTION%%%.      
 
         .. todo:: '___NAME___' IS NOT IMPLEMENTED

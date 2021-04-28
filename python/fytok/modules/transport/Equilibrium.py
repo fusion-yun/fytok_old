@@ -7,7 +7,7 @@ import scipy
 import scipy.integrate
 from numpy import arctan2, cos, sin, sqrt
 from scipy.optimize import fsolve, root_scalar
-from spdm.data.AttributeTree import as_attribute_tree
+from spdm.data.AttributeTree import AttributeTree, as_attribute_tree
 from spdm.data.Field import Field
 from spdm.data.Function import Function
 from spdm.data.mesh.CurvilinearMesh import CurvilinearMesh
@@ -21,7 +21,7 @@ from spdm.util.utilities import try_get
 
 from ..utilities.GGD import GGD
 from ..utilities.IDS import IDS
-from ..utilities.Misc import VacuumToroidalField,RZTuple
+from ..utilities.Misc import RZTuple, VacuumToroidalField
 from ..utilities.RadialGrid import RadialGrid
 
 TOLERANCE = 1.0e-6
@@ -197,7 +197,7 @@ class MagneticSurfaceCoordinateSystem:
 
     @cached_property
     def mesh(self):
-        return self.create_mesh(*self._uv, type_index=13)
+        return self.create_mesh(self._uv[0],  self._uv[1], type_index=13)
 
     @property
     def r(self):
@@ -327,7 +327,7 @@ class MagneticSurfaceCoordinateSystem:
         else:
             rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard = sbox.T
 
-        return Dict({
+        return AttributeTree({
             # RZ position of the geometric axis of the magnetic surfaces (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the surface)
             "geometric_axis": {"r": (rmin+rmax)*0.5,  "z": (zmin+zmax)*0.5},
             # Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary)[m]
@@ -959,7 +959,7 @@ class EquilibriumBoundarySeparatrix(Profiles):
         super().__init__(*args, **kwargs)
 
 
-class EquilibriumTimeSlice(Dict):
+class EquilibriumTimeSlice(AttributeTree):
     """
        Time slice of   Equilibrium
     """
@@ -1015,6 +1015,10 @@ class EquilibriumTimeSlice(Dict):
                 v = np.asarray([dim2])
 
             self._uv = [u, v]
+
+    @property
+    def time(self):
+        return self._time
 
     @property
     def vacuum_toroidal_field(self):
@@ -1140,7 +1144,6 @@ class EquilibriumTimeSlice(Dict):
         return axis
 
 
-@as_attribute_tree
 class Equilibrium(IDS):
     r"""Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
 

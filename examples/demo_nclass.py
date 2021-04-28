@@ -3,8 +3,10 @@ import numpy as np
 import pandas as pd
 import scipy.constants
 from fytok.Tokamak import Tokamak
+from fytok.modules.transport.CoreTransport import CoreTransport
 from spdm.data.Collection import Collection
 from spdm.data.File import File
+from spdm.data.Node import _next_
 from spdm.data.Function import Function
 from spdm.util.logger import logger
 from spdm.util.plot_profiles import plot_profiles
@@ -152,6 +154,7 @@ if __name__ == "__main__":
     ) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
     core_profile = tok.core_profiles.profiles_1d[-1]
+
     plot_profiles(
         [
             (core_profile.electrons.density,       r"$n_e$"),
@@ -165,38 +168,48 @@ if __name__ == "__main__":
         grid=True, fontsize=10
     ) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
+    core_transport = CoreTransport({
+        "identifier": {
+            "name": "neoclassical",
+            "index": 5,
+            "description": "by NCLASS"
+        }
+    },  grid=eq.radial_grid("rho_tor_norm"),   time=eq.time)
 
-    core_transport = nclass.transport_nclass(tok.equilibrium, tok.core_profiles)
+    nclass.transport_nclass(eq, core_profile, core_transport.profiles_1d[_next_])
+
+    core_transport1d = core_transport.profiles_1d[-1]
 
     logger.debug(core_transport.identifier)
 
+if False:
     plot_profiles(
         [
             [
-                (core_transport.profiles_1d.electrons.particles.flux, r"$\Gamma_e$"),
-                *[(ion.particles.flux,        f"$\Gamma_{{{ion.label}}}$") for ion in core_transport.profiles_1d.ion],
+                (core_transport1d.electrons.particles.flux, r"$\Gamma_e$"),
+                *[(ion.particles.flux,        f"$\Gamma_{{{ion.label}}}$") for ion in core_transport1d.ion],
             ],
             [
-                (core_transport.profiles_1d.electrons.particles.d,   r"$D_e$"),
-                *[(ion.particles.d,           f"$D_{{{ion.label}}}$") for ion in core_transport.profiles_1d.ion],
+                (core_transport1d.electrons.particles.d,   r"$D_e$"),
+                *[(ion.particles.d,           f"$D_{{{ion.label}}}$") for ion in core_transport1d.ion],
             ],
             [
-                (core_transport.profiles_1d.electrons.particles.v,   r"$v_e$"),
-                * [(ion.particles.v,           f"$v_{{{ion.label}}}$") for ion in core_transport.profiles_1d.ion],
+                (core_transport1d.electrons.particles.v,   r"$v_e$"),
+                * [(ion.particles.v,           f"$v_{{{ion.label}}}$") for ion in core_transport1d.ion],
             ],
             [
-                (core_transport.profiles_1d.electrons.energy.flux,   r"$q_e$"),
-                *[(ion.energy.flux,        f"$q_{{{ion.label}}}$") for ion in core_transport.profiles_1d.ion],
+                (core_transport1d.electrons.energy.flux,   r"$q_e$"),
+                *[(ion.energy.flux,        f"$q_{{{ion.label}}}$") for ion in core_transport1d.ion],
             ],
             [
-                (core_transport.profiles_1d.electrons.energy.d,      r"$\chi_e$"),
-                *[(ion.energy.d,           f"$\chi_{{{ion.label}}}$") for ion in core_transport.profiles_1d.ion],
+                (core_transport1d.electrons.energy.d,      r"$\chi_e$"),
+                *[(ion.energy.d,           f"$\chi_{{{ion.label}}}$") for ion in core_transport1d.ion],
             ],
             [
-                (core_transport.profiles_1d.electrons.energy.v,      r"$v_{Te}$"),
-                *[(ion.energy.v,           f"$v_{{T,{ion.label}}}$") for ion in core_transport.profiles_1d.ion],
+                (core_transport1d.electrons.energy.v,      r"$v_{Te}$"),
+                *[(ion.energy.v,           f"$v_{{T,{ion.label}}}$") for ion in core_transport1d.ion],
             ]
         ],
-        x_axis=(core_transport.profiles_1d.grid_v.rho_tor_norm,   r"$\sqrt{\Phi/\Phi_{bdry}}$"),  # x axis,
+        x_axis=(core_transport1d.grid_v.rho_tor_norm,   r"$\sqrt{\Phi/\Phi_{bdry}}$"),  # x axis,
         annotation=core_transport.identifier.name,
         grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)

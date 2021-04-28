@@ -13,7 +13,6 @@ from ..utilities.RadialGrid import RadialGrid
 from .ParticleSpecies import Species
 
 
-@as_attribute_tree
 class CoreTransport(IDS):
     r"""
         Core plasma transport of particles, energy, momentum and poloidal flux. The transport of particles, energy and momentum is described by
@@ -52,17 +51,17 @@ class CoreTransport(IDS):
             return self._time
 
         @cached_property
-        def grid_d(self):
+        def grid_d(self) -> RadialGrid:
             """Grid for effective diffusivities and parallel conductivity"""
             return self._grid.pullback(0.5*(self._grid.psi_norm[:-1]+self._grid.psi_norm[1:]))
 
         @cached_property
-        def grid_v(self):
+        def grid_v(self) -> RadialGrid:
             """ Grid for effective convections  """
             return self._grid.pullback(self._grid.psi_norm)
 
         @cached_property
-        def grid_flux(self):
+        def grid_flux(self) -> RadialGrid:
             """ Grid for fluxes  """
             return self._grid.pullback(0.5*(self._grid.psi_norm[:-1]+self._grid.psi_norm[1:]))
 
