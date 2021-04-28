@@ -2,7 +2,7 @@ import collections
 from functools import cached_property
 
 import numpy as np
-from external.SpDB.python.spdm.data.AttributeTree import as_attribute_tree
+from spdm.data.AttributeTree import as_attribute_tree
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
