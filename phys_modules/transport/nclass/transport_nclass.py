@@ -49,14 +49,15 @@ def transport_nclass(equilibrium: EquilibriumTimeSlice, core_profiles: CoreProfi
     #     grid=equilibrium.radial_grid("rho_tor_norm", axis=grid),
     #     time=equilibrium.time,
     # )
-    core_transport.ion = [{
-        "label": p_ion.label,
-        "z_ion": p_ion.z_ion,
-        "neutral_index": p_ion.neutral_index,
-        "element": p_ion.element,
-        "multiple_states_flag": p_ion.multiple_states_flag,
-        "state": p_ion.state
-    } for p_ion in core_profiles.ion]
+    for p_ion in core_profiles.ion:
+        core_transport.ion[_next_] = {
+            "label": p_ion.label,
+            "z_ion": p_ion.z_ion,
+            "neutral_index": p_ion.neutral_index,
+            "element": p_ion.element,
+            "multiple_states_flag": p_ion.multiple_states_flag,
+            "state": p_ion.state
+        }
 
     # ----------------------------------------------------------------------
     # Model options
