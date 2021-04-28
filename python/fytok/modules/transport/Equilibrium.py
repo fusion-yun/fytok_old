@@ -1221,7 +1221,7 @@ class Equilibrium(IDS):
             raise IndexError(f"{time_slice} not in {slice_num}")
 
         eq = self.time_slice[time_slice]
-        logger.debug(type(eq))
+        
         return eq.plot(axis, *args, **kwargs)
 
     def fetch_profile(self, d):

@@ -1,17 +1,17 @@
+import sys
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.constants
-from fytok.Tokamak import Tokamak
 from fytok.modules.transport.CoreTransport import CoreTransport
+from fytok.Tokamak import Tokamak
 from spdm.data.Collection import Collection
 from spdm.data.File import File
-from spdm.data.Node import _next_
 from spdm.data.Function import Function
+from spdm.data.Node import _next_
 from spdm.util.logger import logger
-from spdm.util.plot_profiles import plot_profiles
-import sys
-
+from spdm.util.plot_profiles import plot_profiles, sp_figure
 
 if __name__ == "__main__":
     sys.path.append("/home/salmon/workspace/fytok/phys_modules/")
@@ -67,6 +67,17 @@ if __name__ == "__main__":
             }]
         }
     })
+
+    sp_figure(tok,
+              wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
+              pf_active={"facecolor": 'red'},
+              equilibrium={"mesh": True, "boundary": True,
+                           "scalar_field": [
+                               #   ("coordinate_system.norm_grad_psi", {"levels": 32, "linewidths": 0.1}),
+                               ("psirz", {"levels": 32, "linewidths": 0.1}),
+                           ],
+                           }
+              ) .savefig("/home/salmon/workspace/output/contour.svg", transparent=True)
 
     eq = tok.equilibrium.time_slice[-1]
 
@@ -174,13 +185,13 @@ if __name__ == "__main__":
         }
     },  grid=eq.radial_grid("rho_tor_norm"),   time=eq.time)
 
-    nclass.transport_nclass(eq, core_profile, core_transport.profiles_1d[_next_])
+    core_transport.profiles_1d[_next_] = {"time": 0.0}
+    nclass.transport_nclass(eq, core_profile, core_transport.profiles_1d[-1])
 
     core_transport1d = core_transport.profiles_1d[-1]
 
     logger.debug(core_transport.identifier)
 
-if False:
     plot_profiles(
         [
             [

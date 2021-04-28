@@ -65,6 +65,7 @@ if __name__ == "__main__":
                            ],
                            }
               ) .savefig("/home/salmon/workspace/output/contour.svg", transparent=True)
+
     eq_f = equilibrium.time_slice[-1]
     eq = tok.equilibrium.time_slice[-1]
     plot_profiles(

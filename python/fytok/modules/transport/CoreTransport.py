@@ -4,7 +4,7 @@ from functools import cached_property, lru_cache
 import numpy as np
 from spdm.data.AttributeTree import as_attribute_tree
 from spdm.data.Function import Function
-from spdm.data.Node import Dict, List
+from spdm.data.Node import Dict, List, Node
 from spdm.data.Profiles import Profiles
 from spdm.util.logger import logger
 
@@ -17,7 +17,7 @@ class CoreTransportProfiles1D(Profiles):
     def __init__(self, *args, grid=None,  **kwargs):
         super().__init__(*args,   **kwargs)
         self._grid = grid or self._parent._grid
-        self._time = self["time"] or 0.0
+        self._time = self["time"] 
 
     @property
     def time(self) -> float:
@@ -38,7 +38,7 @@ class CoreTransportProfiles1D(Profiles):
         """ Grid for fluxes  """
         return self._grid.pullback(0.5*(self._grid.psi_norm[:-1]+self._grid.psi_norm[1:]))
 
-    class TransportCoeff(Profiles):
+    class TransportCoeff(Node):
         def __init__(self, *args, **kwargs):
             super().__init__(*args,   **kwargs)
 
@@ -54,17 +54,17 @@ class CoreTransportProfiles1D(Profiles):
         def flux(self):
             return Function(self._parent.grid_flux.rho_tor_norm, self["flux"])
 
-    class Electrons(Profiles):
+    class Electrons(Node):
         def __init__(self,   *args,  **kwargs):
             super().__init__(*args, **kwargs)
 
         @cached_property
         def particles(self):
-            return CoreTransport.Profiles1D.TransportCoeff(self["particles"], parent=self._parent)
+            return CoreTransportProfiles1D.TransportCoeff(self["particles"], parent=self._parent)
 
         @cached_property
         def energy(self):
-            return CoreTransport.Profiles1D.TransportCoeff(self["energy"],  parent=self._parent)
+            return CoreTransportProfiles1D.TransportCoeff(self["energy"],  parent=self._parent)
 
     class Ion(Species):
         def __init__(self, *args, **kwargs):
@@ -83,11 +83,11 @@ class CoreTransportProfiles1D(Profiles):
 
         @cached_property
         def particles(self):
-            return CoreTransport.Profiles1D.TransportCoeff(self["particles"], parent=self._parent)
+            return CoreTransportProfiles1D.TransportCoeff(self["particles"], parent=self._parent)
 
         @cached_property
         def energy(self):
-            return CoreTransport.Profiles1D.TransportCoeff(self["energy"],  parent=self._parent)
+            return CoreTransportProfiles1D.TransportCoeff(self["energy"],  parent=self._parent)
 
         class Momentum(Profiles):
             def __init__(self, *args,  **kwargs):
