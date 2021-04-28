@@ -135,7 +135,7 @@ class Tokamak(Dict):
     def transport_solver(self) -> TransportSolver:
         return TransportSolver(self["transport_solver"],
                                time=self.time,
-                               grid=self.radial_grid,
+                               grid=self.equilibrium.time_slice[-1].radial_grid(),
                                parent=self)
 
     def update(self,
@@ -166,19 +166,19 @@ class Tokamak(Dict):
             self["equilibrium"] = equilibrium
 
         if core_transport is not None:
-            del self.core_transport
+            # del self.core_transport
             self["core_transport"] = core_transport
 
         if core_sources is not None:
-            del self.core_sources
+            # del self.core_sources
             self["core_sources"] = core_sources
 
         if boundary_conditions is not None:
-            del self.boundary_conditions
+            # del self.boundary_conditions
             self["boundary_conditions"] = boundary_conditions
 
         core_profiles_prev = self.core_profiles
-
+        core_profiles_next = CoreProfiles(grid=core_profiles_prev.profiles_1d.grid)
         for nstep in range(max_step):
             logger.debug(f"time={time}  iterator step {nstep}/{max_step}")
 
@@ -194,8 +194,9 @@ class Tokamak(Dict):
 
             # TODO: using EdgeProfile update  self.boundary_conditions
 
-            core_profiles_next = self.transport_solver.solve(
+            self.transport_solver.solve(
                 core_profiles_prev,
+                core_profiles_next,
                 time=time,
                 equilibrium=self.equilibrium,
                 vacuum_toroidal_field=self.vacuum_toroidal_field,

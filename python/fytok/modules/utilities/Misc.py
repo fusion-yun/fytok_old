@@ -7,6 +7,8 @@ import numpy as np
 from spdm.data.Node import Dict
 
 VacuumToroidalField = collections.namedtuple("VacuumToroidalField", "r0 b0")
+RZTuple = collections.namedtuple("RZTuple", "r z")
+
 
 class Identifier(Dict):
     def __init__(self, *args, name=None, index=0, description=None, **kwargs):

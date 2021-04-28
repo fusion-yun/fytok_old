@@ -11,7 +11,6 @@ from sympy import Point, Polygon
 from ..utilities.IDS import IDS
 
 
-@as_attribute_tree
 class WallDescription2D(Dict):
 
     def __init__(self, *args, **kwargs):
@@ -103,13 +102,14 @@ class Wall(IDS):
 
         desc2d = self.description_2d
 
-        vessel_inner_points = np.array([desc2d.vessel.annular.outline_inner.r,
-                                        desc2d.vessel.annular.outline_inner.z]).transpose([1, 0])
+        vessel_inner_points = np.array([desc2d['vessel.annular.outline_inner.r'],
+                                        desc2d["vessel.annular.outline_inner.z"]]).transpose([1, 0])
 
-        vessel_outer_points = np.array([desc2d.vessel.annular.outline_outer.r,
-                                        desc2d.vessel.annular.outline_outer.z]).transpose([1, 0])
+        vessel_outer_points = np.array([desc2d["vessel.annular.outline_outer.r"],
+                                        desc2d["vessel.annular.outline_outer.z"]]).transpose([1, 0])
 
-        limiter_points = np.array([desc2d.limiter.unit.outline.r, desc2d.limiter.unit.outline.z]).transpose([1, 0])
+        limiter_points = np.array([desc2d["limiter.unit.outline.r"],
+                                   desc2d["limiter.unit.outline.z"]]).transpose([1, 0])
 
         axis.add_patch(plt.Polygon(limiter_points,  **
                                    collections.ChainMap(kwargs.get("limiter", {}), {"fill": False, "closed": True})))

@@ -1,8 +1,8 @@
 import numpy as np
 import scipy.constants
-from fytok.modules.transport.CoreProfiles import CoreProfiles
+from fytok.modules.transport.CoreProfiles import CoreProfiles, CoreProfiles1D
 from fytok.modules.transport.CoreTransport import CoreTransport
-from fytok.modules.transport.Equilibrium import Equilibrium
+from fytok.modules.transport.Equilibrium import Equilibrium, EquilibriumTimeSlice
 from spdm.data.Function import Function
 from spdm.util.logger import logger
 from spdm.data.Node import _next_
@@ -24,7 +24,7 @@ NCLASS_MSG = [
 ]
 
 
-def transport_nclass(equilibrium: Equilibrium, core_profiles: CoreProfiles, grid: np.ndarray = None) -> CoreTransport:
+def transport_nclass(equilibrium: EquilibriumTimeSlice, core_profiles: CoreProfiles1D, grid: np.ndarray = None) -> CoreTransport.Profiles1D:
 
     logger.debug(f"Transport mode: NCLASS")
 

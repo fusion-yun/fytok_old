@@ -3,7 +3,7 @@ from copy import copy
 from functools import cached_property
 
 import matplotlib.pyplot as plt
-from spdm.data.AttributeTree import as_attribute_tree
+from spdm.data.AttributeTree import as_attribute_tree, AttributeTree
 from spdm.data.Node import Dict
 from spdm.util.logger import logger
 from ..utilities.IDS import IDS
@@ -48,13 +48,13 @@ class PFActive(IDS):
 
         if axis is None:
             axis = plt.gca()
-
         for coil in self.coil:
-            geo = coil.element.geometry.rectangle
-            axis.add_patch(plt.Rectangle((geo.r-geo.width/2.0,  geo.z-geo.height/2.0),
-                                         geo.width,  geo.height,
+            geo = AttributeTree(coil["element.geometry.rectangle"])
+
+            axis.add_patch(plt.Rectangle((geo["r"]-geo["width"]/2.0,  geo["z"]-geo["height"]/2.0),
+                                         geo["width"],  geo["height"],
                                          **collections.ChainMap(kwargs,  {"fill": False})))
-            axis.text(geo.r, geo.z, str(coil.name),
+            axis.text(geo["r"], geo["z"], str(coil["name"]),
                       horizontalalignment='center',
                       verticalalignment='center')
 

@@ -33,13 +33,16 @@ if __name__ == "__main__":
         "radial_grid": {"axis": 64},
         "wall":  device.wall,
         "pf_active": device.pf_active,
-        "equilibrium": {
-            "vacuum_toroidal_field": equilibrium.vacuum_toroidal_field,
-            "global_quantities": equilibrium.global_quantities,
-            "profiles_1d": equilibrium.profiles_1d,
-            "profiles_2d": equilibrium.profiles_2d,
-            "coordinate_system": {"grid": {"dim1": 64, "dim2": 512}}
-        },
+        "equilibrium": equilibrium  # {
+        #     "vacuum_toroidal_field": equilibrium.vacuum_toroidal_field,
+        #     "time_slice": [{
+        #         "global_quantities": equilibrium.global_quantities,
+        #         "profiles_1d": equilibrium.profiles_1d,
+        #         "profiles_2d": equilibrium.profiles_2d,
+        #         "coordinate_system": {"grid": {"dim1": 64, "dim2": 512}}
+        #     }]
+        # }
+        ,
         "core_profiles": {
             "profiles_1d": {
                 "electrons": {
@@ -62,42 +65,43 @@ if __name__ == "__main__":
                            ],
                            }
               ) .savefig("/home/salmon/workspace/output/contour.svg", transparent=True)
-
+    eq_f = equilibrium.time_slice[-1]
+    eq = tok.equilibrium.time_slice[-1]
     plot_profiles(
         [
             [
-                (tok.equilibrium.profiles_1d.ffprime,            r"$ff^{\prime}$"),
-                (Function(equilibrium.profiles_1d.psi_norm,
-                          equilibrium.profiles_1d.f_df_dpsi),   r"$ff^{\prime}_{0}$"),
+                (eq.profiles_1d.ffprime,            r"$ff^{\prime}$"),
+                (Function(eq_f.profiles_1d.psi_norm,
+                          eq_f.profiles_1d.f_df_dpsi),   r"$ff^{\prime}_{0}$"),
             ],
             [
-                (tok.equilibrium.profiles_1d.fpol,              r"$fpol$"),
-                (Function(equilibrium.profiles_1d.psi_norm,
-                          np.abs(equilibrium.profiles_1d.f)),   r"$\left|f_{pol0}\right|$"),
+                (eq.profiles_1d.fpol,              r"$fpol$"),
+                (Function(eq_f.profiles_1d.psi_norm,
+                          np.abs(eq_f.profiles_1d.f)),   r"$\left|f_{pol0}\right|$"),
             ],
             [
-                (tok.equilibrium.profiles_1d.q,                    r"$q$"),
-                # (tok.equilibrium.profiles_1d.dphi_dpsi,                    r"$\frac{d\phi}{d\psi}$"),
-                # (Function(equilibrium.profiles_1d.psi_norm, equilibrium.profiles_1d.q), r"$q_0$"),
+                (eq.profiles_1d.q,                    r"$q$"),
+                # (eq.profiles_1d.dphi_dpsi,                    r"$\frac{d\phi}{d\psi}$"),
+                # (Function(eq_f.profiles_1d.psi_norm, eq_f.profiles_1d.q), r"$q_0$"),
                 (Function(profile["Fp"].values, profile["q"].values),             r"$q^{\star}$"),
             ],
             [
-                (tok.equilibrium.profiles_1d.rho_tor,           r"$\rho_{tor}$"),
+                (eq.profiles_1d.rho_tor,           r"$\rho_{tor}$"),
                 (Function(profile["Fp"].values, profile["rho"].values),             r"$\rho_{tor}^{\star}$"),
-                #     # (tok.equilibrium.profiles_1d.dvolume_drho_tor / ((scipy.constants.pi**2) * 4.0 * tok.equilibrium.vacuum_toroidal_field.r0),
+                #     # (eq.profiles_1d.dvolume_drho_tor / ((scipy.constants.pi**2) * 4.0 * eq.vacuum_toroidal_field.r0),
                 #     #     r"$\frac{dV/d\rho_{tor}}{4\pi^2 R_0}$"),
             ],
-            (tok.equilibrium.profiles_1d.rho_tor_norm,           r"$\rho_{tor}/\rho_{tor,0}$"),
+            (eq.profiles_1d.rho_tor_norm,           r"$\rho_{tor}/\rho_{tor,0}$"),
 
             # [
-            #     # (tok.equilibrium.profiles_1d.j_tor, r"$j_{tor}$"),
-            #     (tok.equilibrium.profiles_1d.j_parallel,                          r"$j_{\parallel}$"),
+            #     # (eq.profiles_1d.j_tor, r"$j_{tor}$"),
+            #     (eq.profiles_1d.j_parallel,                          r"$j_{\parallel}$"),
             #     (Function(profile["Fp"].values, profile["Jtot"].values*1e6),      r"$j_{\parallel}^{\star}$"),
             # ],
             # [
-            #     (tok.equilibrium.profiles_1d.geometric_axis.r,                   r"$geometric_{axis.r}$"),
-            #     (tok.equilibrium.profiles_1d.r_inboard,                          r"$r_{inboard}$"),
-            #     (tok.equilibrium.profiles_1d.r_outboard,                         r"$r_{outboard}$"),
+            #     (eq.profiles_1d.geometric_axis.r,                   r"$geometric_{axis.r}$"),
+            #     (eq.profiles_1d.r_inboard,                          r"$r_{inboard}$"),
+            #     (eq.profiles_1d.r_outboard,                         r"$r_{outboard}$"),
 
             # ],
             # [
@@ -106,48 +110,48 @@ if __name__ == "__main__":
             # (Function(profile["Fp"].values, profile["Poh"].values),                       r"$P_{oh}^{\star}$"),
 
             # ],
-            # (tok.equilibrium.profiles_1d.phi,                   r"$\Phi$"),
-            # (tok.equilibrium.profiles_1d.dpsi_drho_tor,         r"$\frac{d\psi}{d\rho_{tor}}$"),
+            # (eq.profiles_1d.phi,                   r"$\Phi$"),
+            # (eq.profiles_1d.dpsi_drho_tor,         r"$\frac{d\psi}{d\rho_{tor}}$"),
             # [
-            #     (Function(equilibrium.profiles_1d.psi_norm, equilibrium.profiles_1d.q), r"$q_0$"),
-            #     (tok.equilibrium.profiles_1d.q,                 r"$q$"),
-            #     (tok.equilibrium.profiles_1d.dphi_dpsi,         r"$\frac{d\phi}{d\psi}$"),
+            #     (Function(eq_f.profiles_1d.psi_norm, eq_f.profiles_1d.q), r"$q_0$"),
+            #     (eq.profiles_1d.q,                 r"$q$"),
+            #     (eq.profiles_1d.dphi_dpsi,         r"$\frac{d\phi}{d\psi}$"),
             # ],
-            # (tok.equilibrium.profiles_1d.rho_tor,                r"$\rho_{tor}$"),
+            # (eq.profiles_1d.rho_tor,                r"$\rho_{tor}$"),
 
             # [
-            #     (tok.equilibrium.profiles_1d.volume,                r"$V$"),
-            #     (Function(tok.equilibrium.profiles_1d.rho_tor, tok.equilibrium.profiles_1d.dvolume_drho_tor.view(np.ndarray)).antiderivative,
+            #     (eq.profiles_1d.volume,                r"$V$"),
+            #     (Function(eq.profiles_1d.rho_tor, eq.profiles_1d.dvolume_drho_tor.view(np.ndarray)).antiderivative,
             #      r"$\int \frac{dV}{d\rho_{tor}}  d\rho_{tor}$"),
-            #     (tok.equilibrium.profiles_1d.dvolume_dpsi.antiderivative * \
-            #      (tok.equilibrium.global_quantities.psi_boundary - tok.equilibrium.global_quantities.psi_axis),\
+            #     (eq.profiles_1d.dvolume_dpsi.antiderivative * \
+            #      (eq.global_quantities.psi_boundary - eq.global_quantities.psi_axis),\
             #      r"$\int \frac{dV}{d\psi}  d\psi$"),
             # ],
-            # (tok.equilibrium.profiles_1d.dvolume_drho_tor,      r"$\frac{dV}{d\rho}$"),
-            # (tok.equilibrium.profiles_1d.dpsi_drho_tor,         r"$\frac{d\psi}{d\rho_{tor}}$"),
-            # (tok.equilibrium.profiles_1d.drho_tor_dpsi,         r"$\frac{d\rho_{tor}}{d\psi}$"),
-            # (tok.equilibrium.profiles_1d.gm1,                   r"$\left<\frac{1}{R^2}\right>$"),
-            # (tok.equilibrium.profiles_1d.gm2,       r"$\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
-            # (tok.equilibrium.profiles_1d.gm3,                   r"$\left<\left|\nabla \rho\right|^2\right>$"),
-            # (tok.equilibrium.profiles_1d.gm7,                   r"$\left<\left|\nabla \rho\right|\right>$"),
-            # (tok.equilibrium.profiles_1d.dphi_dpsi, r"$\frac{d\phi}{d\psi}$"),
-            # (tok.equilibrium.profiles_1d.drho_tor_dpsi, r"$\frac{d\rho_{tor}}{d\psi}$"),
+            # (eq.profiles_1d.dvolume_drho_tor,      r"$\frac{dV}{d\rho}$"),
+            # (eq.profiles_1d.dpsi_drho_tor,         r"$\frac{d\psi}{d\rho_{tor}}$"),
+            # (eq.profiles_1d.drho_tor_dpsi,         r"$\frac{d\rho_{tor}}{d\psi}$"),
+            # (eq.profiles_1d.gm1,                   r"$\left<\frac{1}{R^2}\right>$"),
+            # (eq.profiles_1d.gm2,       r"$\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
+            # (eq.profiles_1d.gm3,                   r"$\left<\left|\nabla \rho\right|^2\right>$"),
+            # (eq.profiles_1d.gm7,                   r"$\left<\left|\nabla \rho\right|\right>$"),
+            # (eq.profiles_1d.dphi_dpsi, r"$\frac{d\phi}{d\psi}$"),
+            # (eq.profiles_1d.drho_tor_dpsi, r"$\frac{d\rho_{tor}}{d\psi}$"),
             # (tok.core_profiles.profiles_1d.electrons.temperature, r"$T_{e}$"),
             # [
-            #     (tok.equilibrium.coordinate_system.surface_integrate2(lambda r, z:1.0/r**2), \
+            #     (eq.coordinate_system.surface_integrate2(lambda r, z:1.0/r**2), \
             #      r"$\left<\frac{1}{R^2}\right>$"),
-            #     (tok.equilibrium.coordinate_system.surface_integrate(1/tok.equilibrium.coordinate_system.r**2), \
+            #     (eq.coordinate_system.surface_integrate(1/eq.coordinate_system.r**2), \
             #      r"$\left<\frac{1}{R^2}\right>$"),
             # ]
 
         ],
-        # x_axis=(tok.equilibrium.profiles_1d.rho_tor_norm,   {"label": r"$\rho_{N}$"}),  # asd
-        # x_axis=(tok.equilibrium.profiles_1d.phi,   {"label": r"$\Phi$"}),  # asd
-        x_axis=(tok.equilibrium.profiles_1d.psi_norm,    r"$\psi_{N}$"),  # asd
+        # x_axis=(eq.profiles_1d.rho_tor_norm,   {"label": r"$\rho_{N}$"}),  # asd
+        # x_axis=(eq.profiles_1d.phi,   {"label": r"$\Phi$"}),  # asd
+        x_axis=(eq.profiles_1d.psi_norm,    r"$\psi_{N}$"),  # asd
         grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/profiles_1d.svg", transparent=True)
 
-    psi_norm = tok.equilibrium.profiles_1d.psi_norm
-    rho_tor_norm = tok.equilibrium.profiles_1d.rho_tor_norm
+    psi_norm = eq.profiles_1d.psi_norm
+    rho_tor_norm = eq.profiles_1d.rho_tor_norm
 
     r_ped = 0.96  # np.sqrt(0.88)
 
@@ -159,7 +163,7 @@ if __name__ == "__main__":
 
     v_pinch = diff * rho_tor_norm * 1.5 / equilibrium.vacuum_toroidal_field.r0
 
-    j_parallel = tok.equilibrium.profiles_1d.j_parallel.pullback(psi_norm, rho_tor_norm)
+    j_parallel = eq.profiles_1d.j_parallel.pullback(psi_norm, rho_tor_norm)
     Qoh = Function(profile['x'].values, profile['Poh'].values*1e6/scipy.constants.elementary_charge)
     conductivity_parallel = 2.0e-9
 
@@ -187,7 +191,7 @@ if __name__ == "__main__":
         boundary_conditions={
             "current": {
                 "identifier": {"index": 1},
-                "value": tok.equilibrium.global_quantities.psi_boundary
+                "value": eq.global_quantities.psi_boundary
             },
             "electrons": {
                 "particles": {
@@ -217,9 +221,9 @@ if __name__ == "__main__":
         }
     )
 
-    psi_norm = tok.equilibrium.profiles_1d.psi_norm
-    rho_tor_norm = tok.equilibrium.profiles_1d.rho_tor_norm
-    psi_prev = tok.equilibrium.profiles_1d.psi.pullback(psi_norm, rho_tor_norm)
+    psi_norm = eq.profiles_1d.psi_norm
+    rho_tor_norm = eq.profiles_1d.rho_tor_norm
+    psi_prev = eq.profiles_1d.psi.pullback(psi_norm, rho_tor_norm)
     psi_next = tok.core_profiles.profiles_1d.psi
 
     plot_profiles(
@@ -252,9 +256,9 @@ if __name__ == "__main__":
                 (tok.core_profiles.profiles_1d.electrons.temperature,                       r"$T_{e}$"),
                 (Function(profile["x"].values, profile["TE"].values),           r"$T_{e}^{\star}$"),
             ],
-            # (tok.equilibrium.profiles_1d.q.pullback(psi_norm, rho_tor_norm),                    r"$q$"),
+            # (eq.profiles_1d.q.pullback(psi_norm, rho_tor_norm),                    r"$q$"),
             # [
-            #     (tok.equilibrium.profiles_1d.j_parallel.pullback(psi_norm, rho_tor_norm),       r"$j_{\parallel}$"),
+            #     (eq.profiles_1d.j_parallel.pullback(psi_norm, rho_tor_norm),       r"$j_{\parallel}$"),
             #     (Function(profile["x"].values, profile["Jtot"].values*1e6),     r"$j_{\parallel}^{\star}$"),
 
             # ],

@@ -21,7 +21,7 @@ from spdm.util.utilities import try_get
 
 from ..utilities.GGD import GGD
 from ..utilities.IDS import IDS
-from ..utilities.Misc import VacuumToroidalField
+from ..utilities.Misc import VacuumToroidalField,RZTuple
 from ..utilities.RadialGrid import RadialGrid
 
 TOLERANCE = 1.0e-6
@@ -367,9 +367,8 @@ class MagneticSurfaceCoordinateSystem:
         return self.create_surface(1.0)
 
 
-@as_attribute_tree
 class EquilibriumGlobalQuantities(Profiles):
-    def __init__(self, coord: MagneticSurfaceCoordinateSystem,    *args,  **kwargs):
+    def __init__(self,   *args,  coord: MagneticSurfaceCoordinateSystem = None,  **kwargs):
         super().__init__(*args, **kwargs)
         self._coord = coord
 
@@ -471,11 +470,10 @@ class EquilibriumGlobalQuantities(Profiles):
         return NotImplemented
 
 
-@as_attribute_tree
 class EquilibriumProfiles1D(Profiles):
     """Equilibrium profiles(1D radial grid) as a function of the poloidal flux	"""
 
-    def __init__(self,  *args,  coord: MagneticSurfaceCoordinateSystem,  **kwargs):
+    def __init__(self,  *args,  coord: MagneticSurfaceCoordinateSystem = None,    **kwargs):
         if coord is None:
             coord = self._parent.coordinate_system
 
@@ -793,13 +791,12 @@ class EquilibriumProfiles1D(Profiles):
         return NotImplemented
 
 
-@as_attribute_tree
 class EquilibriumProfiles2D(Profiles):
     """
         Equilibrium 2D profiles in the poloidal plane.
     """
 
-    def __init__(self, coord: MagneticSurfaceCoordinateSystem, *args, ** kwargs):
+    def __init__(self,   *args, coord: MagneticSurfaceCoordinateSystem = None,   ** kwargs):
         super().__init__(*args, **kwargs)
         self._coord = coord
 
@@ -862,9 +859,8 @@ class EquilibriumProfiles2D(Profiles):
         return Field(self._coord.Btor, self._coord.r, self._coord.z, mesh_type="curvilinear")
 
 
-@as_attribute_tree
 class EquilibriumBoundary(Profiles):
-    def __init__(self, coord: MagneticSurfaceCoordinateSystem,   *args,  ** kwargs):
+    def __init__(self,  *args, coord: MagneticSurfaceCoordinateSystem = None,   ** kwargs):
         super().__init__(*args, **kwargs)
         self._coord = coord or self._parent.coordinate_system
 
@@ -877,7 +873,7 @@ class EquilibriumBoundary(Profiles):
     def outline(self):
         """RZ outline of the plasma boundary  """
         RZ = np.asarray([[r, z] for r, z in self._coord.flux_surface_map(1.0)])
-        return {"r": RZ[:, 0], "z": RZ[:, 1]}
+        return RZTuple(RZ[:, 0], RZ[:, 1])
 
     @cached_property
     def x_point(self):
@@ -958,13 +954,11 @@ class EquilibriumBoundary(Profiles):
         return NotImplemented
 
 
-@as_attribute_tree
 class EquilibriumBoundarySeparatrix(Profiles):
-    def __init__(self, coord: MagneticSurfaceCoordinateSystem,  *args,  ** kwargs):
+    def __init__(self,   *args, coord: MagneticSurfaceCoordinateSystem = None,   ** kwargs):
         super().__init__(*args, **kwargs)
 
 
-@as_attribute_tree
 class EquilibriumTimeSlice(Dict):
     """
        Time slice of   Equilibrium
@@ -1054,19 +1048,96 @@ class EquilibriumTimeSlice(Dict):
 
     @cached_property
     def profiles_2d(self):
-        return EquilibriumProfiles2D(self.coordinate_system,  parent=self)
+        return EquilibriumProfiles2D(self["global_quantities"], coord=self.coordinate_system,  parent=self)
 
     @cached_property
     def global_quantities(self):
-        return EquilibriumGlobalQuantities(self.coordinate_system,  parent=self)
+        return EquilibriumGlobalQuantities(self["global_quantities"],   coord=self.coordinate_system,  parent=self)
 
     @cached_property
     def boundary(self):
-        return EquilibriumBoundary(self.coordinate_system,   parent=self)
+        return EquilibriumBoundary(self["boundary"], coord=self.coordinate_system, parent=self)
 
     @cached_property
     def boundary_separatrix(self):
         return EquilibriumBoundarySeparatrix(self.coordinate_system,   parent=self)
+
+    def plot(self, axis=None, *args,
+             scalar_field=[],
+             vector_field=[],
+             mesh=True,
+             boundary=True,
+             contour_=False,
+             levels=32, oxpoints=True,
+             **kwargs):
+        """learn from freegs
+        """
+        if axis is None:
+            axis = plt.gca()
+
+        # R = self.profiles_2d.r
+        # Z = self.profiles_2d.z
+        # psi = self.profiles_2d.psi(R, Z)
+
+        # axis.contour(R[1:-1, 1:-1], Z[1:-1, 1:-1], psi[1:-1, 1:-1], levels=levels, linewidths=0.2)
+        if oxpoints is not False:
+            o_point, x_point = self.coordinate_system.critical_points
+            axis.plot(o_point[0].r,
+                      o_point[0].z,
+                      'g.',
+                      linewidth=0.5,
+                      markersize=2,
+                      label="Magnetic axis")
+
+            if len(x_point) > 0:
+                for idx, p in enumerate(x_point):
+                    axis.plot(p.r, p.z, 'rx')
+                    axis.text(p.r, p.z, idx,
+                              horizontalalignment='center',
+                              verticalalignment='center')
+
+                axis.plot([], [], 'rx', label="X-Point")
+
+        if boundary is not False:
+            boundary_points = np.vstack([self.boundary.outline.r,
+                                         self.boundary.outline.z]).T
+
+            axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
+                                       linewidth=0.5, fill=False, closed=True))
+            axis.plot([], [], 'r--', label="Separatrix")
+
+        if mesh is not False:
+            for idx in range(0, self.coordinate_system.mesh.shape[0], 4):
+                ax0 = self.coordinate_system.mesh.axis(idx, axis=0)
+                axis.add_patch(plt.Polygon(ax0.xy, fill=False, closed=True, color="b", linewidth=0.2))
+
+            for idx in range(0, self.coordinate_system.mesh.shape[1], 4):
+                ax1 = self.coordinate_system.mesh.axis(idx, axis=1)
+                axis.plot(ax1.xy[:, 0], ax1.xy[:, 1],  "r", linewidth=0.2)
+
+        for s, opts in scalar_field:
+            if s == "psirz":
+                self._psirz.plot(axis, **opts)
+            else:
+                if "." not in s:
+                    sf = f"profiles_2d.{s}"
+                # self.coordinate_system.norm_grad_psi
+                sf = try_get(self, s, None)
+                if isinstance(sf, Field):
+                    sf.plot(axis, **opts)
+                elif isinstance(sf, np.ndarray):
+                    axis.contour(self.profiles_2d.r, self.profiles_2d.z, sf, **opts)
+                else:
+                    logger.error(f"Can not find field {sf} {type(sf)}!")
+
+        for u, v, opts in vector_field:
+            uf = self.profiles_2d[u]
+            vf = self.profiles_2d[v]
+            axis.streamplot(self.profiles_2d.grid.dim1,
+                            self.profiles_2d.grid.dim2,
+                            vf, uf, **opts)
+
+        return axis
 
 
 @as_attribute_tree
@@ -1140,84 +1211,15 @@ class Equilibrium(IDS):
 
     ####################################################################################
     # Plot proflies
+    def plot(self, axis=None, *args, time_slice: int = -1,  **kwargs):
+        slice_num = len(self.time_slice)
 
-    def plot(self, axis=None, *args,
-             scalar_field=[],
-             vector_field=[],
-             mesh=True,
-             boundary=True,
-             contour_=False,
-             levels=32, oxpoints=True,
-             **kwargs):
-        """learn from freegs
-        """
-        if axis is None:
-            axis = plt.gca()
+        if slice_num == 0 or time_slice > slice_num:
+            raise IndexError(f"{time_slice} not in {slice_num}")
 
-        # R = self.profiles_2d.r
-        # Z = self.profiles_2d.z
-        # psi = self.profiles_2d.psi(R, Z)
-
-        # axis.contour(R[1:-1, 1:-1], Z[1:-1, 1:-1], psi[1:-1, 1:-1], levels=levels, linewidths=0.2)
-
-        if oxpoints is not False:
-            o_point, x_point = self.coordinate_system.critical_points
-            axis.plot(o_point[0].r,
-                      o_point[0].z,
-                      'g.',
-                      linewidth=0.5,
-                      markersize=2,
-                      label="Magnetic axis")
-
-            if len(x_point) > 0:
-                for idx, p in enumerate(x_point):
-                    axis.plot(p.r, p.z, 'rx')
-                    axis.text(p.r, p.z, idx,
-                              horizontalalignment='center',
-                              verticalalignment='center')
-
-                axis.plot([], [], 'rx', label="X-Point")
-
-        if boundary is not False:
-            boundary_points = np.vstack([self.boundary.outline.r,
-                                         self.boundary.outline.z]).T
-
-            axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
-                                       linewidth=0.5, fill=False, closed=True))
-            axis.plot([], [], 'r--', label="Separatrix")
-
-        if mesh is not False:
-            for idx in range(0, self.coordinate_system.mesh.shape[0], 4):
-                ax0 = self.coordinate_system.mesh.axis(idx, axis=0)
-                axis.add_patch(plt.Polygon(ax0.xy, fill=False, closed=True, color="b", linewidth=0.2))
-
-            for idx in range(0, self.coordinate_system.mesh.shape[1], 4):
-                ax1 = self.coordinate_system.mesh.axis(idx, axis=1)
-                axis.plot(ax1.xy[:, 0], ax1.xy[:, 1],  "r", linewidth=0.2)
-
-        for s, opts in scalar_field:
-            if s == "psirz":
-                self._psirz.plot(axis, **opts)
-            else:
-                if "." not in s:
-                    sf = f"profiles_2d.{s}"
-                # self.coordinate_system.norm_grad_psi
-                sf = try_get(self, s, None)
-                if isinstance(sf, Field):
-                    sf.plot(axis, **opts)
-                elif isinstance(sf, np.ndarray):
-                    axis.contour(self.profiles_2d.r, self.profiles_2d.z, sf, **opts)
-                else:
-                    logger.error(f"Can not find field {sf} {type(sf)}!")
-
-        for u, v, opts in vector_field:
-            uf = self.profiles_2d[u]
-            vf = self.profiles_2d[v]
-            axis.streamplot(self.profiles_2d.grid.dim1,
-                            self.profiles_2d.grid.dim2,
-                            vf, uf, **opts)
-
-        return axis
+        eq = self.time_slice[time_slice]
+        logger.debug(type(eq))
+        return eq.plot(axis, *args, **kwargs)
 
     def fetch_profile(self, d):
         if isinstance(d, str):

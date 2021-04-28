@@ -14,7 +14,6 @@ from ..utilities.RadialGrid import RadialGrid
 from .ParticleSpecies import Species
 
 
-@as_attribute_tree
 class CoreProfiles1D(Profiles):
     def __init__(self, *args, grid=None, time=None, parent=None, **kwargs):
         grid = grid or getattr(parent, "_grid", None)
@@ -31,15 +30,14 @@ class CoreProfiles1D(Profiles):
     def grid(self) -> RadialGrid:
         return self._grid
 
-    @as_attribute_tree
     class Electrons(Profiles):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
-        # @property
-        # def temperature(self):
-        #     """Temperature {dynamic} [eV]"""
-        #     return NotImplemented
+        @cached_property
+        def temperature(self):
+            """Temperature {dynamic} [eV]"""
+            return self["temperature"]
 
         # @property
         # def temperature_validity(self):
@@ -53,10 +51,10 @@ class CoreProfiles1D(Profiles):
         # def temperature_fit(self):
         #     """Information on the fit used to obtain the temperature profile [eV]  """
         #     return NotImplemented
-        # @cached_property
-        # def density(self):
-        #     """Density (thermal+non-thermal) {dynamic} [m^-3]"""
-        #     return Function(self.grid.psi_norm, self["density"])
+        @cached_property
+        def density(self):
+            """Density (thermal+non-thermal) {dynamic} [m^-3]"""
+            return self["density"]
         # @property
         # def density_validity(self):
         #     """Indicator of the validity of the density profile.
@@ -106,7 +104,6 @@ class CoreProfiles1D(Profiles):
             """Collisionality normalised to the bounce frequency {dynamic}[-]"""
             return NotImplemented
 
-    @as_attribute_tree
     class Ion(Species):
         def __init__(self,   *args,      **kwargs):
             super().__init__(*args,  **kwargs)
@@ -134,10 +131,10 @@ class CoreProfiles1D(Profiles):
             state density and divided by ion density) {dynamic} [-]  """
             return NotImplemented
 
-        # @cached_property
-        # def temperature(self):
-        #     """Temperature (average over charge states when multiple charge states are considered) {dynamic} [eV]  """
-        #     return Function(self.axis, self["temperature"])
+        @cached_property
+        def temperature(self):
+            """Temperature (average over charge states when multiple charge states are considered) {dynamic} [eV]  """
+            return self["temperature"]
 
         # @property
         # def temperature_validity(self):
@@ -153,10 +150,10 @@ class CoreProfiles1D(Profiles):
         #     """Information on the fit used to obtain the temperature profile [eV]    """
         #     return NotImplemented
 
-        # @cached_property
-        # def density(self):
-        #     """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        #     return Function(self.axis, self["density"])
+        @cached_property
+        def density(self):
+            """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
+            return self["density"]
 
         # @property
         # def density_validity(self):
@@ -167,10 +164,10 @@ class CoreProfiles1D(Profiles):
         #      -2: invalid data, should not be used {dynamic}    """
         #     return NotImplemented
 
-        @cached_property
-        def density_fit(self):
-            """Information on the fit used to obtain the density profile [m^-3]    """
-            return NotImplemented
+        # @cached_property
+        # def density_fit(self):
+        #     """Information on the fit used to obtain the density profile [m^-3]    """
+        #     return NotImplemented
 
         @property
         def density_thermal(self):
@@ -228,7 +225,6 @@ class CoreProfiles1D(Profiles):
             """Quantities related to the different states of the species (ionisation, energy, excitation, ...)  struct_array [max_size=unbounded]  1- 1...N"""
             return self["state"]
 
-    @as_attribute_tree
     class Neutral(Species):
         def __init__(self,    *args, **kwargs):
             super().__init__(*args,  **kwargs)
@@ -426,7 +422,7 @@ class CoreProfiles1D(Profiles):
     # def conductivity_parallel(self):
     #     """Parallel conductivity {dynamic}[ohm ^ -1.m ^ -1]"""
     #     return NotImplemented
-    @as_attribute_tree
+
     class EField(Profiles):
         def __init__(self, *args,   **kwargs):
             super().__init__(*args,   **kwargs)
@@ -473,7 +469,6 @@ class CoreProfiles1D(Profiles):
         return NotImplemented
 
 
-@as_attribute_tree
 class CoreProfilesGlobalQuantities(Profiles):
     def __init__(self, *args, axis=None, **kwargs):
         super().__init__(*args, axis=axis, **kwargs)
