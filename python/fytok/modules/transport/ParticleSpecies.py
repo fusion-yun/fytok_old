@@ -8,7 +8,7 @@ from spdm.data.Profiles import Profiles
 from spdm.util.logger import logger
 
 
-class Species(AttributeTree):
+class Species(Profiles):
     def __init__(self,   *args,  **kwargs):
         super().__init__(*args,   **kwargs)
 

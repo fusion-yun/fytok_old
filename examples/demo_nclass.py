@@ -159,10 +159,8 @@ if __name__ == "__main__":
         [
             (core_profile.electrons.density,       r"$n_e$"),
             (core_profile.electrons.temperature,   r"$T_e$"),
-            (core_profile.ion[0].density,
-             f"$n_{{{core_profile.ion[0].label}}}$"),
-            (core_profile.ion[0].temperature,
-             f"$T_{{{core_profile.ion[0].label}}}$"),
+            # (core_profile.ion[0].density,     f"$n_{{{core_profile.ion[0].label}}}$"),
+            # (core_profile.ion[0].temperature, f"$T_{{{core_profile.ion[0].label}}}$"),
         ],
         x_axis=(core_profile.grid.rho_tor_norm,    r"$\sqrt{\Phi/\Phi_{bdry}}$"),  # x axis,
         grid=True, fontsize=10

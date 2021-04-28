@@ -167,14 +167,14 @@ class CoreTransport(IDS):
             return CoreTransport.Profiles1D.Electrons(self['electrons'], parent=self)
 
         @cached_property
-        def ion(self):
+        def ion(self) -> List:
             """ Transport coefficients related to the various ion species """
-            return List(self['ion'], default_factory=CoreTransport.Profiles1D.Ion, parent=self)
+            return List[CoreTransport.Profiles1D.Ion](self['ion'], default_factory=CoreTransport.Profiles1D.Ion, parent=self)
 
         @cached_property
-        def neutral(self):
+        def neutral(self) -> List:
             """ Transport coefficients related to the various neutral species """
-            return List(self['neutral'], default_factory=CoreTransport.Profiles1D.Neutral,  parent=self)
+            return List[CoreTransport.Profiles1D.Neutral](self['neutral'], default_factory=CoreTransport.Profiles1D.Neutral,  parent=self)
 
         @cached_property
         def total_ion_energy(self):
@@ -196,5 +196,5 @@ class CoreTransport(IDS):
             return Function(self.grid_flux.rho_tor_norm, self["e_field_radial"])
 
     @cached_property
-    def profiles_1d(self):
+    def profiles_1d(self) -> List:
         return List(self["profiles_1d"], default_factory=CoreTransport.Profiles1D, parent=self)
