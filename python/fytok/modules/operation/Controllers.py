@@ -2,12 +2,12 @@
 from functools import cached_property
 
 import numpy as np
-from spdm.data.AttributeTree import AttributeTree
+from spdm.data.Node import Dict
 
 from fytok.Misc import IDSProperties, Signal
 
 
-class Controllers(AttributeTree):
+class Controllers(Dict):
     r"""Feedback and feedforward controllers
 
         Note: Controllers is an ids
@@ -21,13 +21,13 @@ class Controllers(AttributeTree):
     def ids_properties(self):
         return IDSProperties(self._cache.ids_properties)
 
-    class LinearController(AttributeTree):
+    class LinearController(Dict):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
     @cached_property
     def linear_controller(self):
-        res = AttributeTree(
+        res = Dict(
             default_factory_array=lambda _holder=self: Controllers.LinearController(None, parend=_holder))
 
         for lin_contr in self._cache.linear_controller:
@@ -35,13 +35,13 @@ class Controllers(AttributeTree):
 
         return res
 
-    class NonLinearController(AttributeTree):
+    class NonLinearController(Dict):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
     @cached_property
     def nonlinear_controller(self):
-        res = AttributeTree(
+        res = Dict(
             default_factory_array=lambda _holder=self: Controllers.NonLinearController(None, parend=_holder))
 
         for nonlin_contr in self._cache.nonlinear_controller:

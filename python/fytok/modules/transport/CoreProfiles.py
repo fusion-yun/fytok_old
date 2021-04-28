@@ -1,8 +1,9 @@
 import collections
+from external.SpDB.python.spdm.data.AttributeTree import as_attribute_tree
 from functools import cached_property
 
 import numpy as np
-from spdm.data.AttributeTree import AttributeTree
+from spdm.data.Node import Dict
 from spdm.data.Function import Function
 from spdm.data.Node import List
 from spdm.data.Profiles import Profiles
@@ -10,24 +11,27 @@ from spdm.util.logger import logger
 
 from ...RadialGrid import RadialGrid
 from .ParticleSpecies import Species
+from ..utilities.Misc import VacuumToroidalField
 
 
+@as_attribute_tree
 class CoreProfiles1D(Profiles):
-    def __init__(self, *args, grid=None, time=None, **kwargs):
-        grid = grid or self._parent._grid
-        assert(self._grid is not None)
+    def __init__(self, *args, grid=None, time=None, parent=None, **kwargs):
+        grid = grid or getattr(parent, "_grid", None)
+        assert(grid is not None)
         super().__init__(*args, axis=grid.rho_tor_norm, **kwargs)
         self._grid = grid
         self._time = time or 0.0
 
     @property
-    def time(self):
+    def time(self) -> float:
         return self._time
 
     @property
     def grid(self) -> RadialGrid:
         return self._grid
 
+    @as_attribute_tree
     class Electrons(Profiles):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
@@ -102,6 +106,7 @@ class CoreProfiles1D(Profiles):
             """Collisionality normalised to the bounce frequency {dynamic}[-]"""
             return NotImplemented
 
+    @as_attribute_tree
     class Ion(Species):
         def __init__(self,   *args,      **kwargs):
             super().__init__(*args,  **kwargs)
@@ -223,6 +228,7 @@ class CoreProfiles1D(Profiles):
             """Quantities related to the different states of the species (ionisation, energy, excitation, ...)  struct_array [max_size=unbounded]  1- 1...N"""
             return self["state"]
 
+    @as_attribute_tree
     class Neutral(Species):
         def __init__(self,    *args, **kwargs):
             super().__init__(*args,  **kwargs)
@@ -420,7 +426,7 @@ class CoreProfiles1D(Profiles):
     # def conductivity_parallel(self):
     #     """Parallel conductivity {dynamic}[ohm ^ -1.m ^ -1]"""
     #     return NotImplemented
-
+    @as_attribute_tree
     class EField(Profiles):
         def __init__(self, *args,   **kwargs):
             super().__init__(*args,   **kwargs)
@@ -466,12 +472,13 @@ class CoreProfiles1D(Profiles):
         """Magnetic shear, defined as rho_tor/q . dq/drho_tor {dynamic}[-]"""
         return NotImplemented
 
-
+@as_attribute_tree
 class CoreProfilesGlobalQuantities(Profiles):
     def __init__(self, *args, axis=None, **kwargs):
         super().__init__(*args, axis=axis, **kwargs)
 
 
+@as_attribute_tree
 class CoreProfiles(Profiles):
     """CoreProfiles
     """
@@ -479,17 +486,19 @@ class CoreProfiles(Profiles):
     Profiles1D = CoreProfiles1D
     GlobalQuantities = CoreProfilesGlobalQuantities
 
-    def __init__(self,  *args, vacuum_toroidal_field=None,   grid: RadialGrid = None, ** kwargs):
+    def __init__(self,  *args, vacuum_toroidal_field: VacuumToroidalField = None,   grid: RadialGrid = None, ** kwargs):
         super().__init__(*args,  ** kwargs)
         self._grid = grid
-        self._vacuum_toroidal_field = vacuum_toroidal_field or AttributeTree(self.__raw_get__("vacuum_toroidal_field"))
+        self._vacuum_toroidal_field = vacuum_toroidal_field or \
+            VacuumToroidalField(self.__raw_get__("vacuum_toroidal_field.r0"),
+                                self.__raw_get__("vacuum_toroidal_field.b0"))
 
     @property
     def time(self):
         return np.asarray([profile.time for profile in self.profiles_1d])
 
     @property
-    def vacuum_toroidal_field(self) -> AttributeTree:
+    def vacuum_toroidal_field(self) -> VacuumToroidalField:
         return self._vacuum_toroidal_field
 
     @cached_property
@@ -497,5 +506,5 @@ class CoreProfiles(Profiles):
         return List[CoreProfiles1D](self["profiles_1d"], default_factory=CoreProfiles1D,  parent=self)
 
     @cached_property
-    def global_quantities(self):
+    def global_quantities(self) -> CoreProfilesGlobalQuantities:
         return CoreProfilesGlobalQuantities(self["global_quantities"], axis=self.time, parent=self)

@@ -7,20 +7,20 @@ import scipy
 import scipy.integrate
 from fytok.RadialGrid import RadialGrid
 from numpy import arctan2, cos, sin, sqrt
-from numpy.lib.arraysetops import isin
 from scipy.optimize import fsolve, root_scalar
-from spdm.data.AttributeTree import AttributeTree
+from spdm.data.AttributeTree import as_attribute_tree
 from spdm.data.Field import Field
 from spdm.data.Function import Function
 from spdm.data.mesh.CurvilinearMesh import CurvilinearMesh
+from spdm.data.Node import Dict, List
+from spdm.data.Profiles import Profiles
 from spdm.geometry.CubicSplineCurve import CubicSplineCurve
 from spdm.geometry.Curve import Curve
 from spdm.geometry.Point import Point
 from spdm.util.logger import logger
 from spdm.util.utilities import try_get
-from spdm.data.Node import List
-from spdm.data.Profiles import Profiles
-from spdm.data.Node import Dict
+
+from ..utilities.Misc import VacuumToroidalField
 from ..utilities.GGD import GGD
 
 TOLERANCE = 1.0e-6
@@ -326,7 +326,7 @@ class MagneticSurfaceCoordinateSystem:
         else:
             rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard = sbox.T
 
-        return AttributeTree({
+        return Dict({
             # RZ position of the geometric axis of the magnetic surfaces (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the surface)
             "geometric_axis": {"r": (rmin+rmax)*0.5,  "z": (zmin+zmax)*0.5},
             # Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary)[m]
@@ -355,7 +355,7 @@ class MagneticSurfaceCoordinateSystem:
         if not o:
             raise RuntimeError(f"Can not find magnetic axis")
 
-        return AttributeTree({
+        return Dict({
             "r": o[0].r,
             "z": o[0].z,
             "b_field_tor": NotImplemented
@@ -365,7 +365,7 @@ class MagneticSurfaceCoordinateSystem:
     def boundary(self):
         return self.create_surface(1.0)
 
-
+@as_attribute_tree
 class EquilibriumGlobalQuantities(Profiles):
     def __init__(self, coord: MagneticSurfaceCoordinateSystem,    *args,  **kwargs):
         super().__init__(*args, **kwargs)
@@ -469,6 +469,7 @@ class EquilibriumGlobalQuantities(Profiles):
         return NotImplemented
 
 
+@as_attribute_tree
 class EquilibriumProfiles1D(Profiles):
     """Equilibrium profiles(1D radial grid) as a function of the poloidal flux	"""
 
@@ -479,8 +480,8 @@ class EquilibriumProfiles1D(Profiles):
         super().__init__(*args, axis=coord.psi_norm, **kwargs)
 
         self._coord = coord
-        self._b0 = np.abs(self._parent._b0)
-        self._r0 = self._parent._r0
+        self._b0 = np.abs(self._parent.vacuum_toroidal_field.b0)
+        self._r0 = self._parent.vacuum_toroidal_field.r0
 
     @property
     def psi_norm(self):
@@ -790,6 +791,7 @@ class EquilibriumProfiles1D(Profiles):
         return NotImplemented
 
 
+@as_attribute_tree
 class EquilibriumProfiles2D(Profiles):
     """
         Equilibrium 2D profiles in the poloidal plane.
@@ -858,6 +860,7 @@ class EquilibriumProfiles2D(Profiles):
         return Field(self._coord.Btor, self._coord.r, self._coord.z, mesh_type="curvilinear")
 
 
+@as_attribute_tree
 class EquilibriumBoundary(Profiles):
     def __init__(self, coord: MagneticSurfaceCoordinateSystem,   *args,  ** kwargs):
         super().__init__(*args, **kwargs)
@@ -878,6 +881,14 @@ class EquilibriumBoundary(Profiles):
     def x_point(self):
         _, xpt = self._parent.critical_points
         return xpt
+
+    @property
+    def psi_axis(self):
+        return self._coord.psi_axis
+
+    @property
+    def psi_boundary(self):
+        return self._coord.psi_boundary
 
     @cached_property
     def psi(self):
@@ -945,24 +956,26 @@ class EquilibriumBoundary(Profiles):
         return NotImplemented
 
 
+@as_attribute_tree
 class EquilibriumBoundarySeparatrix(Profiles):
     def __init__(self, coord: MagneticSurfaceCoordinateSystem,  *args,  ** kwargs):
         super().__init__(*args, **kwargs)
 
 
+@as_attribute_tree
 class EquilibriumTimeSlice(Dict):
     """
        Time slice of   Equilibrium
     """
 
-    def __init__(self, *args, time=None, R0=None, B0=None,
+    def __init__(self, *args, time=None,
+                 vacuum_toroidal_field: VacuumToroidalField = None,
                  pprime=None, ffprime=None,
                  uv=None, psirz=None,  **kwargs):
         super().__init__(*args, **kwargs)
         self._time = time or 0.0
 
-        self._r0 = R0 or self._parent.vacuum_toroidal_field.r0
-        self._b0 = B0 or self._parent.vacuum_toroidal_field.b0
+        self._vacuum_toroidal_field = vacuum_toroidal_field or self._parent.vacuum_toroidal_field
 
         if not isinstance(psirz, Field):
             psirz = Field(self["profiles_2d.psi"],
@@ -1007,6 +1020,10 @@ class EquilibriumTimeSlice(Dict):
 
             self._uv = [u, v]
 
+    @property
+    def vacuum_toroidal_field(self):
+        return self._vacuum_toroidal_field
+
     def radial_grid(self, primary_axis=None, axis=None):
         """ """
         psi_norm = self.profiles_1d.psi_norm
@@ -1023,7 +1040,7 @@ class EquilibriumTimeSlice(Dict):
 
     @cached_property
     def coordinate_system(self):
-        return MagneticSurfaceCoordinateSystem(self._uv, self._psirz, self._ffprime, self._r0*self._b0)
+        return MagneticSurfaceCoordinateSystem(self._uv, self._psirz, self._ffprime, self.vacuum_toroidal_field.r0*self.vacuum_toroidal_field.b0)
 
     @cached_property
     def constraints(self):
@@ -1050,7 +1067,8 @@ class EquilibriumTimeSlice(Dict):
         return EquilibriumBoundarySeparatrix(self.coordinate_system,   parent=self)
 
 
-class Equilibrium(AttributeTree):
+@as_attribute_tree
+class Equilibrium(Dict):
     r"""Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
 
         Reference:
@@ -1100,7 +1118,7 @@ class Equilibrium(AttributeTree):
 
     @cached_property
     def vacuum_toroidal_field(self):
-        return self["vacuum_toroidal_field"]
+        return VacuumToroidalField(self["vacuum_toroidal_field.r0"], self["vacuum_toroidal_field.b0"])
 
     @cached_property
     def time(self):
@@ -1208,7 +1226,7 @@ class Equilibrium(AttributeTree):
             opts = d.get("opts", {})
         elif isinstance(d, tuple):
             data, opts = d
-        elif isinstance(d, AttributeTree):
+        elif isinstance(d, Dict):
             data = d.data
             opts = d.opts
         else:

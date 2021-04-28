@@ -19,7 +19,7 @@ if __name__ == "__main__":
     from spdm.data.Profile import Profile
     from spdm.data.Entry import open_entry
     from fytok.Plot import plot_profiles
-    from spdm.data.AttributeTree import _next_
+    from spdm.data.Node import _next_
     import freegs
 
     tok = Tokamak(open_entry("east+mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east", shot=55555, time_slice=20))

@@ -2,7 +2,7 @@ import collections
 from functools import cached_property
 
 import numpy as np
-from spdm.data.AttributeTree import AttributeTree
+from spdm.data.Node import Dict
 from spdm.data.Function import Function
 from spdm.data.Node import List
 from spdm.data.Profiles import Profiles
@@ -18,7 +18,7 @@ class Species(Profiles):
         """String identifying ion (e.g. H+, D+, T+, He+2, C+, ...) {dynamic}    """
         return self["label"]
 
-    class Element(AttributeTree):
+    class Element(Dict):
         def __init__(self, *args, **kwargs) -> None:
             super().__init__(*args, **kwargs)
 

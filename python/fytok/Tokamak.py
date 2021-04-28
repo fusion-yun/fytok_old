@@ -1,16 +1,18 @@
 
 import collections
+import datetime
+import getpass
 from functools import cached_property
 
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 import scipy.constants
-from spdm.data.AttributeTree import AttributeTree
+from spdm.data.AttributeTree import as_attribute_tree
 from spdm.data.Function import Function
+from spdm.data.Node import Dict
 from spdm.util.logger import logger
-import getpass
-import datetime
+
 from .modules.device.PFActive import PFActive
 from .modules.device.TF import TF
 from .modules.device.Wall import Wall
@@ -23,11 +25,12 @@ from .modules.transport.EdgeTransport import EdgeTransport
 from .modules.transport.Equilibrium import Equilibrium
 from .modules.transport.TransportSolver import TransportSolver
 from .RadialGrid import RadialGrid
-
+from .modules.utilities.Misc import VacuumToroidalField
 TWOPI = scipy.constants.pi*2.0
 
 
-class Tokamak(AttributeTree):
+@as_attribute_tree
+class Tokamak(Dict):
     """Tokamak
         功能：
             - 描述装置在单一时刻的状态，
@@ -47,8 +50,9 @@ class Tokamak(AttributeTree):
     def time(self):
         return self._time
 
+    @cached_property
     def vacuum_toroidal_field(self):
-        return self["equilibrium.vacuum_toroidal_field"]
+        return VacuumToroidalField(self["equilibrium.vacuum_toroidal_field.r0"], self["equilibrium.vacuum_toroidal_field.b0"])
 
     @cached_property
     def wall(self) -> Wall:
@@ -69,11 +73,11 @@ class Tokamak(AttributeTree):
 
     @cached_property
     def boundary_conditions(self):
-        return AttributeTree(self["boundary_conditions"], parent=self)
+        return Dict(self["boundary_conditions"], parent=self)
 
     @cached_property
     def constraints(self):
-        return AttributeTree(self["constraints"], parent=self)
+        return Dict(self["constraints"], parent=self)
 
     @cached_property
     def equilibrium(self) -> Equilibrium:

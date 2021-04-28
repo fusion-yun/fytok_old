@@ -4,10 +4,10 @@ from functools import cached_property
 import numpy as np
 import scipy
 import scipy.constants
-from spdm.data.AttributeTree import AttributeTree
+from spdm.data.Node import Dict
 from spdm.data.Node import List
 from spdm.data.Node import Node, _next_
-from spdm.data.AttributeTree import AttributeTree
+from spdm.data.Node import Dict
 from spdm.data.Function import Function
 from spdm.util.logger import logger
 
@@ -16,7 +16,7 @@ from fytok.RadialGrid import RadialGrid
 from .Profiles import Profiles
 
 
-class ParticleSpecies(AttributeTree):
+class ParticleSpecies(Dict):
     def __init__(self, *args, radial_grid: RadialGrid = None, **kwargs):
         super().__init__(*args, **kwargs)
         self._radial_grid = radial_grid
@@ -65,7 +65,7 @@ class ParticleSpecies(AttributeTree):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
-        class ParticleCoeff(AttributeTree):
+        class ParticleCoeff(Dict):
             def __init__(self,   *args, **kwargs):
                 super().__init__(*args,   **kwargs)
 
@@ -81,7 +81,7 @@ class ParticleSpecies(AttributeTree):
             def flux(self):
                 return Function(self._parent.grid_flux.rho_tor_norm, self["flux"])
 
-        class EngeryCoeff(AttributeTree):
+        class EngeryCoeff(Dict):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args,   **kwargs)
                 self.d = Function(self._parent.grid_d.rho_tor_norm, self["d"])
@@ -113,7 +113,7 @@ class ParticleSpecies(AttributeTree):
 
         @cached_property
         def momentum(self):
-            return AttributeTree({
+            return Dict({
                 "radial": Function(self._parent.grid.rho_tor_norm, self["momentum.radial"], parent=self._parent),
                 "diamagnetic": Function(self._parent.grid.rho_tor_norm, self["momentum.diamagnetic"], parent=self._parent),
                 "parallel": Function(self._parent.grid.rho_tor_norm, self["momentum.parallel"], parent=self._parent),
@@ -124,7 +124,7 @@ class ParticleSpecies(AttributeTree):
     class BoundaryCondition(Profiles):
         pass
 
-    class Element(AttributeTree):
+    class Element(Dict):
         def __init__(self, *args, **kwargs) -> None:
             super().__init__(*args, **kwargs)
 

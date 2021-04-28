@@ -11,8 +11,8 @@ import numpy as np
 import scipy.constants
 from fytok.util.Misc import Identifier
 from spdm.data.Function import Function
-from spdm.data.AttributeTree import AttributeTree
-from spdm.data.AttributeTree import AttributeTree
+from spdm.data.Node import Dict
+from spdm.data.Node import Dict
 from spdm.util.logger import logger
 from spdm.util.utilities import try_get
 from spdm.numerical.bvp import solve_bvp
@@ -30,7 +30,7 @@ TOLERANCE = 1.0e-6
 TWOPI = 2.0 * scipy.constants.pi
 
 
-class TransportSolver(AttributeTree):
+class TransportSolver(Dict):
     r"""
         Solve transport equations :math:`\rho=\sqrt{ \Phi/\pi B_{0}}`
 
@@ -144,7 +144,7 @@ class TransportSolver(AttributeTree):
         diff_flux = Function(sol.x, -d(sol.x) * sol.yp[0])
         conv_flux = Function(sol.x, e(sol.x) * sol.y[0])
 
-        profiles = AttributeTree({
+        profiles = Dict({
             "diff_flux": diff_flux,
             "conv_flux": conv_flux,
             "s_exp_flux": s_exp_flux,
@@ -169,7 +169,7 @@ class TransportSolver(AttributeTree):
               equilibrium: Equilibrium,
               core_transport: CoreTransport.Profiles1D,
               core_sources: CoreSources.Profiles1D,
-              boundary_conditions: AttributeTree,
+              boundary_conditions: Dict,
               tolerance=1.0e-3,
               max_nodes=1000,
               verbose=2,

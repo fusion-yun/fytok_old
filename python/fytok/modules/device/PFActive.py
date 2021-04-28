@@ -3,23 +3,23 @@ from copy import copy
 from functools import cached_property
 
 import matplotlib.pyplot as plt
-from spdm.data.AttributeTree import AttributeTree
+from spdm.data.Node import Dict
 from spdm.util.logger import logger
 
 
-class PFActive(AttributeTree):
+class PFActive(Dict):
     """
     """
 
-    class Coil(AttributeTree):
+    class Coil(Dict):
         def __init__(self,  *args, **kwargs):
             super().__init__(*args, **kwargs)
 
-    class Circuit(AttributeTree):
+    class Circuit(Dict):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
-    class Supply(AttributeTree):
+    class Supply(Dict):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 

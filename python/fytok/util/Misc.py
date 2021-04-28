@@ -2,11 +2,11 @@ from datetime import datetime
 from functools import cached_property
 
 import numpy as np
-from spdm.data.AttributeTree import AttributeTree
+from spdm.data.Node import Dict
 from spdm.util.LazyProxy import LazyProxy
 
 
-class Identifier(AttributeTree):
+class Identifier(Dict):
     def __init__(self, *args, name=None, index=0, description=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = name or ""
@@ -14,7 +14,7 @@ class Identifier(AttributeTree):
         self.description = ""
 
 
-class Signal(AttributeTree):
+class Signal(Dict):
     def __init__(self,  *args, time=None, data=None, **kwargs):
         super().__init__(*args, **kwargs)
         if type(time) is int:
@@ -59,7 +59,7 @@ class Signal(AttributeTree):
         return NotImplemented
 
 
-class IDSProperties(AttributeTree):
+class IDSProperties(Dict):
     def __init__(self, *args, **kwargs):
         super().__init__(self, *args, **kwargs)
 

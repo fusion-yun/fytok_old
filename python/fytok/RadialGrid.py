@@ -3,10 +3,12 @@ from functools import cached_property
 
 import numpy as np
 from spdm.util.logger import logger
-from spdm.data.AttributeTree import AttributeTree
+from spdm.data.Node import Dict
 from spdm.data.Function import Function
 
 from spdm.util.utilities import try_get
+
+from .modules.utilities.Misc import VacuumToroidalField
 
 
 class RadialGrid:
@@ -14,9 +16,10 @@ class RadialGrid:
 
     """
 
-    def __init__(self, psi_norm, *args, vacuum_toroidal_field=None, equilibrium=None, **kwargs) -> None:
+    def __init__(self, psi_norm, *args, vacuum_toroidal_field: VacuumToroidalField = None, equilibrium=None, **kwargs) -> None:
         self._data = kwargs
         if equilibrium is not None:
+            
             self._vacuum_toroidal_field = vacuum_toroidal_field
             self._equilibrium = equilibrium
             self._psi_axis = equilibrium.boundary.psi_axis
@@ -25,9 +28,7 @@ class RadialGrid:
                 psi_norm = equilibrium.profiles_1d.psi_norm
         else:
             self._equilibrium = None
-            self._vacuum_toroidal_field = AttributeTree(kwargs.get(
-                "vacuum_toroidal_field", {"r0": NotImplemented,
-                                          "b0": NotImplemented}))
+            self._vacuum_toroidal_field = vacuum_toroidal_field or VacuumToroidalField(1.0, 1.0)
             self._psi_axis = kwargs.get("psi_axis", NotImplemented)
             self._psi_boundary = kwargs.get("psi_boundary", NotImplemented)
         assert(self._equilibrium != None)

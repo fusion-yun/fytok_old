@@ -4,7 +4,7 @@ from functools import cached_property, lru_cache
 import numpy as np
 from spdm.data.Node import List
 from spdm.data.Function import Function
-from spdm.data.AttributeTree import AttributeTree
+from spdm.data.Node import Dict
 from spdm.util.logger import logger
 
 from spdm.data.Profiles import Profiles
@@ -12,7 +12,7 @@ from ...RadialGrid import RadialGrid
 from .ParticleSpecies import Species
 
 
-class CoreTransport(AttributeTree):
+class CoreTransport(Dict):
     r"""
         Core plasma transport of particles, energy, momentum and poloidal flux. The transport of particles, energy and momentum is described by
         diffusion coefficients,  :math:`D`, and convection velocities,  :math:`v`. These are defined by the total fluxes of particles, energy and momentum, across a
@@ -39,7 +39,7 @@ class CoreTransport(AttributeTree):
     def time(self):
         return np.asarray([profile.time for profile in self.profiles_1d])
 
-    class Profiles1D(AttributeTree):
+    class Profiles1D(Dict):
         def __init__(self, *args, grid=None,  **kwargs):
             super().__init__(*args,   **kwargs)
             self._grid = grid or self._parent._grid

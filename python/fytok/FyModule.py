@@ -51,4 +51,4 @@ class FyModule(SpObject):
     #         else:
     #             logger.info(f"Load '{cls.__name__}' module {backend}!")
 
-    #     return AttributeTree.__new__(n_cls)
+    #     return Dict.__new__(n_cls)

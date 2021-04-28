@@ -3,10 +3,10 @@ from functools import cached_property
 
 import numpy as np
 import scipy
-from spdm.data.AttributeTree import AttributeTree
+from spdm.data.Node import Dict
 from spdm.data.Function import Function
 from spdm.data.Node import Node, _next_
-from spdm.data.AttributeTree import AttributeTree
+from spdm.data.Node import Dict
 from spdm.util.logger import logger
 
 from .modules.operation.PulseSchedule import PulseSchedule
@@ -14,7 +14,7 @@ from .modules.transport.TransportSolver import TransportSolver
 from .Tokamak import Tokamak
 
 
-class Scenario(AttributeTree):
+class Scenario(Dict):
     """
         Scenario
 

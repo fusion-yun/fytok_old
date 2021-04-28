@@ -14,12 +14,12 @@ from spdm.data.mesh import Mesh
 from spdm.data.mesh.CurvilinearMesh import CurvilinearMesh
 from spdm.data.mesh.RectilinearMesh import RectilinearMesh
 
-from spdm.data.AttributeTree import AttributeTree
+from spdm.data.Node import Dict
 from spdm.util.logger import logger
 from spdm.util.utilities import try_get
 
 
-class CoordinateSystem(AttributeTree, Coordinates):
+class CoordinateSystem(Dict, Coordinates):
     r"""
         Definition of the 2D grid
 
@@ -50,7 +50,7 @@ class CoordinateSystem(AttributeTree, Coordinates):
     """
 
     def __init__(self,  *args, mesh=None, jacobian=None, **kwargs):
-        AttributeTree.__init__(self, *args)
+        Dict.__init__(self, *args)
 
         if mesh is not None:
             Coordinates.__init__(self, mesh=mesh, **kwargs)
@@ -79,7 +79,7 @@ class CoordinateSystem(AttributeTree, Coordinates):
 
     #     # TODO: not complete
 
-    #     return AttributeTree({
+    #     return Dict({
     #         "jacobian": jacobian,
     #         "tensor_covariant": tensor_covariant,
     #         "tensor_contravariant": tensor_contravariant

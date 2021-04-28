@@ -1,7 +1,7 @@
-from spdm.data.AttributeTree import AttributeTree
+from spdm.data.Node import Dict
 
 
-class EdgeProfiles(AttributeTree):
+class EdgeProfiles(Dict):
     """Edge plasma profiles
          (includes the scrape-off layer and possibly part of the confined plasma)
 
@@ -11,4 +11,4 @@ class EdgeProfiles(AttributeTree):
 
     def __init__(self, cache=None, *args, equilibrium=None, rho_tor_norm=None, ** kwargs):
         super().__init__(*args, ** kwargs)
-        self.__dict__['_cache'] = cache or AttributeTree()
+        self.__dict__['_cache'] = cache or Dict()
