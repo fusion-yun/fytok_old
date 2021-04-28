@@ -51,4 +51,4 @@ class FyModule(SpObject):
     #         else:
     #             logger.info(f"Load '{cls.__name__}' module {backend}!")
 
-    #     return PhysicalGraph.__new__(n_cls)
+    #     return AttributeTree.__new__(n_cls)

@@ -3,23 +3,23 @@ from copy import copy
 from functools import cached_property
 
 import matplotlib.pyplot as plt
-from spdm.data.PhysicalGraph import PhysicalGraph
+from spdm.data.AttributeTree import AttributeTree
 from spdm.util.logger import logger
 
 
-class PFActive(PhysicalGraph):
+class PFActive(AttributeTree):
     """
     """
 
-    class Coil(PhysicalGraph):
+    class Coil(AttributeTree):
         def __init__(self,  *args, **kwargs):
             super().__init__(*args, **kwargs)
 
-    class Circuit(PhysicalGraph):
+    class Circuit(AttributeTree):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
-    class Supply(PhysicalGraph):
+    class Supply(AttributeTree):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 

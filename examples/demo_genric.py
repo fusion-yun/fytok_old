@@ -1,21 +1,17 @@
 from typing import TypeVar,  Sequence
 import collections
-
+from spdm.data.Node import Dict
+from spdm.util.logger import logger
 if __name__ == "__main__":
 
-    T=TypeVar('T')
+    cache = {}
 
-    class List(Sequence[T]):
-        def __init__(self, d=None, *args,   **kwargs):
-            self._data = d or []
+    g = Dict[str, dict](cache)
 
-        def __getitem__(self,k:int)->T:
-            return self._data[k]
+    logger.debug(getattr(g, "__orig_class__", None))
 
-        def __len__(self)->int:
-            return len(self._data)
+    g["a"] = "Hello world!"
+    g["b"] = {"c": 2, "d": 3}
 
-    L=List[int] 
-    l=L([1,2,3,4])
-
-    print(isinstance(l,collections.abc.Sequence))
+    logger.debug(cache)
+    logger.debug(type(g["b"]))

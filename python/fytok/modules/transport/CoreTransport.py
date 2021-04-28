@@ -2,12 +2,12 @@ import collections
 from functools import cached_property, lru_cache
 
 import numpy as np
-from spdm.data.List import List
+from spdm.data.Node import List
 from spdm.data.Function import Function
 from spdm.data.AttributeTree import AttributeTree
 from spdm.util.logger import logger
 
-from ...Profiles import Profiles
+from spdm.data.Profiles import Profiles
 from ...RadialGrid import RadialGrid
 from .ParticleSpecies import Species
 

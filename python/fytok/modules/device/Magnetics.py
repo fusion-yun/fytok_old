@@ -1,12 +1,12 @@
 from functools import cached_property
 
 import numpy as np
-from spdm.data.PhysicalGraph import PhysicalGraph
+from spdm.data.AttributeTree import AttributeTree
 
 from fytok.Misc import IDSProperties, Signal, Identifier
 
 
-class Magnetics(PhysicalGraph):
+class Magnetics(AttributeTree):
     """Magnetic diagnostics for equilibrium identification and plasma shape control.
 
     """
@@ -18,7 +18,7 @@ class Magnetics(PhysicalGraph):
     def ids_properties(self):
         return IDSProperties(self._cache.ids_properties)
 
-    class FluxLoop(PhysicalGraph):
+    class FluxLoop(AttributeTree):
         def __init__(self,  *args, **kwargs):
             super().__init__(*args, ** kwargs)
 
@@ -86,12 +86,12 @@ class Magnetics(PhysicalGraph):
     def flux_loop(self):
         """Flux loops; partial flux loops can be described   """
 
-        res = PhysicalGraph(default_factory_array=lambda _holder=self: Magnetics.FluxLoop(parent=_holder))
+        res = AttributeTree(default_factory_array=lambda _holder=self: Magnetics.FluxLoop(parent=_holder))
         for floop in self["flux_loop"]:
             res[_next_] = floop
         return res
 
-    class MagneticProbe(PhysicalGraph):
+    class MagneticProbe(AttributeTree):
         def __init__(self,   *args, **kwargs):
             super().__init__(*args, **kwargs)
 
@@ -125,7 +125,7 @@ class Magnetics(PhysicalGraph):
         @cached_property
         def position(self):
             """R, Z, Phi position of the coil centre    structure    """
-            return PhysicalGraph(
+            return AttributeTree(
                 r=float(self["position.r"]),
                 z=float(self["position.z)"],
                 phi=float(self["position.phi"])
@@ -149,12 +149,12 @@ class Magnetics(PhysicalGraph):
         def indices_differential(self):
             """Indices (from the bpol_probe array of structure) of the two probes used to build the field difference field(second index) - field(first index).
             Use only if ../type/index = 6, leave empty otherwise {static}    INT_1D    1- 1...2"""
-            return PhysicalGraph(self["toroidal_angle"])
+            return AttributeTree(self["toroidal_angle"])
 
         @ cached_property
         def bandwidth_3db(self):
             """3dB bandwith (first index : lower frequency bound, second index : upper frequency bound) {static} [Hz]    """
-            return PhysicalGraph(self._cache.bandwidth_3db)
+            return AttributeTree(self._cache.bandwidth_3db)
 
         @ cached_property
         def area(self):
@@ -203,13 +203,13 @@ class Magnetics(PhysicalGraph):
         @ cached_property
         def non_linear_response(self):
             """Non-linear response of the probe (typically in case of a Hall probe)"""
-            return PhysicalGraph(b_field_linear=self._cache.b_field_linear,
-                                 b_field_non_linear=PhysicalGraph(b_field_linear=self._cache.b_field_non_linear))
+            return AttributeTree(b_field_linear=self._cache.b_field_linear,
+                                 b_field_non_linear=AttributeTree(b_field_linear=self._cache.b_field_non_linear))
 
     @ cached_property
     def b_field_pol_probe(self):
         """Poloidal field probes    struct_array [max_size=200] """
-        res=PhysicalGraph(default_factory_array=lambda _holder=self: Magnetics.MagneticProbe(parent=_holder))
+        res=AttributeTree(default_factory_array=lambda _holder=self: Magnetics.MagneticProbe(parent=_holder))
         for floop in self._cache.b_field_pol_probe:
             res[_next_]=floop
         return res
@@ -217,7 +217,7 @@ class Magnetics(PhysicalGraph):
     @ cached_property
     def b_field_tor_probe(self):
         """Toroidal field probes    struct_array [max_size=20] """
-        res=PhysicalGraph(default_factory_array=lambda _holder=self: Magnetics.MagneticProbe(parent=_holder))
+        res=AttributeTree(default_factory_array=lambda _holder=self: Magnetics.MagneticProbe(parent=_holder))
         for floop in self._cache.b_field_tor_probe:
             res[_next_]=floop
         return res

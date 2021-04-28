@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.constants
 from fytok.modules.transport.Equilibrium import Equilibrium
-from spdm.data.PhysicalGraph import PhysicalGraph
+from spdm.data.AttributeTree import AttributeTree
 from spdm.util.logger import logger
 from spdm.data.Function import Function
 
@@ -100,7 +100,7 @@ class EquilibriumFreeGS(Equilibrium):
         if constraints is None:
             constraints = self.constraints
         else:
-            constraints = PhysicalGraph(constraints)
+            constraints = AttributeTree(constraints)
 
         psivals = constraints.psivals or []
         isoflux = constraints.isoflux or []

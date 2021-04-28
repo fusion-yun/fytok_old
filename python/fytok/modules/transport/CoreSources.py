@@ -4,10 +4,10 @@ from functools import cached_property, lru_cache
 import numpy as np
 import scipy.constants
 from spdm.data.Function import Function
-from spdm.data.List import List
+from spdm.data.Node import List
+from spdm.data.Profiles import Profiles
 from spdm.util.logger import logger
 
-from ...Profiles import Profiles
 from ...RadialGrid import RadialGrid
 
 

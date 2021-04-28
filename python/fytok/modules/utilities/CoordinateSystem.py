@@ -14,12 +14,12 @@ from spdm.data.mesh import Mesh
 from spdm.data.mesh.CurvilinearMesh import CurvilinearMesh
 from spdm.data.mesh.RectilinearMesh import RectilinearMesh
 
-from spdm.data.PhysicalGraph import PhysicalGraph
+from spdm.data.AttributeTree import AttributeTree
 from spdm.util.logger import logger
 from spdm.util.utilities import try_get
 
 
-class CoordinateSystem(PhysicalGraph, Coordinates):
+class CoordinateSystem(AttributeTree, Coordinates):
     r"""
         Definition of the 2D grid
 
@@ -50,7 +50,7 @@ class CoordinateSystem(PhysicalGraph, Coordinates):
     """
 
     def __init__(self,  *args, mesh=None, jacobian=None, **kwargs):
-        PhysicalGraph.__init__(self, *args)
+        AttributeTree.__init__(self, *args)
 
         if mesh is not None:
             Coordinates.__init__(self, mesh=mesh, **kwargs)
@@ -79,7 +79,7 @@ class CoordinateSystem(PhysicalGraph, Coordinates):
 
     #     # TODO: not complete
 
-    #     return PhysicalGraph({
+    #     return AttributeTree({
     #         "jacobian": jacobian,
     #         "tensor_covariant": tensor_covariant,
     #         "tensor_contravariant": tensor_contravariant

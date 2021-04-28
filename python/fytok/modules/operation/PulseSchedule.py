@@ -1,9 +1,9 @@
 from functools import cached_property
 import numpy as np
-from spdm.data.PhysicalGraph import PhysicalGraph
+from spdm.data.AttributeTree import AttributeTree
 
 
-class PulseSchedule(PhysicalGraph):
+class PulseSchedule(AttributeTree):
     r"""Description of Pulse Schedule, described by subsystems waveform references and an enveloppe around them.
 
     The controllers, pulse schedule and SDN are defined in separate IDSs. All names and identifiers of subsystems
@@ -45,7 +45,7 @@ class PulseSchedule(PhysicalGraph):
         """Gas injection system and density control references"""
         return NotImplemented
 
-    class Reference(PhysicalGraph):
+    class Reference(AttributeTree):
         def __init__(self, *args, name=None, time=None, data=None, **kwargs):
             super().__init__(*args, **kwargs)
             self.__dict__["_signal"] = Signal(time=time, data=data)
@@ -71,15 +71,15 @@ class PulseSchedule(PhysicalGraph):
             reference/data_error_upper and reference/data_error_lower nodes {constant}"""
             return NotImplemented
 
-    class Event(PhysicalGraph):
+    class Event(AttributeTree):
         pass
 
     @cached_property
     def event(self):
         """List of events, either predefined triggers or events recorded during the pulse."""
-        return PhysicalGraph(default_factory_array=lambda _holder=self: PulseSchedule.Event(None, parent=_holder))
+        return AttributeTree(default_factory_array=lambda _holder=self: PulseSchedule.Event(None, parent=_holder))
 
-    class FluxControl(PhysicalGraph):
+    class FluxControl(AttributeTree):
         def __init__(self,   *args, time=None, **kwargs):
             super().__init__(*args, **kwargs)
             self.__dict__["_time"] = time
@@ -114,7 +114,7 @@ class PulseSchedule(PhysicalGraph):
         """Magnetic flux control references"""
         return PulseSchedule.FluxControl(self._cache.flux_control, time=self.time)
 
-    class PositionControl(PhysicalGraph):
+    class PositionControl(AttributeTree):
         def __init__(self,  *args, time=None, **kwargs):
             super().__init__(*args, **kwargs)
             self.__dict__["_time"] = time
@@ -127,13 +127,13 @@ class PulseSchedule(PhysicalGraph):
         @cached_property
         def magnetic_axis(self):
             """Magnetic axis position"""
-            return PhysicalGraph(r=PulseSchedule.Reference(name='magnetic_axis.r', time=self._time, data=self._cache.magnetic_axis.r),
+            return AttributeTree(r=PulseSchedule.Reference(name='magnetic_axis.r', time=self._time, data=self._cache.magnetic_axis.r),
                                  z=PulseSchedule.Reference(name='magnetic_axis.z', time=self._time, data=self._cache.magnetic_axis.z))
 
         @cached_property
         def geometric_axis(self):
             """RZ position of the geometric axis (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the boundary)"""
-            return PhysicalGraph(r=PulseSchedule.Reference(name='geometric_axis.r', time=self._time, data=self._cache.geometric_axis.r),
+            return AttributeTree(r=PulseSchedule.Reference(name='geometric_axis.r', time=self._time, data=self._cache.geometric_axis.r),
                                  z=PulseSchedule.Reference(name='geometric_axis.z', time=self._time, data=self._cache.geometric_axis.z))
 
         @cached_property
@@ -174,7 +174,7 @@ class PulseSchedule(PhysicalGraph):
         @cached_property
         def x_point(self):
             """Array of X-points, for each of them the RZ position is given     struct_array [max_size=2]     1- 1...N"""
-            res = PhysicalGraph(default_factory_array=lambda _time: PhysicalGraph(r=PulseSchedule.Reference(name='x_point.r', time=_time),
+            res = AttributeTree(default_factory_array=lambda _time: AttributeTree(r=PulseSchedule.Reference(name='x_point.r', time=_time),
                                                                                   z=PulseSchedule.Reference(name='x_point.z', time=_time)))
             for xp in self._cache.x_point:
                 pit = res[_next_]
@@ -185,7 +185,7 @@ class PulseSchedule(PhysicalGraph):
         @cached_property
         def strike_point(self):
             """Array of strike points, for each of them the RZ position is given     struct_array [max_size=4]     1- 1...N"""
-            res = PhysicalGraph(default_factory_array=lambda _time: PhysicalGraph(r=PulseSchedule.Reference(name='strike_point.r', time=_time),
+            res = AttributeTree(default_factory_array=lambda _time: AttributeTree(r=PulseSchedule.Reference(name='strike_point.r', time=_time),
                                                                                   z=PulseSchedule.Reference(name='strike_point.z', time=_time)))
             for xp in self._cache.strike_point:
                 pit = res[_next_]
@@ -196,13 +196,13 @@ class PulseSchedule(PhysicalGraph):
         @cached_property
         def active_limiter_point(self):
             """RZ position of the active limiter point (point of the plasma boundary in contact with the limiter)     """
-            return PhysicalGraph(r=PulseSchedule.Reference(name='active_limiter_point.r', time=_time, data=self._cache.active_limiter_point.r),
+            return AttributeTree(r=PulseSchedule.Reference(name='active_limiter_point.r', time=_time, data=self._cache.active_limiter_point.r),
                                  z=PulseSchedule.Reference(name='active_limiter_point.z', time=_time, data=self._cache.active_limiter_point.z))
 
         @cached_property
         def boundary_outline(self):
             """Set of (R,Z) points defining the outline of the plasma boundary     struct_array [max_size=301]     1- 1...N"""
-            res = PhysicalGraph(default_factory_array=lambda _time: PhysicalGraph(r=PulseSchedule.Reference(name='boundary_outline.r', time=_time),
+            res = AttributeTree(default_factory_array=lambda _time: AttributeTree(r=PulseSchedule.Reference(name='boundary_outline.r', time=_time),
                                                                                   z=PulseSchedule.Reference(name='boundary_outline.z', time=_time)))
             for xp in self._cache.boundary_outline:
                 pit = res[_next_]
@@ -213,7 +213,7 @@ class PulseSchedule(PhysicalGraph):
         @cached_property
         def gap(self):
             """Set of gaps, defined by a reference point and a direction."""
-            res = PhysicalGraph(default_factory_array=lambda _time: PhysicalGraph(
+            res = AttributeTree(default_factory_array=lambda _time: AttributeTree(
                 name="",
                 identifier="",
                 angle=0.0,
@@ -236,7 +236,7 @@ class PulseSchedule(PhysicalGraph):
         """Plasma position and shape control references"""
         return PulseSchedule.PositionControl(self._cache.position_control, time=self.time)
 
-    class TF(PhysicalGraph):
+    class TF(AttributeTree):
         def __init__(self, cache=None, *args, time=None, **kwargs):
             super().__init__(*args, **kwargs)
             self.__dict__["_time"] = time

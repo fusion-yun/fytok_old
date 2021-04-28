@@ -11,7 +11,7 @@ import numpy as np
 import scipy.constants
 from fytok.util.Misc import Identifier
 from spdm.data.Function import Function
-from spdm.data.PhysicalGraph import PhysicalGraph
+from spdm.data.AttributeTree import AttributeTree
 from spdm.data.AttributeTree import AttributeTree
 from spdm.util.logger import logger
 from spdm.util.utilities import try_get
@@ -30,7 +30,7 @@ TOLERANCE = 1.0e-6
 TWOPI = 2.0 * scipy.constants.pi
 
 
-class TransportSolver(PhysicalGraph):
+class TransportSolver(AttributeTree):
     r"""
         Solve transport equations :math:`\rho=\sqrt{ \Phi/\pi B_{0}}`
 

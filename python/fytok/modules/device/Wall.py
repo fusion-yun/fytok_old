@@ -3,13 +3,13 @@ from copy import copy
 
 import matplotlib.pyplot as plt
 import numpy as np
-from spdm.data.PhysicalGraph import PhysicalGraph
+from spdm.data.AttributeTree import AttributeTree
 from spdm.util.logger import logger
 from functools import cached_property
 from sympy import Point, Polygon
 
 
-class Wall(PhysicalGraph):
+class Wall(AttributeTree):
     """Wall
 
     """

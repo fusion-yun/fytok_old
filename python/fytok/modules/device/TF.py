@@ -5,13 +5,13 @@ from functools import cached_property, lru_cache
 
 import matplotlib.pyplot as plt
 import numpy as np
-from spdm.data.PhysicalGraph import PhysicalGraph
+from spdm.data.AttributeTree import AttributeTree
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.util.urilib import urisplit
 
 
-class TF(PhysicalGraph):
+class TF(AttributeTree):
     """TF　Coils
 
     """

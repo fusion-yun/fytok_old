@@ -6,7 +6,7 @@ import scipy
 from spdm.data.AttributeTree import AttributeTree
 from spdm.data.Function import Function
 from spdm.data.Node import Node, _next_
-from spdm.data.PhysicalGraph import PhysicalGraph
+from spdm.data.AttributeTree import AttributeTree
 from spdm.util.logger import logger
 
 from .modules.operation.PulseSchedule import PulseSchedule
@@ -14,7 +14,7 @@ from .modules.transport.TransportSolver import TransportSolver
 from .Tokamak import Tokamak
 
 
-class Scenario(PhysicalGraph):
+class Scenario(AttributeTree):
     """
         Scenario
 

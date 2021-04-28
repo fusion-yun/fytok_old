@@ -2,16 +2,16 @@ import collections
 from functools import cached_property
 
 import numpy as np
-from spdm.data.List import List
-from spdm.data.PhysicalGraph import PhysicalGraph
-from spdm.data.Function import Function
-from spdm.util.logger import logger
 from spdm.data.AttributeTree import AttributeTree
+from spdm.data.Function import Function
+from spdm.data.Node import List
+from spdm.data.Profiles import Profiles
+from spdm.util.logger import logger
+
 from ...RadialGrid import RadialGrid
-from ...Profiles import Profiles
 from .ParticleSpecies import Species
 
-# class Profiles(PhysicalGraph):
+# class Profiles(AttributeTree):
 #     def __init__(self, *args, grid=None, **kwargs):
 #         super().__init__(*args, **kwargs)
 #         self._grid = grid or self._parent.radial_grid

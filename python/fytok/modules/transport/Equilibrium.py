@@ -18,8 +18,8 @@ from spdm.geometry.Curve import Curve
 from spdm.geometry.Point import Point
 from spdm.util.logger import logger
 from spdm.util.utilities import try_get
-from spdm.data.List import List
-from ...Profiles import Profiles
+from spdm.data.Node import List
+from spdm.data.Profiles import Profiles
 from ..utilities.GGD import GGD
 
 TOLERANCE = 1.0e-6

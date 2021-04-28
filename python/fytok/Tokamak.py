@@ -1,5 +1,6 @@
 
 import collections
+from external.SpDB.python.spdm.data.AttributeTree import AttributeTree
 from functools import cached_property
 
 import matplotlib.pyplot as plt
@@ -7,9 +8,6 @@ import numpy as np
 import scipy
 import scipy.constants
 from spdm.data.AttributeTree import AttributeTree
-from spdm.data.List import List
-from spdm.data.Node import Node, _next_
-from spdm.data.PhysicalGraph import PhysicalGraph
 from spdm.data.Function import Function
 from spdm.util.logger import logger
 import getpass
@@ -30,7 +28,7 @@ from .RadialGrid import RadialGrid
 TWOPI = scipy.constants.pi*2.0
 
 
-class Tokamak(PhysicalGraph):
+class Tokamak(AttributeTree):
     """Tokamak
         功能：
             - 描述装置在单一时刻的状态，
@@ -72,11 +70,11 @@ class Tokamak(PhysicalGraph):
 
     @cached_property
     def boundary_conditions(self):
-        return PhysicalGraph(self["boundary_conditions"], parent=self)
+        return AttributeTree(self["boundary_conditions"], parent=self)
 
     @cached_property
     def constraints(self):
-        return PhysicalGraph(self["constraints"], parent=self)
+        return AttributeTree(self["constraints"], parent=self)
 
     @cached_property
     def equilibrium(self) -> Equilibrium:
