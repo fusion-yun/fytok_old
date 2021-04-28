@@ -1,6 +1,5 @@
 
 import collections
-from external.SpDB.python.spdm.data.AttributeTree import AttributeTree
 from functools import cached_property
 
 import matplotlib.pyplot as plt
