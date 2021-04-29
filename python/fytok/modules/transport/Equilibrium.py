@@ -1211,8 +1211,9 @@ class Equilibrium(IDS):
 
     ####################################################################################
     # Plot profiles
-    def plot(self, axis=None, *args, time: float = None, ggd=False, **kwargs):
-        axis = self.time_slice(time).plot(axis, *args, **kwargs)
+    def plot(self, axis=None, *args, time: float = None, time_slice=False, ggd=False, **kwargs):
+        if time_slice:
+            axis = self.time_slice(time).plot(axis, *args, **kwargs)
         if ggd:
             axis = self.grid_ggd(time).plot(axis, *args, **kwargs)
         return axis
