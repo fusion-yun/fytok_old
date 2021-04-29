@@ -6,6 +6,7 @@ from spdm.data.AttributeTree import AttributeTree
 from spdm.data.Function import Function
 from spdm.data.Node import List
 from spdm.data.Profiles import Profiles
+from spdm.data.TimeSeries import TimeSeries
 from spdm.util.logger import logger
 
 from ..utilities.IDS import IDS
@@ -498,8 +499,8 @@ class CoreProfiles(IDS):
 
     @cached_property
     def profiles_1d(self) -> List[CoreProfiles1D]:
-        return List[CoreProfiles1D](self["profiles_1d"], default_factory=CoreProfiles1D,  parent=self)
+        return TimeSeries[CoreProfiles1D](self["profiles_1d"],   time=self.time,  parent=self)
 
     @cached_property
     def global_quantities(self) -> CoreProfilesGlobalQuantities:
-        return CoreProfilesGlobalQuantities(self["global_quantities"], axis=self.time, parent=self)
+        return TimeSeries[CoreProfilesGlobalQuantities](self["global_quantities"],   time=self.time, parent=self)
