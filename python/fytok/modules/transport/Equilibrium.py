@@ -8,6 +8,7 @@ import scipy.integrate
 from numpy import arctan2, cos, sin, sqrt
 from scipy.optimize import fsolve, root_scalar
 from spdm.data.AttributeTree import AttributeTree, as_attribute_tree
+from spdm.data.TimeSeries import TimeSeries, TimeSlice
 from spdm.data.Field import Field
 from spdm.data.Function import Function
 from spdm.data.mesh.CurvilinearMesh import CurvilinearMesh
@@ -959,7 +960,7 @@ class EquilibriumBoundarySeparatrix(Profiles):
         super().__init__(*args, **kwargs)
 
 
-class EquilibriumTimeSlice(AttributeTree):
+class EquilibriumTimeSlice(TimeSeries):
     """
        Time slice of   Equilibrium
     """
@@ -1196,33 +1197,25 @@ class Equilibrium(IDS):
     def vacuum_toroidal_field(self):
         return VacuumToroidalField(self["vacuum_toroidal_field.r0"], self["vacuum_toroidal_field.b0"])
 
-    @cached_property
+    @property
     def time(self):
-        d = self["time"]
-        if d == None:
-            return np.asarray([profile.time for profile in self.time_slice])
-        else:
-            return np.asarray(d)
+        return self._time
 
     @cached_property
-    def time_slice(self) -> List[EquilibriumTimeSlice]:
-        return List[EquilibriumTimeSlice](self["time_slice"], default_factory=EquilibriumTimeSlice,  parent=self)
+    def time_slice(self) -> TimeSeries[EquilibriumTimeSlice]:
+        return TimeSeries[EquilibriumTimeSlice](self["time_slice"], slice=EquilibriumTimeSlice, time=self._time,  parent=self)
 
     @cached_property
-    def grid_gdd(self) -> List[GGD]:
-        return List[GGD](self["time_slice"], default_factory=GGD,  parent=self)
+    def grid_ggd(self) -> TimeSeries[GGD]:
+        return TimeSeries[GGD](self["grid_ggd"], slice=GGD, time=self._time, parent=self)
 
     ####################################################################################
-    # Plot proflies
-    def plot(self, axis=None, *args, time_slice: int = -1,  **kwargs):
-        slice_num = len(self.time_slice)
-
-        if slice_num == 0 or time_slice > slice_num:
-            raise IndexError(f"{time_slice} not in {slice_num}")
-
-        eq = self.time_slice[time_slice]
-        
-        return eq.plot(axis, *args, **kwargs)
+    # Plot profiles
+    def plot(self, axis=None, *args, time: float = None, ggd=False, **kwargs):
+        axis = self.time_slice(time).plot(axis, *args, **kwargs)
+        if ggd:
+            axis = self.grid_ggd(time).plot(axis, *args, **kwargs)
+        return axis
 
     def fetch_profile(self, d):
         if isinstance(d, str):
