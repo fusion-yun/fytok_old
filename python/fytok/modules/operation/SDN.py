@@ -1,6 +1,6 @@
 
 # This is file is generated from template
-from fytok.IDS import IDS
+from ..utilities.IDS import IDS
 
 class SDN(IDS):
     r"""Description of the Synchronous Data Network parameters and the signals on it

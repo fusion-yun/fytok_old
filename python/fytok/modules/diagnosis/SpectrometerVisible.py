@@ -1,6 +1,6 @@
 
 # This is file is generated from template
-from fytok.IDS import IDS
+from ..utilities.IDS import IDS
 
 class SpectrometerVisible(IDS):
     r"""Spectrometer in visible light range diagnostic

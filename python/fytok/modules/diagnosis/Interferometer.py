@@ -1,6 +1,6 @@
 
 # This is file is generated from template
-from fytok.IDS import IDS
+from ..utilities.IDS import IDS
 
 class Interferometer(IDS):
     r"""Interferometer diagnostic

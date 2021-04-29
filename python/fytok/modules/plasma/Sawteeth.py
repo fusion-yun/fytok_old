@@ -1,6 +1,6 @@
 
 # This is file is generated from template
-from fytok.IDS import IDS
+from ..utilities.IDS import IDS
 
 class Sawteeth(IDS):
     r"""Description of sawtooth events. This IDS must be used in homogeneous_time = 1 mode

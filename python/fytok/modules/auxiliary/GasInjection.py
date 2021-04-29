@@ -1,6 +1,6 @@
 
 # This is file is generated from template
-from fytok.IDS import IDS
+from ..utilities.IDS import IDS
 
 class GasInjection(IDS):
     r"""Gas injection by a system of pipes and valves

@@ -3,7 +3,7 @@ import pathlib
 
 ids_templ = """
 # This is file is generated from template
-from fytok.IDS import IDS
+from ..utilities.IDS import IDS
 
 class {clsname}(IDS):
     r\"\"\"{doc_string}

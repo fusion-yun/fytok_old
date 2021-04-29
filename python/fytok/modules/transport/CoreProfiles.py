@@ -471,8 +471,8 @@ class CoreProfiles1D(Profiles):
 
 
 class CoreProfilesGlobalQuantities(AttributeTree):
-    def __init__(self, *args, axis=None, **kwargs):
-        super().__init__(*args, axis=axis, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args,  **kwargs)
 
 
 class CoreProfiles(IDS):
@@ -498,7 +498,7 @@ class CoreProfiles(IDS):
         return self._vacuum_toroidal_field
 
     @cached_property
-    def profiles_1d(self) -> List[CoreProfiles1D]:
+    def profiles_1d(self) -> TimeSeries[CoreProfiles1D]:
         return TimeSeries[CoreProfiles1D](self["profiles_1d"],   time=self.time,  parent=self)
 
     @cached_property

@@ -74,7 +74,7 @@ if __name__ == "__main__":
                                ("psirz", {"levels": 32, "linewidths": 0.1}),
                            ],
                            }
-              ) .savefig("/home/salmon/workspace/output/contour.svg", transparent=True)
+              ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
 
     eq = tok.equilibrium.time_slice[-1]
 

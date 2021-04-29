@@ -1,6 +1,6 @@
 
 # This is file is generated from template
-from fytok.IDS import IDS
+from ..utilities.IDS import IDS
 
 class HardXRays(IDS):
     r"""Hard X-rays tomography diagnostic

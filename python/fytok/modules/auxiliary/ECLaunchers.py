@@ -1,6 +1,6 @@
 
 # This is file is generated from template
-from fytok.IDS import IDS
+from ..utilities.IDS import IDS
 
 class ECLaunchers(IDS):
     r"""Launchers for heating and current drive in the electron cyclotron (EC) frequencies.

@@ -18,11 +18,11 @@ from spdm.geometry.CubicSplineCurve import CubicSplineCurve
 from spdm.geometry.Curve import Curve
 from spdm.geometry.Point import Point
 from spdm.util.logger import logger
-from spdm.util.utilities import try_get
+from spdm.util.utilities import try_get, convert_to_named_tuple
 
 from ..utilities.GGD import GGD
 from ..utilities.IDS import IDS
-from ..utilities.Misc import RZTuple, VacuumToroidalField
+from ..utilities.Misc import RZTuple, Identifier, VacuumToroidalField
 from ..utilities.RadialGrid import RadialGrid
 
 TOLERANCE = 1.0e-6
@@ -31,7 +31,7 @@ EPS = np.finfo(float).eps
 TWOPI = 2.0*scipy.constants.pi
 
 
-class MagneticSurfaceCoordinateSystem:
+class EquilibriumCoordinateSystem(Dict):
     r"""
         Flux surface coordinate system on a square grid of flux and poloidal angle
 
@@ -47,17 +47,56 @@ class MagneticSurfaceCoordinateSystem:
         phi         : 0 <= phi     < 2*pi ,  toroidal angle
     """
 
-    def __init__(self, uv, psirz: Field, ffprime: Function, fvac: float, *args, **kwargs):
+    def __init__(self, *args, fvac=None, data=None, **kwargs):
         """
             Initialize FluxSurface
         """
-        super().__init__()
+        super().__init__(*args, **kwargs)
 
-        self._mesh = None
-        self._uv = uv
-        self._psirz = psirz
-        self._ffprime = ffprime
-        self._fvac = fvac
+        self._fvac = fvac or self._parent._vacuum_toroidal_field.r0*self._parent._vacuum_toroidal_field.b0
+
+        data = data or self._parent
+        self._psirz = Field(data["profiles_2d.psi"],
+                            data["profiles_2d.grid.dim1"],
+                            data["profiles_2d.grid.dim2"],
+                            mesh_type="rectilinear")
+
+        psi_norm = data["profiles_1d.psi_norm"]
+
+        self._ffprime = Function(psi_norm, data["profiles_1d.f_df_dpsi"])
+
+        self._pprime = Function(psi_norm, data["profiles_1d.dpressure_dpsi"])
+
+        dim1 = self["grid.dim1"]
+        dim2 = self["grid.dim2"]
+
+        if isinstance(dim1, np.ndarray):
+            u = dim1
+        elif dim1 == None:
+            u = np.linspace(0.0001,  0.99,  len(self._ffprime))
+        elif isinstance(dim2, int):
+            u = np.linspace(0.0001,  0.99,  dim1)
+        elif isinstance(dim2, np.ndarray):
+            u = dim1
+        else:
+            u = np.asarray([dim1])
+
+        if isinstance(dim2, np.ndarray):
+            v = dim2
+        elif dim2 == None:
+            v = np.linspace(0.0,  1.0,  128)
+        elif isinstance(dim2, int):
+            v = np.linspace(0.0, 1.0,  dim2)
+        elif isinstance(dim2, np.ndarray):
+            v = dim2
+        else:
+            v = np.asarray([dim2])
+
+        self._uv = [u, v]
+
+    @cached_property
+    def grid_type(self):
+        return Identifier(**self["grid_type"])
 
     @cached_property
     def critical_points(self):
@@ -147,8 +186,9 @@ class MagneticSurfaceCoordinateSystem:
 
                 yield r1, z1
 
-    def create_mesh(self, u, v, *args, type_index=13):
+    def create_mesh(self, u, v, *args, type_index=None):
         logger.debug(f"create mesh! type index={type_index}")
+        type_index = type_index or self.grid_type.index
         if type_index == 13:
             rz = np.asarray([[r, z] for r, z in self.flux_surface_map(u, v[:-1])]).reshape(len(u), len(v)-1, 2)
             rz = np.hstack((rz, rz[:, :1, :]))
@@ -368,10 +408,23 @@ class MagneticSurfaceCoordinateSystem:
         return self.create_surface(1.0)
 
 
+class EquilibriumConstraints(AttributeTree):
+    r"""
+        In case of equilibrium reconstruction under constraints, measurements used to constrain the equilibrium,
+        reconstructed values and accuracy of the fit. The names of the child nodes correspond to the following
+        definition: the solver aims at minimizing a cost function defined as :
+            J=1/2*sum_i [ weight_i^2 (reconstructed_i - measured_i)^2 / sigma_i^2 ]. in which sigma_i is the
+            standard deviation of the measurement error (to be found in the IDS of the measurement)
+    """
+
+    def __init__(self, *args,   **kwargs):
+        super().__init__(*args,    **kwargs)
+
+
 class EquilibriumGlobalQuantities(Profiles):
-    def __init__(self,   *args,  coord: MagneticSurfaceCoordinateSystem = None,  **kwargs):
+    def __init__(self,   *args,  coord: EquilibriumCoordinateSystem = None,  **kwargs):
         super().__init__(*args, **kwargs)
-        self._coord = coord
+        self._coord = coord or self._parent.coordinate_system
 
     @property
     def beta_pol(self):
@@ -474,7 +527,7 @@ class EquilibriumGlobalQuantities(Profiles):
 class EquilibriumProfiles1D(Profiles):
     """Equilibrium profiles(1D radial grid) as a function of the poloidal flux	"""
 
-    def __init__(self,  *args,  coord: MagneticSurfaceCoordinateSystem = None,    **kwargs):
+    def __init__(self,  *args,  coord: EquilibriumCoordinateSystem = None,    **kwargs):
         if coord is None:
             coord = self._parent.coordinate_system
 
@@ -797,7 +850,7 @@ class EquilibriumProfiles2D(Profiles):
         Equilibrium 2D profiles in the poloidal plane.
     """
 
-    def __init__(self,   *args, coord: MagneticSurfaceCoordinateSystem = None,   ** kwargs):
+    def __init__(self,   *args, coord: EquilibriumCoordinateSystem = None,   ** kwargs):
         super().__init__(*args, **kwargs)
         self._coord = coord
 
@@ -861,9 +914,9 @@ class EquilibriumProfiles2D(Profiles):
 
 
 class EquilibriumBoundary(Profiles):
-    def __init__(self,  *args, coord: MagneticSurfaceCoordinateSystem = None,   ** kwargs):
+    def __init__(self,  *args, coord: EquilibriumCoordinateSystem = None,   ** kwargs):
         super().__init__(*args, **kwargs)
-        self._coord = coord or self._parent.coordinate_system
+        self._coord = coord
 
     @cached_property
     def type(self):
@@ -956,74 +1009,25 @@ class EquilibriumBoundary(Profiles):
 
 
 class EquilibriumBoundarySeparatrix(Profiles):
-    def __init__(self,   *args, coord: MagneticSurfaceCoordinateSystem = None,   ** kwargs):
+    def __init__(self,   *args, coord: EquilibriumCoordinateSystem = None,   ** kwargs):
         super().__init__(*args, **kwargs)
 
 
-class EquilibriumTimeSlice(TimeSeries):
+class EquilibriumTimeSlice(Dict):
     """
        Time slice of   Equilibrium
     """
 
-    def __init__(self, *args, time=None,
-                 vacuum_toroidal_field: VacuumToroidalField = None,
-                 pprime=None, ffprime=None,
-                 uv=None, psirz=None,  **kwargs):
+    def __init__(self, *args, time=None, vacuum_toroidal_field: VacuumToroidalField = None, **kwargs):
         super().__init__(*args, **kwargs)
         self._time = time or 0.0
+        self._vacuum_toroidal_field = vacuum_toroidal_field or \
+            VacuumToroidalField(self._parent.vacuum_toroidal_field.r0,
+                                self._parent.vacuum_toroidal_field.b0(time))
 
-        self._vacuum_toroidal_field = vacuum_toroidal_field or self._parent.vacuum_toroidal_field
-
-        if not isinstance(psirz, Field):
-            psirz = Field(self["profiles_2d.psi"],
-                          self["profiles_2d.grid.dim1"],
-                          self["profiles_2d.grid.dim2"],
-                          mesh_type="rectilinear")
-
-        self._psirz = psirz
-
-        self._ffprime = ffprime if ffprime is not None else Function(
-            self["profiles_1d.psi_norm"], self["profiles_1d.f_df_dpsi"])
-        self._pprime = pprime if pprime is not None else Function(
-            self["profiles_1d.psi_norm"], self["profiles_1d.dpressure_dpsi"])
-
-        if uv is not None:
-            self._uv = uv
-        else:
-            dim1 = self["coordinate_system.grid.dim1"]
-            dim2 = self["coordinate_system.grid.dim2"]
-
-            if isinstance(dim1, np.ndarray):
-                u = dim1
-            elif dim1 == None:
-                u = np.linspace(0.0001,  0.99,  len(self._ffprime))
-            elif isinstance(dim2, int):
-                u = np.linspace(0.0001,  0.99,  dim1)
-            elif isinstance(dim2, np.ndarray):
-                u = dim1
-            else:
-                u = np.asarray([dim1])
-
-            if isinstance(dim2, np.ndarray):
-                v = dim2
-            elif dim2 == None:
-                v = np.linspace(0.0,  1.0,  128)
-            elif isinstance(dim2, int):
-                v = np.linspace(0.0, 1.0,  dim2)
-            elif isinstance(dim2, np.ndarray):
-                v = dim2
-            else:
-                v = np.asarray([dim2])
-
-            self._uv = [u, v]
-
-    @property
+    @ property
     def time(self):
         return self._time
-
-    @property
-    def vacuum_toroidal_field(self):
-        return self._vacuum_toroidal_field
 
     def radial_grid(self, primary_axis=None, axis=None):
         """ """
@@ -1039,33 +1043,33 @@ class EquilibriumTimeSlice(TimeSeries):
             psi_norm = Function(p_axis, psi_norm)(np.linspace(p_axis[0], p_axis[-1], p_axis.shape[0]))
         return RadialGrid(psi_norm, equilibrium=self)
 
-    @cached_property
-    def coordinate_system(self):
-        return MagneticSurfaceCoordinateSystem(self._uv, self._psirz, self._ffprime, self.vacuum_toroidal_field.r0*self.vacuum_toroidal_field.b0)
+    @ cached_property
+    def coordinate_system(self) -> EquilibriumCoordinateSystem:
+        return EquilibriumCoordinateSystem(self["coordinate_system"], fvac=self._vacuum_toroidal_field.r0*self._vacuum_toroidal_field.b0, parent=self)
 
-    @cached_property
+    @ cached_property
     def constraints(self):
-        return self["constraints"]
+        return EquilibriumConstraints(self["constraints"], coord=self.coordinate_system, parent=self)
 
-    @cached_property
+    @ cached_property
     def profiles_1d(self):
         return EquilibriumProfiles1D(self["profiles_1d"], coord=self.coordinate_system, parent=self)
 
-    @cached_property
+    @ cached_property
     def profiles_2d(self):
         return EquilibriumProfiles2D(self["global_quantities"], coord=self.coordinate_system,  parent=self)
 
-    @cached_property
+    @ cached_property
     def global_quantities(self):
         return EquilibriumGlobalQuantities(self["global_quantities"],   coord=self.coordinate_system,  parent=self)
 
-    @cached_property
+    @ cached_property
     def boundary(self):
         return EquilibriumBoundary(self["boundary"], coord=self.coordinate_system, parent=self)
 
-    @cached_property
+    @ cached_property
     def boundary_separatrix(self):
-        return EquilibriumBoundarySeparatrix(self.coordinate_system,   parent=self)
+        return EquilibriumBoundarySeparatrix(self["boundary_separatrix"], coord=self.coordinate_system,   parent=self)
 
     def plot(self, axis=None, *args,
              scalar_field=[],
@@ -1188,14 +1192,14 @@ class Equilibrium(IDS):
         #            Cylindrical coordinate      : (R,\phi,Z)
         #    Poloidal plane coordinate   : (\rho,\theta,\phi)
     """
-    IDS = "transport.equilibrium"
+    IDS = "equilibrium"
 
     def __init__(self,  *args,  **kwargs):
         super().__init__(*args, **kwargs)
 
     @cached_property
-    def vacuum_toroidal_field(self):
-        return VacuumToroidalField(self["vacuum_toroidal_field.r0"], self["vacuum_toroidal_field.b0"])
+    def vacuum_toroidal_field(self) -> VacuumToroidalField:
+        return VacuumToroidalField(**self["vacuum_toroidal_field"])
 
     @property
     def time(self):
@@ -1212,8 +1216,7 @@ class Equilibrium(IDS):
     ####################################################################################
     # Plot profiles
     def plot(self, axis=None, *args, time: float = None, time_slice=False, ggd=False, **kwargs):
-        if time_slice:
-            axis = self.time_slice(time).plot(axis, *args, **kwargs)
+        axis = self.time_slice(time).plot(axis, *args, **kwargs)
         if ggd:
             axis = self.grid_ggd(time).plot(axis, *args, **kwargs)
         return axis

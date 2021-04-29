@@ -232,7 +232,7 @@ class Tokamak(Dict):
         self.__dict__["core_profiles"] = core_profiles_next
         self._time = time
 
-    def plot(self, axis=None, *args, title=None,   **kwargs):
+    def plot(self, axis=None, *args, title=None, time=None,  **kwargs):
 
         if axis is None:
             axis = plt.gca()
@@ -244,7 +244,7 @@ class Tokamak(Dict):
             self.pf_active.plot(axis, **kwargs.get("pf_active", {}))
 
         if kwargs.get("equilibrium", True) is not False:
-            self.equilibrium.plot(axis, **kwargs.get("equilibrium", {}))
+            self.equilibrium.plot(axis, time=time,  **kwargs.get("equilibrium", {}))
 
         axis.set_aspect('equal')
         axis.axis('scaled')
