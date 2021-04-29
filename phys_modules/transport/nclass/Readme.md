@@ -14,3 +14,5 @@ Build
 =============
 
     python -m numpy.f2py --debug-capi  -c $(pkg-config --libs openblas)  src/nclass_mod.f90 only: nclass : -m nclass_mod
+
+    python -m numpy.f2py  -c $(pkg-config --libs openblas)  src/nclass_mod.f90 only: nclass : -m nclass_mod

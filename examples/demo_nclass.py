@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.constants
+import transport.nclass as nclass
 from fytok.modules.transport.CoreTransport import CoreTransport
 from fytok.Tokamak import Tokamak
 from spdm.data.Collection import Collection
@@ -14,8 +15,6 @@ from spdm.util.logger import logger
 from spdm.util.plot_profiles import plot_profiles, sp_figure
 
 if __name__ == "__main__":
-    sys.path.append("/home/salmon/workspace/fytok/phys_modules/")
-    import transport.nclass as nclass
 
     device = File("/home/salmon/workspace/fytok/data/mapping/ITER/imas/3/static/config.xml").entry
 

@@ -1,8 +1,8 @@
 import collections
-from external.SpDB.python.spdm.data.AttributeTree import AttributeTree
 from functools import cached_property
 
 import numpy as np
+from spdm.data.AttributeTree import AttributeTree
 from spdm.data.Function import Function
 from spdm.data.Node import List
 from spdm.data.Profiles import Profiles
