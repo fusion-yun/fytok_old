@@ -65,16 +65,7 @@ if __name__ == "__main__":
         }
     })
 
-    logger.debug(tok.equilibrium.ids_properties.source)
-    logger.debug(tok.equilibrium.ids_properties.provider)
-    logger.debug(tok.equilibrium.ids_properties.creation_date)
-    logger.debug(tok.equilibrium.ids_properties.version_put)
-
-
-    logger.debug(tok.equilibrium.code.name)
-    logger.debug(tok.equilibrium.code.library)
-
-    logger.debug(tok.equilibrium.time)
+    logger.debug(tok.equilibrium.ids_properties.__serialize__())
 
     sp_figure(tok,
               wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
