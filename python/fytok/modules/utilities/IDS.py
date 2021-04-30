@@ -1,59 +1,122 @@
-from functools import cached_property
-from spdm.data.AttributeTree import AttributeTree
-from spdm.util.logger import logger
-from spdm.util.sp_export import sp_find_module
-from spdm.util.utilities import convert_to_named_tuple
 import collections
-VersionPut = collections.namedtuple("VersionPut", "data_dictionary  access_layer access_layer_language ")
-IDSProperties = collections.namedtuple("IDSProperties", [
-    # Any comment describing the content of this IDS {constant}     STR_0D
-    "comment",
-    # This node must be filled (with 0, 1, or 2) for the IDS to be valid. If 1, the time of this IDS is homogeneous, i.e.
-    #  the time values for this IDS are stored in the time node just below the root of this IDS. If 0, the time values are stored
-    #  in the various time fields at lower levels in the tree. In the case only constant or static nodes are filled within the IDS,
-    #  homogeneous_time must be set to 2 {constant}     INT_0D
-    "homogeneous_time",
-    # Source of the data (any comment describing the origin of the data : code, path to diagnostic signals, processing method, ...) {constant}     STR_0D
-    "source",
-    # Name of the person in charge of producing this data {constant}     STR_0D
-    "provider",
-    # Date at which this data has been produced {constant}     STR_0D
-    "creation_date",
-    # Version of the access layer package used to PUT this IDS
-    "version_put",
-],
-    defaults=["", 0, "", "", 0, VersionPut(0, 0, 0)]
-)
+import datetime
+import getpass
+import os
+from functools import cached_property
+from typing import Sequence
+
+from spdm.data.AttributeTree import AttributeTree
+from spdm.data.Node import List
+from spdm.data.TimeSeries import TimeSequence
+from spdm.util.logger import logger
+
+
+class IDSProperties(AttributeTree):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args,  **kwargs)
+
+    @cached_property
+    def comment(self):
+        """ Any comment describing the content of this IDS {constant}	STR_0D"""
+        return self["comment"]
+
+    @cached_property
+    def homogeneous_time(self):
+        """This node must be filled (with 0, 1, or 2) for the IDS to be valid. If 1, the time of this IDS is homogeneous,
+            i.e. the time values for this IDS are stored in the time node just below the root of this IDS. If 0,
+                 the time values are stored in the various time fields at lower levels in the tree.
+                 In the case only constant or static nodes are filled within the IDS, homogeneous_time must be set to 2 {constant}	INT_0D	"""
+        return self["homogeneous_time"] or 2
+
+    @cached_property
+    def source(self):
+        """Source of the data (any comment describing the origin of the data : code, path to diagnostic signals, processing method, ...) {constant}	STR_0D	"""
+        return self["source"] or f"Create by '{self._parent.__class__.__module__}.{self._parent.__class__.__name__ }'"
+
+    @cached_property
+    def provider(self):
+        """Name of the person in charge of producing this data {constant}	STR_0D	"""
+        return self["provider"] or getpass.getuser().capitalize()
+
+    @cached_property
+    def creation_date(self):
+        """Date at which this data has been produced {constant}	STR_0D	"""
+        return self["creation_date"] or datetime.datetime.now().isoformat()
+
+    VersionPut = collections.namedtuple("VersionPut", "data_dictionary  access_layer access_layer_language ",
+                                        defaults=[os.environ.get("IMAS_DD_VER", 3), os.environ.get("IMAS_AL_VER", 4), "N/A"])
+
+    @cached_property
+    def version_put(self) -> VersionPut:
+        """Version of the access layer package used to PUT this IDS"""
+        return IDSProperties.VersionPut(**(self["version_put"] or {}))
+
+
+class IDSCode(AttributeTree):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @cached_property
+    def name(self) -> str:
+        """Name of software generating IDS {constant}	STR_0D"""
+        return self["name"] or f"{self._parent.__class__.__module__}.{self._parent.__class__.__name__}"
+
+    @cached_property
+    def commit(self) -> str:
+        """	Unique commit reference of software {constant}	STR_0D"""
+        return self["commit"]
+
+    @cached_property
+    def version(self) -> str:
+        """Unique version (tag) of software {constant}	STR_0D"""
+        return self["version"]
+
+    @cached_property
+    def repository(self) -> str:
+        """URL of software repository {constant}	STR_0D"""
+        return self["repository"]
+
+    @cached_property
+    def parameters(self) -> str:
+        r"""List of the code specific parameters in XML format {constant}	STR_0D"""
+        return self["parameters"]
+
+    @cached_property
+    def output_flag(self) -> Sequence[int]:
+        """Output flag : 0 means the run is successful, other values mean some difficulty has been encountered, the exact meaning is then code specific. Negative values mean the result shall not be used. {dynamic}	INT_1D	1- time"""
+        return self["output_flag"]
+
+    LibraryDesc = collections.namedtuple("LibraryDesc", [
+        "name",         # Name of software {constant}	STR_0D
+        "commit",       # Unique commit reference of software {constant}	STR_0D
+        "version",      # Unique version (tag) of software {constant}	STR_0D
+        "repository",   # URL of software repository {constant}	STR_0D
+        "parameters",   # List of the code specific parameters in XML format {constant}
+    ])
+
+    @cached_property
+    def library(self) -> List[LibraryDesc]:
+        "List of external libraries used by the code that has produced this IDS	struct_array [max_size=10]	1- 1...N"
+        return List[IDSCode.LibraryDesc](self["library"], default_factory=lambda d, *args, **kwargs: IDSCode.LibraryDesc(**(d or {})), parent=self)
 
 
 class IDS(AttributeTree):
-    """%%%DESCRIPTION%%%.      
-
+    """
+        %%%DESCRIPTION%%%.
         .. todo:: '___NAME___' IS NOT IMPLEMENTED
     """
-    @staticmethod
-    def __new__(cls,     *args, **kwargs):
-        if cls is not IDS:
-            return super(IDS, cls).__new__(cls)
-        return NotImplemented
-        # backend = str(config.engine) or ""
-        # n_cls = cls
-
-        # if not backend:
-        #     pass
-        # else:
-        #     try:
-        #         plugin_name = f"{__package__}.plugins.{cls.__name__.lower()}.Plugin{backend}"
-        #         n_cls = sp_find_module(plugin_name, fragment=f"{cls.__name__}{backend}")
-        #     except ModuleNotFoundError as error:
-        #         logger.debug(error)
-        #         n_cls = cls
-
-        # return Dict.__new__(n_cls)
 
     def __init__(self, *args, ** kwargs):
         super().__init__(*args, ** kwargs)
 
     @cached_property
-    def ids_properties(self):
-        return IDSProperties(**self["ids_properties"])
+    def ids_properties(self) -> IDSProperties:
+        return IDSProperties(self["ids_properties"], parent=self)
+
+    @cached_property
+    def code(self) -> IDSCode:
+        return IDSCode(self['code'], parent=self)
+
+    @cached_property
+    def time(self) -> TimeSequence:
+        return TimeSequence(self['time'], parent=self)

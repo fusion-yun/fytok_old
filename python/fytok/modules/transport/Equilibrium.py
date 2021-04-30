@@ -1,5 +1,6 @@
 import collections
 from functools import cached_property
+from typing import Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -47,25 +48,22 @@ class EquilibriumCoordinateSystem(Dict):
         phi         : 0 <= phi     < 2*pi ,  toroidal angle
     """
 
-    def __init__(self, *args, fvac=None, data=None, **kwargs):
+    def __init__(self, *args,
+                 vacuum_toroidal_field: VacuumToroidalField = None,
+                 psirz: Field = None,
+                 ffprime: Function = None,
+                 pprime: Function = None,
+                 **kwargs):
         """
             Initialize FluxSurface
         """
         super().__init__(*args, **kwargs)
+        self._vacuum_toroidal_field = vacuum_toroidal_field
+        self._fvac = self._vacuum_toroidal_field.r0*self._vacuum_toroidal_field.b0
 
-        self._fvac = fvac or self._parent._vacuum_toroidal_field.r0*self._parent._vacuum_toroidal_field.b0
-
-        data = data or self._parent
-        self._psirz = Field(data["profiles_2d.psi"],
-                            data["profiles_2d.grid.dim1"],
-                            data["profiles_2d.grid.dim2"],
-                            mesh_type="rectilinear")
-
-        psi_norm = data["profiles_1d.psi_norm"]
-
-        self._ffprime = Function(psi_norm, data["profiles_1d.f_df_dpsi"])
-
-        self._pprime = Function(psi_norm, data["profiles_1d.dpressure_dpsi"])
+        self._psirz = psirz
+        self._ffprime = ffprime
+        self._pprime = pprime
 
         dim1 = self["grid.dim1"]
         dim2 = self["grid.dim2"]
@@ -93,6 +91,22 @@ class EquilibriumCoordinateSystem(Dict):
             v = np.asarray([dim2])
 
         self._uv = [u, v]
+
+    def radial_grid(self, primary_axis=None, axis=None):
+        """ 
+            Radial grid
+        """
+        psi_norm = self.psi_norm
+
+        if primary_axis == "psi_norm" or primary_axis is None:
+            if axis is not None:
+                psi_norm = axis
+        else:
+            p_axis = try_get(self, primary_axis)
+            if not isinstance(p_axis, np.ndarray):
+                raise NotImplementedError(primary_axis)
+            psi_norm = Function(p_axis, psi_norm)(np.linspace(p_axis[0], p_axis[-1], p_axis.shape[0]))
+        return RadialGrid(psi_norm, vacuum_toroidal_field=self._vacuum_toroidal_field, equilibrium=self)
 
     @cached_property
     def grid_type(self):
@@ -1018,56 +1032,57 @@ class EquilibriumTimeSlice(Dict):
        Time slice of   Equilibrium
     """
 
-    def __init__(self, *args, time=None, vacuum_toroidal_field: VacuumToroidalField = None, **kwargs):
+    def __init__(self, *args, time: float = None, vacuum_toroidal_field: VacuumToroidalField = None, **kwargs):
         super().__init__(*args, **kwargs)
-        self._time = time or 0.0
-        self._vacuum_toroidal_field = vacuum_toroidal_field or \
-            VacuumToroidalField(self._parent.vacuum_toroidal_field.r0,
-                                self._parent.vacuum_toroidal_field.b0(time))
+        self._time = time or self['time'] or 0.0
+        assert(vacuum_toroidal_field is not None)
+        self._vacuum_toroidal_field = vacuum_toroidal_field
 
-    @ property
+    @property
     def time(self):
         return self._time
 
-    def radial_grid(self, primary_axis=None, axis=None):
-        """ """
-        psi_norm = self.profiles_1d.psi_norm
+    def radial_grid(self, *args, **kwargs):
+        return self.coordinate_system.radial_grid(*args, **kwargs)
 
-        if primary_axis == "psi_norm" or primary_axis is None:
-            if axis is not None:
-                psi_norm = axis
-        else:
-            p_axis = try_get(self.profiles_1d, primary_axis)
-            if not isinstance(p_axis, np.ndarray):
-                raise NotImplementedError(primary_axis)
-            psi_norm = Function(p_axis, psi_norm)(np.linspace(p_axis[0], p_axis[-1], p_axis.shape[0]))
-        return RadialGrid(psi_norm, equilibrium=self)
-
-    @ cached_property
+    @cached_property
     def coordinate_system(self) -> EquilibriumCoordinateSystem:
-        return EquilibriumCoordinateSystem(self["coordinate_system"], fvac=self._vacuum_toroidal_field.r0*self._vacuum_toroidal_field.b0, parent=self)
+        psirz = Field(self["profiles_2d.psi"],
+                      self["profiles_2d.grid.dim1"],
+                      self["profiles_2d.grid.dim2"],
+                      mesh_type="rectilinear")
 
-    @ cached_property
+        psi_norm = self["profiles_1d.psi_norm"]
+        ffprime = self["profiles_1d.f_df_dpsi"]
+        pprime = self["profiles_1d.dpressure_dpsi"]
+        return EquilibriumCoordinateSystem(self["coordinate_system"],
+                                           vacuum_toroidal_field=self._vacuum_toroidal_field,
+                                           psirz=psirz,
+                                           ffprime=Function(psi_norm, ffprime),
+                                           pprime=Function(psi_norm, pprime),
+                                           parent=self)
+
+    @cached_property
     def constraints(self):
         return EquilibriumConstraints(self["constraints"], coord=self.coordinate_system, parent=self)
 
-    @ cached_property
+    @cached_property
     def profiles_1d(self):
         return EquilibriumProfiles1D(self["profiles_1d"], coord=self.coordinate_system, parent=self)
 
-    @ cached_property
+    @cached_property
     def profiles_2d(self):
         return EquilibriumProfiles2D(self["global_quantities"], coord=self.coordinate_system,  parent=self)
 
-    @ cached_property
+    @cached_property
     def global_quantities(self):
         return EquilibriumGlobalQuantities(self["global_quantities"],   coord=self.coordinate_system,  parent=self)
 
-    @ cached_property
+    @cached_property
     def boundary(self):
         return EquilibriumBoundary(self["boundary"], coord=self.coordinate_system, parent=self)
 
-    @ cached_property
+    @cached_property
     def boundary_separatrix(self):
         return EquilibriumBoundarySeparatrix(self["boundary_separatrix"], coord=self.coordinate_system,   parent=self)
 
@@ -1150,7 +1165,8 @@ class EquilibriumTimeSlice(Dict):
 
 
 class Equilibrium(IDS):
-    r"""Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
+    r"""
+        Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
 
         Reference:
             - O. Sauter and S. Yu Medvedev, "Tokamak coordinate conventions: COCOS", Computer Physics Communications 184, 2 (2013), pp. 293--302.
@@ -1194,24 +1210,30 @@ class Equilibrium(IDS):
     """
     IDS = "equilibrium"
 
-    def __init__(self,  *args,  **kwargs):
+    def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    @cached_property
-    def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        return VacuumToroidalField(**self["vacuum_toroidal_field"])
+        self._r0 = self["vacuum_toroidal_field.r0"]
+        self._b0 = self["vacuum_toroidal_field.b0"] or []
 
     @property
-    def time(self):
-        return self._time
+    def vacuum_toroidal_field(self) -> VacuumToroidalField:
+        if isinstance(self._b0, float):
+            return VacuumToroidalField(self._r0, self._b0)
+        elif isinstance(self._b0, collections.abc.MutableSequence):
+            return VacuumToroidalField(self._r0, Function(np.asarray(self.time), np.asarray(self._b0)))
 
     @cached_property
     def time_slice(self) -> TimeSeries[EquilibriumTimeSlice]:
-        return TimeSeries[EquilibriumTimeSlice](self["time_slice"], slice=EquilibriumTimeSlice, time=self._time,  parent=self)
+        def time_slice_creator(*args, time=None, vacuum_toroidal_field=self._vacuum_toroidal_field, ** kwargs):
+            return EquilibriumTimeSlice(*args, time=time, vacuum_toroidal_field=VacuumToroidalField(vacuum_toroidal_field.r0, vacuum_toroidal_field.b0(time)), **kwargs)
+        return TimeSeries[EquilibriumTimeSlice](self["time_slice"],  time=self.time,  default_factory=time_slice_creator, parent=self)
 
     @cached_property
     def grid_ggd(self) -> TimeSeries[GGD]:
-        return TimeSeries[GGD](self["grid_ggd"], slice=GGD, time=self._time, parent=self)
+        def grid_ggd_creator(*args, time=None, vacuum_toroidal_field=self._vacuum_toroidal_field, ** kwargs):
+            return EquilibriumTimeSlice(*args, time=time, vacuum_toroidal_field=VacuumToroidalField(vacuum_toroidal_field.r0, vacuum_toroidal_field.b0(time)), **kwargs)
+        return TimeSeries[GGD](self["grid_ggd"],  time=self._time, default_factory=grid_ggd_creator, parent=self)
 
     ####################################################################################
     # Plot profiles

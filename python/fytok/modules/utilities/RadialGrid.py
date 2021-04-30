@@ -24,7 +24,7 @@ class RadialGrid:
             self._psi_axis = equilibrium.boundary.psi_axis
             self._psi_boundary = equilibrium.boundary.psi_boundary
             if psi_norm is None:
-                psi_norm = equilibrium.profiles_1d.psi_norm
+                psi_norm = equilibrium.psi_norm
         else:
             self._equilibrium = None
             self._vacuum_toroidal_field = vacuum_toroidal_field or VacuumToroidalField(1.0, 1.0)
@@ -42,7 +42,7 @@ class RadialGrid:
     def _try_get(self, k):
         d = self._data.get(k, None)
         if d is None:
-            d = try_get(self._equilibrium.profiles_1d, k, None)
+            d = try_get(self._equilibrium, k, None)
 
         if isinstance(d, Function):
             if d.x is not self._psi_norm:
