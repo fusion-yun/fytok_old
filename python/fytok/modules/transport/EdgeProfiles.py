@@ -7,7 +7,7 @@ class EdgeProfiles(Dict):
 
        .. todo:: 'EdgeProfiles' IS NOT IMPLEMENTED
     """
-    IDS = "edge_profiles"
+    _IDS = "edge_profiles"
 
     def __init__(self, cache=None, *args, equilibrium=None, rho_tor_norm=None, ** kwargs):
         super().__init__(*args, ** kwargs)

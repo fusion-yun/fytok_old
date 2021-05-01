@@ -2,7 +2,7 @@
 import numpy as np
 import pandas as pd
 import scipy.constants
-import transport.nclass as nclass
+
 from fytok.modules.transport.CoreTransport import CoreTransport
 from fytok.Tokamak import Tokamak
 from spdm.data.Collection import Collection
@@ -11,6 +11,8 @@ from spdm.data.Function import Function
 from spdm.data.Node import _next_
 from spdm.util.logger import logger
 from spdm.util.plot_profiles import plot_profiles, sp_figure
+
+import transport.nclass as nclass
 
 if __name__ == "__main__":
 
@@ -65,7 +67,7 @@ if __name__ == "__main__":
         }
     })
 
-    logger.debug(tok.equilibrium.ids_properties.__serialize__())
+    logger.debug(tok.equilibrium.__serialize__())
 
     sp_figure(tok,
               wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},

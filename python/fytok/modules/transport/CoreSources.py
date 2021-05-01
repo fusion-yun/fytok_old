@@ -15,7 +15,7 @@ from ..utilities.RadialGrid import RadialGrid
 class CoreSources(IDS):
     """CoreSources
     """
-    IDS = "core_sources"
+    _IDS = "core_sources"
 
     def __init__(self, *args, grid: RadialGrid = None, **kwargs):
         super().__init__(*args, **kwargs)

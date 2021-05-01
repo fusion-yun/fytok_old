@@ -182,7 +182,7 @@ class CoreTransport(IDS):
         flux described above divided by the flux surface area :math:`V^{\prime}\left\langle \left|\nabla\rho_{tor,norm}\right|\right\rangle` .
         Note that the energy flux includes the energy transported by the particle flux.
     """
-    IDS = "core_transport"
+    _IDS = "core_transport"
     Profiles1D = CoreTransportProfiles1D
 
     def __init__(self,  *args, grid: RadialGrid = None,  **kwargs):

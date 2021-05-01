@@ -3,7 +3,7 @@ import datetime
 import getpass
 import os
 from functools import cached_property
-from typing import Sequence
+from typing import Sequence, Mapping
 
 from spdm.data.AttributeTree import AttributeTree
 from spdm.data.Node import List
@@ -105,9 +105,23 @@ class IDS(AttributeTree):
         %%%DESCRIPTION%%%.
         .. todo:: '___NAME___' IS NOT IMPLEMENTED
     """
+    _IDS = "NOT_DEFINED"
 
     def __init__(self, *args, ** kwargs):
         super().__init__(*args, ** kwargs)
+
+    def __serialize__(self):
+        res = super().__serialize__()
+        res["@ids"] = self._IDS
+        return res
+
+    @classmethod
+    def __deserialize__(cls, desc: Mapping):
+        ids = desc.get("@ids", None)
+        if ids is None:
+            raise ValueError(desc)
+        else:
+            raise NotImplementedError(ids)
 
     @cached_property
     def ids_properties(self) -> IDSProperties:

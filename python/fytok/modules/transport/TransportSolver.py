@@ -38,7 +38,7 @@ class TransportSolver(Dict):
         See  :cite:`hinton_theory_1976,coster_european_2010,pereverzev_astraautomated_1991`
 
     """
-    IDS = "transport_solver_numerics"
+    _IDS = "transport_solver_numerics"
 
     def __init__(self,  *args, grid: RadialGrid = None, **kwargs):
         super().__init__(*args, **kwargs)

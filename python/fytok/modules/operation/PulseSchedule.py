@@ -10,7 +10,7 @@ class PulseSchedule(Dict):
     appearing in the pulse_schedule must be identical to those used in the IDSs describing the related subsystems.
 
     """
-    IDS = "pulse_schedule"
+    _IDS = "pulse_schedule"
 
     def __init__(self,  *args,  **kwargs):
         super().__init__(*args, **kwargs)

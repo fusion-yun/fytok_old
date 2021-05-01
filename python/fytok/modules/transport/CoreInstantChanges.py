@@ -40,7 +40,7 @@ class CoreInstantChanges(IDS):
     r"""
         Instant changes of the radial core plasma profiles due to pellet, MHD, ...
     """
-    IDS = "core_instant_changes"
+    _IDS = "core_instant_changes"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

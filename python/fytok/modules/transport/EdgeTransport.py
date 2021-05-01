@@ -9,7 +9,7 @@ class EdgeTransport(Dict):
         Todo:
             'EdgeTransport' IS NOT IMPLEMENTED
     """
-    IDS = "edge_transport"
+    _IDS = "edge_transport"
 
     def __init__(self, *args, ** kwargs):
         super().__init__(*args, **kwargs)

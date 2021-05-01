@@ -12,7 +12,7 @@ class Controllers(Dict):
 
         Note: Controllers is an ids
     """
-    IDS = "controllers"
+    _IDS = "controllers"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

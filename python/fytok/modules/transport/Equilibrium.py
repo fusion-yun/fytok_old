@@ -1,6 +1,6 @@
 import collections
 from functools import cached_property
-from typing import Sequence
+from typing import Sequence, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -1208,13 +1208,13 @@ class Equilibrium(IDS):
         #            Cylindrical coordinate      : (R,\phi,Z)
         #    Poloidal plane coordinate   : (\rho,\theta,\phi)
     """
-    IDS = "equilibrium"
+    _IDS = "equilibrium"
 
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._r0 = self["vacuum_toroidal_field.r0"]
-        self._b0 = self["vacuum_toroidal_field.b0"] or []
+        self._r0 = self["vacuum_toroidal_field.r0"] or 0.0
+        self._b0 = self["vacuum_toroidal_field.b0"] or 0.0
 
     @property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
@@ -1226,7 +1226,11 @@ class Equilibrium(IDS):
     @cached_property
     def time_slice(self) -> TimeSeries[EquilibriumTimeSlice]:
         def time_slice_creator(*args, time=None, vacuum_toroidal_field=self._vacuum_toroidal_field, ** kwargs):
-            return EquilibriumTimeSlice(*args, time=time, vacuum_toroidal_field=VacuumToroidalField(vacuum_toroidal_field.r0, vacuum_toroidal_field.b0(time)), **kwargs)
+            r0 = self._r0
+            b0 = self._b0
+            if callable(b0):
+                b0 = b0(time)
+            return EquilibriumTimeSlice(*args, time=time, vacuum_toroidal_field=VacuumToroidalField(r0, b0), **kwargs)
         return TimeSeries[EquilibriumTimeSlice](self["time_slice"],  time=self.time,  default_factory=time_slice_creator, parent=self)
 
     @cached_property
@@ -1238,7 +1242,9 @@ class Equilibrium(IDS):
     ####################################################################################
     # Plot profiles
     def plot(self, axis=None, *args, time: float = None, time_slice=False, ggd=False, **kwargs):
-        axis = self.time_slice(time).plot(axis, *args, **kwargs)
+        t_slice = self.time_slice(time)
+        logger.debug(type(t_slice))
+        axis = t_slice.plot(axis, *args, **kwargs)
         if ggd:
             axis = self.grid_ggd(time).plot(axis, *args, **kwargs)
         return axis

@@ -17,7 +17,7 @@ class TF(IDS):
     """TF　Coils
 
     """
-    IDS = "tf"
+    _IDS = "tf"
 
     def __init__(self,  *args,    **kwargs):
         super().__init__(*args, **kwargs)

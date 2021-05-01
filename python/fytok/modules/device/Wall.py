@@ -86,7 +86,7 @@ class Wall(IDS):
     """Wall
 
     """
-    IDS = "wall"
+    _IDS = "wall"
 
     def __init__(self, *args,  **kwargs):
         super().__init__(*args, **kwargs)

@@ -478,7 +478,7 @@ class CoreProfilesGlobalQuantities(AttributeTree):
 class CoreProfiles(IDS):
     """CoreProfiles
     """
-    IDS = "core_profiles"
+    _IDS = "core_profiles"
     Profiles1D = CoreProfiles1D
     GlobalQuantities = CoreProfilesGlobalQuantities
 
