@@ -1042,6 +1042,10 @@ class EquilibriumTimeSlice(Dict):
     def time(self):
         return self._time
 
+    @property
+    def vacuum_toroidal_field(self):
+        return self._vacuum_toroidal_field
+
     def radial_grid(self, *args, **kwargs):
         return self.coordinate_system.radial_grid(*args, **kwargs)
 
@@ -1141,7 +1145,7 @@ class EquilibriumTimeSlice(Dict):
 
         for s, opts in scalar_field:
             if s == "psirz":
-                self._psirz.plot(axis, **opts)
+                self.coordinate_system._psirz.plot(axis, **opts)
             else:
                 if "." not in s:
                     sf = f"profiles_2d.{s}"
@@ -1212,7 +1216,6 @@ class Equilibrium(IDS):
 
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
-
         self._r0 = self["vacuum_toroidal_field.r0"] or 0.0
         self._b0 = self["vacuum_toroidal_field.b0"] or 0.0
 
@@ -1220,17 +1223,21 @@ class Equilibrium(IDS):
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
         if isinstance(self._b0, float):
             return VacuumToroidalField(self._r0, self._b0)
+        elif isinstance(self._b0, np.ndarray):
+            return VacuumToroidalField(self._r0, Function(np.asarray(self.time), self._b0))
         elif isinstance(self._b0, collections.abc.MutableSequence):
             return VacuumToroidalField(self._r0, Function(np.asarray(self.time), np.asarray(self._b0)))
 
     @cached_property
     def time_slice(self) -> TimeSeries[EquilibriumTimeSlice]:
-        def time_slice_creator(*args, time=None, vacuum_toroidal_field=self._vacuum_toroidal_field, ** kwargs):
-            r0 = self._r0
-            b0 = self._b0
+        r0 = self._r0
+        b0 = self._b0
+
+        def time_slice_creator(*args, time=None, r0=r0, b0=b0, ** kwargs):
             if callable(b0):
                 b0 = b0(time)
             return EquilibriumTimeSlice(*args, time=time, vacuum_toroidal_field=VacuumToroidalField(r0, b0), **kwargs)
+
         return TimeSeries[EquilibriumTimeSlice](self["time_slice"],  time=self.time,  default_factory=time_slice_creator, parent=self)
 
     @cached_property

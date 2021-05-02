@@ -67,17 +67,19 @@ if __name__ == "__main__":
         }
     })
 
-    logger.debug(tok.equilibrium.__serialize__())
+    # logger.debug(tok.equilibrium.time_slice[-1].__serialize__())
 
     sp_figure(tok,
               wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
               pf_active={"facecolor": 'red'},
-              equilibrium={"mesh": True, "boundary": True,
-                           "scalar_field": [
-                               #   ("coordinate_system.norm_grad_psi", {"levels": 32, "linewidths": 0.1}),
-                               ("psirz", {"levels": 32, "linewidths": 0.1}),
-                           ],
-                           }
+              equilibrium={
+                  "mesh": True,
+                  "boundary": True,
+                  "scalar_field": [
+                      #   ("coordinate_system.norm_grad_psi", {"levels": 32, "linewidths": 0.1}),
+                      ("psirz", {"levels": 32, "linewidths": 0.1}),
+                  ],
+              }
               ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
 
     eq = tok.equilibrium.time_slice[-1]
