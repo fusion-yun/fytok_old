@@ -82,6 +82,7 @@ if __name__ == "__main__":
               }
               ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
 
+
     eq = tok.equilibrium.time_slice[-1]
 
     plot_profiles(
@@ -166,7 +167,8 @@ if __name__ == "__main__":
         x_axis=(eq.profiles_1d.psi_norm,    r"$\psi_{N}$"),  # asd
         grid=True, fontsize=16
     ) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
-
+    
+if False:
     core_profile = tok.core_profiles.profiles_1d[-1]
 
     plot_profiles(

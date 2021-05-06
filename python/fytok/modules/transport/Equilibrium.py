@@ -1242,16 +1242,15 @@ class Equilibrium(IDS):
 
     @cached_property
     def grid_ggd(self) -> TimeSeries[GGD]:
-        def grid_ggd_creator(*args, time=None, vacuum_toroidal_field=self._vacuum_toroidal_field, ** kwargs):
-            return EquilibriumTimeSlice(*args, time=time, vacuum_toroidal_field=VacuumToroidalField(vacuum_toroidal_field.r0, vacuum_toroidal_field.b0(time)), **kwargs)
+        def grid_ggd_creator(*args, time=None,  ** kwargs):
+            return GGD(*args, time=time, **kwargs)
         return TimeSeries[GGD](self["grid_ggd"],  time=self._time, default_factory=grid_ggd_creator, parent=self)
 
     ####################################################################################
     # Plot profiles
-    def plot(self, axis=None, *args, time: float = None, time_slice=False, ggd=False, **kwargs):
-        t_slice = self.time_slice(time)
-        logger.debug(type(t_slice))
-        axis = t_slice.plot(axis, *args, **kwargs)
+    def plot(self, axis=None, *args, time: float = None, time_slice=True, ggd=False, **kwargs):
+        if time_slice is not False:
+            axis = self.time_slice(time).plot(axis, *args, **kwargs)
         if ggd:
             axis = self.grid_ggd(time).plot(axis, *args, **kwargs)
         return axis
