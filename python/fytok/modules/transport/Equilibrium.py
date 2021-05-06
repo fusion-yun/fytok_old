@@ -294,13 +294,13 @@ class EquilibriumCoordinateSystem(Dict):
 
     @property
     def ffprime(self):
-        return self._ffprime
+        return Function(self.psi_norm, self._ffprime)
 
     @cached_property
     def fpol(self):
         """Diamagnetic function (F=R B_Phi)  [T.m]."""
-        fpol2 = self.ffprime.antiderivative * (2 * (self.psi_boundary - self.psi_axis))
-        return Function(self.psi_norm,  np.sqrt(fpol2 - fpol2[-1] + self._fvac**2))
+        fpol2 = self._ffprime.antiderivative * (2 * (self.psi_boundary - self.psi_axis))
+        return Function(self.psi_norm,   np.sqrt(fpol2 - fpol2[-1] + self._fvac**2))
 
     @cached_property
     def dl(self):
@@ -308,15 +308,15 @@ class EquilibriumCoordinateSystem(Dict):
 
     @cached_property
     def Br(self):
-        return -self.psirz(self.r, self.z, dy=1).view(np.ndarray)/self.r
+        return -self.psirz(self.r, self.z, dy=1) / self.r
 
     @cached_property
     def Bz(self):
-        return self.psirz(self.r, self.z, dx=1).view(np.ndarray)/self.r
+        return self.psirz(self.r, self.z, dx=1) / self.r
 
     @cached_property
     def Btor(self):
-        return 1.0 / self.r.view(np.ndarray) * self.fpol.reshape(self.mesh.shape[0], 1).view(np.ndarray)
+        return 1.0 / self.r * self.fpol.__array__().reshape(self.mesh.shape[0], 1)
 
     @cached_property
     def Bpol(self):
@@ -603,8 +603,12 @@ class EquilibriumProfiles1D(Profiles):
         return self.fpol
 
     @cached_property
-    def dpressure_dpsi(self):
+    def pprime(self):
         return Function(self._axis, self._coord._pprime(self._axis))
+
+    @property
+    def dpressure_dpsi(self):
+        return self.pprime
 
     @cached_property
     def j_tor(self):
@@ -616,9 +620,10 @@ class EquilibriumProfiles1D(Profiles):
     @cached_property
     def j_parallel(self):
         r"""Flux surface averaged parallel current density = average(j.B) / B0, where B0 = Equilibrium/Global/Toroidal_Field/B0 {dynamic}[A/m ^ 2]. """
-        d = (-1/self._b0) * (self.fpol*self.dpressure_dpsi +
-                             self.gm5*self.f_df_dpsi/self.fpol/scipy.constants.mu_0)
-        return Function(self._axis, d.view(np.ndarray))
+        return Function(self._axis,
+                        np.asarray((-1/self._b0)
+                                   * (self.fpol * self.pprime +
+                                      self.gm5 * self.ffprime / self.fpol / scipy.constants.mu_0)))
 
     @cached_property
     def dphi_dpsi(self):
@@ -687,10 +692,10 @@ class EquilibriumProfiles1D(Profiles):
 
     @cached_property
     def geometric_axis(self):
-        return {
+        return convert_to_named_tuple({
             "r": Function(self._axis, self.shape_property.geometric_axis.r),
             "z": Function(self._axis, self.shape_property.geometric_axis.z),
-        }
+        })
 
     @property
     def minor_radius(self):
