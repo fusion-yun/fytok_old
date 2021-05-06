@@ -67,7 +67,6 @@ if __name__ == "__main__":
         }
     })
 
-
     sp_figure(tok,
               wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
               pf_active={"facecolor": 'red'},
@@ -96,7 +95,7 @@ if __name__ == "__main__":
             ],
             [
                 (eq.profiles_1d.q,                  r"$q$"),
-                # (eq.profiles_1d.dphi_dpsi,                    r"$\frac{d\phi}{d\psi}$"),
+                (eq.profiles_1d.dphi_dpsi,                    r"$\frac{d\phi}{d\psi}$"),
                 # (Function(equilibrium.profiles_1d.psi_norm, equilibrium.profiles_1d.q), r"$q_0$"),
                 (Function(profile["Fp"].values, profile["q"].values),             r"$q^{\star}$"),
             ],
@@ -107,8 +106,8 @@ if __name__ == "__main__":
                 #     #     r"$\frac{dV/d\rho_{tor}}{4\pi^2 R_0}$"),
             ],
             (eq.profiles_1d.phi,                   r"$\Phi$"),
-
-
+            (eq.profiles_1d.rho_tor_norm,           r"$\rho_{tor}/\rho_{tor,0}$"),
+            (eq.profiles_1d.dpsi_drho_tor,         r"$\frac{d\psi}{d\rho_{tor}}$"),
             [
                 # (eq.profiles_1d.j_tor, r"$j_{tor}$"),
                 (eq.profiles_1d.j_parallel,                          r"$j_{\parallel}$"),
@@ -126,19 +125,12 @@ if __name__ == "__main__":
             #     (Function(profile["Fp"].values, profile["Poh"].values),                       r"$P_{oh}^{\star}$"),
 
             # ],
-            # (eq.profiles_1d.dpsi_drho_tor,         r"$\frac{d\psi}{d\rho_{tor}}$"),
-            # [
-            #     (Function(equilibrium.profiles_1d.psi_norm, equilibrium.profiles_1d.q), r"$q_0$"),
-            #     (eq.profiles_1d.q,                 r"$q$"),
-            #     (eq.profiles_1d.dphi_dpsi,         r"$\frac{d\phi}{d\psi}$"),
-            # ],
-            # (eq.profiles_1d.rho_tor,                r"$\rho_{tor}$"),
-            # (eq.profiles_1d.rho_tor_norm,           r"$\rho_{tor}/\rho_{tor,0}$"),
+
 
             # [
             #     (eq.profiles_1d.volume,                r"$V$"),
-            #     (Function(eq.profiles_1d.rho_tor, eq.profiles_1d.dvolume_drho_tor.view(np.ndarray)).antiderivative,
-            #      r"$\int \frac{dV}{d\rho_{tor}}  d\rho_{tor}$"),
+            #     # (Function(eq.profiles_1d.rho_tor, eq.profiles_1d.dvolume_drho_tor).antiderivative,
+            #     #  r"$\int \frac{dV}{d\rho_{tor}}  d\rho_{tor}$"),
             #     (eq.profiles_1d.dvolume_dpsi.antiderivative * \
             #      (eq.global_quantities.psi_boundary - eq.global_quantities.psi_axis),\
             #      r"$\int \frac{dV}{d\psi}  d\psi$"),
@@ -166,7 +158,6 @@ if __name__ == "__main__":
         x_axis=(eq.profiles_1d.psi_norm,    r"$\psi_{N}$"),  # asd
         grid=True, fontsize=16
     ) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
-
 if False:
     core_profile = tok.core_profiles.profiles_1d[-1]
 

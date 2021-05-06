@@ -93,7 +93,7 @@ class EquilibriumCoordinateSystem(Dict):
         self._uv = [u, v]
 
     def radial_grid(self, primary_axis=None, axis=None):
-        """ 
+        """
             Radial grid
         """
         psi_norm = self.psi_norm
@@ -103,10 +103,12 @@ class EquilibriumCoordinateSystem(Dict):
                 psi_norm = axis
         else:
             p_axis = try_get(self, primary_axis)
+            if isinstance(p_axis, Function):
+                p_axis = p_axis.__array__()
             if not isinstance(p_axis, np.ndarray):
                 raise NotImplementedError(primary_axis)
             psi_norm = Function(p_axis, psi_norm)(np.linspace(p_axis[0], p_axis[-1], p_axis.shape[0]))
-        return RadialGrid(psi_norm, vacuum_toroidal_field=self._vacuum_toroidal_field, equilibrium=self)
+        return RadialGrid(psi_norm, vacuum_toroidal_field=self._vacuum_toroidal_field, equilibrium=self._parent)
 
     @cached_property
     def grid_type(self):
@@ -238,6 +240,9 @@ class EquilibriumCoordinateSystem(Dict):
     def surface_mesh(self):
         return self.create_surface(*self._uv)
 
+    ###############################
+    # 2-D
+
     def br(self, r, z):
         return -self.psirz(r,  z, dy=1)/r
 
@@ -262,45 +267,8 @@ class EquilibriumCoordinateSystem(Dict):
     def z(self):
         return self.mesh.xy[:, :, 1]
 
-    @cached_property
-    def psi_axis(self):
-        """Poloidal flux at the magnetic axis  [Wb]."""
-        o, _ = self.critical_points
-        return o[0].psi
-
-    @cached_property
-    def psi_boundary(self):
-        """Poloidal flux at the selected plasma boundary  [Wb]."""
-        _, x = self.critical_points
-        if len(x) > 0:
-            return x[0].psi
-        else:
-            raise ValueError(f"No x-point")
-
-    @property
-    def psi_norm(self):
-        return self.mesh.uv[0]
-
-    @cached_property
-    def psi(self):
-        return self.psi_norm * (self.psi_boundary-self.psi_axis) + self.psi_axis
-
     def psirz(self, r, z, *args, **kwargs):
         return self._psirz(r, z, *args, **kwargs)
-
-    @cached_property
-    def cocos_flag(self):
-        return 1.0 if self.psi_boundary > self.psi_axis else -1.0
-
-    @property
-    def ffprime(self):
-        return Function(self.psi_norm, self._ffprime)
-
-    @cached_property
-    def fpol(self):
-        """Diamagnetic function (F=R B_Phi)  [T.m]."""
-        fpol2 = self._ffprime.antiderivative * (2 * (self.psi_boundary - self.psi_axis))
-        return Function(self.psi_norm,   np.sqrt(fpol2 - fpol2[-1] + self._fvac**2))
 
     @cached_property
     def dl(self):
@@ -345,14 +313,6 @@ class EquilibriumCoordinateSystem(Dict):
 
     def surface_average(self,  *args, **kwargs):
         return self.surface_integrate(*args, **kwargs) / self.dvolume_dpsi
-
-    @cached_property
-    def dvolume_dpsi(self):
-        r"""
-            .. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
-            .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
-        """
-        return self.surface_integrate()
 
     def bbox(self, s=None):
         rz = np.asarray([(s.bbox[0]+self.bbox[1])*0.5 for s in self.surface_mesh]).T
@@ -405,6 +365,9 @@ class EquilibriumCoordinateSystem(Dict):
             "r_outboard": r_outboard,
         })
 
+    ###############################
+    # 0-D
+
     @cached_property
     def magnetic_axis(self):
         o, _ = self.critical_points
@@ -420,6 +383,76 @@ class EquilibriumCoordinateSystem(Dict):
     @cached_property
     def boundary(self):
         return self.create_surface(1.0)
+
+    @cached_property
+    def cocos_flag(self):
+        return 1.0 if self.psi_boundary > self.psi_axis else -1.0
+
+    @cached_property
+    def psi_axis(self):
+        """Poloidal flux at the magnetic axis  [Wb]."""
+        o, _ = self.critical_points
+        return o[0].psi
+
+    @cached_property
+    def psi_boundary(self):
+        """Poloidal flux at the selected plasma boundary  [Wb]."""
+        _, x = self.critical_points
+        if len(x) > 0:
+            return x[0].psi
+        else:
+            raise ValueError(f"No x-point")
+
+    ###############################
+    # 1-D
+    @cached_property
+    def dvolume_dpsi(self):
+        r"""
+            .. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
+            .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
+        """
+        return self.surface_integrate()
+
+    @property
+    def ffprime(self):
+        return Function(self.psi_norm, self._ffprime)
+
+    @cached_property
+    def fpol(self):
+        """Diamagnetic function (F=R B_Phi)  [T.m]."""
+        fpol2 = self._ffprime.antiderivative * (2 * (self.psi_boundary - self.psi_axis))
+        return Function(self.psi_norm,   np.sqrt(fpol2 - fpol2[-1] + self._fvac**2))
+
+    @property
+    def psi_norm(self):
+        return self.mesh.uv[0]
+
+    @cached_property
+    def psi(self):
+        return self.psi_norm * (self.psi_boundary-self.psi_axis) + self.psi_axis
+
+    @cached_property
+    def dq_dpsi(self):
+        return Function(self.psi_norm, self.fpol*self.surface_integrate(1.0/(self.r**2)) *
+                        ((self.psi_boundary-self.psi_axis) / (TWOPI)))
+
+    @cached_property
+    def phi(self):
+        r"""
+            Note:
+            .. math::
+                \Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi
+        """
+        return self.dq_dpsi.antiderivative
+
+    @cached_property
+    def rho_tor(self):
+        """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0[m]"""
+        return np.sqrt(self.phi/(scipy.constants.pi * self._vacuum_toroidal_field.b0))
+
+    @cached_property
+    def rho_tor_norm(self):
+        return np.sqrt(self.phi/self.phi[-1])
 
 
 class EquilibriumConstraints(AttributeTree):
@@ -645,17 +678,16 @@ class EquilibriumProfiles1D(Profiles):
             .. math::
                 \Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi
         """
-        return Function(self._axis, self.fpol*self._coord.surface_integrate(1.0/(self._coord.r**2)) *
-                        ((self._coord.psi_boundary-self._coord.psi_axis) / (TWOPI))).antiderivative
+        return Function(self._axis, self._coord.phi(self._axis))
 
     @cached_property
     def rho_tor(self):
         """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0[m]"""
-        return np.sqrt(self.phi/(scipy.constants.pi * self._b0))
+        return Function(self._axis, self._coord.rho_tor(self._axis))
 
     @cached_property
     def rho_tor_norm(self):
-        return np.sqrt(self.phi/self.phi[-1])
+        return Function(self._axis, self._coord.rho_tor_norm(self._axis))
 
     @cached_property
     def drho_tor_dpsi(self):
