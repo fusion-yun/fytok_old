@@ -4,7 +4,7 @@ from functools import cached_property
 
 import matplotlib.pyplot as plt
 from spdm.data.AttributeTree import as_attribute_tree, AttributeTree
-from spdm.data.Node import Dict
+from spdm.data.Node import Dict, List
 from spdm.util.logger import logger
 from ..utilities.IDS import IDS
 
@@ -31,18 +31,18 @@ class PFActive(IDS):
 
     @cached_property
     def coil(self):
-        return PFActive.Coil(self["coil"], parent=self)
+        return List[PFActive.Coil](self["coil"],  parent=self)
 
     @cached_property
     def circuit(self):
         """Circuits, connecting multiple PF coils to multiple supplies, 
             defining the current and voltage relationships in the system"""
-        return PFActive.Circuit(self["circuit"], parent=self)
+        return List[PFActive.Circuit](self["circuit"],  parent=self)
 
     @cached_property
     def supply(self):
         """PF power supplies"""
-        return PFActive.Supply(self["supply"], parent=self)
+        return List[PFActive.Supply](self["supply"], parent=self)
 
     def plot(self, axis=None, *args, with_circuit=False, **kwargs):
 

@@ -5,7 +5,7 @@ from functools import cached_property
 import matplotlib.pyplot as plt
 import numpy as np
 from spdm.data.AttributeTree import as_attribute_tree
-from spdm.data.Node import Dict
+from spdm.data.Node import Dict, List
 from spdm.util.logger import logger
 from sympy import Point, Polygon
 from ..utilities.IDS import IDS

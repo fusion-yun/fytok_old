@@ -67,7 +67,6 @@ if __name__ == "__main__":
         }
     })
 
-    # logger.debug(tok.equilibrium.time_slice[-1].__serialize__())
 
     sp_figure(tok,
               wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
