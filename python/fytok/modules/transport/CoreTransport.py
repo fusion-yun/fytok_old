@@ -1,10 +1,9 @@
 import collections
-from functools import cached_property, lru_cache
+from functools import cached_property
 
 import numpy as np
-from spdm.data.AttributeTree import as_attribute_tree
 from spdm.data.Function import Function
-from spdm.data.Node import Dict, List, Node
+from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
 from spdm.data.TimeSeries import TimeSeries
 from spdm.util.logger import logger
@@ -39,7 +38,7 @@ class CoreTransportProfiles1D(Profiles):
         """ Grid for fluxes  """
         return self._grid.pullback(0.5*(self._grid.psi_norm[:-1]+self._grid.psi_norm[1:]))
 
-    class TransportCoeff(Node):
+    class TransportCoeff(Dict):
         def __init__(self, *args, **kwargs):
             super().__init__(*args,   **kwargs)
 
@@ -55,7 +54,7 @@ class CoreTransportProfiles1D(Profiles):
         def flux(self):
             return Function(self._parent.grid_flux.rho_tor_norm, self["flux"])
 
-    class Electrons(Node):
+    class Electrons(Dict):
         def __init__(self,   *args,  **kwargs):
             super().__init__(*args, **kwargs)
 
@@ -96,23 +95,23 @@ class CoreTransportProfiles1D(Profiles):
 
             @cached_property
             def radial(self):
-                return CoreTransport.TransportCoeff(self["radial"], parent=self._parent)
+                return CoreTransportProfiles1D.TransportCoeff(self["radial"], parent=self._parent)
 
             @cached_property
             def diamagnetic(self):
-                return CoreTransport.TransportCoeff(self["diamagnetic"], parent=self._parent)
+                return CoreTransportProfiles1D.TransportCoeff(self["diamagnetic"], parent=self._parent)
 
             @cached_property
             def parallel(self):
-                return CoreTransport.TransportCoeff(self["parallel"], parent=self._parent)
+                return CoreTransportProfiles1D.TransportCoeff(self["parallel"], parent=self._parent)
 
             @cached_property
             def poloidal(self):
-                return CoreTransport.TransportCoeff(self["poloidal"], parent=self._parent)
+                return CoreTransportProfiles1D.TransportCoeff(self["poloidal"], parent=self._parent)
 
             @cached_property
             def toroidal(self):
-                return CoreTransport.TransportCoeff(self["toroidal"], parent=self._parent)
+                return CoreTransportProfiles1D.TransportCoeff(self["toroidal"], parent=self._parent)
 
         @cached_property
         def momentum(self):
@@ -129,11 +128,11 @@ class CoreTransportProfiles1D(Profiles):
 
         @cached_property
         def particles(self):
-            return CoreTransport.TransportCoeff(self["particles"], parent=self._parent)
+            return CoreTransportProfiles1D.TransportCoeff(self["particles"], parent=self._parent)
 
         @cached_property
         def energy(self):
-            return CoreTransport.TransportCoeff(self["energy"],  parent=self._parent)
+            return CoreTransportProfiles1D.TransportCoeff(self["energy"],  parent=self._parent)
 
     @cached_property
     def electrons(self):
@@ -143,12 +142,12 @@ class CoreTransportProfiles1D(Profiles):
     @cached_property
     def ion(self) -> List:
         """ Transport coefficients related to the various ion species """
-        return List[CoreTransportProfiles1D.Ion](self['ion'], default_factory=CoreTransportProfiles1D.Ion, parent=self)
+        return List[CoreTransportProfiles1D.Ion](self['ion'], parent=self)
 
     @cached_property
     def neutral(self) -> List:
         """ Transport coefficients related to the various neutral species """
-        return List[CoreTransportProfiles1D.Neutral](self['neutral'], default_factory=CoreTransportProfiles1D.Neutral,  parent=self)
+        return List[CoreTransportProfiles1D.Neutral](self['neutral'],   parent=self)
 
     @cached_property
     def total_ion_energy(self):

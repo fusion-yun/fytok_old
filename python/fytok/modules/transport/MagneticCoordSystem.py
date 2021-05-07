@@ -11,20 +11,19 @@ from scipy.optimize import fsolve, root_scalar
 from spdm.data.AttributeTree import AttributeTree, as_attribute_tree
 from spdm.data.Field import Field
 from spdm.data.Function import Function
-from spdm.data.mesh.CurvilinearMesh import CurvilinearMesh
 from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
 from spdm.data.TimeSeries import TimeSeries, TimeSlice
 from spdm.geometry.CubicSplineCurve import CubicSplineCurve
 from spdm.geometry.Curve import Curve
 from spdm.geometry.Point import Point
+from spdm.mesh.CurvilinearMesh import CurvilinearMesh
 from spdm.util.logger import logger
 from spdm.util.utilities import convert_to_named_tuple, try_get
 
 from ..utilities.GGD import GGD
 from ..utilities.IDS import IDS
 from ..utilities.Misc import Identifier, RZTuple, VacuumToroidalField
-from ..utilities.Misc import VacuumToroidalField
 
 TOLERANCE = 1.0e-6
 EPS = np.finfo(float).eps
@@ -78,6 +77,12 @@ class RadialGrid:
             raise RuntimeError(f"Illegal shape! {k} {d.shape }!={self._psi_norm.shape}")
 
         return d.view(np.ndarray)
+
+    def __serialize__(self) -> Dict:
+        return {
+            "psi_norm": self.psi_norm,
+            "rho_tor_norm": self.rho_tor_norm,
+        }
 
     def pullback(self, psi_norm):
         return RadialGrid(psi_norm, coordinate_system=self._coordinate_system, **self._data)

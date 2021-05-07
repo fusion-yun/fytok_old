@@ -219,7 +219,7 @@ class CoreProfiles1D(Profiles):
         @cached_property
         def multiple_states_flag(self):
             """Multiple states calculation flag : 0-Only one state is considered; 1-Multiple states are considered and are described in the state  {dynamic}    """
-            return self.__raw_get__("multiple_states_flag")
+            return self["multiple_states_flag"]
 
         @cached_property
         def state(self):
@@ -417,7 +417,7 @@ class CoreProfiles1D(Profiles):
     def j_bootstrap(self):
         """Bootstrap current density = average(J_Bootstrap.B) / B0,
             where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
-        return Function(self.axis, self["j_bootstrap"])
+        return Function(self._axis, self["j_bootstrap"])
 
     # @property
     # def conductivity_parallel(self):
@@ -430,7 +430,7 @@ class CoreProfiles1D(Profiles):
 
         @cached_property
         def parallel(self):
-            return Function(self.axis, self["parallel"])
+            return Function(self._axis, self["parallel"])
 
     @cached_property
     def e_field(self):

@@ -24,9 +24,14 @@ NCLASS_MSG = [
 ]
 
 
-def transport_nclass(equilibrium: EquilibriumTimeSlice, core_profiles: CoreProfiles1D, core_transport: CoreTransport.Profiles1D, grid: np.ndarray = None) -> CoreTransport.Profiles1D:
+def transport_nclass(equilibrium: EquilibriumTimeSlice,
+                     core_profiles: CoreProfiles1D,
+                     core_transport: CoreTransport.Profiles1D,
+                     grid: np.ndarray = None) -> CoreTransport.Profiles1D:
 
-    logger.debug(f"Transport mode: NCLASS")
+    logger.debug(f"Transport mode: NCLASS [START]")
+
+    eq_profiles_1d = equilibrium.profiles_1d
 
     # core_transport = CoreTransport(
     #     {
@@ -106,19 +111,19 @@ def transport_nclass(equilibrium: EquilibriumTimeSlice, core_profiles: CoreProfi
     #  p_gr2phi       : radial electric field gradient Psi'(Phi'/Psi')' (V/rho**2)
     # -----------------------------------------------------------------------------
 
-    psi_norm = equilibrium.profiles_1d.psi_norm
+    psi_norm = eq_profiles_1d.psi_norm
     rho_tor_norm = core_profiles.grid.rho_tor_norm
     rho_tor = core_profiles.grid.rho_tor
     rho_tor_bdry = rho_tor[-1]
 
-    bt0_pr = equilibrium.profiles_1d.fpol * equilibrium.profiles_1d.gm1 / equilibrium.profiles_1d.gm9
-    gph_pr = equilibrium.profiles_1d.gm1*equilibrium.profiles_1d.vprime * rho_tor_bdry
+    bt0_pr = eq_profiles_1d.fpol * eq_profiles_1d.gm1 / eq_profiles_1d.gm9
+    gph_pr = eq_profiles_1d.gm1*eq_profiles_1d.vprime * rho_tor_bdry
 
     b0 = equilibrium.vacuum_toroidal_field.b0
     r0 = equilibrium.vacuum_toroidal_field.r0
 
-    r_inboard = equilibrium.profiles_1d.r_inboard
-    r_outboard = equilibrium.profiles_1d.r_outboard
+    r_inboard = eq_profiles_1d.r_inboard
+    r_outboard = eq_profiles_1d.r_outboard
 
     xr0_pr = (r_inboard+r_outboard)*0.5
 
@@ -132,17 +137,18 @@ def transport_nclass(equilibrium: EquilibriumTimeSlice, core_profiles: CoreProfi
 
     ns = [core_profiles.electrons.density, *[ion.density for ion in core_profiles.ion]]
 
-    dPs = [core_profiles.electrons.pressure.derivative*equilibrium.profiles_1d.dpsi_drho_tor_norm,
-           *[ion.pressure.derivative*equilibrium.profiles_1d.dpsi_drho_tor_norm for ion in core_profiles.ion]]
+    dPs = [core_profiles.electrons.pressure.derivative*eq_profiles_1d.dpsi_drho_tor_norm,
+           *[ion.pressure.derivative*eq_profiles_1d.dpsi_drho_tor_norm for ion in core_profiles.ion]]
 
     amu = [scipy.constants.m_e/scipy.constants.m_u,   # Electron mass in amu
            * [sum([(a.a*a.atoms_n) for a in ion.element])for ion in core_profiles.ion]]
 
-    q = equilibrium.profiles_1d.q
-    dq_drho_tor = equilibrium.profiles_1d.q.derivative*equilibrium.profiles_1d.dpsi_drho_tor
-    dphi_drho_tor = equilibrium.profiles_1d.dphi_dpsi*equilibrium.profiles_1d.dpsi_drho_tor
-    fpol = equilibrium.profiles_1d.fpol
-    kappa = equilibrium.profiles_1d.elongation
+    q = eq_profiles_1d.q
+
+    dq_drho_tor = q.derivative*eq_profiles_1d.dpsi_drho_tor
+    dphi_drho_tor = q*eq_profiles_1d.dpsi_drho_tor
+    fpol = eq_profiles_1d.fpol
+    kappa = eq_profiles_1d.elongation
 
     c_potb = kappa[0]*b0/2.0/q[0]
     c_potl = r0*q[0]
@@ -150,16 +156,19 @@ def transport_nclass(equilibrium: EquilibriumTimeSlice, core_profiles: CoreProfi
     psi_norm = Function(core_transport.grid_d.rho_tor_norm, core_transport.grid_d.psi_norm)
 
     flag = True
+
+    ele = core_transport.electrons
+
     # Set input for NCLASS
     for ipr, x in enumerate(core_transport.grid_d.rho_tor_norm):
         x_psi = psi_norm(x)
         xqs = q(x_psi)
         # Geometry and electrical field calculations
 
-        dpsi_drho_tor = equilibrium.profiles_1d.dpsi_drho_tor(x_psi)
-        jparallel = equilibrium.profiles_1d.j_parallel(x_psi)*b0
-        dphi_dpsi = equilibrium.profiles_1d.dphi_dpsi(x_psi)
-        grad_rho_tor2 = equilibrium.profiles_1d.gm3(x_psi)
+        dpsi_drho_tor = eq_profiles_1d.dpsi_drho_tor(x_psi)
+        jparallel = eq_profiles_1d.j_parallel(x_psi)*b0
+        dphi_dpsi = eq_profiles_1d.dphi_dpsi(x_psi)
+        grad_rho_tor2 = eq_profiles_1d.gm3(x_psi)
 
         #-------------#
         #Call NCLASS  #
@@ -209,18 +218,16 @@ def transport_nclass(equilibrium: EquilibriumTimeSlice, core_profiles: CoreProfi
                 p_fm[2] = 2*a**(2*2)*(1.0 + 2*b)/c
                 p_fm[1] = 3*a**(2*3)*(1.0 + 3*b)/c
 
-        e_parallel = core_profiles.e_field.parallel
-        
         inputs = (
             m_i,                                              # number of isotopes (> 1) [-]
             m_z,                                              # highest charge state [-]
-            equilibrium.profiles_1d.gm5(x_psi),               # <B**2> [T**2]
-            equilibrium.profiles_1d.gm4(x_psi),               # <1/B**2> [1/T**2]
+            eq_profiles_1d.gm5(x_psi),                        # <B**2> [T**2]
+            eq_profiles_1d.gm4(x_psi),                        # <1/B**2> [1/T**2]
             core_profiles.e_field.parallel(x_psi)*b0,         # <E.B> [V*T/m]
             scipy.constants.mu_0*fpol(x_psi) / dpsi_drho_tor,  # mu_0*F/(dPsi/dr) [rho/m]
             p_fm,                                             # poloidal moments of drift factor for PS [/m**2]
-            equilibrium.profiles_1d.trapped_fraction(x_psi),  # trapped fraction [-]
-            equilibrium.profiles_1d.gm6(x_psi),               # <grad(rho)**2/B**2> [rho**2/m**2/T**2]
+            eq_profiles_1d.trapped_fraction(x_psi),           # trapped fraction [-]
+            eq_profiles_1d.gm6(x_psi),                        # <grad(rho)**2/B**2> [rho**2/m**2/T**2]
             dphi_drho_tor(x_psi),                             # potential gradient Phi' [V/rho]
             ((dpsi_drho_tor**2) * dq_drho_tor(x_psi)),        # Psi'(Phi'/Psi')' [V/rho**2]
             p_ngrth,                                          # <n.grad(Theta)> [/m]
@@ -250,7 +257,7 @@ def transport_nclass(equilibrium: EquilibriumTimeSlice, core_profiles: CoreProfi
         # logger.debug(outputs)
 
         (
-            iflag,  # " int"
+            iflag,      # " int"
             p_etap,     # - parallel electrical resistivity [Ohm*m]
             p_jbbs,     # - <J_bs.B> [A*T/m**2]
             p_jbex,     # - <J_ex.B> current response to fex_iz [A*T/m**2]
@@ -326,13 +333,13 @@ def transport_nclass(equilibrium: EquilibriumTimeSlice, core_profiles: CoreProfi
         utheta_s[:, 2, :] = p_etap*(jparallel - p_jbbs)*utheta_s[:, 2, :]
 
         # Electron particle flux
-        core_transport.electrons.particles.flux[ipr] = np.sum(glf_s[:, 0])
-        core_transport.electrons.particles.d[ipr] = dn_s[0]/grad_rho_tor2
-        core_transport.electrons.particles.v[ipr] = vnnt_s[0] + vneb_s[0]*p_etap*(jparallel - p_jbbs)
+        ele.particles.flux[ipr] = np.sum(glf_s[:, 0])
+        ele.particles.d[ipr] = dn_s[0]/grad_rho_tor2
+        ele.particles.v[ipr] = vnnt_s[0] + vneb_s[0]*p_etap*(jparallel - p_jbbs)
         # Electrons  heat flux
-        core_transport.electrons.energy.flux[ipr] = np.sum(qfl_s[:, 0])
-        core_transport.electrons.energy.d[ipr] = chi_s[0]/grad_rho_tor2
-        core_transport.electrons.energy.v[ipr] = vqnt_s[0] + vqeb_s[0]*p_etap*(jparallel - p_jbbs)
+        ele.energy.flux[ipr] = np.sum(qfl_s[:, 0])
+        ele.energy.d[ipr] = chi_s[0]/grad_rho_tor2
+        ele.energy.v[ipr] = vqnt_s[0] + vqeb_s[0]*p_etap*(jparallel - p_jbbs)
 
         # core_transport.chieff[ipr] = chi_s[1]/grad_rho_tor2  # need to set 0.0
 
@@ -346,7 +353,6 @@ def transport_nclass(equilibrium: EquilibriumTimeSlice, core_profiles: CoreProfi
             sp.energy.flux[ipr] = np.sum(qfl_s[:, k + 1])
             sp.energy.d[ipr] = chi_s[k + 1]/grad_rho_tor2
             sp.energy.v[ipr] = vqnt_s[k + 1] + vqeb_s[k + 1]*p_etap*(jparallel - p_jbbs)
-
             # sp.deff[ipr] = dn_s[k + 1]/grad_rho_tor2
 
             # Ionic rotational  momentum transport
@@ -395,5 +401,5 @@ def transport_nclass(equilibrium: EquilibriumTimeSlice, core_profiles: CoreProfi
 
     # Copy local values to profiles
     # core_profiles.vloop[ipr] = profiles_rm.vpol[1, :]
-
+    logger.debug(f"Transport mode: NCLASS [DONE]")
     return core_transport

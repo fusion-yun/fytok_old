@@ -165,7 +165,6 @@ if __name__ == "__main__":
         grid=True, fontsize=10
     ) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
-
     core_transport = CoreTransport({
         "identifier": {
             "name": "neoclassical",
@@ -176,9 +175,9 @@ if __name__ == "__main__":
 
     core_transport.profiles_1d[_next_] = {"time": 0.0}
 
-    nclass.transport_nclass(eq, core_profile, core_transport.profiles_1d[-1])
-
     core_transport1d = core_transport.profiles_1d[-1]
+
+    nclass.transport_nclass(eq, core_profile, core_transport1d)
 
     plot_profiles(
         [
@@ -210,3 +209,5 @@ if __name__ == "__main__":
         x_axis=(core_transport1d.grid_v.rho_tor_norm,   r"$\sqrt{\Phi/\Phi_{bdry}}$"),  # x axis,
         annotation=core_transport.identifier.name,
         grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
+
+    logger.debug("====== DONE ========")
