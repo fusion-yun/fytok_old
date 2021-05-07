@@ -175,12 +175,10 @@ if __name__ == "__main__":
     },  grid=eq.radial_grid("rho_tor_norm"),   time=eq.time)
 
     core_transport.profiles_1d[_next_] = {"time": 0.0}
-    
+
     nclass.transport_nclass(eq, core_profile, core_transport.profiles_1d[-1])
 
     core_transport1d = core_transport.profiles_1d[-1]
-
-    logger.debug(core_transport.identifier)
 
     plot_profiles(
         [
