@@ -6,10 +6,11 @@ from spdm.data.AttributeTree import as_attribute_tree
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List, Node
 from spdm.data.Profiles import Profiles
+from spdm.data.TimeSeries import TimeSeries
 from spdm.util.logger import logger
 
 from ..utilities.IDS import IDS
-from ..utilities.RadialGrid import RadialGrid
+from .MagneticCoordSystem import RadialGrid
 from .ParticleSpecies import Species
 
 
@@ -17,7 +18,7 @@ class CoreTransportProfiles1D(Profiles):
     def __init__(self, *args, grid=None,  **kwargs):
         super().__init__(*args,   **kwargs)
         self._grid = grid or self._parent._grid
-        self._time = self["time"] 
+        self._time = self["time"]
 
     @property
     def time(self) -> float:
@@ -183,20 +184,17 @@ class CoreTransport(IDS):
         Note that the energy flux includes the energy transported by the particle flux.
     """
     _IDS = "core_transport"
+
     Profiles1D = CoreTransportProfiles1D
 
     def __init__(self,  *args, grid: RadialGrid = None,  **kwargs):
         super().__init__(*args, **kwargs)
         self._grid = grid
 
-    @cached_property
-    def identifier(self):
-        return self["identifier"]
-
-    @property
-    def time(self):
-        return np.asarray([profile.time for profile in self.profiles_1d])
+    # @property
+    # def time(self):
+    #     return np.asarray([profile.time for profile in self.profiles_1d])
 
     @cached_property
-    def profiles_1d(self) -> List[CoreTransportProfiles1D]:
-        return List[CoreTransportProfiles1D](self["profiles_1d"], default_factory=CoreTransportProfiles1D, parent=self)
+    def profiles_1d(self) -> TimeSeries[CoreTransportProfiles1D]:
+        return TimeSeries[CoreTransportProfiles1D](self["profiles_1d"],  time=self.time,   parent=self)

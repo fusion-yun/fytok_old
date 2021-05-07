@@ -11,7 +11,7 @@ from spdm.util.logger import logger
 
 from ..utilities.IDS import IDS
 from ..utilities.Misc import VacuumToroidalField
-from ..utilities.RadialGrid import RadialGrid
+from .MagneticCoordSystem import RadialGrid
 from .ParticleSpecies import Species
 
 
@@ -488,18 +488,13 @@ class CoreProfiles(IDS):
         self._vacuum_toroidal_field = vacuum_toroidal_field or \
             VacuumToroidalField(self.__raw_get__("vacuum_toroidal_field.r0"),
                                 self.__raw_get__("vacuum_toroidal_field.b0"))
-
-    @property
-    def time(self):
-        return np.asarray([profile.time for profile in self.profiles_1d])
-
     @property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
         return self._vacuum_toroidal_field
 
     @cached_property
-    def profiles_1d(self) -> TimeSeries[CoreProfiles1D]:
-        return TimeSeries[CoreProfiles1D](self["profiles_1d"],   time=self.time,  parent=self)
+    def profiles_1d(self) -> TimeSeries[Profiles1D]:
+        return TimeSeries[CoreProfiles.Profiles1D](self["profiles_1d"], time=self.time,  parent=self)
 
     @cached_property
     def global_quantities(self) -> CoreProfilesGlobalQuantities:

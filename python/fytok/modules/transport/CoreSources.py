@@ -9,7 +9,7 @@ from spdm.data.Profiles import Profiles
 from spdm.util.logger import logger
 
 from ..utilities.IDS import IDS
-from ..utilities.RadialGrid import RadialGrid
+from .MagneticCoordSystem import RadialGrid
 
 
 class CoreSources(IDS):

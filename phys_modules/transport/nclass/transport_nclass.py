@@ -123,7 +123,7 @@ def transport_nclass(equilibrium: EquilibriumTimeSlice, core_profiles: CoreProfi
     xr0_pr = (r_inboard+r_outboard)*0.5
 
     #  external poloidal current has a flux surface (A)|
-    xfs_pr = 2.0*scipy.constants.pi*xr0_pr*bt0_pr/scipy.constants.mu_0
+    xfs_pr = xr0_pr*bt0_pr * (2.0*scipy.constants.pi/scipy.constants.mu_0)
 
     # Electron,Ion densities, temperatures and mass
 
