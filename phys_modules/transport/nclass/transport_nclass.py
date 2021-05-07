@@ -209,6 +209,8 @@ def transport_nclass(equilibrium: EquilibriumTimeSlice, core_profiles: CoreProfi
                 p_fm[2] = 2*a**(2*2)*(1.0 + 2*b)/c
                 p_fm[1] = 3*a**(2*3)*(1.0 + 3*b)/c
 
+        e_parallel = core_profiles.e_field.parallel
+        
         inputs = (
             m_i,                                              # number of isotopes (> 1) [-]
             m_z,                                              # highest charge state [-]

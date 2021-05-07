@@ -165,7 +165,7 @@ if __name__ == "__main__":
         grid=True, fontsize=10
     ) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
-if False:
+
     core_transport = CoreTransport({
         "identifier": {
             "name": "neoclassical",
