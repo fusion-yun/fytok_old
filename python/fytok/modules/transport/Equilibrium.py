@@ -648,7 +648,7 @@ class EquilibriumProfiles1D(Profiles):
         r"""Flux surface averaged toroidal current density = average(j_tor/R) / average(1/R) {dynamic}[A.m ^ -2]. """
         d = (self.gm2*self.dvolume_drho_tor*self.dpsi_drho_tor).derivative / \
             self.dvolume_dpsi*self._r0/scipy.constants.mu_0
-        return Function(self._axis, d.view(np.ndarray))
+        return Function(self._axis, np.asarray(d))
 
     @cached_property
     def j_parallel(self):
@@ -773,7 +773,8 @@ class EquilibriumProfiles1D(Profiles):
 
     @cached_property
     def norm_grad_rho_tor(self):
-        return self._coord.norm_grad_psi * self.drho_tor_dpsi.view(np.ndarray).reshape(list(self.drho_tor_dpsi.shape)+[1])
+        d = np.asarray(self.drho_tor_dpsi)
+        return self._coord.norm_grad_psi * d.reshape(list(d.shape)+[1])
 
     @cached_property
     def gm1(self):
@@ -1254,8 +1255,10 @@ class Equilibrium(IDS):
 
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._r0 = self["vacuum_toroidal_field.r0"] or 0.0
-        self._b0 = self["vacuum_toroidal_field.b0"] or 0.0
+        self._r0 = self["vacuum_toroidal_field.r0"] or 1.0
+        b0 = self["vacuum_toroidal_field.b0"] or 1.0
+        self._cocos_flag = b0 > 0
+        self._b0 = np.abs(b0)
 
     @property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
