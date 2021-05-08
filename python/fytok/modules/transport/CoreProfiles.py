@@ -1,6 +1,6 @@
 import collections
 from functools import cached_property
-
+import scipy.constants
 import numpy as np
 from spdm.data.AttributeTree import AttributeTree
 from spdm.data.Function import Function
@@ -11,7 +11,7 @@ from spdm.util.logger import logger
 
 from ..utilities.IDS import IDS
 from ..utilities.Misc import VacuumToroidalField
-from .MagneticCoordSystem import RadialGrid
+from .MagneticCoordSystem import RadialGrid, TWOPI
 from .ParticleSpecies import Species
 
 
@@ -19,9 +19,13 @@ class CoreProfiles1D(Profiles):
     def __init__(self, *args, grid=None, time=None, parent=None, **kwargs):
         grid = grid or getattr(parent, "_grid", None)
         assert(grid is not None)
-        super().__init__(*args, axis=grid.rho_tor_norm, **kwargs)
+        super().__init__(*args, axis=grid.rho_tor_norm, parent=parent, **kwargs)
         self._grid = grid
         self._time = time or 0.0
+        self._r0 = self._parent.vacuum_toroidal_field.r0
+        self._b0 = self._parent.vacuum_toroidal_field.b0
+        if callable(self._b0):
+            self._b0 = self._b0(time)
 
     @property
     def time(self) -> float:
@@ -32,8 +36,8 @@ class CoreProfiles1D(Profiles):
         return self._grid
 
     class Electrons(Profiles):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
+        def __init__(self,   *args, axis=None, parent=None, **kwargs):
+            super().__init__(*args, axis=axis if axis is not None else parent.grid.rho_tor_norm,  **kwargs)
 
         @cached_property
         def temperature(self):
@@ -106,8 +110,8 @@ class CoreProfiles1D(Profiles):
             return NotImplemented
 
     class Ion(Species):
-        def __init__(self,   *args,      **kwargs):
-            super().__init__(*args,  **kwargs)
+        def __init__(self,   *args, axis=None, parent=None, **kwargs):
+            super().__init__(*args, axis=axis if axis is not None else parent.grid.rho_tor_norm,  **kwargs)
 
         @cached_property
         def z_ion(self):
@@ -197,24 +201,24 @@ class CoreProfiles1D(Profiles):
         @cached_property
         def pressure_fast_perpendicular(self):
             """Fast (non-thermal) perpendicular pressure (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-            return NotImplemented
+            return self["pressure_fast_perpendicular"]
 
         @cached_property
         def pressure_fast_parallel(self):
             """Fast (non-thermal) parallel pressure (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-            return NotImplemented
+            return self["pressure_fast_parallel"]
 
         @property
         def rotation_frequency_tor(self):
             """Toroidal rotation frequency (i.e. toroidal velocity divided by the major radius at which the toroidal velocity is taken)
             (average over charge states when multiple charge states are considered) {dynamic} [rad.s^-1]  """
-            return NotImplemented
+            return self["rotation_frequency_tor"]
 
         @property
         def velocity(self):
             """Velocity (average over charge states when multiple charge states are considered) at the position of maximum major
             radius on every flux surface [m.s^-1]    """
-            return NotImplemented
+            return self["velocity"]
 
         @cached_property
         def multiple_states_flag(self):
@@ -227,8 +231,8 @@ class CoreProfiles1D(Profiles):
             return self["state"]
 
     class Neutral(Species):
-        def __init__(self,    *args, **kwargs):
-            super().__init__(*args,  **kwargs)
+        def __init__(self,   *args, axis=None, parent=None, **kwargs):
+            super().__init__(*args, axis=axis if axis is not None else parent.grid.rho_tor_norm,  **kwargs)
 
         @property
         def ion_index(self):
@@ -302,35 +306,34 @@ class CoreProfiles1D(Profiles):
         #     return NotImplemented
 
     @cached_property
-    def electrons(self):
+    def electrons(self) -> Electrons:
         """Quantities related to the electrons"""
-        return CoreProfiles1D.Electrons(self["electrons"], axis=self.grid.rho_tor_norm, parent=self)
+        return CoreProfiles1D.Electrons(self["electrons"], axis=self._axis, parent=self)
 
     @cached_property
-    def ion(self):
+    def ion(self) -> List[Ion]:
         """Quantities related to the different ion species"""
-        return List(self["ion"], default_factory=lambda d, axis=self.grid.rho_tor_norm, parent=self, **kwargs: CoreProfiles1D.Ion(d, axis=axis, parent=parent, **kwargs),  parent=self)
+        return List[CoreProfiles1D.Ion](self["ion"],  parent=self)
 
     @cached_property
-    def neutral(self):
+    def neutral(self) -> List[Neutral]:
         """Quantities related to the different neutral species"""
-        return List(self["neutral"],
-                    default_factory=lambda d, axis=self.grid.rho_tor_norm, parent=self, **kwargs: CoreProfiles1D.Neutral(d, axis=axis, parent=parent, **kwargs), parent=self)
+        return List[CoreProfiles1D.Neutral](self["neutral"],  parent=self)
 
     @cached_property
     def t_i_average(self):
         """Ion temperature(averaged on charge states and ion species) {dynamic}[eV]"""
-        return Function(self.grid.rho_tor_norm, self["t_i_average"], description={"name": "t_i_average"})
+        return Function(self._axis, self["t_i_average"])
 
     @cached_property
     def t_i_average_fit(self):
         """Information on the fit used to obtain the t_i_average profile[eV]"""
-        return Function(self.grid.rho_tor_norm, self["t_i_average_fit"])
+        return Function(self._axis, self["t_i_average_fit"])
 
     @cached_property
     def n_i_total(self):
         """ total ion density(sum over species and charge states)   (thermal+non-thermal) {dynamic}[-]"""
-        res = Function(self.grid.rho_tor_norm, 0.0)
+        res = Function(self._axis, 0.0)
         for ion in self.ion:
             res += ion.z_ion*(ion.density_thermal+ion.density_fast)
         return res
@@ -343,7 +346,7 @@ class CoreProfiles1D(Profiles):
     @cached_property
     def n_i_thermal_total(self):
         """Total ion thermal density(sum over species and charge states) {dynamic}[m ^ -3]"""
-        res = Function(self.grid.rho_tor_norm, 0.0)
+        res = Function(self._axis, 0.0)
         for ion in self.ion:
             res += ion.z_ion * ion.density_thermal
         return res
@@ -351,7 +354,7 @@ class CoreProfiles1D(Profiles):
     @cached_property
     def zeff(self):
         """Effective charge {dynamic}[-]"""
-        res = Function(self.grid.rho_tor_norm, 0.0)
+        res = Function(self._axis, 0.0)
         for ion in self.ion:
             res += ion.z_ion * ion.z_ion * ion.density
         return res/self.n_i_total
@@ -359,18 +362,18 @@ class CoreProfiles1D(Profiles):
     @cached_property
     def zeff_fit(self):
         """Information on the fit used to obtain the zeff profile[-]  """
-        return Function(self.grid.rho_tor_norm, 0.0)
+        return Function(self._axis, 0.0)
 
     @cached_property
     def momentum_tor(self):
         """Total plasma toroidal momentum, summed over ion species and electrons weighted by their density and major radius,
             i.e. sum_over_species(n*R*m*Vphi) {dynamic}[kg.m ^ -1.s ^ -1]"""
-        return Function(self.grid.rho_tor_norm, 0.0)
+        return NotImplemented
 
     @cached_property
     def pressure_ion_total(self):
         """Total(sum over ion species) thermal ion pressure {dynamic}[Pa]"""
-        return Function(self.grid.rho_tor_norm, 0.0)
+        return np.sum([ion.pressure for ion in self.ion])
 
     @cached_property
     def pressure_thermal(self):
@@ -387,31 +390,31 @@ class CoreProfiles1D(Profiles):
         """Total parallel pressure(electrons+ions, thermal+non-thermal) {dynamic}[Pa]"""
         return NotImplemented
 
-    # @cached_property
-    # def j_total(self):
-    #     """Total parallel current density = average(jtot.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
-    #     return Function(self.grid.rho_tor_norm, 0.0, description={"name": "j_total"})
+    @cached_property
+    def j_total(self):
+        """Total parallel current density = average(jtot.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
+        return self.current_parallel_inside.derivative * self._r0*TWOPI/self.grid.dvolume_drho_tor
 
-    # @property
-    # def current_parallel_inside(self):
-    #     """Parallel current driven inside the flux surface. Cumulative surface integral of j_total {dynamic}[A]"""
-    #     return NotImplemented
+    @cached_property
+    def current_parallel_inside(self) -> Function:
+        """Parallel current driven inside the flux surface. Cumulative surface integral of j_total {dynamic}[A]"""
+        return self.grid.dpsi_drho_tor
 
-    # @cached_property
-    # def j_tor(self):
-    #     """Total toroidal current density = average(J_Tor/R) / average(1/R) {dynamic}[A/m ^ 2]"""
-    #     return Function(self.grid.rho_tor_norm, 0.0, description={"name": "j_tor"})
+    @cached_property
+    def j_tor(self):
+        """Total toroidal current density = average(J_Tor/R) / average(1/R) {dynamic}[A/m ^ 2]"""
+        return Function(self._axis, ["j_tor"])
 
     @cached_property
     def j_ohmic(self):
         """Ohmic parallel current density = average(J_Ohmic.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
-        return NotImplemented
+        return Function(self._axis, ["j_ohmic"])
 
     @cached_property
     def j_non_inductive(self):
         """Non-inductive(includes bootstrap) parallel current density = average(jni.B) / B0,
         where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
-        return NotImplemented
+        return Function(self._axis, ["j_non_inductive"])
 
     @cached_property
     def j_bootstrap(self):
@@ -419,14 +422,29 @@ class CoreProfiles1D(Profiles):
             where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
         return Function(self._axis, self["j_bootstrap"])
 
-    # @property
-    # def conductivity_parallel(self):
-    #     """Parallel conductivity {dynamic}[ohm ^ -1.m ^ -1]"""
-    #     return NotImplemented
+    @cached_property
+    def conductivity_parallel(self):
+        """Parallel conductivity {dynamic}[ohm ^ -1.m ^ -1]"""
+        Te = self.electrons.temperature
+        ne = self.electrons.density
+
+        # Electron collisions: Coulomb logarithm
+        clog = np.asarray([
+            (24.0 - 1.15*np.log10(ne[idx]*1.0e-6) + 2.30*np.log10(Te[idx]))
+            if Te[idx] >= 10 else (23.0 - 1.15*np.log10(ne[idx]*1.0e-6) + 3.45*np.log10(Te[idx]))
+            for idx in range(len(ne))
+        ])
+        # electron collision time:
+        # tau_e = (np.sqrt(2.*scipy.constants.electron_mass)*(Te**1.5)) / 1.8e-19 / (ne * 1.0e-6) / clog
+
+        # Plasma electrical conductivity:
+        return 1.96e0 * scipy.constants.elementary_charge**2   \
+            * ((np.sqrt(2.*scipy.constants.electron_mass)*(Te**1.5)) / 1.8e-19 / clog) \
+            / scipy.constants.m_e
 
     class EField(Profiles):
-        def __init__(self, *args,   **kwargs):
-            super().__init__(*args,   **kwargs)
+        def __init__(self,   *args, axis=None, parent=None, **kwargs):
+            super().__init__(*args, axis=axis if axis is not None else parent._axis,  **kwargs)
 
         @cached_property
         def parallel(self):
@@ -436,12 +454,12 @@ class CoreProfiles1D(Profiles):
     def e_field(self):
         """Electric field, averaged on the magnetic surface. E.g for the parallel component, average(E.B) / B0,
             using core_profiles/vacuum_toroidal_field/b0[V.m ^ -1]  """
-        return CoreProfiles1D.EField(self["e_field"], axis=self.grid.rho_tor_norm, parent=self)
+        return CoreProfiles1D.EField(self["e_field"], axis=self._axis, parent=self)
 
     @cached_property
     def phi_potential(self):
         """Electrostatic potential, averaged on the magnetic flux surface {dynamic}[V]"""
-        return NotImplemented  # Function(self.grid.rho_tor_norm, 0.0, description={"name": "phi_potential"})
+        return Function(self._axis, self["phi_potential"])
 
     @cached_property
     def rotation_frequency_tor_sonic(self):
@@ -449,25 +467,18 @@ class CoreProfiles1D(Profiles):
         This quantity is the toroidal angular rotation frequency due to the ExB drift, introduced in formula(43) of Hinton and Wong,
         Physics of Fluids 3082 (1985), also referred to as sonic flow in regimes in which the toroidal velocity is dominant over the
         poloidal velocity Click here for further documentation. {dynamic}[s ^ -1]"""
-        return NotImplemented  # Function(self.grid.rho_tor_norm, 0.0, description={"name": "rotation_frequency_tor_sonic"})
+        return Function(self._axis, self["rotation_frequency_tor_sonic"])
 
-    # @cached_property
-    # def q(self):
-    #     """Safety factor(IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic}[-].
-    #     This quantity is COCOS-dependent, with the following transformation: """
-    #     # q = (constants.pi*2.0)*self._b0*self.dpsi_drho_tor.axis*self.grid.rho_tor[-1]/self.dpsi_drho_tor
-    #     # q[0] = 2*q[1]-q[2]
-    #     # return Quantity(self.dpsi_drho_tor.axis, q)
-    #     return Quantity(self.grid.rho_tor_norm, 0, description={"name": "Safety factor"})
-
-    # @cached_property
-    # def dpsi_drho_tor(self):
-    #     return Quantity(self.grid.rho_tor_norm, 0, description={"name": "dpsi_drho_tor"})
+    @cached_property
+    def q(self):
+        """Safety factor(IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic}[-].
+        This quantity is COCOS-dependent, with the following transformation: """
+        return Function(self._axis, self["q"])
 
     @cached_property
     def magnetic_shear(self):
         """Magnetic shear, defined as rho_tor/q . dq/drho_tor {dynamic}[-]"""
-        return NotImplemented
+        return Function(self._axis, self["magnetic_shear"])
 
 
 class CoreProfilesGlobalQuantities(AttributeTree):
@@ -482,15 +493,13 @@ class CoreProfiles(IDS):
     Profiles1D = CoreProfiles1D
     GlobalQuantities = CoreProfilesGlobalQuantities
 
-    def __init__(self,  *args, vacuum_toroidal_field: VacuumToroidalField = None,   grid: RadialGrid = None, ** kwargs):
+    def __init__(self,  *args,  grid: RadialGrid = None, ** kwargs):
         super().__init__(*args,  ** kwargs)
         self._grid = grid
-        self._vacuum_toroidal_field = vacuum_toroidal_field or \
-            VacuumToroidalField(self.__raw_get__("vacuum_toroidal_field.r0"),
-                                self.__raw_get__("vacuum_toroidal_field.b0"))
+
     @property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        return self._vacuum_toroidal_field
+        return VacuumToroidalField(self["vacuum_toroidal_field.b0"], self["vacuum_toroidal_field.r0"])
 
     @cached_property
     def profiles_1d(self) -> TimeSeries[Profiles1D]:

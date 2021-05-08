@@ -5,8 +5,9 @@ from typing import Sequence, Union
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
+import scipy.constants
 import scipy.integrate
-from spdm.data.AttributeTree import AttributeTree, as_attribute_tree
+from spdm.data.AttributeTree import AttributeTree
 from spdm.data.Field import Field
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List
@@ -215,32 +216,36 @@ class EquilibriumProfiles1D(Profiles):
         return self.pprime
 
     @cached_property
+    def plasma_current(self) -> Function:
+        """Toroidal current driven inside the flux surface.  
+          .. math:: I_{pl}\equiv\int_{S_{\zeta}}\mathbf{j}\cdot dS_{\zeta}=\frac{\text{gm2}}{4\pi^{2}\mu_{0}}\frac{\partial V}{\partial\psi}\left(\frac{\partial\psi}{\partial\rho}\right)^{2}
+         {dynamic}[A]"""
+        return self._coord.surface_average(self._coord.grad_psi2 / (self._coord.r**2))*self.dvolume_dpsi/scipy.constants.mu_0
+
+        # return self.dpsi_drho_tor*self.gm2*self.dvolume_drho_tor/(TWOPI**2)/scipy.constants.mu_0
+
+    @cached_property
     def j_tor(self):
         r"""Flux surface averaged toroidal current density = average(j_tor/R) / average(1/R) {dynamic}[A.m ^ -2]. """
-        d = (self.gm2*self.dvolume_drho_tor*self.dpsi_drho_tor).derivative / \
-            self.dvolume_dpsi*self._r0/scipy.constants.mu_0
-        return Function(self._axis, np.asarray(d))
+        return self.plasma_current.derivative / (self._coord.psi_boundary - self._coord.psi_axis)/self.dvolume_dpsi * self._r0
 
     @cached_property
     def j_parallel(self):
         r"""Flux surface averaged parallel current density = average(j.B) / B0, where B0 = Equilibrium/Global/Toroidal_Field/B0 {dynamic}[A/m ^ 2]. """
-        return Function(self._axis,
-                        np.asarray((-1/self._b0)
-                                   * (self.fpol * self.pprime +
-                                      self.gm5 * self.ffprime / self.fpol / scipy.constants.mu_0)))
+        return (self.fpol**2)/self.dvolume_dpsi * ((self.plasma_current/self.fpol).derivative / (self._coord.psi_boundary - self._coord.psi_axis))/self._b0
 
     @cached_property
     def dphi_dpsi(self):
-        return self.gm1 * self.fpol * self.dvolume_dpsi / (4*scipy.constants.pi**2)
+        return self.gm1 * self.fpol * self.dvolume_dpsi / (TWOPI**2)
 
     @property
     def q(self):
         r"""
             Safety factor
             (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)[-].
-            .. math: : q(\psi) =\frac{d\Phi}{d\psi} =\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
+            .. math:: q(\psi) =\frac{d\Phi}{d\psi} =\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
         """
-        return Function(self._axis, self.fpol * self.dvolume_dpsi*self._coord.surface_average(1.0/(self._coord.r**2))/(4*scipy.constants.pi**2))
+        return self.fpol * self.dvolume_dpsi*self._coord.surface_average(1.0/(self._coord.r**2))/(TWOPI**2)
 
     @cached_property
     def phi(self):
@@ -334,13 +339,6 @@ class EquilibriumProfiles1D(Profiles):
     def triangularity_lower(self)	:
         """Lower triangularity w.r.t. magnetic axis. {dynamic}[-]"""
         return Function(self._axis, self.shape_property.triangularity_lower)
-
-    @cached_property
-    def plasma_current(self):
-        r"""
-            Ip
-        """
-        return self.dpsi_drho_tor*self.gm2*self.dvolume_drho_tor/(TWOPI**2)/scipy.constants.mu_0
 
     @cached_property
     def norm_grad_rho_tor(self):

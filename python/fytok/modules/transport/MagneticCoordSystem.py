@@ -144,6 +144,10 @@ class RadialGrid:
         """Volume enclosed inside the magnetic surface {dynamic} [m^3]"""
         return self._try_get("volume")
 
+    @cached_property
+    def dvolume_drho_tor(self) -> Function:
+        return self._try_get("dvolume_drho_tor")
+
 
 class MagneticCoordSystem(Dict):
     r"""
@@ -411,8 +415,12 @@ class MagneticCoordSystem(Dict):
         return (self.Br**2+self.Bz**2 + self.Btor**2)
 
     @cached_property
+    def grad_psi2(self):
+        return self.psirz(self.r, self.z, dx=1)**2+self.psirz(self.r, self.z, dy=1)**2
+
+    @cached_property
     def norm_grad_psi(self):
-        return np.sqrt(self.psirz(self.r, self.z, dx=1)**2+self.psirz(self.r, self.z, dy=1)**2)
+        return np.sqrt(self.grad_psi2)
 
     def surface_integrate(self, alpha=None, *args, **kwargs):
         r"""

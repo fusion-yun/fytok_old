@@ -168,6 +168,11 @@ class CoreTransportProfiles1D(Profiles):
         """ Radial component of the electric field (calculated e.g. by a neoclassical model) {dynamic} [V.m^-1]"""
         return Function(self.grid_flux.rho_tor_norm, self["e_field_radial"])
 
+    # @cached_property
+    # def j_bootstrap(self):
+    #     """ Bootstrap current density = average(J_Bootstrap.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field/ B0 {dynamic} [A/m^2]"""
+    #     return Function(self.grid_v.rho_tor_norm, self["j_bootstrap"])
+
 
 class CoreTransport(IDS):
     r"""

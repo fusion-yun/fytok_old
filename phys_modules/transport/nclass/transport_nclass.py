@@ -375,7 +375,7 @@ def transport_nclass(equilibrium: EquilibriumTimeSlice,
 
         # resistivity and <j dot B>
         # core_transport.conductivity_parallel[ipr] = 1.0 / p_etap
-        core_profiles.j_bootstrap[ipr] = p_jbbs/b0
+        core_transport.j_bootstrap[ipr] = p_jbbs/b0
 
         # Recalculate E_r for storage
         # core_profiles.e_field.radial[ipr] = NotImplemented  # p_fpol[i]/r0/fhat*profiles_rm.vtor[i, 1]
