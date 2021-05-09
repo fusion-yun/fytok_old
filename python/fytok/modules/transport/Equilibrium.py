@@ -9,7 +9,7 @@ import scipy.constants
 import scipy.integrate
 from spdm.data.AttributeTree import AttributeTree
 from spdm.data.Field import Field
-from spdm.data.Function import Function
+from spdm.data.Function import Expression, Function
 from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
 from spdm.data.TimeSeries import TimeSeries, TimeSlice
@@ -217,12 +217,10 @@ class EquilibriumProfiles1D(Profiles):
 
     @cached_property
     def plasma_current(self) -> Function:
-        """Toroidal current driven inside the flux surface.  
+        """Toroidal current driven inside the flux surface.
           .. math:: I_{pl}\equiv\int_{S_{\zeta}}\mathbf{j}\cdot dS_{\zeta}=\frac{\text{gm2}}{4\pi^{2}\mu_{0}}\frac{\partial V}{\partial\psi}\left(\frac{\partial\psi}{\partial\rho}\right)^{2}
          {dynamic}[A]"""
-        return self._coord.surface_average(self._coord.grad_psi2 / (self._coord.r**2))*self.dvolume_dpsi/scipy.constants.mu_0
-
-        # return self.dpsi_drho_tor*self.gm2*self.dvolume_drho_tor/(TWOPI**2)/scipy.constants.mu_0
+        return self._coord.surface_average(self._coord.grad_psi2 / (self._coord.r**2))*self._coord.dvolume_dpsi/scipy.constants.mu_0
 
     @cached_property
     def j_tor(self):
@@ -239,7 +237,7 @@ class EquilibriumProfiles1D(Profiles):
         return self.gm1 * self.fpol * self.dvolume_dpsi / (TWOPI**2)
 
     @property
-    def q(self):
+    def q(self) -> Expression:
         r"""
             Safety factor
             (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)[-].
@@ -273,7 +271,8 @@ class EquilibriumProfiles1D(Profiles):
                                         =\frac{1}{2\sqrt{\pi B_{0}\Phi_{tor}}}\frac{d\Phi_{tor}}{d\psi} \
                                         =\frac{q}{2\pi B_{0}\rho_{tor}}
         """
-        return self.rho_tor.derivative/(self._coord.psi_boundary-self._coord.psi_axis)
+
+        return Function(self._axis[1:],  1.0/self.dpsi_drho_tor[1:])
 
     @cached_property
     def dpsi_drho_tor(self)	:
@@ -341,11 +340,6 @@ class EquilibriumProfiles1D(Profiles):
         return Function(self._axis, self.shape_property.triangularity_lower)
 
     @cached_property
-    def norm_grad_rho_tor(self):
-        d = np.asarray(self.drho_tor_dpsi)
-        return self._coord.norm_grad_psi * d.reshape(list(d.shape)+[1])
-
-    @cached_property
     def gm1(self):
         r"""
             Flux surface averaged 1/R ^ 2  [m ^ -2]
@@ -359,8 +353,8 @@ class EquilibriumProfiles1D(Profiles):
             Flux surface averaged .. math: : \left | \nabla \rho_{tor}\right|^2/R^2  [m^-2]
             .. math:: \left\langle\left |\frac{\nabla\rho}{R}\right|^{2}\right\rangle
         """
-        d = self._coord.surface_average((self.norm_grad_rho_tor/self._coord.r)**2)
-        return Function(self._axis, Function(self._axis[1:], d[1:])(self._axis))
+        return Function(self._axis[1:], self._coord.surface_average(self._coord.grad_psi2/(self._coord.r)**2)[1:] / (self.dpsi_drho_tor[1:]**2))
+        # return Function(self._axis, Function(self._axis[1:], d[1:])(self._axis))
 
     @cached_property
     def gm3(self):
@@ -368,8 +362,7 @@ class EquilibriumProfiles1D(Profiles):
             Flux surface averaged .. math: : \left | \nabla \rho_{tor}\right|^2  [-]
             .. math:: {\left\langle \left |\nabla\rho\right|^{2}\right\rangle}
         """
-        d = self._coord.surface_average(self.norm_grad_rho_tor**2)
-        return Function(self._axis, Function(self._axis[1:], d[1:])(self._axis))
+        return Function(self._axis[1:], self._coord.surface_average(self._coord.grad_psi2)[1:] / (self.dpsi_drho_tor[1:]**2))
 
     @cached_property
     def gm4(self):
@@ -393,18 +386,21 @@ class EquilibriumProfiles1D(Profiles):
             Flux surface averaged  .. math: : \left | \nabla \rho_{tor}\right|^2/B^2  [T^-2]
             .. math:: \left\langle \frac{\left |\nabla\rho\right|^{2}}{B^{2}}\right\rangle
         """
-        return Function(self._axis, self._coord.surface_average(self.norm_grad_rho_tor**2/self._coord.B2))
+        return Function(self._axis[1:], self._coord.surface_average(self._coord.grad_psi2/self._coord.B2)[1:]/(self.dpsi_drho_tor[1:]**2))
 
-    @cached_property
+        # return Function(self._axis, self._coord.surface_average(self.norm_grad_rho_tor**2/self._coord.B2))
+
+    @ cached_property
     def gm7(self):
         r"""
             Flux surface averaged .. math:: \left | \nabla \rho_{tor}\right |  [-]
             .. math: : \left\langle \left |\nabla\rho\right |\right\rangle
         """
-        d = self._coord.surface_average(self.norm_grad_rho_tor)
-        return Function(self._axis, Function(self._axis[1:], d[1:])(self._axis))
+        return Function(self._axis[1:], self._coord.surface_average(self._coord.norm_grad_psi)[1:]/self.dpsi_drho_tor[1:])
+        # d = self._coord.surface_average(self.norm_grad_rho_tor)
+        # return Function(self._axis, Function(self._axis[1:], d[1:])(self._axis))
 
-    @cached_property
+    @ cached_property
     def gm8(self):
         r"""
             Flux surface averaged R[m]
@@ -412,7 +408,7 @@ class EquilibriumProfiles1D(Profiles):
         """
         return Function(self._axis, self._coord.surface_average(self._coord.r))
 
-    @cached_property
+    @ cached_property
     def gm9(self):
         r"""
             Flux surface averaged 1/R[m ^ -1]
@@ -420,48 +416,48 @@ class EquilibriumProfiles1D(Profiles):
         """
         return Function(self._axis, self._coord.surface_average(1.0/self._coord.r))
 
-    @cached_property
+    @ cached_property
     def magnetic_shear(self):
         """Magnetic shear, defined as rho_tor/q . dq/drho_tor[-]	 """
-        return Function(self._axis, self.rho_tor/self.q * self.q.derivative)
+        return self.rho_tor/self.q * self.q.derivative
 
-    @cached_property
+    @ cached_property
     def rho_volume_norm(self)	:
         """Normalised square root of enclosed volume(radial coordinate). The normalizing value is the enclosed volume at the equilibrium boundary
             (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation)[-]"""
         return NotImplemented
 
-    @cached_property
+    @ cached_property
     def area(self):
         """Cross-sectional area of the flux surface[m ^ 2]"""
         return NotImplemented
 
-    @cached_property
+    @ cached_property
     def darea_dpsi(self):
         """Radial derivative of the cross-sectional area of the flux surface with respect to psi[m ^ 2.Wb ^ -1]. """
         return NotImplemented
 
-    @cached_property
+    @ cached_property
     def darea_drho_tor(self)	:
         """Radial derivative of the cross-sectional area of the flux surface with respect to rho_tor[m]"""
         return NotImplemented
 
-    @cached_property
+    @ cached_property
     def surface(self):
         """Surface area of the toroidal flux surface[m ^ 2]"""
         return NotImplemented
 
-    @cached_property
+    @ cached_property
     def trapped_fraction(self)	:
         """Trapped particle fraction[-]"""
-        return Function(self._axis, self["trapped_fraction"] or 0.0)
+        return Function(self._axis, self["trapped_fraction"])
 
-    @cached_property
+    @ cached_property
     def b_field_max(self):
         """Maximum(modulus(B)) on the flux surface(always positive, irrespective of the sign convention for the B-field direction)[T]"""
         return NotImplemented
 
-    @cached_property
+    @ cached_property
     def beta_pol(self):
         """Poloidal beta profile. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip ^ 2][-]"""
         return NotImplemented
@@ -476,60 +472,60 @@ class EquilibriumProfiles2D(Profiles):
         super().__init__(*args, **kwargs)
         self._coord = coord
 
-    @property
+    @ property
     def grid_type(self):
         return self._coord.grid_type
 
-    @cached_property
+    @ cached_property
     def grid(self):
         return self._coord.grid
 
-    @property
+    @ property
     def r(self):
         """Values of the major radius on the grid  [m] """
         return self._coord.r
 
-    @property
+    @ property
     def z(self):
         """Values of the Height on the grid  [m] """
         return self._coord.z
 
-    @cached_property
+    @ cached_property
     def psi(self):
         """Values of the poloidal flux at the grid in the poloidal plane  [Wb]. """
         return self.apply_psifunc(lambda p: p, unit="Wb")
 
-    @cached_property
+    @ cached_property
     def theta(self):
         """	Values of the poloidal angle on the grid  [rad] """
         return NotImplementedError()
 
-    @cached_property
+    @ cached_property
     def phi(self):
         """	Toroidal flux  [Wb]"""
         return self.apply_psifunc("phi")
 
-    @cached_property
+    @ cached_property
     def j_tor(self):
         """	Toroidal plasma current density  [A.m^-2]"""
         return self.apply_psifunc("j_tor")
 
-    @cached_property
+    @ cached_property
     def j_parallel(self):
         """	Parallel (to magnetic field) plasma current density  [A.m^-2]"""
         return self.apply_psifunc("j_parallel")
 
-    @cached_property
+    @ cached_property
     def b_field_r(self):
         """R component of the poloidal magnetic field  [T]"""
         return Field(self._coord.Br, self._coord.r, self._coord.z, mesh_type="curvilinear")
 
-    @cached_property
+    @ cached_property
     def b_field_z(self):
         """Z component of the poloidal magnetic field  [T]"""
         return Field(self._coord.Bz, self._coord.r, self._coord.z, mesh_type="curvilinear")
 
-    @cached_property
+    @ cached_property
     def b_field_tor(self):
         """Toroidal component of the magnetic field  [T]"""
         return Field(self._coord.Btor, self._coord.r, self._coord.z, mesh_type="curvilinear")
@@ -540,91 +536,91 @@ class EquilibriumBoundary(Profiles):
         super().__init__(*args, **kwargs)
         self._coord = coord
 
-    @cached_property
+    @ cached_property
     def type(self):
         """0 (limiter) or 1 (diverted)  """
         return 1
 
-    @cached_property
+    @ cached_property
     def outline(self):
         """RZ outline of the plasma boundary  """
         RZ = np.asarray([[r, z] for r, z in self._coord.flux_surface_map(1.0)])
         return RZTuple(RZ[:, 0], RZ[:, 1])
 
-    @cached_property
+    @ cached_property
     def x_point(self):
         _, xpt = self._parent.critical_points
         return xpt
 
-    @property
+    @ property
     def psi_axis(self):
         return self._coord.psi_axis
 
-    @property
+    @ property
     def psi_boundary(self):
         return self._coord.psi_boundary
 
-    @cached_property
+    @ cached_property
     def psi(self):
         """Value of the poloidal flux at which the boundary is taken  [Wb]"""
         return self._parent.psi_boundary
 
-    @cached_property
+    @ cached_property
     def psi_norm(self):
         """Value of the normalised poloidal flux at which the boundary is taken (typically 99.x %),
             the flux being normalised to its value at the separatrix """
         return self.psi*0.99
 
-    @cached_property
+    @ cached_property
     def shape_property(self):
         return self._coord.shape_property(1.0)
 
-    @property
+    @ property
     def geometric_axis(self):
         """RZ position of the geometric axis (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the boundary)"""
         return self.shape_property.geometric_axis
 
-    @property
+    @ property
     def minor_radius(self):
         """Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary) [m]	"""
         return self.shape_property.minor_radius
 
-    @property
+    @ property
     def elongation(self):
         """Elongation of the plasma boundary. [-]	"""
         return self.shape_property.elongation
 
-    @property
+    @ property
     def elongation_upper(self):
         """Elongation(upper half w.r.t. geometric axis) of the plasma boundary. [-]	"""
         return self.shape_property.elongation_upper
 
-    @property
+    @ property
     def elongation_lower(self):
         """Elongation(lower half w.r.t. geometric axis) of the plasma boundary. [-]	"""
         return self.shape_property.elongation_lower
 
-    @property
+    @ property
     def triangularity(self):
         """Triangularity of the plasma boundary. [-]	"""
         return self.shape_property.triangularity
 
-    @property
+    @ property
     def triangularity_upper(self):
         """Upper triangularity of the plasma boundary. [-]	"""
         return self.shape_property.triangularity_upper
 
-    @property
+    @ property
     def triangularity_lower(self):
         """Lower triangularity of the plasma boundary. [-]"""
         return self.shape_property.triangularity_lower
 
-    @cached_property
+    @ cached_property
     def strike_point(self)	:
         """Array of strike points, for each of them the RZ position is given	struct_array [max_size=unbounded]	1- 1...N"""
         return NotImplemented
 
-    @cached_property
+    @ cached_property
     def active_limiter_point(self):
         """	RZ position of the active limiter point (point of the plasma boundary in contact with the limiter)"""
         return NotImplemented
@@ -646,18 +642,18 @@ class EquilibriumTimeSlice(Dict):
         assert(vacuum_toroidal_field is not None)
         self._vacuum_toroidal_field = vacuum_toroidal_field
 
-    @property
+    @ property
     def time(self):
         return self._time
 
-    @property
+    @ property
     def vacuum_toroidal_field(self):
         return self._vacuum_toroidal_field
 
     def radial_grid(self, *args, **kwargs):
         return self.coordinate_system.radial_grid(*args, **kwargs)
 
-    @cached_property
+    @ cached_property
     def coordinate_system(self) -> MagneticCoordSystem:
         psirz = Field(self["profiles_2d.psi"],
                       self["profiles_2d.grid.dim1"],
@@ -674,27 +670,27 @@ class EquilibriumTimeSlice(Dict):
                                    pprime=Function(psi_norm, pprime),
                                    parent=self)
 
-    @cached_property
+    @ cached_property
     def constraints(self):
         return EquilibriumConstraints(self["constraints"], coord=self.coordinate_system, parent=self)
 
-    @cached_property
+    @ cached_property
     def profiles_1d(self):
         return EquilibriumProfiles1D(self["profiles_1d"], coord=self.coordinate_system, parent=self)
 
-    @cached_property
+    @ cached_property
     def profiles_2d(self):
         return EquilibriumProfiles2D(self["global_quantities"], coord=self.coordinate_system,  parent=self)
 
-    @cached_property
+    @ cached_property
     def global_quantities(self):
         return EquilibriumGlobalQuantities(self["global_quantities"],   coord=self.coordinate_system,  parent=self)
 
-    @cached_property
+    @ cached_property
     def boundary(self):
         return EquilibriumBoundary(self["boundary"], coord=self.coordinate_system, parent=self)
 
-    @cached_property
+    @ cached_property
     def boundary_separatrix(self):
         return EquilibriumBoundarySeparatrix(self["boundary_separatrix"], coord=self.coordinate_system,   parent=self)
 
@@ -829,7 +825,7 @@ class Equilibrium(IDS):
         self._cocos_flag = b0 > 0
         self._b0 = np.abs(b0)
 
-    @property
+    @ property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
         if isinstance(self._b0, float):
             return VacuumToroidalField(self._r0, self._b0)
@@ -838,7 +834,7 @@ class Equilibrium(IDS):
         elif isinstance(self._b0, collections.abc.MutableSequence):
             return VacuumToroidalField(self._r0, Function(np.asarray(self.time), np.asarray(self._b0)))
 
-    @cached_property
+    @ cached_property
     def time_slice(self) -> TimeSeries[EquilibriumTimeSlice]:
         r0 = self._r0
         b0 = self._b0
@@ -850,7 +846,7 @@ class Equilibrium(IDS):
 
         return TimeSeries[EquilibriumTimeSlice](self["time_slice"],  time=self.time,  default_factory=time_slice_creator, parent=self)
 
-    @cached_property
+    @ cached_property
     def grid_ggd(self) -> TimeSeries[GGD]:
         def grid_ggd_creator(*args, time=None,  ** kwargs):
             return GGD(*args, time=time, **kwargs)

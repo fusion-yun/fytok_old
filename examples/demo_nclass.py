@@ -132,15 +132,15 @@ if __name__ == "__main__":
             #      (eq.global_quantities.psi_boundary - eq.global_quantities.psi_axis),\
             #      r"$\int \frac{dV}{d\psi}  d\psi$"),
             # ],
-            # (eq.profiles_1d.dvolume_drho_tor,      r"$\frac{dV}{d\rho}$"),
-            # (eq.profiles_1d.dpsi_drho_tor,         r"$\frac{d\psi}{d\rho_{tor}}$"),
-            # (eq.profiles_1d.drho_tor_dpsi,         r"$\frac{d\rho_{tor}}{d\psi}$"),
-            # (eq.profiles_1d.gm1,                   r"$\left<\frac{1}{R^2}\right>$"),
-            # (eq.profiles_1d.gm2,                   r"$\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
-            # (eq.profiles_1d.gm3,                   r"$\left<\left|\nabla \rho\right|^2\right>$"),
-            # (eq.profiles_1d.gm7,                   r"$\left<\left|\nabla \rho\right|\right>$"),
-            # (eq.profiles_1d.dphi_dpsi,             r"$\frac{d\phi}{d\psi}$"),
-            # (eq.profiles_1d.drho_tor_dpsi,         r"$\frac{d\rho_{tor}}{d\psi}$"),
+
+            (eq.profiles_1d.gm1,                   r"$gm1=\left<\frac{1}{R^2}\right>$"),
+            (eq.profiles_1d.gm2,                   r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
+            (eq.profiles_1d.gm3,                   r"$gm3=\left<\left|\nabla \rho\right|^2\right>$"),
+            (eq.profiles_1d.gm7,                   r"$gm7=\left<\left|\nabla \rho\right|\right>$"),
+            (eq.profiles_1d.dphi_dpsi,             r"$\frac{d\phi}{d\psi}$"),
+            (eq.profiles_1d.drho_tor_dpsi,         r"$\frac{d\rho_{tor}}{d\psi}$"),
+            (eq.profiles_1d.dvolume_drho_tor,      r"$\frac{dV}{d\rho}$"),
+            (eq.profiles_1d.dpsi_drho_tor,         r"$\frac{d\psi}{d\rho_{tor}}$"),
             # [
             #     (eq.coordinate_system.surface_integrate2(lambda r, z:1.0/r**2), \
             #      r"$\left<\frac{1}{R^2}\right>$"),
