@@ -639,8 +639,8 @@ class EquilibriumTimeSlice(TimeSlice):
 
     def __init__(self, *args, vacuum_toroidal_field: VacuumToroidalField = None, **kwargs):
         super().__init__(*args, **kwargs)
-        self._vacuum_toroidal_field = vacuum_toroidal_field or \
-            VacuumToroidalField(self["vacuum_toroidal_field"]._as_dict())
+        vacuum_toroidal_field = vacuum_toroidal_field or self._parent.vacuum_toroidal_field
+        self._vacuum_toroidal_field = VacuumToroidalField(vacuum_toroidal_field.r0, np.abs(vacuum_toroidal_field.b0))
 
     @property
     def time(self):
@@ -829,11 +829,11 @@ class Equilibrium(IDS):
 
     @cached_property
     def time_slice(self) -> TimeSeries[EquilibriumTimeSlice]:
-        return TimeSeries[EquilibriumTimeSlice](self["time_slice"],  time=self.time, parent=self)
+        return TimeSeries[EquilibriumTimeSlice](self["time_slice"], parent=self)
 
     @cached_property
     def grid_ggd(self) -> TimeSeries[GGD]:
-        return TimeSeries[GGD](self["grid_ggd"], time=self. time, parent=self)
+        return TimeSeries[GGD](self["grid_ggd"], parent=self)
 
     ####################################################################################
     # Plot profiles

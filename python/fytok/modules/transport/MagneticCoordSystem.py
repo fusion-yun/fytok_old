@@ -31,124 +31,6 @@ EPS = np.finfo(float).eps
 TWOPI = 2.0*scipy.constants.pi
 
 
-class RadialGrid:
-    r"""
-
-    """
-
-    def __init__(self, psi_norm, *args, vacuum_toroidal_field: VacuumToroidalField = None, coordinate_system=None, **kwargs) -> None:
-        self._data = kwargs
-        if coordinate_system is not None:
-            self._vacuum_toroidal_field = vacuum_toroidal_field
-            self._coordinate_system = coordinate_system
-            self._psi_axis = coordinate_system.psi_axis
-            self._psi_boundary = coordinate_system.psi_boundary
-            if psi_norm is None:
-                psi_norm = coordinate_system.psi_norm
-        else:
-            self._coordinate_system = None
-            self._vacuum_toroidal_field = vacuum_toroidal_field or VacuumToroidalField(1.0, 1.0)
-            self._psi_axis = kwargs.get("psi_axis", NotImplemented)
-            self._psi_boundary = kwargs.get("psi_boundary", NotImplemented)
-
-        assert(self._coordinate_system != None)
-
-        if isinstance(psi_norm, int):
-            self._psi_norm = np.linspace(0, 1.0, psi_norm)
-        elif isinstance(psi_norm, np.ndarray):
-            self._psi_norm = psi_norm
-        else:
-            self._psi_norm = np.linspace(0, 1.0, 128)
-            # raise ValueError(f"psi_norm is not defined")
-
-    def _try_get(self, k):
-        d = self._data.get(k, None)
-        if d is None:
-            d = try_get(self._coordinate_system, k, None)
-
-        if isinstance(d, Function):
-            if d.x is not self._psi_norm:
-                d = d(self._psi_norm)
-        elif d is None or (not isinstance(d, np.ndarray) and d == None):
-            raise AttributeError(f"Can not find {k} in {type(self._coordinate_system)}!")
-        elif not isinstance(d, np.ndarray):
-            raise TypeError(type(d))
-        elif d.shape != self._psi_norm.shape:
-            raise RuntimeError(f"Illegal shape! {k} {d.shape }!={self._psi_norm.shape}")
-
-        return d.view(np.ndarray)
-
-    def __serialize__(self) -> Dict:
-        return {
-            "psi_norm": self.psi_norm,
-            "rho_tor_norm": self.rho_tor_norm,
-        }
-
-    def pullback(self, psi_norm):
-        return RadialGrid(psi_norm, coordinate_system=self._coordinate_system, **self._data)
-
-    @property
-    def vacuum_toroidal_field(self):
-        return self._vacuum_toroidal_field
-
-    @cached_property
-    def psi_magnetic_axis(self):
-        """Poloidal flux at the magnetic axis  [Wb]."""
-        return self._psi_axis
-
-    @cached_property
-    def psi_boundary(self):
-        """Poloidal flux at the selected plasma boundary  [Wb]."""
-        return self._psi_boundary
-
-    @property
-    def psi_norm(self):
-        return self._psi_norm
-
-    @cached_property
-    def psi(self):
-        """Poloidal magnetic flux {dynamic} [Wb]. This quantity is COCOS-dependent, with the following transformation"""
-        return self.psi_norm * (self.psi_boundary-self.psi_magnetic_axis)+self.psi_magnetic_axis
-
-    @cached_property
-    def rho_tor_norm(self):
-        r"""Normalised toroidal flux coordinate. The normalizing value for rho_tor_norm, is the toroidal flux coordinate 
-            at the equilibrium boundary (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation, 
-            see time_slice/boundary/b_flux_pol_norm in the equilibrium IDS) {dynamic} [-]
-        """
-        return self._try_get("rho_tor_norm")
-
-    @cached_property
-    def rho_tor(self):
-        r"""Toroidal flux coordinate. rho_tor = sqrt(b_flux_tor/(pi*b0)) ~ sqrt(pi*r^2*b0/(pi*b0)) ~ r [m]. 
-            The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0 {dynamic} [m]"""
-        return self._try_get("rho_tor")
-
-    @cached_property
-    def rho_pol_norm(self):
-        r"""Normalised poloidal flux coordinate = sqrt((psi(rho)-psi(magnetic_axis)) / (psi(LCFS)-psi(magnetic_axis))) {dynamic} [-]"""
-        return self._try_get("rho_pol_norm")
-
-    @cached_property
-    def area(self):
-        """Cross-sectional area of the flux surface {dynamic} [m^2]"""
-        return self._try_get("area")
-
-    @cached_property
-    def surface(self):
-        """Surface area of the toroidal flux surface {dynamic} [m^2]"""
-        return self._try_get("surface")
-
-    @cached_property
-    def volume(self):
-        """Volume enclosed inside the magnetic surface {dynamic} [m^3]"""
-        return self._try_get("volume")
-
-    @cached_property
-    def dvolume_drho_tor(self) -> Function:
-        return self._try_get("dvolume_drho_tor")
-
-
 class MagneticCoordSystem(Dict):
     r"""
         Flux surface coordinate system on a square grid of flux and poloidal angle
@@ -209,6 +91,10 @@ class MagneticCoordSystem(Dict):
 
         self._uv = [u, v]
 
+    @property
+    def vacuum_toroidal_field(self) -> VacuumToroidalField:
+        return self._vacuum_toroidal_field
+
     def radial_grid(self, primary_axis=None, axis=None):
         """
             Radial grid
@@ -225,11 +111,11 @@ class MagneticCoordSystem(Dict):
             if not isinstance(p_axis, np.ndarray):
                 raise NotImplementedError(primary_axis)
             psi_norm = Function(p_axis, psi_norm)(np.linspace(p_axis[0], p_axis[-1], p_axis.shape[0]))
-        return RadialGrid(psi_norm, vacuum_toroidal_field=self._vacuum_toroidal_field, coordinate_system=self)
+        return RadialGrid(self, psi_norm)
 
     @cached_property
     def grid_type(self):
-        return Identifier(**self["grid_type"])
+        return Identifier(**self["grid_type"]._as_dict())
 
     @cached_property
     def critical_points(self):
@@ -574,3 +460,92 @@ class MagneticCoordSystem(Dict):
     @cached_property
     def rho_tor_norm(self):
         return np.sqrt(self.phi/self.phi[-1])
+
+
+class RadialGrid:
+    r"""
+        Radial grid
+    """
+
+    def __init__(self,  coordinate_system: MagneticCoordSystem, psi_norm=None) -> None:
+
+        self._coordinate_system = coordinate_system
+        self._psi_axis = coordinate_system.psi_axis
+        self._psi_boundary = coordinate_system.psi_boundary
+
+        if isinstance(psi_norm, int):
+            self._psi_norm = np.linspace(0, 1.0,  psi_norm)
+        elif psi_norm is None:
+            self._psi_norm = coordinate_system.psi_norm
+        else:
+            self._psi_norm = np.asarray(psi_norm)
+
+    def __serialize__(self) -> Dict:
+        return {
+            "psi_norm": self.psi_norm,
+            "rho_tor_norm": self.rho_tor_norm,
+        }
+
+    def pullback(self, psi_norm):
+        return RadialGrid(psi_norm, self._coordinate_system)
+
+    @property
+    def vacuum_toroidal_field(self):
+        return self._coordinate_system.vacuum_toroidal_field
+
+    @cached_property
+    def psi_magnetic_axis(self):
+        """Poloidal flux at the magnetic axis  [Wb]."""
+        return self._psi_axis
+
+    @cached_property
+    def psi_boundary(self):
+        """Poloidal flux at the selected plasma boundary  [Wb]."""
+        return self._psi_boundary
+
+    @property
+    def psi_norm(self):
+        return self._psi_norm
+
+    @cached_property
+    def psi(self):
+        """Poloidal magnetic flux {dynamic} [Wb]. This quantity is COCOS-dependent, with the following transformation"""
+        return self.psi_norm * (self.psi_boundary-self.psi_magnetic_axis)+self.psi_magnetic_axis
+
+    @cached_property
+    def rho_tor_norm(self):
+        r"""Normalised toroidal flux coordinate. The normalizing value for rho_tor_norm, is the toroidal flux coordinate 
+            at the equilibrium boundary (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation, 
+            see time_slice/boundary/b_flux_pol_norm in the equilibrium IDS) {dynamic} [-]
+        """
+        return self._parent.rho_tor_norm(self.psi_norm)
+
+    @cached_property
+    def rho_tor(self):
+        r"""Toroidal flux coordinate. rho_tor = sqrt(b_flux_tor/(pi*b0)) ~ sqrt(pi*r^2*b0/(pi*b0)) ~ r [m]. 
+            The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0 {dynamic} [m]"""
+        return self._parent.rho_tor
+
+    @cached_property
+    def rho_pol_norm(self):
+        r"""Normalised poloidal flux coordinate = sqrt((psi(rho)-psi(magnetic_axis)) / (psi(LCFS)-psi(magnetic_axis))) {dynamic} [-]"""
+        return self._parent.rho_pol_norm
+
+    @cached_property
+    def area(self):
+        """Cross-sectional area of the flux surface {dynamic} [m^2]"""
+        return self._parent.area
+
+    @cached_property
+    def surface(self):
+        """Surface area of the toroidal flux surface {dynamic} [m^2]"""
+        return self._parent.surface
+
+    @cached_property
+    def volume(self):
+        """Volume enclosed inside the magnetic surface {dynamic} [m^3]"""
+        return self._parent.volume
+
+    @cached_property
+    def dvolume_drho_tor(self) -> Function:
+        return self._parent.dvolume_drho_tor
