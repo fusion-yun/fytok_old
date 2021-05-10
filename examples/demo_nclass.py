@@ -89,13 +89,13 @@ if __name__ == "__main__":
 
     plot_profiles(
         [
-            (eq.profiles_1d.dpressure_dpsi,         r"$dP/d\psi$"),
+            (eq.profiles_1d.dpressure_dpsi,                                                   r"$dP/d\psi$"),
             [
-                (eq.profiles_1d.ffprime,            r"$ff^{\prime}$"),
-                (Function(eq.profiles_1d.psi_norm,  eq.profiles_1d.f_df_dpsi),    r"$ff^{\prime}_{0}$"),
+                (eq.profiles_1d.ffprime,                                                   r"$ff^{\prime}$"),
+                (Function(eq.profiles_1d.psi_norm,  eq.profiles_1d.f_df_dpsi),         r"$ff^{\prime}_{0}$"),
             ],
             [
-                (eq.profiles_1d.fpol,               r"$fpol$"),
+                (eq.profiles_1d.fpol,                                                             r"$fpol$"),
                 (Function(eq.profiles_1d.psi_norm, np.abs(eq.profiles_1d.f)),    r"$\left|f_{pol0}\right|$"),
             ],
             [
@@ -106,22 +106,19 @@ if __name__ == "__main__":
             [
                 (Function(profile["Fp"].values, profile["rho"].values),             r"$\rho_{tor}^{\star}$"),
                 (eq.profiles_1d.rho_tor,                                                    r"$\rho_{tor}$"),
-                #     # (eq.profiles_1d.dvolume_drho_tor / ((scipy.constants.pi**2) * 4.0 * eq.vacuum_toroidal_field.r0),
-                #     #     r"$\frac{dV/d\rho_{tor}}{4\pi^2 R_0}$"),
             ],
             [
                 (Function(profile["Fp"].values, profile["x"].values),             r"$\rho_{tor,0}^{\star}$"),
                 (eq.profiles_1d.rho_tor_norm,                                             r"$\rho_{tor,0}$"),
             ],
             [
-                (Function(profile["Fp"].values, profile["Jtot"].values*1e6),      r"$j_{\parallel}^{\star}$"),
-                (eq.profiles_1d.j_parallel,                                               r"$j_{\parallel}$"),
-                # (eq.profiles_1d.j_tor,                                                         r"$j_{tor}$"),
+                (Function(profile["Fp"].values, profile["Jtot"].values*1e6),     r"$j_{\parallel}^{\star}$"),
+                (eq.profiles_1d.j_parallel,                                              r"$j_{\parallel}$"),
             ],
             # [
-            #     (eq.profiles_1d.geometric_axis.r,                                    r"$geometric_{axis.r}$"),
-            #     (eq.profiles_1d.r_inboard,                                                  r"$r_{inboard}$"),
-            #     (eq.profiles_1d.r_outboard,                                                r"$r_{outboard}$"),
+            #     (eq.profiles_1d.geometric_axis.r,                                 r"$geometric_{axis.r}$"),
+            #     (eq.profiles_1d.r_inboard,                                               r"$r_{inboard}$"),
+            #     (eq.profiles_1d.r_outboard,                                             r"$r_{outboard}$"),
             # ],
 
             # [
@@ -133,14 +130,14 @@ if __name__ == "__main__":
             #      r"$\int \frac{dV}{d\psi}  d\psi$"),
             # ],
 
-            (eq.profiles_1d.gm1,                   r"$gm1=\left<\frac{1}{R^2}\right>$"),
-            (eq.profiles_1d.gm2,                   r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
-            (eq.profiles_1d.gm3,                   r"$gm3=\left<\left|\nabla \rho\right|^2\right>$"),
-            (eq.profiles_1d.gm7,                   r"$gm7=\left<\left|\nabla \rho\right|\right>$"),
-            (eq.profiles_1d.dphi_dpsi,             r"$\frac{d\phi}{d\psi}$"),
-            (eq.profiles_1d.drho_tor_dpsi,         r"$\frac{d\rho_{tor}}{d\psi}$"),
-            (eq.profiles_1d.dvolume_drho_tor,      r"$\frac{dV}{d\rho}$"),
-            (eq.profiles_1d.dpsi_drho_tor,         r"$\frac{d\psi}{d\rho_{tor}}$"),
+            (eq.profiles_1d.gm1,                                         r"$gm1=\left<\frac{1}{R^2}\right>$"),
+            (eq.profiles_1d.gm2,                r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
+            (eq.profiles_1d.gm3,                            r"$gm3=\left<\left|\nabla \rho\right|^2\right>$"),
+            (eq.profiles_1d.gm7,                              r"$gm7=\left<\left|\nabla \rho\right|\right>$"),
+            (eq.profiles_1d.dphi_dpsi,                                              r"$\frac{d\phi}{d\psi}$"),
+            (eq.profiles_1d.drho_tor_dpsi,                                    r"$\frac{d\rho_{tor}}{d\psi}$"),
+            (eq.profiles_1d.dvolume_drho_tor,                                          r"$\frac{dV}{d\rho}$"),
+            (eq.profiles_1d.dpsi_drho_tor,                                    r"$\frac{d\psi}{d\rho_{tor}}$"),
             # [
             #     (eq.coordinate_system.surface_integrate2(lambda r, z:1.0/r**2), \
             #      r"$\left<\frac{1}{R^2}\right>$"),
@@ -149,9 +146,7 @@ if __name__ == "__main__":
             # ]
 
         ],
-        # x_axis=(eq.profiles_1d.rho_tor_norm,   {"label": r"$\rho_{N}$"}),  # asd
-        # x_axis=(eq.profiles_1d.phi,   {"label": r"$\Phi$"}),  # asd
-        x_axis=(eq.profiles_1d.psi_norm,    r"$\psi_{N}$"),  # asd
+        x_axis=(eq.profiles_1d.psi_norm,                                                        r"$\psi_{N}$"),
         grid=True, fontsize=16
     ) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
     core_profile = tok.core_profiles.profiles_1d[-1]

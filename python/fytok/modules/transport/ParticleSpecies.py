@@ -3,36 +3,50 @@ from functools import cached_property
 
 import numpy as np
 from spdm.data.AttributeTree import AttributeTree
-from spdm.data.Node import List
+from spdm.data.Node import List, Dict
 from spdm.data.Profiles import Profiles
 from spdm.util.logger import logger
 
 
-class Species(Profiles):
+class SpeciesElement(Dict):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+
+class SpeciesState(Dict):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+
+class Species(Dict):
+    Element = SpeciesElement
+    State = SpeciesState
+
     def __init__(self,   *args,  **kwargs):
         super().__init__(*args,   **kwargs)
 
     @cached_property
-    def label(self):
+    def label(self) -> str:
         """String identifying ion (e.g. H+, D+, T+, He+2, C+, ...) {dynamic}    """
-        return self.__raw_get__("label")
+        return self["label"]
 
-    class Element(AttributeTree):
-        def __init__(self, *args, **kwargs) -> None:
-            super().__init__(*args, **kwargs)
-
-    @property
-    def element(self):
-        return List(self.__raw_get__("element"), default_factory=Species.Element, parent=self)
-
-    class State(AttributeTree):
-        def __init__(self, *args, **kwargs) -> None:
-            super().__init__(*args, **kwargs)
+    @cached_property
+    def multiple_states_flag(self) -> int:
+        return self["multiple_states_flag"]
 
     @property
-    def multiple_states_flag(self):
-        return self.__raw_get__("multiple_states_flag")
+    def element(self) -> List[Element]:
+        return List[SpeciesElement](self["element"],  parent=self)
 
     @property
-    def state(self):
-        return List(self.__raw_get__("state"), default_factory=Species.State, parent=self)
+    def state(self) -> SpeciesState:
+        return SpeciesState(self["state"],  parent=self)
+
+
+class SpeciesIon(Species):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @cached_property
+    def z_ion(self) -> int:
+        return self["z_ion"]

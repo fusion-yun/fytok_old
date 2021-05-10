@@ -24,36 +24,22 @@ NCLASS_MSG = [
 ]
 
 
-def transport_nclass(equilibrium: EquilibriumTimeSlice,
-                     core_profiles: CoreProfiles1D,
-                     core_transport: CoreTransport.Profiles1D,
-                     grid: np.ndarray = None) -> CoreTransport.Profiles1D:
+def nclass(equilibrium: Equilibrium.TimeSlice,
+           core_profiles: CoreProfiles.Profiles1D,
+           core_transport: CoreTransport.Profiles1D,
+           grid: np.ndarray = None) -> CoreTransport.Profiles1D:
 
     logger.debug(f"Transport mode: NCLASS [START]")
 
+    # core_transport.identifier = {
+    #     "name": "neoclassical",
+    #     "index": 5,
+    #     "description": "by NCLASS"
+    # }
+
     eq_profiles_1d = equilibrium.profiles_1d
 
-    # core_transport = CoreTransport(
-    #     {
-    #         "identifier": {
-    #             "name": "neoclassical",
-    #             "index": 5,
-    #             "description": "by NCLASS"
-    #         },
-    #         "profiles_1d": {
-    #             "ion": [{
-    #                 "label": p_ion.label,
-    #                 "z_ion": p_ion.z_ion,
-    #                 "neutral_index": p_ion.neutral_index,
-    #                 "element": p_ion.element,
-    #                 "multiple_states_flag": p_ion.multiple_states_flag,
-    #                 "state": p_ion.state
-    #             } for p_ion in core_profiles.ion]
-    #         }
-    #     },
-    #     grid=equilibrium.radial_grid("rho_tor_norm", axis=grid),
-    #     time=equilibrium.time,
-    # )
+   
     for p_ion in core_profiles.ion:
         core_transport.ion[_next_] = {
             "label": p_ion.label,

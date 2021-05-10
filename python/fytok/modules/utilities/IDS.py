@@ -5,13 +5,12 @@ import os
 from functools import cached_property
 from typing import Sequence, Mapping
 
-from spdm.data.AttributeTree import AttributeTree
-from spdm.data.Node import List
-from spdm.data.TimeSeries import TimeSequence
+from spdm.data.Node import List, Dict
+from spdm.data.TimeSeries import TimeSeries
 from spdm.util.logger import logger
 
 
-class IDSProperties(AttributeTree):
+class IDSProperties(Dict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args,  **kwargs)
 
@@ -52,7 +51,7 @@ class IDSProperties(AttributeTree):
         return IDSProperties.VersionPut(**(self["version_put"] or {}))
 
 
-class IDSCode(AttributeTree):
+class IDSCode(Dict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -100,7 +99,7 @@ class IDSCode(AttributeTree):
         return List[IDSCode.LibraryDesc](self["library"], default_factory=lambda d, *args, **kwargs: IDSCode.LibraryDesc(**(d or {})), parent=self)
 
 
-class IDS(AttributeTree):
+class IDS(Dict):
     """
         %%%DESCRIPTION%%%.
         .. todo:: '___NAME___' IS NOT IMPLEMENTED
@@ -110,8 +109,8 @@ class IDS(AttributeTree):
     def __init__(self, *args, ** kwargs):
         super().__init__(*args, ** kwargs)
 
-    def __serialize__(self):
-        res = super().__serialize__()
+    def __serialize__(self, ignore=None):
+        res = super().__serialize__(ignore=ignore or ['time_slice'])
         res["@ids"] = self._IDS
         return res
 
@@ -132,5 +131,9 @@ class IDS(AttributeTree):
         return IDSCode(self['code'], parent=self)
 
     @cached_property
-    def time(self) -> TimeSequence:
-        return TimeSequence(self['time'], parent=self)
+    def time_slice(self) -> TimeSeries:
+        return NotImplemented
+
+    @cached_property
+    def time(self):
+        return self.time_slice.time

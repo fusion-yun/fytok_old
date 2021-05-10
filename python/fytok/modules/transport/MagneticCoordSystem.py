@@ -23,7 +23,7 @@ from spdm.util.utilities import convert_to_named_tuple, try_get
 
 from ..utilities.GGD import GGD
 from ..utilities.IDS import IDS
-from ..utilities.Misc import Identifier, RZTuple, VacuumToroidalField
+from ..utilities.Misc import Identifier,  VacuumToroidalField
 
 TOLERANCE = 1.0e-6
 EPS = np.finfo(float).eps
