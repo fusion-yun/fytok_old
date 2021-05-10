@@ -5,7 +5,7 @@ import numpy as np
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
-from spdm.data.TimeSeries import TimeSeries
+from spdm.data.TimeSeries import TimeSeries, TimeSlice
 from spdm.util.logger import logger
 
 from ..utilities.IDS import IDS, IDSCode
@@ -260,7 +260,7 @@ class CoreTransport(IDS):
         Note that the energy flux includes the energy transported by the particle flux.
     """
     _IDS = "core_transport"
-    Profiles1D = CoreTransportProfiles1D
+    TimeSlice = CoreTransportTimeSlice
 
     def __init__(self,  *args, grid=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -273,4 +273,3 @@ class CoreTransport(IDS):
     @cached_property
     def model(self):
         return self.time_slice("model")
- 

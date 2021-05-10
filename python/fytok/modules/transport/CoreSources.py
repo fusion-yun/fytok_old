@@ -340,6 +340,7 @@ class CoreSources(IDS):
     """
     _IDS = "core_sources"
     Profiles1D = CoreSourcesProfiles1D
+    TimeSlice = CoreSourcesTimeSlice
 
     def __init__(self, *args, grid: RadialGrid = None, **kwargs):
         super().__init__(*args, **kwargs)

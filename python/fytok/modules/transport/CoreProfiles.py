@@ -1,17 +1,17 @@
 import collections
 from functools import cached_property
-import scipy.constants
+
 import numpy as np
-from spdm.data.AttributeTree import AttributeTree
+import scipy.constants
 from spdm.data.Function import Function
-from spdm.data.Node import List
+from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
 from spdm.data.TimeSeries import TimeSeries
 from spdm.util.logger import logger
 
 from ..utilities.IDS import IDS
 from ..utilities.Misc import VacuumToroidalField
-from .MagneticCoordSystem import RadialGrid, TWOPI
+from .MagneticCoordSystem import TWOPI, RadialGrid
 from .ParticleSpecies import Species
 
 
@@ -481,30 +481,54 @@ class CoreProfiles1D(Profiles):
         return Function(self._axis, self["magnetic_shear"])
 
 
-class CoreProfilesGlobalQuantities(AttributeTree):
+class CoreProfilesGlobalQuantities(Dict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args,  **kwargs)
+
+
+class CoreProfilesTimeSlice(Dict):
+    def __init__(self,  *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @cached_property
+    def profiles_1d(self) -> CoreProfiles1D:
+        return CoreProfiles1D(self["profiles_1d"], parent=self)
+
+    @cached_property
+    def global_quantities(self) -> CoreProfilesGlobalQuantities:
+        return CoreProfilesGlobalQuantities(self["global_quantities"], parent=self)
 
 
 class CoreProfiles(IDS):
     """CoreProfiles
     """
     _IDS = "core_profiles"
-    Profiles1D = CoreProfiles1D
-    GlobalQuantities = CoreProfilesGlobalQuantities
+    TimeSlice = CoreProfilesTimeSlice
 
     def __init__(self,  *args,  grid: RadialGrid = None, ** kwargs):
         super().__init__(*args,  ** kwargs)
         self._grid = grid
 
-    @property
+    @cached_property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        return VacuumToroidalField(self["vacuum_toroidal_field.b0"], self["vacuum_toroidal_field.r0"])
+        vacuum_toroidal_field = self["vacuum_toroidal_field"]
+        if vacuum_toroidal_field == None:
+            vacuum_toroidal_field = self._grid.vacuum_toroidal_field
+        else:
+            vacuum_toroidal_field = VacuumToroidalField(* vacuum_toroidal_field ._as_dict())
+        return vacuum_toroidal_field
 
     @cached_property
-    def profiles_1d(self) -> TimeSeries[Profiles1D]:
-        return TimeSeries[CoreProfiles.Profiles1D](self["profiles_1d"], time=self.time,  parent=self)
+    def time_slice(self) -> TimeSeries[TimeSlice]:
+        return TimeSeries[CoreProfilesTimeSlice]({
+            "profiles_1d": self["profiles_1d"],
+            "global_quantities": self["global_quantities"]
+        }, parent=self, grid=self._grid)
+
+    @cached_property
+    def profiles_1d(self) -> List[CoreProfiles1D]:
+        return self.time_slice.to_aos("profiles_1d")
 
     @cached_property
     def global_quantities(self) -> CoreProfilesGlobalQuantities:
-        return TimeSeries[CoreProfilesGlobalQuantities](self["global_quantities"],   time=self.time, parent=self)
+        return self.time_slice.to_soa("global_quantities")

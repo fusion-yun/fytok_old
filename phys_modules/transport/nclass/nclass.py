@@ -25,9 +25,9 @@ NCLASS_MSG = [
 
 
 def nclass(equilibrium: Equilibrium.TimeSlice,
-           core_profiles: CoreProfiles.Profiles1D,
-           core_transport: CoreTransport.Profiles1D,
-           grid: np.ndarray = None) -> CoreTransport.Profiles1D:
+           core_profiles: CoreProfiles.TimeSlice,
+           core_transport: CoreTransport.TimeSlice,
+           grid: np.ndarray = None) -> CoreTransport.TimeSlice:
 
     logger.debug(f"Transport mode: NCLASS [START]")
 

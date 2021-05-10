@@ -16,7 +16,7 @@ from spdm.numerical.bvp import solve_bvp
 from spdm.util.logger import logger
 from spdm.util.utilities import try_get
 
-from .CoreProfiles import CoreProfiles
+from .CoreProfiles import CoreProfiles, CoreProfilesTimeSlice
 from .CoreSources import CoreSources
 from .CoreTransport import CoreTransport
 from .EdgeProfiles import EdgeProfiles
@@ -163,19 +163,19 @@ class TransportSolver(Dict):
         return sol, profiles
 
     def solve(self,
-              core_profiles_prev: CoreProfiles.Profiles1D,
-              core_profiles_next: CoreProfiles.Profiles1D,
+              core_profiles_prev: CoreProfiles.TimeSlice,
+              core_profiles_next: CoreProfiles.TimeSlice,
               *args,
               time=None,
               equilibrium: Equilibrium,
-              core_transport: CoreTransport.Profiles1D,
-              core_sources: CoreSources.Profiles1D,
+              core_transport: CoreTransport.TimeSlice,
+              core_sources: CoreSources.TimeSlice,
               boundary_conditions: Dict,
               tolerance=1.0e-3,
               max_nodes=1000,
               verbose=2,
               enable_ion_solver: bool = False,
-              **kwargs) -> CoreProfiles.Profiles1D:
+              **kwargs) -> CoreProfilesTimeSlice:
         r"""
             Solve transport equations
 

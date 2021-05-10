@@ -150,27 +150,27 @@ if __name__ == "__main__":
         grid=True, fontsize=16
     ) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
-    if False:
-        core_profile = tok.core_profiles.profiles_1d[-1]
-        plot_profiles(
+    core_profile = tok.core_profiles.time_slice.insert(eq)
+    plot_profiles(
+        [
             [
-                [
-                    (Function(profile["x"].values, profile["NE"].values*1.0e19),            r"$n_{e}^{\star}$"),
-                    (core_profile.electrons.density,                                        r"$n_e$"),
-                    *[(ion.density,                         f"$n_{{{ion.label}}}$") for ion in core_profile.ion],
-
-                ],
-                [
-                    (Function(profile["x"].values, profile["TE"].values),                   r"$T_{e}^{\star}$"),
-                    (core_profile.electrons.temperature,                                    r"$T_e$"),
-                    *[(ion.temperature,                      f"$T_{{{ion.label}}}$") for ion in core_profile.ion],
-                ],
+                 (Function(profile["x"].values, profile["NE"].values*1.0e19),            r"$n_{e}^{\star}$"),
+                (core_profile.electrons.density,                                        r"$n_e$"),
+                *[(ion.density,                         f"$n_{{{ion.label}}}$") for ion in core_profile.ion],
 
             ],
-            x_axis=(core_profile.grid.rho_tor_norm,    r"$\sqrt{\Phi/\Phi_{bdry}}$"),  # x axis,
-            grid=True, fontsize=10
-        ) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
+            [
+                (Function(profile["x"].values, profile["TE"].values),                   r"$T_{e}^{\star}$"),
+                (core_profile.electrons.temperature,                                    r"$T_e$"),
+                *[(ion.temperature,                      f"$T_{{{ion.label}}}$") for ion in core_profile.ion],
+            ],
 
+        ],
+        x_axis=(core_profile.grid.rho_tor_norm,    r"$\sqrt{\Phi/\Phi_{bdry}}$"),  # x axis,
+        grid=True, fontsize=10
+    ) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
+
+    if False:
         core_transport = CoreTransport({
             "identifier": {
                 "name": "neoclassical",
