@@ -8,7 +8,7 @@ from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
 from spdm.data.TimeSeries import TimeSeries
 from spdm.util.logger import logger
-
+from spdm.data.AoS import AoS
 from ..utilities.IDS import IDS
 from ..utilities.Misc import VacuumToroidalField
 from .MagneticCoordSystem import TWOPI, RadialGrid
@@ -520,10 +520,12 @@ class CoreProfiles(IDS):
 
     @cached_property
     def time_slice(self) -> TimeSeries[TimeSlice]:
-        return TimeSeries[CoreProfilesTimeSlice]({
-            "profiles_1d": self["profiles_1d"],
-            "global_quantities": self["global_quantities"]
-        }, parent=self, grid=self._grid)
+        return TimeSeries[CoreProfilesTimeSlice](self["time_slice"], parent=self, grid=self._grid)
+
+        # AoS({
+        #     "profiles_1d": self["profiles_1d"],
+        #     "global_quantities": self["global_quantities"]
+        # })
 
     @cached_property
     def profiles_1d(self) -> List[CoreProfiles1D]:

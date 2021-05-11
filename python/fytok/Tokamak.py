@@ -90,14 +90,14 @@ class Tokamak(Dict):
     def core_profiles(self) -> CoreProfiles:
         return CoreProfiles(self["core_profiles"],
                             vacuum_toroidal_field=self.vacuum_toroidal_field,
-                            grid=self.equilibrium.time_slice[-1].radial_grid("rho_tor_norm"),
+                            # grid=self.equilibrium.time_slice[-1].radial_grid("rho_tor_norm"),
                             time=self.time, parent=self)
 
     @cached_property
     def core_transport(self) -> CoreTransport:
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
         return CoreTransport(self["core_transport"],
-                             grid=self.equilibrium.time_slice[-1].radial_grid("rho_tor_norm"),
+                            #  grid=self.equilibrium.time_slice[-1].radial_grid("rho_tor_norm"),
                              time=self.time, parent=self)
 
     @cached_property
@@ -107,7 +107,7 @@ class Tokamak(Dict):
             (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
         return CoreSources(self["core_sources"],
-                           grid=self.equilibrium.time_slice[-1].radial_grid("rho_tor_norm"),
+                        #    grid=self.equilibrium.time_slice[-1].radial_grid("rho_tor_norm"),
                            time=self.time, parent=self)
 
     @cached_property
