@@ -149,8 +149,9 @@ if __name__ == "__main__":
         x_axis=(eq.profiles_1d.psi_norm,                                                        r"$\psi_{N}$"),
         grid=True, fontsize=16
     ) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
-
-    core_profile = tok.core_profiles.time_slice.insert(eq)
+    
+if False:
+    core_profile = tok.core_profiles.time_slice.insert(equlibrium=eq)
     plot_profiles(
         [
             [

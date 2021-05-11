@@ -6,9 +6,9 @@ import scipy.constants
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
-from spdm.data.TimeSeries import TimeSeries
+from spdm.data.TimeSeries import TimeSeries, TimeSlice
 from spdm.util.logger import logger
-from spdm.data.AoS import AoS
+from spdm.data.AoS import AoS, SoA
 from ..utilities.IDS import IDS
 from ..utilities.Misc import VacuumToroidalField
 from .MagneticCoordSystem import TWOPI, RadialGrid
@@ -486,7 +486,7 @@ class CoreProfilesGlobalQuantities(Dict):
         super().__init__(*args,  **kwargs)
 
 
-class CoreProfilesTimeSlice(Dict):
+class CoreProfilesTimeSlice(TimeSlice):
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -505,22 +505,21 @@ class CoreProfiles(IDS):
     _IDS = "core_profiles"
     TimeSlice = CoreProfilesTimeSlice
 
-    def __init__(self,  *args,  grid: RadialGrid = None, ** kwargs):
+    def __init__(self,  *args, ** kwargs):
         super().__init__(*args,  ** kwargs)
-        self._grid = grid
 
     @cached_property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
         vacuum_toroidal_field = self["vacuum_toroidal_field"]
         if vacuum_toroidal_field == None:
-            vacuum_toroidal_field = self._grid.vacuum_toroidal_field
+            vacuum_toroidal_field = self._parent.vacuum_toroidal_field
         else:
-            vacuum_toroidal_field = VacuumToroidalField(* vacuum_toroidal_field ._as_dict())
+            vacuum_toroidal_field = VacuumToroidalField(** vacuum_toroidal_field._as_dict())
         return vacuum_toroidal_field
 
     @cached_property
     def time_slice(self) -> TimeSeries[TimeSlice]:
-        return TimeSeries[CoreProfilesTimeSlice](self["time_slice"], parent=self, grid=self._grid)
+        return TimeSeries[CoreProfilesTimeSlice](self["time_slice"], parent=self)
 
         # AoS({
         #     "profiles_1d": self["profiles_1d"],
@@ -529,8 +528,8 @@ class CoreProfiles(IDS):
 
     @cached_property
     def profiles_1d(self) -> List[CoreProfiles1D]:
-        return self.time_slice.to_aos("profiles_1d")
+        return List[CoreProfiles1D](SoA(self.time_slice, "profiles_1d"), parent=self)
 
     @cached_property
     def global_quantities(self) -> CoreProfilesGlobalQuantities:
-        return self.time_slice.to_soa("global_quantities")
+        return CoreProfilesGlobalQuantities(SoA(self.time_slice, "global_quantities", pos=1), parent=self)
