@@ -110,8 +110,8 @@ class CoreProfiles1D(Profiles):
             return NotImplemented
 
     class Ion(Species):
-        def __init__(self,   *args, axis=None, parent=None, **kwargs):
-            super().__init__(*args, axis=axis if axis is not None else parent.grid.rho_tor_norm,  **kwargs)
+        def __init__(self,   *args, axis=None,  **kwargs):
+            super().__init__(*args, axis=axis,  **kwargs)
 
         @cached_property
         def z_ion(self):
@@ -487,12 +487,19 @@ class CoreProfilesGlobalQuantities(Dict):
 
 
 class CoreProfilesTimeSlice(TimeSlice):
-    def __init__(self,  *args, **kwargs):
+    def __init__(self,  *args, grid=None, vacuum_toroidal_field: VacuumToroidalField = None, **kwargs):
         super().__init__(*args, **kwargs)
+        self._grid = grid
+        self._vacuum_toroidal_field = vacuum_toroidal_field or \
+            VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
+
+    @property
+    def vacuum_toroidal_field(self) -> VacuumToroidalField:
+        return self._vacuum_toroidal_field
 
     @cached_property
     def profiles_1d(self) -> CoreProfiles1D:
-        return CoreProfiles1D(self["profiles_1d"], parent=self)
+        return CoreProfiles1D(self["profiles_1d"], grid=self._grid, parent=self)
 
     @cached_property
     def global_quantities(self) -> CoreProfilesGlobalQuantities:
@@ -509,27 +516,25 @@ class CoreProfiles(IDS):
         super().__init__(*args,  ** kwargs)
 
     @cached_property
-    def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        vacuum_toroidal_field = self["vacuum_toroidal_field"]
-        if vacuum_toroidal_field == None:
-            vacuum_toroidal_field = self._parent.vacuum_toroidal_field
-        else:
-            vacuum_toroidal_field = VacuumToroidalField(** vacuum_toroidal_field._as_dict())
-        return vacuum_toroidal_field
-
-    @cached_property
     def time_slice(self) -> TimeSeries[TimeSlice]:
         return TimeSeries[CoreProfilesTimeSlice](self["time_slice"], parent=self)
-
         # AoS({
         #     "profiles_1d": self["profiles_1d"],
         #     "global_quantities": self["global_quantities"]
         # })
 
-    @cached_property
+    @property
+    def vacuum_toroidal_field(self) -> VacuumToroidalField:
+        r0 = np.asarray([t_slice.vacuum_toroidal_field.r0 for t_slice in self.time_slice])
+        b0 = np.asarray([t_slice.vacuum_toroidal_field.b0 for t_slice in self.time_slice])
+        return VacuumToroidalField(r0[0], b0)
+
+    @property
     def profiles_1d(self) -> List[CoreProfiles1D]:
+        logger.warning(f"NOT IMPLEMENTED!")
         return List[CoreProfiles1D](SoA(self.time_slice, "profiles_1d"), parent=self)
 
-    @cached_property
+    @property
     def global_quantities(self) -> CoreProfilesGlobalQuantities:
+        logger.warning(f"NOT IMPLEMENTED!")
         return CoreProfilesGlobalQuantities(SoA(self.time_slice, "global_quantities", pos=1), parent=self)

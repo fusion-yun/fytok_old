@@ -6,8 +6,8 @@ from functools import cached_property
 from typing import Sequence, Mapping
 
 from spdm.data.Node import List, Dict
-from spdm.data.TimeSeries import TimeSeries
 from spdm.util.logger import logger
+import numpy as np
 
 
 class IDSProperties(Dict):
@@ -22,10 +22,20 @@ class IDSProperties(Dict):
     @cached_property
     def homogeneous_time(self):
         """This node must be filled (with 0, 1, or 2) for the IDS to be valid. If 1, the time of this IDS is homogeneous,
-            i.e. the time values for this IDS are stored in the time node just below the root of this IDS. If 0,
-                 the time values are stored in the various time fields at lower levels in the tree.
+            i.e. If 1, the time values for this IDS are stored in the time node just below the root of this IDS. 
+                 If 0, the time values are stored in the various time fields at lower levels in the tree.
                  In the case only constant or static nodes are filled within the IDS, homogeneous_time must be set to 2 {constant}	INT_0D	"""
-        return self["homogeneous_time"] or 2
+
+        h_time = getattr(self._parent.__class__, "_homogeneous_time", None)
+
+        if h_time is None:
+            pass
+        elif hasattr(self._parent.__class__, "time_slice"):
+            h_time = 1
+        else:
+            h_time = 0
+
+        return h_time
 
     @cached_property
     def source(self):
@@ -82,7 +92,8 @@ class IDSCode(Dict):
 
     @cached_property
     def output_flag(self) -> Sequence[int]:
-        """Output flag : 0 means the run is successful, other values mean some difficulty has been encountered, the exact meaning is then code specific. Negative values mean the result shall not be used. {dynamic}	INT_1D	1- time"""
+        """Output flag : 0 means the run is successful, other values mean some difficulty has been encountered, 
+           the exact meaning is then code specific. Negative values mean the result shall not be used. {dynamic}	INT_1D	1- time"""
         return self["output_flag"]
 
     LibraryDesc = collections.namedtuple("LibraryDesc", [
@@ -130,10 +141,9 @@ class IDS(Dict):
     def code(self) -> IDSCode:
         return IDSCode(self['code'], parent=self)
 
-    @cached_property
-    def time_slice(self) -> TimeSeries:
-        return NotImplemented
-
-    @cached_property
+    @property
     def time(self):
-        return self.time_slice.time
+        if hasattr(self, "time_slice"):
+            return self.time_slice.time
+        else:
+            return self["time"] or 0.0

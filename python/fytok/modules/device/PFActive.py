@@ -9,7 +9,6 @@ from spdm.util.logger import logger
 from ..utilities.IDS import IDS
 
 
-@as_attribute_tree
 class PFActive(IDS):
     """
     """

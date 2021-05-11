@@ -26,21 +26,20 @@ if __name__ == "__main__":
 
     profile = pd.read_csv('/home/salmon/workspace/data/15MA inductive - burn/profile.txt', sep='\t')
 
-    equilibrium.time_slice[-1].coordinate_system = {"grid": {"dim1": 128, "dim2": 256}}
+    equilibrium.coordinate_system = {"grid": {"dim1": 128, "dim2": 256}}
 
     ne = Function(profile["x"].values, profile["NE"].values*1.0e19)
     Te = Function(profile["x"].values, profile["TE"].values)
     Ti = Function(profile["x"].values, profile["TI"].values)
 
     tok = Tokamak({
-        "radial_grid": {"axis": 64},
         "wall":  device.wall,
         "pf_active": device.pf_active,
         "tf": device.tf,
         "magnetics": device.magnetics,
-        "equilibrium": equilibrium,
-        "core_profiles": {
-            "profiles_1d": [{
+        "equilibrium": {"time_slice": [equilibrium]},
+        "core_profiles":   {
+            "profiles_1d": {
                 "electrons": {
                     "label": "electrons",
                     "density":     ne,          # 1.0e19,
@@ -67,23 +66,24 @@ if __name__ == "__main__":
                 ],
                 "conductivity_parallel": 1.0,
                 "psi":   1.0,
-            }]
+            }
         }
-    })
+    },
+        radial_grid={"axis": 64},
+    )
 
-    if False:
-        sp_figure(tok,
-                  wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
-                  pf_active={"facecolor": 'red'},
-                  equilibrium={
-                      "mesh": True,
-                      "boundary": True,
-                      "scalar_field": [
-                          #   ("coordinate_system.norm_grad_psi", {"levels": 32, "linewidths": 0.1}),
-                          ("psirz", {"levels": 32, "linewidths": 0.1}),
-                      ],
-                  }
-                  ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
+    sp_figure(tok,
+              wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
+              pf_active={"facecolor": 'red'},
+              equilibrium={
+                  "mesh": True,
+                  "boundary": True,
+                  "scalar_field": [
+                      #   ("coordinate_system.norm_grad_psi", {"levels": 32, "linewidths": 0.1}),
+                      ("psirz", {"levels": 32, "linewidths": 0.1}),
+                  ],
+              }
+              ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
 
     eq = tok.equilibrium.time_slice[-1]
 
@@ -149,25 +149,25 @@ if __name__ == "__main__":
         x_axis=(eq.profiles_1d.psi_norm,                                                        r"$\psi_{N}$"),
         grid=True, fontsize=16
     ) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
-    
-if False:
-    core_profile = tok.core_profiles.time_slice.insert(equlibrium=eq)
+
+    core_profile = tok.core_profiles.time_slice.next(equilibrium=eq).profiles_1d
+
     plot_profiles(
         [
             [
-                 (Function(profile["x"].values, profile["NE"].values*1.0e19),            r"$n_{e}^{\star}$"),
-                (core_profile.electrons.density,                                        r"$n_e$"),
+                (Function(profile["x"].values, profile["NE"].values*1.0e19),              r"$n_{e}^{\star}$"),
+                (core_profile.electrons.density,                                                     r"$n_e$"),
                 *[(ion.density,                         f"$n_{{{ion.label}}}$") for ion in core_profile.ion],
 
             ],
             [
-                (Function(profile["x"].values, profile["TE"].values),                   r"$T_{e}^{\star}$"),
-                (core_profile.electrons.temperature,                                    r"$T_e$"),
+                (Function(profile["x"].values, profile["TE"].values),                       r"$T_{e}^{\star}$"),
+                (core_profile.electrons.temperature,                                                  r"$T_e$"),
                 *[(ion.temperature,                      f"$T_{{{ion.label}}}$") for ion in core_profile.ion],
             ],
 
         ],
-        x_axis=(core_profile.grid.rho_tor_norm,    r"$\sqrt{\Phi/\Phi_{bdry}}$"),  # x axis,
+        x_axis=(core_profile.grid.rho_tor_norm,                                    r"$\sqrt{\Phi/\Phi_{bdry}}$"),
         grid=True, fontsize=10
     ) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 

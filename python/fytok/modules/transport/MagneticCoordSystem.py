@@ -518,34 +518,34 @@ class RadialGrid:
             at the equilibrium boundary (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation, 
             see time_slice/boundary/b_flux_pol_norm in the equilibrium IDS) {dynamic} [-]
         """
-        return self._parent.rho_tor_norm(self.psi_norm)
+        return self._coordinate_system.rho_tor_norm(self.psi_norm)
 
     @cached_property
     def rho_tor(self):
         r"""Toroidal flux coordinate. rho_tor = sqrt(b_flux_tor/(pi*b0)) ~ sqrt(pi*r^2*b0/(pi*b0)) ~ r [m]. 
             The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0 {dynamic} [m]"""
-        return self._parent.rho_tor
+        return self._coordinate_system.rho_tor
 
     @cached_property
     def rho_pol_norm(self):
         r"""Normalised poloidal flux coordinate = sqrt((psi(rho)-psi(magnetic_axis)) / (psi(LCFS)-psi(magnetic_axis))) {dynamic} [-]"""
-        return self._parent.rho_pol_norm
+        return self._coordinate_system.rho_pol_norm
 
     @cached_property
     def area(self):
         """Cross-sectional area of the flux surface {dynamic} [m^2]"""
-        return self._parent.area
+        return self._coordinate_system.area
 
     @cached_property
     def surface(self):
         """Surface area of the toroidal flux surface {dynamic} [m^2]"""
-        return self._parent.surface
+        return self._coordinate_system.surface
 
     @cached_property
     def volume(self):
         """Volume enclosed inside the magnetic surface {dynamic} [m^3]"""
-        return self._parent.volume
+        return self._coordinate_system.volume
 
     @cached_property
     def dvolume_drho_tor(self) -> Function:
-        return self._parent.dvolume_drho_tor
+        return self._coordinate_system.dvolume_drho_tor

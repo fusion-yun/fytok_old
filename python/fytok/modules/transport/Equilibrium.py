@@ -639,8 +639,11 @@ class EquilibriumTimeSlice(TimeSlice):
 
     def __init__(self, *args, vacuum_toroidal_field: VacuumToroidalField = None, **kwargs):
         super().__init__(*args, **kwargs)
-        vacuum_toroidal_field = vacuum_toroidal_field or self._parent.vacuum_toroidal_field
-        self._vacuum_toroidal_field = VacuumToroidalField(vacuum_toroidal_field.r0, np.abs(vacuum_toroidal_field.b0))
+        self._vacuum_toroidal_field = vacuum_toroidal_field or \
+            VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
+        if self._vacuum_toroidal_field.b0 < 0:
+            self._vacuum_toroidal_field = VacuumToroidalField(
+                self._vacuum_toroidal_field.r0, np.abs(self._vacuum_toroidal_field.b0))
 
     @property
     def time(self):
@@ -650,7 +653,7 @@ class EquilibriumTimeSlice(TimeSlice):
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
         return self._vacuum_toroidal_field
 
-    def radial_grid(self, *args, **kwargs):
+    def radial_grid(self, *args, **kwargs) -> RadialGrid:
         return self.coordinate_system.radial_grid(*args, **kwargs)
 
     @cached_property
@@ -823,10 +826,6 @@ class Equilibrium(IDS):
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    @property
-    def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        return VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
-
     @cached_property
     def time_slice(self) -> TimeSeries[EquilibriumTimeSlice]:
         return TimeSeries[EquilibriumTimeSlice](self["time_slice"], parent=self)
@@ -834,6 +833,12 @@ class Equilibrium(IDS):
     @cached_property
     def grid_ggd(self) -> TimeSeries[GGD]:
         return TimeSeries[GGD](self["grid_ggd"], parent=self)
+
+    @property
+    def vacuum_toroidal_field(self) -> VacuumToroidalField:
+        r0 = np.asarray([t_slice.vacuum_toroidal_field.r0 for t_slice in self.time_slice])
+        b0 = np.asarray([t_slice.vacuum_toroidal_field.b0 for t_slice in self.time_slice])
+        return VacuumToroidalField(r0[0], b0)
 
     ####################################################################################
     # Plot profiles

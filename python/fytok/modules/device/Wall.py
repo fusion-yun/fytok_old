@@ -81,12 +81,12 @@ class WallDescription2D(Dict):
         #     raise TypeError(f"Unknown type {type(vessel)}")
 
 
-@as_attribute_tree
 class Wall(IDS):
     """Wall
 
     """
     _IDS = "wall"
+    _homogeneous_time= 2
 
     def __init__(self, *args,  **kwargs):
         super().__init__(*args, **kwargs)

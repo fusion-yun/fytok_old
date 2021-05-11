@@ -38,21 +38,13 @@ class Tokamak(Dict):
 
     """
 
-    def __init__(self, *args, time=None,    **kwargs):
+    def __init__(self, *args,  radial_grid=None, **kwargs):
         super().__init__(*args,  **kwargs)
-        self._time = time or 0.0
-
-    # @cached_property
-    # def radial_grid(self):
-    #     return self.equilibrium.radial_grid(**self["radial_grid"]._data)
+        self._radial_grid = radial_grid
 
     @property
     def time(self):
         return self._time
-
-    @cached_property
-    def vacuum_toroidal_field(self):
-        return VacuumToroidalField(self["equilibrium.vacuum_toroidal_field.r0"], self["equilibrium.vacuum_toroidal_field.b0"])
 
     @cached_property
     def wall(self) -> Wall:
@@ -78,27 +70,22 @@ class Tokamak(Dict):
 
     @cached_property
     def equilibrium(self) -> Equilibrium:
-        return Equilibrium(self["equilibrium"],
-                           vacuum_toroidal_field=self.vacuum_toroidal_field,
-                           constraints=self.constraints,
-                           wall=self.wall,
-                           pf_active=self.pf_active,
-                           tf=self.tf,
-                           parent=self)
+        return Equilibrium(self["equilibrium"], parent=self)
+
+        #    vacuum_toroidal_field=self.vacuum_toroidal_field,
+        #    constraints=self.constraints,
+        #    wall=self.wall,
+        #    pf_active=self.pf_active,
+        #    tf=self.tf,
 
     @cached_property
     def core_profiles(self) -> CoreProfiles:
-        return CoreProfiles(self["core_profiles"],
-                            vacuum_toroidal_field=self.vacuum_toroidal_field,
-                            # grid=self.equilibrium.time_slice[-1].radial_grid("rho_tor_norm"),
-                            time=self.time, parent=self)
+        return CoreProfiles(self["core_profiles"],  parent=self)
 
     @cached_property
     def core_transport(self) -> CoreTransport:
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return CoreTransport(self["core_transport"],
-                            #  grid=self.equilibrium.time_slice[-1].radial_grid("rho_tor_norm"),
-                             time=self.time, parent=self)
+        return CoreTransport(self["core_transport"],  parent=self)
 
     @cached_property
     def core_sources(self) -> CoreSources:
@@ -106,9 +93,7 @@ class Tokamak(Dict):
             Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return CoreSources(self["core_sources"],
-                        #    grid=self.equilibrium.time_slice[-1].radial_grid("rho_tor_norm"),
-                           time=self.time, parent=self)
+        return CoreSources(self["core_sources"],  parent=self)
 
     @cached_property
     def edge_profiles(self) -> EdgeProfiles:
@@ -128,15 +113,9 @@ class Tokamak(Dict):
         """
         return EdgeSources(self["edge_sources"], parent=self)
 
-    def particle_species(self):
-        pass
-
     @cached_property
     def transport_solver(self) -> TransportSolver:
-        return TransportSolver(self["transport_solver"],
-                               time=self.time,
-                               grid=self.equilibrium.time_slice[-1].radial_grid(),
-                               parent=self)
+        return TransportSolver(self["transport_solver"], parent=self)
 
     def update(self,
                time=None,
