@@ -639,15 +639,12 @@ class EquilibriumTimeSlice(TimeSlice):
 
     def __init__(self, *args, vacuum_toroidal_field: VacuumToroidalField = None, **kwargs):
         super().__init__(*args, **kwargs)
+        
         self._vacuum_toroidal_field = vacuum_toroidal_field or \
             VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
         if self._vacuum_toroidal_field.b0 < 0:
             self._vacuum_toroidal_field = VacuumToroidalField(
                 self._vacuum_toroidal_field.r0, np.abs(self._vacuum_toroidal_field.b0))
-
-    @property
-    def time(self):
-        return self._time
 
     @property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:

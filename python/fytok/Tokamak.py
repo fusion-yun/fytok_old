@@ -38,8 +38,8 @@ class Tokamak(Dict):
 
     """
 
-    def __init__(self, *args,  radial_grid=None, **kwargs):
-        super().__init__(*args,  **kwargs)
+    def __init__(self, desc=None, * args,  radial_grid=None, **kwargs):
+        super().__init__(desc or kwargs)
         self._radial_grid = radial_grid
 
     @property
