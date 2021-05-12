@@ -38,10 +38,10 @@ def nclass(equilibrium: Equilibrium.TimeSlice,
     # }
 
     eq_profiles_1d = equilibrium.profiles_1d
-
-   
-    for p_ion in core_profiles.ion:
-        core_transport.ion[_next_] = {
+    core_profile = core_profiles.profiles_1d
+    core_trans_prof = core_transport.profiles_1d
+    for p_ion in core_profile.ion:
+        core_trans_prof.ion[_next_] = {
             "label": p_ion.label,
             "z_ion": p_ion.z_ion,
             "neutral_index": p_ion.neutral_index,
@@ -85,9 +85,9 @@ def nclass(equilibrium: Equilibrium.TimeSlice,
     #                 =   -> else on
     l_pfirsch = 1
 
-    m_i = 1+len(core_profiles.ion)
+    m_i = 1+len(core_profile.ion)
 
-    m_z = max([ion.z_ion for ion in core_profiles.ion])
+    m_z = max([ion.z_ion for ion in core_profile.ion])
     # ------------------------------------------------------------------------
     #  c_den          : density cutoff below which species is ignored (/m**3)
     # ------------------------------------------------------------------------
@@ -98,8 +98,8 @@ def nclass(equilibrium: Equilibrium.TimeSlice,
     # -----------------------------------------------------------------------------
 
     psi_norm = eq_profiles_1d.psi_norm
-    rho_tor_norm = core_profiles.grid.rho_tor_norm
-    rho_tor = core_profiles.grid.rho_tor
+    rho_tor_norm = core_profile.grid.rho_tor_norm
+    rho_tor = core_profile.grid.rho_tor
     rho_tor_bdry = rho_tor[-1]
 
     bt0_pr = eq_profiles_1d.fpol * eq_profiles_1d.gm1 / eq_profiles_1d.gm9
@@ -118,16 +118,16 @@ def nclass(equilibrium: Equilibrium.TimeSlice,
 
     # Electron,Ion densities, temperatures and mass
 
-    Ts = [core_profiles.electrons.temperature, *[ion.temperature for ion in core_profiles.ion]]
+    Ts = [core_profile.electrons.temperature, *[ion.temperature for ion in core_profile.ion]]
     dTs = [t.derivative for t in Ts]
 
-    ns = [core_profiles.electrons.density, *[ion.density for ion in core_profiles.ion]]
+    ns = [core_profile.electrons.density, *[ion.density for ion in core_profile.ion]]
 
-    dPs = [core_profiles.electrons.pressure.derivative*eq_profiles_1d.dpsi_drho_tor_norm,
-           *[ion.pressure.derivative*eq_profiles_1d.dpsi_drho_tor_norm for ion in core_profiles.ion]]
+    dPs = [core_profile.electrons.pressure.derivative*eq_profiles_1d.dpsi_drho_tor_norm,
+           *[ion.pressure.derivative*eq_profiles_1d.dpsi_drho_tor_norm for ion in core_profile.ion]]
 
     amu = [scipy.constants.m_e/scipy.constants.m_u,   # Electron mass in amu
-           * [sum([(a.a*a.atoms_n) for a in ion.element])for ion in core_profiles.ion]]
+           * [sum([(a.a*a.atoms_n) for a in ion.element])for ion in core_profile.ion]]
 
     q = eq_profiles_1d.q
 
@@ -139,14 +139,14 @@ def nclass(equilibrium: Equilibrium.TimeSlice,
     c_potb = kappa[0]*b0/2.0/q[0]
     c_potl = r0*q[0]
 
-    psi_norm = Function(core_transport.grid_d.rho_tor_norm, core_transport.grid_d.psi_norm)
+    psi_norm = Function(core_trans_prof.grid_d.rho_tor_norm, core_trans_prof.grid_d.psi_norm)
 
     flag = True
 
-    ele = core_transport.electrons
+    ele = core_trans_prof.electrons
 
     # Set input for NCLASS
-    for ipr, x in enumerate(core_transport.grid_d.rho_tor_norm):
+    for ipr, x in enumerate(core_trans_prof.grid_d.rho_tor_norm):
         x_psi = psi_norm(x)
         xqs = q(x_psi)
         # Geometry and electrical field calculations
@@ -209,7 +209,7 @@ def nclass(equilibrium: Equilibrium.TimeSlice,
             m_z,                                              # highest charge state [-]
             eq_profiles_1d.gm5(x_psi),                        # <B**2> [T**2]
             eq_profiles_1d.gm4(x_psi),                        # <1/B**2> [1/T**2]
-            core_profiles.e_field.parallel(x_psi)*b0,         # <E.B> [V*T/m]
+            core_profile.e_field.parallel(x_psi)*b0,         # <E.B> [V*T/m]
             scipy.constants.mu_0*fpol(x_psi) / dpsi_drho_tor,  # mu_0*F/(dPsi/dr) [rho/m]
             p_fm,                                             # poloidal moments of drift factor for PS [/m**2]
             eq_profiles_1d.trapped_fraction(x_psi),           # trapped fraction [-]
@@ -327,10 +327,10 @@ def nclass(equilibrium: Equilibrium.TimeSlice,
         ele.energy.d[ipr] = chi_s[0]/grad_rho_tor2
         ele.energy.v[ipr] = vqnt_s[0] + vqeb_s[0]*p_etap*(jparallel - p_jbbs)
 
-        # core_transport.chieff[ipr] = chi_s[1]/grad_rho_tor2  # need to set 0.0
+        # core_trans_prof.chieff[ipr] = chi_s[1]/grad_rho_tor2  # need to set 0.0
 
         # Ion heatfluxes
-        for k, sp in enumerate(core_transport.ion):
+        for k, sp in enumerate(core_trans_prof.ion):
             # ion particle fluxes
             sp.particles.flux[ipr] = np.sum(glf_s[:, k + 1])
             sp.particles.d[ipr] = dn_s[k + 1]/grad_rho_tor2
@@ -354,25 +354,25 @@ def nclass(equilibrium: Equilibrium.TimeSlice,
             #     p_fpolhat[i]*profiles_rm.vpol[ipr] - r0 * \
             #     p_fpolhat[i]/p_fpol[i]*e_r[3]
 
-        # core_transport.electrons.particles.d.eff[ipr] = dn_s[1]/grad_rho_tor2  # need to set
+        # core_trans_prof.electrons.particles.d.eff[ipr] = dn_s[1]/grad_rho_tor2  # need to set
 
         # rotational momentum transport
-        core_transport.momentum_tor.d[ipr] = 0.0
+        core_trans_prof.momentum_tor.d[ipr] = 0.0
 
         # resistivity and <j dot B>
-        # core_transport.conductivity_parallel[ipr] = 1.0 / p_etap
-        core_transport.j_bootstrap[ipr] = p_jbbs/b0
+        # core_trans_prof.conductivity_parallel[ipr] = 1.0 / p_etap
+        core_trans_prof.j_bootstrap[ipr] = p_jbbs/b0
 
         # Recalculate E_r for storage
-        # core_profiles.e_field.radial[ipr] = NotImplemented  # p_fpol[i]/r0/fhat*profiles_rm.vtor[i, 1]
-        # core_profiles.e_field.poloidal[ipr] = NotImplemented  # -p_fpol[i]/r0*profiles_rm.vpol[i, 1]
-        # core_profiles.e_field.toroidal[ipr] = NotImplemented  # p_fpol[i]/r0/fhat*profiles_rm.vtor[i, 1]
+        # core_profile.e_field.radial[ipr] = NotImplemented  # p_fpol[i]/r0/fhat*profiles_rm.vtor[i, 1]
+        # core_profile.e_field.poloidal[ipr] = NotImplemented  # -p_fpol[i]/r0*profiles_rm.vpol[i, 1]
+        # core_profile.e_field.toroidal[ipr] = NotImplemented  # p_fpol[i]/r0/fhat*profiles_rm.vtor[i, 1]
 
     # Extend to edge values
-    # core_transport.chi[-1, :] = core_transport.chi[-1 - 1, :]
-    # core_transport.Vt[-1, :] = core_transport.Vt[-1 - 1, :]
-    # core_transport.heat_fluxes[-1, :] = core_transport.heat_fluxes[-1 - 1, :]
-    # core_transport.chieff[-1, :] = core_transport.chieff[-1 - 1, :]
+    # core_trans_prof.chi[-1, :] = core_trans_prof.chi[-1 - 1, :]
+    # core_trans_prof.Vt[-1, :] = core_trans_prof.Vt[-1 - 1, :]
+    # core_trans_prof.heat_fluxes[-1, :] = core_trans_prof.heat_fluxes[-1 - 1, :]
+    # core_trans_prof.chieff[-1, :] = core_trans_prof.chieff[-1 - 1, :]
 
     # core_transport.d[-1, :] = core_transport.d[-1 - 1, :]
     # core_transport.Vp[-1, :] = core_transport.Vp[-1 - 1, :]
@@ -386,6 +386,6 @@ def nclass(equilibrium: Equilibrium.TimeSlice,
     # core_transport.jboot[-1] = core_transport.jboot[-1 - 1]
 
     # Copy local values to profiles
-    # core_profiles.vloop[ipr] = profiles_rm.vpol[1, :]
+    # core_profile.vloop[ipr] = profiles_rm.vpol[1, :]
     logger.debug(f"Transport mode: NCLASS [DONE]")
     return core_transport

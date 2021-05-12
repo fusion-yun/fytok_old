@@ -19,15 +19,15 @@ class TransportCoeff(Dict):
         super().__init__(*args,   **kwargs)
 
     @cached_property
-    def d(self):
+    def d(self) -> Function:
         return Function(self._parent.grid_d.rho_tor_norm, self["d"])
 
     @cached_property
-    def v(self):
+    def v(self) -> Function:
         return Function(self._parent.grid_v.rho_tor_norm, self["v"])
 
     @cached_property
-    def flux(self):
+    def flux(self) -> Function:
         return Function(self._parent.grid_flux.rho_tor_norm, self["flux"])
 
 
@@ -36,11 +36,11 @@ class CoreTransportElectrons(Dict):
         super().__init__(*args, **kwargs)
 
     @cached_property
-    def particles(self):
+    def particles(self) -> TransportCoeff:
         return TransportCoeff(self["particles"], parent=self._parent)
 
     @cached_property
-    def energy(self):
+    def energy(self) -> TransportCoeff:
         return TransportCoeff(self["energy"],  parent=self._parent)
 
 
@@ -60,11 +60,11 @@ class CoreTransportIon(Species):
         return self.__raw_get__("neutral_index")
 
     @cached_property
-    def particles(self):
+    def particles(self) -> TransportCoeff:
         return TransportCoeff(self["particles"], parent=self._parent)
 
     @cached_property
-    def energy(self):
+    def energy(self) -> TransportCoeff:
         return TransportCoeff(self["energy"],  parent=self._parent)
 
 
@@ -73,23 +73,23 @@ class CoreTransportMomentum(Profiles):
         super().__init__(*args,  **kwargs)
 
     @cached_property
-    def radial(self):
+    def radial(self) -> TransportCoeff:
         return TransportCoeff(self["radial"], parent=self._parent)
 
     @cached_property
-    def diamagnetic(self):
+    def diamagnetic(self) -> TransportCoeff:
         return TransportCoeff(self["diamagnetic"], parent=self._parent)
 
     @cached_property
-    def parallel(self):
+    def parallel(self) -> TransportCoeff:
         return TransportCoeff(self["parallel"], parent=self._parent)
 
     @cached_property
-    def poloidal(self):
+    def poloidal(self) -> TransportCoeff:
         return TransportCoeff(self["poloidal"], parent=self._parent)
 
     @cached_property
-    def toroidal(self):
+    def toroidal(self) -> TransportCoeff:
         return TransportCoeff(self["toroidal"], parent=self._parent)
 
 
@@ -103,11 +103,11 @@ class CoreTransportNeutral(Species):
         return self.__raw_get__("ion_index")
 
     @cached_property
-    def particles(self):
+    def particles(self) -> TransportCoeff:
         return TransportCoeff(self["particles"], parent=self._parent)
 
     @cached_property
-    def energy(self):
+    def energy(self) -> TransportCoeff:
         return TransportCoeff(self["energy"],  parent=self._parent)
 
 
@@ -117,14 +117,9 @@ class CoreTransportProfiles1D(Profiles):
     Electrons = CoreTransportElectrons
     Momentum = CoreTransportMomentum
 
-    def __init__(self, *args, grid: RadialGrid = None, time=None, **kwargs):
+    def __init__(self, *args, grid: RadialGrid = None,  **kwargs):
         super().__init__(*args,   **kwargs)
-        self._grid = grid or self._parent._grid
-        self._time = time or self["time"]
-
-    @property
-    def time(self) -> float:
-        return self._time
+        self._grid = grid
 
     @cached_property
     def grid_d(self) -> RadialGrid:
@@ -142,62 +137,73 @@ class CoreTransportProfiles1D(Profiles):
         return self._grid.pullback(0.5*(self._grid.psi_norm[:-1]+self._grid.psi_norm[1:]))
 
     @cached_property
-    def electrons(self):
+    def electrons(self) -> CoreTransportElectrons:
         """ Transport quantities related to the electrons """
         return CoreTransportProfiles1D.Electrons(self['electrons'], parent=self)
 
     @cached_property
-    def ion(self) -> List:
+    def ion(self) -> List[CoreTransportIon]:
         """ Transport coefficients related to the various ion species """
         return List[CoreTransportProfiles1D.Ion](self['ion'], parent=self)
 
     @cached_property
-    def neutral(self) -> List:
+    def neutral(self) -> List[CoreTransportNeutral]:
         """ Transport coefficients related to the various neutral species """
         return List[CoreTransportProfiles1D.Neutral](self['neutral'],   parent=self)
 
     @cached_property
-    def momentum(self):
+    def momentum(self) -> CoreTransportMomentum:
         return CoreTransportProfiles1D.Momentum(self["momentum"],  parent=self)
 
     @cached_property
-    def total_ion_energy(self):
+    def total_ion_energy(self) -> TransportCoeff:
         """ Transport coefficients for the total (summed over ion species) energy equation """
         return TransportCoeff(self["total_ion_energy"], parent=self)
 
     @cached_property
-    def momentum_tor(self):
+    def momentum_tor(self) -> TransportCoeff:
         """ Transport coefficients for total toroidal momentum equation  """
         return TransportCoeff(self["momentum_tor"], parent=self)
 
     @cached_property
-    def conductivity_parallel(self):
+    def conductivity_parallel(self) -> Function:
         return Function(self.grid_d.rho_tor_norm, self["conductivity_parallel"])
 
     @cached_property
-    def e_field_radial(self):
+    def e_field_radial(self) -> Function:
         """ Radial component of the electric field (calculated e.g. by a neoclassical model) {dynamic} [V.m^-1]"""
         return Function(self.grid_flux.rho_tor_norm, self["e_field_radial"])
 
 
-class CoreTransportTimeSlice(Dict):
+class CoreTransportTimeSlice(TimeSlice):
 
-    def __init__(self,   *args, grid: RadialGrid = None, time=None, **kwargs):
+    def __init__(self,   *args, grid: RadialGrid = None,   **kwargs):
         super().__init__(*args, **kwargs)
-        self._grid = grid or self._parent._grid
-        self._time = time or 0.0
+        self._grid = grid
 
     @cached_property
     def profiles_1d(self) -> CoreTransportProfiles1D:
-        return CoreTransportProfiles1D(self["profiles_1d"],  grid=self._grid,  time=self._time, parent=self)
+        return CoreTransportProfiles1D(self["profiles_1d"],  grid=self._grid,   parent=self)
 
 
-class CoreTransportModel(Dict):
+class CoreTransport(IDS):
+    r"""
+        Core plasma transport of particles, energy, momentum and poloidal flux. The transport of particles, energy and momentum is described by
+        diffusion coefficients,  :math:`D`, and convection velocities,  :math:`v`. These are defined by the total fluxes of particles, energy and momentum, across a
+        flux surface given by : :math:`V^{\prime}\left[-DY^{\prime}\left|\nabla\rho_{tor,norm}\right|^{2}+vY\left|\nabla\rho_{tor,norm}\right|\right]`,
+        where  :math:`Y` represents the particles, energy and momentum density, respectively, while  :math:`V` is the volume inside a flux surface, the primes denote
+        derivatives with respect to :math:`\rho_{tor,norm}` and
+        :math:`\left\langle X\right\rangle` is the flux surface average of a quantity  :math:`X`. This formulation remains valid when changing simultaneously
+        :math:`\rho_{tor,norm}` into :math:`\rho_{tor}`
+        in the gradient terms and in the derivatives denoted by the prime. The average flux stored in the IDS as sibling of  :math:`D` and  :math:`v` is the total
+        flux described above divided by the flux surface area :math:`V^{\prime}\left\langle \left|\nabla\rho_{tor,norm}\right|\right\rangle` .
+        Note that the energy flux includes the energy transported by the particle flux.
+    """
+    _IDS = "core_transport"
+    TimeSlice = CoreTransportTimeSlice
 
-    def __init__(self, *args, grid=None, time=None, **kwargs):
+    def __init__(self, *args,  **kwargs):
         super().__init__(*args, **kwargs)
-        self._grid = grid or self._parent._grid
-        self._time = time or self._parent
 
     @cached_property
     def code(self) -> IDSCode:
@@ -238,38 +244,8 @@ class CoreTransportModel(Dict):
 
     @cached_property
     def time_slice(self) -> TimeSeries[CoreTransportTimeSlice]:
-        return TimeSeries[CoreTransportTimeSlice]({"profiles_1d": self["profiles_1d"]},
-                                                  grid=self._grid,  time=self._time, parent=self)
+        return TimeSeries[CoreTransportTimeSlice](self["time_slice"],  parent=self)
 
-    @cached_property
-    def profiles_1d(self) -> TimeSeries:
-        return self.time_slice["profiles_1d"]
-
-
-class CoreTransport(IDS):
-    r"""
-        Core plasma transport of particles, energy, momentum and poloidal flux. The transport of particles, energy and momentum is described by
-        diffusion coefficients,  :math:`D`, and convection velocities,  :math:`v`. These are defined by the total fluxes of particles, energy and momentum, across a
-        flux surface given by : :math:`V^{\prime}\left[-DY^{\prime}\left|\nabla\rho_{tor,norm}\right|^{2}+vY\left|\nabla\rho_{tor,norm}\right|\right]`,
-        where  :math:`Y` represents the particles, energy and momentum density, respectively, while  :math:`V` is the volume inside a flux surface, the primes denote
-        derivatives with respect to :math:`\rho_{tor,norm}` and
-        :math:`\left\langle X\right\rangle` is the flux surface average of a quantity  :math:`X`. This formulation remains valid when changing simultaneously
-        :math:`\rho_{tor,norm}` into :math:`\rho_{tor}`
-        in the gradient terms and in the derivatives denoted by the prime. The average flux stored in the IDS as sibling of  :math:`D` and  :math:`v` is the total
-        flux described above divided by the flux surface area :math:`V^{\prime}\left\langle \left|\nabla\rho_{tor,norm}\right|\right\rangle` .
-        Note that the energy flux includes the energy transported by the particle flux.
-    """
-    _IDS = "core_transport"
-    TimeSlice = CoreTransportTimeSlice
-
-    def __init__(self,  *args, grid=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._grid = grid or RadialGrid(self["grid"])
-
-    @cached_property
-    def time_slice(self) -> TimeSeries[List[CoreTransportModel]]:
-        return TimeSeries[List[CoreTransportModel]](self["model"],  parent=self)
-
-    @cached_property
-    def model(self):
-        return self.time_slice("model")
+    # @cached_property
+    # def profiles_1d(self) -> TimeSeries:
+    #     return self.time_slice["profiles_1d"]

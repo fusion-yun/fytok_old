@@ -40,7 +40,7 @@ class CoreProfiles1D(Profiles):
             super().__init__(*args, axis=axis if axis is not None else parent.grid.rho_tor_norm,  **kwargs)
 
         @cached_property
-        def temperature(self):
+        def temperature(self) -> Function:
             """Temperature {dynamic} [eV]"""
             return self["temperature"]
 
@@ -57,7 +57,7 @@ class CoreProfiles1D(Profiles):
         #     """Information on the fit used to obtain the temperature profile [eV]  """
         #     return NotImplemented
         @cached_property
-        def density(self):
+        def density(self) -> Function:
             """Density (thermal+non-thermal) {dynamic} [m^-3]"""
             return self["density"]
         # @property
@@ -82,7 +82,7 @@ class CoreProfiles1D(Profiles):
         #     return NotImplemented
 
         @cached_property
-        def pressure(self):
+        def pressure(self) -> Function:
             """Pressure(thermal+non-thermal) {dynamic}[Pa]"""
             if self.pressure_fast_perpendicular is not NotImplemented:
                 return self.pressure_thermal+self.pressure_fast_perpendicular+self.pressure_fast_parallel
@@ -90,22 +90,22 @@ class CoreProfiles1D(Profiles):
                 return self.pressure_thermal
 
         @cached_property
-        def pressure_thermal(self):
+        def pressure_thermal(self) -> Function:
             """Pressure(thermal) associated with random motion ~average((v-average(v)) ^ 2) {dynamic}[Pa]"""
             return self.density*self.temperature
 
         @cached_property
-        def pressure_fast_perpendicular(self):
+        def pressure_fast_perpendicular(self) -> Function:
             """Fast(non-thermal) perpendicular pressure {dynamic}[Pa]"""
             return NotImplemented
 
         @cached_property
-        def pressure_fast_parallel(self):
+        def pressure_fast_parallel(self) -> Function:
             """Fast(non-thermal) parallel pressure {dynamic}[Pa]"""
             return NotImplemented
 
         @cached_property
-        def collisionality_norm(self):
+        def collisionality_norm(self) -> Function:
             """Collisionality normalised to the bounce frequency {dynamic}[-]"""
             return NotImplemented
 

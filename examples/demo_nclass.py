@@ -19,14 +19,6 @@ if __name__ == "__main__":
 
     device = File("/home/salmon/workspace/fytok/data/mapping/ITER/imas/3/static/config.xml").entry
 
-    equilibrium = File(
-        # "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
-        "/home/salmon/workspace/data/15MA inductive - burn/Increased domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16VVHR.txt",
-        # "/home/salmon/workspace/data/Limiter plasmas-7.5MA li=1.1/Limiter plasmas 7.5MA-EQDSK/Limiter_7.5MA_outbord.EQDSK",
-        format="geqdsk").entry
-
-    equilibrium.coordinate_system = {"grid": {"dim1": 128, "dim2": 256}}
-
     tok = Tokamak(
         wall=device.wall,
         pf_active=device.pf_active,
@@ -34,7 +26,16 @@ if __name__ == "__main__":
         magnetics=device.magnetics,
         radial_grid={"axis": 64},
     )
-    eq = tok.equilibrium.time_slice.push_back(equilibrium, time=0.0)
+
+    eq_conf = File(
+        # "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
+        "/home/salmon/workspace/data/15MA inductive - burn/Increased domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16VVHR.txt",
+        # "/home/salmon/workspace/data/Limiter plasmas-7.5MA li=1.1/Limiter plasmas 7.5MA-EQDSK/Limiter_7.5MA_outbord.EQDSK",
+        format="geqdsk").entry
+
+    eq_conf.coordinate_system = {"grid": {"dim1": 128, "dim2": 256}}
+
+    eq = tok.equilibrium.time_slice.push_back(eq_conf, time=0.0)
 
     sp_figure(tok,
               wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
@@ -150,8 +151,7 @@ if __name__ == "__main__":
     core_profile_slice = tok.core_profiles.time_slice.push_back(core_profiles_conf,
                                                                 grid=eq.radial_grid(),
                                                                 vacuum_toroidal_field=eq.vacuum_toroidal_field)
-    
-    logger.debug(core_profile_slice.time)
+
 
     core_profile = core_profile_slice.profiles_1d
 
@@ -174,56 +174,55 @@ if __name__ == "__main__":
         grid=True, fontsize=10
     ) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
-    if False:
-        core_transport = CoreTransport({
-            "identifier": {
-                "name": "neoclassical",
-                "index": 5,
-                "description": "by NCLASS"
-            }
-        },  grid=eq.radial_grid("rho_tor_norm"),   time=eq.time)
+    core_transport = CoreTransport({
+        "identifier": {
+            "name": "neoclassical",
+            "index": 5,
+            "description": "by NCLASS"
+        }
+    })
 
-        core_transport.profiles_1d[_next_] = {"time": 0.0}
+    core_transport_slice = core_transport.time_slice.next(equilibrium=eq, core_profile=core_profile_slice, time=0.0)
 
-        core_transport1d = core_transport.profiles_1d[-1]
+    nclass.nclass(eq, core_profile_slice, core_transport_slice)
 
-        nclass.transport_nclass(eq, core_profile, core_transport1d)
+    core_transport1d = core_transport_slice.profiles_1d
 
-        plot_profiles(
+    plot_profiles(
+        [
             [
-                [
-                    (core_transport1d.electrons.particles.flux,                            r"$\Gamma_e$"),
-                    *[(ion.particles.flux,        f"$\Gamma_{{{ion.label}}}$") for ion in core_transport1d.ion],
-                ],
-                [
-                    (core_transport1d.electrons.particles.d,                                    r"$D_e$"),
-                    *[(ion.particles.d,           f"$D_{{{ion.label}}}$") for ion in core_transport1d.ion],
-                ],
-                [
-                    (core_transport1d.electrons.particles.v,                                    r"$v_e$"),
-                    *[(ion.particles.v,           f"$v_{{{ion.label}}}$") for ion in core_transport1d.ion],
-                ],
-                [
-                    (core_transport1d.electrons.energy.flux,                                    r"$q_e$"),
-                    *[(ion.energy.flux,        f"$q_{{{ion.label}}}$") for ion in core_transport1d.ion],
-                ],
-                [
-                    (Function(baseline["x"].values, baseline["Xi"].values),            r"$\chi_{i}^{\star}$"),
-                    (Function(baseline["x"].values, baseline["XiNC"].values),       r"$\chi_{i,nc}^{\star}$"),
-                    (core_transport1d.electrons.energy.d,                                      r"$\chi_e$"),
-                    *[(ion.energy.d,           f"$\chi_{{{ion.label}}}$") for ion in core_transport1d.ion],
-                ],
-                [
-                    (core_transport1d.electrons.energy.v,      r"$v_{Te}$"),
-                    *[(ion.energy.v,           f"$v_{{T,{ion.label}}}$") for ion in core_transport1d.ion],
-                ],
-                [
-                    (Function(baseline["x"].values, baseline["Jbs"].values),      r"$j_{bootstrap}^{\star}$"),
-                    (core_transport1d.j_bootstrap,                                      r"$j_{bootstrap}$"),
-                ]
+                 (core_transport1d.electrons.particles.flux,                            r"$\Gamma_e$"),
+                *[(ion.particles.flux,        f"$\Gamma_{{{ion.label}}}$") for ion in core_transport1d.ion],
             ],
-            x_axis=(core_transport1d.grid_v.rho_tor_norm,                     r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-            annotation=core_transport.identifier.name,
-            grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
+            [
+                (core_transport1d.electrons.particles.d,                                    r"$D_e$"),
+                *[(ion.particles.d,           f"$D_{{{ion.label}}}$") for ion in core_transport1d.ion],
+            ],
+            [
+                (core_transport1d.electrons.particles.v,                                    r"$v_e$"),
+                *[(ion.particles.v,           f"$v_{{{ion.label}}}$") for ion in core_transport1d.ion],
+            ],
+            [
+                (core_transport1d.electrons.energy.flux,                                    r"$q_e$"),
+                *[(ion.energy.flux,        f"$q_{{{ion.label}}}$") for ion in core_transport1d.ion],
+            ],
+            [
+                (Function(baseline["x"].values, baseline["Xi"].values),            r"$\chi_{i}^{\star}$"),
+                (Function(baseline["x"].values, baseline["XiNC"].values),       r"$\chi_{i,nc}^{\star}$"),
+                (core_transport1d.electrons.energy.d,                                      r"$\chi_e$"),
+                *[(ion.energy.d,           f"$\chi_{{{ion.label}}}$") for ion in core_transport1d.ion],
+            ],
+            [
+                (core_transport1d.electrons.energy.v,      r"$v_{Te}$"),
+                *[(ion.energy.v,           f"$v_{{T,{ion.label}}}$") for ion in core_transport1d.ion],
+            ],
+            [
+                (Function(baseline["x"].values, baseline["Jbs"].values),      r"$j_{bootstrap}^{\star}$"),
+                (core_transport1d.j_bootstrap,                                      r"$j_{bootstrap}$"),
+            ]
+        ],
+        x_axis=(core_transport1d.grid_v.rho_tor_norm,                     r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+        annotation=core_transport.identifier.name,
+        grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
     logger.debug("====== DONE ========")
