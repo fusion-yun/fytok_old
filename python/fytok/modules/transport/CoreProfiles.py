@@ -114,13 +114,13 @@ class CoreProfiles1D(Profiles):
             super().__init__(*args, axis=axis,  **kwargs)
 
         @cached_property
-        def z_ion(self):
+        def z_ion(self) -> int:
             """Ion charge (of the dominant ionisation state; lumped ions are allowed),
             volume averaged over plasma radius {dynamic} [Elementary Charge Unit]  FLT_0D  """
             return self.__raw_get__("z_ion")
 
         @cached_property
-        def neutral_index(self):
+        def neutral_index(self) -> int:
             """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
             return self.__raw_get__("neutral_index")
 
@@ -137,7 +137,7 @@ class CoreProfiles1D(Profiles):
             return NotImplemented
 
         @cached_property
-        def temperature(self):
+        def temperature(self) -> Function:
             """Temperature (average over charge states when multiple charge states are considered) {dynamic} [eV]  """
             return self["temperature"]
 
@@ -156,7 +156,7 @@ class CoreProfiles1D(Profiles):
         #     return NotImplemented
 
         @cached_property
-        def density(self):
+        def density(self) -> Function:
             """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
             return self["density"]
 
@@ -175,17 +175,17 @@ class CoreProfiles1D(Profiles):
         #     return NotImplemented
 
         @property
-        def density_thermal(self):
+        def density_thermal(self) -> Function:
             """Density (thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
             return NotImplemented
 
         @property
-        def density_fast(self):
+        def density_fast(self) -> Function:
             """Density of fast (non-thermal) particles (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
             return NotImplemented
 
         @cached_property
-        def pressure(self):
+        def pressure(self) -> Function:
             """Pressure (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
             if self.pressure_fast_perpendicular is not NotImplemented:
                 return self.pressure_thermal+self.pressure_fast_perpendicular+self.pressure_fast_parallel
@@ -193,29 +193,29 @@ class CoreProfiles1D(Profiles):
                 return self.pressure_thermal
 
         @cached_property
-        def pressure_thermal(self):
+        def pressure_thermal(self) -> Function:
             """Pressure (thermal) associated with random motion ~average((v-average(v))^2)
             (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
             return self.density*self.temperature
 
         @cached_property
-        def pressure_fast_perpendicular(self):
+        def pressure_fast_perpendicular(self) -> Function:
             """Fast (non-thermal) perpendicular pressure (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
             return self["pressure_fast_perpendicular"]
 
         @cached_property
-        def pressure_fast_parallel(self):
+        def pressure_fast_parallel(self) -> Function:
             """Fast (non-thermal) parallel pressure (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
             return self["pressure_fast_parallel"]
 
         @property
-        def rotation_frequency_tor(self):
+        def rotation_frequency_tor(self) -> Function:
             """Toroidal rotation frequency (i.e. toroidal velocity divided by the major radius at which the toroidal velocity is taken)
             (average over charge states when multiple charge states are considered) {dynamic} [rad.s^-1]  """
             return self["rotation_frequency_tor"]
 
         @property
-        def velocity(self):
+        def velocity(self) -> Function:
             """Velocity (average over charge states when multiple charge states are considered) at the position of maximum major
             radius on every flux surface [m.s^-1]    """
             return self["velocity"]

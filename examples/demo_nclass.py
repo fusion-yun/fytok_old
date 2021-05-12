@@ -24,8 +24,7 @@ if __name__ == "__main__":
         pf_active=device.pf_active,
         tf=device.tf,
         magnetics=device.magnetics,
-        radial_grid={"axis": 64},
-    )
+        radial_grid={"axis": 64},)
 
     eq_conf = File(
         # "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
@@ -35,7 +34,9 @@ if __name__ == "__main__":
 
     eq_conf.coordinate_system = {"grid": {"dim1": 128, "dim2": 256}}
 
-    eq = tok.equilibrium.time_slice.push_back(eq_conf, time=0.0)
+    eq_slice = tok.equilibrium.time_slice.push_back(eq_conf, time=0.0)
+
+    eq_profile = eq_slice.profiles_1d
 
     sp_figure(tok,
               wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
@@ -51,55 +52,55 @@ if __name__ == "__main__":
 
     plot_profiles(
         [
-            (eq.profiles_1d.dpressure_dpsi,                                                   r"$dP/d\psi$"),
+            (eq_profile.dpressure_dpsi,                                                       r"$dP/d\psi$"),
             [
-                (eq.profiles_1d.ffprime,                                                   r"$ff^{\prime}$"),
-                (Function(eq.profiles_1d.psi_norm,  eq.profiles_1d.f_df_dpsi),         r"$ff^{\prime}_{0}$"),
+                (eq_profile.ffprime,                                                       r"$ff^{\prime}$"),
+                (Function(eq_profile.psi_norm,  eq_profile.f_df_dpsi),                 r"$ff^{\prime}_{0}$"),
             ],
             [
-                (eq.profiles_1d.fpol,                                                             r"$fpol$"),
-                (Function(eq.profiles_1d.psi_norm, np.abs(eq.profiles_1d.f)),    r"$\left|f_{pol0}\right|$"),
+                (eq_profile.fpol,                                                                 r"$fpol$"),
+                (Function(eq_profile.psi_norm, np.abs(eq_profile.f)),            r"$\left|f_{pol0}\right|$"),
             ],
             [
                 (Function(baseline["Fp"].values, baseline["q"].values),                      r"$q^{\star}$"),
-                (eq.profiles_1d.q,                                                                   r"$q$"),
-                (eq.profiles_1d.dphi_dpsi,                                         r"$\frac{d\phi}{d\psi}$"),
+                (eq_profile.q,                                                                       r"$q$"),
+                (eq_profile.dphi_dpsi,                                             r"$\frac{d\phi}{d\psi}$"),
             ],
             [
                 (Function(baseline["Fp"].values, baseline["rho"].values),           r"$\rho_{tor}^{\star}$"),
-                (eq.profiles_1d.rho_tor,                                                    r"$\rho_{tor}$"),
+                (eq_profile.rho_tor,                                                        r"$\rho_{tor}$"),
             ],
             [
                 (Function(baseline["Fp"].values, baseline["x"].values),           r"$\rho_{tor,0}^{\star}$"),
-                (eq.profiles_1d.rho_tor_norm,                                             r"$\rho_{tor,0}$"),
+                (eq_profile.rho_tor_norm,                                                 r"$\rho_{tor,0}$"),
             ],
             [
                 (Function(baseline["Fp"].values, baseline["Jtot"].values*1e6),   r"$j_{\parallel}^{\star}$"),
-                (eq.profiles_1d.j_parallel,                                              r"$j_{\parallel}$"),
+                (eq_profile.j_parallel,                                                  r"$j_{\parallel}$"),
             ],
             # [
-            #     (eq.profiles_1d.geometric_axis.r,                                 r"$geometric_{axis.r}$"),
-            #     (eq.profiles_1d.r_inboard,                                               r"$r_{inboard}$"),
-            #     (eq.profiles_1d.r_outboard,                                             r"$r_{outboard}$"),
+            #     (eq_profile.geometric_axis.r,                                     r"$geometric_{axis.r}$"),
+            #     (eq_profile.r_inboard,                                                   r"$r_{inboard}$"),
+            #     (eq_profile.r_outboard,                                                 r"$r_{outboard}$"),
             # ],
 
             # [
-            #     (eq.profiles_1d.volume,                r"$V$"),
-            #     # (Function(eq.profiles_1d.rho_tor, eq.profiles_1d.dvolume_drho_tor).antiderivative,
+            #     (eq_profile.volume,                r"$V$"),
+            #     # (Function(eq_profile.rho_tor, eq_profile.dvolume_drho_tor).antiderivative,
             #     #  r"$\int \frac{dV}{d\rho_{tor}}  d\rho_{tor}$"),
-            #     (eq.profiles_1d.dvolume_dpsi.antiderivative * \
+            #     (eq_profile.dvolume_dpsi.antiderivative * \
             #      (eq.global_quantities.psi_boundary - eq.global_quantities.psi_axis),\
             #      r"$\int \frac{dV}{d\psi}  d\psi$"),
             # ],
 
-            (eq.profiles_1d.gm1,                                         r"$gm1=\left<\frac{1}{R^2}\right>$"),
-            (eq.profiles_1d.gm2,                r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
-            (eq.profiles_1d.gm3,                            r"$gm3=\left<\left|\nabla \rho\right|^2\right>$"),
-            (eq.profiles_1d.gm7,                              r"$gm7=\left<\left|\nabla \rho\right|\right>$"),
-            (eq.profiles_1d.dphi_dpsi,                                              r"$\frac{d\phi}{d\psi}$"),
-            (eq.profiles_1d.drho_tor_dpsi,                                    r"$\frac{d\rho_{tor}}{d\psi}$"),
-            (eq.profiles_1d.dvolume_drho_tor,                                          r"$\frac{dV}{d\rho}$"),
-            (eq.profiles_1d.dpsi_drho_tor,                                    r"$\frac{d\psi}{d\rho_{tor}}$"),
+            (eq_profile.gm1,                                               r"$gm1=\left<\frac{1}{R^2}\right>$"),
+            (eq_profile.gm2,                      r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
+            (eq_profile.gm3,                                  r"$gm3=\left<\left|\nabla \rho\right|^2\right>$"),
+            (eq_profile.gm7,                                    r"$gm7=\left<\left|\nabla \rho\right|\right>$"),
+            (eq_profile.dphi_dpsi,                                                    r"$\frac{d\phi}{d\psi}$"),
+            (eq_profile.drho_tor_dpsi,                                          r"$\frac{d\rho_{tor}}{d\psi}$"),
+            (eq_profile.dvolume_drho_tor,                                                r"$\frac{dV}{d\rho}$"),
+            (eq_profile.dpsi_drho_tor,                                          r"$\frac{d\psi}{d\rho_{tor}}$"),
             # [
             #     (eq.coordinate_system.surface_integrate2(lambda r, z:1.0/r**2), \
             #      r"$\left<\frac{1}{R^2}\right>$"),
@@ -107,9 +108,8 @@ if __name__ == "__main__":
             #      r"$\left<\frac{1}{R^2}\right>$"),
             # ]
         ],
-        x_axis=(eq.profiles_1d.psi_norm,                                                        r"$\psi_{N}$"),
-        grid=True, fontsize=16
-    ) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
+        x_axis=(eq_profile.psi_norm,                                                              r"$\psi_{N}$"),
+        grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
     ###################################################################################################
 
@@ -145,13 +145,11 @@ if __name__ == "__main__":
             ],
             "conductivity_parallel": 1.0,
             "psi":   1.0,
-        }
-    }
+        }}
 
     core_profile_slice = tok.core_profiles.time_slice.push_back(core_profiles_conf,
-                                                                grid=eq.radial_grid(),
-                                                                vacuum_toroidal_field=eq.vacuum_toroidal_field)
-
+                                                                grid=eq_slice.radial_grid(),
+                                                                vacuum_toroidal_field=eq_slice.vacuum_toroidal_field)
 
     core_profile = core_profile_slice.profiles_1d
 
@@ -171,20 +169,20 @@ if __name__ == "__main__":
 
         ],
         x_axis=(core_profile.grid.rho_tor_norm,                                    r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-        grid=True, fontsize=10
-    ) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
+        grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
+if False:
     core_transport = CoreTransport({
         "identifier": {
             "name": "neoclassical",
             "index": 5,
             "description": "by NCLASS"
-        }
-    })
+        }})
 
-    core_transport_slice = core_transport.time_slice.next(equilibrium=eq, core_profile=core_profile_slice, time=0.0)
+    core_transport_slice = core_transport.time_slice.next(
+        equilibrium=eq_slice, core_profile=core_profile_slice, time=0.0)
 
-    nclass.nclass(eq, core_profile_slice, core_transport_slice)
+    nclass.nclass(eq_slice, core_profile_slice, core_transport_slice)
 
     core_transport1d = core_transport_slice.profiles_1d
 

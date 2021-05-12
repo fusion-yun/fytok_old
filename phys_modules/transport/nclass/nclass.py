@@ -37,7 +37,7 @@ def nclass(equilibrium: Equilibrium.TimeSlice,
     #     "description": "by NCLASS"
     # }
 
-    eq_profiles_1d = equilibrium.profiles_1d
+    eq_profile = equilibrium.profiles_1d
     core_profile = core_profiles.profiles_1d
     core_trans_prof = core_transport.profiles_1d
     for p_ion in core_profile.ion:
@@ -97,19 +97,19 @@ def nclass(equilibrium: Equilibrium.TimeSlice,
     #  p_gr2phi       : radial electric field gradient Psi'(Phi'/Psi')' (V/rho**2)
     # -----------------------------------------------------------------------------
 
-    psi_norm = eq_profiles_1d.psi_norm
+    psi_norm = eq_profile.psi_norm
     rho_tor_norm = core_profile.grid.rho_tor_norm
     rho_tor = core_profile.grid.rho_tor
     rho_tor_bdry = rho_tor[-1]
 
-    bt0_pr = eq_profiles_1d.fpol * eq_profiles_1d.gm1 / eq_profiles_1d.gm9
-    gph_pr = eq_profiles_1d.gm1*eq_profiles_1d.vprime * rho_tor_bdry
+    bt0_pr = eq_profile.fpol * eq_profile.gm1 / eq_profile.gm9
+    gph_pr = eq_profile.gm1*eq_profile.vprime * rho_tor_bdry
 
     b0 = equilibrium.vacuum_toroidal_field.b0
     r0 = equilibrium.vacuum_toroidal_field.r0
 
-    r_inboard = eq_profiles_1d.r_inboard
-    r_outboard = eq_profiles_1d.r_outboard
+    r_inboard = eq_profile.r_inboard
+    r_outboard = eq_profile.r_outboard
 
     xr0_pr = (r_inboard+r_outboard)*0.5
 
@@ -123,18 +123,18 @@ def nclass(equilibrium: Equilibrium.TimeSlice,
 
     ns = [core_profile.electrons.density, *[ion.density for ion in core_profile.ion]]
 
-    dPs = [core_profile.electrons.pressure.derivative*eq_profiles_1d.dpsi_drho_tor_norm,
-           *[ion.pressure.derivative*eq_profiles_1d.dpsi_drho_tor_norm for ion in core_profile.ion]]
+    dPs = [core_profile.electrons.pressure.derivative*eq_profile.dpsi_drho_tor_norm,
+           *[ion.pressure.derivative*eq_profile.dpsi_drho_tor_norm for ion in core_profile.ion]]
 
     amu = [scipy.constants.m_e/scipy.constants.m_u,   # Electron mass in amu
-           * [sum([(a.a*a.atoms_n) for a in ion.element])for ion in core_profile.ion]]
+           * [sum([(a.a*a.atoms_n) for a in ion.element]) for ion in core_profile.ion]]
 
-    q = eq_profiles_1d.q
+    q = eq_profile.q
 
-    dq_drho_tor = q.derivative*eq_profiles_1d.dpsi_drho_tor
-    dphi_drho_tor = q*eq_profiles_1d.dpsi_drho_tor
-    fpol = eq_profiles_1d.fpol
-    kappa = eq_profiles_1d.elongation
+    dq_drho_tor = q.derivative*eq_profile.dpsi_drho_tor
+    dphi_drho_tor = q*eq_profile.dpsi_drho_tor
+    fpol = eq_profile.fpol
+    kappa = eq_profile.elongation
 
     c_potb = kappa[0]*b0/2.0/q[0]
     c_potl = r0*q[0]
@@ -151,10 +151,10 @@ def nclass(equilibrium: Equilibrium.TimeSlice,
         xqs = q(x_psi)
         # Geometry and electrical field calculations
 
-        dpsi_drho_tor = eq_profiles_1d.dpsi_drho_tor(x_psi)
-        jparallel = eq_profiles_1d.j_parallel(x_psi)*b0
-        dphi_dpsi = eq_profiles_1d.dphi_dpsi(x_psi)
-        grad_rho_tor2 = eq_profiles_1d.gm3(x_psi)
+        dpsi_drho_tor = eq_profile.dpsi_drho_tor(x_psi)
+        jparallel = eq_profile.j_parallel(x_psi)*b0
+        dphi_dpsi = eq_profile.dphi_dpsi(x_psi)
+        grad_rho_tor2 = eq_profile.gm3(x_psi)
 
         #-------------#
         #Call NCLASS  #
@@ -207,13 +207,13 @@ def nclass(equilibrium: Equilibrium.TimeSlice,
         inputs = (
             m_i,                                              # number of isotopes (> 1) [-]
             m_z,                                              # highest charge state [-]
-            eq_profiles_1d.gm5(x_psi),                        # <B**2> [T**2]
-            eq_profiles_1d.gm4(x_psi),                        # <1/B**2> [1/T**2]
+            eq_profile.gm5(x_psi),                        # <B**2> [T**2]
+            eq_profile.gm4(x_psi),                        # <1/B**2> [1/T**2]
             core_profile.e_field.parallel(x_psi)*b0,         # <E.B> [V*T/m]
             scipy.constants.mu_0*fpol(x_psi) / dpsi_drho_tor,  # mu_0*F/(dPsi/dr) [rho/m]
             p_fm,                                             # poloidal moments of drift factor for PS [/m**2]
-            eq_profiles_1d.trapped_fraction(x_psi),           # trapped fraction [-]
-            eq_profiles_1d.gm6(x_psi),                        # <grad(rho)**2/B**2> [rho**2/m**2/T**2]
+            eq_profile.trapped_fraction(x_psi),           # trapped fraction [-]
+            eq_profile.gm6(x_psi),                        # <grad(rho)**2/B**2> [rho**2/m**2/T**2]
             dphi_drho_tor(x_psi),                             # potential gradient Phi' [V/rho]
             ((dpsi_drho_tor**2) * dq_drho_tor(x_psi)),        # Psi'(Phi'/Psi')' [V/rho**2]
             p_ngrth,                                          # <n.grad(Theta)> [/m]
