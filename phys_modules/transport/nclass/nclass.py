@@ -1,13 +1,14 @@
 import numpy as np
 import scipy.constants
 from fytok.modules.transport.CoreProfiles import CoreProfiles, CoreProfiles1D
+from fytok.modules.transport.CoreSources import CoreSources
 from fytok.modules.transport.CoreTransport import CoreTransport
-from fytok.modules.transport.Equilibrium import Equilibrium, EquilibriumTimeSlice
+from fytok.modules.transport.Equilibrium import Equilibrium
 from spdm.data.Function import Function
-from spdm.util.logger import logger
 from spdm.data.Node import _next_
-from .nclass_mod import nclass_mod
+from spdm.util.logger import logger
 
+from .nclass_mod import nclass_mod
 
 NCLASS_MSG = [
     "iflag=-4 warning: no viscosity",
@@ -27,6 +28,7 @@ NCLASS_MSG = [
 def nclass(equilibrium: Equilibrium.TimeSlice,
            core_profiles: CoreProfiles.TimeSlice,
            core_transport: CoreTransport.TimeSlice,
+           core_sources: CoreSources.TimeSlice,
            grid: np.ndarray = None) -> CoreTransport.TimeSlice:
 
     logger.debug(f"Transport mode: NCLASS [START]")
@@ -49,7 +51,6 @@ def nclass(equilibrium: Equilibrium.TimeSlice,
         "multiple_states_flag": ion.multiple_states_flag,
         "state": ion.state
     } for ion in core_profile.ion]
-
 
     # ----------------------------------------------------------------------
     # Model options

@@ -1,5 +1,6 @@
 import collections
 from functools import cached_property
+from fytok.modules.utilities.Combiner import Combiner
 
 import numpy as np
 from spdm.data.Function import Function
@@ -175,7 +176,7 @@ class CoreTransportTimeSlice(TimeSlice):
         return CoreTransportProfiles1D(self["profiles_1d"],  grid=self._grid,   parent=self)
 
 
-class CoreTransport(IDS):
+class CoreTransportModel(Dict):
     r"""
         Core plasma transport of particles, energy, momentum and poloidal flux. The transport of particles, energy and momentum is described by
         diffusion coefficients,  :math:`D`, and convection velocities,  :math:`v`. These are defined by the total fluxes of particles, energy and momentum, across a
@@ -188,11 +189,11 @@ class CoreTransport(IDS):
         flux described above divided by the flux surface area :math:`V^{\prime}\left\langle \left|\nabla\rho_{tor,norm}\right|\right\rangle` .
         Note that the energy flux includes the energy transported by the particle flux.
     """
-    _IDS = "core_transport"
-    TimeSlice = CoreTransportTimeSlice
+    TimeSlice = CoreTransportProfiles1D
 
-    def __init__(self, *args,  **kwargs):
+    def __init__(self, *args,  grid: RadialGrid = None,   **kwargs):
         super().__init__(*args, **kwargs)
+        self._grid = grid
 
     @cached_property
     def code(self) -> IDSCode:
@@ -232,9 +233,41 @@ class CoreTransport(IDS):
         return self["flux_multiplier"]
 
     @cached_property
-    def time_slice(self) -> TimeSeries[CoreTransportTimeSlice]:
-        return TimeSeries[CoreTransportTimeSlice](self["time_slice"],  parent=self)
+    def profiles_1d(self) -> TimeSeries[CoreTransportProfiles1D]:
+        return TimeSeries[CoreTransportProfiles1D](self["profiles_1d"], parent=self)
+
+    def update(self, *args, time=None, grid=None, **kwargs):
+        self.profiles_1d.insert(*args,  grid=grid or self._grid, time=time, **kwargs)
 
     # @cached_property
     # def profiles_1d(self) -> TimeSeries:
     #     return self.time_slice["profiles_1d"]
+
+
+class CoreTransport(IDS):
+    r"""
+        Core plasma transport of particles, energy, momentum and poloidal flux. The transport of particles, energy and momentum is described by
+        diffusion coefficients,  :math:`D`, and convection velocities,  :math:`v`. These are defined by the total fluxes of particles, energy and momentum, across a
+        flux surface given by : :math:`V^{\prime}\left[-DY^{\prime}\left|\nabla\rho_{tor,norm}\right|^{2}+vY\left|\nabla\rho_{tor,norm}\right|\right]`,
+        where  :math:`Y` represents the particles, energy and momentum density, respectively, while  :math:`V` is the volume inside a flux surface, the primes denote
+        derivatives with respect to :math:`\rho_{tor,norm}` and
+        :math:`\left\langle X\right\rangle` is the flux surface average of a quantity  :math:`X`. This formulation remains valid when changing simultaneously
+        :math:`\rho_{tor,norm}` into :math:`\rho_{tor}`
+        in the gradient terms and in the derivatives denoted by the prime. The average flux stored in the IDS as sibling of  :math:`D` and  :math:`v` is the total
+        flux described above divided by the flux surface area :math:`V^{\prime}\left\langle \left|\nabla\rho_{tor,norm}\right|\right\rangle` .
+        Note that the energy flux includes the energy transported by the particle flux.
+    """
+    _IDS = "core_transport"
+    _serialize_ignore = ["profiles_1d", ]
+    Model = CoreTransportModel
+
+    def __init__(self, *args,  **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @cached_property
+    def model(self) -> List[CoreTransportModel]:
+        return List[CoreTransportModel](self["model"], parent=self)
+
+    @cached_property
+    def profiles_1d(self):
+        return Combiner(self.model, prefix="profiles_1d")
