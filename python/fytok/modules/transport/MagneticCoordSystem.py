@@ -487,7 +487,7 @@ class RadialGrid:
         }
 
     def pullback(self, psi_norm):
-        return RadialGrid(psi_norm, self._coordinate_system)
+        return RadialGrid(self._coordinate_system, psi_norm)
 
     @property
     def vacuum_toroidal_field(self):

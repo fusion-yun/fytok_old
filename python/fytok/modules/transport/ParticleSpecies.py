@@ -12,6 +12,18 @@ class SpeciesElement(Dict):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
+    @cached_property
+    def a(self):
+        return self["a"]
+
+    @cached_property
+    def atoms_n(self):
+        return self["atoms_n"]
+
+    @cached_property
+    def z_n(self):
+        return self["z_n"]
+
 
 class SpeciesState(Dict):
     def __init__(self, *args, **kwargs) -> None:
@@ -49,4 +61,11 @@ class SpeciesIon(Species):
 
     @cached_property
     def z_ion(self) -> int:
-        return self["z_ion"]
+        """Ion charge (of the dominant ionisation state; lumped ions are allowed),
+        volume averaged over plasma radius {dynamic} [Elementary Charge Unit]  FLT_0D  """
+        return self["z_ion"] or -1
+
+    @cached_property
+    def neutral_index(self):
+        """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
+        return self["neutral_index"] or None

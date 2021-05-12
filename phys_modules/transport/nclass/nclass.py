@@ -40,15 +40,16 @@ def nclass(equilibrium: Equilibrium.TimeSlice,
     eq_profile = equilibrium.profiles_1d
     core_profile = core_profiles.profiles_1d
     core_trans_prof = core_transport.profiles_1d
-    for p_ion in core_profile.ion:
-        core_trans_prof.ion[_next_] = {
-            "label": p_ion.label,
-            "z_ion": p_ion.z_ion,
-            "neutral_index": p_ion.neutral_index,
-            "element": p_ion.element,
-            "multiple_states_flag": p_ion.multiple_states_flag,
-            "state": p_ion.state
-        }
+
+    core_trans_prof.ion = [{
+        "label": ion.label,
+        "z_ion": ion.z_ion,
+        "neutral_index": ion.neutral_index,
+        "element": ion.element,
+        "multiple_states_flag": ion.multiple_states_flag,
+        "state": ion.state
+    } for ion in core_profile.ion]
+
 
     # ----------------------------------------------------------------------
     # Model options
@@ -123,11 +124,13 @@ def nclass(equilibrium: Equilibrium.TimeSlice,
 
     ns = [core_profile.electrons.density, *[ion.density for ion in core_profile.ion]]
 
-    dPs = [core_profile.electrons.pressure.derivative*eq_profile.dpsi_drho_tor_norm,
-           *[ion.pressure.derivative*eq_profile.dpsi_drho_tor_norm for ion in core_profile.ion]]
+    dpsi_drho_tor_norm = eq_profile.dpsi_drho_tor_norm
+
+    dPs = [core_profile.electrons.pressure.derivative * dpsi_drho_tor_norm,
+           *[ion.pressure.derivative * dpsi_drho_tor_norm for ion in core_profile.ion]]
 
     amu = [scipy.constants.m_e/scipy.constants.m_u,   # Electron mass in amu
-           * [sum([(a.a*a.atoms_n) for a in ion.element]) for ion in core_profile.ion]]
+           * [sum([(element.a*element.atoms_n) for element in ion.element]) for ion in core_profile.ion]]
 
     q = eq_profile.q
 
@@ -361,7 +364,7 @@ def nclass(equilibrium: Equilibrium.TimeSlice,
 
         # resistivity and <j dot B>
         # core_trans_prof.conductivity_parallel[ipr] = 1.0 / p_etap
-        core_trans_prof.j_bootstrap[ipr] = p_jbbs/b0
+        # core_trans_prof.j_bootstrap[ipr] = p_jbbs/b0
 
         # Recalculate E_r for storage
         # core_profile.e_field.radial[ipr] = NotImplemented  # p_fpol[i]/r0/fhat*profiles_rm.vtor[i, 1]

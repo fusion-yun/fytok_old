@@ -187,10 +187,10 @@ class CoreProfiles1D(Profiles):
         @cached_property
         def pressure(self) -> Function:
             """Pressure (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-            if self.pressure_fast_perpendicular is not NotImplemented:
-                return self.pressure_thermal+self.pressure_fast_perpendicular+self.pressure_fast_parallel
-            else:
-                return self.pressure_thermal
+            # if self.pressure_fast_perpendicular is not NotImplemented:
+            #     return self.pressure_thermal+self.pressure_fast_perpendicular+self.pressure_fast_parallel
+            # else:
+            return self.pressure_thermal
 
         @cached_property
         def pressure_thermal(self) -> Function:

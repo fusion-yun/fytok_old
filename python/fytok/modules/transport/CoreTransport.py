@@ -11,7 +11,7 @@ from spdm.util.logger import logger
 from ..utilities.IDS import IDS, IDSCode
 from ..utilities.Misc import Identifier
 from .MagneticCoordSystem import RadialGrid
-from .ParticleSpecies import Species
+from .ParticleSpecies import Species, SpeciesIon
 
 
 class TransportCoeff(Dict):
@@ -44,20 +44,9 @@ class CoreTransportElectrons(Dict):
         return TransportCoeff(self["energy"],  parent=self._parent)
 
 
-class CoreTransportIon(Species):
+class CoreTransportIon(SpeciesIon):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-    @property
-    def z_ion(self):
-        """Ion charge (of the dominant ionisation state; lumped ions are allowed),
-        volume averaged over plasma radius {dynamic} [Elementary Charge Unit]  FLT_0D  """
-        return self.__raw_get__("z_ion")
-
-    @property
-    def neutral_index(self):
-        """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
-        return self.__raw_get__("neutral_index")
 
     @cached_property
     def particles(self) -> TransportCoeff:

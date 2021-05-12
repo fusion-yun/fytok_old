@@ -157,21 +157,20 @@ if __name__ == "__main__":
         [
             [
                 (Function(baseline["x"].values, baseline["NE"].values*1.0e19),              r"$n_{e}^{\star}$"),
-                (core_profile.electrons.density,                                                     r"$n_e$"),
+                (core_profile.electrons.density,                                                      r"$n_e$"),
                 *[(ion.density,                         f"$n_{{{ion.label}}}$") for ion in core_profile.ion],
 
             ],
             [
-                (Function(baseline["x"].values, baseline["TE"].values),                       r"$T_{e}^{\star}$"),
+                (Function(baseline["x"].values, baseline["TE"].values),                     r"$T_{e}^{\star}$"),
                 (core_profile.electrons.temperature,                                                  r"$T_e$"),
                 *[(ion.temperature,                      f"$T_{{{ion.label}}}$") for ion in core_profile.ion],
             ],
 
         ],
-        x_axis=(core_profile.grid.rho_tor_norm,                                    r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+        x_axis=(core_profile.grid.rho_tor_norm,                                   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
         grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
-if False:
     core_transport = CoreTransport({
         "identifier": {
             "name": "neoclassical",
@@ -179,8 +178,7 @@ if False:
             "description": "by NCLASS"
         }})
 
-    core_transport_slice = core_transport.time_slice.next(
-        equilibrium=eq_slice, core_profile=core_profile_slice, time=0.0)
+    core_transport_slice = core_transport.time_slice.next(grid=eq_slice.radial_grid(), time=0.0)
 
     nclass.nclass(eq_slice, core_profile_slice, core_transport_slice)
 
@@ -189,37 +187,37 @@ if False:
     plot_profiles(
         [
             [
-                 (core_transport1d.electrons.particles.flux,                            r"$\Gamma_e$"),
-                *[(ion.particles.flux,        f"$\Gamma_{{{ion.label}}}$") for ion in core_transport1d.ion],
+                 (core_transport1d.electrons.particles.flux,                                r"$\Gamma_e$"),
+                *[(ion.particles.flux,       f"$\Gamma_{{{ion.label}}}$") for ion in core_transport1d.ion],
             ],
             [
-                (core_transport1d.electrons.particles.d,                                    r"$D_e$"),
+                (core_transport1d.electrons.particles.d,                                         r"$D_e$"),
                 *[(ion.particles.d,           f"$D_{{{ion.label}}}$") for ion in core_transport1d.ion],
             ],
             [
-                (core_transport1d.electrons.particles.v,                                    r"$v_e$"),
-                *[(ion.particles.v,           f"$v_{{{ion.label}}}$") for ion in core_transport1d.ion],
+                (core_transport1d.electrons.particles.v,                                         r"$v_e$"),
+                *[(ion.particles.v,               f"$v_{{{ion.label}}}$") for ion in core_transport1d.ion],
             ],
             [
-                (core_transport1d.electrons.energy.flux,                                    r"$q_e$"),
-                *[(ion.energy.flux,        f"$q_{{{ion.label}}}$") for ion in core_transport1d.ion],
+                (core_transport1d.electrons.energy.flux,                                         r"$q_e$"),
+                *[(ion.energy.flux,               f"$q_{{{ion.label}}}$") for ion in core_transport1d.ion],
             ],
             [
-                (Function(baseline["x"].values, baseline["Xi"].values),            r"$\chi_{i}^{\star}$"),
-                (Function(baseline["x"].values, baseline["XiNC"].values),       r"$\chi_{i,nc}^{\star}$"),
-                (core_transport1d.electrons.energy.d,                                      r"$\chi_e$"),
-                *[(ion.energy.d,           f"$\chi_{{{ion.label}}}$") for ion in core_transport1d.ion],
+                (Function(baseline["x"].values, baseline["Xi"].values),             r"$\chi_{i}^{\star}$"),
+                (Function(baseline["x"].values, baseline["XiNC"].values),        r"$\chi_{i,nc}^{\star}$"),
+                (core_transport1d.electrons.energy.d,                                         r"$\chi_e$"),
+                *[(ion.energy.d,               f"$\chi_{{{ion.label}}}$") for ion in core_transport1d.ion],
             ],
             [
-                (core_transport1d.electrons.energy.v,      r"$v_{Te}$"),
-                *[(ion.energy.v,           f"$v_{{T,{ion.label}}}$") for ion in core_transport1d.ion],
+                (core_transport1d.electrons.energy.v,                                         r"$v_{Te}$"),
+                *[(ion.energy.v,                f"$v_{{T,{ion.label}}}$") for ion in core_transport1d.ion],
             ],
             [
-                (Function(baseline["x"].values, baseline["Jbs"].values),      r"$j_{bootstrap}^{\star}$"),
-                (core_transport1d.j_bootstrap,                                      r"$j_{bootstrap}$"),
+                (Function(baseline["x"].values, baseline["Jbs"].values),       r"$j_{bootstrap}^{\star}$"),
+                (core_transport1d.j_bootstrap,                                         r"$j_{bootstrap}$"),
             ]
         ],
-        x_axis=(core_transport1d.grid_v.rho_tor_norm,                     r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+        x_axis=(core_transport1d.grid_v.rho_tor_norm,                        r"$\sqrt{\Phi/\Phi_{bdry}}$"),
         annotation=core_transport.identifier.name,
         grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
