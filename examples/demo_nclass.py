@@ -190,25 +190,25 @@ if __name__ == "__main__":
                 # *[(ion.particles.flux,       f"$\Gamma_{{{ion.label}}}$") for ion in core_transport1d.ion],
             ],
             # [
-            #     (core_transport1d.electrons.particles.d,                                         r"$D_e$"),
+                (core_transport1d.electrons.particles.d,                                         r"$D_e$"),
             #     *[(ion.particles.d,               f"$D_{{{ion.label}}}$") for ion in core_transport1d.ion],
             # ],
             # [
-            #     (core_transport1d.electrons.particles.v,                                         r"$v_e$"),
+                (core_transport1d.electrons.particles.v,                                         r"$v_e$"),
             #     *[(ion.particles.v,               f"$v_{{{ion.label}}}$") for ion in core_transport1d.ion],
             # ],
             # [
-            #     (core_transport1d.electrons.energy.flux,                                         r"$q_e$"),
+                (core_transport1d.electrons.energy.flux,                                         r"$q_e$"),
             #     *[(ion.energy.flux,               f"$q_{{{ion.label}}}$") for ion in core_transport1d.ion],
             # ],
             # [
             #     (Function(baseline["x"].values, baseline["Xi"].values),             r"$\chi_{i}^{\star}$"),
             #     (Function(baseline["x"].values, baseline["XiNC"].values),        r"$\chi_{i,nc}^{\star}$"),
-            #     (core_transport1d.electrons.energy.d,                                         r"$\chi_e$"),
+                (core_transport1d.electrons.energy.d,                                         r"$\chi_e$"),
             #     *[(ion.energy.d,               f"$\chi_{{{ion.label}}}$") for ion in core_transport1d.ion],
             # ],
             # [
-            #     (core_transport1d.electrons.energy.v,                                         r"$v_{Te}$"),
+                (core_transport1d.electrons.energy.v,                                         r"$v_{Te}$"),
             #     *[(ion.energy.v,                f"$v_{{T,{ion.label}}}$") for ion in core_transport1d.ion],
             # ],
             # [
@@ -216,7 +216,7 @@ if __name__ == "__main__":
             #     # (core_transport1d.j_bootstrap,                                         r"$j_{bootstrap}$"),
             # ]
         ],
-        x_axis=(core_transport1d.grid_v.rho_tor_norm,                        r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+        x_axis=(core_transport.model[0].profiles_1d[-1].grid_v.rho_tor_norm,     r"$\sqrt{\Phi/\Phi_{bdry}}$"),
         # annotation=core_transport.model[0].identifier.name,
         grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 

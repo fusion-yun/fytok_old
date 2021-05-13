@@ -29,9 +29,9 @@ class Combiner(Entry):
 
         if all([isinstance(d, (np.ndarray, Function, float, int)) for d in cache]):
             if len(cache) == 1:
-                return np.asarray(cache[0])
+                return (cache[0])
             elif len(cache) > 1:
-                return np.add.reduce([np.asarray(d) for d in cache])
+                return np.add.reduce(cache)
         else:
             return Combiner(self._data, prefix=path)
 
