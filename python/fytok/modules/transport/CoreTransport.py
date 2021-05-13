@@ -1,8 +1,8 @@
 import collections
 from functools import cached_property
-from fytok.modules.utilities.Combiner import Combiner
 
 import numpy as np
+from fytok.modules.utilities.Combiner import combiner
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
@@ -236,12 +236,8 @@ class CoreTransportModel(Dict):
     def profiles_1d(self) -> TimeSeries[CoreTransportProfiles1D]:
         return TimeSeries[CoreTransportProfiles1D](self["profiles_1d"], parent=self)
 
-    def update(self, *args, time=None, grid=None, **kwargs):
-        self.profiles_1d.insert(*args,  grid=grid or self._grid, time=time, **kwargs)
-
-    # @cached_property
-    # def profiles_1d(self) -> TimeSeries:
-    #     return self.time_slice["profiles_1d"]
+    def update(self, *args,   grid=None, **kwargs):
+        self.profiles_1d.insert(*args,  grid=grid or self._grid,  **kwargs)
 
 
 class CoreTransport(IDS):
@@ -260,6 +256,7 @@ class CoreTransport(IDS):
     _IDS = "core_transport"
     _serialize_ignore = ["profiles_1d", ]
     Model = CoreTransportModel
+    TimeSlice = CoreTransportTimeSlice
 
     def __init__(self, *args,  **kwargs):
         super().__init__(*args, **kwargs)
@@ -268,6 +265,10 @@ class CoreTransport(IDS):
     def model(self) -> List[CoreTransportModel]:
         return List[CoreTransportModel](self["model"], parent=self)
 
+    def update(self, *args, **kwargs):
+        for m in self.model:
+            m.update(*args, **kwargs)
+
     @cached_property
-    def profiles_1d(self):
-        return Combiner(self.model, prefix="profiles_1d")
+    def profiles_1d(self) -> TimeSeries[CoreTransportProfiles1D]:
+        return combiner(self.model, path="profiles_1d")

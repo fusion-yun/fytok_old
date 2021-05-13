@@ -1,50 +1,49 @@
 import collections.abc
 from functools import cached_property
-from typing import Sequence
+from typing import Any, Generic, MutableSequence, Sequence
+
 import numpy as np
+from spdm.data.Entry import Entry
 from spdm.data.Function import Function
-from spdm.data.Node import Dict, List, Node
-from spdm.data.Profiles import Profiles
-from spdm.data.TimeSeries import TimeSeries, TimeSlice
+from spdm.data.Node import Node
 from spdm.util.logger import logger
-
-from ..utilities.IDS import IDS, IDSCode
-from ..utilities.Misc import Identifier
+from spdm.util.utilities import normalize_path, try_get
 
 
-class Combiner(Node):
-    __slots__ = "_prefix", "_axis"
+class Combiner(Entry):
+    __slots__ = "_path",
 
-    def __init__(self, prefix=None, axis=None) -> None:
-        super().__init__(self)
-        self._axis = axis
-        if prefix is None:
-            self._prefix = []
-        elif isinstance(prefix, str):
-            self._prefix = prefix.split('.')
-        elif not isinstance(prefix, collections.abc.MutableSequence):
-            self._prefix = [prefix]
+    def __init__(self, cache: Sequence, *args,    **kwargs) -> None:
+        super().__init__(cache, *args, **kwargs)
 
-    def __getattr__(self, k):
-        path = self._prefix+[k]
-        axis = self._axis
-        res = None
-        for d in self._data:
-            v = getattr(d, path, None)
-            if v == None:
-                continue
-            elif isinstance(v, Function):
-                if axis is None:
-                    axis = v.x
-                v = v(axis)
-            elif isinstance(v, collections.abc.Mapping):
-                raise NotImplementedError()
+    def __raw_get__(self, path, *args, **kwargs):
+        if len(self._cache) == 0:
+            logger.warning(f"Combiner of empty list!")
+            return None
+        path = self._path + normalize_path(path)
 
-            if res is None:
-                res = v
-            else:
-                res += v
-        if res is None:
-            return Combiner(self._cache, path, self._axis)
+        if len(path) == 0:
+            raise KeyError(f"Empty path!")
         else:
-            return res
+            cache = [try_get(d, path) for d in self._cache]
+
+        if all([isinstance(d, (np.ndarray, Function, float, int)) for d in cache]):
+            return np.add.reduce(cache)
+        else:
+            return Combiner(self._cache,  path)
+
+    def __raw_set__(self, key, value: Any):
+        raise NotImplementedError()
+
+    def __getattr__(self, path):
+        return self.__raw_get__(path)
+
+    def __getitem__(self, path):
+        return self.__raw_get__(path)
+
+    def __iter__(self):
+        return NotImplemented
+
+
+def combiner(*args, parent=None, **kwargs):
+    return Node(Combiner(*args, **kwargs), parent=parent)
