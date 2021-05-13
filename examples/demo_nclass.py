@@ -181,34 +181,35 @@ if __name__ == "__main__":
     core_transport.update(eq_slice, core_profile_slice, grid=eq_slice.radial_grid(), time=0.0)
 
     core_transport1d = core_transport.profiles_1d[-1]
-    # logger.debug(type(core_transport1d.electrons.particles.flux))
+
+    logger.debug([f"$\Gamma_{{{ion.label}}}$" for ion in core_transport1d.ion])
 
     plot_profiles(
         [
             [
                  (core_transport1d.electrons.particles.flux,                                r"$\Gamma_e$"),
-                # *[(ion.particles.flux,       f"$\Gamma_{{{ion.label}}}$") for ion in core_transport1d.ion],
+                *[(ion.particles.flux,       f"$\Gamma_{{{ion.label}}}$") for ion in core_transport1d.ion],
             ],
             # [
-                (core_transport1d.electrons.particles.d,                                         r"$D_e$"),
+            (core_transport1d.electrons.particles.d,                                         r"$D_e$"),
             #     *[(ion.particles.d,               f"$D_{{{ion.label}}}$") for ion in core_transport1d.ion],
             # ],
             # [
-                (core_transport1d.electrons.particles.v,                                         r"$v_e$"),
+            (core_transport1d.electrons.particles.v,                                         r"$v_e$"),
             #     *[(ion.particles.v,               f"$v_{{{ion.label}}}$") for ion in core_transport1d.ion],
             # ],
             # [
-                (core_transport1d.electrons.energy.flux,                                         r"$q_e$"),
+            (core_transport1d.electrons.energy.flux,                                         r"$q_e$"),
             #     *[(ion.energy.flux,               f"$q_{{{ion.label}}}$") for ion in core_transport1d.ion],
             # ],
             # [
             #     (Function(baseline["x"].values, baseline["Xi"].values),             r"$\chi_{i}^{\star}$"),
             #     (Function(baseline["x"].values, baseline["XiNC"].values),        r"$\chi_{i,nc}^{\star}$"),
-                (core_transport1d.electrons.energy.d,                                         r"$\chi_e$"),
+            (core_transport1d.electrons.energy.d,                                         r"$\chi_e$"),
             #     *[(ion.energy.d,               f"$\chi_{{{ion.label}}}$") for ion in core_transport1d.ion],
             # ],
             # [
-                (core_transport1d.electrons.energy.v,                                         r"$v_{Te}$"),
+            (core_transport1d.electrons.energy.v,                                         r"$v_{Te}$"),
             #     *[(ion.energy.v,                f"$v_{{T,{ion.label}}}$") for ion in core_transport1d.ion],
             # ],
             # [

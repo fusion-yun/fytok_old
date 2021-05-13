@@ -1,4 +1,5 @@
 import collections.abc
+import enum
 from functools import cached_property
 from typing import Any, Generic, MutableSequence, Sequence
 
@@ -11,8 +12,6 @@ from spdm.util.utilities import normalize_path, try_get
 
 
 class Combiner(Entry):
-    __slots__ = "_path",
-
     def __init__(self, cache: Sequence, *args,    **kwargs) -> None:
         super().__init__(cache, *args, **kwargs)
 
@@ -27,19 +26,24 @@ class Combiner(Entry):
         else:
             cache = [try_get(d, path) for d in self._data]
 
-        if all([isinstance(d, (np.ndarray, Function, float, int)) for d in cache]):
-            if len(cache) == 1:
-                return (cache[0])
-            elif len(cache) > 1:
-                return np.add.reduce(cache)
-        else:
+        cache = [d for d in cache if isinstance(d, (np.ndarray, Function, float, int))]
+
+        if len(cache) == 0:
             return Combiner(self._data, prefix=path)
+        elif len(cache) == 1:
+            return (cache[0])
+        else:
+            return np.add.reduce(cache)
 
     def put(self, key, value: Any):
         raise NotImplementedError()
 
     def iter(self):
-        return NotImplemented
+        cache = [try_get(d, self._prefix).__iter__() for d in self._data]
+        if len(cache) == 0:
+            return NotImplementedError()
+        for d in cache[0]:
+            yield Combiner([d, *[next(it) for it in cache[1:]]])
 
 
 def combiner(*args, parent=None, **kwargs):
