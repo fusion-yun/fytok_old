@@ -28,8 +28,10 @@ class Combiner(Entry):
             cache = [try_get(d, path) for d in self._data]
 
         if all([isinstance(d, (np.ndarray, Function, float, int)) for d in cache]):
-            logger.debug(cache[0])
-            return np.add.reduce(cache)
+            if len(cache) == 1:
+                return np.asarray(cache[0])
+            elif len(cache) > 1:
+                return np.add.reduce([np.asarray(d) for d in cache])
         else:
             return Combiner(self._data, prefix=path)
 
