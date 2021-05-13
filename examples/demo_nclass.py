@@ -153,8 +153,6 @@ if __name__ == "__main__":
 
     core_profile = core_profile_slice.profiles_1d
 
-    logger.debug(type(core_profile.electrons.density))
-
     plot_profiles(
         [
             [
@@ -171,7 +169,7 @@ if __name__ == "__main__":
         ],
         x_axis=(core_profile.grid.rho_tor_norm,                                   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
         grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
-if False:
+
     core_transport = CoreTransport({
         "model": [{
             "identifier": {
@@ -183,6 +181,7 @@ if False:
     core_transport.update(eq_slice, core_profile_slice, grid=eq_slice.radial_grid(), time=0.0)
 
     core_transport1d = core_transport.profiles_1d[-1]
+    # logger.debug(type(core_transport1d.electrons.particles.flux))
 
     plot_profiles(
         [

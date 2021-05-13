@@ -16,32 +16,27 @@ class Combiner(Entry):
     def __init__(self, cache: Sequence, *args,    **kwargs) -> None:
         super().__init__(cache, *args, **kwargs)
 
-    def __raw_get__(self, path, *args, **kwargs):
-        if len(self._cache) == 0:
+    def get(self, path, *args, **kwargs):
+        if len(self._data) == 0:
             logger.warning(f"Combiner of empty list!")
             return None
-        path = self._path + normalize_path(path)
+        path = self._prefix + normalize_path(path)
 
         if len(path) == 0:
             raise KeyError(f"Empty path!")
         else:
-            cache = [try_get(d, path) for d in self._cache]
+            cache = [try_get(d, path) for d in self._data]
 
         if all([isinstance(d, (np.ndarray, Function, float, int)) for d in cache]):
+            logger.debug(cache[0])
             return np.add.reduce(cache)
         else:
-            return Combiner(self._cache,  path)
+            return Combiner(self._data, prefix=path)
 
-    def __raw_set__(self, key, value: Any):
+    def put(self, key, value: Any):
         raise NotImplementedError()
 
-    def __getattr__(self, path):
-        return self.__raw_get__(path)
-
-    def __getitem__(self, path):
-        return self.__raw_get__(path)
-
-    def __iter__(self):
+    def iter(self):
         return NotImplemented
 
 

@@ -2,7 +2,8 @@ import collections
 from functools import cached_property
 
 import numpy as np
-from fytok.modules.utilities.Combiner import combiner
+from fytok.modules.utilities.Combiner import Combiner
+from spdm.data.AttributeTree import AttributeTree
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
@@ -271,4 +272,4 @@ class CoreTransport(IDS):
 
     @cached_property
     def profiles_1d(self) -> TimeSeries[CoreTransportProfiles1D]:
-        return combiner(self.model, path="profiles_1d")
+        return AttributeTree(Combiner(self.model, prefix="profiles_1d"), parent=self)
