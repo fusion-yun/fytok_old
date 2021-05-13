@@ -178,7 +178,7 @@ if __name__ == "__main__":
                 "description": "by NCLASS"
             }}]})
 
-    core_transport.update(eq_slice, core_profile_slice, grid=eq_slice.radial_grid(), time=0.0)
+    core_transport.update(equlibrium=eq_slice, core_profiles=core_profile_slice, grid=eq_slice.radial_grid(), time=0.0)
 
     core_transport1d = core_transport.profiles_1d[-1]
 

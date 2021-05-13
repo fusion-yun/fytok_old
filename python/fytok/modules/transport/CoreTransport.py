@@ -237,8 +237,22 @@ class CoreTransportModel(Dict):
     def profiles_1d(self) -> TimeSeries[CoreTransportProfiles1D]:
         return TimeSeries[CoreTransportProfiles1D](self["profiles_1d"], parent=self)
 
-    def update(self, *args,   grid=None, **kwargs):
-        self.profiles_1d.insert(*args,  grid=grid or self._grid,  **kwargs)
+    def update(self, d=None, *args, core_profiles=None,   grid=None, **kwargs):
+        prof = d or {}
+        # prof = d.setdefault("profiles_1d", {})
+        if core_profiles is not None:
+            prof["electrons"] = {}
+            prof["ion"] = [
+                {
+                    "label": ion.label,
+                    "z_ion": ion.z_ion,
+                    "neutral_index": ion.neutral_index,
+                    "element": ion.element._as_list(),
+                }
+                for ion in core_profiles.profiles_1d.ion
+            ]
+        logger.debug(prof)
+        self.profiles_1d.insert(prof, *args,  grid=grid or self._grid,  **kwargs)
 
 
 class CoreTransport(IDS):
