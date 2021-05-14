@@ -1,6 +1,6 @@
 
 # This is file is generated from template
-from ..utilities.IDS import IDS
+from ..common.IDS import IDS
 
 class ECLaunchers(IDS):
     r"""Launchers for heating and current drive in the electron cyclotron (EC) frequencies.

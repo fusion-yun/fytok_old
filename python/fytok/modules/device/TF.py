@@ -10,7 +10,7 @@ from spdm.data.Node import Dict
 from spdm.util.LazyProxy import LazyProxy
 from spdm.util.logger import logger
 from spdm.util.urilib import urisplit
-from ..utilities.IDS import IDS
+from ..common.IDS import IDS
 
 @as_attribute_tree
 class TF(IDS):

@@ -8,7 +8,7 @@ from spdm.data.AttributeTree import as_attribute_tree
 from spdm.data.Node import Dict, List
 from spdm.util.logger import logger
 from sympy import Point, Polygon
-from ..utilities.IDS import IDS
+from ..common.IDS import IDS
 
 
 class WallDescription2D(Dict):

@@ -1,6 +1,6 @@
 
 # This is file is generated from template
-from ..utilities.IDS import IDS
+from ..common.IDS import IDS
 
 class EMCoupling(IDS):
     r"""Description of the axisymmetric mutual electromagnetics; does not include non-axisymmetric coil systems; the convention is Quantity_Sensor_Source

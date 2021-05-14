@@ -1,6 +1,6 @@
 
 # This is file is generated from template
-from ..utilities.IDS import IDS
+from ..common.IDS import IDS
 
 class NeutronDiagnostic(IDS):
     r"""Neutron diagnostic such as DNFM, NFM or MFC

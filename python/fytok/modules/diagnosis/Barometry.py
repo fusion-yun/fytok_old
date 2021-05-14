@@ -1,6 +1,6 @@
 
 # This is file is generated from template
-from ..utilities.IDS import IDS
+from ..common.IDS import IDS
 
 class Barometry(IDS):
     r"""Pressure measurements in the vacuum vessel. NB will need to change the type of the pressure node to signal_1d when moving to the new LL.

@@ -2,16 +2,17 @@ import collections
 from functools import cached_property
 
 import numpy as np
-from fytok.modules.utilities.Combiner import Combiner
 from spdm.data.AttributeTree import AttributeTree
+from spdm.data.Combiner import Combiner
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
 from spdm.data.TimeSeries import TimeSeries, TimeSlice
 from spdm.util.logger import logger
 
-from ..utilities.IDS import IDS, IDSCode
-from ..utilities.Misc import Identifier
+from ..common.Actor import Actor
+from ..common.IDS import IDS, IDSCode
+from ..common.Misc import Identifier
 from .MagneticCoordSystem import RadialGrid
 from .ParticleSpecies import Species, SpeciesIon
 
@@ -135,7 +136,7 @@ class CoreTransportProfiles1D(Profiles):
     @cached_property
     def ion(self) -> List[CoreTransportIon]:
         """ Transport coefficients related to the various ion species """
-        return List[CoreTransportProfiles1D.Ion](self['ion'], parent=self)
+        return List[CoreTransportIon](self['ion'], parent=self)
 
     @cached_property
     def neutral(self) -> List[CoreTransportNeutral]:
@@ -177,22 +178,15 @@ class CoreTransportTimeSlice(TimeSlice):
         return CoreTransportProfiles1D(self["profiles_1d"],  grid=self._grid,   parent=self)
 
 
-class CoreTransportModel(Dict):
-    r"""
-        Core plasma transport of particles, energy, momentum and poloidal flux. The transport of particles, energy and momentum is described by
-        diffusion coefficients,  :math:`D`, and convection velocities,  :math:`v`. These are defined by the total fluxes of particles, energy and momentum, across a
-        flux surface given by : :math:`V^{\prime}\left[-DY^{\prime}\left|\nabla\rho_{tor,norm}\right|^{2}+vY\left|\nabla\rho_{tor,norm}\right|\right]`,
-        where  :math:`Y` represents the particles, energy and momentum density, respectively, while  :math:`V` is the volume inside a flux surface, the primes denote
-        derivatives with respect to :math:`\rho_{tor,norm}` and
-        :math:`\left\langle X\right\rangle` is the flux surface average of a quantity  :math:`X`. This formulation remains valid when changing simultaneously
-        :math:`\rho_{tor,norm}` into :math:`\rho_{tor}`
-        in the gradient terms and in the derivatives denoted by the prime. The average flux stored in the IDS as sibling of  :math:`D` and  :math:`v` is the total
-        flux described above divided by the flux surface area :math:`V^{\prime}\left\langle \left|\nabla\rho_{tor,norm}\right|\right\rangle` .
-        Note that the energy flux includes the energy transported by the particle flux.
-    """
+class CoreTransportModel(Actor):
+
+    _module_prefix = "transport.core_transport"
+
     TimeSlice = CoreTransportProfiles1D
 
-    def __init__(self, *args,  grid: RadialGrid = None,   **kwargs):
+    Profiles1D = CoreTransportProfiles1D
+
+    def __init__(self, *args,  grid: RadialGrid = None, **kwargs):
         super().__init__(*args, **kwargs)
         self._grid = grid
 
@@ -225,7 +219,6 @@ class CoreTransportModel(Dict):
             elm_resolved        | 23        | Time resolved ELM model
             pedestal            | 24        | Transport level to give edge pedestal
             not_provided	    | 25        | No data provided
-
         """
         return Identifier(**self["identifier"]._as_dict())
 
@@ -234,25 +227,24 @@ class CoreTransportModel(Dict):
         return self["flux_multiplier"]
 
     @cached_property
-    def profiles_1d(self) -> TimeSeries[CoreTransportProfiles1D]:
-        return TimeSeries[CoreTransportProfiles1D](self["profiles_1d"], parent=self)
+    def profiles_1d(self) -> TimeSeries[Profiles1D]:
+        return TimeSeries[self.__class__.Profiles1D](self["profiles_1d"], parent=self)
 
-    def update(self, d=None, *args, core_profiles=None,   grid=None, **kwargs):
-        prof = d or {}
-        # prof = d.setdefault("profiles_1d", {})
+    def update(self, desc=None, *args, core_profiles=None,   grid=None, **kwargs):
         if core_profiles is not None:
-            prof["electrons"] = {}
-            prof["ion"] = [
-                {
-                    "label": ion.label,
-                    "z_ion": ion.z_ion,
-                    "neutral_index": ion.neutral_index,
-                    "element": ion.element._as_list(),
-                }
-                for ion in core_profiles.profiles_1d.ion
-            ]
-        logger.debug(prof)
-        self.profiles_1d.insert(prof, *args,  grid=grid or self._grid,  **kwargs)
+            desc = collections.ChainMap(desc or {}, {
+                "electrons": {},
+                "ion":  [
+                    {
+                        "label": ion.label,
+                        "z_ion": ion.z_ion,
+                        "neutral_index": ion.neutral_index,
+                        "element": ion.element._as_list(),
+                    }
+                    for ion in core_profiles.profiles_1d.ion
+                ]})
+        
+        self.profiles_1d.insert(desc or {}, *args,  grid=grid or self._grid,  **kwargs)
 
 
 class CoreTransport(IDS):
@@ -272,6 +264,7 @@ class CoreTransport(IDS):
     _serialize_ignore = ["profiles_1d", ]
     Model = CoreTransportModel
     TimeSlice = CoreTransportTimeSlice
+    Profiles1D = CoreTransportProfiles1D
 
     def __init__(self, *args,  **kwargs):
         super().__init__(*args, **kwargs)

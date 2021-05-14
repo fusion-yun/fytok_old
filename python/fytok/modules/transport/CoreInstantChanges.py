@@ -3,8 +3,8 @@ from functools import cached_property
 
 from spdm.data.AttributeTree import AttributeTree
 from spdm.data.TimeSeries import TimeSeries, TimeSequence
-from ..utilities.IDS import IDS
-from ..utilities.Misc import Identifier, VacuumToroidalField
+from ..common.IDS import IDS
+from ..common.Misc import Identifier, VacuumToroidalField
 from .CoreProfiles import CoreProfiles1D
 
 

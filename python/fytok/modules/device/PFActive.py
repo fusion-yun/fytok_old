@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from spdm.data.AttributeTree import as_attribute_tree, AttributeTree
 from spdm.data.Node import Dict, List
 from spdm.util.logger import logger
-from ..utilities.IDS import IDS
+from ..common.IDS import IDS
 
 
 class PFActive(IDS):

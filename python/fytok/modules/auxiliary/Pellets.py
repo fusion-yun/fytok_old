@@ -1,6 +1,6 @@
 
 # This is file is generated from template
-from ..utilities.IDS import IDS
+from ..common.IDS import IDS
 
 class Pellets(IDS):
     r"""Description of pellets launched into the plasma

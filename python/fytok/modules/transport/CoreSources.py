@@ -9,8 +9,8 @@ from spdm.data.Profiles import Profiles
 from spdm.data.TimeSeries import TimeSeries
 from spdm.util.logger import logger
 
-from ..utilities.IDS import IDS, IDSCode
-from ..utilities.Misc import Identifier, VacuumToroidalField
+from ..common.IDS import IDS, IDSCode
+from ..common.Misc import Identifier, VacuumToroidalField
 from .MagneticCoordSystem import RadialGrid
 from .ParticleSpecies import Species
 

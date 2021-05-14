@@ -1,6 +1,6 @@
 
 # This is file is generated from template
-from ..utilities.IDS import IDS
+from ..common.IDS import IDS
 
 class SDN(IDS):
     r"""Description of the Synchronous Data Network parameters and the signals on it

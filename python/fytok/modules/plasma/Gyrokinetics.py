@@ -1,4 +1,4 @@
-from ..utilities.IDS import IDS
+from ..common.IDS import IDS
 
 class Gyrokinetics(IDS):
     r"""

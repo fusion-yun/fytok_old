@@ -1,6 +1,6 @@
 
 # This is file is generated from template
-from ..utilities.IDS import IDS
+from ..common.IDS import IDS
 
 class Sawteeth(IDS):
     r"""Description of sawtooth events. This IDS must be used in homogeneous_time = 1 mode

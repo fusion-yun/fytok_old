@@ -25,7 +25,7 @@ from .modules.transport.EdgeTransport import EdgeTransport
 from .modules.transport.Equilibrium import Equilibrium
 from .modules.transport.MagneticCoordSystem import RadialGrid
 from .modules.transport.TransportSolver import TransportSolver
-from .modules.utilities.Misc import VacuumToroidalField
+from .modules.common.Misc import VacuumToroidalField
 
 TWOPI = scipy.constants.pi*2.0
 

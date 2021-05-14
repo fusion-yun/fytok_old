@@ -16,9 +16,9 @@ from spdm.data.TimeSeries import TimeSeries, TimeSlice
 from spdm.util.logger import logger
 from spdm.util.utilities import convert_to_named_tuple, try_get
 
-from ..utilities.GGD import GGD
-from ..utilities.IDS import IDS
-from ..utilities.Misc import VacuumToroidalField
+from ..common.GGD import GGD
+from ..common.IDS import IDS
+from ..common.Misc import VacuumToroidalField
 from .MagneticCoordSystem import MagneticCoordSystem, RadialGrid
 
 TOLERANCE = 1.0e-6
@@ -639,7 +639,7 @@ class EquilibriumTimeSlice(TimeSlice):
 
     def __init__(self, *args, vacuum_toroidal_field: VacuumToroidalField = None, **kwargs):
         super().__init__(*args, **kwargs)
-
+        
         self._vacuum_toroidal_field = vacuum_toroidal_field or \
             VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
         if self._vacuum_toroidal_field.b0 < 0:

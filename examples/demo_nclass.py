@@ -1,4 +1,5 @@
 
+from logging import log
 import numpy as np
 import pandas as pd
 import scipy.constants
@@ -12,7 +13,6 @@ from spdm.data.Node import _next_
 from spdm.util.logger import logger
 from spdm.util.plot_profiles import plot_profiles, sp_figure
 
-import transport.nclass as nclass
 
 if __name__ == "__main__":
     baseline = pd.read_csv('/home/salmon/workspace/data/15MA inductive - burn/profile.txt', sep='\t')
@@ -170,24 +170,18 @@ if __name__ == "__main__":
         x_axis=(core_profile.grid.rho_tor_norm,                                   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
         grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
-    core_transport = CoreTransport({
-        "model": [{
-            "identifier": {
-                "name": "neoclassical",
-                "index": 5,
-                "description": "by NCLASS"
-            }}]})
+    core_transport = CoreTransport({"model": [{"code": {"name": "neoclassical"}}]})
 
     core_transport.update(equlibrium=eq_slice, core_profiles=core_profile_slice, grid=eq_slice.radial_grid(), time=0.0)
 
-    core_transport1d = core_transport.profiles_1d[-1]
+    logger.debug([type(ion.particles) for ion in core_transport.model[0].profiles_1d[0].ion])
 
-    logger.debug([f"$\Gamma_{{{ion.label}}}$" for ion in core_transport1d.ion])
+    core_transport1d = core_transport.profiles_1d[-1]
 
     plot_profiles(
         [
             [
-                 (core_transport1d.electrons.particles.flux,                                r"$\Gamma_e$"),
+                (core_transport1d.electrons.particles.flux,                                r"$\Gamma_e$"),
                 *[(ion.particles.flux,       f"$\Gamma_{{{ion.label}}}$") for ion in core_transport1d.ion],
             ],
             # [

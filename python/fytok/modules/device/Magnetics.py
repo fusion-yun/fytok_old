@@ -5,7 +5,7 @@ from fytok.Misc import Identifier, IDSProperties, Signal
 from spdm.data.AttributeTree import as_attribute_tree
 from spdm.data.Node import Dict
 
-from ..utilities.IDS import IDS
+from ..common.IDS import IDS
 
 
 @as_attribute_tree
