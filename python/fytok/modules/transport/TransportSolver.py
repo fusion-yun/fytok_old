@@ -163,13 +163,12 @@ class TransportSolver(Dict):
         return sol, profiles
 
     def solve(self,
-              core_profiles_prev: CoreProfiles.TimeSlice,
-              core_profiles_next: CoreProfiles.TimeSlice,
+              core_profiles: CoreProfiles,
               *args,
               time=None,
               equilibrium: Equilibrium,
-              core_transport: CoreTransport.TimeSlice,
-              core_sources: CoreSources.TimeSlice,
+              core_transport: CoreTransport,
+              core_sources: CoreSources,
               boundary_conditions: Dict,
               tolerance=1.0e-3,
               max_nodes=1000,
@@ -183,8 +182,7 @@ class TransportSolver(Dict):
             Current Equation
 
             Args:
-                core_profiles_prev  : profiles at :math:`t-1`
-                core_profiles_next　: profiles at :math:`t`
+                core_profiles       : profiles at :math:`t-1`
                 equilibrium         : Equilibrium
                 transports          : CoreTransport
                 sources             : CoreSources

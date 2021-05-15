@@ -3,12 +3,14 @@ from functools import cached_property
 
 import numpy as np
 import scipy.constants
+from spdm.data.AoS import AoS, SoA
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
 from spdm.data.TimeSeries import TimeSeries, TimeSlice
+from spdm.flow.Actor import Actor
 from spdm.util.logger import logger
-from spdm.data.AoS import AoS, SoA
+
 from ..common.IDS import IDS
 from ..common.Misc import VacuumToroidalField
 from .MagneticCoordSystem import TWOPI, RadialGrid
@@ -208,13 +210,13 @@ class CoreProfiles1D(Profiles):
             """Fast (non-thermal) parallel pressure (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
             return self["pressure_fast_parallel"]
 
-        @property
+        @cached_property
         def rotation_frequency_tor(self) -> Function:
             """Toroidal rotation frequency (i.e. toroidal velocity divided by the major radius at which the toroidal velocity is taken)
             (average over charge states when multiple charge states are considered) {dynamic} [rad.s^-1]  """
             return self["rotation_frequency_tor"]
 
-        @property
+        @cached_property
         def velocity(self) -> Function:
             """Velocity (average over charge states when multiple charge states are considered) at the position of maximum major
             radius on every flux surface [m.s^-1]    """
@@ -238,72 +240,73 @@ class CoreProfiles1D(Profiles):
         def ion_index(self):
             """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
             return self.__raw_get__("ion_index")
-        # @property
-        # def element(self):
-        #     """List of elements forming the atom or molecule  struct_array [max_size=unbounded]  1- 1...N"""
-        #     return NotImplemented
 
-        # @property
-        # def label(self):
-        #     """String identifying the species (e.g. H, D, T, He, C, D2, DT, CD4, ...) {dynamic}  STR_0D  """
-        #     return NotImplemented
+        @property
+        def element(self):
+            """List of elements forming the atom or molecule  struct_array [max_size=unbounded]  1- 1...N"""
+            return NotImplemented
 
-        # @property
-        # def ion_index(self):
-        #     """Index of the corresponding ion species in the ../../ion array {dynamic}  INT_0D  """
-        #     return NotImplemented
+        @property
+        def label(self):
+            """String identifying the species (e.g. H, D, T, He, C, D2, DT, CD4, ...) {dynamic}  STR_0D  """
+            return NotImplemented
 
-        # @property
-        # def temperature(self):
-        #     """Temperature (average over charge states when multiple charge states are considered) {dynamic} [eV]  """
-        #     return NotImplemented
+        @property
+        def ion_index(self):
+            """Index of the corresponding ion species in the ../../ion array {dynamic}  INT_0D  """
+            return NotImplemented
 
-        # @property
-        # def density(self):
-        #     """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        #     return NotImplemented
+        @property
+        def temperature(self):
+            """Temperature (average over charge states when multiple charge states are considered) {dynamic} [eV]  """
+            return NotImplemented
 
-        # @property
-        # def density_thermal(self):
-        #     """Density (thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        #     return NotImplemented
+        @property
+        def density(self):
+            """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
+            return NotImplemented
 
-        # @property
-        # def density_fast(self):
-        #     """Density of fast (non-thermal) particles (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        #     return NotImplemented
+        @property
+        def density_thermal(self):
+            """Density (thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
+            return NotImplemented
 
-        # @property
-        # def pressure(self):
-        #     """Pressure (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-        #     return NotImplemented
+        @property
+        def density_fast(self):
+            """Density of fast (non-thermal) particles (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
+            return NotImplemented
 
-        # @property
-        # def pressure_thermal(self):
-        #     """Pressure (thermal) associated with random motion ~average((v-average(v))^2)
-        #     (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-        #     return NotImplemented
+        @property
+        def pressure(self):
+            """Pressure (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
+            return NotImplemented
 
-        # @property
-        # def pressure_fast_perpendicular(self):
-        #     """Fast (non-thermal) perpendicular pressure (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-        #     return NotImplemented
+        @property
+        def pressure_thermal(self):
+            """Pressure (thermal) associated with random motion ~average((v-average(v))^2)
+            (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
+            return NotImplemented
 
-        # @property
-        # def pressure_fast_parallel(self):
-        #     """Fast (non-thermal) parallel pressure (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-        #     return NotImplemented
+        @property
+        def pressure_fast_perpendicular(self):
+            """Fast (non-thermal) perpendicular pressure (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
+            return NotImplemented
 
-        # @property
-        # def multiple_states_flag(self):
-        #     """Multiple states calculation flag : 0-Only one state is considered; 1-Multiple states are considered and are described in the
-        #     state structure {dynamic}  INT_0D  """
-        #     return NotImplemented
+        @property
+        def pressure_fast_parallel(self):
+            """Fast (non-thermal) parallel pressure (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
+            return NotImplemented
 
-        # @property
-        # def state(self):
-        #     """Quantities related to the different states of the species (energy, excitation, ...)  struct_array [max_size=unbounded]  1- 1...N"""
-        #     return NotImplemented
+        @property
+        def multiple_states_flag(self):
+            """Multiple states calculation flag : 0-Only one state is considered; 1-Multiple states are considered and are described in the
+            state structure {dynamic}  INT_0D  """
+            return NotImplemented
+
+        @property
+        def state(self):
+            """Quantities related to the different states of the species (energy, excitation, ...)  struct_array [max_size=unbounded]  1- 1...N"""
+            return NotImplemented
 
     @cached_property
     def electrons(self) -> Electrons:
@@ -506,10 +509,11 @@ class CoreProfilesTimeSlice(TimeSlice):
         return CoreProfilesGlobalQuantities(self["global_quantities"], parent=self)
 
 
-class CoreProfiles(IDS):
+class CoreProfiles(IDS, Actor):
     """CoreProfiles
     """
     _IDS = "core_profiles"
+    _stats_ = "time_slice",
     TimeSlice = CoreProfilesTimeSlice
 
     def __init__(self,  *args, ** kwargs):
@@ -517,7 +521,15 @@ class CoreProfiles(IDS):
 
     @cached_property
     def time_slice(self) -> TimeSeries[TimeSlice]:
-        return TimeSeries[self.__class__.TimeSlice](self["time_slice"], parent=self)
+        return TimeSeries[CoreProfilesTimeSlice](self["time_slice"], parent=self)
+
+    @property
+    def previous_state(self) -> CoreProfilesTimeSlice:
+        return self.time_slice[-2]
+
+    @property
+    def current_state(self) -> CoreProfilesTimeSlice:
+        return self.time_slice[-1]
 
     @property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:

@@ -1,18 +1,20 @@
 import collections
 from functools import cached_property
+from typing import overload
 
 import numpy as np
 from spdm.data.AttributeTree import AttributeTree
 from spdm.data.Combiner import Combiner
 from spdm.data.Function import Function
-from spdm.data.Node import Dict, List
+from spdm.data.Node import Dict, List, Node
 from spdm.data.Profiles import Profiles
-from spdm.data.TimeSeries import TimeSeries, TimeSlice
+from spdm.data.TimeSeries import TimeSequence, TimeSeries, TimeSlice
+from spdm.flow.Actor import Actor, ActorBundle
 from spdm.util.logger import logger
 
-from ..common.Actor import Actor
 from ..common.IDS import IDS, IDSCode
 from ..common.Misc import Identifier
+from .CoreProfiles import CoreProfiles, CoreProfilesTimeSlice
 from .MagneticCoordSystem import RadialGrid
 from .ParticleSpecies import Species, SpeciesIon
 
@@ -167,27 +169,17 @@ class CoreTransportProfiles1D(Profiles):
         return Function(self.grid_flux.rho_tor_norm, self["e_field_radial"])
 
 
-class CoreTransportTimeSlice(TimeSlice):
+class CoreTransportModel(Dict[str, Node], Actor[CoreProfilesTimeSlice]):
 
-    def __init__(self,   *args, grid: RadialGrid = None,   **kwargs):
-        super().__init__(*args, **kwargs)
-        self._grid = grid
-
-    @cached_property
-    def profiles_1d(self) -> CoreTransportProfiles1D:
-        return CoreTransportProfiles1D(self["profiles_1d"],  grid=self._grid,   parent=self)
-
-
-class CoreTransportModel(Actor):
-
-    _module_prefix = "transport.core_transport"
+    _actor_module_prefix = "transport.core_transport."
 
     TimeSlice = CoreTransportProfiles1D
 
     Profiles1D = CoreTransportProfiles1D
 
     def __init__(self, *args,  grid: RadialGrid = None, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(Dict, self).__init__(*args, **kwargs)
+        super(Actor, self).__init__()
         self._grid = grid
 
     @cached_property
@@ -230,7 +222,8 @@ class CoreTransportModel(Actor):
     def profiles_1d(self) -> TimeSeries[Profiles1D]:
         return TimeSeries[self.__class__.Profiles1D](self["profiles_1d"], parent=self)
 
-    def update(self, desc=None, *args, core_profiles=None,   grid=None, **kwargs):
+    def advance(self, desc=None, *args, core_profiles: CoreProfiles.TimeSlice = None,   grid=None, time=None, **kwargs):
+        time = super().advance(*args, time=time, **kwargs)
         if core_profiles is not None:
             desc = collections.ChainMap(desc or {}, {
                 "electrons": {},
@@ -243,11 +236,13 @@ class CoreTransportModel(Actor):
                     }
                     for ion in core_profiles.profiles_1d.ion
                 ]})
-        
-        self.profiles_1d.insert(desc or {}, *args,  grid=grid or self._grid,  **kwargs)
+        self.profiles_1d.insert(desc or {}, *args, time=time, grid=grid or self._grid,  **kwargs)
+
+    def update(self, *args, **kwargs):
+        return super().update(*args, **kwargs)
 
 
-class CoreTransport(IDS):
+class CoreTransport(IDS, Actor[TimeSlice]):
     r"""
         Core plasma transport of particles, energy, momentum and poloidal flux. The transport of particles, energy and momentum is described by
         diffusion coefficients,  :math:`D`, and convection velocities,  :math:`v`. These are defined by the total fluxes of particles, energy and momentum, across a
@@ -263,20 +258,30 @@ class CoreTransport(IDS):
     _IDS = "core_transport"
     _serialize_ignore = ["profiles_1d", ]
     Model = CoreTransportModel
-    TimeSlice = CoreTransportTimeSlice
     Profiles1D = CoreTransportProfiles1D
 
-    def __init__(self, *args,  **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, parent=None, ** kwargs):
+        IDS.__init__(*self, args, parent=parent)
+        Actor.__init__(self, **kwargs)
 
     @cached_property
-    def model(self) -> List[CoreTransportModel]:
-        return List[CoreTransportModel](self["model"], parent=self)
+    def model(self) -> ActorBundle[CoreTransportModel]:
+        return ActorBundle[CoreTransportModel](self["model"],   parent=self)
+
+    def advance(self, *args,  **kwargs):
+        return self.model.advance(*args, **kwargs)
 
     def update(self, *args, **kwargs):
-        for m in self.model:
-            m.update(*args, **kwargs)
+        return self.model.update(*args, **kwargs)
 
-    @cached_property
-    def profiles_1d(self) -> TimeSeries[CoreTransportProfiles1D]:
-        return AttributeTree(Combiner(self.model, prefix="profiles_1d"), parent=self)
+    @property
+    def current_state(self) -> TimeSlice:
+        return TimeSlice({"time": self._timer.current, "model": [m.current_state for m in self.model]})
+
+    @property
+    def previous_state(self) -> TimeSlice:
+        return TimeSlice({"time": self._timer.previous, "model": [m.previous_state for m in self.model]})
+
+    @property
+    def profiles_1d(self) -> CoreTransportProfiles1D:
+        return AttributeTree(Combiner([m.current_state["profiles_1d"] for m in self.model]), parent=self)

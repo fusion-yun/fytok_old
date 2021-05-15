@@ -13,6 +13,7 @@ from spdm.data.Function import Expression, Function
 from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
 from spdm.data.TimeSeries import TimeSeries, TimeSlice
+from spdm.flow.Actor import Actor
 from spdm.util.logger import logger
 from spdm.util.utilities import convert_to_named_tuple, try_get
 
@@ -639,7 +640,7 @@ class EquilibriumTimeSlice(TimeSlice):
 
     def __init__(self, *args, vacuum_toroidal_field: VacuumToroidalField = None, **kwargs):
         super().__init__(*args, **kwargs)
-        
+
         self._vacuum_toroidal_field = vacuum_toroidal_field or \
             VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
         if self._vacuum_toroidal_field.b0 < 0:
@@ -772,7 +773,7 @@ class EquilibriumTimeSlice(TimeSlice):
         return axis
 
 
-class Equilibrium(IDS):
+class Equilibrium(IDS, Actor[EquilibriumTimeSlice]):
     r"""
         Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
 
@@ -817,7 +818,7 @@ class Equilibrium(IDS):
         #    Poloidal plane coordinate   : (\rho,\theta,\phi)
     """
     _IDS = "equilibrium"
-
+    _stats_ = "time_slice", "grid._ggd"
     TimeSlice = EquilibriumTimeSlice
 
     def __init__(self,  *args, **kwargs):
@@ -837,8 +838,17 @@ class Equilibrium(IDS):
         b0 = np.asarray([t_slice.vacuum_toroidal_field.b0 for t_slice in self.time_slice])
         return VacuumToroidalField(r0[0], b0)
 
+    @property
+    def current_state(self) -> EquilibriumTimeSlice:
+        return self.time_slice[-1]
+
+    @property
+    def previous_state(self) -> EquilibriumTimeSlice:
+        return self.time_slice[-2]
+        
     ####################################################################################
     # Plot profiles
+
     def plot(self, axis=None, *args, time: float = None, time_slice=True, ggd=False, **kwargs):
         if time_slice is not False:
             axis = self.time_slice(time).plot(axis, *args, **kwargs)
