@@ -169,7 +169,7 @@ class CoreTransportProfiles1D(Profiles):
         return Function(self.grid_flux.rho_tor_norm, self["e_field_radial"])
 
 
-class CoreTransportModel(Dict[str, Node], Actor[CoreProfilesTimeSlice]):
+class CoreTransportModel(Dict[str, Node], Actor):
 
     _actor_module_prefix = "transport.core_transport."
 
@@ -242,7 +242,7 @@ class CoreTransportModel(Dict[str, Node], Actor[CoreProfilesTimeSlice]):
         return super().update(*args, **kwargs)
 
 
-class CoreTransport(IDS, Actor[TimeSlice]):
+class CoreTransport(IDS):
     r"""
         Core plasma transport of particles, energy, momentum and poloidal flux. The transport of particles, energy and momentum is described by
         diffusion coefficients,  :math:`D`, and convection velocities,  :math:`v`. These are defined by the total fluxes of particles, energy and momentum, across a
@@ -261,26 +261,11 @@ class CoreTransport(IDS, Actor[TimeSlice]):
     Profiles1D = CoreTransportProfiles1D
 
     def __init__(self, *args, parent=None, ** kwargs):
-        IDS.__init__(*self, args, parent=parent)
-        Actor.__init__(self, **kwargs)
+        super().__init__(*args, parent=parent, **kwargs)
 
     @cached_property
     def model(self) -> ActorBundle[CoreTransportModel]:
         return ActorBundle[CoreTransportModel](self["model"],   parent=self)
-
-    def advance(self, *args,  **kwargs):
-        return self.model.advance(*args, **kwargs)
-
-    def update(self, *args, **kwargs):
-        return self.model.update(*args, **kwargs)
-
-    @property
-    def current_state(self) -> TimeSlice:
-        return TimeSlice({"time": self._timer.current, "model": [m.current_state for m in self.model]})
-
-    @property
-    def previous_state(self) -> TimeSlice:
-        return TimeSlice({"time": self._timer.previous, "model": [m.previous_state for m in self.model]})
 
     @property
     def profiles_1d(self) -> CoreTransportProfiles1D:

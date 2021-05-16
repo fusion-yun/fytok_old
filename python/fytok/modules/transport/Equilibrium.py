@@ -773,7 +773,7 @@ class EquilibriumTimeSlice(TimeSlice):
         return axis
 
 
-class Equilibrium(IDS, Actor[EquilibriumTimeSlice]):
+class Equilibrium(IDS):
     r"""
         Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
 
@@ -845,7 +845,7 @@ class Equilibrium(IDS, Actor[EquilibriumTimeSlice]):
     @property
     def previous_state(self) -> EquilibriumTimeSlice:
         return self.time_slice[-2]
-        
+
     ####################################################################################
     # Plot profiles
 

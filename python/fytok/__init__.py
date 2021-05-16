@@ -30,4 +30,4 @@ except Exception as error:
 
 else:
 
-    logger.debug(f"FY_MODULE_PATH={':'.join(mod_path)}")
+    logger.info(f"FY_MODULE_PATH={':'.join(mod_path)}")

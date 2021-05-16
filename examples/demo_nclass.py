@@ -15,6 +15,8 @@ from spdm.util.plot_profiles import plot_profiles, sp_figure
 
 
 if __name__ == "__main__":
+    logger.info("====== START ========")
+
     baseline = pd.read_csv('/home/salmon/workspace/data/15MA inductive - burn/profile.txt', sep='\t')
 
     device = File("/home/salmon/workspace/fytok/data/mapping/ITER/imas/3/static/config.xml").entry
@@ -34,7 +36,7 @@ if __name__ == "__main__":
 
     eq_conf.coordinate_system = {"grid": {"dim1": 128, "dim2": 256}}
 
-    eq_slice = tok.equilibrium.time_slice.push_back(eq_conf, time=0.0)
+    eq_slice = tok.equilibrium.time_slice.insert(eq_conf, time=0.0)
 
     ###################################################################################################
     if False:
@@ -174,14 +176,16 @@ if __name__ == "__main__":
     if True:
         core_transport = CoreTransport({"model": [{"code": {"name": "neoclassical"}}]})
 
-        core_transport.advance(equlibrium=tok.equilibrium.current_state,
-                               core_profiles=tok.core_profiles.current_state,
-                               grid=tok.equilibrium.current_state.radial_grid(), time=0.0)
+        core_transport.model.advance(
+            # equlibrium=tok.equilibrium.current_state,
+            # core_profiles=tok.core_profiles.current_state,
+            # grid=tok.equilibrium.current_state.radial_grid(),
+            time=0.0)
 
         # logger.debug([ion.label for ion in core_transport.profiles_1d.ion])
 
         core_transport1d = core_transport.model[0].profiles_1d[-1]
-
+    if False:
         plot_profiles(
             [
                 [
@@ -219,4 +223,4 @@ if __name__ == "__main__":
             # annotation=core_transport.model[0].identifier.name,
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
-    logger.debug("====== DONE ========")
+    logger.info("====== DONE ========")
