@@ -270,3 +270,13 @@ class CoreTransport(IDS):
     @property
     def profiles_1d(self) -> CoreTransportProfiles1D:
         return AttributeTree(Combiner([m.current_state["profiles_1d"] for m in self.model]), parent=self)
+
+    def advance(self, *args, time=None, dt=None,   **kwargs) -> float:
+        time = super().advance(time=time, dt=dt)
+        self.model.advance(*args, time=time, **kwargs)
+        return time
+
+    def update(self,  *args,  **kwargs) -> bool:
+        success = super().update(*args, **kwargs)
+        success = success or self.model.update(*args,  **kwargs)
+        return success

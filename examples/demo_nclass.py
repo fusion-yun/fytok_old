@@ -176,16 +176,16 @@ if __name__ == "__main__":
     if True:
         core_transport = CoreTransport({"model": [{"code": {"name": "neoclassical"}}]})
 
-        core_transport.model.advance(
+        core_transport.advance(
             # equlibrium=tok.equilibrium.current_state,
             # core_profiles=tok.core_profiles.current_state,
             # grid=tok.equilibrium.current_state.radial_grid(),
             time=0.0)
 
         # logger.debug([ion.label for ion in core_transport.profiles_1d.ion])
-
-        core_transport1d = core_transport.model[0].profiles_1d[-1]
     if False:
+        core_transport1d = core_transport.model[0].profiles_1d[-1]
+
         plot_profiles(
             [
                 [

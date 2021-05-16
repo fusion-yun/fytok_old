@@ -4,11 +4,12 @@ import getpass
 import os
 from functools import cached_property
 from typing import Mapping, Sequence
-
+import functools
 import numpy as np
 from spdm.data.Node import Dict, List
 from spdm.flow.Actor import Actor
 from spdm.util.logger import logger
+import inspect
 
 
 class IDSProperties(Dict):
@@ -148,3 +149,5 @@ class IDS(Dict, Actor):
             return self.time_slice.time
         else:
             return self["time"] or 0.0
+
+ 
