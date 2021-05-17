@@ -34,8 +34,7 @@ class NClass(CoreTransportModel):
                core_profiles: CoreProfiles.TimeSlice,
                **kwargs):
 
-        logger.debug(f"Transport mode: NCLASS [START]")
-
+        return 0.0
         # core_transport.identifier = {
         #     "name": "neoclassical",
         #     "index": 5,
@@ -394,5 +393,4 @@ class NClass(CoreTransportModel):
 
         # Copy local values to profiles
         # core_profile.vloop[ipr] = profiles_rm.vpol[1, :]
-        logger.debug(f"Transport mode: NCLASS [DONE]")
         return 0.0

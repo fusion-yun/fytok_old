@@ -105,7 +105,7 @@ class CoreTransportNeutral(Species):
         return TransportCoeff(self["energy"],  parent=self._parent)
 
 
-class CoreTransportProfiles1D(Profiles):
+class CoreTransportProfiles1D(TimeSlice):
     Ion = CoreTransportIon
     Neutral = CoreTransportNeutral
     Electrons = CoreTransportElectrons
@@ -177,8 +177,13 @@ class CoreTransportModel(Dict[str, Node], Actor):
 
     Profiles1D = CoreTransportProfiles1D
 
-    def __init__(self, *args,  grid: RadialGrid = None, **kwargs):
-        super(Dict, self).__init__(*args, **kwargs)
+    def __init__(self, d=None, *args,  grid: RadialGrid = None, **kwargs):
+        super(Dict, self).__init__(
+            collections.ChainMap(d or {},
+                                 {"identifier": {"name": f"{self.__class__.__name__}",
+                                                 "description": f"{self.__class__.__name__}",
+                                                 "index": 0}}),
+            * args, **kwargs)
         super(Actor, self).__init__()
         self._grid = grid
 
@@ -222,7 +227,7 @@ class CoreTransportModel(Dict[str, Node], Actor):
     def profiles_1d(self) -> TimeSeries[Profiles1D]:
         return TimeSeries[self.__class__.Profiles1D](self["profiles_1d"], parent=self)
 
-    def advance(self, desc=None, *args, core_profiles=None, grid=None, time=None, dt=None, **kwargs):
+    def advance(self, desc=None, *args, core_profiles=None, grid=None, equlibrium=None, time=None, dt=None, **kwargs):
         time = super().advance(time=time, dt=dt)
         if core_profiles is not None:
             desc = collections.ChainMap(desc or {}, {
@@ -236,7 +241,12 @@ class CoreTransportModel(Dict[str, Node], Actor):
                     }
                     for ion in core_profiles.profiles_1d.ion
                 ]})
-        self.profiles_1d.insert(desc or {},   time=time, grid=grid or self._grid)
+        if grid is None:
+            grid = self._grid
+        if grid is None and equlibrium is not None:
+            grid = equlibrium.profiles_1d[-1].radial_grid()
+
+        self.profiles_1d.insert(desc or {},   time=time, grid=grid)
 
         if core_profiles is not None:
             self.update(*args, core_profiles=core_profiles, **kwargs)

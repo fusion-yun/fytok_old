@@ -174,12 +174,22 @@ if __name__ == "__main__":
 
     ###################################################################################################
     if True:
-        core_transport = CoreTransport({"model": [{"code": {"name": "nclass"}}]})
+        core_transport = CoreTransport({"model": [
+            {"code": {"name": "nclass"}},
+            {"code": {"name": "neoclassical"}},
+            {"code": {"name": "spitzer"}},
+        ]})
 
-        core_transport.advance(equilibrium=tok.equilibrium.current_state,
-                               core_profiles=tok.core_profiles.current_state,
-                               grid=tok.equilibrium.current_state.radial_grid(),
-                               time=0.0)
+        core_transport.advance(dt=0.1,
+                               equilibrium=tok.equilibrium.current_state,
+                               core_profiles=tok.core_profiles.current_state)
+
+        tok.equilibrium.advance(dt=0.1)
+        tok.core_profiles.advance(dt=0.1)
+
+        core_transport.advance(dt=0.1,
+                               equilibrium=tok.equilibrium.current_state,
+                               core_profiles=tok.core_profiles.current_state)
 
     if False:
         core_transport1d = core_transport.model[0].profiles_1d[-1]
