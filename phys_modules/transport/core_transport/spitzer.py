@@ -23,11 +23,13 @@ class Spitzer(CoreTransport.Model):
         - Tokamaks, Third Edition, Chapter 2,16 Confinement,p149,  J.A.Wesson 2003
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self,   *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def update(self, *args, core_profiles: CoreProfiles.TimeSlice = None, **kwargs):
-        self.profiles_1d[-1]["conductivity_parallel"] = 0.0
+        prof = self.profiles_1d[-1]
+        prof.update(core_profiles=core_profiles, **kwargs)
+        prof.conductivity_parallel = prof.grid_d.rho_tor_norm
         return 0.0
 
 

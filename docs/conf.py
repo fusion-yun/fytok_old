@@ -43,7 +43,8 @@ extensions = ["sphinx.ext.napoleon",
               "sphinxcontrib.bibtex",
               'sphinxcontrib.plantuml',
               "recommonmark",
-              "docxsphinx"]
+            #   "docxsphinx"
+              ]
 
 source_suffix = {
     '.rst': 'restructuredtext',
@@ -117,3 +118,5 @@ todo_include_todos = True
 image_converter_args = ['-verbose']
 
 plantuml_output_format='png'
+
+bibtex_bibfiles=["FyTok.bib"]

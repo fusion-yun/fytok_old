@@ -5,15 +5,12 @@ Confinement and transport 约束和输运
 .. toctree::
    :maxdepth: 4
    
-   ../_apidoc/TransportSolver
-
-   ../_apidoc/FluxSurface
-   ../_apidoc/Equilibrium
-   
-   ../_apidoc/CoreProfiles
-   ../_apidoc/CoreSources
-   ../_apidoc/CoreTransport
-
-   ../_apidoc/EdgeProfiles
-   ../_apidoc/EdgeSources
-   ../_apidoc/EdgeTransport
+   ../_apidoc/modules/transport/TransportSolver
+   ../_apidoc/modules/transport/FluxSurface
+   ../_apidoc/modules/transport/Equilibrium
+   ../_apidoc/modules/transport/CoreProfiles
+   ../_apidoc/modules/transport/CoreSources
+   ../_apidoc/modules/transport/CoreTransport
+   ../_apidoc/modules/transport/EdgeProfiles
+   ../_apidoc/modules/transport/EdgeSources
+   ../_apidoc/modules/transport/EdgeTransport

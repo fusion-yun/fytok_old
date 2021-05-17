@@ -184,12 +184,15 @@ if __name__ == "__main__":
                                equilibrium=tok.equilibrium.current_state,
                                core_profiles=tok.core_profiles.current_state)
 
-        tok.equilibrium.advance(dt=0.1)
-        tok.core_profiles.advance(dt=0.1)
+        # tok.equilibrium.advance(dt=0.1)
 
-        core_transport.advance(dt=0.1,
-                               equilibrium=tok.equilibrium.current_state,
-                               core_profiles=tok.core_profiles.current_state)
+        # tok.core_profiles.advance(dt=0.1)
+
+        # core_transport.advance(dt=0.1,
+        #                        equilibrium=tok.equilibrium.current_state,
+        #                        core_profiles=tok.core_profiles.current_state)
+
+        logger.debug(core_transport.model[2].profiles_1d[-1].conductivity_parallel)
 
     if False:
         core_transport1d = core_transport.model[0].profiles_1d[-1]

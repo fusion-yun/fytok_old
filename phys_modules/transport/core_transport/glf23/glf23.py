@@ -28,7 +28,7 @@ class GLF23(CoreTransport.Model):
     def __init__(self, d, *args, grid: RadialGrid, **kwargs):
         super().__init__(collections.ChainMap({
             "identifier": {
-                "name": f"{self.__class__.__name__}",
+                "name": "anomalous",
                 "index": 6,
                 "description": f"{self.__class__.__name__}"
             }}, d or {}), *args, grid=grid, **kwargs)

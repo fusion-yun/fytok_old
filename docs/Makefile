@@ -10,7 +10,7 @@ SOURCEDIR     = .
 BUILDDIR      = _build
 
 APIDOCDIR	  = _apidoc
-ROOTDIR		  = ../python/fytok
+ROOTDIR		  = ../
 
 
 # Put it first so that "make" without argument is like "make help".
@@ -20,9 +20,17 @@ help:
 .PHONY: help Makefile 
 
 apidoc:
-	@$(SPHINXAPIDOC) -feMT -o "$(APIDOCDIR)" "$(ROOTDIR)"	
-	
-	
+	@$(SPHINXAPIDOC) -feMT -o "$(APIDOCDIR)"/phys_modules	 	../phys_modules
+	@$(SPHINXAPIDOC) -feMT -o "$(APIDOCDIR)"  					../python/fytok   
+
+# @$(SPHINXAPIDOC) -feMT -o "$(APIDOCDIR)"/modules/auxiliary 	../python/fytok/modules/auxiliary 	
+# @$(SPHINXAPIDOC) -feMT -o "$(APIDOCDIR)"/modules/common  	../python/fytok/modules/common 	
+# @$(SPHINXAPIDOC) -feMT -o "$(APIDOCDIR)"/modules/device  	../python/fytok/modules/device
+# @$(SPHINXAPIDOC) -feMT -o "$(APIDOCDIR)"/modules/diagnosis 	../python/fytok/modules/diagnosis
+# @$(SPHINXAPIDOC) -feMT -o "$(APIDOCDIR)"/modules/operation 	../python/fytok/modules/operation
+# @$(SPHINXAPIDOC) -feMT -o "$(APIDOCDIR)"/modules/plasma  	../python/fytok/modules/plasma
+# @$(SPHINXAPIDOC) -feMT -o "$(APIDOCDIR)"/modules/transport 	../python/fytok/modules/transport
+
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile 

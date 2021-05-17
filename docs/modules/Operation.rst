@@ -12,9 +12,9 @@ Opreation 运行和控制系统
 .. toctree::
    :maxdepth: 2
 
-   ../_apidoc/PulseSchedule
-   ../_apidoc/Controllers
-   ../_apidoc/SDN
+   ../_apidoc/modujles/operation/PulseSchedule
+   ../_apidoc/modujles/operation/Controllers
+   ../_apidoc/modujles/operation/SDN
 
 
 

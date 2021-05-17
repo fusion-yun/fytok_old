@@ -11,22 +11,17 @@ Plasma 等离子体
 .. toctree::
    :maxdepth: 2
 
-   ../_apidoc/AMNSData
-   ../_apidoc/Radiation
-
-   ../_apidoc/Waves
-
-   ../_apidoc/CoreInstantChanges
-   ../_apidoc/Disruption
-
-   ../_apidoc/DistributionSources
-   ../_apidoc/Distributions
-   ../_apidoc/Gyrokinetics
-
-   ../_apidoc/MHD
-   ../_apidoc/MHDLinear
-
-   ../_apidoc/NTMS
-   ../_apidoc/Sawteeth
-   ../_apidoc/Turbulence
+   ../_apidoc/modules/plasma/AMNSData
+   ../_apidoc/modules/plasma/Radiation
+   ../_apidoc/modules/plasma/Waves
+   ../_apidoc/modules/plasma/CoreInstantChanges
+   ../_apidoc/modules/plasma/Disruption
+   ../_apidoc/modules/plasma/DistributionSources
+   ../_apidoc/modules/plasma/Distributions
+   ../_apidoc/modules/plasma/Gyrokinetics
+   ../_apidoc/modules/plasma/MHD
+   ../_apidoc/modules/plasma/MHDLinear
+   ../_apidoc/modules/plasma/NTMS
+   ../_apidoc/modules/plasma/Sawteeth
+   ../_apidoc/modules/plasma/Turbulence
    

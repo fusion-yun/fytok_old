@@ -6,15 +6,15 @@ Simulator 模拟器
 .. toctree::
    :maxdepth: 4
 
-   ../_apidoc/Tokamak
-   ../_apidoc/Scenario
-   modules/Utility
+   ../_apidoc/fytok.Tokamak
+   ../_apidoc/fytok.Scenario
 
 Modules 模块
 --------------------
 .. toctree::
    :maxdepth: 4
 
+   modules/Common
    modules/Operation      
    modules/Magnetics   
    modules/Transport

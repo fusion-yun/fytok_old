@@ -111,9 +111,41 @@ class CoreTransportProfiles1D(TimeSlice):
     Electrons = CoreTransportElectrons
     Momentum = CoreTransportMomentum
 
-    def __init__(self, *args, grid: RadialGrid = None,  **kwargs):
-        super().__init__(*args,   **kwargs)
-        self._grid = grid
+    def __init__(self, d=None, *args, parent=None, ** kwargs):
+        super().__init__(d, parent=parent)
+        self.update(*args, **kwargs)
+
+    def update(self, *args, grid=True, core_profiles: CoreProfilesTimeSlice = None,  **kwargs):
+        need_reset = False
+        if grid is True and core_profiles is not None:
+            grid = core_profiles.profiles_1d.grid
+
+        if isinstance(grid, RadialGrid):
+            need_reset = True
+            self._grid = grid
+
+        if self['ion'] == None:
+            ion_desc = [
+                {
+                    "label": ion.label,
+                    "z_ion": ion.z_ion,
+                    "neutral_index": ion.neutral_index,
+                    "element": ion.element._as_list(),
+                }
+                for ion in core_profiles.profiles_1d.ion
+            ]
+            if len(ion_desc) > 0:
+                need_reset = True
+                self['ion'] = ion_desc
+
+        if self['electron'] == None:
+            ele_desc = core_profiles.profiles_1d.electrons
+            if ele_desc != None:
+                need_reset = True
+                self["electrons"] = ele_desc
+
+        if need_reset:
+            self.__reset_cache__()
 
     @cached_property
     def grid_d(self) -> RadialGrid:
@@ -177,15 +209,12 @@ class CoreTransportModel(Dict[str, Node], Actor):
 
     Profiles1D = CoreTransportProfiles1D
 
-    def __init__(self, d=None, *args,  grid: RadialGrid = None, **kwargs):
+    def __init__(self, d=None, *args,  **kwargs):
         super(Dict, self).__init__(
-            collections.ChainMap(d or {},
-                                 {"identifier": {"name": f"{self.__class__.__name__}",
-                                                 "description": f"{self.__class__.__name__}",
-                                                 "index": 0}}),
+            collections.ChainMap(d or {}, {"identifier": {"name":  "unspecified", "index": 0,
+                                                          "description": f"{self.__class__.__name__}"}}),
             * args, **kwargs)
         super(Actor, self).__init__()
-        self._grid = grid
 
     @cached_property
     def code(self) -> IDSCode:
@@ -227,32 +256,15 @@ class CoreTransportModel(Dict[str, Node], Actor):
     def profiles_1d(self) -> TimeSeries[Profiles1D]:
         return TimeSeries[self.__class__.Profiles1D](self["profiles_1d"], parent=self)
 
-    def advance(self, desc=None, *args, core_profiles=None, grid=None, equlibrium=None, time=None, dt=None, **kwargs):
+    def advance(self,   *args,  time=None, dt=None, **kwargs):
         time = super().advance(time=time, dt=dt)
-        if core_profiles is not None:
-            desc = collections.ChainMap(desc or {}, {
-                "electrons": {},
-                "ion":  [
-                    {
-                        "label": ion.label,
-                        "z_ion": ion.z_ion,
-                        "neutral_index": ion.neutral_index,
-                        "element": ion.element._as_list(),
-                    }
-                    for ion in core_profiles.profiles_1d.ion
-                ]})
-        if grid is None:
-            grid = self._grid
-        if grid is None and equlibrium is not None:
-            grid = equlibrium.profiles_1d[-1].radial_grid()
-
-        self.profiles_1d.insert(desc or {},   time=time, grid=grid)
-
-        if core_profiles is not None:
-            self.update(*args, core_profiles=core_profiles, **kwargs)
+        self.profiles_1d.insert(*args,  time=time, **kwargs)
+        if len(args)+len(kwargs) > 0:
+            self.update(*args,  **kwargs)
 
     def update(self, *args, **kwargs):
-        return super().update(*args, **kwargs)
+        assert(len(self) > 0)
+        return self.profiles_1d[-1].update(*args, **kwargs)
 
 
 class CoreTransport(IDS):
@@ -282,18 +294,12 @@ class CoreTransport(IDS):
         return ActorBundle[CoreTransportModel](self["model"],   parent=self)
 
     @property
-    def current_state(self) -> TimeSlice:
-        return TimeSlice({
-            "time": self.current_time,
-            "profiles_1d": AttributeTree(Combiner([(m.profiles_1d[-1], m.flux_multiplier) for m in self.model]), parent=self)
-        })
+    def current_state(self) -> CoreTransportProfiles1D:
+        return AttributeTree(Combiner([m.profiles_1d[-1] for m in self.model], factor=[m.flux_multiplier or 1.0 for m in self.model]), parent=self)
 
-    @property
-    def previous_state(self) -> TimeSlice:
-        return TimeSlice({
-            "time": self.previous_time,
-            "profiles_1d": AttributeTree(Combiner([(m.profiles_1d[-2], m.flux_multiplier) for m in self.model]), parent=self)
-        })
+    @ property
+    def previous_state(self) -> CoreTransportProfiles1D:
+        return AttributeTree(Combiner([m.profiles_1d[-2] for m in self.model], factor=[m.flux_multiplier or 1.0 for m in self.model]), parent=self)
 
     def advance(self, *args, time=None, dt=None,   **kwargs) -> float:
         time = super().advance(time=time, dt=dt)
