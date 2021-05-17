@@ -8,29 +8,32 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 import scipy.constants
-from spdm.data.AttributeTree import as_attribute_tree
 from spdm.data.Function import Function
-from spdm.data.Node import Dict
+from spdm.data.Node import Dict, Node
+from spdm.flow.Actor import Actor
 from spdm.util.logger import logger
 
+from .modules.common.Misc import VacuumToroidalField
+#############################
 from .modules.device.PFActive import PFActive
 from .modules.device.TF import TF
 from .modules.device.Wall import Wall
+#############################
 from .modules.transport.CoreProfiles import CoreProfiles
 from .modules.transport.CoreSources import CoreSources
 from .modules.transport.CoreTransport import CoreTransport
+#############################
 from .modules.transport.EdgeProfiles import EdgeProfiles
 from .modules.transport.EdgeSources import EdgeSources
 from .modules.transport.EdgeTransport import EdgeTransport
+#############################
 from .modules.transport.Equilibrium import Equilibrium
-from .modules.transport.MagneticCoordSystem import RadialGrid
 from .modules.transport.TransportSolver import TransportSolver
-from .modules.common.Misc import VacuumToroidalField
 
 TWOPI = scipy.constants.pi*2.0
 
 
-class Tokamak(Dict):
+class Tokamak(Dict[str, Node], Actor):
     """Tokamak
         功能：
             - 描述装置在单一时刻的状态，
@@ -38,13 +41,17 @@ class Tokamak(Dict):
 
     """
 
-    def __init__(self, desc=None, * args,  radial_grid=None, **kwargs):
+    def __init__(self, desc=None, * args, r0=None, b0=None,  radial_grid=None, **kwargs):
         super().__init__(desc or kwargs)
         self._radial_grid = radial_grid
+        self._b0 = [b0]
+        self._r0 = r0
 
     @property
     def time(self):
         return self._time
+
+    # --------------------------------------------------------------------------
 
     @cached_property
     def wall(self) -> Wall:
@@ -57,26 +64,11 @@ class Tokamak(Dict):
     @cached_property
     def pf_active(self) -> PFActive:
         return PFActive(self["pf_active"], parent=self)
-
     # --------------------------------------------------------------------------
-
-    @cached_property
-    def boundary_conditions(self):
-        return Dict(self["boundary_conditions"], parent=self)
-
-    @cached_property
-    def constraints(self):
-        return Dict(self["constraints"], parent=self)
 
     @cached_property
     def equilibrium(self) -> Equilibrium:
         return Equilibrium(self["equilibrium"], parent=self)
-
-        #    vacuum_toroidal_field=self.vacuum_toroidal_field,
-        #    constraints=self.constraints,
-        #    wall=self.wall,
-        #    pf_active=self.pf_active,
-        #    tf=self.tf,
 
     @cached_property
     def core_profiles(self) -> CoreProfiles:
@@ -117,99 +109,75 @@ class Tokamak(Dict):
     def transport_solver(self) -> TransportSolver:
         return TransportSolver(self["transport_solver"], parent=self)
 
-    def update(self,
-               time=None,
-               vacuum_toroidal_field=None,
-               constraints=None,
-               equilibrium=None,
-               core_transport=None,
-               core_sources=None,
-               boundary_conditions=None,
-               tolerance=1.0e-6,
-               max_step=1,
-               **kwargs):
+    def advance(self, time=None,  dt=None,  vacuum_toroidal_field: VacuumToroidalField = None, **kwargs):
 
-        if time is not None:
-            time = self._time
+        time = super().advance(time=time, dt=dt)
+
+        vacuum_toroidal_field = VacuumToroidalField(r0=self._r0, b0=self._b0[-1])
+
+        self.pf_active.advance(time=time)
+
+        self.equilibrium.advance(time=time, vacuum_toroidal_field=vacuum_toroidal_field,
+                                 wall=self.wall, pf_active=self.pf_active.current_state,)
+
+        self.core_profiles.advance(time=time)
+
+        self.core_sources.advance(time=time)
+
+        self.core_transport.advance(time=time)
+
+        self.update(time=time, vacuum_toroidal_field=vacuum_toroidal_field, **kwargs)
+
+    def update(self,  vacuum_toroidal_field: VacuumToroidalField = None, max_step=1, enable_edge=False, tolerance=1.0e-6, **kwargs):
 
         if vacuum_toroidal_field is not None:
-            del self.vacuum_toroidal_field
-            self["vacuum_toroidal_field"] = vacuum_toroidal_field
+            self._b0[-1] = vacuum_toroidal_field.b0
 
-        if constraints is not None:
-            del self.constraints
-            self["constraints"] = constraints
+        vacuum_toroidal_field = VacuumToroidalField(r0=self._r0, b0=self._b0[-1])
 
-        if equilibrium is not None:
-            del self.equilibrium
-            self["equilibrium"] = equilibrium
+        core_profile_prev = self.core_profiles.previous_state
+        core_profile_next = self.core_profiles.current_state
 
-        if core_transport is not None:
-            # del self.core_transport
-            self["core_transport"] = core_transport
-
-        if core_sources is not None:
-            # del self.core_sources
-            self["core_sources"] = core_sources
-
-        if boundary_conditions is not None:
-            # del self.boundary_conditions
-            self["boundary_conditions"] = boundary_conditions
-
-        core_profiles_prev = self.core_profiles
-        core_profiles_next = CoreProfiles(grid=core_profiles_prev.profiles_1d.grid)
         for nstep in range(max_step):
-            logger.debug(f"time={time}  iterator step {nstep}/{max_step}")
+            equilibrium = self.equilibrium.current_state
 
-            # self.radial_grid.update(time=time, equilibrium=self.equilibrium)
+            self.core_transport.update(vacuum_toroidal_field=vacuum_toroidal_field,
+                                       equilibrium=equilibrium, core_profiles=core_profile_next)
 
-            # self.core_transport.update(time=time,
-            #                            equilibrium=self.equilibrium,
-            #                            core_profiles=self.core_profiles)
+            self.core_sources.update(vacuum_toroidal_field=vacuum_toroidal_field,
+                                     equilibrium=equilibrium, core_profiles=core_profile_next)
 
-            # self.core_sources.update(time=time,
-            #                          equilibrium=self.equilibrium,
-            #                          core_profiles=self.core_profiles)
+            convergence = self.transport_solver.update(
+                core_profile_prev,  core_profile_next,
+                vacuum_toroidal_field=vacuum_toroidal_field,
+                equilibrium=equilibrium,
+                core_transport=self.core_transport.current_state,
+                core_sources=self.core_sources.current_state,
+                **kwargs)
 
-            # TODO: using EdgeProfile update  self.boundary_conditions
+            if enable_edge:
+                self.edge_transport.update(vacuum_toroidal_field=vacuum_toroidal_field,
+                                           equilibrium=equilibrium, core_profiles=core_profile_next)
 
-            self.transport_solver.solve(
-                core_profiles_prev,
-                core_profiles_next,
-                time=time,
-                equilibrium=self.equilibrium,
-                vacuum_toroidal_field=self.vacuum_toroidal_field,
-                core_transport=self.core_transport,
-                core_sources=self.core_sources,
-                boundary_conditions=self.boundary_conditions,
-                tolerance=tolerance,
-                verbose=0,
-                **kwargs.get("transport_solver", {})
-            )
+                self.edge_sources.update(vacuum_toroidal_field=vacuum_toroidal_field,
+                                         equilibrium=equilibrium, core_profiles=core_profile_next)
 
-            # TODO: Update Edge
+                self.edge_profiles.update(vacuum_toroidal_field=vacuum_toroidal_field,
+                                          equilibrium=equilibrium, core_profiles=core_profile_next,
+                                          edge_transport=self.edge_transport.current_state,
+                                          edge_sources=self.edge_sources.current_state)
 
-            logger.warning(f"TODO: EdgeTransport")
+                # TODO: update boundary condition
 
-            # self.edge_transport.update(time=time, equilibrium=self.equilibrium, core_profiles_prev=self.core_profiles)
+            self.equilibrium.update(vacuum_toroidal_field=vacuum_toroidal_field,
+                                    wall=self.wall,
+                                    pf_active=self.pf_active.current_state,
+                                    core_profiles=core_profile_next)
 
-            # self.edge_sources.update(time=time, equilibrium=self.equilibrium, core_profiles_prev=self.core_profiles)
+            logger.debug(f"time={self.time}  iterator step {nstep}/{max_step} convergence={convergence}")
 
-            self.constraints.update(time=time)
-
-            if self.equilibrium.update(
-                vacuum_toroidal_field=self.vacuum_toroidal_field,
-                psi=core_profiles_next.profiles_1d.psi,
-                constraints=self.constraints,
-                core_profiles=core_profiles_next,
-                test_convergence=True
-            ):
+            if convergence < tolerance:
                 break
-
-            core_profiles_prev = core_profiles_next
-
-        self.__dict__["core_profiles"] = core_profiles_next
-        self._time = time
 
     def plot(self, axis=None, *args, title=None, time=None,  **kwargs):
 

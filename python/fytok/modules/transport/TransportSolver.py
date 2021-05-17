@@ -9,13 +9,13 @@ from math import log
 
 import numpy as np
 import scipy.constants
-from fytok.util.Misc import Identifier
 from spdm.data.Function import Function
 from spdm.data.Node import Dict
 from spdm.numerical.bvp import solve_bvp
 from spdm.util.logger import logger
 from spdm.util.utilities import try_get
 
+from ..common.Misc import Identifier
 from .CoreProfiles import CoreProfiles, CoreProfilesTimeSlice
 from .CoreSources import CoreSources
 from .CoreTransport import CoreTransport
@@ -47,6 +47,14 @@ class TransportSolver(Dict):
     @property
     def radial_grid(self):
         return self._grid
+
+    @cached_property
+    def solver(self) -> Identifier:
+        return Identifier(**self["solver"]._as_dict())
+
+    @cached_property
+    def primary_coordinate(self) -> Identifier:
+        return Identifier(**self["primary_coordinate"]._as_dict())
 
     def solve_general_form(self, x0, y0, flux0,   coeff,  bc,  hyper_diff=[0.0, 0.0],  **kwargs):
         r"""
@@ -162,14 +170,14 @@ class TransportSolver(Dict):
 
         return sol, profiles
 
-    def solve(self,
-              core_profiles: CoreProfiles,
+    def update(self,
+              core_profiles_prev: CoreProfiles.TimeSlice,
+              core_profiles_next: CoreProfiles.TimeSlice,
               *args,
               time=None,
-              equilibrium: Equilibrium,
-              core_transport: CoreTransport,
-              core_sources: CoreSources,
-              boundary_conditions: Dict,
+              equilibrium: Equilibrium.TimeSlice,
+              core_transport: CoreTransport.TimeSlice,
+              core_sources: CoreSources.TimeSlice,
               tolerance=1.0e-3,
               max_nodes=1000,
               verbose=2,
@@ -631,6 +639,7 @@ class TransportSolver(Dict):
             core_sources,
             boundary_conditions.current
         )
+
         if enable_ion_solver:
             raise NotImplementedError()
         else:

@@ -818,7 +818,7 @@ class Equilibrium(IDS):
         #    Poloidal plane coordinate   : (\rho,\theta,\phi)
     """
     _IDS = "equilibrium"
-    _stats_ = "time_slice", "grid._ggd"
+    _stats_ = "time_slice", "grid_ggd"
     TimeSlice = EquilibriumTimeSlice
 
     def __init__(self,  *args, **kwargs):

@@ -9,10 +9,10 @@ from spdm.data.Profiles import Profiles
 from spdm.data.TimeSeries import TimeSeries
 from spdm.util.logger import logger
 
-from ..common.IDS import IDS, IDSCode
+from ..common.IDS import IDS
 from ..common.Misc import Identifier, VacuumToroidalField
+from ..common.Species import Species
 from .MagneticCoordSystem import RadialGrid
-from .ParticleSpecies import Species
 
 
 class CoreSourcesParticle(Profiles):

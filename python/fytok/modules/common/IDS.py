@@ -6,7 +6,7 @@ from functools import cached_property
 from typing import Mapping, Sequence
 import functools
 import numpy as np
-from spdm.data.Node import Dict, List
+from spdm.data.Node import Dict, List, Node
 from spdm.flow.Actor import Actor
 from spdm.util.logger import logger
 import inspect
@@ -112,7 +112,7 @@ class IDSCode(Dict):
         return List[IDSCode.LibraryDesc](self["library"], default_factory=lambda d, *args, **kwargs: IDSCode.LibraryDesc(**(d or {})), parent=self)
 
 
-class IDS(Dict, Actor):
+class IDS(Dict[str, Node], Actor):
     """
         %%%DESCRIPTION%%%.
         .. todo:: '___NAME___' IS NOT IMPLEMENTED
@@ -120,7 +120,7 @@ class IDS(Dict, Actor):
     _IDS = "NOT_DEFINED"
 
     def __init__(self, *args, ** kwargs):
-        super().__init__(*args, ** kwargs)
+        super(Dict, self).__init__(*args, ** kwargs)
 
     def __serialize__(self, ignore=None):
         res = super().__serialize__(ignore=ignore or ['time_slice'])
@@ -150,4 +150,8 @@ class IDS(Dict, Actor):
         else:
             return self["time"] or 0.0
 
- 
+    def advance(self, *args, time=None, dt=None, **kwargs) -> float:
+        return super().advance(*args, time=time, dt=dt, **kwargs)
+
+    def update(self, *args, **kwargs):
+        return super().update(*args, **kwargs)

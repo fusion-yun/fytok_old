@@ -13,8 +13,8 @@ from spdm.util.logger import logger
 
 from ..common.IDS import IDS
 from ..common.Misc import VacuumToroidalField
+from ..common.Species import Species
 from .MagneticCoordSystem import TWOPI, RadialGrid
-from .ParticleSpecies import Species
 
 
 class CoreProfiles1D(Profiles):

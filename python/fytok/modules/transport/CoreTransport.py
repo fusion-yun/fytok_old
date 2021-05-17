@@ -14,9 +14,9 @@ from spdm.util.logger import logger
 
 from ..common.IDS import IDS, IDSCode
 from ..common.Misc import Identifier
+from ..common.Species import Species, SpeciesIon
 from .CoreProfiles import CoreProfiles, CoreProfilesTimeSlice
 from .MagneticCoordSystem import RadialGrid
-from .ParticleSpecies import Species, SpeciesIon
 
 
 class TransportCoeff(Dict):
@@ -216,14 +216,14 @@ class CoreTransportModel(Dict[str, Node], Actor):
 
     @cached_property
     def flux_multiplier(self) -> float:
-        return self["flux_multiplier"]
+        return self["flux_multiplier"] or 1.0
 
     @cached_property
     def profiles_1d(self) -> TimeSeries[Profiles1D]:
         return TimeSeries[self.__class__.Profiles1D](self["profiles_1d"], parent=self)
 
-    def advance(self, desc=None, *args, core_profiles: CoreProfiles.TimeSlice = None,   grid=None, time=None, **kwargs):
-        time = super().advance(*args, time=time, **kwargs)
+    def advance(self, desc=None, *args, core_profiles=None, grid=None, time=None, dt=None, **kwargs):
+        time = super().advance(time=time, dt=dt)
         if core_profiles is not None:
             desc = collections.ChainMap(desc or {}, {
                 "electrons": {},
@@ -236,7 +236,10 @@ class CoreTransportModel(Dict[str, Node], Actor):
                     }
                     for ion in core_profiles.profiles_1d.ion
                 ]})
-        self.profiles_1d.insert(desc or {}, *args, time=time, grid=grid or self._grid,  **kwargs)
+        self.profiles_1d.insert(desc or {},   time=time, grid=grid or self._grid)
+
+        if core_profiles is not None:
+            self.update(*args, core_profiles=core_profiles, **kwargs)
 
     def update(self, *args, **kwargs):
         return super().update(*args, **kwargs)
@@ -259,6 +262,7 @@ class CoreTransport(IDS):
     _serialize_ignore = ["profiles_1d", ]
     Model = CoreTransportModel
     Profiles1D = CoreTransportProfiles1D
+    TimeSlice = CoreTransportProfiles1D
 
     def __init__(self, *args, parent=None, ** kwargs):
         super().__init__(*args, parent=parent, **kwargs)
@@ -268,15 +272,23 @@ class CoreTransport(IDS):
         return ActorBundle[CoreTransportModel](self["model"],   parent=self)
 
     @property
-    def profiles_1d(self) -> CoreTransportProfiles1D:
-        return AttributeTree(Combiner([m.current_state["profiles_1d"] for m in self.model]), parent=self)
+    def current_state(self) -> TimeSlice:
+        return TimeSlice({
+            "time": self.current_time,
+            "profiles_1d": AttributeTree(Combiner([(m.profiles_1d[-1], m.flux_multiplier) for m in self.model]), parent=self)
+        })
+
+    @property
+    def previous_state(self) -> TimeSlice:
+        return TimeSlice({
+            "time": self.previous_time,
+            "profiles_1d": AttributeTree(Combiner([(m.profiles_1d[-2], m.flux_multiplier) for m in self.model]), parent=self)
+        })
 
     def advance(self, *args, time=None, dt=None,   **kwargs) -> float:
         time = super().advance(time=time, dt=dt)
-        self.model.advance(*args, time=time, **kwargs)
-        return time
+        return self.model.advance(*args, time=time, **kwargs)
 
-    def update(self,  *args,  **kwargs) -> bool:
-        success = super().update(*args, **kwargs)
-        success = success or self.model.update(*args,  **kwargs)
-        return success
+    def update(self,  *args,  **kwargs) -> float:
+        super().update(*args, **kwargs)
+        return self.model.update(*args,  **kwargs)

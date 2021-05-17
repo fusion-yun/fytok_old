@@ -182,6 +182,8 @@ if __name__ == "__main__":
             # grid=tok.equilibrium.current_state.radial_grid(),
             time=0.0)
 
+        
+
         # logger.debug([ion.label for ion in core_transport.profiles_1d.ion])
     if False:
         core_transport1d = core_transport.model[0].profiles_1d[-1]

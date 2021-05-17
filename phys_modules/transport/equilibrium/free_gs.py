@@ -8,9 +8,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.constants
 from fytok.modules.transport.Equilibrium import Equilibrium
+from spdm.data.Function import Function
 from spdm.data.Node import Dict
 from spdm.util.logger import logger
-from spdm.data.Function import Function
 
 
 def is_none(v):
