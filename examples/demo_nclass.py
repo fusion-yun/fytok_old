@@ -114,45 +114,45 @@ if __name__ == "__main__":
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
     ###################################################################################################
-    if False:
-        ne = Function(baseline["x"].values, baseline["NE"].values*1.0e19)
-        Te = Function(baseline["x"].values, baseline["TE"].values)
-        Ti = Function(baseline["x"].values, baseline["TI"].values)
 
-        core_profiles_conf = {
-            "profiles_1d": {
-                "electrons": {
-                    "label": "electrons",
-                    "density":     ne,          # 1.0e19,
-                    "temperature": Te,          # lambda x: (1-x**2)**2,
+    ne = Function(baseline["x"].values, baseline["NE"].values*1.0e19)
+    Te = Function(baseline["x"].values, baseline["TE"].values)
+    Ti = Function(baseline["x"].values, baseline["TI"].values)
+
+    core_profiles_conf = {
+        "profiles_1d": {
+            "electrons": {
+                "label": "electrons",
+                "density":     ne,          # 1.0e19,
+                "temperature": Te,          # lambda x: (1-x**2)**2,
+            },
+            "ion": [
+                {
+
+                    "label": "H^+",
+                    "z_ion": 1,
+                    "neutral_index": 1,
+                    "element": [{"a": 1, "z_n": 1, "atoms_n": 1}],
+                    "density":   0.5*ne,    # 0.5e19,
+                    "temperature": Ti,      # lambda x: (1-x**2)**2
                 },
-                "ion": [
-                    {
+                {
+                    "label": "D^+",
+                    "z_ion": 1,
+                    "element": [{"a": 2, "z_n": 1, "atoms_n": 1}],
+                    "neutral_index": 2,
+                    "density":    0.5*ne,   # 0.5e19,
+                    "temperature": Ti,      # lambda x: (1-x**2)**2
+                }
+            ],
+            "conductivity_parallel": 1.0,
+            "psi":   1.0,
+        }}
 
-                        "label": "H^+",
-                        "z_ion": 1,
-                        "neutral_index": 1,
-                        "element": [{"a": 1, "z_n": 1, "atoms_n": 1}],
-                        "density":   0.5*ne,    # 0.5e19,
-                        "temperature": Ti,      # lambda x: (1-x**2)**2
-                    },
-                    {
-                        "label": "D^+",
-                        "z_ion": 1,
-                        "element": [{"a": 2, "z_n": 1, "atoms_n": 1}],
-                        "neutral_index": 2,
-                        "density":    0.5*ne,   # 0.5e19,
-                        "temperature": Ti,      # lambda x: (1-x**2)**2
-                    }
-                ],
-                "conductivity_parallel": 1.0,
-                "psi":   1.0,
-            }}
-
-        core_profile_slice = tok.core_profiles.time_slice.push_back(core_profiles_conf,
-                                                                    grid=eq_slice.radial_grid(),
-                                                                    vacuum_toroidal_field=eq_slice.vacuum_toroidal_field)
-
+    core_profile_slice = tok.core_profiles.time_slice.push_back(core_profiles_conf,
+                                                                grid=eq_slice.radial_grid(),
+                                                                vacuum_toroidal_field=eq_slice.vacuum_toroidal_field)
+    if False:
         core_profile = core_profile_slice.profiles_1d
 
         plot_profiles(
@@ -174,17 +174,13 @@ if __name__ == "__main__":
 
     ###################################################################################################
     if True:
-        core_transport = CoreTransport({"model": [{"code": {"name": "neoclassical"}}]})
+        core_transport = CoreTransport({"model": [{"code": {"name": "nclass"}}]})
 
-        core_transport.advance(
-            # equlibrium=tok.equilibrium.current_state,
-            # core_profiles=tok.core_profiles.current_state,
-            # grid=tok.equilibrium.current_state.radial_grid(),
-            time=0.0)
+        core_transport.advance(equilibrium=tok.equilibrium.current_state,
+                               core_profiles=tok.core_profiles.current_state,
+                               grid=tok.equilibrium.current_state.radial_grid(),
+                               time=0.0)
 
-        
-
-        # logger.debug([ion.label for ion in core_transport.profiles_1d.ion])
     if False:
         core_transport1d = core_transport.model[0].profiles_1d[-1]
 

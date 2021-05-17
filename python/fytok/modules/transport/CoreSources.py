@@ -15,7 +15,7 @@ from ..common.Species import Species
 from .MagneticCoordSystem import RadialGrid
 
 
-class CoreSourcesParticle(Profiles):
+class CoreSourcesParticle(Dict):
     def __init__(self, *args,  **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -25,24 +25,22 @@ class CoreSourcesParticle(Profiles):
 
     @cached_property
     def energy(self):
-        d = self["energy"]
-        if not isinstance(d, Function):
-            return Function(self._parent.grid.rho_tor_norm, self["energy"], parent=self._parent)
-        else:
-            return d
+        return Function(self._parent.grid.rho_tor_norm, self["energy"], parent=self._parent)
 
     @cached_property
     def momentum(self):
-        return Profiles({
-            "radial": Function(self._parent.grid.rho_tor_norm, self["momentum.radial"], parent=self._parent),
-            "diamagnetic": Function(self._parent.grid.rho_tor_norm, self["momentum.diamagnetic"], parent=self._parent),
-            "parallel": Function(self._parent.grid.rho_tor_norm, self["momentum.parallel"], parent=self._parent),
-            "poloidal": Function(self._parent.grid.rho_tor_norm, self["momentum.poloidal"], parent=self._parent),
-            "toroidal": Function(self._parent.grid.rho_tor_norm, self["momentum.toroidal"], parent=self._parent)
-        })
+        return Profiles(self["momentum"], axis=self._parent.grid.rho_tor_norm, parent=self._parent)
+
+        # {
+        #     "radial": Function(self._parent.grid.rho_tor_norm, self["momentum.radial"], parent=self._parent),
+        #     "diamagnetic": Function(self._parent.grid.rho_tor_norm, self["momentum.diamagnetic"], parent=self._parent),
+        #     "parallel": Function(self._parent.grid.rho_tor_norm, self["momentum.parallel"], parent=self._parent),
+        #     "poloidal": Function(self._parent.grid.rho_tor_norm, self["momentum.poloidal"], parent=self._parent),
+        #     "toroidal": Function(self._parent.grid.rho_tor_norm, self["momentum.toroidal"], parent=self._parent)
+        # }
 
 
-class CoreSourcesElectrons(Profiles):
+class CoreSourcesElectrons(Dict):
     def __init__(self,  *args,   **kwargs):
         super().__init__(* args,  **kwargs)
 
@@ -75,7 +73,7 @@ class CoreSourcesElectrons(Profiles):
         )
 
 
-class CoreSourcesIon(Profiles):
+class CoreSourcesIon(Dict):
     def __init__(self,  *args,   **kwargs):
         super().__init__(* args,  **kwargs)
 
