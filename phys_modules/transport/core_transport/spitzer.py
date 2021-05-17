@@ -27,8 +27,8 @@ class Spitzer(CoreTransport.Model):
         super().__init__(*args, **kwargs)
 
     def update(self, *args, core_profiles: CoreProfiles.TimeSlice = None, **kwargs):
+        super().update(*args, core_profiles=core_profiles, **kwargs)
         prof = self.profiles_1d[-1]
-        prof.update(core_profiles=core_profiles, **kwargs)
         prof.conductivity_parallel = prof.grid_d.rho_tor_norm
         return 0.0
 
