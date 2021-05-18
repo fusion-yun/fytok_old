@@ -206,7 +206,8 @@ class MagneticCoordSystem(Dict):
                 yield r1, z1
 
     def create_mesh(self, u, v, *args, type_index=None):
-        logger.debug(f"create mesh! type index={type_index}")
+        logger.debug(f"create mesh! type index={type_index} START")
+
         type_index = type_index or self.grid_type.index
         if type_index == 13:
             rz = np.asarray([[r, z] for r, z in self.flux_surface_map(u, v[:-1])]).reshape(len(u), len(v)-1, 2)
@@ -214,6 +215,7 @@ class MagneticCoordSystem(Dict):
             mesh = CurvilinearMesh(rz, [u, v], cycle=[False, True])
         else:
             raise NotImplementedError(f"TODO: reconstruct mesh {type_index}")
+        logger.debug(f"create mesh! type index={type_index} DONE")
 
         return mesh
 

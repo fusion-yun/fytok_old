@@ -175,9 +175,9 @@ if __name__ == "__main__":
     ###################################################################################################
     if True:
         core_transport = CoreTransport({"model": [
-            {"code": {"name": "nclass"}},
-            {"code": {"name": "neoclassical"}},
             {"code": {"name": "spitzer"}},
+            {"code": {"name": "neoclassical"}},
+            {"code": {"name": "gyroBhom"}},
         ]})
 
         core_transport.advance(dt=0.1,
@@ -192,11 +192,11 @@ if __name__ == "__main__":
         #                        equilibrium=tok.equilibrium.current_state,
         #                        core_profiles=tok.core_profiles.current_state)
 
-        logger.debug(core_transport.model[2].profiles_1d[-1].conductivity_parallel)
+        core_transport1d = core_transport.current_state.profiles_1d
 
-    if False:
-        core_transport1d = core_transport.model[0].profiles_1d[-1]
+        logger.debug(core_transport1d.electrons.particles.flux)
 
+    # if False:
         plot_profiles(
             [
                 [
@@ -225,10 +225,10 @@ if __name__ == "__main__":
                     (core_transport1d.electrons.energy.v,                                         r"$v_{Te}$"),
                     *[(ion.energy.v,                f"$v_{{T,{ion.label}}}$") for ion in core_transport1d.ion],
                 ],
-                # [
-                #     (Function(baseline["x"].values, baseline["Jbs"].values),       r"$j_{bootstrap}^{\star}$"),
-                #     # (core_transport1d.j_bootstrap,                                         r"$j_{bootstrap}$"),
-                # ]
+                [
+                    (Function(baseline["x"].values, baseline["Jbs"].values),       r"$j_{bootstrap}^{\star}$"),
+                    # (core_transport1d.j_bootstrap,                                         r"$j_{bootstrap}$"),
+                ]
             ],
             x_axis=(core_transport.model[0].profiles_1d[-1].grid_v.rho_tor_norm,     r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             # annotation=core_transport.model[0].identifier.name,

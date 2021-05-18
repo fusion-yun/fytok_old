@@ -111,11 +111,12 @@ class CoreTransportProfiles1D(TimeSlice):
     Electrons = CoreTransportElectrons
     Momentum = CoreTransportMomentum
 
-    def __init__(self, d=None, *args, parent=None, ** kwargs):
+    def __init__(self, d=None, *args,  parent=None, ** kwargs):
         super().__init__(d, parent=parent)
         self.update(*args, **kwargs)
 
     def update(self, *args, grid=True, core_profiles: CoreProfilesTimeSlice = None,  **kwargs):
+
         need_reset = False
         if grid is True and core_profiles is not None:
             grid = core_profiles.profiles_1d.grid
@@ -124,25 +125,27 @@ class CoreTransportProfiles1D(TimeSlice):
             need_reset = True
             self._grid = grid
 
-        if self['ion'] == None:
-            ion_desc = [
-                {
-                    "label": ion.label,
-                    "z_ion": ion.z_ion,
-                    "neutral_index": ion.neutral_index,
-                    "element": ion.element._as_list(),
-                }
-                for ion in core_profiles.profiles_1d.ion
-            ]
-            if len(ion_desc) > 0:
-                need_reset = True
-                self['ion'] = ion_desc
+        if core_profiles is not None:
 
-        if self['electron'] == None:
-            ele_desc = core_profiles.profiles_1d.electrons
-            if ele_desc != None:
-                need_reset = True
-                self["electrons"] = ele_desc
+            if self['ion'] == None:
+                ion_desc = [
+                    {
+                        "label": ion.label,
+                        "z_ion": ion.z_ion,
+                        "neutral_index": ion.neutral_index,
+                        "element": ion.element._as_list(),
+                    }
+                    for ion in core_profiles.profiles_1d.ion
+                ]
+                if len(ion_desc) > 0:
+                    need_reset = True
+                    self['ion'] = ion_desc
+
+            if self['electron'] == None:
+                ele_desc = core_profiles.profiles_1d.electrons
+                if ele_desc != None:
+                    need_reset = True
+                    self["electrons"] = ele_desc
 
         if need_reset:
             self.__reset_cache__()
@@ -266,6 +269,14 @@ class CoreTransportModel(Dict[str, Node], Actor):
         assert(len(self) > 0)
         return self.profiles_1d[-1].update(*args, **kwargs)
 
+    @property
+    def current_state(self) -> AttributeTree:
+        return AttributeTree({"flux_multiplier": self.flux_multiplier, "profiles_1d": self.profiles_1d[-1]}, parent=self)
+
+    @property
+    def previous_state(self) -> AttributeTree:
+        return AttributeTree({"flux_multiplier": self.flux_multiplier, "profiles_1d": self.profiles_1d[-2]}, parent=self)
+
 
 class CoreTransport(IDS):
     r"""
@@ -294,12 +305,12 @@ class CoreTransport(IDS):
         return ActorBundle[CoreTransportModel](self["model"],   parent=self)
 
     @property
-    def current_state(self) -> CoreTransportProfiles1D:
-        return AttributeTree(Combiner([m.profiles_1d[-1] for m in self.model], factor=[m.flux_multiplier or 1.0 for m in self.model]), parent=self)
+    def current_state(self) -> CoreTransportModel:
+        return self.model.current_state
 
     @ property
     def previous_state(self) -> CoreTransportProfiles1D:
-        return AttributeTree(Combiner([m.profiles_1d[-2] for m in self.model], factor=[m.flux_multiplier or 1.0 for m in self.model]), parent=self)
+        return self.model.previous_state
 
     def advance(self, *args, time=None, dt=None,   **kwargs) -> float:
         time = super().advance(time=time, dt=dt)
