@@ -98,6 +98,7 @@ if __name__ == "__main__":
             ],
             (profile["Poh"].values, r"Joul heating power density $\sigma_{\parallel}\cdot E^2$"),
             (profile["Xi"].values,                 r"ion heat conductivity $\chi_i$"),
+            (profile["XiNC"].values,                 r"neoclassical ion heat conductivity $\chi_{NC}$"),
 
 
         ],

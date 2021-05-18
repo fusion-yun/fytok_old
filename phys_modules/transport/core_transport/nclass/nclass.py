@@ -44,7 +44,6 @@ class NClass(CoreTransportModel):
 
         super().update(equilibrium=equilibrium, core_profiles=core_profiles)
 
-        return 0.0
         # core_transport.identifier = {
         #     "name": "neoclassical",
         #     "index": 5,

@@ -199,6 +199,10 @@ class CoreTransportProfiles1D(TimeSlice):
         return Function(self.grid_d.rho_tor_norm, self["conductivity_parallel"])
 
     @cached_property
+    def j_bootstrap(self) -> Function:
+        return Function(self.grid_d.rho_tor_norm, self["j_bootstrap"])
+
+    @cached_property
     def e_field_radial(self) -> Function:
         """ Radial component of the electric field (calculated e.g. by a neoclassical model) {dynamic} [V.m^-1]"""
         return Function(self.grid_flux.rho_tor_norm, self["e_field_radial"])

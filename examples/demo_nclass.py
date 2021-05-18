@@ -175,9 +175,10 @@ if __name__ == "__main__":
     ###################################################################################################
     if True:
         core_transport = CoreTransport({"model": [
-            {"code": {"name": "spitzer"}},
+            # {"code": {"name": "spitzer"}},
             {"code": {"name": "neoclassical"}},
-            {"code": {"name": "gyroBhom"}},
+            # {"code": {"name": "nclass"}},
+            # {"code": {"name": "gyroBhom"}},
         ]})
 
         core_transport.advance(dt=0.1,
@@ -192,9 +193,9 @@ if __name__ == "__main__":
         #                        equilibrium=tok.equilibrium.current_state,
         #                        core_profiles=tok.core_profiles.current_state)
 
-        core_transport1d = core_transport.current_state.profiles_1d
-
-        logger.debug(core_transport1d.electrons.particles.flux)
+        # core_transport1d = core_transport.current_state.profiles_1d
+        core_transport1d = core_transport.model[0].profiles_1d[-1]
+        logger.debug(type(core_transport1d.electrons.particles.flux))
 
     # if False:
         plot_profiles(
@@ -216,8 +217,8 @@ if __name__ == "__main__":
                     *[(ion.energy.flux,               f"$q_{{{ion.label}}}$") for ion in core_transport1d.ion],
                 ],
                 [
-                    (Function(baseline["x"].values, baseline["Xi"].values),             r"$\chi_{i}^{\star}$"),
-                    (Function(baseline["x"].values, baseline["XiNC"].values),        r"$\chi_{i,nc}^{\star}$"),
+                    # (Function(baseline["x"].values, baseline["Xi"].values),             r"$\chi_{i}^{\star}$"),
+                    # (Function(baseline["x"].values, baseline["XiNC"].values),        r"$\chi_{i,nc}^{\star}$"),
                     (core_transport1d.electrons.energy.d,                                         r"$\chi_e$"),
                     *[(ion.energy.d,               f"$\chi_{{{ion.label}}}$") for ion in core_transport1d.ion],
                 ],

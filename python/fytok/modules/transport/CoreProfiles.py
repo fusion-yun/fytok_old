@@ -13,7 +13,7 @@ from spdm.util.logger import logger
 
 from ..common.IDS import IDS
 from ..common.Misc import VacuumToroidalField
-from ..common.Species import Species
+from ..common.Species import Species, SpeciesElectron, SpeciesIon, SpeciesElectron
 from .MagneticCoordSystem import TWOPI, RadialGrid
 
 
@@ -37,7 +37,7 @@ class CoreProfiles1D(Profiles):
     def grid(self) -> RadialGrid:
         return self._grid
 
-    class Electrons(Profiles):
+    class Electrons(SpeciesElectron):
         def __init__(self,   *args, axis=None, parent=None, **kwargs):
             super().__init__(*args, axis=axis if axis is not None else parent.grid.rho_tor_norm,  **kwargs)
 
@@ -111,33 +111,11 @@ class CoreProfiles1D(Profiles):
             """Collisionality normalised to the bounce frequency {dynamic}[-]"""
             return NotImplemented
 
-    class Ion(Species):
+    class Ion(SpeciesIon):
         def __init__(self,   *args, axis=None,  **kwargs):
             super().__init__(*args, axis=axis,  **kwargs)
 
-        @cached_property
-        def z_ion(self) -> int:
-            """Ion charge (of the dominant ionisation state; lumped ions are allowed),
-            volume averaged over plasma radius {dynamic} [Elementary Charge Unit]  FLT_0D  """
-            return self["z_ion"]
-
-        @cached_property
-        def neutral_index(self) -> int:
-            """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
-            return self["neutral_index"]
-
-        @cached_property
-        def z_ion_1d(self):
-            """Average charge of the ion species (sum of states charge weighted by state density and
-            divided by ion density) {dynamic} [-]  """
-            return NotImplemented
-
-        @cached_property
-        def z_ion_square_1d(self):
-            """Average square charge of the ion species (sum of states square charge weighted by
-            state density and divided by ion density) {dynamic} [-]  """
-            return NotImplemented
-
+    
         @cached_property
         def temperature(self) -> Function:
             """Temperature (average over charge states when multiple charge states are considered) {dynamic} [eV]  """
@@ -396,28 +374,36 @@ class CoreProfiles1D(Profiles):
     @cached_property
     def j_total(self):
         """Total parallel current density = average(jtot.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
-        return self.current_parallel_inside.derivative * self._r0*TWOPI/self.grid.dvolume_drho_tor
+        d = self["j_total"]
+        if isinstance(d, np.ndarray) or d != None:
+            return Function(self._axis, d)
+        else:
+            return self.current_parallel_inside.derivative * self._r0*TWOPI/self.grid.dvolume_drho_tor
 
     @cached_property
     def current_parallel_inside(self) -> Function:
         """Parallel current driven inside the flux surface. Cumulative surface integral of j_total {dynamic}[A]"""
-        return self.grid.dpsi_drho_tor
+        return Function(self._axis, self["current_parallel_inside"])
 
     @cached_property
     def j_tor(self):
         """Total toroidal current density = average(J_Tor/R) / average(1/R) {dynamic}[A/m ^ 2]"""
-        return Function(self._axis, ["j_tor"])
+        d = self["j_tor"]
+        if isinstance(d, np.ndarray) or d != None:
+            return Function(self._axis, d)
+        else:
+            return NotImplemented
 
     @cached_property
     def j_ohmic(self):
         """Ohmic parallel current density = average(J_Ohmic.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
-        return Function(self._axis, ["j_ohmic"])
+        return self.conductivity_parallel*self.e_field.parallel  # Function(self._axis, ["j_ohmic"])
 
     @cached_property
     def j_non_inductive(self):
         """Non-inductive(includes bootstrap) parallel current density = average(jni.B) / B0,
         where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
-        return Function(self._axis, ["j_non_inductive"])
+        return self.j_total - self.j_ohmic
 
     @cached_property
     def j_bootstrap(self):
@@ -428,22 +414,28 @@ class CoreProfiles1D(Profiles):
     @cached_property
     def conductivity_parallel(self):
         """Parallel conductivity {dynamic}[ohm ^ -1.m ^ -1]"""
-        Te = self.electrons.temperature
-        ne = self.electrons.density
 
-        # Electron collisions: Coulomb logarithm
-        clog = np.asarray([
-            (24.0 - 1.15*np.log10(ne[idx]*1.0e-6) + 2.30*np.log10(Te[idx]))
-            if Te[idx] >= 10 else (23.0 - 1.15*np.log10(ne[idx]*1.0e-6) + 3.45*np.log10(Te[idx]))
-            for idx in range(len(ne))
-        ])
-        # electron collision time:
-        # tau_e = (np.sqrt(2.*scipy.constants.electron_mass)*(Te**1.5)) / 1.8e-19 / (ne * 1.0e-6) / clog
+        d = self["conductivity_parallel"]
 
-        # Plasma electrical conductivity:
-        return 1.96e0 * scipy.constants.elementary_charge**2   \
-            * ((np.sqrt(2.*scipy.constants.electron_mass)*(Te**1.5)) / 1.8e-19 / clog) \
-            / scipy.constants.m_e
+        if isinstance(d, np.ndarray) or d != None:
+            return Function(self._axis, d)
+        else:
+            Te = self.electrons.temperature
+            ne = self.electrons.density
+
+            # Electron collisions: Coulomb logarithm
+            clog = np.asarray([
+                (24.0 - 1.15*np.log10(ne[idx]*1.0e-6) + 2.30*np.log10(Te[idx]))
+                if Te[idx] >= 10 else (23.0 - 1.15*np.log10(ne[idx]*1.0e-6) + 3.45*np.log10(Te[idx]))
+                for idx in range(len(ne))
+            ])
+            # electron collision time:
+            # tau_e = (np.sqrt(2.*scipy.constants.electron_mass)*(Te**1.5)) / 1.8e-19 / (ne * 1.0e-6) / clog
+
+            # Plasma electrical conductivity:
+            return 1.96e0 * scipy.constants.elementary_charge**2   \
+                * ((np.sqrt(2.*scipy.constants.electron_mass)*(Te**1.5)) / 1.8e-19 / clog) \
+                / scipy.constants.m_e
 
     class EField(Profiles):
         def __init__(self,   *args, axis=None, parent=None, **kwargs):
