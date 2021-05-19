@@ -152,7 +152,7 @@ if __name__ == "__main__":
     core_profile_slice = tok.core_profiles.time_slice.push_back(core_profiles_conf,
                                                                 grid=eq_slice.radial_grid(),
                                                                 vacuum_toroidal_field=eq_slice.vacuum_toroidal_field)
-    if False:
+    if True:
         core_profile = core_profile_slice.profiles_1d
 
         plot_profiles(
@@ -168,6 +168,11 @@ if __name__ == "__main__":
                     (core_profile.electrons.temperature,                                                  r"$T_e$"),
                     *[(ion.temperature,                        f"$T_{{{ion.label}}}$") for ion in core_profile.ion],
                 ],
+                (core_profile.zeff,                                                                   r"$z_{eff}$"),
+                # [
+                (core_profile.j_ohmic,                                                              r"$j_{ohmic}$"),
+                (Function(baseline["x"].values, baseline["Joh"].values),                       r"$j_{oh}^{\star}$"),
+                # ]
             ],
             x_axis=(core_profile.grid.rho_tor_norm,                                   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
@@ -175,9 +180,9 @@ if __name__ == "__main__":
     ###################################################################################################
     if True:
         core_transport = CoreTransport({"model": [
-            # {"code": {"name": "spitzer"}},
             {"code": {"name": "neoclassical"}},
             # {"code": {"name": "nclass"}},
+            # {"code": {"name": "spitzer"}},
             # {"code": {"name": "gyroBhom"}},
         ]})
 
@@ -195,13 +200,12 @@ if __name__ == "__main__":
 
         # core_transport1d = core_transport.current_state.profiles_1d
         core_transport1d = core_transport.model[0].profiles_1d[-1]
-        logger.debug(type(core_transport1d.electrons.particles.flux))
 
     # if False:
         plot_profiles(
             [
                 [
-                    (core_transport1d.electrons.particles.flux,                                r"$\Gamma_e$"),
+                    (core_transport1d.electrons.particles.flux,                                 r"$\Gamma_e$"),
                     *[(ion.particles.flux,       f"$\Gamma_{{{ion.label}}}$") for ion in core_transport1d.ion],
                 ],
                 [
@@ -216,22 +220,36 @@ if __name__ == "__main__":
                     (core_transport1d.electrons.energy.flux,                                         r"$q_e$"),
                     *[(ion.energy.flux,               f"$q_{{{ion.label}}}$") for ion in core_transport1d.ion],
                 ],
-                [
-                    # (Function(baseline["x"].values, baseline["Xi"].values),             r"$\chi_{i}^{\star}$"),
-                    # (Function(baseline["x"].values, baseline["XiNC"].values),        r"$\chi_{i,nc}^{\star}$"),
-                    (core_transport1d.electrons.energy.d,                                         r"$\chi_e$"),
+
+                # (Function(baseline["x"].values, baseline["Xi"].values),          r"$\chi_{i}^{\star}$"),
+                (Function(baseline["x"].values, baseline["XiNC"].values),     r"$\chi_{i,nc}^{\star}$"),
+                [   # (core_transport1d.electrons.energy.d,                                         r"$\chi_e$"),
+                    # *[(ion.energy.d,               f"$\chi_{{{ion.label}}},nclass$")
+                    #   for ion in core_transport.model[1].profiles_1d[-1].ion],
                     *[(ion.energy.d,               f"$\chi_{{{ion.label}}}$") for ion in core_transport1d.ion],
                 ],
                 [
                     (core_transport1d.electrons.energy.v,                                         r"$v_{Te}$"),
                     *[(ion.energy.v,                f"$v_{{T,{ion.label}}}$") for ion in core_transport1d.ion],
                 ],
+                # [
+                (core_transport1d.conductivity_parallel,                              r"$\sigma_{\parallel}$"),
+                # (core_transport.model[2].profiles_1d[-1].conductivity_parallel,
+                #  r"$\sigma_{\parallel,spitizer}$"),
+
+                # ],
+                (core_transport1d.e_field_radial,                                             r"$E_{radial}$"),
+                (tok.equilibrium.time_slice[-1].profiles_1d.trapped_fraction(
+                    core_transport.model[0].profiles_1d[-1].grid_v.psi_norm),      r"trapped"),
+
+
                 [
-                    (Function(baseline["x"].values, baseline["Jbs"].values),       r"$j_{bootstrap}^{\star}$"),
-                    # (core_transport1d.j_bootstrap,                                         r"$j_{bootstrap}$"),
+                    (Function(baseline["x"].values, baseline["Jbs"].values*1.0e6),     r"$j_{bootstrap}^{\star}$"),
+                    ( core_transport1d.j_bootstrap*1e-17,
+                     r"$j_{bootstrap}$"),
                 ]
             ],
-            x_axis=(core_transport.model[0].profiles_1d[-1].grid_v.rho_tor_norm,     r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            x_axis=(core_transport.model[0].profiles_1d[-1].grid_v.rho_tor_norm, r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             # annotation=core_transport.model[0].identifier.name,
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 

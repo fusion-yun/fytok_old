@@ -6,6 +6,6 @@ from fytok.modules.transport.CoreProfiles import CoreProfiles
 from fytok.modules.transport.CoreTransport import CoreTransport
 from fytok.modules.transport.Equilibrium import Equilibrium
 
-from .glf23 import glf2d
+from .glf23 import GLF23
 
 __SP_EXPORT__ = GLF23

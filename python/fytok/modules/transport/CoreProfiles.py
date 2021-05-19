@@ -115,7 +115,22 @@ class CoreProfiles1D(Profiles):
         def __init__(self,   *args, axis=None,  **kwargs):
             super().__init__(*args, axis=axis,  **kwargs)
 
-    
+        @cached_property
+        def z_ion_1d(self):
+            d = self["z_ion_id"]
+            if isinstance(d, np.ndarray) or d != None:
+                return d
+            else:
+                return Function(self._axis, self.z_ion)
+
+        @cached_property
+        def z_ion_square_1d(self):
+            d = self["z_ion_square_1d"]
+            if isinstance(d, np.ndarray) or d != None:
+                return d
+            else:
+                return Function(self._axis, self.z_ion*self.z_ion)
+
         @cached_property
         def temperature(self) -> Function:
             """Temperature (average over charge states when multiple charge states are considered) {dynamic} [eV]  """
@@ -138,7 +153,11 @@ class CoreProfiles1D(Profiles):
         @cached_property
         def density(self) -> Function:
             """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-            return self["density"]
+            d = self["density"]
+            if not isinstance(d, np.ndarray) or d != None:
+                return d
+            else:
+                return self.density_fast+self.density_thermal
 
         # @property
         # def density_validity(self):
@@ -157,12 +176,12 @@ class CoreProfiles1D(Profiles):
         @property
         def density_thermal(self) -> Function:
             """Density (thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-            return NotImplemented
+            return self["density_thermal"]
 
         @property
         def density_fast(self) -> Function:
             """Density of fast (non-thermal) particles (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-            return NotImplemented
+            return self["density_fast"]
 
         @cached_property
         def pressure(self) -> Function:
@@ -170,13 +189,13 @@ class CoreProfiles1D(Profiles):
             # if self.pressure_fast_perpendicular is not NotImplemented:
             #     return self.pressure_thermal+self.pressure_fast_perpendicular+self.pressure_fast_parallel
             # else:
-            return self.pressure_thermal
+            return self.density*self.temperature
 
         @cached_property
         def pressure_thermal(self) -> Function:
             """Pressure (thermal) associated with random motion ~average((v-average(v))^2)
             (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-            return self.density*self.temperature
+            return self.density_thermal*self.temperature
 
         @cached_property
         def pressure_fast_perpendicular(self) -> Function:
@@ -304,7 +323,7 @@ class CoreProfiles1D(Profiles):
     @cached_property
     def t_i_average(self):
         """Ion temperature(averaged on charge states and ion species) {dynamic}[eV]"""
-        return Function(self._axis, self["t_i_average"])
+        return Function(self._axis, np.sum([np.asarray(ion.temperature*ion.density) for ion in self.ion])/np.sum([np.asarray(ion.density) for ion in self.ion]))
 
     @cached_property
     def t_i_average_fit(self):
@@ -314,10 +333,7 @@ class CoreProfiles1D(Profiles):
     @cached_property
     def n_i_total(self):
         """ total ion density(sum over species and charge states)   (thermal+non-thermal) {dynamic}[-]"""
-        res = Function(self._axis, 0.0)
-        for ion in self.ion:
-            res += ion.z_ion*(ion.density_thermal+ion.density_fast)
-        return res
+        return Function(self._axis, np.sum([np.asarray(ion.z_ion*ion.density) for ion in self.ion]))
 
     @cached_property
     def n_i_total_over_n_e(self):
@@ -327,23 +343,17 @@ class CoreProfiles1D(Profiles):
     @cached_property
     def n_i_thermal_total(self):
         """Total ion thermal density(sum over species and charge states) {dynamic}[m ^ -3]"""
-        res = Function(self._axis, 0.0)
-        for ion in self.ion:
-            res += ion.z_ion * ion.density_thermal
-        return res
+        return Function(self._axis, np.sum([np.asarray(ion.z_ion*ion.density_thermal) for ion in self.ion]))
 
     @cached_property
     def zeff(self):
         """Effective charge {dynamic}[-]"""
-        res = Function(self._axis, 0.0)
-        for ion in self.ion:
-            res += ion.z_ion * ion.z_ion * ion.density
-        return res/self.n_i_total
+        return np.sum([np.asarray(ion.z_ion*ion.z_ion*ion.density) for ion in self.ion]) / self.n_i_total
 
     @cached_property
     def zeff_fit(self):
         """Information on the fit used to obtain the zeff profile[-]  """
-        return Function(self._axis, 0.0)
+        return NotImplemented
 
     @cached_property
     def momentum_tor(self):
@@ -468,12 +478,12 @@ class CoreProfiles1D(Profiles):
     def q(self):
         """Safety factor(IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic}[-].
         This quantity is COCOS-dependent, with the following transformation: """
-        return Function(self._axis, self["q"])
+        return self["q"]
 
     @cached_property
     def magnetic_shear(self):
         """Magnetic shear, defined as rho_tor/q . dq/drho_tor {dynamic}[-]"""
-        return Function(self._axis, self["magnetic_shear"])
+        return self["magnetic_shear"]
 
 
 class CoreProfilesGlobalQuantities(Dict):

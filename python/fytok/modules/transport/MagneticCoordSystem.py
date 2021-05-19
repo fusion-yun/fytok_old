@@ -1,4 +1,5 @@
 import collections
+from dataclasses import dataclass
 from functools import cached_property
 from typing import Sequence, Union
 
@@ -23,7 +24,7 @@ from spdm.util.utilities import convert_to_named_tuple, try_get
 
 from ..common.GGD import GGD
 from ..common.IDS import IDS
-from ..common.Misc import Identifier,  VacuumToroidalField
+from ..common.Misc import Identifier, RZTuple, VacuumToroidalField
 
 TOLERANCE = 1.0e-6
 EPS = np.finfo(float).eps
@@ -326,7 +327,30 @@ class MagneticCoordSystem(Dict):
     def bbox(self, s=None):
         rz = np.asarray([(s.bbox[0]+self.bbox[1])*0.5 for s in self.surface_mesh]).T
 
-    def shape_property(self, psi=None):
+    @dataclass
+    class ShapePropety:
+        # RZ position of the geometric axis of the magnetic surfaces (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the surface)
+        geometric_axis: RZTuple
+        # Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary)[m]
+        minor_radius: np.ndarray  # (rmax - rmin)*0.5,
+        # Elongation of the plasma boundary. [-]
+        elongation: np.ndarray  # (zmax-zmin)/(rmax-rmin),
+        # Elongation(upper half w.r.t. geometric axis) of the plasma boundary. [-]
+        elongation_upper: np.ndarray  # (zmax-(zmax+zmin)*0.5)/(rmax-rmin),
+        # longation(lower half w.r.t. geometric axis) of the plasma boundary. [-]
+        elongation_lower: np.ndarray  # ((zmax+zmin)*0.5-zmin)/(rmax-rmin),
+        # Triangularity of the plasma boundary. [-]
+        triangularity: np.ndarray  # (rzmax-rzmin)/(rmax - rmin)*2,
+        # Upper triangularity of the plasma boundary. [-]
+        triangularity_upper: np.ndarray  # ((rmax+rmin)*0.5 - rzmax)/(rmax - rmin)*2,
+        # Lower triangularity of the plasma boundary. [-]
+        triangularity_lower: np.ndarray  # ((rmax+rmin)*0.5 - rzmin)/(rmax - rmin)*2,
+        # Radial coordinate(major radius) on the inboard side of the magnetic axis[m]
+        r_inboard: np.ndarray  # r_inboard,
+        # Radial coordinate(major radius) on the outboard side of the magnetic axis[m]
+        r_outboard: np.ndarray  # r_outboard,
+
+    def shape_property(self, psi=None) -> ShapePropety:
         def shape_box(s: Curve):
             r, z = s.xy()
             rmin = np.min(r)
@@ -351,28 +375,28 @@ class MagneticCoordSystem(Dict):
         else:
             rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard = sbox.T
 
-        return convert_to_named_tuple({
+        return MagneticCoordSystem.ShapePropety(
             # RZ position of the geometric axis of the magnetic surfaces (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the surface)
-            "geometric_axis": {"r": (rmin+rmax)*0.5,  "z": (zmin+zmax)*0.5},
+            RZTuple((rmin+rmax)*0.5, (zmin+zmax)*0.5),
             # Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary)[m]
-            "minor_radius": (rmax - rmin)*0.5,
+            (rmax - rmin)*0.5,  # "minor_radius":
             # Elongation of the plasma boundary. [-]
-            "elongation": (zmax-zmin)/(rmax-rmin),
+            (zmax-zmin)/(rmax-rmin),  # "elongation":
             # Elongation(upper half w.r.t. geometric axis) of the plasma boundary. [-]
-            "elongation_upper": (zmax-(zmax+zmin)*0.5)/(rmax-rmin),
+            (zmax-(zmax+zmin)*0.5)/(rmax-rmin),  # "elongation_upper":
             # longation(lower half w.r.t. geometric axis) of the plasma boundary. [-]
-            "elongation_lower": ((zmax+zmin)*0.5-zmin)/(rmax-rmin),
+            ((zmax+zmin)*0.5-zmin)/(rmax-rmin),  # elongation_lower":
             # Triangularity of the plasma boundary. [-]
-            "triangularity": (rzmax-rzmin)/(rmax - rmin)*2,
+            (rzmax-rzmin)/(rmax - rmin)*2,  # "triangularity":
             # Upper triangularity of the plasma boundary. [-]
-            "triangularity_upper": ((rmax+rmin)*0.5 - rzmax)/(rmax - rmin)*2,
+            ((rmax+rmin)*0.5 - rzmax)/(rmax - rmin)*2,  # "triangularity_upper":
             # Lower triangularity of the plasma boundary. [-]
-            "triangularity_lower": ((rmax+rmin)*0.5 - rzmin)/(rmax - rmin)*2,
+            ((rmax+rmin)*0.5 - rzmin)/(rmax - rmin)*2,  # "triangularity_lower":
             # Radial coordinate(major radius) on the inboard side of the magnetic axis[m]
-            "r_inboard": r_inboard,
+            r_inboard,  # "r_inboard":
             # Radial coordinate(major radius) on the outboard side of the magnetic axis[m]
-            "r_outboard": r_outboard,
-        })
+            r_outboard,  # "r_outboard":
+        )
 
     ###############################
     # 0-D

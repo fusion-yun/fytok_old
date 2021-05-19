@@ -29,17 +29,17 @@ class PFActive(IDS):
         super().__init__(*args,  **kwargs)
 
     @cached_property
-    def coil(self):
+    def coil(self) -> List[Coil]:
         return List[PFActive.Coil](self["coil"],  parent=self)
 
     @cached_property
-    def circuit(self):
+    def circuit(self) -> List[Circuit]:
         """Circuits, connecting multiple PF coils to multiple supplies, 
             defining the current and voltage relationships in the system"""
         return List[PFActive.Circuit](self["circuit"],  parent=self)
 
     @cached_property
-    def supply(self):
+    def supply(self) -> List[Supply]:
         """PF power supplies"""
         return List[PFActive.Supply](self["supply"], parent=self)
 

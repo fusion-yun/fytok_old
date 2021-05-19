@@ -100,7 +100,7 @@ class NClass(CoreTransportModel):
 
         m_i = 1+len(core_profile.ion)
 
-        m_z = max([ion.z_ion for ion in core_profile.ion])
+        m_z = np.sum([ion.z_ion for ion in core_profile.ion])
         # ------------------------------------------------------------------------
         #  c_den          : density cutoff below which species is ignored (/m**3)
         # ------------------------------------------------------------------------

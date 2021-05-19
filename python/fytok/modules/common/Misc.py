@@ -1,13 +1,20 @@
 
 import collections
+from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
-
+from typing import Union
 import numpy as np
 from spdm.data.Node import Dict
 
 VacuumToroidalField = collections.namedtuple("VacuumToroidalField", "r0 b0", defaults=(0.0, 0.0))
 Identifier = collections.namedtuple("Identifier", "name  index description ", defaults=("unamed", 0, ""))
+
+
+@dataclass
+class RZTuple:
+    r: Union[float, np.ndarray]
+    z: Union[float, np.ndarray]
 
 
 class Signal(Dict):

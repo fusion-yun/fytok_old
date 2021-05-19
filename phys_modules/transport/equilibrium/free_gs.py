@@ -11,6 +11,8 @@ from fytok.modules.transport.Equilibrium import Equilibrium
 from spdm.data.Function import Function
 from spdm.data.Node import Dict
 from spdm.util.logger import logger
+from fytok.modules.device.Wall import Wall
+from fytok.modules.device.PFActive import PFActive
 
 
 def is_none(v):
@@ -19,15 +21,20 @@ def is_none(v):
 
 class EquilibriumFreeGS(Equilibrium):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, wall: Wall, pf_active: PFActive = None, **kwargs):
         super().__init__(*args, **kwargs)
 
-        eq_wall = freegs.machine.Wall(self._parent.wall.limiter.unit.outline.r,
-                                      self._parent.wall.limiter.unit.outline.z)
+        # if wall is None:
+        #     wall = self._parent.wall
+        # if pf_active:
+        #     pf_active = self._parent.pf_active
+
+        eq_wall = freegs.machine.Wall(wall.description_2d.limiter.unit.outline.r,
+                                      wall.description_2d.limiter.unit.outline.z)
 
         eq_coils = []
 
-        for coil in self._parent.pf_active.coil:
+        for coil in pf_active.coil:
 
             rect = coil.element.geometry.rectangle
             turns = coil.element.turns_with_sign

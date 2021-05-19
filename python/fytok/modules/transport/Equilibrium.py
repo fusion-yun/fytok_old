@@ -19,7 +19,7 @@ from spdm.util.utilities import convert_to_named_tuple, try_get
 
 from ..common.GGD import GGD
 from ..common.IDS import IDS
-from ..common.Misc import VacuumToroidalField
+from ..common.Misc import RZTuple, VacuumToroidalField
 from .MagneticCoordSystem import MagneticCoordSystem, RadialGrid
 
 TOLERANCE = 1.0e-6
@@ -290,15 +290,15 @@ class EquilibriumProfiles1D(Profiles):
         return (4*scipy.constants.pi**2*self._b0)*self.rho_tor/(self.fpol*self.gm1)
 
     @cached_property
-    def shape_property(self) -> Function:
+    def shape_property(self) -> MagneticCoordSystem.ShapePropety:
         return self._coord.shape_property()
 
     @cached_property
-    def geometric_axis(self) -> Function:
-        return convert_to_named_tuple({
-            "r": Function(self._axis, self.shape_property.geometric_axis.r),
-            "z": Function(self._axis, self.shape_property.geometric_axis.z),
-        })
+    def geometric_axis(self) -> RZTuple:
+        return RZTuple(
+            Function(self._axis, self.shape_property.geometric_axis.r),
+            Function(self._axis, self.shape_property.geometric_axis.z)
+        )
 
     @property
     def minor_radius(self) -> Function:
@@ -321,17 +321,17 @@ class EquilibriumProfiles1D(Profiles):
         return Function(self._axis, self.shape_property.elongation)
 
     @cached_property
-    def triangularity(self)	:
+    def triangularity(self) -> Function	:
         """Upper triangularity w.r.t. magnetic axis. {dynamic}[-]"""
         return Function(self._axis, self.shape_property.triangularity)
 
     @cached_property
-    def triangularity_upper(self)	:
+    def triangularity_upper(self) -> Function	:
         """Upper triangularity w.r.t. magnetic axis. {dynamic}[-]"""
         return Function(self._axis, self.shape_property.triangularity_upper)
 
     @cached_property
-    def triangularity_lower(self)	:
+    def triangularity_lower(self) -> Function:
         """Lower triangularity w.r.t. magnetic axis. {dynamic}[-]"""
         return Function(self._axis, self.shape_property.triangularity_lower)
 
@@ -418,7 +418,7 @@ class EquilibriumProfiles1D(Profiles):
         return self.rho_tor/self.q * self.q.derivative
 
     @cached_property
-    def rho_volume_norm(self)	:
+    def rho_volume_norm(self) -> Function:
         """Normalised square root of enclosed volume(radial coordinate). The normalizing value is the enclosed volume at the equilibrium boundary
             (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation)[-]"""
         return NotImplemented
@@ -434,7 +434,7 @@ class EquilibriumProfiles1D(Profiles):
         return NotImplemented
 
     @cached_property
-    def darea_drho_tor(self)	:
+    def darea_drho_tor(self) -> Function	:
         """Radial derivative of the cross-sectional area of the flux surface with respect to rho_tor[m]"""
         return NotImplemented
 
@@ -445,8 +445,14 @@ class EquilibriumProfiles1D(Profiles):
 
     @cached_property
     def trapped_fraction(self) -> Function:
-        """Trapped particle fraction[-]"""
-        return Function(self._axis, self["trapped_fraction"])
+        """Trapped particle fraction[-]
+            Tokamak 3ed, 14.10
+        """
+        d = self["trapped_fraction"]
+        if not isinstance(d, np.ndarray) and d == None:
+            epsilon = self.rho_tor/self._r0
+            d = np.asarray(1.0 - (1-epsilon)**2/np.sqrt(1.0-epsilon**2)/(1+1.46*np.sqrt(epsilon)))
+        return Function(self._axis, d)
 
     @cached_property
     def b_field_max(self) -> Function:

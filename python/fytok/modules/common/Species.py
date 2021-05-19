@@ -32,7 +32,7 @@ class SpeciesState(Dict):
         super().__init__(*args, **kwargs)
 
 
-class Species(Dict):
+class Species(Profiles):
     Element = SpeciesElement
     State = SpeciesState
 

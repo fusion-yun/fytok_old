@@ -14,7 +14,7 @@ from spdm.util.logger import logger
 
 from ..common.IDS import IDS, IDSCode
 from ..common.Misc import Identifier
-from ..common.Species import Species, SpeciesIon
+from ..common.Species import Species, SpeciesElectron, SpeciesIon
 from .CoreProfiles import CoreProfiles, CoreProfilesTimeSlice
 from .MagneticCoordSystem import RadialGrid
 
@@ -36,7 +36,7 @@ class TransportCoeff(Dict):
         return Function(self._parent.grid_flux.rho_tor_norm, self["flux"])
 
 
-class CoreTransportElectrons(Dict):
+class CoreTransportElectrons(SpeciesElectron):
     def __init__(self,   *args,  **kwargs):
         super().__init__(*args, **kwargs)
 

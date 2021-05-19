@@ -5,6 +5,7 @@ import getpass
 from functools import cached_property
 
 import matplotlib.pyplot as plt
+from fytok.modules.transport.MagneticCoordSystem import RadialGrid
 import numpy as np
 import scipy
 import scipy.constants
@@ -41,7 +42,7 @@ class Tokamak(Dict[str, Node], Actor):
 
     """
 
-    def __init__(self, desc=None, * args, r0=None, b0=None,  radial_grid=None, **kwargs):
+    def __init__(self, desc=None, * args, r0=None, b0=None,  radial_grid: RadialGrid = None, **kwargs):
         super().__init__(desc or kwargs)
         self._radial_grid = radial_grid
         self._b0 = [b0]
@@ -68,7 +69,7 @@ class Tokamak(Dict[str, Node], Actor):
 
     @cached_property
     def equilibrium(self) -> Equilibrium:
-        return Equilibrium(self["equilibrium"], parent=self)
+        return Equilibrium(self["equilibrium"], wall=self.wall, pf_active=self.pf_active, parent=self)
 
     @cached_property
     def core_profiles(self) -> CoreProfiles:
