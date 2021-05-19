@@ -97,8 +97,9 @@ if __name__ == "__main__":
                 (profile["Pneu"].values,  r"?electron thermal losses due to ionzation of cold neutrals"),
             ],
             (profile["Poh"].values, r"Joul heating power density $\sigma_{\parallel}\cdot E^2$"),
-            (profile["Xi"].values,                 r"ion heat conductivity $\chi_i$"),
+            (profile["Xi"].values,                                   r"ion heat conductivity $\chi_i$"),
             (profile["XiNC"].values,                 r"neoclassical ion heat conductivity $\chi_{NC}$"),
+            (profile["U"].values,                                                        r"$V_{loop}$"),
 
 
         ],

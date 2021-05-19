@@ -55,12 +55,12 @@ class NeoClassical(CoreTransport.Model):
         sum1 = 0
         sum2 = 0
 
-        Te = core_profile.electrons.temperature(rho_tor_norm)
-        Ne = core_profile.electrons.density(rho_tor_norm)
-        Pe = core_profile.electrons.pressure(rho_tor_norm)
-        dlnTe = Function(psi, Te).derivative/Te
-        dlnNe = Function(psi, Ne).derivative/Ne
-        dlnPe = Function(psi, Pe).derivative/Pe
+        Te = core_profile.electrons.temperature
+        Ne = core_profile.electrons.density
+        Pe = core_profile.electrons.pressure
+        dlnTe = Te.derivative/Te
+        dlnNe = Ne.derivative/Ne
+        dlnPe = Pe.derivative/Pe
         # electron collision time , eq 14.6.1
         tau_e = np.asarray(1.09e16*((Te/1000)**(3/2))/Ne/lnCoul)
 
@@ -84,12 +84,12 @@ class NeoClassical(CoreTransport.Model):
         C = np.asarray(0.56/Zeff*(3.0-Zeff)/(3.0+Zeff))
 
         eta = eta_s*Zeff/(1-phi)/(1.0-C*phi)*(1.0+0.27*(Zeff-1.0))/(1.0+0.47*(Zeff-1.0))
-        trans.conductivity_parallel = 1.0/eta
+        trans.conductivity_parallel =0.50/eta # FIXME: magnetic factor 0.50 should be 1.0
 
         ###########################################################################################
         #  Sec 14.12 Bootstrap current
         #
-        x = equilibrium.profiles_1d.trapped_fraction(psi_norm)
+        x = np.sqrt(2*epsilon)  # equilibrium.profiles_1d.trapped_fraction(psi_norm)
         c1 = (4.0+2.6*x)/(1.0+1.02*np.sqrt(nu_e)+1.07*nu_e)/(1.0 + 1.07 * epsilon32*nu_e)
         c3 = (7.0+6.5*x)/(1.0+0.57*np.sqrt(nu_e)+0.61*nu_e)/(1.0 + 0.61 * epsilon32*nu_e) - c1*5/2
 
@@ -110,12 +110,12 @@ class NeoClassical(CoreTransport.Model):
         sum1 = 0.0
         sum2 = 0.0
         for idx, sp in enumerate(core_profile.ion):
-            Ti = sp.temperature(rho_tor_norm)
-            Ni = sp.density(rho_tor_norm)
-            Pi = sp.pressure(rho_tor_norm)
-            dlnTi = Function(psi, Ti).derivative/Ti
-            dlnNi = Function(psi, Ni).derivative/Ni
-            dlnPi = Function(psi, Pi).derivative/Pi
+            Ti = sp.temperature
+            Ni = sp.density
+            Pi = sp.pressure
+            dlnTi = Ti.derivative/Ti
+            dlnNi = Ni.derivative/Ni
+            dlnPi = Pi.derivative/Pi
 
             mi = sp.a
             Zi = sp.z_ion_1d
@@ -146,11 +146,14 @@ class NeoClassical(CoreTransport.Model):
             trans.ion[idx].particles.d = chi_i/3.0
 
             #########################################################################
+            #  Sec 14.12 Bootstrap current
 
-            c2 = Ti/Te*c1
-            d = -1.17/(1.0+0.46*x)
+            c2 = c1*Ti/Te
+
             e3n2 = (epsilon ** 3)*(nu_i**2)
-            c4 = c2*((d + 0.35*np.sqrt(nu_i)) / (1 + 0.7*np.sqrt(nu_i)) + 2.1*e3n2) / (1 - e3n2) / (1 + e3n2)
+
+            c4 = ((-1.17/(1.0+0.46*x) + 0.35*np.sqrt(nu_i)) / (1 + 0.7*np.sqrt(nu_i)) + 2.1*e3n2) \
+                / (1 - e3n2) / (1 + e3n2)*c2
 
             j_bootstrap = j_bootstrap + c2*dlnPi + c4*dlnTi
 
@@ -164,7 +167,9 @@ class NeoClassical(CoreTransport.Model):
         # eq 4.9.2
         # trans.j_bootstrap = (-(q/B0/epsilon12))*j_bootstrap
 
-        trans.j_bootstrap = j_bootstrap * x/(2.4+5.4*x+2.6*x**2)/B0 * Pe * equilibrium.profiles_1d.fpol(psi_norm)
+        trans.j_bootstrap = - j_bootstrap * x/(2.4+5.4*x+2.6*x**2) * Pe * \
+            equilibrium.profiles_1d.fpol(psi_norm) * q / rho_tor / rho_tor[-1] * 22  # FIXME: magnetic factor
+        # / (2.0*scipy.constants.pi*B0)*628
 
         trans.e_field_radial = sum1/sum2
 

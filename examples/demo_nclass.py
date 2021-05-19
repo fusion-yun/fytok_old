@@ -172,7 +172,8 @@ if __name__ == "__main__":
                 # [
                 (core_profile.j_ohmic,                                                              r"$j_{ohmic}$"),
                 (Function(baseline["x"].values, baseline["Joh"].values),                       r"$j_{oh}^{\star}$"),
-                # ]
+                # ],
+                (core_profile.grid.psi,                                                                  r"$\psi$"),
             ],
             x_axis=(core_profile.grid.rho_tor_norm,                                   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
@@ -232,21 +233,25 @@ if __name__ == "__main__":
                     (core_transport1d.electrons.energy.v,                                         r"$v_{Te}$"),
                     *[(ion.energy.v,                f"$v_{{T,{ion.label}}}$") for ion in core_transport1d.ion],
                 ],
-                # [
-                (core_transport1d.conductivity_parallel,                              r"$\sigma_{\parallel}$"),
+                [
+                    (Function(baseline["x"].values, baseline["Joh"].values*1e6 / baseline["U"].values * \
+                              (2.0*scipy.constants.pi * core_profile_slice.vacuum_toroidal_field.r0)),     r"$\sigma_{\parallel}^{\star}$"),
+                    (core_transport1d.conductivity_parallel,                              r"$\sigma_{\parallel}$"),
+                ],
                 # (core_transport.model[2].profiles_1d[-1].conductivity_parallel,
                 #  r"$\sigma_{\parallel,spitizer}$"),
 
                 # ],
+                [
+                    (Function(baseline["x"].values, baseline["Jbs"].values*1.0e6),     r"$j_{bootstrap}^{\star}$"),
+                    (core_transport1d.j_bootstrap,                                             r"$j_{bootstrap}$"),
+                ],
                 (core_transport1d.e_field_radial,                                             r"$E_{radial}$"),
                 (tok.equilibrium.time_slice[-1].profiles_1d.trapped_fraction(
                     core_transport.model[0].profiles_1d[-1].grid_v.psi_norm),      r"trapped"),
 
                 (core_profile.electrons.pressure,                                                  r"$p_{e}$"),
-                [
-                    (Function(baseline["x"].values, baseline["Jbs"].values*1.0e6),     r"$j_{bootstrap}^{\star}$"),
-                    (-core_transport1d.j_bootstrap*500,                                             r"$j_{bootstrap}$"),
-                ]
+
             ],
             x_axis=(core_transport.model[0].profiles_1d[-1].grid_v.rho_tor_norm, r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             # annotation=core_transport.model[0].identifier.name,
