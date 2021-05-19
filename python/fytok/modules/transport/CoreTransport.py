@@ -63,8 +63,8 @@ class CoreTransportIon(SpeciesIon):
 
 
 class CoreTransportMomentum(Profiles):
-    def __init__(self, *args,  **kwargs):
-        super().__init__(*args,  **kwargs)
+    def __init__(self, *args,  axis=None, parent=None, **kwargs):
+        super().__init__(*args, axis=axis if axis is not None else parent.grid.rho_tor_norm,  **kwargs)
 
     @cached_property
     def radial(self) -> TransportCoeff:
@@ -149,6 +149,10 @@ class CoreTransportProfiles1D(TimeSlice):
 
         if need_reset:
             self.__reset_cache__()
+
+    @property
+    def grid(self) -> RadialGrid:
+        return self._grid
 
     @cached_property
     def grid_d(self) -> RadialGrid:

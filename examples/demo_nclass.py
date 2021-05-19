@@ -26,7 +26,7 @@ if __name__ == "__main__":
         pf_active=device.pf_active,
         tf=device.tf,
         magnetics=device.magnetics,
-        radial_grid={"axis": 64},)
+        radial_grid={"axis": 256},)
 
     eq_conf = File(
         # "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
@@ -34,7 +34,7 @@ if __name__ == "__main__":
         # "/home/salmon/workspace/data/Limiter plasmas-7.5MA li=1.1/Limiter plasmas 7.5MA-EQDSK/Limiter_7.5MA_outbord.EQDSK",
         format="geqdsk").entry
 
-    eq_conf.coordinate_system = {"grid": {"dim1": 128, "dim2": 256}}
+    eq_conf.coordinate_system = {"grid": {"dim1": 256, "dim2": 256}}
 
     eq_slice = tok.equilibrium.time_slice.insert(eq_conf, time=0.0)
 
@@ -242,11 +242,10 @@ if __name__ == "__main__":
                 (tok.equilibrium.time_slice[-1].profiles_1d.trapped_fraction(
                     core_transport.model[0].profiles_1d[-1].grid_v.psi_norm),      r"trapped"),
 
-
+                (core_profile.electrons.pressure,                                                  r"$p_{e}$"),
                 [
                     (Function(baseline["x"].values, baseline["Jbs"].values*1.0e6),     r"$j_{bootstrap}^{\star}$"),
-                    ( core_transport1d.j_bootstrap*1e-17,
-                     r"$j_{bootstrap}$"),
+                    (-core_transport1d.j_bootstrap*500,                                             r"$j_{bootstrap}$"),
                 ]
             ],
             x_axis=(core_transport.model[0].profiles_1d[-1].grid_v.rho_tor_norm, r"$\sqrt{\Phi/\Phi_{bdry}}$"),

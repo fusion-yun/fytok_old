@@ -7,8 +7,14 @@ from typing import Union
 import numpy as np
 from spdm.data.Node import Dict
 
-VacuumToroidalField = collections.namedtuple("VacuumToroidalField", "r0 b0", defaults=(0.0, 0.0))
+# VacuumToroidalField = collections.namedtuple("VacuumToroidalField", "r0 b0", defaults=(0.0, 0.0))
 Identifier = collections.namedtuple("Identifier", "name  index description ", defaults=("unamed", 0, ""))
+
+
+@dataclass
+class VacuumToroidalField:
+    r0: float = 0.0
+    b0: float = 0.0
 
 
 @dataclass

@@ -149,7 +149,7 @@ class EquilibriumProfiles1D(Profiles):
         super().__init__(*args, axis=coord.psi_norm, **kwargs)
 
         self._coord = coord
-        self._b0 = np.abs(self._parent.vacuum_toroidal_field.b0)
+        self._b0 = self._parent.vacuum_toroidal_field.b0
         self._r0 = self._parent.vacuum_toroidal_field.r0
 
     @property
@@ -647,11 +647,9 @@ class EquilibriumTimeSlice(TimeSlice):
     def __init__(self, *args, vacuum_toroidal_field: VacuumToroidalField = None, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._vacuum_toroidal_field = vacuum_toroidal_field or \
-            VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
-        if self._vacuum_toroidal_field.b0 < 0:
-            self._vacuum_toroidal_field = VacuumToroidalField(
-                self._vacuum_toroidal_field.r0, np.abs(self._vacuum_toroidal_field.b0))
+        vacuum_toroidal_field = vacuum_toroidal_field or VacuumToroidalField(
+            **self["vacuum_toroidal_field"]._as_dict())
+        self._vacuum_toroidal_field = VacuumToroidalField(vacuum_toroidal_field.r0, abs(vacuum_toroidal_field.b0))
 
     @property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:

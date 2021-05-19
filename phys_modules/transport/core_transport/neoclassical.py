@@ -46,6 +46,7 @@ class NeoClassical(CoreTransport.Model):
         rho_tor_norm = np.asarray(core_profile.grid.rho_tor_norm)
         rho_tor = np.asarray(core_profile.grid.rho_tor)
         psi_norm = np.asarray(core_profile.grid.psi_norm)
+        psi = np.asarray(core_profile.grid.psi)
         q = np.asarray(equilibrium.profiles_1d.q(core_profile.grid.psi_norm))
 
         # Tavg = np.sum([ion.density*ion.temperature for ion in core_profile.ion]) / \
@@ -57,9 +58,9 @@ class NeoClassical(CoreTransport.Model):
         Te = core_profile.electrons.temperature(rho_tor_norm)
         Ne = core_profile.electrons.density(rho_tor_norm)
         Pe = core_profile.electrons.pressure(rho_tor_norm)
-        dlnTe = Function(rho_tor, Te).derivative/Te
-        dlnNe = Function(rho_tor, Ne).derivative/Ne
-        dlnPe = Function(rho_tor, Pe).derivative/Pe
+        dlnTe = Function(psi, Te).derivative/Te
+        dlnNe = Function(psi, Ne).derivative/Ne
+        dlnPe = Function(psi, Pe).derivative/Pe
         # electron collision time , eq 14.6.1
         tau_e = np.asarray(1.09e16*((Te/1000)**(3/2))/Ne/lnCoul)
 
@@ -112,9 +113,9 @@ class NeoClassical(CoreTransport.Model):
             Ti = sp.temperature(rho_tor_norm)
             Ni = sp.density(rho_tor_norm)
             Pi = sp.pressure(rho_tor_norm)
-            dlnTi = Function(rho_tor, Ti).derivative/Ti
-            dlnNi = Function(rho_tor, Ni).derivative/Ni
-            dlnPi = Function(rho_tor, Pi).derivative/Pi
+            dlnTi = Function(psi, Ti).derivative/Ti
+            dlnNi = Function(psi, Ni).derivative/Ni
+            dlnPi = Function(psi, Pi).derivative/Pi
 
             mi = sp.a
             Zi = sp.z_ion_1d
@@ -148,8 +149,9 @@ class NeoClassical(CoreTransport.Model):
 
             c2 = Ti/Te*c1
             d = -1.17/(1.0+0.46*x)
-            c4 = c2*((d + 0.35*np.sqrt(nu_i)) / (1 + 0.7*np.sqrt(nu_i)) + 2.1*(epsilon ** 3)*(nu_i**2))\
-                / (1-epsilon**3*nu_i**2) / (1+epsilon**3*nu_i**2)
+            e3n2 = (epsilon ** 3)*(nu_i**2)
+            c4 = c2*((d + 0.35*np.sqrt(nu_i)) / (1 + 0.7*np.sqrt(nu_i)) + 2.1*e3n2) / (1 - e3n2) / (1 + e3n2)
+
             j_bootstrap = j_bootstrap + c2*dlnPi + c4*dlnTi
 
             # eq 4.9.2
@@ -161,9 +163,8 @@ class NeoClassical(CoreTransport.Model):
 
         # eq 4.9.2
         # trans.j_bootstrap = (-(q/B0/epsilon12))*j_bootstrap
-        Dx = 2.4+5.4*x+2.6*x**2
 
-        trans.j_bootstrap = equilibrium.profiles_1d.fpol(psi_norm) * x/Dx*Pe * j_bootstrap
+        trans.j_bootstrap = j_bootstrap * x/(2.4+5.4*x+2.6*x**2)/B0 * Pe * equilibrium.profiles_1d.fpol(psi_norm)
 
         trans.e_field_radial = sum1/sum2
 

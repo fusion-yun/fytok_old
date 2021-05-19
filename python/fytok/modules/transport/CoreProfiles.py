@@ -38,8 +38,8 @@ class CoreProfiles1D(Profiles):
         return self._grid
 
     class Electrons(SpeciesElectron):
-        def __init__(self,   *args, axis=None, parent=None, **kwargs):
-            super().__init__(*args, axis=axis if axis is not None else parent.grid.rho_tor_norm,  **kwargs)
+        def __init__(self,   *args,  **kwargs):
+            super().__init__(*args,    **kwargs)
 
         @cached_property
         def temperature(self) -> Function:
@@ -94,7 +94,7 @@ class CoreProfiles1D(Profiles):
         @cached_property
         def pressure_thermal(self) -> Function:
             """Pressure(thermal) associated with random motion ~average((v-average(v)) ^ 2) {dynamic}[Pa]"""
-            return self.density*self.temperature
+            return self.density*self.temperature*scipy.constants.electron_volt
 
         @cached_property
         def pressure_fast_perpendicular(self) -> Function:
@@ -112,8 +112,8 @@ class CoreProfiles1D(Profiles):
             return NotImplemented
 
     class Ion(SpeciesIon):
-        def __init__(self,   *args, axis=None,  **kwargs):
-            super().__init__(*args, axis=axis,  **kwargs)
+        def __init__(self,   *args,   **kwargs):
+            super().__init__(*args,  **kwargs)
 
         @cached_property
         def z_ion_1d(self):

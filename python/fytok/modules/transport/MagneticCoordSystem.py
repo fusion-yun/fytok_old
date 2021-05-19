@@ -59,7 +59,7 @@ class MagneticCoordSystem(Dict):
         """
         super().__init__(*args, **kwargs)
         self._vacuum_toroidal_field = vacuum_toroidal_field
-        self._fvac = self._vacuum_toroidal_field.r0*self._vacuum_toroidal_field.b0
+        self._fvac = abs(self._vacuum_toroidal_field.r0*self._vacuum_toroidal_field.b0)
 
         self._psirz = psirz
         self._ffprime = ffprime
@@ -481,7 +481,7 @@ class MagneticCoordSystem(Dict):
     @cached_property
     def rho_tor(self):
         """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0[m]"""
-        return np.sqrt(self.phi/(scipy.constants.pi * self._vacuum_toroidal_field.b0))
+        return np.sqrt(self.phi/(scipy.constants.pi * abs(self._vacuum_toroidal_field.b0)))
 
     @cached_property
     def rho_tor_norm(self):

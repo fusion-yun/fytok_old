@@ -36,8 +36,8 @@ class Species(Profiles):
     Element = SpeciesElement
     State = SpeciesState
 
-    def __init__(self,   *args,  **kwargs):
-        super().__init__(*args,   **kwargs)
+    def __init__(self,   *args, axis=None, parent=None,  **kwargs):
+        super().__init__(*args, axis=axis if axis is not None else parent.grid.rho_tor_norm, parent=parent, **kwargs)
 
     @cached_property
     def label(self) -> str:
@@ -68,7 +68,7 @@ class Species(Profiles):
 
 class SpeciesElectron(Species):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(*args,  **kwargs)
 
     @property
     def label(self) -> str:
@@ -85,8 +85,8 @@ class SpeciesElectron(Species):
 
 
 class SpeciesIon(Species):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args,  **kwargs):
+        super().__init__(*args,   **kwargs)
 
     @cached_property
     def z(self) -> float:
