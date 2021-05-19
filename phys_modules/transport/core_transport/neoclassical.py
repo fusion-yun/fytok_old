@@ -64,7 +64,7 @@ class NeoClassical(CoreTransport.Model):
         # electron collision time , eq 14.6.1
         tau_e = np.asarray(1.09e16*((Te/1000)**(3/2))/Ne/lnCoul)
 
-        vTe = np.asarray(np.sqrt(Te/scipy.constants.electron_mass))
+        vTe = np.asarray(np.sqrt(2*Te/scipy.constants.electron_mass))
 
         # Larmor radius,   eq 14.7.2
         rho_e = np.asarray(1.07e-4*((Te/1000)**(1/2))/B0)
@@ -77,14 +77,14 @@ class NeoClassical(CoreTransport.Model):
         ###########################################################################################
         #  Sec 14.10 Resistivity
         #
-        eta_s = np.asarray(1.65e-9*lnCoul*Te**(-3/2))
+        eta_s = np.asarray(1.65e-9*lnCoul*(Te/1000)**(-3/2))
         nu_e = np.asarray(R0*q/vTe/tau_e/epsilon32)
         Zeff = np.asarray(core_profile.zeff)
         phi = np.asarray(equilibrium.profiles_1d.trapped_fraction(psi_norm)/(1.0+(0.58+0.20*Zeff)*nu_e))
         C = np.asarray(0.56/Zeff*(3.0-Zeff)/(3.0+Zeff))
 
         eta = eta_s*Zeff/(1-phi)/(1.0-C*phi)*(1.0+0.27*(Zeff-1.0))/(1.0+0.47*(Zeff-1.0))
-        trans.conductivity_parallel =0.50/eta # FIXME: magnetic factor 0.50 should be 1.0
+        trans.conductivity_parallel = 1.0/eta  # FIXME: magnetic factor 0.50 should be 1.0
 
         ###########################################################################################
         #  Sec 14.12 Bootstrap current
@@ -168,8 +168,7 @@ class NeoClassical(CoreTransport.Model):
         # trans.j_bootstrap = (-(q/B0/epsilon12))*j_bootstrap
 
         trans.j_bootstrap = - j_bootstrap * x/(2.4+5.4*x+2.6*x**2) * Pe * \
-            equilibrium.profiles_1d.fpol(psi_norm) * q / rho_tor / rho_tor[-1] * 22  # FIXME: magnetic factor
-        # / (2.0*scipy.constants.pi*B0)*628
+            equilibrium.profiles_1d.fpol(psi_norm) * q / rho_tor / rho_tor[-1] / (2.0*scipy.constants.pi*B0)
 
         trans.e_field_radial = sum1/sum2
 

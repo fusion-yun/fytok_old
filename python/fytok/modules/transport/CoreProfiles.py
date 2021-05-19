@@ -86,10 +86,12 @@ class CoreProfiles1D(Profiles):
         @cached_property
         def pressure(self) -> Function:
             """Pressure(thermal+non-thermal) {dynamic}[Pa]"""
-            if self.pressure_fast_perpendicular is not NotImplemented:
-                return self.pressure_thermal+self.pressure_fast_perpendicular+self.pressure_fast_parallel
-            else:
-                return self.pressure_thermal
+            return self.density*self.temperature*scipy.constants.electron_volt
+
+            # if self.pressure_fast_perpendicular is not NotImplemented:
+            #     return self.pressure_thermal+self.pressure_fast_perpendicular+self.pressure_fast_parallel
+            # else:
+            #     return self.pressure_thermal
 
         @cached_property
         def pressure_thermal(self) -> Function:
@@ -189,13 +191,13 @@ class CoreProfiles1D(Profiles):
             # if self.pressure_fast_perpendicular is not NotImplemented:
             #     return self.pressure_thermal+self.pressure_fast_perpendicular+self.pressure_fast_parallel
             # else:
-            return self.density*self.temperature
+            return self.density*self.temperature*scipy.constants.electron_volt
 
         @cached_property
         def pressure_thermal(self) -> Function:
             """Pressure (thermal) associated with random motion ~average((v-average(v))^2)
             (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-            return self.density_thermal*self.temperature
+            return self.density_thermal*self.temperature*scipy.constants.electron_volt
 
         @cached_property
         def pressure_fast_perpendicular(self) -> Function:

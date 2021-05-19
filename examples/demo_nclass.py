@@ -116,8 +116,8 @@ if __name__ == "__main__":
     ###################################################################################################
 
     ne = Function(baseline["x"].values, baseline["NE"].values*1.0e19)
-    Te = Function(baseline["x"].values, baseline["TE"].values)
-    Ti = Function(baseline["x"].values, baseline["TI"].values)
+    Te = Function(baseline["x"].values, baseline["TE"].values*1000)
+    Ti = Function(baseline["x"].values, baseline["TI"].values*1000)
 
     core_profiles_conf = {
         "profiles_1d": {
@@ -234,14 +234,10 @@ if __name__ == "__main__":
                     *[(ion.energy.v,                f"$v_{{T,{ion.label}}}$") for ion in core_transport1d.ion],
                 ],
                 [
-                    (Function(baseline["x"].values, baseline["Joh"].values*1e6 / baseline["U"].values * \
+                    (Function(baseline["x"].values, baseline["Joh"].values*1.0e6 / baseline["U"].values * \
                               (2.0*scipy.constants.pi * core_profile_slice.vacuum_toroidal_field.r0)),     r"$\sigma_{\parallel}^{\star}$"),
                     (core_transport1d.conductivity_parallel,                              r"$\sigma_{\parallel}$"),
                 ],
-                # (core_transport.model[2].profiles_1d[-1].conductivity_parallel,
-                #  r"$\sigma_{\parallel,spitizer}$"),
-
-                # ],
                 [
                     (Function(baseline["x"].values, baseline["Jbs"].values*1.0e6),     r"$j_{bootstrap}^{\star}$"),
                     (core_transport1d.j_bootstrap,                                             r"$j_{bootstrap}$"),
