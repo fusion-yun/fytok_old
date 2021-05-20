@@ -272,7 +272,7 @@ if __name__ == "__main__":
                 [
                     (Function(baseline["x"].values, baseline["Joh"].values*1.0e6 / baseline["U"].values * \
                               (2.0*scipy.constants.pi * core_profile_slice.vacuum_toroidal_field.r0)),     r"$\sigma_{\parallel}^{\star}$"),
-                    (core_transport1d.conductivity_parallel,                       r"$\sigma_{\parallel}^{wesson}$"),
+                    (core_transport1d.conductivity_parallel*11/14,                       r"$\sigma_{\parallel}^{wesson}$"),
                 ],
                 [
                     (Function(baseline["x"].values, baseline["Jbs"].values*1.0e6),     r"$j_{bootstrap}^{\star}$"),

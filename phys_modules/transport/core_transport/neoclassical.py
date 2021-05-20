@@ -34,8 +34,6 @@ class NeoClassical(CoreTransport.Model):
 
         super().update(*args, core_profiles=core_profiles, **kwargs)
 
-        # Coulomb logarithm
-        lnCoul = 14
         eV = scipy.constants.electron_volt
         B0 = equilibrium.vacuum_toroidal_field.b0
         R0 = equilibrium.vacuum_toroidal_field.r0
@@ -61,6 +59,17 @@ class NeoClassical(CoreTransport.Model):
         dlnTe = Te.derivative/Te
         dlnNe = Ne.derivative/Ne
         dlnPe = Pe.derivative/Pe
+        Te = np.asarray(Te)
+        Ne = np.asarray(Ne)
+        Pe = np.asarray(Pe)
+
+        # Coulomb logarithm
+        #  Ch.14.5 p727 Tokamaks 2003
+        lnCoul = (14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +\
+            (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000))*(Te >= 10)
+
+        # (17.3 - 0.5*np.log(Ne/1e20) + 1.5*np.log(Te/1000))*(Te >= 10)
+        logger.debug(lnCoul)
         # electron collision time , eq 14.6.1
         tau_e = np.asarray(1.09e16*((Te/1000)**(3/2))/Ne/lnCoul)
 
@@ -85,7 +94,7 @@ class NeoClassical(CoreTransport.Model):
         C = np.asarray(0.56/Zeff*(3.0-Zeff)/(3.0+Zeff))
 
         eta = eta_s*Zeff/(1-phi)/(1.0-C*phi)*(1.0+0.27*(Zeff-1.0))/(1.0+0.47*(Zeff-1.0))
-        trans.conductivity_parallel = 1.0/eta   
+        trans.conductivity_parallel = 1.0/eta
 
         ###########################################################################################
         #  Sec 14.12 Bootstrap current

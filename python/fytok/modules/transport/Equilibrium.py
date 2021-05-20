@@ -535,7 +535,7 @@ class EquilibriumProfiles2D(Profiles):
 
 class EquilibriumBoundary(Profiles):
     def __init__(self,  *args, coord: MagneticCoordSystem = None,   ** kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, axis=coord.psi_norm, **kwargs)
         self._coord = coord
 
     @cached_property
@@ -544,10 +544,10 @@ class EquilibriumBoundary(Profiles):
         return 1
 
     @cached_property
-    def outline(self):
+    def outline(self) -> RZTuple:
         """RZ outline of the plasma boundary  """
         RZ = np.asarray([[r, z] for r, z in self._coord.flux_surface_map(1.0)])
-        return convert_to_named_tuple(r=RZ[:, 0], z=RZ[:, 1])
+        return RZTuple(RZ[:, 0], RZ[:, 1])
 
     @cached_property
     def x_point(self):
