@@ -13,7 +13,7 @@ from spdm.flow.Actor import Actor, ActorBundle
 from spdm.util.logger import logger
 
 from ..common.IDS import IDS, IDSCode
-from ..common.Misc import Identifier
+from ..common.Misc import Identifier, VacuumToroidalField
 from ..common.Species import Species, SpeciesElectron, SpeciesIon, SpeciesIonState
 from .CoreProfiles import CoreProfiles, CoreProfilesTimeSlice
 from .MagneticCoordSystem import RadialGrid
@@ -335,6 +335,10 @@ class CoreTransport(IDS):
 
     def __init__(self, *args, parent=None, ** kwargs):
         super().__init__(*args, parent=parent, **kwargs)
+
+    @cached_property
+    def vacuum_toroidal_field(self) -> VacuumToroidalField:
+        return VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
 
     @cached_property
     def model(self) -> ActorBundle[CoreTransportModel]:

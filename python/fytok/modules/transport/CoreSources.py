@@ -3,10 +3,13 @@ from functools import cached_property
 
 import numpy as np
 import scipy.constants
+from spdm.data.AttributeTree import AttributeTree
+from spdm.data.Combiner import Combiner
 from spdm.data.Function import Function
-from spdm.data.Node import Dict, List
+from spdm.data.Node import Dict, List, Node
 from spdm.data.Profiles import Profiles
-from spdm.data.TimeSeries import TimeSeries
+from spdm.data.TimeSeries import TimeSequence, TimeSeries, TimeSlice
+from spdm.flow.Actor import Actor, ActorBundle
 from spdm.util.logger import logger
 
 from ..common.IDS import IDS
@@ -221,34 +224,32 @@ class CoreSourcesSpecies(Dict):
         return Identifier(**self["type"]._as_dict())
 
 
-class CoreSourcesTimeSlice(Dict):
-    GlobalQuantities = CoreSourcesGlobalQuantities
-    Profiles1D = CoreSourcesProfiles1D
+# class CoreSourcesTimeSlice(Dict):
+#     GlobalQuantities = CoreSourcesGlobalQuantities
+#     Profiles1D = CoreSourcesProfiles1D
 
-    def __init__(self,   *args, grid=None, time=None, **kwargs):
+#     def __init__(self,   *args, grid=None, time=None, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self._grid = grid or self._parent._grid
+#         self._time = time or self._parent
+
+#     @cached_property
+#     def vacuum_toroidal_field(self):
+#         return VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
+
+#     @cached_property
+#     def global_quantities(self) -> GlobalQuantities:
+#         return CoreSources.GlobalQuantities(self["global_quantities"], time=self._time,  parent=self)
+
+#     @cached_property
+#     def profiles_1d(self) -> Profiles1D:
+#         return CoreSources.Profiles1D(self["profiles_1d"], grid=self._grid,  time=self._time, parent=self)
+
+
+class CoreSourcesSource(Dict[str, Node], Actor):
+
+    def __init__(self,   *args,  **kwargs):
         super().__init__(*args, **kwargs)
-        self._grid = grid or self._parent._grid
-        self._time = time or self._parent
-
-    @cached_property
-    def vacuum_toroidal_field(self):
-        return VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
-
-    @cached_property
-    def global_quantities(self) -> GlobalQuantities:
-        return CoreSources.GlobalQuantities(self["global_quantities"], time=self._time,  parent=self)
-
-    @cached_property
-    def profiles_1d(self) -> Profiles1D:
-        return CoreSources.Profiles1D(self["profiles_1d"], grid=self._grid,  time=self._time, parent=self)
-
-
-class CoreSourcesSource(Dict):
-    TimeSlice = CoreSourcesTimeSlice
-
-    def __init__(self,   *args, time=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._time = time
 
     @cached_property
     def identifier(self) -> Identifier:
@@ -315,22 +316,13 @@ class CoreSourcesSource(Dict):
     def species(self):
         return CoreSourcesSpecies(self["species"], parent=self)
 
-    @cached_property
-    def time_slice(self) -> TimeSeries[TimeSlice]:
-        return TimeSeries[CoreSources.TimeSlice](
-            {
-                "global_quantities": self["global_quantities"],
-                "profiles_1d": self["profiles_1d"]
-            },
-            time=self._time,  parent=self)
+    @property
+    def global_quantities(self) -> TimeSeries[CoreSourcesGlobalQuantities]:
+        return TimeSeries[CoreSourcesGlobalQuantities](self["global_quantities"], parent=self)
 
     @property
-    def global_quantities(self) -> TimeSeries:
-        return self.time_slice["global_quantities"]
-
-    @property
-    def profiles_1d(self) -> TimeSeries:
-        return self.time_slice["profiles_1d"]
+    def profiles_1d(self) -> TimeSeries[CoreSourcesProfiles1D]:
+        return TimeSeries[CoreSourcesProfiles1D](self["profiles_1d"], parent=self)
 
 
 class CoreSources(IDS):
@@ -338,16 +330,15 @@ class CoreSources(IDS):
     """
     _IDS = "core_sources"
     Profiles1D = CoreSourcesProfiles1D
-    TimeSlice = CoreSourcesTimeSlice
+    Source = CoreSourcesSource
 
-    def __init__(self, *args, grid: RadialGrid = None, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._grid = grid
 
     @cached_property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
         return VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
 
     @cached_property
-    def source(self) -> List[CoreSourcesSource]:
-        return List[CoreSourcesSource](self["source"], parent=self, grid=self._grid, time=self.time)
+    def source(self) -> ActorBundle[CoreSourcesSource]:
+        return ActorBundle[CoreSourcesSource](self["source"], parent=self)
