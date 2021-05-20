@@ -12,10 +12,32 @@ if __name__ == "__main__":
     plot_profiles(
         [
             [
-                (profile["NE"].values,                                   r"$N_{e}$"),
+                (profile["NE"].values,                                                           r"$N_{e}$"),
+                (profile["Nd+t"].values,                        r"Nd,thermal + Nt thermalised fuel density"),
+                (profile["Nalf"].values,                                              r"He + alpha density"),
+                (profile["Nz"].values,                                                  r"impurity density"),
+                (profile["Nb"].values,                                        r"fast NBI deuterium density"),
+                # (profile["NE"].values
+                #  - profile["Nd+t"].values
+                #  - profile["Nz"].values*profile["Zeff"].values
+                #  - profile["Nalf"].values,
+                #  r"rms",  {"color": "red", "linestyle": "dashed"}),
+
+            ],
+            [
+                (profile["Nalf"].values,                                              r"He + alpha density"),
+                (profile["Nath"].values,                                              r"thermal He density"),
+                (profile["Naff"].values,                              r"alpha prtcl. density (thin orbits)"),
+                (profile["Nalf"].values
+                 - profile["Nath"].values
+                 - profile["Naff"].values,   r"rms",
+                 {"color": "red", "linestyle": "dashed"}),
+
             ],
             [
                 (profile["TE"].values,                                   r"$T_{e}$"),
+                (profile["TI"].values,                                   r"$T_{i}$"),
+
             ],
             [
                 (profile["Jext"].values,                               r"$j_{ext}$"),
