@@ -18,7 +18,8 @@ if __name__ == "__main__":
     logger.info("====== START ========")
 
     baseline = pd.read_csv('/home/salmon/workspace/data/15MA inductive - burn/profile.txt', sep='\t')
-
+    bs_psi = baseline["Fp"].values
+    bs_r_nrom = baseline["x"].values
     device = File("/home/salmon/workspace/fytok/data/mapping/ITER/imas/3/static/config.xml").entry
 
     tok = Tokamak(
@@ -53,35 +54,39 @@ if __name__ == "__main__":
 
         plot_profiles(
             [
-                (eq_profile.dpressure_dpsi,                                                       r"$dP/d\psi$"),
+                # (eq_profile.dpressure_dpsi,                                                       r"$dP/d\psi$"),
+                # [
+                #     (Function(eq_profile.psi_norm,  eq_profile.f_df_dpsi),  r"$ff^{\prime}_{0}$" ),
+                #     (eq_profile.ffprime,                                                       r"$ff^{\prime}$"),
+                # ],
+                # [
+                #     (Function(eq_profile.psi_norm, np.abs(eq_profile.f)),  r"$\left|f_{pol0}\right|$" ),
+                #     (eq_profile.fpol,                                                                 r"$fpol$"),
+                # ],
                 [
-                    (eq_profile.ffprime,                                                       r"$ff^{\prime}$"),
-                    (Function(eq_profile.psi_norm,  eq_profile.f_df_dpsi),                 r"$ff^{\prime}_{0}$"),
-                ],
-                [
-                    (eq_profile.fpol,                                                                 r"$fpol$"),
-                    (Function(eq_profile.psi_norm, np.abs(eq_profile.f)),            r"$\left|f_{pol0}\right|$"),
-                ],
-                [
-                    (Function(baseline["Fp"].values, baseline["q"].values),                      r"$q^{\star}$"),
+                    (Function(bs_psi, baseline["q"].values),       r"$q^{astra}$", {"marker": "+"}),
                     (eq_profile.q,                                                                       r"$q$"),
-                    (eq_profile.dphi_dpsi,                                             r"$\frac{d\phi}{d\psi}$"),
+                    # (eq_profile.dphi_dpsi,                                             r"$\frac{d\phi}{d\psi}$"),
                 ],
                 [
-                    (Function(baseline["Fp"].values, baseline["rho"].values),           r"$\rho_{tor}^{\star}$"),
+                    (Function(bs_psi, baseline["rho"].values),           r"$\rho_{tor}^{astra}$", {"marker": "+"}),
                     (eq_profile.rho_tor,                                                        r"$\rho_{tor}$"),
                 ],
                 [
-                    (Function(baseline["Fp"].values, baseline["x"].values),           r"$\rho_{tor,0}^{\star}$"),
+                    (Function(bs_psi, baseline["x"].values),           r"$\rho_{tor,0}^{astra}$", {"marker": "+"}),
                     (eq_profile.rho_tor_norm,                                                 r"$\rho_{tor,0}$"),
                 ],
                 [
-                    (Function(baseline["Fp"].values, baseline["Jtot"].values*1e6),   r"$j_{\parallel}^{\star}$"),
+                    (Function(bs_psi, baseline["Jtot"].values*1e6),   r"$j_{\parallel}^{astra}$", {"marker": "+"}),
                     (eq_profile.j_parallel,                                                  r"$j_{\parallel}$"),
                 ],
                 [
-                    (Function(baseline["Fp"].values, baseline["shif"].values), r"$\Delta^{\star}$ shafranov shift"),
+                    (Function(bs_psi, baseline["shif"].values), r"$\Delta^{astra}$ shafranov shift", {"marker": "+"}),
                     (eq_profile.geometric_axis.r-eq_slice.vacuum_toroidal_field.r0,               r"$\Delta$ "),
+                ],
+                [
+                    (Function(bs_psi, baseline["k"].values),         r"$k^{astra}$ elongation", {"marker": "+"}),
+                    (eq_profile.elongation,                                                 r"$k$ elongation"),
                 ],
 
                 # (eq_profile.gm1,                                             r"$gm1=\left<\frac{1}{R^2}\right>$"),
@@ -119,15 +124,15 @@ if __name__ == "__main__":
 
     ###################################################################################################
 
-    Te = Function(baseline["x"].values, baseline["TE"].values*1000)
-    Ti = Function(baseline["x"].values, baseline["TI"].values*1000)
+    Te = Function(bs_r_nrom, baseline["TE"].values*1000)
+    Ti = Function(bs_r_nrom, baseline["TI"].values*1000)
 
-    ne = Function(baseline["x"].values, baseline["NE"].values*1.0e19)
-    nHe = Function(baseline["x"].values, baseline["Nalf"].values*1.0e19)
-    # nDT = Function(baseline["x"].values, baseline["Nd+t"].values*1.0e19)
+    ne = Function(bs_r_nrom, baseline["NE"].values*1.0e19)
+    nHe = Function(bs_r_nrom, baseline["Nalf"].values*1.0e19)
+    # nDT = Function(bs_r_nrom, baseline["Nd+t"].values*1.0e19)
     nDT = ne * (1.0 - 0.02*4 - 0.0012*18) - nHe*2.0
 
-    # Zeff = Function(baseline["x"].values, baseline["Zeff"].values)
+    # Zeff = Function(bs_r_nrom, baseline["Zeff"].values)
 
     core_profiles_conf = {
         "profiles_1d": {
@@ -184,24 +189,24 @@ if __name__ == "__main__":
         plot_profiles(
             [
                 [
-                    # (Function(baseline["x"].values, baseline["NE"].values*1.0e19),              r"$n_{e}^{\star}$"),
+                    # (Function(bs_r_nrom, baseline["NE"].values*1.0e19),              r"$n_{e}^{astra}$"),
                     (core_profile.electrons.density,                                                      r"$n_e$"),
                     *[(ion.density,                            f"$n_{{{ion.label}}}$") for ion in core_profile.ion],
 
                 ],
                 [
-                    # (Function(baseline["x"].values, baseline["TE"].values),                     r"$T_{e}^{\star}$"),
+                    # (Function(bs_r_nrom, baseline["TE"].values),                     r"$T_{e}^{astra}$"),
                     (core_profile.electrons.temperature,                                                  r"$T_e$"),
                     *[(ion.temperature,                        f"$T_{{{ion.label}}}$") for ion in core_profile.ion],
                 ],
 
                 [
-                    (Function(baseline["x"].values, baseline["Zeff"].values),                     r"$Z_{eff}^{\star}$"),
+                    (Function(bs_r_nrom, baseline["Zeff"].values),                     r"$Z_{eff}^{astra}$"),
                     (core_profile.zeff,                                                                   r"$z_{eff}$"),
                 ],
                 [
                     (core_profile.j_ohmic,                                                              r"$j_{ohmic}$"),
-                    (Function(baseline["x"].values, baseline["Joh"].values),                       r"$j_{oh}^{\star}$"),
+                    (Function(bs_r_nrom, baseline["Joh"].values),                       r"$j_{oh}^{astra}$"),
                 ],
                 (core_profile.grid.psi,                                                                  r"$\psi$"),
                 (core_profile.electrons.pressure,                                                        r"$p_e $"),
@@ -259,34 +264,35 @@ if __name__ == "__main__":
                 #     *[(ion.energy.flux,               f"$q_{{{ion.label}}}$") for ion in core_transport1d.ion],
                 # ],
 
-                # (Function(baseline["x"].values, baseline["Xi"].values),          r"$\chi_{i}^{\star}$"),
+                # (Function(bs_r_nrom, baseline["Xi"].values),          r"$\chi_{i}^{astra}$"),
                 # [
                 #     (core_transport1d.electrons.energy.v,                                         r"$v_{Te}$"),
                 #     *[(ion.energy.v,                f"$v_{{T,{ion.label}}}$") for ion in core_transport1d.ion],
                 # ],
                 [
-                    (Function(baseline["x"].values, np.log(baseline["XiNC"].values)),
-                     r"$ln \chi_{i,nc}^{\star}$", {"color": "blue", "linestyle": "dashed", "marker": "."}),
+                    (Function(bs_r_nrom, np.log(baseline["XiNC"].values)),
+                     r"$ln \chi_{i,nc}^{astra}$", {"marker": "+"}),
                     * [(np.log(ion.energy.d),   f"$ln \chi_{{{ion.label},wesson}}$") for ion in core_transport1d.ion],
                 ],
                 [
-                    (Function(baseline["x"].values, baseline["Zeff"].values),                r"$Z_{eff}^{\star}$"),
+                    (Function(bs_r_nrom, baseline["Zeff"].values),          r"$Z_{eff}^{astra}$", {"marker": "+"}),
                     (core_profile.zeff,                                                              r"$z_{eff}$"),
                 ],
                 [
-                    (Function(baseline["x"].values, baseline["Joh"].values*1.0e6 / baseline["U"].values * \
-                              (2.0*scipy.constants.pi * core_profile_slice.vacuum_toroidal_field.r0)),     r"$\sigma_{\parallel}^{\star}$"),
+                    (Function(bs_r_nrom, baseline["Joh"].values*1.0e6 / baseline["U"].values * \
+                              (2.0*scipy.constants.pi * core_profile_slice.vacuum_toroidal_field.r0)),     r"$\sigma_{\parallel}^{astra}$", {"marker": "+"}),
                     (core_transport1d.conductivity_parallel*11/14,
                      r"$\sigma_{\parallel}^{wesson}$"),
                 ],
                 [
-                    (Function(baseline["x"].values, baseline["Jbs"].values*1.0e6),     r"$j_{bootstrap}^{\star}$"),
+                    (Function(bs_r_nrom, baseline["Jbs"].values*1.0e6),
+                     r"$j_{bootstrap}^{astra}$", {"marker": "+"}),
                     (core_transport1d.j_bootstrap,                                    r"$j_{bootstrap}^{wesson}$"),
                 ],
-                # (core_transport1d.e_field_radial,                                             r"$E_{radial}$"),
+
+                (core_transport1d.e_field_radial,                                             r"$E_{radial}$"),
                 # (tok.equilibrium.time_slice[-1].profiles_1d.trapped_fraction(
                 # core_transport.model[0].profiles_1d[-1].grid_v.psi_norm),      r"trapped"),
-
                 # (core_profile.electrons.pressure,                                                  r"$p_{e}$"),
 
             ],

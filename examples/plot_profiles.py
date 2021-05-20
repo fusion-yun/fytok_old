@@ -131,7 +131,7 @@ if __name__ == "__main__":
             (profile["XiNC"].values,                 r"neoclassical ion heat conductivity $\chi_{NC}$"),
             (profile["U"].values,                                                        r"$V_{loop}$"),
             (profile["shif"].values,                                                r"shafranov shift"),
-            (profile["shif"].values,                                                r"shafranov shift"),
+            (profile["k"].values,                                                        r"elongation"),
 
         ],
         x_axis=(profile["x"].values,                                   r"$\rho_{N}$"),
