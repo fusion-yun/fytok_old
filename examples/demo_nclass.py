@@ -25,8 +25,7 @@ if __name__ == "__main__":
         wall=device.wall,
         pf_active=device.pf_active,
         tf=device.tf,
-        magnetics=device.magnetics,
-        radial_grid={"axis": 256},)
+        magnetics=device.magnetics)
 
     eq_conf = File(
         # "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
@@ -34,7 +33,7 @@ if __name__ == "__main__":
         # "/home/salmon/workspace/data/Limiter plasmas-7.5MA li=1.1/Limiter plasmas 7.5MA-EQDSK/Limiter_7.5MA_outbord.EQDSK",
         format="geqdsk").entry
 
-    eq_conf.coordinate_system = {"grid": {"dim1": 256, "dim2": 256}}
+    eq_conf.coordinate_system = {"grid": {"dim1": 100, "dim2": 256}}
 
     eq_slice = tok.equilibrium.time_slice.insert(eq_conf, time=0.0)
 
@@ -51,7 +50,7 @@ if __name__ == "__main__":
                   ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
     if True:
         eq_profile = tok.equilibrium.current_state.profiles_1d
-    
+
         plot_profiles(
             [
                 (eq_profile.dpressure_dpsi,                                                       r"$dP/d\psi$"),
@@ -195,14 +194,20 @@ if __name__ == "__main__":
                 ],
 
                 # [
-                (Function(baseline["x"].values, baseline["Zeff"].values),                 r"$Z_{eff}^{\star}$"),
-                (core_profile.zeff,                                                               r"$z_{eff}$"),
+                (Function(baseline["x"].values, baseline["Zeff"].values),                     r"$Z_{eff}^{\star}$"),
+                (core_profile.zeff,                                                                   r"$z_{eff}$"),
                 # ],
                 # [
                 (core_profile.j_ohmic,                                                              r"$j_{ohmic}$"),
                 (Function(baseline["x"].values, baseline["Joh"].values),                       r"$j_{oh}^{\star}$"),
                 # ],
                 (core_profile.grid.psi,                                                                  r"$\psi$"),
+                (core_profile.electrons.pressure,                                                        r"$p_e $"),
+                (core_profile.electrons.density,                                                         r"$n_e $"),
+                (core_profile.electrons.temperature,                                                     r"$T_e $"),
+                (core_profile.electrons.pressure.derivative,                                     r"$p_e^{\prime}$"),
+                (core_profile.electrons.density.derivative,                                      r"$n_e^{\prime}$"),
+                (core_profile.electrons.temperature.derivative,                                  r"$T_e^{\prime}$"),
 
             ],
             x_axis=(core_profile.grid.rho_tor_norm,                                   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
@@ -272,7 +277,8 @@ if __name__ == "__main__":
                 [
                     (Function(baseline["x"].values, baseline["Joh"].values*1.0e6 / baseline["U"].values * \
                               (2.0*scipy.constants.pi * core_profile_slice.vacuum_toroidal_field.r0)),     r"$\sigma_{\parallel}^{\star}$"),
-                    (core_transport1d.conductivity_parallel*11/14,                       r"$\sigma_{\parallel}^{wesson}$"),
+                    (core_transport1d.conductivity_parallel*11/14,
+                     r"$\sigma_{\parallel}^{wesson}$"),
                 ],
                 [
                     (Function(baseline["x"].values, baseline["Jbs"].values*1.0e6),     r"$j_{bootstrap}^{\star}$"),

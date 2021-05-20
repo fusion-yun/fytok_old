@@ -69,7 +69,7 @@ class NeoClassical(CoreTransport.Model):
             (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000))*(Te >= 10)
 
         # (17.3 - 0.5*np.log(Ne/1e20) + 1.5*np.log(Te/1000))*(Te >= 10)
-        logger.debug(lnCoul)
+        
         # electron collision time , eq 14.6.1
         tau_e = np.asarray(1.09e16*((Te/1000)**(3/2))/Ne/lnCoul)
 
