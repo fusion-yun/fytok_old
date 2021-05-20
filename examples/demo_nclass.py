@@ -38,7 +38,7 @@ if __name__ == "__main__":
     eq_slice = tok.equilibrium.time_slice.insert(eq_conf, time=0.0)
 
     ###################################################################################################
-    if True:
+    if False:
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
                   pf_active={"facecolor": 'red'},
@@ -79,6 +79,19 @@ if __name__ == "__main__":
                     (Function(baseline["Fp"].values, baseline["Jtot"].values*1e6),   r"$j_{\parallel}^{\star}$"),
                     (eq_profile.j_parallel,                                                  r"$j_{\parallel}$"),
                 ],
+                [
+                    (Function(baseline["Fp"].values, baseline["shif"].values), r"$\Delta^{\star}$ shafranov shift"),
+                    (eq_profile.geometric_axis.r-eq_slice.vacuum_toroidal_field.r0,               r"$\Delta$ "),
+                ],
+
+                # (eq_profile.gm1,                                             r"$gm1=\left<\frac{1}{R^2}\right>$"),
+                # (eq_profile.gm2,                    r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
+                # (eq_profile.gm3,                                r"$gm3=\left<\left|\nabla \rho\right|^2\right>$"),
+                # (eq_profile.gm7,                                  r"$gm7=\left<\left|\nabla \rho\right|\right>$"),
+                # (eq_profile.dphi_dpsi,                                                  r"$\frac{d\phi}{d\psi}$"),
+                # (eq_profile.drho_tor_dpsi,                                        r"$\frac{d\rho_{tor}}{d\psi}$"),
+                # (eq_profile.dvolume_drho_tor,                                              r"$\frac{dV}{d\rho}$"),
+                # (eq_profile.dpsi_drho_tor,                                        r"$\frac{d\psi}{d\rho_{tor}}$"),
                 # [
                 #     (eq_profile.geometric_axis.r,                                     r"$geometric_{axis.r}$"),
                 #     (eq_profile.r_inboard,                                                   r"$r_{inboard}$"),
@@ -94,14 +107,6 @@ if __name__ == "__main__":
                 #      r"$\int \frac{dV}{d\psi}  d\psi$"),
                 # ],
 
-                (eq_profile.gm1,                                             r"$gm1=\left<\frac{1}{R^2}\right>$"),
-                (eq_profile.gm2,                    r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
-                (eq_profile.gm3,                                r"$gm3=\left<\left|\nabla \rho\right|^2\right>$"),
-                (eq_profile.gm7,                                  r"$gm7=\left<\left|\nabla \rho\right|\right>$"),
-                (eq_profile.dphi_dpsi,                                                  r"$\frac{d\phi}{d\psi}$"),
-                (eq_profile.drho_tor_dpsi,                                        r"$\frac{d\rho_{tor}}{d\psi}$"),
-                (eq_profile.dvolume_drho_tor,                                              r"$\frac{dV}{d\rho}$"),
-                (eq_profile.dpsi_drho_tor,                                        r"$\frac{d\psi}{d\rho_{tor}}$"),
                 # [
                 #     (eq.coordinate_system.surface_integrate2(lambda r, z:1.0/r**2), \
                 #      r"$\left<\frac{1}{R^2}\right>$"),
@@ -176,7 +181,6 @@ if __name__ == "__main__":
                                                                 vacuum_toroidal_field=eq_slice.vacuum_toroidal_field)
     if True:
         core_profile = core_profile_slice.profiles_1d
-
         plot_profiles(
             [
                 [
@@ -234,7 +238,7 @@ if __name__ == "__main__":
 
         # core_transport1d = core_transport.current_state.profiles_1d
         core_transport1d = core_transport.model[0].profiles_1d[-1]
-         
+
     # if False:
         plot_profiles(
             [
@@ -256,21 +260,18 @@ if __name__ == "__main__":
                 # ],
 
                 # (Function(baseline["x"].values, baseline["Xi"].values),          r"$\chi_{i}^{\star}$"),
-                [
-                    (Function(baseline["x"].values, baseline["XiNC"].values*0.2),     r"$0.2 \chi_{i,nc}^{\star}$"),
-                    # (core_transport1d.electrons.energy.d,                                         r"$\chi_e$"),
-                    # *[(ion.energy.d,               f"$\chi_{{{ion.label}}},nclass$")
-                    #   for ion in core_transport.model[1].profiles_1d[-1].ion],
-                    *[(ion.energy.d,               f"$\chi_{{{ion.label},wesson}}$")
-                      for ion in core_transport1d.ion],
-                ],
                 # [
                 #     (core_transport1d.electrons.energy.v,                                         r"$v_{Te}$"),
                 #     *[(ion.energy.v,                f"$v_{{T,{ion.label}}}$") for ion in core_transport1d.ion],
                 # ],
                 [
-                    (Function(baseline["x"].values, baseline["Zeff"].values),                 r"$Z_{eff}^{\star}$"),
-                    (core_profile.zeff,                                                         r"$z_{eff}$"),
+                    (Function(baseline["x"].values, np.log(baseline["XiNC"].values)),
+                     r"$ln \chi_{i,nc}^{\star}$", {"color": "blue", "linestyle": "dashed", "marker": "."}),
+                    * [(np.log(ion.energy.d),   f"$ln \chi_{{{ion.label},wesson}}$") for ion in core_transport1d.ion],
+                ],
+                [
+                    (Function(baseline["x"].values, baseline["Zeff"].values),                r"$Z_{eff}^{\star}$"),
+                    (core_profile.zeff,                                                              r"$z_{eff}$"),
                 ],
                 [
                     (Function(baseline["x"].values, baseline["Joh"].values*1.0e6 / baseline["U"].values * \

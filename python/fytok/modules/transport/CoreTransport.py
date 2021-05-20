@@ -14,7 +14,7 @@ from spdm.util.logger import logger
 
 from ..common.IDS import IDS, IDSCode
 from ..common.Misc import Identifier
-from ..common.Species import Species, SpeciesElectron, SpeciesIon
+from ..common.Species import Species, SpeciesElectron, SpeciesIon, SpeciesIonState
 from .CoreProfiles import CoreProfiles, CoreProfilesTimeSlice
 from .MagneticCoordSystem import RadialGrid
 
@@ -49,22 +49,29 @@ class CoreTransportElectrons(SpeciesElectron):
         return TransportCoeff(self["energy"],  parent=self._parent)
 
 
-class CoreTransportIon(SpeciesIon):
-    def __init__(self, *args, **kwargs):
+class CoreTransportIonState(SpeciesIonState):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
     @cached_property
     def particles(self) -> TransportCoeff:
-        return TransportCoeff(self["particles"], parent=self._parent)
+        """Transport quantities related to density equation of the charge state considered (thermal+non-thermal)	structure	"""
+        return TransportCoeff(self["particles"], parent=self)
 
     @cached_property
     def energy(self) -> TransportCoeff:
-        return TransportCoeff(self["energy"],  parent=self._parent)
+        """Transport quantities related to the energy equation of the charge state considered	structure	"""
+        return TransportCoeff(self["energy"], parent=self)
+
+    @cached_property
+    def momentum(self) -> TransportCoeff:
+        """Transport coefficients related to the state momentum equations for various components (directions)"""
+        return TransportCoeff(self["momentum"], parent=self)
 
 
-class CoreTransportMomentum(Profiles):
-    def __init__(self, *args,  axis=None, parent=None, **kwargs):
-        super().__init__(*args, axis=axis if axis is not None else parent.grid.rho_tor_norm,  **kwargs)
+class CoreTransportMomentum(Dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args,  **kwargs)
 
     @cached_property
     def radial(self) -> TransportCoeff:
@@ -85,6 +92,27 @@ class CoreTransportMomentum(Profiles):
     @cached_property
     def toroidal(self) -> TransportCoeff:
         return TransportCoeff(self["toroidal"], parent=self._parent)
+
+
+class CoreTransportIon(SpeciesIon):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @cached_property
+    def particles(self) -> TransportCoeff:
+        return TransportCoeff(self["particles"], parent=self._parent)
+
+    @cached_property
+    def energy(self) -> TransportCoeff:
+        return TransportCoeff(self["energy"],  parent=self._parent)
+
+    @cached_property
+    def momentum(self) -> CoreTransportMomentum:
+        return CoreTransportMomentum(self["momentum"], parent=self._parent)
+
+    @cached_property
+    def state(self) -> List[CoreTransportIonState]:
+        return List[CoreTransportIonState](self["state"], parent=self)
 
 
 class CoreTransportNeutral(Species):

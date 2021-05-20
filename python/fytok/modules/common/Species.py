@@ -1,4 +1,5 @@
 import collections
+from dataclasses import dataclass
 from functools import cached_property
 import scipy.constants
 import numpy as np
@@ -27,14 +28,8 @@ class SpeciesElement(Dict):
         return self["z_n"]
 
 
-class SpeciesState(Dict):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
-
 class Species(Profiles):
     Element = SpeciesElement
-    State = SpeciesState
 
     def __init__(self,   *args, axis=None, parent=None,  **kwargs):
         super().__init__(*args, axis=axis if axis is not None else parent.grid.rho_tor_norm, parent=parent, **kwargs)
@@ -61,10 +56,7 @@ class Species(Profiles):
     def z(self) -> float:
         return NotImplemented
 
-    @property
-    def state(self) -> SpeciesState:
-        return SpeciesState(self["state"],  parent=self)
-
+  
 
 class SpeciesElectron(Species):
     def __init__(self, *args, **kwargs):
@@ -84,6 +76,41 @@ class SpeciesElectron(Species):
         return -1
 
 
+class SpeciesIonState(Dict):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+    @cached_property
+    def z_min(self):
+        """Minimum Z of the charge state bundle {dynamic} [Elementary Charge Unit]	FLT_0D	"""
+        return self["z_min"]
+
+    @cached_property
+    def z_max(self):
+        """Maximum Z of the charge state bundle {dynamic} [Elementary Charge Unit]	FLT_0D	"""
+        return self["z_max"]
+
+    @cached_property
+    def label(self):
+        """String identifying charge state (e.g. C+, C+2 , C+3, C+4, C+5, C+6, ...) {dynamic}	STR_0D	"""
+        return self["label"]
+
+    @cached_property
+    def vibrational_level(self):
+        """Vibrational level (can be bundled) {dynamic} [Elementary Charge Unit]	FLT_0D	"""
+        return self["vibrational_level"]
+
+    @cached_property
+    def vibrational_mode(self):
+        """Vibrational mode of this state, e.g. "A_g". Need to define, or adopt a standard nomenclature. {dynamic}	STR_0D	"""
+        return self["vibrational_mode"]
+
+    @cached_property
+    def electron_configuration(self):
+        """Configuration of atomic orbitals of this state, e.g. 1s2-2s1 {dynamic}	STR_0D	"""
+        return self["electron_configuration"]
+
+
 class SpeciesIon(Species):
     def __init__(self, *args,  **kwargs):
         super().__init__(*args,   **kwargs)
@@ -101,7 +128,7 @@ class SpeciesIon(Species):
     @cached_property
     def neutral_index(self) -> int:
         """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
-        return self["neutral_index"]
+        return self._entry.get("neutral_index")
 
     @cached_property
     def z_ion_1d(self):
@@ -114,3 +141,13 @@ class SpeciesIon(Species):
         """Average square charge of the ion species (sum of states square charge weighted by
         state density and divided by ion density) {dynamic} [-]  """
         return NotImplemented
+
+    @cached_property
+    def multiple_states_flag(self) -> int:
+        """Multiple states calculation flag : 0-Only one state is considered; 1-Multiple states are considered and are described in the state  {dynamic}    """
+        return self._entry.get("multiple_states_flag") or 0
+
+    @cached_property
+    def state(self):
+        """Quantities related to the different states of the species (ionisation, energy, excitation, ...)  struct_array [max_size=unbounded]  1- 1...N"""
+        return List[SpeciesIonState](self["state"], parent=self)

@@ -16,9 +16,9 @@ if __name__ == "__main__":
                 # (profile["Nd+t"].values,                        r"Nd,thermal + Nt thermalised fuel density"),
                 (profile["NE"].values
                  - profile["Nd+t"].values
-                 - profile["Nalf"].values*2,      r"$N_{e}-N_{DT}-N_{\alpha}*2$"),
+                 - profile["Nalf"].values*2,                                r"$N_{e}-N_{DT}-N_{\alpha}*2$"),
                 (profile["Nz"].values*profile["Zeff"].values,                                   r"$N_{z}$"),
-                (profile["Nb"].values,                                   r"fast NBI deuterium density"),
+                (profile["Nb"].values,                                       r"fast NBI deuterium density"),
 
                 # (profile["NE"].values
                 #  - profile["Nd+t"].values
@@ -126,11 +126,12 @@ if __name__ == "__main__":
                 (profile["Pix"].values,                         r"auxiliary heating"),
                 (profile["Pneu"].values,  r"?electron thermal losses due to ionzation of cold neutrals"),
             ],
-            (profile["Poh"].values, r"Joul heating power density $\sigma_{\parallel}\cdot E^2$"),
+            (profile["Poh"].values,        r"Joul heating power density $\sigma_{\parallel}\cdot E^2$"),
             (profile["Xi"].values,                                   r"ion heat conductivity $\chi_i$"),
             (profile["XiNC"].values,                 r"neoclassical ion heat conductivity $\chi_{NC}$"),
             (profile["U"].values,                                                        r"$V_{loop}$"),
-
+            (profile["shif"].values,                                                r"shafranov shift"),
+            (profile["shif"].values,                                                r"shafranov shift"),
 
         ],
         x_axis=(profile["x"].values,                                   r"$\rho_{N}$"),

@@ -65,8 +65,8 @@ class NeoClassical(CoreTransport.Model):
 
         # Coulomb logarithm
         #  Ch.14.5 p727 Tokamaks 2003
-        # lnCoul = (14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) #* (Te < 10) +\
-        lnCoul = (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000))*(Te >= 10)
+        lnCoul = (14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +\
+            (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000))*(Te >= 10)
         # (17.3 - 0.5*np.log(Ne/1e20) + 1.5*np.log(Te/1000))*(Te >= 10)
 
         # lnCoul = 14
@@ -109,8 +109,8 @@ class NeoClassical(CoreTransport.Model):
         ###########################################################################################
         #  Sec 14.11 Chang-0Hinton formula for \Chi_i
 
-        # Shafranov shift
-        delta_ = Function(rho_tor, np.array(equilibrium.profiles_1d.geometric_axis.r-R0)).derivative
+        # Shafranov shift 
+        delta_ = Function(rho_tor, np.array(equilibrium.profiles_1d.geometric_axis.r(psi_norm)-R0)).derivative
 
         # impurity ions
         nZI = 0.0
