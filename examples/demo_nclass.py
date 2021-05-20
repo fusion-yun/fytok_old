@@ -114,12 +114,15 @@ if __name__ == "__main__":
 
     ###################################################################################################
 
-    ne = Function(baseline["x"].values, baseline["NE"].values*1.0e19)
     Te = Function(baseline["x"].values, baseline["TE"].values*1000)
-    nDT = Function(baseline["x"].values, baseline["Nd+t"].values*1.0e19)
     Ti = Function(baseline["x"].values, baseline["TI"].values*1000)
-    n_alpha = Function(baseline["x"].values, baseline["Nalf"].values*1000)
-    Zeff = Function(baseline["x"].values, baseline["Zeff"].values)
+
+    ne = Function(baseline["x"].values, baseline["NE"].values*1.0e19)
+    nHe = Function(baseline["x"].values, baseline["Nalf"].values*1.0e19)
+    # nDT = Function(baseline["x"].values, baseline["Nd+t"].values*1.0e19)
+    nDT = ne * (1.0 - 0.02*4 - 0.0012*18) - nHe*2.0
+
+    # Zeff = Function(baseline["x"].values, baseline["Zeff"].values)
 
     core_profiles_conf = {
         "profiles_1d": {
@@ -132,7 +135,6 @@ if __name__ == "__main__":
                 {
                     "label": "H^+",
                     "z_ion": 1,
-                    "neutral_index": 1,
                     "element": [{"a": 1, "z_n": 1, "atoms_n": 1}],
                     "density":  nDT/2.0,
                     "temperature": Ti,
@@ -141,36 +143,32 @@ if __name__ == "__main__":
                     "label": "D^+",
                     "z_ion": 1,
                     "element": [{"a": 2, "z_n": 1, "atoms_n": 1}],
-                    "neutral_index": 2,
                     "density":  nDT/2.0,
                     "temperature": Ti,
                 },
                 {
-                    "label": r"\alpha^{2+}",
+                    "label": r"He^{2}",
                     "z_ion": 2,
                     "element": [{"a": 4, "z_n": 1, "atoms_n": 1}],
-                    "neutral_index": 2,
-                    "density": n_alpha,
+                    "density": nHe,
                     "temperature": Ti,
                 },
                 {
-                    "label": "Be^{2+}",
-                    "z_ion": 2,
+                    "label": "Be^{4}",
+                    "z_ion": 4,
                     "element": [{"a": 9, "z_n": 1, "atoms_n":   1}],
-                    "neutral_index": 4,
                     "density":    0.02*ne,
                     "temperature": Ti,
                 },
                 {
-                    "label": "Ar^+",
-                    "z_ion": 1,
+                    "label": "Ar^{18}",
+                    "z_ion": 18,
                     "element": [{"a": 40, "z_n": 1, "atoms_n":   1}],
-                    "neutral_index": 18,
                     "density":    0.0012*ne,
                     "temperature": Ti,
                 }
             ],
-            "zeff": Zeff
+            # "zeff": Zeff
         }}
 
     core_profile_slice = tok.core_profiles.time_slice.push_back(core_profiles_conf,
@@ -193,14 +191,14 @@ if __name__ == "__main__":
                     *[(ion.temperature,                        f"$T_{{{ion.label}}}$") for ion in core_profile.ion],
                 ],
 
-                # [
-                (Function(baseline["x"].values, baseline["Zeff"].values),                     r"$Z_{eff}^{\star}$"),
-                (core_profile.zeff,                                                                   r"$z_{eff}$"),
-                # ],
-                # [
-                (core_profile.j_ohmic,                                                              r"$j_{ohmic}$"),
-                (Function(baseline["x"].values, baseline["Joh"].values),                       r"$j_{oh}^{\star}$"),
-                # ],
+                [
+                    (Function(baseline["x"].values, baseline["Zeff"].values),                     r"$Z_{eff}^{\star}$"),
+                    (core_profile.zeff,                                                                   r"$z_{eff}$"),
+                ],
+                [
+                    (core_profile.j_ohmic,                                                              r"$j_{ohmic}$"),
+                    (Function(baseline["x"].values, baseline["Joh"].values),                       r"$j_{oh}^{\star}$"),
+                ],
                 (core_profile.grid.psi,                                                                  r"$\psi$"),
                 (core_profile.electrons.pressure,                                                        r"$p_e $"),
                 (core_profile.electrons.density,                                                         r"$n_e $"),
@@ -236,7 +234,7 @@ if __name__ == "__main__":
 
         # core_transport1d = core_transport.current_state.profiles_1d
         core_transport1d = core_transport.model[0].profiles_1d[-1]
-        logger.debug(core_profile_slice.vacuum_toroidal_field.r0)
+         
     # if False:
         plot_profiles(
             [
@@ -272,7 +270,7 @@ if __name__ == "__main__":
                 # ],
                 [
                     (Function(baseline["x"].values, baseline["Zeff"].values),                 r"$Z_{eff}^{\star}$"),
-                    (core_profile.zeff,                                                               r"$z_{eff}$"),
+                    (core_profile.zeff,                                                         r"$z_{eff}$"),
                 ],
                 [
                     (Function(baseline["x"].values, baseline["Joh"].values*1.0e6 / baseline["U"].values * \

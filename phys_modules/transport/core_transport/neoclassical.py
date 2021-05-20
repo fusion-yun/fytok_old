@@ -65,11 +65,12 @@ class NeoClassical(CoreTransport.Model):
 
         # Coulomb logarithm
         #  Ch.14.5 p727 Tokamaks 2003
-        lnCoul = (14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +\
-            (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000))*(Te >= 10)
-
+        # lnCoul = (14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) #* (Te < 10) +\
+        lnCoul = (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000))*(Te >= 10)
         # (17.3 - 0.5*np.log(Ne/1e20) + 1.5*np.log(Te/1000))*(Te >= 10)
-        
+
+        # lnCoul = 14
+
         # electron collision time , eq 14.6.1
         tau_e = np.asarray(1.09e16*((Te/1000)**(3/2))/Ne/lnCoul)
 

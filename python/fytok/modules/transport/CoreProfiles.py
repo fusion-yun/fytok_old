@@ -354,10 +354,10 @@ class CoreProfiles1D(Profiles):
         if isinstance(d, np.ndarray) or d != None:
             return d
         else:
-            zeff = 0.0
-            for ion in self.ion:
-                zeff = zeff + np.asarray(ion.z_ion*ion.z_ion*ion.density)
-            return zeff / self.electrons.density
+            # zeff = 0.0
+            # for ion in self.ion:
+            #     zeff = zeff + np.asarray(ion.z_ion*ion.z_ion*ion.density)
+            return sum([np.asarray(ion.z_ion*ion.z_ion*ion.density) for ion in self.ion]) / self.electrons.density
 
     @ cached_property
     def zeff_fit(self):

@@ -12,17 +12,25 @@ if __name__ == "__main__":
     plot_profiles(
         [
             [
-                (profile["NE"].values,                                                           r"$N_{e}$"),
-                (profile["Nd+t"].values,                        r"Nd,thermal + Nt thermalised fuel density"),
-                (profile["Nalf"].values,                                              r"He + alpha density"),
-                (profile["Nz"].values,                                                  r"impurity density"),
-                (profile["Nb"].values,                                        r"fast NBI deuterium density"),
+                # (profile["NE"].values,                                                           r"$N_{e}$"),
+                # (profile["Nd+t"].values,                        r"Nd,thermal + Nt thermalised fuel density"),
+                (profile["NE"].values
+                 - profile["Nd+t"].values
+                 - profile["Nalf"].values*2,      r"$N_{e}-N_{DT}-N_{\alpha}*2$"),
+                (profile["Nz"].values*profile["Zeff"].values,                                   r"$N_{z}$"),
+                (profile["Nb"].values,                                   r"fast NBI deuterium density"),
+
                 # (profile["NE"].values
                 #  - profile["Nd+t"].values
                 #  - profile["Nz"].values*profile["Zeff"].values
-                #  - profile["Nalf"].values,
+                #  - profile["Nalf"].values*2,
                 #  r"rms",  {"color": "red", "linestyle": "dashed"}),
 
+            ],
+            [
+                (profile["Nalf"].values,                                              r"He + alpha density"),
+                (profile["Nz"].values,                                                  r"impurity density"),
+                (profile["Nb"].values,                                        r"fast NBI deuterium density"),
             ],
             [
                 (profile["Nalf"].values,                                              r"He + alpha density"),
