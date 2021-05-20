@@ -39,7 +39,7 @@ if __name__ == "__main__":
     eq_slice = tok.equilibrium.time_slice.insert(eq_conf, time=0.0)
 
     ###################################################################################################
-    if False:
+    if True:
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
                   pf_active={"facecolor": 'red'},
