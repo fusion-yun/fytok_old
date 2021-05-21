@@ -7,15 +7,12 @@ import numpy as np
 import scipy
 import scipy.constants
 import scipy.integrate
-from spdm.data.AttributeTree import AttributeTree
 from spdm.data.Field import Field
 from spdm.data.Function import Expression, Function
 from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
-from spdm.data.TimeSeries import TimeSeries, TimeSlice
-from spdm.flow.Actor import Actor
 from spdm.util.logger import logger
-from spdm.util.utilities import convert_to_named_tuple, try_get
+from spdm.util.utilities import try_get
 
 from ..common.GGD import GGD
 from ..common.IDS import IDS
@@ -28,7 +25,7 @@ EPS = np.finfo(float).eps
 TWOPI = 2.0*scipy.constants.pi
 
 
-class EquilibriumConstraints(AttributeTree):
+class EquilibriumConstraints(Dict):
     r"""
         In case of equilibrium reconstruction under constraints, measurements used to constrain the equilibrium,
         reconstructed values and accuracy of the fit. The names of the child nodes correspond to the following
@@ -633,7 +630,7 @@ class EquilibriumBoundarySeparatrix(Profiles):
         super().__init__(*args, **kwargs)
 
 
-class EquilibriumTimeSlice(TimeSlice):
+class EquilibriumTimeSlice(Dict):
     """
        Time slice of   Equilibrium
     """
@@ -822,42 +819,30 @@ class Equilibrium(IDS):
         #    Poloidal plane coordinate   : (\rho,\theta,\phi)
     """
     _IDS = "equilibrium"
-    _stats_ = "time_slice", "grid_ggd"
-    TimeSlice = EquilibriumTimeSlice
 
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    @cached_property
-    def time_slice(self) -> TimeSeries[EquilibriumTimeSlice]:
-        return TimeSeries[EquilibriumTimeSlice](self["time_slice"], parent=self)
-
-    @cached_property
-    def grid_ggd(self) -> TimeSeries[GGD]:
-        return TimeSeries[GGD](self["grid_ggd"], parent=self)
-
     @property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        r0 = np.asarray([t_slice.vacuum_toroidal_field.r0 for t_slice in self.time_slice])
-        b0 = np.asarray([t_slice.vacuum_toroidal_field.b0 for t_slice in self.time_slice])
-        return VacuumToroidalField(r0[0], b0)
+        return VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
 
-    @property
-    def current_state(self) -> EquilibriumTimeSlice:
-        return self.time_slice[-1]
+    @cached_property
+    def grid_ggd(self) -> GGD:
+        return GGD(self["grid_ggd"], parent=self)
 
-    @property
-    def previous_state(self) -> EquilibriumTimeSlice:
-        return self.time_slice[-2]
+    @cached_property
+    def time_slice(self) -> EquilibriumTimeSlice:
+        return EquilibriumTimeSlice(self["time_slice"], parent=self)
 
     ####################################################################################
     # Plot profiles
 
-    def plot(self, axis=None, *args, time: float = None, time_slice=True, ggd=False, **kwargs):
+    def plot(self, axis=None, *args,   time_slice=True, ggd=False, **kwargs):
         if time_slice is not False:
-            axis = self.time_slice(time).plot(axis, *args, **kwargs)
+            axis = self.time_slice.plot(axis, *args, **kwargs)
         if ggd:
-            axis = self.grid_ggd(time).plot(axis, *args, **kwargs)
+            axis = self.grid_ggd.plot(axis, *args, **kwargs)
         return axis
 
     def fetch_profile(self, d):

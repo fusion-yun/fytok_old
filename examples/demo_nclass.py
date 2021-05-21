@@ -5,6 +5,8 @@ import pandas as pd
 import scipy.constants
 
 from fytok.modules.transport.CoreTransport import CoreTransport
+from fytok.modules.transport.CoreSources import CoreSources
+
 from fytok.Tokamak import Tokamak
 from spdm.data.Collection import Collection
 from spdm.data.File import File
@@ -228,7 +230,13 @@ if __name__ == "__main__":
             # {"code": {"name": "spitzer"}},
             # {"code": {"name": "gyroBhom"}},
         ]})
-
+        core_transport = CoreSources({"source": [
+            {"code": {"name": "neoclassical"}},
+            # {"code": {"name": "nclass"}},
+            # {"code": {"name": "spitzer"}},
+            # {"code": {"name": "gyroBhom"}},
+        ]})
+        
         core_transport.advance(dt=0.1,
                                equilibrium=tok.equilibrium.current_state,
                                core_profiles=tok.core_profiles.current_state)

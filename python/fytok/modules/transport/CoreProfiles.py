@@ -3,12 +3,9 @@ from functools import cached_property
 
 import numpy as np
 import scipy.constants
-from spdm.data.AoS import AoS, SoA
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
-from spdm.data.TimeSeries import TimeSeries, TimeSlice
-from spdm.flow.Actor import Actor
 from spdm.util.logger import logger
 
 from ..common.IDS import IDS
@@ -493,60 +490,23 @@ class CoreProfilesGlobalQuantities(Dict):
         super().__init__(*args,  **kwargs)
 
 
-class CoreProfilesTimeSlice(TimeSlice):
-    def __init__(self,  *args, grid=None, vacuum_toroidal_field: VacuumToroidalField = None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._grid = grid
-        self._vacuum_toroidal_field = vacuum_toroidal_field or \
-            VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
-
-    @ property
-    def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        return self._vacuum_toroidal_field
-
-    @ cached_property
-    def profiles_1d(self) -> CoreProfiles1D:
-        return CoreProfiles1D(self["profiles_1d"], grid=self._grid, parent=self)
-
-    @ cached_property
-    def global_quantities(self) -> CoreProfilesGlobalQuantities:
-        return CoreProfilesGlobalQuantities(self["global_quantities"], parent=self)
-
-
-class CoreProfiles(IDS, Actor):
+class CoreProfiles(IDS):
     """CoreProfiles
     """
     _IDS = "core_profiles"
-    _stats_ = "time_slice",
-    TimeSlice = CoreProfilesTimeSlice
 
-    def __init__(self,  *args, ** kwargs):
+    def __init__(self,  *args, grid: RadialGrid = None, ** kwargs):
         super().__init__(*args,  ** kwargs)
+        self._grid = grid
 
-    @ cached_property
-    def time_slice(self) -> TimeSeries[TimeSlice]:
-        return TimeSeries[CoreProfilesTimeSlice](self["time_slice"], parent=self)
-
-    @ property
-    def previous_state(self) -> CoreProfilesTimeSlice:
-        return self.time_slice[-2]
-
-    @ property
-    def current_state(self) -> CoreProfilesTimeSlice:
-        return self.time_slice[-1]
-
-    @ property
+    @cached_property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        r0 = np.asarray([t_slice.vacuum_toroidal_field.r0 for t_slice in self.time_slice])
-        b0 = np.asarray([t_slice.vacuum_toroidal_field.b0 for t_slice in self.time_slice])
-        return VacuumToroidalField(r0[0], b0)
+        return VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
 
-    @ property
-    def profiles_1d(self) -> List[CoreProfiles1D]:
-        logger.warning(f"NOT IMPLEMENTED!")
-        return List[CoreProfiles1D](SoA(self.time_slice, "profiles_1d"), parent=self)
+    @cached_property
+    def profiles_1d(self) -> CoreProfiles1D:
+        return CoreProfiles1D(self["profiles_1d"], grid=self._grid, parent=self)
 
-    @ property
+    @cached_property
     def global_quantities(self) -> CoreProfilesGlobalQuantities:
-        logger.warning(f"NOT IMPLEMENTED!")
-        return CoreProfilesGlobalQuantities(SoA(self.time_slice, "global_quantities", pos=1), parent=self)
+        return CoreProfilesGlobalQuantities(self["global_quantities"], parent=self)

@@ -1,27 +1,23 @@
 import collections
+from dataclasses import dataclass
 from functools import cached_property
-from typing import overload
 
 import numpy as np
-from spdm.data.AttributeTree import AttributeTree
-from spdm.data.Combiner import Combiner
 from spdm.data.Function import Function
-from spdm.data.Node import Dict, List, Node
+from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
-from spdm.data.TimeSeries import TimeSequence, TimeSeries, TimeSlice
-from spdm.flow.Actor import Actor, ActorBundle
 from spdm.util.logger import logger
 
 from ..common.IDS import IDS, IDSCode
 from ..common.Misc import Identifier, VacuumToroidalField
 from ..common.Species import Species, SpeciesElectron, SpeciesIon, SpeciesIonState
-from .CoreProfiles import CoreProfiles, CoreProfilesTimeSlice
+from .CoreProfiles import CoreProfiles
 from .MagneticCoordSystem import RadialGrid
 
 
 class TransportCoeff(Dict):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args,   **kwargs)
+        super().__init__(*args,  ** kwargs)
 
     @cached_property
     def d(self) -> Function:
@@ -133,17 +129,16 @@ class CoreTransportNeutral(Species):
         return TransportCoeff(self["energy"],  parent=self._parent)
 
 
-class CoreTransportProfiles1D(TimeSlice):
+class CoreTransportProfiles1D(Profiles):
     Ion = CoreTransportIon
     Neutral = CoreTransportNeutral
     Electrons = CoreTransportElectrons
     Momentum = CoreTransportMomentum
 
-    def __init__(self, d=None, *args,  parent=None, ** kwargs):
-        super().__init__(d, parent=parent)
-        self.update(*args, **kwargs)
+    def __init__(self, *args, ** kwargs):
+        super().__init__(*args,   **kwargs)
 
-    def update(self, *args, grid=True, core_profiles: CoreProfilesTimeSlice = None,  **kwargs):
+    def update(self, *args, grid=True, core_profiles: CoreProfiles = None,  **kwargs):
 
         need_reset = False
         if grid is True and core_profiles is not None:
@@ -154,7 +149,6 @@ class CoreTransportProfiles1D(TimeSlice):
             self._grid = grid
 
         if core_profiles is not None:
-
             if self['ion'] == None:
                 ion_desc = [
                     {
@@ -240,28 +234,28 @@ class CoreTransportProfiles1D(TimeSlice):
         return Function(self.grid_flux.rho_tor_norm, self["e_field_radial"])
 
 
-class CoreTransportModel(Dict[str, Node], Actor):
+class CoreTransportModel(Dict):
 
     _actor_module_prefix = "transport.core_transport."
-
-    TimeSlice = CoreTransportProfiles1D
 
     Profiles1D = CoreTransportProfiles1D
 
     def __init__(self, d=None, *args,  **kwargs):
-        super(Dict, self).__init__(
+        super().__init__(
             collections.ChainMap(d or {}, {"identifier": {"name":  "unspecified", "index": 0,
                                                           "description": f"{self.__class__.__name__}"}}),
             * args, **kwargs)
-        super(Actor, self).__init__()
+
+    def update(self, *args, **kwargs) -> float:
+        return self.profiles_1d.update(*args, **kwargs)
 
     @cached_property
     def code(self) -> IDSCode:
         return IDSCode(self["code"])
 
     @cached_property
-    def comment(self):
-        return self["comment"]
+    def comment(self) -> str:
+        return self["comment"] or ""
 
     @cached_property
     def identifier(self) -> Identifier:
@@ -292,26 +286,8 @@ class CoreTransportModel(Dict[str, Node], Actor):
         return self["flux_multiplier"] or 1.0
 
     @cached_property
-    def profiles_1d(self) -> TimeSeries[Profiles1D]:
-        return TimeSeries[self.__class__.Profiles1D](self["profiles_1d"], parent=self)
-
-    def advance(self,   *args,  time=None, dt=None, **kwargs):
-        time = super().advance(time=time, dt=dt)
-        self.profiles_1d.insert(*args,  time=time, **kwargs)
-        if len(args)+len(kwargs) > 0:
-            self.update(*args,  **kwargs)
-
-    def update(self, *args, **kwargs):
-        assert(len(self) > 0)
-        return self.profiles_1d[-1].update(*args, **kwargs)
-
-    @property
-    def current_state(self) -> AttributeTree:
-        return AttributeTree({"flux_multiplier": self.flux_multiplier, "profiles_1d": self.profiles_1d[-1]}, parent=self)
-
-    @property
-    def previous_state(self) -> AttributeTree:
-        return AttributeTree({"flux_multiplier": self.flux_multiplier, "profiles_1d": self.profiles_1d[-2]}, parent=self)
+    def profiles_1d(self) -> CoreTransportProfiles1D:
+        return self.__class__.Profiles1D(self["profiles_1d"], parent=self)
 
 
 class CoreTransport(IDS):
@@ -328,34 +304,19 @@ class CoreTransport(IDS):
         Note that the energy flux includes the energy transported by the particle flux.
     """
     _IDS = "core_transport"
-    _serialize_ignore = ["profiles_1d", ]
     Model = CoreTransportModel
-    Profiles1D = CoreTransportProfiles1D
-    TimeSlice = CoreTransportProfiles1D
 
-    def __init__(self, *args, parent=None, ** kwargs):
-        super().__init__(*args, parent=parent, **kwargs)
+    def __init__(self, *args, ** kwargs):
+        super().__init__(*args,  **kwargs)
 
     @cached_property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
         return VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
 
     @cached_property
-    def model(self) -> ActorBundle[CoreTransportModel]:
-        return ActorBundle[CoreTransportModel](self["model"],   parent=self)
-
-    @property
-    def current_state(self) -> CoreTransportModel:
-        return self.model.current_state
-
-    @ property
-    def previous_state(self) -> CoreTransportProfiles1D:
-        return self.model.previous_state
-
-    def advance(self, *args, time=None, dt=None,   **kwargs) -> float:
-        time = super().advance(time=time, dt=dt)
-        return self.model.advance(*args, time=time, **kwargs)
+    def model(self) -> List[CoreTransportModel]:
+        return List[CoreTransportModel](self["model"],   parent=self)
 
     def update(self,  *args,  **kwargs) -> float:
-        super().update(*args, **kwargs)
-        return self.model.update(*args,  **kwargs)
+        redisual = sum([model.update(*args,  **kwargs) for model in self.model])
+        return super().update(*args, **kwargs) + redisual

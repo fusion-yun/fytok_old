@@ -28,8 +28,8 @@ class NeoClassical(CoreTransport.Model):
             }}, d or {}), *args, **kwargs)
 
     def update(self, *args,
-               equilibrium: Equilibrium.TimeSlice,
-               core_profiles: CoreProfiles.TimeSlice,
+               equilibrium: Equilibrium,
+               core_profiles: CoreProfiles,
                **kwargs):
 
         super().update(*args, core_profiles=core_profiles, **kwargs)
@@ -74,7 +74,7 @@ class NeoClassical(CoreTransport.Model):
         # electron collision time , eq 14.6.1
         tau_e = np.asarray(1.09e16*((Te/1000)**(3/2))/Ne/lnCoul)
 
-        vTe = np.asarray(np.sqrt(Te*scipy.constants.electron_volt/scipy.constants.electron_mass))
+        vTe = np.asarray(np.sqrt(Te*eV/scipy.constants.electron_mass))
 
         # Larmor radius,   eq 14.7.2
         rho_e = np.asarray(1.07e-4*((Te/1000)**(1/2))/B0)
@@ -109,7 +109,7 @@ class NeoClassical(CoreTransport.Model):
         ###########################################################################################
         #  Sec 14.11 Chang-0Hinton formula for \Chi_i
 
-        # Shafranov shift 
+        # Shafranov shift
         delta_ = Function(rho_tor, np.array(equilibrium.profiles_1d.geometric_axis.r(psi_norm)-R0)).derivative
 
         # impurity ions
@@ -140,7 +140,7 @@ class NeoClassical(CoreTransport.Model):
             tau_i = np.asarray(6.6e17*np.sqrt(mi)*((Ti/1000)**(3/2))/Ni/(1.1*lnCoul))
 
             # thermal velocity
-            v_Ti = np.sqrt(Ti*(scipy.constants.electron_volt/scipy.constants.m_p/mi))
+            v_Ti = np.sqrt(Ti*(eV/scipy.constants.m_p/mi))
 
             nu_i = np.asarray(R0*q/epsilon32/v_Ti/tau_i)
             mu_i = np.asarray(nu_i*(1.0+1.54*alpha))

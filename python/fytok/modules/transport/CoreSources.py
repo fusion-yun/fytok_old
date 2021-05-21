@@ -3,13 +3,9 @@ from functools import cached_property
 
 import numpy as np
 import scipy.constants
-from spdm.data.AttributeTree import AttributeTree
-from spdm.data.Combiner import Combiner
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List, Node
 from spdm.data.Profiles import Profiles
-from spdm.data.TimeSeries import TimeSequence, TimeSeries, TimeSlice
-from spdm.flow.Actor import Actor, ActorBundle
 from spdm.util.logger import logger
 
 from ..common.IDS import IDS
@@ -246,7 +242,7 @@ class CoreSourcesSpecies(Dict):
 #         return CoreSources.Profiles1D(self["profiles_1d"], grid=self._grid,  time=self._time, parent=self)
 
 
-class CoreSourcesSource(Dict[str, Node], Actor):
+class CoreSourcesSource(Dict[str, Node]):
 
     def __init__(self,   *args,  **kwargs):
         super().__init__(*args, **kwargs)
@@ -316,20 +312,32 @@ class CoreSourcesSource(Dict[str, Node], Actor):
     def species(self):
         return CoreSourcesSpecies(self["species"], parent=self)
 
-    @property
-    def global_quantities(self) -> TimeSeries[CoreSourcesGlobalQuantities]:
-        return TimeSeries[CoreSourcesGlobalQuantities](self["global_quantities"], parent=self)
+    @cached_property
+    def global_quantities(self) -> CoreSourcesGlobalQuantities:
+        return CoreSourcesGlobalQuantities(self["global_quantities"], parent=self)
 
-    @property
-    def profiles_1d(self) -> TimeSeries[CoreSourcesProfiles1D]:
-        return TimeSeries[CoreSourcesProfiles1D](self["profiles_1d"], parent=self)
+    @cached_property
+    def profiles_1d(self) -> CoreSourcesProfiles1D:
+        return CoreSourcesProfiles1D(self["profiles_1d"], parent=self)
+
+    def advance(self,   *args,  time=None, dt=None, **kwargs):
+        time = super().advance(time=time, dt=dt)
+        self.profiles_1d.insert(*args,  time=time, **kwargs)
+        self.global_quantities.insert(*args,  time=time, **kwargs)
+        if len(args)+len(kwargs) > 0:
+            self.update(*args,  **kwargs)
+
+    def update(self, *args, **kwargs):
+        assert(len(self.profiles_1d) > 0)
+        res = self.profiles_1d[-1].update(*args, **kwargs)
+        res += self.global_quantities[-1].update(*args, **kwargs)
+        return res
 
 
 class CoreSources(IDS):
     """CoreSources
     """
     _IDS = "core_sources"
-    Profiles1D = CoreSourcesProfiles1D
     Source = CoreSourcesSource
 
     def __init__(self, *args, **kwargs):
@@ -340,5 +348,9 @@ class CoreSources(IDS):
         return VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
 
     @cached_property
-    def source(self) -> ActorBundle[CoreSourcesSource]:
-        return ActorBundle[CoreSourcesSource](self["source"], parent=self)
+    def source(self) -> List[CoreSourcesSource]:
+        return List[CoreSourcesSource](self["source"], parent=self)
+
+    def update(self,  *args,  **kwargs) -> float:
+        redisual = sum([source.update(*args,  **kwargs) for source in self.source])
+        return super().update(*args, **kwargs) + redisual
