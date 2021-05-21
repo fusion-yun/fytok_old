@@ -1,4 +1,5 @@
 
+from external.freegs.freegs import equilibrium
 from logging import log
 import numpy as np
 import pandas as pd
@@ -8,7 +9,6 @@ from fytok.modules.transport.CoreTransport import CoreTransport
 from fytok.modules.transport.CoreSources import CoreSources
 
 from fytok.Tokamak import Tokamak
-from spdm.data.Collection import Collection
 from spdm.data.File import File
 from spdm.data.Function import Function
 from spdm.data.Node import _next_
@@ -24,12 +24,6 @@ if __name__ == "__main__":
     bs_r_nrom = baseline["x"].values
     device = File("/home/salmon/workspace/fytok/data/mapping/ITER/imas/3/static/config.xml").entry
 
-    tok = Tokamak(
-        wall=device.wall,
-        pf_active=device.pf_active,
-        tf=device.tf,
-        magnetics=device.magnetics)
-
     eq_conf = File(
         # "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
         "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt",
@@ -38,10 +32,15 @@ if __name__ == "__main__":
 
     eq_conf.coordinate_system = {"grid": {"dim1": 100, "dim2": 256}}
 
-    eq_slice = tok.equilibrium.time_slice.insert(eq_conf, time=0.0)
+    tok = Tokamak(
+        wall=device.wall,
+        pf_active=device.pf_active,
+        tf=device.tf,
+        magnetics=device.magnetics,
+        equilibrium={"vacuum_toroidal_field": eq_conf["vacuum_toroidal_field"]._as_dict(), "time_slice": eq_conf})
 
     ###################################################################################################
-    if False:
+    if True:
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
                   pf_active={"facecolor": 'red'},
@@ -52,7 +51,7 @@ if __name__ == "__main__":
                   }
                   ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
     if True:
-        eq_profile = tok.equilibrium.current_state.profiles_1d
+        eq_profile = tok.equilibrium.time_slice.profiles_1d
 
         plot_profiles(
             [
@@ -84,7 +83,7 @@ if __name__ == "__main__":
                 ],
                 [
                     (Function(bs_psi, baseline["shif"].values), r"$\Delta^{astra}$ shafranov shift", {"marker": "+"}),
-                    (eq_profile.geometric_axis.r-eq_slice.vacuum_toroidal_field.r0,               r"$\Delta$ "),
+                    (eq_profile.geometric_axis.r-tok.equilibrium.vacuum_toroidal_field.r0,               r"$\Delta$ "),
                 ],
                 [
                     (Function(bs_psi, baseline["k"].values),         r"$k^{astra}$ elongation", {"marker": "+"}),
@@ -135,59 +134,59 @@ if __name__ == "__main__":
     nDT = ne * (1.0 - 0.02*4 - 0.0012*18) - nHe*2.0
 
     # Zeff = Function(bs_r_nrom, baseline["Zeff"].values)
+    if False:
+        core_profiles_conf = {
+            "profiles_1d": {
+                "electrons": {
+                    "label": "electrons",
+                    "density":     ne,
+                    "temperature": Te,
+                },
+                "ion": [
+                    {
+                        "label": "H^+",
+                        "z_ion": 1,
+                        "element": [{"a": 1, "z_n": 1, "atoms_n": 1}],
+                        "density":  nDT/2.0,
+                        "temperature": Ti,
+                    },
+                    {
+                        "label": "D^+",
+                        "z_ion": 1,
+                        "element": [{"a": 2, "z_n": 1, "atoms_n": 1}],
+                        "density":  nDT/2.0,
+                        "temperature": Ti,
+                    },
+                    {
+                        "label": r"He^{2}",
+                        "z_ion": 2,
+                        "element": [{"a": 4, "z_n": 1, "atoms_n": 1}],
+                        "density": nHe,
+                        "temperature": Ti,
+                    },
+                    {
+                        "label": "Be^{4}",
+                        "z_ion": 4,
+                        "element": [{"a": 9, "z_n": 1, "atoms_n":   1}],
+                        "density":    0.02*ne,
+                        "temperature": Ti,
+                    },
+                    {
+                        "label": "Ar^{18}",
+                        "z_ion": 18,
+                        "element": [{"a": 40, "z_n": 1, "atoms_n":   1}],
+                        "density":    0.0012*ne,
+                        "temperature": Ti,
+                    }
+                ],
+                # "zeff": Zeff
+            }}
 
-    core_profiles_conf = {
-        "profiles_1d": {
-            "electrons": {
-                "label": "electrons",
-                "density":     ne,
-                "temperature": Te,
-            },
-            "ion": [
-                {
-                    "label": "H^+",
-                    "z_ion": 1,
-                    "element": [{"a": 1, "z_n": 1, "atoms_n": 1}],
-                    "density":  nDT/2.0,
-                    "temperature": Ti,
-                },
-                {
-                    "label": "D^+",
-                    "z_ion": 1,
-                    "element": [{"a": 2, "z_n": 1, "atoms_n": 1}],
-                    "density":  nDT/2.0,
-                    "temperature": Ti,
-                },
-                {
-                    "label": r"He^{2}",
-                    "z_ion": 2,
-                    "element": [{"a": 4, "z_n": 1, "atoms_n": 1}],
-                    "density": nHe,
-                    "temperature": Ti,
-                },
-                {
-                    "label": "Be^{4}",
-                    "z_ion": 4,
-                    "element": [{"a": 9, "z_n": 1, "atoms_n":   1}],
-                    "density":    0.02*ne,
-                    "temperature": Ti,
-                },
-                {
-                    "label": "Ar^{18}",
-                    "z_ion": 18,
-                    "element": [{"a": 40, "z_n": 1, "atoms_n":   1}],
-                    "density":    0.0012*ne,
-                    "temperature": Ti,
-                }
-            ],
-            # "zeff": Zeff
-        }}
+        tok.core_profiles.advance(core_profiles_conf,
+                                  grid=tok.equilibrium.time_slice.radial_grid(),
+                                  vacuum_toroidal_field=tok.equilibrium.vacuum_toroidal_field)
 
-    core_profile_slice = tok.core_profiles.time_slice.push_back(core_profiles_conf,
-                                                                grid=eq_slice.radial_grid(),
-                                                                vacuum_toroidal_field=eq_slice.vacuum_toroidal_field)
-    if True:
-        core_profile = core_profile_slice.profiles_1d
+        core_profile = tok.core_profiles.profiles_1d
         plot_profiles(
             [
                 [
@@ -223,7 +222,7 @@ if __name__ == "__main__":
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
     ###################################################################################################
-    if True:
+    if False:
         core_transport = CoreTransport({"model": [
             {"code": {"name": "neoclassical"}},
             # {"code": {"name": "nclass"}},
@@ -236,7 +235,7 @@ if __name__ == "__main__":
             # {"code": {"name": "spitzer"}},
             # {"code": {"name": "gyroBhom"}},
         ]})
-        
+
         core_transport.advance(dt=0.1,
                                equilibrium=tok.equilibrium.current_state,
                                core_profiles=tok.core_profiles.current_state)
@@ -252,7 +251,7 @@ if __name__ == "__main__":
         # core_transport1d = core_transport.current_state.profiles_1d
         core_transport1d = core_transport.model[0].profiles_1d[-1]
 
-    # if False:
+    if False:
         plot_profiles(
             [
                 # [

@@ -6,6 +6,7 @@ import pathlib
 import pprint
 
 mod_path = [(pathlib.Path(__path__[0])/"../../phys_modules").resolve()]
+
 ext_path = (pathlib.Path(__path__[0])/"../../external").resolve()
 
 if ext_path.exists():

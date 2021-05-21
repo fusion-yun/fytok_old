@@ -10,7 +10,8 @@ from spdm.util.logger import logger
 
 from ..common.IDS import IDS, IDSCode
 from ..common.Misc import Identifier, VacuumToroidalField
-from ..common.Species import Species, SpeciesElectron, SpeciesIon, SpeciesIonState
+from ..common.Species import (Species, SpeciesElectron, SpeciesIon,
+                              SpeciesIonState)
 from .CoreProfiles import CoreProfiles
 from .MagneticCoordSystem import RadialGrid
 

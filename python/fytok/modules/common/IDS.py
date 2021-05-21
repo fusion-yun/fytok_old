@@ -1,15 +1,16 @@
 import collections
 import datetime
+import functools
 import getpass
+import inspect
 import os
 from functools import cached_property
 from typing import Mapping, Sequence
-import functools
+
 import numpy as np
 from spdm.data.Node import Dict, List, Node
 from spdm.flow.Actor import Actor
-from spdm.util.logger import logger
-import inspect
+# from spdm.util.logger import logger
 
 
 class IDSProperties(Dict):
@@ -112,7 +113,7 @@ class IDSCode(Dict):
         return List[IDSCode.LibraryDesc](self["library"], default_factory=lambda d, *args, **kwargs: IDSCode.LibraryDesc(**(d or {})), parent=self)
 
 
-class IDS(Dict[str, Node], Actor):
+class IDS(Actor):
     """
         %%%DESCRIPTION%%%.
         .. todo:: '___NAME___' IS NOT IMPLEMENTED

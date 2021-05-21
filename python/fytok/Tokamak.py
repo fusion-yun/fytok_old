@@ -34,7 +34,7 @@ from .modules.transport.TransportSolver import TransportSolver
 TWOPI = scipy.constants.pi*2.0
 
 
-class Tokamak(Dict[str, Node], Actor):
+class Tokamak(Actor):
     """Tokamak
         功能：
             - 描述装置在单一时刻的状态，
