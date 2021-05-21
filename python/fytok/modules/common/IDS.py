@@ -120,8 +120,9 @@ class IDS(Actor):
     """
     _IDS = "NOT_DEFINED"
 
-    def __init__(self, *args, ** kwargs):
+    def __init__(self, *args, as_actor=None, ** kwargs):
         super(Dict, self).__init__(*args, ** kwargs)
+        super(Actor, self).__init__(**(as_actor or {}))
 
     def __serialize__(self, ignore=None):
         res = super().__serialize__(ignore=ignore or ['time_slice'])
@@ -144,15 +145,3 @@ class IDS(Actor):
     def code(self) -> IDSCode:
         return IDSCode(self['code'], parent=self)
 
-    @property
-    def time(self):
-        if hasattr(self, "time_slice"):
-            return self.time_slice.time
-        else:
-            return self["time"] or 0.0
-
-    def advance(self, *args, time=None, dt=None, **kwargs) -> float:
-        return super().advance(*args, time=time, dt=dt, **kwargs)
-
-    def update(self, *args, **kwargs):
-        return super().update(*args, **kwargs)

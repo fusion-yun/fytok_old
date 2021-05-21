@@ -1,4 +1,5 @@
 import collections
+from dataclasses import dataclass
 from functools import cached_property
 from typing import Sequence, Union
 
@@ -819,6 +820,12 @@ class Equilibrium(IDS):
         #    Poloidal plane coordinate   : (\rho,\theta,\phi)
     """
     _IDS = "equilibrium"
+
+    @dataclass
+    class State(IDS.State):
+        vacuum_toroidal_field: VacuumToroidalField
+        time_slice: EquilibriumTimeSlice
+        grid_gdd: GGD
 
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)

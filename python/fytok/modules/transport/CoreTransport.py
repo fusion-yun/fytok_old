@@ -171,7 +171,7 @@ class CoreTransportProfiles1D(Profiles):
                     self["electrons"] = ele_desc
 
         if need_reset:
-            self.__reset_cache__()
+            self.__reset__()
 
     @property
     def grid(self) -> RadialGrid:

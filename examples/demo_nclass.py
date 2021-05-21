@@ -36,11 +36,13 @@ if __name__ == "__main__":
         wall=device.wall,
         pf_active=device.pf_active,
         tf=device.tf,
-        magnetics=device.magnetics,
-        equilibrium={"vacuum_toroidal_field": eq_conf["vacuum_toroidal_field"]._as_dict(), "time_slice": eq_conf})
+        magnetics=device.magnetics)
 
     ###################################################################################################
-    if True:
+    tok.equilibrium.update(time=0.0,  time_slice=eq_conf,
+                           vacuum_toroidal_field=eq_conf["vacuum_toroidal_field"]._as_dict())
+
+    if False:
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
                   pf_active={"facecolor": 'red'},
@@ -51,6 +53,7 @@ if __name__ == "__main__":
                   }
                   ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
     if True:
+
         eq_profile = tok.equilibrium.time_slice.profiles_1d
 
         plot_profiles(
@@ -182,9 +185,9 @@ if __name__ == "__main__":
                 # "zeff": Zeff
             }}
 
-        tok.core_profiles.advance(core_profiles_conf,
-                                  grid=tok.equilibrium.time_slice.radial_grid(),
-                                  vacuum_toroidal_field=tok.equilibrium.vacuum_toroidal_field)
+        tok.core_profiles.update(core_profiles_conf,
+                                 grid=tok.equilibrium.time_slice.radial_grid(),
+                                 vacuum_toroidal_field=tok.equilibrium.vacuum_toroidal_field)
 
         core_profile = tok.core_profiles.profiles_1d
         plot_profiles(
