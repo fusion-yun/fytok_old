@@ -68,16 +68,16 @@ class Tokamak(Actor):
 
     @cached_property
     def equilibrium(self) -> Equilibrium:
-        return Equilibrium(self.__fetch__("equilibrium", {}), wall=self.wall, pf_active=self.pf_active, parent=self)
+        return Equilibrium(self.__fetch__("equilibrium"), wall=self.wall, pf_active=self.pf_active, parent=self)
 
     @cached_property
     def core_profiles(self) -> CoreProfiles:
-        return CoreProfiles(self["core_profiles"], grid=self.equilibrium.time_slice.coordinate_system.radial_grid(), parent=self)
+        return CoreProfiles(self.__fetch__("core_profiles"), grid=self.equilibrium.time_slice.coordinate_system.radial_grid(), parent=self)
 
     @cached_property
     def core_transport(self) -> CoreTransport:
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return CoreTransport(self["core_transport"],  parent=self)
+        return CoreTransport(self.__fetch__("core_transport"),  parent=self)
 
     @cached_property
     def core_sources(self) -> CoreSources:
