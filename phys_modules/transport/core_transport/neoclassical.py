@@ -189,6 +189,7 @@ class NeoClassical(CoreTransport.Model):
         ###########################################################################################
         #  Sec 4.6
         #
+        return 0.0
 
 
 __SP_EXPORT__ = NeoClassical

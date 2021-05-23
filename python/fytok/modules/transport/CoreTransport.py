@@ -1,6 +1,7 @@
 import collections
 from dataclasses import dataclass
 from functools import cached_property
+from typing import Optional
 
 import numpy as np
 from spdm.data.Function import Function
@@ -136,8 +137,9 @@ class CoreTransportProfiles1D(Profiles):
     Electrons = CoreTransportElectrons
     Momentum = CoreTransportMomentum
 
-    def __init__(self, *args, ** kwargs):
-        super().__init__(*args,   **kwargs)
+    def __init__(self, *args, grid: Optional[RadialGrid] = None, ** kwargs):
+        super().__init__(*args, axis=grid.rho_tor_norm,   **kwargs)
+        self._grid = grid or self._parent._grid
 
     def update(self, *args, grid=True, core_profiles: CoreProfiles = None,  **kwargs):
 
@@ -172,6 +174,7 @@ class CoreTransportProfiles1D(Profiles):
 
         if need_reset:
             self.__reset__()
+        return 0.0
 
     @property
     def grid(self) -> RadialGrid:
@@ -241,11 +244,12 @@ class CoreTransportModel(Dict):
 
     Profiles1D = CoreTransportProfiles1D
 
-    def __init__(self, d=None, *args,  **kwargs):
+    def __init__(self, d=None, *args, grid: Optional[RadialGrid] = None, ** kwargs):
         super().__init__(
             collections.ChainMap(d or {}, {"identifier": {"name":  "unspecified", "index": 0,
                                                           "description": f"{self.__class__.__name__}"}}),
             * args, **kwargs)
+        self._grid = grid or self._parent._grid
 
     def update(self, *args, **kwargs) -> float:
         return self.profiles_1d.update(*args, **kwargs)
@@ -288,7 +292,7 @@ class CoreTransportModel(Dict):
 
     @cached_property
     def profiles_1d(self) -> CoreTransportProfiles1D:
-        return self.__class__.Profiles1D(self["profiles_1d"], parent=self)
+        return self.__class__.Profiles1D(self["profiles_1d"], grid=self._grid, parent=self)
 
 
 class CoreTransport(IDS):
@@ -307,8 +311,9 @@ class CoreTransport(IDS):
     _IDS = "core_transport"
     Model = CoreTransportModel
 
-    def __init__(self, *args, ** kwargs):
+    def __init__(self, *args, grid: RadialGrid = None, ** kwargs):
         super().__init__(*args,  **kwargs)
+        self._grid = grid
 
     @cached_property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
@@ -316,8 +321,10 @@ class CoreTransport(IDS):
 
     @cached_property
     def model(self) -> List[CoreTransportModel]:
-        return List[CoreTransportModel](self["model"],   parent=self)
+        return List[CoreTransportModel](self["model"], grid=self._grid,  parent=self)
 
     def update(self,  *args,  **kwargs) -> float:
-        redisual = sum([model.update(*args,  **kwargs) for model in self.model])
+        res = [model.update(*args,  **kwargs) for model in self.model]
+        logger.debug(res)
+        redisual = sum(res)
         return super().update(*args, **kwargs) + redisual

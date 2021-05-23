@@ -39,8 +39,8 @@ if __name__ == "__main__":
         magnetics=device.magnetics)
 
     ###################################################################################################
-    tok.equilibrium.update(time=0.0,  time_slice=eq_conf,
-                           vacuum_toroidal_field=eq_conf["vacuum_toroidal_field"]._as_dict())
+    tok.equilibrium.update({"time": 0.0,  "time_slice": eq_conf,
+                            "vacuum_toroidal_field": eq_conf["vacuum_toroidal_field"]._as_dict()})
 
     if False:
         sp_figure(tok,
@@ -52,7 +52,8 @@ if __name__ == "__main__":
                       "scalar_field": [("psirz", {"levels": 32, "linewidths": 0.1}), ],
                   }
                   ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
-    if True:
+
+    if False:
 
         eq_profile = tok.equilibrium.time_slice.profiles_1d
 
@@ -137,7 +138,7 @@ if __name__ == "__main__":
     nDT = ne * (1.0 - 0.02*4 - 0.0012*18) - nHe*2.0
 
     # Zeff = Function(bs_r_nrom, baseline["Zeff"].values)
-    if False:
+    if True:
         core_profiles_conf = {
             "profiles_1d": {
                 "electrons": {
@@ -190,6 +191,7 @@ if __name__ == "__main__":
                                  vacuum_toroidal_field=tok.equilibrium.vacuum_toroidal_field)
 
         core_profile = tok.core_profiles.profiles_1d
+
         plot_profiles(
             [
                 [
@@ -231,17 +233,21 @@ if __name__ == "__main__":
             # {"code": {"name": "nclass"}},
             # {"code": {"name": "spitzer"}},
             # {"code": {"name": "gyroBhom"}},
-        ]})
-        core_transport = CoreSources({"source": [
-            {"code": {"name": "neoclassical"}},
-            # {"code": {"name": "nclass"}},
-            # {"code": {"name": "spitzer"}},
-            # {"code": {"name": "gyroBhom"}},
-        ]})
+        ]},
+            grid=tok.equilibrium.time_slice.coordinate_system.radial_grid()
+        )
+        # core_sources = CoreSources({"source": [
+        #     {"code": {"name": "neoclassical"}},
+        #     # {"code": {"name": "nclass"}},
+        #     # {"code": {"name": "spitzer"}},
+        #     # {"code": {"name": "gyroBhom"}},
+        # ]},
+        #     grid=tok.equilibrium.time_slice.coordinate_system.radial_grid()
+        # )
 
         core_transport.advance(dt=0.1,
-                               equilibrium=tok.equilibrium.current_state,
-                               core_profiles=tok.core_profiles.current_state)
+                               equilibrium=tok.equilibrium.current_state(),
+                               core_profiles=tok.core_profiles.current_state())
 
         # tok.equilibrium.advance(dt=0.1)
 
@@ -252,7 +258,7 @@ if __name__ == "__main__":
         #                        core_profiles=tok.core_profiles.current_state)
 
         # core_transport1d = core_transport.current_state.profiles_1d
-        core_transport1d = core_transport.model[0].profiles_1d[-1]
+        core_transport1d = core_transport.model[0].profiles_1d
 
     if False:
         plot_profiles(
@@ -290,7 +296,7 @@ if __name__ == "__main__":
                 ],
                 [
                     (Function(bs_r_nrom, baseline["Joh"].values*1.0e6 / baseline["U"].values * \
-                              (2.0*scipy.constants.pi * core_profile_slice.vacuum_toroidal_field.r0)),     r"$\sigma_{\parallel}^{astra}$", {"marker": "+"}),
+                              (2.0*scipy.constants.pi * tok.equilibrium.vacuum_toroidal_field.r0)),     r"$\sigma_{\parallel}^{astra}$", {"marker": "+"}),
                     (core_transport1d.conductivity_parallel*11/14,
                      r"$\sigma_{\parallel}^{wesson}$"),
                 ],
@@ -306,7 +312,49 @@ if __name__ == "__main__":
                 # (core_profile.electrons.pressure,                                                  r"$p_{e}$"),
 
             ],
-            x_axis=(core_transport.model[0].profiles_1d[-1].grid_v.rho_tor_norm, r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            x_axis=(core_transport.model[0].profiles_1d.grid_v.rho_tor_norm, r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            # annotation=core_transport.model[0].identifier.name,
+            grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
+
+    if True:
+        core_sources = CoreSources({"source": [
+            {"code": {"name": "bootstrap_current"}},
+            # {"code": {"name": "spitzer"}},
+            # {"code": {"name": "spitzer"}},
+            # {"code": {"name": "gyroBhom"}},
+        ]},
+            grid=tok.equilibrium.time_slice.coordinate_system.radial_grid()
+        )
+
+        core_sources.advance(dt=0.1, equilibrium=tok.equilibrium, core_profiles=tok.core_profiles)
+
+        core_source1d = core_sources.source[0].profiles_1d
+
+        plot_profiles(
+            [
+                [
+                    (Function(bs_r_nrom, baseline["Zeff"].values),          r"$Z_{eff}^{astra}$", {"marker": "+"}),
+                    (core_profile.zeff,                                                              r"$z_{eff}$"),
+                ],
+                [
+                    (Function(bs_r_nrom, baseline["Joh"].values*1.0e6 / baseline["U"].values *
+                              (2.0*scipy.constants.pi * tok.equilibrium.vacuum_toroidal_field.r0)),     r"$\sigma_{\parallel}^{astra}$", {"marker": "+"}),
+                    (core_source1d.conductivity_parallel*11/14,
+                     r"$\sigma_{\parallel}^{wesson}$"),
+                ],
+                [
+                    (Function(bs_r_nrom, baseline["Jbs"].values*1.0e6),
+                     r"$j_{bootstrap}^{astra}$", {"marker": "+"}),
+                    (core_source1d.j_parallel,                                    r"$j_{bootstrap}^{wesson}$"),
+                ],
+
+                # (core_source1d.e_field_radial,                                             r"$E_{radial}$"),
+                # (tok.equilibrium.time_slice[-1].profiles_1d.trapped_fraction(
+                # core_transport.model[0].profiles_1d[-1].grid_v.psi_norm),      r"trapped"),
+                # (core_profile.electrons.pressure,                                                  r"$p_{e}$"),
+
+            ],
+            x_axis=(core_source1d.grid.rho_tor_norm, r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             # annotation=core_transport.model[0].identifier.name,
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 

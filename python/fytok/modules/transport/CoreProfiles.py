@@ -1,6 +1,6 @@
 import collections
 from functools import cached_property
-
+from dataclasses import dataclass
 import numpy as np
 import scipy.constants
 from spdm.data.Function import Function
@@ -349,38 +349,38 @@ class CoreProfiles1D(Profiles):
             #     zeff = zeff + np.asarray(ion.z_ion*ion.z_ion*ion.density)
             return sum([np.asarray(ion.z_ion*ion.z_ion*ion.density) for ion in self.ion]) / self.electrons.density
 
-    @ cached_property
+    @cached_property
     def zeff_fit(self):
         """Information on the fit used to obtain the zeff profile[-]  """
         return NotImplemented
 
-    @ cached_property
+    @cached_property
     def momentum_tor(self):
         """Total plasma toroidal momentum, summed over ion species and electrons weighted by their density and major radius,
             i.e. sum_over_species(n*R*m*Vphi) {dynamic}[kg.m ^ -1.s ^ -1]"""
         return NotImplemented
 
-    @ cached_property
+    @cached_property
     def pressure_ion_total(self):
         """Total(sum over ion species) thermal ion pressure {dynamic}[Pa]"""
         return np.sum([ion.pressure for ion in self.ion])
 
-    @ cached_property
+    @cached_property
     def pressure_thermal(self):
         """Thermal pressure(electrons+ions) {dynamic}[Pa]"""
         return NotImplemented
 
-    @ cached_property
+    @cached_property
     def pressure_perpendicular(self):
         """Total perpendicular pressure(electrons+ions, thermal+non-thermal) {dynamic}[Pa]"""
         return NotImplemented
 
-    @ cached_property
+    @cached_property
     def pressure_parallel(self):
         """Total parallel pressure(electrons+ions, thermal+non-thermal) {dynamic}[Pa]"""
         return NotImplemented
 
-    @ cached_property
+    @cached_property
     def j_total(self):
         """Total parallel current density = average(jtot.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
         d = self["j_total"]
@@ -389,12 +389,12 @@ class CoreProfiles1D(Profiles):
         else:
             return self.current_parallel_inside.derivative * self._r0*TWOPI/self.grid.dvolume_drho_tor
 
-    @ cached_property
+    @cached_property
     def current_parallel_inside(self) -> Function:
         """Parallel current driven inside the flux surface. Cumulative surface integral of j_total {dynamic}[A]"""
         return Function(self._axis, self["current_parallel_inside"])
 
-    @ cached_property
+    @cached_property
     def j_tor(self):
         """Total toroidal current density = average(J_Tor/R) / average(1/R) {dynamic}[A/m ^ 2]"""
         d = self["j_tor"]
@@ -403,24 +403,24 @@ class CoreProfiles1D(Profiles):
         else:
             return NotImplemented
 
-    @ cached_property
+    @cached_property
     def j_ohmic(self):
         """Ohmic parallel current density = average(J_Ohmic.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
         return self.conductivity_parallel*self.e_field.parallel  # Function(self._axis, ["j_ohmic"])
 
-    @ cached_property
+    @cached_property
     def j_non_inductive(self):
         """Non-inductive(includes bootstrap) parallel current density = average(jni.B) / B0,
         where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
         return self.j_total - self.j_ohmic
 
-    @ cached_property
+    @cached_property
     def j_bootstrap(self):
         """Bootstrap current density = average(J_Bootstrap.B) / B0,
             where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
         return Function(self._axis, self["j_bootstrap"])
 
-    @ cached_property
+    @cached_property
     def conductivity_parallel(self):
         """Parallel conductivity {dynamic}[ohm ^ -1.m ^ -1]"""
 
@@ -446,26 +446,40 @@ class CoreProfiles1D(Profiles):
                 * ((np.sqrt(2.*scipy.constants.electron_mass)*(Te**1.5)) / 1.8e-19 / clog) \
                 / scipy.constants.m_e
 
+    @cached_property
+    def coulomb_logarithm(self):
+        """ Coulomb logarithm, Tokamaks   Ch.14.5 p727 ,2003
+        """
+        Te = np.asarray(self.electrons.temperature)
+        Ne = np.asarray(self.electrons.density)
+
+        # Coulomb logarithm
+        #  Ch.14.5 p727 Tokamaks 2003
+        lnCoul = (14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +\
+            (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000))*(Te >= 10)
+
+        return lnCoul
+
     class EField(Profiles):
         def __init__(self,   *args, axis=None, parent=None, **kwargs):
             super().__init__(*args, axis=axis if axis is not None else parent._axis,  **kwargs)
 
-        @ cached_property
+        @cached_property
         def parallel(self):
             return Function(self._axis, self["parallel"])
 
-    @ cached_property
+    @cached_property
     def e_field(self):
         """Electric field, averaged on the magnetic surface. E.g for the parallel component, average(E.B) / B0,
             using core_profiles/vacuum_toroidal_field/b0[V.m ^ -1]  """
         return CoreProfiles1D.EField(self["e_field"], axis=self._axis, parent=self)
 
-    @ cached_property
+    @cached_property
     def phi_potential(self):
         """Electrostatic potential, averaged on the magnetic flux surface {dynamic}[V]"""
         return Function(self._axis, self["phi_potential"])
 
-    @ cached_property
+    @cached_property
     def rotation_frequency_tor_sonic(self):
         """Derivative of the flux surface averaged electrostatic potential with respect to the poloidal flux, multiplied by - 1.
         This quantity is the toroidal angular rotation frequency due to the ExB drift, introduced in formula(43) of Hinton and Wong,
@@ -473,13 +487,13 @@ class CoreProfiles1D(Profiles):
         poloidal velocity Click here for further documentation. {dynamic}[s ^ -1]"""
         return Function(self._axis, self["rotation_frequency_tor_sonic"])
 
-    @ cached_property
+    @cached_property
     def q(self):
         """Safety factor(IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic}[-].
         This quantity is COCOS-dependent, with the following transformation: """
         return self["q"]
 
-    @ cached_property
+    @cached_property
     def magnetic_shear(self):
         """Magnetic shear, defined as rho_tor/q . dq/drho_tor {dynamic}[-]"""
         return self["magnetic_shear"]
@@ -495,13 +509,28 @@ class CoreProfiles(IDS):
     """
     _IDS = "core_profiles"
 
+    @dataclass
+    class State(IDS.State):
+        profiles_1d: CoreProfiles1D
+
     def __init__(self,  *args, grid: RadialGrid = None, ** kwargs):
         super().__init__(*args,  ** kwargs)
         self._grid = grid
 
     @cached_property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        return VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
+        d = self["vacuum_toroidal_field"]
+        if d == None:
+            d = self._grid.vacuum_toroidal_field
+        elif isinstance(d, Dict):
+            d = VacuumToroidalField(**d._as_dict())
+        elif not isinstance(d, VacuumToroidalField):
+            raise TypeError(type(d))
+        return d
+
+    @property
+    def grid(self):
+        return self._grid
 
     @cached_property
     def profiles_1d(self) -> CoreProfiles1D:

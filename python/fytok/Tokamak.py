@@ -3,6 +3,7 @@ import collections
 import datetime
 import getpass
 from functools import cached_property
+from typing import ChainMap
 
 import matplotlib.pyplot as plt
 from fytok.modules.transport.MagneticCoordSystem import RadialGrid
@@ -34,7 +35,7 @@ from .modules.transport.TransportSolver import TransportSolver
 TWOPI = scipy.constants.pi*2.0
 
 
-class Tokamak(Dict[str, Node], Actor):
+class Tokamak(Actor):
     """Tokamak
         功能：
             - 描述装置在单一时刻的状态，
@@ -42,11 +43,9 @@ class Tokamak(Dict[str, Node], Actor):
 
     """
 
-    def __init__(self, desc=None, * args, r0=None, b0=None,  radial_grid: RadialGrid = None, **kwargs):
-        super(Dict, self).__init__(desc or kwargs)
-        self._radial_grid = radial_grid
-        self._b0 = [b0]
-        self._r0 = r0
+    def __init__(self, d=None, * args, **kwargs):
+        super().__init__(kwargs)
+        self._time = 0.0
 
     @property
     def time(self):
@@ -73,7 +72,7 @@ class Tokamak(Dict[str, Node], Actor):
 
     @cached_property
     def core_profiles(self) -> CoreProfiles:
-        return CoreProfiles(self["core_profiles"],  parent=self)
+        return CoreProfiles(self["core_profiles"], grid=self.equilibrium.time_slice.coordinate_system.radial_grid(), parent=self)
 
     @cached_property
     def core_transport(self) -> CoreTransport:

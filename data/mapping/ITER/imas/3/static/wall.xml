@@ -22,7 +22,7 @@
         <name>limiter</name>
         <index dtype='int'>0</index>
       </type>
-      <unit>
+      <unit id='0'>
         <name>limiter</name>
         <closed dtype='int'>1</closed>
         <outline>
@@ -43,6 +43,7 @@
           
         </outline>
       </unit>
+      <unit id='-1'></unit>
     </limiter>
     <vessel>
         <name>ITER</name>

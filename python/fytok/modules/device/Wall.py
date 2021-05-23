@@ -1,14 +1,55 @@
 import collections
 from copy import copy
 from functools import cached_property
+from logging import log
 
 import matplotlib.pyplot as plt
+from fytok.modules.common.Misc import RZTuple
 import numpy as np
 from spdm.data.AttributeTree import as_attribute_tree
 from spdm.data.Node import Dict, List
 from spdm.util.logger import logger
 from sympy import Point, Polygon
 from ..common.IDS import IDS
+from ..common.Misc import RZTuple
+
+
+class Limiter(Dict):
+    def __init__(self,  *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    class Unit(Dict):
+        def __init__(self,  *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+        @cached_property
+        def outline(self) -> RZTuple:
+            return RZTuple(self["outline.r"], self["outline.z"])
+
+    @cached_property
+    def unit(self) -> List[Unit]:
+        return List[Limiter.Unit](self["unit"], parent=self)
+
+
+class Vessel(Dict):
+    def __init__(self,   *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    class Annular(Dict):
+        def __init__(self,  *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+        @cached_property
+        def outline_outer(self) -> RZTuple:
+            return RZTuple(self["outline_outer.r"], self["outline_outer.z"])
+
+        @cached_property
+        def outline_inner(self) -> RZTuple:
+            return RZTuple(self["outline_inner.r"], self["outline_inner.z"])
+
+    @cached_property
+    def annular(self):
+        return Vessel.Annular(self["annular"], parent=self)
 
 
 class WallDescription2D(Dict):
@@ -18,8 +59,8 @@ class WallDescription2D(Dict):
 
     @cached_property
     def limiter_polygon(self):
-        limiter_points = np.array([self.limiter.unit.outline.r,
-                                   self.limiter.unit.outline.z]).transpose([1, 0])
+        limiter_points = np.array([self.limiter.unit[0].outline.r,
+                                   self.limiter.unit[0].outline.z]).transpose([1, 0])
 
         return Polygon(*map(Point, limiter_points))
 
@@ -80,13 +121,21 @@ class WallDescription2D(Dict):
         # else:
         #     raise TypeError(f"Unknown type {type(vessel)}")
 
+    @cached_property
+    def limiter(self) -> Limiter:
+        return Limiter(self["limiter"], parent=self)
+
+    @cached_property
+    def vessel(self) -> Vessel:
+        return Vessel(self["vessel"], parent=self)
+
 
 class Wall(IDS):
     """Wall
 
     """
     _IDS = "wall"
-    _homogeneous_time= 2
+    _homogeneous_time = 2
 
     def __init__(self, *args,  **kwargs):
         super().__init__(*args, **kwargs)
@@ -102,14 +151,14 @@ class Wall(IDS):
 
         desc2d = self.description_2d
 
-        vessel_inner_points = np.array([desc2d['vessel.annular.outline_inner.r'],
-                                        desc2d["vessel.annular.outline_inner.z"]]).transpose([1, 0])
+        vessel_inner_points = np.array([desc2d.vessel.annular.outline_inner.r,
+                                        desc2d.vessel.annular.outline_inner.z]).transpose([1, 0])
 
-        vessel_outer_points = np.array([desc2d["vessel.annular.outline_outer.r"],
-                                        desc2d["vessel.annular.outline_outer.z"]]).transpose([1, 0])
+        vessel_outer_points = np.array([desc2d.vessel.annular.outline_outer.r,
+                                        desc2d.vessel.annular.outline_outer.z]).transpose([1, 0])
 
-        limiter_points = np.array([desc2d["limiter.unit.outline.r"],
-                                   desc2d["limiter.unit.outline.z"]]).transpose([1, 0])
+        limiter_points = np.array([desc2d.limiter.unit[0].outline.r,
+                                   desc2d.limiter.unit[0].outline.z]).transpose([1, 0])
 
         axis.add_patch(plt.Polygon(limiter_points,  **
                                    collections.ChainMap(kwargs.get("limiter", {}), {"fill": False, "closed": True})))

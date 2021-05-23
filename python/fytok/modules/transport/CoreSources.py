@@ -1,5 +1,6 @@
 import collections
 from functools import cached_property
+from typing import Optional
 
 import numpy as np
 import scipy.constants
@@ -7,6 +8,7 @@ from spdm.data.Function import Function
 from spdm.data.Node import Dict, List, Node
 from spdm.data.Profiles import Profiles
 from spdm.util.logger import logger
+from spdm.flow.Actor import Actor
 
 from ..common.IDS import IDS
 from ..common.Misc import Identifier, VacuumToroidalField
@@ -98,8 +100,9 @@ class CoreSourcesNeutral(Profiles):
 
 
 class CoreSourcesProfiles1D(Profiles):
-    def __init__(self, *args, axis=None, **kwargs):
-        super().__init__(*args, axis=axis, **kwargs)
+    def __init__(self, *args, grid: RadialGrid = None, **kwargs):
+        super().__init__(*args,  **kwargs)
+        self._grid = grid or self._parent._grid
 
     @property
     def time(self) -> float:
@@ -242,10 +245,12 @@ class CoreSourcesSpecies(Dict):
 #         return CoreSources.Profiles1D(self["profiles_1d"], grid=self._grid,  time=self._time, parent=self)
 
 
-class CoreSourcesSource(Dict[str, Node]):
+class CoreSourcesSource(Actor):
+    _actor_module_prefix = "transport.core_sources."
 
-    def __init__(self,   *args,  **kwargs):
+    def __init__(self,   *args, grid: Optional[RadialGrid] = None, **kwargs):
         super().__init__(*args, **kwargs)
+        self._grid = grid or self._parent._grid
 
     @cached_property
     def identifier(self) -> Identifier:
@@ -318,7 +323,7 @@ class CoreSourcesSource(Dict[str, Node]):
 
     @cached_property
     def profiles_1d(self) -> CoreSourcesProfiles1D:
-        return CoreSourcesProfiles1D(self["profiles_1d"], parent=self)
+        return CoreSourcesProfiles1D(self["profiles_1d"], axis=self._grid.rho_tor_norm, parent=self)
 
     def advance(self,   *args,  time=None, dt=None, **kwargs):
         time = super().advance(time=time, dt=dt)
@@ -327,10 +332,10 @@ class CoreSourcesSource(Dict[str, Node]):
         if len(args)+len(kwargs) > 0:
             self.update(*args,  **kwargs)
 
-    def update(self, *args, **kwargs):
+    def update(self, *args, **kwargs) -> float:
         assert(len(self.profiles_1d) > 0)
-        res = self.profiles_1d[-1].update(*args, **kwargs)
-        res += self.global_quantities[-1].update(*args, **kwargs)
+        res = self.profiles_1d.update(*args, **kwargs) or 0.0
+        res += self.global_quantities.update(*args, **kwargs) or 0.0
         return res
 
 
@@ -340,8 +345,9 @@ class CoreSources(IDS):
     _IDS = "core_sources"
     Source = CoreSourcesSource
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, grid: Optional[RadialGrid] = None, **kwargs):
         super().__init__(*args, **kwargs)
+        self._grid = grid
 
     @cached_property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
@@ -349,7 +355,7 @@ class CoreSources(IDS):
 
     @cached_property
     def source(self) -> List[CoreSourcesSource]:
-        return List[CoreSourcesSource](self["source"], parent=self)
+        return List[CoreSourcesSource](self["source"], grid=self._grid, parent=self)
 
     def update(self,  *args,  **kwargs) -> float:
         redisual = sum([source.update(*args,  **kwargs) for source in self.source])

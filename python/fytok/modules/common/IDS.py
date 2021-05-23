@@ -120,12 +120,11 @@ class IDS(Actor):
     """
     _IDS = "NOT_DEFINED"
 
-    def __init__(self, *args, as_actor=None, ** kwargs):
-        super(Dict, self).__init__(*args, ** kwargs)
-        super(Actor, self).__init__(**(as_actor or {}))
+    def __init__(self, *args, ** kwargs):
+        super().__init__( *args, ** kwargs)
 
     def __serialize__(self, ignore=None):
-        res = super().__serialize__(ignore=ignore or ['time_slice'])
+        res = super().__serialize__(ignore=ignore)
         res["@ids"] = self._IDS
         return res
 
@@ -144,4 +143,3 @@ class IDS(Actor):
     @cached_property
     def code(self) -> IDSCode:
         return IDSCode(self['code'], parent=self)
-
