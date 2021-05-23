@@ -141,7 +141,7 @@ class CoreSourcesProfiles1D(Profiles):
 
     @cached_property
     def j_parallel(self):
-        return Function(self.grid.rho_tor_norm, self["j_parallel"])
+        return Function(self.grid.rho_tor_norm, self.__fetch__("j_parallel"))
 
     @cached_property
     def current_parallel_inside(self):
@@ -325,18 +325,10 @@ class CoreSourcesSource(Actor):
     def profiles_1d(self) -> CoreSourcesProfiles1D:
         return CoreSourcesProfiles1D(self["profiles_1d"], axis=self._grid.rho_tor_norm, parent=self)
 
-    def advance(self,   *args,  time=None, dt=None, **kwargs):
-        time = super().advance(time=time, dt=dt)
-        self.profiles_1d.insert(*args,  time=time, **kwargs)
-        self.global_quantities.insert(*args,  time=time, **kwargs)
-        if len(args)+len(kwargs) > 0:
-            self.update(*args,  **kwargs)
-
     def update(self, *args, **kwargs) -> float:
-        assert(len(self.profiles_1d) > 0)
-        res = self.profiles_1d.update(*args, **kwargs) or 0.0
-        res += self.global_quantities.update(*args, **kwargs) or 0.0
-        return res
+        return super().update(*args, **kwargs)
+        # res = self.profiles_1d.update(*args, **kwargs)
+        # res += self.global_quantities.update(*args, **kwargs)
 
 
 class CoreSources(IDS):

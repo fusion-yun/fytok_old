@@ -195,6 +195,8 @@ if __name__ == "__main__":
 
         core_profile = tok.core_profiles.profiles_1d
 
+        logger.debug(core_profile.e_field.parallel)
+
         plot_profiles(
             [
                 [
@@ -210,12 +212,12 @@ if __name__ == "__main__":
                 ],
 
                 [
-                    (Function(bs_r_nrom, baseline["Zeff"].values),                     r"$Z_{eff}^{astra}$"),
-                    (core_profile.zeff,                                                                   r"$z_{eff}$"),
+                    (Function(bs_r_nrom, baseline["Zeff"].values),                            r"$Z_{eff}^{astra}$"),
+                    (core_profile.zeff,                                                               r"$z_{eff}$"),
                 ],
                 [
-                    (core_profile.j_ohmic,                                                              r"$j_{ohmic}$"),
-                    (Function(bs_r_nrom, baseline["Joh"].values),                       r"$j_{oh}^{astra}$"),
+                    (core_profile.j_ohmic,                                                          r"$j_{ohmic}$"),
+                    (Function(bs_r_nrom, baseline["Joh"].values),                              r"$j_{oh}^{astra}$"),
                 ],
                 (core_profile.grid.psi,                                                                  r"$\psi$"),
                 (core_profile.electrons.pressure,                                                        r"$p_e $"),
@@ -331,34 +333,33 @@ if __name__ == "__main__":
 
         core_sources.advance(dt=0.1, equilibrium=tok.equilibrium, core_profiles=tok.core_profiles)
 
-        core_source1d = core_sources.source[0].profiles_1d
+        core_source_1d = core_sources.source[0].profiles_1d
 
         plot_profiles(
             [
+                # [
+                #     (Function(bs_r_nrom, baseline["Zeff"].values),          r"$Z_{eff}^{astra}$", {"marker": "+"}),
+                #     (core_profile.zeff,                                                              r"$z_{eff}$"),
+                # ],
+                # [
+                #     (Function(bs_r_nrom, baseline["Joh"].values*1.0e6 / baseline["U"].values *
+                #               (2.0*scipy.constants.pi * tok.equilibrium.vacuum_toroidal_field.r0)),     r"$\sigma_{\parallel}^{astra}$", {"marker": "+"}),
+                #     (core_source_1d.conductivity_parallel*11/14,
+                #      r"$\sigma_{\parallel}^{wesson}$"),
+                # ],
                 [
-                    (Function(bs_r_nrom, baseline["Zeff"].values),          r"$Z_{eff}^{astra}$", {"marker": "+"}),
-                    (core_profile.zeff,                                                              r"$z_{eff}$"),
-                ],
-                [
-                    (Function(bs_r_nrom, baseline["Joh"].values*1.0e6 / baseline["U"].values *
-                              (2.0*scipy.constants.pi * tok.equilibrium.vacuum_toroidal_field.r0)),     r"$\sigma_{\parallel}^{astra}$", {"marker": "+"}),
-                    (core_source1d.conductivity_parallel*11/14,
-                     r"$\sigma_{\parallel}^{wesson}$"),
-                ],
-                [
-                    (Function(bs_r_nrom, baseline["Jbs"].values*1.0e6),
-                     r"$j_{bootstrap}^{astra}$", {"marker": "+"}),
-                    (core_source1d.j_parallel,                                    r"$j_{bootstrap}^{wesson}$"),
+                    (Function(bs_r_nrom, baseline["Jbs"].values*1.0e6), r"$j_{bootstrap}^{astra}$", {"marker": "+"}),
+                    (core_source_1d.j_parallel,                                    r"$j_{bootstrap}^{wesson}$"),
                 ],
 
-                # (core_source1d.e_field_radial,                                             r"$E_{radial}$"),
+                # (core_source_1d.e_field_radial,                                             r"$E_{radial}$"),
                 # (tok.equilibrium.time_slice[-1].profiles_1d.trapped_fraction(
                 # core_transport.model[0].profiles_1d[-1].grid_v.psi_norm),      r"trapped"),
                 # (core_profile.electrons.pressure,                                                  r"$p_{e}$"),
 
             ],
-            x_axis=(core_source1d.grid.rho_tor_norm, r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            x_axis=(core_source_1d.grid.rho_tor_norm, r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             # annotation=core_transport.model[0].identifier.name,
-            grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
+            grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_sources.svg", transparent=True)
 
     logger.info("====== DONE ========")

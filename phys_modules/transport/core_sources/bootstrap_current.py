@@ -32,7 +32,6 @@ class BootstrapCurrent(CoreSources.Source):
         R0 = equilibrium.vacuum_toroidal_field.r0
 
         core_profile = core_profiles.profiles_1d
-        src = self.profiles_1d
 
         rho_tor_norm = np.asarray(core_profile.grid.rho_tor_norm)
         rho_tor = np.asarray(core_profile.grid.rho_tor)
@@ -117,9 +116,9 @@ class BootstrapCurrent(CoreSources.Source):
         # eq 4.9.2
         # src.j_bootstrap = (-(q/B0/epsilon12))*j_bootstrap
 
-        src.j_parallel = - j_bootstrap * x/(2.4+5.4*x+2.6*x**2) * Pe * \
+        self.profiles_1d.j_parallel = - j_bootstrap * x/(2.4+5.4*x+2.6*x**2) * Pe * \
             equilibrium.time_slice.profiles_1d.fpol(psi_norm) * q / rho_tor / rho_tor[-1] / (2.0*scipy.constants.pi*B0)
-
+        logger.debug(self.profiles_1d.j_parallel)
         return 0.0
 
 

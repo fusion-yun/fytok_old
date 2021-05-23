@@ -433,11 +433,12 @@ class CoreProfiles1D(Profiles):
             ne = self.electrons.density
 
             # Electron collisions: Coulomb logarithm
-            clog = np.asarray([
-                (24.0 - 1.15*np.log10(ne[idx]*1.0e-6) + 2.30*np.log10(Te[idx]))
-                if Te[idx] >= 10 else (23.0 - 1.15*np.log10(ne[idx]*1.0e-6) + 3.45*np.log10(Te[idx]))
-                for idx in range(len(ne))
-            ])
+            # clog = np.asarray([
+            #     (24.0 - 1.15*np.log10(ne[idx]*1.0e-6) + 2.30*np.log10(Te[idx]))
+            #     if Te[idx] >= 10 else (23.0 - 1.15*np.log10(ne[idx]*1.0e-6) + 3.45*np.log10(Te[idx]))
+            #     for idx in range(len(ne))
+            # ])
+            clog = self.coulomb_logarithm
             # electron collision time:
             # tau_e = (np.sqrt(2.*scipy.constants.electron_mass)*(Te**1.5)) / 1.8e-19 / (ne * 1.0e-6) / clog
 
