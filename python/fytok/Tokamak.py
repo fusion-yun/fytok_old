@@ -68,7 +68,7 @@ class Tokamak(Actor):
 
     @cached_property
     def equilibrium(self) -> Equilibrium:
-        return Equilibrium(self["equilibrium"], wall=self.wall, pf_active=self.pf_active, parent=self)
+        return Equilibrium(self.__fetch__("equilibrium", {}), wall=self.wall, pf_active=self.pf_active, parent=self)
 
     @cached_property
     def core_profiles(self) -> CoreProfiles:

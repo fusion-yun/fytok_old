@@ -19,18 +19,11 @@ from spdm.util.plot_profiles import plot_profiles, sp_figure
 if __name__ == "__main__":
     logger.info("====== START ========")
 
+    device = File("/home/salmon/workspace/fytok/data/mapping/ITER/imas/3/static/config.xml").entry
+
     baseline = pd.read_csv('/home/salmon/workspace/data/15MA inductive - burn/profile.txt', sep='\t')
     bs_psi = baseline["Fp"].values
     bs_r_nrom = baseline["x"].values
-    device = File("/home/salmon/workspace/fytok/data/mapping/ITER/imas/3/static/config.xml").entry
-
-    eq_conf = File(
-        # "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
-        "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt",
-        # "/home/salmon/workspace/data/Limiter plasmas-7.5MA li=1.1/Limiter plasmas 7.5MA-EQDSK/Limiter_7.5MA_outbord.EQDSK",
-        format="geqdsk").entry
-
-    eq_conf.coordinate_system = {"grid": {"dim1": 100, "dim2": 256}}
 
     tok = Tokamak(
         wall=device.wall,
@@ -38,11 +31,22 @@ if __name__ == "__main__":
         tf=device.tf,
         magnetics=device.magnetics)
 
-    ###################################################################################################
-    tok.equilibrium.update({"time": 0.0,  "time_slice": eq_conf,
-                            "vacuum_toroidal_field": eq_conf["vacuum_toroidal_field"]._as_dict()})
+    # logger.debug(tok.wall)
 
-    if False:
+    ###################################################################################################
+    if True:
+        eq_conf = File(
+            # "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
+            "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt",
+            # "/home/salmon/workspace/data/Limiter plasmas-7.5MA li=1.1/Limiter plasmas 7.5MA-EQDSK/Limiter_7.5MA_outbord.EQDSK",
+            format="geqdsk").entry
+
+        eq_conf.coordinate_system = {"grid": {"dim1": 100, "dim2": 256}}
+
+        tok.equilibrium.update({"time": 0.0,  "time_slice": eq_conf,
+                                "vacuum_toroidal_field": eq_conf["vacuum_toroidal_field"]._as_dict()})
+
+    if True:
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
                   pf_active={"facecolor": 'red'},
@@ -52,8 +56,6 @@ if __name__ == "__main__":
                       "scalar_field": [("psirz", {"levels": 32, "linewidths": 0.1}), ],
                   }
                   ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
-
-    if False:
 
         eq_profile = tok.equilibrium.time_slice.profiles_1d
 
@@ -128,17 +130,18 @@ if __name__ == "__main__":
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
     ###################################################################################################
+    if False:
 
-    Te = Function(bs_r_nrom, baseline["TE"].values*1000)
-    Ti = Function(bs_r_nrom, baseline["TI"].values*1000)
+        Te = Function(bs_r_nrom, baseline["TE"].values*1000)
+        Ti = Function(bs_r_nrom, baseline["TI"].values*1000)
 
-    ne = Function(bs_r_nrom, baseline["NE"].values*1.0e19)
-    nHe = Function(bs_r_nrom, baseline["Nalf"].values*1.0e19)
-    # nDT = Function(bs_r_nrom, baseline["Nd+t"].values*1.0e19)
-    nDT = ne * (1.0 - 0.02*4 - 0.0012*18) - nHe*2.0
+        ne = Function(bs_r_nrom, baseline["NE"].values*1.0e19)
+        nHe = Function(bs_r_nrom, baseline["Nalf"].values*1.0e19)
+        # nDT = Function(bs_r_nrom, baseline["Nd+t"].values*1.0e19)
+        nDT = ne * (1.0 - 0.02*4 - 0.0012*18) - nHe*2.0
 
-    # Zeff = Function(bs_r_nrom, baseline["Zeff"].values)
-    if True:
+        # Zeff = Function(bs_r_nrom, baseline["Zeff"].values)
+
         core_profiles_conf = {
             "profiles_1d": {
                 "electrons": {
@@ -316,7 +319,7 @@ if __name__ == "__main__":
             # annotation=core_transport.model[0].identifier.name,
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
-    if True:
+    if False:
         core_sources = CoreSources({"source": [
             {"code": {"name": "bootstrap_current"}},
             # {"code": {"name": "spitzer"}},

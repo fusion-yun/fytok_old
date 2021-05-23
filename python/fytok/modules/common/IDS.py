@@ -120,8 +120,8 @@ class IDS(Actor):
     """
     _IDS = "NOT_DEFINED"
 
-    def __init__(self, *args, ** kwargs):
-        super().__init__( *args, ** kwargs)
+    def __init__(self,  *args, ** kwargs):
+        super().__init__(*args, ** kwargs)
 
     def __serialize__(self, ignore=None):
         res = super().__serialize__(ignore=ignore)
