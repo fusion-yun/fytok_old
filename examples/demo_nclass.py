@@ -11,27 +11,26 @@ from fytok.modules.transport.CoreSources import CoreSources
 from fytok.Tokamak import Tokamak
 from spdm.data.File import File
 from spdm.data.Function import Function
-from spdm.data.Node import _next_
+from spdm.data.Entry import _next_
 from spdm.util.logger import logger
 from spdm.util.plot_profiles import plot_profiles, sp_figure
+from spdm.util.utilities import serialize
 
 
 if __name__ == "__main__":
     logger.info("====== START ========")
 
-    device = File("/home/salmon/workspace/fytok/data/mapping/ITER/imas/3/static/config.xml").entry
+    device = File("/home/salmon/workspace/fytok/data/mapping/ITER/imas/3/static/config.xml")
 
     baseline = pd.read_csv('/home/salmon/workspace/data/15MA inductive - burn/profile.txt', sep='\t')
     bs_psi = baseline["Fp"].values
     bs_r_nrom = baseline["x"].values
 
     tok = Tokamak(
-        wall=device.wall,
-        pf_active=device.pf_active,
-        tf=device.tf,
-        magnetics=device.magnetics)
-
-    # logger.debug(tok.wall)
+        wall=device.entry.get("wall"),
+        pf_active=device.entry.get("pf_active"),
+        tf=device.entry.get("tf"),
+        magnetics=device.entry.get("magnetics"))
 
     ###################################################################################################
     if True:
@@ -130,7 +129,7 @@ if __name__ == "__main__":
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
     ###################################################################################################
-    if True:
+    if False:
 
         Te = Function(bs_r_nrom, baseline["TE"].values*1000)
         Ti = Function(bs_r_nrom, baseline["TI"].values*1000)

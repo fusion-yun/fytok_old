@@ -57,14 +57,12 @@ class WallDescription2D(Dict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    @cached_property
     def limiter_polygon(self):
         limiter_points = np.array([self.limiter.unit[0].outline.r,
                                    self.limiter.unit[0].outline.z]).transpose([1, 0])
 
         return Polygon(*map(Point, limiter_points))
 
-    @cached_property
     def vessel_polygon(self):
         vessel_inner_points = np.array([self.vessel.annular.outline_inner.r,
                                         self.vessel.annular.outline_inner.z]).transpose([1, 0])
@@ -74,11 +72,11 @@ class WallDescription2D(Dict):
 
         return Polygon(*map(Point, vessel_inner_points)), Polygon(*map(Point, vessel_outer_points))
 
-    def in_limiter(self, *x):
-        return self.limiter_polygon.encloses(Point(*x))
+    # def in_limiter(self, *x):
+    #     return self.limiter_polygon().encloses(Point(*x))
 
-    def in_vessel(self, *x):
-        return self.vessel_polygon.encloses(Point(*x))
+    # def in_vessel(self, *x):
+    #     return self.vessel_polygon().encloses(Point(*x))
 
         # if isinstance(data, LazyProxy):
         #     limiter = data.description_2d.limiter.unit.outline()
@@ -160,7 +158,7 @@ class Wall(IDS):
         limiter_points = np.array([desc2d.limiter.unit[0].outline.r,
                                    desc2d.limiter.unit[0].outline.z]).transpose([1, 0])
 
-        axis.add_patch(plt.Polygon(limiter_points,  **
+        axis.add_patch(plt.Polygon(limiter_points, **
                                    collections.ChainMap(kwargs.get("limiter", {}), {"fill": False, "closed": True})))
 
         axis.add_patch(plt.Polygon(vessel_outer_points, **collections.ChainMap(kwargs.get("vessel_outer", {}),

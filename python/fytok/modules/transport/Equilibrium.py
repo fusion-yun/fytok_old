@@ -642,11 +642,9 @@ class EquilibriumTimeSlice(Dict):
     Boundary = EquilibriumBoundary
     BoundarySeparatrix = EquilibriumBoundarySeparatrix
 
-    def __init__(self, *args, vacuum_toroidal_field: VacuumToroidalField = None, **kwargs):
+    def __init__(self, *args, vacuum_toroidal_field: VacuumToroidalField = None, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-
-        vacuum_toroidal_field = vacuum_toroidal_field or VacuumToroidalField(
-            **self["vacuum_toroidal_field"]._as_dict())
+        vacuum_toroidal_field = vacuum_toroidal_field or VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
         self._vacuum_toroidal_field = VacuumToroidalField(vacuum_toroidal_field.r0, abs(vacuum_toroidal_field.b0))
 
     @property
