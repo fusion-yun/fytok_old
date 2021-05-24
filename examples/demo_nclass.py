@@ -34,16 +34,22 @@ if __name__ == "__main__":
 
     ###################################################################################################
     if True:
-        eq_conf = File(
+        eqdsk = File(
             # "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
             "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt",
             # "/home/salmon/workspace/data/Limiter plasmas-7.5MA li=1.1/Limiter plasmas 7.5MA-EQDSK/Limiter_7.5MA_outbord.EQDSK",
-            format="geqdsk").entry
+            format="geqdsk")
 
-        eq_conf.coordinate_system = {"grid": {"dim1": 100, "dim2": 256}}
+        tok.equilibrium.update({"time": 0.0,
+                                "time_slice": {
+                                    "profiles_1d": eqdsk.entry.get("profiles_1d"),
+                                    "profiles_2d": eqdsk.entry.get("profiles_2d"),
+                                    "coordinate_system": {"grid": {"dim1": 100, "dim2": 256}}
+                                },
+                                "vacuum_toroidal_field":  eqdsk.entry.get("vacuum_toroidal_field"),
+                                })
 
-        tok.equilibrium.update({"time": 0.0,  "time_slice": eq_conf,
-                                "vacuum_toroidal_field": eq_conf["vacuum_toroidal_field"]._as_dict()})
+        # logger.debug(tok.equilibrium.time_slice.coordinate_system.critical_points[1][0].psi)
 
     if True:
         sp_figure(tok,
@@ -55,7 +61,7 @@ if __name__ == "__main__":
                       "scalar_field": [("psirz", {"levels": 32, "linewidths": 0.1}), ],
                   }
                   ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
-
+    if True:
         eq_profile = tok.equilibrium.time_slice.profiles_1d
 
         plot_profiles(

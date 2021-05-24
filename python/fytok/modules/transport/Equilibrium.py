@@ -13,7 +13,7 @@ from spdm.data.Function import Expression, Function
 from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
 from spdm.util.logger import logger
-from spdm.util.utilities import try_get
+from spdm.util.utilities import try_get, _not_found_
 
 from ..common.GGD import GGD
 from ..common.IDS import IDS
@@ -642,14 +642,15 @@ class EquilibriumTimeSlice(Dict):
     Boundary = EquilibriumBoundary
     BoundarySeparatrix = EquilibriumBoundarySeparatrix
 
-    def __init__(self, *args, vacuum_toroidal_field: VacuumToroidalField = None, **kwargs) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        vacuum_toroidal_field = vacuum_toroidal_field or VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
-        self._vacuum_toroidal_field = VacuumToroidalField(vacuum_toroidal_field.r0, abs(vacuum_toroidal_field.b0))
 
-    @property
+    @cached_property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        return self._vacuum_toroidal_field
+        vacuum_toroidal_field = self.get("vacuum_toroidal_field", _not_found_)
+        if vacuum_toroidal_field is _not_found_:
+            vacuum_toroidal_field = self._parent.vacuum_toroidal_field
+        return VacuumToroidalField(vacuum_toroidal_field.r0, abs(vacuum_toroidal_field.b0))
 
     def radial_grid(self, *args, **kwargs) -> RadialGrid:
         return self.coordinate_system.radial_grid(*args, **kwargs)
@@ -665,7 +666,7 @@ class EquilibriumTimeSlice(Dict):
         ffprime = self["profiles_1d.f_df_dpsi"]
         pprime = self["profiles_1d.dpressure_dpsi"]
         return MagneticCoordSystem(self["coordinate_system"],
-                                   vacuum_toroidal_field=self._vacuum_toroidal_field,
+                                   vacuum_toroidal_field=self.vacuum_toroidal_field,
                                    psirz=psirz,
                                    ffprime=Function(psi_norm, ffprime),
                                    pprime=Function(psi_norm, pprime),
@@ -828,9 +829,9 @@ class Equilibrium(IDS):
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    @property
+    @cached_property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        return VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
+        return VacuumToroidalField(**self.get("vacuum_toroidal_field")._as_dict())
 
     @cached_property
     def grid_ggd(self) -> GGD:
@@ -838,7 +839,7 @@ class Equilibrium(IDS):
 
     @cached_property
     def time_slice(self) -> EquilibriumTimeSlice:
-        return EquilibriumTimeSlice(self["time_slice"], parent=self)
+        return EquilibriumTimeSlice(self["time_slice"],   parent=self)
 
     ####################################################################################
     # Plot profiles

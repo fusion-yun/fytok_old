@@ -148,7 +148,7 @@ class Wall(IDS):
             axis = plt.gca()
 
         desc2d = self.description_2d
-
+        
         vessel_inner_points = np.array([desc2d.vessel.annular.outline_inner.r,
                                         desc2d.vessel.annular.outline_inner.z]).transpose([1, 0])
 

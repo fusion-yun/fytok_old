@@ -89,7 +89,7 @@ class MagneticCoordSystem(Dict):
             v = dim2
         else:
             v = np.asarray([dim2])
-
+        
         self._uv = [u, v]
 
     @property
@@ -182,6 +182,7 @@ class MagneticCoordSystem(Dict):
             v = np.asarray([v])
 
         theta = v*TWOPI  # +theta0
+
         psi = u*(psi1-psi0)+psi0
 
         for psi_val in psi:
