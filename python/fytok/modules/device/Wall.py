@@ -4,12 +4,12 @@ from functools import cached_property
 from logging import log
 
 import matplotlib.pyplot as plt
-from fytok.modules.common.Misc import RZTuple
 import numpy as np
 from spdm.data.AttributeTree import as_attribute_tree
 from spdm.data.Node import Dict, List
 from spdm.util.logger import logger
 from sympy import Point, Polygon
+
 from ..common.IDS import IDS
 from ..common.Misc import RZTuple
 

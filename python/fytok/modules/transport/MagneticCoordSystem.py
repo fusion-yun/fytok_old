@@ -1,6 +1,6 @@
 import collections
 from dataclasses import dataclass
-from functools import cached_property
+from  functools import cached_property
 from typing import Sequence, Union
 
 import matplotlib.pyplot as plt

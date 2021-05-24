@@ -4,7 +4,7 @@ import functools
 import getpass
 import inspect
 import os
-from functools import cached_property
+from  functools import cached_property
 from typing import Mapping, Optional, Sequence
 from dataclasses import dataclass
 import numpy as np

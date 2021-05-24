@@ -1,5 +1,5 @@
 import collections
-from functools import cached_property
+from  functools import cached_property
 from typing import Optional
 
 import numpy as np
@@ -141,7 +141,7 @@ class CoreSourcesProfiles1D(Profiles):
 
     @cached_property
     def j_parallel(self):
-        return Function(self.grid.rho_tor_norm, self.__fetch__("j_parallel"))
+        return Function(self.grid.rho_tor_norm, self.get("j_parallel", None))
 
     @cached_property
     def current_parallel_inside(self):

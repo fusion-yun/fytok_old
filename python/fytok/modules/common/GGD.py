@@ -1,4 +1,4 @@
-from functools import cached_property
+from  functools import cached_property
 
 from spdm.data.Node import Dict, List
 from spdm.flow.Actor import Actor

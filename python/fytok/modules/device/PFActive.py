@@ -1,6 +1,6 @@
 import collections
 from copy import copy
-from functools import cached_property
+from  functools import cached_property
 
 import matplotlib.pyplot as plt
 from spdm.data.AttributeTree import as_attribute_tree, AttributeTree

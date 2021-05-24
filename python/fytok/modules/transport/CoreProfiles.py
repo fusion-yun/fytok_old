@@ -1,5 +1,5 @@
 import collections
-from functools import cached_property
+from  functools import cached_property
 from dataclasses import dataclass
 import numpy as np
 import scipy.constants
@@ -97,16 +97,16 @@ class CoreProfilesIon(SpeciesIon):
 
     @cached_property
     def z_ion_1d(self):
-        d = self["z_ion_id"]
-        if isinstance(d, np.ndarray) or d != None:
+        d = self.get("z_ion_id", None)
+        if isinstance(d, np.ndarray):
             return d
         else:
             return Function(self._axis, self.z_ion)
 
     @cached_property
     def z_ion_square_1d(self):
-        d = self["z_ion_square_1d"]
-        if isinstance(d, np.ndarray) or d != None:
+        d = self.get("z_ion_square_1d", None)
+        if isinstance(d, np.ndarray):
             return d
         else:
             return Function(self._axis, self.z_ion*self.z_ion)

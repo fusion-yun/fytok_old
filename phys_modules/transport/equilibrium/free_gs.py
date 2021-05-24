@@ -1,7 +1,7 @@
 import collections
 import pprint
 import sys
-from functools import cached_property
+from  functools import cached_property
 
 import freegs
 import matplotlib.pyplot as plt

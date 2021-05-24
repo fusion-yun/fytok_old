@@ -1,5 +1,5 @@
 
-from functools import cached_property
+from  functools import cached_property
 
 from spdm.data.AttributeTree import AttributeTree
 from spdm.data.TimeSeries import TimeSeries, TimeSequence

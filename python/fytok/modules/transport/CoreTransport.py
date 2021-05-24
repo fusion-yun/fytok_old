@@ -7,6 +7,7 @@ import numpy as np
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
+from spdm.flow.Actor import Actor
 from spdm.util.logger import logger
 
 from ..common.IDS import IDS, IDSCode
@@ -238,7 +239,7 @@ class CoreTransportProfiles1D(Profiles):
         return Function(self.grid_flux.rho_tor_norm, self["e_field_radial"])
 
 
-class CoreTransportModel(Dict):
+class CoreTransportModel(Actor):
 
     _actor_module_prefix = "transport.core_transport."
 
@@ -321,7 +322,7 @@ class CoreTransport(IDS):
 
     @cached_property
     def model(self) -> List[CoreTransportModel]:
-        return List[CoreTransportModel](self["model"], grid=self._grid,  parent=self)
+        return List[CoreTransportModel](self["model"], parent=self)
 
     def update(self,  *args,  **kwargs) -> float:
         res = [model.update(*args,  **kwargs) for model in self.model]

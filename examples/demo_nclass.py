@@ -235,7 +235,7 @@ if __name__ == "__main__":
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
     ###################################################################################################
-    if True:
+    if False:
         core_transport = CoreTransport({"model": [
             {"code": {"name": "neoclassical"}},
             # {"code": {"name": "nclass"}},
@@ -259,6 +259,8 @@ if __name__ == "__main__":
 
         # core_transport1d = core_transport.current_state.profiles_1d
         core_transport1d = core_transport.model[0].profiles_1d
+
+        logger.debug([ion.label for ion in core_transport1d.ion])
 
         plot_profiles(
             [
@@ -314,7 +316,7 @@ if __name__ == "__main__":
             # annotation=core_transport.model[0].identifier.name,
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
-    if False:
+    if True:
         core_sources = CoreSources({"source": [
             {"code": {"name": "bootstrap_current"}},
             # {"code": {"name": "spitzer"}},
@@ -340,10 +342,10 @@ if __name__ == "__main__":
                 #     (core_source_1d.conductivity_parallel*11/14,
                 #      r"$\sigma_{\parallel}^{wesson}$"),
                 # ],
-                [
-                    (Function(bs_r_nrom, baseline["Jbs"].values*1.0e6), r"$j_{bootstrap}^{astra}$", {"marker": "+"}),
-                    (core_source_1d.j_parallel,                                    r"$j_{bootstrap}^{wesson}$"),
-                ],
+                # [
+                (Function(bs_r_nrom, baseline["Jbs"].values*1.0e6), r"$j_{bootstrap}^{astra}$", {"marker": "+"}),
+                (core_source_1d.j_parallel,                                    r"$j_{bootstrap}^{wesson}$"),
+                # ],
 
                 # (core_source_1d.e_field_radial,                                             r"$E_{radial}$"),
                 # (tok.equilibrium.time_slice[-1].profiles_1d.trapped_fraction(

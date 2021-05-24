@@ -1,8 +1,8 @@
 import collections
 from dataclasses import dataclass
-from functools import cached_property
+from  functools import cached_property
 from typing import Sequence, Union
-
+from functools import cached_property
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
@@ -446,8 +446,8 @@ class EquilibriumProfiles1D(Profiles):
         """Trapped particle fraction[-]
             Tokamak 3ed, 14.10
         """
-        d = self["trapped_fraction"]
-        if not isinstance(d, np.ndarray) and d == None:
+        d = self.get("trapped_fraction", None)
+        if not isinstance(d, np.ndarray):
             epsilon = self.rho_tor/self._r0
             d = np.asarray(1.0 - (1-epsilon)**2/np.sqrt(1.0-epsilon**2)/(1+1.46*np.sqrt(epsilon)))
         return Function(self._axis, d)

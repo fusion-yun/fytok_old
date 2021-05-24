@@ -4,7 +4,7 @@
 
 import collections
 import copy
-from functools import cached_property
+from  functools import cached_property
 from math import log
 
 import numpy as np

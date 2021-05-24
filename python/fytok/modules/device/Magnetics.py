@@ -1,11 +1,10 @@
-from functools import cached_property
-
 import numpy as np
-from fytok.Misc import Identifier, IDSProperties, Signal
 from spdm.data.AttributeTree import as_attribute_tree
 from spdm.data.Node import Dict
+from  functools import cached_property
 
-from ..common.IDS import IDS
+from ..common.IDS import IDS, IDSProperties
+from ..common.Misc import Identifier, Signal
 
 
 @as_attribute_tree
@@ -128,25 +127,26 @@ class Magnetics(IDS):
         @cached_property
         def position(self):
             """R, Z, Phi position of the coil centre    structure    """
-            return Dict(
-                r=float(self["position.r"]),
-                z=float(self["position.z)"],
-                phi=float(self["position.phi"])
-            )
+            return NotImplemented
+            # return Dict(
+            #     r=float(self["position.r"]),
+            #     z=float(self["position.z)"],
+            #     phi=float(self["position.phi"])
+            # )
 
         @ cached_property
         def poloidal_angle(self):
             """Angle of the sensor normal vector (n) with respect to horizontal plane (clockwise as in cocos=11 theta-like angle).
             Zero if sensor normal vector fully in the horizontal plane and oriented towards increasing major radius. Values in [0 , 2Pi]
             """
-            return float(self["poloidal_angle"])
+            return self["poloidal_angle"]
 
         @ cached_property
         def toroidal_angle(self):
             """Angle of the projection of the sensor normal vector (n) in the horizontal plane with the increasing R direction (i.e. grad(R))
             (angle is counter-clockwise from above as in cocos=11 phi-like angle). Values should be taken modulo pi with values within (-pi/2,pi/2].
             Zero if projected sensor normal is parallel to grad(R), pi/2 if it is parallel to grad(phi). """
-            return float(self["toroidal_angle"])
+            return self["toroidal_angle"]
 
         @ cached_property
         def indices_differential(self):
@@ -207,22 +207,22 @@ class Magnetics(IDS):
         def non_linear_response(self):
             """Non-linear response of the probe (typically in case of a Hall probe)"""
             return Dict(b_field_linear=self._cache.b_field_linear,
-                                 b_field_non_linear=Dict(b_field_linear=self._cache.b_field_non_linear))
+                        b_field_non_linear=Dict(b_field_linear=self._cache.b_field_non_linear))
 
     @ cached_property
     def b_field_pol_probe(self):
         """Poloidal field probes    struct_array [max_size=200] """
-        res=Dict(default_factory_array=lambda _holder=self: Magnetics.MagneticProbe(parent=_holder))
+        res = Dict(default_factory_array=lambda _holder=self: Magnetics.MagneticProbe(parent=_holder))
         for floop in self._cache.b_field_pol_probe:
-            res[_next_]=floop
+            res[_next_] = floop
         return res
 
     @ cached_property
     def b_field_tor_probe(self):
         """Toroidal field probes    struct_array [max_size=20] """
-        res=Dict(default_factory_array=lambda _holder=self: Magnetics.MagneticProbe(parent=_holder))
+        res = Dict(default_factory_array=lambda _holder=self: Magnetics.MagneticProbe(parent=_holder))
         for floop in self._cache.b_field_tor_probe:
-            res[_next_]=floop
+            res[_next_] = floop
         return res
 
     @ cached_property

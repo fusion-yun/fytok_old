@@ -1,5 +1,5 @@
 import collections
-from functools import cached_property
+from  functools import cached_property
 
 import numpy as np
 import scipy

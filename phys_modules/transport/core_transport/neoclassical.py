@@ -35,17 +35,17 @@ class NeoClassical(CoreTransport.Model):
         super().update(*args, core_profiles=core_profiles, **kwargs)
 
         eV = scipy.constants.electron_volt
-        B0 = equilibrium.vacuum_toroidal_field.b0
+        B0 = abs(equilibrium.vacuum_toroidal_field.b0)
         R0 = equilibrium.vacuum_toroidal_field.r0
 
         core_profile = core_profiles.profiles_1d
-        trans = self.profiles_1d[-1]
+        trans = self.profiles_1d
 
         rho_tor_norm = np.asarray(core_profile.grid.rho_tor_norm)
         rho_tor = np.asarray(core_profile.grid.rho_tor)
         psi_norm = np.asarray(core_profile.grid.psi_norm)
         psi = np.asarray(core_profile.grid.psi)
-        q = np.asarray(equilibrium.profiles_1d.q(core_profile.grid.psi_norm))
+        q = np.asarray(equilibrium.time_slice.profiles_1d.q(core_profile.grid.psi_norm))
 
         # Tavg = np.sum([ion.density*ion.temperature for ion in core_profile.ion]) / \
         #     np.sum([ion.density for ion in core_profile.ion])
@@ -65,21 +65,18 @@ class NeoClassical(CoreTransport.Model):
 
         # Coulomb logarithm
         #  Ch.14.5 p727 Tokamaks 2003
-        lnCoul = (14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +\
-            (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000))*(Te >= 10)
+        # lnCoul = (14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +\
+        #     (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000))*(Te >= 10)
         # (17.3 - 0.5*np.log(Ne/1e20) + 1.5*np.log(Te/1000))*(Te >= 10)
 
         # lnCoul = 14
-
+        lnCoul = core_profiles.profiles_1d.coulomb_logarithm
         # electron collision time , eq 14.6.1
         tau_e = np.asarray(1.09e16*((Te/1000)**(3/2))/Ne/lnCoul)
 
         vTe = np.asarray(np.sqrt(Te*eV/scipy.constants.electron_mass))
 
-        # Larmor radius,   eq 14.7.2
-        rho_e = np.asarray(1.07e-4*((Te/1000)**(1/2))/B0)
-
-        rho_tor[0] = max(rho_e[0], rho_tor[0])
+        rho_tor[0] = max(1.07e-4*((Te[0]/1000)**(1/2))/B0, rho_tor[0])  # Larmor radius,   eq 14.7.2
 
         epsilon = np.asarray(rho_tor/R0)
         epsilon12 = np.sqrt(epsilon)
@@ -100,7 +97,7 @@ class NeoClassical(CoreTransport.Model):
         ###########################################################################################
         #  Sec 14.12 Bootstrap current
         #
-        x = equilibrium.profiles_1d.trapped_fraction(psi_norm)  # np.sqrt(2*epsilon)  #
+        x = equilibrium.time_slice.profiles_1d.trapped_fraction(psi_norm)  # np.sqrt(2*epsilon)  #
         c1 = (4.0+2.6*x)/(1.0+1.02*np.sqrt(nu_e)+1.07*nu_e)/(1.0 + 1.07 * epsilon32*nu_e)
         c3 = (7.0+6.5*x)/(1.0+0.57*np.sqrt(nu_e)+0.61*nu_e)/(1.0 + 0.61 * epsilon32*nu_e) - c1*5/2
 
@@ -110,7 +107,8 @@ class NeoClassical(CoreTransport.Model):
         #  Sec 14.11 Chang-0Hinton formula for \Chi_i
 
         # Shafranov shift
-        delta_ = Function(rho_tor, np.array(equilibrium.profiles_1d.geometric_axis.r(psi_norm)-R0)).derivative
+        delta_ = Function(rho_tor, np.array(
+            equilibrium.time_slice.profiles_1d.geometric_axis.r(psi_norm)-R0)).derivative
 
         # impurity ions
         nZI = 0.0
@@ -179,7 +177,7 @@ class NeoClassical(CoreTransport.Model):
         # trans.j_bootstrap = (-(q/B0/epsilon12))*j_bootstrap
 
         trans.j_bootstrap = - j_bootstrap * x/(2.4+5.4*x+2.6*x**2) * Pe * \
-            equilibrium.profiles_1d.fpol(psi_norm) * q / rho_tor / rho_tor[-1] / (2.0*scipy.constants.pi*B0)
+            equilibrium.time_slice.profiles_1d.fpol(psi_norm) * q / rho_tor / rho_tor[-1] / (2.0*scipy.constants.pi*B0)
 
         trans.e_field_radial = sum1/sum2
 

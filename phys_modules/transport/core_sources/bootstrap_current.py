@@ -64,9 +64,7 @@ class BootstrapCurrent(CoreSources.Source):
 
         vTe = np.asarray(np.sqrt(Te*eV/scipy.constants.electron_mass))
 
-        # Larmor radius,   eq 14.7.2
-        rho_e = np.asarray(1.07e-4*((Te/1000)**(1/2))/B0)
-        rho_tor[0] = max(rho_e[0], rho_tor[0])
+        rho_tor[0] = max(np.asarray(1.07e-4*((Te[0]/1000)**(1/2))/B0), rho_tor[0])   # Larmor radius,   eq 14.7.2
 
         epsilon = np.asarray(rho_tor/R0)
         epsilon12 = np.sqrt(epsilon)
@@ -116,9 +114,9 @@ class BootstrapCurrent(CoreSources.Source):
         # eq 4.9.2
         # src.j_bootstrap = (-(q/B0/epsilon12))*j_bootstrap
 
-        self.profiles_1d.j_parallel = - j_bootstrap * x/(2.4+5.4*x+2.6*x**2) * Pe * \
+        j_bootstrap = - j_bootstrap * x/(2.4+5.4*x+2.6*x**2) * Pe * \
             equilibrium.time_slice.profiles_1d.fpol(psi_norm) * q / rho_tor / rho_tor[-1] / (2.0*scipy.constants.pi*B0)
-        logger.debug(self.profiles_1d.j_parallel)
+        self.profiles_1d.j_parallel = j_bootstrap
         return 0.0
 
 

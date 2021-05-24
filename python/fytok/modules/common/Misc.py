@@ -2,7 +2,7 @@
 import collections
 from dataclasses import dataclass
 from datetime import datetime
-from functools import cached_property
+from  functools import cached_property
 from typing import Union
 import numpy as np
 from spdm.data.Node import Dict

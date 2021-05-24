@@ -1,4 +1,4 @@
-from functools import cached_property
+from  functools import cached_property
 import numpy as np
 from spdm.data.Node import Dict
 

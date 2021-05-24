@@ -12,6 +12,7 @@ import scipy
 import scipy.constants
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, Node
+from spdm.data.sp_property import sp_property
 from spdm.flow.Actor import Actor
 from spdm.util.logger import logger
 
@@ -20,6 +21,7 @@ from .modules.common.Misc import VacuumToroidalField
 from .modules.device.PFActive import PFActive
 from .modules.device.TF import TF
 from .modules.device.Wall import Wall
+from .modules.device.Magnetics import Magnetics
 #############################
 from .modules.transport.CoreProfiles import CoreProfiles
 from .modules.transport.CoreSources import CoreSources
@@ -64,11 +66,15 @@ class Tokamak(Actor):
     @cached_property
     def pf_active(self) -> PFActive:
         return PFActive(self["pf_active"], parent=self)
+
+    @cached_property
+    def magnetics(self) -> Magnetics:
+        return Magnetics(self["pf_active"], parent=self)
     # --------------------------------------------------------------------------
 
     @cached_property
     def equilibrium(self) -> Equilibrium:
-        return Equilibrium(self.__fetch__("equilibrium"), wall=self.wall, pf_active=self.pf_active, parent=self)
+        return Equilibrium(self["equilibrium"], wall=self.wall, pf_active=self.pf_active, parent=self)
 
     @cached_property
     def core_profiles(self) -> CoreProfiles:

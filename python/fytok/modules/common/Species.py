@@ -1,6 +1,6 @@
 import collections
 from dataclasses import dataclass
-from functools import cached_property
+from  functools import cached_property
 
 import numpy as np
 import scipy.constants
