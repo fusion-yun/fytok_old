@@ -245,10 +245,10 @@ class CoreTransportModel(Dict):
     Profiles1D = CoreTransportProfiles1D
 
     def __init__(self, d=None, *args, grid: Optional[RadialGrid] = None, ** kwargs):
-        super().__init__(
-            collections.ChainMap(d or {}, {"identifier": {"name":  "unspecified", "index": 0,
-                                                          "description": f"{self.__class__.__name__}"}}),
-            * args, **kwargs)
+        super().__init__(collections.ChainMap(d or {},
+                                              {"identifier": {"name":  "unspecified", "index": 0,
+                                                              "description": f"{self.__class__.__name__}"}}),
+                         * args, **kwargs)
         self._grid = grid or self._parent._grid
 
     def update(self, *args, **kwargs) -> float:
@@ -325,6 +325,5 @@ class CoreTransport(IDS):
 
     def update(self,  *args,  **kwargs) -> float:
         res = [model.update(*args,  **kwargs) for model in self.model]
-        logger.debug(res)
         redisual = sum(res)
         return super().update(*args, **kwargs) + redisual

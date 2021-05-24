@@ -278,20 +278,13 @@ class CoreProfilesNeutral(Species):
 
 
 class CoreProfiles1D(Profiles):
-    def __init__(self, *args, grid=None, time=None, parent=None, **kwargs):
+    def __init__(self, *args, grid: RadialGrid = None, time=None, parent=None, **kwargs):
         grid = grid or getattr(parent, "_grid", None)
         assert(grid is not None)
         super().__init__(*args, axis=grid.rho_tor_norm, parent=parent, **kwargs)
         self._grid = grid
-        self._time = time or 0.0
-        self._r0 = self._parent.vacuum_toroidal_field.r0
-        self._b0 = self._parent.vacuum_toroidal_field.b0
-        if callable(self._b0):
-            self._b0 = self._b0(time)
-
-    @property
-    def time(self) -> float:
-        return self._time
+        self._r0 = self._grid.vacuum_toroidal_field.r0
+        self._b0 = self._grid.vacuum_toroidal_field.b0
 
     @property
     def grid(self) -> RadialGrid:
@@ -340,8 +333,8 @@ class CoreProfiles1D(Profiles):
     @cached_property
     def zeff(self):
         """Effective charge {dynamic}[-]"""
-        d = self["zeff"]
-        if isinstance(d, np.ndarray) or d != None:
+        d = self.get("zeff")
+        if isinstance(d, np.ndarray):
             return d
         else:
             # zeff = 0.0

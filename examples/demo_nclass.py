@@ -135,7 +135,7 @@ if __name__ == "__main__":
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
     ###################################################################################################
-    if False:
+    if True:
 
         Te = Function(bs_r_nrom, baseline["TE"].values*1000)
         Ti = Function(bs_r_nrom, baseline["TI"].values*1000)
@@ -200,8 +200,6 @@ if __name__ == "__main__":
 
         core_profile = tok.core_profiles.profiles_1d
 
-        logger.debug(core_profile.e_field.parallel)
-
         plot_profiles(
             [
                 [
@@ -237,7 +235,7 @@ if __name__ == "__main__":
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
     ###################################################################################################
-    if False:
+    if True:
         core_transport = CoreTransport({"model": [
             {"code": {"name": "neoclassical"}},
             # {"code": {"name": "nclass"}},
@@ -246,14 +244,6 @@ if __name__ == "__main__":
         ]},
             grid=tok.equilibrium.time_slice.coordinate_system.radial_grid()
         )
-        # core_sources = CoreSources({"source": [
-        #     {"code": {"name": "neoclassical"}},
-        #     # {"code": {"name": "nclass"}},
-        #     # {"code": {"name": "spitzer"}},
-        #     # {"code": {"name": "gyroBhom"}},
-        # ]},
-        #     grid=tok.equilibrium.time_slice.coordinate_system.radial_grid()
-        # )
 
         core_transport.advance(dt=0.1,
                                equilibrium=tok.equilibrium.current_state(),
@@ -270,7 +260,6 @@ if __name__ == "__main__":
         # core_transport1d = core_transport.current_state.profiles_1d
         core_transport1d = core_transport.model[0].profiles_1d
 
-    if False:
         plot_profiles(
             [
                 # [
@@ -311,8 +300,7 @@ if __name__ == "__main__":
                      r"$\sigma_{\parallel}^{wesson}$"),
                 ],
                 [
-                    (Function(bs_r_nrom, baseline["Jbs"].values*1.0e6),
-                     r"$j_{bootstrap}^{astra}$", {"marker": "+"}),
+                    (Function(bs_r_nrom, baseline["Jbs"].values*1.0e6),  r"$j_{bootstrap}^{astra}$", {"marker": "+"}),
                     (core_transport1d.j_bootstrap,                                    r"$j_{bootstrap}^{wesson}$"),
                 ],
 

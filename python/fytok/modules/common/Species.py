@@ -1,10 +1,11 @@
 import collections
 from dataclasses import dataclass
 from functools import cached_property
-import scipy.constants
+
 import numpy as np
+import scipy.constants
 from spdm.data.AttributeTree import AttributeTree
-from spdm.data.Node import List, Dict
+from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
 from spdm.util.logger import logger
 
