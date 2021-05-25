@@ -11,7 +11,7 @@
     <homogeneous_time dtype="int">2</homogeneous_time>
   </ids_properties>
 
-  <description_2d>
+  <description_2d id='0'>
     <type>
       <name>ITER</name>
       <index dtype='int'>1</index>

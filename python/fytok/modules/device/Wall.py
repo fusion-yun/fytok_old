@@ -11,6 +11,11 @@ from ..common.IDS import IDS
 from ..common.Misc import RZTuple
 
 
+class WallGlobalQuantities(Dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
 class WallLimiter(Dict):
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -128,18 +133,34 @@ class WallDescription2D(Dict):
         #     raise TypeError(f"Unknown type {type(vessel)}")
 
 
+class WallDescriptionGGD(Dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
 class Wall(IDS):
     """Wall
 
     """
     _IDS = "wall"
+    Description2D = WallDescription2D
+    DescriptionGGD = WallDescriptionGGD
+    GlobalQuantities = WallGlobalQuantities
 
     def __init__(self, *args,  **kwargs):
         super().__init__(*args, **kwargs)
 
     @sp_property
-    def description_2d(self) -> WallDescription2D:
+    def global_quantities(self) -> GlobalQuantities:
+        return self["global_quantities"]
+
+    @sp_property
+    def description_2d(self) -> List[Description2D]:
         return self["description_2d"]
+
+    @sp_property
+    def description_ggd(self) -> List[DescriptionGGD]:
+        return self["description_ggd"]
 
     def plot(self, axis=None, *args, **kwargs):
 
