@@ -7,6 +7,6 @@ class AMNSData(IDS):
         
         Note: AMNSData is an ids
     """
-    IDS="amns_data"
+    _IDS="amns_data"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -7,6 +7,6 @@ class Interferometer(IDS):
         
         Note: Interferometer is an ids
     """
-    IDS="interferometer"
+    _IDS="interferometer"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

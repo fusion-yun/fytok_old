@@ -8,6 +8,6 @@ class Distributions(IDS):
         Note: 
             Distributions is an ids
     """
-    IDS="distributions"
+    _IDS="distributions"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

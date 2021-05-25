@@ -1,55 +1,60 @@
-import collections
-from copy import copy
-from  functools import cached_property
 
 import matplotlib.pyplot as plt
-from spdm.data.AttributeTree import as_attribute_tree, AttributeTree
 from spdm.data.Node import Dict, List
+from spdm.data.sp_property import sp_property
 from spdm.util.logger import logger
+
 from ..common.IDS import IDS
+
+
+class PFActiveCoil(Dict):
+    def __init__(self,  *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+class PFActiveCircuit(Dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+class PFActiveSupply(Dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class PFActive(IDS):
     """
     """
-
-    class Coil(Dict):
-        def __init__(self,  *args, **kwargs):
-            super().__init__(*args, **kwargs)
-
-    class Circuit(Dict):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-
-    class Supply(Dict):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
+    _IDS = "pf_active"
+    
+    Coil = PFActiveCoil
+    Circuit = PFActiveCircuit
+    Supply = PFActiveSupply
 
     def __init__(self, *args,  **kwargs):
         super().__init__(*args,  **kwargs)
 
-    @cached_property
+    @sp_property
     def coil(self) -> List[Coil]:
-        return List[PFActive.Coil](self["coil"],  parent=self)
+        return self["coil"]
 
-    @cached_property
+    @sp_property
     def circuit(self) -> List[Circuit]:
         """Circuits, connecting multiple PF coils to multiple supplies, 
             defining the current and voltage relationships in the system"""
-        return List[PFActive.Circuit](self["circuit"],  parent=self)
+        return self["circuit"]
 
-    @cached_property
+    @sp_property
     def supply(self) -> List[Supply]:
         """PF power supplies"""
-        return List[PFActive.Supply](self["supply"], parent=self)
+        return self["supply"]
 
     def plot(self, axis=None, *args, with_circuit=False, **kwargs):
 
         if axis is None:
             axis = plt.gca()
         for coil in self.coil:
-            geo = AttributeTree(coil["element.geometry.rectangle"])
-
+            geo = coil["element.geometry.rectangle"]
             axis.add_patch(plt.Rectangle((geo["r"]-geo["width"]/2.0,  geo["z"]-geo["height"]/2.0),
                                          geo["width"],  geo["height"],
                                          **collections.ChainMap(kwargs,  {"fill": False})))

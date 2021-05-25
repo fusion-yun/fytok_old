@@ -1,5 +1,4 @@
 import collections
-from  functools import cached_property
 from typing import Optional
 
 import numpy as np
@@ -7,8 +6,9 @@ import scipy.constants
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List, Node
 from spdm.data.Profiles import Profiles
-from spdm.util.logger import logger
+from spdm.data.sp_property import sp_property
 from spdm.flow.Actor import Actor
+from spdm.util.logger import logger
 
 from ..common.IDS import IDS
 from ..common.Misc import Identifier, VacuumToroidalField
@@ -20,15 +20,15 @@ class CoreSourcesParticle(Dict):
     def __init__(self, *args,  **kwargs):
         super().__init__(*args, **kwargs)
 
-    @cached_property
+    @sp_property
     def particles(self):
         return Function(self._parent.grid.rho_tor_norm, self["particles"], parent=self._parent)
 
-    @cached_property
+    @sp_property
     def energy(self):
         return Function(self._parent.grid.rho_tor_norm, self["energy"], parent=self._parent)
 
-    @cached_property
+    @sp_property
     def momentum(self):
         return Profiles(self["momentum"], axis=self._parent.grid.rho_tor_norm, parent=self._parent)
 
@@ -45,7 +45,7 @@ class CoreSourcesElectrons(Dict):
     def __init__(self,  *args,   **kwargs):
         super().__init__(* args,  **kwargs)
 
-    @cached_property
+    @sp_property
     def particle(self):
         return (
             + self.S_neutrals   # ionization source from neutrals (wall recycling, gas puffing, etc),
@@ -54,7 +54,7 @@ class CoreSourcesElectrons(Dict):
             + self.S_ripple     # particle losses induced by toroidal magnetic field ripple.
         )
 
-    @cached_property
+    @sp_property
     def energy(self):
         return (
             - self._parent.Qei      # electron–ion collisional energy transfer
@@ -78,7 +78,7 @@ class CoreSourcesIon(Dict):
     def __init__(self,  *args,   **kwargs):
         super().__init__(* args,  **kwargs)
 
-    @cached_property
+    @sp_property
     def energy(self):
         return (
             + self._parent.Qei      # electron–ion collisional energy transfer
@@ -112,46 +112,46 @@ class CoreSourcesProfiles1D(Profiles):
     def grid(self) -> RadialGrid:
         return self._grid
 
-    @cached_property
-    def electrons(self):
-        return CoreSourcesElectrons(self["electrons"], parent=self)
+    @sp_property
+    def electrons(self) -> CoreSourcesElectrons:
+        return self["electrons"]
 
-    @cached_property
-    def ion(self):
-        return List[CoreSourcesIon](self["ion"], parent=self)
+    @sp_property
+    def ion(self) -> List[CoreSourcesIon]:
+        return self["ion"]
 
-    @cached_property
-    def neutral(self):
-        return List[CoreSourcesNeutral](self["neutral"], parent=self)
+    @sp_property
+    def neutral(self) -> List[CoreSourcesNeutral]:
+        return self["neutral"]
 
-    @cached_property
+    @sp_property
     def total_ion_energy(self):
         res = Function(self.grid.rho_tor_norm,  0.0)
         for ion in self.ion:
             res += ion.energy
         return res
 
-    @cached_property
+    @sp_property
     def total_ion_power_inside(self):
         return NotImplemented
 
-    @cached_property
+    @sp_property
     def torque_tor_inside(self):
         return NotImplemented
 
-    @cached_property
+    @sp_property
     def j_parallel(self):
         return Function(self.grid.rho_tor_norm, self.get("j_parallel", None))
 
-    @cached_property
+    @sp_property
     def current_parallel_inside(self):
         return Function(self.grid.rho_tor_norm, self["current_parallel_inside"])
 
-    @cached_property
+    @sp_property
     def conductivity_parallel(self):
         return Function(self.grid.rho_tor_norm, self["conductivity_parallel"])
 
-    @cached_property
+    @sp_property
     def Qei(self):
         Te = self._core_profile.profiles_1d.electrons.temperature
         ne = self._core_profile.profiles_1d.electrons.density
@@ -169,15 +169,15 @@ class CoreSourcesProfiles1D(Profiles):
 
         return sum(qei(ion) for ion in self._core_profile.ions)*(3/2) * e/(mp/me/2)/tau_e
 
-    @cached_property
+    @sp_property
     def Qneo(self):
         return NotImplemented
 
-    @cached_property
+    @sp_property
     def Qoh(self):
         return NotImplemented
 
-    @cached_property
+    @sp_property
     def j_ni(self):
         r"""
             the current density driven by the non-inductive sources
@@ -232,15 +232,15 @@ class CoreSourcesSpecies(Dict):
 #         self._grid = grid or self._parent._grid
 #         self._time = time or self._parent
 
-#     @cached_property
+#     @sp_property
 #     def vacuum_toroidal_field(self):
 #         return VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
 
-#     @cached_property
+#     @sp_property
 #     def global_quantities(self) -> GlobalQuantities:
 #         return CoreSources.GlobalQuantities(self["global_quantities"], time=self._time,  parent=self)
 
-#     @cached_property
+#     @sp_property
 #     def profiles_1d(self) -> Profiles1D:
 #         return CoreSources.Profiles1D(self["profiles_1d"], grid=self._grid,  time=self._time, parent=self)
 
@@ -252,7 +252,7 @@ class CoreSourcesSource(Actor):
         super().__init__(*args, **kwargs)
         self._grid = grid or self._parent._grid
 
-    @cached_property
+    @sp_property
     def identifier(self) -> Identifier:
         r"""
             Source term identifier (process causing this source term). Available options (refer to the children of this identifier structure) :
@@ -313,15 +313,15 @@ class CoreSourcesSource(Actor):
         """
         return Identifier(**self["identifier"]._as_dict())
 
-    @cached_property
+    @sp_property
     def species(self):
         return CoreSourcesSpecies(self["species"], parent=self)
 
-    @cached_property
+    @sp_property
     def global_quantities(self) -> CoreSourcesGlobalQuantities:
         return CoreSourcesGlobalQuantities(self["global_quantities"], parent=self)
 
-    @cached_property
+    @sp_property
     def profiles_1d(self) -> CoreSourcesProfiles1D:
         return CoreSourcesProfiles1D(self["profiles_1d"], axis=self._grid.rho_tor_norm, parent=self)
 
@@ -341,11 +341,11 @@ class CoreSources(IDS):
         super().__init__(*args, **kwargs)
         self._grid = grid
 
-    @cached_property
+    @sp_property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
         return VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
 
-    @cached_property
+    @sp_property
     def source(self) -> List[CoreSourcesSource]:
         return List[CoreSourcesSource](self["source"], grid=self._grid, parent=self)
 

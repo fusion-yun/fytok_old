@@ -8,6 +8,6 @@ class Disruption(IDS):
         Note: 
             Disruption is an ids
     """
-    IDS="disruption"
+    _IDS="disruption"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

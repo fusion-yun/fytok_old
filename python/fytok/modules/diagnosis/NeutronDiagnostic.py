@@ -7,6 +7,6 @@ class NeutronDiagnostic(IDS):
         
         Note: NeutronDiagnostic is an ids
     """
-    IDS="neutron_diagnostic"
+    _IDS="neutron_diagnostic"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

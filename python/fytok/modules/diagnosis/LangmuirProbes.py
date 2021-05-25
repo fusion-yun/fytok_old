@@ -7,6 +7,6 @@ class LangmuirProbes(IDS):
         
         Note: LangmuirProbes is an ids
     """
-    IDS="langmuir_probes"
+    _IDS="langmuir_probes"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

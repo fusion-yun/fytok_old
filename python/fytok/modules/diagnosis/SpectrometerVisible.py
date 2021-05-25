@@ -7,6 +7,6 @@ class SpectrometerVisible(IDS):
         
         Note: SpectrometerVisible is an ids
     """
-    IDS="spectrometer_visible"
+    _IDS="spectrometer_visible"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

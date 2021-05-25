@@ -7,6 +7,6 @@ class ECLaunchers(IDS):
         
         Note: ECLaunchers is an ids
     """
-    IDS="ec_launchers"
+    _IDS="ec_launchers"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

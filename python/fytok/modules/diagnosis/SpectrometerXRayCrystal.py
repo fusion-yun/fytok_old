@@ -7,6 +7,6 @@ class SpectrometerXRayCrystal(IDS):
         
         Note: SpectrometerXRayCrystal is an ids
     """
-    IDS="spectrometer_x_ray_crystal"
+    _IDS="spectrometer_x_ray_crystal"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -7,6 +7,6 @@ class BremsstrahlungVisible(IDS):
         
         Note: BremsstrahlungVisible is an ids
     """
-    IDS="bremsstrahlung_visible"
+    _IDS="bremsstrahlung_visible"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -7,6 +7,6 @@ class HardXRays(IDS):
         
         Note: HardXRays is an ids
     """
-    IDS="hard_x_rays"
+    _IDS="hard_x_rays"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

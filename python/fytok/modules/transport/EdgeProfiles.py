@@ -2,7 +2,7 @@ from spdm.data.Node import Dict
 from ..common.IDS import IDS
 
 
-class EdgeProfiles(Dict):
+class EdgeProfiles(IDS):
     """Edge plasma profiles
          (includes the scrape-off layer and possibly part of the confined plasma)
 

@@ -7,6 +7,6 @@ class SpectrometerMass(IDS):
         
         Note: SpectrometerMass is an ids
     """
-    IDS="spectrometer_mass"
+    _IDS="spectrometer_mass"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

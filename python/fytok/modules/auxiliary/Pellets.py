@@ -7,6 +7,6 @@ class Pellets(IDS):
         
         Note: Pellets is an ids
     """
-    IDS="pellets"
+    _IDS="pellets"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

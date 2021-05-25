@@ -8,6 +8,6 @@ class Gyrokinetics(IDS):
         which are given in the rotating frame.
         Note: Gyrokinetics is an ids
     """
-    IDS="gyrokinetics"
+    _IDS="gyrokinetics"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

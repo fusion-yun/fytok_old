@@ -7,6 +7,6 @@ class MHD(IDS):
         
         Note: MHD is an ids
     """
-    IDS="mhd"
+    _IDS="mhd"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

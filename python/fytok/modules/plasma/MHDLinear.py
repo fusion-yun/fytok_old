@@ -7,6 +7,6 @@ class MHDLinear(IDS):
         
         Note: MHDLinear is an ids
     """
-    IDS="mhd_linear"
+    _IDS="mhd_linear"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

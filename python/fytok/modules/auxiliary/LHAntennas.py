@@ -7,6 +7,6 @@ class LHAntennas(IDS):
         
         Note: LHAntennas is an ids
     """
-    IDS="lh_antennas"
+    _IDS="lh_antennas"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

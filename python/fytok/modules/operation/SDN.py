@@ -7,6 +7,6 @@ class SDN(IDS):
         
         Note: SDN is an ids
     """
-    IDS="sdn"
+    _IDS="sdn"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

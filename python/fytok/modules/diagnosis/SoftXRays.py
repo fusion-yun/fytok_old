@@ -7,6 +7,6 @@ class SoftXRays(IDS):
         
         Note: SoftXRays is an ids
     """
-    IDS="soft_x_rays"
+    _IDS="soft_x_rays"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

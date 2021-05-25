@@ -1,15 +1,12 @@
-import collections
 import datetime
-import functools
 import getpass
-import inspect
-import os
-from  functools import cached_property
-from typing import Mapping, Optional, Sequence
 from dataclasses import dataclass
-import numpy as np
+from typing import Mapping, Optional, Sequence
+
 from spdm.data.Node import Dict, List, Node
+from spdm.data.sp_property import sp_property
 from spdm.flow.Actor import Actor
+
 # from spdm.util.logger import logger
 
 
@@ -17,12 +14,12 @@ class IDSProperties(Dict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args,  **kwargs)
 
-    @cached_property
+    @sp_property
     def comment(self):
         """ Any comment describing the content of this IDS {constant}	STR_0D"""
         return self["comment"]
 
-    @cached_property
+    @sp_property
     def homogeneous_time(self):
         """This node must be filled (with 0, 1, or 2) for the IDS to be valid. If 1, the time of this IDS is homogeneous,
             i.e. If 1, the time values for this IDS are stored in the time node just below the root of this IDS. 
@@ -40,17 +37,17 @@ class IDSProperties(Dict):
 
         return h_time
 
-    @cached_property
+    @sp_property
     def source(self):
         """Source of the data (any comment describing the origin of the data : code, path to diagnostic signals, processing method, ...) {constant}	STR_0D	"""
         return self["source"] or f"Create by '{self._parent.__class__.__module__}.{self._parent.__class__.__name__ }'"
 
-    @cached_property
+    @sp_property
     def provider(self):
         """Name of the person in charge of producing this data {constant}	STR_0D	"""
         return self["provider"] or getpass.getuser().capitalize()
 
-    @cached_property
+    @sp_property
     def creation_date(self):
         """Date at which this data has been produced {constant}	STR_0D	"""
         return self["creation_date"] or datetime.datetime.now().isoformat()
@@ -61,7 +58,7 @@ class IDSProperties(Dict):
         access_layer: str = os.environ.get("IMAS_AL_VER", 4)
         access_layer_language: str = "N/A"
 
-    @cached_property
+    @sp_property
     def version_put(self) -> VersionPut:
         """Version of the access layer package used to PUT this IDS"""
         return IDSProperties.VersionPut(**(self["version_put"]._as_dict()))
@@ -71,32 +68,32 @@ class IDSCode(Dict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    @cached_property
+    @sp_property
     def name(self) -> str:
         """Name of software generating IDS {constant}	STR_0D"""
         return self["name"] or f"{self._parent.__class__.__module__}.{self._parent.__class__.__name__}"
 
-    @cached_property
+    @sp_property
     def commit(self) -> str:
         """	Unique commit reference of software {constant}	STR_0D"""
         return self["commit"]
 
-    @cached_property
+    @sp_property
     def version(self) -> str:
         """Unique version (tag) of software {constant}	STR_0D"""
         return self["version"]
 
-    @cached_property
+    @sp_property
     def repository(self) -> str:
         """URL of software repository {constant}	STR_0D"""
         return self["repository"]
 
-    @cached_property
+    @sp_property
     def parameters(self) -> str:
         r"""List of the code specific parameters in XML format {constant}	STR_0D"""
         return self["parameters"]
 
-    @cached_property
+    @sp_property
     def output_flag(self) -> Sequence[int]:
         """Output flag : 0 means the run is successful, other values mean some difficulty has been encountered, 
            the exact meaning is then code specific. Negative values mean the result shall not be used. {dynamic}	INT_1D	1- time"""
@@ -110,7 +107,7 @@ class IDSCode(Dict):
         repository: str = ""    # URL of software repository {constant}	STR_0D
         parameters: list = None   # List of the code specific parameters in XML format {constant}
 
-    @cached_property
+    @sp_property
     def library(self) -> List[LibraryDesc]:
         "List of external libraries used by the code that has produced this IDS	struct_array [max_size=10]	1- 1...N"
         return List[IDSCode.LibraryDesc](self["library"],   parent=self)
@@ -139,10 +136,10 @@ class IDS(Actor):
         else:
             raise NotImplementedError(ids)
 
-    @cached_property
+    @sp_property
     def ids_properties(self) -> IDSProperties:
         return IDSProperties(self["ids_properties"], parent=self)
 
-    @cached_property
+    @sp_property
     def code(self) -> IDSCode:
         return IDSCode(self['code'], parent=self)

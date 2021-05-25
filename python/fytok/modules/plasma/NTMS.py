@@ -1,6 +1,6 @@
 
 # This is file is generated from template
-from ...util.IDS import IDS
+from ..common.IDS import IDS
 
 class Ntms(IDS):
     r"""Description of neoclassical tearing modes

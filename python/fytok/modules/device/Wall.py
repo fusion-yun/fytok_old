@@ -1,12 +1,9 @@
 import collections
-from copy import copy
-from functools import cached_property
-from logging import log
 
 import matplotlib.pyplot as plt
 import numpy as np
-from spdm.data.AttributeTree import as_attribute_tree
 from spdm.data.Node import Dict, List
+from spdm.data.sp_property import sp_property
 from spdm.util.logger import logger
 from sympy import Point, Polygon
 
@@ -14,7 +11,7 @@ from ..common.IDS import IDS
 from ..common.Misc import RZTuple
 
 
-class Limiter(Dict):
+class WallLimiter(Dict):
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -22,16 +19,16 @@ class Limiter(Dict):
         def __init__(self,  *args, **kwargs):
             super().__init__(*args, **kwargs)
 
-        @cached_property
+        @sp_property
         def outline(self) -> RZTuple:
             return RZTuple(self["outline.r"], self["outline.z"])
 
-    @cached_property
+    @sp_property
     def unit(self) -> List[Unit]:
         return List[Limiter.Unit](self["unit"], parent=self)
 
 
-class Vessel(Dict):
+class WallVessel(Dict):
     def __init__(self,   *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -39,23 +36,34 @@ class Vessel(Dict):
         def __init__(self,  *args, **kwargs):
             super().__init__(*args, **kwargs)
 
-        @cached_property
+        @sp_property
         def outline_outer(self) -> RZTuple:
             return RZTuple(self["outline_outer.r"], self["outline_outer.z"])
 
-        @cached_property
+        @sp_property
         def outline_inner(self) -> RZTuple:
             return RZTuple(self["outline_inner.r"], self["outline_inner.z"])
 
-    @cached_property
+    @sp_property
     def annular(self):
         return Vessel.Annular(self["annular"], parent=self)
 
 
 class WallDescription2D(Dict):
 
+    Limiter = WallLimiter
+    Vessel = WallVessel
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+    @sp_property
+    def limiter(self) -> Limiter:
+        return self["limiter"]
+
+    @sp_property
+    def vessel(self) -> Vessel:
+        return self["vessel"]
 
     def limiter_polygon(self):
         limiter_points = np.array([self.limiter.unit[0].outline.r,
@@ -119,28 +127,19 @@ class WallDescription2D(Dict):
         # else:
         #     raise TypeError(f"Unknown type {type(vessel)}")
 
-    @cached_property
-    def limiter(self) -> Limiter:
-        return Limiter(self["limiter"], parent=self)
-
-    @cached_property
-    def vessel(self) -> Vessel:
-        return Vessel(self["vessel"], parent=self)
-
 
 class Wall(IDS):
     """Wall
 
     """
     _IDS = "wall"
-    _homogeneous_time = 2
 
     def __init__(self, *args,  **kwargs):
         super().__init__(*args, **kwargs)
 
-    @cached_property
+    @sp_property
     def description_2d(self) -> WallDescription2D:
-        return WallDescription2D(self["description_2d"], parent=self)
+        return self["description_2d"]
 
     def plot(self, axis=None, *args, **kwargs):
 
@@ -148,7 +147,7 @@ class Wall(IDS):
             axis = plt.gca()
 
         desc2d = self.description_2d
-        
+
         vessel_inner_points = np.array([desc2d.vessel.annular.outline_inner.r,
                                         desc2d.vessel.annular.outline_inner.z]).transpose([1, 0])
 

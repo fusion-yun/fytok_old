@@ -2,13 +2,10 @@
 import collections
 import datetime
 import getpass
-from functools import cached_property
-from typing import ChainMap
-
+from typing import Union
+import numpy as np
 import matplotlib.pyplot as plt
 from fytok.modules.transport.MagneticCoordSystem import RadialGrid
-import numpy as np
-import scipy
 import scipy.constants
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, Node
@@ -16,24 +13,25 @@ from spdm.data.sp_property import sp_property
 from spdm.flow.Actor import Actor
 from spdm.util.logger import logger
 
+##################################
 from .modules.common.Misc import VacuumToroidalField
-#############################
+from .modules.device.Magnetics import Magnetics
 from .modules.device.PFActive import PFActive
 from .modules.device.TF import TF
 from .modules.device.Wall import Wall
-from .modules.device.Magnetics import Magnetics
-#############################
+# ---------------------------------
 from .modules.transport.CoreProfiles import CoreProfiles
 from .modules.transport.CoreSources import CoreSources
 from .modules.transport.CoreTransport import CoreTransport
-#############################
+# ---------------------------------
 from .modules.transport.EdgeProfiles import EdgeProfiles
 from .modules.transport.EdgeSources import EdgeSources
 from .modules.transport.EdgeTransport import EdgeTransport
-#############################
+# ---------------------------------
 from .modules.transport.Equilibrium import Equilibrium
 from .modules.transport.TransportSolver import TransportSolver
 
+##################################
 TWOPI = scipy.constants.pi*2.0
 
 
@@ -45,81 +43,88 @@ class Tokamak(Actor):
 
     """
 
-    def __init__(self, d=None, * args, **kwargs):
+    def __init__(self, d=None, * args, grid: Union[RadialGrid, np.ndarray, None] = None, **kwargs):
         super().__init__(kwargs)
         self._time = 0.0
+        self._grid = grid
 
     @property
     def time(self):
         return self._time
 
+    @property
+    def grid(self):
+        if not isinstance(self._grid, RadialGrid):
+            self._grid = self.equilibrium.time_slice.coordinate_system.radial_grid(
+                self._grid, primary_axis="rho_tor_norm")
+        return self._grid
     # --------------------------------------------------------------------------
 
-    @cached_property
+    @sp_property
     def wall(self) -> Wall:
-        return Wall(self["wall"], parent=self)
+        return self["wall"]
 
-    @cached_property
+    @sp_property
     def tf(self) -> TF:
-        return TF(self["tf"], parent=self)
+        return self["tf"]
 
-    @cached_property
+    @sp_property
     def pf_active(self) -> PFActive:
-        return PFActive(self["pf_active"], parent=self)
+        return self["pf_active"]
 
-    @cached_property
+    @sp_property
     def magnetics(self) -> Magnetics:
-        return Magnetics(self["pf_active"], parent=self)
+        return self["magnetics"]
     # --------------------------------------------------------------------------
 
-    @cached_property
+    @sp_property
     def equilibrium(self) -> Equilibrium:
-        return Equilibrium(self["equilibrium"], wall=self.wall, pf_active=self.pf_active, parent=self)
+        return self["equilibrium"]
 
-    @cached_property
+    @sp_property
     def core_profiles(self) -> CoreProfiles:
-        return CoreProfiles(self.__fetch__("core_profiles"), grid=self.equilibrium.time_slice.coordinate_system.radial_grid(), parent=self)
+        return self["core_profiles"]
 
-    @cached_property
+    @sp_property
     def core_transport(self) -> CoreTransport:
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return CoreTransport(self.__fetch__("core_transport"),  parent=self)
+        return self["core_transport"]
 
-    @cached_property
+    @sp_property
     def core_sources(self) -> CoreSources:
         """Core plasma thermal source terms (for the transport equations of the thermal species).
             Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return CoreSources(self["core_sources"],  parent=self)
+        return self["core_sources"]
 
-    @cached_property
+    @sp_property
     def edge_profiles(self) -> EdgeProfiles:
-        return EdgeProfiles(self["edge_profiles"], parent=self)
+        return self["edge_profiles"]
 
-    @cached_property
+    @sp_property
     def edge_transport(self) -> EdgeTransport:
         """Edge plasma transport. Energy terms correspond to the full kinetic energy equation
          (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return EdgeTransport(self["edge_transport"], parent=self)
+        return self["edge_transport"]
 
-    @cached_property
+    @sp_property
     def edge_sources(self) -> EdgeSources:
         """Edge plasma sources. Energy terms correspond to the full kinetic energy equation
          (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return EdgeSources(self["edge_sources"], parent=self)
+        return self["edge_sources"]
 
-    @cached_property
+    @sp_property
     def transport_solver(self) -> TransportSolver:
-        return TransportSolver(self["transport_solver"], parent=self)
+        return self["transport_solver"]
 
     def advance(self, time=None,  dt=None,  vacuum_toroidal_field: VacuumToroidalField = None, **kwargs):
 
         time = super().advance(time=time, dt=dt)
 
-        vacuum_toroidal_field = VacuumToroidalField(r0=self._r0, b0=self._b0[-1])
+        vacuum_toroidal_field = VacuumToroidalField(r0=self._r0, b0=self._b0)
 
         self.pf_active.advance(time=time)
 

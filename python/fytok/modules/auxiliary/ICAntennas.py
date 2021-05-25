@@ -7,6 +7,6 @@ class IcAntennas(IDS):
         
         Note: IcAntennas is an ids
     """
-    IDS="ic_antennas"
+    _IDS="ic_antennas"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

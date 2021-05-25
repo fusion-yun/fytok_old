@@ -2,19 +2,17 @@
 
 """
 
-import collections
-import copy
-from  functools import cached_property
 from math import log
 
 import numpy as np
 import scipy.constants
 from spdm.data.Function import Function
-from spdm.data.Node import Dict
+from spdm.data.Node import Dict, _not_found_
+from spdm.data.sp_property import sp_property
 from spdm.numerical.bvp import solve_bvp
 from spdm.util.logger import logger
-from spdm.util.utilities import try_get
 
+from ..common.IDS import IDS
 from ..common.Misc import Identifier
 from .CoreProfiles import CoreProfiles
 from .CoreSources import CoreSources
@@ -31,7 +29,7 @@ TOLERANCE = 1.0e-6
 TWOPI = 2.0 * scipy.constants.pi
 
 
-class TransportSolver(Dict):
+class TransportSolver(IDS):
     r"""
         Solve transport equations :math:`\rho=\sqrt{ \Phi/\pi B_{0}}`
 
@@ -48,13 +46,13 @@ class TransportSolver(Dict):
     def radial_grid(self):
         return self._grid
 
-    @cached_property
+    @sp_property
     def solver(self) -> Identifier:
-        return Identifier(**self["solver"]._as_dict())
+        return Identifier(**self.get("solver", _not_found_)._as_dict())
 
-    @cached_property
+    @sp_property
     def primary_coordinate(self) -> Identifier:
-        return Identifier(**self["primary_coordinate"]._as_dict())
+        return Identifier(**self.get("primary_coordinate", _not_found_)._as_dict())
 
     def solve_general_form(self, x0, y0, flux0,   coeff,  bc,  hyper_diff=[0.0, 0.0],  **kwargs):
         r"""

@@ -7,6 +7,6 @@ class ChargeExchange(IDS):
         
         Note: ChargeExchange is an ids
     """
-    IDS="charge_exchange"
+    _IDS="charge_exchange"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

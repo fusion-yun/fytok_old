@@ -1,49 +1,36 @@
 
-from  functools import cached_property
+from spdm.data.sp_property import sp_property
 
-import numpy as np
-from spdm.data.Node import Dict
-
-from fytok.Misc import IDSProperties, Signal
+from spdm.data.Node import Dict, _not_found_, List
+from ..common.IDS import IDS,
 
 
-class Controllers(Dict):
+class ControllersLineController(Dict):
+    def __init__(self,  *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+class ControllersNonLinearController(Dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+class Controllers(IDS):
     r"""Feedback and feedforward controllers
 
         Note: Controllers is an ids
     """
     _IDS = "controllers"
+    LineController = ControllersLineController
+    NonLinearController = ControllersNonLinearController
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    @cached_property
-    def ids_properties(self):
-        return IDSProperties(self._cache.ids_properties)
+    @sp_property
+    def linear_controller(self) -> List[LineController]:
+        return self["linear_controller"]
 
-    class LinearController(Dict):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-
-    @cached_property
-    def linear_controller(self):
-        res = Dict(
-            default_factory_array=lambda _holder=self: Controllers.LinearController(None, parend=_holder))
-
-        for lin_contr in self._cache.linear_controller:
-            res[_next_] = lin_contr
-
-        return res
-
-    class NonLinearController(Dict):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-
-    @cached_property
-    def nonlinear_controller(self):
-        res = Dict(
-            default_factory_array=lambda _holder=self: Controllers.NonLinearController(None, parend=_holder))
-
-        for nonlin_contr in self._cache.nonlinear_controller:
-            res[_next_] = nonlin_contr
-        return res
+    @sp_property
+    def nonlinear_controller(self) -> List[NonLinearController]:
+        return self["nonlinear_controller"]

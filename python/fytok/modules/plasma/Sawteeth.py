@@ -7,6 +7,6 @@ class Sawteeth(IDS):
         
         Note: Sawteeth is an ids
     """
-    IDS="sawteeth"
+    _IDS="sawteeth"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

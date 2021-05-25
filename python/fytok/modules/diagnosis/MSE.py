@@ -7,6 +7,6 @@ class MSE(IDS):
         
         Note: MSE is an ids
     """
-    IDS="mse"
+    _IDS="mse"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

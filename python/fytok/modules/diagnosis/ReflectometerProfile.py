@@ -7,6 +7,6 @@ class ReflectometerProfile(IDS):
         
         Note: ReflectometerProfile is an ids
     """
-    IDS="reflectometer_profile"
+    _IDS="reflectometer_profile"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

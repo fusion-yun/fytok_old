@@ -1,13 +1,12 @@
 import numpy as np
 from spdm.data.AttributeTree import as_attribute_tree
 from spdm.data.Node import Dict
-from  functools import cached_property
+from spdm.data.sp_property import sp_property
 
 from ..common.IDS import IDS, IDSProperties
 from ..common.Misc import Identifier, Signal
 
 
-@as_attribute_tree
 class Magnetics(IDS):
     """Magnetic diagnostics for equilibrium identification and plasma shape control.
 
@@ -16,7 +15,7 @@ class Magnetics(IDS):
     def __init__(self,  *args,   ** kwargs):
         super().__init__(*args, ** kwargs)
 
-    @cached_property
+    @sp_property
     def ids_properties(self):
         return IDSProperties(self._cache.ids_properties)
 
@@ -24,17 +23,17 @@ class Magnetics(IDS):
         def __init__(self,  *args, **kwargs):
             super().__init__(*args, ** kwargs)
 
-        @cached_property
+        @sp_property
         def name(self):
             """Name of the probe {static}  """
             return str(self["name"])
 
-        @cached_property
+        @sp_property
         def identifier(self):
             """ID of the probe {static}  """
             return str(self["identifier"])
 
-        @cached_property
+        @sp_property
         def type(self):
             """Probe type. Available options (refer to the children of this identifier structure) :
 
@@ -51,40 +50,40 @@ class Magnetics(IDS):
             """
             return Identifier(self["type"])
 
-        @cached_property
+        @sp_property
         def position(self):
             """List of (R,Z,phi) points defining the position of the loop (see data structure documentation FLUXLOOPposition.pdf) {static}   """
             return NotImplemented
 
-        @cached_property
+        @sp_property
         def indices_differential(self):
             """Indices (from the flux_loop array of structure) of the two flux loops used to build the flux difference flux(second index) - flux(first index).
              Use only if ../type/index = 6, leave empty otherwise {static}  """
             return NotImplemented
 
-        @cached_property
+        @sp_property
         def area(self):
             """Effective area (ratio between flux and average magnetic field over the loop) {static} [m^2]    """
             return NotImplemented
 
-        @cached_property
+        @sp_property
         def gm9(self):
             """Integral of 1/R over the loop area (ratio between flux and magnetic rigidity R0.B0). Use only if ../type/index = 3 to 6,
               leave empty otherwise. {static} [m]         """
             return NotImplemented
 
-        @cached_property
+        @sp_property
         def flux(self):
             """Measured magnetic flux over loop in which Z component of normal to loop is directed downwards (negative grad Z direction) [Wb].
              """
             return NotImplemented
 
-        @cached_property
+        @sp_property
         def voltage(self):
             """Measured voltage between the loop terminals [V]"""
             return NotImplemented
 
-    @cached_property
+    @sp_property
     def flux_loop(self):
         """Flux loops; partial flux loops can be described   """
 
@@ -97,17 +96,17 @@ class Magnetics(IDS):
         def __init__(self,   *args, **kwargs):
             super().__init__(*args, **kwargs)
 
-        @cached_property
+        @sp_property
         def name(self):
             """Name of the probe {static}  """
             return str(self["name"])
 
-        @cached_property
+        @sp_property
         def identifier(self):
             """ID of the probe {static}  """
             return str(self["identifier"])
 
-        @cached_property
+        @sp_property
         def type(self):
             """Probe type. Available options (refer to the children of this identifier structure) :
 
@@ -124,7 +123,7 @@ class Magnetics(IDS):
             """
             return Identifier(self["type"])
 
-        @cached_property
+        @sp_property
         def position(self):
             """R, Z, Phi position of the coil centre    structure    """
             return NotImplemented
@@ -134,54 +133,54 @@ class Magnetics(IDS):
             #     phi=float(self["position.phi"])
             # )
 
-        @ cached_property
+        @ sp_property
         def poloidal_angle(self):
             """Angle of the sensor normal vector (n) with respect to horizontal plane (clockwise as in cocos=11 theta-like angle).
             Zero if sensor normal vector fully in the horizontal plane and oriented towards increasing major radius. Values in [0 , 2Pi]
             """
             return self["poloidal_angle"]
 
-        @ cached_property
+        @ sp_property
         def toroidal_angle(self):
             """Angle of the projection of the sensor normal vector (n) in the horizontal plane with the increasing R direction (i.e. grad(R))
             (angle is counter-clockwise from above as in cocos=11 phi-like angle). Values should be taken modulo pi with values within (-pi/2,pi/2].
             Zero if projected sensor normal is parallel to grad(R), pi/2 if it is parallel to grad(phi). """
             return self["toroidal_angle"]
 
-        @ cached_property
+        @ sp_property
         def indices_differential(self):
             """Indices (from the bpol_probe array of structure) of the two probes used to build the field difference field(second index) - field(first index).
             Use only if ../type/index = 6, leave empty otherwise {static}    INT_1D    1- 1...2"""
             return Dict(self["toroidal_angle"])
 
-        @ cached_property
+        @ sp_property
         def bandwidth_3db(self):
             """3dB bandwith (first index : lower frequency bound, second index : upper frequency bound) {static} [Hz]    """
             return Dict(self._cache.bandwidth_3db)
 
-        @ cached_property
+        @ sp_property
         def area(self):
             """Area of each turn of the sensor; becomes effective area when multiplied by the turns {static} [m^2]  """
             return self._cache.area
 
-        @ cached_property
+        @ sp_property
         def length(self):
             """Length of the sensor along it's normal vector (n) {static} [m]  """
             return self._cache.length
 
-        @ cached_property
+        @ sp_property
         def turns(self):
             """Turns in the coil, including sign {static}    INT_0D    """
             return self._cache.turns
 
-        @ cached_property
+        @ sp_property
         def field(self):
             """Magnetic field component in direction of sensor normal axis (n) averaged over sensor volume defined by area and length,
             where n = cos(poloidal_angle)*cos(toroidal_angle)*grad(R) - sin(poloidal_angle)*grad(Z) + cos(poloidal_angle)*sin(toroidal_angle)*grad(Phi)/norm(grad(Phi)) [T].
             This quantity is COCOS-dependent, with the following transformation :"""
             return Signal(self.time, data=self._cache.field)
 
-        @ cached_property
+        @ sp_property
         def voltage(self):
             """Voltage on the coil terminals [V]
 
@@ -203,13 +202,13 @@ class Magnetics(IDS):
                           validity=int(self._cache.voltage.validity)
                           )
 
-        @ cached_property
+        @ sp_property
         def non_linear_response(self):
             """Non-linear response of the probe (typically in case of a Hall probe)"""
             return Dict(b_field_linear=self._cache.b_field_linear,
                         b_field_non_linear=Dict(b_field_linear=self._cache.b_field_non_linear))
 
-    @ cached_property
+    @ sp_property
     def b_field_pol_probe(self):
         """Poloidal field probes    struct_array [max_size=200] """
         res = Dict(default_factory_array=lambda _holder=self: Magnetics.MagneticProbe(parent=_holder))
@@ -217,7 +216,7 @@ class Magnetics(IDS):
             res[_next_] = floop
         return res
 
-    @ cached_property
+    @ sp_property
     def b_field_tor_probe(self):
         """Toroidal field probes    struct_array [max_size=20] """
         res = Dict(default_factory_array=lambda _holder=self: Magnetics.MagneticProbe(parent=_holder))
@@ -225,7 +224,7 @@ class Magnetics(IDS):
             res[_next_] = floop
         return res
 
-    @ cached_property
+    @ sp_property
     def rogowski_coil(self):
         """Set of Rog"""
         return NotImplemented

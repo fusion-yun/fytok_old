@@ -7,6 +7,6 @@ class CoilsNonAxisymmetric(IDS):
         
         Note: CoilsNonAxisymmetric is an ids
     """
-    IDS="coils_non_axisymmetric"
+    _IDS="coils_non_axisymmetric"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

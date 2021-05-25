@@ -7,6 +7,6 @@ class IronCore(IDS):
        
         Note: IronCore is an ids
     """
-    IDS="iron_core"
+    _IDS="iron_core"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

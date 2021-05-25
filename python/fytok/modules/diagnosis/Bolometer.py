@@ -7,6 +7,6 @@ class Bolometer(IDS):
         
         Note: Bolometer is an ids
     """
-    IDS="bolometer"
+    _IDS="bolometer"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

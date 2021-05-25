@@ -1,14 +1,15 @@
 import collections
 from dataclasses import dataclass
-from functools import cached_property
 from typing import Optional
 
 import numpy as np
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
+from spdm.data.sp_property import sp_property
 from spdm.flow.Actor import Actor
 from spdm.util.logger import logger
+from spdm.util.utilities import _not_found_
 
 from ..common.IDS import IDS, IDSCode
 from ..common.Misc import Identifier, VacuumToroidalField
@@ -22,15 +23,15 @@ class TransportCoeff(Dict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args,  ** kwargs)
 
-    @cached_property
+    @sp_property
     def d(self) -> Function:
         return Function(self._parent.grid_d.rho_tor_norm, self["d"])
 
-    @cached_property
+    @sp_property
     def v(self) -> Function:
         return Function(self._parent.grid_v.rho_tor_norm, self["v"])
 
-    @cached_property
+    @sp_property
     def flux(self) -> Function:
         return Function(self._parent.grid_flux.rho_tor_norm, self["flux"])
 
@@ -39,79 +40,79 @@ class CoreTransportElectrons(SpeciesElectron):
     def __init__(self,   *args,  **kwargs):
         super().__init__(*args, **kwargs)
 
-    @cached_property
+    @sp_property
     def particles(self) -> TransportCoeff:
-        return TransportCoeff(self["particles"], parent=self._parent)
+        return self["particles"]
 
-    @cached_property
+    @sp_property
     def energy(self) -> TransportCoeff:
-        return TransportCoeff(self["energy"],  parent=self._parent)
+        return self["energy"]
 
 
 class CoreTransportIonState(SpeciesIonState):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    @cached_property
+    @sp_property
     def particles(self) -> TransportCoeff:
         """Transport quantities related to density equation of the charge state considered (thermal+non-thermal)	structure	"""
-        return TransportCoeff(self["particles"], parent=self)
+        return self["particles"]
 
-    @cached_property
+    @sp_property
     def energy(self) -> TransportCoeff:
         """Transport quantities related to the energy equation of the charge state considered	structure	"""
-        return TransportCoeff(self["energy"], parent=self)
+        return self["energy"]
 
-    @cached_property
+    @sp_property
     def momentum(self) -> TransportCoeff:
         """Transport coefficients related to the state momentum equations for various components (directions)"""
-        return TransportCoeff(self["momentum"], parent=self)
+        return self["momentum"]
 
 
 class CoreTransportMomentum(Dict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args,  **kwargs)
 
-    @cached_property
+    @sp_property
     def radial(self) -> TransportCoeff:
-        return TransportCoeff(self["radial"], parent=self._parent)
+        return self["radial"]
 
-    @cached_property
+    @sp_property
     def diamagnetic(self) -> TransportCoeff:
-        return TransportCoeff(self["diamagnetic"], parent=self._parent)
+        return self["diamagnetic"]
 
-    @cached_property
+    @sp_property
     def parallel(self) -> TransportCoeff:
-        return TransportCoeff(self["parallel"], parent=self._parent)
+        return self["parallel"]
 
-    @cached_property
+    @sp_property
     def poloidal(self) -> TransportCoeff:
-        return TransportCoeff(self["poloidal"], parent=self._parent)
+        return self["poloidal"]
 
-    @cached_property
+    @sp_property
     def toroidal(self) -> TransportCoeff:
-        return TransportCoeff(self["toroidal"], parent=self._parent)
+        return self["toroidal"]
 
 
 class CoreTransportIon(SpeciesIon):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    @cached_property
+    @sp_property
     def particles(self) -> TransportCoeff:
-        return TransportCoeff(self["particles"], parent=self._parent)
+        return self["particles"]
 
-    @cached_property
+    @sp_property
     def energy(self) -> TransportCoeff:
-        return TransportCoeff(self["energy"],  parent=self._parent)
+        return self["energy"]
 
-    @cached_property
+    @sp_property
     def momentum(self) -> CoreTransportMomentum:
-        return CoreTransportMomentum(self["momentum"], parent=self._parent)
+        return self["momentum"]
 
-    @cached_property
+    @sp_property
     def state(self) -> List[CoreTransportIonState]:
-        return List[CoreTransportIonState](self["state"], parent=self)
+        return self["state"]
 
 
 class CoreTransportNeutral(Species):
@@ -119,17 +120,17 @@ class CoreTransportNeutral(Species):
         super().__init__(*args, **kwargs)
 
     @property
-    def ion_index(self):
+    def ion_index(self) -> int:
         """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
-        return self.__raw_get__("ion_index")
+        return self["ion_index"]
 
-    @cached_property
+    @sp_property
     def particles(self) -> TransportCoeff:
-        return TransportCoeff(self["particles"], parent=self._parent)
+        return self["particles"]
 
-    @cached_property
+    @sp_property
     def energy(self) -> TransportCoeff:
-        return TransportCoeff(self["energy"],  parent=self._parent)
+        return self["energy"]
 
 
 class CoreTransportProfiles1D(Profiles):
@@ -181,59 +182,59 @@ class CoreTransportProfiles1D(Profiles):
     def grid(self) -> RadialGrid:
         return self._grid
 
-    @cached_property
+    @sp_property
     def grid_d(self) -> RadialGrid:
         """Grid for effective diffusivities and parallel conductivity"""
         return self._grid.pullback(0.5*(self._grid.psi_norm[:-1]+self._grid.psi_norm[1:]))
 
-    @cached_property
+    @sp_property
     def grid_v(self) -> RadialGrid:
         """ Grid for effective convections  """
         return self._grid.pullback(self._grid.psi_norm)
 
-    @cached_property
+    @sp_property
     def grid_flux(self) -> RadialGrid:
         """ Grid for fluxes  """
         return self._grid.pullback(0.5*(self._grid.psi_norm[:-1]+self._grid.psi_norm[1:]))
 
-    @cached_property
+    @sp_property
     def electrons(self) -> CoreTransportElectrons:
         """ Transport quantities related to the electrons """
-        return CoreTransportProfiles1D.Electrons(self['electrons'], parent=self)
+        return self['electrons']
 
-    @cached_property
+    @sp_property
     def ion(self) -> List[CoreTransportIon]:
         """ Transport coefficients related to the various ion species """
-        return List[CoreTransportIon](self['ion'], parent=self)
+        return self['ion']
 
-    @cached_property
+    @sp_property
     def neutral(self) -> List[CoreTransportNeutral]:
         """ Transport coefficients related to the various neutral species """
-        return List[CoreTransportProfiles1D.Neutral](self['neutral'],   parent=self)
+        return self['neutral']
 
-    @cached_property
+    @sp_property
     def momentum(self) -> CoreTransportMomentum:
-        return CoreTransportProfiles1D.Momentum(self["momentum"],  parent=self)
+        return self["momentum"]
 
-    @cached_property
+    @sp_property
     def total_ion_energy(self) -> TransportCoeff:
         """ Transport coefficients for the total (summed over ion species) energy equation """
-        return TransportCoeff(self["total_ion_energy"], parent=self)
+        return self["total_ion_energy"]
 
-    @cached_property
+    @sp_property
     def momentum_tor(self) -> TransportCoeff:
         """ Transport coefficients for total toroidal momentum equation  """
-        return TransportCoeff(self["momentum_tor"], parent=self)
+        return self["momentum_tor"]
 
-    @cached_property
+    @sp_property
     def conductivity_parallel(self) -> Function:
         return Function(self.grid_d.rho_tor_norm, self["conductivity_parallel"])
 
-    @cached_property
+    @sp_property
     def j_bootstrap(self) -> Function:
         return Function(self.grid_d.rho_tor_norm, self["j_bootstrap"])
 
-    @cached_property
+    @sp_property
     def e_field_radial(self) -> Function:
         """ Radial component of the electric field (calculated e.g. by a neoclassical model) {dynamic} [V.m^-1]"""
         return Function(self.grid_flux.rho_tor_norm, self["e_field_radial"])
@@ -255,15 +256,15 @@ class CoreTransportModel(Actor):
     def update(self, *args, **kwargs) -> float:
         return self.profiles_1d.update(*args, **kwargs)
 
-    @cached_property
+    @sp_property
     def code(self) -> IDSCode:
         return IDSCode(self["code"])
 
-    @cached_property
+    @sp_property
     def comment(self) -> str:
-        return self["comment"] or ""
+        return self["comment"]
 
-    @cached_property
+    @sp_property
     def identifier(self) -> Identifier:
         r"""
             Transport model identifier. Available options (refer to the children of this identifier structure) :
@@ -287,11 +288,11 @@ class CoreTransportModel(Actor):
         """
         return Identifier(**self["identifier"]._as_dict())
 
-    @cached_property
+    @sp_property
     def flux_multiplier(self) -> float:
         return self["flux_multiplier"] or 1.0
 
-    @cached_property
+    @sp_property
     def profiles_1d(self) -> CoreTransportProfiles1D:
         return self.__class__.Profiles1D(self["profiles_1d"], grid=self._grid, parent=self)
 
@@ -314,15 +315,15 @@ class CoreTransport(IDS):
 
     def __init__(self, *args, grid: RadialGrid = None, ** kwargs):
         super().__init__(*args,  **kwargs)
-        self._grid = grid
+        self._grid = grid or getattr(self._parent, "grid", _not_found_)
 
-    @cached_property
+    @sp_property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
         return VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
 
-    @cached_property
-    def model(self) -> List[CoreTransportModel]:
-        return List[CoreTransportModel](self["model"], parent=self)
+    @sp_property
+    def model(self) -> List[Model]:
+        return self["model"]
 
     def update(self,  *args,  **kwargs) -> float:
         res = [model.update(*args,  **kwargs) for model in self.model]

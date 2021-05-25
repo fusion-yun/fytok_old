@@ -7,6 +7,6 @@ class DistributionSources(IDS):
         
         Note: DistributionSources is an ids
     """
-    IDS="distribution_sources"
+    _IDS="distribution_sources"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

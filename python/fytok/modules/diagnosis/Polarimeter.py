@@ -7,6 +7,6 @@ class Polarimeter(IDS):
         
         Note: Polarimeter is an ids
     """
-    IDS="polarimeter"
+    _IDS="polarimeter"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

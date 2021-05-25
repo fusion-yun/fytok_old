@@ -7,6 +7,6 @@ class CameraVisible(IDS):
         
         Note: CameraVisible is an ids
     """
-    IDS="camera_visible"
+    _IDS="camera_visible"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

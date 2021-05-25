@@ -7,6 +7,6 @@ class CameraIR(IDS):
         
         Note: CameraIR is an ids
     """
-    IDS="camera_ir"
+    _IDS="camera_ir"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

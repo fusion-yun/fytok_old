@@ -1,14 +1,13 @@
 
-from  functools import cached_property
+from functools import cached_property
 
-from spdm.data.AttributeTree import AttributeTree
-from spdm.data.TimeSeries import TimeSeries, TimeSequence
+from spdm.data.Node import Dict, Node, _not_found_
 from ..common.IDS import IDS
 from ..common.Misc import Identifier, VacuumToroidalField
 from .CoreProfiles import CoreProfiles1D
 
 
-class CoreInstantChange(AttributeTree):
+class CoreInstantChange(Dict[str, Node]):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -47,8 +46,4 @@ class CoreInstantChanges(IDS):
 
     @cached_property
     def vacuum_toroidal_field(self):
-        return VacuumToroidalField(self["vacuum_toroidal_field.r0"], self["vacuum_toroidal_field.b0"])
-
-    @property
-    def time(self) -> TimeSequence:
-        return self._time
+        return VacuumToroidalField(**self.get("vacuum_toroidal_field", _not_found_)._as_dict())

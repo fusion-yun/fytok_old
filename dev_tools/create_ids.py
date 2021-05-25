@@ -9,7 +9,7 @@ class {clsname}(IDS):
     r\"\"\"{doc_string}
         Note: {clsname} is an ids
     \"\"\"
-    IDS="{ids}"
+    _IDS="{ids}"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 """

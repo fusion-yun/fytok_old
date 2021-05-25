@@ -7,6 +7,6 @@ class EMCoupling(IDS):
         
         Note: EMCoupling is an ids
     """
-    IDS="em_coupling"
+    _IDS="em_coupling"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

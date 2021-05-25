@@ -7,6 +7,6 @@ class GasInjection(IDS):
         
         Note: GasInjection is an ids
     """
-    IDS="gas_injection"
+    _IDS="gas_injection"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

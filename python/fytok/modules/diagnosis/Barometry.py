@@ -7,6 +7,6 @@ class Barometry(IDS):
         
         Note: Barometry is an ids
     """
-    IDS="barometry"
+    _IDS="barometry"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

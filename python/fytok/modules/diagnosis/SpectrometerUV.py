@@ -7,6 +7,6 @@ class SpectrometerUV(IDS):
         
         Note: SpectrometerUV is an ids
     """
-    IDS="spectrometer_uv"
+    _IDS="spectrometer_uv"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

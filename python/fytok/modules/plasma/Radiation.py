@@ -7,6 +7,6 @@ class Radiation(IDS):
         
         Note: Radiation is an ids
     """
-    IDS="radiation"
+    _IDS="radiation"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

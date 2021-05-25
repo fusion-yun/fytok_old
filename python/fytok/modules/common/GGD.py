@@ -1,6 +1,5 @@
-from  functools import cached_property
-
 from spdm.data.Node import Dict, List
+from spdm.data.sp_property import sp_property
 from spdm.flow.Actor import Actor
 from spdm.util.logger import logger
 
@@ -21,16 +20,16 @@ class GGDGrid(Dict):
     def __init__(self,   *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    @cached_property
+    @sp_property
     def identifier(self):
         return Identifier(**self["identifier"]._as_dict())
 
-    @cached_property
+    @sp_property
     def space(self) -> List[GGDSpace]:
         """Set of grid spaces"""
         return List[GGDSpace](self["space"], parent=self)
 
-    @cached_property
+    @sp_property
     def grid_subset(self) -> List[GGDGridSubset]:
         """Grid subsets"""
         return List[GGDGridSubset](self["grid_subset"], parent=self)
@@ -43,7 +42,7 @@ class GGD(Actor):
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    @cached_property
+    @sp_property
     def grid(self) -> List[GGDGrid]:
         return List[GGDGrid](self["grid"], parent=self)
 

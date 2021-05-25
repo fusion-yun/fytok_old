@@ -7,6 +7,6 @@ class ECE(IDS):
         
         Note: ECE is an ids
     """
-    IDS="ece"
+    _IDS="ece"
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
