@@ -46,7 +46,7 @@ if __name__ == "__main__":
                                 })
 
         # logger.debug(tok.equilibrium.time_slice.coordinate_system.critical_points[1][0].psi)
-        logger.debug(tok.equilibrium.time_slice.boundary.outline.r)
+        # logger.debug(tok.equilibrium.time_slice.boundary.outline.r)
 
     if True:
         sp_figure(tok,

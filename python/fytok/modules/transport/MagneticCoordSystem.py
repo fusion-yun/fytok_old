@@ -10,8 +10,13 @@ from spdm.geometry.Curve import Curve
 from spdm.geometry.Point import Point
 from spdm.mesh.CurvilinearMesh import CurvilinearMesh
 from spdm.util.logger import logger
-from spdm.util.numlib import constants, np, optimize
+from spdm.util.numlib import ENABLE_JAX, constants, np
 from spdm.util.utilities import try_get
+
+if ENABLE_JAX:
+    from spdm.util.numlib import minimize
+else:
+    from spdm.util.numlib import root_scalar
 
 from ..common.GGD import GGD
 from ..common.IDS import IDS
@@ -185,18 +190,26 @@ class MagneticCoordSystem(Dict):
                 z1 = Z0+Rm * np.sin(theta_val)
 
                 if not np.isclose(self.psirz(r1, z1), psi_val):
-                    try:
-                        def func(r): return float(self.psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1)) - psi_val
-                        sol = optimize.root_scalar(func,  bracket=[0, 1], method='brentq')
-                    except ValueError as error:
-                        raise ValueError(f"Find root fialed! {error} {psi_val}")
+                    if not ENABLE_JAX:
+                        def func(r): return (float(self.psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1)) - psi_val)
 
-                    if not sol.converged:
-                        raise ValueError(f"Find root fialed!")
+                        try:
+                            sol = root_scalar(func,  bracket=[0, 1], method='brentq')
+                            r = sol.root
+                        except ValueError as error:
+                            raise ValueError(f"Find root fialed! {error} {psi_val}")
 
-                    r1 = (1.0-sol.root)*r0+sol.root*r1
-                    z1 = (1.0-sol.root)*z0+sol.root*z1
+                        if not sol.converged:
+                            raise ValueError(f"Find root fialed!")
+                    else:
+                        #  FIXME: JAX version is not completed!  
+                        def func(r): return (float(self.psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1)) - psi_val)**2
 
+                        sol = minimize(func, np.asarray([0.5]), method='BFGS')
+                        r = sol.x[0]
+
+                    r1 = (1.0-r)*r0+r*r1
+                    z1 = (1.0-r)*z0+r*z1
                 yield r1, z1
 
     def create_mesh(self, u, v, *args, type_index=None):
