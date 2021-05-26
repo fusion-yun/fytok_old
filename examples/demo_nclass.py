@@ -1,21 +1,17 @@
 
-from external.freegs.freegs import equilibrium
 from logging import log
-import numpy as np
+
 import pandas as pd
-import scipy.constants
-
-from fytok.modules.transport.CoreTransport import CoreTransport
 from fytok.modules.transport.CoreSources import CoreSources
-
+from fytok.modules.transport.CoreTransport import CoreTransport
 from fytok.Tokamak import Tokamak
+from spdm.data.Entry import _next_
 from spdm.data.File import File
 from spdm.data.Function import Function
-from spdm.data.Entry import _next_
 from spdm.util.logger import logger
+from spdm.util.numlib import constants
 from spdm.util.plot_profiles import plot_profiles, sp_figure
 from spdm.util.utilities import serialize
-
 
 if __name__ == "__main__":
     logger.info("====== START ========")
@@ -50,6 +46,7 @@ if __name__ == "__main__":
                                 })
 
         # logger.debug(tok.equilibrium.time_slice.coordinate_system.critical_points[1][0].psi)
+        logger.debug(tok.equilibrium.time_slice.boundary.outline.r)
 
     if True:
         sp_figure(tok,
@@ -61,7 +58,7 @@ if __name__ == "__main__":
                       "scalar_field": [("psirz", {"levels": 32, "linewidths": 0.1}), ],
                   }
                   ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
-    
+
     if False:
         eq_profile = tok.equilibrium.time_slice.profiles_1d
 
@@ -298,7 +295,7 @@ if __name__ == "__main__":
                 ],
                 [
                     (Function(bs_r_nrom, baseline["Joh"].values*1.0e6 / baseline["U"].values * \
-                              (2.0*scipy.constants.pi * tok.equilibrium.vacuum_toroidal_field.r0)),     r"$\sigma_{\parallel}^{astra}$", {"marker": "+"}),
+                              (2.0*constants.pi * tok.equilibrium.vacuum_toroidal_field.r0)),     r"$\sigma_{\parallel}^{astra}$", {"marker": "+"}),
                     (core_transport1d.conductivity_parallel*11/14,
                      r"$\sigma_{\parallel}^{wesson}$"),
                 ],
@@ -339,7 +336,7 @@ if __name__ == "__main__":
                 # ],
                 # [
                 #     (Function(bs_r_nrom, baseline["Joh"].values*1.0e6 / baseline["U"].values *
-                #               (2.0*scipy.constants.pi * tok.equilibrium.vacuum_toroidal_field.r0)),     r"$\sigma_{\parallel}^{astra}$", {"marker": "+"}),
+                #               (2.0*constants.pi * tok.equilibrium.vacuum_toroidal_field.r0)),     r"$\sigma_{\parallel}^{astra}$", {"marker": "+"}),
                 #     (core_source_1d.conductivity_parallel*11/14,
                 #      r"$\sigma_{\parallel}^{wesson}$"),
                 # ],

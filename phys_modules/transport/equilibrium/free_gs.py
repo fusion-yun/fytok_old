@@ -5,8 +5,8 @@ from  functools import cached_property
 
 import freegs
 import matplotlib.pyplot as plt
-import numpy as np
-import scipy.constants
+from spdm.util.numlib import np
+from spdm.util.numlib import constants
 from fytok.modules.transport.Equilibrium import Equilibrium
 from spdm.data.Function import Function
 from spdm.data.Node import Dict
@@ -90,7 +90,7 @@ class EquilibriumFreeGS(Equilibrium):
         else:
             # Plasma pressure on axis [Pascals]
             pressure = profiles.get("pressure", None) or  \
-                self.global_quantities.beta_tor*(self.vacuum_toroidal_field.b0**2)/(2.0*scipy.constants.mu_0)
+                self.global_quantities.beta_tor*(self.vacuum_toroidal_field.b0**2)/(2.0*constants.mu_0)
             if is_none(pressure):
                 raise RuntimeError(f"pressure is not defined!")
 

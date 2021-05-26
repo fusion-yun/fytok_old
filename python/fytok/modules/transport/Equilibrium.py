@@ -3,9 +3,9 @@ from dataclasses import dataclass
 from typing import Sequence, Union
 
 import matplotlib.pyplot as plt
-import numpy as np
+from spdm.util.numlib import np
 import scipy
-import scipy.constants
+from spdm.util.numlib import constants
 import scipy.integrate
 from spdm.data.Field import Field
 from spdm.data.Function import Expression, Function
@@ -23,7 +23,7 @@ from .MagneticCoordSystem import MagneticCoordSystem, RadialGrid
 TOLERANCE = 1.0e-6
 EPS = np.finfo(float).eps
 
-TWOPI = 2.0*scipy.constants.pi
+TWOPI = 2.0*constants.pi
 
 
 class EquilibriumConstraints(Dict):
@@ -214,7 +214,7 @@ class EquilibriumProfiles1D(Profiles):
         """Toroidal current driven inside the flux surface.
           .. math:: I_{pl}\equiv\int_{S_{\zeta}}\mathbf{j}\cdot dS_{\zeta}=\frac{\text{gm2}}{4\pi^{2}\mu_{0}}\frac{\partial V}{\partial\psi}\left(\frac{\partial\psi}{\partial\rho}\right)^{2}
          {dynamic}[A]"""
-        return self._coord.surface_average(self._coord.grad_psi2 / (self._coord.r**2))*self._coord.dvolume_dpsi/scipy.constants.mu_0
+        return self._coord.surface_average(self._coord.grad_psi2 / (self._coord.r**2))*self._coord.dvolume_dpsi/constants.mu_0
 
     @sp_property
     def j_tor(self) -> Function:
@@ -285,7 +285,7 @@ class EquilibriumProfiles1D(Profiles):
     @sp_property
     def dvolume_drho_tor(self) -> Function:
         """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
-        return (4*scipy.constants.pi**2*self._b0)*self.rho_tor/(self.fpol*self.gm1)
+        return (4*constants.pi**2*self._b0)*self.rho_tor/(self.fpol*self.gm1)
 
     @sp_property
     def shape_property(self) -> MagneticCoordSystem.ShapePropety:
@@ -735,7 +735,6 @@ class EquilibriumTimeSlice(Dict):
                 axis.plot([], [], 'rx', label="X-Point")
 
         if boundary is not False:
-            logger.debug(self.boundary.outline.r)
             boundary_points = np.vstack([self.boundary.outline.r,
                                          self.boundary.outline.z]).T
 

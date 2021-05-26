@@ -1,8 +1,8 @@
 
 import collections
 
-import numpy as np
-import scipy.constants
+from spdm.util.numlib import np
+from spdm.util.numlib import constants
 from fytok.modules.transport.CoreProfiles import CoreProfiles
 from fytok.modules.transport.CoreSources import CoreSources
 from fytok.modules.transport.Equilibrium import Equilibrium
@@ -27,7 +27,7 @@ class BootstrapCurrent(CoreSources.Source):
 
         super().update(*args, core_profiles=core_profiles, **kwargs)
 
-        eV = scipy.constants.electron_volt
+        eV = constants.electron_volt
         B0 = abs(equilibrium.vacuum_toroidal_field.b0)
         R0 = equilibrium.vacuum_toroidal_field.r0
 
@@ -62,7 +62,7 @@ class BootstrapCurrent(CoreSources.Source):
         # electron collision time , eq 14.6.1
         tau_e = np.asarray(1.09e16*((Te/1000)**(3/2))/Ne/lnCoul)
 
-        vTe = np.asarray(np.sqrt(Te*eV/scipy.constants.electron_mass))
+        vTe = np.asarray(np.sqrt(Te*eV/constants.electron_mass))
 
         rho_tor[0] = max(np.asarray(1.07e-4*((Te[0]/1000)**(1/2))/B0), rho_tor[0])   # Larmor radius,   eq 14.7.2
 
@@ -91,7 +91,7 @@ class BootstrapCurrent(CoreSources.Source):
             tau_i = np.asarray(6.6e17*np.sqrt(mi)*((Ti/1000)**(3/2))/Ni/(1.1*lnCoul))
 
             # thermal velocity
-            v_Ti = np.sqrt(Ti*(eV/scipy.constants.m_p/mi))
+            v_Ti = np.sqrt(Ti*(eV/constants.m_p/mi))
 
             nu_i = np.asarray(R0*q/epsilon32/v_Ti/tau_i)
 
@@ -115,7 +115,7 @@ class BootstrapCurrent(CoreSources.Source):
         # src.j_bootstrap = (-(q/B0/epsilon12))*j_bootstrap
 
         j_bootstrap = - j_bootstrap * x/(2.4+5.4*x+2.6*x**2) * Pe * \
-            equilibrium.time_slice.profiles_1d.fpol(psi_norm) * q / rho_tor / rho_tor[-1] / (2.0*scipy.constants.pi*B0)
+            equilibrium.time_slice.profiles_1d.fpol(psi_norm) * q / rho_tor / rho_tor[-1] / (2.0*constants.pi*B0)
         self.profiles_1d.j_parallel = j_bootstrap
         return 0.0
 

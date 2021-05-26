@@ -4,8 +4,8 @@
 
 from math import log
 
-import numpy as np
-import scipy.constants
+from spdm.util.numlib import np
+from spdm.util.numlib import constants
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, _not_found_
 from spdm.data.Node import sp_property
@@ -26,7 +26,7 @@ from .MagneticCoordSystem import RadialGrid
 EPSILON = 1.0e-15
 TOLERANCE = 1.0e-6
 
-TWOPI = 2.0 * scipy.constants.pi
+TWOPI = 2.0 * constants.pi
 
 
 class TransportSolver(IDS):
@@ -312,7 +312,7 @@ class TransportSolver(IDS):
             # total non inductive current, component proportional to PSI,      [A/m^2/V/s]
             j_imp = 0.0  # sources.j_imp if sources is not None else 0.0   # can not find data in imas dd
 
-            c = (scipy.constants.mu_0*B0 * rho_tor_boundary)/(fpol**2)
+            c = (constants.mu_0*B0 * rho_tor_boundary)/(fpol**2)
 
             a = conductivity_parallel * rho_tor * c * inv_tau
 
@@ -320,7 +320,7 @@ class TransportSolver(IDS):
 
             d = vpr*gm2 / fpol / ((TWOPI**2)*rho_tor_boundary)
 
-            e = (- scipy.constants.mu_0 * B0 * k_phi) * (conductivity_parallel * rho_tor**2/fpol**2)
+            e = (- constants.mu_0 * B0 * k_phi) * (conductivity_parallel * rho_tor**2/fpol**2)
 
             f = - vpr * j_exp/TWOPI * c
 
@@ -377,15 +377,15 @@ class TransportSolver(IDS):
                 core_profiles_next.dpsi_drho_tor_norm = profiles.yp
                 # core_profiles_next.dgamma_current = profiles.gamma
                 # core_profiles_next.j_tor = (profiles.y*fpol).derivative / vpr * \
-                #     (-TWOPI*R0 / scipy.constants.mu_0/rho_tor_boundary)
+                #     (-TWOPI*R0 / constants.mu_0/rho_tor_boundary)
 
                 # core_profiles_next.j_parallel = profiles.gamma * \
-                #     (- TWOPI / (scipy.constants.mu_0 * B0 * rho_tor_boundary)) * fpol**2/vpr
+                #     (- TWOPI / (constants.mu_0 * B0 * rho_tor_boundary)) * fpol**2/vpr
 
                 # core_profiles_next.e_field.parallel = (core_profiles_next.j_parallel-j_exp -
                 #                                        j_exp*core_profiles_next.psi)/conductivity_parallel
             else:
-                psi_prime = (scipy.constants.pi*2.0)*B0 * rho_tor / qsf * rho_tor_boundary
+                psi_prime = (constants.pi*2.0)*B0 * rho_tor / qsf * rho_tor_boundary
                 core_profiles_next.dpsi_drho_tor_norm = psi_prime
                 core_profiles_next.psi = psi0[0] + psi_prime.antiderivative * 2
 

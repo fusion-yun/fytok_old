@@ -2,7 +2,7 @@
 import collections
 from copy import copy
 
-import numpy as np
+from spdm.util.numlib import np
 from spdm.data.Node import Dict, List
 from spdm.data.Node import sp_property
 from spdm.util.logger import logger

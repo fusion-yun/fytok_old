@@ -1,7 +1,7 @@
 
-import numpy as np
+from spdm.util.numlib import np
 import scipy
-import scipy.constants
+from spdm.util.numlib import constants
 from fytok.modules.transport.CoreProfiles import CoreProfiles
 from fytok.modules.transport.CoreTransport import CoreTransport
 from fytok.modules.transport.Equilibrium import Equilibrium

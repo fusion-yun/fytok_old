@@ -1,8 +1,8 @@
 import collections
 from typing import Optional
 
-import numpy as np
-import scipy.constants
+from spdm.util.numlib import np
+from spdm.util.numlib import constants
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List, Node
 from spdm.data.Profiles import Profiles
@@ -157,11 +157,11 @@ class CoreSourcesProfiles1D(Profiles):
         ne = self._core_profile.profiles_1d.electrons.density
 
         gamma_ei = 15.2 - np.log(ne)/np.log(1.0e20) + np.log(Te)/np.log(1.0e3)
-        epsilon = scipy.constants.epsilon_0
-        e = scipy.constants.elementary_charge
-        me = scipy.constants.electron_mass
-        mp = scipy.constants.proton_mass
-        PI = scipy.constants.pi
+        epsilon = constants.epsilon_0
+        e = constants.elementary_charge
+        me = constants.electron_mass
+        mp = constants.proton_mass
+        PI = constants.pi
         tau_e = 12*(PI**(3/2))*(epsilon**2)/(e**4)*np.sqrt(me/2)*((e*Te)**(3/2))/ne/gamma_ei
 
         def qei(ion):

@@ -1,7 +1,7 @@
 
 import numpy as np
 import pandas as pd
-import scipy.constants
+from spdm.util.numlib import constants
 from fytok.Tokamak import Tokamak
 from spdm.data.Collection import Collection
 from spdm.data.File import File
@@ -89,7 +89,7 @@ if __name__ == "__main__":
             [
                 (eq.profiles_1d.rho_tor,           r"$\rho_{tor}$"),
                 (Function(profile["Fp"].values, profile["rho"].values),             r"$\rho_{tor}^{\star}$"),
-                #     # (eq.profiles_1d.dvolume_drho_tor / ((scipy.constants.pi**2) * 4.0 * eq.vacuum_toroidal_field.r0),
+                #     # (eq.profiles_1d.dvolume_drho_tor / ((constants.pi**2) * 4.0 * eq.vacuum_toroidal_field.r0),
                 #     #     r"$\frac{dV/d\rho_{tor}}{4\pi^2 R_0}$"),
             ],
             (eq.profiles_1d.rho_tor_norm,           r"$\rho_{tor}/\rho_{tor,0}$"),
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     v_pinch = diff * rho_tor_norm * 1.5 / equilibrium.vacuum_toroidal_field.r0
 
     j_parallel = eq.profiles_1d.j_parallel.pullback(psi_norm, rho_tor_norm)
-    Qoh = Function(profile['x'].values, profile['Poh'].values*1e6/scipy.constants.elementary_charge)
+    Qoh = Function(profile['x'].values, profile['Poh'].values*1e6/constants.elementary_charge)
     conductivity_parallel = 2.0e-9
 
     tok.update(

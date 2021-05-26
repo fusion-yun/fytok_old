@@ -13,7 +13,15 @@ class PFActiveCoil(Dict):
         super().__init__(*args, **kwargs)
 
     @sp_property
-    def element(self) -> AttributeTree:
+    def name(self) -> str:
+        return self["name"]
+
+    @sp_property
+    def identifier(self) -> str:
+        return self["identifier"]
+
+    @sp_property
+    def element(self) -> List[AttributeTree]:
         return self["element"]
 
 
@@ -45,7 +53,7 @@ class PFActive(IDS):
 
     @sp_property
     def circuit(self) -> List[Circuit]:
-        """Circuits, connecting multiple PF coils to multiple supplies, 
+        """Circuits, connecting multiple PF coils to multiple supplies,
             defining the current and voltage relationships in the system"""
         return self["circuit"]
 
@@ -59,11 +67,11 @@ class PFActive(IDS):
         if axis is None:
             axis = plt.gca()
         for coil in self.coil:
-            geo = coil.element.geometry.rectangle
-            axis.add_patch(plt.Rectangle((geo["r"]-geo["width"]/2.0,  geo["z"]-geo["height"]/2.0),
-                                         geo["width"],  geo["height"],
+            rect = coil.element[0].geometry.rectangle
+            axis.add_patch(plt.Rectangle((rect.r - rect.width / 2.0,  rect.z - rect.height / 2.0),
+                                         rect.width,  rect.height,
                                          **collections.ChainMap(kwargs,  {"fill": False})))
-            axis.text(geo["r"], geo["z"], str(coil["name"]),
+            axis.text(rect.r, rect.z, coil.name,
                       horizontalalignment='center',
                       verticalalignment='center')
 

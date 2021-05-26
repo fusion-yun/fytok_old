@@ -152,7 +152,7 @@ def sp_write_geqdsk(p, file):
 
 
 def sp_imas_equilibrium_to_geqdsk(eq, nw=125, nh=125):
-    from scipy.interpolate import griddata
+    from spdm.util.numlib import interpolate 
 
     coord_r = eq.coordinate_system.r
     coord_z = eq.coordinate_system.z
@@ -191,7 +191,7 @@ def sp_imas_equilibrium_to_geqdsk(eq, nw=125, nh=125):
         [coord_r.size, 1]), coord_z.reshape([coord_z.size, 1]), axis=1)
     psi = eq.profiles_2d[1].psi
     values = psi[:coord_r.shape[0], :coord_r.shape[1]].reshape(points.shape[0])
-    psirz = griddata(points, values, (grid_r, grid_z),
+    psirz = interpolate.griddata(points, values, (grid_r, grid_z),
                      method='cubic').transpose()
 
     # profile
@@ -271,7 +271,7 @@ def sp_geqdsk_to_imas_equilibrium(geqdsk, eq):
     #     [coord_r.size, 1]), coord_z.reshape([coord_z.size, 1]), axis=1)
     # psi = eq.profiles_2d[1].psi
     # values = psi[:coord_r.shape[0], :coord_r.shape[1]].reshape(points.shape[0])
-    # psirz = griddata(points, values, (grid_r, grid_z),
+    # psirz = interpolate.griddata(points, values, (grid_r, grid_z),
     #                  method='cubic').transpose()
 
     # profile

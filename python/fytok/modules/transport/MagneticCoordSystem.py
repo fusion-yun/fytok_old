@@ -2,25 +2,16 @@ import collections
 from dataclasses import dataclass
 from typing import Sequence, Union
 
-import matplotlib.pyplot as plt
-import numpy as np
-import scipy
-import scipy.integrate
-from numpy import arctan2, cos, sin, sqrt
-from scipy.optimize import fsolve, root_scalar
-from spdm.data.AttributeTree import AttributeTree, as_attribute_tree
 from spdm.data.Field import Field
 from spdm.data.Function import Function
-from spdm.data.Node import Dict, List
-from spdm.data.Profiles import Profiles
-from spdm.data.Node import sp_property
-from spdm.data.TimeSeries import TimeSeries, TimeSlice
+from spdm.data.Node import Dict, List, sp_property
 from spdm.geometry.CubicSplineCurve import CubicSplineCurve
 from spdm.geometry.Curve import Curve
 from spdm.geometry.Point import Point
 from spdm.mesh.CurvilinearMesh import CurvilinearMesh
 from spdm.util.logger import logger
-from spdm.util.utilities import convert_to_named_tuple, try_get
+from spdm.util.numlib import constants, np, optimize
+from spdm.util.utilities import try_get
 
 from ..common.GGD import GGD
 from ..common.IDS import IDS
@@ -29,7 +20,7 @@ from ..common.Misc import Identifier, RZTuple, VacuumToroidalField
 TOLERANCE = 1.0e-6
 EPS = np.finfo(float).eps
 
-TWOPI = 2.0*scipy.constants.pi
+TWOPI = 2.0*constants.pi
 
 
 class MagneticCoordSystem(Dict):
@@ -58,7 +49,8 @@ class MagneticCoordSystem(Dict):
             Initialize FluxSurface
         """
         super().__init__(*args, **kwargs)
-        self._vacuum_toroidal_field = vacuum_toroidal_field
+        self._vacuum_toroidal_field = vacuum_toroidal_field or self._parent.vacuum_toroidal_field
+        logger.debug(self._vacuum_toroidal_field)
         self._fvac = abs(self._vacuum_toroidal_field.r0*self._vacuum_toroidal_field.b0)
 
         self._psirz = psirz
@@ -115,7 +107,7 @@ class MagneticCoordSystem(Dict):
         return RadialGrid(self, psi_norm)
 
     @sp_property
-    def grid_type(self)->Identifier:
+    def grid_type(self) -> Identifier:
         return Identifier(**self["grid_type"]._as_dict())
 
     @sp_property
@@ -170,8 +162,8 @@ class MagneticCoordSystem(Dict):
             R1 = x_points[0].r
             Z1 = x_points[0].z
             psi1 = x_points[0].psi
-            theta0 = arctan2(Z1 - Z0, R1 - R0)
-        Rm = sqrt((R1-R0)**2+(Z1-Z0)**2)
+            theta0 = np.arctan2(Z1 - Z0, R1 - R0)
+        Rm = np.sqrt((R1-R0)**2+(Z1-Z0)**2)
 
         if not isinstance(u, (np.ndarray, collections.abc.MutableSequence)):
             u = [u]
@@ -189,13 +181,13 @@ class MagneticCoordSystem(Dict):
             for theta_val in theta:
                 r0 = R0
                 z0 = Z0
-                r1 = R0+Rm * cos(theta_val)
-                z1 = Z0+Rm * sin(theta_val)
+                r1 = R0+Rm * np.cos(theta_val)
+                z1 = Z0+Rm * np.sin(theta_val)
 
                 if not np.isclose(self.psirz(r1, z1), psi_val):
                     try:
                         def func(r): return float(self.psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1)) - psi_val
-                        sol = root_scalar(func,  bracket=[0, 1], method='brentq')
+                        sol = optimize.root_scalar(func,  bracket=[0, 1], method='brentq')
                     except ValueError as error:
                         raise ValueError(f"Find root fialed! {error} {psi_val}")
 
@@ -260,7 +252,7 @@ class MagneticCoordSystem(Dict):
         return np.sqrt(self.br(r, z)**2+self.bz(r, z)**2)
 
     def surface_integrate2(self, fun, *args, **kwargs):
-        return np.asarray([surf.integrate(lambda r, z: fun(r, z, *args, **kwargs)/self.bpol(r, z)) * (2*scipy.constants.pi) for surf in self.surface_mesh])
+        return np.asarray([surf.integrate(lambda r, z: fun(r, z, *args, **kwargs)/self.bpol(r, z)) * (2*constants.pi) for surf in self.surface_mesh])
 
     @sp_property
     def mesh(self):
@@ -320,7 +312,7 @@ class MagneticCoordSystem(Dict):
             alpha = 1.0/self.Bpol
         else:
             alpha = alpha/self.Bpol
-        return np.sum((np.roll(alpha, 1, axis=1)+alpha) * self.dl, axis=1) * (0.5*2*scipy.constants.pi)
+        return np.sum((np.roll(alpha, 1, axis=1)+alpha) * self.dl, axis=1) * (0.5*2*constants.pi)
 
     def surface_average(self,  *args, **kwargs):
         return self.surface_integrate(*args, **kwargs) / self.dvolume_dpsi
@@ -482,7 +474,7 @@ class MagneticCoordSystem(Dict):
     @sp_property
     def rho_tor(self):
         """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0[m]"""
-        return np.sqrt(self.phi/(scipy.constants.pi * abs(self._vacuum_toroidal_field.b0)))
+        return np.sqrt(self.phi/(constants.pi * abs(self._vacuum_toroidal_field.b0)))
 
     @sp_property
     def rho_tor_norm(self):

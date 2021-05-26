@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from freegs.coil import Coil
 from freegs.machine import Machine, Wall
-from scipy import special
 from spdm.data.Collection import Collection
 from spdm.util.logger import logger
 

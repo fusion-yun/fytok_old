@@ -1,8 +1,8 @@
 
 import collections
 
-import numpy as np
-import scipy.constants
+from spdm.util.numlib import np
+from spdm.util.numlib import constants
 from fytok.modules.transport.CoreProfiles import CoreProfiles
 from fytok.modules.transport.CoreSources import CoreSources
 from fytok.modules.transport.Equilibrium import Equilibrium
@@ -27,7 +27,7 @@ class Spitzer(CoreSources.Source):
 
         super().update(*args, core_profiles=core_profiles, **kwargs)
 
-        eV = scipy.constants.electron_volt
+        eV = constants.electron_volt
         B0 = equilibrium.vacuum_toroidal_field.b0
         R0 = equilibrium.vacuum_toroidal_field.r0
 
@@ -59,7 +59,7 @@ class Spitzer(CoreSources.Source):
         # electron collision time , eq 14.6.1
         tau_e = np.asarray(1.09e16*((Te/1000)**(3/2))/Ne/lnCoul)
 
-        vTe = np.asarray(np.sqrt(Te*eV/scipy.constants.electron_mass))
+        vTe = np.asarray(np.sqrt(Te*eV/constants.electron_mass))
 
         # Larmor radius,   eq 14.7.2
         rho_e = np.asarray(1.07e-4*((Te/1000)**(1/2))/B0)

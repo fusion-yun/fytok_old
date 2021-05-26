@@ -3,10 +3,10 @@ import collections
 import datetime
 import getpass
 from typing import Union
-import numpy as np
+from spdm.util.numlib import np
 import matplotlib.pyplot as plt
 from fytok.modules.transport.MagneticCoordSystem import RadialGrid
-import scipy.constants
+from spdm.util.numlib import constants
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, Node
 from spdm.data.Node import sp_property
@@ -32,7 +32,7 @@ from .modules.transport.Equilibrium import Equilibrium
 from .modules.transport.TransportSolver import TransportSolver
 
 ##################################
-TWOPI = scipy.constants.pi*2.0
+TWOPI = constants.pi*2.0
 
 
 class Tokamak(Actor):
@@ -228,8 +228,8 @@ class Tokamak(Actor):
     #         / self.equilibrium.profiles_1d.rho_tor[-1]**2 \
     #         * self.equilibrium.profiles_1d.dpsi_drho_tor  \
     #         * (self.equilibrium.profiles_1d.fpol**2) \
-    #         / (scipy.constants.mu_0*self.vacuum_toroidal_field.b0) \
-    #         * (scipy.constants.pi)
+    #         / (constants.mu_0*self.vacuum_toroidal_field.b0) \
+    #         * (constants.pi)
 
     #     j_total[1:] /= self.equilibrium.profiles_1d.dvolume_drho_tor[1:]
     #     j_total[0] = 2*j_total[1]-j_total[2]

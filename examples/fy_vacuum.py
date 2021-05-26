@@ -1,15 +1,16 @@
 import sys
+
 sys.path.append("/home/salmon/workspace/fytok/python")
 sys.path.append("/home/salmon/workspace/SpDev/SpCommon")
 sys.path.append("/home/salmon/workspace/SpDev/SpDB")
 
 import collections
-from spdm.util.logger import logger
-from spdm.data.Collection import Collection
-import matplotlib.pyplot as plt
-import numpy as np
-from scipy import special
 import math
+
+import matplotlib.pyplot as plt
+from spdm.data.Collection import Collection
+from spdm.util.logger import logger
+from spdm.util.numlib import scipy,np
 
 db = Collection("east+mdsplus:///home/salmon/public_data/~t/",default_tree_name="efit_east")
 entry = db.open(shot=55555).entry
@@ -36,7 +37,7 @@ COIL=collections.namedtuple("COIL", "label r z current turns")
 def psi(r, z, coils):
     def green_function(Rc, Zc, R, Z):
         k2   =  4.0*Rc*R/((Rc+R)*(Rc+R)+(Zc-Z)*(Zc-Z))          
-        return   math.sqrt(R*Rc)/(2.0*math.pi)* ((2.0-k2) * special.ellipk(k2) - 2.0* special.ellipe(k2))/math.sqrt(k2)  
+        return   math.sqrt(R*Rc)/(2.0*math.pi)* ((2.0-k2) *scipy.special.ellipk(k2) - 2.0* scipy.special.ellipe(k2))/math.sqrt(k2)  
     return sum([green_function(coil.r, coil.z, r, z)*coil.current for coil in coils])
 itime=30000
 

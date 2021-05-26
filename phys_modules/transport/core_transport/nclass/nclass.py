@@ -1,7 +1,7 @@
 import collections
 
-import numpy as np
-import scipy.constants
+from spdm.util.numlib import np
+from spdm.util.numlib import constants
 from fytok.modules.transport.CoreProfiles import CoreProfiles, CoreProfiles1D
 from fytok.modules.transport.CoreSources import CoreSources
 from fytok.modules.transport.CoreTransport import (CoreTransport,
@@ -127,7 +127,7 @@ class NClass(CoreTransportModel):
         xr0_pr = (r_inboard+r_outboard)*0.5
 
         #  external poloidal current has a flux surface (A)|
-        xfs_pr = xr0_pr*bt0_pr * (2.0*scipy.constants.pi/scipy.constants.mu_0)
+        xfs_pr = xr0_pr*bt0_pr * (2.0*constants.pi/constants.mu_0)
 
         # Electron,Ion densities, temperatures and mass
 
@@ -141,7 +141,7 @@ class NClass(CoreTransportModel):
         dPs = [core_profile.electrons.pressure.derivative * dpsi_drho_tor_norm,
                *[ion.pressure.derivative * dpsi_drho_tor_norm for ion in core_profile.ion]]
 
-        amu = [scipy.constants.m_e/scipy.constants.m_u,   # Electron mass in amu
+        amu = [constants.m_e/constants.m_u,   # Electron mass in amu
                * [sum([(element.a*element.atoms_n) for element in ion.element]) for ion in core_profile.ion]]
 
         q = eq_profile.q
@@ -184,7 +184,7 @@ class NClass(CoreTransportModel):
             rminx = x*rho_tor_bdry
 
             xeps = rminx/xr0
-            xgph = gph_pr(x_psi)/4/(scipy.constants.pi**2)
+            xgph = gph_pr(x_psi)/4/(constants.pi**2)
             xfs = xfs_pr(x_psi)
 
             if (xgph == 0):
@@ -225,7 +225,7 @@ class NClass(CoreTransportModel):
                 eq_profile.gm5(x_psi),                        # <B**2> [T**2]
                 eq_profile.gm4(x_psi),                        # <1/B**2> [1/T**2]
                 core_profile.e_field.parallel(x_psi)*b0,         # <E.B> [V*T/m]
-                scipy.constants.mu_0*fpol(x_psi) / dpsi_drho_tor,  # mu_0*F/(dPsi/dr) [rho/m]
+                constants.mu_0*fpol(x_psi) / dpsi_drho_tor,  # mu_0*F/(dPsi/dr) [rho/m]
                 p_fm,                                             # poloidal moments of drift factor for PS [/m**2]
                 eq_profile.trapped_fraction(x_psi),           # trapped fraction [-]
                 eq_profile.gm6(x_psi),                        # <grad(rho)**2/B**2> [rho**2/m**2/T**2]

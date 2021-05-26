@@ -1,7 +1,7 @@
 import collections
 from  functools import cached_property
 
-import numpy as np
+from spdm.util.numlib import np
 import scipy
 from spdm.data.Node import Dict
 from spdm.data.Function import Function

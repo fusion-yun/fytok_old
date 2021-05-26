@@ -2,7 +2,7 @@ import collections
 from dataclasses import dataclass
 from typing import Optional
 
-import numpy as np
+from spdm.util.numlib import np
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List, sp_property
 from spdm.data.Profiles import Profiles

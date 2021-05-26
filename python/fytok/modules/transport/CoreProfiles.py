@@ -2,8 +2,8 @@ import collections
 from dataclasses import dataclass
 from typing import Optional
 
-import numpy as np
-import scipy.constants
+from spdm.util.numlib import np
+from spdm.util.numlib import constants
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
@@ -65,7 +65,7 @@ class CoreProfilesElectrons(SpeciesElectron):
     @sp_property
     def pressure(self) -> Function:
         """Pressure(thermal+non-thermal) {dynamic}[Pa]"""
-        return self.density*self.temperature*scipy.constants.electron_volt
+        return self.density*self.temperature*constants.electron_volt
 
         # if self.pressure_fast_perpendicular is not NotImplemented:
         #     return self.pressure_thermal+self.pressure_fast_perpendicular+self.pressure_fast_parallel
@@ -75,7 +75,7 @@ class CoreProfilesElectrons(SpeciesElectron):
     @sp_property
     def pressure_thermal(self) -> Function:
         """Pressure(thermal) associated with random motion ~average((v-average(v)) ^ 2) {dynamic}[Pa]"""
-        return self.density*self.temperature*scipy.constants.electron_volt
+        return self.density*self.temperature*constants.electron_volt
 
     @sp_property
     def pressure_fast_perpendicular(self) -> Function:
@@ -171,13 +171,13 @@ class CoreProfilesIon(SpeciesIon):
         # if self.pressure_fast_perpendicular is not NotImplemented:
         #     return self.pressure_thermal+self.pressure_fast_perpendicular+self.pressure_fast_parallel
         # else:
-        return self.density*self.temperature*scipy.constants.electron_volt
+        return self.density*self.temperature*constants.electron_volt
 
     @sp_property
     def pressure_thermal(self) -> Function:
         """Pressure (thermal) associated with random motion ~average((v-average(v))^2)
         (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-        return self.density_thermal*self.temperature*scipy.constants.electron_volt
+        return self.density_thermal*self.temperature*constants.electron_volt
 
     @sp_property
     def pressure_fast_perpendicular(self) -> Function:
@@ -435,12 +435,12 @@ class CoreProfiles1D(Profiles):
             # ])
             clog = self.coulomb_logarithm
             # electron collision time:
-            # tau_e = (np.sqrt(2.*scipy.constants.electron_mass)*(Te**1.5)) / 1.8e-19 / (ne * 1.0e-6) / clog
+            # tau_e = (np.sqrt(2.*constants.electron_mass)*(Te**1.5)) / 1.8e-19 / (ne * 1.0e-6) / clog
 
             # Plasma electrical conductivity:
-            return 1.96e0 * scipy.constants.elementary_charge**2   \
-                * ((np.sqrt(2.*scipy.constants.electron_mass)*(Te**1.5)) / 1.8e-19 / clog) \
-                / scipy.constants.m_e
+            return 1.96e0 * constants.elementary_charge**2   \
+                * ((np.sqrt(2.*constants.electron_mass)*(Te**1.5)) / 1.8e-19 / clog) \
+                / constants.m_e
 
     @sp_property
     def coulomb_logarithm(self):

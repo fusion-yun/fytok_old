@@ -1,7 +1,7 @@
 import collections
 from dataclasses import dataclass
 
-import scipy.constants
+from spdm.util.numlib import constants
 from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
 from spdm.data.Node import sp_property
@@ -67,7 +67,7 @@ class SpeciesElectron(Species):
     @sp_property
     def a(self):
         """Mass of elctron {dynamic} [Atomic Mass Unit]"""
-        return scipy.constants.m_e/scipy.constants.m_u
+        return constants.m_e/constants.m_u
 
     @sp_property
     def z(self) -> float:
