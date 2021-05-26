@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import scipy.constants
 from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
-from spdm.data.sp_property import sp_property
+from spdm.data.Node import sp_property
 from spdm.util.logger import logger
 
 

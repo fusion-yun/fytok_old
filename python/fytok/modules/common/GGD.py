@@ -1,5 +1,5 @@
 from spdm.data.Node import Dict, List
-from spdm.data.sp_property import sp_property
+from spdm.data.Node import sp_property
 from spdm.flow.Actor import Actor
 from spdm.util.logger import logger
 

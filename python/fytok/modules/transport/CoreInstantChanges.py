@@ -7,7 +7,7 @@ from ..common.Misc import Identifier, VacuumToroidalField
 from .CoreProfiles import CoreProfiles1D
 
 
-class CoreInstantChange(Dict[str, Node]):
+class CoreInstantChange(Dict[Node]):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

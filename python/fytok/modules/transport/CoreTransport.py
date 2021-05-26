@@ -4,9 +4,8 @@ from typing import Optional
 
 import numpy as np
 from spdm.data.Function import Function
-from spdm.data.Node import Dict, List
+from spdm.data.Node import Dict, List, sp_property
 from spdm.data.Profiles import Profiles
-from spdm.data.sp_property import sp_property
 from spdm.flow.Actor import Actor
 from spdm.util.logger import logger
 from spdm.util.utilities import _not_found_

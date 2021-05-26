@@ -61,7 +61,8 @@ if __name__ == "__main__":
                       "scalar_field": [("psirz", {"levels": 32, "linewidths": 0.1}), ],
                   }
                   ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
-    if True:
+    
+    if False:
         eq_profile = tok.equilibrium.time_slice.profiles_1d
 
         plot_profiles(
@@ -135,7 +136,7 @@ if __name__ == "__main__":
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
     ###################################################################################################
-    if True:
+    if False:
 
         Te = Function(bs_r_nrom, baseline["TE"].values*1000)
         Ti = Function(bs_r_nrom, baseline["TI"].values*1000)
@@ -316,7 +317,7 @@ if __name__ == "__main__":
             # annotation=core_transport.model[0].identifier.name,
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
-    if True:
+    if False:
         core_sources = CoreSources({"source": [
             {"code": {"name": "bootstrap_current"}},
             # {"code": {"name": "spitzer"}},

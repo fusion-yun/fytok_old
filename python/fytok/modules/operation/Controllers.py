@@ -1,5 +1,5 @@
 
-from spdm.data.sp_property import sp_property
+from spdm.data.Node import sp_property
 
 from spdm.data.Node import Dict, _not_found_, List
 from ..common.IDS import IDS,

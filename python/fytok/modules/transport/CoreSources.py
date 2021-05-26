@@ -6,7 +6,7 @@ import scipy.constants
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List, Node
 from spdm.data.Profiles import Profiles
-from spdm.data.sp_property import sp_property
+from spdm.data.Node import sp_property
 from spdm.flow.Actor import Actor
 from spdm.util.logger import logger
 

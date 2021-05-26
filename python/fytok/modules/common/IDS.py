@@ -4,8 +4,7 @@ import os
 from dataclasses import dataclass
 from typing import Mapping, Optional, Sequence
 
-from spdm.data.Node import Dict, List, Node
-from spdm.data.sp_property import sp_property
+from spdm.data.Node import Dict, List, Node, sp_property
 from spdm.flow.Actor import Actor
 from spdm.util.logger import logger
 

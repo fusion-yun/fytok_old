@@ -8,7 +8,7 @@ import numpy as np
 import scipy.constants
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, _not_found_
-from spdm.data.sp_property import sp_property
+from spdm.data.Node import sp_property
 from spdm.numerical.bvp import solve_bvp
 from spdm.util.logger import logger
 

@@ -1,15 +1,20 @@
 
 import matplotlib.pyplot as plt
+from spdm.data.AttributeTree import AttributeTree
 from spdm.data.Node import Dict, List
-from spdm.data.sp_property import sp_property
+from spdm.data.Node import sp_property
 from spdm.util.logger import logger
-
+import collections
 from ..common.IDS import IDS
 
 
 class PFActiveCoil(Dict):
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+    @sp_property
+    def element(self) -> AttributeTree:
+        return self["element"]
 
 
 class PFActiveCircuit(Dict):
@@ -26,7 +31,7 @@ class PFActive(IDS):
     """
     """
     _IDS = "pf_active"
-    
+
     Coil = PFActiveCoil
     Circuit = PFActiveCircuit
     Supply = PFActiveSupply
@@ -54,7 +59,7 @@ class PFActive(IDS):
         if axis is None:
             axis = plt.gca()
         for coil in self.coil:
-            geo = coil["element.geometry.rectangle"]
+            geo = coil.element.geometry.rectangle
             axis.add_patch(plt.Rectangle((geo["r"]-geo["width"]/2.0,  geo["z"]-geo["height"]/2.0),
                                          geo["width"],  geo["height"],
                                          **collections.ChainMap(kwargs,  {"fill": False})))

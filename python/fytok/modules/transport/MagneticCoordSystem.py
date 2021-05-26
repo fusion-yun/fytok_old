@@ -13,7 +13,7 @@ from spdm.data.Field import Field
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
-from spdm.data.sp_property import sp_property
+from spdm.data.Node import sp_property
 from spdm.data.TimeSeries import TimeSeries, TimeSlice
 from spdm.geometry.CubicSplineCurve import CubicSplineCurve
 from spdm.geometry.Curve import Curve

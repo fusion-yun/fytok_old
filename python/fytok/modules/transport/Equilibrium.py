@@ -11,7 +11,7 @@ from spdm.data.Field import Field
 from spdm.data.Function import Expression, Function
 from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
-from spdm.data.sp_property import sp_property
+from spdm.data.Node import sp_property
 from spdm.util.logger import logger
 from spdm.util.utilities import _not_found_, try_get
 
@@ -532,8 +532,10 @@ class EquilibriumProfiles2D(Profiles):
 
 
 class EquilibriumBoundary(Profiles):
-    def __init__(self,  *args, coord: MagneticCoordSystem = None,   ** kwargs):
-        super().__init__(*args, axis=coord.psi_norm, **kwargs)
+    def __init__(self,  *args, coord: MagneticCoordSystem = None, parent=None,   ** kwargs):
+        if coord is None:
+            coord = parent.coordinate_system
+        super().__init__(*args, axis=coord.psi_norm, parent=parent, **kwargs)
         self._coord = coord
 
     @sp_property
@@ -733,6 +735,7 @@ class EquilibriumTimeSlice(Dict):
                 axis.plot([], [], 'rx', label="X-Point")
 
         if boundary is not False:
+            logger.debug(self.boundary.outline.r)
             boundary_points = np.vstack([self.boundary.outline.r,
                                          self.boundary.outline.z]).T
 
