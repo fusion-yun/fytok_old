@@ -4,12 +4,10 @@
 
 from math import log
 
-from spdm.util.numlib import np
-from spdm.util.numlib import constants
 from spdm.data.Function import Function
-from spdm.data.Node import Dict, _not_found_
-from spdm.data.Node import sp_property
-from spdm.numerical.bvp import solve_bvp
+from spdm.data.Node import Dict, _not_found_, sp_property
+from spdm.numlib import constants, np
+from spdm.numlib.bvp import solve_bvp
 from spdm.util.logger import logger
 
 from ..common.IDS import IDS

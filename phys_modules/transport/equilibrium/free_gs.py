@@ -5,8 +5,8 @@ from  functools import cached_property
 
 import freegs
 import matplotlib.pyplot as plt
-from spdm.util.numlib import np
-from spdm.util.numlib import constants
+from spdm.numlib import np
+from spdm.numlib import constants
 from fytok.modules.transport.Equilibrium import Equilibrium
 from spdm.data.Function import Function
 from spdm.data.Node import Dict

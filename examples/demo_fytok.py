@@ -1,7 +1,7 @@
 
 import numpy as np
 import pandas as pd
-from spdm.util.numlib import constants
+from spdm.numlib import constants
 from fytok.Tokamak import Tokamak
 from spdm.data.Collection import Collection
 from spdm.data.File import File

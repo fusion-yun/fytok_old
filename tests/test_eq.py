@@ -1,6 +1,6 @@
 import math
 from scipy import special
-from spdm.util.numlib import np
+from spdm.numlib import np
 import matplotlib.pyplot as plt
 import pprint
 import collections

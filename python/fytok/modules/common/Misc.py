@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Union, Any
 
-from spdm.util.numlib import np
+from spdm.numlib import np
 from spdm.data.Node import Dict
 from spdm.data.Node import sp_property
 

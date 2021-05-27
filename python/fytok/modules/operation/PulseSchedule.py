@@ -1,4 +1,4 @@
-from spdm.util.numlib import np
+from spdm.numlib import np
 from spdm.data.Node import Dict, List
 from spdm.data.Node import sp_property
 

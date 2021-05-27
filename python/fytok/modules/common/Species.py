@@ -1,7 +1,7 @@
 import collections
 from dataclasses import dataclass
 
-from spdm.util.numlib import constants
+from spdm.numlib import constants
 from spdm.data.Node import Dict, List
 from spdm.data.Profiles import Profiles
 from spdm.data.Node import sp_property

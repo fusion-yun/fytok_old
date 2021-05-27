@@ -2,7 +2,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from spdm.util.numlib import constants
+from spdm.numlib import constants
 from spdm.util.logger import logger
 from spdm.util.plot_profiles import plot_profiles
 

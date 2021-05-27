@@ -5,13 +5,11 @@ import pandas as pd
 from fytok.modules.transport.CoreSources import CoreSources
 from fytok.modules.transport.CoreTransport import CoreTransport
 from fytok.Tokamak import Tokamak
-from spdm.data.Entry import _next_
 from spdm.data.File import File
 from spdm.data.Function import Function
+from spdm.numlib import constants
 from spdm.util.logger import logger
-from spdm.util.numlib import constants
 from spdm.util.plot_profiles import plot_profiles, sp_figure
-from spdm.util.utilities import serialize
 
 if __name__ == "__main__":
     logger.info("====== START ========")
@@ -44,7 +42,6 @@ if __name__ == "__main__":
                                 },
                                 "vacuum_toroidal_field":  eqdsk.entry.get("vacuum_toroidal_field"),
                                 })
-
         # logger.debug(tok.equilibrium.time_slice.coordinate_system.critical_points[1][0].psi)
         # logger.debug(tok.equilibrium.time_slice.boundary.outline.r)
 
@@ -53,9 +50,9 @@ if __name__ == "__main__":
                   wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
                   pf_active={"facecolor": 'red'},
                   equilibrium={
-                      "mesh": True,
+                      "mesh": False,
                       "boundary": True,
-                      "scalar_field": [("psirz", {"levels": 32, "linewidths": 0.1}), ],
+                      "scalar_field": []  # [("psirz", {"levels": 16, "linewidths": 0.1}), ],
                   }
                   ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
 

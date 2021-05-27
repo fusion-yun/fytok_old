@@ -5,8 +5,8 @@ from fytok.modules.transport.CoreTransport import CoreTransport
 from fytok.modules.transport.Equilibrium import Equilibrium
 from spdm.data.Function import Function
 from spdm.util.logger import logger
-from spdm.util.numlib import np
-from spdm.util.numlib from spdm.util.numlib import constants
+from spdm.numlib import np
+from spdm.numlib from spdm.numlib import constants
 
 
 class NeoClassical(CoreTransport.Model):

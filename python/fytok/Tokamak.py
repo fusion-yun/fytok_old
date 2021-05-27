@@ -3,10 +3,10 @@ import collections
 import datetime
 import getpass
 from typing import Union
-from spdm.util.numlib import np
+from spdm.numlib import np
 import matplotlib.pyplot as plt
 from fytok.modules.transport.MagneticCoordSystem import RadialGrid
-from spdm.util.numlib import constants
+from spdm.numlib import constants
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, Node
 from spdm.data.Node import sp_property

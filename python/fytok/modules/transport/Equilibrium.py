@@ -3,9 +3,9 @@ from dataclasses import dataclass
 from typing import Sequence, Union
 
 import matplotlib.pyplot as plt
-from spdm.util.numlib import np
+from spdm.numlib import np
 import scipy
-from spdm.util.numlib import constants
+from spdm.numlib import constants
 import scipy.integrate
 from spdm.data.Field import Field
 from spdm.data.Function import Expression, Function
@@ -39,7 +39,7 @@ class EquilibriumConstraints(Dict):
         super().__init__(*args,    **kwargs)
 
 
-class EquilibriumGlobalQuantities(Profiles):
+class EquilibriumGlobalQuantities(Dict):
     def __init__(self,   *args,  coord: MagneticCoordSystem = None,  **kwargs):
         super().__init__(*args, **kwargs)
         self._coord = coord or self._parent.coordinate_system
@@ -100,13 +100,13 @@ class EquilibriumGlobalQuantities(Profiles):
         return x
 
     @sp_property
-    def psi_axis(self):
+    def psi_axis(self) -> float:
         """Poloidal flux at the magnetic axis[Wb]."""
         o, _ = self._coord.critical_points
         return o[0].psi
 
     @sp_property
-    def psi_boundary(self):
+    def psi_boundary(self) -> float:
         """Poloidal flux at the selected plasma boundary[Wb]."""
         _, x = self._coord.critical_points
         if len(x) > 0:
@@ -137,7 +137,7 @@ class EquilibriumGlobalQuantities(Profiles):
         return NotImplemented
 
 
-class EquilibriumProfiles1D(Profiles):
+class EquilibriumProfiles1D(Dict):
     """Equilibrium profiles(1D radial grid) as a function of the poloidal flux	"""
 
     def __init__(self,  *args,  coord: MagneticCoordSystem = None,    **kwargs):
@@ -463,7 +463,7 @@ class EquilibriumProfiles1D(Profiles):
         return NotImplemented
 
 
-class EquilibriumProfiles2D(Profiles):
+class EquilibriumProfiles2D(Dict):
     """
         Equilibrium 2D profiles in the poloidal plane.
     """
@@ -481,12 +481,12 @@ class EquilibriumProfiles2D(Profiles):
         return self._coord.grid
 
     @sp_property
-    def r(self):
+    def r(self) -> np.ndarray:
         """Values of the major radius on the grid  [m] """
         return self._coord.r
 
     @sp_property
-    def z(self):
+    def z(self) -> np.ndarray:
         """Values of the Height on the grid  [m] """
         return self._coord.z
 
@@ -531,7 +531,116 @@ class EquilibriumProfiles2D(Profiles):
         return Field(self._coord.Btor, self._coord.r, self._coord.z, mesh_type="curvilinear")
 
 
-class EquilibriumBoundary(Profiles):
+class EquilibriumBoundary(Dict):
+    """
+        Description of the plasma boundary used by fixed-boundary codes and typically chosen at psi_norm = 99.x% of the separatrix
+    """
+
+    def __init__(self,  *args, coord: MagneticCoordSystem = None, parent=None,   ** kwargs):
+        if coord is None:
+            coord = parent.coordinate_system
+        super().__init__(*args, axis=coord.psi_norm, parent=parent, **kwargs)
+        self._coord = coord
+
+    @sp_property
+    def type(self):
+        """0 (limiter) or 1 (diverted)  """
+        return 1
+
+    @sp_property
+    def outline(self) -> RZTuple:
+        """RZ outline of the plasma boundary  """
+        surf = self._coord.find_surface(self.psi, only_closed=True)
+
+        if isinstance(surf, collections.abc.Sequence):
+            logger.warning(
+                f"There are  {len(surf)}   lcfs, and only the first one is used. psi_norm_bdry={(self.psi-self.psi_axis)/(self.psi_boundary-self.psi_axis)}")
+
+            surf = surf[0]
+
+        return RZTuple(*surf.point().T)
+
+    @sp_property
+    def x_point(self):
+        _, xpt = self._parent.critical_points
+        return xpt
+
+    @sp_property
+    def psi_axis(self) -> float:
+        return self._coord.psi_axis
+
+    @sp_property
+    def psi_boundary(self) -> float:
+        return self._coord.psi_boundary
+
+    @sp_property
+    def psi(self) -> float:
+        """Value of the poloidal flux at which the boundary is taken  [Wb]"""
+        return self["psi"] or self.psi_norm*(self.psi_boundary-self.psi_axis)+self.psi_axis
+
+    @sp_property
+    def psi_norm(self) -> float:
+        """Value of the normalised poloidal flux at which the boundary is taken (typically 99.x %),
+            the flux being normalised to its value at the separatrix """
+        return self["psi_norm"] or 0.995
+
+    @sp_property
+    def shape_property(self) -> MagneticCoordSystem.ShapePropety:
+        return self._coord.shape_property(self.psi_norm)
+
+    @sp_property
+    def geometric_axis(self) -> RZTuple:
+        """RZ position of the geometric axis (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the boundary)"""
+        return self.shape_property.geometric_axis
+
+    @sp_property
+    def minor_radius(self) -> float:
+        """Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary) [m]	"""
+        return self.shape_property.minor_radius
+
+    @sp_property
+    def elongation(self) -> float:
+        """Elongation of the plasma boundary. [-]	"""
+        return self.shape_property.elongation
+
+    @sp_property
+    def elongation_upper(self) -> float:
+        """Elongation(upper half w.r.t. geometric axis) of the plasma boundary. [-]	"""
+        return self.shape_property.elongation_upper
+
+    @sp_property
+    def elongation_lower(self) -> float:
+        """Elongation(lower half w.r.t. geometric axis) of the plasma boundary. [-]	"""
+        return self.shape_property.elongation_lower
+
+    @sp_property
+    def triangularity(self) -> float:
+        """Triangularity of the plasma boundary. [-]	"""
+        return self.shape_property.triangularity
+
+    @sp_property
+    def triangularity_upper(self) -> float:
+        """Upper triangularity of the plasma boundary. [-]	"""
+        return self.shape_property.triangularity_upper
+
+    @sp_property
+    def triangularity_lower(self) -> float:
+        """Lower triangularity of the plasma boundary. [-]"""
+        return self.shape_property.triangularity_lower
+
+    @sp_property
+    def strike_point(self)	:
+        """Array of strike points, for each of them the RZ position is given	struct_array [max_size=unbounded]	1- 1...N"""
+        return NotImplemented
+
+    @sp_property
+    def active_limiter_point(self):
+        """	RZ position of the active limiter point (point of the plasma boundary in contact with the limiter)"""
+        return NotImplemented
+
+
+class EquilibriumBoundarySeparatrix(Profiles):
+
     def __init__(self,  *args, coord: MagneticCoordSystem = None, parent=None,   ** kwargs):
         if coord is None:
             coord = parent.coordinate_system
@@ -548,89 +657,6 @@ class EquilibriumBoundary(Profiles):
         """RZ outline of the plasma boundary  """
         RZ = np.asarray([[r, z] for r, z in self._coord.flux_surface_map(1.0)])
         return RZTuple(RZ[:, 0], RZ[:, 1])
-
-    @sp_property
-    def x_point(self):
-        _, xpt = self._parent.critical_points
-        return xpt
-
-    @sp_property
-    def psi_axis(self):
-        return self._coord.psi_axis
-
-    @sp_property
-    def psi_boundary(self):
-        return self._coord.psi_boundary
-
-    @sp_property
-    def psi(self):
-        """Value of the poloidal flux at which the boundary is taken  [Wb]"""
-        return self._parent.psi_boundary
-
-    @sp_property
-    def psi_norm(self):
-        """Value of the normalised poloidal flux at which the boundary is taken (typically 99.x %),
-            the flux being normalised to its value at the separatrix """
-        return self.psi*0.99
-
-    @sp_property
-    def shape_property(self):
-        return self._coord.shape_property(1.0)
-
-    @sp_property
-    def geometric_axis(self):
-        """RZ position of the geometric axis (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the boundary)"""
-        return self.shape_property.geometric_axis
-
-    @sp_property
-    def minor_radius(self):
-        """Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary) [m]	"""
-        return self.shape_property.minor_radius
-
-    @sp_property
-    def elongation(self):
-        """Elongation of the plasma boundary. [-]	"""
-        return self.shape_property.elongation
-
-    @sp_property
-    def elongation_upper(self):
-        """Elongation(upper half w.r.t. geometric axis) of the plasma boundary. [-]	"""
-        return self.shape_property.elongation_upper
-
-    @sp_property
-    def elongation_lower(self):
-        """Elongation(lower half w.r.t. geometric axis) of the plasma boundary. [-]	"""
-        return self.shape_property.elongation_lower
-
-    @sp_property
-    def triangularity(self):
-        """Triangularity of the plasma boundary. [-]	"""
-        return self.shape_property.triangularity
-
-    @sp_property
-    def triangularity_upper(self):
-        """Upper triangularity of the plasma boundary. [-]	"""
-        return self.shape_property.triangularity_upper
-
-    @sp_property
-    def triangularity_lower(self):
-        """Lower triangularity of the plasma boundary. [-]"""
-        return self.shape_property.triangularity_lower
-
-    @sp_property
-    def strike_point(self)	:
-        """Array of strike points, for each of them the RZ position is given	struct_array [max_size=unbounded]	1- 1...N"""
-        return NotImplemented
-
-    @sp_property
-    def active_limiter_point(self):
-        """	RZ position of the active limiter point (point of the plasma boundary in contact with the limiter)"""
-        return NotImplemented
-
-
-class EquilibriumBoundarySeparatrix(Profiles):
-    def __init__(self,   *args,     ** kwargs):
-        super().__init__(*args, **kwargs)
 
 
 class EquilibriumTimeSlice(Dict):
@@ -662,7 +688,7 @@ class EquilibriumTimeSlice(Dict):
         psirz = Field(self["profiles_2d.psi"],
                       self["profiles_2d.grid.dim1"],
                       self["profiles_2d.grid.dim2"],
-                      mesh_type="rectilinear")
+                      mesh="rectilinear")
 
         psi_norm = self["profiles_1d.psi_norm"]
         ffprime = self["profiles_1d.f_df_dpsi"]
@@ -703,6 +729,7 @@ class EquilibriumTimeSlice(Dict):
              vector_field=[],
              mesh=True,
              boundary=True,
+             separatrix=False,
              contour_=False,
              levels=32, oxpoints=True,
              **kwargs):
@@ -739,7 +766,7 @@ class EquilibriumTimeSlice(Dict):
                                          self.boundary.outline.z]).T
 
             axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
-                                       linewidth=0.5, fill=False, closed=True))
+                                       linewidth=0.5, fill=False, closed=False))
             axis.plot([], [], 'r--', label="Separatrix")
 
         if mesh is not False:
@@ -750,6 +777,9 @@ class EquilibriumTimeSlice(Dict):
             for idx in range(0, self.coordinate_system.mesh.shape[1], 4):
                 ax1 = self.coordinate_system.mesh.axis(idx, axis=1)
                 axis.plot(ax1.xy[:, 0], ax1.xy[:, 1],  "r", linewidth=0.2)
+
+        if separatrix is not False:
+            raise NotImplementedError()
 
         for s, opts in scalar_field:
             if s == "psirz":

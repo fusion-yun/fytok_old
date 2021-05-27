@@ -9,15 +9,14 @@ from spdm.geometry.CubicSplineCurve import CubicSplineCurve
 from spdm.geometry.Curve import Curve
 from spdm.geometry.Point import Point
 from spdm.mesh.CurvilinearMesh import CurvilinearMesh
-from spdm.util.logger import logger
-from spdm.util.numlib import ENABLE_JAX, constants, np
-from spdm.util.utilities import try_get
+from spdm.numlib.contours import find_countours
+from spdm.util.logger import logger, deprecated
+from spdm.numlib import ENABLE_JAX, constants, np
+from spdm.util.utilities import try_get, _not_found_
 
-if ENABLE_JAX:
-    from spdm.util.numlib import minimize
-else:
-    from spdm.util.numlib import root_scalar
 
+from spdm.numlib import minimize, root_scalar
+from spdm.numlib.optimize import find_critical_points, minimize_filter
 from ..common.GGD import GGD
 from ..common.IDS import IDS
 from ..common.Misc import Identifier, RZTuple, VacuumToroidalField
@@ -26,6 +25,16 @@ TOLERANCE = 1.0e-6
 EPS = np.finfo(float).eps
 
 TWOPI = 2.0*constants.pi
+
+
+@dataclass
+class OXPoint:
+    r: float
+    z: float
+    psi: float
+
+
+# OXPoint = collections.namedtuple('OXPoint', "r z psi")
 
 
 class MagneticCoordSystem(Dict):
@@ -119,8 +128,8 @@ class MagneticCoordSystem(Dict):
     def critical_points(self):
         opoints = []
         xpoints = []
-        OXPoint = collections.namedtuple('OXPoint', "r z psi")
-        for r, z, psi, D in self._psirz.find_peak():
+
+        for r, z, psi, D in find_critical_points(self._psirz, *self._psirz.mesh.bbox, tolerance=self._psirz.mesh.dx):
             p = OXPoint(r, z, psi)
 
             if D < 0.0:  # saddle/X-point
@@ -136,9 +145,9 @@ class MagneticCoordSystem(Dict):
             raise RuntimeError(f"Can not find o-point!")
         else:
 
-            bbox = self._psirz.coordinates.mesh.bbox
-            Rmid = (bbox[0][0] + bbox[0][1])/2.0
-            Zmid = (bbox[1][0] + bbox[1][1])/2.0
+            bbox = self._psirz.mesh.bbox
+            Rmid = (bbox[0] + bbox[2])/2.0
+            Zmid = (bbox[1] + bbox[3])/2.0
 
             opoints.sort(key=lambda x: (x.r - Rmid)**2 + (x.z - Zmid)**2)
 
@@ -148,6 +157,107 @@ class MagneticCoordSystem(Dict):
 
         return opoints, xpoints
 
+    def find_surface(self, levels: Union[float, Sequence] = None, only_closed=True, field: Field = None, ntheta=256) -> Union[Curve, Sequence[Curve]]:
+
+        if field is None:
+            field = self._psirz
+
+        opoints, _ = self.critical_points
+
+        r0 = opoints[0].r
+        z0 = opoints[0].z
+
+        surf_collection = []
+
+        R, Z = field.mesh.xy
+
+        F = np.asarray(field)
+
+        for level, col in find_countours(R, Z, F,
+                                         levels=levels if isinstance(levels, (Sequence, np.ndarray)) else [levels]):
+            surf = []
+            if len(col) == 0:
+                points = []
+                for pts in minimize_filter(lambda p: field(*p)-level, *field.mesh.bbox, torlerance=field.mesh.dx):
+                    points.append(pts)
+
+                points.sort(key=lambda p: (p[0] - r0)**2 + (p[1] - z0)**2)
+
+                surf.append(Point(*points[0]))
+
+            else:
+                for segment in col:
+                    if isinstance(segment, np.ndarray):
+                        s = CubicSplineCurve(ntheta,  segment)
+                        if not only_closed:
+                            surf.append(s)
+                        elif s.enclosed([r0, z0]):
+                            surf.append(s)
+
+            if not only_closed:
+                pass
+            elif len(surf) == 1:
+                surf = surf[0]
+            else:
+                logger.warning(f"Found {len(surf)} closed surface. Maybe something wrong!")
+
+            surf_collection.append(surf)
+
+        if isinstance(levels, float):
+            return surf_collection[0]
+        else:
+            return surf_collection
+
+    def find_surface_psi_norm(self, psi_norm: Union[float, Sequence], *args, field=None, **kwargs) -> Union[Curve, Sequence[Curve]]:
+        opoints, xpoints = self.critical_points
+        psi_axis = opoints[0].psi
+        psi_bdry = xpoints[0].psi
+
+        return self.find_surface(np.asarry(psi_norm)*(psi_bdry-psi_axis)+psi_axis, *args, field=field or self._psirz, **kwargs)
+
+    def create_mesh(self, u=None, v=None, *args, primary='psi', type_index=None):
+
+        opoints, xpoints = self.critical_points
+
+        type_index = type_index or self.grid_type.index
+
+        if u is None:
+            u = 64
+
+        if isinstance(u, int):
+            u = np.linspace(0, 1, u)
+        elif not isinstance(u, (np.ndarray, Sequence)):
+            u = np.asarray([u])
+
+        if isinstance(v, int):
+            v = np.linspace(0, 1, v)
+        elif not isinstance(u, (np.ndarray, Sequence)):
+            v = np.asarray([v])
+
+        if type_index == 13 or primary == 'psi':
+            primary = "psi"
+            field = self._psirz
+            f_axis = opoints[0].psi
+            f_bdry = xpoints[0].psi
+        else:
+            primary_axis = primary or "phi"
+            field = try_get(self._parent, ["profiles_2d", primary_axis], _not_found_)
+            if field is _not_found_:
+                raise KeyError(f"Can not find field '{primary_axis}'")
+            f_axis = field(opoints[0].r, opoints[0].z)
+            f_bdry = field(xpoints[0].r, xpoints[0].z)
+
+        levels = (f_bdry-f_axis)*u+f_axis
+
+        surf = self.find_surface(levels, field=field, only_closed=True, ntheta=v)
+
+        mesh = CurvilinearMesh(surf, [u, v], cycle=[False, True])
+
+        logger.debug(f"Create mesh: type index={type_index} primare={primary}  ")
+
+        return mesh
+
+    @deprecated
     def flux_surface_map(self, u, v=None):
         o_points, x_points = self.critical_points
 
@@ -159,7 +269,7 @@ class MagneticCoordSystem(Dict):
             psi0 = o_points[0].psi
 
         if len(x_points) == 0:
-            R1 = self.psirz.coordinates.bbox[1][0]
+            R1 = self._psirz.coordinates.bbox[1][0]
             Z1 = Z0
             psi1 = 0.0
             theta0 = 0
@@ -202,9 +312,8 @@ class MagneticCoordSystem(Dict):
                         if not sol.converged:
                             raise ValueError(f"Find root fialed!")
                     else:
-                        #  FIXME: JAX version is not completed!  
+                        #  FIXME: JAX version is not completed!
                         def func(r): return (float(self.psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1)) - psi_val)**2
-
                         sol = minimize(func, np.asarray([0.5]), method='BFGS')
                         r = sol.x[0]
 
@@ -212,7 +321,8 @@ class MagneticCoordSystem(Dict):
                     z1 = (1.0-r)*z0+r*z1
                 yield r1, z1
 
-    def create_mesh(self, u, v, *args, type_index=None):
+    @deprecated
+    def create_mesh_old(self, u, v, *args, type_index=None):
         logger.debug(f"create mesh! type index={type_index} START")
 
         type_index = type_index or self.grid_type.index
@@ -226,6 +336,7 @@ class MagneticCoordSystem(Dict):
 
         return mesh
 
+    @deprecated
     def create_surface(self, psi_norm, v=None):
         if isinstance(psi_norm, CubicSplineCurve):
             return psi_norm
@@ -356,25 +467,22 @@ class MagneticCoordSystem(Dict):
         # Radial coordinate(major radius) on the outboard side of the magnetic axis[m]
         r_outboard: np.ndarray  # r_outboard,
 
-    def shape_property(self, psi=None) -> ShapePropety:
+    def shape_property(self, psi_norm: Union[float, Sequence[float]] = None) -> ShapePropety:
         def shape_box(s: Curve):
-            r, z = s.xy()
-            rmin = np.min(r)
-            rmax = np.max(r)
-            zmin = np.min(z)
-            zmax = np.max(z)
+            r, z = s.xy.T
+            rmin, zmin, rmax, zmax = s.bbox
             rzmin = r[np.argmin(z)]
             rzmax = r[np.argmax(z)]
-            r_inboard = s.point(0.5)[0]
-            r_outboard = s.point(0)[0]
+            r_inboard = s.point(0.5)[0]  # FIXME: incorrect
+            r_outboard = s.point(0)[0]  # FIXME: incorrect
             return rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard
 
-        if psi is None:
+        if psi_norm is None:
             pass
-        elif not isinstance(psi, (np.ndarray, collections.abc.MutableSequence)):
-            psi = [psi]
+        elif not isinstance(psi_norm, (np.ndarray, collections.abc.MutableSequence)):
+            psi_norm = [psi_norm]
 
-        sbox = np.asarray([[*shape_box(s)] for s in self.create_surface(psi)])
+        sbox = np.asarray([[*shape_box(s)] for s in self.find_surface_psi_norm(psi_norm)])
 
         if sbox.shape[0] == 1:
             rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard = sbox[0]

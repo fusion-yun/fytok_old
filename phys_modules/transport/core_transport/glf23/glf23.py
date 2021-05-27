@@ -1,8 +1,8 @@
 
 import collections
 
-from spdm.util.numlib import np
-from spdm.util.numlib import constants
+from spdm.numlib import np
+from spdm.numlib import constants
 from fytok.modules.transport.CoreProfiles import CoreProfiles
 from fytok.modules.transport.CoreTransport import (CoreTransport,
                                                    CoreTransportProfiles1D)
