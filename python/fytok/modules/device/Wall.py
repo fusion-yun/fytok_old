@@ -43,11 +43,11 @@ class WallVessel(Dict):
 
         @sp_property
         def outline_outer(self) -> RZTuple:
-            return RZTuple(self["outline_outer.r"], self["outline_outer.z"])
+            return RZTuple(**self["outline_outer"]._as_dict())
 
         @sp_property
         def outline_inner(self) -> RZTuple:
-            return RZTuple(self["outline_inner.r"], self["outline_inner.z"])
+            return RZTuple(**self["outline_inner"]._as_dict())
 
     @sp_property
     def annular(self) -> Annular:
@@ -168,7 +168,8 @@ class Wall(IDS):
             axis = plt.gca()
 
         desc2d = self.description_2d[0]
-
+        logger.debug(desc2d.vessel.annular.outline_inner.r.shape)
+        logger.debug(desc2d.vessel.annular.outline_inner.z.shape)
         vessel_inner_points = np.array([desc2d.vessel.annular.outline_inner.r,
                                         desc2d.vessel.annular.outline_inner.z]).transpose([1, 0])
 

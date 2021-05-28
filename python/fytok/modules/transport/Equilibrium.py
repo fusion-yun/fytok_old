@@ -555,9 +555,7 @@ class EquilibriumBoundary(Dict):
         if isinstance(surf, collections.abc.Sequence):
             logger.warning(
                 f"There are  {len(surf)}   lcfs, and only the first one is used. psi_norm_bdry={(self.psi-self.psi_axis)/(self.psi_boundary-self.psi_axis)}")
-
             surf = surf[0]
-
         return RZTuple(*surf.point().T)
 
     @sp_property

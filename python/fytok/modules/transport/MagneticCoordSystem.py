@@ -253,7 +253,7 @@ class MagneticCoordSystem(Dict):
 
         mesh = CurvilinearMesh(surf, [u, v], cycle=[False, True])
 
-        logger.debug(f"Create mesh: type index={type_index} primare={primary}  ")
+        logger.debug(f"Create mesh: type index={type_index} primary={primary}  ")
 
         return mesh
 

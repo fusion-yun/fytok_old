@@ -33,7 +33,6 @@ if __name__ == "__main__":
             "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt",
             # "/home/salmon/workspace/data/Limiter plasmas-7.5MA li=1.1/Limiter plasmas 7.5MA-EQDSK/Limiter_7.5MA_outbord.EQDSK",
             format="geqdsk")
-
         tok.equilibrium.update({"time": 0.0,
                                 "time_slice": {
                                     "profiles_1d": eqdsk.entry.get("profiles_1d"),
@@ -44,6 +43,7 @@ if __name__ == "__main__":
                                 })
         # logger.debug(tok.equilibrium.time_slice.coordinate_system.critical_points[1][0].psi)
         # logger.debug(tok.equilibrium.time_slice.boundary.outline.r)
+        # logger.debug(tok.equilibrium.time_slice.boundary.outline.z)
 
     if True:
         sp_figure(tok,
