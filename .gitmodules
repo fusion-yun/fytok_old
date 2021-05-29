@@ -1,6 +1,0 @@
-[submodule "external/SpDB"]
-	path = external/SpDB
-	url = git@gitee.com:SimPla/SpDB.git
-[submodule "external/freegs"]
-	path = external/freegs
-	url = https://github.com/bendudson/freegs.git
