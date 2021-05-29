@@ -26,8 +26,6 @@ if __name__ == "__main__":
         tf=device.entry.find("tf"),
         magnetics=device.entry.find("magnetics"))
 
-    logger.debug(tok.wall.description_2d[0].vessel.annular.outline_inner.r)
-
     ###################################################################################################
     if True:
         eqdsk = File(

@@ -65,7 +65,6 @@ class MagneticCoordSystem(Dict):
         """
         super().__init__(*args, **kwargs)
         self._vacuum_toroidal_field = vacuum_toroidal_field or self._parent.vacuum_toroidal_field
-        logger.debug(self._vacuum_toroidal_field)
         self._fvac = abs(self._vacuum_toroidal_field.r0*self._vacuum_toroidal_field.b0)
 
         self._psirz = psirz
