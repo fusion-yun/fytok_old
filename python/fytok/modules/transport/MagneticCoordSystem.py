@@ -1,10 +1,11 @@
 import collections
 from dataclasses import dataclass
+from functools import cached_property
 from typing import Sequence, Union
 
 from spdm.data.Field import Field
 from spdm.data.Function import Function
-from spdm.data.Node import Dict, List, sp_property
+from spdm.data.Node import Dict, List
 from spdm.geometry.CubicSplineCurve import CubicSplineCurve
 from spdm.geometry.Curve import Curve
 from spdm.geometry.Point import Point
@@ -120,11 +121,11 @@ class MagneticCoordSystem(Dict):
             psi_norm = Function(p_axis, psi_norm)(np.linspace(p_axis[0], p_axis[-1], p_axis.shape[0]))
         return RadialGrid(self, psi_norm)
 
-    @sp_property
+    @cached_property
     def grid_type(self) -> Identifier:
         return Identifier(**self["grid_type"]._as_dict())
 
-    @sp_property
+    @cached_property
     def critical_points(self):
         opoints = []
         xpoints = []
@@ -359,7 +360,7 @@ class MagneticCoordSystem(Dict):
         xy = np.vstack((xy, xy[:1, :]))
         return CubicSplineCurve(v, xy, is_closed=True)
 
-    @sp_property
+    @cached_property
     def surface_mesh(self):
         return self.create_surface(*self._uv)
 
@@ -378,7 +379,7 @@ class MagneticCoordSystem(Dict):
     def surface_integrate2(self, fun, *args, **kwargs):
         return np.asarray([surf.integrate(lambda r, z: fun(r, z, *args, **kwargs)/self.bpol(r, z)) * (2*constants.pi) for surf in self.surface_mesh])
 
-    @sp_property
+    @cached_property
     def mesh(self):
         return self.create_mesh(self._uv[0],  self._uv[1], type_index=13)
 
@@ -393,38 +394,38 @@ class MagneticCoordSystem(Dict):
     def psirz(self, r, z, *args, **kwargs):
         return self._psirz(r, z, *args, **kwargs)
 
-    @sp_property
+    @cached_property
     def dl(self):
         return np.asarray([self.mesh.axis(idx, axis=0).geo_object.dl(self.mesh.uv[1]) for idx in range(self.mesh.shape[0])])
 
-    @sp_property
+    @cached_property
     def Br(self):
         return -self.psirz(self.r, self.z, dy=1) / self.r
 
-    @sp_property
+    @cached_property
     def Bz(self):
         return self.psirz(self.r, self.z, dx=1) / self.r
 
-    @sp_property
+    @cached_property
     def Btor(self):
         return 1.0 / self.r * self.fpol.__array__().reshape(self.mesh.shape[0], 1)
 
-    @sp_property
+    @cached_property
     def Bpol(self):
         r"""
             .. math:: B_{pol} =   R / |\nabla \psi|
         """
         return np.sqrt(self.Br**2+self.Bz**2)
 
-    @sp_property
+    @cached_property
     def B2(self):
         return (self.Br**2+self.Bz**2 + self.Btor**2)
 
-    @sp_property
+    @cached_property
     def grad_psi2(self):
         return self.psirz(self.r, self.z, dx=1)**2+self.psirz(self.r, self.z, dy=1)**2
 
-    @sp_property
+    @cached_property
     def norm_grad_psi(self):
         return np.sqrt(self.grad_psi2)
 
@@ -515,7 +516,7 @@ class MagneticCoordSystem(Dict):
     ###############################
     # 0-D
 
-    @sp_property
+    @cached_property
     def magnetic_axis(self):
         o, _ = self.critical_points
         if not o:
@@ -527,21 +528,21 @@ class MagneticCoordSystem(Dict):
             "b_field_tor": NotImplemented
         })
 
-    @sp_property
+    @cached_property
     def boundary(self):
         return self.create_surface(1.0)
 
-    @sp_property
+    @cached_property
     def cocos_flag(self):
         return 1.0 if self.psi_boundary > self.psi_axis else -1.0
 
-    @sp_property
+    @cached_property
     def psi_axis(self):
         """Poloidal flux at the magnetic axis  [Wb]."""
         o, _ = self.critical_points
         return o[0].psi
 
-    @sp_property
+    @cached_property
     def psi_boundary(self):
         """Poloidal flux at the selected plasma boundary  [Wb]."""
         _, x = self.critical_points
@@ -552,7 +553,7 @@ class MagneticCoordSystem(Dict):
 
     ###############################
     # 1-D
-    @sp_property
+    @cached_property
     def dvolume_dpsi(self):
         r"""
             .. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
@@ -564,7 +565,7 @@ class MagneticCoordSystem(Dict):
     def ffprime(self):
         return Function(self.psi_norm, self._ffprime)
 
-    @sp_property
+    @cached_property
     def fpol(self):
         """Diamagnetic function (F=R B_Phi)  [T.m]."""
         fpol2 = self._ffprime.antiderivative * (2 * (self.psi_boundary - self.psi_axis))
@@ -574,16 +575,16 @@ class MagneticCoordSystem(Dict):
     def psi_norm(self):
         return self.mesh.uv[0]
 
-    @sp_property
+    @cached_property
     def psi(self):
         return self.psi_norm * (self.psi_boundary-self.psi_axis) + self.psi_axis
 
-    @sp_property
+    @cached_property
     def dq_dpsi(self):
         return Function(self.psi_norm, self.fpol*self.surface_integrate(1.0/(self.r**2)) *
                         ((self.psi_boundary-self.psi_axis) / (TWOPI)))
 
-    @sp_property
+    @cached_property
     def phi(self):
         r"""
             Note:
@@ -592,12 +593,12 @@ class MagneticCoordSystem(Dict):
         """
         return self.dq_dpsi.antiderivative
 
-    @sp_property
+    @cached_property
     def rho_tor(self):
         """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0[m]"""
         return np.sqrt(self.phi/(constants.pi * abs(self._vacuum_toroidal_field.b0)))
 
-    @sp_property
+    @cached_property
     def rho_tor_norm(self):
         return np.sqrt(self.phi/self.phi[-1])
 
@@ -633,12 +634,12 @@ class RadialGrid:
     def vacuum_toroidal_field(self):
         return self._coordinate_system.vacuum_toroidal_field
 
-    @sp_property
+    @cached_property
     def psi_magnetic_axis(self):
         """Poloidal flux at the magnetic axis  [Wb]."""
         return self._psi_axis
 
-    @sp_property
+    @cached_property
     def psi_boundary(self):
         """Poloidal flux at the selected plasma boundary  [Wb]."""
         return self._psi_boundary
@@ -647,12 +648,12 @@ class RadialGrid:
     def psi_norm(self):
         return self._psi_norm
 
-    @sp_property
+    @cached_property
     def psi(self):
         """Poloidal magnetic flux {dynamic} [Wb]. This quantity is COCOS-dependent, with the following transformation"""
         return self.psi_norm * (self.psi_boundary-self.psi_magnetic_axis)+self.psi_magnetic_axis
 
-    @sp_property
+    @cached_property
     def rho_tor_norm(self):
         r"""Normalised toroidal flux coordinate. The normalizing value for rho_tor_norm, is the toroidal flux coordinate 
             at the equilibrium boundary (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation, 
@@ -660,32 +661,32 @@ class RadialGrid:
         """
         return self._coordinate_system.rho_tor_norm(self.psi_norm)
 
-    @sp_property
+    @cached_property
     def rho_tor(self):
         r"""Toroidal flux coordinate. rho_tor = sqrt(b_flux_tor/(pi*b0)) ~ sqrt(pi*r^2*b0/(pi*b0)) ~ r [m]. 
             The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0 {dynamic} [m]"""
         return self._coordinate_system.rho_tor
 
-    @sp_property
+    @cached_property
     def rho_pol_norm(self):
         r"""Normalised poloidal flux coordinate = sqrt((psi(rho)-psi(magnetic_axis)) / (psi(LCFS)-psi(magnetic_axis))) {dynamic} [-]"""
         return self._coordinate_system.rho_pol_norm
 
-    @sp_property
+    @cached_property
     def area(self):
         """Cross-sectional area of the flux surface {dynamic} [m^2]"""
         return self._coordinate_system.area
 
-    @sp_property
+    @cached_property
     def surface(self):
         """Surface area of the toroidal flux surface {dynamic} [m^2]"""
         return self._coordinate_system.surface
 
-    @sp_property
+    @cached_property
     def volume(self):
         """Volume enclosed inside the magnetic surface {dynamic} [m^3]"""
         return self._coordinate_system.volume
 
-    @sp_property
+    @cached_property
     def dvolume_drho_tor(self) -> Function:
         return self._coordinate_system.dvolume_drho_tor

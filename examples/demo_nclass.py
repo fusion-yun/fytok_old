@@ -21,10 +21,12 @@ if __name__ == "__main__":
     bs_r_nrom = baseline["x"].values
 
     tok = Tokamak(
-        wall=device.entry.get("wall"),
-        pf_active=device.entry.get("pf_active"),
-        tf=device.entry.get("tf"),
-        magnetics=device.entry.get("magnetics"))
+        wall=device.entry.find("wall"),
+        pf_active=device.entry.find("pf_active"),
+        tf=device.entry.find("tf"),
+        magnetics=device.entry.find("magnetics"))
+
+    logger.debug(tok.wall.description_2d[0].vessel.annular.outline_inner.r)
 
     ###################################################################################################
     if True:
@@ -36,11 +38,11 @@ if __name__ == "__main__":
 
         tok.equilibrium.update({"time": 0.0,
                                 "time_slice": {
-                                    "profiles_1d": eqdsk.entry.get("profiles_1d"),
-                                    "profiles_2d": eqdsk.entry.get("profiles_2d"),
+                                    "profiles_1d": eqdsk.entry.find("profiles_1d"),
+                                    "profiles_2d": eqdsk.entry.find("profiles_2d"),
                                     "coordinate_system": {"grid": {"dim1": 100, "dim2": 256}}
                                 },
-                                "vacuum_toroidal_field":  eqdsk.entry.get("vacuum_toroidal_field"),
+                                "vacuum_toroidal_field":  eqdsk.entry.find("vacuum_toroidal_field"),
                                 })
         # logger.debug(tok.equilibrium.time_slice.coordinate_system.critical_points[1][0].psi)
         # logger.debug(tok.equilibrium.time_slice.boundary.outline.r)
