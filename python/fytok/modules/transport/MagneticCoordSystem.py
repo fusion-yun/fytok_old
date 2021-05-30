@@ -395,7 +395,7 @@ class MagneticCoordSystem(Dict):
 
     @cached_property
     def dl(self):
-        return np.asarray([self.mesh.axis(idx, axis=0).geo_object.dl(self.mesh.uv[1]) for idx in range(self.mesh.shape[0])])
+        return np.asarray([self.mesh.axis(idx, axis=0).dl(self.mesh.uv[1]) for idx in range(self.mesh.shape[0])])
 
     @cached_property
     def Br(self):

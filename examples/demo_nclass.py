@@ -42,6 +42,10 @@ if __name__ == "__main__":
                                 },
                                 "vacuum_toroidal_field":  eqdsk.entry.find("vacuum_toroidal_field"),
                                 })
+        logger.debug(tok.wall['description_2d'])
+        logger.debug(tok.wall.description_2d)
+        logger.debug(tok.wall['description_2d'])
+
         # logger.debug(tok.equilibrium.time_slice.coordinate_system.critical_points[1][0].psi)
         # logger.debug(tok.equilibrium.time_slice.boundary.outline.r)
         # logger.debug(tok.equilibrium.time_slice.boundary.outline.z)
@@ -57,7 +61,7 @@ if __name__ == "__main__":
                   }
                   ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
 
-    if False:
+    if True:
         eq_profile = tok.equilibrium.time_slice.profiles_1d
 
         plot_profiles(
