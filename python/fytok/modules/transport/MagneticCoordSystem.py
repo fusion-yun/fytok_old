@@ -157,10 +157,15 @@ class MagneticCoordSystem(Dict):
 
         return opoints, xpoints
 
-    def find_surface(self, levels: Union[float, Sequence] = None, only_closed=True, field: Field = None, ntheta=256) -> Union[Curve, Sequence[Curve]]:
+    def find_surface_low(self, levels: Union[float, Sequence] = None, only_closed=True, field: Field = None, ntheta=256) -> Union[Curve, Sequence[Curve]]:
 
         if field is None:
             field = self._psirz
+
+        single_line = True
+        if not isinstance(levels, collections.abc.Sequence):
+            levels = [levels]
+            single_line = False
 
         opoints, _ = self.critical_points
 
@@ -203,10 +208,87 @@ class MagneticCoordSystem(Dict):
 
             surf_collection.append(surf)
 
-        if isinstance(levels, float):
+        if single_line:
             return surf_collection[0]
         else:
             return surf_collection
+
+    
+    def find_surface_high(self, levels: Union[float, Sequence] = None, only_closed=True, field: Field = None, ntheta=256) -> Union[Curve, Sequence[Curve]]:
+        single_line = False
+        if not isinstance(levels, (collections.abc.Sequence, np.ndarray)):
+            levels = np.asarray([levels])
+            single_line = True
+
+        o_points, x_points = self.critical_points
+
+        if len(o_points) == 0:
+            raise RuntimeError(f"Can not find o-point!")
+        else:
+            R0 = o_points[0].r
+            Z0 = o_points[0].z
+            psi0 = o_points[0].psi
+
+        if len(x_points) == 0:
+            R1 = self._psirz.coordinates.bbox[1][0]
+            Z1 = Z0
+            psi1 = 0.0
+            theta0 = 0
+        else:
+            R1 = x_points[0].r
+            Z1 = x_points[0].z
+            psi1 = x_points[0].psi
+            theta0 = np.arctan2(Z1 - Z0, R1 - R0)
+        Rm = np.sqrt((R1-R0)**2+(Z1-Z0)**2)
+
+        if isinstance(ntheta, int):
+            v = np.linspace(0, 1.0)
+        else:
+            v = ntheta
+        theta = v*TWOPI  # +theta0
+
+        surf_collection = []
+        for psi_val in levels:
+            pts = []
+            for theta_val in theta:
+                r0 = R0
+                z0 = Z0
+                r1 = R0+Rm * np.cos(theta_val)
+                z1 = Z0+Rm * np.sin(theta_val)
+                # logger.debug((r1, z1, psi_val))
+                if not np.isclose(self.psirz(r1, z1), psi_val):
+                    if not ENABLE_JAX:
+                        def func(r): return (float(self.psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1)) - psi_val)
+
+                        try:
+                            sol = root_scalar(func,  bracket=[0, 1], method='brentq')
+                            r = sol.root
+                        except ValueError as error:
+                            raise ValueError(f"Find root fialed! {error} {psi_val}")
+
+                        if not sol.converged:
+                            raise ValueError(f"Find root fialed!")
+                    else:
+                        #  FIXME: JAX version is not completed!
+                        def func(r): return (float(self.psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1)) - psi_val)**2
+                        sol = minimize(func, np.asarray([0.5]), method='BFGS')
+                        r = sol.x[0]
+
+                    r1 = (1.0-r)*r0+r*r1
+                    z1 = (1.0-r)*z0+r*z1
+
+                pts.append([r1, z1])
+            pts = np.asarray(pts)
+            surf_collection.append(CubicSplineCurve(v,  pts))
+
+        if single_line:
+            return surf_collection[0]
+        else:
+            return surf_collection
+
+
+    def find_surface(self, *args,**kwargs) -> Union[Curve, Sequence[Curve]]:
+        return self.find_surface_high(*args,**kwargs)
 
     def find_surface_psi_norm(self, psi_norm: Union[float, Sequence], *args, field=None, **kwargs) -> Union[Curve, Sequence[Curve]]:
         opoints, xpoints = self.critical_points
@@ -214,6 +296,7 @@ class MagneticCoordSystem(Dict):
         psi_bdry = xpoints[0].psi
 
         return self.find_surface(np.asarray(psi_norm)*(psi_bdry-psi_axis)+psi_axis, *args, field=field or self._psirz, **kwargs)
+
 
     def create_mesh(self, u=None, v=None, *args, primary='psi', type_index=None):
 
@@ -250,76 +333,12 @@ class MagneticCoordSystem(Dict):
         levels = (f_bdry-f_axis)*u+f_axis
 
         surf = self.find_surface(levels, field=field, only_closed=True, ntheta=v)
-
+        
         mesh = CurvilinearMesh(surf, [u, v], cycle=[False, True])
 
         logger.debug(f"Create mesh: type index={type_index} primary={primary}  ")
 
         return mesh
-
-    @deprecated
-    def flux_surface_map(self, u, v=None):
-        o_points, x_points = self.critical_points
-
-        if len(o_points) == 0:
-            raise RuntimeError(f"Can not find o-point!")
-        else:
-            R0 = o_points[0].r
-            Z0 = o_points[0].z
-            psi0 = o_points[0].psi
-
-        if len(x_points) == 0:
-            R1 = self._psirz.coordinates.bbox[1][0]
-            Z1 = Z0
-            psi1 = 0.0
-            theta0 = 0
-        else:
-            R1 = x_points[0].r
-            Z1 = x_points[0].z
-            psi1 = x_points[0].psi
-            theta0 = np.arctan2(Z1 - Z0, R1 - R0)
-        Rm = np.sqrt((R1-R0)**2+(Z1-Z0)**2)
-
-        if not isinstance(u, (np.ndarray, collections.abc.MutableSequence)):
-            u = [u]
-        u = np.asarray(u)
-        if v is None:
-            v = self._uv[1]
-        elif not isinstance(v, (np.ndarray, collections.abc.MutableSequence)):
-            v = np.asarray([v])
-
-        theta = v*TWOPI  # +theta0
-
-        psi = u*(psi1-psi0)+psi0
-
-        for psi_val in psi:
-            for theta_val in theta:
-                r0 = R0
-                z0 = Z0
-                r1 = R0+Rm * np.cos(theta_val)
-                z1 = Z0+Rm * np.sin(theta_val)
-
-                if not np.isclose(self.psirz(r1, z1), psi_val):
-                    if not ENABLE_JAX:
-                        def func(r): return (float(self.psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1)) - psi_val)
-
-                        try:
-                            sol = root_scalar(func,  bracket=[0, 1], method='brentq')
-                            r = sol.root
-                        except ValueError as error:
-                            raise ValueError(f"Find root fialed! {error} {psi_val}")
-
-                        if not sol.converged:
-                            raise ValueError(f"Find root fialed!")
-                    else:
-                        #  FIXME: JAX version is not completed!
-                        def func(r): return (float(self.psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1)) - psi_val)**2
-                        sol = minimize(func, np.asarray([0.5]), method='BFGS')
-                        r = sol.x[0]
-
-                    r1 = (1.0-r)*r0+r*r1
-                    z1 = (1.0-r)*z0+r*z1
-                yield r1, z1
 
     @deprecated
     def create_mesh_old(self, u, v, *args, type_index=None):
@@ -470,15 +489,15 @@ class MagneticCoordSystem(Dict):
     def shape_property(self, psi_norm: Union[float, Sequence[float]] = None) -> ShapePropety:
         def shape_box(s: Curve):
             r, z = s.xy.T
-            (rmin, zmin), (rmax, zmax) = s.bbox
+            (rmin, rmax), (zmin, zmax) = s.bbox
             rzmin = r[np.argmin(z)]
             rzmax = r[np.argmax(z)]
-            r_inboard = s.point(0.5)[0]  # FIXME: incorrect
-            r_outboard = s.point(0)[0]  # FIXME: incorrect
+            r_inboard = s.point(0.5)[0]
+            r_outboard = s.point(0)[0]
             return rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard
 
         if psi_norm is None:
-            psi_norm = [1]
+            psi_norm = self.psi_norm
         elif not isinstance(psi_norm, (np.ndarray, collections.abc.MutableSequence)):
             psi_norm = [psi_norm]
 

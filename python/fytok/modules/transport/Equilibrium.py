@@ -555,7 +555,7 @@ class EquilibriumBoundary(Dict):
 
         if isinstance(surf, collections.abc.Sequence):
             logger.warning(
-                f"There are  {len(surf)}   lcfs, and only the first one is used. psi_norm_bdry={(self.psi-self.psi_axis)/(self.psi_boundary-self.psi_axis)}")
+                f"There are  {len(surf)} lcfs, and only the first one is used. psi_norm_bdry={(self.psi-self.psi_axis)/(self.psi_boundary-self.psi_axis)}")
             surf = surf[0]
         return RZTuple(*surf.point().T)
 
@@ -766,7 +766,7 @@ class EquilibriumTimeSlice(Dict):
 
             axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
                                        linewidth=0.5, fill=False, closed=False))
-            axis.plot([], [], 'r--', label="Separatrix")
+            axis.plot([], [], 'r--', label="Boundary")
 
         if mesh is not False:
             for idx in range(0, self.coordinate_system.mesh.shape[0], 4):
