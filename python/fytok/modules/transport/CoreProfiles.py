@@ -295,7 +295,7 @@ class CoreProfiles1D(Profiles):
     @sp_property
     def electrons(self) -> CoreProfilesElectrons:
         """Quantities related to the electrons"""
-        return CoreProfilesElectrons(self["electrons"], axis=self._axis, parent=self)
+        return CoreProfilesElectrons(self["electrons"], axis=self._grid.rho_tor_norm, parent=self)
 
     @sp_property
     def ion(self) -> List[CoreProfilesIon]:

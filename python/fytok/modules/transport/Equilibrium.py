@@ -137,7 +137,7 @@ class EquilibriumGlobalQuantities(Dict):
         return NotImplemented
 
 
-class EquilibriumProfiles1D(Dict):
+class EquilibriumProfiles1D(Profiles):
     """Equilibrium profiles(1D radial grid) as a function of the poloidal flux	"""
 
     def __init__(self,  *args,  coord: MagneticCoordSystem = None, parent=None,    **kwargs):
@@ -152,14 +152,14 @@ class EquilibriumProfiles1D(Dict):
         self._grid = self._coord.radial_grid()
 
     @sp_property
-    def psi_norm(self) :
+    def psi_norm(self):
         """Normalized poloidal flux[Wb]. """
         return self._coord.psi_norm
 
     @sp_property
     def psi(self) -> Function:
         """Poloidal flux[Wb]. """
-        return Function(self._grid.psi_norm, self.psi_norm * (self._coord.psi_boundary - self._coord.psi_axis) + self._coord.psi_axis)
+        return self.psi_norm * (self._coord.psi_boundary - self._coord.psi_axis) + self._coord.psi_axis
 
     @sp_property
     def vprime(self) -> Function:
@@ -167,14 +167,14 @@ class EquilibriumProfiles1D(Dict):
             .. math: : V^{\prime} =  2 \pi  \int{R / |\nabla \psi | * dl }
             .. math: : V^{\prime}(psi) = 2 \pi  \int{dl * R / |\nabla \psi|}
         """
-        return Function(self._grid.psi_norm, self._coord.dvolume_dpsi*(self._coord.psi_boundary-self._coord.psi_axis))
+        return self._coord.dvolume_dpsi*(self._coord.psi_boundary-self._coord.psi_axis)
 
     @sp_property
     def dvolume_dpsi(self) -> Function:
         r"""
             Radial derivative of the volume enclosed in the flux surface with respect to Psi[m ^ 3.Wb ^ -1].
         """
-        return Function(self._grid.psi_norm, self._coord.dvolume_dpsi)
+        return self._coord.dvolume_dpsi
 
     @sp_property
     def volume(self) -> Function:
@@ -185,7 +185,7 @@ class EquilibriumProfiles1D(Dict):
     def ffprime(self) -> Function:
         """	Derivative of F w.r.t. Psi, multiplied with F[T ^ 2.m ^ 2/Wb]. """
         # return self._parent._ffprime  # Function(self.psi_norm, self._coord.ffprime(self.psi_norm))
-        return Function(self._grid.psi_norm,   self._coord._ffprime(self._grid.psi_norm))
+        return self._coord._ffprime(self._grid.psi_norm)
 
     @sp_property
     def f_df_dpsi(self) -> Function:
@@ -195,7 +195,7 @@ class EquilibriumProfiles1D(Dict):
     @sp_property
     def fpol(self) -> Function:
         """Diamagnetic function(F=R B_Phi)[T.m]."""
-        return Function(self._grid.psi_norm, self._coord.fpol(self._grid.psi_norm))
+        return self._coord.fpol(self._grid.psi_norm)
 
     @sp_property
     def f(self) -> Function:
@@ -204,7 +204,7 @@ class EquilibriumProfiles1D(Dict):
 
     @sp_property
     def pprime(self) -> Function:
-        return Function(self._grid.psi_norm, self._coord._pprime(self._grid.psi_norm))
+        return self._coord._pprime(self._grid.psi_norm)
 
     @sp_property
     def dpressure_dpsi(self) -> Function:
@@ -215,21 +215,21 @@ class EquilibriumProfiles1D(Dict):
         """Toroidal current driven inside the flux surface.
           .. math:: I_{pl}\equiv\int_{S_{\zeta}}\mathbf{j}\cdot dS_{\zeta}=\frac{\text{gm2}}{4\pi^{2}\mu_{0}}\frac{\partial V}{\partial\psi}\left(\frac{\partial\psi}{\partial\rho}\right)^{2}
          {dynamic}[A]"""
-        return Function(self._grid.psi_norm,  self._coord.surface_average(self._coord.grad_psi2 / (self._coord.r**2))*self._coord.dvolume_dpsi/constants.mu_0)
+        return self._coord.surface_average(self._coord.grad_psi2 / (self._coord.r**2))*self._coord.dvolume_dpsi/constants.mu_0
 
     @sp_property
     def j_tor(self) -> Function:
         r"""Flux surface averaged toroidal current density = average(j_tor/R) / average(1/R) {dynamic}[A.m ^ -2]. """
-        return Function(self._grid.psi_norm, self.plasma_current.derivative / (self._coord.psi_boundary - self._coord.psi_axis)/self.dvolume_dpsi * self._r0)
+        return self.plasma_current.derivative / (self._coord.psi_boundary - self._coord.psi_axis)/self.dvolume_dpsi * self._r0
 
     @sp_property
     def j_parallel(self) -> Function:
         r"""Flux surface averaged parallel current density = average(j.B) / B0, where B0 = Equilibrium/Global/Toroidal_Field/B0 {dynamic}[A/m ^ 2]. """
-        return Function(self._grid.psi_norm,  (self.fpol**2)/self.dvolume_dpsi * ((self.plasma_current/self.fpol).derivative / (self._coord.psi_boundary - self._coord.psi_axis))/self._b0)
+        return (self.fpol**2)/self.dvolume_dpsi * ((self.plasma_current/self.fpol).derivative / (self._coord.psi_boundary - self._coord.psi_axis))/self._b0
 
     @sp_property
     def dphi_dpsi(self) -> Function:
-        return Function(self._grid.psi_norm, self.gm1 * self.fpol * self.dvolume_dpsi / (TWOPI**2))
+        return self.gm1 * self.fpol * self.dvolume_dpsi / (TWOPI**2)
 
     @sp_property
     def q(self) -> Function:
@@ -238,7 +238,7 @@ class EquilibriumProfiles1D(Dict):
             (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)[-].
             .. math:: q(\psi) =\frac{d\Phi}{d\psi} =\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
         """
-        return Function(self._grid.psi_norm,  self.fpol * self.dvolume_dpsi*self._coord.surface_average(1.0/(self._coord.r**2))/(TWOPI**2))
+        return self.fpol * self.dvolume_dpsi*self._coord.surface_average(1.0/(self._coord.r**2))/(TWOPI**2)
 
     @sp_property
     def phi(self) -> Function:
@@ -247,16 +247,16 @@ class EquilibriumProfiles1D(Dict):
             .. math::
                 \Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi
         """
-        return Function(self._grid.psi_norm, self._coord.phi(self._grid.psi_norm))
+        return self._coord.phi(self._grid.psi_norm)
 
     @sp_property
     def rho_tor(self) -> Function:
         """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0[m]"""
-        return Function(self._grid.psi_norm, self._coord.rho_tor(self._grid.psi_norm))
+        return self._coord.rho_tor(self._grid.psi_norm)
 
     @sp_property
     def rho_tor_norm(self) -> Function:
-        return Function(self._grid.psi_norm, self._coord.rho_tor_norm(self._grid.psi_norm))
+        return self._coord.rho_tor_norm(self._grid.psi_norm)
 
     @sp_property
     def drho_tor_dpsi(self) -> Function:
@@ -274,19 +274,19 @@ class EquilibriumProfiles1D(Dict):
         """
             Derivative of Psi with respect to Rho_Tor[Wb/m].
         """
-        return Function(self._grid.psi_norm, (TWOPI*self._b0)*self.rho_tor/self.dphi_dpsi)
+        return (TWOPI*self._b0)*self.rho_tor/self.dphi_dpsi
 
     @sp_property
     def dpsi_drho_tor_norm(self) -> Function:
         """
             Derivative of Psi with respect to Rho_Tor[Wb/m].
         """
-        return Function(self._grid.psi_norm, self.dpsi_drho_tor*self.rho_tor[-1])
+        return self.dpsi_drho_tor*self.rho_tor[-1]
 
     @sp_property
     def dvolume_drho_tor(self) -> Function:
         """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
-        return Function(self._grid.psi_norm, (4*constants.pi**2*self._b0)*self.rho_tor/(self.fpol*self.gm1))
+        return (4*constants.pi**2*self._b0)*self.rho_tor/(self.fpol*self.gm1)
 
     @sp_property
     def shape_property(self) -> MagneticCoordSystem.ShapePropety:
@@ -307,32 +307,32 @@ class EquilibriumProfiles1D(Dict):
     @sp_property
     def r_inboard(self) -> Function:
         """Radial coordinate(major radius) on the inboard side of the magnetic axis[m]"""
-        return Function(self._grid.psi_norm, self.shape_property.r_inboard)
+        return self.shape_property.r_inboard
 
     @sp_property
     def r_outboard(self) -> Function:
         """Radial coordinate(major radius) on the outboard side of the magnetic axis[m]"""
-        return Function(self._grid.psi_norm, self.shape_property.r_outboard)
+        return self.shape_property.r_outboard
 
     @sp_property
     def elongation(self) -> Function:
         """Elongation. {dynamic}[-]"""
-        return Function(self._grid.psi_norm, self.shape_property.elongation)
+        return self.shape_property.elongation
 
     @sp_property
     def triangularity(self) -> Function	:
         """Upper triangularity w.r.t. magnetic axis. {dynamic}[-]"""
-        return Function(self._grid.psi_norm, self.shape_property.triangularity)
+        return self.shape_property.triangularity
 
     @sp_property
     def triangularity_upper(self) -> Function	:
         """Upper triangularity w.r.t. magnetic axis. {dynamic}[-]"""
-        return Function(self._grid.psi_norm, self.shape_property.triangularity_upper)
+        return self.shape_property.triangularity_upper
 
     @sp_property
     def triangularity_lower(self) -> Function:
         """Lower triangularity w.r.t. magnetic axis. {dynamic}[-]"""
-        return Function(self._grid.psi_norm, self.shape_property.triangularity_lower)
+        return self.shape_property.triangularity_lower
 
     @sp_property
     def gm1(self) -> Function:
@@ -340,7 +340,7 @@ class EquilibriumProfiles1D(Dict):
             Flux surface averaged 1/R ^ 2  [m ^ -2]
             .. math: : \left\langle\frac{1}{R^{2}}\right\rangle
         """
-        return Function(self._grid.psi_norm, self._coord.surface_average(1.0/(self._coord.r**2)))
+        return self._coord.surface_average(1.0/(self._coord.r**2))
 
     @sp_property
     def gm2(self) -> Function:
@@ -365,7 +365,7 @@ class EquilibriumProfiles1D(Dict):
             Flux surface averaged 1/B ^ 2  [T ^ -2]
             .. math: : \left\langle \frac{1}{B^{2}}\right\rangle
         """
-        return Function(self._grid.psi_norm, self._coord.surface_average(1.0/self._coord.B2))
+        return self._coord.surface_average(1.0/self._coord.B2)
 
     @sp_property
     def gm5(self) -> Function:
@@ -373,7 +373,7 @@ class EquilibriumProfiles1D(Dict):
             Flux surface averaged B ^ 2  [T ^ 2]
             .. math: : \left\langle B^{2}\right\rangle
         """
-        return Function(self._grid.psi_norm, self._coord.surface_average(self._coord.B2))
+        return self._coord.surface_average(self._coord.B2)
 
     @sp_property
     def gm6(self) -> Function:
@@ -401,7 +401,7 @@ class EquilibriumProfiles1D(Dict):
             Flux surface averaged R[m]
             .. math: : \left\langle R\right\rangle
         """
-        return Function(self._grid.psi_norm, self._coord.surface_average(self._coord.r))
+        return self._coord.surface_average(self._coord.r)
 
     @sp_property
     def gm9(self) -> Function:
@@ -409,7 +409,7 @@ class EquilibriumProfiles1D(Dict):
             Flux surface averaged 1/R[m ^ -1]
             .. math: : \left\langle \frac{1}{R}\right\rangle
         """
-        return Function(self._grid.psi_norm, self._coord.surface_average(1.0/self._coord.r))
+        return self._coord.surface_average(1.0/self._coord.r)
 
     @sp_property
     def magnetic_shear(self) -> Function:
