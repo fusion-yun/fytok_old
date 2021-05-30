@@ -48,7 +48,7 @@ if __name__ == "__main__":
                   wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
                   pf_active={"facecolor": 'red'},
                   equilibrium={
-                      "mesh": False,
+                      "mesh": True,
                       "boundary": True,
                       "scalar_field": []  # [("psirz", {"levels": 16, "linewidths": 0.1}), ],
                   }

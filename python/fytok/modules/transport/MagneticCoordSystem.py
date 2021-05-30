@@ -157,15 +157,17 @@ class MagneticCoordSystem(Dict):
 
         return opoints, xpoints
 
-    def find_surface_low(self, levels: Union[float, Sequence] = None, only_closed=True, field: Field = None, ntheta=256) -> Union[Curve, Sequence[Curve]]:
+    def find_surface_sp(self, levels: Union[float, Sequence] = None, only_closed=True, field: Field = None, ntheta=256) -> Union[Curve, Sequence[Curve]]:
 
         if field is None:
             field = self._psirz
 
-        single_line = True
-        if not isinstance(levels, collections.abc.Sequence):
+        single_line = False
+        if not isinstance(levels, (collections.abc.Sequence, np.ndarray)):
             levels = [levels]
-            single_line = False
+            single_line = True
+
+        levels = np.asarray(levels)
 
         opoints, _ = self.critical_points
 
@@ -178,8 +180,7 @@ class MagneticCoordSystem(Dict):
 
         F = np.asarray(field)
 
-        for level, col in find_countours(R, Z, F,
-                                         levels=levels if isinstance(levels, (Sequence, np.ndarray)) else [levels]):
+        for level, col in find_countours(F, R, Z, levels=levels):
             surf = []
             if len(col) == 0:
                 points = []
@@ -189,7 +190,6 @@ class MagneticCoordSystem(Dict):
                 points.sort(key=lambda p: (p[0] - r0)**2 + (p[1] - z0)**2)
 
                 surf.append(Point(*points[0]))
-
             else:
                 for segment in col:
                     if isinstance(segment, np.ndarray):
@@ -213,8 +213,8 @@ class MagneticCoordSystem(Dict):
         else:
             return surf_collection
 
-    
-    def find_surface_high(self, levels: Union[float, Sequence] = None, only_closed=True, field: Field = None, ntheta=256) -> Union[Curve, Sequence[Curve]]:
+    def find_surface_old(self, levels: Union[float, Sequence] = None, only_closed=True, field: Field = None, ntheta=256) -> Union[Curve, Sequence[Curve]]:
+
         single_line = False
         if not isinstance(levels, (collections.abc.Sequence, np.ndarray)):
             levels = np.asarray([levels])
@@ -286,9 +286,8 @@ class MagneticCoordSystem(Dict):
         else:
             return surf_collection
 
-
-    def find_surface(self, *args,**kwargs) -> Union[Curve, Sequence[Curve]]:
-        return self.find_surface_high(*args,**kwargs)
+    def find_surface(self, *args, **kwargs) -> Union[Curve, Sequence[Curve]]:
+        return self.find_surface_sp(*args, **kwargs)
 
     def find_surface_psi_norm(self, psi_norm: Union[float, Sequence], *args, field=None, **kwargs) -> Union[Curve, Sequence[Curve]]:
         opoints, xpoints = self.critical_points
@@ -296,7 +295,6 @@ class MagneticCoordSystem(Dict):
         psi_bdry = xpoints[0].psi
 
         return self.find_surface(np.asarray(psi_norm)*(psi_bdry-psi_axis)+psi_axis, *args, field=field or self._psirz, **kwargs)
-
 
     def create_mesh(self, u=None, v=None, *args, primary='psi', type_index=None):
 
@@ -333,7 +331,7 @@ class MagneticCoordSystem(Dict):
         levels = (f_bdry-f_axis)*u+f_axis
 
         surf = self.find_surface(levels, field=field, only_closed=True, ntheta=v)
-        
+
         mesh = CurvilinearMesh(surf, [u, v], cycle=[False, True])
 
         logger.debug(f"Create mesh: type index={type_index} primary={primary}  ")

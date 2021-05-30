@@ -773,9 +773,9 @@ class EquilibriumTimeSlice(Dict):
                 ax0 = self.coordinate_system.mesh.axis(idx, axis=0)
                 axis.add_patch(plt.Polygon(ax0.xy, fill=False, closed=True, color="b", linewidth=0.2))
 
-            for idx in range(0, self.coordinate_system.mesh.shape[1], 4):
-                ax1 = self.coordinate_system.mesh.axis(idx, axis=1)
-                axis.plot(ax1.xy[:, 0], ax1.xy[:, 1],  "r", linewidth=0.2)
+            # for idx in range(0, self.coordinate_system.mesh.shape[1], 4):
+            #     ax1 = self.coordinate_system.mesh.axis(idx, axis=1)
+            #     axis.plot(ax1.xy[:, 0], ax1.xy[:, 1],  "r", linewidth=0.2)
 
         if separatrix is not False:
             raise NotImplementedError()
