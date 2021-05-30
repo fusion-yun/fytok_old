@@ -42,13 +42,6 @@ if __name__ == "__main__":
                                 },
                                 "vacuum_toroidal_field":  eqdsk.entry.find("vacuum_toroidal_field"),
                                 })
-        logger.debug(tok.wall['description_2d'])
-        logger.debug(tok.wall.description_2d)
-        logger.debug(tok.wall['description_2d'])
-
-        # logger.debug(tok.equilibrium.time_slice.coordinate_system.critical_points[1][0].psi)
-        # logger.debug(tok.equilibrium.time_slice.boundary.outline.r)
-        # logger.debug(tok.equilibrium.time_slice.boundary.outline.z)
 
     if True:
         sp_figure(tok,
@@ -135,7 +128,7 @@ if __name__ == "__main__":
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
     ###################################################################################################
-    if False:
+    if True:
 
         Te = Function(bs_r_nrom, baseline["TE"].values*1000)
         Ti = Function(bs_r_nrom, baseline["TI"].values*1000)

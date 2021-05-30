@@ -55,8 +55,7 @@ class Tokamak(Actor):
     @property
     def grid(self):
         if not isinstance(self._grid, RadialGrid):
-            self._grid = self.equilibrium.time_slice.coordinate_system.radial_grid(
-                self._grid, primary_axis="rho_tor_norm")
+            self._grid = self.equilibrium.time_slice.coordinate_system.radial_grid("rho_tor_norm")
         return self._grid
     # --------------------------------------------------------------------------
 

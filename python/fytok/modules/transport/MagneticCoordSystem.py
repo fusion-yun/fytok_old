@@ -1,7 +1,7 @@
 import collections
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Sequence, Union
+from typing import Sequence, Union, Tuple
 
 from spdm.data.Field import Field
 from spdm.data.Function import Function
@@ -125,7 +125,7 @@ class MagneticCoordSystem(Dict):
         return Identifier(**self["grid_type"]._as_dict())
 
     @cached_property
-    def critical_points(self):
+    def critical_points(self) -> Tuple[Sequence[OXPoint], Sequence[OXPoint]]:
         opoints = []
         xpoints = []
 
@@ -213,7 +213,7 @@ class MagneticCoordSystem(Dict):
         psi_axis = opoints[0].psi
         psi_bdry = xpoints[0].psi
 
-        return self.find_surface(np.asarry(psi_norm)*(psi_bdry-psi_axis)+psi_axis, *args, field=field or self._psirz, **kwargs)
+        return self.find_surface(np.asarray(psi_norm)*(psi_bdry-psi_axis)+psi_axis, *args, field=field or self._psirz, **kwargs)
 
     def create_mesh(self, u=None, v=None, *args, primary='psi', type_index=None):
 
@@ -470,7 +470,7 @@ class MagneticCoordSystem(Dict):
     def shape_property(self, psi_norm: Union[float, Sequence[float]] = None) -> ShapePropety:
         def shape_box(s: Curve):
             r, z = s.xy.T
-            rmin, zmin, rmax, zmax = s.bbox
+            (rmin, zmin), (rmax, zmax) = s.bbox
             rzmin = r[np.argmin(z)]
             rzmax = r[np.argmax(z)]
             r_inboard = s.point(0.5)[0]  # FIXME: incorrect
@@ -478,7 +478,7 @@ class MagneticCoordSystem(Dict):
             return rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard
 
         if psi_norm is None:
-            pass
+            psi_norm = [1]
         elif not isinstance(psi_norm, (np.ndarray, collections.abc.MutableSequence)):
             psi_norm = [psi_norm]
 
