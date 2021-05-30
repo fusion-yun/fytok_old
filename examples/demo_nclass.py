@@ -93,6 +93,7 @@ if __name__ == "__main__":
                     (Function(bs_psi, baseline["k"].values),         r"$k^{astra}$ elongation", {"marker": "+"}),
                     (eq_profile.elongation,                                                 r"$k$ elongation"),
                 ],
+                (eq_profile.dvolume_dpsi,                                                 r"$\frac{dV}{d\psi}$"),
 
                 # (eq_profile.gm1,                                             r"$gm1=\left<\frac{1}{R^2}\right>$"),
                 # (eq_profile.gm2,                    r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
