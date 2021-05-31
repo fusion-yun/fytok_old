@@ -257,7 +257,7 @@ class CoreTransportModel(Actor):
 
     @sp_property
     def code(self) -> IDSCode:
-        return IDSCode(self["code"])
+        return self["code"]
 
     @sp_property
     def comment(self) -> str:

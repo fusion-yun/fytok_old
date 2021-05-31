@@ -100,6 +100,11 @@ class CoreSourcesNeutral(Profiles):
 
 
 class CoreSourcesProfiles1D(Profiles):
+
+    Electrons = CoreSourcesElectrons
+    Ion = CoreSourcesIon
+    Neutral = CoreSourcesNeutral
+
     def __init__(self, *args, grid: RadialGrid = None, parent=None, **kwargs):
         grid = grid or parent._grid
         super().__init__(*args, axis=grid.rho_tor_norm, **kwargs)
@@ -248,6 +253,7 @@ class CoreSourcesSpecies(Dict):
 
 class CoreSourcesSource(Actor):
     _actor_module_prefix = "transport.core_sources."
+    Profiles1D = CoreSourcesProfiles1D
 
     def __init__(self,   *args, grid: Optional[RadialGrid] = None, **kwargs):
         super().__init__(*args, **kwargs)

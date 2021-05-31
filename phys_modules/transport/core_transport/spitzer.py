@@ -1,15 +1,13 @@
+
 import collections
-from  functools import cached_property
 
 from spdm.numlib import np
 from spdm.numlib import constants
 from fytok.modules.transport.CoreProfiles import CoreProfiles
-from fytok.modules.transport.CoreTransport import CoreTransport, CoreTransportProfiles1D
+from fytok.modules.transport.CoreTransport import CoreTransport
 from fytok.modules.transport.Equilibrium import Equilibrium
-from fytok.modules.transport.MagneticCoordSystem import RadialGrid
 from spdm.data.Function import Function
-from spdm.data.Node import _next_
-from spdm.data.TimeSeries import TimeSeries, TimeSlice
+from spdm.data.Node import Dict, List, Node
 from spdm.util.logger import logger
 
 
@@ -23,34 +21,78 @@ class Spitzer(CoreTransport.Model):
         - Tokamaks, Third Edition, Chapter 14  ,p727,  J.A.Wesson 2003
     """
 
-    def __init__(self,   *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, d=None, *args,  **kwargs):
+        super().__init__(collections.ChainMap({
+            "identifier": {
+                "name": f"neoclassical",
+                "index": 5,
+                "description": f"{self.__class__.__name__}  Neoclassical model, based on  Tokamaks, 3ed, J.A.Wesson 2003"
+            }}, d or {}), *args, **kwargs)
 
-    def advance(self, *args, time=None, dt=None,   **kwargs) -> float:
-        return super().advance(*args, time=time, dt=dt,   **kwargs)
+    def update(self, *args,
+               equilibrium: Equilibrium,
+               core_profiles: CoreProfiles,
+               **kwargs):
 
-    def update(self, *args, core_profiles: CoreProfiles.TimeSlice = None, **kwargs):
-        super().update(*args, grid=core_profiles.profiles_1d.grid, **kwargs)
-        prof = self.profiles_1d[-1]
+        super().update(*args, core_profiles=core_profiles, **kwargs)
 
-        Te = np.asarray(core_profiles.profiles_1d.electrons.temperature)
-        ne = np.asarray(core_profiles.profiles_1d.electrons.density)
+        eV = constants.electron_volt
+        B0 = equilibrium.vacuum_toroidal_field.b0
+        R0 = equilibrium.vacuum_toroidal_field.r0
 
-        # Coulomb logarithm  Ch.14.5 p727 Tokamaks 2003
-        clog = (31.0 - 0.5*np.log(ne) + np.log(Te))*(Te < 10) +\
-            (31.3 - 0.5*np.log(ne) + np.log(Te))*(Te >= 10)
+        core_profile = core_profiles.profiles_1d
+        trans = self.profiles_1d
 
-        # (29.96 - 0.5*np.log(ne) + 1.5 * np.log(Te))*(Te >= 10000)
+        rho_tor_norm = core_profile.grid.rho_tor_norm
+        rho_tor = core_profile.grid.rho_tor
+        psi_norm = core_profile.grid.psi_norm
+        psi = core_profile.grid.psi
+        q = equilibrium.profiles_1d.q(psi_norm)
 
-        # Collision times Eq. 14.6.1 p729 Tokamaks 2003
-        # tau_e = 1.09e16*((Te*1.0e-3)**(3/2))/ne/clog
+        # Tavg = np.sum([ion.density*ion.temperature for ion in core_profile.ion]) / \
+        #     np.sum([ion.density for ion in core_profile.ion])
 
-        # Spitzer resistivity, Eq. 14.10.1 p735 Tokamaks 2003
-        sigma = Function(core_profiles.profiles_1d.grid.rho_tor_norm, 1.65e-9 * clog*((Te*1.0e-3)**(-3/2)))
+        Te = core_profile.electrons.temperature(rho_tor_norm)
+        Ne = core_profile.electrons.density(rho_tor_norm)
+        Pe = core_profile.electrons.pressure(rho_tor_norm)
 
-        prof.conductivity_parallel = Function(prof.grid_d.rho_tor_norm, sigma)
+        # Coulomb logarithm
+        #  Ch.14.5 p727 Tokamaks 2003
+        # lnCoul = (14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +\
+        #     (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000))*(Te >= 10)
+        # (17.3 - 0.5*np.log(Ne/1e20) + 1.5*np.log(Te/1000))*(Te >= 10)
 
-        return 0.0
+        # lnCoul = 14
+        lnCoul = core_profile.coulomb_logarithm(rho_tor_norm)
+
+        # electron collision time , eq 14.6.1
+        tau_e = 1.09e16*((Te/1000)**(3/2))/Ne/lnCoul
+
+        vTe = np.sqrt(Te*eV/constants.electron_mass)
+
+        # Larmor radius,   eq 14.7.2
+        rho_e = 1.07e-4*((Te/1000)**(1/2))/B0
+
+        rho_tor[0] = max(rho_e[0], rho_tor[0])
+
+        epsilon = rho_tor/R0
+        epsilon12 = np.sqrt(epsilon)
+        epsilon32 = epsilon**(3/2)
+        ###########################################################################################
+        #  Sec 14.10 Resistivity
+        #
+        eta_s = 1.65e-9*lnCoul*(Te/1000)**(-3/2)
+        nu_e = R0*q/vTe/tau_e/epsilon32
+        Zeff = core_profile.zeff
+        fT = 1.0 - (1-epsilon)**2/np.sqrt(1.0-epsilon**2)/(1+1.46*np.sqrt(epsilon))
+        phi = fT/(1.0+(0.58+0.20*Zeff)*nu_e)
+        C = 0.56/Zeff*(3.0-Zeff)/(3.0+Zeff)
+
+        eta = eta_s*Zeff/(1-phi)/(1.0-C*phi)*(1.0+0.27*(Zeff-1.0))/(1.0+0.47*(Zeff-1.0))
+
+        self.profiles_1d.conductivity_parallel = 1.0/eta
+
+        return 0.00
 
 
 __SP_EXPORT__ = Spitzer

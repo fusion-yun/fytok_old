@@ -39,15 +39,14 @@ class BootstrapCurrent(CoreSources.Source):
 
         q = equilibrium.time_slice.profiles_1d.q(psi_norm)
 
-        # Tavg = np.sum([ion.density*ion.temperature for ion in core_profile.ion]) / \
-        #     np.sum([ion.density for ion in core_profile.ion])
         # max(np.asarray(1.07e-4*((Te[0]/1000)**(1/2))/B0), rho_tor[0])   # Larmor radius,   eq 14.7.2
 
         Te = core_profile.electrons.temperature(rho_tor_norm)
         Ne = core_profile.electrons.density(rho_tor_norm)
         Pe = core_profile.electrons.pressure(rho_tor_norm)
-        dlnTe = core_profile.electrons.temperature.derivative(rho_tor_norm) / Te
-        dlnPe = core_profile.electrons.pressure.derivative(rho_tor_norm) / Pe
+        dlnTe = core_profile.electrons.temperature.dln(rho_tor_norm)
+        dlnNe = core_profile.electrons.density.dln(rho_tor_norm)
+        dlnPe = core_profile.electrons.pressure.dln(rho_tor_norm)  # dlnNe+dlnNe
 
         # Coulomb logarithm
         #  Ch.14.5 p727 Tokamaks 2003
@@ -78,9 +77,10 @@ class BootstrapCurrent(CoreSources.Source):
         for sp in core_profile.ion:
             Ti = sp.temperature(rho_tor_norm)
             Ni = sp.density(rho_tor_norm)
-            Pi = sp.pressure(rho_tor_norm)
-            dlnTi = sp.temperature.derivative(rho_tor_norm)/Ti
-            dlnPi = sp.pressure.derivative(rho_tor_norm)/Pi
+
+            dlnTi = sp.temperature.dln(rho_tor_norm)
+            dlnNi = sp.density.dln(rho_tor_norm)
+            dlnPi = sp.pressure.dln(rho_tor_norm)  # dlnNi + dlnTi
             mi = sp.a
 
             # ion collision time Tokamaks 3ed, eq 14.6.2 p730
@@ -109,8 +109,8 @@ class BootstrapCurrent(CoreSources.Source):
         # eq 4.9.2
         # src.j_bootstrap = (-(q/B0/epsilon12))*j_bootstrap
 
-        j_bootstrap = - j_bootstrap * x/(2.4+5.4*x+2.6*x**2) * Pe * \
-            equilibrium.time_slice.profiles_1d.fpol(psi_norm) * q / rho_tor / rho_tor[-1] / (2.0*constants.pi*B0)
+        j_bootstrap = - j_bootstrap * x/(2.4+5.4*x+2.6*x**2) * Pe   \
+            * equilibrium.time_slice.profiles_1d.fpol(psi_norm) * q / rho_tor_norm / (rho_tor[-1])**2 / (2.0*constants.pi*B0)
 
         self.profiles_1d.j_parallel = Function(rho_tor_norm, j_bootstrap)
         return 0.0

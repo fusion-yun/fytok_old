@@ -92,6 +92,15 @@ class CoreProfilesElectrons(SpeciesElectron):
         """Collisionality normalised to the bounce frequency {dynamic}[-]"""
         return NotImplemented
 
+    @sp_property
+    def tau(self) -> Function:
+        """electron collision time"""
+        return 1.09e16*((self.temperature/1000)**(3/2))/self.density/self._parent.coulomb_logarithm
+
+    @sp_property
+    def vT(self) -> Function:
+        return np.sqrt(self.temperature*constants.electron_volt/constants.electron_mass)
+
 
 class CoreProfilesIon(SpeciesIon):
     def __init__(self,   *args,   **kwargs):

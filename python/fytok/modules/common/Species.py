@@ -126,7 +126,7 @@ class SpeciesIon(Species):
     @sp_property
     def neutral_index(self) -> int:
         """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
-        return self["neutral_index"]
+        return self["neutral_index"] or 0
 
     @sp_property
     def z_ion_1d(self):
@@ -143,9 +143,9 @@ class SpeciesIon(Species):
     @sp_property
     def multiple_states_flag(self) -> int:
         """Multiple states calculation flag : 0-Only one state is considered; 1-Multiple states are considered and are described in the state  {dynamic}    """
-        return self._entry.get("multiple_states_flag") or 0
+        return self["multiple_states_flag"] or 0
 
     @sp_property
-    def state(self):
+    def state(self) -> List[SpeciesIonState]:
         """Quantities related to the different states of the species (ionisation, energy, excitation, ...)  struct_array [max_size=unbounded]  1- 1...N"""
-        return List[SpeciesIonState](self["state"], parent=self)
+        return self["state"]
