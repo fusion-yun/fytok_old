@@ -138,9 +138,11 @@ class CoreTransportProfiles1D(Dict[Node]):
     Electrons = CoreTransportElectrons
     Momentum = CoreTransportMomentum
 
-    def __init__(self, *args, grid: Optional[RadialGrid] = None, ** kwargs):
+    def __init__(self, *args, grid: Optional[RadialGrid] = None, parent=None, ** kwargs):
+        if grid is None:
+            grid = parent._grid
         super().__init__(*args, axis=grid.rho_tor_norm,   **kwargs)
-        self._grid = grid or self._parent._grid
+        self._grid = grid
 
     def update(self, *args, grid=True, core_profiles: CoreProfiles = None,  **kwargs):
 
@@ -245,11 +247,8 @@ class CoreTransportModel(Actor):
 
     Profiles1D = CoreTransportProfiles1D
 
-    def __init__(self, d=None, *args, grid: Optional[RadialGrid] = None, ** kwargs):
-        super().__init__(collections.ChainMap(d or {},
-                                              {"identifier": {"name":  "unspecified", "index": 0,
-                                                              "description": f"{self.__class__.__name__}"}}),
-                         * args, **kwargs)
+    def __init__(self, *args, grid: Optional[RadialGrid] = None, ** kwargs):
+        super().__init__(*args, **kwargs)
         self._grid = grid or self._parent._grid
 
     def update(self, *args, **kwargs) -> float:
@@ -293,7 +292,7 @@ class CoreTransportModel(Actor):
 
     @sp_property
     def profiles_1d(self) -> CoreTransportProfiles1D:
-        return self.__class__.Profiles1D(self["profiles_1d"], grid=self._grid, parent=self)
+        return self["profiles_1d"]
 
 
 class CoreTransport(IDS):

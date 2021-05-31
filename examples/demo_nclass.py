@@ -279,6 +279,8 @@ if __name__ == "__main__":
                     (Function(bs_r_nrom, baseline["Joh"].values*1.0e6 / baseline["U"].values * \
                               (2.0*constants.pi * tok.equilibrium.vacuum_toroidal_field.r0)),     r"$\sigma_{\parallel}^{astra}$", {"marker": "+"}),
                     (core_transport1d.conductivity_parallel,                 r"$\sigma_{\parallel}^{wesson}$"),
+                    (core_transport.model.combine.profiles_1d.conductivity_parallel,  r"$\sigma_{\parallel}$"),
+
                 ],
 
                 # (core_transport1d.e_field_radial,                                             r"$E_{radial}$"),
