@@ -580,7 +580,7 @@ class MagneticCoordSystem(Dict):
     @ cached_property
     def fpol(self):
         """Diamagnetic function (F=R B_Phi)  [T.m]."""
-        fpol2 = self._ffprime.antiderivative * (2 * (self.psi_boundary - self.psi_axis))
+        fpol2 = self._ffprime.antiderivative(self.psi_norm) * (2 * (self.psi_boundary - self.psi_axis))
         return Function(self.psi_norm,   np.sqrt(fpol2 - fpol2[-1] + self._fvac**2))
 
     @ property
@@ -602,7 +602,7 @@ class MagneticCoordSystem(Dict):
             .. math::
                 \Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi
         """
-        return self.dq_dpsi.antiderivative
+        return self.dq_dpsi.antiderivative(self.psi_norm)
 
     @ cached_property
     def rho_tor(self):
@@ -670,7 +670,7 @@ class RadialGrid:
             at the equilibrium boundary (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation,
             see time_slice/boundary/b_flux_pol_norm in the equilibrium IDS) {dynamic} [-]
         """
-        return self._coordinate_system.rho_tor_norm(self.psi_norm)
+        return self._coordinate_system.rho_tor_norm
 
     @ cached_property
     def rho_tor(self):

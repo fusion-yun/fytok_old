@@ -314,16 +314,16 @@ class CoreSourcesSource(Actor):
         return Identifier(**self["identifier"]._as_dict())
 
     @sp_property
-    def species(self):
-        return CoreSourcesSpecies(self["species"], parent=self)
+    def species(self) -> CoreSourcesSpecies:
+        return self["species"]
 
     @sp_property
     def global_quantities(self) -> CoreSourcesGlobalQuantities:
-        return CoreSourcesGlobalQuantities(self["global_quantities"], parent=self)
+        return self["global_quantities"]
 
     @sp_property
     def profiles_1d(self) -> CoreSourcesProfiles1D:
-        return CoreSourcesProfiles1D(self["profiles_1d"], axis=self._grid.rho_tor_norm, parent=self)
+        return self["profiles_1d"]
 
     def update(self, *args, **kwargs) -> float:
         return super().update(*args, **kwargs)

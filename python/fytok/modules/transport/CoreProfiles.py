@@ -447,13 +447,13 @@ class CoreProfiles1D(Profiles):
     def coulomb_logarithm(self) -> Function:
         """ Coulomb logarithm, Tokamaks   Ch.14.5 p727 ,2003
         """
-        Te = self.electrons.temperature
-        Ne = self.electrons.density
+        Te = self.electrons.temperature(self._axis)
+        Ne = self.electrons.density(self._axis)
 
         # Coulomb logarithm
         #  Ch.14.5 p727 Tokamaks 2003
-        return (14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +\
-            (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000))*(Te >= 10)
+        return ((14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +
+                (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te >= 10))
 
     class EField(Profiles):
         def __init__(self,   *args, axis=None, parent=None, **kwargs):
@@ -468,7 +468,6 @@ class CoreProfiles1D(Profiles):
         """Electric field, averaged on the magnetic surface. E.g for the parallel component, average(E.B) / B0,
             using core_profiles/vacuum_toroidal_field/b0[V.m ^ -1]  """
         return CoreProfiles1D.EField(self._entry.find("e_field"), parent=self)
-        # return CoreProfiles1D.EField(self["e_field"], axis=self._axis, parent=self)
 
     @sp_property
     def phi_potential(self) -> Function:

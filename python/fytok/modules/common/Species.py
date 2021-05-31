@@ -13,17 +13,17 @@ class SpeciesElement(Dict):
         super().__init__(*args, **kwargs)
 
     @sp_property
-    def a(self):
+    def a(self) -> float:
         r"""Mass of atom {dynamic} [Atomic Mass Unit] """
         return self["a"]
 
     @sp_property
-    def atoms_n(self):
+    def atoms_n(self) -> int:
         r"""Number of atoms of this element in the molecule {dynamic}"""
         return self["atoms_n"]
 
     @sp_property
-    def z_n(self):
+    def z_n(self) -> int:
         return self["z_n"]
 
 
@@ -44,10 +44,10 @@ class Species(Profiles):
 
     @sp_property
     def element(self) -> List[Element]:
-        return List[SpeciesElement](self["element"],  parent=self)
+        return List[SpeciesElement](self._entry.find("element"),  parent=self)
 
     @sp_property
-    def a(self):
+    def a(self) -> float:
         """Mass of ion {dynamic} [Atomic Mass Unit]"""
         return sum([a.a*a.atoms_n for a in self.element])
 

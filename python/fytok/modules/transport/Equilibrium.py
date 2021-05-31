@@ -179,13 +179,13 @@ class EquilibriumProfiles1D(Profiles):
     @sp_property
     def volume(self) -> Function:
         """Volume enclosed in the flux surface[m ^ 3]"""
-        return self.vprime.antiderivative
+        return self.vprime.antiderivative(self._grid.psi_norm)
 
     @sp_property
     def ffprime(self) -> Function:
         """	Derivative of F w.r.t. Psi, multiplied with F[T ^ 2.m ^ 2/Wb]. """
         # return self._parent._ffprime  # Function(self.psi_norm, self._coord.ffprime(self.psi_norm))
-        return self._coord._ffprime(self._grid.psi_norm)
+        return self._coord._ffprime
 
     @sp_property
     def f_df_dpsi(self) -> Function:
@@ -195,7 +195,7 @@ class EquilibriumProfiles1D(Profiles):
     @sp_property
     def fpol(self) -> Function:
         """Diamagnetic function(F=R B_Phi)[T.m]."""
-        return self._coord.fpol(self._grid.psi_norm)
+        return self._coord.fpol
 
     @sp_property
     def f(self) -> Function:
@@ -204,7 +204,7 @@ class EquilibriumProfiles1D(Profiles):
 
     @sp_property
     def pprime(self) -> Function:
-        return self._coord._pprime(self._grid.psi_norm)
+        return self._coord._pprime
 
     @sp_property
     def dpressure_dpsi(self) -> Function:
@@ -220,12 +220,12 @@ class EquilibriumProfiles1D(Profiles):
     @sp_property
     def j_tor(self) -> Function:
         r"""Flux surface averaged toroidal current density = average(j_tor/R) / average(1/R) {dynamic}[A.m ^ -2]. """
-        return self.plasma_current.derivative / (self._coord.psi_boundary - self._coord.psi_axis)/self.dvolume_dpsi * self._r0
+        return self.plasma_current.derivative() / (self._coord.psi_boundary - self._coord.psi_axis)/self.dvolume_dpsi * self._r0
 
     @sp_property
     def j_parallel(self) -> Function:
         r"""Flux surface averaged parallel current density = average(j.B) / B0, where B0 = Equilibrium/Global/Toroidal_Field/B0 {dynamic}[A/m ^ 2]. """
-        return (self.fpol**2)/self.dvolume_dpsi * ((self.plasma_current/self.fpol).derivative / (self._coord.psi_boundary - self._coord.psi_axis))/self._b0
+        return (self.fpol**2)/self.dvolume_dpsi * ((self.plasma_current/self.fpol).derivative() / (self._coord.psi_boundary - self._coord.psi_axis))/self._b0
 
     @sp_property
     def dphi_dpsi(self) -> Function:
@@ -247,16 +247,16 @@ class EquilibriumProfiles1D(Profiles):
             .. math::
                 \Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi
         """
-        return self._coord.phi(self._grid.psi_norm)
+        return self._coord.phi
 
     @sp_property
     def rho_tor(self) -> Function:
         """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0[m]"""
-        return self._coord.rho_tor(self._grid.psi_norm)
+        return self._coord.rho_tor
 
     @sp_property
     def rho_tor_norm(self) -> Function:
-        return self._coord.rho_tor_norm(self._grid.psi_norm)
+        return self._coord.rho_tor_norm
 
     @sp_property
     def drho_tor_dpsi(self) -> Function:
@@ -349,7 +349,7 @@ class EquilibriumProfiles1D(Profiles):
             .. math:: \left\langle\left |\frac{\nabla\rho}{R}\right|^{2}\right\rangle
         """
         return Function(self._grid.psi_norm[1:], self._coord.surface_average(self._coord.grad_psi2/(self._coord.r)**2)[1:] / (self.dpsi_drho_tor[1:]**2))
-        # return Function(self._grid.psi_norm, Function(self._grid.psi_norm[1:], d[1:])(self._grid.psi_norm))
+        # return Function(self._grid.psi_norm, Function(self._grid.psi_norm[1:], d[1:]))
 
     @sp_property
     def gm3(self) -> Function:
@@ -393,7 +393,7 @@ class EquilibriumProfiles1D(Profiles):
         """
         return Function(self._grid.psi_norm[1:], self._coord.surface_average(self._coord.norm_grad_psi)[1:]/self.dpsi_drho_tor[1:])
         # d = self._coord.surface_average(self.norm_grad_rho_tor)
-        # return Function(self._grid.psi_norm, Function(self._grid.psi_norm[1:], d[1:])(self._grid.psi_norm))
+        # return Function(self._grid.psi_norm, Function(self._grid.psi_norm[1:], d[1:]))
 
     @sp_property
     def gm8(self) -> Function:
@@ -414,7 +414,7 @@ class EquilibriumProfiles1D(Profiles):
     @sp_property
     def magnetic_shear(self) -> Function:
         """Magnetic shear, defined as rho_tor/q . dq/drho_tor[-]	 """
-        return self.rho_tor/self.q * self.q.derivative
+        return self.rho_tor/self.q * self.q.derivative()
 
     @sp_property
     def rho_volume_norm(self) -> Function:
@@ -443,15 +443,15 @@ class EquilibriumProfiles1D(Profiles):
         return NotImplemented
 
     @sp_property
-    def trapped_fraction(self):
+    def trapped_fraction(self) -> Function:
         """Trapped particle fraction[-]
             Tokamak 3ed, 14.10
         """
-        d = self.get("trapped_fraction", None)
+        d = self["trapped_fraction"]
         if not isinstance(d, np.ndarray):
             epsilon = self.rho_tor/self._r0
             d = np.asarray(1.0 - (1-epsilon)**2/np.sqrt(1.0-epsilon**2)/(1+1.46*np.sqrt(epsilon)))
-        return Function(self._grid.psi_norm, d)
+        return d
 
     @sp_property
     def b_field_max(self):

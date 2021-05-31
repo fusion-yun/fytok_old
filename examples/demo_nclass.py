@@ -4,7 +4,7 @@ from fytok.modules.transport.CoreTransport import CoreTransport
 from fytok.Tokamak import Tokamak
 from spdm.data.File import File
 from spdm.data.Function import Function
-from spdm.numlib import constants
+from spdm.numlib import constants, np
 from spdm.util.logger import logger
 from spdm.util.plot_profiles import plot_profiles, sp_figure
 
@@ -35,7 +35,7 @@ if __name__ == "__main__":
                                 "time_slice": {
                                     "profiles_1d": eqdsk.entry.find("profiles_1d"),
                                     "profiles_2d": eqdsk.entry.find("profiles_2d"),
-                                    "coordinate_system": {"grid": {"dim1": 100, "dim2": 256}}
+                                    "coordinate_system": {"grid": {"dim1":200, "dim2": 256}}
                                 },
                                 "vacuum_toroidal_field":  eqdsk.entry.find("vacuum_toroidal_field"),
                                 })
@@ -218,16 +218,16 @@ if __name__ == "__main__":
                 (core_profile.electrons.pressure,                                                        r"$p_e $"),
                 (core_profile.electrons.density,                                                         r"$n_e $"),
                 (core_profile.electrons.temperature,                                                     r"$T_e $"),
-                (core_profile.electrons.pressure.derivative,                                     r"$p_e^{\prime}$"),
-                (core_profile.electrons.density.derivative,                                      r"$n_e^{\prime}$"),
-                (core_profile.electrons.temperature.derivative,                                  r"$T_e^{\prime}$"),
+                (core_profile.electrons.pressure.derivative(),                                   r"$p_e^{\prime}$"),
+                (core_profile.electrons.density.derivative(),                                    r"$n_e^{\prime}$"),
+                (core_profile.electrons.temperature.derivative(),                                r"$T_e^{\prime}$"),
 
             ],
             x_axis=(core_profile.grid.rho_tor_norm,                                   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
     ###################################################################################################
-    if True:
+    if False:
         core_transport = CoreTransport({"model": [
             {"code": {"name": "neoclassical"}},
             # {"code": {"name": "nclass"}},
@@ -308,7 +308,7 @@ if __name__ == "__main__":
             # annotation=core_transport.model[0].identifier.name,
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
-    if False:
+    if True:
         core_sources = CoreSources({"source": [
             {"code": {"name": "bootstrap_current"}},
             # {"code": {"name": "spitzer"}},
@@ -334,10 +334,10 @@ if __name__ == "__main__":
                 #     (core_source_1d.conductivity_parallel*11/14,
                 #      r"$\sigma_{\parallel}^{wesson}$"),
                 # ],
-                # [
-                (Function(bs_r_nrom, baseline["Jbs"].values*1.0e6), r"$j_{bootstrap}^{astra}$", {"marker": "+"}),
-                (core_source_1d.j_parallel,                                    r"$j_{bootstrap}^{wesson}$"),
-                # ],
+                [
+                    (Function(bs_r_nrom, baseline["Jbs"].values*1.0e6), r"$j_{bootstrap}^{astra}$", {"marker": "+"}),
+                    (core_source_1d.j_parallel,                                    r"$j_{bootstrap}^{wesson}$"),
+                ],
 
                 # (core_source_1d.e_field_radial,                                             r"$E_{radial}$"),
                 # (tok.equilibrium.time_slice[-1].profiles_1d.trapped_fraction(
