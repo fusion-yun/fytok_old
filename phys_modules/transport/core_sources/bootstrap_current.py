@@ -33,17 +33,15 @@ class BootstrapCurrent(CoreSources.Source):
 
         core_profile = core_profiles.profiles_1d
 
-        rho_tor_norm = core_profile.grid.rho_tor_norm
-        rho_tor = core_profile.grid.rho_tor
-        psi_norm = core_profile.grid.psi_norm
-        psi = core_profile.grid.psi
-        q = equilibrium.time_slice.profiles_1d.q(core_profile.grid.psi_norm)
+        rho_tor_norm = (core_profile.grid.rho_tor_norm[:-1]+core_profile.grid.rho_tor_norm[1:])*0.5
+        rho_tor = (core_profile.grid.rho_tor[:-1]+core_profile.grid.rho_tor[1:])*0.5
+        psi_norm = (core_profile.grid.psi_norm[:-1]+core_profile.grid.psi_norm[1:])*0.5
+
+        q = equilibrium.time_slice.profiles_1d.q(psi_norm)
 
         # Tavg = np.sum([ion.density*ion.temperature for ion in core_profile.ion]) / \
         #     np.sum([ion.density for ion in core_profile.ion])
-        rho_tor_norm[0] = 0.001
         # max(np.asarray(1.07e-4*((Te[0]/1000)**(1/2))/B0), rho_tor[0])   # Larmor radius,   eq 14.7.2
-        rho_tor[0] = rho_tor_norm[0]*rho_tor[-1]
 
         Te = core_profile.electrons.temperature(rho_tor_norm)
         Ne = core_profile.electrons.density(rho_tor_norm)
@@ -113,8 +111,8 @@ class BootstrapCurrent(CoreSources.Source):
 
         j_bootstrap = - j_bootstrap * x/(2.4+5.4*x+2.6*x**2) * Pe * \
             equilibrium.time_slice.profiles_1d.fpol(psi_norm) * q / rho_tor / rho_tor[-1] / (2.0*constants.pi*B0)
-        
-        self.profiles_1d.j_parallel = j_bootstrap
+
+        self.profiles_1d.j_parallel = Function(rho_tor_norm, j_bootstrap)
         return 0.0
 
 

@@ -100,9 +100,10 @@ class CoreSourcesNeutral(Profiles):
 
 
 class CoreSourcesProfiles1D(Profiles):
-    def __init__(self, *args, grid: RadialGrid = None, **kwargs):
-        super().__init__(*args,  **kwargs)
-        self._grid = grid or self._parent._grid
+    def __init__(self, *args, grid: RadialGrid = None, parent=None, **kwargs):
+        grid = grid or parent._grid
+        super().__init__(*args, axis=grid.rho_tor_norm, **kwargs)
+        self._grid = grid
 
     @property
     def time(self) -> float:
@@ -132,24 +133,24 @@ class CoreSourcesProfiles1D(Profiles):
         return res
 
     @sp_property
-    def total_ion_power_inside(self):
+    def total_ion_power_inside(self) -> Function:
         return NotImplemented
 
     @sp_property
-    def torque_tor_inside(self):
+    def torque_tor_inside(self) -> Function:
         return NotImplemented
 
     @sp_property
-    def j_parallel(self):
-        return Function(self.grid.rho_tor_norm, self.get("j_parallel", None))
+    def j_parallel(self) -> Function:
+        return self["j_parallel"]
 
     @sp_property
-    def current_parallel_inside(self):
-        return Function(self.grid.rho_tor_norm, self["current_parallel_inside"])
+    def current_parallel_inside(self) -> Function:
+        return self["current_parallel_inside"]
 
     @sp_property
-    def conductivity_parallel(self):
-        return Function(self.grid.rho_tor_norm, self["conductivity_parallel"])
+    def conductivity_parallel(self) -> Function:
+        return self["conductivity_parallel"]
 
     @sp_property
     def Qei(self):
