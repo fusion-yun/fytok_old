@@ -35,7 +35,7 @@ if __name__ == "__main__":
                                 "time_slice": {
                                     "profiles_1d": eqdsk.entry.find("profiles_1d"),
                                     "profiles_2d": eqdsk.entry.find("profiles_2d"),
-                                    "coordinate_system": {"grid": {"dim1":200, "dim2": 256}}
+                                    "coordinate_system": {"grid": {"dim1": 200, "dim2": 256}}
                                 },
                                 "vacuum_toroidal_field":  eqdsk.entry.find("vacuum_toroidal_field"),
                                 })
@@ -336,7 +336,9 @@ if __name__ == "__main__":
                 # ],
                 [
                     (Function(bs_r_nrom, baseline["Jbs"].values*1.0e6), r"$j_{bootstrap}^{astra}$", {"marker": "+"}),
-                    (core_source_1d.j_parallel,                                    r"$j_{bootstrap}^{wesson}$"),
+                    (core_source_1d.j_parallel,                                         r"$j_{bootstrap}^{wesson}$"),
+                    (core_sources.source.combine("profiles_1d.j_parallel"),             r"$j_{bootstrap}^{wesson}$"),
+
                 ],
 
                 # (core_source_1d.e_field_radial,                                             r"$E_{radial}$"),
