@@ -36,7 +36,7 @@ if __name__ == "__main__":
                                 "time_slice": {
                                     "profiles_1d": eqdsk.entry.find("profiles_1d"),
                                     "profiles_2d": eqdsk.entry.find("profiles_2d"),
-                                    "coordinate_system": {"grid": {"dim1": 128, "dim2": 256}}
+                                    "coordinate_system": {"grid": {"dim1": 64, "dim2": 128}}
                                 },
                                 "vacuum_toroidal_field":  eqdsk.entry.find("vacuum_toroidal_field"),
                                 })
