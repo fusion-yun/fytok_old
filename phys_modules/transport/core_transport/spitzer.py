@@ -7,7 +7,6 @@ from fytok.modules.transport.CoreProfiles import CoreProfiles
 from fytok.modules.transport.CoreTransport import CoreTransport
 from fytok.modules.transport.Equilibrium import Equilibrium
 from spdm.data.Function import Function
-from spdm.data.Node import Dict, List, Node
 from spdm.util.logger import logger
 
 
@@ -34,21 +33,21 @@ class Spitzer(CoreTransport.Model):
                core_profiles: CoreProfiles,
                **kwargs):
 
-        super().update(*args, core_profiles=core_profiles, **kwargs)
+        super().update(*args, **kwargs)
 
         eV = constants.electron_volt
         B0 = equilibrium.vacuum_toroidal_field.b0
         R0 = equilibrium.vacuum_toroidal_field.r0
 
         core_profile = core_profiles.profiles_1d
-        trans = self.profiles_1d
 
         rho_tor_norm = core_profile.grid.rho_tor_norm
         rho_tor = core_profile.grid.rho_tor
         psi_norm = core_profile.grid.psi_norm
         psi = core_profile.grid.psi
-        q = equilibrium.profiles_1d.q(psi_norm)
-
+        q = equilibrium.time_slice.profiles_1d.q(psi_norm)
+        rho_tor_norm[0] = 0.001
+        rho_tor[0] = rho_tor_norm[0]*rho_tor[-1]
         # Tavg = np.sum([ion.density*ion.temperature for ion in core_profile.ion]) / \
         #     np.sum([ion.density for ion in core_profile.ion])
 
@@ -71,9 +70,9 @@ class Spitzer(CoreTransport.Model):
         vTe = np.sqrt(Te*eV/constants.electron_mass)
 
         # Larmor radius,   eq 14.7.2
-        rho_e = 1.07e-4*((Te/1000)**(1/2))/B0
+        # rho_e = 1.07e-4*((Te/1000)**(1/2))/B0
 
-        rho_tor[0] = max(rho_e[0], rho_tor[0])
+        # rho_tor[0] = max(rho_e[0], rho_tor[0])
 
         epsilon = rho_tor/R0
         epsilon12 = np.sqrt(epsilon)
@@ -83,14 +82,14 @@ class Spitzer(CoreTransport.Model):
         #
         eta_s = 1.65e-9*lnCoul*(Te/1000)**(-3/2)
         nu_e = R0*q/vTe/tau_e/epsilon32
-        Zeff = core_profile.zeff
+        Zeff = core_profile.zeff(rho_tor_norm)
         fT = 1.0 - (1-epsilon)**2/np.sqrt(1.0-epsilon**2)/(1+1.46*np.sqrt(epsilon))
         phi = fT/(1.0+(0.58+0.20*Zeff)*nu_e)
         C = 0.56/Zeff*(3.0-Zeff)/(3.0+Zeff)
 
         eta = eta_s*Zeff/(1-phi)/(1.0-C*phi)*(1.0+0.27*(Zeff-1.0))/(1.0+0.47*(Zeff-1.0))
 
-        self.profiles_1d.conductivity_parallel = 1.0/eta
+        self.profiles_1d.conductivity_parallel = Function(rho_tor_norm, np.asarray(1.0/eta))
 
         return 0.00
 

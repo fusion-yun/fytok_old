@@ -228,7 +228,7 @@ if __name__ == "__main__":
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
     ###################################################################################################
-    if False:
+    if True:
         core_transport = CoreTransport({"model": [
             # {"code": {"name": "neoclassical"}},
             # {"code": {"name": "nclass"}},
@@ -278,17 +278,10 @@ if __name__ == "__main__":
                 [
                     (Function(bs_r_nrom, baseline["Joh"].values*1.0e6 / baseline["U"].values * \
                               (2.0*constants.pi * tok.equilibrium.vacuum_toroidal_field.r0)),     r"$\sigma_{\parallel}^{astra}$", {"marker": "+"}),
-                    (core_transport1d.conductivity_parallel*11/14,
-                     r"$\sigma_{\parallel}^{wesson}$"),
-                ],
-                [
-                    (Function(bs_r_nrom, baseline["Jbs"].values*1.0e6),  r"$j_{bootstrap}^{astra}$", {"marker": "+"}),
-                    (core_transport1d.j_bootstrap,                                    r"$j_{bootstrap}^{wesson}$"),
+                    (core_transport1d.conductivity_parallel,                 r"$\sigma_{\parallel}^{wesson}$"),
                 ],
 
                 # (core_transport1d.e_field_radial,                                             r"$E_{radial}$"),
-                (core_transport1d.conductivity_parallel,                                  r"$\sigma_{\parallel}$"),
-
                 # (tok.equilibrium.time_slice[-1].profiles_1d.trapped_fraction(
                 # core_transport.model[0].profiles_1d[-1].grid_v.psi_norm),      r"trapped"),
                 # (core_profile.electrons.pressure,                                                  r"$p_{e}$"),

@@ -2,11 +2,11 @@ import collections
 from dataclasses import dataclass
 from typing import Optional
 
-from spdm.numlib import np
 from spdm.data.Function import Function
-from spdm.data.Node import Dict, List, sp_property
+from spdm.data.Node import Dict, List, Node, sp_property
 from spdm.data.Profiles import Profiles
 from spdm.flow.Actor import Actor
+from spdm.numlib import np
 from spdm.util.logger import logger
 from spdm.util.utilities import _not_found_
 
@@ -132,7 +132,7 @@ class CoreTransportNeutral(Species):
         return self["energy"]
 
 
-class CoreTransportProfiles1D(Profiles):
+class CoreTransportProfiles1D(Dict[Node]):
     Ion = CoreTransportIon
     Neutral = CoreTransportNeutral
     Electrons = CoreTransportElectrons
@@ -325,6 +325,4 @@ class CoreTransport(IDS):
         return self["model"]
 
     def update(self,  *args,  **kwargs) -> float:
-        res = [model.update(*args,  **kwargs) for model in self.model]
-        redisual = sum(res)
-        return super().update(*args, **kwargs) + redisual
+        return super().update(*args, **kwargs) + self.model.update(*args,  **kwargs)

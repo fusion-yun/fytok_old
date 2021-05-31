@@ -357,5 +357,4 @@ class CoreSources(IDS):
         return List[CoreSourcesSource](self["source"], grid=self._grid, parent=self)
 
     def update(self,  *args,  **kwargs) -> float:
-        redisual = sum([source.update(*args,  **kwargs) for source in self.source])
-        return super().update(*args, **kwargs) + redisual
+        return super().update(*args, **kwargs) + self.source.update(*args, **kwargs)
