@@ -295,17 +295,17 @@ class CoreProfiles1D(Profiles):
     @sp_property
     def electrons(self) -> CoreProfilesElectrons:
         """Quantities related to the electrons"""
-        return CoreProfilesElectrons(self["electrons"], axis=self._grid.rho_tor_norm, parent=self)
+        return CoreProfilesElectrons(self._entry.find("electrons"), axis=self._grid.rho_tor_norm, parent=self)
 
     @sp_property
     def ion(self) -> List[CoreProfilesIon]:
         """Quantities related to the different ion species"""
-        return List[CoreProfilesIon](self["ion"],  parent=self)
+        return List[CoreProfilesIon](self._entry.find("ion"), axis=self._grid.rho_tor_norm,   parent=self)
 
     @sp_property
     def neutral(self) -> List[CoreProfilesNeutral]:
         """Quantities related to the different neutral species"""
-        return List[CoreProfilesNeutral](self["neutral"],  parent=self)
+        return List[CoreProfilesNeutral](self._entry.find("neutral"), axis=self._grid.rho_tor_norm,   parent=self)
 
     @sp_property
     def t_i_average(self) -> Function:
@@ -459,20 +459,15 @@ class CoreProfiles1D(Profiles):
         def __init__(self,   *args, axis=None, parent=None, **kwargs):
             super().__init__(*args, axis=axis if axis is not None else parent._axis,  **kwargs)
 
-        def __getitem__(self, path):
-            logger.debug((self._entry._prefix, path))
-            return super().__getitem__(path)
-
         @sp_property
         def parallel(self) -> Function:
-            logger.debug(self._entry)
             return self["parallel"]
 
     @sp_property
     def e_field(self) -> EField:
         """Electric field, averaged on the magnetic surface. E.g for the parallel component, average(E.B) / B0,
             using core_profiles/vacuum_toroidal_field/b0[V.m ^ -1]  """
-        return self["e_field"]
+        return CoreProfiles1D.EField(self._entry.find("e_field"), parent=self)
         # return CoreProfiles1D.EField(self["e_field"], axis=self._axis, parent=self)
 
     @sp_property
