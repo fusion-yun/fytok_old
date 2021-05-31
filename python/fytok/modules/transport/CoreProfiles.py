@@ -308,34 +308,34 @@ class CoreProfiles1D(Profiles):
         return List[CoreProfilesNeutral](self["neutral"],  parent=self)
 
     @sp_property
-    def t_i_average(self):
+    def t_i_average(self) -> Function:
         """Ion temperature(averaged on charge states and ion species) {dynamic}[eV]"""
-        return Function(self._axis, np.sum([np.asarray(ion.temperature*ion.density) for ion in self.ion])/np.sum([np.asarray(ion.density) for ion in self.ion]))
+        return np.sum([np.asarray(ion.temperature*ion.density) for ion in self.ion])/np.sum([np.asarray(ion.density) for ion in self.ion])
 
     @sp_property
-    def t_i_average_fit(self):
+    def t_i_average_fit(self) -> Function:
         """Information on the fit used to obtain the t_i_average profile[eV]"""
-        return Function(self._axis, self["t_i_average_fit"])
+        return self["t_i_average_fit"]
 
     @sp_property
-    def n_i_total(self):
+    def n_i_total(self) -> Function:
         """ total ion density(sum over species and charge states)   (thermal+non-thermal) {dynamic}[-]"""
         return Function(self._axis, np.sum([np.asarray(ion.z_ion*ion.density) for ion in self.ion]))
 
     @sp_property
-    def n_i_total_over_n_e(self):
+    def n_i_total_over_n_e(self) -> Function:
         """Ratio of total ion density(sum over species and charge states) over electron density. (thermal+non-thermal) {dynamic}[-]"""
         return self.n_i_total/self.electrons.density
 
     @sp_property
-    def n_i_thermal_total(self):
+    def n_i_thermal_total(self) -> Function:
         """Total ion thermal density(sum over species and charge states) {dynamic}[m ^ -3]"""
-        return Function(self._axis, np.sum([np.asarray(ion.z_ion*ion.density_thermal) for ion in self.ion]))
+        return np.sum([np.asarray(ion.z_ion*ion.density_thermal) for ion in self.ion])
 
     @sp_property
-    def zeff(self):
+    def zeff(self) -> Function:
         """Effective charge {dynamic}[-]"""
-        d = self.get("zeff")
+        d = self["zeff"]
         if isinstance(d, np.ndarray):
             return d
         else:
@@ -345,38 +345,38 @@ class CoreProfiles1D(Profiles):
             return sum([np.asarray(ion.z_ion*ion.z_ion*ion.density) for ion in self.ion]) / self.electrons.density
 
     @sp_property
-    def zeff_fit(self):
+    def zeff_fit(self) -> Function:
         """Information on the fit used to obtain the zeff profile[-]  """
         return NotImplemented
 
     @sp_property
-    def momentum_tor(self):
+    def momentum_tor(self) -> Function:
         """Total plasma toroidal momentum, summed over ion species and electrons weighted by their density and major radius,
             i.e. sum_over_species(n*R*m*Vphi) {dynamic}[kg.m ^ -1.s ^ -1]"""
         return NotImplemented
 
     @sp_property
-    def pressure_ion_total(self):
+    def pressure_ion_total(self) -> Function:
         """Total(sum over ion species) thermal ion pressure {dynamic}[Pa]"""
         return np.sum([ion.pressure for ion in self.ion])
 
     @sp_property
-    def pressure_thermal(self):
+    def pressure_thermal(self) -> Function:
         """Thermal pressure(electrons+ions) {dynamic}[Pa]"""
         return NotImplemented
 
     @sp_property
-    def pressure_perpendicular(self):
+    def pressure_perpendicular(self) -> Function:
         """Total perpendicular pressure(electrons+ions, thermal+non-thermal) {dynamic}[Pa]"""
         return NotImplemented
 
     @sp_property
-    def pressure_parallel(self):
+    def pressure_parallel(self) -> Function:
         """Total parallel pressure(electrons+ions, thermal+non-thermal) {dynamic}[Pa]"""
         return NotImplemented
 
     @sp_property
-    def j_total(self):
+    def j_total(self) -> Function:
         """Total parallel current density = average(jtot.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
         d = self["j_total"]
         if isinstance(d, np.ndarray) or d != None:
@@ -387,42 +387,43 @@ class CoreProfiles1D(Profiles):
     @sp_property
     def current_parallel_inside(self) -> Function:
         """Parallel current driven inside the flux surface. Cumulative surface integral of j_total {dynamic}[A]"""
-        return Function(self._axis, self["current_parallel_inside"])
+        return self["current_parallel_inside"]
 
     @sp_property
-    def j_tor(self):
+    def j_tor(self) -> Function:
         """Total toroidal current density = average(J_Tor/R) / average(1/R) {dynamic}[A/m ^ 2]"""
         d = self["j_tor"]
         if isinstance(d, np.ndarray) or d != None:
-            return Function(self._axis, d)
+            return d
         else:
             return NotImplemented
 
     @sp_property
-    def j_ohmic(self):
+    def j_ohmic(self) -> Function:
         """Ohmic parallel current density = average(J_Ohmic.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
         return self.conductivity_parallel*self.e_field.parallel  # Function(self._axis, ["j_ohmic"])
 
     @sp_property
-    def j_non_inductive(self):
+    def j_non_inductive(self) -> Function:
         """Non-inductive(includes bootstrap) parallel current density = average(jni.B) / B0,
         where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
         return self.j_total - self.j_ohmic
 
     @sp_property
-    def j_bootstrap(self):
+    def j_bootstrap(self) -> Function:
         """Bootstrap current density = average(J_Bootstrap.B) / B0,
             where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
-        return Function(self._axis, self["j_bootstrap"])
+        return self["j_bootstrap"]
 
     @sp_property
-    def conductivity_parallel(self):
+    def conductivity_parallel(self) -> Function:
         """Parallel conductivity {dynamic}[ohm ^ -1.m ^ -1]"""
 
         d = self["conductivity_parallel"]
 
-        if isinstance(d, np.ndarray) or d != None:
-            return Function(self._axis, d)
+        if isinstance(d, np.ndarray) or (hasattr(d.__class__, 'empty') and not d.empty):
+            return d
+
         else:
             Te = self.electrons.temperature
             ne = self.electrons.density
@@ -443,54 +444,58 @@ class CoreProfiles1D(Profiles):
                 / constants.m_e
 
     @sp_property
-    def coulomb_logarithm(self):
+    def coulomb_logarithm(self) -> Function:
         """ Coulomb logarithm, Tokamaks   Ch.14.5 p727 ,2003
         """
-        Te = np.asarray(self.electrons.temperature)
-        Ne = np.asarray(self.electrons.density)
+        Te = self.electrons.temperature
+        Ne = self.electrons.density
 
         # Coulomb logarithm
         #  Ch.14.5 p727 Tokamaks 2003
-        lnCoul = (14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +\
+        return (14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +\
             (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000))*(Te >= 10)
-
-        return lnCoul
 
     class EField(Profiles):
         def __init__(self,   *args, axis=None, parent=None, **kwargs):
             super().__init__(*args, axis=axis if axis is not None else parent._axis,  **kwargs)
 
+        def __getitem__(self, path):
+            logger.debug((self._entry._prefix, path))
+            return super().__getitem__(path)
+
         @sp_property
-        def parallel(self):
-            return Function(self._axis, self["parallel"])
+        def parallel(self) -> Function:
+            logger.debug(self._entry)
+            return self["parallel"]
 
     @sp_property
-    def e_field(self):
+    def e_field(self) -> EField:
         """Electric field, averaged on the magnetic surface. E.g for the parallel component, average(E.B) / B0,
             using core_profiles/vacuum_toroidal_field/b0[V.m ^ -1]  """
-        return CoreProfiles1D.EField(self["e_field"], axis=self._axis, parent=self)
+        return self["e_field"]
+        # return CoreProfiles1D.EField(self["e_field"], axis=self._axis, parent=self)
 
     @sp_property
-    def phi_potential(self):
+    def phi_potential(self) -> Function:
         """Electrostatic potential, averaged on the magnetic flux surface {dynamic}[V]"""
-        return Function(self._axis, self["phi_potential"])
+        return self["phi_potential"]
 
     @sp_property
-    def rotation_frequency_tor_sonic(self):
+    def rotation_frequency_tor_sonic(self) -> Function:
         """Derivative of the flux surface averaged electrostatic potential with respect to the poloidal flux, multiplied by - 1.
         This quantity is the toroidal angular rotation frequency due to the ExB drift, introduced in formula(43) of Hinton and Wong,
         Physics of Fluids 3082 (1985), also referred to as sonic flow in regimes in which the toroidal velocity is dominant over the
         poloidal velocity Click here for further documentation. {dynamic}[s ^ -1]"""
-        return Function(self._axis, self["rotation_frequency_tor_sonic"])
+        return self["rotation_frequency_tor_sonic"]
 
     @sp_property
-    def q(self):
+    def q(self) -> Function:
         """Safety factor(IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic}[-].
         This quantity is COCOS-dependent, with the following transformation: """
         return self["q"]
 
     @sp_property
-    def magnetic_shear(self):
+    def magnetic_shear(self) -> Function:
         """Magnetic shear, defined as rho_tor/q . dq/drho_tor {dynamic}[-]"""
         return self["magnetic_shear"]
 

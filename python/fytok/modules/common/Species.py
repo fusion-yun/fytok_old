@@ -121,12 +121,12 @@ class SpeciesIon(Species):
     def z_ion(self) -> float:
         """Ion charge (of the dominant ionisation state; lumped ions are allowed),
         volume averaged over plasma radius {dynamic} [Elementary Charge Unit]  FLT_0D  """
-        return self._entry.get("z_ion") or 1
+        return self["z_ion"] or 1
 
     @sp_property
     def neutral_index(self) -> int:
         """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
-        return self._entry.get("neutral_index")
+        return self["neutral_index"]
 
     @sp_property
     def z_ion_1d(self):

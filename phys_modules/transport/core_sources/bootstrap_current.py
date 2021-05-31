@@ -24,7 +24,7 @@ class BootstrapCurrent(CoreSources.Source):
                equilibrium: Equilibrium,
                core_profiles: CoreProfiles,
                **kwargs):
-
+        return 0.0
         super().update(*args, core_profiles=core_profiles, **kwargs)
 
         eV = constants.electron_volt

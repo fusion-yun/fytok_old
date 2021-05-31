@@ -4,9 +4,8 @@ from fytok.modules.transport.CoreProfiles import CoreProfiles
 from fytok.modules.transport.CoreTransport import CoreTransport
 from fytok.modules.transport.Equilibrium import Equilibrium
 from spdm.data.Function import Function
+from spdm.numlib import constants, np
 from spdm.util.logger import logger
-from spdm.numlib import np
-from spdm.numlib from spdm.numlib import constants
 
 
 class NeoClassical(CoreTransport.Model):
@@ -31,8 +30,8 @@ class NeoClassical(CoreTransport.Model):
                equilibrium: Equilibrium,
                core_profiles: CoreProfiles,
                **kwargs):
-
-        super().update(*args, core_profiles=core_profiles, **kwargs)
+        return 0.0 
+        return super().update(*args, core_profiles=core_profiles, **kwargs)
 
         eV = constants.electron_volt
         B0 = abs(equilibrium.vacuum_toroidal_field.b0)

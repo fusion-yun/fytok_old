@@ -1,6 +1,3 @@
-
-from logging import log
-
 import pandas as pd
 from fytok.modules.transport.CoreSources import CoreSources
 from fytok.modules.transport.CoreTransport import CoreTransport
@@ -50,7 +47,7 @@ if __name__ == "__main__":
                   equilibrium={
                       "mesh": True,
                       "boundary": True,
-                      "scalar_field": []  # [("psirz", {"levels": 16, "linewidths": 0.1}), ],
+                      "scalar_field": [("psirz", {"levels": 16, "linewidths": 0.1}), ],
                   }
                   ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
 
@@ -69,8 +66,8 @@ if __name__ == "__main__":
                 #     (eq_profile.fpol,                                                                 r"$fpol$"),
                 # ],
                 [
-                    (Function(bs_psi, baseline["q"].values),       r"$q^{astra}$", {"marker": "+"}),
-                    (eq_profile.q,                                                                       r"$q$"),
+                    (Function(bs_psi, baseline["q"].values),                     r"$q^{astra}$", {"marker": "+"}),
+                    (eq_profile.q,                                                                        r"$q$"),
                     # (eq_profile.dphi_dpsi,                                             r"$\frac{d\phi}{d\psi}$"),
                 ],
                 [
@@ -87,13 +84,12 @@ if __name__ == "__main__":
                 ],
                 [
                     (Function(bs_psi, baseline["shif"].values), r"$\Delta^{astra}$ shafranov shift", {"marker": "+"}),
-                    (eq_profile.geometric_axis.r-tok.equilibrium.vacuum_toroidal_field.r0,               r"$\Delta$ "),
+                    (eq_profile.geometric_axis.r-tok.equilibrium.vacuum_toroidal_field.r0,          r"$\Delta$ "),
                 ],
                 [
                     (Function(bs_psi, baseline["k"].values),         r"$k^{astra}$ elongation", {"marker": "+"}),
                     (eq_profile.elongation,                                                 r"$k$ elongation"),
                 ],
-                (eq_profile.dvolume_dpsi,                                                 r"$\frac{dV}{d\psi}$"),
 
                 # (eq_profile.gm1,                                             r"$gm1=\left<\frac{1}{R^2}\right>$"),
                 # (eq_profile.gm2,                    r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
@@ -129,7 +125,7 @@ if __name__ == "__main__":
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
     ###################################################################################################
-    if False:
+    if True:
 
         Te = Function(bs_r_nrom, baseline["TE"].values*1000)
         Ti = Function(bs_r_nrom, baseline["TI"].values*1000)
@@ -212,6 +208,8 @@ if __name__ == "__main__":
                     (Function(bs_r_nrom, baseline["Zeff"].values),                            r"$Z_{eff}^{astra}$"),
                     (core_profile.zeff,                                                               r"$z_{eff}$"),
                 ],
+                (core_profile.e_field.parallel,                                                 r"$E_{\parallel}$"),
+
                 [
                     (core_profile.j_ohmic,                                                          r"$j_{ohmic}$"),
                     (Function(bs_r_nrom, baseline["Joh"].values),                              r"$j_{oh}^{astra}$"),
@@ -229,7 +227,7 @@ if __name__ == "__main__":
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
     ###################################################################################################
-    if False:
+    if True:
         core_transport = CoreTransport({"model": [
             {"code": {"name": "neoclassical"}},
             # {"code": {"name": "nclass"}},
@@ -250,7 +248,7 @@ if __name__ == "__main__":
         # core_transport.advance(dt=0.1,
         #                        equilibrium=tok.equilibrium.current_state,
         #                        core_profiles=tok.core_profiles.current_state)
-
+    if False:
         # core_transport1d = core_transport.current_state.profiles_1d
         core_transport1d = core_transport.model[0].profiles_1d
 
