@@ -65,7 +65,7 @@ class NeoClassical(CoreTransport.Model):
         epsilon32 = epsilon**(3/2)
 
         ###########################################################################################
-        #  Sec 14.11 Chang-0Hinton formula for \Chi_i
+        #  Sec 14.11 Chang-Hinton formula for \Chi_i
 
         # Shafranov shift
         delta_ = Function(rho_tor, np.array(
@@ -108,7 +108,7 @@ class NeoClassical(CoreTransport.Model):
 
             chi_i = chi_i/epsilon32*(q**2)*(rho_i**2)/(1.0+0.74*mu_i*epsilon32)
 
-            sp_trans = self.profiles_1d.ion.find(label=sp.label, only_first=True, default_value=_not_found_)
+            sp_trans = self.profiles_1d.ion.find({"label": sp.label}, only_first=True, default_value=_not_found_)
 
             if sp_trans is _not_found_:
                 self.profiles_1d.ion[_next_] = {
@@ -117,7 +117,14 @@ class NeoClassical(CoreTransport.Model):
                     "neutral_index": sp.neutral_index,
                     "element": sp.element._as_list(),
                 }
-            sp_trans = self.profiles_1d.ion.find(label=sp.label, only_first=True, default_value=_not_found_)
+            sp_trans = self.profiles_1d.ion.find({"label": sp.label}, only_first=True, default_value=_not_found_)
+
+            # sp_trans = self.profiles_1d.ion.insert({"label": sp.label}, {
+            #     "label": sp.label,
+            #     "z_ion": sp.z_ion,
+            #     "neutral_index": sp.neutral_index,
+            #     "element": sp.element._as_list(),
+            # })
 
             if sp_trans is _not_found_:
                 raise KeyError(f"Can not create CoreTransport.Model for ion {sp.label}")

@@ -272,7 +272,8 @@ if __name__ == "__main__":
                 [
                     (Function(bs_r_nrom, np.log(baseline["XiNC"].values)),
                      r"$ln \chi_{i,nc}^{astra}$", {"marker": "+"}),
-                    * [(np.log(ion.energy.d),   f"$ln \chi_{{{ion.label},wesson}}$") for ion in core_transport1d.ion],
+                    * [(np.log(ion.energy.d),   f"${ion.label}$", {}, r"$ln \chi$ Wesson")
+                        for ion in core_transport1d.ion],
                 ],
                 [
                     (Function(bs_r_nrom, baseline["Zeff"].values),          r"$Z_{eff}^{astra}$", {"marker": "+"}),
