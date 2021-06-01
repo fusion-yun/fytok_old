@@ -36,7 +36,7 @@ if __name__ == "__main__":
                                 "time_slice": {
                                     "profiles_1d": eqdsk.entry.find("profiles_1d"),
                                     "profiles_2d": eqdsk.entry.find("profiles_2d"),
-                                    "coordinate_system": {"grid": {"dim1": 64, "dim2": 128}}
+                                    "coordinate_system": {"grid": {"dim1": 100, "dim2": 256}}
                                 },
                                 "vacuum_toroidal_field":  eqdsk.entry.find("vacuum_toroidal_field"),
                                 })
@@ -67,7 +67,7 @@ if __name__ == "__main__":
                 #     (eq_profile.fpol,                                                                 r"$fpol$"),
                 # ],
                 [
-                    (Function(bs_psi, baseline["q"].values),                     r"$q^{astra}$", {"marker": "+"}),
+                    (Function(bs_psi, baseline["q"].values),            r"$q^{astra}$", {"marker": "+"}, "$[-]$"),
                     (eq_profile.q,                                                                        r"$q$"),
                     # (eq_profile.dphi_dpsi,                                             r"$\frac{d\phi}{d\psi}$"),
                 ],
@@ -84,12 +84,14 @@ if __name__ == "__main__":
                     (eq_profile.j_parallel,                                                  r"$j_{\parallel}$"),
                 ],
                 [
-                    (Function(bs_psi, baseline["shif"].values), r"$\Delta^{astra}$ shafranov shift", {"marker": "+"}),
-                    (eq_profile.geometric_axis.r-tok.equilibrium.vacuum_toroidal_field.r0,          r"$\Delta$ "),
+                    (Function(bs_psi, baseline["shif"].values),
+                     r"$\Delta^{astra}$", {"marker": "+"}, "shafranov \n shift"),
+                    (eq_profile.geometric_axis.r-tok.equilibrium.vacuum_toroidal_field.r0,
+                     r"$\Delta$ ", {}, "shafranov \n shift"),
                 ],
                 [
-                    (Function(bs_psi, baseline["k"].values),         r"$k^{astra}$ elongation", {"marker": "+"}),
-                    (eq_profile.elongation,                                                 r"$k$ elongation"),
+                    (Function(bs_psi, baseline["k"].values),         r"$k^{astra}$", {"marker": "+"}, "elongation"),
+                    (eq_profile.elongation,                                               r"$k$", {}, "elongation"),
                 ],
 
                 # (eq_profile.gm1,                                             r"$gm1=\left<\frac{1}{R^2}\right>$"),
@@ -230,7 +232,7 @@ if __name__ == "__main__":
     ###################################################################################################
     if True:
         core_transport = CoreTransport({"model": [
-            # {"code": {"name": "neoclassical"}},
+            {"code": {"name": "neoclassical"}},
             # {"code": {"name": "nclass"}},
             {"code": {"name": "spitzer"}},
             # {"code": {"name": "gyroBhom"}},
@@ -244,28 +246,28 @@ if __name__ == "__main__":
 
         plot_profiles(
             [
-                # [
-                #     (core_transport1d.electrons.particles.flux,                                 r"$\Gamma_e$"),
-                #     *[(ion.particles.flux,       f"$\Gamma_{{{ion.label}}}$") for ion in core_transport1d.ion],
-                # ],
-                # [
-                #     (core_transport1d.electrons.particles.d,                                         r"$D_e$"),
-                #     *[(ion.particles.d,               f"$D_{{{ion.label}}}$") for ion in core_transport1d.ion],
-                # ],
-                # [
-                #     (core_transport1d.electrons.particles.v,                                         r"$v_e$"),
-                #     *[(ion.particles.v,               f"$v_{{{ion.label}}}$") for ion in core_transport1d.ion],
-                # ],
-                # [
-                #     (core_transport1d.electrons.energy.flux,                                         r"$q_e$"),
-                #     *[(ion.energy.flux,               f"$q_{{{ion.label}}}$") for ion in core_transport1d.ion],
-                # ],
+                [
+                    (core_transport1d.electrons.particles.flux,                                 r"$\Gamma_e$"),
+                    *[(ion.particles.flux,       f"$\Gamma_{{{ion.label}}}$") for ion in core_transport1d.ion],
+                ],
+                [
+                    (core_transport1d.electrons.particles.d,                                         r"$D_e$"),
+                    *[(ion.particles.d,               f"$D_{{{ion.label}}}$") for ion in core_transport1d.ion],
+                ],
+                [
+                    (core_transport1d.electrons.particles.v,                                         r"$v_e$"),
+                    *[(ion.particles.v,               f"$v_{{{ion.label}}}$") for ion in core_transport1d.ion],
+                ],
+                [
+                    (core_transport1d.electrons.energy.flux,                                         r"$q_e$"),
+                    *[(ion.energy.flux,               f"$q_{{{ion.label}}}$") for ion in core_transport1d.ion],
+                ],
 
-                # (Function(bs_r_nrom, baseline["Xi"].values),          r"$\chi_{i}^{astra}$"),
-                # [
-                #     (core_transport1d.electrons.energy.v,                                         r"$v_{Te}$"),
-                #     *[(ion.energy.v,                f"$v_{{T,{ion.label}}}$") for ion in core_transport1d.ion],
-                # ],
+                (Function(bs_r_nrom, baseline["Xi"].values),          r"$\chi_{i}^{astra}$"),
+                [
+                    (core_transport1d.electrons.energy.v,                                         r"$v_{Te}$"),
+                    *[(ion.energy.v,                f"$v_{{T,{ion.label}}}$") for ion in core_transport1d.ion],
+                ],
                 [
                     (Function(bs_r_nrom, np.log(baseline["XiNC"].values)),
                      r"$ln \chi_{i,nc}^{astra}$", {"marker": "+"}),
@@ -276,7 +278,7 @@ if __name__ == "__main__":
                     (core_profile.zeff,                                                              r"$z_{eff}$"),
                 ],
                 [
-                    (Function(bs_r_nrom, baseline["Joh"].values*1.0e6 / baseline["U"].values * \
+                    (Function(bs_r_nrom, baseline["Joh"].values*1.0e6 / baseline["U"].values *
                               (2.0*constants.pi * tok.equilibrium.vacuum_toroidal_field.r0)),     r"$\sigma_{\parallel}^{astra}$", {"marker": "+"}),
                     (core_transport1d.conductivity_parallel,                 r"$\sigma_{\parallel}^{wesson}$"),
                     (core_transport.model.combine.profiles_1d.conductivity_parallel,  r"$\sigma_{\parallel}$"),
@@ -320,16 +322,16 @@ if __name__ == "__main__":
                 [
                     (Function(bs_r_nrom, baseline["Jbs"].values*1.0e6), r"$j_{bootstrap}^{astra}$", {"marker": "+"}),
                     (core_source_1d.j_parallel,                                         r"$j_{bootstrap}^{wesson}$"),
-                ],
-                (core_sources.source.combine.profiles_1d.j_parallel,             r"$j_{bootstrap}^{wesson}$"),
 
-                (tok.core_profiles.profiles_1d.electrons.density,                                       r"$ n_e $"),
-                (tok.core_profiles.profiles_1d.electrons.temperature,                                   r"$ T_e $"),
-                (tok.core_profiles.profiles_1d.electrons.temperature.dln(),          r"$\frac{T_e^{\prime}}{T_e}$"),
-                (tok.core_profiles.profiles_1d.electrons.density.dln(),              r"$\frac{n_e^{\prime}}{n_e}$"),
-                (tok.core_profiles.profiles_1d.electrons.pressure.dln(),             r"$\frac{p_e^{\prime}}{p_e}$"),
-                (tok.core_profiles.profiles_1d.electrons.tau,                                          r"$\tau_e$"),
-                (tok.core_profiles.profiles_1d.electrons.vT,                                          r"$v_{T,e}$"),
+                    (core_sources.source.combine.profiles_1d.j_parallel,             r"$j_{bootstrap}^{wesson}$"),
+                ],
+                # (tok.core_profiles.profiles_1d.electrons.density,                                       r"$ n_e $"),
+                # (tok.core_profiles.profiles_1d.electrons.temperature,                                   r"$ T_e $"),
+                # (tok.core_profiles.profiles_1d.electrons.temperature.dln(),          r"$\frac{T_e^{\prime}}{T_e}$"),
+                # (tok.core_profiles.profiles_1d.electrons.density.dln(),              r"$\frac{n_e^{\prime}}{n_e}$"),
+                # (tok.core_profiles.profiles_1d.electrons.pressure.dln(),             r"$\frac{p_e^{\prime}}{p_e}$"),
+                # (tok.core_profiles.profiles_1d.electrons.tau,                                          r"$\tau_e$"),
+                # (tok.core_profiles.profiles_1d.electrons.vT,                                          r"$v_{T,e}$"),
 
                 # (core_source_1d.e_field_radial,                                             r"$E_{radial}$"),
                 # (tok.equilibrium.time_slice[-1].profiles_1d.trapped_fraction(

@@ -24,15 +24,15 @@ class CoreInstantChange(Dict[Node]):
             sawtooth       | 3           | Instant changes from a sawtooth
             elm            | 4           | Instant changes from an edge localised mode
         """
-        return Identifier(self["identifier"], parent=self)
+        return self["identifier"]
 
     @cached_property
-    def profiles_1d(self) -> TimeSeries[CoreProfiles1D]:
+    def profiles_1d(self) -> CoreProfiles1D:
         r"""
             Changes in 1D core profiles for various time slices. This structure mirrors core_profiles/profiles_1d and 
             describes instant changes to each of these physical quantities (i.e. a signed difference quantity after change - quantity before change) {dynamic}
         """
-        return TimeSeries[CoreProfiles1D](self["profiles_1d"],   time=self._parent.time,  parent=self)
+        return self["profiles_1d"]
 
 
 class CoreInstantChanges(IDS):

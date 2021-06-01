@@ -1,9 +1,9 @@
-__path__ = __import__('pkgutil').extend_path(__path__, __name__)
-
-
-import sys
-import pathlib
 import pprint
+import pathlib
+import sys
+__path__ = __import__('pkgutil').extend_path(__path__, __name__)
+__version__= '0.0.0'
+
 
 mod_path = [(pathlib.Path(__path__[0])/"../../phys_modules").resolve()]
 
@@ -22,6 +22,7 @@ mod_path = [p.as_posix() for p in mod_path]
 
 sys.path.extend(mod_path)
 
+
 try:
     from spdm.util.logger import logger
 except Exception as error:
@@ -30,5 +31,5 @@ except Exception as error:
     pprint.pprint(f"Error: {error}")
 
 else:
-
+    logger.info(f"Using FyTok \t: {__version__}")
     logger.info(f"FY_MODULE_PATH={':'.join(mod_path)}")

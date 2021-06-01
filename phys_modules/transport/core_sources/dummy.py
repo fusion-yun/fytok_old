@@ -27,7 +27,6 @@ class DummyCoreSource(CoreSources.Source):
 
         super().update(*args, **kwargs)
 
-        self.profiles_1d.j_parallel = core_profiles.profiles_1d.grid.rho_tor_norm*1e6
         return 0.0
 
 

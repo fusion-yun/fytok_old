@@ -144,39 +144,37 @@ class CoreTransportProfiles1D(Dict[Node]):
         super().__init__(*args, axis=grid.rho_tor_norm,   **kwargs)
         self._grid = grid
 
-    def update(self, *args, grid=True, core_profiles: CoreProfiles = None,  **kwargs):
+    def update(self, *args, grid=True,  **kwargs):
 
-        need_reset = False
-        if grid is True and core_profiles is not None:
-            grid = core_profiles.profiles_1d.grid
+        # need_reset = False
+        # if grid is True and core_profiles is not None:
+        #     grid = core_profiles.profiles_1d.grid
 
-        if isinstance(grid, RadialGrid):
-            need_reset = True
-            self._grid = grid
+        # if isinstance(grid, RadialGrid):
+        #     need_reset = True
+        #     self._grid = grid
 
-        if core_profiles is not None:
-            if self['ion'] == None:
-                ion_desc = [
-                    {
-                        "label": ion.label,
-                        "z_ion": ion.z_ion,
-                        "neutral_index": ion.neutral_index,
-                        "element": ion.element._as_list(),
-                    }
-                    for ion in core_profiles.profiles_1d.ion
-                ]
-                if len(ion_desc) > 0:
-                    need_reset = True
-                    self['ion'] = ion_desc
+        # if core_profiles is not None:
+        #     if self['ion'] == None:
+        #         ion_desc = [
+        #             {
+        #                 "label": ion.label,
+        #                 "z_ion": ion.z_ion,
+        #                 "neutral_index": ion.neutral_index,
+        #                 "element": ion.element._as_list(),
+        #             }
+        #             for ion in core_profiles.profiles_1d.ion
+        #         ]
+        #         if len(ion_desc) > 0:
+        #             need_reset = True
+        #             self['ion'] = ion_desc
 
-            if self['electron'] == None:
-                ele_desc = core_profiles.profiles_1d.electrons
-                if ele_desc != None:
-                    need_reset = True
-                    self["electrons"] = ele_desc
+        #     if self['electron'] == None:
+        #         ele_desc = core_profiles.profiles_1d.electrons
+        #         if ele_desc != None:
+        #             need_reset = True
+        #             self["electrons"] = ele_desc
 
-        if need_reset:
-            self.__reset__()
         return 0.0
 
     @property
