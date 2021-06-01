@@ -14,6 +14,8 @@ from ..common.IDS import IDS
 from ..common.Misc import Identifier, VacuumToroidalField
 from ..common.Species import Species
 from .MagneticCoordSystem import RadialGrid
+from .Equilibrium import Equilibrium
+from .CoreProfiles import CoreProfiles
 
 
 class CoreSourcesParticle(Dict):
@@ -332,10 +334,8 @@ class CoreSourcesSource(Actor):
     def profiles_1d(self) -> CoreSourcesProfiles1D:
         return self["profiles_1d"]
 
-    def update(self, *args, **kwargs) -> float:
+    def update(self,  *args,  **kwargs) -> float:
         return super().update(*args, **kwargs)
-        # res = self.profiles_1d.update(*args, **kwargs)
-        # res += self.global_quantities.update(*args, **kwargs)
 
 
 class CoreSources(IDS):
@@ -356,5 +356,10 @@ class CoreSources(IDS):
     def source(self) -> List[CoreSourcesSource]:
         return List[CoreSourcesSource](self["source"], grid=self._grid, parent=self)
 
-    def update(self,  *args,  **kwargs) -> float:
-        return super().update(*args, **kwargs) + self.source.update(*args, **kwargs)
+    def update(self,  *args, equilibrium: Equilibrium = None,  core_profiles: CoreProfiles = None, **kwargs) -> float:
+        super().update(*args, **kwargs)
+        if equilibrium is None:
+            equilibrium = self._parent.equilibrium
+        if core_profiles is None:
+            core_profiles = self._parent.core_profiles
+        return self.source.update(equilibrium=equilibrium, core_profiles=core_profiles)

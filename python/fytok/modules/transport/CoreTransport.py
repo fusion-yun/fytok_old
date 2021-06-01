@@ -15,6 +15,7 @@ from ..common.Misc import Identifier, VacuumToroidalField
 from ..common.Species import (Species, SpeciesElectron, SpeciesIon,
                               SpeciesIonState)
 from .CoreProfiles import CoreProfiles
+from .Equilibrium import Equilibrium
 from .MagneticCoordSystem import RadialGrid
 
 
@@ -216,7 +217,7 @@ class CoreTransportModel(Actor):
         super().__init__(*args, **kwargs)
         self._grid = grid or self._parent._grid
 
-    def update(self, *args, **kwargs) -> float:
+    def update(self, *args, equilibrium: Equilibrium = None,  core_profiles: CoreProfiles = None, **kwargs) -> float:
         return self.profiles_1d.update(*args, **kwargs)
 
     @sp_property
@@ -288,5 +289,13 @@ class CoreTransport(IDS):
     def model(self) -> List[Model]:
         return self["model"]
 
-    def update(self,  *args,  **kwargs) -> float:
-        return super().update(*args, **kwargs) + self.model.update(*args,  **kwargs)
+    def update(self,  *args, grid: RadialGrid = None, equilibrium: Equilibrium = None,  core_profiles: CoreProfiles = None, **kwargs) -> float:
+        super().update(*args, **kwargs)
+        if equilibrium is None:
+            equilibrium = self._parent.equilibrium
+        if core_profiles is None:
+            core_profiles = self._parent.core_profiles
+        if grid is None:
+            grid = self._parent.grid
+        self._grid = grid
+        return self.model.update(equilibrium=equilibrium, core_profiles=core_profiles)

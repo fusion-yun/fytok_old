@@ -3,7 +3,7 @@
 """
 
 from math import log
-
+from typing import Optional, Mapping
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, _not_found_, sp_property, List
 from spdm.numlib import constants, np
@@ -15,9 +15,9 @@ from ..common.Misc import Identifier
 from .CoreProfiles import CoreProfiles
 from .CoreSources import CoreSources
 from .CoreTransport import CoreTransport
-from .EdgeProfiles import EdgeProfiles
-from .EdgeSources import EdgeSources
-from .EdgeTransport import EdgeTransport
+# from .EdgeProfiles import EdgeProfiles
+# from .EdgeSources import EdgeSources
+# from .EdgeTransport import EdgeTransport
 from .Equilibrium import Equilibrium
 from .MagneticCoordSystem import RadialGrid
 
@@ -25,6 +25,11 @@ EPSILON = 1.0e-15
 TOLERANCE = 1.0e-6
 
 TWOPI = 2.0 * constants.pi
+
+
+class TransportSolverBoundaryCondition(Dict):
+    def __init__(self, cache: Optional[Mapping], *args, **kwargs):
+        super().__init__(cache=cache, *args, **kwargs)
 
 
 class TransportSolver(IDS):
@@ -35,13 +40,14 @@ class TransportSolver(IDS):
 
     """
     _IDS = "transport_solver_numerics"
+    BoundaryCondition = TransportSolverBoundaryCondition
 
     def __init__(self,  *args, grid: RadialGrid = None, **kwargs):
         super().__init__(*args, **kwargs)
-        self._grid = grid
+        self._grid = grid if grid is not None else self._parent._grid
 
     @property
-    def radial_grid(self):
+    def grid(self):
         return self._grid
 
     @sp_property
@@ -51,6 +57,18 @@ class TransportSolver(IDS):
     @sp_property
     def primary_coordinate(self) -> Identifier:
         return self["primary_coordinate"]
+
+    @sp_property
+    def boundary_condition(self) -> BoundaryCondition:
+        return self["boundary_condition"]
+
+    def update(self, core_profiles: CoreProfiles,
+               *args,
+               time=None,
+               equilibrium: Equilibrium,
+               core_transport: CoreTransport,
+               core_sources: CoreSources, **kwargs):
+        pass
 
     def solve_general_form(self, x0, y0, flux0,   coeff,  bc,  hyper_diff=[0.0, 0.0],  **kwargs):
         r"""
@@ -166,18 +184,17 @@ class TransportSolver(IDS):
 
         return sol, profiles
 
-    def update(self,
-               core_profiles: CoreProfiles,
-               *args,
-               time=None,
-               equilibrium: Equilibrium,
-               core_transport: CoreTransport,
-               core_sources: CoreSources,
-               tolerance=1.0e-3,
-               max_nodes=1000,
-               verbose=2,
-               enable_ion_solver: bool = False,
-               **kwargs) -> CoreProfiles:
+    def solve(self,
+              core_profiles: CoreProfiles,
+              /,
+              equilibrium: Equilibrium,
+              core_transport: CoreTransport,
+              core_sources: CoreSources,
+              tolerance=1.0e-3,
+              max_nodes=1000,
+              verbose=2,
+              enable_ion_solver: bool = False,
+              **kwargs) -> CoreProfiles:
         r"""
             Solve transport equations
 
@@ -233,12 +250,11 @@ class TransportSolver(IDS):
                             V^{\prime\frac{5}{3}}\left[Q_{e,exp}-Q_{e,imp}\cdot T_{e}+Q_{ei}-Q_{\gamma i}\right]
                     :label: transport_electron_temperature
         """
-        if time is None:
-            time = equilibrium.time
+
         core_profiles_next = core_profiles
         core_profiles_prev = core_profiles.previous_state
 
-        tau = core_profiles.time - core_profiles_prev.time
+        tau = core_profiles_next.time - core_profiles_prev.time
 
         inv_tau = 0 if abs(tau) < EPSILON else 1.0/tau
 
@@ -252,7 +268,7 @@ class TransportSolver(IDS):
         # $rho_tor_{norm}$ normalized minor radius                [-]
         rho_tor_norm = core_profiles.grid.rho_tor_norm
 
-        psi_norm = core_profiles.grid.psi_norm
+        psi_norm = core_profiles_next.grid.psi_norm
 
         trans = core_transport.model.combine
         # Grid
@@ -293,19 +309,19 @@ class TransportSolver(IDS):
         #　Current Equation
         def current_transport(core_profiles_next: CoreProfiles.Profiles1D,
                               core_profiles_prev: CoreProfiles.Profiles1D,
-                              core_transport: CoreTransport,
-                              core_sources: CoreSources,
+                              core_transport: CoreTransport.Model,
+                              core_sources: CoreSources.Source,
                               boundary_conditions):
 
             # -----------------------------------------------------------------
             # Transport
             # plasma parallel conductivity,                                 [(Ohm*m)^-1]
-            conductivity_parallel = core_transport.conductivity_parallel
+            conductivity_parallel = core_transport.profiles_1d.conductivity_parallel
 
             # -----------------------------------------------------------
             # Sources
             # total non inductive current, PSI independent component,          [A/m^2]
-            j_exp = core_sources.j_parallel
+            j_exp = core_sources.profiles_1d.j_parallel
 
             # total non inductive current, component proportional to PSI,      [A/m^2/V/s]
             j_imp = 0.0  # sources.j_imp if sources is not None else 0.0   # can not find data in imas dd
@@ -349,10 +365,10 @@ class TransportSolver(IDS):
                 raise NotImplementedError(boundary_conditions)
 
             # $\Psi$ flux function from current                 [Wb]
-            psi0 = core_profiles_preve.psi
+            psi0 = core_profiles_prev.psi
 
             # $\frac{\partial\Psi}{\partial\rho_{tor,norm}}$               [Wb/m]
-            gamma0 = core_profiles_preve.dpsi_drho_tor_norm
+            gamma0 = core_profiles_prev.dpsi_drho_tor_norm
 
             if not isinstance(gamma0, np.ndarray):
                 gamma0 = -d * Function(rho_tor_norm, psi0).derivative + e * psi0
@@ -391,7 +407,7 @@ class TransportSolver(IDS):
             # core_profiles.j_total = j_exp
 
         def electron_particle_transport(core_profiles_next: CoreProfiles.Profiles1D.Electrons,
-                                        core_profiles_preve: CoreProfiles.Profiles1D.Electrons,
+                                        core_profiles_prev: CoreProfiles.Profiles1D.Electrons,
                                         trans: List[CoreTransport.Model.Profiles1D.Electrons],
                                         source: List[CoreSources.Source.Profiles1D.Electrons],
                                         boundary_conditions):
