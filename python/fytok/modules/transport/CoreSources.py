@@ -346,7 +346,7 @@ class CoreSources(IDS):
 
     def __init__(self, *args, grid: Optional[RadialGrid] = None, **kwargs):
         super().__init__(*args, **kwargs)
-        self._grid = grid
+        self._grid = grid or self._parent._grid
 
     @sp_property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:

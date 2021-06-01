@@ -62,12 +62,12 @@ class TransportSolver(IDS):
     def boundary_condition(self) -> BoundaryCondition:
         return self["boundary_condition"]
 
-    def update(self, core_profiles: CoreProfiles,
-               *args,
-               time=None,
-               equilibrium: Equilibrium,
-               core_transport: CoreTransport,
-               core_sources: CoreSources, **kwargs):
+    def update(self, /,
+               core_profiles: CoreProfiles = None,
+               equilibrium: Equilibrium = None,
+               core_transport: CoreTransport = None,
+               core_sources: CoreSources = None,
+               **kwargs):
         pass
 
     def solve_general_form(self, x0, y0, flux0,   coeff,  bc,  hyper_diff=[0.0, 0.0],  **kwargs):

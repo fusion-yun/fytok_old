@@ -24,21 +24,19 @@ if __name__ == "__main__":
         magnetics=device.entry.find("magnetics"))
 
     ###################################################################################################
-    if True: # Equlibrium
+    if True:  # Equlibrium
         eqdsk = File(
             # "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
             "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt",
             # "/home/salmon/workspace/data/Limiter plasmas-7.5MA li=1.1/Limiter plasmas 7.5MA-EQDSK/Limiter_7.5MA_outbord.EQDSK",
             format="geqdsk")
 
-        tok.equilibrium.update({"time": 0.0,
-                                "time_slice": {
-                                    "profiles_1d": eqdsk.entry.find("profiles_1d"),
-                                    "profiles_2d": eqdsk.entry.find("profiles_2d"),
-                                    "coordinate_system": {"grid": {"dim1": 100, "dim2": 256}}
-                                },
-                                "vacuum_toroidal_field":  eqdsk.entry.find("vacuum_toroidal_field"),
-                                })
+        tok.equilibrium["time_slice"] = {
+            "profiles_1d": eqdsk.entry.find("profiles_1d"),
+            "profiles_2d": eqdsk.entry.find("profiles_2d"),
+            "coordinate_system": {"grid": {"dim1": 100, "dim2": 256}}
+        }
+        tok.equilibrium["vacuum_toroidal_field"] = eqdsk.entry.find("vacuum_toroidal_field")
 
     if True:
         sp_figure(tok,
@@ -126,7 +124,7 @@ if __name__ == "__main__":
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
     ###################################################################################################
-    if True: # CoreProfile
+    if True:  # CoreProfile
         s_range = -1  # slice(0, 140, 1)
         Te = Function(bs_r_nrom, smooth(baseline["TE"].values*1000, s_range))
         Ti = Function(bs_r_nrom, smooth(baseline["TI"].values*1000, s_range))
@@ -225,7 +223,7 @@ if __name__ == "__main__":
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
     ###################################################################################################
-    if True: # CoreTransport
+    if True:  # CoreTransport
         tok.core_transport["model"] = [
             {"code": {"name": "spitzer"}},
             {"code": {"name": "neoclassical"}},
@@ -288,7 +286,7 @@ if __name__ == "__main__":
             # annotation=core_transport.model[0].identifier.name,
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
-    if True: # CoreSources
+    if True:  # CoreSources
         tok.core_sources["source"] = [
             {"code": {"name": "bootstrap_current"}},
             {"code": {"name": "dummy"}},
@@ -336,7 +334,7 @@ if __name__ == "__main__":
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_sources.svg", transparent=True)
     ###################################################################################################
 
-    if True: # TransportSolver
+    if True:  # TransportSolver
         tok.transport_solver["boundary_condition"] = {}
 
         tok.transport_solver.update()
