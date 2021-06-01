@@ -130,7 +130,7 @@ class NeoClassical(CoreTransport.Model):
             if sp_trans is _not_found_:
                 raise KeyError(f"Can not add ion {sp.label}!")
             else:
-                logger.debug(f"Add ion {sp.label}!")
+                logger.debug(f"Add ion '{sp.label}'")
 
             sp_trans.energy.d = chi_i
             sp_trans.particles.d = chi_i/3.0
