@@ -3,11 +3,11 @@ import collections
 
 from spdm.numlib import np
 from spdm.numlib import constants
-from fytok.modules.transport.CoreProfiles import CoreProfiles
-from fytok.modules.transport.CoreTransport import (CoreTransport,
+from fytok.transport.CoreProfiles import CoreProfiles
+from fytok.transport.CoreTransport import (CoreTransport,
                                                    CoreTransportProfiles1D)
-from fytok.modules.transport.Equilibrium import Equilibrium
-from fytok.modules.transport.MagneticCoordSystem import RadialGrid
+from fytok.transport.Equilibrium import Equilibrium
+from fytok.transport.MagneticCoordSystem import RadialGrid
 from spdm.data.Function import Function
 from spdm.data.Node import _next_
 from spdm.data.TimeSeries import TimeSeries, TimeSlice

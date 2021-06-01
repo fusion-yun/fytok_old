@@ -2,11 +2,11 @@ import collections
 
 from spdm.numlib import np
 from spdm.numlib import constants
-from fytok.modules.transport.CoreProfiles import CoreProfiles, CoreProfiles1D
-from fytok.modules.transport.CoreSources import CoreSources
-from fytok.modules.transport.CoreTransport import (CoreTransport,
+from fytok.transport.CoreProfiles import CoreProfiles, CoreProfiles1D
+from fytok.transport.CoreSources import CoreSources
+from fytok.transport.CoreTransport import (CoreTransport,
                                                    CoreTransportModel)
-from fytok.modules.transport.Equilibrium import Equilibrium
+from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.Function import Function
 from spdm.data.Node import _next_
 from spdm.util.logger import logger

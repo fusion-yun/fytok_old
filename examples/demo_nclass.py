@@ -7,6 +7,7 @@ from spdm.numlib import constants, np
 from spdm.numlib.smooth import smooth
 from spdm.util.logger import logger
 from spdm.util.plot_profiles import plot_profiles, sp_figure
+from fytok.common.Atoms import atoms
 
 if __name__ == "__main__":
     logger.info("====== START ========")
@@ -137,47 +138,13 @@ if __name__ == "__main__":
         # Zeff = Function(bs_r_nrom, baseline["Zeff"].values)
 
         tok.core_profiles["profiles_1d"] = {
-            "electrons": {
-                "label": "electrons",
-                "density":     ne,
-                "temperature": Te,
-            },
+            "electrons": {** atoms["e"], "density": ne,  "temperature": Te, },
             "ion": [
-                {
-                    "label": "H^+",
-                    "z_ion": 1,
-                    "element": [{"a": 1, "z_n": 1, "atoms_n": 1}],
-                    "density":  nDT/2.0,
-                    "temperature": Ti,
-                },
-                {
-                    "label": "D^+",
-                    "z_ion": 1,
-                    "element": [{"a": 2, "z_n": 1, "atoms_n": 1}],
-                    "density":  nDT/2.0,
-                    "temperature": Ti,
-                },
-                {
-                    "label": r"He^{2}",
-                    "z_ion": 2,
-                    "element": [{"a": 4, "z_n": 1, "atoms_n": 1}],
-                    "density": nHe,
-                    "temperature": Ti,
-                },
-                {
-                    "label": "Be^{4}",
-                    "z_ion": 4,
-                    "element": [{"a": 9, "z_n": 1, "atoms_n":   1}],
-                    "density":    0.02*ne,
-                    "temperature": Ti,
-                },
-                {
-                    "label": "Ar^{18}",
-                    "z_ion": 18,
-                    "element": [{"a": 40, "z_n": 1, "atoms_n":   1}],
-                    "density":    0.0012*ne,
-                    "temperature": Ti,
-                }
+                {**atoms["H"],  "density":  0.5*nDT, "temperature": Ti, },
+                {**atoms["D"],  "density":  0.5*nDT, "temperature": Ti, },
+                {**atoms["He"], "density":      nHe, "temperature": Ti, },
+                {**atoms["Be"], "density":  0.02*ne, "temperature": Ti, },
+                {**atoms["Ar"], "density":0.0012*ne, "temperature": Ti, }
             ],
             # "zeff": Zeff
         }
@@ -227,8 +194,20 @@ if __name__ == "__main__":
         tok.core_transport["model"] = [
             {"code": {"name": "spitzer"}},
             {"code": {"name": "neoclassical"}},
+            {"code": {"name": "dummy"}},
         ]
 
+        trans_dummy = tok.core_transport.model[{"code.name": 'dummy'}]
+
+        trans_dummy.profiles_1d["electrons"] = {**atoms["e"],
+                                                "particles": {"d": 0, "v": 0},
+                                                "energy": {"d": 0, "v": 0}}
+
+        trans_dummy.profiles_1d["ion"] = [
+            {**atoms["H"],  "particles":{"d": 0, "v": 0}, "energy": {"d": 0, "v": 0}, },
+            {**atoms["D"],  "particles":{"d": 0, "v": 0}, "energy": {"d": 0, "v": 0}, },
+            {**atoms["He"], "particles":{"d": 0, "v": 0}, "energy": {"d": 0, "v": 0}, }
+        ]
         tok.core_transport.update()
 
         core_transport1d = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d

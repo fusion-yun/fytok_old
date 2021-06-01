@@ -1,6 +1,6 @@
 import collections
 from dataclasses import dataclass
-from fytok.modules.transport.MagneticCoordSystem import RadialGrid
+from fytok.transport.MagneticCoordSystem import RadialGrid
 
 from spdm.numlib import constants
 from spdm.data.Node import Dict, List, Node

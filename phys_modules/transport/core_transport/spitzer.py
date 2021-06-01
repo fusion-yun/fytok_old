@@ -3,9 +3,9 @@ import collections
 
 from spdm.numlib import np
 from spdm.numlib import constants
-from fytok.modules.transport.CoreProfiles import CoreProfiles
-from fytok.modules.transport.CoreTransport import CoreTransport
-from fytok.modules.transport.Equilibrium import Equilibrium
+from fytok.transport.CoreProfiles import CoreProfiles
+from fytok.transport.CoreTransport import CoreTransport
+from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.Function import Function
 from spdm.util.logger import logger
 

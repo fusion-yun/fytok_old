@@ -3,33 +3,33 @@ import collections
 import datetime
 import getpass
 from typing import Union
-from spdm.numlib import np
+
 import matplotlib.pyplot as plt
-from fytok.modules.transport.MagneticCoordSystem import RadialGrid
-from spdm.numlib import constants
 from spdm.data.Function import Function
-from spdm.data.Node import Dict, Node
-from spdm.data.Node import sp_property
+from spdm.data.Node import Dict, Node, sp_property
 from spdm.flow.Actor import Actor
+from spdm.numlib import constants, np
 from spdm.util.logger import logger
 
+from fytok.transport.MagneticCoordSystem import RadialGrid
+
 ##################################
-from .modules.common.Misc import VacuumToroidalField
-from .modules.device.Magnetics import Magnetics
-from .modules.device.PFActive import PFActive
-from .modules.device.TF import TF
-from .modules.device.Wall import Wall
+from .common.Misc import VacuumToroidalField
+from .device.Magnetics import Magnetics
+from .device.PFActive import PFActive
+from .device.TF import TF
+from .device.Wall import Wall
 # ---------------------------------
-from .modules.transport.CoreProfiles import CoreProfiles
-from .modules.transport.CoreSources import CoreSources
-from .modules.transport.CoreTransport import CoreTransport
+from .transport.CoreProfiles import CoreProfiles
+from .transport.CoreSources import CoreSources
+from .transport.CoreTransport import CoreTransport
 # ---------------------------------
-from .modules.transport.EdgeProfiles import EdgeProfiles
-from .modules.transport.EdgeSources import EdgeSources
-from .modules.transport.EdgeTransport import EdgeTransport
+from .transport.EdgeProfiles import EdgeProfiles
+from .transport.EdgeSources import EdgeSources
+from .transport.EdgeTransport import EdgeTransport
 # ---------------------------------
-from .modules.transport.Equilibrium import Equilibrium
-from .modules.transport.TransportSolver import TransportSolver
+from .transport.Equilibrium import Equilibrium
+from .transport.TransportSolver import TransportSolver
 
 ##################################
 TWOPI = constants.pi*2.0

@@ -7,12 +7,12 @@ import freegs
 import matplotlib.pyplot as plt
 from spdm.numlib import np
 from spdm.numlib import constants
-from fytok.modules.transport.Equilibrium import Equilibrium
+from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.Function import Function
 from spdm.data.Node import Dict
 from spdm.util.logger import logger
-from fytok.modules.device.Wall import Wall
-from fytok.modules.device.PFActive import PFActive
+from fytok.device.Wall import Wall
+from fytok.device.PFActive import PFActive
 
 
 def is_none(v):

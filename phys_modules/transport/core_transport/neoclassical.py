@@ -1,8 +1,8 @@
 import collections
 
-from fytok.modules.transport.CoreProfiles import CoreProfiles
-from fytok.modules.transport.CoreTransport import CoreTransport
-from fytok.modules.transport.Equilibrium import Equilibrium
+from fytok.transport.CoreProfiles import CoreProfiles
+from fytok.transport.CoreTransport import CoreTransport
+from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.Entry import _next_
 from spdm.data.Function import Function
 from spdm.numlib import constants, np

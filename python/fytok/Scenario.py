@@ -1,17 +1,15 @@
 import collections
-from  functools import cached_property
+from functools import cached_property
 
-from spdm.numlib import np
 import scipy
-from spdm.data.Node import Dict
 from spdm.data.Function import Function
-from spdm.data.Node import Node, _next_
-from spdm.data.Node import Dict
+from spdm.data.Node import Dict, Node, _next_
+from spdm.numlib import np
 from spdm.util.logger import logger
 
-from .modules.operation.PulseSchedule import PulseSchedule
-from .modules.transport.TransportSolver import TransportSolver
+from .operation.PulseSchedule import PulseSchedule
 from .Tokamak import Tokamak
+from .transport.TransportSolver import TransportSolver
 
 
 class Scenario(Dict):
