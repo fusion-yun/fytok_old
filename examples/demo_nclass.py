@@ -232,9 +232,10 @@ if __name__ == "__main__":
     ###################################################################################################
     if True:
         core_transport = CoreTransport({"model": [
+            {"code": {"name": "spitzer"}},
             {"code": {"name": "neoclassical"}},
             # {"code": {"name": "nclass"}},
-            {"code": {"name": "spitzer"}},
+
             # {"code": {"name": "gyroBhom"}},
         ]},
             grid=tok.equilibrium.time_slice.coordinate_system.radial_grid()
@@ -242,7 +243,7 @@ if __name__ == "__main__":
 
         core_transport.advance(dt=0.1,  equilibrium=tok.equilibrium,     core_profiles=tok.core_profiles)
 
-        core_transport1d = core_transport.model[0].profiles_1d
+        core_transport1d = core_transport.model[{"code.name": "neoclassical"}].profiles_1d
 
         plot_profiles(
             [
@@ -280,7 +281,8 @@ if __name__ == "__main__":
                 [
                     (Function(bs_r_nrom, baseline["Joh"].values*1.0e6 / baseline["U"].values *
                               (2.0*constants.pi * tok.equilibrium.vacuum_toroidal_field.r0)),     r"$\sigma_{\parallel}^{astra}$", {"marker": "+"}),
-                    (core_transport1d.conductivity_parallel,                 r"$\sigma_{\parallel}^{wesson}$"),
+                    (core_transport.model[{"code.name": "spitzer"}].profiles_1d.conductivity_parallel,
+                     r"$\sigma_{\parallel}^{wesson}$"),
                     (core_transport.model.combine.profiles_1d.conductivity_parallel,  r"$\sigma_{\parallel}$"),
 
                 ],

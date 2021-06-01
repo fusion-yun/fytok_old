@@ -2,13 +2,12 @@ import collections
 from dataclasses import dataclass
 from typing import Optional
 
-from spdm.numlib import np
-from spdm.numlib import constants
 from spdm.data.Function import Function
-from spdm.data.Node import Dict, List
+from spdm.data.Node import Dict, List, sp_property, Node
 from spdm.data.Profiles import Profiles
-from spdm.data.Node import sp_property
+from spdm.numlib import constants, np
 from spdm.util.logger import logger
+from spdm.util.utilities import _not_found_
 
 from ..common.IDS import IDS
 from ..common.Misc import VacuumToroidalField
@@ -107,25 +106,25 @@ class CoreProfilesIon(SpeciesIon):
         super().__init__(*args,  **kwargs)
 
     @sp_property
-    def z_ion_1d(self):
-        d = self.get("z_ion_id", None)
+    def z_ion_1d(self) -> Function:
+        d = self.get("z_ion_id", default_value=_not_found_)
         if isinstance(d, np.ndarray):
-            return d
+            return Function(self._grid.rho_tor_norm, d)
         else:
-            return Function(self._axis, self.z_ion)
+            return Function(self._grid.rho_tor_norm, self.z_ion)
 
     @sp_property
-    def z_ion_square_1d(self):
-        d = self.get("z_ion_square_1d", None)
+    def z_ion_square_1d(self) -> Function:
+        d = self.get("z_ion_square_1d", default_value=_not_found_)
         if isinstance(d, np.ndarray):
-            return d
+            return Function(self._grid.rho_tor_norm, d)
         else:
-            return Function(self._axis, self.z_ion*self.z_ion)
+            return Function(self._grid.rho_tor_norm, self.z_ion*self.z_ion)
 
     @sp_property
     def temperature(self) -> Function:
         """Temperature (average over charge states when multiple charge states are considered) {dynamic} [eV]  """
-        return Function(self._axis, self["temperature"])
+        return Function(self._grid.rho_tor_norm, self["temperature"])
 
     # @property
     # def temperature_validity(self):
@@ -146,9 +145,9 @@ class CoreProfilesIon(SpeciesIon):
         """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
         d = self["density"]
         if not isinstance(d, np.ndarray) or d != None:
-            return Function(self._axis, d)
+            return d
         else:
-            return Function(self._axis, self.density_fast+self.density_thermal)
+            return self.density_fast+self.density_thermal
 
     # @property
     # def density_validity(self):
@@ -464,19 +463,20 @@ class CoreProfiles1D(Profiles):
         return ((14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +
                 (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te >= 10))
 
-    class EField(Profiles):
-        def __init__(self,   *args, axis=None, parent=None, **kwargs):
-            super().__init__(*args, axis=axis if axis is not None else parent._axis,  **kwargs)
+    class EField(Dict[Node]):
+        def __init__(self,   *args, grid: RadialGrid = None,   **kwargs):
+            super().__init__(*args,  **kwargs)
+            self._grid = grid or self._parent._grid
 
         @sp_property
         def parallel(self) -> Function:
-            return self["parallel"]
+            return Function(self._grid.rho_tor_norm, self["parallel"])
 
     @sp_property
     def e_field(self) -> EField:
         """Electric field, averaged on the magnetic surface. E.g for the parallel component, average(E.B) / B0,
             using core_profiles/vacuum_toroidal_field/b0[V.m ^ -1]  """
-        return CoreProfiles1D.EField(self._entry.find("e_field"), parent=self)
+        return self.get_raw("e_field")
 
     @sp_property
     def phi_potential(self) -> Function:

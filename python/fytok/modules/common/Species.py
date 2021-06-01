@@ -1,9 +1,9 @@
 import collections
 from dataclasses import dataclass
+from fytok.modules.transport.MagneticCoordSystem import RadialGrid
 
 from spdm.numlib import constants
-from spdm.data.Node import Dict, List
-from spdm.data.Profiles import Profiles
+from spdm.data.Node import Dict, List, Node
 from spdm.data.Node import sp_property
 from spdm.util.logger import logger
 
@@ -27,7 +27,7 @@ class SpeciesElement(Dict):
         return self["z_n"]
 
 
-class Species(Profiles):
+class Species(Dict[Node]):
     Element = SpeciesElement
 
     def __init__(self,   *args, axis=None, parent=None,  **kwargs):
@@ -44,7 +44,7 @@ class Species(Profiles):
 
     @sp_property
     def element(self) -> List[Element]:
-        return List[SpeciesElement](self._entry.find("element"),  parent=self)
+        return self["element"]
 
     @sp_property
     def a(self) -> float:
@@ -57,8 +57,9 @@ class Species(Profiles):
 
 
 class SpeciesElectron(Species):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, grid=None, **kwargs):
         super().__init__(*args,  **kwargs)
+        self._grid = grid or self._parent._grid
 
     @property
     def label(self) -> str:
@@ -110,8 +111,9 @@ class SpeciesIonState(Dict):
 
 
 class SpeciesIon(Species):
-    def __init__(self, *args,  **kwargs):
-        super().__init__(*args,   **kwargs)
+    def __init__(self, *args, grid: RadialGrid = None, **kwargs):
+        super().__init__(*args,  **kwargs)
+        self._grid = grid or self._parent._grid
 
     @sp_property
     def z(self) -> float:

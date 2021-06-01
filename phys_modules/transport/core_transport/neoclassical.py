@@ -32,7 +32,7 @@ class NeoClassical(CoreTransport.Model):
                equilibrium: Equilibrium,
                core_profiles: CoreProfiles,
                **kwargs):
-        super().update(*args,   **kwargs)
+        super().update(*args, **kwargs)
 
         eV = constants.electron_volt
         B0 = abs(equilibrium.vacuum_toroidal_field.b0)
@@ -53,24 +53,10 @@ class NeoClassical(CoreTransport.Model):
         sum2 = 0
 
         Te = core_profile.electrons.temperature(rho_tor_norm)
-        Ne = core_profile.electrons.density
-        Pe = core_profile.electrons.pressure
-        dlnTe = Te.dln()
-        dlnNe = Ne.derivative/Ne
-        dlnPe = dlnTe+dlnNe
+        Ne = core_profile.electrons.density(rho_tor_norm)
 
-        # Coulomb logarithm
-        #  Ch.14.5 p727 Tokamaks 2003
-        # lnCoul = (14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +\
-        #     (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000))*(Te >= 10)
-        # (17.3 - 0.5*np.log(Ne/1e20) + 1.5*np.log(Te/1000))*(Te >= 10)
-
-        # lnCoul = 14
         lnCoul = core_profile.coulomb_logarithm(rho_tor_norm)
         # electron collision time , eq 14.6.1
-        tau_e = (1.09e16*((Te/1000)**(3/2))/Ne/lnCoul)
-
-        vTe = (np.sqrt(Te*eV/constants.electron_mass))
 
         rho_tor[0] = max(1.07e-4*((Te[0]/1000)**(1/2))/B0, rho_tor[0])  # Larmor radius,   eq 14.7.2
 
@@ -83,7 +69,7 @@ class NeoClassical(CoreTransport.Model):
 
         # Shafranov shift
         delta_ = Function(rho_tor, np.array(
-            equilibrium.time_slice.profiles_1d.geometric_axis.r(psi_norm)-R0)).derivative
+            equilibrium.time_slice.profiles_1d.geometric_axis.r(psi_norm)-R0)).derivative(rho_tor_norm)
 
         # impurity ions
         nZI = 0.0
@@ -93,13 +79,9 @@ class NeoClassical(CoreTransport.Model):
 
         sum1 = 0.0
         sum2 = 0.0
-        for idx, sp in enumerate(core_profile.ion):
+        for sp in core_profile.ion:
             Ti = sp.temperature(rho_tor_norm)
             Ni = sp.density(rho_tor_norm)
-            Pi = sp.pressure(rho_tor_norm)
-            dlnTi = sp.temperature.dln(rho_tor_norm)
-            dlnNi = sp.density.dln(rho_tor_norm)
-            dlnPi = sp.pressure.dln(rho_tor_norm)
 
             mi = sp.a
             Zi = sp.z_ion_1d
@@ -126,7 +108,8 @@ class NeoClassical(CoreTransport.Model):
 
             chi_i = chi_i/epsilon32*(q**2)*(rho_i**2)/(1.0+0.74*mu_i*epsilon32)
 
-            sp_trans = self.profiles_1d.ion.find(label=sp.label, default_value=_not_found_)
+            sp_trans = self.profiles_1d.ion.find(label=sp.label, only_first=True, default_value=_not_found_)
+
             if sp_trans is _not_found_:
                 self.profiles_1d.ion[_next_] = {
                     "label": sp.label,
@@ -134,10 +117,12 @@ class NeoClassical(CoreTransport.Model):
                     "neutral_index": sp.neutral_index,
                     "element": sp.element._as_list(),
                 }
-            sp_trans = self.profiles_1d.ion.find(label=sp.label, default_value=_not_found_)
+            sp_trans = self.profiles_1d.ion.find(label=sp.label, only_first=True, default_value=_not_found_)
 
             if sp_trans is _not_found_:
                 raise KeyError(f"Can not create CoreTransport.Model for ion {sp.label}")
+            else:
+                logger.debug(f"Add CoreTransport.Model for ion {sp.label}")
 
             sp_trans.energy.d = chi_i
             sp_trans.particles.d = chi_i/3.0

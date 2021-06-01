@@ -41,11 +41,11 @@ class CoreTransportElectrons(SpeciesElectron):
 
     @sp_property
     def particles(self) -> TransportCoeff:
-        return self["particles"]
+        return TransportCoeff(self["particles"], parent=self._parent)
 
     @sp_property
     def energy(self) -> TransportCoeff:
-        return self["energy"]
+        return TransportCoeff(self["energy"], parent=self._parent)
 
 
 class CoreTransportIonState(SpeciesIonState):
@@ -55,17 +55,17 @@ class CoreTransportIonState(SpeciesIonState):
     @sp_property
     def particles(self) -> TransportCoeff:
         """Transport quantities related to density equation of the charge state considered (thermal+non-thermal)	structure	"""
-        return self["particles"]
+        return TransportCoeff(self["particles"], parent=self._parent)
 
     @sp_property
     def energy(self) -> TransportCoeff:
         """Transport quantities related to the energy equation of the charge state considered	structure	"""
-        return self["energy"]
+        return TransportCoeff(self["energy"], parent=self._parent)
 
     @sp_property
     def momentum(self) -> TransportCoeff:
         """Transport coefficients related to the state momentum equations for various components (directions)"""
-        return self["momentum"]
+        return TransportCoeff(self["momentum"], parent=self._parent)
 
 
 class CoreTransportMomentum(Dict):
@@ -74,23 +74,23 @@ class CoreTransportMomentum(Dict):
 
     @sp_property
     def radial(self) -> TransportCoeff:
-        return self["radial"]
+        return TransportCoeff(self["radial"], parent=self._parent)
 
     @sp_property
     def diamagnetic(self) -> TransportCoeff:
-        return self["diamagnetic"]
+        return TransportCoeff(self["diamagnetic"], parent=self._parent)
 
     @sp_property
     def parallel(self) -> TransportCoeff:
-        return self["parallel"]
+        return TransportCoeff(self["parallel"], parent=self._parent)
 
     @sp_property
     def poloidal(self) -> TransportCoeff:
-        return self["poloidal"]
+        return TransportCoeff(self["poloidal"], parent=self._parent)
 
     @sp_property
     def toroidal(self) -> TransportCoeff:
-        return self["toroidal"]
+        return TransportCoeff(self["toroidal"], parent=self._parent)
 
 
 class CoreTransportIon(SpeciesIon):
@@ -99,11 +99,11 @@ class CoreTransportIon(SpeciesIon):
 
     @sp_property
     def particles(self) -> TransportCoeff:
-        return self["particles"]
+        return TransportCoeff(self["particles"], parent=self._parent)
 
     @sp_property
     def energy(self) -> TransportCoeff:
-        return self["energy"]
+        return TransportCoeff(self["energy"], parent=self._parent)
 
     @sp_property
     def momentum(self) -> CoreTransportMomentum:
@@ -125,11 +125,11 @@ class CoreTransportNeutral(Species):
 
     @sp_property
     def particles(self) -> TransportCoeff:
-        return self["particles"]
+        return TransportCoeff(self["particles"], parent=self._parent)
 
     @sp_property
     def energy(self) -> TransportCoeff:
-        return self["energy"]
+        return TransportCoeff(self["energy"], parent=self._parent)
 
 
 class CoreTransportProfiles1D(Dict[Node]):
@@ -143,39 +143,6 @@ class CoreTransportProfiles1D(Dict[Node]):
             grid = parent._grid
         super().__init__(*args, axis=grid.rho_tor_norm,   **kwargs)
         self._grid = grid
-
-    def update(self, *args, grid=True,  **kwargs):
-
-        # need_reset = False
-        # if grid is True and core_profiles is not None:
-        #     grid = core_profiles.profiles_1d.grid
-
-        # if isinstance(grid, RadialGrid):
-        #     need_reset = True
-        #     self._grid = grid
-
-        # if core_profiles is not None:
-        #     if self['ion'] == None:
-        #         ion_desc = [
-        #             {
-        #                 "label": ion.label,
-        #                 "z_ion": ion.z_ion,
-        #                 "neutral_index": ion.neutral_index,
-        #                 "element": ion.element._as_list(),
-        #             }
-        #             for ion in core_profiles.profiles_1d.ion
-        #         ]
-        #         if len(ion_desc) > 0:
-        #             need_reset = True
-        #             self['ion'] = ion_desc
-
-        #     if self['electron'] == None:
-        #         ele_desc = core_profiles.profiles_1d.electrons
-        #         if ele_desc != None:
-        #             need_reset = True
-        #             self["electrons"] = ele_desc
-
-        return 0.0
 
     @property
     def grid(self) -> RadialGrid:
