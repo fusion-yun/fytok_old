@@ -22,7 +22,11 @@ if __name__ == "__main__":
         wall=device.entry.find("wall"),
         pf_active=device.entry.find("pf_active"),
         tf=device.entry.find("tf"),
-        magnetics=device.entry.find("magnetics"))
+        magnetics=device.entry.find("magnetics"),
+        transport_solver={"code": {"name": "bvp_solver"}},
+        equilibrium={"code": {"name": "dummy"}}
+
+    )
 
     ###################################################################################################
     if True:  # Equlibrium
@@ -197,13 +201,13 @@ if __name__ == "__main__":
             {"code": {"name": "dummy"}},
         ]
 
-        trans_dummy = tok.core_transport.model[{"code.name": 'dummy'}]
+        transp_dummy = tok.core_transport.model[{"code.name": 'dummy'}]
 
-        trans_dummy.profiles_1d["electrons"] = {**atoms["e"],
-                                                "particles": {"d": 0, "v": 0},
-                                                "energy": {"d": 0, "v": 0}}
+        transp_dummy.profiles_1d["electrons"] = {**atoms["e"],
+                                                 "particles": {"d": 0, "v": 0},
+                                                 "energy": {"d": 0, "v": 0}}
 
-        trans_dummy.profiles_1d["ion"] = [
+        transp_dummy.profiles_1d["ion"] = [
             {**atoms["H"],  "particles":{"d": 0, "v": 0}, "energy": {"d": 0, "v": 0}, },
             {**atoms["D"],  "particles":{"d": 0, "v": 0}, "energy": {"d": 0, "v": 0}, },
             {**atoms["He"], "particles":{"d": 0, "v": 0}, "energy": {"d": 0, "v": 0}, }
@@ -314,6 +318,7 @@ if __name__ == "__main__":
     ###################################################################################################
 
     if True:  # TransportSolver
+
         tok.transport_solver["boundary_condition"] = {}
 
         tok.transport_solver.update()

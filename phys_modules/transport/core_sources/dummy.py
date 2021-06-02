@@ -11,7 +11,7 @@ from spdm.data.Node import Dict, List, Node
 from spdm.util.logger import logger
 
 
-class DummyCoreSource(CoreSources.Source):
+class CoreSourceDummy(CoreSources.Source):
     def __init__(self, d=None, *args,  **kwargs):
         super().__init__(collections.ChainMap({
             "identifier": {
@@ -30,4 +30,4 @@ class DummyCoreSource(CoreSources.Source):
         return 0.0
 
 
-__SP_EXPORT__ = DummyCoreSource
+__SP_EXPORT__ = CoreSourceDummy

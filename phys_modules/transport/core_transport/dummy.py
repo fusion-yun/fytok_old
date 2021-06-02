@@ -11,7 +11,7 @@ from spdm.data.Node import Dict, List, Node
 from spdm.util.logger import logger
 
 
-class DummyTransportMode(CoreTransport.Model):
+class TransportModeDummy(CoreTransport.Model):
     """
        Dummy CoreTransport.Model
        ===============================
@@ -36,4 +36,4 @@ class DummyTransportMode(CoreTransport.Model):
         return 0.00
 
 
-__SP_EXPORT__ = DummyTransportMode
+__SP_EXPORT__ = TransportModeDummy

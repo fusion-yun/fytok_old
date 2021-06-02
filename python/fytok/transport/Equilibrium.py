@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Sequence, Union
 
 import matplotlib.pyplot as plt
+from fytok.device.PFActive import PFActive
 from spdm.numlib import np
 import scipy
 from spdm.numlib import constants
@@ -15,6 +16,9 @@ from spdm.data.Node import sp_property
 from spdm.util.logger import logger
 from spdm.util.utilities import _not_found_, try_get
 
+from ..device.Wall import Wall
+from ..device.PFActive import PFActive
+from ..device.Magnetics import Magnetics
 from ..common.GGD import GGD
 from ..common.IDS import IDS
 from ..common.Misc import RZTuple, VacuumToroidalField
@@ -26,6 +30,33 @@ EPS = np.finfo(float).eps
 TWOPI = 2.0*constants.pi
 
 
+class EquilibriumConstraintsPurePosition(Dict):
+    def __init__(self,  *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+class EquilibriumConstraints0D(Dict):
+    def __init__(self,  d, *args, **kwargs):
+        if isinstance(d, float):
+            d = {"measured": d}
+        super().__init__(*args, **collections.ChainMap(d, kwargs))
+
+    """Measured value {dynamic} [as_parent]	FLT_0D	"""
+    measured: float = 0
+    """Path to the source data for this measurement in the IMAS data dictionary {dynamic}	STR_0D	"""
+    source: str = ""
+    """Exact time slice used from the time array of the measurement source data. If the time slice does not exist in the time array of the source data, it means linear interpolation has been used {dynamic} [s]	FLT_0D	"""
+    time_measurement: float = 0
+    """Integer flag : 1 means exact data, taken as an exact input without being fitted; 0 means the equilibrium code does a least square fit {dynamic}	INT_0D	"""
+    exact: float = 0
+    """Weight given to the measurement {dynamic} [-]	FLT_0D	"""
+    weight: float = 0
+    """Value calculated from the reconstructed equilibrium {dynamic} [as_parent]	FLT_0D	"""
+    reconstructed: float = 0
+    """Squared error normalized by the standard deviation considered in the minimization process : chi_squared = weight^2 *(reconstructed - measured)^2 / sigma^2, where sigma is the standard deviation of the measurement error {dynamic} [as_parent]	FLT_0D    """
+    chi_squared: float = 0
+
+
 class EquilibriumConstraints(Dict):
     r"""
         In case of equilibrium reconstruction under constraints, measurements used to constrain the equilibrium,
@@ -34,9 +65,96 @@ class EquilibriumConstraints(Dict):
             J=1/2*sum_i [ weight_i^2 (reconstructed_i - measured_i)^2 / sigma_i^2 ]. in which sigma_i is the
             standard deviation of the measurement error (to be found in the IDS of the measurement)
     """
+    Constraints0D = EquilibriumConstraints0D
+    PurePosition = EquilibriumConstraintsPurePosition
 
     def __init__(self, *args,   **kwargs):
         super().__init__(*args,    **kwargs)
+
+    @sp_property
+    def b_field_tor_vacuum_r(self) -> Constraints0D:
+        """	Vacuum field times major radius in the toroidal field magnet. Positive sign means anti-clockwise when viewed from above [T.m]	structure	"""
+        return self["b_field_tor_vacuum_r"]
+
+    @sp_property
+    def bpol_probe(self) -> List[Constraints0D]:
+        """Set of poloidal field probes [T]	struct_array [max_size=unbounded]	1- IDS:magnetics/bpol_probe"""
+        return self["bpol_probe"]
+
+    @sp_property
+    def diamagnetic_flux(self) -> List[Constraints0D]:
+        """Diamagnetic flux [Wb]	structure	"""
+        return self["diamagnetic_flux"]
+
+    @sp_property
+    def faraday_angle(self) -> List[Constraints0D]:
+        """Set of faraday angles [rad]	struct_array [max_size=unbounded]	1- IDS:polarimeter/channel"""
+        return self["faraday_angle"]
+
+    @sp_property
+    def mse_polarisation_angle(self) -> List[Constraints0D]:
+        """Set of MSE polarisation angles [rad]	struct_array [max_size=unbounded]	1- IDS:mse/channel"""
+        return self["mse_polarisation_ang"]
+
+    @sp_property
+    def flux_loop(self) -> List[Constraints0D]:
+        """Set of flux loops [Wb]	struct_array [max_size=unbounded]	1- IDS:magnetics/flux_loop"""
+        return self["flux_loop"]
+
+    @sp_property
+    def ip(self) -> Constraints0D:
+        """Plasma current. Positive sign means anti-clockwise when viewed from above [A]	structure	"""
+        return self["ip"]
+
+    @dataclass
+    class Magnetisation:
+        magnetisation_r: EquilibriumConstraints0D
+        magnetisation_z: EquilibriumConstraints0D
+
+    @sp_property
+    def iron_core_segment(self) -> List[Magnetisation]:
+        """Magnetisation M of a set of iron core segments [T]	struct_array [max_size=unbounded]	1- IDS:iron_core/segment"""
+        return self["iron_core_segment"]
+
+    @sp_property
+    def n_e(self) -> List[Constraints0D]:
+        """Set of local density measurements [m^-3]	struct_array [max_size=unbounded]	1- 1...N"""
+        return self["n_e"]
+
+    @sp_property
+    def n_e_line(self) -> List[Constraints0D]:
+        """Set of line integrated density measurements [m^-2]	struct_array [max_size=unbounded]	1- IDS:interferometer/channel"""
+        return self["n_e_line"]
+
+    @sp_property
+    def pf_current(self) -> List[Constraints0D]:
+        """Current in a set of poloidal field coils [A]	struct_array [max_size=unbounded]	1- IDS:pf_active/coil"""
+        return self["pf_current"]
+
+    @sp_property
+    def pf_passive_current(self) -> List[Constraints0D]:
+        """Current in a set of axisymmetric passive conductors [A]	struct_array [max_size=unbounded]	1- IDS:pf_passive/loop"""
+        return self["pf_passive_current"]
+
+    @sp_property
+    def pressure(self) -> List[Constraints0D]:
+        """Set of total pressure estimates [Pa]	struct_array [max_size=unbounded]	1- 1...N"""
+        return self["pressure"]
+
+    @sp_property
+    def q(self) -> List[Constraints0D]:
+        """Set of safety factor estimates at various positions [-]	struct_array [max_size=unbounded]	1- 1...N"""
+        return self["q"]
+
+    @sp_property
+    def x_point(self) -> PurePosition:
+        "Array of X-points, for each of them the RZ position is given	struct_array [max_size=unbounded]	1- 1...N"""
+        return self["x_point"]
+
+    @sp_property
+    def strike_point(self) -> PurePosition:
+        """Array of strike points, for each of them the RZ position is given"""
+        return self["strike_point"]
 
 
 class EquilibriumGlobalQuantities(Dict):
@@ -850,6 +968,8 @@ class Equilibrium(IDS):
         #    Poloidal plane coordinate   : (\rho,\theta,\phi)
     """
     _IDS = "equilibrium"
+    _actor_module_prefix = "transport.equilibrium."
+    Constraints = EquilibriumConstraints
 
     @dataclass
     class State(IDS.State):
@@ -871,6 +991,10 @@ class Equilibrium(IDS):
     @sp_property
     def time_slice(self) -> EquilibriumTimeSlice:
         return self["time_slice"]
+
+    def update(self,  *args, constraints: Constraints, core_profiles=None, wall: Wall = None,
+               pf_active: PFActive = None, magnetics: Magnetics = None, **kwargs):
+        super().update(*args, **kwargs)
 
     ####################################################################################
     # Plot profiles

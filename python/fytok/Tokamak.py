@@ -119,75 +119,72 @@ class Tokamak(Actor):
     def transport_solver(self) -> TransportSolver:
         return self["transport_solver"]
 
-    def advance(self, time=None,  dt=None,  vacuum_toroidal_field: VacuumToroidalField = None, **kwargs):
+    def advance(self,  dt=None, /,  time=None, **kwargs):
 
         time = super().advance(time=time, dt=dt)
 
-        vacuum_toroidal_field = VacuumToroidalField(r0=self._r0, b0=self._b0)
+        self.wall.advance(time=time, updte=False)
 
-        self.pf_active.advance(time=time)
+        self.pf_active.advance(time=time, updte=False)
 
-        self.equilibrium.advance(time=time, vacuum_toroidal_field=vacuum_toroidal_field,
-                                 wall=self.wall, pf_active=self.pf_active.current_state,)
+        self.equilibrium.advance(time=time, updte=False)
 
-        self.core_profiles.advance(time=time)
+        self.core_profiles.advance(time=time, updte=False)
 
-        self.core_sources.advance(time=time)
+        self.core_sources.advance(time=time, updte=False)
 
-        self.core_transport.advance(time=time)
+        self.core_transport.advance(time=time, updte=False)
 
-        self.update(time=time, vacuum_toroidal_field=vacuum_toroidal_field, **kwargs)
+    def update(self, *args, constraints=None,  max_iteration=1,  enable_edge=False,  tolerance=1.0e-6, **kwargs):
 
-    def update(self,  vacuum_toroidal_field: VacuumToroidalField = None, max_step=1, enable_edge=False, tolerance=1.0e-6, **kwargs):
+        self.wall.update(kwargs.get("wall", {}))
 
-        if vacuum_toroidal_field is not None:
-            self._b0[-1] = vacuum_toroidal_field.b0
+        self.pf_active.update(kwargs.get("pf_active", {}))
 
-        vacuum_toroidal_field = VacuumToroidalField(r0=self._r0, b0=self._b0[-1])
+        self.magnetics.update(kwargs.get("magnetics", {}))
 
-        core_profile_prev = self.core_profiles.previous_state
-        core_profile_next = self.core_profiles.current_state
+        for nstep in range(max_iteration):
 
-        for nstep in range(max_step):
-            equilibrium = self.equilibrium.current_state
+            self.core_profiles.update()
 
-            self.core_transport.update(vacuum_toroidal_field=vacuum_toroidal_field,
-                                       equilibrium=equilibrium, core_profiles=core_profile_next)
+            self.equilibrium.update(constraints=constraints,
+                                    core_profiles=self.core_profiles,
+                                    wall=self.wall,
+                                    pf_active=self.pf_active,
+                                    magnetics=self.magnetics)
 
-            self.core_sources.update(vacuum_toroidal_field=vacuum_toroidal_field,
-                                     equilibrium=equilibrium, core_profiles=core_profile_next)
+            self.core_sources.update(equilibrium=self.equilibrium, core_profiles=self.core_profiles)
 
-            convergence = self.transport_solver.update(
-                core_profile_prev,  core_profile_next,
-                vacuum_toroidal_field=vacuum_toroidal_field,
-                equilibrium=equilibrium,
-                core_transport=self.core_transport.current_state,
-                core_sources=self.core_sources.current_state,
-                **kwargs)
+            self.core_transport.update(equilibrium=self.equilibrium, core_profiles=self.core_profiles)
 
             if enable_edge:
-                self.edge_transport.update(vacuum_toroidal_field=vacuum_toroidal_field,
-                                           equilibrium=equilibrium, core_profiles=core_profile_next)
+                self.edge_transport.update(equilibrium=self.equilibrium, core_profiles=self.core_profiles)
 
-                self.edge_sources.update(vacuum_toroidal_field=vacuum_toroidal_field,
-                                         equilibrium=equilibrium, core_profiles=core_profile_next)
+                self.edge_sources.update(equilibrium=self.equilibrium, core_profiles=self.core_profiles)
 
-                self.edge_profiles.update(vacuum_toroidal_field=vacuum_toroidal_field,
-                                          equilibrium=equilibrium, core_profiles=core_profile_next,
+                self.edge_profiles.update(equilibrium=self.equilibrium, core_profiles=self.core_profiles,
                                           edge_transport=self.edge_transport.current_state,
                                           edge_sources=self.edge_sources.current_state)
 
                 # TODO: update boundary condition
+                self.transport_solver.update(edge_profiles=self.edge_profiles)
 
-            self.equilibrium.update(vacuum_toroidal_field=vacuum_toroidal_field,
-                                    wall=self.wall,
-                                    pf_active=self.pf_active.current_state,
-                                    core_profiles=core_profile_next)
+            convergence = self.transport_solver.solve(
+                core_profiles=self.core_profiles,
+                equilibrium=self.equilibrium,
+                core_transport=self.core_transport,
+                core_sources=self.core_sources,
+                **kwargs)
 
-            logger.debug(f"time={self.time}  iterator step {nstep}/{max_step} convergence={convergence}")
+            logger.debug(f"time={self.time}  iterator step {nstep}/{max_iteration} convergence={convergence}")
 
             if convergence < tolerance:
                 break
+
+        if convergence > tolerance:
+            logger.warning(
+                f"The solution does not converge, and the number of iterations exceeds the maximum {max_iteration}")
+        return convergence
 
     def plot(self, axis=None, *args, title=None, time=None,  **kwargs):
 
