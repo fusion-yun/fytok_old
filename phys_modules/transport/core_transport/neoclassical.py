@@ -118,6 +118,7 @@ class NeoClassical(CoreTransport.Model):
                 }
             sp_trans = self.profiles_1d.ion.find({"label": sp.label}, only_first=True, default_value=_not_found_)
 
+            # TODO: Need node to support conditional insertion
             # sp_trans = self.profiles_1d.ion.insert({"label": sp.label},
             #                                        {_next_: {
             #                                            "label": sp.label,
@@ -128,16 +129,14 @@ class NeoClassical(CoreTransport.Model):
             #                                        only_first=True)
 
             if sp_trans is _not_found_:
-                raise KeyError(f"Can not add ion {sp.label}!")
+                logger.error(f"Can not add ion {sp.label}!")
             else:
-                logger.debug(f"Add ion '{sp.label}'")
-
-            sp_trans.energy.d = chi_i
-            sp_trans.particles.d = chi_i/3.0
+                sp_trans.energy.d = chi_i
+                sp_trans.particles.d = chi_i/3.0
 
             #########################################################################
 
-            sum1 = sum1 + chi_i/3.0*sp.pressure.derivative*Zi/Ti
+            sum1 = sum1 + chi_i/3.0*sp.pressure.derivative(rho_tor_norm)*Zi/Ti
             sum2 = sum2 + chi_i/3.0*Ni*Zi2 / Ti
 
         self.profiles_1d.e_field_radial = sum1/sum2

@@ -2,7 +2,7 @@
 import collections
 import datetime
 import getpass
-from typing import Union
+from typing import ChainMap, Union
 
 import matplotlib.pyplot as plt
 from spdm.data.Function import Function
@@ -10,8 +10,6 @@ from spdm.data.Node import Dict, Node, sp_property
 from spdm.flow.Actor import Actor
 from spdm.numlib import constants, np
 from spdm.util.logger import logger
-
-from fytok.transport.MagneticCoordSystem import RadialGrid
 
 ##################################
 from .common.Misc import VacuumToroidalField
@@ -29,6 +27,7 @@ from .transport.EdgeSources import EdgeSources
 from .transport.EdgeTransport import EdgeTransport
 # ---------------------------------
 from .transport.Equilibrium import Equilibrium
+from .transport.MagneticCoordSystem import RadialGrid
 from .transport.TransportSolver import TransportSolver
 
 ##################################
@@ -44,7 +43,7 @@ class Tokamak(Actor):
     """
 
     def __init__(self, d=None, * args, grid: Union[RadialGrid, np.ndarray, None] = None, **kwargs):
-        super().__init__(kwargs)
+        super().__init__(collections.ChainMap(d or {}, kwargs))
         self._time = 0.0
         self._grid = grid
 
@@ -135,7 +134,7 @@ class Tokamak(Actor):
 
         self.core_transport.advance(time=time, updte=False)
 
-    def update(self, *args, constraints=None,  max_iteration=1,  enable_edge=False,  tolerance=1.0e-6, **kwargs):
+    def update(self, *args, constraints: Equilibrium.Constraints = None,  max_iteration=1,  enable_edge=False,  tolerance=1.0e-6, **kwargs):
 
         self.wall.update(kwargs.get("wall", {}))
 

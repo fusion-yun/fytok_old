@@ -23,8 +23,20 @@ if __name__ == "__main__":
         pf_active=device.entry.find("pf_active"),
         tf=device.entry.find("tf"),
         magnetics=device.entry.find("magnetics"),
+        equilibrium={"code": {"name": "dummy"}},
+        core_profiles={
+            "profiles_1d": {
+                "electrons": {** atoms["e"]},
+                "ion": [
+                    atoms["H"],
+                    atoms["D"],
+                    atoms["He"],
+                    atoms["Be"],
+                    atoms["Ar"],
+                ],
+                # "zeff": Zeff
+            }},
         transport_solver={"code": {"name": "bvp_solver"}},
-        equilibrium={"code": {"name": "dummy"}}
 
     )
 
@@ -141,17 +153,15 @@ if __name__ == "__main__":
 
         # Zeff = Function(bs_r_nrom, baseline["Zeff"].values)
 
-        tok.core_profiles["profiles_1d"] = {
-            "electrons": {** atoms["e"], "density": ne,  "temperature": Te, },
-            "ion": [
-                {**atoms["H"],  "density":  0.5*nDT, "temperature": Ti, },
-                {**atoms["D"],  "density":  0.5*nDT, "temperature": Ti, },
-                {**atoms["He"], "density":      nHe, "temperature": Ti, },
-                {**atoms["Be"], "density":  0.02*ne, "temperature": Ti, },
-                {**atoms["Ar"], "density":0.0012*ne, "temperature": Ti, }
-            ],
-            # "zeff": Zeff
-        }
+        tok.core_profiles.profiles_1d.electrons.update({"density": ne,  "temperature": Te, })
+        tok.core_profiles.profiles_1d.ion.update_many(
+            [  # query             value
+                ({"label": "H", },  {"density":   0.5*nDT, "temperature": Ti, }),
+                ({"label": "D", },  {"density":   0.5*nDT, "temperature": Ti, }),
+                ({"label": "He", }, {"density":       nHe, "temperature": Ti, }),
+                ({"label": "Be", }, {"density":   0.02*ne, "temperature": Ti, }),
+                ({"label": "Ar", }, {"density": 0.0012*ne, "temperature": Ti, }),
+            ])
 
         tok.core_profiles.update()
 

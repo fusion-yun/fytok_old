@@ -2,21 +2,18 @@
 
 """
 
+import collections
 from math import log
 from typing import Mapping, Optional
-import collections
+
 from fytok.common.IDS import IDS
 from fytok.common.Misc import Identifier
 from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreSources import CoreSources
 from fytok.transport.CoreTransport import CoreTransport
-# from fytok.transport.EdgeProfiles import EdgeProfiles
-# from fytok.transport.EdgeSources import EdgeSources
-# from fytok.transport.EdgeTransport import EdgeTransport
 from fytok.transport.Equilibrium import Equilibrium
 from fytok.transport.MagneticCoordSystem import RadialGrid
 from fytok.transport.TransportSolver import TransportSolver
-
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List, _not_found_, sp_property
 from spdm.numlib import constants, np
@@ -29,7 +26,7 @@ TOLERANCE = 1.0e-6
 TWOPI = 2.0 * constants.pi
 
 
-class BVPTransportSolver(TransportSolver):
+class TransportSolverBVP(TransportSolver):
     r"""
         Solve transport equations :math:`\rho=\sqrt{ \Phi/\pi B_{0}}`
         See  :cite:`hinton_theory_1976,coster_european_2010,pereverzev_astraautomated_1991`
@@ -226,21 +223,20 @@ class BVPTransportSolver(TransportSolver):
         inv_tau = 0 if abs(tau) < EPSILON else 1.0/tau
 
         # $R_0$ characteristic major radius of the device   [m]
-        R0 = core_profiles.vacuum_toroidal_field.r0
+        R0 = equilibrium.vacuum_toroidal_field.r0
 
         # $B_0$ magnetic field measured at $R_0$            [T]
-        B0 = core_profiles.vacuum_toroidal_field.b0
+        B0 = equilibrium.vacuum_toroidal_field.b0
 
         B0m = core_profiles_prev.vacuum_toroidal_field.b0
         # $rho_tor_{norm}$ normalized minor radius                [-]
-        rho_tor_norm = core_profiles.grid.rho_tor_norm
+        rho_tor_norm = core_profiles_next.grid.rho_tor_norm
 
         psi_norm = core_profiles_next.grid.psi_norm
 
-        trans = core_transport.model.combine
         # Grid
         # $rho_tor$ not  normalized minor radius                [m]
-        rho_tor = trans.grid_v.rho_tor
+        rho_tor = core_profiles_next.grid.rho_tor
 
         rho_tor_boundary = core_profiles_next.grid.rho_tor[-1]
 
@@ -255,25 +251,26 @@ class BVPTransportSolver(TransportSolver):
         # -----------------------------------------------------------
         # Equilibrium
         # diamagnetic function,$F=R B_\phi$                 [T*m]
-        fpol = equilibrium.time_slice.profiles_1d.fpol.pullback(psi_norm, rho_tor_norm)
+        fpol = equilibrium.time_slice.profiles_1d.fpol(psi_norm)
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        vpr = equilibrium.time_slice.profiles_1d.dvolume_drho_tor.pullback(psi_norm, rho_tor_norm)
+        vpr = equilibrium.time_slice.profiles_1d.dvolume_drho_tor(psi_norm)
 
-        vprm = core_profiles_prev.vprime
+        vprm = core_profiles_prev.dvolume_drho_tor
 
         if not isinstance(vprm, np.ndarray) or vprm == None:
             vprm = vpr
 
         # $q$ safety factor                                 [-]
-        qsf = Function(rho_tor_norm, equilibrium.time_slice.profiles_1d.q(psi_norm))
-        gm1 = Function(rho_tor_norm, equilibrium.time_slice.profiles_1d.gm1(psi_norm))
-        gm2 = Function(rho_tor_norm, equilibrium.time_slice.profiles_1d.gm2(psi_norm))
-        gm3 = Function(rho_tor_norm, equilibrium.time_slice.profiles_1d.gm3(psi_norm))
+        qsf = equilibrium.time_slice.profiles_1d.q(psi_norm)
+        gm1 = equilibrium.time_slice.profiles_1d.gm1(psi_norm)
+        gm2 = equilibrium.time_slice.profiles_1d.gm2(psi_norm)
+        gm3 = equilibrium.time_slice.profiles_1d.gm3(psi_norm)
 
         core_profiles.vprime = vpr
 
         #　Current Equation
+
         def current_transport(core_profiles_next: CoreProfiles.Profiles1D,
                               core_profiles_prev: CoreProfiles.Profiles1D,
                               core_transport: CoreTransport.Model,
@@ -611,12 +608,15 @@ class BVPTransportSolver(TransportSolver):
             """
             raise NotImplementedError("Rotation")
 
+        core_transport_combine = core_transport.model.combine
+        core_source_combine = core_sources.source.combine
+
         current_transport(
             core_profiles_next,
             core_profiles_prev,
-            core_transport,
-            core_sources,
-            boundary_conditions.current
+            core_transport_combine,
+            core_source_combine,
+            self.boundary_conditions_1d.current
         )
 
         if enable_ion_solver:
@@ -627,14 +627,14 @@ class BVPTransportSolver(TransportSolver):
                 core_profiles_prev.electrons,
                 core_transport.electrons,
                 core_sources.electrons,
-                boundary_conditions.electrons
+                self.boundary_conditions_1d.electrons
             )
             energy_transport(
                 core_profiles.electrons,
                 core_profiles_prev.electrons,
                 core_transport.electrons,
                 core_sources.electrons,
-                boundary_conditions.electrons
+                self.boundary_conditions_1d.electrons
             )
 
         return core_profiles
@@ -667,4 +667,4 @@ class BVPTransportSolver(TransportSolver):
         # terminate
 
 
-__SP_EXPORT__ = BVPTransportSolver
+__SP_EXPORT__ = TransportSolverBVP
