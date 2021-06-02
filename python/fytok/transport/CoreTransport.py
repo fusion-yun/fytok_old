@@ -217,9 +217,6 @@ class CoreTransportModel(Actor):
         super().__init__(*args, **kwargs)
         self._grid = grid or self._parent._grid
 
-    def update(self, *args, equilibrium: Equilibrium = None,  core_profiles: CoreProfiles = None, **kwargs) -> float:
-        return self.profiles_1d.update(*args, **kwargs)
-
     @sp_property
     def code(self) -> IDSCode:
         return self["code"]

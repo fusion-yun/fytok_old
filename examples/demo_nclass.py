@@ -24,18 +24,7 @@ if __name__ == "__main__":
         tf=device.entry.find("tf"),
         magnetics=device.entry.find("magnetics"),
         equilibrium={"code": {"name": "dummy"}},
-        core_profiles={
-            "profiles_1d": {
-                "electrons": {** atoms["e"]},
-                "ion": [
-                    atoms["H"],
-                    atoms["D"],
-                    atoms["He"],
-                    atoms["Be"],
-                    atoms["Ar"],
-                ],
-                # "zeff": Zeff
-            }},
+        core_profiles={},
         transport_solver={"code": {"name": "bvp_solver"}},
 
     )
@@ -80,31 +69,32 @@ if __name__ == "__main__":
                 #     (eq_profile.fpol,                                                                 r"$fpol$"),
                 # ],
                 [
-                    (Function(bs_psi, baseline["q"].values),            r"$q^{astra}$", {"marker": "+"}, "$[-]$"),
+                    (Function(bs_psi, baseline["q"].values),            r"$q^{astra}$", r"$[-]$", {"marker": "+"}),
                     (eq_profile.q,                                                                        r"$q$"),
                     # (eq_profile.dphi_dpsi,                                             r"$\frac{d\phi}{d\psi}$"),
                 ],
                 [
-                    (Function(bs_psi, baseline["rho"].values),           r"$\rho_{tor}^{astra}$", {"marker": "+"}),
+                    (Function(bs_psi, baseline["rho"].values),       r"$\rho_{tor}^{astra}$", r"[m]", {"marker": "+"}),
                     (eq_profile.rho_tor,                                                        r"$\rho_{tor}$"),
                 ],
                 [
-                    (Function(bs_psi, baseline["x"].values),           r"$\rho_{tor,0}^{astra}$", {"marker": "+"}),
-                    (eq_profile.rho_tor_norm,                                                 r"$\rho_{tor,0}$"),
+                    (Function(bs_psi, baseline["x"].values),           r"astra",
+                     r"$ {\rho_{tor}}{\rho_{tor,bdry}}$", {"marker": "+"}),
+                    (eq_profile.rho_tor_norm,                                                 r"fytok"),
                 ],
                 [
-                    (Function(bs_psi, baseline["Jtot"].values*1e6),   r"$j_{\parallel}^{astra}$", {"marker": "+"}),
-                    (eq_profile.j_parallel,                                                  r"$j_{\parallel}$"),
+                    (Function(bs_psi, baseline["Jtot"].values*1e6),   r"astra", r"$j_{\parallel}$", {"marker": "+"}),
+                    (eq_profile.j_parallel,                                         r"fytok",     r"$j_{\parallel}$"),
                 ],
                 [
                     (Function(bs_psi, baseline["shif"].values),
-                     r"$\Delta^{astra}$", {"marker": "+"}, "shafranov \n shift"),
+                     r"$\Delta^{astra}$", "shafranov \n shift", {"marker": "+"}),
                     (eq_profile.geometric_axis.r-tok.equilibrium.vacuum_toroidal_field.r0,
-                     r"$\Delta$ ", {}, "shafranov \n shift"),
+                     r"$\Delta$ ", "shafranov \n shift"),
                 ],
                 [
-                    (Function(bs_psi, baseline["k"].values),         r"$k^{astra}$", {"marker": "+"}, "elongation"),
-                    (eq_profile.elongation,                                               r"$k$", {}, "elongation"),
+                    (Function(bs_psi, baseline["k"].values),         r"$k^{astra}$", "elongation", {"marker": "+"}),
+                    (eq_profile.elongation,                                               r"$k$", "elongation"),
                 ],
 
                 # (eq_profile.gm1,                                             r"$gm1=\left<\frac{1}{R^2}\right>$"),
@@ -153,15 +143,15 @@ if __name__ == "__main__":
 
         # Zeff = Function(bs_r_nrom, baseline["Zeff"].values)
 
-        tok.core_profiles.profiles_1d.electrons.update({"density": ne,  "temperature": Te, })
-        tok.core_profiles.profiles_1d.ion.update_many(
-            [  # query             value
-                ({"label": "H", },  {"density":   0.5*nDT, "temperature": Ti, }),
-                ({"label": "D", },  {"density":   0.5*nDT, "temperature": Ti, }),
-                ({"label": "He", }, {"density":       nHe, "temperature": Ti, }),
-                ({"label": "Be", }, {"density":   0.02*ne, "temperature": Ti, }),
-                ({"label": "Ar", }, {"density": 0.0012*ne, "temperature": Ti, }),
-            ])
+        tok.core_profiles.profiles_1d = {
+            "electrons": {**atoms["e"], "density": ne,  "temperature": Te, },
+            "ion": [
+                {**atoms["H"],  "density":   0.5*nDT, "temperature": Ti, },
+                {**atoms["D"],  "density":   0.5*nDT, "temperature": Ti, },
+                {**atoms["He"], "density":       nHe, "temperature": Ti, },
+                {**atoms["Be"], "density":   0.02*ne, "temperature": Ti, },
+                {**atoms["Ar"], "density": 0.0012*ne, "temperature": Ti, },
+            ]}
 
         tok.core_profiles.update()
 
@@ -171,25 +161,26 @@ if __name__ == "__main__":
             [
                 [
                     # (Function(bs_r_nrom, baseline["NE"].values*1.0e19),              r"$n_{e}^{astra}$"),
-                    (core_profile.electrons.density,                                                      r"$n_e$"),
-                    *[(ion.density,                            f"$n_{{{ion.label}}}$") for ion in core_profile.ion],
+                    (core_profile.electrons.density*1e-19,        r"$e$", r"n $[10^{19} m \cdot s^{-3}]$"),
+                    *[(ion.density*1e-19,                            f"${ion.label}$") for ion in core_profile.ion],
 
                 ],
                 [
                     # (Function(bs_r_nrom, baseline["TE"].values),                     r"$T_{e}^{astra}$"),
-                    (core_profile.electrons.temperature,                                                  r"$T_e$"),
-                    *[(ion.temperature,                        f"$T_{{{ion.label}}}$") for ion in core_profile.ion],
+                    (core_profile.electrons.temperature/1000,                              r"$e$", r"T $[keV]$"),
+                    *[(ion.temperature/1000,                      f"${ion.label}$") for ion in core_profile.ion],
                 ],
 
                 [
-                    (Function(bs_r_nrom, baseline["Zeff"].values),                            r"$Z_{eff}^{astra}$"),
-                    (core_profile.zeff,                                                               r"$z_{eff}$"),
+                    (Function(bs_r_nrom, baseline["Zeff"].values),            r"$^{astra}$", r"$Z_{eff}  [-]$"),
+                    (core_profile.zeff,                                                               r"$fytok$"),
                 ],
-                (core_profile.e_field.parallel,                                                 r"$E_{\parallel}$"),
+                (core_profile.e_field.parallel,                          r"",   r"$E_{\parallel} [V\cdot m^{-1}]$ "),
 
                 [
-                    (core_profile.j_ohmic,                                                          r"$j_{ohmic}$"),
-                    (Function(bs_r_nrom, baseline["Joh"].values),                              r"$j_{oh}^{astra}$"),
+                    (Function(bs_r_nrom, baseline["Joh"].values),                   "astra",    r"$j_{ohmic} [A]$"),
+                    (core_profile.j_ohmic,                                          "fytok",    r"$j_{ohmic} [A]$"),
+
                 ],
                 (core_profile.grid.psi,                                                                  r"$\psi$"),
                 (core_profile.electrons.pressure,                                                        r"$p_e $"),
@@ -245,24 +236,25 @@ if __name__ == "__main__":
                     *[(ion.energy.flux,               f"$q_{{{ion.label}}}$") for ion in core_transport1d.ion],
                 ],
 
-                (Function(bs_r_nrom, baseline["Xi"].values),          r"$\chi_{i}^{astra}$"),
+                (Function(bs_r_nrom, baseline["Xi"].values),                            r"$\chi_{i}^{astra}$"),
                 [
-                    (core_transport1d.electrons.energy.v,                                         r"$v_{Te}$"),
-                    *[(ion.energy.v,                f"$v_{{T,{ion.label}}}$") for ion in core_transport1d.ion],
+                    (core_transport1d.electrons.energy.v,           r"$electron$", r"$v_{T} [m\cdot s^{-1}]$"),
+                    *[(ion.energy.v,                f"${ion.label}$",
+                       r"$v_{T} [m\cdot s^{-1}]$") for ion in core_transport1d.ion],
                 ],
                 [
                     (Function(bs_r_nrom, np.log(baseline["XiNC"].values)),
-                     r"$ln \chi_{i,nc}^{astra}$", {"marker": "+"}),
-                    * [(np.log(ion.energy.d),   f"${ion.label}$", {}, r"$ln \chi$ Wesson")
+                     r"$ln \chi_{i,nc}^{astra}$", "", {"marker": "+"}),
+                    * [(np.log(ion.energy.d),   f"${ion.label}$", r"$ln \chi$ Wesson")
                         for ion in core_transport1d.ion],
                 ],
                 [
-                    (Function(bs_r_nrom, baseline["Zeff"].values),          r"$Z_{eff}^{astra}$", {"marker": "+"}),
+                    (Function(bs_r_nrom, baseline["Zeff"].values),     r"$Z_{eff}^{astra}$", "[-]", {"marker": "+"}),
                     (core_profile.zeff,                                                              r"$z_{eff}$"),
                 ],
                 [
                     (Function(bs_r_nrom, baseline["Joh"].values*1.0e6 / baseline["U"].values *
-                              (2.0*constants.pi * tok.equilibrium.vacuum_toroidal_field.r0)),     r"$\sigma_{\parallel}^{astra}$", {"marker": "+"}),
+                              (2.0*constants.pi * tok.equilibrium.vacuum_toroidal_field.r0)),     r"$\sigma_{\parallel}^{astra}$", "", {"marker": "+"}),
                     (tok.core_transport.model[{"code.name": "spitzer"}].profiles_1d.conductivity_parallel,
                      r"$\sigma_{\parallel}^{wesson}$"),
                     (tok.core_transport.model.combine.profiles_1d.conductivity_parallel,  r"$\sigma_{\parallel}$"),
@@ -302,7 +294,8 @@ if __name__ == "__main__":
                 #      r"$\sigma_{\parallel}^{wesson}$"),
                 # ],
                 [
-                    (Function(bs_r_nrom, baseline["Jbs"].values*1.0e6), r"$j_{bootstrap}^{astra}$", {"marker": "+"}),
+                    (Function(bs_r_nrom, baseline["Jbs"].values*1.0e6),
+                     r"$j_{bootstrap}^{astra}$", r"$[A]$", {"marker": "+"}),
                     (core_source_1d.j_parallel,                                         r"$j_{bootstrap}^{wesson}$"),
 
                     (tok.core_sources.source.combine.profiles_1d.j_parallel,             r"$j_{bootstrap}^{wesson}$"),
