@@ -16,7 +16,7 @@ if __name__ == "__main__":
                 # (profile["Nd+t"].values,                        r"Nd,thermal + Nt thermalised fuel density"),
                 (profile["NE"].values
                  - profile["Nd+t"].values
-                 - profile["Nalf"].values*2,                                r"$N_{e}-N_{DT}-N_{\alpha}*2$"),
+                 - profile["Nalf"].values*2,                                r"$N_{e}-N_{DT}-N_{\alpha}*2$", r"$10^{19}[m^{-3}]$"),
                 (profile["Nz"].values*profile["Zeff"].values,                                   r"$N_{z}$"),
                 (profile["Nb"].values,                                       r"fast NBI deuterium density"),
 
@@ -28,105 +28,107 @@ if __name__ == "__main__":
 
             ],
             [
-                (profile["Nalf"].values,                                              r"He + alpha density"),
-                (profile["Nz"].values,                                                  r"impurity density"),
-                (profile["Nb"].values,                                        r"fast NBI deuterium density"),
+                (profile["Nalf"].values,                   r"He + alpha density", r"$10^{19}[m^{-3}]$"),
+                (profile["Nz"].values,                       r"impurity density", r"$10^{19}[m^{-3}]$"),
+                (profile["Nb"].values,             r"fast NBI deuterium density", r"$10^{19}[m^{-3}]$"),
             ],
             [
-                (profile["Nalf"].values,                                              r"He + alpha density"),
-                (profile["Nath"].values,                                              r"thermal He density"),
-                (profile["Naff"].values,                              r"alpha prtcl. density (thin orbits)"),
+                (profile["Nalf"].values,                      r"He + alpha density", r"$10^{19}[m^{-3}]$"),
+                (profile["Nath"].values,                      r"thermal He density", r"$10^{19}[m^{-3}]$"),
+                (profile["Naff"].values,      r"alpha prtcl. density (thin orbits)", r"$10^{19}[m^{-3}]$"),
                 (profile["Nalf"].values
                  - profile["Nath"].values
-                 - profile["Naff"].values,   r"rms",
+                 - profile["Naff"].values,   r"rms", r"$10^{19}[m^{-3}]$",
                  {"color": "red", "linestyle": "dashed"}),
 
             ],
             [
-                (profile["TE"].values,                                   r"$T_{e}$"),
-                (profile["TI"].values,                                   r"$T_{i}$"),
+                (profile["TE"].values,                                   r"$T_{e}$", r"$T[eV]$"),
+                (profile["TI"].values,                                   r"$T_{i}$", r"$T[eV]$"),
 
             ],
             [
-                (profile["Jext"].values,                               r"$j_{ext}$"),
-                (profile["Jnb"].values,                                 r"$j_{nb}$"),
-                (profile["Jrf"].values,                                 r"$j_{rf}$"),
+                (profile["Jext"].values,                                r"ext$", r"$J [mA\cdot m^{-2}]$"),
+                (profile["Jnb"].values,                                 r"nb$",  r"$J [mA\cdot m^{-2}]$"),
+                (profile["Jrf"].values,                                 r"rf$",  r"$J [mA\cdot m^{-2}]$"),
                 (profile["Jext"].values
                  - profile["Jnb"].values
-                 - profile["Jrf"].values,                  r"$J_{ext}-J_{nb}-J_{rf}$",
+                 - profile["Jrf"].values,                  r"$J_{ext}-J_{nb}-J_{rf}$", r"$J [mA\cdot m^{-2}]$",
                  {"color": "red", "linestyle": "dashed"}),
             ],
 
             [
-                (profile["Jnoh"].values,                                r"$j_{noh}$"),
-                (profile["Jbs"].values,                           r"$j_{bootstrap}$"),
-                (profile["Jnb"].values,                                  r"$j_{nb}$"),
-                (profile["Jrf"].values,                                  r"$j_{rf}$"),
+                (profile["Jnoh"].values,                                r"$j_{noh}$", r"$J [mA\cdot m^{-2}]$"),
+                (profile["Jbs"].values,                           r"$j_{bootstrap}$", r"$J [mA\cdot m^{-2}]$"),
+                (profile["Jnb"].values,                                  r"$j_{nb}$", r"$J [mA\cdot m^{-2}]$"),
+                (profile["Jrf"].values,                                  r"$j_{rf}$", r"$J [mA\cdot m^{-2}]$"),
 
                 (profile["Jnoh"].values
                  - profile["Jbs"].values
                  - profile["Jnb"].values
-                 - profile["Jrf"].values,           r"$J_{noh}-J_{bs}-J_{nb}-J_{rf}$",
+                 - profile["Jrf"].values,           r"$J_{noh}-J_{bs}-J_{nb}-J_{rf}$", r"$J [mA\cdot m^{-2}]$",
                  {"color": "red", "linestyle": "dashed"}),
             ],
 
             [
 
-                (profile["Jtot"].values,                          r"$j_{\parallel}$"),
-                (profile["Joh"].values,                                  r"$j_{oh}$"),
-                (profile["Jnoh"].values,                                r"$j_{noh}$"),
+                (profile["Jtot"].values,                          r" parallel ",  r"$J [mA\cdot m^{-2}]$"),
+                (profile["Joh"].values,                                  r"oh $", r"$J [mA\cdot m^{-2}]$"),
+                (profile["Jnoh"].values,                                r"noh ",  r"$J [mA\cdot m^{-2}]$"),
                 (profile["Jtot"].values
                  - profile["Jnoh"].values
-                 - profile["Joh"].values,           r"$j_{\parallel}-j_{oh}-j_{noh}$",
+                 - profile["Joh"].values,           r"$j_{\parallel}-j_{oh}-j_{noh}$", r"$J [mA\cdot m^{-2}]$",
                  {"color": "red", "linestyle": "dashed"}),
 
             ],
 
             [
-                (profile["Paux"].values,                 r"auxilliary power density"),
-                (profile["PeEX"].values,               r"RF+NB heating of electrons"),
-                (profile["Pex"].values,                   r"RF heating of electrons"),
-                (profile["Pnbe"].values,                  r"NB heating of electrons"),
+                (profile["Paux"].values,                 r"auxilliary power density", r"P $[MW\cdot m^{-2}]$"),
+                (profile["PeEX"].values,               r"RF+NB heating of electrons", r"P $[MW\cdot m^{-2}]$"),
+                (profile["Pex"].values,                   r"RF heating of electrons", r"P $[MW\cdot m^{-2}]$"),
+                (profile["Pnbe"].values,                  r"NB heating of electrons", r"P $[MW\cdot m^{-2}]$"),
 
                 (profile["Paux"].values
                  - profile["Pex"].values
-                 - profile["Pnbe"].values,                                   r"rms",
+                 - profile["Pnbe"].values,                                   r"rms", r"$[MW\cdot m^{-2}]$",
                  {"color": "red", "linestyle": "dashed"}),
 
             ],
 
 
             [
-                (profile["Pdt"].values,                          r"$\alpha$-heating"),
-                (profile["Pdti"].values,                r"heating of ions by alphas"),
-                (profile["Pdte"].values,            r"heating of elecrons by alphas"),
+                (profile["Pdt"].values,                          r"$\alpha$-heating", r"P $[MW\cdot m^{-2}]$"),
+                (profile["Pdti"].values,                r"heating of ions by alphas", r"P $[MW\cdot m^{-2}]$"),
+                (profile["Pdte"].values,            r"heating of elecrons by alphas", r"P $[MW\cdot m^{-2}]$"),
                 (profile["Pdt"].values
                  - profile["Pdti"].values
-                 - profile["Pdte"].values,                                    r"rms",
+                 - profile["Pdte"].values,                                    r"rms", r"$[MW\cdot m^{-2}]$",
                  {"color": "red", "linestyle": "dashed"}),
 
             ],
             [
-                (profile["Prad"].values,                     r"total radiative loss"),
-                (profile["Plin"].values,                                     r"Plin"),
-                (profile["Psyn"].values,           r"electron synchrotoron radiaion"),
-                (profile["Pbrm"].values,                                     r"Pbrm"),
+                (profile["Prad"].values,                     r"total radiative loss", r"P $[MW\cdot m^{-2}]$"),
+                (profile["Plin"].values,                                     r"lin",  r"P $[MW\cdot m^{-2}]$"),
+                (profile["Psyn"].values,           r"electron synchrotoron radiaion", r"P $[MW\cdot m^{-2}]$"),
+                (profile["Pbrm"].values,                                     r"brm",  r"P $[MW\cdot m^{-2}]$"),
 
                 (profile["Prad"].values
                     - profile["Psyn"].values
                     - profile["Pbrm"].values
-                    - profile["Plin"].values,                                 r"rms",
+                    - profile["Plin"].values,                                 r"rms", r"P $[MW\cdot m^{-2}]$",
                     {"color": "red", "linestyle": "dashed"}),
 
             ],
             [
-                (profile["Pibm"].values,              r"Beam power absorbed by ions"),
+                (profile["Pibm"].values,              r"Beam power absorbed by ions", r"P $[MW\cdot m^{-2}]$"),
                 (profile["Peic"].values,
-                 r"?electron-ion heat exchange $\frac{3}{\tau_{ei}}n_{e}\left(T_{e}-T_{i}\right)\frac{m}{M}$"),
-                (profile["Pix"].values,                         r"auxiliary heating"),
-                (profile["Pneu"].values,  r"?electron thermal losses due to ionzation of cold neutrals"),
+                 r"?electron-ion heat exchange $\frac{3}{\tau_{ei}}n_{e}\left(T_{e}-T_{i}\right)\frac{m}{M}$", r"$[MW\cdot m^{-2}]$"),
+                (profile["Pix"].values,                         r"auxiliary heating", r"P $[MW\cdot m^{-2}]$"),
+                (profile["Pneu"].values,
+                 r"?electron thermal losses due to ionzation of cold neutrals", r"P $[MW\cdot m^{-2}]$"),
             ],
-            (profile["Poh"].values,        r"Joul heating power density $\sigma_{\parallel}\cdot E^2$"),
+            (profile["Poh"].values,
+             r"Joul heating power density $\sigma_{\parallel}\cdot E^2$", r"P $[MW\cdot m^{-2}]$"),
             (profile["Xi"].values,                                   r"ion heat conductivity $\chi_i$"),
             (profile["XiNC"].values,                 r"neoclassical ion heat conductivity $\chi_{NC}$"),
             (profile["U"].values,                                                        r"$V_{loop}$"),
