@@ -44,7 +44,6 @@ if __name__ == "__main__":
             "coordinate_system": {"grid": {"dim1": 100, "dim2": 256}}
         }
 
-    if True:
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
                   pf_active={"facecolor": 'red'},
@@ -256,7 +255,7 @@ if __name__ == "__main__":
 
                 [
                     (Function(bs_r_nrom, baseline["Xi"].values),          r"astra", r"$\chi_{i}$", {"marker": "+"}),
-                    *[(core_transport1d.ion[{"label": ion.label}].energy.d,
+                    *[(core_transport1d_dummy.ion[{"label": ion.label}].energy.d,
                        f"{ion.label}", r"$\chi_{i}$") for ion in core_profile.ion],
                 ],
 

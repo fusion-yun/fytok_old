@@ -255,7 +255,7 @@ class CoreTransportModel(Actor):
 
     @sp_property
     def profiles_1d(self) -> CoreTransportProfiles1D:
-        return self.get("profiles_1d")
+        return self.get("profiles_1d", {})
 
 
 class CoreTransport(IDS):
