@@ -196,7 +196,7 @@ if __name__ == "__main__":
 
         rho_tor_norm = tok.equilibrium.time_slice.radial_grid().rho_tor_norm
         r0 = tok.equilibrium.vacuum_toroidal_field.r0
-        
+
         r_ped = 0.96  # np.sqrt(0.88)
         Cped = 0.2
         Ccore = 0.4
@@ -357,7 +357,11 @@ if __name__ == "__main__":
 
     if True:  # TransportSolver
 
-        tok.transport_solver["boundary_condition"] = {}
+        tok.transport_solver["boundary_condition_1d"] = {
+            "current": {"value": [0, 0, 1, 0]}
+        }
+
+        logger.debug(tok.transport_solver.boundary_condition_1d)
 
         tok.transport_solver.update()
 

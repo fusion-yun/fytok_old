@@ -27,14 +27,11 @@ EPSILON = 1.0e-15
 TOLERANCE = 1.0e-6
 
 TWOPI = 2.0 * constants.pi
-
-
 @dataclass
 class _BC:
     identifier: Identifier
     value: np.ndarray
     rho_tor_norm: float
-
 
 class TransportSolver(IDS):
     r"""
@@ -46,6 +43,7 @@ class TransportSolver(IDS):
 
     @dataclass
     class BoundaryConditions1D:
+
 
         @dataclass
         class Electrons:
