@@ -128,6 +128,7 @@ if __name__ == "__main__":
                 # ]
             ],
             x_axis=(eq_profile.psi_norm,                                                              r"$\psi_{N}$"),
+            title="Equlibrium",
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
     ###################################################################################################
@@ -277,8 +278,8 @@ if __name__ == "__main__":
                       for ion in core_profile.ion],
                 ],
                 [
-                    (Function(bs_r_nrom, baseline["Zeff"].values),     r"$Z_{eff}^{astra}$", "[-]", {"marker": "+"}),
-                    (core_profile.zeff,                                                              r"$z_{eff}$"),
+                    (Function(bs_r_nrom, baseline["Zeff"].values),     r"astra", r"$Z_{eff}[-]$", {"marker": "+"}),
+                    (core_profile.zeff,                                r"fytok", r"$Z_{eff}[-]$"),
                 ],
                 [
                     (Function(bs_r_nrom, baseline["Joh"].values*1.0e6 / baseline["U"].values *
@@ -296,9 +297,9 @@ if __name__ == "__main__":
 
             ],
             x_axis=(rho_tor_norm, r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-            index_slice=slice(10, 110, 1),
+            # index_slice=slice(10, 110, 1),
 
-            # annotation=core_transport.model[0].identifier.name,
+            title=tok.core_transport.model[0].identifier.name,
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
     if True:  # CoreSources
