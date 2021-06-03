@@ -195,7 +195,8 @@ if __name__ == "__main__":
     if True:  # CoreTransport
 
         rho_tor_norm = tok.equilibrium.time_slice.radial_grid().rho_tor_norm
-
+        r0 = tok.equilibrium.vacuum_toroidal_field.r0
+        
         r_ped = 0.96  # np.sqrt(0.88)
         Cped = 0.2
         Ccore = 0.4
@@ -206,7 +207,7 @@ if __name__ == "__main__":
             [lambda r:r < r_ped, lambda r:r >= r_ped],
             [lambda x:0.5*chi(x), lambda x: chi(x)])
         D = 0.01*chi
-        v_pinch = D * rho_tor_norm * 1.5 / tok.equilibrium.vacuum_toroidal_field.r0
+        v_pinch = D * rho_tor_norm * 1.5 / r0
 
         tok.core_transport["model"] = [
             {"code": {"name": "dummy"},
@@ -354,7 +355,7 @@ if __name__ == "__main__":
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_sources.svg", transparent=True)
     ###################################################################################################
 
-    if False:  # TransportSolver
+    if True:  # TransportSolver
 
         tok.transport_solver["boundary_condition"] = {}
 

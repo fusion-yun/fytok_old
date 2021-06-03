@@ -2,6 +2,7 @@
 
 """
 
+from dataclasses import dataclass
 from math import log
 from typing import Mapping, Optional
 
@@ -28,80 +29,11 @@ TOLERANCE = 1.0e-6
 TWOPI = 2.0 * constants.pi
 
 
-class TransportSolverBoundaryConditions1DBC(Dict):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    @sp_property
-    def identifier(self) -> Identifier:
-        return self["identifier"]
-
-    @sp_property
-    def value(self) -> np.ndarray:
-        return self["value"]
-
-    @sp_property
-    def rho_tor_norm(self) -> float:
-        return self["rho_tor_norm"] or 0.99
-
-
-class TransportSolverBoundaryConditions1DBCElectrons(Dict):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    @sp_property
-    def particles(self) -> TransportSolverBoundaryConditions1DBC:
-        return self["particles"]
-
-    @sp_property
-    def energy(self) -> TransportSolverBoundaryConditions1DBC:
-        return self["value"]
-
-    @sp_property
-    def rho_tor_norm(self) -> float:
-        return self["rho_tor_norm"] or 0.99
-
-
-class TransportSolverBoundaryConditions1DBCIon(SpeciesIon):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    @sp_property
-    def particles(self) -> TransportSolverBoundaryConditions1DBC:
-        return self["particles"]
-
-    @sp_property
-    def energy(self) -> TransportSolverBoundaryConditions1DBC:
-        return self["value"]
-
-
-class TransportSolverBoundaryConditions1D(AttributeTree):
-    BC = TransportSolverBoundaryConditions1DBC
-    BCElectrons = TransportSolverBoundaryConditions1DBCElectrons
-    BCIon = TransportSolverBoundaryConditions1DBCIon
-
-    def __init__(self,  *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    @sp_property
-    def curent(self) -> BC:
-        return self["current"]
-
-    @sp_property
-    def energy_ion_total(self) -> BC:
-        return self["energy_ion_total"]
-
-    @sp_property
-    def momentum_tor(self) -> BC:
-        return self["momentum_tor"]
-
-    @sp_property
-    def electrons(self) -> BCElectrons:
-        return self["electrons"]
-
-    @sp_property
-    def ion(self) -> List[BCIon]:
-        return self["ion"]
+@dataclass
+class _BC:
+    identifier: Identifier
+    value: np.ndarray
+    rho_tor_norm: float
 
 
 class TransportSolver(IDS):
@@ -110,8 +42,31 @@ class TransportSolver(IDS):
         :math:`\rho=\sqrt{ \Phi/\pi B_{0}}`
     """
     _IDS = "transport_solver_numerics"
-    BoundaryConditions1D = TransportSolverBoundaryConditions1D
     _actor_module_prefix = "transport.transport_solver."
+
+    @dataclass
+    class BoundaryConditions1D:
+
+        @dataclass
+        class Electrons:
+            particles: _BC
+            energy: _BC
+            rho_tor_norm: float
+
+        @dataclass
+        class Ion(SpeciesIon):
+            particles: _BC
+            energy: _BC
+
+        curent: _BC
+
+        energy_ion_total: _BC
+
+        momentum_tor: _BC
+
+        electrons: Electrons
+
+        ion: List[Ion]
 
     def __init__(self,  *args, grid: RadialGrid = None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -123,15 +78,15 @@ class TransportSolver(IDS):
 
     @sp_property
     def solver(self) -> Identifier:
-        return self["solver"]
+        return self.get("solver", {})
 
     @sp_property
     def primary_coordinate(self) -> Identifier:
-        return self["primary_coordinate"]
+        return self.get("primary_coordinate", {})
 
     @sp_property
     def boundary_condition_1d(self) -> BoundaryConditions1D:
-        return self["boundary_condition_1d"]
+        return self.get("boundary_condition_1d", {})
 
     def update(self, *args,  **kwargs):
         logger.debug(f"TODO: update dounbary condition")

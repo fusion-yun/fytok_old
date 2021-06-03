@@ -60,33 +60,33 @@ class Tokamak(Actor):
 
     @sp_property
     def wall(self) -> Wall:
-        return self["wall"]
+        return self.get("wall", {})
 
     @sp_property
     def tf(self) -> TF:
-        return self["tf"]
+        return self.get("tf", {})
 
     @sp_property
     def pf_active(self) -> PFActive:
-        return self["pf_active"]
+        return self.get("pf_active", {})
 
     @sp_property
     def magnetics(self) -> Magnetics:
-        return self["magnetics"]
+        return self.get("magnetics", {})
     # --------------------------------------------------------------------------
 
     @sp_property
     def equilibrium(self) -> Equilibrium:
-        return self["equilibrium"]
+        return self.get("equilibrium", {})
 
     @sp_property
     def core_profiles(self) -> CoreProfiles:
-        return self["core_profiles"]
+        return self.get("core_profiles", {})
 
     @sp_property
     def core_transport(self) -> CoreTransport:
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return self["core_transport"]
+        return self.get("core_transport", {})
 
     @sp_property
     def core_sources(self) -> CoreSources:
@@ -94,29 +94,29 @@ class Tokamak(Actor):
             Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return self["core_sources"]
+        return self.get("core_sources", {})
 
     @sp_property
     def edge_profiles(self) -> EdgeProfiles:
-        return self["edge_profiles"]
+        return self.get("edge_profiles", {})
 
     @sp_property
     def edge_transport(self) -> EdgeTransport:
         """Edge plasma transport. Energy terms correspond to the full kinetic energy equation
          (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return self["edge_transport"]
+        return self.get("edge_transport", {})
 
     @sp_property
     def edge_sources(self) -> EdgeSources:
         """Edge plasma sources. Energy terms correspond to the full kinetic energy equation
          (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return self["edge_sources"]
+        return self.get("edge_sources", {})
 
     @sp_property
     def transport_solver(self) -> TransportSolver:
-        return self["transport_solver"]
+        return self.get("transport_solver", {})
 
     def advance(self,  dt=None, /,  time=None, **kwargs):
 
@@ -146,11 +146,12 @@ class Tokamak(Actor):
 
             self.core_profiles.update()
 
-            self.equilibrium.update(constraints=constraints,
-                                    core_profiles=self.core_profiles,
-                                    wall=self.wall,
-                                    pf_active=self.pf_active,
-                                    magnetics=self.magnetics)
+            self.equilibrium.update(
+                constraints=constraints,
+                core_profiles=self.core_profiles,
+                wall=self.wall,
+                pf_active=self.pf_active,
+                magnetics=self.magnetics)
 
             self.core_sources.update(equilibrium=self.equilibrium, core_profiles=self.core_profiles)
 
@@ -168,24 +169,24 @@ class Tokamak(Actor):
                 # TODO: update boundary condition
                 self.transport_solver.update(edge_profiles=self.edge_profiles)
 
-            convergence = self.transport_solver.solve(
+            redisual = self.transport_solver.solve(
                 core_profiles=self.core_profiles,
                 equilibrium=self.equilibrium,
                 core_transport=self.core_transport,
                 core_sources=self.core_sources,
                 **kwargs)
 
-            logger.debug(f"time={self.time}  iterator step {nstep}/{max_iteration} convergence={convergence}")
+            logger.debug(f"time={self.time}  iterator step {nstep}/{max_iteration} redisual={redisual}")
 
-            if convergence < tolerance:
+            if redisual < tolerance:
                 break
 
-        if convergence > tolerance:
+        if redisual > tolerance:
             logger.warning(
                 f"The solution does not converge, and the number of iterations exceeds the maximum {max_iteration}")
-        return convergence
+        return redisual
 
-    def plot(self, axis=None, *args, title=None, time=None,  **kwargs):
+    def plot(self, axis=None, /,  **kwargs):
 
         if axis is None:
             axis = plt.gca()
@@ -197,7 +198,7 @@ class Tokamak(Actor):
             self.pf_active.plot(axis, **kwargs.get("pf_active", {}))
 
         if kwargs.get("equilibrium", True) is not False:
-            self.equilibrium.plot(axis, time=time,  **kwargs.get("equilibrium", {}))
+            self.equilibrium.plot(axis,  **kwargs.get("equilibrium", {}))
 
         axis.set_aspect('equal')
         axis.axis('scaled')
