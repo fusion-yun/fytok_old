@@ -792,25 +792,22 @@ class EquilibriumTimeSlice(Dict):
 
     @sp_property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        vacuum_toroidal_field = self.get("vacuum_toroidal_field", _not_found_)
-        if vacuum_toroidal_field is _not_found_:
-            vacuum_toroidal_field = self._parent.vacuum_toroidal_field
-        return VacuumToroidalField(vacuum_toroidal_field.r0, abs(vacuum_toroidal_field.b0))
+        return self.get("vacuum_toroidal_field", None) or self._parent.vacuum_toroidal_field
 
     def radial_grid(self, *args, **kwargs) -> RadialGrid:
         return self.coordinate_system.radial_grid(*args, **kwargs)
 
     @sp_property
     def coordinate_system(self) -> MagneticCoordSystem:
-        psirz = Field(self["profiles_2d.psi"],
-                      self["profiles_2d.grid.dim1"],
-                      self["profiles_2d.grid.dim2"],
+        psirz = Field(self.get("profiles_2d.psi"),
+                      self.get("profiles_2d.grid.dim1"),
+                      self.get("profiles_2d.grid.dim2"),
                       mesh="rectilinear")
 
         psi_norm = self["profiles_1d.psi_norm"]
         ffprime = self["profiles_1d.f_df_dpsi"]
         pprime = self["profiles_1d.dpressure_dpsi"]
-        return MagneticCoordSystem(self["coordinate_system"],
+        return MagneticCoordSystem(self.get("coordinate_system"),
                                    vacuum_toroidal_field=self.vacuum_toroidal_field,
                                    psirz=psirz,
                                    ffprime=Function(psi_norm, ffprime),
@@ -819,15 +816,15 @@ class EquilibriumTimeSlice(Dict):
 
     @sp_property
     def constraints(self) -> Constraints:
-        return self["constraints"]
+        return self.get("constraints", {})
 
     @sp_property
     def profiles_1d(self) -> Profiles1D:
-        return self["profiles_1d"]
+        return self.get("profiles_1d", {})
 
     @sp_property
     def profiles_2d(self) -> Profiles2D:
-        return self["profiles_2d"]
+        return self.get("profiles_2d", {})
 
     @sp_property
     def global_quantities(self) -> GlobalQuantities:
@@ -982,7 +979,9 @@ class Equilibrium(IDS):
 
     @sp_property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        return VacuumToroidalField(**self.get("vacuum_toroidal_field", _not_found_)._as_dict())
+        r0 = self.get("vacuum_toroidal_field.r0", 0.0)
+        b0 = abs(self.get("vacuum_toroidal_field.b0", 0.0))
+        return {"r0": r0, "b0": b0}
 
     @sp_property
     def grid_ggd(self) -> GGD:

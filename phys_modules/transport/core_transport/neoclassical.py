@@ -23,7 +23,7 @@ class NeoClassical(CoreTransport.Model):
     def __init__(self, d, *args, **kwargs):
         super().__init__(collections.ChainMap({
             "identifier": {
-                "name": f"neoclassical",
+                "name": "neoclassical",
                 "index": 5,
                 "description": f"{self.__class__.__name__}  Neoclassical model, based on  Tokamaks, 3ed, J.A.Wesson 2003"
             }}, d or {}), *args, **kwargs)
@@ -116,7 +116,7 @@ class NeoClassical(CoreTransport.Model):
                     "neutral_index": sp.neutral_index,
                     "element": sp.element._as_list(),
                 }
-            sp_trans = self.profiles_1d.ion.find({"label": sp.label}, only_first=True, default_value=_not_found_)
+            sp_trans = self.profiles_1d.ion[{"label": sp.label}]
 
             # TODO: Need node to support conditional insertion
             # sp_trans = self.profiles_1d.ion.insert({"label": sp.label},

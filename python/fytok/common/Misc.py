@@ -30,3 +30,8 @@ class RZTuple:
     r: Any
     z: Any
 
+
+@dataclass
+class Signal:
+    data: np.ndarray
+    time: np.ndarray

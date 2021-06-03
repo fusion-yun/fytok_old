@@ -25,15 +25,15 @@ class TransportCoeff(Dict):
 
     @sp_property
     def d(self) -> Function:
-        return Function(self._parent.grid_d.rho_tor_norm, self["d"])
+        return Function(self._parent.grid_d.rho_tor_norm, self.get("d", None))
 
     @sp_property
     def v(self) -> Function:
-        return Function(self._parent.grid_v.rho_tor_norm, self["v"])
+        return Function(self._parent.grid_v.rho_tor_norm,  self.get("v", None))
 
     @sp_property
     def flux(self) -> Function:
-        return Function(self._parent.grid_flux.rho_tor_norm, self["flux"])
+        return Function(self._parent.grid_flux.rho_tor_norm, self.get("flux", None))
 
 
 class CoreTransportElectrons(SpeciesElectron):
@@ -42,11 +42,11 @@ class CoreTransportElectrons(SpeciesElectron):
 
     @sp_property
     def particles(self) -> TransportCoeff:
-        return TransportCoeff(self["particles"], parent=self._parent)
+        return TransportCoeff(self.get("particles", {}), parent=self._parent)
 
     @sp_property
     def energy(self) -> TransportCoeff:
-        return TransportCoeff(self["energy"], parent=self._parent)
+        return TransportCoeff(self.get("energy", {}), parent=self._parent)
 
 
 class CoreTransportIonState(SpeciesIonState):
@@ -167,44 +167,44 @@ class CoreTransportProfiles1D(Dict[Node]):
     @sp_property
     def electrons(self) -> CoreTransportElectrons:
         """ Transport quantities related to the electrons """
-        return self['electrons']
+        return self.get('electrons', {})
 
     @sp_property
     def ion(self) -> List[CoreTransportIon]:
         """ Transport coefficients related to the various ion species """
-        return self['ion']
+        return self.get('ion', [])
 
     @sp_property
     def neutral(self) -> List[CoreTransportNeutral]:
         """ Transport coefficients related to the various neutral species """
-        return self['neutral']
+        return self.get('neutral', [])
 
     @sp_property
     def momentum(self) -> CoreTransportMomentum:
-        return self["momentum"]
+        return self.get('momentum', {})
 
     @sp_property
     def total_ion_energy(self) -> TransportCoeff:
         """ Transport coefficients for the total (summed over ion species) energy equation """
-        return self["total_ion_energy"]
+        return self.get("total_ion_energy", {})
 
     @sp_property
     def momentum_tor(self) -> TransportCoeff:
         """ Transport coefficients for total toroidal momentum equation  """
-        return self["momentum_tor"]
+        return self.get("momentum_tor", {})
 
     @sp_property
     def conductivity_parallel(self) -> Function:
-        return Function(self.grid_d.rho_tor_norm, self["conductivity_parallel"])
+        return Function(self.grid_d.rho_tor_norm, self.get("conductivity_parallel", 0))
 
     @sp_property
     def j_bootstrap(self) -> Function:
-        return Function(self.grid_d.rho_tor_norm, self["j_bootstrap"])
+        return Function(self.grid_d.rho_tor_norm, self.get("j_bootstrap", 0))
 
     @sp_property
     def e_field_radial(self) -> Function:
         """ Radial component of the electric field (calculated e.g. by a neoclassical model) {dynamic} [V.m^-1]"""
-        return Function(self.grid_flux.rho_tor_norm, self["e_field_radial"])
+        return Function(self.grid_flux.rho_tor_norm, self.get("e_field_radial", 0))
 
 
 class CoreTransportModel(Actor):
@@ -215,15 +215,15 @@ class CoreTransportModel(Actor):
 
     def __init__(self, *args, grid: Optional[RadialGrid] = None, ** kwargs):
         super().__init__(*args, **kwargs)
-        self._grid = grid or self._parent._grid
+        self._grid = grid or getattr(self._parent, "_grid", None)
 
     @sp_property
     def code(self) -> IDSCode:
-        return self["code"]
+        return self.get("code", {})
 
     @sp_property
     def comment(self) -> str:
-        return self["comment"]
+        return self.get("comment", "")
 
     @sp_property
     def identifier(self) -> Identifier:
@@ -251,11 +251,11 @@ class CoreTransportModel(Actor):
 
     @sp_property
     def flux_multiplier(self) -> float:
-        return self["flux_multiplier"] or 1.0
+        return self.get("flux_multiplier", 1.0)
 
     @sp_property
     def profiles_1d(self) -> CoreTransportProfiles1D:
-        return self["profiles_1d"]
+        return self.get("profiles_1d")
 
 
 class CoreTransport(IDS):
