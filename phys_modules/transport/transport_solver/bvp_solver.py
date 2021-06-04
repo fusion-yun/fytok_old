@@ -149,16 +149,16 @@ class TransportSolverBVP(TransportSolver):
 
         return sol, profiles
 
-    def solve(self,  /,
-              core_profiles: CoreProfiles,
-              equilibrium: Equilibrium,
-              core_transport: CoreTransport,
-              core_sources: CoreSources,
-              tolerance=1.0e-3,
-              max_nodes=1000,
-              verbose=2,
-              enable_ion_solver: bool = False,
-              **kwargs) -> float:
+    def solve_core(self,  /,
+                   equilibrium: Equilibrium,
+                   core_profiles: CoreProfiles,
+                   core_transport: CoreTransport,
+                   core_sources: CoreSources,
+                   tolerance=1.0e-3,
+                   max_iter=1000,
+                   verbose=2,
+                   enable_ion_solver: bool = False,
+                   **kwargs) -> float:
         r"""
             Solve transport equations
 
@@ -256,9 +256,9 @@ class TransportSolverBVP(TransportSolver):
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
         vpr = equilibrium.time_slice.profiles_1d.dvolume_drho_tor(psi_norm)
 
-        vprm = core_profiles_prev.dvolume_drho_tor
+        vprm = equilibrium.previous_state.time_slice.profiles_1d.dvolume_drho_tor(psi_norm)
 
-        if not isinstance(vprm, np.ndarray) or vprm == None:
+        if not isinstance(vprm, np.ndarray) or vprm is None:
             vprm = vpr
 
         # $q$ safety factor                                 [-]
@@ -275,7 +275,7 @@ class TransportSolverBVP(TransportSolver):
                               core_profiles_prev: CoreProfiles.Profiles1D,
                               core_transport: CoreTransport.Model,
                               core_sources: CoreSources.Source,
-                              boundary_conditions):
+                              boundary_conditions: TransportSolver.BoundaryConditions1D):
 
             # -----------------------------------------------------------------
             # Transport
@@ -321,10 +321,10 @@ class TransportSolverBVP(TransportSolver):
             # On axis:
             #     dNi/drho_tor(rho_tor=0)=0:  - this is Ne, not N
 
-            if boundary_conditions.identifier.index == 1:
+            if boundary_conditions.current.identifier.index == 1:
                 u = 1
                 v = 0
-                w = boundary_conditions.value
+                w = boundary_conditions.current.value
             else:
                 raise NotImplementedError(boundary_conditions)
 
@@ -346,7 +346,7 @@ class TransportSolverBVP(TransportSolver):
                 hyper_diff=[0, 0.0001],
                 tolerance=tolerance,
                 verbose=verbose,
-                max_nodes=max_nodes)
+                max_iter=max_iter)
 
             logger.info(f"Solve transport equations: Current [{'Success' if sol.success else 'Failed'}]")
 
@@ -426,7 +426,7 @@ class TransportSolverBVP(TransportSolver):
                 hyper_diff=[0, 0.0001],
                 tolerance=tolerance,
                 verbose=verbose,
-                max_nodes=max_nodes,
+                max_iter=max_iter,
                 ignore_x=[d.x[np.argmax(np.abs(d.derivative))]]
             )
 
@@ -500,7 +500,7 @@ class TransportSolverBVP(TransportSolver):
                 hyper_diff=[0, 0.0001],
                 tolerance=tolerance,
                 verbose=verbose,
-                max_nodes=max_nodes,
+                max_iter=max_iter,
                 ignore_x=[d.x[np.argmax(np.abs(d.derivative))]]
             )
 
@@ -579,7 +579,7 @@ class TransportSolverBVP(TransportSolver):
                 hyper_diff=[0, 0.0001],
                 tolerance=tolerance,
                 verbose=verbose,
-                max_nodes=max_nodes,
+                max_iter=max_iter,
                 ignore_x=[d.x[np.argmax(np.abs(d.derivative))]],
                 ** kwargs
             )

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from spdm.data.Function import Function
-from spdm.data.Node import Dict, List, sp_property, Node
+from spdm.data.Node import Dict, List, Node, sp_property
 from spdm.data.Profiles import Profiles
 from spdm.numlib import constants, np
 from spdm.util.logger import logger
@@ -288,6 +288,10 @@ class CoreProfilesNeutral(Species):
 
 
 class CoreProfiles1D(Profiles):
+    Electrons = CoreProfilesElectrons
+    Ion = CoreProfilesIon
+    Neutral = CoreProfilesNeutral
+
     def __init__(self, *args, grid: RadialGrid = None, time=None, parent=None, **kwargs):
         grid = grid or getattr(parent, "_grid", None)
         assert(grid is not None)
@@ -476,7 +480,7 @@ class CoreProfiles1D(Profiles):
     def e_field(self) -> EField:
         """Electric field, averaged on the magnetic surface. E.g for the parallel component, average(E.B) / B0,
             using core_profiles/vacuum_toroidal_field/b0[V.m ^ -1]  """
-        return self.get("e_field",{})
+        return self.get("e_field", {})
 
     @sp_property
     def phi_potential(self) -> Function:
@@ -523,16 +527,9 @@ class CoreProfiles(IDS):
         super().__init__(*args,  ** kwargs)
         self._grid = grid or self._parent.grid
 
-    @sp_property
+    @property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        d = self["vacuum_toroidal_field"]
-        if d == None:
-            d = self._grid.vacuum_toroidal_field
-        elif isinstance(d, Dict):
-            d = VacuumToroidalField(**d._as_dict())
-        elif not isinstance(d, VacuumToroidalField):
-            raise TypeError(type(d))
-        return d
+        return self._grid.vacuum_toroidal_field
 
     @property
     def grid(self) -> RadialGrid:
@@ -540,8 +537,8 @@ class CoreProfiles(IDS):
 
     @sp_property
     def profiles_1d(self) -> Profiles1D:
-        return self["profiles_1d"]
+        return self.get("profiles_1d", {})
 
     @sp_property
     def global_quantities(self) -> GlobalQuantities:
-        return self["global_quantities"]
+        return self.get("global_quantities", {})

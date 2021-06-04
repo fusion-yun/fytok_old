@@ -41,7 +41,7 @@ if __name__ == "__main__":
         tok.equilibrium["time_slice"] = {
             "profiles_1d": eqdsk.entry.find("profiles_1d"),
             "profiles_2d": eqdsk.entry.find("profiles_2d"),
-            "coordinate_system": {"grid": {"dim1": 100, "dim2": 256}}
+            "coordinate_system": {"grid": {"dim1": 64, "dim2": 128}}
         }
 
         sp_figure(tok,
@@ -357,12 +357,37 @@ if __name__ == "__main__":
 
     if True:  # TransportSolver
 
-        tok.transport_solver["boundary_condition_1d"] = {
-            "current": {"value": [0, 0, 1, 0]}
-        }
-
-        logger.debug(tok.transport_solver.boundary_condition_1d)
+        tok.transport_solver["boundary_condition_1d"] = {"current": {"value": [0, 0, 1, 0]}}
 
         tok.transport_solver.update()
+
+        tok.transport_solver.solve(
+            equilibrium=tok.equilibrium,
+            core_profiles=tok.core_profiles,
+            core_transport=tok.core_transport,
+            core_sources=tok.core_sources)
+
+        plot_profiles(
+            [
+                [
+                    # (Function(bs_r_nrom, baseline["NE"].values*1.0e19),              r"$n_{e}^{astra}$"),
+                    (core_profile.electrons.density*1e-19,             r"$e$", r"n $[10^{19} m \cdot s^{-3}]$"),
+                    *[(ion.density*1e-19,                            f"${ion.label}$") for ion in core_profile.ion],
+
+                ],
+                [
+                    # (Function(bs_r_nrom, baseline["TE"].values),                     r"$T_{e}^{astra}$"),
+                    (core_profile.electrons.temperature/1000,                              r"$e$", r"T $[keV]$"),
+                    *[(ion.temperature/1000,                      f"${ion.label}$") for ion in core_profile.ion],
+                ],
+
+                [
+                    (Function(bs_r_nrom, baseline["Zeff"].values),                r"$^{astra}$", r"$Z_{eff}  [-]$"),
+                    (core_profile.zeff,                                                                 r"$fytok$"),
+                ],
+                (core_profile.e_field.parallel,                    r"fytok",   r"$E_{\parallel} [V\cdot m^{-1}]$ "),
+            ],
+            x_axis=(core_profile.grid.rho_tor_norm,                                   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
     logger.info("====== DONE ========")
