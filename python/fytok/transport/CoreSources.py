@@ -250,7 +250,13 @@ class CoreSources(IDS):
     def source(self) -> List[CoreSourcesSource]:
         return self.get("source", [])
 
-    def update(self,  /, equilibrium: Equilibrium,  core_profiles: CoreProfiles, **kwargs) -> float:
+    def update(self,  /, equilibrium: Equilibrium = None,  core_profiles: CoreProfiles = None, **kwargs) -> float:
         super().update(**kwargs)
-
+        if equilibrium is None:
+            equilibrium = self._parent.equilibrium
+        if core_profiles is None:
+            core_profiles = self._parent.core_profiles
+        # if grid is None:
+        #     grid = self._parent.grid
+        # self._grid = grid
         return self.source.update(equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)

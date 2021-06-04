@@ -286,8 +286,8 @@ class CoreTransport(IDS):
     def model(self) -> List[Model]:
         return self["model"]
 
-    def update(self,  *args, grid: RadialGrid = None, equilibrium: Equilibrium = None,  core_profiles: CoreProfiles = None, **kwargs) -> float:
-        super().update(*args, **kwargs)
+    def update(self,   /, grid: RadialGrid = None, equilibrium: Equilibrium = None,  core_profiles: CoreProfiles = None, **kwargs) -> float:
+        super().update(**kwargs)
         if equilibrium is None:
             equilibrium = self._parent.equilibrium
         if core_profiles is None:

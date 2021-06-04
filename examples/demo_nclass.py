@@ -322,10 +322,8 @@ if __name__ == "__main__":
                 #      r"$\sigma_{\parallel}^{wesson}$"),
                 # ],
                 [
-                    (Function(bs_r_nrom, baseline["Joh"].values),
-                     "astra",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
-                    (core_profile.j_ohmic,
-                     "fytok",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
+                    (Function(bs_r_nrom, baseline["Joh"].values), "astra",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
+                    # (core_profile.j_ohmic,                        "fytok",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
 
                 ],
                 [
@@ -357,7 +355,8 @@ if __name__ == "__main__":
 
     if True:  # TransportSolver
 
-        tok.transport_solver["boundary_condition_1d"] = {"current": {"value": [0, 0, 1, 0]}}
+        tok.transport_solver["boundary_conditions_1d"] = {
+            "current": {"identifier": {"index": 1}, "value": [0, 0, 1, 0]}}
 
         tok.transport_solver.update()
 

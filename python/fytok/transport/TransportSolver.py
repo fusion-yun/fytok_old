@@ -65,11 +65,11 @@ class TransportSolver(IDS):
 
         ion: List[Ion]
 
-        current: _BC = _BC(value=[0, 0, 0, 0])
+        current: _BC
 
-        energy_ion_total: _BC = _BC(value=[0, 0, 0, 0])
+        energy_ion_total: _BC
 
-        momentum_tor: _BC = _BC(value=[0, 0, 0, 0])
+        momentum_tor: _BC
 
     def __init__(self,  *args, grid: RadialGrid = None, **kwargs):
         super().__init__(*args, **kwargs)

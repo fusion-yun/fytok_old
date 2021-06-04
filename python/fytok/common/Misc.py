@@ -20,6 +20,12 @@ class Identifier:
 
 
 @dataclass
+class Decomposition:
+    implicit_part: np.ndarray  # Implicit part
+    explicit_part: np.ndarray  # Explicit part
+
+
+@dataclass
 class VacuumToroidalField:
     r0: float = 0.0
     b0: float = 0.0

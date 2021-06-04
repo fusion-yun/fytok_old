@@ -431,29 +431,29 @@ class CoreProfiles1D(Profiles):
     def conductivity_parallel(self) -> Function:
         """Parallel conductivity {dynamic}[ohm ^ -1.m ^ -1]"""
 
-        d = self["conductivity_parallel"]
+        return self["conductivity_parallel"]
 
-        if isinstance(d, np.ndarray) or (hasattr(d.__class__, 'empty') and not d.empty):
-            return d
+        # if isinstance(d, np.ndarray) or (hasattr(d.__class__, 'empty') and not d.empty):
+        #     return d
 
-        else:
-            Te = self.electrons.temperature
-            ne = self.electrons.density
+        # else:
+        #     Te = self.electrons.temperature
+        #     ne = self.electrons.density
 
-            # Electron collisions: Coulomb logarithm
-            # clog = np.asarray([
-            #     (24.0 - 1.15*np.log10(ne[idx]*1.0e-6) + 2.30*np.log10(Te[idx]))
-            #     if Te[idx] >= 10 else (23.0 - 1.15*np.log10(ne[idx]*1.0e-6) + 3.45*np.log10(Te[idx]))
-            #     for idx in range(len(ne))
-            # ])
-            clog = self.coulomb_logarithm
-            # electron collision time:
-            # tau_e = (np.sqrt(2.*constants.electron_mass)*(Te**1.5)) / 1.8e-19 / (ne * 1.0e-6) / clog
+        #     # Electron collisions: Coulomb logarithm
+        #     # clog = np.asarray([
+        #     #     (24.0 - 1.15*np.log10(ne[idx]*1.0e-6) + 2.30*np.log10(Te[idx]))
+        #     #     if Te[idx] >= 10 else (23.0 - 1.15*np.log10(ne[idx]*1.0e-6) + 3.45*np.log10(Te[idx]))
+        #     #     for idx in range(len(ne))
+        #     # ])
+        #     clog = self.coulomb_logarithm
+        #     # electron collision time:
+        #     # tau_e = (np.sqrt(2.*constants.electron_mass)*(Te**1.5)) / 1.8e-19 / (ne * 1.0e-6) / clog
 
-            # Plasma electrical conductivity:
-            return 1.96e0 * constants.elementary_charge**2   \
-                * ((np.sqrt(2.*constants.electron_mass)*(Te**1.5)) / 1.8e-19 / clog) \
-                / constants.m_e
+        #     # Plasma electrical conductivity:
+        #     return 1.96e0 * constants.elementary_charge**2   \
+        #         * ((np.sqrt(2.*constants.electron_mass)*(Te**1.5)) / 1.8e-19 / clog) \
+        #         / constants.m_e
 
     @sp_property
     def coulomb_logarithm(self) -> Function:

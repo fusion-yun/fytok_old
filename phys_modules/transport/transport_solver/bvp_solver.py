@@ -96,7 +96,7 @@ class TransportSolverBVP(TransportSolver):
             y, gamma = Y
 
             try:
-                yp = Function(x, y).derivative
+                yp = Function(x, y).derivative(x)
 
                 dy = (-gamma + e(x)*y + hyper_diff * yp)/(d(x)+hyper_diff)
 
@@ -124,11 +124,11 @@ class TransportSolverBVP(TransportSolver):
                     u1 * yb + v1 * gammab - w1)
 
         if flux0 is None:
-            flux0 = -d(x0) * y0.derivative + e(x0)*y0
+            flux0 = -d(x0) * y0.derivative(x0) + e(x0)*y0
 
-        sol = solve_bvp(fun, bc_func, x0, np.vstack([y0.view(np.ndarray), flux0.view(np.ndarray)]),  **kwargs)
+        sol = solve_bvp(fun, bc_func, x0, np.vstack([y0, flux0]),  **kwargs)
 
-        s_exp_flux = Function(sol.x,  Function(sol.x,  S(sol.x, sol.y[0])).antiderivative)
+        s_exp_flux = Function(sol.x,  Function(sol.x,  S(sol.x, sol.y[0])).antiderivative(sol.x))
         diff_flux = Function(sol.x, -d(sol.x) * sol.yp[0])
         conv_flux = Function(sol.x, e(sol.x) * sol.y[0])
 
@@ -321,6 +321,7 @@ class TransportSolverBVP(TransportSolver):
             #      U*Y + V*Gamma =W
             # On axis:
             #     dNi/drho_tor(rho_tor=0)=0:  - this is Ne, not N
+            logger.debug(boundary_conditions.current)
 
             if boundary_conditions.current.identifier.index == 1:
                 u = 1
@@ -330,13 +331,13 @@ class TransportSolverBVP(TransportSolver):
                 raise NotImplementedError(boundary_conditions)
 
             # $\Psi$ flux function from current                 [Wb]
-            psi0 = core_profiles_prev.psi
+            psi0 = core_profiles_prev.grid.psi
 
             # $\frac{\partial\Psi}{\partial\rho_{tor,norm}}$               [Wb/m]
-            gamma0 = core_profiles_prev.dpsi_drho_tor_norm
+            gamma0 = eq.dpsi_drho_tor_norm(psi_norm)
 
             if not isinstance(gamma0, np.ndarray):
-                gamma0 = -d * Function(rho_tor_norm, psi0).derivative + e * psi0
+                gamma0 = -d * Function(rho_tor_norm, psi0).derivative(rho_tor_norm) + e * psi0
 
             sol, profiles = self.solve_general_form(
                 rho_tor_norm,
@@ -352,8 +353,8 @@ class TransportSolverBVP(TransportSolver):
             logger.info(f"Solve transport equations: Current [{'Success' if sol.success else 'Failed'}]")
 
             if sol.success:
-                core_profiles.psi = profiles.y
-                core_profiles.dpsi_drho_tor_norm = profiles.yp
+                core_profiles_next["psi"] = profiles.y
+                core_profiles_next["dpsi_drho_tor_norm"] = profiles.yp
                 # core_profiles.dgamma_current = profiles.gamma
                 # core_profiles.j_tor = (profiles.y*fpol).derivative / vpr * \
                 #     (-TWOPI*R0 / constants.mu_0/rho_tor_boundary)
@@ -364,9 +365,9 @@ class TransportSolverBVP(TransportSolver):
                 # core_profiles.e_field.parallel = (core_profiles.j_parallel-j_exp -
                 #                                        j_exp*core_profiles.psi)/conductivity_parallel
             else:
-                psi_prime = (constants.pi*2.0)*B0 * rho_tor / qsf * rho_tor_boundary
-                core_profiles.dpsi_drho_tor_norm = psi_prime
-                core_profiles.psi = psi0[0] + psi_prime.antiderivative * 2
+                psi_prime = Function(rho_tor_norm, (constants.pi*2.0)*B0 * rho_tor / qsf * rho_tor_boundary)
+                core_profiles_next["dpsi_drho_tor_norm"] = psi_prime
+                core_profiles_next["psi"] = psi0[0] + psi_prime.antiderivative(rho_tor_norm) * 2
 
             # core_profiles.f_current = f*c
             # core_profiles.j_total = j_exp
@@ -613,8 +614,8 @@ class TransportSolverBVP(TransportSolver):
         current_transport(
             core_profiles_next,
             core_profiles_prev,
-            c_transp,
-            c_source,
+            c_transp.profiles_1d,
+            c_source.profiles_1d,
             self.boundary_conditions_1d
         )
 
@@ -628,15 +629,15 @@ class TransportSolverBVP(TransportSolver):
                 c_source,
                 self.boundary_conditions_1d
             )
-            electron_energy_transport(
-                core_profiles_next,
-                core_profiles_prev,
-                c_transp,
-                c_source,
-                self.boundary_conditions_1d
-            )
+            # electron_energy_transport(
+            #     core_profiles_next,
+            #     core_profiles_prev,
+            #     c_transp,
+            #     c_source,
+            #     self.boundary_conditions_1d
+            # )
 
-        return core_profiles
+        return core_profiles_next
 
         # while time < end_time
         #     repeat until converged
