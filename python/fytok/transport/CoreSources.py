@@ -1,21 +1,22 @@
 import collections
+from dataclasses import dataclass
+import functools
 from typing import Optional
 
-from spdm.numlib import np
-from spdm.numlib import constants
+from spdm.data.AttributeTree import AttributeTree
 from spdm.data.Function import Function
-from spdm.data.Node import Dict, List, Node
+from spdm.data.Node import Dict, List, Node, sp_property
 from spdm.data.Profiles import Profiles
-from spdm.data.Node import sp_property
 from spdm.flow.Actor import Actor
+from spdm.numlib import constants, np
 from spdm.util.logger import logger
 
 from ..common.IDS import IDS
 from ..common.Misc import Identifier, VacuumToroidalField
-from ..common.Species import Species
-from .MagneticCoordSystem import RadialGrid
-from .Equilibrium import Equilibrium
+from ..common.Species import Species, SpeciesElectron, SpeciesIon
 from .CoreProfiles import CoreProfiles
+from .Equilibrium import Equilibrium
+from .MagneticCoordSystem import RadialGrid
 
 
 class CoreSourcesParticle(Dict):
@@ -43,57 +44,16 @@ class CoreSourcesParticle(Dict):
         # }
 
 
-class CoreSourcesElectrons(Dict):
-    def __init__(self,  *args,   **kwargs):
-        super().__init__(* args,  **kwargs)
-
-    @sp_property
-    def particle(self):
-        return (
-            + self.S_neutrals   # ionization source from neutrals (wall recycling, gas puffing, etc),
-            + self.S_nbi        # NBI,
-            + self.S_ext        # optional additional source ‘EXT’,
-            + self.S_ripple     # particle losses induced by toroidal magnetic field ripple.
-        )
-
-    @sp_property
-    def energy(self):
-        return (
-            - self._parent.Qei      # electron–ion collisional energy transfer
-            + self._parent.Qneo     # neoclassical contribution
-            # + self.Qoh              # ohmic
-            # + self.Qe_lh            # LH,
-            # + self.Qe_nbi           # NBI,
-            # + self.Qe_icrh          # ICRH,
-            # + self.Qe_ecrh          # ECRH
-            # + self.Qe_n0            # charge exchange
-            # + self.Qe_ext           # optional additional source ‘EXT’
-            # - self.Qrad             # line radiation
-            # - self.Qbrem            # bremsstrahlung
-            # - self.Qcyclo           # synchroton radiation
-            # + self.Qe_fus           # fusion reactions
-            # + self.Qe_rip           # energy losses induced by toroidal magnetic field ripple
-        )
+@dataclass
+class CoreSourcesElectrons(SpeciesElectron):
+    particle: np.ndarray
+    energy: np.ndarray
 
 
-class CoreSourcesIon(Dict):
-    def __init__(self,  *args,   **kwargs):
-        super().__init__(* args,  **kwargs)
-
-    @sp_property
-    def energy(self):
-        return (
-            + self._parent.Qei      # electron–ion collisional energy transfer
-            - self._parent.Qneo     # neoclassical contribution (opposite sign w.r.t. electron heat equation)
-            + self.Qi_lh            # LH,
-            + self.Qi_nbi           # NBI,
-            + self.Qi_icrh          # ICRH,
-            + self.Qi_ecrh          # ECRH
-            + self.Qi_n0            # charge exchange
-            + self.Qi_ext           # optional additional source EXT’
-            + self.Qi_fus           # fusion reactions
-            + self.Qi_rip           # energy losses induced by toroidal magnetic field ripple
-        )
+@dataclass
+class CoreSourcesIon(SpeciesIon):
+    particles: np.ndarray
+    energy: np.ndarray
 
 
 class CoreSourcesNeutral(Profiles):
@@ -113,31 +73,24 @@ class CoreSourcesProfiles1D(Profiles):
         self._grid = grid
 
     @property
-    def time(self) -> float:
-        return self._time
-
-    @property
     def grid(self) -> RadialGrid:
         return self._grid
 
     @sp_property
     def electrons(self) -> CoreSourcesElectrons:
-        return self["electrons"]
+        return self.get("electrons", {})
 
     @sp_property
     def ion(self) -> List[CoreSourcesIon]:
-        return self["ion"]
+        return self.get("ion", [])
 
     @sp_property
     def neutral(self) -> List[CoreSourcesNeutral]:
-        return self["neutral"]
+        return self.get("neutral", [])
 
     @sp_property
     def total_ion_energy(self):
-        res = Function(self.grid.rho_tor_norm,  0.0)
-        for ion in self.ion:
-            res += ion.energy
-        return res
+        return np.sum([ion.energy for ion in self.ion])
 
     @sp_property
     def total_ion_power_inside(self) -> Function:
@@ -149,55 +102,15 @@ class CoreSourcesProfiles1D(Profiles):
 
     @sp_property
     def j_parallel(self) -> Function:
-        return self["j_parallel"]
+        return self.get("j_parallel", None)
 
     @sp_property
     def current_parallel_inside(self) -> Function:
-        return self["current_parallel_inside"]
+        return self.get("current_parallel_inside", None)
 
     @sp_property
     def conductivity_parallel(self) -> Function:
-        return self["conductivity_parallel"]
-
-    @sp_property
-    def Qei(self):
-        Te = self._core_profile.profiles_1d.electrons.temperature
-        ne = self._core_profile.profiles_1d.electrons.density
-
-        gamma_ei = 15.2 - np.log(ne)/np.log(1.0e20) + np.log(Te)/np.log(1.0e3)
-        epsilon = constants.epsilon_0
-        e = constants.elementary_charge
-        me = constants.electron_mass
-        mp = constants.proton_mass
-        PI = constants.pi
-        tau_e = 12*(PI**(3/2))*(epsilon**2)/(e**4)*np.sqrt(me/2)*((e*Te)**(3/2))/ne/gamma_ei
-
-        def qei(ion):
-            return ion.density*(ion.z_ion**2)/sum(ele.atoms_n*ele.a for ele in ion.element)*(Te-ion.temperature)
-
-        return sum(qei(ion) for ion in self._core_profile.ions)*(3/2) * e/(mp/me/2)/tau_e
-
-    @sp_property
-    def Qneo(self):
-        return NotImplemented
-
-    @sp_property
-    def Qoh(self):
-        return NotImplemented
-
-    @sp_property
-    def j_ni(self):
-        r"""
-            the current density driven by the non-inductive sources
-        """
-        return (
-            self.j_boot         # bootstrap current
-            + self.j_nbi        # neutral beam injection (NBI)
-            + self.j_lh         # lower hybrid (LH) waves
-            + self.j_ec         # electron cyclotron (EC) waves
-            + self.j_ic         # ion cyclotron (IC) waves
-            + self.j_ext        # current source ‘EXT
-        )
+        return self.get("conductivity_parallel", None)
 
 
 class CoreSourcesGlobalQuantities(Dict):
@@ -228,38 +141,19 @@ class CoreSourcesSpecies(Dict):
             neutron        | 6	        |  Neutron
             photon         | 7	        |  Photon
         """
-        return Identifier(**self["type"]._as_dict())
-
-
-# class CoreSourcesTimeSlice(Dict):
-#     GlobalQuantities = CoreSourcesGlobalQuantities
-#     Profiles1D = CoreSourcesProfiles1D
-
-#     def __init__(self,   *args, grid=None, time=None, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self._grid = grid or self._parent._grid
-#         self._time = time or self._parent
-
-#     @sp_property
-#     def vacuum_toroidal_field(self):
-#         return VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
-
-#     @sp_property
-#     def global_quantities(self) -> GlobalQuantities:
-#         return CoreSources.GlobalQuantities(self["global_quantities"], time=self._time,  parent=self)
-
-#     @sp_property
-#     def profiles_1d(self) -> Profiles1D:
-#         return CoreSources.Profiles1D(self["profiles_1d"], grid=self._grid,  time=self._time, parent=self)
+        return self.get("type", {})
 
 
 class CoreSourcesSource(Actor):
     _actor_module_prefix = "transport.core_sources."
+
+    Species = CoreSourcesSpecies
     Profiles1D = CoreSourcesProfiles1D
+    GlobalQuantities = CoreSourcesGlobalQuantities
 
     def __init__(self,   *args, grid: Optional[RadialGrid] = None, **kwargs):
         super().__init__(*args, **kwargs)
-        self._grid = grid or self._parent._grid
+        self._grid = grid or getattr(self._parent, "_grid", None)
 
     @sp_property
     def identifier(self) -> Identifier:
@@ -320,19 +214,19 @@ class CoreSourcesSource(Actor):
             custom_8                                   | 908            | Custom source terms 8; content to be decided by data provided
             custom_9                                   | 909            | Custom source terms 9; content to be decided by data provided
         """
-        return Identifier(**self["identifier"]._as_dict())
+        return self.get("identifier", {})
 
     @sp_property
-    def species(self) -> CoreSourcesSpecies:
-        return self["species"]
+    def species(self) -> Species:
+        return self.get("species", {})
 
     @sp_property
-    def global_quantities(self) -> CoreSourcesGlobalQuantities:
-        return self["global_quantities"]
+    def global_quantities(self) -> GlobalQuantities:
+        return self.get("global_quantities", {})
 
     @sp_property
-    def profiles_1d(self) -> CoreSourcesProfiles1D:
-        return self["profiles_1d"]
+    def profiles_1d(self) -> Profiles1D:
+        return self.get("profiles_1d", {})
 
     def update(self,  *args,  **kwargs) -> float:
         return super().update(*args, **kwargs)
@@ -346,20 +240,17 @@ class CoreSources(IDS):
 
     def __init__(self, *args, grid: Optional[RadialGrid] = None, **kwargs):
         super().__init__(*args, **kwargs)
-        self._grid = grid or self._parent._grid
+        self._grid = grid or getattr(self._parent, "_grid", None)
 
-    @sp_property
+    @property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        return VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
+        return self._grid.vacuum_toroidal_field
 
     @sp_property
     def source(self) -> List[CoreSourcesSource]:
-        return List[CoreSourcesSource](self["source"], grid=self._grid, parent=self)
+        return self.get("source", [])
 
-    def update(self,  *args, equilibrium: Equilibrium = None,  core_profiles: CoreProfiles = None, **kwargs) -> float:
-        super().update(*args, **kwargs)
-        if equilibrium is None:
-            equilibrium = self._parent.equilibrium
-        if core_profiles is None:
-            core_profiles = self._parent.core_profiles
-        return self.source.update(equilibrium=equilibrium, core_profiles=core_profiles)
+    def update(self,  /, equilibrium: Equilibrium,  core_profiles: CoreProfiles, **kwargs) -> float:
+        super().update(**kwargs)
+
+        return self.source.update(equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)

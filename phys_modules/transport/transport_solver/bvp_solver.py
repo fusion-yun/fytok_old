@@ -217,6 +217,9 @@ class TransportSolverBVP(TransportSolver):
 
         core_profiles_next = core_profiles
         core_profiles_prev = core_profiles.previous_state
+        c_transp = core_transport.model.combine
+        c_source = core_sources.source.combine
+        eq = equilibrium.time_slice.profiles_1d
 
         tau = core_profiles_next.time - core_profiles_prev.time
 
@@ -251,10 +254,10 @@ class TransportSolverBVP(TransportSolver):
         # -----------------------------------------------------------
         # Equilibrium
         # diamagnetic function,$F=R B_\phi$                 [T*m]
-        fpol = equilibrium.time_slice.profiles_1d.fpol(psi_norm)
+        fpol = eq.fpol(psi_norm)
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        vpr = equilibrium.time_slice.profiles_1d.dvolume_drho_tor(psi_norm)
+        vpr = eq.dvolume_drho_tor(psi_norm)
 
         vprm = equilibrium.previous_state.time_slice.profiles_1d.dvolume_drho_tor(psi_norm)
 
@@ -262,30 +265,28 @@ class TransportSolverBVP(TransportSolver):
             vprm = vpr
 
         # $q$ safety factor                                 [-]
-        qsf = equilibrium.time_slice.profiles_1d.q(psi_norm)
-        gm1 = equilibrium.time_slice.profiles_1d.gm1(psi_norm)
-        gm2 = equilibrium.time_slice.profiles_1d.gm2(psi_norm)
-        gm3 = equilibrium.time_slice.profiles_1d.gm3(psi_norm)
+        qsf = eq.q(psi_norm)
+        gm1 = eq.gm1(psi_norm)
+        gm2 = eq.gm2(psi_norm)
+        gm3 = eq.gm3(psi_norm)
 
         core_profiles.vprime = vpr
 
-        #　Current Equation
-
         def current_transport(core_profiles_next: CoreProfiles.Profiles1D,
                               core_profiles_prev: CoreProfiles.Profiles1D,
-                              core_transport: CoreTransport.Model,
-                              core_sources: CoreSources.Source,
+                              transp: CoreTransport.Model.Profiles1D,
+                              source: CoreSources.Source.Profiles1D,
                               boundary_conditions: TransportSolver.BoundaryConditions1D):
 
             # -----------------------------------------------------------------
             # Transport
             # plasma parallel conductivity,                                 [(Ohm*m)^-1]
-            conductivity_parallel = core_transport.profiles_1d.conductivity_parallel
+            conductivity_parallel = transp.conductivity_parallel
 
             # -----------------------------------------------------------
             # Sources
             # total non inductive current, PSI independent component,          [A/m^2]
-            j_exp = core_sources.profiles_1d.j_parallel
+            j_exp = source.j_parallel
 
             # total non inductive current, component proportional to PSI,      [A/m^2/V/s]
             j_imp = 0.0  # sources.j_imp if sources is not None else 0.0   # can not find data in imas dd
@@ -372,13 +373,13 @@ class TransportSolverBVP(TransportSolver):
 
         def electron_particle_transport(core_profiles_next: CoreProfiles.Profiles1D.Electrons,
                                         core_profiles_prev: CoreProfiles.Profiles1D.Electrons,
-                                        trans: List[CoreTransport.Model.Profiles1D.Electrons],
-                                        source: List[CoreSources.Source.Profiles1D.Electrons],
-                                        boundary_conditions):
+                                        transp: CoreTransport.Model.Profiles1D.Electrons,
+                                        source: CoreSources.Source.Profiles1D.Electrons,
+                                        boundary_conditions: TransportSolver.BoundaryConditions1D.Electrons):
             # Particle Transport
 
-            diff = trans.particles.d
-            conv = trans.particles.v
+            diff = transp.particles.d
+            conv = transp.particles.v
 
             se_exp = source.particles
             se_imp = 0.0
@@ -446,13 +447,13 @@ class TransportSolverBVP(TransportSolver):
 
         def ion_particle_transport(core_profiles_next: CoreProfiles.Profiles1D.Ion,
                                    core_profiles_prev: CoreProfiles.Profiles1D.Ion,
-                                   trans: CoreTransport.Model.Profiles1D.Ion,
+                                   transp: CoreTransport.Model.Profiles1D.Ion,
                                    source:  CoreSources.Source.Profiles1D.Ion,
-                                   boundary_conditions):
+                                   boundary_conditions: TransportSolver.BoundaryConditions1D.Ion):
             # Particle Transport
 
-            diff = trans.particles.d
-            conv = trans.particles.v
+            diff = transp.particles.d
+            conv = transp.particles.v
 
             se_exp = source.particles
             se_imp = 0.0
@@ -522,7 +523,7 @@ class TransportSolverBVP(TransportSolver):
                              core_profiles_prev: CoreProfiles.Profiles1D,
                              trans: List[CoreTransport.Model],
                              source: List[CoreSources.Source],
-                             boundary_conditions):
+                             boundary_conditions: TransportSolver.BoundaryConditions1D):
             # energy transport
             diff = trans.energy.d
             v_pinch = trans.energy.v
@@ -599,7 +600,8 @@ class TransportSolverBVP(TransportSolver):
             core_profiles["T_s_exp_flux"] = profiles.s_exp_flux
             core_profiles["T_residual"] = profiles.residual
 
-        def rotation_transport(core_profiles, core_profiles_prev, trans, source, boundary_conditions):
+        def rotation_transport(core_profiles, core_profiles_prev, trans, source,
+                               boundary_conditions: TransportSolver.BoundaryConditions1D):
             r"""
                 Rotation Transport
                 .. math::  \left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(V^{\prime\frac{5}{3}}\left\langle R\right\rangle \
@@ -608,33 +610,30 @@ class TransportSolverBVP(TransportSolver):
             """
             raise NotImplementedError("Rotation")
 
-        core_transport_combine = core_transport.model.combine
-        core_source_combine = core_sources.source.combine
-
         current_transport(
             core_profiles_next,
             core_profiles_prev,
-            core_transport_combine,
-            core_source_combine,
-            self.boundary_conditions_1d.current
+            c_transp,
+            c_source,
+            self.boundary_conditions_1d
         )
 
         if enable_ion_solver:
             raise NotImplementedError()
         else:
             electron_particle_transport(
-                core_profiles_next.electrons,
-                core_profiles_prev.electrons,
-                core_transport.electrons,
-                core_sources.electrons,
-                self.boundary_conditions_1d.electrons
+                core_profiles_next,
+                core_profiles_prev,
+                c_transp,
+                c_source,
+                self.boundary_conditions_1d
             )
-            energy_transport(
-                core_profiles.electrons,
-                core_profiles_prev.electrons,
-                core_transport.electrons,
-                core_sources.electrons,
-                self.boundary_conditions_1d.electrons
+            electron_energy_transport(
+                core_profiles_next,
+                core_profiles_prev,
+                c_transp,
+                c_source,
+                self.boundary_conditions_1d
             )
 
         return core_profiles
