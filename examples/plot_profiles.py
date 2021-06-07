@@ -73,7 +73,7 @@ if __name__ == "__main__":
             [
 
                 (profile["Jtot"].values,                          r" parallel ",  r"$J [mA\cdot m^{-2}]$"),
-                (profile["Joh"].values,                                  r"oh $", r"$J [mA\cdot m^{-2}]$"),
+                (profile["Joh"].values,                                  r"oh  ", r"$J [mA\cdot m^{-2}]$"),
                 (profile["Jnoh"].values,                                r"noh ",  r"$J [mA\cdot m^{-2}]$"),
                 (profile["Jtot"].values
                  - profile["Jnoh"].values

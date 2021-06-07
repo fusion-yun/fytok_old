@@ -49,6 +49,7 @@ class TransportSolver(IDS):
 
     @dataclass
     class BoundaryConditions1D:
+        BoundaryConditions = _BC
 
         @dataclass
         class Electrons:
@@ -65,11 +66,11 @@ class TransportSolver(IDS):
 
         ion: List[Ion]
 
-        current: _BC
+        current: BoundaryConditions
 
-        energy_ion_total: _BC
+        energy_ion_total: BoundaryConditions
 
-        momentum_tor: _BC
+        momentum_tor: BoundaryConditions
 
     def __init__(self,  *args, grid: RadialGrid = None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -118,7 +119,7 @@ class TransportSolver(IDS):
               edge_profiles: EdgeProfiles = False,
               edge_transport: EdgeTransport = False,
               edge_sources: EdgeSources = False,
-              max_iter=1000,
+              max_iter=1,
               tolerance=1.0e-3,
               **kwargs) -> float:
         """

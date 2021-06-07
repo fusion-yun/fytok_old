@@ -1,6 +1,8 @@
+from operator import eq
 import pandas as pd
 
 from fytok.Tokamak import Tokamak
+from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.File import File
 from spdm.data.Function import Function
 from spdm.numlib import constants, np
@@ -97,20 +99,17 @@ if __name__ == "__main__":
                      r"$j_{\parallel} [A\cdot m^{-2}]$", {"marker": "+"}),
                     (eq_profile.j_parallel,                                         r"fytok",     r"$j_{\parallel}$"),
                 ],
-                # (eq_profile.gm1,                                             r"$gm1=\left<\frac{1}{R^2}\right>$"),
-                # (eq_profile.gm2,                    r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
-                # (eq_profile.gm3,                                r"$gm3=\left<\left|\nabla \rho\right|^2\right>$"),
-                # (eq_profile.gm7,                                  r"$gm7=\left<\left|\nabla \rho\right|\right>$"),
-                # (eq_profile.dphi_dpsi,                                                  r"$\frac{d\phi}{d\psi}$"),
-                # (eq_profile.drho_tor_dpsi,                                        r"$\frac{d\rho_{tor}}{d\psi}$"),
-                # (eq_profile.dvolume_drho_tor,                                              r"$\frac{dV}{d\rho}$"),
-                # (eq_profile.dpsi_drho_tor,                                        r"$\frac{d\psi}{d\rho_{tor}}$"),
+
                 # [
                 #     (eq_profile.geometric_axis.r,                                     r"$geometric_{axis.r}$"),
                 #     (eq_profile.r_inboard,                                                   r"$r_{inboard}$"),
                 #     (eq_profile.r_outboard,                                                 r"$r_{outboard}$"),
                 # ],
-
+                [
+                    (4*(constants.pi**2)*tok.equilibrium.time_slice.vacuum_toroidal_field.r0*tok.equilibrium.time_slice.profiles_1d.rho_tor,
+                     r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho , dV/d\rho$"),
+                    (tok.equilibrium.time_slice.profiles_1d.dvolume_drho_tor,   r"$V^{\prime}$", r"$dV/d\rho$"),
+                ]
                 # [
                 #     (eq_profile.volume,                r"$V$"),
                 #     # (Function(eq_profile.rho_tor, eq_profile.dvolume_drho_tor).antiderivative,
@@ -127,9 +126,38 @@ if __name__ == "__main__":
                 #      r"$\left<\frac{1}{R^2}\right>$"),
                 # ]
             ],
-            x_axis=(eq_profile.psi_norm,                                                r"$\psi/\psi_{bdry}$"),
+            x_axis=(eq_profile._coord.psi_norm,                                                r"$\psi/\psi_{bdry}$"),
             title="Equlibrium",
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
+
+        rgrid = eq_profile._coord
+        plot_profiles(
+            [
+                (rgrid.psi_norm,  r"$\bar{\psi}$", r"$[-]$"),
+                (rgrid.rho_tor_norm,  r"$\bar{\rho}$", r"$[-]$"),
+                (rgrid.psi,  r"$\psi$", r"$[Wb]$"),
+                (rgrid.rho_tor,  r"$\rho$", r"$[m]$"),
+                (eq_profile.dvolume_dpsi(rgrid.psi_norm),  r"$dV/d\psi$", r"$[m]$"),
+                [
+                    (4*(constants.pi**2)*rgrid.vacuum_toroidal_field.r0*rgrid.rho_tor,
+                        r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho$"),
+
+                    (rgrid.dvolume_drho_tor, r"$dV/d\rho_{tor}$", r"$[m^2]$")
+                ],
+                (rgrid.gm1,                                             r"$gm1=\left<\frac{1}{R^2}\right>$"),
+                (rgrid.gm2,                    r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
+                (rgrid.gm3,                                r"$gm3=\left<\left|\nabla \rho\right|^2\right>$"),
+                (rgrid.gm7,                                  r"$gm7=\left<\left|\nabla \rho\right|\right>$"),
+                (rgrid.gm8,                                                         r"$gm8=\left<R\right>$"),
+
+                (rgrid.dphi_dpsi,                                                  r"$\frac{d\phi}{d\psi}$"),
+                (rgrid.drho_tor_dpsi,                                        r"$\frac{d\rho_{tor}}{d\psi}$"),
+                # (rgrid.dvolume_drho_tor,                                              r"$\frac{dV}{d\rho}$"),
+                (rgrid.dpsi_drho_tor,                                        r"$\frac{d\psi}{d\rho_{tor}}$"),
+            ],
+            x_axis=(rgrid.rho_tor_norm,      r"$\bar{\rho_{tor}}$"),
+            title="Equlibrium",
+            grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_coord.svg", transparent=True)
 
     ###################################################################################################
     if True:  # CoreProfile
@@ -183,9 +211,9 @@ if __name__ == "__main__":
                 (core_profile.electrons.pressure,                                                        r"$p_e $"),
                 (core_profile.electrons.density,                                                         r"$n_e $"),
                 (core_profile.electrons.temperature,                                                     r"$T_e $"),
-                (core_profile.electrons.pressure.derivative(),                                   r"$p_e^{\prime}$"),
-                (core_profile.electrons.density.derivative(),                                    r"$n_e^{\prime}$"),
-                (core_profile.electrons.temperature.derivative(),                                r"$T_e^{\prime}$"),
+                # (core_profile.electrons.pressure.derivative(),                                   r"$p_e^{\prime}$"),
+                # (core_profile.electrons.density.derivative(),                                    r"$n_e^{\prime}$"),
+                # (core_profile.electrons.temperature.derivative(),                                r"$T_e^{\prime}$"),
 
             ],
             x_axis=(core_profile.grid.rho_tor_norm,                                   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
@@ -209,10 +237,13 @@ if __name__ == "__main__":
         D = 0.01*chi
         v_pinch = D * rho_tor_norm * 1.5 / r0
 
+        conductivity_parallel = Function(bs_r_nrom, baseline["Joh"].values*1.0e6 / baseline["U"].values *
+                                         (2.0*constants.pi * tok.equilibrium.vacuum_toroidal_field.r0))
+
         tok.core_transport["model"] = [
             {"code": {"name": "dummy"},
              "profiles_1d": {
-
+                "conductivity_parallel": conductivity_parallel,
                 "electrons": {**atoms["e"],
                               "particles":   {"d": 0.1*(chi+chi_e), "v": 0},
                               "energy":      {"d": 0.5*chi, "v": 0},
@@ -223,11 +254,11 @@ if __name__ == "__main__":
                     {**atoms["He"], "particles":{"d": 0.1 *
                                                  (chi+chi_e), "v": 0}, "energy": {"d": 0.5*chi, "v": 0}, }
                 ]}},
-            {"code": {"name": "neoclassical"}},
-            {"code": {"name": "spitzer"}},
+            # {"code": {"name": "neoclassical"}},
+            # {"code": {"name": "spitzer"}},
         ]
         tok.core_transport.update()
-
+    if False:
         core_transport1d_nc = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
         core_transport1d_dummy = tok.core_transport.model[{"code.name": "dummy"}].profiles_1d
         core_transport1d = tok.core_transport.model.combine.profiles_1d
@@ -301,16 +332,25 @@ if __name__ == "__main__":
 
     if True:  # CoreSources
         tok.core_sources["source"] = [
-            {"code": {"name": "bootstrap_current"}},
-            {"code": {"name": "dummy"}},
+            # {"code": {"name": "bootstrap_current"}},
+            {"code": {"name": "dummy"},
+                "profiles_1d": {"j_parallel": Function(bs_r_nrom, baseline["Jtot"].values*1e6)}
+             },
         ]
-
+        # tok.core_sources.source[{"code.name": "dummy"}].profiles_1d["j_parallel"] = \
+        #     Function(bs_r_nrom, baseline["Jtot"].values)
         tok.core_sources.update()
-
-        core_source_1d = tok.core_sources.source[0].profiles_1d
+    if False:
+        core_source_1d = tok.core_sources.source.combine.profiles_1d
 
         plot_profiles(
             [
+                [
+                    (Function(bs_r_nrom, baseline["Jtot"].values),  "astra", r"$J_{\parallel} [MA\cdot m^{-2}]$"),
+                    (tok.core_sources.source[{"code.name": "dummy"}].profiles_1d.j_parallel,
+                     "dummy", r"$J_{\parallel} [MA\cdot m^{-2}]$"),
+                    (core_source_1d.j_parallel,                     "fytok", r"$J_{\parallel} [MA\cdot m^{-2}]$"),
+                ],
                 # [
                 #     (Function(bs_r_nrom, baseline["Zeff"].values),          r"$Z_{eff}^{astra}$", {"marker": "+"}),
                 #     (core_profile.zeff,                                                              r"$z_{eff}$"),
@@ -321,18 +361,17 @@ if __name__ == "__main__":
                 #     (core_source_1d.conductivity_parallel,
                 #      r"$\sigma_{\parallel}^{wesson}$"),
                 # ],
-                [
-                    (Function(bs_r_nrom, baseline["Joh"].values), "astra",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
-                    # (core_profile.j_ohmic,                        "fytok",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
+                # [
+                #     (Function(bs_r_nrom, baseline["Joh"].values), "astra",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
+                #     # (core_profile.j_ohmic,                        "fytok",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
+                # ],
+                # [
+                #     (Function(bs_r_nrom, baseline["Jbs"].values),
+                #      r"astra", r"$j_{bootstrap} [MA\cdot m^{-2}]$", {"marker": "+"}),
+                #     (core_source_1d.j_parallel*1.0e-6,                                          r"wesson"),
 
-                ],
-                [
-                    (Function(bs_r_nrom, baseline["Jbs"].values),
-                     r"astra", r"$j_{bootstrap} [MA\cdot m^{-2}]$", {"marker": "+"}),
-                    (core_source_1d.j_parallel*1.0e-6,                                          r"wesson"),
-
-                    (tok.core_sources.source.combine.profiles_1d.j_parallel*1.0e-6,             r"fytok"),
-                ],
+                #     (tok.core_sources.source.combine.profiles_1d.j_parallel*1.0e-6,             r"fytok"),
+                # ],
                 # (tok.core_profiles.profiles_1d.electrons.density,                                       r"$ n_e $"),
                 # (tok.core_profiles.profiles_1d.electrons.temperature,                                   r"$ T_e $"),
                 # (tok.core_profiles.profiles_1d.electrons.temperature.dln(),          r"$\frac{T_e^{\prime}}{T_e}$"),
@@ -354,11 +393,14 @@ if __name__ == "__main__":
     ###################################################################################################
 
     if True:  # TransportSolver
-
         tok.transport_solver["boundary_conditions_1d"] = {
-            "current": {"identifier": {"index": 1}, "value": [0, 0, 1, 0]}}
+            "current": {"identifier": {"index": 1}, "value": [tok.equilibrium.time_slice.global_quantities.psi_boundary]}}
 
         tok.transport_solver.update()
+
+        # psi0 = tok.core_profiles.profiles_1d['psi']
+        # tok.core_profiles.profiles_1d["psi"] = np.zeros(tok.core_profiles.grid.rho_tor_norm.shape)
+        # tok.core_profiles.profiles_1d["dpsi_drho_tor_norm"] = np.zeros(tok.core_profiles.grid.rho_tor_norm.shape)
 
         tok.transport_solver.solve(
             equilibrium=tok.equilibrium,
@@ -366,27 +408,64 @@ if __name__ == "__main__":
             core_transport=tok.core_transport,
             core_sources=tok.core_sources)
 
+        core_profile = tok.core_profiles.profiles_1d
+
+        conductivity_parallel = Function(bs_r_nrom, baseline["Joh"].values*1.0e6 / baseline["U"].values *
+                                         (2.0*constants.pi * tok.equilibrium.vacuum_toroidal_field.r0))
+
         plot_profiles(
             [
-                [
-                    # (Function(bs_r_nrom, baseline["NE"].values*1.0e19),              r"$n_{e}^{astra}$"),
-                    (core_profile.electrons.density*1e-19,             r"$e$", r"n $[10^{19} m \cdot s^{-3}]$"),
-                    *[(ion.density*1e-19,                            f"${ion.label}$") for ion in core_profile.ion],
+                # [
+                #     # (Function(bs_r_nrom, baseline["NE"].values*1.0e19),              r"$n_{e}^{astra}$"),
+                #     (core_profile.electrons.density*1e-19,             r"$e$", r"n $[10^{19} m \cdot s^{-3}]$"),
+                #     *[(ion.density*1e-19,                            f"${ion.label}$") for ion in core_profile.ion],
 
-                ],
-                [
-                    # (Function(bs_r_nrom, baseline["TE"].values),                     r"$T_{e}^{astra}$"),
-                    (core_profile.electrons.temperature/1000,                              r"$e$", r"T $[keV]$"),
-                    *[(ion.temperature/1000,                      f"${ion.label}$") for ion in core_profile.ion],
-                ],
+                # ],
+                # [
+                #     # (Function(bs_r_nrom, baseline["TE"].values),                     r"$T_{e}^{astra}$"),
+                #     (core_profile.electrons.temperature/1000,                              r"$e$", r"T $[keV]$"),
+                #     *[(ion.temperature/1000,                      f"${ion.label}$") for ion in core_profile.ion],
+                # ],
 
                 [
-                    (Function(bs_r_nrom, baseline["Zeff"].values),                r"$^{astra}$", r"$Z_{eff}  [-]$"),
-                    (core_profile.zeff,                                                                 r"$fytok$"),
+                    (Function(bs_r_nrom, baseline["Fp"].values), r"astra", r"$\psi/\psi_{bdry}  [-]$", {"marker": "+"}),
+                    ((core_profile["psi"]-core_profile["psi"][0])/(core_profile["psi"][-1]-core_profile["psi"][0]),
+                     r"fytok", r"$\psi  [-]$"),
                 ],
-                (core_profile.e_field.parallel,                    r"fytok",   r"$E_{\parallel} [V\cdot m^{-1}]$ "),
+                [
+                    (Function(bs_r_nrom, (baseline["Fp"].values * (tok.equilibrium.time_slice.global_quantities.psi_boundary-tok.equilibrium.time_slice.global_quantities.psi_axis)
+                                          + tok.equilibrium.time_slice.global_quantities.psi_axis)), r"astra", r"$\psi [Wb]$", {"marker": "+"}),
+                    (core_profile["psi"],  r"fytok", r"$\psi  [Wb]$"),
+                ],
+                [
+                    (Function(bs_r_nrom, baseline["Jtot"].values), "astra",   r"$J_{\parallel} [MA]$", {"marker": "+"}),
+                    (tok.core_sources.source.combine.profiles_1d.j_parallel/1e6,    "fytok",   r"$J_{\parallel} [MA]$"),
+                ],
+                [
+                    (conductivity_parallel, "astra", r"$\sigma_{\parallel}$", {"marker": "+"}),
+                    (tok.core_transport.model.combine.profiles_1d.conductivity_parallel,
+                     "fytok", r"$\sigma_{\parallel}$"),
+                ],
+                # (core_profile["sol.current.a"],  r"sol.current.a", r"$a$"),
+                # (core_profile["sol.current.b"],  r"sol.current.b", r"$b$"),
+                # (core_profile["sol.current.c"],  r"sol.current.c", r"$c$"),
+                (core_profile["sol.current.d"],  r"sol.current.d", r"$d$"),
+                # (core_profile["sol.current.e"],  r"sol.current.e", r"$e$"),
+                (core_profile["sol.current.f"],  r"sol.current.f", r"$f$"),
+                (core_profile["sol.current.fpol"],  r"sol.current.fpol", r"$fpol$"),
+                (core_profile["sol.current.gm2"],  r"sol.current.gm2", r"$gm2$"),
+                [
+                    (4*(constants.pi**2)*core_profile.grid.vacuum_toroidal_field.r0*core_profile.grid.rho_tor,
+                        r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho$"),
+                    (core_profile.grid.dvolume_drho_tor, r"$dV/d\rho_{tor}$", r"$[m^2]$"),
+                    (core_profile["sol.current.vpr"],  r"sol.current.vpr", r"$vpr$"),
+
+                ]
+
+                # (core_profile.e_field.parallel,                    r"fytok",   r"$E_{\parallel} [V\cdot m^{-1}]$ "),
             ],
             x_axis=(core_profile.grid.rho_tor_norm,                                   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-            grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
+            title="Result of TransportSolver",
+            grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile_result.svg", transparent=True)
 
     logger.info("====== DONE ========")
