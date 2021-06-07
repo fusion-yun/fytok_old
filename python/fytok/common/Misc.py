@@ -2,11 +2,10 @@
 import collections
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Union, Any
+from typing import Any, Generic, TypeVar, Union
 
+from spdm.data.Node import Dict, sp_property
 from spdm.numlib import np
-from spdm.data.Node import Dict
-from spdm.data.Node import sp_property
 
 # VacuumToroidalField = collections.namedtuple("VacuumToroidalField", "r0 b0", defaults=(0.0, 0.0))
 # Identifier = collections.namedtuple("Identifier", " ", defaults=("unamed", 0, ""))
@@ -19,10 +18,13 @@ class Identifier:
     description: str = ""
 
 
+_TData = TypeVar("_TData")
+
+
 @dataclass
-class Decomposition:
-    implicit_part: np.ndarray  # Implicit part
-    explicit_part: np.ndarray  # Explicit part
+class Decomposition(Generic[_TData]):
+    implicit_part: _TData  # Implicit part
+    explicit_part: _TData  # Explicit part
 
 
 @dataclass

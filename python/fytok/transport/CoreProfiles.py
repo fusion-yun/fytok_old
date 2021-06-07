@@ -307,17 +307,17 @@ class CoreProfiles1D(Profiles):
     @sp_property
     def electrons(self) -> CoreProfilesElectrons:
         """Quantities related to the electrons"""
-        return CoreProfilesElectrons(self._entry.find("electrons"), axis=self._grid.rho_tor_norm, parent=self)
+        return self.get("electrons", {})
 
     @sp_property
     def ion(self) -> List[CoreProfilesIon]:
         """Quantities related to the different ion species"""
-        return List[CoreProfilesIon](self._entry.find("ion"), axis=self._grid.rho_tor_norm,  hasher="label", parent=self)
+        return self.get("ion", [])
 
     @sp_property
     def neutral(self) -> List[CoreProfilesNeutral]:
         """Quantities related to the different neutral species"""
-        return List[CoreProfilesNeutral](self._entry.find("neutral"), axis=self._grid.rho_tor_norm,  hasher="label",  parent=self)
+        return self.get("neutral", [])
 
     @sp_property
     def t_i_average(self) -> Function:

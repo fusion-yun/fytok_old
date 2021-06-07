@@ -12,7 +12,7 @@ from spdm.numlib import constants, np
 from spdm.util.logger import logger
 
 from ..common.IDS import IDS
-from ..common.Misc import Identifier, VacuumToroidalField
+from ..common.Misc import Decomposition, Identifier, VacuumToroidalField
 from ..common.Species import Species, SpeciesElectron, SpeciesIon
 from .CoreProfiles import CoreProfiles
 from .Equilibrium import Equilibrium
@@ -46,14 +46,20 @@ class CoreSourcesParticle(Dict):
 
 @dataclass
 class CoreSourcesElectrons(SpeciesElectron):
-    particle: np.ndarray
+    particles: np.ndarray
+    particles_decomposed: Decomposition[np.ndarray]
+
     energy: np.ndarray
+    energy_decomposed: Decomposition[np.ndarray]
 
 
 @dataclass
 class CoreSourcesIon(SpeciesIon):
     particles: np.ndarray
+    particles_decomposed: Decomposition[np.ndarray]
+
     energy: np.ndarray
+    energy_decomposed: Decomposition[np.ndarray]
 
 
 class CoreSourcesNeutral(Profiles):
@@ -94,11 +100,15 @@ class CoreSourcesProfiles1D(Profiles):
 
     @sp_property
     def total_ion_power_inside(self) -> Function:
-        return NotImplemented
+        return self.get("total_ion_power_inside", None)
+
+    @sp_property
+    def momentum_tor(self) -> Function:
+        return self.get("momentum_tor", None)
 
     @sp_property
     def torque_tor_inside(self) -> Function:
-        return NotImplemented
+        return self.get("torque_tor_inside", None)
 
     @sp_property
     def j_parallel(self) -> Function:
