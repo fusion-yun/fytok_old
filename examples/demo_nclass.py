@@ -57,7 +57,7 @@ if __name__ == "__main__":
                   ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
 
         eq_profile = tok.equilibrium.time_slice.profiles_1d
-    # if False:
+
         plot_profiles(
             [
                 # (eq_profile.dpressure_dpsi,                                                       r"$dP/d\psi$"),
@@ -129,7 +129,7 @@ if __name__ == "__main__":
             x_axis=(eq_profile._coord.psi_norm,                                                r"$\psi/\psi_{bdry}$"),
             title="Equlibrium",
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
-    if True:
+
         rgrid = eq_profile._coord
         plot_profiles(
             [
@@ -175,8 +175,8 @@ if __name__ == "__main__":
         tok.core_profiles["profiles_1d"] = {
             "electrons": {**atoms["e"], "density": 0.1*b_ne,  "temperature": 0.1*b_Te, },
             "ion": [
-                {**atoms["H"],  "density":   0.5*b_nDT, "temperature": b_Ti, },
                 {**atoms["D"],  "density":   0.5*b_nDT, "temperature": b_Ti, },
+                {**atoms["T"],  "density":   0.5*b_nDT, "temperature": b_Ti, },
                 {**atoms["He"], "density":       b_nHe, "temperature": b_Ti, },
                 {**atoms["Be"], "density":   0.02*b_ne, "temperature": b_Ti, },
                 {**atoms["Ar"], "density": 0.0012*b_ne, "temperature": b_Ti, },
@@ -221,7 +221,6 @@ if __name__ == "__main__":
 
     ###################################################################################################
     if True:  # CoreTransport
-
         rho_tor_norm = tok.equilibrium.time_slice.profiles_1d.rho_tor_norm
         R0 = tok.equilibrium.vacuum_toroidal_field.r0
 
@@ -251,16 +250,16 @@ if __name__ == "__main__":
                     "electrons": {
                         **atoms["e"],
                         "particles":   {"d": D, "v": -v_pinch},
-                        "energy":      {"d": 0.5*chi, "v": -v_pinch},
+                        "energy":      {"d": chi_e, "v": -v_pinch},
                     },
                     "ion": [
                         {
-                            **atoms["H"],
+                            **atoms["D"],
                             "particles":{"d":  D, "v": v_pinch},
                             "energy": {"d": chi, "v": 0},
                         },
                         {
-                            **atoms["D"],
+                            **atoms["T"],
                             "particles":{"d":  D, "v": v_pinch},
                             "energy": {"d": chi, "v": 0},
                         },
@@ -369,7 +368,9 @@ if __name__ == "__main__":
                                             - baseline["Prad"].values
                                             )*1000
                                            )},
-            }},
+                    "ion":[]
+            }
+            },
             # {"code": {"name": "q_ei"}, }
             # {"code": {"name": "bootstrap_current"}},
         ]
@@ -432,7 +433,18 @@ if __name__ == "__main__":
         tok.transport_solver["boundary_conditions_1d"] = {
             "current": {"identifier": {"index": 1}, "value": [tok.equilibrium.time_slice.global_quantities.psi_boundary]},
             "electrons": {"particles": {"identifier": {"index": 1}, "value": [b_ne[-1]]},
-                          "energy": {"identifier": {"index": 1}, "value": [b_Te[-1]]}}
+                          "energy": {"identifier": {"index": 1}, "value": [b_Te[-1]]}},
+            "ion": [
+                {**atoms["D"],
+                 "particles": {"identifier": {"index": 1}, "value": [b_nDT[-1]]},
+                 "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}},
+                {**atoms["T"],
+                    "particles": {"identifier": {"index": 1}, "value": [b_nDT[-1]]},
+                    "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}},
+                {**atoms["He"],
+                    "particles": {"identifier": {"index": 1}, "value": [b_nHe[-1]]},
+                    "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}}
+            ]
         }
 
         tok.transport_solver.update(equilibrium=tok.equilibrium,
@@ -444,7 +456,7 @@ if __name__ == "__main__":
         # tok.core_profiles.profiles_1d["psi"] = np.zeros(tok.core_profiles.grid.rho_tor_norm.shape)
         # tok.core_profiles.profiles_1d["dpsi_drho_tor_norm"] = np.zeros(tok.core_profiles.grid.rho_tor_norm.shape)
 
-        tok.transport_solver.solve()
+        tok.transport_solver.solve(impurities=["D", "T", "He", "Ar", "Be"])
 
         core_profile = tok.core_profiles.profiles_1d
 
@@ -499,10 +511,10 @@ if __name__ == "__main__":
                 ######################################################################
                 # electron energy
                 # [
-                # (b_Te, r"astra", r"$T_e [eV]$",  {"marker": "+"}),
-                # (core_profile.electrons.temperature, r"fytok", r"$[eV]$"),
-                # (b_Te-core_profile.electrons.temperature, r"residual",
-                #  r"$[eV]$",  {"color": "red", "linestyle": "dashed"}),
+                (b_Te, r"astra", r"$T_e [eV]$",  {"marker": "+"}),
+                (core_profile.electrons.temperature, r"fytok", r"$T_e [eV]$"),
+                (b_Te-core_profile.electrons.temperature, r"residual",
+                 r"$[eV]$",  {"color": "red", "linestyle": "dashed"}),
                 # ],
 
                 ######################################################################

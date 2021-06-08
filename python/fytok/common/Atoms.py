@@ -18,6 +18,12 @@ atoms = {
         "element": [{"a": 2, "z_n": 1, "atoms_n": 1}],
 
     },
+    "T": {
+        "label": "T",
+        "z_ion": 1,
+        "element": [{"a": 3, "z_n": 1, "atoms_n": 1}],
+
+    },
     "He": {
         "label": "He",
         "z_ion": 2,

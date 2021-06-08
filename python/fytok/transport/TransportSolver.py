@@ -2,11 +2,11 @@
 
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from math import log
 from typing import Mapping, Optional
 
-from fytok.common.Species import SpeciesIon
+from fytok.common.Species import SpeciesElectron, SpeciesIon
 from fytok.transport.EdgeProfiles import EdgeProfiles
 from fytok.transport.EdgeSources import EdgeSources
 from fytok.transport.EdgeTransport import EdgeTransport
@@ -32,11 +32,21 @@ TOLERANCE = 1.0e-6
 TWOPI = 2.0 * constants.pi
 
 
-@dataclass
-class _BC:
-    value: np.ndarray
-    rho_tor_norm: float = 1.0
-    identifier: Identifier = Identifier()
+class _BC(Dict):
+    def __init__(self,  *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @sp_property
+    def value(self) -> np.ndarray:
+        return self.get('value', [0.0])
+
+    @sp_property
+    def rho_tor_norm(self) -> float:
+        return self.get('rho_tor_norm', 1.0)
+
+    @sp_property
+    def identifier(self) -> Identifier:
+        return self.get('identifier', {"index": 1})
 
 
 class TransportSolver(IDS):
@@ -47,30 +57,68 @@ class TransportSolver(IDS):
     _IDS = "transport_solver_numerics"
     _actor_module_prefix = "transport.transport_solver."
 
-    @dataclass
-    class BoundaryConditions1D:
+    class BoundaryConditions1D(Dict):
         BoundaryConditions = _BC
 
-        @dataclass
-        class Electrons:
-            particles: _BC
-            energy: _BC
-            rho_tor_norm: float
+        def __init__(self,   *args, grid: RadialGrid = None, **kwargs):
+            super().__init__(*args, **kwargs)
+            self._grid = grid or self._parent._grid
 
-        @dataclass
+        @property
+        def grid(self) -> RadialGrid:
+            return self._grid
+
+        class Electrons(SpeciesElectron):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args,   **kwargs)
+
+            @sp_property
+            def particles(self) -> _BC:
+                return self.get("particles", {})
+
+            @sp_property
+            def energy(self) -> _BC:
+                return self.get("energy", {})
+
+            @sp_property
+            def rho_tor_norm(self) -> float:
+                return self.get("rho_tor_norm", 1.0)
+
         class Ion(SpeciesIon):
-            particles: _BC
-            energy: _BC
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args,   **kwargs)
 
-        electrons: Electrons
+            @sp_property
+            def particles(self) -> _BC:
+                return self.get("particles", {})
 
-        ion: List[Ion]
+            @sp_property
+            def energy(self) -> _BC:
+                return self.get("energy", {})
 
-        current: BoundaryConditions
+            @sp_property
+            def rho_tor_norm(self) -> float:
+                return self.get("rho_tor_norm", 1.0)
 
-        energy_ion_total: BoundaryConditions
+        @sp_property
+        def electrons(self) -> Electrons:
+            return self.get("electrons", {})
 
-        momentum_tor: BoundaryConditions
+        @sp_property
+        def current(self) -> BoundaryConditions:
+            return self.get("current", {})
+
+        @sp_property
+        def energy_ion_total(self) -> BoundaryConditions:
+            return self.get("energy_ion_total", {})
+
+        @sp_property
+        def momentum_tor(self) -> BoundaryConditions:
+            return self.get("momentum_tor", {})
+
+        @sp_property
+        def ion(self) -> List[Ion]:
+            return self.get("ion", [])
 
     def __init__(self,  *args, grid: RadialGrid = None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -125,20 +173,26 @@ class TransportSolver(IDS):
     def solve_core(self, *args,   tolerance=1e-3, **kwargs):
         return NotImplemented
 
-    def solve(self,  max_iter=1, max_nodes=1000,  tolerance=1.0e-3, **kwargs) -> float:
+    def solve(self,  max_iter=1, tolerance=1.0e-3, ** kwargs) -> float:
         """
             solve transport eqation
             return residual of core_profiles
         """
 
         for step in range(max_iter):
-            logger.debug(f" Iteration step={step}")
+            logger.debug(f" Iteration step={step}: start")
 
-            residual = self.solve_core(max_nodes=max_nodes, tolerance=tolerance, **kwargs)
+            residual = []
+            residual.append(self.solve_core(tolerance=tolerance, **kwargs))
 
             if self._edge_profiles is not False:
-                residual += self.solve_edge(tolerance=tolerance, **kwargs)
+                residual.append(self.solve_edge(tolerance=tolerance, **kwargs))
 
-            if abs(residual) < tolerance:
-                return
+            residual = max(residual)
+
+            logger.debug(f" Iteration step={step}: stop   residual={residual}  ")
+
+            if residual < tolerance:
+                break
+
         return residual

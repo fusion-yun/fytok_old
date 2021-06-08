@@ -22,7 +22,7 @@ class CoreProfilesElectrons(SpeciesElectron):
     @sp_property
     def temperature(self) -> Function:
         """Temperature {dynamic} [eV]"""
-        return self["temperature"]
+        return self.get("temperature", None)
 
     # @property
     # def temperature_validity(self):
