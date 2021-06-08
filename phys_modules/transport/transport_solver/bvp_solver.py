@@ -130,15 +130,15 @@ class TransportSolverBVP(TransportSolver):
         diff_flux = Function(sol.x, np.asarray(-d(sol.x) * sol.yp[0]))
         conv_flux = Function(sol.x, np.asarray(e(sol.x) * sol.y[0]))
 
+        y = Function(sol.x, sol.y[0])
+        yp = Function(sol.x, sol.yp[0])
         profiles = convert_to_named_tuple({
             "diff_flux": diff_flux,
             "conv_flux": conv_flux,
             "s_exp_flux": s_exp_flux,
-
-            "y": Function(sol.x, sol.y[0]),
-            "yp":  Function(sol.x, sol.yp[0]),
-            "flux": Function(sol.x, sol.y[1]),
-            "flux_prime": Function(sol.x, sol.yp[1]),
+            "y": y,
+            "yp": yp,
+            "flux": -d*yp+y,
         })
 
         if not sol.success:
@@ -294,15 +294,15 @@ class TransportSolverBVP(TransportSolver):
 
             b = conductivity_parallel * rho_tor * c * inv_tau
 
-            d = vpr*gm2 / fpol / (rho_tor_boundary)    
+            d = vpr*gm2 / fpol / (rho_tor_boundary)
 
             logger.warning(f"FIXME:  The result is correct, but the formula does not match ASTRA. why?  ")
 
             e = (- constants.mu_0 * B0 * k_phi) * (conductivity_parallel * rho_tor**2/fpol**2)
 
-            f = - vpr * j_exp  * c
+            f = - vpr * j_exp * c
 
-            g = vpr * j_imp  * c  # + ....
+            g = vpr * j_imp * c  # + ....
 
             # -----------------------------------------------------------
             # boundary condition, value
@@ -435,36 +435,34 @@ class TransportSolverBVP(TransportSolver):
                 max_nodes=max_nodes,
                 ignore_x=[d.x[np.argmax(np.abs(d.derivative()))]]
             )
-            rms_residuals = np.max(sol.rms_residuals)
-            logger.info(
-                f"Solve transport equations: {label.capitalize()} particle [{'Success' if sol.success else 'Failed'}] max reduisal={rms_residuals}")
-
-            logger.debug((bc.particles.value[0], profiles.y[-1]))
 
             core_profiles_next["density"] = profiles.y
-            core_profiles_next["density_prime"] = profiles.yp
-
             core_profiles_next["density_flux"] = profiles.flux
+
             core_profiles_next["rms_residuals"] = Function((sol.x[1:]+sol.x[:-1])*0.5, sol.rms_residuals)
-            core_profiles_next["residuals"] = -d*core_profiles_next.density.derivative() + \
-                core_profiles_next.density*e
 
             core_profiles_next["s_exp_flux"] = profiles.s_exp_flux
             core_profiles_next["diff_flux"] = profiles.diff_flux
             core_profiles_next["conv_flux"] = profiles.conv_flux
             core_profiles_next["residual"] = profiles.diff_flux + profiles.conv_flux - profiles.s_exp_flux
 
-            core_profiles_next["diff"] = diff
-            core_profiles_next["conv"] = conv
-            core_profiles_next["vpr"] = vpr
+            # core_profiles_next["diff"] = diff
+            # core_profiles_next["conv"] = conv
+            # core_profiles_next["vpr"] = vpr
 
-            core_profiles_next["a"] = a
-            core_profiles_next["b"] = b
-            core_profiles_next["d"] = d
-            core_profiles_next["e"] = e
-            core_profiles_next["f"] = f
-            core_profiles_next["g"] = g
-            return 0.0  # rms_residuals
+            # core_profiles_next["a"] = a
+            # core_profiles_next["b"] = b
+            # core_profiles_next["d"] = d
+            # core_profiles_next["e"] = e
+            # core_profiles_next["f"] = f
+            # core_profiles_next["g"] = g
+
+            rms_residuals = np.max(sol.rms_residuals)
+
+            logger.info(
+                f"Solve transport equations: {label.capitalize()} particle [{'Success' if sol.success else 'Failed'}] max reduisal={rms_residuals}")
+
+            return rms_residuals
 
         def energy_transport(core_profiles_next:  Union[CoreProfiles.Profiles1D.Electrons, CoreProfiles.Profiles1D.Ion],
                              core_profiles_prev: Union[CoreProfiles.Profiles1D.Electrons, CoreProfiles.Profiles1D.Ion],
@@ -474,37 +472,33 @@ class TransportSolverBVP(TransportSolver):
                                        TransportSolver.BoundaryConditions1D.Ion]
                              ):
             # energy transport
-            diff = transp.energy.d
+            chi = transp.energy.d
             v_pinch = transp.energy.v
-            qs_exp = source.energy + source.energy_decomposed.explicit_part
-            qs_imp = source.energy_decomposed.implicit_part
+            lambda_ = 5/2
 
-            # # FIXME: Collisions is not implemented
-            # # qs_exp += qei + qzi + qgi
-            # # qi_imp += vei + vzi
-            # logger.warning(
-            #     f"Energy Transport: Collisions is not implemented! [qs_exp += qei + qzi + qgi, qi_imp += vei + vzi] ")
+            Qs_exp = source.energy  # + source.energy_decomposed.explicit_part
+            Qs_imp = 0  # source.energy_decomposed.implicit_part
 
             density_prev = core_profiles_prev.density
 
-            density_next = core_profiles.density
+            density_next = core_profiles_next.density
 
-            density_flux_next = core_profiles.density_flux
+            density_flux_next = core_profiles_next["density_flux"]
 
-            a = (3/2) * density_next * vpr * rho_tor_boundary * inv_tau
+            a = rho_tor_boundary * inv_tau * (3/2) * density_next * vpr
 
-            b = (3/2) * density_prev * (vprm**(5/3)/vpr**(2/3)) * rho_tor_boundary * inv_tau
+            b = rho_tor_boundary * inv_tau * (3/2) * density_prev * (vprm**(5/3) / vpr**(2/3))
 
-            b = Function(rho_tor_norm, np.hstack(([0], b[1:])))
+            # b = Function(rho_tor_norm, np.hstack(([0], b[1:])))
 
-            d = vpr * gm3 * density_next * diff / rho_tor_boundary
+            d = vpr * gm3 * density_next * chi / rho_tor_boundary
 
-            e = vpr * gm3 * density_next * v_pinch + (5/2) * density_flux_next\
+            e = vpr * gm3 * density_next * v_pinch + lambda_ * density_flux_next  \
                 - vpr * (3/4)*k_phi * rho_tor * density_next
 
-            f = vpr * (qs_exp) * rho_tor_boundary
+            f = vpr * (Qs_exp) * rho_tor_boundary
 
-            g = vpr * (qs_imp + (3*k_rho_bdry - k_phi * vpr.derivative)*density_next) * rho_tor_boundary
+            g = vpr * (Qs_imp + (3*k_rho_bdry - k_phi * vpr.derivative())*density_next) * rho_tor_boundary
 
             if bc.energy.identifier.index == 1:
                 u = 1
@@ -514,7 +508,7 @@ class TransportSolverBVP(TransportSolver):
                 raise NotImplementedError(bc.energy)
 
             Ts_prev = core_profiles_prev.temperature
-            Hs_prev = core_profiles_prev.head_flux or None
+            # Hs_prev = core_profiles_prev.head_flux or None
 
             sol, profiles = self.solve_general_form(
                 rho_tor_norm,
@@ -525,25 +519,25 @@ class TransportSolverBVP(TransportSolver):
                 hyper_diff=[0, 0.0001],
                 tolerance=tolerance,
                 verbose=verbose,
-                max_iter=max_iter,
-                ignore_x=[d.x[np.argmax(np.abs(d.derivative))]],
+                max_nodes=max_nodes,
+                ignore_x=[d.x[np.argmax(np.abs(d.derivative()))]],
                 ** kwargs
             )
-            logger.info(
-                f"Solve transport equations: {core_profiles_prev.label.capitalize()} energy [{'Success' if sol.success else 'Failed'}] ")
 
-            core_profiles["temperature"] = profiles.y
-            core_profiles["temperature_prime"] = profiles.yp
-            core_profiles["heat_flux"] = profiles.flux
-            core_profiles["heat_flux0"] = profiles.flux0
-            core_profiles["T_a"] = a
-            core_profiles["T_b"] = b
-            core_profiles["T_d"] = d
-            core_profiles["T_e"] = e
-            core_profiles["T_diff_flux"] = profiles.diff_flux
-            core_profiles["T_conv_flux"] = profiles.conv_flux
-            core_profiles["T_s_exp_flux"] = profiles.s_exp_flux
-            core_profiles["T_residual"] = profiles.residual
+            core_profiles_next["temperature"] = profiles.y
+            core_profiles_next["heat_flux"] = profiles.flux
+            # core_profiles["a"] = a
+            # core_profiles["b"] = b
+            # core_profiles["d"] = d
+            # core_profiles["e"] = e
+            # core_profiles["diff_flux"] = profiles.diff_flux
+            # core_profiles["conv_flux"] = profiles.conv_flux
+            # core_profiles["s_exp_flux"] = profiles.s_exp_flux
+            # core_profiles["residual"] = profiles.residual
+            rms_residuals = np.max(sol.rms_residuals)
+            logger.info(
+                f"Solve transport equations: {core_profiles_next.label.capitalize()} energy [{'Success' if sol.success else 'Failed'}] ")
+            return rms_residuals
 
         def rotation_transport(core_profiles_next:  Union[CoreProfiles.Profiles1D.Electrons, CoreProfiles.Profiles1D.Ion],
                                core_profiles_prev: Union[CoreProfiles.Profiles1D.Electrons, CoreProfiles.Profiles1D.Ion],
@@ -590,15 +584,14 @@ class TransportSolverBVP(TransportSolver):
                 self.boundary_conditions_1d.electrons
             )
 
+        residual += energy_transport(
+            core_profiles_next.profiles_1d.electrons,
+            core_profiles_prev.profiles_1d.electrons,
+            c_transp.profiles_1d.electrons,
+            c_source.profiles_1d.electrons,
+            self.boundary_conditions_1d.electrons
+        )
         if False:
-            residual += energy_transport(
-                core_profiles_next.profiles_1d.electrons,
-                core_profiles_prev.profiles_1d.electrons,
-                c_transp.profiles_1d.electrons,
-                c_source.profiles_1d.electrons,
-                self.boundary_conditions_1d.electrons
-            )
-
             for ion in core_profiles_next.profiles_1d.ion:
                 residual += energy_transport(
                     ion,

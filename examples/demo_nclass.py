@@ -423,7 +423,8 @@ if __name__ == "__main__":
     if True:  # TransportSolver
         tok.transport_solver["boundary_conditions_1d"] = {
             "current": {"identifier": {"index": 1}, "value": [tok.equilibrium.time_slice.global_quantities.psi_boundary]},
-            "electrons": {"particles": {"identifier": {"index": 1}, "value": [b_ne[-1]]}}
+            "electrons": {"particles": {"identifier": {"index": 1}, "value": [b_ne[-1]]},
+                          "energy": {"identifier": {"index": 1}, "value": [b_Te[-1]]}}
         }
 
         tok.transport_solver.update()
@@ -487,15 +488,18 @@ if __name__ == "__main__":
                 # (core_profile.electrons["d"],  r"electron.d", r"$d$"),
                 # (core_profile.electrons["e"],  r"electron.e", r"$e$"),
                 # (core_profile.electrons["f"],  r"electron.f", r"$f$"),
-                [
-                    (core_profile.electrons["s_exp_flux"],   r"Source", r"[10^{23} s^{-1}]", {"color": "green", }),
-                    (core_profile.electrons["diff_flux"],    r"Diffusive flux",  "", {"color": "black", }),
-                    (core_profile.electrons["conv_flux"],    r"Convective flux", "",  {"color": "red", }),
-                    (core_profile.electrons["residual"],     r"Residual",  "", {"color": "blue", }),
-                ],
+                # [
+                #     (core_profile.electrons["s_exp_flux"],   r"Source", r"[10^{23} s^{-1}]", {"color": "green", }),
+                #     (core_profile.electrons["diff_flux"],    r"Diffusive flux",  "", {"color": "black", }),
+                #     (core_profile.electrons["conv_flux"],    r"Convective flux", "",  {"color": "red", }),
+                #     (core_profile.electrons["residual"],     r"Residual",  "", {"color": "blue", }),
+                # ],
                 ######################################################################
                 # electron energy
-
+                [
+                    (b_Te, r"astra", r"$T_e [eV]$",  {"marker": "+"}),
+                    (core_profile.electrons.temperature, r"fytok", r"$[eV]$"),
+                ],
 
                 ######################################################################
 
