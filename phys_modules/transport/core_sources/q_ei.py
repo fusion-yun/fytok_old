@@ -16,7 +16,7 @@ class CoreSourceQei(CoreSources.Source):
     def __init__(self, d=None, *args,  **kwargs):
         super().__init__(collections.ChainMap({
             "identifier": {
-                "name": f"QeiSource",
+                "name": f"Qei Source",
                 "index": -1,
                 "description": f"{self.__class__.__name__} Qei Source "
             }}, d or {}), *args, **kwargs)
@@ -39,7 +39,7 @@ class CoreSourceQei(CoreSources.Source):
         PI = constants.pi
         tau_e = 12*(PI**(3/2))*(epsilon**2)/(e**4)*np.sqrt(me/2)*((e*Te)**(3/2))/ne/gamma_ei
 
-        def qei(ion: CoreProfiles.Profiles1D.Ion):
+        def qei_f(ion: CoreProfiles.Profiles1D.Ion):
             return ion.density*(ion.z_ion**2)/sum(ele.atoms_n*ele.a for ele in ion.element)*(Te-ion.temperature)
 
         coeff = (3/2) * e/(mp/me/2)/tau_e
@@ -51,9 +51,9 @@ class CoreSourceQei(CoreSources.Source):
                 "label": ion.label,
                 "energy": q_ei
             }
-            q_ie = q_ie + qei
+            q_ie = q_ie + q_ei
 
-        self.profiles_1d.electrons["energy"] = q_ie
+        self.profiles_1d.electrons["energy"] = -q_ie
 
         return 0.0
 

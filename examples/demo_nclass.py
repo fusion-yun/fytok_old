@@ -173,7 +173,7 @@ if __name__ == "__main__":
         # Zeff = Function(bs_r_nrom, baseline["Zeff"].values)
 
         tok.core_profiles["profiles_1d"] = {
-            "electrons": {**atoms["e"], "density": 0.1*b_ne,  "temperature": b_Te, },
+            "electrons": {**atoms["e"], "density": 0.1*b_ne,  "temperature": 0.1*b_Te, },
             "ion": [
                 {**atoms["H"],  "density":   0.5*b_nDT, "temperature": b_Ti, },
                 {**atoms["D"],  "density":   0.5*b_nDT, "temperature": b_Ti, },
@@ -251,7 +251,7 @@ if __name__ == "__main__":
                     "electrons": {
                         **atoms["e"],
                         "particles":   {"d": D, "v": -v_pinch},
-                        "energy":      {"d": 0.5*chi, "v": 0},
+                        "energy":      {"d": 0.5*chi, "v": -v_pinch},
                     },
                     "ion": [
                         {
@@ -360,9 +360,17 @@ if __name__ == "__main__":
             {"code": {"name": "dummy"},
                 "profiles_1d": {
                     "j_parallel": Function(bs_r_nrom, baseline["Jtot"].values*1e6),
-                    "electrons":{"particles": ne_src}
-            }
-            },
+                    "electrons":{
+                        "particles": ne_src,
+                        "energy": Function(bs_r_nrom,
+                                           (baseline["Poh"].values
+                                            + baseline["Paux"].values
+                                            - baseline["Peic"].values
+                                            - baseline["Prad"].values
+                                            )*1000
+                                           )},
+            }},
+            # {"code": {"name": "q_ei"}, }
             # {"code": {"name": "bootstrap_current"}},
         ]
         # tok.core_sources.source[{"code.name": "dummy"}].profiles_1d["j_parallel"] = \
@@ -427,17 +435,16 @@ if __name__ == "__main__":
                           "energy": {"identifier": {"index": 1}, "value": [b_Te[-1]]}}
         }
 
-        tok.transport_solver.update()
+        tok.transport_solver.update(equilibrium=tok.equilibrium,
+                                    core_profiles=tok.core_profiles,
+                                    core_transport=tok.core_transport,
+                                    core_sources=tok.core_sources)
 
         # psi0 = tok.core_profiles.profiles_1d['psi']
         # tok.core_profiles.profiles_1d["psi"] = np.zeros(tok.core_profiles.grid.rho_tor_norm.shape)
         # tok.core_profiles.profiles_1d["dpsi_drho_tor_norm"] = np.zeros(tok.core_profiles.grid.rho_tor_norm.shape)
 
-        tok.transport_solver.solve(
-            equilibrium=tok.equilibrium,
-            core_profiles=tok.core_profiles,
-            core_transport=tok.core_transport,
-            core_sources=tok.core_sources)
+        tok.transport_solver.solve()
 
         core_profile = tok.core_profiles.profiles_1d
 
@@ -472,8 +479,8 @@ if __name__ == "__main__":
                 ######################################################################
                 # electron particles
                 [
-                    (b_ne, r"astra", r"$n_e [10^{19} m^{-3}]$",  {"marker": "+"}),
-                    (core_profile.electrons.density, r"fytok", r"$n_e [10^{19} m^{-3}]$"),
+                    (b_ne, r"astra", r"$n_e [m^{-3}]$",  {"marker": "+"}),
+                    (core_profile.electrons.density, r"fytok", r"$n_e [ m^{-3}]$"),
                     (b_ne-core_profile.electrons.density, r"residual",
                      r"$n_e [10^{19} m^{-3}]$",  {"color": "red", "linestyle": "dashed"}),
                     # *[(ion.density*1e-19,                            f"${ion.label}$") for ion in core_profile.ion],
@@ -482,12 +489,7 @@ if __name__ == "__main__":
                 #     (core_profile.electrons["diff"],  r"D"),
                 #     (np.abs(core_profile.electrons["conv"]),  r"$\left|V\right|$"),
                 # ],
-                # (core_profile.electrons["a"],  r"electron.a", r"$a$"),
-                # (core_profile.electrons["b"],  r"electron.b", r"$b$"),
-                # (core_profile.electrons["c"],  r"electron.c", r"$c$"),
-                # (core_profile.electrons["d"],  r"electron.d", r"$d$"),
-                # (core_profile.electrons["e"],  r"electron.e", r"$e$"),
-                # (core_profile.electrons["f"],  r"electron.f", r"$f$"),
+
                 # [
                 #     (core_profile.electrons["s_exp_flux"],   r"Source", r"[10^{23} s^{-1}]", {"color": "green", }),
                 #     (core_profile.electrons["diff_flux"],    r"Diffusive flux",  "", {"color": "black", }),
@@ -496,23 +498,25 @@ if __name__ == "__main__":
                 # ],
                 ######################################################################
                 # electron energy
-                [
-                    (b_Te, r"astra", r"$T_e [eV]$",  {"marker": "+"}),
-                    (core_profile.electrons.temperature, r"fytok", r"$[eV]$"),
-                ],
+                # [
+                # (b_Te, r"astra", r"$T_e [eV]$",  {"marker": "+"}),
+                # (core_profile.electrons.temperature, r"fytok", r"$[eV]$"),
+                # (b_Te-core_profile.electrons.temperature, r"residual",
+                #  r"$[eV]$",  {"color": "red", "linestyle": "dashed"}),
+                # ],
 
                 ######################################################################
 
-                [
-                    (4*(constants.pi**2)*R0 * core_profile.grid.rho_tor, r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho$"),
-                    (core_profile.electrons["vpr"],  r"vpr"),
-                ],
                 # [
-                #     # (Function(bs_r_nrom, baseline["TE"].values),                     r"$T_{e}^{astra}$"),
-                #     (core_profile.electrons.temperature/1000,                              r"$e$", r"T $[keV]$"),
-                #     *[(ion.temperature/1000,                      f"${ion.label}$") for ion in core_profile.ion],
+                #     (4*(constants.pi**2)*R0 * core_profile.grid.rho_tor, r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho$"),
+                #     (core_profile.electrons["vpr"],  r"vpr"),
                 # ],
-
+                # (core_profile.electrons["a"],  r"electron.a", r"$a$"),
+                # (core_profile.electrons["b"],  r"electron.b", r"$b$"),
+                # (core_profile.electrons["c"],  r"electron.c", r"$c$"),
+                # (core_profile.electrons["d"],  r"electron.d", r"$d$"),
+                # (core_profile.electrons["e"],  r"electron.e", r"$e$"),
+                # (core_profile.electrons["f"],  r"electron.f", r"$f$"),
                 # (core_profile.e_field.parallel,                    r"fytok",   r"$E_{\parallel} [V\cdot m^{-1}]$ "),
             ],
             x_axis=(core_profile.grid.rho_tor_norm,                                   r"$\sqrt{\Phi/\Phi_{bdry}}$"),

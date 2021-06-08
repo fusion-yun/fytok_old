@@ -44,22 +44,41 @@ class CoreSourcesParticle(Dict):
         # }
 
 
-@dataclass
 class CoreSourcesElectrons(SpeciesElectron):
-    particles: np.ndarray
-    particles_decomposed: Decomposition[np.ndarray]
-    
-    energy: np.ndarray
-    energy_decomposed: Decomposition[np.ndarray]
+
+    @sp_property
+    def particles(self) -> Function:
+        return self.get("particles", None)
+
+    @sp_property
+    def particles_decomposed(self) -> Decomposition[Function]:
+        return self.get("particles_decomposed", None)
+
+    @sp_property
+    def energy(self) -> Function:
+        return self.get("energy", None)
+
+    @sp_property
+    def energy_decomposed(self) -> Decomposition[Function]:
+        return self.get("energy_decomposed", None)
 
 
-@dataclass
 class CoreSourcesIon(SpeciesIon):
-    particles: np.ndarray
-    particles_decomposed: Decomposition[np.ndarray]
+    @sp_property
+    def particles(self) -> Function:
+        return self.get("particles", None)
 
-    energy: np.ndarray
-    energy_decomposed: Decomposition[np.ndarray]
+    @sp_property
+    def particles_decomposed(self) -> Decomposition[Function]:
+        return self.get("particles_decomposed", None)
+
+    @sp_property
+    def energy(self) -> Function:
+        return self.get("energy", None)
+
+    @sp_property
+    def energy_decomposed(self) -> Decomposition[Function]:
+        return self.get("energy_decomposed", None)
 
 
 class CoreSourcesNeutral(Profiles):

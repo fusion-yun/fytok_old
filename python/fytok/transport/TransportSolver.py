@@ -92,61 +92,53 @@ class TransportSolver(IDS):
     def boundary_conditions_1d(self) -> BoundaryConditions1D:
         return self.get("boundary_conditions_1d", {})
 
-    def solve_core(self, /,
-                   core_profiles: CoreProfiles = None,
-                   equilibrium: Equilibrium = None,
-                   core_transport: CoreTransport = None,
-                   core_sources: CoreSources = None,
-                   **kwargs):
-        return NotImplemented
+    def update(self, /,
+               equilibrium: Equilibrium = None,
+               core_profiles: CoreProfiles = None,
+               core_transport: CoreTransport = None,
+               core_sources: CoreSources = None,
+               edge_profiles: EdgeProfiles = False,
+               edge_transport: EdgeTransport = False,
+               edge_sources: EdgeSources = False,
+               **kwargs):
 
-    def solve_edge(self, /,
-                   equilibrium: Equilibrium,
-                   edge_profiles:  EdgeProfiles,
-                   edge_transport: EdgeTransport,
-                   edge_sources:   EdgeSources,
-                   **kwargs):
-        return NotImplemented
+        if equilibrium is not None:
+            self._equilibrium = equilibrium
+        if core_profiles is not None:
+            self._core_profiles = core_profiles
+        if core_transport is not None:
+            self._core_transport = core_transport
+        if core_sources is not None:
+            self._core_sources = core_sources
+        if edge_profiles is not None:
+            self._edge_profiles = edge_profiles
+        if edge_transport is not None:
+            self._edge_transport = edge_transport
+        if edge_sources is not None:
+            self._edge_sources = edge_sources
 
-    def update(self, *args, **kwargs):
         return 0.0
 
-    def solve(self,  /,
-              equilibrium: Equilibrium,
-              core_profiles: CoreProfiles,
-              core_transport: CoreTransport,
-              core_sources: CoreSources,
-              edge_profiles: EdgeProfiles = False,
-              edge_transport: EdgeTransport = False,
-              edge_sources: EdgeSources = False,
-              max_iter=1,
-              tolerance=1.0e-3,
-              **kwargs) -> float:
+    def solve_core(self, *args, max_nodes=1000, tolerance=1e-3, **kwargs):
+        return NotImplemented
+
+    def solve_core(self, *args,   tolerance=1e-3, **kwargs):
+        return NotImplemented
+
+    def solve(self,  max_iter=1, max_nodes=1000,  tolerance=1.0e-3, **kwargs) -> float:
         """
             solve transport eqation
-            return reduisal of core_profiles
+            return residual of core_profiles
         """
 
         for step in range(max_iter):
-
             logger.debug(f" Iteration step={step}")
 
-            reduisal = self.solve_core(core_profiles=core_profiles,
-                                       core_transport=core_transport,
-                                       core_sources=core_sources,
-                                       equilibrium=equilibrium,
-                                       max_iter=max_iter,
-                                       tolerance=tolerance,
-                                       **kwargs)
+            residual = self.solve_core(max_nodes=max_nodes, tolerance=tolerance, **kwargs)
 
-            if edge_profiles is not False:
-                reduisal += self.solve_edge(edge_profiles=edge_profiles,
-                                            edge_transport=edge_transport,
-                                            edge_sources=edge_sources,
-                                            equilibrium=equilibrium,
-                                            max_iter=max_iter,
-                                            tolerance=tolerance,
-                                            **kwargs)
-            if abs(reduisal) < tolerance:
+            if self._edge_profiles is not False:
+                residual += self.solve_edge(tolerance=tolerance, **kwargs)
+
+            if abs(residual) < tolerance:
                 return
-        return reduisal
+        return residual
