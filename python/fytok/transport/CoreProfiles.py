@@ -39,7 +39,7 @@ class CoreProfilesElectrons(SpeciesElectron):
     @sp_property
     def density(self) -> Function:
         """Density (thermal+non-thermal) {dynamic} [m^-3]"""
-        return self["density"]
+        return self.get("density", None)
     # @property
     # def density_validity(self):
     #     """Indicator of the validity of the density profile.
@@ -294,8 +294,7 @@ class CoreProfiles1D(Profiles):
 
     def __init__(self, *args, grid: RadialGrid = None, time=None, parent=None, **kwargs):
         grid = grid or getattr(parent, "_grid", None)
-        assert(grid is not None)
-        super().__init__(*args, axis=grid.rho_tor_norm, parent=parent, **kwargs)
+        super().__init__(*args, axis=getattr(grid, "rho_tor_norm", None), parent=parent, **kwargs)
         self._grid = grid
         self._r0 = self._grid.vacuum_toroidal_field.r0
         self._b0 = self._grid.vacuum_toroidal_field.b0
@@ -347,7 +346,7 @@ class CoreProfiles1D(Profiles):
     @sp_property
     def zeff(self) -> Function:
         """Effective charge {dynamic}[-]"""
-        d = self["zeff"]
+        d = self.get("zeff", _not_found_)
         if isinstance(d, np.ndarray):
             return d
         else:

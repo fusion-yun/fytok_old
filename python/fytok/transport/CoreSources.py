@@ -48,7 +48,7 @@ class CoreSourcesParticle(Dict):
 class CoreSourcesElectrons(SpeciesElectron):
     particles: np.ndarray
     particles_decomposed: Decomposition[np.ndarray]
-
+    
     energy: np.ndarray
     energy_decomposed: Decomposition[np.ndarray]
 

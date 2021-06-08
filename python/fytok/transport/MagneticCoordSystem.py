@@ -438,19 +438,19 @@ class MagneticCoordSystem(Dict):
     def grad_psi2(self):
         return self.psirz(self.r, self.z, dx=1)**2+self.psirz(self.r, self.z, dy=1)**2
 
-    @cached_property
-    def norm_grad_psi(self):
-        return np.sqrt(self.grad_psi2)
-
+ 
     def surface_integrate(self, alpha=None, *args, **kwargs):
         r"""
             .. math:: \left\langle \alpha\right\rangle \equiv\frac{2\pi}{V^{\prime}}\oint\alpha\frac{Rdl}{\left|\nabla\psi\right|}
         """
         if alpha is None:
-            alpha = 1.0/self.Bpol
+            alpha = 1/self.Bpol
         else:
-            alpha = alpha/self.Bpol
-        return np.sum((np.roll(alpha, 1, axis=1)+alpha) * self.dl, axis=1) * (0.5*2*constants.pi)
+            alpha = np.asarray(alpha)/self.Bpol
+
+        alpha = 0.5*(np.roll(alpha, 1, axis=1)+alpha)
+
+        return np.sum(alpha * self.dl, axis=1) * (TWOPI)
 
     def surface_average(self,  *args, **kwargs):
         return self.surface_integrate(*args, **kwargs) / self.dvolume_dpsi
@@ -653,7 +653,7 @@ class MagneticCoordSystem(Dict):
         """
             Derivative of Psi with respect to Rho_Tor[Wb/m].
         """
-        return (TWOPI*self._vacuum_toroidal_field.b0)*self.rho_tor/self.dphi_dpsi
+        return (self._vacuum_toroidal_field.b0)*self.rho_tor/self.dphi_dpsi
 
     @cached_property
     def dphi_dpsi(self) -> np.ndarray:
@@ -734,7 +734,7 @@ class MagneticCoordSystem(Dict):
             Flux surface averaged .. math:: \left | \nabla \rho_{tor}\right |  [-]
             .. math: : \left\langle \left |\nabla\rho\right |\right\rangle
         """
-        return Function(self.psi_norm[1:], self.surface_average(self.norm_grad_psi)[1:]/self.dpsi_drho_tor[1:])(self.psi_norm)
+        return Function(self.psi_norm[1:], self.surface_average(np.sqrt(self.grad_psi2))[1:]/self.dpsi_drho_tor[1:])(self.psi_norm)
         # d = self.surface_average(self.norm_grad_rho_tor)
         # return np.ndarray(self._grid.psi_norm, np.ndarray(self._grid.psi_norm[1:], d[1:]))
 

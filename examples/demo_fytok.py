@@ -156,7 +156,9 @@ if __name__ == "__main__":
 
     r_ped = 0.96  # np.sqrt(0.88)
 
-    n_src = Function(rho_tor_norm, lambda x: 30e20 * np.exp(15.0*(x**2-1.0)))
+    S0 = 7.5e20
+
+    n_src = Function(rho_tor_norm, lambda x: S0 * np.exp(15.0*(x**2-1.0)))
 
     diff = Function(rho_tor_norm,
                     [lambda r:r < r_ped, lambda r:r >= r_ped],
