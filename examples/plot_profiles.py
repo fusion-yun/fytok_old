@@ -134,7 +134,9 @@ if __name__ == "__main__":
             (profile["U"].values,                                                        r"$V_{loop}$"),
             (profile["shif"].values,                                                r"shafranov shift"),
             (profile["k"].values,                                                        r"elongation"),
+            (profile["He"].values,                                       r"electron heat conductivity"),
 
+            
         ],
         x_axis=(profile["x"].values,                                   r"$\rho_{N}$"),
         # index_slice=slice(-100,None, 1),

@@ -1,3 +1,4 @@
+from math import log
 from operator import eq
 import pandas as pd
 
@@ -173,7 +174,7 @@ if __name__ == "__main__":
         # Zeff = Function(bs_r_nrom, baseline["Zeff"].values)
 
         tok.core_profiles["profiles_1d"] = {
-            "electrons": {**atoms["e"], "density": 0.1*b_ne,  "temperature": 0.1*b_Te, },
+            "electrons": {**atoms["e"], "density": 0.1*b_ne,  "temperature": b_Te, },
             "ion": [
                 {**atoms["D"],  "density":   0.5*b_nDT, "temperature": b_Ti, },
                 {**atoms["T"],  "density":   0.5*b_nDT, "temperature": b_Ti, },
@@ -242,6 +243,7 @@ if __name__ == "__main__":
         #     [lambda x:  0.5+(x**4), lambda x: 0.11])
         D = 0.1*chi_e
         v_pinch = Function(None, lambda x: 0.4 * D(x) * x / R0)  # FIXME: The coefficient 0.4 is a guess.
+        v_pinch_T = Function(None, lambda x: 1.385 * chi_e(x) * x / R0)
 
         tok.core_transport["model"] = [
             {"code": {"name": "dummy"},
@@ -250,7 +252,7 @@ if __name__ == "__main__":
                     "electrons": {
                         **atoms["e"],
                         "particles":   {"d": D, "v": -v_pinch},
-                        "energy":      {"d": chi_e, "v": -v_pinch},
+                        "energy":      {"d": chi_e, "v": -v_pinch_T},
                     },
                     "ion": [
                         {
@@ -277,64 +279,56 @@ if __name__ == "__main__":
         # logger.debug(tok.core_transport.model[0].profiles_1d.electrons.particles.v(rho_tor_norm))
 
         tok.core_transport.update()
-    if False:
+    if True:
         core_transport1d_nc = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
         core_transport1d_dummy = tok.core_transport.model[{"code.name": "dummy"}].profiles_1d
         core_transport1d = tok.core_transport.model.combine.profiles_1d
 
         plot_profiles(
             [
-                [
-                    (core_transport1d.electrons.particles.flux,                            "e",  r"$\Gamma$"),
-                    *[(core_transport1d.ion[{"label": ion.label}].particles.flux,
-                       f"{ion.label}", f"$\Gamma$") for ion in core_profile.ion],
-                ],
-                [
-                    (core_transport1d.electrons.particles.d,                                  "e",     r"$D$"),
-                    *[(core_transport1d.ion[{"label": ion.label}].particles.d,     f"{ion.label}", r"$D$")
-                      for ion in core_profile.ion],
-                ],
-                [
-                    (core_transport1d.electrons.particles.v,                        "e",              r"$v$"),
-                    *[(core_transport1d.ion[{"label": ion.label}].particles.v, f"{ion.label}",  f"$v$")
-                      for ion in core_profile.ion],
-                ],
-
+                # [
+                #     (core_transport1d.electrons.particles.flux,                            "e",  r"$\Gamma$"),
+                #     *[(core_transport1d.ion[{"label": ion.label}].particles.flux,
+                #        f"{ion.label}", f"$\Gamma$") for ion in core_profile.ion],
+                # ],
+                # [
+                #     (core_transport1d.electrons.particles.d,                                  "e",     r"$D$"),
+                #     *[(core_transport1d.ion[{"label": ion.label}].particles.d,     f"{ion.label}", r"$D$")
+                #       for ion in core_profile.ion],
+                # ],
+                # [
+                #     (core_transport1d.electrons.particles.v,                        "e",              r"$v$"),
+                #     *[(core_transport1d.ion[{"label": ion.label}].particles.v, f"{ion.label}",  f"$v$")
+                #       for ion in core_profile.ion],
+                # ],
 
                 [
                     (Function(bs_r_nrom, baseline["Xi"].values),          r"astra", r"$\chi_{i}$", {"marker": "+"}),
-                    *[(core_transport1d_dummy.ion[{"label": ion.label}].energy.d,
-                       f"{ion.label}", r"$\chi_{i}$") for ion in core_profile.ion],
+                    *[(ion.energy.d,  f"{ion.label}", r"$\chi_{i}$") for ion in core_transport1d_dummy.ion],
                 ],
 
+                # [
+                #     (Function(bs_r_nrom,  np.log(baseline["XiNC"].values)),  "astra", r"$ln \chi_{i,nc}$", {"marker": "+"}),
+                #     # * [(np.log(core_transport1d_nc.ion[{"label": label}].energy.d),   f"${label}$", r"$ln \chi_{i,nc}$")
+                #     #     for label in ("H", "D", "He")],
+                # ],
                 [
-                    (Function(bs_r_nrom,  np.log(baseline["XiNC"].values)),
-                     "astra", r"$ln \chi_{i,nc}$", {"marker": "+"}),
-                    * [(np.log(core_transport1d_nc.ion[{"label": label}].energy.d),   f"${label}$", r"$ln \chi_{i,nc}$")
-                        for label in ("H", "D", "He")],
+                    (Function(bs_r_nrom, baseline["He"].values), "astra", r"$\chi_{e}$"),
+                    (core_transport1d_dummy.electrons.energy.d,  "fytok", r"$\chi_{e}$"),
                 ],
 
-                [
-                    (core_transport1d.electrons.energy.flux,                             "e",         r"$q$"),
-                    *[(core_transport1d.ion[{"label": ion.label}].energy.flux,
-                       f"{ion.label}") for ion in core_profile.ion],
-                ],
-                [
-                    (core_transport1d.electrons.energy.v,           r"$electron$", r"V pinch $[m\cdot s^{-1}]$"),
-                    *[(core_transport1d.ion[{"label": ion.label}].energy.v,  f"${ion.label}$",)
-                      for ion in core_profile.ion],
-                ],
-                [
-                    (Function(bs_r_nrom, baseline["Zeff"].values),     r"astra", r"$Z_{eff}[-]$", {"marker": "+"}),
-                    (core_profile.zeff,                                r"fytok", r"$Z_{eff}[-]$"),
-                ],
+                # [
+                #     (core_transport1d.electrons.energy.v,           r"$electron$", r"V pinch $[m\cdot s^{-1}]$"),
+                #     *[(core_transport1d.ion[{"label": ion.label}].energy.v,  f"${ion.label}$",)
+                #       for ion in core_profile.ion],
+                # ],
+
                 [
                     (Function(bs_r_nrom, baseline["Joh"].values*1.0e6 / baseline["U"].values *
                               (2.0*constants.pi * tok.equilibrium.vacuum_toroidal_field.r0)),     r"astra", r"$\sigma_{\parallel}$", {"marker": "+"}),
-                    (tok.core_transport.model[{"code.name": "spitzer"}].profiles_1d.conductivity_parallel,
-                     "spitzer", r"$\sigma_{\parallel}$"),
-                    (core_transport1d.conductivity_parallel,  r"fytok"),
-
+                    # (tok.core_transport.model[{"code.name": "spitzer"}].profiles_1d.conductivity_parallel,
+                    #  "spitzer", r"$\sigma_{\parallel}$"),
+                    (core_transport1d_dummy.conductivity_parallel,  r"fytok"),
                 ],
 
                 # (core_transport1d.e_field_radial,                                             r"$E_{radial}$"),
@@ -345,15 +339,12 @@ if __name__ == "__main__":
             ],
             x_axis=(rho_tor_norm, r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             # index_slice=slice(10, 110, 1),
-
             title=tok.core_transport.model[0].identifier.name,
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
     if True:  # CoreSources
 
-        S0 = 5e20
-
-        ne_src = Function(rho_tor_norm, lambda x, _S0=S0: _S0 * np.exp(15.0*(x**2-1.0)))
+        ne_src = Function(rho_tor_norm, lambda x:  5e20 * np.exp(15.0*(x**2-1.0)))
 
         tok.core_sources["source"] = [
             {"code": {"name": "dummy"},
@@ -361,12 +352,14 @@ if __name__ == "__main__":
                     "j_parallel": Function(bs_r_nrom, baseline["Jtot"].values*1e6),
                     "electrons":{
                         "particles": ne_src,
-                        "energy": Function(bs_r_nrom,
-                                           (baseline["Poh"].values
-                                            + baseline["Paux"].values
-                                            - baseline["Peic"].values
-                                            - baseline["Prad"].values
-                                            )*1000
+                        "energy": Function(bs_r_nrom[1:],
+                                           (baseline["Poh"].values[1:]
+                                               + baseline["Pdte"].values[1:]
+                                               + baseline["Paux"].values[1:]
+                                               - baseline["Peic"].values[1:]
+                                               - baseline["Prad"].values[1:]
+                                               - baseline["Pneu"].values[1:]
+                                            )*1e6/constants.electron_volt
                                            )},
                     "ion":[]
             }
@@ -462,7 +455,6 @@ if __name__ == "__main__":
 
         b_psi = Function(bs_r_nrom, (baseline["Fp"].values * (tok.equilibrium.time_slice.global_quantities.psi_boundary-tok.equilibrium.time_slice.global_quantities.psi_axis)
                                      + tok.equilibrium.time_slice.global_quantities.psi_axis))
-
         plot_profiles(
             [
 
@@ -501,21 +493,39 @@ if __name__ == "__main__":
                 #     (core_profile.electrons["diff"],  r"D"),
                 #     (np.abs(core_profile.electrons["conv"]),  r"$\left|V\right|$"),
                 # ],
+                (core_profile.electrons["density_flux"], r"$\Gamma_e$"),
 
-                # [
-                #     (core_profile.electrons["s_exp_flux"],   r"Source", r"[10^{23} s^{-1}]", {"color": "green", }),
-                #     (core_profile.electrons["diff_flux"],    r"Diffusive flux",  "", {"color": "black", }),
-                #     (core_profile.electrons["conv_flux"],    r"Convective flux", "",  {"color": "red", }),
-                #     (core_profile.electrons["residual"],     r"Residual",  "", {"color": "blue", }),
-                # ],
+                [
+                    (core_profile.electrons["s_exp_flux"],   r"Source",
+                     r"$\Gamma_e$ Particle flux", {"color": "green", }),
+                    (core_profile.electrons["diff_flux"],    r"Diffusive ",  "", {"color": "black", }),
+                    (core_profile.electrons["conv_flux"],    r"Convective ", "",  {"color": "blue", }),
+                    (core_profile.electrons["diff_flux"]
+                     + core_profile.electrons["conv_flux"]
+                     - core_profile.electrons["s_exp_flux"],     r"residual",  "", {"color": "red", }),
+                ],
                 ######################################################################
                 # electron energy
-                # [
-                (b_Te, r"astra", r"$T_e [eV]$",  {"marker": "+"}),
-                (core_profile.electrons.temperature, r"fytok", r"$T_e [eV]$"),
-                (b_Te-core_profile.electrons.temperature, r"residual",
-                 r"$[eV]$",  {"color": "red", "linestyle": "dashed"}),
-                # ],
+                [
+                    (b_Te, r"electron (astra)", r"$T_s [eV]$",  {"marker": "+"}),
+                    (b_Ti, r"ion (astra)", r"$ [eV]$",  {"marker": "+"}),
+
+                    (core_profile.electrons.temperature, r"electron (fytok)  ", r"$ [eV]$",  {"marker": "."}),
+                    (b_Te-core_profile.electrons.temperature, r"residual",
+                     r"$[eV]$",  {"color": "red", "linestyle": "dashed"}),
+                ],
+                (core_profile.electrons["temperature_prime"], r"$T^{\prime}$", r"$T_e [eV m^-1]$"),
+                (core_profile.electrons["heat_flux_prime"], r"$q^{\prime}$"),
+
+                [
+                    (core_profile.electrons["s_exp_flux_Te"],   r"Heat Source",  "", {"color": "green", }),
+                    (core_profile.electrons["diff_flux_Te"],    r"Heat Diffusive flux",  "", {"color": "black", }),
+                    (core_profile.electrons["conv_flux_Te"],    r"Heat Convective flux", "",  {"color": "blue", }),
+
+                    (core_profile.electrons["diff_flux_Te"]
+                     + core_profile.electrons["conv_flux_Te"]
+                     - core_profile.electrons["s_exp_flux_Te"],     r"residual",  "", {"color": "red", "linestyle": "dashed"}),
+                ],
 
                 ######################################################################
 
@@ -529,11 +539,14 @@ if __name__ == "__main__":
                 # (core_profile.electrons["d"],  r"electron.d", r"$d$"),
                 # (core_profile.electrons["e"],  r"electron.e", r"$e$"),
                 # (core_profile.electrons["f"],  r"electron.f", r"$f$"),
+                # (core_profile.electrons["g"],  r"electron.f", r"$g$"),
+
                 # (core_profile.e_field.parallel,                    r"fytok",   r"$E_{\parallel} [V\cdot m^{-1}]$ "),
             ],
             x_axis=(core_profile.grid.rho_tor_norm,                                   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            # x_axis=(core_profile.electrons.temperature.x,                                   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             title="Result of TransportSolver",
-            # index_slice=slice(0, 100, 1),
+            # index_slice=slice(0, 200, 1),
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile_result.svg", transparent=True)
 
     logger.info("====== DONE ========")

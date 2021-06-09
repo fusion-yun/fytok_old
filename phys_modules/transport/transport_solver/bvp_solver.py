@@ -7,6 +7,8 @@ import enum
 from math import log
 from typing import Mapping, Optional, Type, Union
 
+from matplotlib.pyplot import loglog
+
 from fytok.common.IDS import IDS
 from fytok.common.Misc import Identifier
 from fytok.transport.CoreProfiles import CoreProfiles
@@ -91,6 +93,13 @@ class TransportSolverBVP(TransportSolver):
 
         if not isinstance(self._vprm, np.ndarray) or self._vprm is None:
             self._vprm = self._vpr
+        self._vpr35 = self._vpr**(5/3)
+        self._vpr35m = self._vprm**(5/3)
+
+        if np.isclose(self._eq.dvolume_drho_tor(self._psi_norm[0]), 0.0):
+            self._inv_vpr23 = Function(self._rho_tor_norm[1:], self._eq.dvolume_drho_tor(self._psi_norm[1:])**(-2/3))
+        else:
+            self._inv_vpr23 = Function(self._rho_tor_norm, self._eq.dvolume_drho_tor(self._psi_norm)**(-2/3))
 
         # $q$ safety factor                                 [-]
         self._qsf = Function(self._rho_tor_norm, self._eq.q(self._psi_norm))
@@ -147,7 +156,7 @@ class TransportSolverBVP(TransportSolver):
                     \end{cases}
                     :label: generalized_trans_eq_first_order
         """
-        a, b, d, e, f, g = coeff
+        a, b, c, d, e, f, g = coeff
 
         if not isinstance(x0, np.ndarray):
             raise TypeError(type(x0))
@@ -170,18 +179,15 @@ class TransportSolverBVP(TransportSolver):
             hyper_diff = hyper_diff_exp+hyper_diff_imp*max(d)
 
         def S(x, y):
-            return f(x) - g(x) * y - (a(x) * y - b(x) * y0_func(x))
+            return (f(x) - g(x) * y - (a(x) * y - b(x) * y0_func(x)))*c(x)
 
         def fun(x, Y):
             y, gamma = Y
-
             yp = Function(x, y).derivative(x)
-            # yp = (y[1:]-y[:-1])/(x[1:]-x[:-1])
-            # yp = np.gradient(y, x)
-
+            if np.isclose(x[0], 0.0):
+                yp[0] = 0.0
             dy = (-gamma + e(x)*y + hyper_diff * yp)/(d(x)+hyper_diff)
-
-            dgamma = S(x, y)
+            dgamma = (f(x) - g(x) * y - (a(x) * y - b(x) * y0_func(x)))*c(x)
 
             return np.vstack((dy, dgamma))
 
@@ -248,21 +254,19 @@ class TransportSolverBVP(TransportSolver):
         else:
             j_imp = 0.0
 
+        a = conductivity_parallel * self._rho_tor * self._inv_tau
+
+        b = conductivity_parallel * self._rho_tor * self._inv_tau
+
         c = (constants.mu_0 * self._B0 * self._rho_tor_boundary)/(self._fpol**2)
-
-        a = conductivity_parallel * self._rho_tor * c * self._inv_tau
-
-        b = conductivity_parallel * self._rho_tor * c * self._inv_tau
 
         d = self._vpr*self._gm2 / self._fpol / (self._rho_tor_boundary)
 
-        logger.warning(f"FIXME:  The result is correct, but the formula does not match. why?  ")
-
         e = (- constants.mu_0 * self._B0 * self._k_phi) * (conductivity_parallel * self._rho_tor**2/self._fpol**2)
 
-        f = - self._vpr * j_exp * c
+        f = - self._vpr * j_exp
 
-        g = self._vpr * j_imp * c  # + ....
+        g = self._vpr * j_imp    # + ....
 
         # -----------------------------------------------------------
         # boundary condition, value
@@ -305,7 +309,7 @@ class TransportSolverBVP(TransportSolver):
             self._rho_tor_norm,
             core_profiles_next.get("psi", self._core_profiles_next.grid.psi),
             core_profiles_next.get("dpsi_drho_tor_norm", None),
-            (a, b,  d, e, f, g),
+            (a, b, c, d, e, f, g),
             ((0, 1, 0.0), (u, v, w)),
             hyper_diff=[0, 0.0001],
             **kwargs)
@@ -348,12 +352,13 @@ class TransportSolverBVP(TransportSolver):
         se_exp = source.particles  # + source.particles_decomposed.explicit_part
         se_imp = 0  # source.particles_decomposed.implicit_part
 
-        a = self._rho_tor_boundary * self._vpr * self._inv_tau
-        b = self._rho_tor_boundary * self._vprm * self._inv_tau
+        a = self._vpr * self._inv_tau
+        b = self._vprm * self._inv_tau
+        c = Function(None, self._rho_tor_boundary)
         d = self._vpr * self._gm3 * diff / self._rho_tor_boundary
         e = self._vpr * self._gm3 * conv - self._vpr * self._rho_tor * self._k_phi
-        f = self._rho_tor_boundary * self._vpr * se_exp
-        g = self._rho_tor_boundary * self._vpr * (se_imp + self._k_rho_bdry)
+        f = self._vpr * se_exp
+        g = self._vpr * (se_imp + self._k_rho_bdry)
 
         # Boundary conditions for electron diffusion equation in form:
         #      U*Y + V*Gamma =W
@@ -371,7 +376,7 @@ class TransportSolverBVP(TransportSolver):
             self._rho_tor_norm,
             core_profiles_prev.density,
             core_profiles_prev.get("density_flux", None),
-            (a, b,  d, e, f, g),
+            (a, b, c, d, e, f, g),
             ((e[0], -1, 0), (u, v, w)),
             hyper_diff=[0, 0.0001],
             ignore_x=[d.x[np.argmax(np.abs(d.derivative()))]],
@@ -387,7 +392,6 @@ class TransportSolverBVP(TransportSolver):
         core_profiles_next["s_exp_flux"] = profiles.s_exp_flux
         core_profiles_next["diff_flux"] = profiles.diff_flux
         core_profiles_next["conv_flux"] = profiles.conv_flux
-        core_profiles_next["residual"] = profiles.diff_flux + profiles.conv_flux - profiles.s_exp_flux
 
         # core_profiles_next["diff"] = diff
         # core_profiles_next["conv"] = conv
@@ -422,13 +426,12 @@ class TransportSolverBVP(TransportSolver):
                                       source: Union[CoreSources.Source.Profiles1D.Electrons, CoreSources.Source.Profiles1D.Ion],
                                       bc: Union[TransportSolver.BoundaryConditions1D.Electrons,
                                                 TransportSolver.BoundaryConditions1D.Ion],
-                                      hyper_diff=[0.0001, 0.0],
+                                      hyper_diff=[0.0, 0.01],
                                       ):
 
         # energy transport
         chi = transp.energy.d
         v_pinch = transp.energy.v
-        lambda_ = 5/2
 
         Qs_exp = source.energy  # + source.energy_decomposed.explicit_part
         Qs_imp = 0  # source.energy_decomposed.implicit_part
@@ -437,23 +440,25 @@ class TransportSolverBVP(TransportSolver):
 
         density_next = core_profiles_next.density
 
-        density_flux_next = core_profiles_next.get("density_flux", 0)
+        gamma_s = 3/2 * core_profiles_next.get("density_flux", 0)
 
-        a = self._rho_tor_boundary * self._inv_tau * (3/2) * density_next * self._vpr
+        a = self._inv_tau * (3/2) * self._vpr35 * density_next
 
-        # self._coeff_T_b = self._rho_tor_boundary * self._inv_tau * (3/2) * (self._vprm**(5/3) / self._vpr**(2/3))
-        b = self._coeff_T_b * density_prev
+        b = self._inv_tau * (3/2) * self._vpr35m * density_prev
+
+        c = self._rho_tor_boundary * self._inv_vpr23
 
         d = self._vpr * self._gm3 / self._rho_tor_boundary * density_next * chi
 
-        e = self._vpr * self._gm3 * density_next * v_pinch + lambda_ * density_flux_next \
-            - self._vpr * (3/4)*self._k_phi * self._rho_tor * density_next
+        e = self._vpr * self._gm3 * density_next * v_pinch + gamma_s  \
+            # - self._vpr * (3/4)*self._k_phi * self._rho_tor * density_next
 
-        f = self._rho_tor_boundary * self._vpr * (Qs_exp)
+        f = self._vpr35 * (Qs_exp)
         # + np.sum([self.nu_ab(label, other.label)*other.temperature for other in species])
 
-        g = self._rho_tor_boundary * self._vpr * (Qs_imp + self._Qimp_k_ns*density_next)
+        g = self._vpr35 * (Qs_imp + self._Qimp_k_ns*density_next)
         # +np.sum([self.nu_ab(label, other.label) for other in species])
+
         if hyper_diff is not None:
             hyper_diff_exp, hyper_diff_imp = hyper_diff
             hyper_diff = hyper_diff_exp + hyper_diff_imp*max(d)
@@ -485,14 +490,23 @@ class TransportSolverBVP(TransportSolver):
         elif not isinstance(flux0, np.ndarray) or flux0.shape != x0.shape:
             raise ValueError(f"{flux0.shape} != {x0.shape} ")
 
-        def func(x,  y, gamma, _a=a, _b=b, _d=d, _e=e, _f=f, _g=g, _y0=y0_func, _hyper_diff=hyper_diff):
+        def func(x,  y, gamma, _a=a, _b=b, _c=c,  _d=d, _e=e, _f=f, _g=g, _y0=y0_func, _hyper_diff=hyper_diff):
             yp = Function(x, y).derivative(x)
 
-            dy = (-gamma + _e(x)*y + _hyper_diff * yp)/(_d(x)+_hyper_diff)
+            if x[0] == 0.0:
+                yp[0] = 0   # remove singularity at the magnetic axis
 
-            dgamma = _f(x) - _g(x) * y - (_a(x) * y - _b(x) * _y0(x))
+            dy = (-gamma + _e(x)*y + _hyper_diff * yp)/(_d(x)+_hyper_diff)
+            
+            dgamma = (_f(x) - _g(x) * y - (_a(x) * y - _b(x) * _y0(x)))*_c(x)
+            dy[0]=0
+            # dgamma[0]=0
+            # logger.debug((x[:2], dy[:2], dgamma[:2], gamma[:2],  _d(x[:2])))
 
             return dy, dgamma
+
+        def S(x,  y, _a=a, _b=b,  _f=f, _g=g, _y0=y0_func):
+            return _f(x) - _g(x) * y - (_a(x) * y - _b(x) * _y0(x))
 
         def bc_func(Ya, Yb):
             r"""
@@ -504,9 +518,9 @@ class TransportSolverBVP(TransportSolver):
             ya, gammaa = Ya
             yb, gammab = Yb
 
-            return u0 * ya + v0 * gammaa - w0, u1 * yb + v1 * gammab - w1
+            return u1 * yb + v1 * gammab - w1, u0 * ya + v0 * gammaa - w0
 
-        return np.asarray(y0), np.asarray(flux0), func, bc_func, ignore_x
+        return np.asarray(y0), np.asarray(flux0), func, bc_func, ignore_x, d, e, S
 
     def energy_transport(self,
                          core_profiles_next:  CoreProfiles.Profiles1D,
@@ -519,7 +533,7 @@ class TransportSolverBVP(TransportSolver):
                          **kwargs
                          ):
 
-        y0, flux0, fc, bc, ignore_x = self._energy_transport_coefficient(
+        y0, flux0, fc, bc, ignore_x, d, e, S = self._energy_transport_coefficient(
             self._rho_tor_norm,
             core_profiles_next.electrons,
             core_profiles_prev.electrons,
@@ -542,7 +556,7 @@ class TransportSolverBVP(TransportSolver):
             if ion.label in impurities:
                 continue
             species.append(ion.label)
-            y0, flux0, fc, bc, _ = self._energy_transport_coefficient(
+            y0, flux0, fc, bc, *_ = self._energy_transport_coefficient(
                 self._rho_tor_norm,
                 ion,
                 core_profiles_prev.ion[{'label': ion.label}],
@@ -583,17 +597,25 @@ class TransportSolverBVP(TransportSolver):
             self._rho_tor_norm,
             Y,
             ignore_x=[ignore_x],
+            S=np.zeros([len(species)*2, len(species)*2]),
             ** kwargs
         )
-        
         for idx, label in enumerate(species):
             if label == core_profiles_next.electrons.label:
-                core_profiles_next.electrons["temperature"] = sol.y[idx*2]
-                core_profiles_next.electrons["heat_flux"] = sol.y[idx*2+1]
-            else:
-                core_profiles_next.ion[{"label": label}]["temperature"] = sol.y[idx*2]
-                core_profiles_next.ion[{"label": label}]["heat_flux"] = sol.y[idx*2+1]
 
+                core_profiles_next.electrons["temperature"] = Function(sol.x, sol.y[idx*2])
+                core_profiles_next.electrons["heat_flux"] = Function(sol.x, sol.y[idx*2+1])
+                core_profiles_next.electrons["temperature_prime"] = Function(sol.x, sol.yp[idx*2])
+                core_profiles_next.electrons["heat_flux_prime"] = Function(sol.x, sol.yp[idx*2+1])
+                core_profiles_next.electrons["diff_flux_Te"] = Function(sol.x, np.asarray(-d(sol.x) * sol.yp[0]))
+                core_profiles_next.electrons["conv_flux_Te"] = Function(sol.x, np.asarray(e(sol.x) * sol.y[0]))
+                core_profiles_next.electrons["s_exp_flux_Te"] = Function(sol.x,  S(sol.x, sol.y[0])).antiderivative()
+
+            else:
+                core_profiles_next.ion[{"label": label}]["temperature"] = Function(sol.x, sol.y[idx*2])
+                core_profiles_next.ion[{"label": label}]["heat_flux"] = Function(sol.x, sol.y[idx*2+1])
+                core_profiles_next.ion[{"label": label}]["temperature_prime"] = Function(sol.x, sol.yp[idx*2])
+                core_profiles_next.ion[{"label": label}]["heat_flux_prime"] = Function(sol.x, sol.yp[idx*2+1])
         # core_profiles_next["temperature"] = profiles.y
         # core_profiles_next["heat_flux"] = profiles.flux
         # # core_profiles_next["a"] = a

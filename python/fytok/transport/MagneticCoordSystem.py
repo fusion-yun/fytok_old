@@ -397,48 +397,48 @@ class MagneticCoordSystem(Dict):
         return self.create_mesh(self._uv[0],  self._uv[1], type_index=13)
 
     @property
-    def r(self):
+    def r(self) -> np.ndarray:
         return self.mesh.xy[:, :, 0]
 
     @property
-    def z(self):
+    def z(self) -> np.ndarray:
         return self.mesh.xy[:, :, 1]
 
-    def psirz(self, r, z, *args, **kwargs):
+    def psirz(self, r, z, *args, **kwargs) -> np.ndarray:
         return self._psirz(r, z, *args, **kwargs)
 
     @cached_property
-    def dl(self):
-        return np.asarray([self.mesh.axis(idx, axis=0).dl(self.mesh.uv[1]) for idx in range(self.mesh.shape[0])])
+    def dl(self) -> np.ndarray:
+        return np.vstack([np.asarray(self.mesh.axis(idx, axis=0).dl(self.mesh.uv[1]))
+                          for idx in range(self.mesh.shape[0])])
 
     @cached_property
-    def Br(self):
+    def Br(self) -> np.ndarray:
         return -self.psirz(self.r, self.z, dy=1) / self.r
 
     @cached_property
-    def Bz(self):
+    def Bz(self) -> np.ndarray:
         return self.psirz(self.r, self.z, dx=1) / self.r
 
     @cached_property
-    def Btor(self):
+    def Btor(self) -> np.ndarray:
         return 1.0 / self.r * self.fpol.__array__().reshape(self.mesh.shape[0], 1)
 
     @cached_property
-    def Bpol(self):
+    def Bpol(self) -> np.ndarray:
         r"""
             .. math:: B_{pol} =   R / |\nabla \psi|
         """
         return np.sqrt(self.Br**2+self.Bz**2)
 
     @cached_property
-    def B2(self):
+    def B2(self) -> np.ndarray:
         return (self.Br**2+self.Bz**2 + self.Btor**2)
 
     @cached_property
-    def grad_psi2(self):
+    def grad_psi2(self) -> np.ndarray:
         return self.psirz(self.r, self.z, dx=1)**2+self.psirz(self.r, self.z, dy=1)**2
 
- 
     def surface_integrate(self, alpha=None, *args, **kwargs):
         r"""
             .. math:: \left\langle \alpha\right\rangle \equiv\frac{2\pi}{V^{\prime}}\oint\alpha\frac{Rdl}{\left|\nabla\psi\right|}
