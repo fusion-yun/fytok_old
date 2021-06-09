@@ -217,7 +217,7 @@ if __name__ == "__main__":
                 # (core_profile.electrons.temperature.derivative(),                                r"$T_e^{\prime}$"),
 
             ],
-            x_axis=(core_profile.grid.rho_tor_norm,                                   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            x_axis=([0, 1.0],                                  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
     ###################################################################################################
@@ -337,7 +337,7 @@ if __name__ == "__main__":
                 # (core_profile.electrons.pressure,                                                  r"$p_{e}$"),
 
             ],
-            x_axis=(rho_tor_norm, r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            x_axis=([0, 1.0],   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             # index_slice=slice(10, 110, 1),
             title=tok.core_transport.model[0].identifier.name,
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
@@ -543,7 +543,7 @@ if __name__ == "__main__":
 
                 # (core_profile.e_field.parallel,                    r"fytok",   r"$E_{\parallel} [V\cdot m^{-1}]$ "),
             ],
-            x_axis=(core_profile.grid.rho_tor_norm,                                   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            x_axis=([0, 1.0],                             r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             # x_axis=(core_profile.electrons.temperature.x,                                   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             title="Result of TransportSolver",
             # index_slice=slice(0, 200, 1),

@@ -108,8 +108,6 @@ class TransportSolverBVP(TransportSolver):
         self._gm3 = Function(self._rho_tor_norm, self._eq.gm3(self._psi_norm))
 
         self._Qimp_k_ns = (3*self._k_rho_bdry - self._k_phi * self._vpr.derivative())
-        b_ = self._rho_tor_boundary * self._inv_tau * (3/2) * (self._vprm**(5/3) / self._vpr**(2/3))
-        self._coeff_T_b = Function(self._rho_tor_norm[1:], b_(self._rho_tor_norm[1:]))
 
     def solve_general_form(self, x0, y0, flux0,   coeff,  bc,  hyper_diff=[0.0, 0.0],  **kwargs):
         r"""
@@ -491,15 +489,17 @@ class TransportSolverBVP(TransportSolver):
             raise ValueError(f"{flux0.shape} != {x0.shape} ")
 
         def func(x,  y, gamma, _a=a, _b=b, _c=c,  _d=d, _e=e, _f=f, _g=g, _y0=y0_func, _hyper_diff=hyper_diff):
-            yp = Function(x, y).derivative(x)
-
+            # yp = Function(x, y).derivative(x)
+            # if x[0] == 0.0:
+            #     yp[0] = 0   # remove singularity at the magnetic axis
+            # dy = (-gamma + _e(x)*y + _hyper_diff * yp)/(_d(x)+_hyper_diff)
             if x[0] == 0.0:
-                yp[0] = 0   # remove singularity at the magnetic axis
+                dy = np.hstack([[0.0], (-gamma[1:] + _e(x[1:])*y[1:])/(_d(x[1:]))])
+            else:
+                dy = (-gamma + _e(x)*y)/(_d(x))
 
-            dy = (-gamma + _e(x)*y + _hyper_diff * yp)/(_d(x)+_hyper_diff)
-            
             dgamma = (_f(x) - _g(x) * y - (_a(x) * y - _b(x) * _y0(x)))*_c(x)
-            dy[0]=0
+            dy[0] = 0
             # dgamma[0]=0
             # logger.debug((x[:2], dy[:2], dgamma[:2], gamma[:2],  _d(x[:2])))
 
