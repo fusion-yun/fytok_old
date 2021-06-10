@@ -77,11 +77,9 @@ class MagneticCoordSystem(Dict):
         if isinstance(dim1, np.ndarray):
             u = dim1
         elif dim1 == None:
-            u = np.linspace(0.0001,  0.99,  len(self._ffprime))
-        elif isinstance(dim2, int):
-            u = np.linspace(0.0001,  0.99,  dim1)
-        elif isinstance(dim2, np.ndarray):
-            u = dim1
+            u = np.linspace(0.0001,  1.0,  len(self._ffprime), endpoint=False)
+        elif isinstance(dim1, int):
+            u = np.linspace(0.0001,  1.0,  dim1, endpoint=False)
         else:
             u = np.asarray([dim1])
 
@@ -194,8 +192,10 @@ class MagneticCoordSystem(Dict):
                 for segment in col:
                     if isinstance(segment, np.ndarray):
                         theta = (np.arctan2(segment[:, 0]-r0, segment[:, 1]-z0) + constants.pi) / (constants.pi*2)
-                        if np.isclose(theta[0], theta[-1]) or not only_closed:
+
+                        if np.isclose(theta[0], theta[-1]) or (max(theta)-min(theta)) > 0.99 or not only_closed:
                             surf.append(CubicSplineCurve(segment, theta))
+
                     else:
                         raise RuntimeError(type(col))
 

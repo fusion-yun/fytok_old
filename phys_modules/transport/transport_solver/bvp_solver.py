@@ -391,8 +391,8 @@ class TransportSolverBVP(TransportSolver):
         core_profiles_next["diff_flux"] = profiles.diff_flux
         core_profiles_next["conv_flux"] = profiles.conv_flux
 
-        # core_profiles_next["diff"] = diff
-        # core_profiles_next["conv"] = conv
+        core_profiles_next["diff"] = diff
+        core_profiles_next["conv"] = conv
         # core_profiles_next["vpr"] = vpr
 
         # core_profiles_next["a"] = a

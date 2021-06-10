@@ -58,7 +58,7 @@ if __name__ == "__main__":
                   ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
 
         eq_profile = tok.equilibrium.time_slice.profiles_1d
-
+        
         plot_profiles(
             [
                 # (eq_profile.dpressure_dpsi,                                                       r"$dP/d\psi$"),
@@ -134,6 +134,7 @@ if __name__ == "__main__":
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
         rgrid = eq_profile._coord
+        
         plot_profiles(
             [
                 (rgrid.psi_norm,  r"$\bar{\psi}$", r"$[-]$"),
@@ -165,8 +166,8 @@ if __name__ == "__main__":
     ###################################################################################################
     if True:  # CoreProfile
         s_range = -1  # slice(0, 140, 1)
-        b_Te = Function(bs_r_nrom, smooth(baseline["TE"].values*1000, s_range))
-        b_Ti = Function(bs_r_nrom, smooth(baseline["TI"].values*1000, s_range))
+        b_Te = Function(bs_r_nrom, baseline["TE"].values*1000)
+        b_Ti = Function(bs_r_nrom, baseline["TI"].values*1000)
 
         b_ne = Function(bs_r_nrom, baseline["NE"].values*1.0e19)
         b_nHe = Function(bs_r_nrom, baseline["Nalf"].values*1.0e19)
@@ -239,9 +240,10 @@ if __name__ == "__main__":
         # D = Function(
         #     [lambda r:r < r_ped, lambda r:r >= r_ped],
         #     [lambda x:  0.5+(x**4), lambda x: 0.11])
+
         D = 0.1*chi_e
-        v_pinch = Function(None, lambda x: 0.4 * D(x) * x / R0)  # FIXME: The coefficient 0.4 is a guess.
-        v_pinch_T = Function(None, lambda x: 1.385 * chi_e(x) * x / R0)
+        v_pinch = Function([0, r_ped, 1.0], lambda x: 0.4 * D(x) * x / R0)   # FIXME: The coefficient 0.4 is a guess.
+        v_pinch_T = Function([0, r_ped, 1.0], lambda x: 1.385 * chi_e(x) * x / R0)
 
         tok.core_transport["model"] = [
             {"code": {"name": "dummy"},
@@ -277,7 +279,7 @@ if __name__ == "__main__":
         # logger.debug(tok.core_transport.model[0].profiles_1d.electrons.particles.v(rho_tor_norm))
 
         tok.core_transport.update()
-    
+
         core_transport1d_nc = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
         core_transport1d_dummy = tok.core_transport.model[{"code.name": "dummy"}].profiles_1d
         core_transport1d = tok.core_transport.model.combine.profiles_1d
@@ -369,7 +371,7 @@ if __name__ == "__main__":
         # tok.core_sources.source[{"code.name": "dummy"}].profiles_1d["j_parallel"] = \
         #     Function(bs_r_nrom, baseline["Jtot"].values)
         tok.core_sources.update()
-    
+
         core_source_1d = tok.core_sources.source.combine.profiles_1d
 
         plot_profiles(
@@ -452,6 +454,19 @@ if __name__ == "__main__":
 
         core_profile = tok.core_profiles.profiles_1d
 
+        plot_profiles(
+            [
+                [
+                    (core_profile.electrons["diff"],  r"D"),
+                    (np.abs(core_profile.electrons["conv"]),  r"$\left|V\right|$"),
+                ],
+            ],
+            # x_axis=(rho_tor_norm,                             r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            x_axis=(core_profile.electrons.temperature.x_axis,  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            title="Result of TransportSolver",
+            # index_slice=slice(0, 200, 1),
+            grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile_result.svg", transparent=True)
+
         b_psi = Function(bs_r_nrom, (baseline["Fp"].values * (tok.equilibrium.time_slice.global_quantities.psi_boundary-tok.equilibrium.time_slice.global_quantities.psi_axis)
                                      + tok.equilibrium.time_slice.global_quantities.psi_axis))
         plot_profiles(
@@ -489,10 +504,7 @@ if __name__ == "__main__":
                     # *[(ion.density*1e-19,                            f"${ion.label}$") for ion in core_profile.ion],
                 ],
 
-                # [
-                #     (core_profile.electrons["diff"],  r"D"),
-                #     (np.abs(core_profile.electrons["conv"]),  r"$\left|V\right|$"),
-                # ],
+
                 (core_profile.electrons["density_flux"], r"$\Gamma_e$"),
 
                 [
@@ -545,8 +557,8 @@ if __name__ == "__main__":
 
                 # (core_profile.e_field.parallel,                    r"fytok",   r"$E_{\parallel} [V\cdot m^{-1}]$ "),
             ],
-            x_axis=([0, 1],                             r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-            # x_axis=(core_profile.electrons.temperature.x,                                   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            # x_axis=(rho_tor_norm,                             r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            x_axis=(core_profile.electrons.temperature.x_axis,  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             title="Result of TransportSolver",
             # index_slice=slice(0, 200, 1),
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile_result.svg", transparent=True)

@@ -48,9 +48,9 @@ if __name__ == "__main__":
 
             ],
             [
-                (profile["Jext"].values,                                r"ext$", r"$J [mA\cdot m^{-2}]$"),
-                (profile["Jnb"].values,                                 r"nb$",  r"$J [mA\cdot m^{-2}]$"),
-                (profile["Jrf"].values,                                 r"rf$",  r"$J [mA\cdot m^{-2}]$"),
+                (profile["Jext"].values,                                r"ext", r"$J [mA\cdot m^{-2}]$"),
+                (profile["Jnb"].values,                                 r"nb",  r"$J [mA\cdot m^{-2}]$"),
+                (profile["Jrf"].values,                                 r"rf",  r"$J [mA\cdot m^{-2}]$"),
                 (profile["Jext"].values
                  - profile["Jnb"].values
                  - profile["Jrf"].values,                  r"$J_{ext}-J_{nb}-J_{rf}$", r"$J [mA\cdot m^{-2}]$",
@@ -136,7 +136,7 @@ if __name__ == "__main__":
             (profile["k"].values,                                                        r"elongation"),
             (profile["He"].values,                                       r"electron heat conductivity"),
 
-            
+
         ],
         x_axis=(profile["x"].values,                                   r"$\rho_{N}$"),
         # index_slice=slice(-100,None, 1),
