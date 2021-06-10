@@ -51,14 +51,14 @@ if __name__ == "__main__":
                   wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
                   pf_active={"facecolor": 'red'},
                   equilibrium={
-                      "mesh": True,
-                      "boundary": True,
-                      "scalar_field": [("psirz", {"levels": 16, "linewidths": 0.1}), ],
+                      "contour": [0, 2],
+                      #   "scalar_field": [("psirz", {"levels": 16, "linewidths": 0.1}), ],
                   }
                   ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
 
+    if False:
         eq_profile = tok.equilibrium.time_slice.profiles_1d
-        
+
         plot_profiles(
             [
                 # (eq_profile.dpressure_dpsi,                                                       r"$dP/d\psi$"),
@@ -134,7 +134,7 @@ if __name__ == "__main__":
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
         rgrid = eq_profile._coord
-        
+
         plot_profiles(
             [
                 (rgrid.psi_norm,  r"$\bar{\psi}$", r"$[-]$"),
@@ -164,7 +164,7 @@ if __name__ == "__main__":
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_coord.svg", transparent=True)
 
     ###################################################################################################
-    if True:  # CoreProfile
+    if False:  # CoreProfile
         s_range = -1  # slice(0, 140, 1)
         b_Te = Function(bs_r_nrom, baseline["TE"].values*1000)
         b_Ti = Function(bs_r_nrom, baseline["TI"].values*1000)
@@ -224,7 +224,7 @@ if __name__ == "__main__":
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
     ###################################################################################################
-    if True:  # CoreTransport
+    if False:  # CoreTransport
         rho_tor_norm = tok.equilibrium.time_slice.profiles_1d.rho_tor_norm
         R0 = tok.equilibrium.vacuum_toroidal_field.r0
 
@@ -343,7 +343,7 @@ if __name__ == "__main__":
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
     ###################################################################################################
-    if True:  # CoreSources
+    if False:  # CoreSources
 
         ne_src = Function(rho_tor_norm, lambda x:  5e20 * np.exp(15.0*(x**2-1.0)))
 
@@ -423,7 +423,7 @@ if __name__ == "__main__":
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_sources.svg", transparent=True)
 
     ###################################################################################################
-    if True:  # TransportSolver
+    if False:  # TransportSolver
         tok.transport_solver["boundary_conditions_1d"] = {
             "current": {"identifier": {"index": 1}, "value": [tok.equilibrium.time_slice.global_quantities.psi_boundary]},
             "electrons": {"particles": {"identifier": {"index": 1}, "value": [b_ne[-1]]},

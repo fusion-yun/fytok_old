@@ -655,13 +655,13 @@ class EquilibriumBoundary(Dict):
     @sp_property
     def psi(self) -> float:
         """Value of the poloidal flux at which the boundary is taken  [Wb]"""
-        return self["psi"] or self.psi_norm*(self.psi_boundary-self.psi_axis)+self.psi_axis
+        return self.get("psi", self.psi_norm*(self.psi_boundary-self.psi_axis)+self.psi_axis)
 
     @sp_property
     def psi_norm(self) -> float:
         """Value of the normalised poloidal flux at which the boundary is taken (typically 99.x %),
             the flux being normalised to its value at the separatrix """
-        return self["psi_norm"] or 0.995
+        return self.get("psi_norm", 0.995)
 
     @sp_property
     def shape_property(self) -> MagneticCoordSystem.ShapePropety:
@@ -734,8 +734,33 @@ class EquilibriumBoundarySeparatrix(Profiles):
     @sp_property
     def outline(self) -> RZTuple:
         """RZ outline of the plasma boundary  """
-        RZ = np.asarray([[r, z] for r, z in self._coord.flux_surface_map(1.0)])
-        return RZTuple(RZ[:, 0], RZ[:, 1])
+        surf = self._coord.find_surface(self.psi, only_closed=True)
+
+        if isinstance(surf, collections.abc.Sequence):
+            logger.warning(
+                f"There are  {len(surf)} lcfs, and only the first one is used. psi_norm_bdry={(self.psi-self.psi_axis)/(self.psi_boundary-self.psi_axis)}")
+            surf = surf[0]
+        return RZTuple(*surf.point().T)
+        # return RZTuple(RZ[:, 0], RZ[:, 1])
+
+    @sp_property
+    def psi_axis(self) -> float:
+        return self._coord.psi_axis
+
+    @sp_property
+    def psi_boundary(self) -> float:
+        return self._coord.psi_boundary
+
+    @sp_property
+    def psi(self) -> float:
+        """Value of the poloidal flux at which the boundary is taken  [Wb]"""
+        return self.get("psi", self.psi_boundary)
+
+    @sp_property
+    def psi_norm(self) -> float:
+        """Value of the normalised poloidal flux at which the boundary is taken (typically 99.x %),
+            the flux being normalised to its value at the separatrix """
+        return self.get("psi_norm", 1.0)
 
 
 class EquilibriumTimeSlice(Dict):
@@ -769,12 +794,13 @@ class EquilibriumTimeSlice(Dict):
         psi_norm = self["profiles_1d.psi_norm"]
         ffprime = self["profiles_1d.f_df_dpsi"]
         pprime = self["profiles_1d.dpressure_dpsi"]
-        return MagneticCoordSystem(self.get("coordinate_system"),
-                                   vacuum_toroidal_field=self.vacuum_toroidal_field,
-                                   psirz=psirz,
-                                   ffprime=Function(psi_norm, ffprime),
-                                   pprime=Function(psi_norm, pprime),
-                                   parent=self)
+        return MagneticCoordSystem(
+            self.get("coordinate_system"),
+            vacuum_toroidal_field=self.vacuum_toroidal_field,
+            psirz=psirz,
+            ffprime=Function(psi_norm, ffprime),
+            pprime=Function(psi_norm, pprime),
+            parent=self)
 
     @sp_property
     def constraints(self) -> Constraints:
@@ -803,10 +829,9 @@ class EquilibriumTimeSlice(Dict):
     def plot(self, axis=None, *args,
              scalar_field=[],
              vector_field=[],
-             mesh=True,
-             boundary=True,
-             separatrix=False,
-             contour_=False,
+             boundary=False,
+             separatrix=True,
+             contour=False,
              levels=32, oxpoints=True,
              **kwargs):
         """learn from freegs
@@ -823,9 +848,9 @@ class EquilibriumTimeSlice(Dict):
             o_point, x_point = self.coordinate_system.critical_points
             axis.plot(o_point[0].r,
                       o_point[0].z,
-                      'g.',
+                      'g+',
                       linewidth=0.5,
-                      markersize=2,
+                      #   markersize=2,
                       label="Magnetic axis")
 
             if len(x_point) > 0:
@@ -841,21 +866,34 @@ class EquilibriumTimeSlice(Dict):
             boundary_points = np.vstack([self.boundary.outline.r,
                                          self.boundary.outline.z]).T
 
-            axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
+            axis.add_patch(plt.Polygon(boundary_points, color='b', linestyle='solid',
                                        linewidth=0.5, fill=False, closed=False))
-            axis.plot([], [], 'r--', label="Boundary")
-
-        if mesh is not False:
-            for idx in range(0, self.coordinate_system.mesh.shape[0], 4):
-                ax0 = self.coordinate_system.mesh.axis(idx, axis=0)
-                axis.add_patch(plt.Polygon(ax0.xy, fill=False, closed=True, color="b", linewidth=0.2))
-
-            # for idx in range(0, self.coordinate_system.mesh.shape[1], 4):
-            #     ax1 = self.coordinate_system.mesh.axis(idx, axis=1)
-            #     axis.plot(ax1.xy[:, 0], ax1.xy[:, 1],  "r", linewidth=0.2)
+            axis.plot([], [], 'b', label="Boundary")
 
         if separatrix is not False:
-            raise NotImplementedError()
+            boundary_points = np.vstack([self.boundary_separatrix.outline.r,
+                                         self.boundary_separatrix.outline.z]).T
+
+            axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
+                                       linewidth=0.5, fill=False, closed=False))
+            axis.plot([], [], 'r--', label="Separatrix")
+
+        if contour is not False:
+            if contour is True:
+                contour = 16
+            self.coordinate_system.plot_contour(axis, contour)
+            # if isinstance(contour, int):
+            #     c_list = range(0, self.coordinate_system.mesh.shape[0], int(
+            #         self.coordinate_system.mesh.shape[0]/contour+0.5))
+            # elif isinstance(contour, collections.abc.Sequcence):
+            #     c_list = contour
+            # for idx in c_list:
+            #     ax0 = self.coordinate_system.mesh.axis(idx, axis=0)
+
+            #     if ax0.xy.shape[1] == 1:
+            #         axis.add_patch(plt.Circle(ax0.xy[:, 0], radius=0.05, fill=False,color="b", linewidth=0.2))
+            #     else:
+            #         axis.add_patch(plt.Polygon(ax0.xy, fill=False, closed=True, color="b", linewidth=0.2))
 
         for s, opts in scalar_field:
             if s == "psirz":

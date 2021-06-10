@@ -77,9 +77,9 @@ class MagneticCoordSystem(Dict):
         if isinstance(dim1, np.ndarray):
             u = dim1
         elif dim1 == None:
-            u = np.linspace(0.0001,  1.0,  len(self._ffprime), endpoint=False)
+            u = np.linspace(0.0,  1.0,  len(self._ffprime))  # , endpoint=False)
         elif isinstance(dim1, int):
-            u = np.linspace(0.0001,  1.0,  dim1, endpoint=False)
+            u = np.linspace(0.0,  1.0,  dim1)  # , endpoint=False)
         else:
             u = np.asarray([dim1])
 
@@ -182,7 +182,7 @@ class MagneticCoordSystem(Dict):
             surf = []
             if len(col) == 0:
                 points = []
-                for pts in minimize_filter(lambda p: field(*p)-level, *field.mesh.bbox, torlerance=field.mesh.dx):
+                for pts in minimize_filter(lambda p: field(*p)-level, *field.mesh.bbox, tolerance=field.mesh.dx):
                     points.append(pts)
 
                 points.sort(key=lambda p: (p[0] - r0)**2 + (p[1] - z0)**2)
@@ -193,9 +193,10 @@ class MagneticCoordSystem(Dict):
                     if isinstance(segment, np.ndarray):
                         theta = (np.arctan2(segment[:, 0]-r0, segment[:, 1]-z0) + constants.pi) / (constants.pi*2)
 
-                        if np.isclose(theta[0], theta[-1]) or (max(theta)-min(theta)) > 0.99 or not only_closed:
+                        if np.isclose(theta[0], theta[-1]) or not only_closed:
                             surf.append(CubicSplineCurve(segment, theta))
-
+                        elif (max(theta)-min(theta)) > 0.99:
+                            surf.append(CubicSplineCurve(segment))
                     else:
                         raise RuntimeError(type(col))
 
@@ -543,7 +544,7 @@ class MagneticCoordSystem(Dict):
 
     @cached_property
     def boundary(self):
-        return self.create_surface(1.0)
+        return self.create_surface(self.psi_boundary)
 
     @cached_property
     def cocos_flag(self) -> int:
@@ -754,6 +755,27 @@ class MagneticCoordSystem(Dict):
             .. math: : \left\langle \frac{1}{R}\right\rangle
         """
         return self.surface_average(1.0/self.r)
+
+    def plot_contour(self, axis, levels=16):
+        import matplotlib.pyplot as plt
+
+        if isinstance(levels, int):
+            levels = np.linspace(0, 1, levels)
+        elif isinstance(levels, (collections.abc.Sequence)):
+            l_min, l_max = levels
+            levels = np.linspace(l_min, l_max, 16)
+        levels = levels*(self.psi_boundary-self.psi_axis)+self.psi_axis
+
+        field = self._psirz
+
+        R, Z = field.mesh.xy
+
+        F = np.asarray(field)
+
+        for level, col in find_countours(F, R, Z, levels=levels):
+            for segment in col:
+                axis.add_patch(plt.Polygon(segment, fill=False, closed=np.all(
+                    np.isclose(segment[0], segment[-1])), color="b", linewidth=0.2))
 
 
 class RadialGrid:
