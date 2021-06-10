@@ -582,12 +582,13 @@ class MagneticCoordSystem(Dict):
         """Toroidal current driven inside the flux surface.
           .. math:: I_{pl}\equiv\int_{S_{\zeta}}\mathbf{j}\cdot dS_{\zeta}=\frac{\text{gm2}}{4\pi^{2}\mu_{0}}\frac{\partial V}{\partial\psi}\left(\frac{\partial\psi}{\partial\rho}\right)^{2}
          {dynamic}[A]"""
-        return self.surface_average(self.grad_psi2 / (self.r**2))*self.dvolume_dpsi/constants.mu_0
+        return np.asarray(self.surface_average(self.grad_psi2 / (self.r**2))*self.dvolume_dpsi/constants.mu_0)
 
     @cached_property
     def j_parallel(self) -> np.ndarray:
         r"""Flux surface averaged parallel current density = average(j.B) / B0, where B0 = Equilibrium/Global/Toroidal_Field/B0 {dynamic}[A/m ^ 2]. """
-        return (self.fpol**2)/self.dvolume_dpsi * (Function(self.psi_norm, self.plasma_current/self.fpol).derivative() / (self.psi_boundary - self.psi_axis))/self.vacuum_toroidal_field.b0
+        d = np.asarray(Function(self.psi_norm, self.plasma_current/self.fpol).derivative())
+        return np.asarray((self.fpol**2)/self.dvolume_dpsi * d / (self.psi_boundary - self.psi_axis)/self.vacuum_toroidal_field.b0)
 
     @property
     def psi_norm(self) -> np.ndarray:
@@ -670,7 +671,7 @@ class MagneticCoordSystem(Dict):
     @cached_property
     def volume(self) -> np.ndarray:
         """Volume enclosed in the flux surface[m ^ 3]"""
-        return Function(self.psi_norm, self.dvolume_dpsi).antiderivative()
+        return np.asarray(Function(self.psi_norm, self.dvolume_dpsi).antiderivative())
 
     @cached_property
     def dvolume_drho_tor(self) -> np.ndarray:

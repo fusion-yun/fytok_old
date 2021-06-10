@@ -186,7 +186,7 @@ class TransportSolverBVP(TransportSolver):
                 yp[0] = 0.0
             dy = (-gamma + e(x)*y + hyper_diff * yp)/(d(x)+hyper_diff)
             dgamma = (f(x) - g(x) * y - (a(x) * y - b(x) * y0_func(x)))*c(x)
-
+            dy[0] = dy[1]
             return np.vstack((dy, dgamma))
 
         u0, v0, w0 = bc[0]
@@ -377,7 +377,7 @@ class TransportSolverBVP(TransportSolver):
             (a, b, c, d, e, f, g),
             ((e[0], -1, 0), (u, v, w)),
             hyper_diff=[0, 0.0001],
-            ignore_x=[d.x[np.argmax(np.abs(d.derivative()))]],
+            ignore_x=[self._rho_tor_norm[np.argmax(np.abs(d.derivative(self._rho_tor_norm)))]],
             **kwargs
         )
 
@@ -461,7 +461,7 @@ class TransportSolverBVP(TransportSolver):
             hyper_diff_exp, hyper_diff_imp = hyper_diff
             hyper_diff = hyper_diff_exp + hyper_diff_imp*max(d)
 
-        ignore_x = self._rho_tor_norm[np.argmax(np.abs(d.derivative()))]
+        ignore_x = self._rho_tor_norm[np.argmax(np.abs(d.derivative(self._rho_tor_norm)))]
 
         u0, v0, w0 = e[0], -1, 0
 
@@ -489,17 +489,17 @@ class TransportSolverBVP(TransportSolver):
             raise ValueError(f"{flux0.shape} != {x0.shape} ")
 
         def func(x,  y, gamma, _a=a, _b=b, _c=c,  _d=d, _e=e, _f=f, _g=g, _y0=y0_func, _hyper_diff=hyper_diff):
-            # yp = Function(x, y).derivative(x)
-            # if x[0] == 0.0:
-            #     yp[0] = 0   # remove singularity at the magnetic axis
-            # dy = (-gamma + _e(x)*y + _hyper_diff * yp)/(_d(x)+_hyper_diff)
+            yp = Function(x, y).derivative(x)
             if x[0] == 0.0:
-                dy = np.hstack([[0.0], (-gamma[1:] + _e(x[1:])*y[1:])/(_d(x[1:]))])
-            else:
-                dy = (-gamma + _e(x)*y)/(_d(x))
+                yp[0] = 0   # remove singularity at the magnetic axis
+            dy = (-gamma + _e(x)*y + _hyper_diff * yp)/(_d(x)+_hyper_diff)
+            # if x[0] == 0.0:
+            #     dy = np.hstack([[0.0], (-gamma[1:] + _e(x[1:])*y[1:])/(_d(x[1:]))])
+            # else:
+            #     dy = (-gamma + _e(x)*y)/(_d(x))
 
             dgamma = (_f(x) - _g(x) * y - (_a(x) * y - _b(x) * _y0(x)))*_c(x)
-            dy[0] = 0
+            # dy[0] = 0
             # dgamma[0]=0
             # logger.debug((x[:2], dy[:2], dgamma[:2], gamma[:2],  _d(x[:2])))
 
@@ -596,8 +596,8 @@ class TransportSolverBVP(TransportSolver):
             bc_full,
             self._rho_tor_norm,
             Y,
-            ignore_x=[ignore_x],
-            S=np.zeros([len(species)*2, len(species)*2]),
+            ignore_x=[0, ignore_x],
+            # S=np.zeros([len(species)*2, len(species)*2]),
             ** kwargs
         )
         for idx, label in enumerate(species):
@@ -610,6 +610,7 @@ class TransportSolverBVP(TransportSolver):
                 core_profiles_next.electrons["diff_flux_Te"] = Function(sol.x, np.asarray(-d(sol.x) * sol.yp[0]))
                 core_profiles_next.electrons["conv_flux_Te"] = Function(sol.x, np.asarray(e(sol.x) * sol.y[0]))
                 core_profiles_next.electrons["s_exp_flux_Te"] = Function(sol.x,  S(sol.x, sol.y[0])).antiderivative()
+                core_profiles_next.electrons["rms_residuals"] = Function((sol.x[1:]+sol.x[:-1])*0.5, sol.rms_residuals)
 
             else:
                 core_profiles_next.ion[{"label": label}]["temperature"] = Function(sol.x, sol.y[idx*2])
@@ -651,7 +652,7 @@ class TransportSolverBVP(TransportSolver):
 
     def solve_core(self,  /,
                    tolerance=1.0e-3,
-                   max_nodes=1000,
+                   max_nodes=250,
                    verbose=2,
                    enable_ion_particle_solver: bool = False,
                    impurities=[],
@@ -755,20 +756,19 @@ class TransportSolverBVP(TransportSolver):
             # Quasi-neutral condition
             self._core_profiles_next.electrons["density"] = n_ele
             self._core_profiles_next.electrons["density_flux"] = n_ele
-
-        residual.append(self.energy_transport(
-            self._core_profiles_next,
-            self._core_profiles_prev,
-            self._c_transp,
-            self._c_source,
-            self.boundary_conditions_1d,
-            impurities=impurities,
-            tolerance=tolerance,
-            max_nodes=max_nodes,
-            verbose=verbose,
-        ))
-
         if False:
+            residual.append(self.energy_transport(
+                self._core_profiles_next,
+                self._core_profiles_prev,
+                self._c_transp,
+                self._c_source,
+                self.boundary_conditions_1d,
+                impurities=impurities,
+                tolerance=tolerance,
+                max_nodes=max_nodes,
+                verbose=verbose,
+            ))
+
             for ion in self._core_profiles_next.ion:
                 residual.append(self.energy_transport(
                     ion,

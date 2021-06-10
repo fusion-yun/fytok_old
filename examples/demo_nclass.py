@@ -5,7 +5,7 @@ import pandas as pd
 from fytok.Tokamak import Tokamak
 from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.File import File
-from spdm.data.Function import Function
+from spdm.data.Function import Function, PiecewiseFunction
 from spdm.numlib import constants, np
 from spdm.numlib.smooth import smooth
 from spdm.util.logger import logger
@@ -127,7 +127,9 @@ if __name__ == "__main__":
                 #      r"$\left<\frac{1}{R^2}\right>$"),
                 # ]
             ],
-            x_axis=(eq_profile._coord.psi_norm,                                                r"$\psi/\psi_{bdry}$"),
+            # x_axis=(eq_profile._coord.psi_norm,                                                r"$\psi/\psi_{bdry}$"),
+            x_axis=([0, 1.0],                                                r"$\psi/\psi_{bdry}$"),
+
             title="Equlibrium",
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
@@ -228,12 +230,8 @@ if __name__ == "__main__":
         r_ped = 0.96  # np.sqrt(0.88)
         Cped = 0.2
         Ccore = 0.4
-        chi = Function(
-            [lambda r:r < r_ped, lambda r:r >= r_ped],
-            [lambda x: Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
-        chi_e = Function(
-            [lambda r:r < r_ped, lambda r:r >= r_ped],
-            [lambda x:0.5*chi(x), lambda x: chi(x)])
+        chi = PiecewiseFunction([0, r_ped, 1.0],  [lambda x: Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
+        chi_e = PiecewiseFunction([0, r_ped, 1.0], [lambda x:0.5*chi(x), lambda x: chi(x)])
 
         conductivity_parallel = Function(bs_r_nrom, baseline["Joh"].values*1.0e6 / baseline["U"].values *
                                          (2.0*constants.pi * R0))
@@ -279,7 +277,7 @@ if __name__ == "__main__":
         # logger.debug(tok.core_transport.model[0].profiles_1d.electrons.particles.v(rho_tor_norm))
 
         tok.core_transport.update()
-    if True:
+    
         core_transport1d_nc = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
         core_transport1d_dummy = tok.core_transport.model[{"code.name": "dummy"}].profiles_1d
         core_transport1d = tok.core_transport.model.combine.profiles_1d
@@ -342,6 +340,7 @@ if __name__ == "__main__":
             title=tok.core_transport.model[0].identifier.name,
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
+    ###################################################################################################
     if True:  # CoreSources
 
         ne_src = Function(rho_tor_norm, lambda x:  5e20 * np.exp(15.0*(x**2-1.0)))
@@ -370,7 +369,7 @@ if __name__ == "__main__":
         # tok.core_sources.source[{"code.name": "dummy"}].profiles_1d["j_parallel"] = \
         #     Function(bs_r_nrom, baseline["Jtot"].values)
         tok.core_sources.update()
-    if False:
+    
         core_source_1d = tok.core_sources.source.combine.profiles_1d
 
         plot_profiles(
@@ -420,8 +419,8 @@ if __name__ == "__main__":
             # annotation=core_transport.model[0].identifier.name,
             # index_slice=slice(1, 110, 1),
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_sources.svg", transparent=True)
-    ###################################################################################################
 
+    ###################################################################################################
     if True:  # TransportSolver
         tok.transport_solver["boundary_conditions_1d"] = {
             "current": {"identifier": {"index": 1}, "value": [tok.equilibrium.time_slice.global_quantities.psi_boundary]},
@@ -462,7 +461,7 @@ if __name__ == "__main__":
                 # psi ,current
                 [
                     (b_psi, r"astra", r"$\psi [Wb]$", {"marker": "+"}),
-                    (core_profile["psi"],  r"fytok", r"$\psi  [Wb]$"),
+                    (core_profile["psi"],  r"fytok", r"$\psi  [Wb]$", {"marker": "."}),
                     (b_psi-core_profile["psi"], r"residual",
                      r"$n_e [10^{19} m^{-3}]$",  {"color": "red", "linestyle": "dashed"}),
                 ],
@@ -484,11 +483,12 @@ if __name__ == "__main__":
                 # electron particles
                 [
                     (b_ne, r"astra", r"$n_e [m^{-3}]$",  {"marker": "+"}),
-                    (core_profile.electrons.density, r"fytok", r"$n_e [ m^{-3}]$"),
+                    (core_profile.electrons.density, r"fytok", r"$n_e [ m^{-3}]$", {"marker": "."}),
                     (b_ne-core_profile.electrons.density, r"residual",
                      r"$n_e [10^{19} m^{-3}]$",  {"color": "red", "linestyle": "dashed"}),
                     # *[(ion.density*1e-19,                            f"${ion.label}$") for ion in core_profile.ion],
                 ],
+
                 # [
                 #     (core_profile.electrons["diff"],  r"D"),
                 #     (np.abs(core_profile.electrons["conv"]),  r"$\left|V\right|$"),
@@ -506,26 +506,28 @@ if __name__ == "__main__":
                 ],
                 ######################################################################
                 # electron energy
-                [
-                    (b_Te, r"electron (astra)", r"$T_s [eV]$",  {"marker": "+"}),
-                    (b_Ti, r"ion (astra)", r"$ [eV]$",  {"marker": "+"}),
+                # [
+                #     (b_Te, r"electron (astra)", r"$T_s [eV]$",  {"marker": "+"}),
+                #     (b_Ti, r"ion (astra)", r"$ [eV]$",  {"marker": "+"}),
 
-                    (core_profile.electrons.temperature, r"electron (fytok)  ", r"$ [eV]$",  {"marker": "."}),
-                    (b_Te-core_profile.electrons.temperature, r"residual",
-                     r"$[eV]$",  {"color": "red", "linestyle": "dashed"}),
-                ],
-                (core_profile.electrons["temperature_prime"], r"$T^{\prime}$", r"$T_e [eV m^-1]$"),
-                (core_profile.electrons["heat_flux_prime"], r"$q^{\prime}$"),
+                #     (core_profile.electrons.temperature, r"electron (fytok)  ", r"$ [eV]$",  {"marker": "."}),
+                #     (b_Te-core_profile.electrons.temperature, r"residual",
+                #      r"$[eV]$",  {"color": "red", "linestyle": "dashed"}),
+                # ],
+                # (core_profile.electrons["rms_residuals"], r"rms_residuals"),
 
-                [
-                    (core_profile.electrons["s_exp_flux_Te"],   r"Heat Source",  "", {"color": "green", }),
-                    (core_profile.electrons["diff_flux_Te"],    r"Heat Diffusive flux",  "", {"color": "black", }),
-                    (core_profile.electrons["conv_flux_Te"],    r"Heat Convective flux", "",  {"color": "blue", }),
+                # (core_profile.electrons["temperature_prime"], r"$T^{\prime}$", r"$T_e [eV m^-1]$"),
+                # (core_profile.electrons["heat_flux_prime"], r"$q^{\prime}$"),
 
-                    (core_profile.electrons["diff_flux_Te"]
-                     + core_profile.electrons["conv_flux_Te"]
-                     - core_profile.electrons["s_exp_flux_Te"],     r"residual",  "", {"color": "red", "linestyle": "dashed"}),
-                ],
+                # [
+                #     (core_profile.electrons["s_exp_flux_Te"],   r"Heat Source",  "", {"color": "green", }),
+                #     (core_profile.electrons["diff_flux_Te"],    r"Heat Diffusive flux",  "", {"color": "black", }),
+                #     (core_profile.electrons["conv_flux_Te"],    r"Heat Convective flux", "",  {"color": "blue", }),
+
+                #     (core_profile.electrons["diff_flux_Te"]
+                #      + core_profile.electrons["conv_flux_Te"]
+                #      - core_profile.electrons["s_exp_flux_Te"],     r"residual",  "", {"color": "red", "linestyle": "dashed"}),
+                # ],
 
                 ######################################################################
 
@@ -543,7 +545,7 @@ if __name__ == "__main__":
 
                 # (core_profile.e_field.parallel,                    r"fytok",   r"$E_{\parallel} [V\cdot m^{-1}]$ "),
             ],
-            x_axis=([0, 1.0],                             r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            x_axis=([0, 1],                             r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             # x_axis=(core_profile.electrons.temperature.x,                                   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             title="Result of TransportSolver",
             # index_slice=slice(0, 200, 1),
