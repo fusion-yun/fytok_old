@@ -44,7 +44,7 @@ if __name__ == "__main__":
         tok.equilibrium["time_slice"] = {
             "profiles_1d": eqdsk.entry.find("profiles_1d"),
             "profiles_2d": eqdsk.entry.find("profiles_2d"),
-            "coordinate_system": {"grid": {"dim1": 128, "dim2": 128}}
+            "coordinate_system": {"grid": {"dim1": 63, "dim2": 128}}
         }
 
         sp_figure(tok,

@@ -740,7 +740,7 @@ class EquilibriumBoundarySeparatrix(Profiles):
             logger.warning(
                 f"There are  {len(surf)} lcfs, and only the first one is used. psi_norm_bdry={(self.psi-self.psi_axis)/(self.psi_boundary-self.psi_axis)}")
             surf = surf[0]
-        return RZTuple(*surf.point().T)
+        return RZTuple(*surf.xyz)
         # return RZTuple(RZ[:, 0], RZ[:, 1])
 
     @sp_property

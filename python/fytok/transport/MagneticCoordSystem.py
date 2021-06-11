@@ -191,12 +191,32 @@ class MagneticCoordSystem(Dict):
             else:
                 for segment in col:
                     if isinstance(segment, np.ndarray):
-                        theta = (np.arctan2(segment[:, 0]-r0, segment[:, 1]-z0) + constants.pi) / (constants.pi*2)
+                        theta = np.arctan2(segment[:, 0]-r0, segment[:, 1]-z0)
 
-                        if np.isclose(theta[0], theta[-1]) or not only_closed:
-                            surf.append(CubicSplineCurve(segment, theta))
-                        elif (max(theta)-min(theta)) > 0.99:
+                        if (max(theta)-min(theta)) > 0.99*TWOPI or not only_closed:
                             surf.append(CubicSplineCurve(segment))
+                        elif np.isclose(theta[0], theta[-1]):
+                            points = segment[:-1]
+                            theta = theta[:-1]
+                            # prepare mesh, u must be strictly increased
+                            p_min = np.argmin(theta)
+                            p_max = np.argmax(theta)
+
+                            if p_min == 0:
+                                pass
+                            elif p_min == p_max+1:
+                                theta = np.roll(theta, -p_min)
+                                points = np.roll(points, -p_min, axis=0)
+                            elif p_min == p_max-1:
+                                theta = np.flip(np.roll(theta, -p_min-1))
+                                points = np.flip(np.roll(points, -p_min-1, axis=0), axis=0)
+                            else:
+                                raise ValueError(f"Can not convert 'u' to be strictly increased!")
+                            theta = np.hstack([theta, [theta[0]+TWOPI]])
+                            theta = (theta-theta.min())/(theta.max()-theta.min())
+                            points = np.vstack([points, points[:1]])
+                            surf.append(CubicSplineCurve(points, [theta]))
+
                     else:
                         raise RuntimeError(type(col))
 
@@ -376,7 +396,7 @@ class MagneticCoordSystem(Dict):
 
     @cached_property
     def surface_mesh(self):
-        return self.create_surface(*self._uv)
+        return self.create_mesh(*self._uv)
 
     ###############################
     # 2-D
@@ -399,6 +419,7 @@ class MagneticCoordSystem(Dict):
 
     @property
     def r(self) -> np.ndarray:
+
         return self.mesh.xy[:, :, 0]
 
     @property
@@ -410,8 +431,9 @@ class MagneticCoordSystem(Dict):
 
     @cached_property
     def dl(self) -> np.ndarray:
-        return np.vstack([np.asarray(self.mesh.axis(idx, axis=0).dl(self.mesh.uv[1]))
-                          for idx in range(self.mesh.shape[0])])
+        v = self.mesh.uv[1]
+        d = [np.asarray(self.mesh.axis(idx, axis=0).dl(v)) for idx in range(self.mesh.shape[0])]
+        return np.vstack(d)
 
     @cached_property
     def Br(self) -> np.ndarray:
@@ -484,7 +506,7 @@ class MagneticCoordSystem(Dict):
 
     def shape_property(self, psi_norm: Union[float, Sequence[float]] = None) -> ShapePropety:
         def shape_box(s: Curve):
-            r, z = s.xy.T
+            r, z = s.xy
             (rmin, rmax), (zmin, zmax) = s.bbox
             rzmin = r[np.argmin(z)]
             rzmax = r[np.argmax(z)]
@@ -543,8 +565,8 @@ class MagneticCoordSystem(Dict):
         })
 
     @cached_property
-    def boundary(self):
-        return self.create_surface(self.psi_boundary)
+    def boundary(self) -> Curve:
+        return self.find_surface(self.psi_boundary)
 
     @cached_property
     def cocos_flag(self) -> int:
@@ -764,6 +786,7 @@ class MagneticCoordSystem(Dict):
         elif isinstance(levels, (collections.abc.Sequence)):
             l_min, l_max = levels
             levels = np.linspace(l_min, l_max, 16)
+
         levels = levels*(self.psi_boundary-self.psi_axis)+self.psi_axis
 
         field = self._psirz
@@ -776,6 +799,7 @@ class MagneticCoordSystem(Dict):
             for segment in col:
                 axis.add_patch(plt.Polygon(segment, fill=False, closed=np.all(
                     np.isclose(segment[0], segment[-1])), color="b", linewidth=0.2))
+        return axis
 
 
 class RadialGrid:
