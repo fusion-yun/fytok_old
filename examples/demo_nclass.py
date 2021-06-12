@@ -44,7 +44,7 @@ if __name__ == "__main__":
         tok.equilibrium["time_slice"] = {
             "profiles_1d": eqdsk.entry.find("profiles_1d"),
             "profiles_2d": eqdsk.entry.find("profiles_2d"),
-            "coordinate_system": {"grid": {"dim1": 63, "dim2": 128}}
+            "coordinate_system": {"grid": {"dim1": 256, "dim2": 256}}
         }
 
         sp_figure(tok,
@@ -52,12 +52,50 @@ if __name__ == "__main__":
                   pf_active={"facecolor": 'red'},
                   equilibrium={
                       "contour": [0, 2],
+                      "separatrix": True,
                       #   "scalar_field": [("psirz", {"levels": 16, "linewidths": 0.1}), ],
                   }
                   ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
-
-    if False:
         eq_profile = tok.equilibrium.time_slice.profiles_1d
+
+ 
+    if False:
+        rgrid = eq_profile._coord
+
+        plot_profiles(
+            [
+                (rgrid.psi_norm,  r"$\bar{\psi}$", r"$[-]$"),
+                (rgrid.rho_tor_norm,  r"$\bar{\rho}$", r"$[-]$"),
+                (rgrid.psi,  r"$\psi$", r"$[Wb]$"),
+                (rgrid.rho_tor,  r"$\rho$", r"$[m]$"),
+                (rgrid.drho_tor_dpsi,  r"$d\rho/d\psi$"),
+
+                (eq_profile.dvolume_dpsi(rgrid.psi_norm),  r"$dV/d\psi$", r"$[m]$"),
+                [
+                    (4*(constants.pi**2)*rgrid.vacuum_toroidal_field.r0*rgrid.rho_tor,
+                        r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho$"),
+
+                    (rgrid.dvolume_drho_tor, r"$dV/d\rho_{tor}$", r"$[m^2]$")
+                ],
+                (rgrid.gm1,                                             r"$gm1=\left<\frac{1}{R^2}\right>$"),
+                (rgrid.gm2,                    r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
+                (rgrid.gm3,                                r"$gm3=\left<\left|\nabla \rho\right|^2\right>$"),
+                (rgrid.gm7,                                  r"$gm7=\left<\left|\nabla \rho\right|\right>$"),
+                (rgrid.gm8,                                                         r"$gm8=\left<R\right>$"),
+
+                (rgrid.dphi_dpsi,                                                  r"$\frac{d\phi}{d\psi}$"),
+                (rgrid.drho_tor_dpsi,                                        r"$\frac{d\rho_{tor}}{d\psi}$"),
+                # (rgrid.dvolume_drho_tor,                                              r"$\frac{dV}{d\rho}$"),
+                (rgrid.dpsi_drho_tor,                                        r"$\frac{d\psi}{d\rho_{tor}}$"),
+            ],
+            # x_axis=(rgrid.rho_tor_norm,      r"$\bar{\rho_{tor}}$"),
+            x_axis=(rgrid.psi_norm,      r"$\bar{\psi}$"),
+
+            title="Equlibrium",
+            grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_coord.svg", transparent=True)
+
+
+    if True:
 
         plot_profiles(
             [
@@ -70,6 +108,8 @@ if __name__ == "__main__":
                 #     (Function(eq_profile.psi_norm, np.abs(eq_profile.f)),  r"$\left|f_{pol0}\right|$" ),
                 #     (eq_profile.fpol,                                                                 r"$fpol$"),
                 # ],
+                (eq_profile.dvolume_dpsi,                                      r"$dV/d\psi$",  r"$dV/d\psi$"),
+
                 [
                     (Function(bs_psi, baseline["q"].values),            r"astra",  r"$q [-]$", {"marker": "+"}),
                     (eq_profile.q,                                      r"fytok",  r"$q [-]$"),
@@ -127,42 +167,12 @@ if __name__ == "__main__":
                 #      r"$\left<\frac{1}{R^2}\right>$"),
                 # ]
             ],
-            # x_axis=(eq_profile._coord.psi_norm,                                                r"$\psi/\psi_{bdry}$"),
-            x_axis=([0, 1.0],                                                r"$\psi/\psi_{bdry}$"),
+            x_axis=(eq_profile._coord.psi_norm,                                                r"$\psi/\psi_{bdry}$"),
+            # x_axis=([0, 1.0],                                                r"$\psi/\psi_{bdry}$"),
 
             title="Equlibrium",
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
-
-        rgrid = eq_profile._coord
-
-        plot_profiles(
-            [
-                (rgrid.psi_norm,  r"$\bar{\psi}$", r"$[-]$"),
-                (rgrid.rho_tor_norm,  r"$\bar{\rho}$", r"$[-]$"),
-                (rgrid.psi,  r"$\psi$", r"$[Wb]$"),
-                (rgrid.rho_tor,  r"$\rho$", r"$[m]$"),
-                (eq_profile.dvolume_dpsi(rgrid.psi_norm),  r"$dV/d\psi$", r"$[m]$"),
-                [
-                    (4*(constants.pi**2)*rgrid.vacuum_toroidal_field.r0*rgrid.rho_tor,
-                        r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho$"),
-
-                    (rgrid.dvolume_drho_tor, r"$dV/d\rho_{tor}$", r"$[m^2]$")
-                ],
-                (rgrid.gm1,                                             r"$gm1=\left<\frac{1}{R^2}\right>$"),
-                (rgrid.gm2,                    r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
-                (rgrid.gm3,                                r"$gm3=\left<\left|\nabla \rho\right|^2\right>$"),
-                (rgrid.gm7,                                  r"$gm7=\left<\left|\nabla \rho\right|\right>$"),
-                (rgrid.gm8,                                                         r"$gm8=\left<R\right>$"),
-
-                (rgrid.dphi_dpsi,                                                  r"$\frac{d\phi}{d\psi}$"),
-                (rgrid.drho_tor_dpsi,                                        r"$\frac{d\rho_{tor}}{d\psi}$"),
-                # (rgrid.dvolume_drho_tor,                                              r"$\frac{dV}{d\rho}$"),
-                (rgrid.dpsi_drho_tor,                                        r"$\frac{d\psi}{d\rho_{tor}}$"),
-            ],
-            x_axis=(rgrid.rho_tor_norm,      r"$\bar{\rho_{tor}}$"),
-            title="Equlibrium",
-            grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_coord.svg", transparent=True)
-
+  
     ###################################################################################################
     if False:  # CoreProfile
         s_range = -1  # slice(0, 140, 1)

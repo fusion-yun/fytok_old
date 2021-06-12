@@ -614,7 +614,8 @@ class EquilibriumProfiles2D(Dict):
 
 class EquilibriumBoundary(Dict):
     """
-        Description of the plasma boundary used by fixed-boundary codes and typically chosen at psi_norm = 99.x% of the separatrix
+        Description of the plasma boundary used by fixed-boundary codes and typically chosen at psi_norm = 99.x% 
+        of the separatrix
     """
 
     def __init__(self,  *args, coord: MagneticCoordSystem = None, parent=None,   ** kwargs):
@@ -631,13 +632,8 @@ class EquilibriumBoundary(Dict):
     @sp_property
     def outline(self) -> RZTuple:
         """RZ outline of the plasma boundary  """
-        surf = self._coord.find_surface(self.psi, only_closed=True)
-
-        if isinstance(surf, collections.abc.Sequence):
-            logger.warning(
-                f"There are  {len(surf)} lcfs, and only the first one is used. psi_norm_bdry={(self.psi-self.psi_axis)/(self.psi_boundary-self.psi_axis)}")
-            surf = surf[0]
-        return RZTuple(*surf.point().T)
+        surf = next(self._coord.find_surface(self.psi, o_point=False))
+        return RZTuple(*surf.xyz)
 
     @sp_property
     def x_point(self):
@@ -734,14 +730,8 @@ class EquilibriumBoundarySeparatrix(Profiles):
     @sp_property
     def outline(self) -> RZTuple:
         """RZ outline of the plasma boundary  """
-        surf = self._coord.find_surface(self.psi, only_closed=True)
-
-        if isinstance(surf, collections.abc.Sequence):
-            logger.warning(
-                f"There are  {len(surf)} lcfs, and only the first one is used. psi_norm_bdry={(self.psi-self.psi_axis)/(self.psi_boundary-self.psi_axis)}")
-            surf = surf[0]
+        _, surf = next(self._coord.find_surface_by_psi_norm(1.0, o_point=None))
         return RZTuple(*surf.xyz)
-        # return RZTuple(RZ[:, 0], RZ[:, 1])
 
     @sp_property
     def psi_axis(self) -> float:
@@ -816,15 +806,15 @@ class EquilibriumTimeSlice(Dict):
 
     @sp_property
     def global_quantities(self) -> GlobalQuantities:
-        return self["global_quantities"]
+        return self.get("global_quantities", {})
 
     @sp_property
     def boundary(self) -> Boundary:
-        return self["boundary"]
+        return self.get("boundary", {})
 
     @sp_property
     def boundary_separatrix(self) -> BoundarySeparatrix:
-        return self["boundary_separatrix"]
+        return self.get("boundary_separatrix", {})
 
     def plot(self, axis=None, *args,
              scalar_field=[],

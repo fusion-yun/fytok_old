@@ -1,23 +1,23 @@
 import collections
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Sequence, Union, Tuple
+from typing import Iterator, Sequence, Tuple, TypeVar, Union
 
 from spdm.data.Field import Field
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List
 from spdm.geometry.CubicSplineCurve import CubicSplineCurve
 from spdm.geometry.Curve import Curve
+from spdm.geometry.GeoObject import GeoObject, _TCoord
 from spdm.geometry.Point import Point
 from spdm.mesh.CurvilinearMesh import CurvilinearMesh
+from spdm.mesh.Mesh import Mesh
+from spdm.numlib import constants, minimize, np, root_scalar
 from spdm.numlib.contours import find_countours
-from spdm.util.logger import logger, deprecated
-from spdm.numlib import ENABLE_JAX, constants, np
-from spdm.util.utilities import try_get, _not_found_
-
-
-from spdm.numlib import minimize, root_scalar
 from spdm.numlib.optimize import find_critical_points, minimize_filter
+from spdm.util.logger import deprecated, logger
+from spdm.util.utilities import _not_found_, try_get
+
 from ..common.GGD import GGD
 from ..common.IDS import IDS
 from ..common.Misc import Identifier, RZTuple, VacuumToroidalField
@@ -77,9 +77,9 @@ class MagneticCoordSystem(Dict):
         if isinstance(dim1, np.ndarray):
             u = dim1
         elif dim1 == None:
-            u = np.linspace(0.0,  1.0,  len(self._ffprime))  # , endpoint=False)
+            u = np.linspace(0.0001,  0.99,  len(self._ffprime))
         elif isinstance(dim1, int):
-            u = np.linspace(0.0,  1.0,  dim1)  # , endpoint=False)
+            u = np.linspace(0.0001,  0.99,  dim1)
         else:
             u = np.asarray([dim1])
 
@@ -155,56 +155,51 @@ class MagneticCoordSystem(Dict):
 
         return opoints, xpoints
 
-    def find_surface_sp(self, levels: Union[float, Sequence] = None, only_closed=True, field: Field = None) -> Union[Curve, Sequence[Curve]]:
-
-        if field is None:
-            field = self._psirz
-
-        single_line = False
-        if not isinstance(levels, (collections.abc.Sequence, np.ndarray)):
-            levels = [levels]
-            single_line = True
-
-        levels = np.asarray(levels)
-
-        opoints, _ = self.critical_points
-
-        r0 = opoints[0].r
-        z0 = opoints[0].z
-
-        surf_collection = []
-
-        R, Z = field.mesh.xy
-
-        F = np.asarray(field)
-
-        for level, col in find_countours(F, R, Z, levels=levels):
-            surf = []
-            if len(col) == 0:
-                points = []
-                for pts in minimize_filter(lambda p: field(*p)-level, *field.mesh.bbox, tolerance=field.mesh.dx):
-                    points.append(pts)
-
-                points.sort(key=lambda p: (p[0] - r0)**2 + (p[1] - z0)**2)
-
-                surf.append(Point(*points[0]))
+    def find_surface(self, psi: Union[float, Sequence] = None, o_point: OXPoint = True) -> Iterator[Tuple[float, GeoObject]]:
+        """
+            if o_point is not None:
+                only return  closed surface  enclosed o-point
+                if closed surface does not exists, return None
+                number of surface == len(psi)
             else:
-                for segment in col:
-                    if isinstance(segment, np.ndarray):
-                        theta = np.arctan2(segment[:, 0]-r0, segment[:, 1]-z0)
+                do not guarantee the number of surface == len(psi)
+                return all surface ,
+        """
 
-                        if (max(theta)-min(theta)) > 0.99*TWOPI or not only_closed:
-                            surf.append(CubicSplineCurve(segment))
-                        elif np.isclose(theta[0], theta[-1]):
-                            points = segment[:-1]
-                            theta = theta[:-1]
-                            # prepare mesh, u must be strictly increased
-                            p_min = np.argmin(theta)
-                            p_max = np.argmax(theta)
+        if not isinstance(psi, (collections.abc.Sequence, np.ndarray)):
+            psi = [psi]
 
-                            if p_min == 0:
-                                pass
-                            elif p_min == p_max+1:
+        if o_point is True:
+            opts, _ = self.critical_points
+            if len(opts) == 0:
+                raise RuntimeError(f"O-point is not defined!")
+            o_point = opts[0]
+
+        R, Z = self._psirz.mesh.xy
+
+        F = np.asarray(self._psirz)
+
+        if o_point is None or o_point is None:
+            for level, col in find_countours(F, R, Z, levels=psi):
+                for points in col:
+                    yield level, CubicSplineCurve(points)
+        else:
+            for level, col in find_countours(F, R, Z, levels=psi):
+                surf = None
+                for points in col:
+                    theta = np.arctan2(points[:, 0]-o_point.r, points[:, 1]-o_point.z)
+
+                    if 1.0 - (max(theta)-min(theta))/TWOPI > 2.0/len(theta):  # open or do not contain o-point
+                        continue
+                    if np.isclose(theta[0], theta[-1]):
+                        # prepare mesh, u must be strictly increased
+                        theta = theta[:-1]
+                        points = points[:-1]
+                        p_min = np.argmin(theta)
+                        p_max = np.argmax(theta)
+
+                        if p_min > 0:
+                            if p_min == p_max+1:
                                 theta = np.roll(theta, -p_min)
                                 points = np.roll(points, -p_min, axis=0)
                             elif p_min == p_max-1:
@@ -215,110 +210,32 @@ class MagneticCoordSystem(Dict):
                             theta = np.hstack([theta, [theta[0]+TWOPI]])
                             theta = (theta-theta.min())/(theta.max()-theta.min())
                             points = np.vstack([points, points[:1]])
-                            surf.append(CubicSplineCurve(points, [theta]))
 
+                            self._mesh = [theta]
+                            self._points = points
+                        surf = CubicSplineCurve(points, [theta])
+                    else:  # boundary separatrix
+                        surf = CubicSplineCurve(points)
+                    yield level, surf
+                    break
+
+                if surf is None:
+                    if np.isclose(level, o_point.psi):
+                        yield level, Point(o_point.r, o_point.z)
                     else:
-                        raise RuntimeError(type(col))
+                        raise RuntimeError(f"{level},{o_point.psi},{(max(theta),min(theta))}")
 
-            if not only_closed:
-                pass
-            elif len(surf) == 1:
-                surf = surf[0]
-            else:
-                logger.warning(f"Found {len(surf)} closed surface. Maybe something wrong!")
+                    # idx = [i for i, pt in points if np.allclose(pt, x_pt)]
+                    # if len(idx) != 2:
+                    #     logger.debug(f"irregular magnetic surface! ")
+                    #     continue
+                    # theta = theta[idx[0]:idx[1]]
+                    # points = points[idx[0]:idx[1]]
 
-            surf_collection.append(surf)
+    def find_surface_by_psi_norm(self, psi_norm: Union[float, Sequence], *args,   **kwargs) -> Iterator[Tuple[float, GeoObject]]:
+        yield from self.find_surface(psi_norm*(self.psi_boundary-self.psi_axis)+self.psi_axis, *args,  **kwargs)
 
-        if single_line:
-            return surf_collection[0]
-        else:
-            return surf_collection
-
-    @deprecated
-    def find_surface_old(self, levels: Union[float, Sequence] = None, only_closed=True, field: Field = None, ntheta=256) -> Union[Curve, Sequence[Curve]]:
-
-        single_line = False
-        if not isinstance(levels, (collections.abc.Sequence, np.ndarray)):
-            levels = np.asarray([levels])
-            single_line = True
-
-        o_points, x_points = self.critical_points
-
-        if len(o_points) == 0:
-            raise RuntimeError(f"Can not find o-point!")
-        else:
-            R0 = o_points[0].r
-            Z0 = o_points[0].z
-            psi0 = o_points[0].psi
-
-        if len(x_points) == 0:
-            R1 = self._psirz.coordinates.bbox[1][0]
-            Z1 = Z0
-            psi1 = 0.0
-            theta0 = 0
-        else:
-            R1 = x_points[0].r
-            Z1 = x_points[0].z
-            psi1 = x_points[0].psi
-            theta0 = np.arctan2(Z1 - Z0, R1 - R0)
-        Rm = np.sqrt((R1-R0)**2+(Z1-Z0)**2)
-
-        if isinstance(ntheta, int):
-            v = np.linspace(0, 1.0)
-        else:
-            v = ntheta
-        theta = v*TWOPI  # +theta0
-
-        surf_collection = []
-        for psi_val in levels:
-            pts = []
-            for theta_val in theta:
-                r0 = R0
-                z0 = Z0
-                r1 = R0+Rm * np.cos(theta_val)
-                z1 = Z0+Rm * np.sin(theta_val)
-                # logger.debug((r1, z1, psi_val))
-                if not np.isclose(self.psirz(r1, z1), psi_val):
-                    if not ENABLE_JAX:
-                        def func(r): return (float(self.psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1)) - psi_val)
-
-                        try:
-                            sol = root_scalar(func,  bracket=[0, 1], method='brentq')
-                            r = sol.root
-                        except ValueError as error:
-                            raise ValueError(f"Find root fialed! {error} {psi_val}")
-
-                        if not sol.converged:
-                            raise ValueError(f"Find root fialed!")
-                    else:
-                        #  FIXME: JAX version is not completed!
-                        def func(r): return (float(self.psirz((1.0-r)*r0+r*r1, (1.0-r)*z0+r*z1)) - psi_val)**2
-                        sol = minimize(func, np.asarray([0.5]), method='BFGS')
-                        r = sol.x[0]
-
-                    r1 = (1.0-r)*r0+r*r1
-                    z1 = (1.0-r)*z0+r*z1
-
-                pts.append([r1, z1])
-            pts = np.asarray(pts)
-            surf_collection.append(CubicSplineCurve(pts))
-
-        if single_line:
-            return surf_collection[0]
-        else:
-            return surf_collection
-
-    def find_surface(self, *args, **kwargs) -> Union[Curve, Sequence[Curve]]:
-        return self.find_surface_sp(*args, **kwargs)
-
-    def find_surface_psi_norm(self, psi_norm: Union[float, Sequence], *args, field=None, **kwargs) -> Union[Curve, Sequence[Curve]]:
-        opoints, xpoints = self.critical_points
-        psi_axis = opoints[0].psi
-        psi_bdry = xpoints[0].psi
-
-        return self.find_surface(np.asarray(psi_norm)*(psi_bdry-psi_axis)+psi_axis, *args, field=field or self._psirz, **kwargs)
-
-    def create_mesh(self, u=None, v=None, *args, primary='psi', type_index=None):
+    def create_mesh(self, u=None, v=None, *args, primary='psi', type_index=None) -> Mesh:
 
         opoints, xpoints = self.critical_points
 
@@ -352,134 +269,85 @@ class MagneticCoordSystem(Dict):
 
         levels = (f_bdry-f_axis)*u+f_axis
 
-        surf = self.find_surface(levels, field=field, only_closed=True)
-
-        mesh = CurvilinearMesh(surf, [u, v], cycle=[False, True])
+        mesh = CurvilinearMesh([surf for _, surf in self.find_surface(levels, o_point=True)],
+                               [u, v], cycle=[False, True])
 
         logger.debug(f"Create mesh: type index={type_index} primary={primary}  ")
 
         return mesh
 
-    @deprecated
-    def create_mesh_old(self, u, v, *args, type_index=None):
-        logger.debug(f"create mesh! type index={type_index} START")
-
-        type_index = type_index or self.grid_type.index
-        if type_index == 13:
-            rz = np.asarray([[r, z] for r, z in self.flux_surface_map(u, v[:-1])]).reshape(len(u), len(v)-1, 2)
-            rz = np.hstack((rz, rz[:, :1, :]))
-            mesh = CurvilinearMesh(rz, [u, v], cycle=[False, True])
-        else:
-            raise NotImplementedError(f"TODO: reconstruct mesh {type_index}")
-        logger.debug(f"create mesh! type index={type_index} DONE")
-
-        return mesh
-
-    @deprecated
-    def create_surface(self, psi_norm, v=None):
-        if isinstance(psi_norm, CubicSplineCurve):
-            return psi_norm
-        elif psi_norm is None:
-            return [self.create_surface(p) for p in self.psi_norm]
-        elif isinstance(psi_norm, collections.abc.MutableSequence):
-            return [self.create_surface(p) for p in psi_norm]
-        elif isinstance(psi_norm, int):
-            psi_norm = self.psi_norm[psi_norm]
-
-        if np.abs(psi_norm) <= EPS:
-            o, _ = self.critical_points
-            return Point(*o)
-
-        xy = np.asarray([[r, z] for r, z in self.flux_surface_map(psi_norm,  v[:-1])])
-        xy = np.vstack((xy, xy[:1, :]))
-        return CubicSplineCurve(xy, is_closed=True)
-
     @cached_property
-    def surface_mesh(self):
+    def surface_mesh(self) -> Mesh:
         return self.create_mesh(*self._uv)
 
     ###############################
     # 2-D
 
-    def br(self, r, z):
-        return -self.psirz(r,  z, dy=1)/r
-
-    def bz(self, r, z):
-        return self.psirz(r, z, dx=1)/r
-
-    def bpol(self, r, z):
-        return np.sqrt(self.br(r, z)**2+self.bz(r, z)**2)
-
-    def surface_integrate2(self, fun, *args, **kwargs):
-        return np.asarray([surf.integrate(lambda r, z: fun(r, z, *args, **kwargs)/self.bpol(r, z)) * (2*constants.pi) for surf in self.surface_mesh])
-
     @cached_property
-    def mesh(self):
+    def mesh(self) -> Mesh:
         return self.create_mesh(self._uv[0],  self._uv[1], type_index=13)
 
     @property
     def r(self) -> np.ndarray:
-
         return self.mesh.xy[:, :, 0]
 
     @property
     def z(self) -> np.ndarray:
         return self.mesh.xy[:, :, 1]
 
-    def psirz(self, r, z, *args, **kwargs) -> np.ndarray:
+    def psirz(self, r: _TCoord, z: _TCoord, *args, **kwargs) -> _TCoord:
         return self._psirz(r, z, *args, **kwargs)
 
-    @cached_property
-    def dl(self) -> np.ndarray:
-        v = self.mesh.uv[1]
-        d = [np.asarray(self.mesh.axis(idx, axis=0).dl(v)) for idx in range(self.mesh.shape[0])]
-        return np.vstack(d)
+    def psi_norm_rz(self, r: _TCoord, z: _TCoord, *args, **kwargs) -> _TCoord:
+        return (self.psirz(r, z, *args, **kwargs)-self.psi_axis)/(self.psi_boundary-self.psi_axis)
 
-    @cached_property
-    def Br(self) -> np.ndarray:
-        return -self.psirz(self.r, self.z, dy=1) / self.r
+    def Br(self, r: _TCoord, z: _TCoord) -> _TCoord:
+        return -self.psirz(r, z, dy=1) / r
 
-    @cached_property
-    def Bz(self) -> np.ndarray:
-        return self.psirz(self.r, self.z, dx=1) / self.r
+    def Bz(self, r: _TCoord, z: _TCoord) -> _TCoord:
+        return self.psirz(r,  z, dx=1) / r
 
-    @cached_property
-    def Btor(self) -> np.ndarray:
-        return 1.0 / self.r * self.fpol.__array__().reshape(self.mesh.shape[0], 1)
+    def Btor(self, r: _TCoord, z: _TCoord) -> _TCoord:
+        return 1.0 / r * self.fpol(self.psi_norm_rz(r, z))
 
-    @cached_property
-    def Bpol(self) -> np.ndarray:
+    def Bpol(self, r: _TCoord, z: _TCoord) -> _TCoord:
         r"""
             .. math:: B_{pol} =   R / |\nabla \psi|
         """
-        return np.sqrt(self.Br**2+self.Bz**2)
+        return np.sqrt(self.Br(r, z)**2+self.Bz(r, z)**2)
 
-    @cached_property
-    def B2(self) -> np.ndarray:
-        return (self.Br**2+self.Bz**2 + self.Btor**2)
+    def B2(self, r: _TCoord, z: _TCoord) -> _TCoord:
+        return (self.Br(r, z)**2+self.Bz(r, z)**2 + self.Btor(r, z)**2)
 
-    @cached_property
-    def grad_psi2(self) -> np.ndarray:
-        return self.psirz(self.r, self.z, dx=1)**2+self.psirz(self.r, self.z, dy=1)**2
+    def grad_psi2(self,  r: _TCoord, z: _TCoord) -> _TCoord:
+        return self.psirz(r, z, dx=1)**2+self.psirz(r, z, dy=1)**2
 
-    def surface_integrate(self, alpha=None, *args, **kwargs):
+    # def surface_integral(self, func=None,   /, **kwargs) -> np.ndarray:
+    #     r"""
+    #         .. math:: \left\langle \alpha\right\rangle \equiv\frac{2\pi}{V^{\prime}}\oint\alpha\frac{Rdl}{\left|\nabla\psi\right|}
+    #     """
+    #     if func is None:
+    #         def func(r, z, _bpol=self.Bpol):
+    #             return 1.0/_bpol(r, z)
+    #     else:
+    #         def func(r, z, _bpol=self.Bpol, _f=func):
+    #             return _f(r, z)/_bpol(r, z)
+    #     return np.asarray([axis.integral(func) for axis in self.mesh.axis_iter()]) * (TWOPI)
+
+    def surface_average(self,  func=None,   /, **kwargs) -> np.ndarray:
         r"""
             .. math:: \left\langle \alpha\right\rangle \equiv\frac{2\pi}{V^{\prime}}\oint\alpha\frac{Rdl}{\left|\nabla\psi\right|}
         """
-        if alpha is None:
-            alpha = 1/self.Bpol
+        if func is None:
+            def func(r, z, _bpol=self.Bpol):
+                return 1.0/_bpol(r, z)
         else:
-            alpha = np.asarray(alpha)/self.Bpol
+            def func(r, z, _bpol=self.Bpol, _f=func):
+                return _f(r, z)/_bpol(r, z)
 
-        alpha = 0.5*(np.roll(alpha, 1, axis=1)+alpha)
+        return np.asarray([axis.average(func) for axis in self.mesh.axis_iter()])
 
-        return np.sum(alpha * self.dl, axis=1) * (TWOPI)
-
-    def surface_average(self,  *args, **kwargs):
-        return self.surface_integrate(*args, **kwargs) / self.dvolume_dpsi
-
-    def bbox(self, s=None):
-        rz = np.asarray([(s.bbox[0]+self.bbox[1])*0.5 for s in self.surface_mesh]).T
+        # return self.surface_integral(*args, **kwargs) / self.dvolume_dpsi
 
     @dataclass
     class ShapePropety:
@@ -505,13 +373,23 @@ class MagneticCoordSystem(Dict):
         r_outboard: np.ndarray  # r_outboard,
 
     def shape_property(self, psi_norm: Union[float, Sequence[float]] = None) -> ShapePropety:
-        def shape_box(s: Curve):
-            r, z = s.xy
-            (rmin, rmax), (zmin, zmax) = s.bbox
-            rzmin = r[np.argmin(z)]
-            rzmax = r[np.argmax(z)]
-            r_inboard = s.point(0.5)[0]
-            r_outboard = s.point(0)[0]
+        def shape_box(s: GeoObject):
+            r, z = s.xyz
+            if isinstance(s, Point):
+                rmin = r
+                rmax = r
+                zmin = z
+                zmax = z
+                r_inboard = r
+                r_outboard = r
+                rzmin = r
+                rzmax = r
+            else:
+                (rmin, rmax), (zmin, zmax) = s.bbox
+                rzmin = r[np.argmin(z)]
+                rzmax = r[np.argmax(z)]
+                r_inboard = s.points(0.5)[0]
+                r_outboard = s.points(0)[0]
             return rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard
 
         if psi_norm is None:
@@ -519,7 +397,7 @@ class MagneticCoordSystem(Dict):
         elif not isinstance(psi_norm, (np.ndarray, collections.abc.MutableSequence)):
             psi_norm = [psi_norm]
 
-        sbox = np.asarray([[*shape_box(s)] for s in self.find_surface_psi_norm(psi_norm)])
+        sbox = np.asarray([[*shape_box(s)] for _, s in self.find_surface_by_psi_norm(psi_norm)])
 
         if sbox.shape[0] == 1:
             rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard = sbox[0]
@@ -564,9 +442,9 @@ class MagneticCoordSystem(Dict):
             "b_field_tor": NotImplemented
         })
 
-    @cached_property
-    def boundary(self) -> Curve:
-        return self.find_surface(self.psi_boundary)
+    # @cached_property
+    # def boundary(self) -> Curve:
+    #     return next(self.find_surface(self.psi_boundary, only_closed=True))
 
     @cached_property
     def cocos_flag(self) -> int:
@@ -598,14 +476,14 @@ class MagneticCoordSystem(Dict):
     def fpol(self) -> np.ndarray:
         """Diamagnetic function (F=R B_Phi)  [T.m]."""
         fpol2 = self._ffprime.antiderivative(self.psi_norm) * (2 * (self.psi_boundary - self.psi_axis))
-        return np.asarray(np.sqrt(fpol2 - fpol2[-1] + self._fvac**2))
+        return np.sqrt(fpol2 - fpol2[-1] + self._fvac**2)
 
     @cached_property
     def plasma_current(self) -> np.ndarray:
         """Toroidal current driven inside the flux surface.
           .. math:: I_{pl}\equiv\int_{S_{\zeta}}\mathbf{j}\cdot dS_{\zeta}=\frac{\text{gm2}}{4\pi^{2}\mu_{0}}\frac{\partial V}{\partial\psi}\left(\frac{\partial\psi}{\partial\rho}\right)^{2}
          {dynamic}[A]"""
-        return np.asarray(self.surface_average(self.grad_psi2 / (self.r**2))*self.dvolume_dpsi/constants.mu_0)
+        return np.asarray(self.surface_average(lambda r, z: self.grad_psi2(r, z) / (r**2))*self.dvolume_dpsi / constants.mu_0)
 
     @cached_property
     def j_parallel(self) -> np.ndarray:
@@ -619,11 +497,11 @@ class MagneticCoordSystem(Dict):
 
     @cached_property
     def psi(self) -> np.ndarray:
-        return np.asarray(self.psi_norm * (self.psi_boundary-self.psi_axis) + self.psi_axis)
+        return self.psi_norm * (self.psi_boundary-self.psi_axis) + self.psi_axis
 
     @cached_property
     def dq_dpsi(self) -> np.ndarray:
-        return np.asarray(self.fpol*self.surface_integrate(1.0/(self.r**2)) * ((self.psi_boundary-self.psi_axis) / (TWOPI)))
+        return self.fpol*self.gm1*self.dvolume_dpsi / (TWOPI)
 
     @cached_property
     def q(self) -> np.ndarray:
@@ -632,7 +510,7 @@ class MagneticCoordSystem(Dict):
             (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)[-].
             .. math:: q(\psi) =\frac{d\Phi}{d\psi} =\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
         """
-        return self.fpol * self.dvolume_dpsi*self.surface_average(1.0/(self.r**2))/(TWOPI**2)
+        return self.fpol * self.dvolume_dpsi*self.gm1/(TWOPI**2)
 
     @cached_property
     def magnetic_shear(self) -> np.ndarray:
@@ -650,16 +528,16 @@ class MagneticCoordSystem(Dict):
             .. math::
                 \Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi
         """
-        return Function(self.psi_norm, self.dq_dpsi).antiderivative(self.psi_norm)
+        return Function(self.psi_norm, self.dq_dpsi).antiderivative(self.psi_norm) * (self.psi_boundary-self.psi_axis)
 
     @cached_property
     def rho_tor(self) -> np.ndarray:
         """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0[m]"""
-        return np.asarray(np.sqrt(self.phi/(constants.pi * abs(self._vacuum_toroidal_field.b0))))
+        return np.sqrt(self.phi/(constants.pi * abs(self._vacuum_toroidal_field.b0)))
 
     @cached_property
     def rho_tor_norm(self) -> np.ndarray:
-        return np.asarray(np.sqrt(self.phi/self.phi[-1]))
+        return np.sqrt(self.phi/self.phi[-1])
 
     @cached_property
     def drho_tor_dpsi(self) -> np.ndarray:
@@ -669,8 +547,8 @@ class MagneticCoordSystem(Dict):
                                         =\frac{1}{2\sqrt{\pi B_{0}\Phi_{tor}}}\frac{d\Phi_{tor}}{d\psi} \
                                         =\frac{q}{2\pi B_{0}\rho_{tor}}
         """
-
-        return Function(self.psi_norm[1:],  1.0/self.dpsi_drho_tor[1:])(self.psi_norm)
+        d = self.dphi_dpsi[1:]/self.rho_tor[1:]/(self._vacuum_toroidal_field.b0)
+        return Function(self.psi_norm[1:], d)(self.psi_norm)
 
     @cached_property
     def dpsi_drho_tor(self) -> np.ndarray:
@@ -678,6 +556,10 @@ class MagneticCoordSystem(Dict):
             Derivative of Psi with respect to Rho_Tor[Wb/m].
         """
         return (self._vacuum_toroidal_field.b0)*self.rho_tor/self.dphi_dpsi
+
+    @cached_property
+    def dphi_dvolume(self) -> np.ndarray:
+        return self.gm1 * self.fpol / TWOPI
 
     @cached_property
     def dphi_dpsi(self) -> np.ndarray:
@@ -689,7 +571,7 @@ class MagneticCoordSystem(Dict):
             .. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
             .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
         """
-        return self.surface_integrate()
+        return np.asarray([axis.length * TWOPI for axis in self.mesh.axis_iter()])
 
     @cached_property
     def volume(self) -> np.ndarray:
@@ -707,7 +589,7 @@ class MagneticCoordSystem(Dict):
             Flux surface averaged 1/R ^ 2  [m ^ -2]
             .. math: : \left\langle\frac{1}{R^{2}}\right\rangle
         """
-        return self.surface_average(1.0/(self.r**2))
+        return self.surface_average(lambda r, z: 1.0/(r**2))
 
     @cached_property
     def gm2(self) -> np.ndarray:
@@ -715,8 +597,7 @@ class MagneticCoordSystem(Dict):
             Flux surface averaged .. math: : \left | \nabla \rho_{tor}\right|^2/R^2  [m^-2]
             .. math:: \left\langle\left |\frac{\nabla\rho}{R}\right|^{2}\right\rangle
         """
-        return Function(self.psi_norm[1:], self.surface_average(self.grad_psi2/(self.r)**2)[1:] / (self.dpsi_drho_tor[1:]**2))(self.psi_norm)
-        # return np.ndarray(self._grid.psi_norm, np.ndarray(self._grid.psi_norm[1:], d[1:]))
+        return self.surface_average(lambda r, z: self.grad_psi2(r, z)/(r**2)) * (self.drho_tor_dpsi ** 2)
 
     @cached_property
     def gm3(self) -> np.ndarray:
@@ -724,7 +605,7 @@ class MagneticCoordSystem(Dict):
             Flux surface averaged .. math: : \left | \nabla \rho_{tor}\right|^2  [-]
             .. math:: {\left\langle \left |\nabla\rho\right|^{2}\right\rangle}
         """
-        return Function(self.psi_norm[1:], self.surface_average(self.grad_psi2)[1:] / (self.dpsi_drho_tor[1:]**2))(self.psi_norm)
+        return self.surface_average(self.grad_psi2) * (self.drho_tor_dpsi ** 2)
 
     @cached_property
     def gm4(self) -> np.ndarray:
@@ -732,7 +613,7 @@ class MagneticCoordSystem(Dict):
             Flux surface averaged 1/B ^ 2  [T ^ -2]
             .. math: : \left\langle \frac{1}{B^{2}}\right\rangle
         """
-        return self.surface_average(1.0/self.B2)
+        return self.surface_average(lambda r, z: 1.0/self.B2(r, z))
 
     @cached_property
     def gm5(self) -> np.ndarray:
@@ -740,7 +621,7 @@ class MagneticCoordSystem(Dict):
             Flux surface averaged B ^ 2  [T ^ 2]
             .. math: : \left\langle B^{2}\right\rangle
         """
-        return self.surface_average(self.B2)
+        return self.surface_average(lambda r, z: self.B2(r, z))
 
     @cached_property
     def gm6(self) -> np.ndarray:
@@ -748,7 +629,7 @@ class MagneticCoordSystem(Dict):
             Flux surface averaged  .. math: : \left | \nabla \rho_{tor}\right|^2/B^2  [T^-2]
             .. math:: \left\langle \frac{\left |\nabla\rho\right|^{2}}{B^{2}}\right\rangle
         """
-        return Function(self.psi_norm[1:], self.surface_average(self.grad_psi2/self.B2)[1:]/(self.dpsi_drho_tor[1:]**2))(self.psi_norm)
+        return self.surface_average(lambda r, z: self.grad_psi2(r, z)/self.B2(r, z)) * (self.drho_tor_dpsi ** 2)
 
         # return np.ndarray(self._grid.psi_norm, self.surface_average(self.norm_grad_rho_tor**2/self.B2))
 
@@ -758,7 +639,7 @@ class MagneticCoordSystem(Dict):
             Flux surface averaged .. math:: \left | \nabla \rho_{tor}\right |  [-]
             .. math: : \left\langle \left |\nabla\rho\right |\right\rangle
         """
-        return Function(self.psi_norm[1:], self.surface_average(np.sqrt(self.grad_psi2))[1:]/self.dpsi_drho_tor[1:])(self.psi_norm)
+        return self.surface_average(lambda r, z: np.sqrt(self.grad_psi2(r, z))) * self.drho_tor_dpsi
         # d = self.surface_average(self.norm_grad_rho_tor)
         # return np.ndarray(self._grid.psi_norm, np.ndarray(self._grid.psi_norm[1:], d[1:]))
 
@@ -768,7 +649,7 @@ class MagneticCoordSystem(Dict):
             Flux surface averaged R[m]
             .. math: : \left\langle R\right\rangle
         """
-        return self.surface_average(self.r)
+        return self.surface_average(lambda r, z: r)
 
     @cached_property
     def gm9(self) -> np.ndarray:
@@ -776,7 +657,7 @@ class MagneticCoordSystem(Dict):
             Flux surface averaged 1/R[m ^ -1]
             .. math: : \left\langle \frac{1}{R}\right\rangle
         """
-        return self.surface_average(1.0/self.r)
+        return self.surface_average(lambda r, z: 1.0 / r)
 
     def plot_contour(self, axis, levels=16):
         import matplotlib.pyplot as plt
