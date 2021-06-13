@@ -60,24 +60,49 @@ if __name__ == "__main__":
 
     if True:
         rgrid = eq_profile._coord
-        logger.debug(rgrid.rho_tor[:5])
+
         plot_profiles(
             [
+
+                [
+                    (Function(baseline["xq"].values, baseline["q"].values), r"astra",  r"$q [-]$", {"marker": "+"}),
+                    (Function(bs_r_nrom, baseline["q"].values), r"astra",  r"$q [-]$", {"marker": "+"}),
+                    (rgrid.q,  r"$fytok$", r"$[Wb]$"),
+                    (rgrid.dphi_dpsi/TWOPI,  r"$\frac{d\phi}{2\pi \psi}$", r"$[Wb]$"),
+
+                ],
+                [
+                    (Function(bs_r_nrom, baseline["rho"].values),       r"astra", r"$\rho_{tor}[m]$",  {"marker": "+"}),
+                    (rgrid.rho_tor,  r"$\rho$", r"$[m]$"),
+
+                ],
+                [
+                    (Function(bs_r_nrom, baseline["x"].values),           r"astra",
+                     r"$\frac{\rho_{tor}}{\rho_{tor,bdry}}$", {"marker": "+"}),
+                    (rgrid.rho_tor_norm,  r"$\bar{\rho}$", r"$[-]$"),
+
+                ],
+
+                [
+                    (Function(bs_r_nrom, 4*(constants.pi**2)*rgrid.vacuum_toroidal_field.r0 * baseline["rho"].values),
+                     r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho$",  {"marker": "+"}),
+                    (rgrid.dvolume_drho_tor, r"$dV/d\rho_{tor}$", r"$[m^2]$"),
+
+                ],
+                (rgrid.dvolume_dpsi, r"$\frac{dV}{d\psi}$"),
+
+                [
+                    # (Function(eq_profile.get('psi_norm', None), eq_profile.get('fpol', None)), "eq")
+                    (rgrid.fpol,  r"$F_{pol}$", r"$[Wb]$"),
+                ],
                 (rgrid.psi,  r"$\psi$", r"$[Wb]$"),
                 (rgrid.phi,  r"$\phi$", r"$[Wb]$"),
                 (rgrid.psi_norm,  r"$\bar{\psi}$", r"$[-]$"),
-                (rgrid.rho_tor_norm,  r"$\bar{\rho}$", r"$[-]$"),
-                (rgrid.rho_tor,  r"$\rho$", r"$[m]$"),
-                (rgrid.drho_tor_dpsi,  r"$d\rho/d\psi$"),
 
-                (eq_profile.dvolume_dpsi(rgrid.psi_norm),  r"$dV/d\psi$", r"$[m]$"),
-                [
-                    (4*(constants.pi**2)*rgrid.vacuum_toroidal_field.r0*rgrid.rho_tor,
-                        r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho$"),
+                (rgrid.dpsi_drho_tor, r"$\frac{dV}{d\psi}\cdot\frac{d\psi}{d\rho_{tor}}$"),
 
-                    (rgrid.dvolume_drho_tor, r"$dV/d\rho_{tor}$", r"$[m^2]$")
+                # (rgrid.drho_tor_dpsi,  r"$d\rho/d\psi$"),
 
-                ],
 
                 (rgrid.gm1,                                             r"$gm1=\left<\frac{1}{R^2}\right>$"),
                 (rgrid.gm2,                    r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
@@ -90,14 +115,13 @@ if __name__ == "__main__":
                 # (rgrid.dvolume_drho_tor,                                              r"$\frac{dV}{d\rho}$"),
                 (rgrid.dpsi_drho_tor,                                        r"$\frac{d\psi}{d\rho_{tor}}$"),
             ],
-            # x_axis=(rgrid.rho_tor_norm,      r"$\bar{\rho_{tor}}$"),
-            x_axis=(rgrid.psi_norm,      r"$\bar{\psi}$"),
+            x_axis=(rgrid.rho_tor_norm,      r"$\bar{\rho_{tor}}$"),
+            # x_axis=(rgrid.psi_norm,      r"$\bar{\psi}$"),
 
             title="Equlibrium",
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_coord.svg", transparent=True)
 
-    if True:
-
+    if False:
         plot_profiles(
             [
                 # (eq_profile.dpressure_dpsi,                                                       r"$dP/d\psi$"),

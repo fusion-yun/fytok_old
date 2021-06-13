@@ -270,7 +270,7 @@ class EquilibriumProfiles1D(Profiles):
     def ffprime(self) -> Function:
         """	Derivative of F w.r.t. Psi, multiplied with F[T ^ 2.m ^ 2/Wb]. """
         # return self._parent._ffprime  # Function(self.psi_norm, self._coord.ffprime(self.psi_norm))
-        return self._coord._ffprime
+        return self._coord.ffprime
 
     @sp_property
     def f_df_dpsi(self) -> Function:
@@ -796,7 +796,6 @@ class EquilibriumTimeSlice(Dict):
 
         ffprime = self.get("profiles_1d.f_df_dpsi", None)
         pprime = self.get("profiles_1d.dpressure_dpsi", None)
-
         if isinstance(ffprime, Function):
             pass
         elif isinstance(ffprime, np.ndarray) and ffprime.shape == p_psi_norm.shape:
@@ -805,7 +804,7 @@ class EquilibriumTimeSlice(Dict):
             raise TypeError(f"{type(ffprime)}")
 
         if isinstance(pprime, Function):
-            self._ffprime = pprime
+            pass
         elif isinstance(pprime, np.ndarray) and pprime.shape == p_psi_norm.shape:
             pprime = Function(p_psi_norm, pprime)
         else:
