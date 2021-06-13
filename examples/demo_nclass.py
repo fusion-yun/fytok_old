@@ -44,7 +44,7 @@ if __name__ == "__main__":
         tok.equilibrium["time_slice"] = {
             "profiles_1d": eqdsk.entry.find("profiles_1d"),
             "profiles_2d": eqdsk.entry.find("profiles_2d"),
-            "coordinate_system": {"psi_norm": np.linspace(0.0001, 0.995, 128)}
+            "coordinate_system": {"psi_norm": {"axis": 0.0001, "boundary": 0.995, "npoints": 128}}
         }
 
         sp_figure(tok,
@@ -52,6 +52,7 @@ if __name__ == "__main__":
                   pf_active={"facecolor": 'red'},
                   equilibrium={
                       "contour": [0, 2],
+                      "boundary": True,
                       "separatrix": True,
                       #   "scalar_field": [("psirz", {"levels": 16, "linewidths": 0.1}), ],
                   }
@@ -65,26 +66,26 @@ if __name__ == "__main__":
             [
 
                 [
-                    (Function(baseline["xq"].values, baseline["q"].values), r"astra",  r"$q [-]$", {"marker": "+"}),
-                    (Function(bs_r_nrom, baseline["q"].values), r"astra",  r"$q [-]$", {"marker": "+"}),
+                    (Function(baseline["Fp"].values, baseline["q"].values), r"astra",  r"$q [-]$", {"marker": "+"}),
+                    (Function(bs_psi, baseline["q"].values), r"astra",  r"$q [-]$", {"marker": "+"}),
                     (rgrid.q,  r"$fytok$", r"$[Wb]$"),
                     (rgrid.dphi_dpsi/TWOPI,  r"$\frac{d\phi}{2\pi d\psi}$", r"$[Wb]$"),
 
                 ],
                 [
-                    (Function(bs_r_nrom, baseline["rho"].values),       r"astra", r"$\rho_{tor}[m]$",  {"marker": "+"}),
+                    (Function(bs_psi, baseline["rho"].values),       r"astra", r"$\rho_{tor}[m]$",  {"marker": "+"}),
                     (rgrid.rho_tor,  r"$\rho$", r"$[m]$"),
 
                 ],
                 [
-                    (Function(bs_r_nrom, baseline["x"].values),           r"astra",
+                    (Function(bs_psi, baseline["x"].values),           r"astra",
                      r"$\frac{\rho_{tor}}{\rho_{tor,bdry}}$", {"marker": "+"}),
                     (rgrid.rho_tor_norm,  r"$\bar{\rho}$", r"$[-]$"),
 
                 ],
 
                 [
-                    (Function(bs_r_nrom, 4*(constants.pi**2)*rgrid.vacuum_toroidal_field.r0 * baseline["rho"].values),
+                    (Function(bs_psi, 4*(constants.pi**2)*rgrid.vacuum_toroidal_field.r0 * baseline["rho"].values),
                      r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho$",  {"marker": "+"}),
                     (rgrid.dvolume_drho_tor, r"$dV/d\rho_{tor}$", r"$[m^2]$"),
 
@@ -114,8 +115,8 @@ if __name__ == "__main__":
                 (rgrid.drho_tor_dpsi,                                        r"$\frac{d\rho_{tor}}{d\psi}$"),
                 (rgrid.dpsi_drho_tor,                                        r"$\frac{d\psi}{d\rho_{tor}}$"),
             ],
-            x_axis=(rgrid.rho_tor_norm,      r"$\bar{\rho}_{tor}$"),
-            # x_axis=(rgrid.psi_norm,      r"$\bar{\psi}$"),
+            # x_axis=(rgrid.rho_tor_norm,      r"$\bar{\rho}_{tor}$"),
+            x_axis=(rgrid.psi_norm,      r"$\bar{\psi}$"),
 
             title="Equlibrium",
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_coord.svg", transparent=True)
@@ -265,7 +266,7 @@ if __name__ == "__main__":
         Cped = 0.2
         Ccore = 0.4
         chi = PiecewiseFunction([0, r_ped, 1.0],  [lambda x: Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
-        chi_e = PiecewiseFunction([0, r_ped, 1.0], [lambda x:0.5*chi(x), lambda x: chi(x)])
+        chi_e = PiecewiseFunction([0, r_ped, 1.0], [lambda x:0.5*chi(x), lambda x: 0.8*Cped])
 
         conductivity_parallel = Function(bs_r_nrom, baseline["Joh"].values*1.0e6 / baseline["U"].values *
                                          (2.0*constants.pi * R0))
@@ -378,7 +379,7 @@ if __name__ == "__main__":
     ###################################################################################################
     if False:  # CoreSources
 
-        ne_src = Function(rho_tor_norm, lambda x:  5e20 * np.exp(15.0*(x**2-1.0)))
+        ne_src = Function(rho_tor_norm, lambda x:  1e19 * np.exp(15.0*(x**2-1.0)))
 
         tok.core_sources["source"] = [
             {"code": {"name": "dummy"},
@@ -410,9 +411,10 @@ if __name__ == "__main__":
         plot_profiles(
             [
                 [
-                    (Function(bs_r_nrom, baseline["Jtot"].values),  "astra", r"$J_{\parallel} [MA\cdot m^{-2}]$"),
+                    (Function(bs_r_nrom, baseline["Jtot"].values*1e6),  "astra",
+                     r"$J_{\parallel} [A\cdot m^{-2}]$", {"marker": "+"}),
                     (tok.core_sources.source[{"code.name": "dummy"}].profiles_1d.j_parallel,
-                     "dummy", r"$J_{\parallel} [MA\cdot m^{-2}]$"),
+                     "dummy", r"$J_{\parallel} [A\cdot m^{-2}]$"),
                     (core_source_1d.j_parallel,                     "fytok", r"$J_{\parallel} [MA\cdot m^{-2}]$"),
                 ],
                 # [
@@ -487,21 +489,23 @@ if __name__ == "__main__":
 
         core_profile = tok.core_profiles.profiles_1d
 
-        plot_profiles(
-            [
-                [
-                    (core_profile.electrons["diff"],  r"D"),
-                    (np.abs(core_profile.electrons["conv"]),  r"$\left|V\right|$"),
-                ],
-            ],
-            # x_axis=(rho_tor_norm,                             r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-            x_axis=(core_profile.electrons.temperature.x_axis,  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-            title="Result of TransportSolver",
-            # index_slice=slice(0, 200, 1),
-            grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile_result.svg", transparent=True)
+        # plot_profiles(
+        #     [
+        #         [
+        #             (core_profile.electrons["diff"],  r"D"),
+        #             (np.abs(core_profile.electrons["conv"]),  r"$\left|V\right|$"),
+        #         ],
+        #     ],
+        #     # x_axis=(rho_tor_norm,                             r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+        #     x_axis=(core_profile.electrons.temperature.x_axis,  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+        #     title="Result of TransportSolver",
+        #     # index_slice=slice(0, 200, 1),
+        #     grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile_result.svg", transparent=True)
 
-        b_psi = Function(bs_r_nrom, (baseline["Fp"].values * (tok.equilibrium.time_slice.global_quantities.psi_boundary-tok.equilibrium.time_slice.global_quantities.psi_axis)
-                                     + tok.equilibrium.time_slice.global_quantities.psi_axis))
+        psi_axis = tok.equilibrium.time_slice.global_quantities.psi_axis
+        psi_boundary = tok.equilibrium.time_slice.global_quantities.psi_boundary
+
+        b_psi = Function(bs_r_nrom, (baseline["Fp"].values * (psi_boundary-psi_axis) + psi_axis))
         plot_profiles(
             [
 
@@ -510,8 +514,7 @@ if __name__ == "__main__":
                 [
                     (b_psi, r"astra", r"$\psi [Wb]$", {"marker": "+"}),
                     (core_profile["psi"],  r"fytok", r"$\psi  [Wb]$", {"marker": "."}),
-                    (b_psi-core_profile["psi"], r"residual",
-                     r"$n_e [10^{19} m^{-3}]$",  {"color": "red", "linestyle": "dashed"}),
+                    (b_psi-core_profile["psi"], r"residual", r"",  {"color": "red", "linestyle": "dashed"}),
                 ],
                 # [
                 #     (Function(bs_r_nrom, baseline["Fp"].values), r"astra", r"$\psi/\psi_{bdry}  [-]$", {"marker": "+"}),
@@ -533,7 +536,7 @@ if __name__ == "__main__":
                     (b_ne, r"astra", r"$n_e [m^{-3}]$",  {"marker": "+"}),
                     (core_profile.electrons.density, r"fytok", r"$n_e [ m^{-3}]$", {"marker": "."}),
                     (b_ne-core_profile.electrons.density, r"residual",
-                     r"$n_e [10^{19} m^{-3}]$",  {"color": "red", "linestyle": "dashed"}),
+                     r"$n_e [ m^{-3}]$",  {"color": "red", "linestyle": "dashed"}),
                     # *[(ion.density*1e-19,                            f"${ion.label}$") for ion in core_profile.ion],
                 ],
 

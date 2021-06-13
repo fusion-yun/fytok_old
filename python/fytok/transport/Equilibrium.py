@@ -632,7 +632,7 @@ class EquilibriumBoundary(Dict):
     @sp_property
     def outline(self) -> RZTuple:
         """RZ outline of the plasma boundary  """
-        surf = next(self._coord.find_surface(self.psi, o_point=False))
+        _, surf = next(self._coord.find_surface(self.psi, o_point=True))
         return RZTuple(*surf.xyz)
 
     @sp_property
@@ -651,13 +651,13 @@ class EquilibriumBoundary(Dict):
     @sp_property
     def psi(self) -> float:
         """Value of the poloidal flux at which the boundary is taken  [Wb]"""
-        return self.get("psi", self.psi_norm*(self.psi_boundary-self.psi_axis)+self.psi_axis)
+        return self.psi_norm*(self._coord.psi_boundary-self._coord.psi_axis)+self._coord.psi_axis
 
     @sp_property
     def psi_norm(self) -> float:
         """Value of the normalised poloidal flux at which the boundary is taken (typically 99.x %),
             the flux being normalised to its value at the separatrix """
-        return self.get("psi_norm", 0.995)
+        return self.get("psi_norm", self._coord.psi_norm[-1])
 
     @sp_property
     def shape_property(self) -> MagneticCoordSystem.ShapePropety:
@@ -744,7 +744,7 @@ class EquilibriumBoundarySeparatrix(Profiles):
     @sp_property
     def psi(self) -> float:
         """Value of the poloidal flux at which the boundary is taken  [Wb]"""
-        return self.get("psi", self.psi_boundary)
+        return self.psi_norm*(self._coord.psi_boundary-self._coord.psi_axis)+self._coord.psi_axis
 
     @sp_property
     def psi_norm(self) -> float:
@@ -784,16 +784,15 @@ class EquilibriumTimeSlice(Dict):
                           mesh="rectilinear")
 
         psi_norm = self.get("coordinate_system.psi_norm", None)
-        if psi_norm is None:
-            psi_norm = 128
-        if isinstance(psi_norm, int):
-            psi_bdry = self.get("boundary.psi_norm", 0.995)
-            psi_norm = np.linspace(0.001, psi_bdry, psi_norm)
-        else:
-            psi_norm = np.asarray(psi_norm)
+
+        if not isinstance(psi_norm, np.ndarray):
+            psi_norm_bdry = self.get("coordinate_system.psi_norm.boundary", 0.995)
+            psi_norm_axis = self.get("coordinate_system.psi_norm.axis", 0.0001)
+            npoints = self.get("coordinate_system.psi_norm.npoints", 128)
+            psi_norm = np.linspace(psi_norm_axis, psi_norm_bdry, npoints)
+            logger.debug((psi_norm[0], psi_norm[-1]))
 
         p_psi_norm = self.get("profiles_1d.psi_norm", None)
-
         ffprime = self.get("profiles_1d.f_df_dpsi", None)
         pprime = self.get("profiles_1d.dpressure_dpsi", None)
         if isinstance(ffprime, Function):
@@ -883,9 +882,9 @@ class EquilibriumTimeSlice(Dict):
             boundary_points = np.vstack([self.boundary.outline.r,
                                          self.boundary.outline.z]).T
 
-            axis.add_patch(plt.Polygon(boundary_points, color='b', linestyle='solid',
-                                       linewidth=0.5, fill=False, closed=False))
-            axis.plot([], [], 'b', label="Boundary")
+            axis.add_patch(plt.Polygon(boundary_points, color='g', linestyle='solid',
+                                       linewidth=0.5, fill=False, closed=True))
+            axis.plot([], [], 'g-', label="Boundary")
 
         if separatrix is not False:
             boundary_points = np.vstack([self.boundary_separatrix.outline.r,
