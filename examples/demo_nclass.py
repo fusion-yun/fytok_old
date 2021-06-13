@@ -44,7 +44,7 @@ if __name__ == "__main__":
         tok.equilibrium["time_slice"] = {
             "profiles_1d": eqdsk.entry.find("profiles_1d"),
             "profiles_2d": eqdsk.entry.find("profiles_2d"),
-            "coordinate_system": {"psi_norm": 128}
+            "coordinate_system": {"psi_norm": np.linspace(0.0001, 0.995, 128)}
         }
 
         sp_figure(tok,
@@ -68,7 +68,7 @@ if __name__ == "__main__":
                     (Function(baseline["xq"].values, baseline["q"].values), r"astra",  r"$q [-]$", {"marker": "+"}),
                     (Function(bs_r_nrom, baseline["q"].values), r"astra",  r"$q [-]$", {"marker": "+"}),
                     (rgrid.q,  r"$fytok$", r"$[Wb]$"),
-                    (rgrid.dphi_dpsi/TWOPI,  r"$\frac{d\phi}{2\pi \psi}$", r"$[Wb]$"),
+                    (rgrid.dphi_dpsi/TWOPI,  r"$\frac{d\phi}{2\pi d\psi}$", r"$[Wb]$"),
 
                 ],
                 [
@@ -101,7 +101,7 @@ if __name__ == "__main__":
 
                 (rgrid.dpsi_drho_tor, r"$\frac{dV}{d\psi}\cdot\frac{d\psi}{d\rho_{tor}}$"),
 
-                # (rgrid.drho_tor_dpsi,  r"$d\rho/d\psi$"),
+                (rgrid.drho_tor_dpsi,  r"$d\rho/d\psi$"),
 
 
                 (rgrid.gm1,                                             r"$gm1=\left<\frac{1}{R^2}\right>$"),
@@ -112,16 +112,15 @@ if __name__ == "__main__":
 
                 (rgrid.dphi_dpsi,                                                  r"$\frac{d\phi}{d\psi}$"),
                 (rgrid.drho_tor_dpsi,                                        r"$\frac{d\rho_{tor}}{d\psi}$"),
-                # (rgrid.dvolume_drho_tor,                                              r"$\frac{dV}{d\rho}$"),
                 (rgrid.dpsi_drho_tor,                                        r"$\frac{d\psi}{d\rho_{tor}}$"),
             ],
-            x_axis=(rgrid.rho_tor_norm,      r"$\bar{\rho_{tor}}$"),
+            x_axis=(rgrid.rho_tor_norm,      r"$\bar{\rho}_{tor}$"),
             # x_axis=(rgrid.psi_norm,      r"$\bar{\psi}$"),
 
             title="Equlibrium",
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_coord.svg", transparent=True)
 
-    if False:
+    if True:
         plot_profiles(
             [
                 # (eq_profile.dpressure_dpsi,                                                       r"$dP/d\psi$"),
@@ -133,7 +132,6 @@ if __name__ == "__main__":
                 #     (Function(eq_profile.psi_norm, np.abs(eq_profile.f)),  r"$\left|f_{pol0}\right|$" ),
                 #     (eq_profile.fpol,                                                                 r"$fpol$"),
                 # ],
-                (eq_profile.dvolume_dpsi,                                      r"$dV/d\psi$",  r"$dV/d\psi$"),
 
                 [
                     (Function(bs_psi, baseline["q"].values),            r"astra",  r"$q [-]$", {"marker": "+"}),

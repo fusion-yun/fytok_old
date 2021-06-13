@@ -471,7 +471,7 @@ class MagneticCoordSystem(object):
         """Toroidal current driven inside the flux surface.
           .. math:: I_{pl}\equiv\int_{S_{\zeta}}\mathbf{j}\cdot dS_{\zeta}=\frac{\text{gm2}}{4\pi^{2}\mu_{0}}\frac{\partial V}{\partial\psi}\left(\frac{\partial\psi}{\partial\rho}\right)^{2}
          {dynamic}[A]"""
-        return np.asarray(self.surface_average(lambda r, z: self.grad_psi2(r, z) / (r**2))*self.dvolume_dpsi / constants.mu_0)
+        return self.surface_integral(lambda r, z: self.grad_psi2(r, z) / (r**2)) / constants.mu_0
 
     @cached_property
     def j_parallel(self) -> np.ndarray:
@@ -558,7 +558,8 @@ class MagneticCoordSystem(object):
                                         =\frac{1}{2\sqrt{\pi B_{0}\Phi_{tor}}}\frac{d\Phi_{tor}}{d\psi} \
                                         =\frac{q}{2\pi B_{0}\rho_{tor}}
         """
-        return self.dvolume_dpsi/self.dvolume_drho_tor
+        # return self.dvolume_dpsi/self.dvolume_drho_tor
+        return self.dvolume_dpsi/(4*constants.pi**2*self._vacuum_toroidal_field.b0) / self.rho_tor*(self.fpol*self.gm1)
         # return self.dphi_dpsi / self.rho_tor / (self._vacuum_toroidal_field.b0)
         # return Function(self.psi_norm[1:], d)(self.psi_norm)
 
@@ -571,12 +572,11 @@ class MagneticCoordSystem(object):
 
     @cached_property
     def dphi_dvolume(self) -> np.ndarray:
-        return self.fpol * self.gm1 / TWOPI
+        return self.fpol * self.gm1
 
     @cached_property
     def dphi_dpsi(self) -> np.ndarray:
-        return self.dphi_dvolume * self.dvolume_dpsi
-        #self.fpol * self.gm1 * self.dvolume_dpsi
+        return self.fpol * self.gm1 * self.dvolume_dpsi
 
     @cached_property
     def gm1(self) -> np.ndarray:
