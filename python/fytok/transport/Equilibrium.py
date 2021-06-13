@@ -614,7 +614,7 @@ class EquilibriumProfiles2D(Dict):
 
 class EquilibriumBoundary(Dict):
     """
-        Description of the plasma boundary used by fixed-boundary codes and typically chosen at psi_norm = 99.x% 
+        Description of the plasma boundary used by fixed-boundary codes and typically chosen at psi_norm = 99.x%
         of the separatrix
     """
 
@@ -776,21 +776,49 @@ class EquilibriumTimeSlice(Dict):
 
     @sp_property
     def coordinate_system(self) -> MagneticCoordSystem:
-        psirz = Field(self.get("profiles_2d.psi"),
-                      self.get("profiles_2d.grid.dim1"),
-                      self.get("profiles_2d.grid.dim2"),
-                      mesh="rectilinear")
+        psirz = self.get("profiles_2d.psi", None)
+        if not isinstance(psirz, Field):
+            psirz = Field(psirz,
+                          self.get("profiles_2d.grid.dim1"),
+                          self.get("profiles_2d.grid.dim2"),
+                          mesh="rectilinear")
 
-        psi_norm = self["profiles_1d.psi_norm"]
-        ffprime = self["profiles_1d.f_df_dpsi"]
-        pprime = self["profiles_1d.dpressure_dpsi"]
+        psi_norm = self.get("coordinate_system.psi_norm", None)
+        if psi_norm is None:
+            psi_norm = 128
+        if isinstance(psi_norm, int):
+            psi_bdry = self.get("boundary.psi_norm", 0.995)
+            psi_norm = np.linspace(0.001, psi_bdry, psi_norm)
+        else:
+            psi_norm = np.asarray(psi_norm)
+
+        p_psi_norm = self.get("profiles_1d.psi_norm", None)
+
+        ffprime = self.get("profiles_1d.f_df_dpsi", None)
+        pprime = self.get("profiles_1d.dpressure_dpsi", None)
+
+        if isinstance(ffprime, Function):
+            pass
+        elif isinstance(ffprime, np.ndarray) and ffprime.shape == p_psi_norm.shape:
+            ffprime = Function(p_psi_norm, ffprime)
+        else:
+            raise TypeError(f"{type(ffprime)}")
+
+        if isinstance(pprime, Function):
+            self._ffprime = pprime
+        elif isinstance(pprime, np.ndarray) and pprime.shape == p_psi_norm.shape:
+            pprime = Function(p_psi_norm, pprime)
+        else:
+            raise TypeError(f"{type(pprime)}")
+
         return MagneticCoordSystem(
-            self.get("coordinate_system"),
-            vacuum_toroidal_field=self.vacuum_toroidal_field,
             psirz=psirz,
-            ffprime=Function(psi_norm, ffprime),
-            pprime=Function(psi_norm, pprime),
-            parent=self)
+            ffprime=ffprime,
+            pprime=pprime,
+            vacuum_toroidal_field=self.vacuum_toroidal_field,
+            psi_norm=psi_norm,
+            ntheta=self.get("coordinate_system.ntheta", None)
+        )
 
     @sp_property
     def constraints(self) -> Constraints:

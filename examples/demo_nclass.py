@@ -2,7 +2,7 @@ from math import log
 from operator import eq
 import pandas as pd
 
-from fytok.Tokamak import Tokamak
+from fytok.Tokamak import TWOPI, Tokamak
 from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.File import File
 from spdm.data.Function import Function, PiecewiseFunction
@@ -44,7 +44,7 @@ if __name__ == "__main__":
         tok.equilibrium["time_slice"] = {
             "profiles_1d": eqdsk.entry.find("profiles_1d"),
             "profiles_2d": eqdsk.entry.find("profiles_2d"),
-            "coordinate_system": {"grid": {"dim1": 256, "dim2": 256}}
+            "coordinate_system": {"psi_norm": 128}
         }
 
         sp_figure(tok,
@@ -58,15 +58,15 @@ if __name__ == "__main__":
                   ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
         eq_profile = tok.equilibrium.time_slice.profiles_1d
 
- 
-    if False:
+    if True:
         rgrid = eq_profile._coord
-
+        logger.debug(rgrid.rho_tor[:5])
         plot_profiles(
             [
+                (rgrid.psi,  r"$\psi$", r"$[Wb]$"),
+                (rgrid.phi,  r"$\phi$", r"$[Wb]$"),
                 (rgrid.psi_norm,  r"$\bar{\psi}$", r"$[-]$"),
                 (rgrid.rho_tor_norm,  r"$\bar{\rho}$", r"$[-]$"),
-                (rgrid.psi,  r"$\psi$", r"$[Wb]$"),
                 (rgrid.rho_tor,  r"$\rho$", r"$[m]$"),
                 (rgrid.drho_tor_dpsi,  r"$d\rho/d\psi$"),
 
@@ -76,7 +76,9 @@ if __name__ == "__main__":
                         r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho$"),
 
                     (rgrid.dvolume_drho_tor, r"$dV/d\rho_{tor}$", r"$[m^2]$")
+
                 ],
+
                 (rgrid.gm1,                                             r"$gm1=\left<\frac{1}{R^2}\right>$"),
                 (rgrid.gm2,                    r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
                 (rgrid.gm3,                                r"$gm3=\left<\left|\nabla \rho\right|^2\right>$"),
@@ -93,7 +95,6 @@ if __name__ == "__main__":
 
             title="Equlibrium",
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_coord.svg", transparent=True)
-
 
     if True:
 
@@ -113,7 +114,7 @@ if __name__ == "__main__":
                 [
                     (Function(bs_psi, baseline["q"].values),            r"astra",  r"$q [-]$", {"marker": "+"}),
                     (eq_profile.q,                                      r"fytok",  r"$q [-]$"),
-                    # (eq_profile.dphi_dpsi,                                             r"$\frac{d\phi}{d\psi}$"),
+                    (eq_profile.dphi_dpsi/TWOPI,                        r"$\frac{d\phi}{2\pi d\psi}$"),
                 ],
                 [
                     (Function(bs_psi, baseline["rho"].values),       r"astra", r"$\rho_{tor}[m]$",  {"marker": "+"}),
@@ -172,7 +173,7 @@ if __name__ == "__main__":
 
             title="Equlibrium",
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
-  
+
     ###################################################################################################
     if False:  # CoreProfile
         s_range = -1  # slice(0, 140, 1)

@@ -2,6 +2,7 @@ import collections
 from dataclasses import dataclass
 from functools import cached_property
 from typing import Iterator, Sequence, Tuple, TypeVar, Union
+from scipy.constants.constants import R
 
 from spdm.data.Field import Field
 from spdm.data.Function import Function
@@ -38,7 +39,7 @@ class OXPoint:
 # OXPoint = collections.namedtuple('OXPoint', "r z psi")
 
 
-class MagneticCoordSystem(Dict):
+class MagneticCoordSystem(object):
     r"""
         Flux surface coordinate system on a square grid of flux and poloidal angle
 
@@ -54,47 +55,73 @@ class MagneticCoordSystem(Dict):
         phi         : 0 <= phi     < 2*pi ,  toroidal angle
     """
 
-    def __init__(self, *args,
-                 vacuum_toroidal_field: VacuumToroidalField = None,
-                 psirz: Field = None,
-                 ffprime: Function = None,
-                 pprime: Function = None,
-                 **kwargs):
+    def __init__(self,
+                 psirz: Field,
+                 ffprime: Union[np.ndarray, Function],
+                 pprime: Union[np.ndarray, Function],
+                 vacuum_toroidal_field: VacuumToroidalField,
+                 psi_norm: np.ndarray = None,
+                 ntheta: int = 128,
+                 grid_type_index: int = 13):
         """
             Initialize FluxSurface
         """
-        super().__init__(*args, **kwargs)
+        super().__init__()
+        self._grid_type_index = grid_type_index
+
+        self._ntheta = ntheta if ntheta is not None else 128
+
         self._vacuum_toroidal_field = vacuum_toroidal_field or self._parent.vacuum_toroidal_field
+
         self._fvac = abs(self._vacuum_toroidal_field.r0*self._vacuum_toroidal_field.b0)
 
         self._psirz = psirz
-        self._ffprime = ffprime
-        self._pprime = pprime
 
-        dim1 = self["grid.dim1"]
-        dim2 = self["grid.dim2"]
-
-        if isinstance(dim1, np.ndarray):
-            u = dim1
-        elif dim1 == None:
-            u = np.linspace(0.0001,  0.99,  len(self._ffprime))
-        elif isinstance(dim1, int):
-            u = np.linspace(0.0001,  0.99,  dim1)
+        if psi_norm is None:
+            psi_norm = 128
+        if isinstance(psi_norm, int):
+            self._psi_norm = np.linspace(0.001, 0.99, psi_norm)
         else:
-            u = np.asarray([dim1])
+            self._psi_norm = np.asarray(psi_norm)
 
-        if isinstance(dim2, np.ndarray):
-            v = dim2
-        elif dim2 == None:
-            v = np.linspace(0.0,  1.0,  128)
-        elif isinstance(dim2, int):
-            v = np.linspace(0.0, 1.0,  dim2)
-        elif isinstance(dim2, np.ndarray):
-            v = dim2
+        if isinstance(ffprime, Function):
+            self._ffprime = ffprime
+        elif isinstance(ffprime, np.ndarray) and ffprime.shape == self._psi_norm.shape:
+            self._ffprime = Function(self._psi_norm, ffprime)
         else:
-            v = np.asarray([dim2])
+            raise TypeError(f"{type(ffprime)}")
 
-        self._uv = [u, v]
+        if isinstance(pprime, Function):
+            self._ffprime = pprime
+        elif isinstance(pprime, np.ndarray) and pprime.shape == self._psi_norm.shape:
+            self._pprime = Function(self._psi_norm, pprime)
+        else:
+            raise TypeError(f"{type(pprime)}")
+
+        # dim1=self["grid.dim1"]
+        # dim2=self["grid.dim2"]
+
+        # if isinstance(dim1, np.ndarray):
+        #     u=dim1
+        # elif dim1 == None:
+        #     u=np.linspace(0.0001,  0.99,  len(self._ffprime))
+        # elif isinstance(dim1, int):
+        #     u=np.linspace(0.0001,  0.99,  dim1)
+        # else:
+        #     u=np.asarray([dim1])
+
+        # if isinstance(dim2, np.ndarray):
+        #     v=dim2
+        # elif dim2 == None:
+        #     v=np.linspace(0.0,  1.0,  128)
+        # elif isinstance(dim2, int):
+        #     v=np.linspace(0.0, 1.0,  dim2)
+        # elif isinstance(dim2, np.ndarray):
+        #     v=dim2
+        # else:
+        #     v=np.asarray([dim2])
+
+        # self._uv=[u, v]
 
     @property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
@@ -118,9 +145,9 @@ class MagneticCoordSystem(Dict):
             psi_norm = Function(p_axis, psi_norm)(np.linspace(p_axis[0], p_axis[-1], p_axis.shape[0]))
         return RadialGrid(self, psi_norm)
 
-    @cached_property
-    def grid_type(self) -> Identifier:
-        return Identifier(**self["grid_type"]._as_dict())
+    @property
+    def grid_type_index(self) -> int:
+        return self._grid_type_index
 
     @cached_property
     def critical_points(self) -> Tuple[Sequence[OXPoint], Sequence[OXPoint]]:
@@ -235,57 +262,28 @@ class MagneticCoordSystem(Dict):
     def find_surface_by_psi_norm(self, psi_norm: Union[float, Sequence], *args,   **kwargs) -> Iterator[Tuple[float, GeoObject]]:
         yield from self.find_surface(psi_norm*(self.psi_boundary-self.psi_axis)+self.psi_axis, *args,  **kwargs)
 
-    def create_mesh(self, u=None, v=None, *args, primary='psi', type_index=None) -> Mesh:
-
-        opoints, xpoints = self.critical_points
-
-        type_index = type_index or self.grid_type.index
-
-        if u is None:
-            u = 64
-
-        if isinstance(u, int):
-            u = np.linspace(0, 1, u)
-        elif not isinstance(u, (np.ndarray, Sequence)):
-            u = np.asarray([u])
-
-        if isinstance(v, int):
-            v = np.linspace(0, 1, v)
-        elif not isinstance(u, (np.ndarray, Sequence)):
-            v = np.asarray([v])
-
-        if type_index == 13 or primary == 'psi':
-            primary = "psi"
-            field = self._psirz
-            f_axis = opoints[0].psi
-            f_bdry = xpoints[0].psi
-        else:
-            primary_axis = primary or "phi"
-            field = try_get(self._parent, ["profiles_2d", primary_axis], _not_found_)
-            if field is _not_found_:
-                raise KeyError(f"Can not find field '{primary_axis}'")
-            f_axis = field(opoints[0].r, opoints[0].z)
-            f_bdry = field(xpoints[0].r, xpoints[0].z)
-
-        levels = (f_bdry-f_axis)*u+f_axis
-
-        mesh = CurvilinearMesh([surf for _, surf in self.find_surface(levels, o_point=True)],
-                               [u, v], cycle=[False, True])
-
-        logger.debug(f"Create mesh: type index={type_index} primary={primary}  ")
-
-        return mesh
-
-    @cached_property
-    def surface_mesh(self) -> Mesh:
-        return self.create_mesh(*self._uv)
-
     ###############################
     # 2-D
 
     @cached_property
     def mesh(self) -> Mesh:
-        return self.create_mesh(self._uv[0],  self._uv[1], type_index=13)
+        # return self.create_mesh(self._psi_norm, None, type_index=13)
+
+        if self._grid_type_index == 13:
+            primary = "psi"
+
+        if isinstance(self._ntheta, int):
+            theta = np.linspace(0, 1, self._ntheta)
+        else:
+            theta = np.asarray(self._ntheta)
+        logger.debug(theta)
+        logger.debug(self._psi_norm)
+        mesh = CurvilinearMesh([surf for _, surf in self.find_surface_by_psi_norm(self._psi_norm, o_point=True)],
+                               [self._psi_norm, theta], cycle=[False, True])
+
+        logger.debug(f"Create mesh: type index={self._grid_type_index} primary={primary}  ")
+
+        return mesh
 
     @property
     def r(self) -> np.ndarray:
@@ -468,9 +466,9 @@ class MagneticCoordSystem(Dict):
     ###############################
     # 1-D
 
-    @property
+    @cached_property
     def ffprime(self) -> np.ndarray:
-        return self._ffprime
+        return self._ffprime(self._psi_norm)
 
     @cached_property
     def fpol(self) -> np.ndarray:
@@ -493,22 +491,18 @@ class MagneticCoordSystem(Dict):
 
     @property
     def psi_norm(self) -> np.ndarray:
-        return self.mesh.uv[0]
+        return self._psi_norm
 
     @cached_property
     def psi(self) -> np.ndarray:
         return self.psi_norm * (self.psi_boundary-self.psi_axis) + self.psi_axis
 
     @cached_property
-    def dq_dpsi(self) -> np.ndarray:
-        return self.fpol*self.gm1*self.dvolume_dpsi / (TWOPI)
-
-    @cached_property
     def q(self) -> np.ndarray:
         r"""
             Safety factor
             (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)[-].
-            .. math:: q(\psi) =\frac{d\Phi}{d\psi} =\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
+            .. math:: q(\psi) =\frac{d\Phi}{2\pi d\psi} =\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{4\pi^{2}}
         """
         return self.fpol * self.dvolume_dpsi*self.gm1/(TWOPI**2)
 
@@ -518,7 +512,7 @@ class MagneticCoordSystem(Dict):
         return self.rho_tor/self.q * self.dq_dpsi
 
     @cached_property
-    def dpsi_drho_tor(self) -> Function:
+    def dpsi_drho_tor(self) -> np.ndarray:
         return (TWOPI*self._vacuum_toroidal_field.b0)*self.rho_tor/self.dphi_dpsi
 
     @cached_property
@@ -528,7 +522,12 @@ class MagneticCoordSystem(Dict):
             .. math::
                 \Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi
         """
-        return Function(self.psi_norm, self.dq_dpsi).antiderivative(self.psi_norm) * (self.psi_boundary-self.psi_axis)
+        if not np.isclose(self.psi[0], self.psi_axis):
+            _psi = np.hstack([[self.psi_axis], self.psi])
+            _dphi_dpsi = np.hstack([[self.dphi_dpsi[0]], self.dphi_dpsi])
+            return Function(_psi, _dphi_dpsi).antiderivative(_psi)[1:]
+        else:
+            return Function(self.psi, self.dphi_dpsi).antiderivative(self.psi)
 
     @cached_property
     def rho_tor(self) -> np.ndarray:
@@ -547,8 +546,8 @@ class MagneticCoordSystem(Dict):
                                         =\frac{1}{2\sqrt{\pi B_{0}\Phi_{tor}}}\frac{d\Phi_{tor}}{d\psi} \
                                         =\frac{q}{2\pi B_{0}\rho_{tor}}
         """
-        d = self.dphi_dpsi[1:]/self.rho_tor[1:]/(self._vacuum_toroidal_field.b0)
-        return Function(self.psi_norm[1:], d)(self.psi_norm)
+        return self.dphi_dpsi / self.rho_tor / (self._vacuum_toroidal_field.b0)
+        # return Function(self.psi_norm[1:], d)(self.psi_norm)
 
     @cached_property
     def dpsi_drho_tor(self) -> np.ndarray:
@@ -559,11 +558,11 @@ class MagneticCoordSystem(Dict):
 
     @cached_property
     def dphi_dvolume(self) -> np.ndarray:
-        return self.gm1 * self.fpol / TWOPI
+        return self.fpol * self.gm1 / TWOPI
 
     @cached_property
     def dphi_dpsi(self) -> np.ndarray:
-        return self.gm1 * self.fpol * self.dvolume_dpsi / (TWOPI**2)
+        return self.fpol * self.gm1 * self.dvolume_dpsi / (TWOPI)
 
     @cached_property
     def dvolume_dpsi(self) -> np.ndarray:
@@ -581,7 +580,10 @@ class MagneticCoordSystem(Dict):
     @cached_property
     def dvolume_drho_tor(self) -> np.ndarray:
         """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
-        return (4*constants.pi**2*self._vacuum_toroidal_field.b0)*self.rho_tor/(self.fpol*self.gm1)
+        # return self.dvolume_dpsi*  (self._vacuum_toroidal_field.b0)*self.rho_tor/self.dphi_dpsi
+        return (4*constants.pi**2*self._vacuum_toroidal_field.b0) * self.rho_tor/(self.fpol*self.gm1)
+        # return self.rho_tor*self.dpsi_drho_tor
+        # return self.dvolume_dpsi*self.dpsi_drho_tor
 
     @cached_property
     def gm1(self) -> np.ndarray:
