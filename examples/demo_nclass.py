@@ -500,7 +500,7 @@ if __name__ == "__main__":
     ###################################################################################################
     # TransportSolver
     if True:
-        tok.update(max_nodes=128, tolerance=1.0e-4)
+        tok.update(max_nodes=1000, tolerance=1.0e-4)
 
         core_profile = tok.core_profiles.profiles_1d
 

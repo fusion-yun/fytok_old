@@ -136,9 +136,9 @@ class TransportSolver(IDS):
         self._core_profiles = core_profiles or getattr(self._parent, "core_profiles", None)
         self._core_transport = core_transport or getattr(self._parent, "core_transport", None)
         self._core_sources = core_sources or getattr(self._parent, "core_sources", None)
-        self._edge_profiles = edge_profiles or getattr(self._parent, "edge_profiles", None)
-        self._edge_transport = edge_transport or getattr(self._parent, "edge_transport", None)
-        self._edge_sources = edge_sources or getattr(self._parent, "edge_sources", None)
+        self._edge_profiles = edge_profiles or getattr(self._parent, "edge_profiles", False)
+        self._edge_transport = edge_transport or getattr(self._parent, "edge_transport", False)
+        self._edge_sources = edge_sources or getattr(self._parent, "edge_sources", False)
 
     @property
     def grid(self):
@@ -162,10 +162,10 @@ class TransportSolver(IDS):
     def solve_core(self, *args, max_nodes=1000, tolerance=1e-3, **kwargs):
         return NotImplemented
 
-    def solve_core(self, *args,   tolerance=1e-3, **kwargs):
+    def solve_edge(self, *args, **kwargs):
         return NotImplemented
 
-    def solve(self,  max_iter=1, tolerance=1.0e-3, ** kwargs) -> float:
+    def solve(self,  max_iter=1, tolerance=1.0e-3, max_nodes=1000, ** kwargs) -> float:
         """
             solve transport eqation
             return residual of core_profiles
@@ -174,13 +174,12 @@ class TransportSolver(IDS):
         for step in range(max_iter):
             logger.debug(f" Iteration step={step}: start")
 
-            residual = []
-            residual.append(self.solve_core(tolerance=tolerance, **kwargs))
+            residual = 0
 
-            if self._edge_profiles is not False:
-                residual.append(self.solve_edge(tolerance=tolerance, **kwargs))
+            residual += self.solve_core(tolerance=tolerance, max_nodes=max_nodes, **kwargs)
 
-            residual = max(residual)
+            # if self._edge_profiles is not False:
+            #     residual.append(self.solve_edge(tolerance=tolerance, **kwargs))
 
             logger.debug(f" Iteration step={step}: stop   residual={residual}  ")
 

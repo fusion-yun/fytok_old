@@ -3,6 +3,7 @@ import collections
 import datetime
 import getpass
 from typing import ChainMap, Union
+from matplotlib.colors import to_rgb
 
 import matplotlib.pyplot as plt
 from spdm.data.Function import Function
@@ -134,7 +135,8 @@ class Tokamak(Actor):
 
         self.core_transport.advance(time=time, update=False)
 
-    def update(self, d=None, /, constraints: Equilibrium.Constraints = None,  max_iteration=1,  enable_edge=False,  tolerance=1.0e-6, **kwargs):
+    def update(self, d=None, /, constraints: Equilibrium.Constraints = None, max_iteration=1, max_nodes=1250,  enable_edge=False,  tolerance=1.0e-6, **kwargs):
+
         super().update(collections.ChainMap(d or {}, kwargs))
 
         for nstep in range(max_iteration):
@@ -159,10 +161,10 @@ class Tokamak(Actor):
 
                 self.edge_profiles.update()
 
-                # TODO: update boundary condition
-                self.transport_solver.update()
+            # TODO: update boundary condition
+            self.transport_solver.update()
 
-            redisual = self.transport_solver.solve(**kwargs)
+            redisual = self.transport_solver.solve(max_nodes=max_nodes, tolerance=tolerance)
 
             logger.debug(f"time={self.time}  iterator step {nstep}/{max_iteration} redisual={redisual}")
 

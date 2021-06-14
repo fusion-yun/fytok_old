@@ -42,11 +42,10 @@ class TransportSolverBVP(TransportSolver):
     def update(self, *args, **kwargs):
         super().update(*args, **kwargs)
 
-        self._prev_state = self._core_profiles.previous_state
-        self._tau = self._core_profiles.time - self._prev_state.time
+        self._tau = self._core_profiles.time - self._core_profiles.previous_state.time
 
         self._core_profiles_next = self._core_profiles.profiles_1d
-        self._core_profiles_prev = self._prev_state.profiles_1d
+        self._core_profiles_prev = self._core_profiles.previous_state.profiles_1d
         self._c_transp = self._core_transport.model.combine.profiles_1d
         self._c_source = self._core_sources.source.combine.profiles_1d
         self._eq = self._equilibrium.time_slice.profiles_1d
@@ -59,7 +58,7 @@ class TransportSolverBVP(TransportSolver):
         # $B_0$ magnetic field measured at $R_0$            [T]
         self._B0 = self._equilibrium.vacuum_toroidal_field.b0
 
-        self._B0m = self._prev_state.vacuum_toroidal_field.b0
+        self._B0m = self._equilibrium.previous_state.vacuum_toroidal_field.b0
         # $rho_tor_{norm}$ normalized minor radius                [-]
         self._rho_tor_norm = self._core_profiles_next.grid.rho_tor_norm
 
@@ -169,6 +168,8 @@ class TransportSolverBVP(TransportSolver):
 
         if flux0 is None:
             flux0 = -d(x0) * y0_func.derivative(x0) + e(x0) * y0_func(x0)
+        elif isinstance(flux0, Function):
+            pass
         elif not isinstance(flux0, np.ndarray) or flux0.shape != x0.shape:
             raise ValueError(f"{flux0.shape} != {x0.shape} ")
 
@@ -712,8 +713,9 @@ class TransportSolverBVP(TransportSolver):
                             V^{\prime\frac{5}{3}}\left[Q_{e,exp}-Q_{e,imp}\cdot T_{e}+Q_{ei}-Q_{\gamma i}\right]
                     :label: transport_electron_temperature
         """
-        residual = []
-        residual.append(self.current_transport(
+        residual = 0
+        count = 0
+        residual += self.current_transport(
             self._core_profiles_next,
             self._core_profiles_prev,
             self._c_transp,
@@ -722,44 +724,46 @@ class TransportSolverBVP(TransportSolver):
             tolerance=tolerance,
             max_nodes=max_nodes,
             verbose=verbose,
-        ))
+        )
+        count += 1
 
-        if True:
-            if enable_ion_particle_solver is False:
-                residual.append(self.particle_transport(
-                    self._core_profiles_next.electrons,
-                    self._core_profiles_prev.electrons,
-                    self._c_transp.electrons,
-                    self._c_source.electrons,
-                    self.boundary_conditions_1d.electrons,
-                    tolerance=tolerance,
-                    max_nodes=max_nodes,
-                    verbose=verbose,
-                ))
-            else:
-                n_ele = 0.0
-                n_ele_flux = 0.0
+        if enable_ion_particle_solver is False:
+            residual += self.particle_transport(
+                self._core_profiles_next.electrons,
+                self._core_profiles_prev.electrons,
+                self._c_transp.electrons,
+                self._c_source.electrons,
+                self.boundary_conditions_1d.electrons,
+                tolerance=tolerance,
+                max_nodes=max_nodes,
+                verbose=verbose,
+            )
+            count += 1
+        elif enable_ion_particle_solver is True:
+            n_ele = 0.0
+            n_ele_flux = 0.0
+            for ion in self._core_profiles_next.ion:
+                if ion.label not in impurities:
+                    count += 1
+                    residual += self.particle_transport(
+                        ion,
+                        self._core_profiles_prev.ion[{"label": ion.label}],
+                        self._c_transp.ion[{"label": ion.label}],
+                        self._c_source.ion[{"label": ion.label}],
+                        self.boundary_conditions_1d.ion[{"label": ion.label}],
+                        tolerance=tolerance,
+                        max_nodes=max_nodes,
+                        verbose=verbose,
+                    )
+                n_ele = n_ele - ion.density*ion.z
+                n_ele_flux = n_ele_flux - ion.get("density_flux", 0)*ion.z
 
-                for ion in self._core_profiles_next.ion:
-                    if ion.label not in impurities:
-                        residual.append(self.particle_transport(
-                            ion,
-                            self._core_profiles_prev.ion[{"label": ion.label}],
-                            self._c_transp.ion[{"label": ion.label}],
-                            self._c_source.ion[{"label": ion.label}],
-                            self.boundary_conditions_1d.ion[{"label": ion.label}],
-                            tolerance=tolerance,
-                            max_nodes=max_nodes,
-                            verbose=verbose,
-                        ))
-                    n_ele = n_ele - ion.density*ion.z
-                    n_ele_flux = n_ele_flux - ion.get("density_flux", 0)*ion.z
+            # Quasi-neutral condition
+            self._core_profiles_next.electrons["density"] = n_ele
+            self._core_profiles_next.electrons["density_flux"] = n_ele
 
-                # Quasi-neutral condition
-                self._core_profiles_next.electrons["density"] = n_ele
-                self._core_profiles_next.electrons["density_flux"] = n_ele
         if False:
-            residual.append(self.energy_transport(
+            residual += self.energy_transport(
                 self._core_profiles_next,
                 self._core_profiles_prev,
                 self._c_transp,
@@ -769,25 +773,26 @@ class TransportSolverBVP(TransportSolver):
                 tolerance=tolerance,
                 max_nodes=max_nodes,
                 verbose=verbose,
-            ))
-
+            )
+            count += 1
             for ion in self._core_profiles_next.ion:
-                residual.append(self.energy_transport(
+                residual += self.energy_transport(
                     ion,
                     self._core_profiles_prev.ion[{"label": ion.label}],
                     self._c_transp.ion[{"label": ion.label}],
                     self._c_source.ion[{"label": ion.label}],
                     self.boundary_conditions_1d.ion[{"label": ion.label}]
-                ))
+                )
+                count += 1
 
-            residual.append(self.rotation_transport(
+            residual += self.rotation_transport(
                 self._core_profiles_next,
                 self._core_profiles_prev,
                 self._c_transp.momentum,
                 self._c_source.momentum_tor,
-                self.boundary_conditions_1d.momentum_tor))
-
-        return max(residual)
+                self.boundary_conditions_1d.momentum_tor)
+            count += 1
+        return residual/count
 
         # while time < end_time
         #     repeat until converged
