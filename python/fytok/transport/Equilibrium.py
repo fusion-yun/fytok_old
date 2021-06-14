@@ -292,6 +292,10 @@ class EquilibriumProfiles1D(Profiles):
         return self._coord._pprime
 
     @sp_property
+    def pressure(self) -> Function:
+        return self._coord._pressure
+
+    @sp_property
     def dpressure_dpsi(self) -> Function:
         return self.pprime
 
@@ -793,26 +797,26 @@ class EquilibriumTimeSlice(Dict):
             logger.debug((psi_norm[0], psi_norm[-1]))
 
         p_psi_norm = self.get("profiles_1d.psi_norm", None)
-        ffprime = self.get("profiles_1d.f_df_dpsi", None)
-        pprime = self.get("profiles_1d.dpressure_dpsi", None)
-        if isinstance(ffprime, Function):
+        fpol = self.get("profiles_1d.f", None)
+        pressure = self.get("profiles_1d.pressure", None)
+        if isinstance(fpol, Function):
             pass
-        elif isinstance(ffprime, np.ndarray) and ffprime.shape == p_psi_norm.shape:
-            ffprime = Function(p_psi_norm, ffprime)
+        elif isinstance(fpol, np.ndarray) and fpol.shape == p_psi_norm.shape:
+            fpol = Function(p_psi_norm, np.abs(fpol))
         else:
-            raise TypeError(f"{type(ffprime)}")
+            raise TypeError(f"{type(fpol)}")
 
-        if isinstance(pprime, Function):
+        if isinstance(pressure, Function):
             pass
-        elif isinstance(pprime, np.ndarray) and pprime.shape == p_psi_norm.shape:
-            pprime = Function(p_psi_norm, pprime)
+        elif isinstance(pressure, np.ndarray) and pressure.shape == p_psi_norm.shape:
+            pressure = Function(p_psi_norm, pressure)
         else:
-            raise TypeError(f"{type(pprime)}")
+            raise TypeError(f"{type(pressure)}")
 
         return MagneticCoordSystem(
             psirz=psirz,
-            ffprime=ffprime,
-            pprime=pprime,
+            fpol=fpol,
+            pressure=pressure,
             vacuum_toroidal_field=self.vacuum_toroidal_field,
             psi_norm=psi_norm,
             ntheta=self.get("coordinate_system.ntheta", None)

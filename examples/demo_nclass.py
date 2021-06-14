@@ -48,8 +48,8 @@ if __name__ == "__main__":
             "profiles_1d": eqdsk.entry.find("profiles_1d"),
             "profiles_2d": eqdsk.entry.find("profiles_2d"),
             "boundary_separatrix": eqdsk.entry.find("boundary"),
-            # "coordinate_system": {"psi_norm": {"axis": 0.01, "boundary": 0.995, "npoints": 128}}
-            "coordinate_system": {"psi_norm": baseline["Fp"].values[1:-1]}
+            "coordinate_system": {"psi_norm": {"axis": 0.0001, "boundary": 0.995, "npoints": 128}}
+            # "coordinate_system": {"psi_norm": baseline["Fp"].values[:-1]}
         }}
 
     # Core profile
@@ -133,7 +133,7 @@ if __name__ == "__main__":
                 "profiles_1d": {
                     "j_parallel": Function(bs_r_nrom, baseline["Jtot"].values*1e6),
                     "electrons":{
-                        "particles": Function(lambda x: 1e19 * np.exp(12.0*(x**2-1.0))),
+                        "particles": Function(lambda x: 1e21 * np.exp(15.0*(x**2-1.0))),
                         "energy": Function(bs_r_nrom[1:],
                                            (baseline["Poh"].values[1:]
                                             + baseline["Pdte"].values[1:]
@@ -153,7 +153,7 @@ if __name__ == "__main__":
     configure["transport_solver"] = {
         "code": {"name": "bvp_solver"},
         "boundary_conditions_1d": {
-            "current": {"identifier": {"index": 1}, "value": [psi_boundary]},
+            "current": {"identifier": {"index": 1}, "value": [0.995*(psi_boundary-psi_axis)+psi_axis]},
             "electrons": {"particles": {"identifier": {"index": 1}, "value": [b_ne[-1]]},
                           "energy": {"identifier": {"index": 1}, "value": [b_Te[-1]]}},
             "ion": [
@@ -206,14 +206,16 @@ if __name__ == "__main__":
         #     grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_surf.svg", transparent=True)
 
         magnetic_surface = eq_profile._coord
-
+        fpol = Function(eq_profile.get('psi_norm', None), eq_profile.get('f', None))
+        ffprime = fpol*fpol.derivative()/(psi_boundary-psi_axis)
         plot_profiles(
             [
                 [
                     (Function(baseline["Fp"].values, baseline["q"].values), r"astra",  r"$q [-]$", {"marker": "+"}),
                     (Function(bs_psi_norm, baseline["q"].values), r"astra",  r"$q [-]$", {"marker": "+"}),
+                    (Function(eq_profile.get('psi_norm', None), eq_profile.get('q', None)), "eqdsk"),
                     (magnetic_surface.q,  r"$fytok$", r"$[Wb]$"),
-                    (magnetic_surface.dphi_dpsi/TWOPI,  r"$\frac{d\phi}{2\pi d\psi}$", r"$[Wb]$"),
+                    # (magnetic_surface.dphi_dpsi,  r"$\frac{d\phi}{d\psi}$", r"$[Wb]$"),
 
                 ],
                 [
@@ -233,21 +235,25 @@ if __name__ == "__main__":
                     (Function(bs_psi_norm, 4*(constants.pi**2)*magnetic_surface.vacuum_toroidal_field.r0 * baseline["rho"].values),
                      r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho$",  {"marker": "+"}),
                     (magnetic_surface.dvolume_drho_tor, r"$dV/d\rho_{tor}$", r"$[m^2]$"),
-
                 ],
+
                 (magnetic_surface.dvolume_dpsi, r"$\frac{dV}{d\psi}$"),
+                (magnetic_surface.volume, r"$V$"),
 
                 [
-                    # (Function(eq_profile.get('psi_norm', None), eq_profile.get('fpol', None)), "eq")
+                    (np.abs(fpol), "eqdsk"),
                     (magnetic_surface.fpol,  r"$F_{pol}$", r"$[Wb]$"),
                 ],
+
+
                 (magnetic_surface.psi,  r"$\psi$", r"$[Wb]$"),
                 (magnetic_surface.phi,  r"$\phi$", r"$[Wb]$"),
                 (magnetic_surface.psi_norm,  r"$\bar{\psi}$", r"$[-]$"),
 
-                (magnetic_surface.dpsi_drho_tor, r"$\frac{dV}{d\psi}\cdot\frac{d\psi}{d\rho_{tor}}$"),
-
-                (magnetic_surface.drho_tor_dpsi,  r"$d\rho/d\psi$"),
+                (magnetic_surface.dpsi_drho_tor, r"$\frac{d\psi}{d\rho_{tor}}$"),
+                (magnetic_surface.drho_tor_dpsi,  r"$\frac{d\rho_{tor}}{d\psi}$"),
+                (magnetic_surface.drho_tor_dpsi*magnetic_surface.dpsi_drho_tor,
+                 r"$\frac{d\rho_{tor}}{d\psi} \cdot \frac{d\psi}{d\rho_{tor}}$"),
 
 
                 (magnetic_surface.gm1,                                             r"$gm1=\left<\frac{1}{R^2}\right>$"),
@@ -257,7 +263,6 @@ if __name__ == "__main__":
                 (magnetic_surface.gm8,                                                         r"$gm8=\left<R\right>$"),
 
                 (magnetic_surface.dphi_dpsi,                                                  r"$\frac{d\phi}{d\psi}$"),
-                (magnetic_surface.drho_tor_dpsi,                                        r"$\frac{d\rho_{tor}}{d\psi}$"),
                 (magnetic_surface.dpsi_drho_tor,                                        r"$\frac{d\psi}{d\rho_{tor}}$"),
             ],
             # x_axis=(magnetic_surface.rho_tor_norm,      r"$\bar{\rho}_{tor}$"),
@@ -281,11 +286,10 @@ if __name__ == "__main__":
                 [
                     (Function(bs_psi_norm, baseline["q"].values),            r"astra",  r"$q [-]$", {"marker": "+"}),
                     (eq_profile.q,                                      r"fytok",  r"$q [-]$"),
-                    (eq_profile.dphi_dpsi/TWOPI,                        r"$\frac{d\phi}{2\pi d\psi}$"),
+                    (eq_profile.dphi_dpsi,                        r"$\frac{d\phi}{d\psi}$"),
                 ],
                 [
-                    (Function(bs_psi_norm, baseline["rho"].values),
-                     r"astra", r"$\rho_{tor}[m]$",  {"marker": "+"}),
+                    (Function(bs_psi_norm, baseline["rho"].values), r"astra", r"$\rho_{tor}[m]$",  {"marker": "+"}),
                     (eq_profile.rho_tor,                                      r"fytok",    r"$\rho_{tor}[m]$"),
                 ],
                 [

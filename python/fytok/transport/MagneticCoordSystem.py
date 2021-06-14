@@ -58,8 +58,8 @@ class MagneticCoordSystem(object):
 
     def __init__(self,
                  psirz: Field,
-                 ffprime: Union[np.ndarray, Function],
-                 pprime: Union[np.ndarray, Function],
+                 fpol: Union[np.ndarray, Function],
+                 pressure: Union[np.ndarray, Function],
                  vacuum_toroidal_field: VacuumToroidalField,
                  psi_norm: np.ndarray = None,
                  ntheta: int = 128,
@@ -68,6 +68,7 @@ class MagneticCoordSystem(object):
             Initialize FluxSurface
         """
         super().__init__()
+
         self._grid_type_index = grid_type_index
 
         self._ntheta = ntheta if ntheta is not None else 128
@@ -85,12 +86,12 @@ class MagneticCoordSystem(object):
         else:
             self._psi_norm = np.asarray(psi_norm)
 
-        if isinstance(ffprime, Function):
-            self._ffprime = ffprime
-        elif isinstance(ffprime, np.ndarray) and ffprime.shape == self._psi_norm.shape:
-            self._ffprime = Function(self._psi_norm, ffprime)
+        if isinstance(fpol, Function):
+            self._fpol = fpol
+        elif isinstance(fpol, np.ndarray) and fpol.shape == self._psi_norm.shape:
+            self._fpol = Function(self._psi_norm, fpol)
         else:
-            raise TypeError(f"{type(ffprime)}")
+            raise TypeError(f"{type(fpol)}")
 
         # if isinstance(pprime, Function):
         #     self._ffprime = pprime
@@ -331,10 +332,10 @@ class MagneticCoordSystem(object):
         return (self.psirz(r, z, *args, **kwargs)-self.psi_axis)/(self.psi_boundary-self.psi_axis)
 
     def Br(self, r: _TCoord, z: _TCoord) -> _TCoord:
-        return -self.psirz(r, z, dy=1) / r
+        return -self.psirz(r, z, dy=1) / r/TWOPI
 
     def Bz(self, r: _TCoord, z: _TCoord) -> _TCoord:
-        return self.psirz(r,  z, dx=1) / r
+        return self.psirz(r,  z, dx=1) / r/TWOPI
 
     def Btor(self, r: _TCoord, z: _TCoord) -> _TCoord:
         return 1.0 / r * self.fpol(self.psi_norm_rz(r, z))
@@ -361,7 +362,7 @@ class MagneticCoordSystem(object):
         else:
             def func(r, z, _bpol=self.Bpol, _f=func):
                 return _f(r, z)/_bpol(r, z)
-        return np.asarray([axis.integral(func) for axis in self.mesh.axis_iter()])
+        return np.asarray([axis.integral(func) for axis in self.mesh.axis_iter()])  # *TWOPI
 
     def surface_average(self,  func,   /, **kwargs) -> np.ndarray:
         r"""
@@ -489,27 +490,24 @@ class MagneticCoordSystem(object):
     # 1-D
 
     @cached_property
-    def ffprime(self) -> np.ndarray:
-        return self._ffprime(self._psi_norm)
-
-    @cached_property
     def fpol(self) -> np.ndarray:
         """Diamagnetic function (F=R B_Phi)  [T.m]."""
-        fpol2 = self._ffprime.antiderivative(self.psi_norm) * 2
-        return np.sqrt(fpol2 - fpol2[-1] + self._fvac**2)
+        return self._fpol(self.psi_norm)
+        # fpol2 = self._ffprime.antiderivative(self.psi_norm) * 2
+        # return np.sqrt(fpol2 - fpol2[0] + self._fvac**2)
 
     @cached_property
     def plasma_current(self) -> np.ndarray:
         """Toroidal current driven inside the flux surface.
           .. math:: I_{pl}\equiv\int_{S_{\zeta}}\mathbf{j}\cdot dS_{\zeta}=\frac{\text{gm2}}{4\pi^{2}\mu_{0}}\frac{\partial V}{\partial\psi}\left(\frac{\partial\psi}{\partial\rho}\right)^{2}
          {dynamic}[A]"""
-        return self.surface_integral(lambda r, z: self.grad_psi2(r, z) / (r**2)) / constants.mu_0
+        return self.gm2*self.dvolume_drho_tor/(TWOPI**2)*self.dpsi_drho_tor/constants.mu_0
 
     @cached_property
     def j_parallel(self) -> np.ndarray:
         r"""Flux surface averaged parallel current density = average(j.B) / B0, where B0 = Equilibrium/Global/Toroidal_Field/B0 {dynamic}[A/m ^ 2]. """
-        d = np.asarray(Function(self.psi_norm, self.plasma_current/self.fpol).derivative())
-        return np.asarray((self.fpol**2)/self.dvolume_dpsi * d / (self.psi_boundary - self.psi_axis)/self.vacuum_toroidal_field.b0)
+        d = np.asarray(Function(self.psi, self.plasma_current/self.fpol).derivative())
+        return np.asarray(constants.pi*(self.fpol**2)/self.dvolume_dpsi * d/self.vacuum_toroidal_field.b0)
 
     @property
     def psi_norm(self) -> np.ndarray:
@@ -526,7 +524,9 @@ class MagneticCoordSystem(object):
             (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)[-].
             .. math:: q(\psi) =\frac{d\Phi}{2\pi d\psi} =\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{2\pi}
         """
-        return self.dphi_dpsi/TWOPI
+        # return self.dphi_dpsi
+        return self._vacuum_toroidal_field.b0 * self.rho_tor / self.dpsi_drho_tor
+
         # return self.fpol * self.dvolume_dpsi*self.gm1/(TWOPI)
 
     @cached_property
@@ -541,9 +541,10 @@ class MagneticCoordSystem(object):
             .. math::
                 \Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi
         """
-        res = Function(self.psi, self.dphi_dpsi).antiderivative(self.psi)
-        if not np.isclose(self.psi[0], self.psi_axis):
-            phi0 = self.dphi_dpsi[0]*(self.psi[0]-self.psi_axis)
+        res = Function(self.volume, self.dphi_dvolume).antiderivative(self.volume)
+
+        if not np.isclose(self.volume[0], 0):
+            phi0 = self.dphi_dvolume[0]*(self.volume[0])
             res += phi0
         return res
 
@@ -566,7 +567,7 @@ class MagneticCoordSystem(object):
             x = self.psi_norm
             dvdx = self.dvolume_dpsi
 
-        return Function(x, dvdx).antiderivative(self.psi_norm)
+        return Function(x, dvdx).antiderivative(self.psi_norm)*(self.psi_boundary-self.psi_axis)
 
     @cached_property
     def dvolume_dpsi(self) -> np.ndarray:
@@ -589,8 +590,10 @@ class MagneticCoordSystem(object):
                                         =\frac{1}{2\sqrt{\pi B_{0}\Phi_{tor}}}\frac{d\Phi_{tor}}{d\psi} \
                                         =\frac{q}{2\pi B_{0}\rho_{tor}}
         """
+        return self.dvolume_dpsi/self.dvolume_drho_tor
+
         # return self.dvolume_dpsi/self.dvolume_drho_tor
-        return self.dvolume_dpsi/(4*constants.pi**2*self._vacuum_toroidal_field.b0) / self.rho_tor*(self.fpol*self.gm1)
+        # return self.dvolume_dpsi/(4*constants.pi**2*self._vacuum_toroidal_field.b0) / self.rho_tor*(self.fpol*self.gm1)
         # return self.dphi_dpsi / self.rho_tor / (self._vacuum_toroidal_field.b0)
         # return Function(self.psi_norm[1:], d)(self.psi_norm)
 
@@ -603,11 +606,11 @@ class MagneticCoordSystem(object):
 
     @cached_property
     def dphi_dvolume(self) -> np.ndarray:
-        return self.fpol * self.gm1
+        return self.fpol * self.gm1/TWOPI
 
     @cached_property
     def dphi_dpsi(self) -> np.ndarray:
-        return self.fpol * self.gm1 * self.dvolume_dpsi
+        return self.fpol * self.gm1 * self.dvolume_dpsi/TWOPI**2
 
     @cached_property
     def gm1(self) -> np.ndarray:

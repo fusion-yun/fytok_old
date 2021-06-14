@@ -258,13 +258,13 @@ class TransportSolverBVP(TransportSolver):
 
         b = conductivity_parallel * self._rho_tor * self._inv_tau
 
-        c = (constants.mu_0 * self._B0 * self._rho_tor_boundary/(TWOPI**2))/(self._fpol**2)
+        c = (constants.mu_0 * self._B0 * self._rho_tor_boundary)/(self._fpol**2)
 
-        d = self._vpr*self._gm2 / self._fpol / (self._rho_tor_boundary)
+        d = self._vpr*self._gm2 / self._fpol / (self._rho_tor_boundary)/(TWOPI)
 
         e = (- constants.mu_0 * self._B0 * self._k_phi) * (conductivity_parallel * self._rho_tor**2/self._fpol**2)
 
-        f = - self._vpr * j_exp
+        f = - self._vpr * j_exp / TWOPI
 
         g = - self._vpr * j_imp    # + ....
 
