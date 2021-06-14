@@ -773,7 +773,7 @@ class EquilibriumTimeSlice(Dict):
 
     @sp_property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        return self.get("vacuum_toroidal_field", None) or self._parent.vacuum_toroidal_field
+        return self.coordinate_system.vacuum_toroidal_field
 
     def radial_grid(self, *args, **kwargs) -> RadialGrid:
         return self.coordinate_system.radial_grid(*args, **kwargs)
@@ -794,7 +794,6 @@ class EquilibriumTimeSlice(Dict):
             psi_norm_axis = self.get("coordinate_system.psi_norm.axis", 0.0001)
             npoints = self.get("coordinate_system.psi_norm.npoints", 128)
             psi_norm = np.linspace(psi_norm_axis, psi_norm_bdry, npoints)
-            logger.debug((psi_norm[0], psi_norm[-1]))
 
         p_psi_norm = self.get("profiles_1d.psi_norm", None)
         fpol = self.get("profiles_1d.f", None)
@@ -802,7 +801,7 @@ class EquilibriumTimeSlice(Dict):
         if isinstance(fpol, Function):
             pass
         elif isinstance(fpol, np.ndarray) and fpol.shape == p_psi_norm.shape:
-            fpol = Function(p_psi_norm, np.abs(fpol))
+            fpol = Function(p_psi_norm, fpol)
         else:
             raise TypeError(f"{type(fpol)}")
 
@@ -815,10 +814,11 @@ class EquilibriumTimeSlice(Dict):
 
         return MagneticCoordSystem(
             psirz=psirz,
+            psi_norm=psi_norm,
             fpol=fpol,
             pressure=pressure,
-            vacuum_toroidal_field=self.vacuum_toroidal_field,
-            psi_norm=psi_norm,
+            vacuum_toroidal_field=self.get("vacuum_toroidal_field", None) or getattr(
+                self._parent, "vacuum_toroidal_field", None),
             ntheta=self.get("coordinate_system.ntheta", None)
         )
 
