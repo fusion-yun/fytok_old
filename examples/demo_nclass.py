@@ -46,7 +46,15 @@ if __name__ == "__main__":
         "vacuum_toroidal_field": eqdsk.entry.find("vacuum_toroidal_field", {}),
         "time_slice": {
             "profiles_1d": eqdsk.entry.find("profiles_1d"),
-            "profiles_2d": eqdsk.entry.find("profiles_2d"),
+            "profiles_2d": {
+                "psi": eqdsk.entry.find("profiles_2d.psi")*TWOPI,
+                "grid_type": "rectangular",
+                "grid_index": 1,
+                "grid": {
+                    "dim1": eqdsk.entry.find("profiles_2d.grid.dim1"),
+                    "dim2": eqdsk.entry.find("profiles_2d.grid.dim2"),
+                }
+            },
             "boundary_separatrix": eqdsk.entry.find("boundary"),
             "coordinate_system": {"psi_norm": {"axis": 0.0001, "boundary": 0.995, "npoints": 128}}
             # "coordinate_system": {"psi_norm": baseline["Fp"].values[:-1]}
@@ -88,8 +96,8 @@ if __name__ == "__main__":
     #     [lambda r:r < r_ped, lambda r:r >= r_ped],
     #     [lambda x:  0.5+(x**4), lambda x: 0.11])
 
-    D = PiecewiseFunction([0, r_ped, 1.0],  [lambda x:0.15 * Ccore*(1.0 + 3*(x**2)), lambda x: 0.2*Cped])
-    v_pinch = Function([0, r_ped, 1.0], lambda x: 0.4 * D(x) * x / R0)   # FIXME: The coefficient 0.4 is a guess.
+    D = PiecewiseFunction([0, r_ped, 1.0],  [lambda x:0.15 * Ccore*(1.0 + 3*(x**2)), lambda x: 0.18*Cped])
+    v_pinch = Function([0, r_ped, 1.0], lambda x: 0.3 * D(x) * x / R0)   # FIXME: The coefficient 0.4 is a guess.
     v_pinch_T = Function([0, r_ped, 1.0], lambda x: 1.385 * chi_e(x) * x / R0)
 
     configure["core_transport"] = {
@@ -250,8 +258,12 @@ if __name__ == "__main__":
                 (magnetic_surface.phi,  r"$\phi$", r"$[Wb]$"),
                 (magnetic_surface.psi_norm,  r"$\bar{\psi}$", r"$[-]$"),
 
-                (magnetic_surface.dpsi_drho_tor, r"$\frac{d\psi}{d\rho_{tor}}$"),
-                (magnetic_surface.drho_tor_dpsi,  r"$\frac{d\rho_{tor}}{d\psi}$"),
+                (magnetic_surface.drho_tor_dpsi, r"$\frac{d\psi}{d\rho_{tor}}$"),
+                [
+                    (magnetic_surface.dpsi_drho_tor,  r"$\frac{d\rho_{tor}}{d\psi}$"),
+                    (magnetic_surface.dvolume_drho_tor/magnetic_surface.dvolume_dpsi,
+                     r"$\frac{dV}{d\rho_{tor}} / \frac{dV}{d\psi}$")
+                ],
                 (magnetic_surface.drho_tor_dpsi*magnetic_surface.dpsi_drho_tor,
                  r"$\frac{d\rho_{tor}}{d\psi} \cdot \frac{d\psi}{d\rho_{tor}}$"),
 
@@ -310,6 +322,11 @@ if __name__ == "__main__":
                     (eq_profile.elongation,                                 r"fytok", r"$elongation[-]$"),
                 ],
                 [
+                    (4*(constants.pi**2)*tok.equilibrium.time_slice.vacuum_toroidal_field.r0*tok.equilibrium.time_slice.profiles_1d.rho_tor,
+                     r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho , dV/d\rho$"),
+                    (tok.equilibrium.time_slice.profiles_1d.dvolume_drho_tor,   r"$V^{\prime}$", r"$dV/d\rho$"),
+                ],
+                [
                     (Function(bs_psi_norm, baseline["Jtot"].values*1e6),   r"astra",
                      r"$j_{\parallel} [A\cdot m^{-2}]$", {"marker": "+"}),
                     (eq_profile.j_parallel,                                         r"fytok",     r"$j_{\parallel}$"),
@@ -320,11 +337,7 @@ if __name__ == "__main__":
                 #     (eq_profile.r_inboard,                                                   r"$r_{inboard}$"),
                 #     (eq_profile.r_outboard,                                                 r"$r_{outboard}$"),
                 # ],
-                [
-                    (4*(constants.pi**2)*tok.equilibrium.time_slice.vacuum_toroidal_field.r0*tok.equilibrium.time_slice.profiles_1d.rho_tor,
-                     r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho , dV/d\rho$"),
-                    (tok.equilibrium.time_slice.profiles_1d.dvolume_drho_tor,   r"$V^{\prime}$", r"$dV/d\rho$"),
-                ]
+
                 # [
                 #     (eq_profile.volume,                r"$V$"),
                 #     # (Function(eq_profile.rho_tor, eq_profile.dvolume_drho_tor).antiderivative,

@@ -501,13 +501,13 @@ class MagneticCoordSystem(object):
         """Toroidal current driven inside the flux surface.
           .. math:: I_{pl}\equiv\int_{S_{\zeta}}\mathbf{j}\cdot dS_{\zeta}=\frac{\text{gm2}}{4\pi^{2}\mu_{0}}\frac{\partial V}{\partial\psi}\left(\frac{\partial\psi}{\partial\rho}\right)^{2}
          {dynamic}[A]"""
-        return self.gm2*self.dvolume_drho_tor/(TWOPI**2)*self.dpsi_drho_tor/constants.mu_0
+        return self.gm2 * self.dvolume_drho_tor/(TWOPI**2) * self.dpsi_drho_tor/constants.mu_0
 
     @cached_property
     def j_parallel(self) -> np.ndarray:
         r"""Flux surface averaged parallel current density = average(j.B) / B0, where B0 = Equilibrium/Global/Toroidal_Field/B0 {dynamic}[A/m ^ 2]. """
-        d = np.asarray(Function(self.psi, self.plasma_current/self.fpol).derivative())
-        return np.asarray(constants.pi*(self.fpol**2)/self.dvolume_dpsi * d/self.vacuum_toroidal_field.b0)
+        d = np.asarray(Function(self.volume, self._fvac*self.plasma_current/self.fpol).derivative())
+        return TWOPI*self._vacuum_toroidal_field.r0*(self.fpol/self._fvac)**2 * d
 
     @property
     def psi_norm(self) -> np.ndarray:
@@ -524,9 +524,9 @@ class MagneticCoordSystem(object):
             (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)[-].
             .. math:: q(\psi) =\frac{d\Phi}{2\pi d\psi} =\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{2\pi}
         """
-        # return self.dphi_dpsi
-        return self._vacuum_toroidal_field.b0 * self.rho_tor / self.dpsi_drho_tor
+        return self.fpol * self.gm1 * self.dvolume_dpsi/TWOPI
 
+        # return self._vacuum_toroidal_field.b0 * self.rho_tor / self.dpsi_drho_tor
         # return self.fpol * self.dvolume_dpsi*self.gm1/(TWOPI)
 
     @cached_property
@@ -580,7 +580,7 @@ class MagneticCoordSystem(object):
     @cached_property
     def dvolume_drho_tor(self) -> np.ndarray:
         """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
-        return (4*constants.pi**2*self._vacuum_toroidal_field.b0) * self.rho_tor/(self.fpol*self.gm1)
+        return (TWOPI**2*self._vacuum_toroidal_field.b0) * self.rho_tor/(self.fpol*self.gm1)
 
     @cached_property
     def drho_tor_dpsi(self) -> np.ndarray:
@@ -590,7 +590,7 @@ class MagneticCoordSystem(object):
                                         =\frac{1}{2\sqrt{\pi B_{0}\Phi_{tor}}}\frac{d\Phi_{tor}}{d\psi} \
                                         =\frac{q}{2\pi B_{0}\rho_{tor}}
         """
-        return self.dvolume_dpsi/self.dvolume_drho_tor
+        return 1.0/self.dpsi_drho_tor
 
         # return self.dvolume_dpsi/self.dvolume_drho_tor
         # return self.dvolume_dpsi/(4*constants.pi**2*self._vacuum_toroidal_field.b0) / self.rho_tor*(self.fpol*self.gm1)
@@ -602,7 +602,8 @@ class MagneticCoordSystem(object):
         """
             Derivative of Psi with respect to Rho_Tor[Wb/m].
         """
-        return self.dvolume_drho_tor/self.dvolume_dpsi
+        return TWOPI*self._vacuum_toroidal_field.b0*self.rho_tor/self.q
+        # return self.dvolume_drho_tor/self.dvolume_dpsi
 
     @cached_property
     def dphi_dvolume(self) -> np.ndarray:
@@ -610,7 +611,7 @@ class MagneticCoordSystem(object):
 
     @cached_property
     def dphi_dpsi(self) -> np.ndarray:
-        return self.fpol * self.gm1 * self.dvolume_dpsi/TWOPI**2
+        return self.fpol * self.gm1 * self.dvolume_dpsi/TWOPI
 
     @cached_property
     def gm1(self) -> np.ndarray:
