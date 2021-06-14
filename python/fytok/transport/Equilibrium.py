@@ -797,7 +797,6 @@ class EquilibriumTimeSlice(Dict):
 
         p_psi_norm = self.get("profiles_1d.psi_norm", None)
         fpol = self.get("profiles_1d.f", None)
-        pressure = self.get("profiles_1d.pressure", None)
         if isinstance(fpol, Function):
             pass
         elif isinstance(fpol, np.ndarray) and fpol.shape == p_psi_norm.shape:
@@ -805,20 +804,21 @@ class EquilibriumTimeSlice(Dict):
         else:
             raise TypeError(f"{type(fpol)}")
 
-        if isinstance(pressure, Function):
-            pass
-        elif isinstance(pressure, np.ndarray) and pressure.shape == p_psi_norm.shape:
-            pressure = Function(p_psi_norm, pressure)
-        else:
-            raise TypeError(f"{type(pressure)}")
+        # pressure = self.get("profiles_1d.pressure", None)
+
+        # if isinstance(pressure, Function):
+        #     pass
+        # elif isinstance(pressure, np.ndarray) and pressure.shape == p_psi_norm.shape:
+        #     pressure = Function(p_psi_norm, pressure)
+        # else:
+        #     raise TypeError(f"{type(pressure)}")
 
         return MagneticCoordSystem(
-            psirz=psirz,
             psi_norm=psi_norm,
+            psirz=psirz,
             fpol=fpol,
-            pressure=pressure,
-            vacuum_toroidal_field=self.get("vacuum_toroidal_field", None) or getattr(
-                self._parent, "vacuum_toroidal_field", None),
+            B0=self.get("vacuum_toroidal_field.b0", None),
+            R0=self.get("vacuum_toroidal_field.r0", None),
             ntheta=self.get("coordinate_system.ntheta", None)
         )
 

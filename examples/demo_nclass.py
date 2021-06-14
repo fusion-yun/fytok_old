@@ -41,10 +41,11 @@ if __name__ == "__main__":
     R0 = eqdsk.entry.find("vacuum_toroidal_field.r0", None)
     psi_axis = eqdsk.entry.find("global_quantities.psi_axis", None)
     psi_boundary = eqdsk.entry.find("global_quantities.psi_boundary", None)
+
     configure["equilibrium"] = {
         "code": {"name": "dummy"},
-        "vacuum_toroidal_field": eqdsk.entry.find("vacuum_toroidal_field", {}),
         "time_slice": {
+            "vacuum_toroidal_field": eqdsk.entry.find("vacuum_toroidal_field", {}),
             "profiles_1d": eqdsk.entry.find("profiles_1d"),
             "profiles_2d": {
                 "psi": eqdsk.entry.find("profiles_2d.psi")*TWOPI,
@@ -313,7 +314,7 @@ if __name__ == "__main__":
                 [
                     (Function(bs_psi_norm, baseline["shif"].values),
                      r"astra", "$\Delta$ shafranov \n shift $[m]$ ", {"marker": "+"}),
-                    (eq_profile.geometric_axis.r-tok.equilibrium.vacuum_toroidal_field.r0,
+                    (eq_profile.geometric_axis.r-tok.equilibrium.time_slice.vacuum_toroidal_field.r0,
                      r"fytok", "shafranov \n shift $\Delta [m]$ "),
                 ],
                 [
@@ -444,7 +445,7 @@ if __name__ == "__main__":
 
                 [
                     (Function(bs_r_nrom, baseline["Joh"].values*1.0e6 / baseline["U"].values *
-                              (2.0*constants.pi * tok.equilibrium.vacuum_toroidal_field.r0)),     r"astra", r"$\sigma_{\parallel}$", {"marker": "+"}),
+                              (2.0*constants.pi * tok.equilibrium.time_slice.vacuum_toroidal_field.r0)),     r"astra", r"$\sigma_{\parallel}$", {"marker": "+"}),
                     # (tok.core_transport.model[{"code.name": "spitzer"}].profiles_1d.conductivity_parallel,
                     #  "spitzer", r"$\sigma_{\parallel}$"),
                     (core_transport1d.conductivity_parallel,  r"fytok"),

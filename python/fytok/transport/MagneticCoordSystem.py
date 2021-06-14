@@ -2,27 +2,23 @@ import collections
 from dataclasses import dataclass
 from functools import cached_property
 from typing import Iterator, Sequence, Tuple, TypeVar, Union
-from numpy.lib.arraysetops import intersect1d
-from scipy.constants.constants import R
 
 from spdm.data.Field import Field
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List
 from spdm.geometry.CubicSplineCurve import CubicSplineCurve
-from spdm.geometry.Curve import Curve, intersect2d
 from spdm.geometry.GeoObject import GeoObject, _TCoord
 from spdm.geometry.Point import Point
 from spdm.mesh.CurvilinearMesh import CurvilinearMesh
 from spdm.mesh.Mesh import Mesh
-from spdm.numlib import constants, minimize, np, root_scalar
+from spdm.numlib import constants, np
 from spdm.numlib.contours import find_countours
-from spdm.numlib.optimize import find_critical_points, minimize_filter
+from spdm.numlib.optimize import find_critical_points
 from spdm.util.logger import deprecated, logger
 from spdm.util.utilities import _not_found_, try_get
 
-from ..common.GGD import GGD
-from ..common.IDS import IDS
-from ..common.Misc import Identifier, RZTuple, VacuumToroidalField
+
+from ..common.Misc import  RZTuple, VacuumToroidalField
 
 TOLERANCE = 1.0e-6
 EPS = np.finfo(float).eps
@@ -59,8 +55,8 @@ class MagneticCoordSystem(object):
     def __init__(self,
                  psirz: Field,
                  fpol: Union[np.ndarray, Function],
-                 pressure: Union[np.ndarray, Function],
-                 vacuum_toroidal_field: VacuumToroidalField,
+                 R0: float,
+                 B0: float,
                  psi_norm: np.ndarray = None,
                  ntheta: int = 128,
                  grid_type_index: int = 13):
@@ -72,9 +68,8 @@ class MagneticCoordSystem(object):
         self._grid_type_index = grid_type_index
 
         self._ntheta = ntheta if ntheta is not None else 128
-
-        self._b0 = np.abs(vacuum_toroidal_field.b0)
-        self._r0 = vacuum_toroidal_field.r0
+        self._b0 = np.abs(B0)
+        self._r0 = R0
         self._fvac = self._b0*self._r0
 
         self._psirz = psirz
