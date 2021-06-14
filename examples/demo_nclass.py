@@ -173,6 +173,8 @@ if __name__ == "__main__":
     # Initialize
     tok = Tokamak(configure)
 
+    # logger.debug(configure)
+
     ###################################################################################################
     # Plot profiles
 
@@ -190,8 +192,6 @@ if __name__ == "__main__":
 
         eq_profile = tok.equilibrium.time_slice.profiles_1d
 
-        magnetic_surface = eq_profile._coord
-
         # _, spearatrix_surf = next(magnetic_surface.find_surface_by_psi_norm([1.0]))
         # bpol = np.asarray([magnetic_surface.Bpol(p[0], p[1]) for p in spearatrix_surf.points()])
         # logger.debug(bpol.min())
@@ -204,6 +204,8 @@ if __name__ == "__main__":
         #      ],
         #     x_axis=([0, 1], "u"),
         #     grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_surf.svg", transparent=True)
+
+        magnetic_surface = eq_profile._coord
 
         plot_profiles(
             [
@@ -497,7 +499,7 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # TransportSolver
-    if False:
+    if True:
         tok.update(max_nodes=128, tolerance=1.0e-4)
 
         core_profile = tok.core_profiles.profiles_1d
