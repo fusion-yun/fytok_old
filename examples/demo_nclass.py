@@ -20,37 +20,163 @@ if __name__ == "__main__":
     bs_psi_norm = baseline["Fp"].values
     bs_r_nrom = baseline["x"].values
 
-    tok = Tokamak(
-        wall=device.entry.find("wall"),
-        pf_active=device.entry.find("pf_active"),
-        tf=device.entry.find("tf"),
-        magnetics=device.entry.find("magnetics"),
-        equilibrium={"code": {"name": "dummy"}},
-        core_profiles={},
-        transport_solver={"code": {"name": "bvp_solver"}},
-    )
+    eqdsk = File(
+        # "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
+        "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt",
+        # "/home/salmon/workspace/data/Limiter plasmas-7.5MA li=1.1/Limiter plasmas 7.5MA-EQDSK/Limiter_7.5MA_outbord.EQDSK",
+        format="geqdsk")
 
     ###################################################################################################
-    if True:  # Equlibrium
-        eqdsk = File(
-            # "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
-            "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt",
-            # "/home/salmon/workspace/data/Limiter plasmas-7.5MA li=1.1/Limiter plasmas 7.5MA-EQDSK/Limiter_7.5MA_outbord.EQDSK",
-            format="geqdsk")
+    # Configure
 
-        tok.equilibrium["vacuum_toroidal_field"] = eqdsk.entry.find("vacuum_toroidal_field", {})
+    configure = {
+        "wall": device.entry.find("wall"),
+        "pf_active": device.entry.find("pf_active"),
+        "tf": device.entry.find("tf"),
+        "magnetics": device.entry.find("magnetics"),
+    }
 
-        tok.equilibrium["time_slice"] = {
+    # Equilibrium
+
+    R0 = eqdsk.entry.find("vacuum_toroidal_field.r0", None)
+    psi_axis = eqdsk.entry.find("global_quantities.psi_axis", None)
+    psi_boundary = eqdsk.entry.find("global_quantities.psi_boundary", None)
+    configure["equilibrium"] = {
+        "code": {"name": "dummy"},
+        "vacuum_toroidal_field": eqdsk.entry.find("vacuum_toroidal_field", {}),
+        "time_slice": {
             "profiles_1d": eqdsk.entry.find("profiles_1d"),
             "profiles_2d": eqdsk.entry.find("profiles_2d"),
             "boundary_separatrix": eqdsk.entry.find("boundary"),
             # "coordinate_system": {"psi_norm": {"axis": 0.01, "boundary": 0.995, "npoints": 128}}
             "coordinate_system": {"psi_norm": baseline["Fp"].values[1:-1]}
-        }
-    
-    
-    
-    if True:  
+        }}
+
+    # Core profile
+
+    b_Te = Function(bs_r_nrom, baseline["TE"].values*1000)
+    b_Ti = Function(bs_r_nrom, baseline["TI"].values*1000)
+
+    b_ne = Function(bs_r_nrom, baseline["NE"].values*1.0e19)
+    b_nHe = Function(bs_r_nrom, baseline["Nalf"].values*1.0e19)
+    # nDT = Function(bs_r_nrom, baseline["Nd+t"].values*1.0e19)
+    b_nDT = b_ne * (1.0 - 0.02*4 - 0.0012*18) - b_nHe*2.0
+
+    # Zeff = Function(bs_r_nrom, baseline["Zeff"].values)
+
+    configure["core_profiles"] = {
+        "profiles_1d": {
+            "electrons": {**atoms["e"], "density": b_ne,  "temperature": b_Te, },
+            "ion": [
+                {**atoms["D"],  "density":   0.5*b_nDT, "temperature": b_Ti, },
+                {**atoms["T"],  "density":   0.5*b_nDT, "temperature": b_Ti, },
+                {**atoms["He"], "density":       b_nHe, "temperature": b_Ti, },
+                {**atoms["Be"], "density":   0.02*b_ne, "temperature": b_Ti, },
+                {**atoms["Ar"], "density": 0.0012*b_ne, "temperature": b_Ti, },
+            ]}}
+
+    # Core Transport
+    conductivity_parallel = Function(bs_r_nrom, baseline["Joh"].values*1.0e6 / baseline["U"].values *
+                                     (2.0*constants.pi * R0))
+    r_ped = 0.96  # np.sqrt(0.88)
+    Cped = 0.2
+    Ccore = 0.4
+    chi = PiecewiseFunction([0, r_ped, 1.0],  [lambda x: Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
+    chi_e = PiecewiseFunction([0, r_ped, 1.0], [lambda x:0.5*chi(x), lambda x: 0.8*Cped])
+
+    # D = Function(
+    #     [lambda r:r < r_ped, lambda r:r >= r_ped],
+    #     [lambda x:  0.5+(x**4), lambda x: 0.11])
+
+    D = PiecewiseFunction([0, r_ped, 1.0],  [lambda x:0.15 * Ccore*(1.0 + 3*(x**2)), lambda x: 0.2*Cped])
+    v_pinch = Function([0, r_ped, 1.0], lambda x: 0.4 * D(x) * x / R0)   # FIXME: The coefficient 0.4 is a guess.
+    v_pinch_T = Function([0, r_ped, 1.0], lambda x: 1.385 * chi_e(x) * x / R0)
+
+    configure["core_transport"] = {
+        "model": [
+            {
+                "code": {"name": "dummy"},
+                "profiles_1d": {
+                    "conductivity_parallel": conductivity_parallel,
+                    "electrons": {
+                        **atoms["e"],
+                        "particles":   {"d": D, "v": -v_pinch},
+                        "energy":      {"d": chi_e, "v": -v_pinch_T},
+                    },
+                    "ion": [
+                        {
+                            **atoms["D"],
+                            "particles":{"d":  D, "v": v_pinch},
+                            "energy": {"d": chi, "v": 0},
+                        },
+                        {
+                            **atoms["T"],
+                            "particles":{"d":  D, "v": v_pinch},
+                            "energy": {"d": chi, "v": 0},
+                        },
+                        {
+                            **atoms["He"],
+                            "particles":{"d": 0.1 * (chi+chi_e), "v": 0},
+                            "energy": {"d": 0.5*chi, "v": 0}, }
+                    ]}
+            },
+
+            # {"code": {"name": "neoclassical"}},
+            # {"code": {"name": "spitzer"}},
+        ]}
+
+    # Core Source
+    configure["core_sources"] = {
+        "source": [
+            {
+                "code": {"name": "dummy"},
+                "profiles_1d": {
+                    "j_parallel": Function(bs_r_nrom, baseline["Jtot"].values*1e6),
+                    "electrons":{
+                        "particles": Function(lambda x: 1e19 * np.exp(12.0*(x**2-1.0))),
+                        "energy": Function(bs_r_nrom[1:],
+                                           (baseline["Poh"].values[1:]
+                                            + baseline["Pdte"].values[1:]
+                                            + baseline["Paux"].values[1:]
+                                            - baseline["Peic"].values[1:]
+                                            - baseline["Prad"].values[1:]
+                                            - baseline["Pneu"].values[1:]
+                                            )*1e6/constants.electron_volt
+                                           )},
+                    "ion":[]
+                }},
+            # {"code": {"name": "q_ei"}, }
+            # {"code": {"name": "bootstrap_current"}},
+        ]}
+
+    #  TransportSolver
+    configure["transport_solver"] = {
+        "code": {"name": "bvp_solver"},
+        "boundary_conditions_1d": {
+            "current": {"identifier": {"index": 1}, "value": [psi_boundary]},
+            "electrons": {"particles": {"identifier": {"index": 1}, "value": [b_ne[-1]]},
+                          "energy": {"identifier": {"index": 1}, "value": [b_Te[-1]]}},
+            "ion": [
+                {**atoms["D"],
+                 "particles": {"identifier": {"index": 1}, "value": [b_nDT[-1]]},
+                 "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}},
+                {**atoms["T"],
+                 "particles": {"identifier": {"index": 1}, "value": [b_nDT[-1]]},
+                 "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}},
+                {**atoms["He"],
+                 "particles": {"identifier": {"index": 1}, "value": [b_nHe[-1]]},
+                 "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}}
+            ]
+        }}
+
+    ###################################################################################################
+    # Initialize
+    tok = Tokamak(configure)
+
+    ###################################################################################################
+    # Plot profiles
+
+    if True:  # Equilibrium
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
                   pf_active={"facecolor": 'red'},
@@ -61,9 +187,9 @@ if __name__ == "__main__":
                       #   "scalar_field": [("psirz", {"levels": 16, "linewidths": 0.1}), ],
                   }
                   ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
+
         eq_profile = tok.equilibrium.time_slice.profiles_1d
 
- 
         magnetic_surface = eq_profile._coord
 
         # _, spearatrix_surf = next(magnetic_surface.find_surface_by_psi_norm([1.0]))
@@ -81,7 +207,6 @@ if __name__ == "__main__":
 
         plot_profiles(
             [
-
                 [
                     (Function(baseline["Fp"].values, baseline["q"].values), r"astra",  r"$q [-]$", {"marker": "+"}),
                     (Function(bs_psi_norm, baseline["q"].values), r"astra",  r"$q [-]$", {"marker": "+"}),
@@ -139,7 +264,6 @@ if __name__ == "__main__":
             title="Equlibrium",
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_coord.svg", transparent=True)
 
-    if True:
         plot_profiles(
             [
                 # (eq_profile.dpressure_dpsi,                                                       r"$dP/d\psi$"),
@@ -217,30 +341,7 @@ if __name__ == "__main__":
             title="Equlibrium",
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
-    ###################################################################################################
     if True:  # CoreProfile
-        s_range = -1  # slice(0, 140, 1)
-        b_Te = Function(bs_r_nrom, baseline["TE"].values*1000)
-        b_Ti = Function(bs_r_nrom, baseline["TI"].values*1000)
-
-        b_ne = Function(bs_r_nrom, baseline["NE"].values*1.0e19)
-        b_nHe = Function(bs_r_nrom, baseline["Nalf"].values*1.0e19)
-        # nDT = Function(bs_r_nrom, baseline["Nd+t"].values*1.0e19)
-        b_nDT = b_ne * (1.0 - 0.02*4 - 0.0012*18) - b_nHe*2.0
-
-        # Zeff = Function(bs_r_nrom, baseline["Zeff"].values)
-
-        tok.core_profiles["profiles_1d"] = {
-            "electrons": {**atoms["e"], "density": b_ne,  "temperature": b_Te, },
-            "ion": [
-                {**atoms["D"],  "density":   0.5*b_nDT, "temperature": b_Ti, },
-                {**atoms["T"],  "density":   0.5*b_nDT, "temperature": b_Ti, },
-                {**atoms["He"], "density":       b_nHe, "temperature": b_Ti, },
-                {**atoms["Be"], "density":   0.02*b_ne, "temperature": b_Ti, },
-                {**atoms["Ar"], "density": 0.0012*b_ne, "temperature": b_Ti, },
-            ]}
-
-        tok.core_profiles.update()
 
         core_profile = tok.core_profiles.profiles_1d
 
@@ -277,63 +378,10 @@ if __name__ == "__main__":
             x_axis=([0, 1.0],                                  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
-    ###################################################################################################
     if True:  # CoreTransport
-        rho_tor_norm = tok.equilibrium.time_slice.profiles_1d.rho_tor_norm
-        R0 = tok.equilibrium.vacuum_toroidal_field.r0
-        conductivity_parallel = Function(bs_r_nrom, baseline["Joh"].values*1.0e6 / baseline["U"].values *
-                                         (2.0*constants.pi * R0))
-        r_ped = 0.96  # np.sqrt(0.88)
-        Cped = 0.2
-        Ccore = 0.4
-        chi = PiecewiseFunction([0, r_ped, 1.0],  [lambda x: Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
-        chi_e = PiecewiseFunction([0, r_ped, 1.0], [lambda x:0.5*chi(x), lambda x: 0.8*Cped])
+        # core_transport1d_nc = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
+        # core_transport1d_dummy = tok.core_transport.model[{"code.name": "dummy"}].profiles_1d
 
-        # D = Function(
-        #     [lambda r:r < r_ped, lambda r:r >= r_ped],
-        #     [lambda x:  0.5+(x**4), lambda x: 0.11])
-
-        D = PiecewiseFunction([0, r_ped, 1.0],  [lambda x:0.15 * Ccore*(1.0 + 3*(x**2)), lambda x: 0.2*Cped])
-        v_pinch = Function([0, r_ped, 1.0], lambda x: 0.4 * D(x) * x / R0)   # FIXME: The coefficient 0.4 is a guess.
-        v_pinch_T = Function([0, r_ped, 1.0], lambda x: 1.385 * chi_e(x) * x / R0)
-
-        tok.core_transport["model"] = [
-            {"code": {"name": "dummy"},
-                "profiles_1d": {
-                    "conductivity_parallel": conductivity_parallel,
-                    "electrons": {
-                        **atoms["e"],
-                        "particles":   {"d": D, "v": -v_pinch},
-                        "energy":      {"d": chi_e, "v": -v_pinch_T},
-                    },
-                    "ion": [
-                        {
-                            **atoms["D"],
-                            "particles":{"d":  D, "v": v_pinch},
-                            "energy": {"d": chi, "v": 0},
-                        },
-                        {
-                            **atoms["T"],
-                            "particles":{"d":  D, "v": v_pinch},
-                            "energy": {"d": chi, "v": 0},
-                        },
-                        {
-                            **atoms["He"],
-                            "particles":{"d": 0.1 * (chi+chi_e), "v": 0},
-                            "energy": {"d": 0.5*chi, "v": 0}, }
-                    ]}
-             },
-
-            # {"code": {"name": "neoclassical"}},
-            # {"code": {"name": "spitzer"}},
-        ]
-
-        # logger.debug(tok.core_transport.model[0].profiles_1d.electrons.particles.v(rho_tor_norm))
-
-        tok.core_transport.update()
-
-        core_transport1d_nc = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
-        core_transport1d_dummy = tok.core_transport.model[{"code.name": "dummy"}].profiles_1d
         core_transport1d = tok.core_transport.model.combine.profiles_1d
 
         plot_profiles(
@@ -356,7 +404,7 @@ if __name__ == "__main__":
 
                 [
                     (Function(bs_r_nrom, baseline["Xi"].values),          r"astra", r"$\chi_{i}$", {"marker": "+"}),
-                    *[(ion.energy.d,  f"{ion.label}", r"$\chi_{i}$") for ion in core_transport1d_dummy.ion],
+                    *[(ion.energy.d,  f"{ion.label}", r"$\chi_{i}$") for ion in core_transport1d.ion],
                 ],
 
                 # [
@@ -366,7 +414,7 @@ if __name__ == "__main__":
                 # ],
                 [
                     (Function(bs_r_nrom, baseline["He"].values), "astra", r"$\chi_{e}$"),
-                    (core_transport1d_dummy.electrons.energy.d,  "fytok", r"$\chi_{e}$"),
+                    (core_transport1d.electrons.energy.d,  "fytok", r"$\chi_{e}$"),
                 ],
 
                 # [
@@ -380,50 +428,20 @@ if __name__ == "__main__":
                               (2.0*constants.pi * tok.equilibrium.vacuum_toroidal_field.r0)),     r"astra", r"$\sigma_{\parallel}$", {"marker": "+"}),
                     # (tok.core_transport.model[{"code.name": "spitzer"}].profiles_1d.conductivity_parallel,
                     #  "spitzer", r"$\sigma_{\parallel}$"),
-                    (core_transport1d_dummy.conductivity_parallel,  r"fytok"),
+                    (core_transport1d.conductivity_parallel,  r"fytok"),
                 ],
 
                 # (core_transport1d.e_field_radial,                                             r"$E_{radial}$"),
                 # (tok.equilibrium.time_slice[-1].profiles_1d.trapped_fraction(
                 # core_transport.model[0].profiles_1d[-1].grid_v.psi_norm),      r"trapped"),
                 # (core_profile.electrons.pressure,                                                  r"$p_{e}$"),
-
             ],
             x_axis=([0, 1.0],   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             # index_slice=slice(10, 110, 1),
             title=tok.core_transport.model[0].identifier.name,
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
-    ###################################################################################################
     if True:  # CoreSources
-
-        ne_src = Function(rho_tor_norm, lambda x: 1e19 * np.exp(12.0*(x**2-1.0)))
-
-        tok.core_sources["source"] = [
-            {"code": {"name": "dummy"},
-                "profiles_1d": {
-                    "j_parallel": Function(bs_r_nrom, baseline["Jtot"].values*1e6),
-                    "electrons":{
-                        "particles": ne_src,
-                        "energy": Function(bs_r_nrom[1:],
-                                           (baseline["Poh"].values[1:]
-                                               + baseline["Pdte"].values[1:]
-                                               + baseline["Paux"].values[1:]
-                                               - baseline["Peic"].values[1:]
-                                               - baseline["Prad"].values[1:]
-                                               - baseline["Pneu"].values[1:]
-                                            )*1e6/constants.electron_volt
-                                           )},
-                    "ion":[]
-            }
-            },
-            # {"code": {"name": "q_ei"}, }
-            # {"code": {"name": "bootstrap_current"}},
-        ]
-        # tok.core_sources.source[{"code.name": "dummy"}].profiles_1d["j_parallel"] = \
-        #     Function(bs_r_nrom, baseline["Jtot"].values)
-        tok.core_sources.update()
-
         core_source_1d = tok.core_sources.source.combine.profiles_1d
 
         plot_profiles(
@@ -478,52 +496,11 @@ if __name__ == "__main__":
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_sources.svg", transparent=True)
 
     ###################################################################################################
-    if True:  # TransportSolver
-        tok.transport_solver["boundary_conditions_1d"] = {
-            "current": {"identifier": {"index": 1}, "value": [tok.equilibrium.time_slice.global_quantities.psi_boundary]},
-            "electrons": {"particles": {"identifier": {"index": 1}, "value": [b_ne[-1]]},
-                          "energy": {"identifier": {"index": 1}, "value": [b_Te[-1]]}},
-            "ion": [
-                {**atoms["D"],
-                 "particles": {"identifier": {"index": 1}, "value": [b_nDT[-1]]},
-                 "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}},
-                {**atoms["T"],
-                    "particles": {"identifier": {"index": 1}, "value": [b_nDT[-1]]},
-                    "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}},
-                {**atoms["He"],
-                    "particles": {"identifier": {"index": 1}, "value": [b_nHe[-1]]},
-                    "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}}
-            ]
-        }
-
-        tok.transport_solver.update(equilibrium=tok.equilibrium,
-                                    core_profiles=tok.core_profiles,
-                                    core_transport=tok.core_transport,
-                                    core_sources=tok.core_sources)
-
-        # psi0 = tok.core_profiles.profiles_1d['psi']
-        # tok.core_profiles.profiles_1d["psi"] = np.zeros(tok.core_profiles.grid.rho_tor_norm.shape)
-        # tok.core_profiles.profiles_1d["dpsi_drho_tor_norm"] = np.zeros(tok.core_profiles.grid.rho_tor_norm.shape)
-
-        tok.transport_solver.solve(impurities=["D", "T", "He", "Ar", "Be"])
+    # TransportSolver
+    if False:
+        tok.update(max_nodes=128, tolerance=1.0e-4)
 
         core_profile = tok.core_profiles.profiles_1d
-
-        # plot_profiles(
-        #     [
-        #         [
-        #             (core_profile.electrons["diff"],  r"D"),
-        #             (np.abs(core_profile.electrons["conv"]),  r"$\left|V\right|$"),
-        #         ],
-        #     ],
-        #     # x_axis=(rho_tor_norm,                             r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-        #     x_axis=(core_profile.electrons.temperature.x_axis,  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-        #     title="Result of TransportSolver",
-        #     # index_slice=slice(0, 200, 1),
-        #     grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile_result.svg", transparent=True)
-
-        psi_axis = tok.equilibrium.time_slice.global_quantities.psi_axis
-        psi_boundary = tok.equilibrium.time_slice.global_quantities.psi_boundary
 
         plot_profiles(
             [
@@ -535,7 +512,7 @@ if __name__ == "__main__":
                      r"astra", r"$\psi [Wb]$", {"marker": "+"}),
                     (core_profile["psi"],  r"fytok", r"$\psi  [Wb]$", {"marker": "."}),
                     (Function(bs_r_nrom, bs_psi_norm*(psi_boundary-psi_axis)+psi_axis)-core_profile["psi"],
-                     r"residual", r"",  {"color": "red", "linestyle": "dashed"}),
+                        r"residual", r"",  {"color": "red", "linestyle": "dashed"}),
                 ],
                 # [
                 #     (Function(bs_r_nrom, baseline["Fp"].values), r"astra", r"$\psi/\psi_{bdry}  [-]$", {"marker": "+"}),
@@ -557,7 +534,7 @@ if __name__ == "__main__":
                     (b_ne, r"astra", r"$n_e [m^{-3}]$",  {"marker": "+"}),
                     (core_profile.electrons.density, r"fytok", r"$n_e [ m^{-3}]$", {"marker": "."}),
                     (b_ne-core_profile.electrons.density, r"residual",
-                     r"$n_e [ m^{-3}]$",  {"color": "red", "linestyle": "dashed"}),
+                        r"$n_e [ m^{-3}]$",  {"color": "red", "linestyle": "dashed"}),
                     # *[(ion.density*1e-19,                            f"${ion.label}$") for ion in core_profile.ion],
                 ],
 
@@ -570,8 +547,8 @@ if __name__ == "__main__":
                     (core_profile.electrons["diff_flux"],    r"Diffusive ",  "", {"color": "black", }),
                     (core_profile.electrons["conv_flux"],    r"Convective ", "",  {"color": "blue", }),
                     (core_profile.electrons["diff_flux"]
-                     + core_profile.electrons["conv_flux"]
-                     - core_profile.electrons["s_exp_flux"],     r"residual",  "", {"color": "red", }),
+                        + core_profile.electrons["conv_flux"]
+                        - core_profile.electrons["s_exp_flux"],     r"residual",  "", {"color": "red", }),
                 ],
                 ######################################################################
                 # electron energy

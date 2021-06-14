@@ -122,25 +122,20 @@ class Tokamak(Actor):
 
         time = super().advance(time=time, dt=dt)
 
-        self.wall.advance(time=time, updte=False)
+        self.wall.advance(time=time, update=False)
 
-        self.pf_active.advance(time=time, updte=False)
+        self.pf_active.advance(time=time, update=False)
 
-        self.equilibrium.advance(time=time, updte=False)
+        self.equilibrium.advance(time=time, update=False)
 
-        self.core_profiles.advance(time=time, updte=False)
+        self.core_profiles.advance(time=time, update=False)
 
-        self.core_sources.advance(time=time, updte=False)
+        self.core_sources.advance(time=time, update=False)
 
-        self.core_transport.advance(time=time, updte=False)
+        self.core_transport.advance(time=time, update=False)
 
-    def update(self, *args, constraints: Equilibrium.Constraints = None,  max_iteration=1,  enable_edge=False,  tolerance=1.0e-6, **kwargs):
-
-        self.wall.update(kwargs.get("wall", {}))
-
-        self.pf_active.update(kwargs.get("pf_active", {}))
-
-        self.magnetics.update(kwargs.get("magnetics", {}))
+    def update(self, d=None, /, constraints: Equilibrium.Constraints = None,  max_iteration=1,  enable_edge=False,  tolerance=1.0e-6, **kwargs):
+        super().update(collections.ChainMap(d or {}, kwargs))
 
         for nstep in range(max_iteration):
 
@@ -162,19 +157,12 @@ class Tokamak(Actor):
 
                 self.edge_sources.update(equilibrium=self.equilibrium, core_profiles=self.core_profiles)
 
-                self.edge_profiles.update(equilibrium=self.equilibrium, core_profiles=self.core_profiles,
-                                          edge_transport=self.edge_transport.current_state,
-                                          edge_sources=self.edge_sources.current_state)
+                self.edge_profiles.update()
 
                 # TODO: update boundary condition
-                self.transport_solver.update(edge_profiles=self.edge_profiles)
+                self.transport_solver.update()
 
-            redisual = self.transport_solver.solve(
-                core_profiles=self.core_profiles,
-                equilibrium=self.equilibrium,
-                core_transport=self.core_transport,
-                core_sources=self.core_sources,
-                **kwargs)
+            redisual = self.transport_solver.solve(**kwargs)
 
             logger.debug(f"time={self.time}  iterator step {nstep}/{max_iteration} redisual={redisual}")
 

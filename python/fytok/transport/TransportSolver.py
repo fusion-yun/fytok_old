@@ -120,9 +120,25 @@ class TransportSolver(IDS):
         def ion(self) -> List[Ion]:
             return self.get("ion", [])
 
-    def __init__(self,  *args, grid: RadialGrid = None, **kwargs):
+    def __init__(self,  *args, grid: RadialGrid = None,
+                 equilibrium: Equilibrium = None,
+                 core_profiles: CoreProfiles = None,
+                 core_transport: CoreTransport = None,
+                 core_sources: CoreSources = None,
+                 edge_profiles: EdgeProfiles = False,
+                 edge_transport: EdgeTransport = False,
+                 edge_sources: EdgeSources = False,
+                 **kwargs):
         super().__init__(*args, **kwargs)
         self._grid = grid if grid is not None else self._parent._grid
+
+        self._equilibrium = equilibrium or getattr(self._parent, "equilibrium", None)
+        self._core_profiles = core_profiles or getattr(self._parent, "core_profiles", None)
+        self._core_transport = core_transport or getattr(self._parent, "core_transport", None)
+        self._core_sources = core_sources or getattr(self._parent, "core_sources", None)
+        self._edge_profiles = edge_profiles or getattr(self._parent, "edge_profiles", None)
+        self._edge_transport = edge_transport or getattr(self._parent, "edge_transport", None)
+        self._edge_sources = edge_sources or getattr(self._parent, "edge_sources", None)
 
     @property
     def grid(self):
@@ -140,32 +156,8 @@ class TransportSolver(IDS):
     def boundary_conditions_1d(self) -> BoundaryConditions1D:
         return self.get("boundary_conditions_1d", {})
 
-    def update(self, /,
-               equilibrium: Equilibrium = None,
-               core_profiles: CoreProfiles = None,
-               core_transport: CoreTransport = None,
-               core_sources: CoreSources = None,
-               edge_profiles: EdgeProfiles = False,
-               edge_transport: EdgeTransport = False,
-               edge_sources: EdgeSources = False,
-               **kwargs):
-
-        if equilibrium is not None:
-            self._equilibrium = equilibrium
-        if core_profiles is not None:
-            self._core_profiles = core_profiles
-        if core_transport is not None:
-            self._core_transport = core_transport
-        if core_sources is not None:
-            self._core_sources = core_sources
-        if edge_profiles is not None:
-            self._edge_profiles = edge_profiles
-        if edge_transport is not None:
-            self._edge_transport = edge_transport
-        if edge_sources is not None:
-            self._edge_sources = edge_sources
-
-        return 0.0
+    def update(self, /, boundary_conditions_1d=None, **kwargs):
+        return self.boundary_conditions_1d.update(boundary_conditions_1d)
 
     def solve_core(self, *args, max_nodes=1000, tolerance=1e-3, **kwargs):
         return NotImplemented
