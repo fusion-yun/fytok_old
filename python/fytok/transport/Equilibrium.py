@@ -879,19 +879,27 @@ class EquilibriumTimeSlice(Dict):
                 axis.plot([], [], 'rx', label="X-Point")
 
         if boundary is not False:
+
             boundary_points = np.vstack([self.boundary.outline.r,
                                          self.boundary.outline.z]).T
 
             axis.add_patch(plt.Polygon(boundary_points, color='g', linestyle='solid',
-                                       linewidth=0.5, fill=False, closed=True))
+                                       linewidth=0.2, fill=False, closed=True))
+
             axis.plot([], [], 'g-', label="Boundary")
 
         if separatrix is not False:
+            r0 = self._entry.find("boundary_separatrix.outline.r", None)
+            z0 = self._entry.find("boundary_separatrix.outline.z", None)
+            if r0 is not None and z0 is not None:
+                axis.add_patch(plt.Polygon(np.vstack([r0, z0]).T, color='b', linestyle=':',
+                                           linewidth=1.0, fill=False, closed=True))
+
             boundary_points = np.vstack([self.boundary_separatrix.outline.r,
                                          self.boundary_separatrix.outline.z]).T
 
             axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
-                                       linewidth=0.5, fill=False, closed=False))
+                                       linewidth=0.2, fill=False, closed=False))
             axis.plot([], [], 'r--', label="Separatrix")
 
         if contour is not False:

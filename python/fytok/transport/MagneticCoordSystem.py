@@ -229,14 +229,13 @@ class MagneticCoordSystem(object):
                     else:  # boundary separatrix
                         if x_point is None:
                             raise RuntimeError(f"No X-point ")
+                        logger.warning(f"The magnetic surface average is not well defined on the separatrix!")
                         xpt = np.asarray([x_point.r, x_point.z])
                         b = points[1:]
                         a = points[:-1]
                         d = b-a
                         d2 = d[:, 0]**2+d[:, 1]**2
                         p = xpt-a
-                        p2 = p[:, 0]*p[:, 0]+p[:, 1]*p[:, 1]
-                        l = np.sqrt(p2/d2)
 
                         c = (p[:, 0]*d[:, 0]+p[:, 1]*d[:, 1])/d2
                         s = (p[:, 0]*d[:, 1]-p[:, 1]*d[:, 0])/d2
@@ -250,12 +249,9 @@ class MagneticCoordSystem(object):
 
                         theta_x = np.arctan2(xpt[0]-o_point.r, xpt[1]-o_point.z)
 
-                        logger.debug((theta_x, theta[idx]))
-
                         points = np.vstack([[xpt], points[idx0:idx1]])
                         theta = np.hstack([theta_x, theta[idx0:idx1]])
 
-                        logger.debug(theta[:5])
                     # theta must be strictly increased
                     p_min = np.argmin(theta)
                     p_max = np.argmax(theta)
@@ -281,6 +277,7 @@ class MagneticCoordSystem(object):
                     break
 
                 if surf is None:
+                    logger.debug(level)
                     if np.isclose(level, o_point.psi):
                         yield level, Point(o_point.r, o_point.z)
                     else:
@@ -294,12 +291,13 @@ class MagneticCoordSystem(object):
                     # points = points[idx[0]:idx[1]]
 
     def find_surface_by_psi_norm(self, psi_norm: Union[float, Sequence], *args,   **kwargs) -> Iterator[Tuple[float, GeoObject]]:
-        yield from self.find_surface(psi_norm*(self.psi_boundary-self.psi_axis)+self.psi_axis, *args,  **kwargs)
+
+        yield from self.find_surface(np.asarray(psi_norm)*(self.psi_boundary-self.psi_axis)+self.psi_axis, *args,  **kwargs)
 
     ###############################
     # 2-D
 
-    @ cached_property
+    @cached_property
     def mesh(self) -> Mesh:
         # return self.create_mesh(self._psi_norm, None, type_index=13)
 
@@ -318,11 +316,11 @@ class MagneticCoordSystem(object):
 
         return mesh
 
-    @ property
+    @property
     def r(self) -> np.ndarray:
         return self.mesh.xy[:, :, 0]
 
-    @ property
+    @property
     def z(self) -> np.ndarray:
         return self.mesh.xy[:, :, 1]
 
@@ -371,7 +369,7 @@ class MagneticCoordSystem(object):
         """
         return self.surface_integral(func)/self.dvolume_dpsi
 
-    @ dataclass
+    @dataclass
     class ShapePropety:
         # RZ position of the geometric axis of the magnetic surfaces (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the surface)
         geometric_axis: RZTuple
@@ -452,7 +450,7 @@ class MagneticCoordSystem(object):
     ###############################
     # 0-D
 
-    @ cached_property
+    @cached_property
     def magnetic_axis(self):
         o, _ = self.critical_points
         if not o:
@@ -468,17 +466,17 @@ class MagneticCoordSystem(object):
     # def boundary(self) -> Curve:
     #     return next(self.find_surface(self.psi_boundary, only_closed=True))
 
-    @ cached_property
+    @cached_property
     def cocos_flag(self) -> int:
         return 1 if self.psi_boundary > self.psi_axis else -1
 
-    @ cached_property
+    @cached_property
     def psi_axis(self) -> float:
         """Poloidal flux at the magnetic axis  [Wb]."""
         o, _ = self.critical_points
         return o[0].psi
 
-    @ cached_property
+    @cached_property
     def psi_boundary(self) -> float:
         """Poloidal flux at the selected plasma boundary  [Wb]."""
         _, x = self.critical_points
@@ -490,38 +488,38 @@ class MagneticCoordSystem(object):
     ###############################
     # 1-D
 
-    @ cached_property
+    @cached_property
     def ffprime(self) -> np.ndarray:
         return self._ffprime(self._psi_norm)
 
-    @ cached_property
+    @cached_property
     def fpol(self) -> np.ndarray:
         """Diamagnetic function (F=R B_Phi)  [T.m]."""
         fpol2 = self._ffprime.antiderivative(self.psi_norm) * 2
         return np.sqrt(fpol2 - fpol2[-1] + self._fvac**2)
 
-    @ cached_property
+    @cached_property
     def plasma_current(self) -> np.ndarray:
         """Toroidal current driven inside the flux surface.
           .. math:: I_{pl}\equiv\int_{S_{\zeta}}\mathbf{j}\cdot dS_{\zeta}=\frac{\text{gm2}}{4\pi^{2}\mu_{0}}\frac{\partial V}{\partial\psi}\left(\frac{\partial\psi}{\partial\rho}\right)^{2}
          {dynamic}[A]"""
         return self.surface_integral(lambda r, z: self.grad_psi2(r, z) / (r**2)) / constants.mu_0
 
-    @ cached_property
+    @cached_property
     def j_parallel(self) -> np.ndarray:
         r"""Flux surface averaged parallel current density = average(j.B) / B0, where B0 = Equilibrium/Global/Toroidal_Field/B0 {dynamic}[A/m ^ 2]. """
         d = np.asarray(Function(self.psi_norm, self.plasma_current/self.fpol).derivative())
         return np.asarray((self.fpol**2)/self.dvolume_dpsi * d / (self.psi_boundary - self.psi_axis)/self.vacuum_toroidal_field.b0)
 
-    @ property
+    @property
     def psi_norm(self) -> np.ndarray:
         return self._psi_norm
 
-    @ cached_property
+    @cached_property
     def psi(self) -> np.ndarray:
         return self.psi_norm * (self.psi_boundary-self.psi_axis) + self.psi_axis
 
-    @ cached_property
+    @cached_property
     def q(self) -> np.ndarray:
         r"""
             Safety factor
@@ -531,35 +529,34 @@ class MagneticCoordSystem(object):
         return self.dphi_dpsi/TWOPI
         # return self.fpol * self.dvolume_dpsi*self.gm1/(TWOPI)
 
-    @ cached_property
+    @cached_property
     def magnetic_shear(self) -> np.ndarray:
         """Magnetic shear, defined as rho_tor/q . dq/drho_tor[-]	 """
         return self.rho_tor/self.q * self.dq_dpsi
 
-    @ cached_property
+    @cached_property
     def phi(self) -> np.ndarray:
         r"""
             Note:
             .. math::
                 \Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi
         """
+        res = Function(self.psi, self.dphi_dpsi).antiderivative(self.psi)
         if not np.isclose(self.psi[0], self.psi_axis):
-            _psi = np.hstack([[self.psi_axis], self.psi])
-            _dphi_dpsi = np.hstack([[self.dphi_dpsi[0]], self.dphi_dpsi])
-            return Function(_psi, _dphi_dpsi).antiderivative(_psi)[1:]
-        else:
-            return Function(self.psi, self.dphi_dpsi).antiderivative(self.psi)
+            phi0 = self.dphi_dpsi[0]*(self.psi[0]-self.psi_axis)
+            res += phi0
+        return res
 
-    @ cached_property
+    @cached_property
     def rho_tor(self) -> np.ndarray:
         """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0[m]"""
         return np.sqrt(self.phi/(constants.pi * abs(self._vacuum_toroidal_field.b0)))
 
-    @ cached_property
+    @cached_property
     def rho_tor_norm(self) -> np.ndarray:
         return np.sqrt(self.phi/self.phi[-1])
 
-    @ cached_property
+    @cached_property
     def volume(self) -> np.ndarray:
         """Volume enclosed in the flux surface[m ^ 3]"""
         if self.psi_norm[0] > 0.0:
@@ -571,7 +568,7 @@ class MagneticCoordSystem(object):
 
         return Function(x, dvdx).antiderivative(self.psi_norm)
 
-    @ cached_property
+    @cached_property
     def dvolume_dpsi(self) -> np.ndarray:
         r"""
             .. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
@@ -579,12 +576,12 @@ class MagneticCoordSystem(object):
         """
         return self.surface_integral()
 
-    @ cached_property
+    @cached_property
     def dvolume_drho_tor(self) -> np.ndarray:
         """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
         return (4*constants.pi**2*self._vacuum_toroidal_field.b0) * self.rho_tor/(self.fpol*self.gm1)
 
-    @ cached_property
+    @cached_property
     def drho_tor_dpsi(self) -> np.ndarray:
         r"""
             .. math::
@@ -597,22 +594,22 @@ class MagneticCoordSystem(object):
         # return self.dphi_dpsi / self.rho_tor / (self._vacuum_toroidal_field.b0)
         # return Function(self.psi_norm[1:], d)(self.psi_norm)
 
-    @ cached_property
+    @cached_property
     def dpsi_drho_tor(self) -> np.ndarray:
         """
             Derivative of Psi with respect to Rho_Tor[Wb/m].
         """
         return self.dvolume_drho_tor/self.dvolume_dpsi
 
-    @ cached_property
+    @cached_property
     def dphi_dvolume(self) -> np.ndarray:
         return self.fpol * self.gm1
 
-    @ cached_property
+    @cached_property
     def dphi_dpsi(self) -> np.ndarray:
         return self.fpol * self.gm1 * self.dvolume_dpsi
 
-    @ cached_property
+    @cached_property
     def gm1(self) -> np.ndarray:
         r"""
             Flux surface averaged 1/R ^ 2  [m ^ -2]
@@ -620,7 +617,7 @@ class MagneticCoordSystem(object):
         """
         return self.surface_average(lambda r, z: 1.0/(r**2))
 
-    @ cached_property
+    @cached_property
     def gm2(self) -> np.ndarray:
         r"""
             Flux surface averaged .. math: : \left | \nabla \rho_{tor}\right|^2/R^2  [m^-2]
@@ -628,7 +625,7 @@ class MagneticCoordSystem(object):
         """
         return self.surface_average(lambda r, z: self.grad_psi2(r, z)/(r**2)) * (self.drho_tor_dpsi ** 2)
 
-    @ cached_property
+    @cached_property
     def gm3(self) -> np.ndarray:
         r"""
             Flux surface averaged .. math: : \left | \nabla \rho_{tor}\right|^2  [-]
@@ -636,7 +633,7 @@ class MagneticCoordSystem(object):
         """
         return self.surface_average(self.grad_psi2) * (self.drho_tor_dpsi ** 2)
 
-    @ cached_property
+    @cached_property
     def gm4(self) -> np.ndarray:
         r"""
             Flux surface averaged 1/B ^ 2  [T ^ -2]
@@ -644,7 +641,7 @@ class MagneticCoordSystem(object):
         """
         return self.surface_average(lambda r, z: 1.0/self.B2(r, z))
 
-    @ cached_property
+    @cached_property
     def gm5(self) -> np.ndarray:
         r"""
             Flux surface averaged B ^ 2  [T ^ 2]
@@ -652,7 +649,7 @@ class MagneticCoordSystem(object):
         """
         return self.surface_average(lambda r, z: self.B2(r, z))
 
-    @ cached_property
+    @cached_property
     def gm6(self) -> np.ndarray:
         r"""
             Flux surface averaged  .. math: : \left | \nabla \rho_{tor}\right|^2/B^2  [T^-2]
@@ -662,7 +659,7 @@ class MagneticCoordSystem(object):
 
         # return np.ndarray(self._grid.psi_norm, self.surface_average(self.norm_grad_rho_tor**2/self.B2))
 
-    @ cached_property
+    @cached_property
     def gm7(self) -> np.ndarray:
         r"""
             Flux surface averaged .. math:: \left | \nabla \rho_{tor}\right |  [-]
@@ -672,7 +669,7 @@ class MagneticCoordSystem(object):
         # d = self.surface_average(self.norm_grad_rho_tor)
         # return np.ndarray(self._grid.psi_norm, np.ndarray(self._grid.psi_norm[1:], d[1:]))
 
-    @ cached_property
+    @cached_property
     def gm8(self) -> np.ndarray:
         r"""
             Flux surface averaged R[m]
@@ -680,7 +677,7 @@ class MagneticCoordSystem(object):
         """
         return self.surface_average(lambda r, z: r)
 
-    @ cached_property
+    @cached_property
     def gm9(self) -> np.ndarray:
         r"""
             Flux surface averaged 1/R[m ^ -1]
@@ -739,30 +736,30 @@ class RadialGrid:
     def pullback(self, psi_norm):
         return RadialGrid(self._coordinate_system, psi_norm)
 
-    @ property
+    @property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
         return self._coordinate_system.vacuum_toroidal_field
 
-    @ cached_property
+    @cached_property
     def psi_magnetic_axis(self) -> float:
         """Poloidal flux at the magnetic axis  [Wb]."""
         return self._psi_axis
 
-    @ cached_property
+    @cached_property
     def psi_boundary(self) -> float:
         """Poloidal flux at the selected plasma boundary  [Wb]."""
         return self._psi_boundary
 
-    @ property
+    @property
     def psi_norm(self) -> np.ndarray:
         return self._psi_norm
 
-    @ cached_property
+    @cached_property
     def psi(self) -> np.ndarray:
         """Poloidal magnetic flux {dynamic} [Wb]. This quantity is COCOS-dependent, with the following transformation"""
         return self.psi_norm * (self.psi_boundary-self.psi_magnetic_axis)+self.psi_magnetic_axis
 
-    @ cached_property
+    @cached_property
     def rho_tor_norm(self) -> np.ndarray:
         r"""Normalised toroidal flux coordinate. The normalizing value for rho_tor_norm, is the toroidal flux coordinate
             at the equilibrium boundary (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation,
@@ -770,32 +767,32 @@ class RadialGrid:
         """
         return Function(self._coordinate_system.psi_norm, self._coordinate_system.rho_tor_norm)(self.psi_norm)
 
-    @ cached_property
+    @cached_property
     def rho_tor(self) -> np.ndarray:
         r"""Toroidal flux coordinate. rho_tor = sqrt(b_flux_tor/(pi*b0)) ~ sqrt(pi*r^2*b0/(pi*b0)) ~ r [m].
             The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0 {dynamic} [m]"""
         return Function(self._coordinate_system.psi_norm, self._coordinate_system.rho_tor)(self.psi_norm)
 
-    @ cached_property
+    @cached_property
     def rho_pol_norm(self) -> np.ndarray:
         r"""Normalised poloidal flux coordinate = sqrt((psi(rho)-psi(magnetic_axis)) / (psi(LCFS)-psi(magnetic_axis))) {dynamic} [-]"""
         return Function(self._coordinate_system.psi_norm, self._coordinate_system.rho_pol_norm)(self.psi_norm)
 
-    @ cached_property
+    @cached_property
     def area(self) -> np.ndarray:
         """Cross-sectional area of the flux surface {dynamic} [m^2]"""
         return Function(self._coordinate_system.psi_norm, self._coordinate_system.area)(self.psi_norm)
 
-    @ cached_property
+    @cached_property
     def surface(self) -> np.ndarray:
         """Surface area of the toroidal flux surface {dynamic} [m^2]"""
         return Function(self._coordinate_system.psi_norm, self._coordinate_system.surface)(self.psi_norm)
 
-    @ cached_property
+    @cached_property
     def volume(self) -> np.ndarray:
         """Volume enclosed inside the magnetic surface {dynamic} [m^3]"""
         return Function(self._coordinate_system.psi_norm, self._coordinate_system.volume)(self.psi_norm)
 
-    @ cached_property
+    @cached_property
     def dvolume_drho_tor(self) -> np.ndarray:
         return Function(self._coordinate_system.psi_norm, self._coordinate_system.dvolume_drho_tor)(self.psi_norm)

@@ -245,12 +245,13 @@ class TransportSolverBVP(TransportSolver):
         # Sources
         j_exp = source.j_parallel
 
-        j_decomp = source.get("j_decomposed", None)
-        if j_decomp is not None:
-            j_exp = j_exp + j_decomp.get("explicit_part", 0)
-            j_imp = j_decomp.get("implicit_part", 0)
-        else:
-            j_imp = 0.0
+        # j_decomp = source.get("j_decomposed", None)
+        # if j_decomp is not None:
+        #     j_exp = j_exp + j_decomp.get("explicit_part", 0)
+        #     j_imp = j_decomp.get("implicit_part", 0)
+        # else:
+        #     j_imp = 0.0
+        j_imp = 0.0
 
         a = conductivity_parallel * self._rho_tor * self._inv_tau
 
@@ -264,7 +265,7 @@ class TransportSolverBVP(TransportSolver):
 
         f = - self._vpr * j_exp
 
-        g = self._vpr * j_imp    # + ....
+        g = - self._vpr * j_imp    # + ....
 
         # -----------------------------------------------------------
         # boundary condition, value
@@ -723,39 +724,40 @@ class TransportSolverBVP(TransportSolver):
             verbose=verbose,
         ))
 
-        if enable_ion_particle_solver is False:
-            residual.append(self.particle_transport(
-                self._core_profiles_next.electrons,
-                self._core_profiles_prev.electrons,
-                self._c_transp.electrons,
-                self._c_source.electrons,
-                self.boundary_conditions_1d.electrons,
-                tolerance=tolerance,
-                max_nodes=max_nodes,
-                verbose=verbose,
-            ))
-        else:
-            n_ele = 0.0
-            n_ele_flux = 0.0
+        if True:
+            if enable_ion_particle_solver is False:
+                residual.append(self.particle_transport(
+                    self._core_profiles_next.electrons,
+                    self._core_profiles_prev.electrons,
+                    self._c_transp.electrons,
+                    self._c_source.electrons,
+                    self.boundary_conditions_1d.electrons,
+                    tolerance=tolerance,
+                    max_nodes=max_nodes,
+                    verbose=verbose,
+                ))
+            else:
+                n_ele = 0.0
+                n_ele_flux = 0.0
 
-            for ion in self._core_profiles_next.ion:
-                if ion.label not in impurities:
-                    residual.append(self.particle_transport(
-                        ion,
-                        self._core_profiles_prev.ion[{"label": ion.label}],
-                        self._c_transp.ion[{"label": ion.label}],
-                        self._c_source.ion[{"label": ion.label}],
-                        self.boundary_conditions_1d.ion[{"label": ion.label}],
-                        tolerance=tolerance,
-                        max_nodes=max_nodes,
-                        verbose=verbose,
-                    ))
-                n_ele = n_ele - ion.density*ion.z
-                n_ele_flux = n_ele_flux - ion.get("density_flux", 0)*ion.z
+                for ion in self._core_profiles_next.ion:
+                    if ion.label not in impurities:
+                        residual.append(self.particle_transport(
+                            ion,
+                            self._core_profiles_prev.ion[{"label": ion.label}],
+                            self._c_transp.ion[{"label": ion.label}],
+                            self._c_source.ion[{"label": ion.label}],
+                            self.boundary_conditions_1d.ion[{"label": ion.label}],
+                            tolerance=tolerance,
+                            max_nodes=max_nodes,
+                            verbose=verbose,
+                        ))
+                    n_ele = n_ele - ion.density*ion.z
+                    n_ele_flux = n_ele_flux - ion.get("density_flux", 0)*ion.z
 
-            # Quasi-neutral condition
-            self._core_profiles_next.electrons["density"] = n_ele
-            self._core_profiles_next.electrons["density_flux"] = n_ele
+                # Quasi-neutral condition
+                self._core_profiles_next.electrons["density"] = n_ele
+                self._core_profiles_next.electrons["density_flux"] = n_ele
         if False:
             residual.append(self.energy_transport(
                 self._core_profiles_next,

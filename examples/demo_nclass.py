@@ -3,7 +3,6 @@ from operator import eq
 import pandas as pd
 
 from fytok.Tokamak import TWOPI, Tokamak
-from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.File import File
 from spdm.data.Function import Function, PiecewiseFunction
 from spdm.numlib import constants, np
@@ -18,7 +17,7 @@ if __name__ == "__main__":
     device = File("/home/salmon/workspace/fytok/data/mapping/ITER/imas/3/static/config.xml")
 
     baseline = pd.read_csv('/home/salmon/workspace/data/15MA inductive - burn/profile.txt', sep='\t')
-    bs_psi = baseline["Fp"].values
+    bs_psi_norm = baseline["Fp"].values
     bs_r_nrom = baseline["x"].values
 
     tok = Tokamak(
@@ -44,9 +43,14 @@ if __name__ == "__main__":
         tok.equilibrium["time_slice"] = {
             "profiles_1d": eqdsk.entry.find("profiles_1d"),
             "profiles_2d": eqdsk.entry.find("profiles_2d"),
-            "coordinate_system": {"psi_norm": {"axis": 0.0001, "boundary": 0.995, "npoints": 128}}
+            "boundary_separatrix": eqdsk.entry.find("boundary"),
+            # "coordinate_system": {"psi_norm": {"axis": 0.01, "boundary": 0.995, "npoints": 128}}
+            "coordinate_system": {"psi_norm": baseline["Fp"].values[1:-1]}
         }
-
+    
+    
+    
+    if True:  
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
                   pf_active={"facecolor": 'red'},
@@ -59,64 +63,78 @@ if __name__ == "__main__":
                   ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
         eq_profile = tok.equilibrium.time_slice.profiles_1d
 
-    if True:
-        rgrid = eq_profile._coord
+ 
+        magnetic_surface = eq_profile._coord
+
+        # _, spearatrix_surf = next(magnetic_surface.find_surface_by_psi_norm([1.0]))
+        # bpol = np.asarray([magnetic_surface.Bpol(p[0], p[1]) for p in spearatrix_surf.points()])
+        # logger.debug(bpol.min())
+        # plot_profiles(
+        #     [(bpol, r"$B_{pol}$"),
+        #      (spearatrix_surf.points()[:, 0], r"$r$"),
+        #      (spearatrix_surf.points()[:, 1], r"$z$"),
+        #      (spearatrix_surf._mesh[0], r"$\theta$"),
+
+        #      ],
+        #     x_axis=([0, 1], "u"),
+        #     grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_surf.svg", transparent=True)
 
         plot_profiles(
             [
 
                 [
                     (Function(baseline["Fp"].values, baseline["q"].values), r"astra",  r"$q [-]$", {"marker": "+"}),
-                    (Function(bs_psi, baseline["q"].values), r"astra",  r"$q [-]$", {"marker": "+"}),
-                    (rgrid.q,  r"$fytok$", r"$[Wb]$"),
-                    (rgrid.dphi_dpsi/TWOPI,  r"$\frac{d\phi}{2\pi d\psi}$", r"$[Wb]$"),
+                    (Function(bs_psi_norm, baseline["q"].values), r"astra",  r"$q [-]$", {"marker": "+"}),
+                    (magnetic_surface.q,  r"$fytok$", r"$[Wb]$"),
+                    (magnetic_surface.dphi_dpsi/TWOPI,  r"$\frac{d\phi}{2\pi d\psi}$", r"$[Wb]$"),
 
                 ],
                 [
-                    (Function(bs_psi, baseline["rho"].values),       r"astra", r"$\rho_{tor}[m]$",  {"marker": "+"}),
-                    (rgrid.rho_tor,  r"$\rho$", r"$[m]$"),
+                    (Function(bs_psi_norm, baseline["rho"].values),
+                     r"astra", r"$\rho_{tor}[m]$",  {"marker": "+"}),
+                    (magnetic_surface.rho_tor,  r"$\rho$", r"$[m]$"),
 
                 ],
                 [
-                    (Function(bs_psi, baseline["x"].values),           r"astra",
+                    (Function(bs_psi_norm, baseline["x"].values),           r"astra",
                      r"$\frac{\rho_{tor}}{\rho_{tor,bdry}}$", {"marker": "+"}),
-                    (rgrid.rho_tor_norm,  r"$\bar{\rho}$", r"$[-]$"),
+                    (magnetic_surface.rho_tor_norm,  r"$\bar{\rho}$", r"$[-]$"),
 
                 ],
 
                 [
-                    (Function(bs_psi, 4*(constants.pi**2)*rgrid.vacuum_toroidal_field.r0 * baseline["rho"].values),
+                    (Function(bs_psi_norm, 4*(constants.pi**2)*magnetic_surface.vacuum_toroidal_field.r0 * baseline["rho"].values),
                      r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho$",  {"marker": "+"}),
-                    (rgrid.dvolume_drho_tor, r"$dV/d\rho_{tor}$", r"$[m^2]$"),
+                    (magnetic_surface.dvolume_drho_tor, r"$dV/d\rho_{tor}$", r"$[m^2]$"),
 
                 ],
-                (rgrid.dvolume_dpsi, r"$\frac{dV}{d\psi}$"),
+                (magnetic_surface.dvolume_dpsi, r"$\frac{dV}{d\psi}$"),
 
                 [
                     # (Function(eq_profile.get('psi_norm', None), eq_profile.get('fpol', None)), "eq")
-                    (rgrid.fpol,  r"$F_{pol}$", r"$[Wb]$"),
+                    (magnetic_surface.fpol,  r"$F_{pol}$", r"$[Wb]$"),
                 ],
-                (rgrid.psi,  r"$\psi$", r"$[Wb]$"),
-                (rgrid.phi,  r"$\phi$", r"$[Wb]$"),
-                (rgrid.psi_norm,  r"$\bar{\psi}$", r"$[-]$"),
+                (magnetic_surface.psi,  r"$\psi$", r"$[Wb]$"),
+                (magnetic_surface.phi,  r"$\phi$", r"$[Wb]$"),
+                (magnetic_surface.psi_norm,  r"$\bar{\psi}$", r"$[-]$"),
 
-                (rgrid.dpsi_drho_tor, r"$\frac{dV}{d\psi}\cdot\frac{d\psi}{d\rho_{tor}}$"),
+                (magnetic_surface.dpsi_drho_tor, r"$\frac{dV}{d\psi}\cdot\frac{d\psi}{d\rho_{tor}}$"),
 
-                (rgrid.drho_tor_dpsi,  r"$d\rho/d\psi$"),
+                (magnetic_surface.drho_tor_dpsi,  r"$d\rho/d\psi$"),
 
 
-                (rgrid.gm1,                                             r"$gm1=\left<\frac{1}{R^2}\right>$"),
-                (rgrid.gm2,                    r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
-                (rgrid.gm3,                                r"$gm3=\left<\left|\nabla \rho\right|^2\right>$"),
-                (rgrid.gm7,                                  r"$gm7=\left<\left|\nabla \rho\right|\right>$"),
-                (rgrid.gm8,                                                         r"$gm8=\left<R\right>$"),
+                (magnetic_surface.gm1,                                             r"$gm1=\left<\frac{1}{R^2}\right>$"),
+                (magnetic_surface.gm2,                    r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
+                (magnetic_surface.gm3,                                r"$gm3=\left<\left|\nabla \rho\right|^2\right>$"),
+                (magnetic_surface.gm7,                                  r"$gm7=\left<\left|\nabla \rho\right|\right>$"),
+                (magnetic_surface.gm8,                                                         r"$gm8=\left<R\right>$"),
 
-                (rgrid.dphi_dpsi,                                                  r"$\frac{d\phi}{d\psi}$"),
-                (rgrid.drho_tor_dpsi,                                        r"$\frac{d\rho_{tor}}{d\psi}$"),
-                (rgrid.dpsi_drho_tor,                                        r"$\frac{d\psi}{d\rho_{tor}}$"),
+                (magnetic_surface.dphi_dpsi,                                                  r"$\frac{d\phi}{d\psi}$"),
+                (magnetic_surface.drho_tor_dpsi,                                        r"$\frac{d\rho_{tor}}{d\psi}$"),
+                (magnetic_surface.dpsi_drho_tor,                                        r"$\frac{d\psi}{d\rho_{tor}}$"),
             ],
-            # x_axis=(rgrid.rho_tor_norm,      r"$\bar{\rho}_{tor}$"),
-            x_axis=(rgrid.psi_norm,      r"$\bar{\psi}$"),
+            # x_axis=(magnetic_surface.rho_tor_norm,      r"$\bar{\rho}_{tor}$"),
+            x_axis=(magnetic_surface.psi_norm,      r"$\bar{\psi}$"),
 
             title="Equlibrium",
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_coord.svg", transparent=True)
@@ -135,32 +153,34 @@ if __name__ == "__main__":
                 # ],
 
                 [
-                    (Function(bs_psi, baseline["q"].values),            r"astra",  r"$q [-]$", {"marker": "+"}),
+                    (Function(bs_psi_norm, baseline["q"].values),            r"astra",  r"$q [-]$", {"marker": "+"}),
                     (eq_profile.q,                                      r"fytok",  r"$q [-]$"),
                     (eq_profile.dphi_dpsi/TWOPI,                        r"$\frac{d\phi}{2\pi d\psi}$"),
                 ],
                 [
-                    (Function(bs_psi, baseline["rho"].values),       r"astra", r"$\rho_{tor}[m]$",  {"marker": "+"}),
+                    (Function(bs_psi_norm, baseline["rho"].values),
+                     r"astra", r"$\rho_{tor}[m]$",  {"marker": "+"}),
                     (eq_profile.rho_tor,                                      r"fytok",    r"$\rho_{tor}[m]$"),
                 ],
                 [
-                    (Function(bs_psi, baseline["x"].values),           r"astra",
+                    (Function(bs_psi_norm, baseline["x"].values),           r"astra",
                      r"$\frac{\rho_{tor}}{\rho_{tor,bdry}}$", {"marker": "+"}),
                     (eq_profile.rho_tor_norm,                        r"fytok"),
                 ],
 
                 [
-                    (Function(bs_psi, baseline["shif"].values),
+                    (Function(bs_psi_norm, baseline["shif"].values),
                      r"astra", "$\Delta$ shafranov \n shift $[m]$ ", {"marker": "+"}),
                     (eq_profile.geometric_axis.r-tok.equilibrium.vacuum_toroidal_field.r0,
                      r"fytok", "shafranov \n shift $\Delta [m]$ "),
                 ],
                 [
-                    (Function(bs_psi, baseline["k"].values),         r"astra", r"$elongation[-]$", {"marker": "+"}),
+                    (Function(bs_psi_norm, baseline["k"].values),
+                     r"astra", r"$elongation[-]$", {"marker": "+"}),
                     (eq_profile.elongation,                                 r"fytok", r"$elongation[-]$"),
                 ],
                 [
-                    (Function(bs_psi, baseline["Jtot"].values*1e6),   r"astra",
+                    (Function(bs_psi_norm, baseline["Jtot"].values*1e6),   r"astra",
                      r"$j_{\parallel} [A\cdot m^{-2}]$", {"marker": "+"}),
                     (eq_profile.j_parallel,                                         r"fytok",     r"$j_{\parallel}$"),
                 ],
@@ -198,7 +218,7 @@ if __name__ == "__main__":
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
     ###################################################################################################
-    if False:  # CoreProfile
+    if True:  # CoreProfile
         s_range = -1  # slice(0, 140, 1)
         b_Te = Function(bs_r_nrom, baseline["TE"].values*1000)
         b_Ti = Function(bs_r_nrom, baseline["TI"].values*1000)
@@ -211,7 +231,7 @@ if __name__ == "__main__":
         # Zeff = Function(bs_r_nrom, baseline["Zeff"].values)
 
         tok.core_profiles["profiles_1d"] = {
-            "electrons": {**atoms["e"], "density": 0.1*b_ne,  "temperature": b_Te, },
+            "electrons": {**atoms["e"], "density": b_ne,  "temperature": b_Te, },
             "ion": [
                 {**atoms["D"],  "density":   0.5*b_nDT, "temperature": b_Ti, },
                 {**atoms["T"],  "density":   0.5*b_nDT, "temperature": b_Ti, },
@@ -258,24 +278,22 @@ if __name__ == "__main__":
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
     ###################################################################################################
-    if False:  # CoreTransport
+    if True:  # CoreTransport
         rho_tor_norm = tok.equilibrium.time_slice.profiles_1d.rho_tor_norm
         R0 = tok.equilibrium.vacuum_toroidal_field.r0
-
+        conductivity_parallel = Function(bs_r_nrom, baseline["Joh"].values*1.0e6 / baseline["U"].values *
+                                         (2.0*constants.pi * R0))
         r_ped = 0.96  # np.sqrt(0.88)
         Cped = 0.2
         Ccore = 0.4
         chi = PiecewiseFunction([0, r_ped, 1.0],  [lambda x: Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
         chi_e = PiecewiseFunction([0, r_ped, 1.0], [lambda x:0.5*chi(x), lambda x: 0.8*Cped])
 
-        conductivity_parallel = Function(bs_r_nrom, baseline["Joh"].values*1.0e6 / baseline["U"].values *
-                                         (2.0*constants.pi * R0))
-
         # D = Function(
         #     [lambda r:r < r_ped, lambda r:r >= r_ped],
         #     [lambda x:  0.5+(x**4), lambda x: 0.11])
 
-        D = 0.1*chi_e
+        D = PiecewiseFunction([0, r_ped, 1.0],  [lambda x:0.15 * Ccore*(1.0 + 3*(x**2)), lambda x: 0.2*Cped])
         v_pinch = Function([0, r_ped, 1.0], lambda x: 0.4 * D(x) * x / R0)   # FIXME: The coefficient 0.4 is a guess.
         v_pinch_T = Function([0, r_ped, 1.0], lambda x: 1.385 * chi_e(x) * x / R0)
 
@@ -377,9 +395,9 @@ if __name__ == "__main__":
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
     ###################################################################################################
-    if False:  # CoreSources
+    if True:  # CoreSources
 
-        ne_src = Function(rho_tor_norm, lambda x:  1e19 * np.exp(15.0*(x**2-1.0)))
+        ne_src = Function(rho_tor_norm, lambda x: 1e19 * np.exp(12.0*(x**2-1.0)))
 
         tok.core_sources["source"] = [
             {"code": {"name": "dummy"},
@@ -417,6 +435,8 @@ if __name__ == "__main__":
                      "dummy", r"$J_{\parallel} [A\cdot m^{-2}]$"),
                     (core_source_1d.j_parallel,                     "fytok", r"$J_{\parallel} [MA\cdot m^{-2}]$"),
                 ],
+                (core_source_1d.electrons.particles,                 "fytok", r"$S_{e} [ m^{-3} s^-1]$"),
+
                 # [
                 #     (Function(bs_r_nrom, baseline["Zeff"].values),          r"$Z_{eff}^{astra}$", {"marker": "+"}),
                 #     (core_profile.zeff,                                                              r"$z_{eff}$"),
@@ -458,7 +478,7 @@ if __name__ == "__main__":
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_sources.svg", transparent=True)
 
     ###################################################################################################
-    if False:  # TransportSolver
+    if True:  # TransportSolver
         tok.transport_solver["boundary_conditions_1d"] = {
             "current": {"identifier": {"index": 1}, "value": [tok.equilibrium.time_slice.global_quantities.psi_boundary]},
             "electrons": {"particles": {"identifier": {"index": 1}, "value": [b_ne[-1]]},
@@ -505,16 +525,17 @@ if __name__ == "__main__":
         psi_axis = tok.equilibrium.time_slice.global_quantities.psi_axis
         psi_boundary = tok.equilibrium.time_slice.global_quantities.psi_boundary
 
-        b_psi = Function(bs_r_nrom, (baseline["Fp"].values * (psi_boundary-psi_axis) + psi_axis))
         plot_profiles(
             [
 
                 ######################################################################
                 # psi ,current
                 [
-                    (b_psi, r"astra", r"$\psi [Wb]$", {"marker": "+"}),
+                    (Function(bs_r_nrom, bs_psi_norm*(psi_boundary-psi_axis)+psi_axis),
+                     r"astra", r"$\psi [Wb]$", {"marker": "+"}),
                     (core_profile["psi"],  r"fytok", r"$\psi  [Wb]$", {"marker": "."}),
-                    (b_psi-core_profile["psi"], r"residual", r"",  {"color": "red", "linestyle": "dashed"}),
+                    (Function(bs_r_nrom, bs_psi_norm*(psi_boundary-psi_axis)+psi_axis)-core_profile["psi"],
+                     r"residual", r"",  {"color": "red", "linestyle": "dashed"}),
                 ],
                 # [
                 #     (Function(bs_r_nrom, baseline["Fp"].values), r"astra", r"$\psi/\psi_{bdry}  [-]$", {"marker": "+"}),
@@ -541,7 +562,7 @@ if __name__ == "__main__":
                 ],
 
 
-                (core_profile.electrons["density_flux"], r"$\Gamma_e$"),
+                # (core_profile.electrons["density_flux"], r"$\Gamma_e$"),
 
                 [
                     (core_profile.electrons["s_exp_flux"],   r"Source",
