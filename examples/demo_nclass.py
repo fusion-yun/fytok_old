@@ -275,8 +275,8 @@ if __name__ == "__main__":
                 (magnetic_surface.gm7,                                  r"$gm7=\left<\left|\nabla \rho\right|\right>$"),
                 (magnetic_surface.gm8,                                                         r"$gm8=\left<R\right>$"),
 
-                (magnetic_surface.dphi_dpsi,                                                  r"$\frac{d\phi}{d\psi}$"),
-                (magnetic_surface.dpsi_drho_tor,                                        r"$\frac{d\psi}{d\rho_{tor}}$"),
+                # (magnetic_surface.dphi_dpsi,                                                  r"$\frac{d\phi}{d\psi}$"),
+                # (magnetic_surface.dpsi_drho_tor,                                        r"$\frac{d\psi}{d\rho_{tor}}$"),
             ],
             # x_axis=(magnetic_surface.rho_tor_norm,      r"$\bar{\rho}_{tor}$"),
             x_axis=(magnetic_surface.psi_norm,      r"$\bar{\psi}$"),
@@ -284,6 +284,7 @@ if __name__ == "__main__":
             title="Equlibrium",
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_coord.svg", transparent=True)
 
+    if True:
         plot_profiles(
             [
                 # (eq_profile.dpressure_dpsi,                                                       r"$dP/d\psi$"),
@@ -528,10 +529,10 @@ if __name__ == "__main__":
                 ######################################################################
                 # psi ,current
                 [
-                    (Function(bs_r_nrom, bs_psi_norm*(psi_boundary-psi_axis)+psi_axis),
+                    (Function(bs_r_nrom, (bs_psi_norm*(psi_boundary-psi_axis)+psi_axis)),
                      r"astra", r"$\psi [Wb]$", {"marker": "+"}),
                     (core_profile["psi"],  r"fytok", r"$\psi  [Wb]$", {"marker": "."}),
-                    (Function(bs_r_nrom, bs_psi_norm*(psi_boundary-psi_axis)+psi_axis)-core_profile["psi"],
+                    (Function(bs_r_nrom, (bs_psi_norm*(psi_boundary-psi_axis)+psi_axis))-core_profile["psi"],
                         r"residual", r"",  {"color": "red", "linestyle": "dashed"}),
                 ],
                 # [

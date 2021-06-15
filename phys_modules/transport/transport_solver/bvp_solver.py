@@ -260,11 +260,11 @@ class TransportSolverBVP(TransportSolver):
 
         c = (constants.mu_0 * self._B0 * self._rho_tor_boundary)/(self._fpol**2)
 
-        d = self._vpr*self._gm2 / self._fpol / (self._rho_tor_boundary)/(TWOPI)
+        d = self._vpr*self._gm2 / self._fpol / (self._rho_tor_boundary)/(TWOPI**2)
 
         e = (- constants.mu_0 * self._B0 * self._k_phi) * (conductivity_parallel * self._rho_tor**2/self._fpol**2)
 
-        f = - self._vpr * j_exp / TWOPI
+        f = - self._vpr * j_exp / TWOPI**2
 
         g = - self._vpr * j_imp    # + ....
 
@@ -792,6 +792,7 @@ class TransportSolverBVP(TransportSolver):
                 self._c_source.momentum_tor,
                 self.boundary_conditions_1d.momentum_tor)
             count += 1
+
         return residual/count
 
         # while time < end_time
