@@ -329,6 +329,7 @@ class TransportSolverBVP(TransportSolver):
         # # if sol.success:
         core_profiles_next["psi"] = profiles.y
         core_profiles_next["dpsi_drho_tor_norm"] = profiles.yp
+        core_profiles_next["psi_error"] = Function((sol.x[1:]+sol.x[:-1])*0.5, sol.rms_residuals)
 
         return rms_residuals
 
@@ -383,7 +384,7 @@ class TransportSolverBVP(TransportSolver):
         core_profiles_next["density"] = profiles.y
         core_profiles_next["density_flux"] = profiles.flux
 
-        core_profiles_next["rms_residuals"] = Function((sol.x[1:]+sol.x[:-1])*0.5, sol.rms_residuals)
+        core_profiles_next["density_error"] = Function((sol.x[1:]+sol.x[:-1])*0.5, sol.rms_residuals)
 
         core_profiles_next["diff_flux"] = profiles.diff_flux
         core_profiles_next["conv_flux"] = profiles.conv_flux
@@ -436,7 +437,7 @@ class TransportSolverBVP(TransportSolver):
         density_next = core_profiles_next.density
 
         gamma_s = 3/2 * core_profiles_next["density_flux"]
-        
+
         a = self._inv_tau * (3/2) * self._vpr35 * density_next
 
         b = self._inv_tau * (3/2) * self._vpr35m * density_prev
@@ -605,12 +606,14 @@ class TransportSolverBVP(TransportSolver):
                 # core_profiles_next.electrons["heat_flux_prime"] = Function(sol.x, sol.yp[idx*2+1])
                 core_profiles_next.electrons["diff_flux_T"] = Function(sol.x, np.asarray(-d(sol.x) * sol.yp[0]))
                 core_profiles_next.electrons["conv_flux_T"] = Function(sol.x, np.asarray(e(sol.x) * sol.y[0]))
-                core_profiles_next.electrons["rms_residuals_T"] = Function(
+                core_profiles_next.electrons["temperature_error"] = Function(
                     (sol.x[1:]+sol.x[:-1])*0.5, sol.rms_residuals)
 
             else:
                 core_profiles_next.ion[{"label": label}]["temperature"] = Function(sol.x, sol.y[idx*2])
                 core_profiles_next.ion[{"label": label}]["heat_flux"] = Function(sol.x, sol.y[idx*2+1])
+                core_profiles_next.ion[{"label": label}]["temperature_error"] = Function(
+                    (sol.x[1:]+sol.x[:-1])*0.5, sol.rms_residuals)
                 # core_profiles_next.ion[{"label": label}]["temperature_prime"] = Function(sol.x, sol.yp[idx*2])
                 # core_profiles_next.ion[{"label": label}]["heat_flux_prime"] = Function(sol.x, sol.yp[idx*2+1])
         # core_profiles_next["temperature"] = profiles.y

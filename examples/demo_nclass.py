@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
     configure["core_profiles"] = {
         "profiles_1d": {
-            "electrons": {**atoms["e"], "density": b_ne,  "temperature": b_Te, },
+            "electrons": {**atoms["e"], "density": 0.5*b_ne,  "temperature":  0.5*b_Te, },
             "ion": [
                 {**atoms["D"],  "density":   0.5*b_nDT, "temperature": b_Ti, },
                 {**atoms["T"],  "density":   0.5*b_nDT, "temperature": b_Ti, },
@@ -261,17 +261,20 @@ if __name__ == "__main__":
                 (magnetic_surface.psi,  r"$\psi$", r"$[Wb]$"),
                 (magnetic_surface.phi,  r"$\phi$", r"$[Wb]$"),
                 (magnetic_surface.psi_norm,  r"$\bar{\psi}$", r"$[-]$"),
-                
+
                 (magnetic_surface.dpsi_drho_tor, r"$\frac{d\psi}{d\rho_{tor}}$", "", {"marker": "."}),
 
-                (magnetic_surface.drho_tor_dpsi, r"$\frac{d\rho_{tor}}{d\psi}$", "", {"marker": "."}),
+                # (magnetic_surface.drho_tor_dpsi, r"$\frac{d\rho_{tor}}{d\psi}$", "", {"marker": "."}),
                 [
                     (magnetic_surface.dpsi_drho_tor,  r"$\frac{d\psi}{d\rho_{tor}}$"),
                     (magnetic_surface.dvolume_drho_tor/magnetic_surface.dvolume_dpsi,
                      r"$\frac{dV}{d\rho_{tor}} / \frac{dV}{d\psi}$")
                 ],
-                (magnetic_surface.drho_tor_dpsi*magnetic_surface.dpsi_drho_tor,
-                 r"$\frac{d\rho_{tor}}{d\psi} \cdot \frac{d\psi}{d\rho_{tor}}$"),
+                # (magnetic_surface.drho_tor_dpsi*magnetic_surface.dpsi_drho_tor,
+                #  r"$\frac{d\rho_{tor}}{d\psi} \cdot \frac{d\psi}{d\rho_{tor}}$"),
+                # (magnetic_surface.gm2_,
+                #  r"$gm2_=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
+                # (magnetic_surface.dpsi_drho_tor, r"$\frac{d\rho_{tor}}{d\psi}$", "", {"marker": "."}),
 
 
                 (magnetic_surface.gm1,                                             r"$gm1=\left<\frac{1}{R^2}\right>$"),
@@ -289,7 +292,7 @@ if __name__ == "__main__":
             title="Equlibrium",
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_coord.svg", transparent=True)
 
-    if False:
+    if True:
         eq_profile = tok.equilibrium.time_slice.profiles_1d
 
         plot_profiles(
@@ -369,7 +372,7 @@ if __name__ == "__main__":
             title="Equlibrium",
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
-    if False:  # CoreProfile
+    if True:  # CoreProfile
 
         core_profile = tok.core_profiles.profiles_1d
 
@@ -406,7 +409,7 @@ if __name__ == "__main__":
             x_axis=([0, 1.0],                                  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
-    if False:  # CoreTransport
+    if True:  # CoreTransport
         # core_transport1d_nc = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
         # core_transport1d_dummy = tok.core_transport.model[{"code.name": "dummy"}].profiles_1d
 
@@ -469,7 +472,7 @@ if __name__ == "__main__":
             title=tok.core_transport.model[0].identifier.name,
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
-    if False:  # CoreSources
+    if True:  # CoreSources
         core_source_1d = tok.core_sources.source.combine.profiles_1d
 
         plot_profiles(
@@ -526,12 +529,57 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # TransportSolver
-    if False:
-        tok.update(max_nodes=500, tolerance=1.0e-4,
-                   impurities=['H', 'D', 'T', 'He', 'Be', 'Ar'],
-                   bvp_rms_mask=[r_ped])
+    if True:
 
         core_profile = tok.core_profiles.profiles_1d
+
+        plot_profiles(
+            [
+
+                ######################################################################
+                # psi ,current
+                # [
+                #     (Function(bs_r_nrom, (bs_psi_norm*(psi_boundary-psi_axis)+psi_axis)),
+                #      r"astra", r"$\psi [Wb]$", {"marker": "+"}),
+                #     (core_profile.grid,  r"fytok", r"$\psi  [Wb]$"),
+                #     (Function(bs_r_nrom, (bs_psi_norm*(psi_boundary-psi_axis)+psi_axis))-core_profile["psi"],
+                #         r"residual", r"",  {"color": "red", "linestyle": "dashed"}),
+                # ],
+
+                # ######################################################################
+                # # electron particles
+                [
+                    (b_ne, r"astra", r"$n_e [m^{-3}]$",  {"marker": "+"}),
+                    (core_profile.electrons.density, r"fytok", r"$n_e [ m^{-3}]$"),
+                    (b_ne-core_profile.electrons.density, r"residual",
+                        r"$n_e [ m^{-3}]$",  {"color": "red", "linestyle": "dashed"}),
+                    # *[(ion.density*1e-19,                            f"${ion.label}$") for ion in core_profile.ion],
+                ],
+
+
+
+                # ######################################################################
+                # # electron energy
+                [
+                    (b_Te, r"electron (astra)", r"$T_e [eV]$",  {"marker": "+"}),
+                    (core_profile.electrons.temperature, r"electron (fytok)  ", r"$ [eV]$"),
+                    (b_Te-core_profile.electrons.temperature, r"residual",
+                     r"$[eV]$",  {"color": "red", "linestyle": "dashed"}),
+                ],
+
+                ######################################################################
+
+
+            ],
+            # x_axis=(rho_tor_norm,                             r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            x_axis=(core_profile.electrons.temperature.x_axis,  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            title="Result of TransportSolver",
+            # index_slice=slice(0, 200, 1),
+            grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile_before.svg", transparent=True)
+
+        tok.update(max_nodes=500, tolerance=1.0e-4,
+                   impurities=['H', 'D', 'T', 'He', 'Be', 'Ar'],
+                   bvp_rms_mask=[2.0/128, r_ped])
 
         plot_profiles(
             [
@@ -542,8 +590,7 @@ if __name__ == "__main__":
                     (Function(bs_r_nrom, (bs_psi_norm*(psi_boundary-psi_axis)+psi_axis)),
                      r"astra", r"$\psi [Wb]$", {"marker": "+"}),
                     (core_profile["psi"],  r"fytok", r"$\psi  [Wb]$"),
-                    (Function(bs_r_nrom, (bs_psi_norm*(psi_boundary-psi_axis)+psi_axis))-core_profile["psi"],
-                        r"residual", r"",  {"color": "red", "linestyle": "dashed"}),
+                    (core_profile["psi_error"], r"residual", r"",  {"color": "red", "linestyle": "dashed"}),
                 ],
                 # [
                 #     (Function(bs_r_nrom, baseline["Fp"].values), r"astra", r"$\psi/\psi_{bdry}  [-]$", {"marker": "+"}),
@@ -564,11 +611,10 @@ if __name__ == "__main__":
                 [
                     (b_ne, r"astra", r"$n_e [m^{-3}]$",  {"marker": "+"}),
                     (core_profile.electrons.density, r"fytok", r"$n_e [ m^{-3}]$"),
-                    (b_ne-core_profile.electrons.density, r"residual",
+                    (core_profile.electrons["density_error"], r"rms residuals",
                         r"$n_e [ m^{-3}]$",  {"color": "red", "linestyle": "dashed"}),
                     # *[(ion.density*1e-19,                            f"${ion.label}$") for ion in core_profile.ion],
                 ],
-                (core_profile.electrons["rms_residuals"], r"rms_residuals"),
 
 
                 # [
@@ -587,10 +633,9 @@ if __name__ == "__main__":
                 [
                     (b_Te, r"electron (astra)", r"$T_e [eV]$",  {"marker": "+"}),
                     (core_profile.electrons.temperature, r"electron (fytok)  ", r"$ [eV]$"),
-                    (b_Te-core_profile.electrons.temperature, r"residual",
+                    (core_profile.electrons["temperature_error"], r"rms_residuals",
                      r"$[eV]$",  {"color": "red", "linestyle": "dashed"}),
                 ],
-                (core_profile.electrons["rms_residuals_T"], r"rms_residuals"),
 
                 # (core_source_1d.electrons.energy,          r"$Q_{e}$"),
 

@@ -302,7 +302,6 @@ class MagneticCoordSystem(object):
                     break
 
                 if surf is None:
-                    logger.debug(level)
                     if np.isclose(level, o_point.psi):
                         yield level, Point(o_point.r, o_point.z)
                     else:
@@ -497,19 +496,23 @@ class MagneticCoordSystem(object):
     def grad_psi(self,  r: _TCoord, z: _TCoord) -> _TCoord:
         return np.sqrt(self.grad_psi2(r, z))
 
-    @cached_property
-    def grad_psi_axis(self):
-        opts, _ = self.critical_points
-        r0 = opts[0].r
-        z0 = opts[0].z
     ###############################
     # surface integral
+    @cached_property
+    def o_point(self) -> OXPoint:
+        opts, _ = self.critical_points
+        return opts[0]
+
+    @cached_property
+    def ddpsi(self):
+        r0 = self.o_point.r
+        z0 = self.o_point.z
+        return np.sqrt(self.psirz(r0, z0, dx=2) * self.psirz(r0, z0, dy=2) + self.psirz(r0, z0, dx=1, dy=1)**2)
 
     def _surface_integral(self, func: Callable[[float, float], float] = None) -> np.ndarray:
-        opts, _ = self.critical_points
-        r0 = opts[0].r
-        z0 = opts[0].z
-        ddpsi = np.sqrt(self.psirz(r0, z0, dx=2) * self.psirz(r0, z0, dy=2))
+        r0 = self.o_point.r
+        z0 = self.o_point.z
+        ddpsi = np.sqrt(self.psirz(r0, z0, dx=2) * self.psirz(r0, z0, dy=2) + self.psirz(r0, z0, dx=1, dy=1)**2)
         c0 = TWOPI*r0**2/ddpsi
         if func is not None:
             return np.asarray([(axis.integral(lambda r, z, _func=func, _bpol=self.Bpol:_func(r, z)/_bpol(r, z)) if not np.isclose(p, 0) else func(r0, z0) * c0) for p, axis in self.mesh.axis_iter()])
@@ -585,18 +588,8 @@ class MagneticCoordSystem(object):
             .. math::
                 \Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi
         """
-        # res = Function(self.volume, self.dphi_dvolume).antiderivative(self.volume)
-        # res = Function(self.psi_norm, self.dphi_dpsi).antiderivative(self.psi_norm) \
-        #     + self.dphi_dpsi[0]*(self.psi_norm[0])*2
 
-        # res *= self.psi_boundary-self.psi_axis
-        if self.psi_norm[0] > 0.0:
-            x = np.hstack([[0.0], self.psi_norm])
-            dvdx = np.hstack([[self.dphi_dpsi[0]], self.dphi_dpsi])
-        else:
-            x = self.psi_norm
-            dvdx = self.dphi_dpsi
-        return Function(x, dvdx).antiderivative(self.psi_norm)*(self.psi_boundary-self.psi_axis)
+        return Function(self.psi_norm, self.dphi_dpsi).antiderivative(self.psi_norm)*(self.psi_boundary-self.psi_axis)
 
     @cached_property
     def rho_tor(self) -> np.ndarray:
@@ -610,14 +603,7 @@ class MagneticCoordSystem(object):
     @cached_property
     def volume(self) -> np.ndarray:
         """Volume enclosed in the flux surface[m ^ 3]"""
-        if self.psi_norm[0] > 0.0:
-            x = np.hstack([[0.0], self.psi_norm])
-            dvdx = np.hstack([[self.dvolume_dpsi[0]], self.dvolume_dpsi])
-        else:
-            x = self.psi_norm
-            dvdx = self.dvolume_dpsi
-
-        return Function(x, dvdx).antiderivative(self.psi_norm)*(self.psi_boundary-self.psi_axis)
+        return Function(self.psi_norm, self.dvolume_dpsi).antiderivative(self.psi_norm)*(self.psi_boundary-self.psi_axis)
 
     @cached_property
     def dvolume_drho_tor(self) -> np.ndarray:
@@ -644,8 +630,7 @@ class MagneticCoordSystem(object):
                                         =\frac{1}{2\sqrt{\pi B_{0}\Phi_{tor}}}\frac{d\Phi_{tor}}{d\psi} \
                                         =\frac{q}{2\pi B_{0}\rho_{tor}}
         """
-        # return self.dvolume_dpsi / self.dvolume_drho_tor
-        return self.q/((TWOPI)*self._b0*self.rho_tor)
+        return 1.0/self.dpsi_drho_tor
 
     @cached_property
     def dpsi_drho_tor(self) -> np.ndarray:
@@ -669,12 +654,18 @@ class MagneticCoordSystem(object):
         return self.surface_average(lambda r, z: 1.0/(r**2))
 
     @cached_property
+    def gm2_(self) -> np.ndarray:
+        return self.surface_average(lambda r, z: self.grad_psi2(r, z)/(r**2))
+
+    @cached_property
     def gm2(self) -> np.ndarray:
         r"""
             Flux surface averaged .. math: : \left | \nabla \rho_{tor}\right|^2/R^2  [m^-2]
             .. math:: \left\langle\left |\frac{\nabla\rho}{R}\right|^{2}\right\rangle
         """
-        return self.surface_average(lambda r, z: self.grad_psi2(r, z)/(r**2)) * (self.drho_tor_dpsi ** 2)
+
+        gm2_ = self.surface_average(lambda r, z: self.grad_psi2(r, z)/(r**2))[1:] / (self.dpsi_drho_tor[1:] ** 2)
+        return Function(self.psi_norm[1:], gm2_)(self.psi_norm)
 
     @cached_property
     def gm3(self) -> np.ndarray:
@@ -682,7 +673,9 @@ class MagneticCoordSystem(object):
             Flux surface averaged .. math: : \left | \nabla \rho_{tor}\right|^2  [-]
             .. math:: {\left\langle \left |\nabla\rho\right|^{2}\right\rangle}
         """
-        return self.surface_average(self.grad_psi2) * (self.drho_tor_dpsi ** 2)
+        gm3_ = self.surface_average(self.grad_psi2)[1:] / (self.dpsi_drho_tor[1:] ** 2)
+
+        return Function(self.psi_norm[1:], gm3_)(self.psi_norm)
 
     @cached_property
     def gm4(self) -> np.ndarray:
@@ -706,9 +699,9 @@ class MagneticCoordSystem(object):
             Flux surface averaged  .. math: : \left | \nabla \rho_{tor}\right|^2/B^2  [T^-2]
             .. math:: \left\langle \frac{\left |\nabla\rho\right|^{2}}{B^{2}}\right\rangle
         """
-        return self.surface_average(lambda r, z: self.grad_psi2(r, z)/self.B2(r, z)) * (self.drho_tor_dpsi ** 2)
+        gm6_ = self.surface_average(lambda r, z: self.grad_psi2(r, z)/self.B2(r, z))[1:] / (self.dpsi_drho_tor[1:] ** 2)
 
-        # return np.ndarray(self._grid.psi_norm, self.surface_average(self.norm_grad_rho_tor**2/self.B2))
+        return Function(self.psi_norm[1:], gm6_)(self.psi_norm)
 
     @cached_property
     def gm7(self) -> np.ndarray:
@@ -716,9 +709,8 @@ class MagneticCoordSystem(object):
             Flux surface averaged .. math:: \left | \nabla \rho_{tor}\right |  [-]
             .. math: : \left\langle \left |\nabla\rho\right |\right\rangle
         """
-        return self.surface_average(lambda r, z: np.sqrt(self.grad_psi2(r, z))) * self.drho_tor_dpsi
-        # d = self.surface_average(self.norm_grad_rho_tor)
-        # return np.ndarray(self._grid.psi_norm, np.ndarray(self._grid.psi_norm[1:], d[1:]))
+        gm7_ = self.surface_average(lambda r, z: np.sqrt(self.grad_psi2(r, z)))[1:] / self.dpsi_drho_tor[1:]
+        return Function(self.psi_norm[1:], gm7_)(self.psi_norm)
 
     @cached_property
     def gm8(self) -> np.ndarray:
