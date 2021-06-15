@@ -570,12 +570,17 @@ class MagneticCoordSystem(object):
                 \Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi
         """
         # res = Function(self.volume, self.dphi_dvolume).antiderivative(self.volume)
-        res = Function(self.psi, self.dphi_dpsi).antiderivative(self.psi)
+        # res = Function(self.psi_norm, self.dphi_dpsi).antiderivative(self.psi_norm) \
+        #     + self.dphi_dpsi[0]*(self.psi_norm[0])*2
 
-        if not np.isclose(self.psi[0], self.psi_axis):
-            phi0 = self.dphi_dpsi[0]*(self.psi[0]-self.psi_axis)
-            res += phi0
-        return res
+        # res *= self.psi_boundary-self.psi_axis
+        if self.psi_norm[0] > 0.0:
+            x = np.hstack([[0.0], self.psi_norm])
+            dvdx = np.hstack([[self.dphi_dpsi[0]], self.dphi_dpsi])
+        else:
+            x = self.psi_norm
+            dvdx = self.dphi_dpsi
+        return Function(x, dvdx).antiderivative(self.psi_norm)*(self.psi_boundary-self.psi_axis)
 
     @cached_property
     def rho_tor(self) -> np.ndarray:
@@ -623,7 +628,8 @@ class MagneticCoordSystem(object):
                                         =\frac{1}{2\sqrt{\pi B_{0}\Phi_{tor}}}\frac{d\Phi_{tor}}{d\psi} \
                                         =\frac{q}{2\pi B_{0}\rho_{tor}}
         """
-        return 1.0/self.dpsi_drho_tor
+        return self.dvolume_dpsi / self.dvolume_drho_tor
+        # return self.q/((TWOPI)*self._b0*self.rho_tor)
 
     @cached_property
     def dpsi_drho_tor(self) -> np.ndarray:

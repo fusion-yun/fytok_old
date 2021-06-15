@@ -91,13 +91,13 @@ if __name__ == "__main__":
     Cped = 0.2
     Ccore = 0.4
     chi = PiecewiseFunction([0, r_ped, 1.0],  [lambda x: Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
-    chi_e = PiecewiseFunction([0, r_ped, 1.0], [lambda x:0.8*Ccore*(1.0 + 3*(x**2)), lambda x:0.8*Cped])
+    chi_e = PiecewiseFunction([0, r_ped, 1.0], [lambda x:0.6*Ccore*(1.0 + 3*(x**2)), lambda x: 1.5 * Cped])
 
     # D = Function(
     #     [lambda r:r < r_ped, lambda r:r >= r_ped],
     #     [lambda x:  0.5+(x**4), lambda x: 0.11])
 
-    D = PiecewiseFunction([0, r_ped, 1.0],  [lambda x:0.15 * Ccore*(1.0 + 3*(x**2)), lambda x: 0.18*Cped])
+    D = PiecewiseFunction([0, r_ped, 1.0],  [lambda x:0.1 * Ccore*(1.0 + 3*(x**2)), lambda x: 0.2*Cped])
     v_pinch = Function([0, r_ped, 1.0], lambda x: 0.4 * D(x) * x / R0)   # FIXME: The coefficient 0.4 is a guess.
     v_pinch_T = Function([0, r_ped, 1.0], lambda x: 0.1*chi_e(x) * x / R0)
 
@@ -145,7 +145,7 @@ if __name__ == "__main__":
                         "particles": Function(lambda x: 1e21 * np.exp(15.0*(x**2-1.0))),
                         "energy": Function(bs_r_nrom[1:],
                                            (
-                               baseline["Poh"].values[1:]
+                            baseline["Poh"].values[1:]
                             + baseline["Pdte"].values[1:]
                             + baseline["Paux"].values[1:]
                             - baseline["Peic"].values[1:]
@@ -265,9 +265,9 @@ if __name__ == "__main__":
                 (magnetic_surface.phi,  r"$\phi$", r"$[Wb]$"),
                 (magnetic_surface.psi_norm,  r"$\bar{\psi}$", r"$[-]$"),
 
-                (magnetic_surface.drho_tor_dpsi, r"$\frac{d\psi}{d\rho_{tor}}$"),
+                (magnetic_surface.drho_tor_dpsi, r"$\frac{d\rho_{tor}}{d\psi}$","",{"marker":"."}),
                 [
-                    (magnetic_surface.dpsi_drho_tor,  r"$\frac{d\rho_{tor}}{d\psi}$"),
+                    (magnetic_surface.dpsi_drho_tor,  r"$\frac{d\psi}{d\rho_{tor}}$"),
                     (magnetic_surface.dvolume_drho_tor/magnetic_surface.dvolume_dpsi,
                      r"$\frac{dV}{d\rho_{tor}} / \frac{dV}{d\psi}$")
                 ],
@@ -526,10 +526,12 @@ if __name__ == "__main__":
     ###################################################################################################
     # TransportSolver
     if True:
-        tok.update(max_nodes=1000, tolerance=1.0e-4, impurities=['H', 'D', 'T', 'He', 'Be', 'Ar'])
+        tok.update(max_nodes=500, tolerance=1.0e-4,
+                   impurities=['H', 'D', 'T', 'He', 'Be', 'Ar'],
+                   bvp_rms_mask=[0,r_ped])
 
         core_profile = tok.core_profiles.profiles_1d
-        logger.debug(core_profile.electrons["density_flux"])
+
         plot_profiles(
             [
 
@@ -538,7 +540,7 @@ if __name__ == "__main__":
                 [
                     (Function(bs_r_nrom, (bs_psi_norm*(psi_boundary-psi_axis)+psi_axis)),
                      r"astra", r"$\psi [Wb]$", {"marker": "+"}),
-                    (core_profile["psi"],  r"fytok", r"$\psi  [Wb]$", {"marker": "."}),
+                    (core_profile["psi"],  r"fytok", r"$\psi  [Wb]$"),
                     (Function(bs_r_nrom, (bs_psi_norm*(psi_boundary-psi_axis)+psi_axis))-core_profile["psi"],
                         r"residual", r"",  {"color": "red", "linestyle": "dashed"}),
                 ],
@@ -560,36 +562,37 @@ if __name__ == "__main__":
                 # electron particles
                 [
                     (b_ne, r"astra", r"$n_e [m^{-3}]$",  {"marker": "+"}),
-                    (core_profile.electrons.density, r"fytok", r"$n_e [ m^{-3}]$", {"marker": "."}),
+                    (core_profile.electrons.density, r"fytok", r"$n_e [ m^{-3}]$"),
                     (b_ne-core_profile.electrons.density, r"residual",
                         r"$n_e [ m^{-3}]$",  {"color": "red", "linestyle": "dashed"}),
                     # *[(ion.density*1e-19,                            f"${ion.label}$") for ion in core_profile.ion],
                 ],
+                (core_profile.electrons["rms_residuals"], r"rms_residuals"),
 
 
-                [
-                    (core_profile.electrons["density_flux"], r"Source",
-                     r"$\Gamma_e$ Particle flux", {"color": "green", }),
-                    (core_profile.electrons["diff_flux"],    r"Diffusive ",  "", {"color": "black", }),
-                    (core_profile.electrons["conv_flux"],    r"Convective ", "",  {"color": "blue", }),
-                    (
-                        core_profile.electrons["density_flux"]
-                        - core_profile.electrons["diff_flux"]
-                        - core_profile.electrons["conv_flux"],
-                        r"residual",  "", {"color": "red", }),
-                ],
+                # [
+                #     (core_profile.electrons["density_flux"], r"Source",
+                #      r"$\Gamma_e$ Particle flux", {"color": "green", }),
+                #     (core_profile.electrons["diff_flux"],    r"Diffusive ",  "", {"color": "black", }),
+                #     (core_profile.electrons["conv_flux"],    r"Convective ", "",  {"color": "blue", }),
+                #     (
+                #         core_profile.electrons["density_flux"]
+                #         - core_profile.electrons["diff_flux"]
+                #         - core_profile.electrons["conv_flux"],
+                #         r"residual",  "", {"color": "red", }),
+                # ],
                 ######################################################################
                 # electron energy
                 [
                     (b_Te, r"electron (astra)", r"$T_e [eV]$",  {"marker": "+"}),
-                    (core_profile.electrons.temperature, r"electron (fytok)  ", r"$ [eV]$",  {"marker": "."}),
+                    (core_profile.electrons.temperature, r"electron (fytok)  ", r"$ [eV]$"),
                     (b_Te-core_profile.electrons.temperature, r"residual",
                      r"$[eV]$",  {"color": "red", "linestyle": "dashed"}),
                 ],
+                (core_profile.electrons["rms_residuals_T"], r"rms_residuals"),
 
-                (core_source_1d.electrons.energy,          r"$Q_{e}$"),
+                # (core_source_1d.electrons.energy,          r"$Q_{e}$"),
 
-                # (core_profile.electrons["rms_residuals"], r"rms_residuals"),
 
                 # (core_profile.electrons["temperature_prime"], r"$T^{\prime}$", r"$T_e [eV m^-1]$"),
                 # (core_profile.electrons["heat_flux_prime"], r"$q^{\prime}$"),
@@ -603,6 +606,7 @@ if __name__ == "__main__":
                      - core_profile.electrons["diff_flux_T"]
                      - core_profile.electrons["conv_flux_T"],     r"residual",  "", {"color": "red", "linestyle": "dashed"}),
                 ],
+
 
                 ######################################################################
 

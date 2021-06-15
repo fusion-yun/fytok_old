@@ -377,7 +377,6 @@ class TransportSolverBVP(TransportSolver):
             (a, b, c, d, e, f, g),
             ((e[0], -1, 0), (u, v, w)),
             hyper_diff=[0, 0.0001],
-            ignore_x=[self._rho_tor_norm[np.argmax(np.abs(d.derivative(self._rho_tor_norm)))]],
             **kwargs
         )
 
@@ -436,8 +435,8 @@ class TransportSolverBVP(TransportSolver):
 
         density_next = core_profiles_next.density
 
-        gamma_s = 3/2 * core_profiles_next.get("density_flux", 0)
-        logger.debug(gamma_s)
+        gamma_s = 3/2 * core_profiles_next["density_flux"]
+        
         a = self._inv_tau * (3/2) * self._vpr35 * density_next
 
         b = self._inv_tau * (3/2) * self._vpr35m * density_prev
@@ -458,8 +457,6 @@ class TransportSolverBVP(TransportSolver):
         if hyper_diff is not None:
             hyper_diff_exp, hyper_diff_imp = hyper_diff
             hyper_diff = hyper_diff_exp + hyper_diff_imp*max(d)
-
-        ignore_x = self._rho_tor_norm[np.argmax(np.abs(d.derivative(self._rho_tor_norm)))]
 
         u0, v0, w0 = e[0], -1, 0
 
@@ -515,10 +512,14 @@ class TransportSolverBVP(TransportSolver):
             """
             ya, gammaa = Ya
             yb, gammab = Yb
+            # d0 = d(0)
+            # if np.isclose(d0, 0.0):
+            #     ypa = 0
+            # else:
+            #     ypa = (gammaa-e(0.0)*ya)/d(0)
+            return u0 * ya + v0 * gammaa - w0, u1 * yb + v1 * gammab - w1
 
-            return u1 * yb + v1 * gammab - w1, u0 * ya + v0 * gammaa - w0
-
-        return np.asarray(y0), np.asarray(flux0), func, bc_func, ignore_x, d, e, S
+        return np.asarray(y0), np.asarray(flux0), func, bc_func,  d, e
 
     def energy_transport(self,
                          core_profiles_next:  CoreProfiles.Profiles1D,
@@ -531,7 +532,7 @@ class TransportSolverBVP(TransportSolver):
                          **kwargs
                          ):
 
-        y0, flux0, fc, bc, ignore_x, d, e, S = self._energy_transport_coefficient(
+        y0, flux0, fc, bc, d, e = self._energy_transport_coefficient(
             self._rho_tor_norm,
             core_profiles_next.electrons,
             core_profiles_prev.electrons,
@@ -594,8 +595,6 @@ class TransportSolverBVP(TransportSolver):
             bc_full,
             self._rho_tor_norm,
             Y,
-            ignore_x=[0, ignore_x],
-            # S=np.zeros([len(species)*2, len(species)*2]),
             ** kwargs
         )
         for idx, label in enumerate(species):
@@ -719,6 +718,7 @@ class TransportSolverBVP(TransportSolver):
             tolerance=tolerance,
             max_nodes=max_nodes,
             verbose=verbose,
+            **kwargs
         )
         count += 1
 
@@ -732,6 +732,7 @@ class TransportSolverBVP(TransportSolver):
                 tolerance=tolerance,
                 max_nodes=max_nodes,
                 verbose=verbose,
+                **kwargs
             )
             count += 1
         elif enable_ion_particle_solver is True:
@@ -749,6 +750,7 @@ class TransportSolverBVP(TransportSolver):
                         tolerance=tolerance,
                         max_nodes=max_nodes,
                         verbose=verbose,
+                        **kwargs
                     )
                 n_ele = n_ele - ion.density*ion.z
                 n_ele_flux = n_ele_flux - ion.get("density_flux", 0)*ion.z
@@ -768,6 +770,7 @@ class TransportSolverBVP(TransportSolver):
                 tolerance=tolerance,
                 max_nodes=max_nodes,
                 verbose=verbose,
+                **kwargs
             )
             count += 1
         if False:
@@ -777,7 +780,8 @@ class TransportSolverBVP(TransportSolver):
                     self._core_profiles_prev.ion[{"label": ion.label}],
                     self._c_transp.ion[{"label": ion.label}],
                     self._c_source.ion[{"label": ion.label}],
-                    self.boundary_conditions_1d.ion[{"label": ion.label}]
+                    self.boundary_conditions_1d.ion[{"label": ion.label}],
+                    **kwargs
                 )
                 count += 1
 
@@ -786,7 +790,8 @@ class TransportSolverBVP(TransportSolver):
                 self._core_profiles_prev,
                 self._c_transp.momentum,
                 self._c_source.momentum_tor,
-                self.boundary_conditions_1d.momentum_tor)
+                self.boundary_conditions_1d.momentum_tor,
+                **kwargs)
             count += 1
 
         return residual/count
