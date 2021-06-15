@@ -487,8 +487,6 @@ class MagneticCoordSystem(object):
         """
         return self.grad_psi(r, z) / r / (TWOPI)
 
-        # return np.sqrt(self.Br(r, z)**2+self.Bz(r, z)**2)
-
     def B2(self, r: _TCoord, z: _TCoord) -> _TCoord:
         return (self.Br(r, z)**2+self.Bz(r, z)**2 + self.Btor(r, z)**2)
 
@@ -524,7 +522,6 @@ class MagneticCoordSystem(object):
     def fpol(self) -> np.ndarray:
         """Diamagnetic function (F=R B_Phi)  [T.m]."""
         return self._fpol(self.psi_norm)
- 
 
     @cached_property
     def plasma_current(self) -> np.ndarray:
@@ -604,7 +601,19 @@ class MagneticCoordSystem(object):
     @cached_property
     def dvolume_drho_tor(self) -> np.ndarray:
         """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
-        return (TWOPI**2*self._b0) * self.rho_tor/(self.fpol*self.gm1)
+        return (TWOPI**2) * self.rho_tor/(self.gm1)/(self._fvac/self.fpol)/self._r0
+
+    # @cached_property
+    # def volume1(self) -> np.ndarray:
+    #     """Volume enclosed in the flux surface[m ^ 3]"""
+    #     if self.rho_tor[0] > 1.0e-4:
+    #         x = np.hstack([[0.0], self.rho_tor])
+    #         dvdx = np.hstack([[self.dvolume_drho_tor[0]], self.dvolume_drho_tor])
+    #     else:
+    #         x = self.rho_tor
+    #         dvdx = self.dvolume_drho_tor
+
+    #     return Function(x, dvdx).antiderivative(self.rho_tor)
 
     @cached_property
     def drho_tor_dpsi(self) -> np.ndarray:

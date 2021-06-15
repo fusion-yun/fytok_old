@@ -137,7 +137,7 @@ class Tokamak(Actor):
 
     def update(self, d=None, /, constraints: Equilibrium.Constraints = None, max_iteration=1, max_nodes=1250,  enable_edge=False,  tolerance=1.0e-6, **kwargs):
 
-        super().update(collections.ChainMap(d or {}, kwargs))
+        super().update(d)
 
         for nstep in range(max_iteration):
 
@@ -164,7 +164,7 @@ class Tokamak(Actor):
             # TODO: update boundary condition
             self.transport_solver.update()
 
-            redisual = self.transport_solver.solve(max_nodes=max_nodes, tolerance=tolerance)
+            redisual = self.transport_solver.solve(max_nodes=max_nodes, tolerance=tolerance, **kwargs)
 
             logger.debug(f"time={self.time}  iterator step {nstep}/{max_iteration} redisual={redisual}")
 
