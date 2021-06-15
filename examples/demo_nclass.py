@@ -247,7 +247,7 @@ if __name__ == "__main__":
                 (magnetic_surface.dvolume_dpsi, r"$\frac{dV}{d\psi}$"),
 
                 [
-                (magnetic_surface.volume, r"$V$  from $\psi$"),
+                    (magnetic_surface.volume, r"$V$  from $\psi$"),
                     # (magnetic_surface.volume1, r"$V$ from $\rho_{tor}$"),
                 ],
 
@@ -261,6 +261,8 @@ if __name__ == "__main__":
                 (magnetic_surface.psi,  r"$\psi$", r"$[Wb]$"),
                 (magnetic_surface.phi,  r"$\phi$", r"$[Wb]$"),
                 (magnetic_surface.psi_norm,  r"$\bar{\psi}$", r"$[-]$"),
+                
+                (magnetic_surface.dpsi_drho_tor, r"$\frac{d\psi}{d\rho_{tor}}$", "", {"marker": "."}),
 
                 (magnetic_surface.drho_tor_dpsi, r"$\frac{d\rho_{tor}}{d\psi}$", "", {"marker": "."}),
                 [
