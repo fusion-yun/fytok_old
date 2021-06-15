@@ -24,7 +24,7 @@ if __name__ == "__main__":
         # "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
         "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt",
         # "/home/salmon/workspace/data/Limiter plasmas-7.5MA li=1.1/Limiter plasmas 7.5MA-EQDSK/Limiter_7.5MA_outbord.EQDSK",
-        format="geqdsk")
+        format="geqdsk").entry
 
     ###################################################################################################
     # Configure
@@ -38,26 +38,26 @@ if __name__ == "__main__":
 
     # Equilibrium
 
-    R0 = eqdsk.entry.find("vacuum_toroidal_field.r0", None)
-    psi_axis = eqdsk.entry.find("global_quantities.psi_axis", None)
-    psi_boundary = eqdsk.entry.find("global_quantities.psi_boundary", None)
+    R0 = eqdsk.find("vacuum_toroidal_field.r0", None)
+    psi_axis = eqdsk.find("global_quantities.psi_axis", None)
+    psi_boundary = eqdsk.find("global_quantities.psi_boundary", None)
 
     configure["equilibrium"] = {
         "code": {"name": "dummy"},
         "time_slice": {
-            "vacuum_toroidal_field": eqdsk.entry.find("vacuum_toroidal_field", {}),
-            "profiles_1d": eqdsk.entry.find("profiles_1d"),
+            "vacuum_toroidal_field": eqdsk.find("vacuum_toroidal_field", {}),
+            "profiles_1d": eqdsk.find("profiles_1d"),
             "profiles_2d": {
-                "psi": eqdsk.entry.find("profiles_2d.psi")*TWOPI,
+                "psi": eqdsk.find("profiles_2d.psi")*TWOPI,
                 "grid_type": "rectangular",
                 "grid_index": 1,
                 "grid": {
-                    "dim1": eqdsk.entry.find("profiles_2d.grid.dim1"),
-                    "dim2": eqdsk.entry.find("profiles_2d.grid.dim2"),
+                    "dim1": eqdsk.find("profiles_2d.grid.dim1"),
+                    "dim2": eqdsk.find("profiles_2d.grid.dim2"),
                 }
             },
-            "boundary_separatrix": eqdsk.entry.find("boundary"),
-            "coordinate_system": {"psi_norm": {"axis": 0.0001, "boundary": 0.995, "npoints": 128}}
+            "boundary_separatrix": eqdsk.find("boundary"),
+            "coordinate_system": {"psi_norm": {"axis": 0.0, "boundary": 0.995, "npoints": 128}}
             # "coordinate_system": {"psi_norm": baseline["Fp"].values[:-1]}
         }}
 
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     Cped = 0.2
     Ccore = 0.4
     chi = PiecewiseFunction([0, r_ped, 1.0],  [lambda x: Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
-    chi_e = PiecewiseFunction([0, r_ped, 1.0], [lambda x:0.6*Ccore*(1.0 + 3*(x**2)), lambda x: 1.5 * Cped])
+    chi_e = PiecewiseFunction([0, r_ped, 1.0], [lambda x:0.65*Ccore*(1.0 + 3*(x**2)), lambda x: 1.5 * Cped])
 
     # D = Function(
     #     [lambda r:r < r_ped, lambda r:r >= r_ped],
@@ -188,7 +188,7 @@ if __name__ == "__main__":
     ###################################################################################################
     # Plot profiles
 
-    if True:  # Equilibrium
+    if False:  # Equilibrium
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
                   pf_active={"facecolor": 'red'},
@@ -199,8 +199,6 @@ if __name__ == "__main__":
                       #   "scalar_field": [("psirz", {"levels": 16, "linewidths": 0.1}), ],
                   }
                   ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
-
-        eq_profile = tok.equilibrium.time_slice.profiles_1d
 
         # _, spearatrix_surf = next(magnetic_surface.find_surface_by_psi_norm([1.0]))
         # bpol = np.asarray([magnetic_surface.Bpol(p[0], p[1]) for p in spearatrix_surf.points()])
@@ -214,31 +212,30 @@ if __name__ == "__main__":
         #      ],
         #     x_axis=([0, 1], "u"),
         #     grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_surf.svg", transparent=True)
+    if True:
 
-        magnetic_surface = eq_profile._coord
-        fpol = Function(eq_profile.get('psi_norm', None), eq_profile.get('f', None))
-        ffprime = fpol*fpol.derivative()/(psi_boundary-psi_axis)
+        magnetic_surface = tok.equilibrium.time_slice.coordinate_system
+
+        fpol = Function(eqdsk.find('profiles_1d.psi_norm', None), eqdsk.get('profiles_1d.f', None))
+
+        # ffprime = fpol*fpol.derivative()/(psi_boundary-psi_axis)
+
         plot_profiles(
             [
                 [
-                    (Function(baseline["Fp"].values, baseline["q"].values), r"astra",  r"$q [-]$", {"marker": "+"}),
                     (Function(bs_psi_norm, baseline["q"].values), r"astra",  r"$q [-]$", {"marker": "+"}),
-                    (Function(eq_profile.get('psi_norm', None), eq_profile.get('q', None)), "eqdsk"),
+                    (Function(eqdsk.get('profiles_1d.psi_norm', None), eqdsk.get('profiles_1d.q', None)), "eqdsk"),
                     (magnetic_surface.q,  r"$fytok$", r"$[Wb]$"),
-                    # (magnetic_surface.dphi_dpsi,  r"$\frac{d\phi}{d\psi}$", r"$[Wb]$"),
-
+                    (magnetic_surface.dphi_dpsi,  r"$\frac{d\phi}{d\psi}$", r"$[Wb]$"),
                 ],
                 [
-                    (Function(bs_psi_norm, baseline["rho"].values),
-                     r"astra", r"$\rho_{tor}[m]$",  {"marker": "+"}),
+                    (Function(bs_psi_norm, baseline["rho"].values), r"astra", r"$\rho_{tor}[m]$",  {"marker": "+"}),
                     (magnetic_surface.rho_tor,  r"$\rho$", r"$[m]$"),
-
                 ],
                 [
                     (Function(bs_psi_norm, baseline["x"].values),           r"astra",
                      r"$\frac{\rho_{tor}}{\rho_{tor,bdry}}$", {"marker": "+"}),
                     (magnetic_surface.rho_tor_norm,  r"$\bar{\rho}$", r"$[-]$"),
-
                 ],
 
                 [
@@ -250,7 +247,7 @@ if __name__ == "__main__":
                 (magnetic_surface.dvolume_dpsi, r"$\frac{dV}{d\psi}$"),
 
                 [
-                    (magnetic_surface.volume, r"$V$  from $\psi$"),
+                (magnetic_surface.volume, r"$V$  from $\psi$"),
                     # (magnetic_surface.volume1, r"$V$ from $\rho_{tor}$"),
                 ],
 
@@ -265,7 +262,7 @@ if __name__ == "__main__":
                 (magnetic_surface.phi,  r"$\phi$", r"$[Wb]$"),
                 (magnetic_surface.psi_norm,  r"$\bar{\psi}$", r"$[-]$"),
 
-                (magnetic_surface.drho_tor_dpsi, r"$\frac{d\rho_{tor}}{d\psi}$","",{"marker":"."}),
+                (magnetic_surface.drho_tor_dpsi, r"$\frac{d\rho_{tor}}{d\psi}$", "", {"marker": "."}),
                 [
                     (magnetic_surface.dpsi_drho_tor,  r"$\frac{d\psi}{d\rho_{tor}}$"),
                     (magnetic_surface.dvolume_drho_tor/magnetic_surface.dvolume_dpsi,
@@ -290,7 +287,9 @@ if __name__ == "__main__":
             title="Equlibrium",
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_coord.svg", transparent=True)
 
-    if True:
+    if False:
+        eq_profile = tok.equilibrium.time_slice.profiles_1d
+
         plot_profiles(
             [
                 # (eq_profile.dpressure_dpsi,                                                       r"$dP/d\psi$"),
@@ -368,7 +367,7 @@ if __name__ == "__main__":
             title="Equlibrium",
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
-    if True:  # CoreProfile
+    if False:  # CoreProfile
 
         core_profile = tok.core_profiles.profiles_1d
 
@@ -405,7 +404,7 @@ if __name__ == "__main__":
             x_axis=([0, 1.0],                                  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile.svg", transparent=True)
 
-    if True:  # CoreTransport
+    if False:  # CoreTransport
         # core_transport1d_nc = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
         # core_transport1d_dummy = tok.core_transport.model[{"code.name": "dummy"}].profiles_1d
 
@@ -468,7 +467,7 @@ if __name__ == "__main__":
             title=tok.core_transport.model[0].identifier.name,
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
-    if True:  # CoreSources
+    if False:  # CoreSources
         core_source_1d = tok.core_sources.source.combine.profiles_1d
 
         plot_profiles(
@@ -525,10 +524,10 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # TransportSolver
-    if True:
+    if False:
         tok.update(max_nodes=500, tolerance=1.0e-4,
                    impurities=['H', 'D', 'T', 'He', 'Be', 'Ar'],
-                   bvp_rms_mask=[0,r_ped])
+                   bvp_rms_mask=[r_ped])
 
         core_profile = tok.core_profiles.profiles_1d
 
