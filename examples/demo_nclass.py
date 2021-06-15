@@ -91,7 +91,7 @@ if __name__ == "__main__":
     Cped = 0.2
     Ccore = 0.4
     chi = PiecewiseFunction([0, r_ped, 1.0],  [lambda x: Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
-    chi_e = PiecewiseFunction([0, r_ped, 1.0], [lambda x:0.5*Ccore*(1.0 + 3*(x**2)), lambda x:0.8*Cped])
+    chi_e = PiecewiseFunction([0, r_ped, 1.0], [lambda x:0.8*Ccore*(1.0 + 3*(x**2)), lambda x:0.8*Cped])
 
     # D = Function(
     #     [lambda r:r < r_ped, lambda r:r >= r_ped],
