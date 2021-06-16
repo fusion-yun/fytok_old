@@ -124,7 +124,7 @@ class CoreProfilesIon(SpeciesIon):
     @sp_property
     def temperature(self) -> Function:
         """Temperature (average over charge states when multiple charge states are considered) {dynamic} [eV]  """
-        return Function(self._grid.rho_tor_norm, self["temperature"])
+        return Function(self._grid.rho_tor_norm, self.get("temperature", 0))
 
     # @property
     # def temperature_validity(self):
@@ -143,11 +143,12 @@ class CoreProfilesIon(SpeciesIon):
     @sp_property
     def density(self) -> Function:
         """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        d = self["density"]
-        if not isinstance(d, np.ndarray) or d != None:
-            return d
-        else:
-            return self.density_fast+self.density_thermal
+        return Function(self._grid.rho_tor_norm, self.get("density", 0))
+        # d = self[]
+        # if not isinstance(d, np.ndarray) or d != None:
+        #     return d
+        # else:
+        #     return self.density_fast+self.density_thermal
 
     # @property
     # def density_validity(self):

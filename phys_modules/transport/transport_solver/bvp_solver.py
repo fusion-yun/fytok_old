@@ -5,7 +5,7 @@
 import collections
 import enum
 from math import log
-from typing import Mapping, Optional, Type, Union
+from typing import Mapping, Optional, Type, Union, Sequence
 
 from matplotlib.pyplot import loglog
 
@@ -268,6 +268,9 @@ class TransportSolverBVP(TransportSolver):
 
         # -----------------------------------------------------------
         # boundary condition, value
+        # axis
+        u0, v0, w0 = 0, 1, 0.0
+
         # Identifier of the boundary condition type.
         #   ID =    1: poloidal flux;
         #           2: ip;
@@ -276,28 +279,24 @@ class TransportSolverBVP(TransportSolver):
         #           5: generic boundary condition y expressed as a1y'+a2y=a3.
         #           6: equation not solved; [eV]
 
-        # Boundary conditions for electron diffusion equation in form:
-        #      U*Y + V*Gamma =W
-        # On axis:
-        #     dNi/drho_tor(rho_tor=0)=0:  - this is Ne, not N
         if bc.identifier.index == 1:  # poloidal flux;
-            u = 1
-            v = 0
-            w = bc.value[0]
+            u1 = 1
+            v1 = 0
+            w1 = bc.value[0]
         elif bc.identifier.index == 2:  # ip, total current inside x=1
             Ip = bc.value[0]
-            u = 0
-            v = 1
-            w = constants.mu_0 * Ip / self._fpol[-1]
+            u1 = 0
+            v1 = 1
+            w1 = constants.mu_0 * Ip / self._fpol[-1]
         elif bc.identifier.index == 3:  # loop voltage;
             Uloop_bdry = bc.value[0]
-            u = 0
-            v = 1
-            w = (self._tau*Uloop_bdry + self._core_profiles_prev.psi[-1])*d(1.0)
+            u1 = 0
+            v1 = 1
+            w1 = (self._tau*Uloop_bdry + self._core_profiles_prev.psi[-1])*d(1.0)
         elif bc.identifier.index == 5:  # generic boundary condition y expressed as a1y' + a2y=a3;
-            u = bc.value[1]
-            v = bc.value[0]
-            w = bc.value[2]
+            u1 = bc.value[1]
+            v1 = bc.value[0]
+            w1 = bc.value[2]
         elif bc.identifier.index == 6:  # equation not solved;
             raise NotImplementedError(bc.identifier.index)
         else:
@@ -308,7 +307,7 @@ class TransportSolverBVP(TransportSolver):
             core_profiles_next.get("psi", self._core_profiles_next.grid.psi),
             core_profiles_next.get("dpsi_drho_tor_norm", None),
             (a, b, c, d, e, f, g),
-            ((0, 1, 0.0), (u, v, w)),
+            ((u0, v0, w0), (u1, v1, w1)),
             hyper_diff=[0, 0.0001],
             **kwargs)
 
@@ -317,19 +316,9 @@ class TransportSolverBVP(TransportSolver):
         logger.info(
             f"Solve transport equations: Current  \t [{'Success' if sol.success else 'Failed'}] max reduisal={rms_residuals}")
 
-        # core_profiles_next["sol.current.a"] = a
-        # core_profiles_next["sol.current.b"] = b
-        # core_profiles_next["sol.current.c"] = c
-        # core_profiles_next["sol.current.d"] = d
-        # core_profiles_next["sol.current.e"] = e
-        # core_profiles_next["sol.current.f"] = f
-        # core_profiles_next["sol.current.gm2"] = gm2
-        # core_profiles_next["sol.current.fpol"] = fpol
-        # core_profiles_next["sol.current.vpr"] = vpr
-        # # if sol.success:
         core_profiles_next["psi"] = profiles.y
-        core_profiles_next["dpsi_drho_tor_norm"] = profiles.yp
         core_profiles_next["psi_error"] = Function((sol.x[1:]+sol.x[:-1])*0.5, sol.rms_residuals)
+        core_profiles_next["dpsi_drho_tor_norm"] = profiles.yp
 
         return rms_residuals
 
@@ -343,7 +332,6 @@ class TransportSolverBVP(TransportSolver):
                            ** kwargs
                            ):
         # Particle Transport
-        label = core_profiles_next.get("label", "electron")
 
         diff = transp.particles.d
         conv = transp.particles.v
@@ -359,15 +347,15 @@ class TransportSolverBVP(TransportSolver):
         f = self._vpr * se_exp
         g = self._vpr * (se_imp + self._k_rho_bdry)
 
-        # Boundary conditions for electron diffusion equation in form:
-        #      U*Y + V*Gamma =W
-        # On axis:
-        #     dNi/drho_tor(rho_tor=0)=0:  - this is Ne, not N
-        if bc.particles.identifier.index == 1:
-            u = 1
-            v = 0
-            w = bc.particles.value[0]
+        # -----------------------------------------------------------
+        # boundary condition, value
+        # axis
+        u0, v0, w0 = 0, 1, 0.0
 
+        if bc.particles.identifier.index == 1:
+            u1 = 1
+            v1 = 0
+            w1 = bc.particles.value[0]
         else:
             raise NotImplementedError(bc.particles.identifier)
 
@@ -376,54 +364,35 @@ class TransportSolverBVP(TransportSolver):
             core_profiles_prev.density,
             core_profiles_prev.get("density_flux", None),
             (a, b, c, d, e, f, g),
-            ((e[0], -1, 0), (u, v, w)),
+            ((u0, v0, w0), (u1, v1, w1)),
             hyper_diff=[0, 0.0001],
             **kwargs
         )
 
         core_profiles_next["density"] = profiles.y
-        core_profiles_next["density_flux"] = profiles.flux
-
         core_profiles_next["density_error"] = Function((sol.x[1:]+sol.x[:-1])*0.5, sol.rms_residuals)
+        core_profiles_next["density_flux"] = profiles.flux
 
         core_profiles_next["diff_flux"] = profiles.diff_flux
         core_profiles_next["conv_flux"] = profiles.conv_flux
 
-        core_profiles_next["diff"] = diff
-        core_profiles_next["conv"] = conv
-        # core_profiles_next["vpr"] = vpr
-
-        # core_profiles_next["a"] = a
-        # core_profiles_next["b"] = b
-        # core_profiles_next["d"] = d
-        # core_profiles_next["e"] = e
-        # core_profiles_next["f"] = f
-        # core_profiles_next["g"] = g
-
         rms_residuals = np.max(sol.rms_residuals)
 
         logger.info(
-            f"Solve transport equations: Particle '{label}' \t [{'Success' if sol.success else 'Failed'}] max reduisal={rms_residuals}")
+            f"Solve transport equations: Particle '{core_profiles_next.label}' \t [{'Success' if sol.success else 'Failed'}] max reduisal={rms_residuals}")
 
         return rms_residuals
 
-    def nu_ab(self, a, b):
-        """
-         exchange terms , Qab= nu_ab(Ta-Tb)
-        """
-        if a.label == b.label:
-            return 0.0
-        return 0.0
-
-    def _energy_transport_coefficient(self, x0: np.ndarray,
-                                      core_profiles_next: Union[CoreProfiles.Profiles1D.Electrons, CoreProfiles.Profiles1D.Ion],
-                                      core_profiles_prev: Union[CoreProfiles.Profiles1D.Electrons, CoreProfiles.Profiles1D.Ion],
-                                      transp: Union[CoreTransport.Model.Profiles1D.Electrons, CoreTransport.Model.Profiles1D.Ion],
-                                      source: Union[CoreSources.Source.Profiles1D.Electrons, CoreSources.Source.Profiles1D.Ion],
-                                      bc: Union[TransportSolver.BoundaryConditions1D.Electrons,
-                                                TransportSolver.BoundaryConditions1D.Ion],
-                                      hyper_diff=[0.0, 0.01],
-                                      ):
+    def energy_transport(self,
+                         core_profiles_next: Union[CoreProfiles.Profiles1D.Electrons, CoreProfiles.Profiles1D.Ion],
+                         core_profiles_prev: Union[CoreProfiles.Profiles1D.Electrons, CoreProfiles.Profiles1D.Ion],
+                         transp: Union[CoreTransport.Model.Profiles1D.Electrons, CoreTransport.Model.Profiles1D.Ion],
+                         source: Union[CoreSources.Source.Profiles1D.Electrons, CoreSources.Source.Profiles1D.Ion],
+                         bc: Union[TransportSolver.BoundaryConditions1D.Electrons,
+                                   TransportSolver.BoundaryConditions1D.Ion],
+                         hyper_diff=[0.0001, 0.0],
+                         **kwargs
+                         ):
 
         # energy transport
         chi = transp.energy.d
@@ -436,7 +405,7 @@ class TransportSolverBVP(TransportSolver):
 
         density_next = core_profiles_next.density
 
-        gamma_s = 3/2 * core_profiles_next["density_flux"]
+        gamma_s = 3/2 * core_profiles_next.get("density_flux", 0)
 
         a = self._inv_tau * (3/2) * self._vpr35 * density_next
 
@@ -459,6 +428,9 @@ class TransportSolverBVP(TransportSolver):
             hyper_diff_exp, hyper_diff_imp = hyper_diff
             hyper_diff = hyper_diff_exp + hyper_diff_imp*max(d)
 
+        # ----------------------------------------------
+        # Boundary Condition
+        # axis
         u0, v0, w0 = e[0], -1, 0
 
         if bc.energy.identifier.index == 1:
@@ -468,169 +440,25 @@ class TransportSolverBVP(TransportSolver):
         else:
             raise NotImplementedError(bc.energy)
 
-        y0 = core_profiles_next.temperature
-        flux0 = core_profiles_next.get("heat_flux", None)
-
-        if isinstance(y0, Function):
-            y0_func = y0
-            y0 = y0_func(x0)
-        elif isinstance(y0, np.ndarray) and y0.shape == x0.shape:
-            y0_func = Function(x0, y0)
-        else:
-            raise ValueError(f"{y0.shape} != {x0.shape} ")
-
-        if flux0 is None:
-            flux0 = -d(x0) * y0_func.derivative(x0) + e(x0) * y0_func(x0)
-        elif not isinstance(flux0, np.ndarray) or flux0.shape != x0.shape:
-            raise ValueError(f"{flux0.shape} != {x0.shape} ")
-
-        def func(x,  y, gamma, _a=a, _b=b, _c=c,  _d=d, _e=e, _f=f, _g=g, _y0=y0_func, _hyper_diff=hyper_diff):
-            yp = Function(x, y).derivative(x)
-            if x[0] == 0.0:
-                yp[0] = 0   # remove singularity at the magnetic axis
-            dy = (-gamma + _e(x)*y + _hyper_diff * yp)/(_d(x)+_hyper_diff)
-            # if x[0] == 0.0:
-            #     dy = np.hstack([[0.0], (-gamma[1:] + _e(x[1:])*y[1:])/(_d(x[1:]))])
-            # else:
-            #     dy = (-gamma + _e(x)*y)/(_d(x))
-
-            dgamma = (_f(x) - _g(x) * y - (_a(x) * y - _b(x) * _y0(x)))*_c(x)
-            # dy[0] = 0
-            # dgamma[0]=0
-            # logger.debug((x[:2], dy[:2], dgamma[:2], gamma[:2],  _d(x[:2])))
-
-            return dy, dgamma
-
-        def S(x,  y, _a=a, _b=b,  _f=f, _g=g, _y0=y0_func):
-            return _f(x) - _g(x) * y - (_a(x) * y - _b(x) * _y0(x))
-
-        def bc_func(Ya, Yb):
-            r"""
-                u*y(b)+v*\Gamma(b)=w
-                Ya=[y(a),y'(a)]
-                Yb=[y(b),y'(b)]
-                P=[[u(a),u(b)],[v(a),v(b)],[w(a),w(b)]]
-            """
-            ya, gammaa = Ya
-            yb, gammab = Yb
-            # d0 = d(0)
-            # if np.isclose(d0, 0.0):
-            #     ypa = 0
-            # else:
-            #     ypa = (gammaa-e(0.0)*ya)/d(0)
-            return u0 * ya + v0 * gammaa - w0, u1 * yb + v1 * gammab - w1
-
-        return np.asarray(y0), np.asarray(flux0), func, bc_func,  d, e
-
-    def energy_transport(self,
-                         core_profiles_next:  CoreProfiles.Profiles1D,
-                         core_profiles_prev:  CoreProfiles.Profiles1D,
-                         transp:  CoreTransport.Model.Profiles1D,
-                         source:  CoreSources.Source.Profiles1D,
-                         boundary_condition: TransportSolver.BoundaryConditions1D,
-                         impurities=[],
-                         hyper_diff=[0.0001, 0.0],
-                         **kwargs
-                         ):
-
-        y0, flux0, fc, bc, d, e = self._energy_transport_coefficient(
+        sol, profiles = self.solve_general_form(
             self._rho_tor_norm,
-            core_profiles_next.electrons,
-            core_profiles_prev.electrons,
-            transp.electrons,
-            source.electrons,
-            boundary_condition.electrons,
-            hyper_diff=hyper_diff)
-
-        # label
-        species = [core_profiles_next.electrons.label]
-        # Temperature,eat flux
-        Y = [y0, flux0]
-
-        # function
-        fc_list = [fc]
-        # boundary condition
-        bc_list = [bc]
-
-        for ion in core_profiles_next.ion:
-            if ion.label in impurities:
-                continue
-            species.append(ion.label)
-            y0, flux0, fc, bc, *_ = self._energy_transport_coefficient(
-                self._rho_tor_norm,
-                ion,
-                core_profiles_prev.ion[{'label': ion.label}],
-                transp.ion[{'label': ion.label}],
-                source.ion[{'label': ion.label}],
-                boundary_condition.ion[{'label': ion.label}],
-                hyper_diff=hyper_diff)
-
-            Y.extend([y0, flux0])
-
-            fc_list.append(fc)
-            bc_list.append(bc)
-
-        Y = np.vstack(Y)
-
-        def func_full(x, Y):
-            res = []
-            for idx, _ in enumerate(species):
-                res.extend(fc_list[idx](x, Y[idx*2], Y[idx*2+1]))
-            return np.vstack(res)
-
-        def bc_full(Ya, Yb):
-            r"""
-                u*y(b)+v*\Gamma(b)=w
-                Ya=[y(a),y'(a)]
-                Yb=[y(b),y'(b)]
-                P=[[u(a),u(b)],[v(a),v(b)],[w(a),w(b)]]
-            """
-
-            res = []
-            for idx, _ in enumerate(species):
-                res.extend(bc_list[idx]((Ya[idx*2], Ya[idx*2+1]), (Yb[idx*2], Yb[idx*2+1])))
-            return np.asarray(res)
-
-        sol = solve_bvp(
-            func_full,
-            bc_full,
-            self._rho_tor_norm,
-            Y,
-            ** kwargs
+            core_profiles_prev.temperature,
+            core_profiles_prev.get("heat_flux", None),
+            (a, b, c, d, e, f, g),
+            ((u0, v0, w0), (u1, v1, w1)),
+            hyper_diff=[0, 0.0001],
+            **kwargs
         )
-        for idx, label in enumerate(species):
-            if label == core_profiles_next.electrons.label:
-                core_profiles_next.electrons["temperature"] = Function(sol.x, sol.y[idx*2])
-                core_profiles_next.electrons["heat_flux"] = Function(sol.x, sol.y[idx*2+1])
-                # core_profiles_next.electrons["temperature_prime"] = Function(sol.x, sol.yp[idx*2])
-                # core_profiles_next.electrons["heat_flux_prime"] = Function(sol.x, sol.yp[idx*2+1])
-                core_profiles_next.electrons["diff_flux_T"] = Function(sol.x, np.asarray(-d(sol.x) * sol.yp[0]))
-                core_profiles_next.electrons["conv_flux_T"] = Function(sol.x, np.asarray(e(sol.x) * sol.y[0]))
-                core_profiles_next.electrons["temperature_error"] = Function(
-                    (sol.x[1:]+sol.x[:-1])*0.5, sol.rms_residuals)
 
-            else:
-                core_profiles_next.ion[{"label": label}]["temperature"] = Function(sol.x, sol.y[idx*2])
-                core_profiles_next.ion[{"label": label}]["heat_flux"] = Function(sol.x, sol.y[idx*2+1])
-                core_profiles_next.ion[{"label": label}]["temperature_error"] = Function(
-                    (sol.x[1:]+sol.x[:-1])*0.5, sol.rms_residuals)
-                # core_profiles_next.ion[{"label": label}]["temperature_prime"] = Function(sol.x, sol.yp[idx*2])
-                # core_profiles_next.ion[{"label": label}]["heat_flux_prime"] = Function(sol.x, sol.yp[idx*2+1])
-        # core_profiles_next["temperature"] = profiles.y
-        # core_profiles_next["heat_flux"] = profiles.flux
-        # # core_profiles_next["a"] = a
-        # # core_profiles_next["b"] = b
-        # core_profiles_next["d"] = d
-        # core_profiles_next["e"] = e
-        # core_profiles_next["f"] = f
+        core_profiles_next["temperature"] = profiles.y
+        core_profiles_next["heat_flux"] = profiles.flux
+        core_profiles_next["temperature_error"] = Function((sol.x[1:]+sol.x[:-1])*0.5, sol.rms_residuals)
 
-        # core_profiles_next["diff_flux"] = profiles.diff_flux
-        # core_profiles_next["conv_flux"] = profiles.conv_flux
-        # core_profiles_next["s_exp_flux"] = profiles.s_exp_flux
-        # core_profiles_next["residual"] = profiles.residual
         rms_residuals = np.max(sol.rms_residuals)
+
         logger.info(
-            f"Solve transport equations: Energy  \t [{'Success' if sol.success else 'Failed'}]  rms_residuals = {rms_residuals} ")
+            f"Solve transport equations: Energy '{core_profiles_next.label}' \t [{'Success' if sol.success else 'Failed'}] max reduisal={rms_residuals}")
+
         return rms_residuals
 
     def rotation_transport(self,
@@ -654,7 +482,8 @@ class TransportSolverBVP(TransportSolver):
                    max_nodes=250,
                    verbose=2,
                    enable_ion_particle_solver: bool = False,
-                   impurities=[],
+                   ion_species: Sequence = None,
+                   impurities: Sequence = [],
                    **kwargs) -> float:
         r"""
             Solve transport equations
@@ -710,6 +539,15 @@ class TransportSolverBVP(TransportSolver):
                             V^{\prime\frac{5}{3}}\left[Q_{e,exp}-Q_{e,imp}\cdot T_{e}+Q_{ei}-Q_{\gamma i}\right]
                     :label: transport_electron_temperature
         """
+
+        if ion_species is None:
+            ion_species_list = [["ion", {"label": ion.label}]
+                                for ion in self._core_profiles_prev.ion if ion.label not in impurities]
+        elif isinstance(ion_species, collections.abc.Sequence):
+            ion_species_list = [["ion", {"label": label}] for label in ion_species if label not in impurities]
+
+        impurities_list = [["ion", {"label": label}] for label in impurities]
+
         residual = 0
         count = 0
         residual += self.current_transport(
@@ -737,24 +575,64 @@ class TransportSolverBVP(TransportSolver):
                 verbose=verbose,
                 **kwargs
             )
+
             count += 1
+
+            nDT = 0
+            Gamma_DT = 0
+
+            # for ion in self._core_profiles_next.ion:
+            #     if ion.label not in impurities:
+            #         continue
+            #     nDT -= ion.density(self._rho_tor_norm)
+            #     flux = ion.get("density_flux", _not_found_)
+            #     if isinstance(flux, Function):
+            #         flux = flux(self._rho_tor_norm)
+
+            #     if isinstance(flux, np.ndarray):
+            #         Gamma_DT -= flux
+
+            num = len(ion_species_list)
+
+            for ion in self._core_profiles_next.ion:
+                if ion.label not in impurities:
+                    continue
+                nDT -= ion.density(self._rho_tor_norm)*ion.z
+                flux = ion.get("density_flux", 0)*ion.z
+                if isinstance(flux, Function):
+                    flux = flux(self._rho_tor_norm)
+
+                Gamma_DT -= flux
+
+            nDT += self._core_profiles_next.electrons.density(self._rho_tor_norm)
+            Gamma_DT += self._core_profiles_next.electrons.fetch("density_flux", 0)(self._rho_tor_norm)
+
+            nDT /= num
+            Gamma_DT /= num
+
+            for ion in self._core_profiles_next.ion:
+                if ion.label in impurities:
+                    continue
+                ion["density"] = nDT
+                ion["density_flux"] = Gamma_DT
+
         elif enable_ion_particle_solver is True:
             n_ele = 0.0
             n_ele_flux = 0.0
-            for ion in self._core_profiles_next.ion:
-                if ion.label not in impurities:
-                    count += 1
-                    residual += self.particle_transport(
-                        ion,
-                        self._core_profiles_prev.ion[{"label": ion.label}],
-                        self._c_transp.ion[{"label": ion.label}],
-                        self._c_source.ion[{"label": ion.label}],
-                        self.boundary_conditions_1d.ion[{"label": ion.label}],
-                        tolerance=tolerance,
-                        max_nodes=max_nodes,
-                        verbose=verbose,
-                        **kwargs
-                    )
+            for rpath in ion_species_list:
+                count += 1
+                residual += self.particle_transport(
+                    self._core_profiles_next.fetch(rpath),
+                    self._core_profiles_prev.fetch(rpath),
+                    self._c_transp.fetch(rpath),
+                    self._c_source.fetch(rpath),
+                    self.boundary_conditions_1d.fetch(rpath),
+                    tolerance=tolerance,
+                    max_nodes=max_nodes,
+                    verbose=verbose,
+                    **kwargs
+                )
+                ion = self._core_profiles_next.fetch(rpath)
                 n_ele = n_ele - ion.density*ion.z
                 n_ele_flux = n_ele_flux - ion.get("density_flux", 0)*ion.z
 
@@ -763,31 +641,21 @@ class TransportSolverBVP(TransportSolver):
             self._core_profiles_next.electrons["density_flux"] = n_ele
 
         if True:
-            residual += self.energy_transport(
-                self._core_profiles_next,
-                self._core_profiles_prev,
-                self._c_transp,
-                self._c_source,
-                self.boundary_conditions_1d,
-                impurities=impurities,
-                tolerance=tolerance,
-                max_nodes=max_nodes,
-                verbose=verbose,
-                **kwargs
-            )
-            count += 1
-        if False:
-            for ion in self._core_profiles_next.ion:
+            for rpath in ["electrons"]+ion_species_list:
                 residual += self.energy_transport(
-                    ion,
-                    self._core_profiles_prev.ion[{"label": ion.label}],
-                    self._c_transp.ion[{"label": ion.label}],
-                    self._c_source.ion[{"label": ion.label}],
-                    self.boundary_conditions_1d.ion[{"label": ion.label}],
+                    self._core_profiles_next.fetch(rpath),
+                    self._core_profiles_prev.fetch(rpath),
+                    self._c_transp.fetch(rpath),
+                    self._c_source.fetch(rpath),
+                    self.boundary_conditions_1d.fetch(rpath),
+                    tolerance=tolerance,
+                    max_nodes=max_nodes,
+                    verbose=verbose,
                     **kwargs
                 )
                 count += 1
 
+        if False:
             residual += self.rotation_transport(
                 self._core_profiles_next,
                 self._core_profiles_prev,
