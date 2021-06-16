@@ -90,8 +90,8 @@ if __name__ == "__main__":
     r_ped = 0.96  # np.sqrt(0.88)
     Cped = 0.2
     Ccore = 0.4
-    chi = PiecewiseFunction([0, r_ped, 1.0],  [lambda x: 0.65*Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
-    chi_e = PiecewiseFunction([0, r_ped, 1.0], [lambda x:0.65*Ccore*(1.0 + 3*(x**2)), lambda x: 1.5 * Cped])
+    chi = PiecewiseFunction([0, r_ped, 1.0],  [lambda x: 1.1*Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
+    chi_e = PiecewiseFunction([0, r_ped, 1.0], [lambda x:0.6 *Ccore*(1.0 + 3*(x**2)), lambda x: 1.5 * Cped])
 
     # D = Function(
     #     [lambda r:r < r_ped, lambda r:r >= r_ped],
@@ -116,12 +116,12 @@ if __name__ == "__main__":
                         {
                             **atoms["D"],
                             "particles":{"d":  D, "v": v_pinch},
-                            "energy": {"d": -chi, "v": v_pinch_T},
+                            "energy": {"d": chi, "v": v_pinch_T},
                         },
                         {
                             **atoms["T"],
                             "particles":{"d":  D, "v": v_pinch},
-                            "energy": {"d": -chi, "v": v_pinch_T},
+                            "energy": {"d": chi, "v": v_pinch_T},
                         },
                         {
                             **atoms["He"],
@@ -149,13 +149,14 @@ if __name__ == "__main__":
                     (baseline["Peic"].values
                      + baseline["Pdti"].values
                      + baseline["Pibm"].values
-                     - baseline["Pdte"].values
                      )*1e6/constants.electron_volt)
 
     Q_He = Function(bs_r_nrom,
                     (- baseline["Pdti"].values
                      - baseline["Pdte"].values
                      )*1e6/constants.electron_volt)
+
+    impurities = ['He', 'Be', 'Ar']
     # Core Source
     configure["core_sources"] = {
         "source": [
@@ -492,7 +493,9 @@ if __name__ == "__main__":
                 ],
                 (core_source_1d.electrons.particles,       "fytok", r"$S_{e} [ m^{-3} s^-1]$"),
                 (core_source_1d.electrons.energy,          "fytok", r"$Q_{e}$"),
-
+                [
+                    * [(ion.density,   f"${ion.label}$") for ion in core_profile.ion if ion.label not in impurities],
+                ],
                 # [
                 #     (Function(bs_r_nrom, baseline["Zeff"].values),          r"$Z_{eff}^{astra}$", {"marker": "+"}),
                 #     (core_profile.zeff,                                                              r"$z_{eff}$"),
@@ -538,7 +541,7 @@ if __name__ == "__main__":
     if True:
 
         core_profile = tok.core_profiles.profiles_1d
-        impurities = ['He', 'Be', 'Ar']
+
         tok.update(enable_ion_particle_solver=False,
                    max_nodes=500, tolerance=1.0e-4,
                    impurities=impurities,
@@ -579,7 +582,7 @@ if __name__ == "__main__":
                 ],
                 [
                     (b_nDT/2,    r"astra $T_D$", r"$n_i [m^-3]$", {"marker": '+'}),
-                    * [(ion.density,   f"${ion.label}$") for ion in core_profile.ion ],
+                    * [(ion.density,   f"${ion.label}$") for ion in core_profile.ion],
                 ],
                 # [
                 #     (core_profile.electrons["density_flux"], r"Source",

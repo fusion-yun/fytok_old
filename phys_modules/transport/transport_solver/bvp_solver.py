@@ -390,7 +390,6 @@ class TransportSolverBVP(TransportSolver):
                          source: Union[CoreSources.Source.Profiles1D.Electrons, CoreSources.Source.Profiles1D.Ion],
                          bc: Union[TransportSolver.BoundaryConditions1D.Electrons,
                                    TransportSolver.BoundaryConditions1D.Ion],
-                         hyper_diff=[0.0001, 0.0],
                          **kwargs
                          ):
 
@@ -415,18 +414,14 @@ class TransportSolverBVP(TransportSolver):
 
         d = self._vpr * self._gm3 * density_next * chi / self._rho_tor_boundary
 
-        e = self._vpr * self._gm3 * density_next * v_pinch + gamma_s  \
-            # - self._vpr * (3/4)*self._k_phi * self._rho_tor * density_next
+        e = self._vpr * self._gm3 * density_next * v_pinch + gamma_s  # \
+        # - self._vpr * (3/4)*self._k_phi * self._rho_tor * density_next
 
         f = self._vpr35 * (Qs_exp)
         # + np.sum([self.nu_ab(label, other.label)*other.temperature for other in species])
 
         g = self._vpr35 * (Qs_imp + self._Qimp_k_ns*density_next)
         # +np.sum([self.nu_ab(label, other.label) for other in species])
-
-        if hyper_diff is not None:
-            hyper_diff_exp, hyper_diff_imp = hyper_diff
-            hyper_diff = hyper_diff_exp + hyper_diff_imp*max(d)
 
         # ----------------------------------------------
         # Boundary Condition
@@ -446,7 +441,7 @@ class TransportSolverBVP(TransportSolver):
             core_profiles_prev.get("heat_flux", None),
             (a, b, c, d, e, f, g),
             ((u0, v0, w0), (u1, v1, w1)),
-            hyper_diff=[0, 0.0001],
+            hyper_diff=[1e-4, 0.0001],
             **kwargs
         )
 
