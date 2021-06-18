@@ -228,6 +228,7 @@ if __name__ == "__main__":
         #      ],
         #     x_axis=([0, 1], "u"),
         #     grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_surf.svg", transparent=True)
+
     if True:
 
         magnetic_surface = tok.equilibrium.time_slice.coordinate_system
@@ -574,12 +575,12 @@ if __name__ == "__main__":
                 # (core_profile["sol.current.gm2"],  r"sol.current.gm2", r"$gm2$"),
                 ######################################################################
                 # electron particles
-                # [
-                #     (b_ne, r"astra", r"$n_e [m^{-3}]$",  {"marker": "+"}),
-                #     (core_profile.electrons.density, r"fytok", r"$n_e [ m^{-3}]$"),
-                #     (core_profile.electrons["density_error"], r"rms residuals ",
-                #         r"$n_e [ m^{-3}]$",  {"color": "red", "linestyle": "dashed"}),
-                # ],
+                [
+                    (b_ne, r"astra", r"$n_e [m^{-3}]$",  {"marker": "+"}),
+                    (core_profile.electrons.density, r"fytok", r"$n_e [ m^{-3}]$"),
+                    # (core_profile.electrons["density_error"], r"rms residuals ",
+                    #     r"$n_e [ m^{-3}]$",  {"color": "red", "linestyle": "dashed"}),
+                ],
                 # [
                 #     (b_nDT/2,    r"astra $T_D$", r"$n_i [m^-3]$", {"marker": '+'}),
                 #     * [(ion.density,   f"${ion.label}$") for ion in core_profile.ion],
@@ -641,6 +642,8 @@ if __name__ == "__main__":
                 # (core_profile.electrons["g"],  r"electron.f", r"$g$"),
 
                 # (core_profile.e_field.parallel,                    r"fytok",   r"$E_{\parallel} [V\cdot m^{-1}]$ "),
+                (core_profile["rms_residuals"], r"rms residuals ",     r"",  {"color": "red", "linestyle": "dashed"}),
+
             ],
             # x_axis=(rho_tor_norm,                             r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             x_axis=(core_profile.electrons.temperature.x_axis,  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
