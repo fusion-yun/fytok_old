@@ -108,6 +108,50 @@ class TransportSolverBVP2(TransportSolver):
 
         self._Qimp_k_ns = (3*self._k_rho_bdry - self._k_phi * self._vpr.derivative())
 
+    def create_transport_eq(self,
+                            coeff: Sequence = [],  # (i,x,y,gamma)
+                            bc: Sequence = [0, 1, 0, 1, 0, 0],
+                            hyper_diff=0.0001,
+                            **kwargs
+                            ) -> BVPResult:
+
+        def func(i: int, x: np.ndarray, Y: np.ndarray, G: np.ndarray,  Ym: Function,  h: float,
+                 _coeff: Sequence[Callable[[np.ndarray, np.ndarray, np.ndarray], np.ndarray]] = coeff,
+                 _hyper_diff=hyper_diff):
+
+            a, b, c, d, e, S = _coeff
+
+            y = Y[i]
+            g = G[i]
+
+            yp = Function(x, y).derivative(x)
+
+            dy = (-g + e(i, x,  Y, G)*y + _hyper_diff * yp)/(d(i, x,  Y, G) + _hyper_diff)
+
+            dg = S(i, x, Y, G)
+
+            if h is not None and Ym is not None and Ym[i] is not None:
+                dg = dg - (a(i, x,  Y, G)*y - b(i, x, Y, G)*Ym[i](x))/h
+
+            if callable(c):
+                dg = dg*c(i, x,  Y, G)
+            else:
+                dg = dg*c
+
+            return dy, dg
+
+        def bc_func(ya: float, ga: float, yb: float, gb: float, /, _bc: Sequence = bc):
+            r"""
+                u*y(b)+v*\Gamma(b)=w
+                Ya=[y(a),y'(a)]
+                Yb=[y(b),y'(b)]
+                P=[[u(a),u(b)],[v(a),v(b)],[w(a),w(b)]]
+            """
+            u0, v0, w0,  u1, v1, w1 = _bc
+            return np.hstack([(u0 * ya + v0 * ga - w0), (u1 * yb + v1 * gb - w1)])
+
+        return func, bc_func
+
     def current_transport(self,
                           transp: CoreTransport.Model.Profiles1D,
                           source: CoreSources.Source.Profiles1D,
@@ -122,22 +166,17 @@ class TransportSolverBVP2(TransportSolver):
         # -----------------------------------------------------------
         # Sources
 
-        j_exp = source.j_parallel + source.get("j_decomposed.explicit_part", Function(0))
-        j_imp = source.get("j_decomposed.implicit_part", Function(0))
+        j_exp = source.j_parallel  # + source.get("j_decomposed.explicit_part", Function(0))
+        j_imp = 0  # source.get("j_decomposed.implicit_part", Function(0))
 
-        def a(x, y, yp, i): return (conductivity_parallel*self._rho_tor)(x)
+        def a(i, x, y, gamma): return (conductivity_parallel*self._rho_tor)(x)
+        def b(i, x, y, gamma): return (conductivity_parallel*self._rho_tor)(x)
+        def c(i, x, y, gamma): return ((constants.mu_0 * self._B0 * self._rho_tor_boundary)/(self._fpol**2))(x)
+        def d(i, x, y, gamma): return(self._vpr * self._gm2 / self._fpol / (self._rho_tor_boundary)/(TWOPI))(x)
+        def e(i, x, y, gamma): return ((- constants.mu_0 * self._B0 * self._k_phi)
+                                       * (conductivity_parallel * self._rho_tor**2/self._fpol**2))(x)
 
-        def b(x, y, yp, i): return (conductivity_parallel*self._rho_tor)(x)
-
-        def c(x, y, yp, i): return ((constants.mu_0 * self._B0 * self._rho_tor_boundary)/(self._fpol**2))(x)
-
-        def d(x, y, yp, i): return (self._vpr * self._gm2 / self._fpol / (self._rho_tor_boundary)/(TWOPI))(x)
-
-        def e(x, y, yp, i): return ((- constants.mu_0 * self._B0 * self._k_phi) *
-                                    (conductivity_parallel * self._rho_tor**2/self._fpol**2))(x)
-
-        def S(x, y, yp, i): return (-self._vpr / TWOPI * (j_exp + j_imp*y[i]))(x)
-
+        def S(i, x, y, gamma): return (-self._vpr * (j_exp + j_imp*y[i])/TWOPI)(x)
         # -----------------------------------------------------------
         # boundary condition, value
         # axis
@@ -174,7 +213,7 @@ class TransportSolverBVP2(TransportSolver):
         else:
             raise NotImplementedError(bc)
 
-        return "psi", (a, b, c, d, e, S), (u0, v0, w0, u1, v1, w1)
+        return "psi", *self.create_transport_eq((a, b, c, d, e, S), (u0, v0, w0, u1, v1, w1), **kwargs)
 
     def particle_transport(self,
                            path,
@@ -196,12 +235,12 @@ class TransportSolverBVP2(TransportSolver):
 
         se_imp = 0  # source.fetch("particles_decomposed.implicit_part", 0)
 
-        def a(x, y, yp, i): return self._vpr(x)
-        def b(x, y, yp, i): return self._vprm(x)
-        def c(x, y, yp, i): return self._rho_tor_boundary
-        def d(x, y, yp, i): return (self._vpr * self._gm3 * diff / self._rho_tor_boundary)(x)
-        def e(x, y, yp, i): return (self._vpr * self._gm3 * conv - self._vpr * self._rho_tor * self._k_phi)(x)
-        def S(x, y, yp, i): return (self._vpr * (se_exp + se_imp*y[i] + self._k_rho_bdry))(x)
+        def a(i, x, y, gamma): return self._vpr(x)
+        def b(i, x, y, gamma): return self._vprm(x)
+        def c(i, x, y, gamma): return self._rho_tor_boundary
+        def d(i, x, y, gamma): return (self._vpr * self._gm3 * diff / self._rho_tor_boundary)(x)
+        def e(i, x, y, gamma): return (self._vpr * self._gm3 * conv - self._vpr * self._rho_tor * self._k_phi)(x)
+        def S(i, x, y, gamma): return (self._vpr * (se_exp + se_imp*y[i] + self._k_rho_bdry))(x)
 
         # -----------------------------------------------------------
         # boundary condition, value
@@ -217,7 +256,7 @@ class TransportSolverBVP2(TransportSolver):
         else:
             raise NotImplementedError(bc.particles.identifier)
 
-        return path+["density"], (a, b, c, d, e, S), (u0, v0, w0,  u1, v1, w1)
+        return path+["density"], *self.create_transport_eq((a, b, c, d, e, S), (u0, v0, w0, u1, v1, w1), **kwargs)
 
     def neutral_condition(self, path):
         if path[0] == "electrons":
@@ -293,93 +332,13 @@ class TransportSolverBVP2(TransportSolver):
         logger.warning(f"TODO: Rotation Transport is not implemented!")
         return 0.0
 
-    def solve_general_form(self,
-                           x: np.ndarray,
-                           y: np.ndarray,
-                           ym: Optional[np.ndarray] = None,  # y^(t-1)
-                           gamma: np.ndarray = None,
-                           h: Optional[float] = None,  # delte t,
-                           /,
-                           coeff: Sequence[Callable[[np.ndarray, np.ndarray, np.ndarray], np.ndarray]] = [],  # (x,y,y')
-                           bc: Sequence = [0, 1, 0, 1, 0, 0],
-                           hyper_diff=0.0001,
-                           **kwargs
-                           ) -> BVPResult:
-        if isinstance(ym, np.ndarray):
-            ym = Function(x, ym)
-        if gamma is None:
-            yp = Function(x, y.T).derivative(x).T
-            a, b, c, d, e, S = coeff
-            gamma = -d(x, y, yp) * yp + e(x, y, yp) * y
-
-        def func(x: np.ndarray, Y: np.ndarray, coeff: Sequence[Callable[[np.ndarray, np.ndarray, np.ndarray], np.ndarray]] = coeff,
-                 ym: Function = ym,  h: float = h,
-                 hyper_diff=hyper_diff):
-
-            a, b, c, d, e, S = coeff
-
-            num = int(len(Y)/2)
-            if num*2 != len(Y):
-                raise RuntimeError(f"The number of 'y'={len(Y)} should be an even number.")
-
-            y = Y[:num]
-            g = Y[num:]
-
-            if num == 1:
-                y = y[0]
-                g = g[0]
-
-            yp = Function(x, y.T).derivative(x).T
-
-            dy = (-g + e(x, y, yp)*y + hyper_diff * yp)/(d(x, y, yp) + hyper_diff)
-
-            dg = S(x, y, yp)
-
-            if h is not None and not np.isclose(h, 0.0) and callable(ym):
-                dg = dg - (a(x, y, yp)*y - b(x, y, yp)*ym(x))/h
-
-            if callable(c):
-                dg = dg*c(x, y, yp)
-            else:
-                dg = dg*c
-
-            return np.vstack([dy, dg])
-
-        def bc_func(Ya: np.ndarray, Yb: np.ndarray, /, bc: Sequence = bc):
-            r"""
-                u*y(b)+v*\Gamma(b)=w
-                Ya=[y(a),y'(a)]
-                Yb=[y(b),y'(b)]
-                P=[[u(a),u(b)],[v(a),v(b)],[w(a),w(b)]]
-            """
-            u0, v0, w0,  u1, v1, w1 = bc.T
-
-            num = int(min(len(Ya)/2, len(Yb)/2))
-            if num == 1:
-                ya = Ya[0]
-                ga = Ya[1]
-
-                yb = Yb[0]
-                gb = Yb[1]
-            elif num > 1:
-                ya = Ya[:num]
-                ga = Ya[num:]
-                yb = Yb[:num]
-                gb = Yb[num:]
-            else:
-                raise RuntimeError(f"The number of 'y'={len(Ya)} should be an even number.")
-
-            return np.hstack([(u0 * ya + v0 * ga - w0), (u1 * yb + v1 * gb - w1)])
-
-        return solve_bvp(func, bc_func, x, np.vstack([y, gamma]),  **kwargs)
-
     def solve_core(self,  /,
-                   tolerance=1.0e-3,
-                   max_nodes=250,
-                   verbose=2,
+
                    enable_ion_particle_solver: bool = False,
                    ion_species: Sequence = None,
                    impurities: Sequence = [],
+                   tolerance=1.0e-3,
+                   max_nodes=250,
                    **kwargs) -> float:
         r"""
             Solve transport equations
@@ -451,66 +410,10 @@ class TransportSolverBVP2(TransportSolver):
             equations = [
                 self.current_transport(self._c_transp,  self._c_source, self.boundary_conditions_1d.current),
                 self.particle_transport(["electrons"], self._c_transp,  self._c_source, self.boundary_conditions_1d),
-                self.energy_transport(["electrons"], self._c_transp,  self._c_source, self.boundary_conditions_1d),
+                # self.energy_transport(["electrons"], self._c_transp,  self._c_source, self.boundary_conditions_1d),
                 # *[self.energy_transport(["ion", {"label": label}], self._c_transp,  self._c_source,
                 #                         self.boundary_conditions_1d) for label in ion_species_list],
             ]
-
-            # for ion in self._core_profiles_next.ion:
-            #     if ion.label not in impurities:
-            #         continue
-            #     nDT -= ion.density(self._rho_tor_norm)
-            #     flux = ion.get("density_flux", _not_found_)
-            #     if isinstance(flux, Function):
-            #         flux = flux(self._rho_tor_norm)
-
-            #     if isinstance(flux, np.ndarray):
-            #         Gamma_DT -= flux
-
-            # num = len(ion_species_list)
-
-            # for ion in self._core_profiles_next.ion:
-            #     if ion.label not in impurities:
-            #         continue
-            #     nDT -= ion.density(self._rho_tor_norm)*ion.z
-            #     flux = ion.get("density_flux", 0)*ion.z
-            #     if isinstance(flux, Function):
-            #         flux = flux(self._rho_tor_norm)
-            #     Gamma_DT -= flux
-
-            # nDT += self._core_profiles_next.electrons.density(self._rho_tor_norm)
-            # Gamma_DT += self._core_profiles_next.electrons.fetch("density_flux", 0)(self._rho_tor_norm)
-            # nDT /= num
-            # Gamma_DT /= num
-            # for ion in self._core_profiles_next.ion:
-            #     if ion.label in impurities:
-            #         continue
-            #     ion["density"] = nDT
-            #     ion["density_flux"] = Gamma_DT
-
-        # elif enable_ion_particle_solver is True:
-        #     n_ele = 0.0
-        #     n_ele_flux = 0.0
-        #     for rpath in ion_species_list:
-        #         count += 1
-        #         residual += self.particle_transport(
-        #             self._core_profiles_next.fetch(rpath),
-        #             self._core_profiles_prev.fetch(rpath),
-        #             self._c_transp.fetch(rpath),
-        #             self._c_source.fetch(rpath),
-        #             self.boundary_conditions_1d.fetch(rpath),
-        #             tolerance=tolerance,
-        #             max_nodes=max_nodes,
-        #             verbose=verbose,
-        #             **kwargs
-        #         )
-        #         ion = self._core_profiles_next.fetch(rpath)
-        #         n_ele = n_ele - ion.density*ion.z
-        #         n_ele_flux = n_ele_flux - ion.get("density_flux", 0)*ion.z
-
-        #     # Quasi-neutral condition
-        #     self._core_profiles_next.electrons["density"] = n_ele
-        #     self._core_profiles_next.electrons["density_flux"] = n_ele
 
         if False:
             for rpath in ["electrons"]+ion_species_list:
@@ -537,38 +440,58 @@ class TransportSolverBVP2(TransportSolver):
                 **kwargs)
             count += 1
 
-        coeff = [
-            (lambda x, y, yp, _coeff_list=[coeff[idx] for path, coeff, bc in equations]:
-             np.vstack([array_like(fc(x, y, yp, idx), x) for idx, fc in enumerate(_coeff_list)]))
-            for idx in range(6)  # a,b,c,d,e,S
-        ]
-
-        bc = np.vstack([bc for path, fc, bc in equations])
-
         x = self._rho_tor_norm
 
+        Y = np.vstack([array_like(self._rho_tor_norm, self._core_profiles_next.fetch(path, None))
+                       for path, *_ in equations])
+        logger.debug(Y.shape)
+
+        Gamma = np.zeros_like(Y)
+
+        # Gamma = np.vstack([gamma(idx, x, Y, Gamma) for idx, (path, func, bc, gamma) in enumerate(equations)])
+
         if self._tau > 0:
-            ym = np.vstack([array_like(self._core_profiles_prev.fetch(path, None), self._rho_tor_norm)
+            Ym = np.vstack([array_like(self._rho_tor_norm, self._core_profiles_prev.fetch(path, None))
                             for path, *_ in equations])
         else:
-            ym = None
+            Ym = [None]*len(equations)
 
-        logger.debug(equations[0][1])
+        def func(x, Y, p=None, /, Ym: np.ndarray = Ym, h: float = self._tau, equations=equations):
+            num = int(len(Y)/2)
+            if num*2 != len(Y):
+                raise RuntimeError(f"The number of 'y'={len(Y)} should be an even number.")
 
-        y = np.vstack([array_like(self._core_profiles_next.fetch(path, None), self._rho_tor_norm)
-                       for path, *_ in equations])
+            y = Y[: num]
+            g = Y[num:]
 
-        sol = self.solve_general_form(x, y, ym, h=self._tau, coeff=coeff, bc=bc, **kwargs)
+            d = [func(idx, x, y, g, Ym, h) for idx, (path, func, *_) in enumerate(equations)]
+
+            return np.vstack([array_like(x, d[i][0]) for i in range(num)]+[array_like(x, d[i][1]) for i in range(num)])
+
+        def bc_func(Ya: np.ndarray, Yb: np.ndarray, /, equations=equations):
+            r"""
+                u*y(b)+v*\Gamma(b)=w
+                Ya=[y(a),y'(a)]
+                Yb=[y(b),y'(b)]
+                P=[[u(a),u(b)],[v(a),v(b)],[w(a),w(b)]]
+            """
+
+            num = int(min(len(Ya)/2, len(Yb)/2))
+
+            d = np.asarray([bc(Ya[idx], Ya[num+idx], Yb[idx], Yb[num+idx])
+                            for idx, (path, func, bc, *_) in enumerate(equations)])
+            return np.hstack([d[:, 0], d[:, 1]])
+
+        sol = solve_bvp(func, bc_func, x, np.vstack([Y, Gamma]), tolerance=tolerance, max_nodes=max_nodes, **kwargs)
 
         rms_residuals = np.max(sol.rms_residuals)
 
         eq_list = []
 
         for idx, (path, * _) in enumerate(equations):
-            logger.debug(path)
             self._core_profiles_next[path] = Function(sol.x, sol.y[idx])
             eq_list.append(path)
-        self._core_profiles_next["rms_residuals"] = Function((sol.x[:-1]+sol.x[1:])*0.5, sol.rms_residuals)
+        self._core_profiles_next["rms_residuals"] = Function((sol.x[: -1]+sol.x[1:])*0.5, sol.rms_residuals)
 
         logger.info(
             f"Solve transport equations : {eq_list}\t [{'Success' if sol.success else 'Failed'}] max reduisal={rms_residuals}")

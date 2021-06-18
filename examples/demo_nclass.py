@@ -546,6 +546,7 @@ if __name__ == "__main__":
         tok.update(enable_ion_particle_solver=False,
                    max_nodes=500, tolerance=1.0e-4,
                    impurities=impurities,
+                   verbose=2,
                    bvp_rms_mask=[1.0/128, r_ped])
 
         plot_profiles(
