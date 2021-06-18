@@ -582,10 +582,10 @@ if __name__ == "__main__":
                     # (core_profile.electrons["density_error"], r"rms residuals ",
                     #     r"$n_e [ m^{-3}]$",  {"color": "red", "linestyle": "dashed"}),
                 ],
-                # [
-                #     (b_nDT/2,    r"astra $T_D$", r"$n_i [m^-3]$", {"marker": '+'}),
-                #     * [(ion.density,   f"${ion.label}$") for ion in core_profile.ion],
-                # ],
+                [
+                    (b_nDT/2,    r"astra $T_D$", r"$n_i [m^-3]$", {"marker": '+'}),
+                    * [(ion.density,   f"${ion.label}$") for ion in core_profile.ion],
+                ],
                 # [
                 #     (core_profile.electrons["density_flux"], r"Source",
                 #      r"$\Gamma_e$ Particle flux", {"color": "green", }),
@@ -599,10 +599,10 @@ if __name__ == "__main__":
                 # ],
                 ######################################################################
                 # electron energy
-                # [
-                #     (b_Te, r" (astra)", r"$T_e [eV]$",  {"marker": "+"}),
-                #     (core_profile.electrons.temperature, r" (fytok)  ", r"$ [eV]$"),
-                # ],
+                [
+                    (b_Te, r" (astra)", r"$T_e [eV]$",  {"marker": "+"}),
+                    (core_profile.electrons.temperature, r" (fytok)  ", r"$ [eV]$"),
+                ],
                 # (core_profile.electrons["temperature_error"], r"rms_residuals",
                 #  r"$[eV]$",  {"color": "red", "linestyle": "dashed"}),
 
