@@ -91,7 +91,7 @@ if __name__ == "__main__":
     Cped = 0.2
     Ccore = 0.4
     chi = PiecewiseFunction([0, r_ped, 1.0],  [lambda x: 1.1*Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
-    chi_e = PiecewiseFunction([0, r_ped, 1.0], [lambda x:0.6 *Ccore*(1.0 + 3*(x**2)), lambda x: 1.5 * Cped])
+    chi_e = PiecewiseFunction([0, r_ped, 1.0], [lambda x:0.6 * Ccore*(1.0 + 3*(x**2)), lambda x: 1.5 * Cped])
 
     # D = Function(
     #     [lambda r:r < r_ped, lambda r:r >= r_ped],
@@ -177,7 +177,7 @@ if __name__ == "__main__":
 
     #  TransportSolver
     configure["transport_solver"] = {
-        "code": {"name": "bvp_solver"},
+        "code": {"name": "bvp_solver2"},
         "boundary_conditions_1d": {
             "current": {"identifier": {"index": 1}, "value": [0.995*(psi_boundary-psi_axis)+psi_axis]},
             "electrons": {"particles": {"identifier": {"index": 1}, "value": [b_ne[-1]]},
@@ -556,7 +556,7 @@ if __name__ == "__main__":
                     (Function(bs_r_nrom, (bs_psi_norm*(psi_boundary-psi_axis)+psi_axis)),
                      r"astra", r"$\psi [Wb]$", {"marker": "+"}),
                     (core_profile["psi"],  r"fytok", r"$\psi  [Wb]$"),
-                    (core_profile["psi_error"], r"residual", r"",  {"color": "red", "linestyle": "dashed"}),
+                    # (core_profile["psi_error"], r"residual", r"",  {"color": "red", "linestyle": "dashed"}),
                 ],
                 # [
                 #     (Function(bs_r_nrom, baseline["Fp"].values), r"astra", r"$\psi/\psi_{bdry}  [-]$", {"marker": "+"}),
@@ -574,16 +574,16 @@ if __name__ == "__main__":
                 # (core_profile["sol.current.gm2"],  r"sol.current.gm2", r"$gm2$"),
                 ######################################################################
                 # electron particles
-                [
-                    (b_ne, r"astra", r"$n_e [m^{-3}]$",  {"marker": "+"}),
-                    (core_profile.electrons.density, r"fytok", r"$n_e [ m^{-3}]$"),
-                    (core_profile.electrons["density_error"], r"rms residuals ",
-                        r"$n_e [ m^{-3}]$",  {"color": "red", "linestyle": "dashed"}),
-                ],
-                [
-                    (b_nDT/2,    r"astra $T_D$", r"$n_i [m^-3]$", {"marker": '+'}),
-                    * [(ion.density,   f"${ion.label}$") for ion in core_profile.ion],
-                ],
+                # [
+                #     (b_ne, r"astra", r"$n_e [m^{-3}]$",  {"marker": "+"}),
+                #     (core_profile.electrons.density, r"fytok", r"$n_e [ m^{-3}]$"),
+                #     (core_profile.electrons["density_error"], r"rms residuals ",
+                #         r"$n_e [ m^{-3}]$",  {"color": "red", "linestyle": "dashed"}),
+                # ],
+                # [
+                #     (b_nDT/2,    r"astra $T_D$", r"$n_i [m^-3]$", {"marker": '+'}),
+                #     * [(ion.density,   f"${ion.label}$") for ion in core_profile.ion],
+                # ],
                 # [
                 #     (core_profile.electrons["density_flux"], r"Source",
                 #      r"$\Gamma_e$ Particle flux", {"color": "green", }),
@@ -597,10 +597,10 @@ if __name__ == "__main__":
                 # ],
                 ######################################################################
                 # electron energy
-                [
-                    (b_Te, r" (astra)", r"$T_e [eV]$",  {"marker": "+"}),
-                    (core_profile.electrons.temperature, r" (fytok)  ", r"$ [eV]$"),
-                ],
+                # [
+                #     (b_Te, r" (astra)", r"$T_e [eV]$",  {"marker": "+"}),
+                #     (core_profile.electrons.temperature, r" (fytok)  ", r"$ [eV]$"),
+                # ],
                 # (core_profile.electrons["temperature_error"], r"rms_residuals",
                 #  r"$[eV]$",  {"color": "red", "linestyle": "dashed"}),
 
@@ -623,11 +623,11 @@ if __name__ == "__main__":
 
 
                 ######################################################################
-                [
-                    (b_Ti,    r"astra $T_i$",       r"$T_{i} [eV]$", {"marker": '+'}),
-                    * [(ion.temperature,          f"${ion.label}$", r"$T_i [eV]$")
-                        for ion in core_profile.ion if ion.label not in impurities],
-                ]
+                # [
+                #     (b_Ti,    r"astra $T_i$",       r"$T_{i} [eV]$", {"marker": '+'}),
+                #     * [(ion.temperature,          f"${ion.label}$", r"$T_i [eV]$")
+                #         for ion in core_profile.ion if ion.label not in impurities],
+                # ]
                 # [
                 #     (4*(constants.pi**2)*R0 * core_profile.grid.rho_tor, r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho$"),
                 #     (core_profile.electrons["vpr"],  r"vpr"),

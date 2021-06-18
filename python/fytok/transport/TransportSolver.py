@@ -174,9 +174,7 @@ class TransportSolver(IDS):
         for step in range(max_iter):
             logger.debug(f" Iteration step={step}: start")
 
-            residual = 0
-
-            residual += self.solve_core(tolerance=tolerance, max_nodes=max_nodes, **kwargs)
+            residual = self.solve_core(tolerance=tolerance, max_nodes=max_nodes, **kwargs)
 
             # if self._edge_profiles is not False:
             #     residual.append(self.solve_edge(tolerance=tolerance, **kwargs))

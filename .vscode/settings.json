@@ -22,4 +22,5 @@
         "${workspaceFolder}/phys_modules",
 
     ],
+    "python.pythonPath": "/fuyun/software/Python/3.8.2-GCCcore-9.3.0/bin/python",
 }
