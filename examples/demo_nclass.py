@@ -625,11 +625,11 @@ if __name__ == "__main__":
 
 
                 ######################################################################
-                # [
-                #     (b_Ti,    r"astra $T_i$",       r"$T_{i} [eV]$", {"marker": '+'}),
-                #     * [(ion.temperature,          f"${ion.label}$", r"$T_i [eV]$")
-                #         for ion in core_profile.ion if ion.label not in impurities],
-                # ]
+                [
+                    (b_Ti,    r"astra $T_i$",       r"$T_{i} [eV]$", {"marker": '+'}),
+                    * [(ion.temperature,          f"${ion.label}$", r"$T_i [eV]$")
+                        for ion in core_profile.ion if ion.label not in impurities],
+                ],
                 # [
                 #     (4*(constants.pi**2)*R0 * core_profile.grid.rho_tor, r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho$"),
                 #     (core_profile.electrons["vpr"],  r"vpr"),

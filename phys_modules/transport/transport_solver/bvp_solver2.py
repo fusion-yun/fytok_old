@@ -483,8 +483,8 @@ class TransportSolverBVP2(TransportSolver):
                                              factor=self._core_profiles_next.ion[{"label": label}].z/Z_ion_total) for label in ion_species],
                 self.energy_transport(["electrons"], self._c_transp,  self._c_source,
                                       self.boundary_conditions_1d, density_index=1),
-                # *[self.energy_transport(["ion", {"label": label}], self._c_transp,  self._c_source,
-                #                         self.boundary_conditions_1d) for label in ion_species_list],
+                *[self.energy_transport(["ion", {"label": label}], self._c_transp,  self._c_source,
+                                        self.boundary_conditions_1d) for label in ion_species],
             ]
 
         if False:
