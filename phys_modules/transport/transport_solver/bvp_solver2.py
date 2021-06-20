@@ -6,7 +6,7 @@ import collections
 import enum
 from itertools import chain
 from math import log
-from typing import Callable, Mapping, Optional, Type, Union, Sequence
+from typing import Callable, Mapping, Optional, Type, Union, Sequence, Any
 
 from matplotlib.pyplot import loglog
 
@@ -18,6 +18,7 @@ from fytok.transport.CoreTransport import CoreTransport
 from fytok.transport.Equilibrium import Equilibrium
 from fytok.transport.MagneticCoordSystem import RadialGrid
 from fytok.transport.TransportSolver import TransportSolver
+from numpy.core.fromnumeric import var
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List, _not_found_, sp_property
 from spdm.numlib import constants, np
@@ -108,67 +109,65 @@ class TransportSolverBVP2(TransportSolver):
 
         self._Qimp_k_ns = (3*self._k_rho_bdry - self._k_phi * self._vpr.derivative())
 
-    def create_transport_eq(self,
-                            coeff: Sequence = [],  # (i,x,y,gamma)
-                            bc: Sequence = [0, 1, 0, 1, 0, 0],
-                            hyper_diff=0.0001,
-                            **kwargs
-                            ) -> BVPResult:
+    def _create_transport_eq(self,
+                             coeff: Sequence = [],  # (i,x,y,gamma)
+                             hyper_diff=0.0001,
+                             **kwargs
+                             ) -> BVPResult:
 
-        def func(i: int, x: np.ndarray, Y: np.ndarray, G: np.ndarray,  Ym: Function,  h: float,
+        def func(i: int, x: np.ndarray, y: np.ndarray, g: np.ndarray, /,
                  _coeff: Sequence[Callable[[np.ndarray, np.ndarray, np.ndarray], np.ndarray]] = coeff,
                  _hyper_diff=hyper_diff):
 
-            a, b, c, d, e, S = _coeff
-
-            y = Y[i]
-            g = G[i]
+            a, b, c, d, e, S, ym, h = _coeff
 
             yp = Function(x, y).derivative(x)
 
-            dy = (-g + e(i, x,  Y, G)*y + _hyper_diff * yp)/(d(i, x,  Y, G) + _hyper_diff)
+            dy = (-g + e(x) * y + _hyper_diff * yp)/(d(x) + _hyper_diff)
 
-            dg = S(i, x, Y, G)
+            dg = S(y)
 
-            if h is not None and Ym is not None and Ym[i] is not None:
-                dg = dg - (a(i, x,  Y, G)*y - b(i, x, Y, G)*Ym[i])/h
+            if h is not None and ym is not None:
+                dg = dg - (a(x)*y - b(x)*ym(x))/h
 
-            if callable(c):
-                dg = dg*c(i, x,  Y, G)
-            else:
+            if c is not None:
                 dg = dg*c
 
             return array_like(x, dy), array_like(x, dg)
 
         return func
 
-    def current_transport(self,
-                          transp: CoreTransport.Model.Profiles1D,
-                          source: CoreSources.Source.Profiles1D,
-                          bc: TransportSolver.BoundaryConditions1D.BoundaryConditions,
-                          **kwargs):
+    def f_current(self,  var_idx: int, var_id: Sequence, hyper_diff=0.0, inv_tau=None, **kwargs):
 
         # -----------------------------------------------------------------
         # Transport
         # plasma parallel conductivity,                                 [(Ohm*m)^-1]
-        conductivity_parallel = transp.conductivity_parallel
+        conductivity_parallel = self._c_transp.conductivity_parallel
+        j_exp = self._c_source.j_parallel + self._c_source.get("j_decomposed.explicit_part", Function(0))
+        j_imp = self._c_source.get("j_decomposed.implicit_part", Function(0))
 
-        # -----------------------------------------------------------
-        # Sources
+        ym = Function(self._rho_tor_norm, self._core_profiles_prev.fetch("psi", None))
 
-        j_exp = source.j_parallel  # + source.get("j_decomposed.explicit_part", Function(0))
-        j_imp = 0  # source.get("j_decomposed.implicit_part", Function(0))
+        def func(x: np.ndarray,  Y: np.ndarray, p: Any = None):
+            y = Y[var_idx*2]
+            g = Y[var_idx*2+1]
+            yp = Function(x, y).derivative(x)
 
-        def a(i, x, y, gamma): return (conductivity_parallel*self._rho_tor)(x)
-        def b(i, x, y, gamma): return (conductivity_parallel*self._rho_tor)(x)
-        def c(i, x, y, gamma): return ((constants.mu_0 * self._B0 * self._rho_tor_boundary)/(self._fpol**2))(x)
-        def d(i, x, y, gamma): return(self._vpr * self._gm2 / self._fpol / (self._rho_tor_boundary)/(TWOPI))(x)
-        def e(i, x, y, gamma): return ((- constants.mu_0 * self._B0 * self._k_phi)
-                                       * (conductivity_parallel * self._rho_tor**2/self._fpol**2))(x)
+            a = conductivity_parallel*self._rho_tor
+            b = conductivity_parallel*self._rho_tor
+            c = (constants.mu_0 * self._B0 * self._rho_tor_boundary)/(self._fpol**2)
+            d = self._vpr * self._gm2 / self._fpol / (self._rho_tor_boundary)/(TWOPI)
+            e = (- constants.mu_0 * self._B0 * self._k_phi) * (conductivity_parallel * self._rho_tor**2/self._fpol**2)
+            S = -self._vpr * (j_exp + j_imp*y)/TWOPI
 
-        def S(i, x, y, gamma): return (-self._vpr * (j_exp + j_imp*y[i])/TWOPI)(x)
+            dy = (-g + e * y + hyper_diff * yp)/(d + hyper_diff)
+            dg = (S - (a * y - b * ym)/inv_tau)*c
+
+            return array_like(x, dy), array_like(x, dg)
+
         # -----------------------------------------------------------
         # boundary condition, value
+        bc: TransportSolver.BoundaryConditions1D.BoundaryConditions = self.boundary_conditions_1d.current
         # axis
         u0, v0, w0 = 0, 1, 0
 
@@ -203,139 +202,134 @@ class TransportSolverBVP2(TransportSolver):
         else:
             raise NotImplementedError(bc)
 
-        def bc_func(idx, ya: float, ga: float, yb: float, gb: float, /, _bc: Sequence = (u0, v0, w0, u1, v1, w1)):
+        def bc_func(Ya: np.ndarray, Yb: np.ndarray, p: Any = None, /, _bc: Sequence = (u0, v0, w0, u1, v1, w1)):
             u0, v0, w0,  u1, v1, w1 = _bc
-            return np.hstack([(u0 * ya[idx] + v0 * ga[idx] - w0), (u1 * yb[idx] + v1 * gb[idx] - w1)])
+            return (u0 * Ya[var_idx*2] + v0 * Ya[var_idx*2+1] - w0), (u1 * Yb[var_idx*2] + v1 * Yb[var_idx*2+1] - w1)
 
-        return "psi", self.create_transport_eq((a, b, c, d, e, S),  **kwargs), bc_func
+        return func, bc
 
-    def particle_transport(self,
-                           path,
-                           transp: CoreTransport.Model.Profiles1D,
-                           source: CoreSources.Source.Profiles1D,
-                           bc: TransportSolver.BoundaryConditions1D,
-                           ** kwargs
-                           ):
+    def f_particle(self, var_idx: int, var_id: Sequence, hyper_diff=0.0, inv_tau=None, ** kwargs):
         # Particle Transport
-        transp = transp.fetch(path)
+        transp: Union[CoreTransport.Model.Profiles1D.Ion,
+                      CoreTransport.Model.Profiles1D.Electrons] = self._c_transp.fetch(var_id[:-1], NotImplemented)
 
         diff = transp.particles.d
 
         conv = transp.particles.v
 
-        source = source.fetch(path)
+        source: Union[CoreSources.Source.Profiles1D.Ion,
+                      CoreSources.Source.Profiles1D.Electrons] = self._c_source.fetch(var_id[:-1], NotImplemented)
 
         se_exp = source.particles  # + source.fetch("particles_decomposed.explicit_part", 0)
 
         se_imp = 0  # source.fetch("particles_decomposed.implicit_part", 0)
 
-        def a(i, x, y, gamma): return self._vpr(x)
-        def b(i, x, y, gamma): return self._vprm(x)
-        def c(i, x, y, gamma): return self._rho_tor_boundary
-        def d(i, x, y, gamma): return (self._vpr * self._gm3 * diff / self._rho_tor_boundary)(x)
-        def e(i, x, y, gamma): return (self._vpr * self._gm3 * conv - self._vpr * self._rho_tor * self._k_phi)(x)
-        def S(i, x, y, gamma): return (self._vpr * (se_exp + se_imp*y[i] + self._k_rho_bdry))(x)
+        ym = self._core_profiles_prev.fetch(var_id, 0)
+
+        def func(x: np.ndarray,  Y: np.ndarray, p: Any = None):
+            y = Y[var_idx*2]
+            g = Y[var_idx*2+1]
+            yp = Function(x, y).derivative(x)
+
+            a = self._vpr(x)
+            b = self._vprm(x)
+            c = self._rho_tor_boundary
+            d = (self._vpr * self._gm3 * diff / self._rho_tor_boundary)(x)
+            e = (self._vpr * self._gm3 * conv - self._vpr * self._rho_tor * self._k_phi)(x)
+            S = (self._vpr * (se_exp + se_imp*y + self._k_rho_bdry))(x)
+
+            dy = (-g + e * y + hyper_diff * yp)/(d + hyper_diff)
+            dg = (S - (a * y - b * ym)/inv_tau)*c
+
+            return array_like(x, dy), array_like(x, dg)
 
         # -----------------------------------------------------------
         # boundary condition, value
-        bc = bc.fetch(path)
+        bc: TransportSolver.BoundaryConditions1D.BoundaryConditions =  \
+            self.boundary_conditions_1d.fetch(var_id[:-1], NotImplemented).particles
 
         # axis
         u0, v0, w0 = 0, 1, 0
 
-        if bc.particles.identifier.index == 1:
+        if bc.identifier.index == 1:
             u1 = 1
             v1 = 0
-            w1 = bc.particles.value[0]
+            w1 = bc.value[0]
         else:
-            raise NotImplementedError(bc.particles.identifier)
+            raise NotImplementedError(bc.identifier)
 
-        def bc_func(idx, ya: float, ga: float, yb: float, gb: float, /, _bc: Sequence = (u0, v0, w0, u1, v1, w1)):
+        def bc_func(Ya: np.ndarray, Yb: np.ndarray, p: Any = None, /, _bc: Sequence = (u0, v0, w0, u1, v1, w1)):
             u0, v0, w0,  u1, v1, w1 = _bc
-            return np.hstack([(u0 * ya[idx] + v0 * ga[idx] - w0), (u1 * yb[idx] + v1 * gb[idx] - w1)])
+            return (u0 * Ya[var_idx*2] + v0 * Ya[var_idx*2+1] - w0), (u1 * Yb[var_idx*2] + v1 * Yb[var_idx*2+1] - w1)
 
-        return path+["density"], self.create_transport_eq((a, b, c, d, e, S), **kwargs), bc_func
+        return func, bc_func
 
-    def neutral_condition_electron(self, path, /,  ion_index=[], Z=[]):
-        def func(idx: int, x: np.ndarray, Y: np.ndarray, G: np.ndarray, Z: np.ndarray = Z, ion_index=ion_index):
-            return Function(x, np.sum(Y[ion_index]*Z, axis=0)).derivative(x),  Function(x, np.sum(Z*G[ion_index], axis=0)).derivative(x)
-
-        def bc_func(idx: int, ya: float, ga: float, yb: float, gb: float, /,  Z: np.ndarray = Z, ion_index=ion_index):
-            return np.hstack([(yb[idx] - np.sum(Z*yb[ion_index])), (gb[idx] - np.sum(Z*gb[ion_index]))])
-
-        return path+["density"], func, bc_func
-
-    def neutral_condition_ion(self, path, /, n_impurity: Function = 0, electron_index: int = 1, factor: float = 1.0):
-
-        def func(idx: int, x: np.ndarray, Y: np.ndarray, G: np.ndarray, *args, n_impurity=n_impurity, factor=factor, electron_index=electron_index):
-            ne = Y[electron_index]
-            if n_impurity is not None:
-                ne = ne - n_impurity(x)
-            return factor*Function(x, ne).derivative(x), factor*Function(x, G[electron_index]).derivative(x)
-
-        def bc_func(idx: int, ya: float, ga: float, yb: float, gb: float, *args, factor=factor, electron_index=electron_index):
-            return np.hstack([(yb[idx] - factor*yb[electron_index]), (gb[idx] - factor*gb[electron_index])])
-
-        return path+["density"],  func, bc_func
-
-    def energy_transport(self,
-                         path,
-                         transp: CoreTransport.Model.Profiles1D,
-                         source: CoreSources.Source.Profiles1D,
-                         bc: TransportSolver.BoundaryConditions1D,
-                         density_index=1,
-                         **kwargs
-                         ):
+    def f_energy(self, var_idx: int, var_id: Sequence, hyper_diff=0.0, inv_tau=None, density_idx=1, **kwargs):
 
         # energy transport
-        transp = transp.fetch(path)
+        transp: CoreTransport.Model.Profiles1D.Ion = self._c_transp.fetch(var_id[:-1], NotImplemented)
         chi = transp.energy.d
         v_pinch = transp.energy.v
 
-        source = source.fetch(path)
-        Qs_exp = source.energy  # + source.energy_decomposed.explicit_part
-        Qs_imp = 0  # source.energy_decomposed.implicit_part
+        source: Union[CoreSources.Source.Profiles1D.Ion,
+                      CoreSources.Source.Profiles1D.Electrons] = self._c_source.fetch(var_id[:-1], NotImplemented)
+        Qs_exp = source.energy + source.get("energy_decomposed.explicit_part", 0)
+        Qs_imp = source.get("energy_decomposed.implicit_part", 0)
 
-        def a(i, x, y, gamma): return ((3/2) * self._vpr35 * y[density_index])(x)
-        def b(i, x, y, gamma): return 0  # (3/2) * self._vpr35m * ym[density_index]
-        def c(i, x, y, gamma): return (self._rho_tor_boundary * self._inv_vpr23)(x)
-        def d(i, x, y, gamma): return (self._vpr * self._gm3 * y[density_index] * chi / self._rho_tor_boundary)(x)
-        # - self._vpr * (3/4)*self._k_phi * self._rho_tor * density_next
-        def e(i, x, y, gamma): return (self._vpr * self._gm3 * y[density_index] * v_pinch)(x) + 3/2*gamma[density_index]
-        def S(i, x, y, gamma): return (self._vpr35 * (Qs_exp + (Qs_imp + self._Qimp_k_ns)*y[i]))(x)
-        # + np.sum([self.nu_ab(label, other.label)*other.temperature for other in species])
-        # +np.sum([self.nu_ab(label, other.label) for other in species])
+        ym = self._core_profiles_prev.fetch(var_id, 0)
+
+        def func(x: np.ndarray,  Y: np.ndarray, p: Any = None):
+            y = Y[var_idx*2]
+            g = Y[var_idx*2+1]
+
+            n = Y[density_idx*2]
+            gamma = Y[density_idx*2+1]
+
+            yp = Function(x, y).derivative(x)
+            a = (3/2) * self._vpr35 * y
+            b = (3/2) * self._vpr35m * ym
+            c = self._rho_tor_boundary * self._inv_vpr23
+
+            d = self._vpr * self._gm3 * n * chi / self._rho_tor_boundary -\
+                self._vpr * (3/4)*self._k_phi * self._rho_tor * ym
+            e = self._vpr * self._gm3 * n * v_pinch + 3/2*gamma
+
+            S = self._vpr35 * (Qs_exp + (Qs_imp + self._Qimp_k_ns)*y)
+
+            dy = (-g + e * y + hyper_diff * yp)/(d + hyper_diff)
+            dg = (S - (a * y - b * ym)/inv_tau)*c
+
+            return array_like(x, dy), array_like(x, dg)
 
         # ----------------------------------------------
         # Boundary Condition
+        bc: TransportSolver.BoundaryConditions1D.BoundaryConditions =\
+            self.boundary_conditions_1d.fetch(var_id[:-1], NotImplemented).energy
+
         # axis
         u0, v0, w0 = 0, 1, 0
-        bc = bc.fetch(path)
-        if bc.energy.identifier.index == 1:
+
+        if bc.identifier.index == 1:
             u1 = 1
             v1 = 0
-            w1 = bc.energy.value[0]
+            w1 = bc.value[0]
         else:
-            raise NotImplementedError(bc.energy)
+            raise NotImplementedError(bc)
 
-        def bc_func(idx, ya: float, ga: float, yb: float, gb: float, /, _bc: Sequence = (u1, v1, w1)):
+        def bc_func(Ya: np.ndarray, Yb: np.ndarray, p: Any = None, /, _bc: Sequence = (u1, v1, w1)):
             u1, v1, w1 = _bc
-            u0 = -e(idx, 0, ya, ga)
+            na = Ya[density_idx*2]
+            ga = Ya[density_idx*2+1]
+            u0 = - (self._vpr * self._gm3 * na * v_pinch + 3/2*ga)
             v0 = 1
-            w0 = 3/2*ga[density_index]
-            return np.hstack([(u0 * ya[idx] + v0 * ga[idx] - w0), (u1 * yb[idx] + v1 * gb[idx] - w1)])
+            w0 = 3/2*ga
+            return (u0 * Ya[var_idx*2] + v0 * Ya[var_idx*2+1] - w0), (u1 * Yb[var_idx*2] + v1 * Yb[var_idx*2+1] - w1)
 
-        return path+["temperature"], self.create_transport_eq((a, b, c, d, e, S), (u0, v0, w0, u1, v1, w1), **kwargs), bc_func
+        return func, bc_func
 
         # return path+["temperature"], (a, b, c, d, e, S), (u0, v0, w0,  u1, v1, w1)
 
-    def rotation_transport(self,
-                           core_profiles_next: CoreProfiles.Profiles1D,
-                           core_profiles_prev: CoreProfiles.Profiles1D,
-                           transp:  CoreTransport.Model.Profiles1D,
-                           source: CoreSources.Source.Profiles1D,
-                           bc:  TransportSolver.BoundaryConditions1D,
-                           **kwargs):
+    def rotation_transport(self, var_idx: int, var_id: Sequence,  hyper_diff=0.0, inv_tau=None, **kwargs):
         r"""
             Rotation Transport
             .. math::  \left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(V^{\prime\frac{5}{3}}\left\langle R\right\rangle \
@@ -345,52 +339,49 @@ class TransportSolverBVP2(TransportSolver):
         logger.warning(f"TODO: Rotation Transport is not implemented!")
         return 0.0
 
-    def _solve_equations(self, equations: Sequence, /,
+    def neutral_condition(self, path, /, n_impurity: Function = 0, electron_index: int = 1, factor: float = 1.0):
+        if path[0] == "electrons":
+            raise NotImplementedError()
+        else:
+            def func(idx: int, x: np.ndarray, Y: np.ndarray, Ym: np.ndarray, G: np.ndarray, *args, n_impurity=n_impurity, factor=factor, electron_index=electron_index):
+                ne = Y[electron_index]
+                if n_impurity is not None:
+                    ne = ne - n_impurity(x)
+                return factor*Function(x, ne).derivative(x), factor*Function(x, G[electron_index]).derivative(x)
+
+            def bc_func(idx: int, ya: float, ga: float, yb: float, gb: float, *args, factor=factor, electron_index=electron_index):
+                return np.hstack([(yb[idx] - factor*yb[electron_index]), (gb[idx] - factor*gb[electron_index])])
+
+        return path+["density"],  func, bc_func
+
+    def _solve_equations(self, x0: np.ndarray, Y0: np.ndarray, eq_grp: Sequence, /,
                          tolerance=1.0e-3,
                          max_nodes=250, **kwargs) -> BVPResult:
 
-        x = self._rho_tor_norm
+        fc_list = [func(idx, var_id, *_args) for idx, (var_id, func,  *_args) in enumerate(eq_grp)]
 
-        Y = np.vstack([array_like(self._rho_tor_norm, self._core_profiles_next.fetch(path, None))
-                       for path, *_ in equations])
+        def func(x: np.ndarray, Y: np.ndarray, p=None, /, fc_list=fc_list):
+            return np.vstack(map(array_like, sum([func(x, Y, p) for func, bc in fc_list], [])))
 
-        Gamma = np.zeros_like(Y)
+        def bc_func(Ya: np.ndarray, Yb: np.ndarray, p=None, /, fc_list=fc_list):
+            return np.np.asarray(sum([bc(Ya, Yb, p) for func, bc in fc_list], []))
 
-        # Gamma = np.vstack([gamma(idx, x, Y, Gamma) for idx, (path, func, bc, gamma) in enumerate(equations)])
+        return solve_bvp(func, bc_func, x0, Y0, tolerance=tolerance, max_nodes=max_nodes, **kwargs)
 
-        if self._tau > 0:
-            Ym = np.vstack([array_like(self._rho_tor_norm, self._core_profiles_prev.fetch(path, None))
-                            for path, *_ in equations])
-        else:
-            Ym = [None]*len(equations)
+    def _convert_to_dict(Y: np.ndarray, var_list=[]):
+        if Y is None:
+            return None
+        profiles = Dict()
 
-        def func(x, Y, p=None, /, Ym: np.ndarray = Ym, h: float = self._tau, equations=equations):
-            num = int(len(Y)/2)
-            if num*2 != len(Y):
-                raise RuntimeError(f"The number of 'y'={len(Y)} should be an even number.")
+        for idx, path in enumerate(var_list):
+            if path[0] != 'ion':
+                profiles[path] = Y[idx*2]
+                profiles[path[:-1]+[f"{path[-1]}_flux"]] = Y[idx*2+1]
+            else:
+                profiles[path] = Y[idx*2]
+                profiles[path[:-1]+[{"label": path[-1]['label']+"_flux"}]] = Y[idx*2+1]
 
-            y = Y[: num]
-            g = Y[num:]
-
-            d = [func(idx, x, y, g, Ym, h) for idx, (path, func, *_) in enumerate(equations)]
-
-            return np.vstack([array_like(x, d[i][0]) for i in range(num)]+[array_like(x, d[i][1]) for i in range(num)])
-
-        def bc_func(Ya: np.ndarray, Yb: np.ndarray, /, equations=equations):
-            r"""
-                u*y(b)+v*\Gamma(b)=w
-                Ya=[y(a),y'(a)]
-                Yb=[y(b),y'(b)]
-                P=[[u(a),u(b)],[v(a),v(b)],[w(a),w(b)]]
-            """
-
-            num = int(min(len(Ya)/2, len(Yb)/2))
-
-            d = np.asarray([bc(idx, Ya[:num], Ya[num:], Yb[:num], Yb[num:])
-                            for idx, (path, func, bc, *_) in enumerate(equations)])
-            return np.hstack([d[:, 0], d[:, 1]])
-
-        return solve_bvp(func, bc_func, x, np.vstack([Y, Gamma]), tolerance=tolerance, max_nodes=max_nodes, **kwargs)
+        return profiles
 
     def solve_core(self,  /,
                    enable_ion_particle_solver: bool = False,
@@ -472,59 +463,38 @@ class TransportSolverBVP2(TransportSolver):
                 else:
                     n_impurity = ion.z*ion.density
 
-        if enable_ion_particle_solver is False:
-            Z_ion_total = np.sum([ion.z for ion in self._core_profiles_next.ion if ion.label in ion_species])
-            equations = [
-                self.current_transport(self._c_transp,  self._c_source, self.boundary_conditions_1d.current),
-                self.particle_transport(["electrons"], self._c_transp,  self._c_source, self.boundary_conditions_1d),
-                *[self.neutral_condition_ion(["ion", {"label": label}],
-                                             electron_index=1,
-                                             n_impurity=n_impurity,
-                                             factor=self._core_profiles_next.ion[{"label": label}].z/Z_ion_total) for label in ion_species],
-                self.energy_transport(["electrons"], self._c_transp,  self._c_source,
-                                      self.boundary_conditions_1d, density_index=1),
-                *[self.energy_transport(["ion", {"label": label}], self._c_transp,  self._c_source,
-                                        self.boundary_conditions_1d) for label in ion_species],
+        if enable_ion_particle_solver is True:
+            eq_grp = [
+                (["psi"],                                        self.f_current,),
+                *[(["ion", {"label": label}, "density"],         self.f_particle,) for label in ion_species],
+                (["electrons", "temperature"],                   self.f_energy,),
+                *[(["ion", {"label": label}, "temperature"],     self.f_energy,) for label in ion_species],
+            ]
+        else:
+
+            eq_grp = [
+                (["psi"],                                        self.f_current,),
+                (["electrons", "density"],                       self.f_particle,),
+                (["electrons", "temperature"],                   self.f_energy,),
+                *[(["ion", {"label": label}, "temperature"],     self.f_energy,) for label in ion_species],
             ]
 
-        if False:
-            for rpath in ["electrons"]+ion_species_list:
-                residual += self.energy_transport(
-                    self._core_profiles_next.fetch(rpath),
-                    self._core_profiles_prev.fetch(rpath),
-                    self._c_transp.fetch(rpath),
-                    self._c_source.fetch(rpath),
-                    self.boundary_conditions_1d.fetch(rpath),
-                    tolerance=tolerance,
-                    max_nodes=max_nodes,
-                    verbose=verbose,
-                    **kwargs
-                )
-                count += 1
+        x = self._rho_tor_norm
 
-        if False:
-            residual += self.rotation_transport(
-                self._core_profiles_next,
-                self._core_profiles_prev,
-                self._c_transp.momentum,
-                self._c_source.momentum_tor,
-                self.boundary_conditions_1d.momentum_tor,
-                **kwargs)
-            count += 1
+        Y = np.vstack(sum([[array_like(x, self._core_profiles_prev.fetch(var_id, 0)), np.zeros_like(x)]
+                           for var_id, *_ in eq_grp], []))
 
-        sol = self._solve_equations(equations, ** kwargs)
+        sol = self._solve_equations(x, Y, eq_grp, **kwargs)
 
         rms_residuals = np.max(sol.rms_residuals)
 
-        eq_list = []
+        for idx, (var_id, * _) in enumerate(eq_grp):
+            self._core_profiles_next[var_id] = Function(sol.x, sol.y[idx*2])
 
-        for idx, (path, * _) in enumerate(equations):
-            self._core_profiles_next[path] = Function(sol.x, sol.y[idx])
-            eq_list.append(path)
         self._core_profiles_next["rms_residuals"] = Function((sol.x[: -1]+sol.x[1:])*0.5, sol.rms_residuals)
 
         logger.info(
-            f"Solve transport equations : {eq_list}\t [{'Success' if sol.success else 'Failed'}] max reduisal={rms_residuals}")
+            f"Solve transport equations {'Success' if sol.success else 'Failed'}] max reduisal={rms_residuals}:\n  {[var_id for var_id, in eq_grp]}")
 
         return rms_residuals
 

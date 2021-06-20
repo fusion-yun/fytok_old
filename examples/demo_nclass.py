@@ -11,6 +11,11 @@ from spdm.util.logger import logger
 from spdm.util.plot_profiles import plot_profiles, sp_figure
 from fytok.common.Atoms import atoms
 
+
+def rms_residual(a, b):
+    return np.abs((a-b)/(a+b)*2)
+
+
 if __name__ == "__main__":
     logger.info("====== START ========")
 
@@ -42,6 +47,7 @@ if __name__ == "__main__":
     psi_axis = eqdsk.find("global_quantities.psi_axis", None)
     psi_boundary = eqdsk.find("global_quantities.psi_boundary", None)
     noise = 0.2  # np.random.random(bs_r_nrom.shape)*0.1
+  
     configure["equilibrium"] = {
         "code": {"name": "dummy"},
         "time_slice": {
@@ -91,7 +97,7 @@ if __name__ == "__main__":
     Cped = 0.2
     Ccore = 0.4
     chi = PiecewiseFunction([0, r_ped, 1.0],  [lambda x: 1.1*Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
-    chi_e = PiecewiseFunction([0, r_ped, 1.0], [lambda x:0.6 * Ccore*(1.0 + 3*(x**2)), lambda x: 1.5 * Cped])
+    chi_e = PiecewiseFunction([0, r_ped, 1.0], [lambda x:0.65 * Ccore*(1.0 + 3*(x**2)), lambda x: 1.2*Cped])
 
     # D = Function(
     #     [lambda r:r < r_ped, lambda r:r >= r_ped],
@@ -99,7 +105,7 @@ if __name__ == "__main__":
 
     D = PiecewiseFunction([0, r_ped, 1.0],  [lambda x:0.1 * Ccore*(1.0 + 3*(x**2)), lambda x: 0.2*Cped])
     v_pinch = Function([0, r_ped, 1.0], lambda x: 0.4 * D(x) * x / R0)   # FIXME: The coefficient 0.4 is a guess.
-    v_pinch_T = Function([0, r_ped, 1.0], lambda x: 0.1*chi_e(x) * x / R0)
+    v_pinch_T = Function([0, r_ped, 1.0], lambda x: 0.1*chi(x) * x / R0)
 
     configure["core_transport"] = {
         "model": [
@@ -126,7 +132,7 @@ if __name__ == "__main__":
                         {
                             **atoms["He"],
                             "particles":{"d": 0.1 * (chi+chi_e), "v": 0},
-                            "energy": {"d": 0.5*chi, "v": 0}, }
+                            "energy": {"d": chi, "v": 0}, }
                     ]}
             },
 
@@ -168,7 +174,7 @@ if __name__ == "__main__":
                     "ion": [
                         {**atoms["D"],          "particles":S*0.5,      "energy":Q_DT*0.5},
                         {**atoms["T"],          "particles":S*0.5,      "energy":Q_DT*0.5},
-                        {**atoms["He"],         "particles":0,          "energy":Q_He}
+                        {**atoms["He"],         "particles":0,          "energy":-Q_He}
                     ]
                 }},
             # {"code": {"name": "q_ei"}, }
@@ -582,10 +588,11 @@ if __name__ == "__main__":
                     # (core_profile.electrons["density_error"], r"rms residuals ",
                     #     r"$n_e [ m^{-3}]$",  {"color": "red", "linestyle": "dashed"}),
                 ],
-                [
-                    (b_nDT/2,    r"astra $T_D$", r"$n_i [m^-3]$", {"marker": '+'}),
-                    * [(ion.density,   f"${ion.label}$") for ion in core_profile.ion],
-                ],
+
+                # [
+                #     (b_nDT/2,    r"astra $T_D$", r"$n_i [m^-3]$", {"marker": '+'}),
+                #     * [(ion.density,   f"${ion.label}$") for ion in core_profile.ion],
+                # ],
                 # [
                 #     (core_profile.electrons["density_flux"], r"Source",
                 #      r"$\Gamma_e$ Particle flux", {"color": "green", }),
@@ -643,8 +650,16 @@ if __name__ == "__main__":
                 # (core_profile.electrons["g"],  r"electron.f", r"$g$"),
 
                 # (core_profile.e_field.parallel,                    r"fytok",   r"$E_{\parallel} [V\cdot m^{-1}]$ "),
-                (core_profile["rms_residuals"], r"rms residuals ",     r"",  {"color": "red", "linestyle": "dashed"}),
+                # (core_profile["rms_residuals"], r"rms residuals ",     r"",  {"color": "red", "linestyle": "dashed"}),
+                # [
+                #     (rms_residual(Function(bs_r_nrom, (bs_psi_norm*(psi_boundary-psi_axis)+psi_axis)),
+                #                   core_profile["psi"]), r"$\psi$", " rms residual [%]"),
 
+                #     (rms_residual(b_ne, core_profile.electrons.density), r"$n_e$"),
+                #     (rms_residual(b_Te, core_profile.electrons.temperature), r"$T_e$"),
+                #     (rms_residual(b_Ti, core_profile.ion[{"label": "D"}].temperature), r"$T_D$"),
+
+                # ],
             ],
             # x_axis=(rho_tor_norm,                             r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             x_axis=(core_profile.electrons.temperature.x_axis,  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
