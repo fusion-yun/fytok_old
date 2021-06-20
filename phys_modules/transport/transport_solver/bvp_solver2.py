@@ -109,7 +109,7 @@ class TransportSolverBVP2(TransportSolver):
 
         self._Qimp_k_ns = (3*self._k_rho_bdry - self._k_phi * self._vpr.derivative())
 
-    def f_current(self,  var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray,  inv_tau=None, hyper_diff=1e-4, **kwargs):
+    def f_current(self,  var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray,  inv_tau=0, hyper_diff=1e-4, **kwargs):
 
         # -----------------------------------------------------------------
         # Transport
@@ -133,7 +133,7 @@ class TransportSolverBVP2(TransportSolver):
             S = -self._vpr * (j_exp + j_imp*y)/TWOPI
 
             dy = (-g + e * y + hyper_diff * yp)/(d + hyper_diff)
-            dg = (S - (a * y - b * ym)/inv_tau)*c
+            dg = (S - (a * y - b * ym)*inv_tau)*c
 
             return array_like(x, dy), array_like(x, dg)
 
@@ -180,7 +180,7 @@ class TransportSolverBVP2(TransportSolver):
 
         return func, bc_func
 
-    def f_particle(self, var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray,  inv_tau=None,  hyper_diff=1e-4, ** kwargs):
+    def f_particle(self, var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray,  inv_tau=0,  hyper_diff=1e-4, ** kwargs):
         # Particle Transport
         transp: Union[CoreTransport.Model.Profiles1D.Ion,
                       CoreTransport.Model.Profiles1D.Electrons] = self._c_transp.fetch(var_id[:-1], NotImplemented)
@@ -212,7 +212,7 @@ class TransportSolverBVP2(TransportSolver):
 
             dy = (-g + e * y + hyper_diff * yp)/(d + hyper_diff)
 
-            dg = (S - (a * y - b * ym)/inv_tau)*c
+            dg = (S - (a * y - b * ym)*inv_tau)*c
 
             return array_like(x, dy), array_like(x, dg)
 
@@ -237,7 +237,7 @@ class TransportSolverBVP2(TransportSolver):
 
         return func, bc_func
 
-    def f_energy(self, var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray, density_idx=1,  inv_tau=None,  hyper_diff=1e-4, **kwargs):
+    def f_energy(self, var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray, density_idx=1,  inv_tau=0,  hyper_diff=1e-4, **kwargs):
 
         # energy transport
         transp: CoreTransport.Model.Profiles1D.Ion = self._c_transp.fetch(var_id[:-1], NotImplemented)
@@ -274,7 +274,7 @@ class TransportSolverBVP2(TransportSolver):
             S = self._vpr35 * (Qs_exp + (Qs_imp + self._Qimp_k_ns)*y)
 
             dy = (-g + e * y + hyper_diff * yp)/(d + hyper_diff)
-            dg = (S - (a * y - b * ym)/inv_tau)*c
+            dg = (S - (a * y - b * ym)*inv_tau)*c
 
             return array_like(x, dy), array_like(x, dg)
 
