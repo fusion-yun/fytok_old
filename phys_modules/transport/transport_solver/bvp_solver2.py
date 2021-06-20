@@ -6,7 +6,7 @@ import collections
 import enum
 from itertools import chain
 from math import log
-from typing import Callable, Mapping, Optional, Type, Union, Sequence, Any
+from typing import Callable, Mapping, Optional, Type, Union, Sequence, Any, Tuple
 
 from matplotlib.pyplot import loglog
 
@@ -109,35 +109,7 @@ class TransportSolverBVP2(TransportSolver):
 
         self._Qimp_k_ns = (3*self._k_rho_bdry - self._k_phi * self._vpr.derivative())
 
-    def _create_transport_eq(self,
-                             coeff: Sequence = [],  # (i,x,y,gamma)
-                             hyper_diff=0.0001,
-                             **kwargs
-                             ) -> BVPResult:
-
-        def func(i: int, x: np.ndarray, y: np.ndarray, g: np.ndarray, /,
-                 _coeff: Sequence[Callable[[np.ndarray, np.ndarray, np.ndarray], np.ndarray]] = coeff,
-                 _hyper_diff=hyper_diff):
-
-            a, b, c, d, e, S, ym, h = _coeff
-
-            yp = Function(x, y).derivative(x)
-
-            dy = (-g + e(x) * y + _hyper_diff * yp)/(d(x) + _hyper_diff)
-
-            dg = S(y)
-
-            if h is not None and ym is not None:
-                dg = dg - (a(x)*y - b(x)*ym(x))/h
-
-            if c is not None:
-                dg = dg*c
-
-            return array_like(x, dy), array_like(x, dg)
-
-        return func
-
-    def f_current(self,  var_idx: int, var_id: Sequence, hyper_diff=0.0, inv_tau=None, **kwargs):
+    def f_current(self,  var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray,  inv_tau=None, hyper_diff=1e-4, **kwargs):
 
         # -----------------------------------------------------------------
         # Transport
@@ -146,9 +118,9 @@ class TransportSolverBVP2(TransportSolver):
         j_exp = self._c_source.j_parallel + self._c_source.get("j_decomposed.explicit_part", Function(0))
         j_imp = self._c_source.get("j_decomposed.implicit_part", Function(0))
 
-        ym = Function(self._rho_tor_norm, self._core_profiles_prev.fetch("psi", None))
+        ym = Function(x0, Y0[var_idx*2])
 
-        def func(x: np.ndarray,  Y: np.ndarray, p: Any = None):
+        def func(x: np.ndarray,  Y: np.ndarray, p: Any = None) -> Tuple[np.ndarray, np.ndarray]:
             y = Y[var_idx*2]
             g = Y[var_idx*2+1]
             yp = Function(x, y).derivative(x)
@@ -202,13 +174,13 @@ class TransportSolverBVP2(TransportSolver):
         else:
             raise NotImplementedError(bc)
 
-        def bc_func(Ya: np.ndarray, Yb: np.ndarray, p: Any = None, /, _bc: Sequence = (u0, v0, w0, u1, v1, w1)):
+        def bc_func(Ya: np.ndarray, Yb: np.ndarray, p: Any = None, /, _bc: Sequence = (u0, v0, w0, u1, v1, w1)) -> Tuple[float, float]:
             u0, v0, w0,  u1, v1, w1 = _bc
-            return (u0 * Ya[var_idx*2] + v0 * Ya[var_idx*2+1] - w0), (u1 * Yb[var_idx*2] + v1 * Yb[var_idx*2+1] - w1)
+            return float((u0 * Ya[var_idx*2] + v0 * Ya[var_idx*2+1] - w0)), float((u1 * Yb[var_idx*2] + v1 * Yb[var_idx*2+1] - w1))
 
-        return func, bc
+        return func, bc_func
 
-    def f_particle(self, var_idx: int, var_id: Sequence, hyper_diff=0.0, inv_tau=None, ** kwargs):
+    def f_particle(self, var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray,  inv_tau=None,  hyper_diff=1e-4, ** kwargs):
         # Particle Transport
         transp: Union[CoreTransport.Model.Profiles1D.Ion,
                       CoreTransport.Model.Profiles1D.Electrons] = self._c_transp.fetch(var_id[:-1], NotImplemented)
@@ -220,25 +192,26 @@ class TransportSolverBVP2(TransportSolver):
         source: Union[CoreSources.Source.Profiles1D.Ion,
                       CoreSources.Source.Profiles1D.Electrons] = self._c_source.fetch(var_id[:-1], NotImplemented)
 
-        se_exp = source.particles  # + source.fetch("particles_decomposed.explicit_part", 0)
+        se_exp = source.particles + source.get("particles_decomposed.explicit_part", 0)
 
-        se_imp = 0  # source.fetch("particles_decomposed.implicit_part", 0)
+        se_imp = source.get("particles_decomposed.implicit_part", 0)
 
-        ym = self._core_profiles_prev.fetch(var_id, 0)
+        ym = Function(x0, Y0[var_idx*2])
 
-        def func(x: np.ndarray,  Y: np.ndarray, p: Any = None):
+        def func(x: np.ndarray,  Y: np.ndarray, p: Any = None) -> Tuple[np.ndarray, np.ndarray]:
             y = Y[var_idx*2]
             g = Y[var_idx*2+1]
             yp = Function(x, y).derivative(x)
 
-            a = self._vpr(x)
-            b = self._vprm(x)
+            a = self._vpr
+            b = self._vprm
             c = self._rho_tor_boundary
-            d = (self._vpr * self._gm3 * diff / self._rho_tor_boundary)(x)
-            e = (self._vpr * self._gm3 * conv - self._vpr * self._rho_tor * self._k_phi)(x)
-            S = (self._vpr * (se_exp + se_imp*y + self._k_rho_bdry))(x)
+            d = self._vpr * self._gm3 * diff / self._rho_tor_boundary
+            e = self._vpr * self._gm3 * conv - self._vpr * self._rho_tor * self._k_phi
+            S = self._vpr * (se_exp + se_imp*y + self._k_rho_bdry)
 
             dy = (-g + e * y + hyper_diff * yp)/(d + hyper_diff)
+
             dg = (S - (a * y - b * ym)/inv_tau)*c
 
             return array_like(x, dy), array_like(x, dg)
@@ -258,27 +231,31 @@ class TransportSolverBVP2(TransportSolver):
         else:
             raise NotImplementedError(bc.identifier)
 
-        def bc_func(Ya: np.ndarray, Yb: np.ndarray, p: Any = None, /, _bc: Sequence = (u0, v0, w0, u1, v1, w1)):
+        def bc_func(Ya: np.ndarray, Yb: np.ndarray, p: Any = None, /, _bc: Sequence = (u0, v0, w0, u1, v1, w1)) -> Tuple[float, float]:
             u0, v0, w0,  u1, v1, w1 = _bc
-            return (u0 * Ya[var_idx*2] + v0 * Ya[var_idx*2+1] - w0), (u1 * Yb[var_idx*2] + v1 * Yb[var_idx*2+1] - w1)
+            return float(u0 * Ya[var_idx*2] + v0 * Ya[var_idx*2+1] - w0), float(u1 * Yb[var_idx*2] + v1 * Yb[var_idx*2+1] - w1)
 
         return func, bc_func
 
-    def f_energy(self, var_idx: int, var_id: Sequence, hyper_diff=0.0, inv_tau=None, density_idx=1, **kwargs):
+    def f_energy(self, var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray, density_idx=1,  inv_tau=None,  hyper_diff=1e-4, **kwargs):
 
         # energy transport
         transp: CoreTransport.Model.Profiles1D.Ion = self._c_transp.fetch(var_id[:-1], NotImplemented)
+
         chi = transp.energy.d
+
         v_pinch = transp.energy.v
 
         source: Union[CoreSources.Source.Profiles1D.Ion,
                       CoreSources.Source.Profiles1D.Electrons] = self._c_source.fetch(var_id[:-1], NotImplemented)
+
         Qs_exp = source.energy + source.get("energy_decomposed.explicit_part", 0)
+
         Qs_imp = source.get("energy_decomposed.implicit_part", 0)
 
-        ym = self._core_profiles_prev.fetch(var_id, 0)
+        ym = Function(x0, Y0[var_idx*2])
 
-        def func(x: np.ndarray,  Y: np.ndarray, p: Any = None):
+        def func(x: np.ndarray,  Y: np.ndarray, p: Any = None) -> Tuple[np.ndarray, np.ndarray]:
             y = Y[var_idx*2]
             g = Y[var_idx*2+1]
 
@@ -320,16 +297,16 @@ class TransportSolverBVP2(TransportSolver):
             u1, v1, w1 = _bc
             na = Ya[density_idx*2]
             ga = Ya[density_idx*2+1]
-            u0 = - (self._vpr * self._gm3 * na * v_pinch + 3/2*ga)
+            u0 = - (self._vpr * self._gm3 * na * v_pinch + 3/2*ga)(0.0)
             v0 = 1
             w0 = 3/2*ga
-            return (u0 * Ya[var_idx*2] + v0 * Ya[var_idx*2+1] - w0), (u1 * Yb[var_idx*2] + v1 * Yb[var_idx*2+1] - w1)
+            return float(u0 * Ya[var_idx*2] + v0 * Ya[var_idx*2+1] - w0), float(u1 * Yb[var_idx*2] + v1 * Yb[var_idx*2+1] - w1)
 
         return func, bc_func
 
         # return path+["temperature"], (a, b, c, d, e, S), (u0, v0, w0,  u1, v1, w1)
 
-    def rotation_transport(self, var_idx: int, var_id: Sequence,  hyper_diff=0.0, inv_tau=None, **kwargs):
+    def rotation_transport(self, var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray, inv_tau=None, hyper_diff=1e-4, **kwargs):
         r"""
             Rotation Transport
             .. math::  \left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(V^{\prime\frac{5}{3}}\left\langle R\right\rangle \
@@ -355,16 +332,15 @@ class TransportSolverBVP2(TransportSolver):
         return path+["density"],  func, bc_func
 
     def _solve_equations(self, x0: np.ndarray, Y0: np.ndarray, eq_grp: Sequence, /,
-                         tolerance=1.0e-3,
-                         max_nodes=250, **kwargs) -> BVPResult:
+                         tolerance=1.0e-3, max_nodes=250, **kwargs) -> BVPResult:
 
-        fc_list = [func(idx, var_id, *_args) for idx, (var_id, func,  *_args) in enumerate(eq_grp)]
+        fc_list = [func(idx, var_id, x0, Y0, *_args) for idx, (var_id, func,  *_args) in enumerate(eq_grp)]
 
-        def func(x: np.ndarray, Y: np.ndarray, p=None, /, fc_list=fc_list):
-            return np.vstack(map(array_like, sum([func(x, Y, p) for func, bc in fc_list], [])))
+        def func(x: np.ndarray, Y: np.ndarray, p=None, /, fc_list: Sequence[Tuple[Callable, Callable]] = fc_list) -> np.ndarray:
+            return np.vstack([array_like(x, d) for d in sum([list(func(x, Y, p)) for func, bc in fc_list], [])])
 
-        def bc_func(Ya: np.ndarray, Yb: np.ndarray, p=None, /, fc_list=fc_list):
-            return np.np.asarray(sum([bc(Ya, Yb, p) for func, bc in fc_list], []))
+        def bc_func(Ya: np.ndarray, Yb: np.ndarray, p=None, /, fc_list: Sequence[Tuple[Callable, Callable]] = fc_list) -> np.ndarray:
+            return np.asarray(sum([list(bc(Ya, Yb, p)) for func, bc in fc_list], []))
 
         return solve_bvp(func, bc_func, x0, Y0, tolerance=tolerance, max_nodes=max_nodes, **kwargs)
 
@@ -494,7 +470,7 @@ class TransportSolverBVP2(TransportSolver):
         self._core_profiles_next["rms_residuals"] = Function((sol.x[: -1]+sol.x[1:])*0.5, sol.rms_residuals)
 
         logger.info(
-            f"Solve transport equations {'Success' if sol.success else 'Failed'}] max reduisal={rms_residuals}:\n  {[var_id for var_id, in eq_grp]}")
+            f"Solve transport equations {'Success' if sol.success else 'Failed'}] max reduisal={rms_residuals}:\n  {[var_id for var_id,*_ in eq_grp]}")
 
         return rms_residuals
 
