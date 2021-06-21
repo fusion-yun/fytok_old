@@ -74,7 +74,7 @@ class CoreSourcesIon(SpeciesIon):
 
     @sp_property
     def energy(self) -> Function:
-        return self.get("energy", None)
+        return self.get("energy", 0)
 
     @sp_property
     def energy_decomposed(self) -> Decomposition[Function]:

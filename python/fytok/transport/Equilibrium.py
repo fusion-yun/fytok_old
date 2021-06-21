@@ -264,7 +264,7 @@ class EquilibriumProfiles1D(Profiles):
 
         super().__init__(*args, axis=coord.psi_norm, parent=parent, **kwargs)
         self._coord = coord
-        self._grid = self._coord.radial_grid()
+        self._grid = self._coord.radial_grid
 
     @sp_property
     def ffprime(self) -> Function:

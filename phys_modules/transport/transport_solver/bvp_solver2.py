@@ -11,7 +11,7 @@ from typing import Callable, Iterator, Mapping, Optional, Type, Union, Sequence,
 from matplotlib.pyplot import loglog
 
 from fytok.common.IDS import IDS
-from fytok.common.Misc import Identifier
+from fytok.common.Misc import Identifier, VacuumToroidalField
 from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreSources import CoreSources
 from fytok.transport.CoreTransport import CoreTransport
@@ -379,14 +379,14 @@ class TransportSolverBVP2(TransportSolver):
         return solve_bvp(func, bc_func, x0, Y0, tolerance=tolerance, max_nodes=max_nodes, **kwargs)
 
     def _convert_to_core_profiles(self, x: np.ndarray, Y: np.ndarray, var_list=[]) -> CoreProfiles:
-        core_profiles = CoreProfiles(parent=self._parent)
+
+        core_profiles = CoreProfiles(grid=self._core_profiles_next.grid.remesh(x, "rho_tor_norm"))
+
         profiles = core_profiles.profiles_1d
 
-        profiles.grid.rho_tor_norm = x
-
         for idx, path in enumerate(var_list):
-            profiles[path] = Function(x, Y[idx*2])
-            profiles[path[:-1]+[f"{path[-1]}_flux"]] = Function(x, Y[idx*2+1])
+            profiles[path] = Y[idx*2]
+            profiles[path[:-1]+[f"{path[-1]}_flux"]] = Y[idx*2+1]
 
         return core_profiles
 
