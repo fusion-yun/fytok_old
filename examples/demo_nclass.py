@@ -47,7 +47,7 @@ if __name__ == "__main__":
     psi_axis = eqdsk.find("global_quantities.psi_axis", None)
     psi_boundary = eqdsk.find("global_quantities.psi_boundary", None)
     noise = 0.2  # np.random.random(bs_r_nrom.shape)*0.1
-  
+
     configure["equilibrium"] = {
         "code": {"name": "dummy"},
         "time_slice": {
@@ -651,15 +651,15 @@ if __name__ == "__main__":
 
                 # (core_profile.e_field.parallel,                    r"fytok",   r"$E_{\parallel} [V\cdot m^{-1}]$ "),
                 # (core_profile["rms_residuals"], r"rms residuals ",     r"",  {"color": "red", "linestyle": "dashed"}),
-                # [
-                #     (rms_residual(Function(bs_r_nrom, (bs_psi_norm*(psi_boundary-psi_axis)+psi_axis)),
-                #                   core_profile["psi"]), r"$\psi$", " rms residual [%]"),
+                [
+                    (rms_residual(Function(bs_r_nrom, (bs_psi_norm*(psi_boundary-psi_axis)+psi_axis)),
+                                  core_profile["psi"]), r"$\psi$", " rms residual [%]"),
 
-                #     (rms_residual(b_ne, core_profile.electrons.density), r"$n_e$"),
-                #     (rms_residual(b_Te, core_profile.electrons.temperature), r"$T_e$"),
-                #     (rms_residual(b_Ti, core_profile.ion[{"label": "D"}].temperature), r"$T_D$"),
+                    (rms_residual(b_ne, core_profile.electrons.density), r"$n_e$"),
+                    (rms_residual(b_Te, core_profile.electrons.temperature), r"$T_e$"),
+                    (rms_residual(b_Ti, core_profile.ion[{"label": "D"}].temperature), r"$T_D$"),
 
-                # ],
+                ],
             ],
             # x_axis=(rho_tor_norm,                             r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             x_axis=(core_profile.electrons.temperature.x_axis,  r"$\sqrt{\Phi/\Phi_{bdry}}$"),

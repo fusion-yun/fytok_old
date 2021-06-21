@@ -6,7 +6,7 @@ import collections
 import enum
 from itertools import chain
 from math import log
-from typing import Callable, Mapping, Optional, Type, Union, Sequence, Any, Tuple
+from typing import Callable, Iterator, Mapping, Optional, Type, Union, Sequence, Any, Tuple
 
 from matplotlib.pyplot import loglog
 
@@ -237,9 +237,23 @@ class TransportSolverBVP2(TransportSolver):
 
         return func, bc_func
 
-    def f_energy(self, var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray, density_idx=1,  inv_tau=0,  hyper_diff=1e-4, **kwargs):
+    def f_energy(self, var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray, density: Union[Callable, int],  inv_tau=0,  hyper_diff=1e-4, **kwargs):
 
-        # energy transport
+        def _density(x, Y):
+            if isinstance(density, int):
+                ns = Y[density*2]
+                gs = Y[density*2+1]
+            elif callable(density):
+                ns, gs = density(x, Y)
+
+            if isinstance(x, np.ndarray) and isinstance(x, np.ndarray) and x.shape == ns.shape:
+                return ns, gs
+            elif isinstance(ns, np.ndarray) and isinstance(x, int):
+                return ns[x], gs[x]
+            else:
+                return ns, gs
+
+                # energy transport
         transp: CoreTransport.Model.Profiles1D.Ion = self._c_transp.fetch(var_id[:-1], NotImplemented)
 
         chi = transp.energy.d
@@ -247,7 +261,7 @@ class TransportSolverBVP2(TransportSolver):
         v_pinch = transp.energy.v
 
         source: Union[CoreSources.Source.Profiles1D.Ion,
-                      CoreSources.Source.Profiles1D.Electrons] = self._c_source.fetch(var_id[:-1], NotImplemented)
+                      CoreSources.Source.Profiles1D.Electrons] = self._c_source.fetch(var_id[: -1], NotImplemented)
 
         Qs_exp = source.energy + source.get("energy_decomposed.explicit_part", 0)
 
@@ -259,16 +273,16 @@ class TransportSolverBVP2(TransportSolver):
             y = Y[var_idx*2]
             g = Y[var_idx*2+1]
 
-            n = Y[density_idx*2]
-            gamma = Y[density_idx*2+1]
+            n, gamma = _density(x, Y)
 
             yp = Function(x, y).derivative(x)
             a = (3/2) * self._vpr35 * y
             b = (3/2) * self._vpr35m * ym
             c = self._rho_tor_boundary * self._inv_vpr23
 
-            d = self._vpr * self._gm3 * n * chi / self._rho_tor_boundary -\
+            d = self._vpr * self._gm3 * n * chi / self._rho_tor_boundary - \
                 self._vpr * (3/4)*self._k_phi * self._rho_tor * ym
+
             e = self._vpr * self._gm3 * n * v_pinch + 3/2*gamma
 
             S = self._vpr35 * (Qs_exp + (Qs_imp + self._Qimp_k_ns)*y)
@@ -280,8 +294,8 @@ class TransportSolverBVP2(TransportSolver):
 
         # ----------------------------------------------
         # Boundary Condition
-        bc: TransportSolver.BoundaryConditions1D.BoundaryConditions =\
-            self.boundary_conditions_1d.fetch(var_id[:-1], NotImplemented).energy
+        bc: TransportSolver.BoundaryConditions1D.BoundaryConditions = self.boundary_conditions_1d.fetch(
+            var_id[: -1], NotImplemented).energy
 
         # axis
         u0, v0, w0 = 0, 1, 0
@@ -295,8 +309,7 @@ class TransportSolverBVP2(TransportSolver):
 
         def bc_func(Ya: np.ndarray, Yb: np.ndarray, p: Any = None, /, _bc: Sequence = (u1, v1, w1)):
             u1, v1, w1 = _bc
-            na = Ya[density_idx*2]
-            ga = Ya[density_idx*2+1]
+            na, ga = _density(0, Ya)
             u0 = - (self._vpr * self._gm3 * na * v_pinch + 3/2*ga)(0.0)
             v0 = 1
             w0 = 3/2*ga
@@ -316,25 +329,32 @@ class TransportSolverBVP2(TransportSolver):
         logger.warning(f"TODO: Rotation Transport is not implemented!")
         return 0.0
 
-    def neutral_condition(self, path, /, n_impurity: Function = 0, electron_index: int = 1, factor: float = 1.0):
-        if path[0] == "electrons":
-            raise NotImplementedError()
-        else:
-            def func(idx: int, x: np.ndarray, Y: np.ndarray, Ym: np.ndarray, G: np.ndarray, *args, n_impurity=n_impurity, factor=factor, electron_index=electron_index):
-                ne = Y[electron_index]
-                if n_impurity is not None:
-                    ne = ne - n_impurity(x)
-                return factor*Function(x, ne).derivative(x), factor*Function(x, G[electron_index]).derivative(x)
+    def quasi_neutral_condition_electron(self, var_id: Sequence, /,  ion_species=[],   ion_index: Iterator[int] = [], impurities: Sequence[Callable] = []):
+        n_impurity, g_impurity = impurities
 
-            def bc_func(idx: int, ya: float, ga: float, yb: float, gb: float, *args, factor=factor, electron_index=electron_index):
-                return np.hstack([(yb[idx] - factor*yb[electron_index]), (gb[idx] - factor*gb[electron_index])])
+        def func(x: np.ndarray, Y: np.ndarray) -> np.ndarray:
+            return \
+                np.sum([self._core_profiles_next["ion", {"label": ion_species[i]}].z*Y[ion_idx*2]
+                        for i, ion_idx in enumerate(ion_index)])+n_impurity(x),\
+                np.sum([self._core_profiles_next["ion", {"label": ion_species[i]}].z*Y[ion_idx*2+1]
+                        for i, ion_idx in enumerate(ion_index)])+g_impurity(x)
+        return func
 
-        return path+["density"],  func, bc_func
+    def quasi_neutral_condition_ion(self, var_id: Sequence, /,  ion_species=[],   electron_index: int = 1, impurities=[]):
+        factor = self._core_profiles_next[var_id].z / \
+            np.sum([self._core_profiles_next["ion", {"label": label}].z for label in ion_species])
+        n_impurity, g_impurity = impurities
+
+        def func(x: np.ndarray, Y: np.ndarray):
+            return factor*(Y[electron_index*2]-array_like(x, n_impurity)),  factor * (Y[electron_index*2+1]-array_like(x, g_impurity))
+
+        return func
 
     def _solve_equations(self, x0: np.ndarray, Y0: np.ndarray, eq_grp: Sequence, /,
                          tolerance=1.0e-3, max_nodes=250, **kwargs) -> BVPResult:
 
-        fc_list = [func(idx, var_id, x0, Y0, *_args) for idx, (var_id, func,  *_args) in enumerate(eq_grp)]
+        fc_list = [func(idx, var_id, x0, Y0, ** (_args[0] if len(_args) > 0 else {}))
+                   for idx, (var_id, func,  *_args) in enumerate(eq_grp)]
 
         def func(x: np.ndarray, Y: np.ndarray, p=None, /, fc_list: Sequence[Tuple[Callable, Callable]] = fc_list) -> np.ndarray:
             return np.vstack([array_like(x, d) for d in sum([list(func(x, Y, p)) for func, bc in fc_list], [])])
@@ -429,30 +449,35 @@ class TransportSolverBVP2(TransportSolver):
 
         if self._core_profiles_next.get("psi", None) is None:
             self._core_profiles_next["psi"] = self._core_profiles_next.grid.psi
-
-        n_impurity = None
-        # FIXME: Fuction do not support sum
-        for ion in self._core_profiles_next.ion:
-            if ion.label not in ion_species:
-                if n_impurity is not None:
-                    n_impurity = n_impurity + ion.z*ion.density
-                else:
-                    n_impurity = ion.z*ion.density
+        n_impurity = Function(0)
+        g_impurity = Function(0)
+        for label in impurities:
+            ion = self._core_profiles_next["ion", {"label": label}]
+            n_impurity = n_impurity + ion.z * ion.density
+            g_impurity = g_impurity + ion.z * ion.get("density_flux", 0)
 
         if enable_ion_particle_solver is True:
             eq_grp = [
                 (["psi"],                                        self.f_current,),
+                (["electrons", "temperature"],                   self.f_energy,
+                 {"density": self.quasi_neutral_condition_electron(["electrons"],
+                                                                   ion_species=ion_species,
+                                                                   impurities=(n_impurity, g_impurity),
+                                                                   ion_index=range(2, 2+len(ion_species)))}),
                 *[(["ion", {"label": label}, "density"],         self.f_particle,) for label in ion_species],
-                (["electrons", "temperature"],                   self.f_energy,),
-                *[(["ion", {"label": label}, "temperature"],     self.f_energy,) for label in ion_species],
+                *[(["ion", {"label": label}, "temperature"],     self.f_energy, {"density": 2+ion_idx})
+                  for ion_idx, label in enumerate(ion_species)],
             ]
         else:
-
             eq_grp = [
                 (["psi"],                                        self.f_current,),
                 (["electrons", "density"],                       self.f_particle,),
-                (["electrons", "temperature"],                   self.f_energy,),
-                *[(["ion", {"label": label}, "temperature"],     self.f_energy,) for label in ion_species],
+                (["electrons", "temperature"],                   self.f_energy, {"density": 1}),
+                *[(["ion", {"label": label}, "temperature"],     self.f_energy,
+                   {"density": self.quasi_neutral_condition_ion(["ion", {"label": label}],
+                                                                ion_species=ion_species,
+                                                                impurities=(n_impurity, g_impurity),
+                                                                electron_index=1)}) for ion_idx, label in enumerate(ion_species)],
             ]
 
         x = self._rho_tor_norm
