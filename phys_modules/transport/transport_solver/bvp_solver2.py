@@ -313,12 +313,8 @@ class TransportSolverBVP2(TransportSolver):
         else:
             raise NotImplementedError(bc)
 
-        def bc_func(Ya: np.ndarray, Yb: np.ndarray, p: Any = None, /, _bc: Sequence = (u1, v1, w1)):
-            u1, v1, w1 = _bc
-            na, ga = _density(0, Ya)
-            u0 = 0
-            v0 = 1
-            w0 = 0
+        def bc_func(Ya: np.ndarray, Yb: np.ndarray, p: Any = None, /, _bc: Sequence = (u0, v0, w0, u1, v1, w1)):
+            u0, v0, w0, u1, v1, w1 = _bc
             return float(u0 * Ya[var_idx*2] + v0 * Ya[var_idx*2+1] - w0), float(u1 * Yb[var_idx*2] + v1 * Yb[var_idx*2+1] - w1)
 
         return func, bc_func
@@ -385,6 +381,8 @@ class TransportSolverBVP2(TransportSolver):
     def _convert_to_core_profiles(self, x: np.ndarray, Y: np.ndarray, var_list=[]) -> CoreProfiles:
         core_profiles = CoreProfiles(parent=self._parent)
         profiles = core_profiles.profiles_1d
+
+        profiles.grid.rho_tor_norm = x
 
         for idx, path in enumerate(var_list):
             profiles[path] = Function(x, Y[idx*2])
