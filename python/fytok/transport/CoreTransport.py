@@ -257,12 +257,16 @@ class CoreTransportModel(Actor):
     def profiles_1d(self) -> CoreTransportProfiles1D:
         return self.get("profiles_1d", {})
 
-    def update(self,  *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None,  **kwargs) -> float:
+    def update(self,  *args, grid=None, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None,  **kwargs) -> float:
         time = super().update(*args, **kwargs)
+        if grid is not None:
+            self._grid = grid
         if equilibrium is not None:
             self._equilibrium = equilibrium
         if core_profiles is not None:
             self._core_profiles = core_profiles
+
+        super().reset()
         return time
 
 
@@ -288,19 +292,18 @@ class CoreTransport(IDS):
 
     @sp_property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        return VacuumToroidalField(**self["vacuum_toroidal_field"]._as_dict())
+        return VacuumToroidalField(**self.get("vacuum_toroidal_field", {}))
 
     @sp_property
     def model(self) -> List[Model]:
-        return self["model"]
+        return List[CoreTransport.Model](
+            self.get("model", []),
+            defualt_value_when_combine={
+                "identifier": {"name": "combined", "index": 1,
+                               "description": """Combination of data from available transport models.
+                                Representation of the total transport in the system"""}
+            },
+            parent=self)
 
-    def update(self,   /, grid: RadialGrid = None, equilibrium: Equilibrium = None,  core_profiles: CoreProfiles = None, **kwargs) -> float:
-        super().update(**kwargs)
-        if equilibrium is None:
-            equilibrium = self._parent.equilibrium
-        if core_profiles is None:
-            core_profiles = self._parent.core_profiles
-        if grid is None:
-            grid = self._parent.grid
-        self._grid = grid
-        return self.model.update(equilibrium=equilibrium, core_profiles=core_profiles)
+    def update(self, *args, **kwargs) -> None:
+        self.model.update(*args, **kwargs)

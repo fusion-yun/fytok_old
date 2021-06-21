@@ -507,11 +507,11 @@ if __name__ == "__main__":
                     (tok.core_sources.source.combine.profiles_1d.j_parallel,
                      "fytok", r"$J_{\parallel} [A\cdot m^{-2}]$"),
                 ],
-                (core_source_1d.electrons.particles,       "fytok", r"$S_{e} [ m^{-3} s^-1]$"),
-                (core_source_1d.electrons.energy,          "fytok", r"$Q_{e}$"),
-                [
-                    * [(ion.density,   f"${ion.label}$") for ion in core_profile.ion if ion.label not in impurities],
-                ],
+                # (core_source_1d.electrons.particles,       "fytok", r"$S_{e} [ m^{-3} s^-1]$"),
+                # (core_source_1d.electrons.energy,          "fytok", r"$Q_{e}$"),
+                # [
+                #     * [(ion.density,   f"${ion.label}$") for ion in core_profile.ion if ion.label not in impurities],
+                # ],
                 # [
                 #     (Function(bs_r_nrom, baseline["Zeff"].values),          r"$Z_{eff}^{astra}$", {"marker": "+"}),
                 #     (core_profile.zeff,                                                              r"$z_{eff}$"),
@@ -527,9 +527,9 @@ if __name__ == "__main__":
                 #     # (core_profile.j_ohmic,                        "fytok",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
                 # ],
                 [
-                    (Function(bs_r_nrom, baseline["Jbs"].values*1e6),
-                     r"astra", r"$j_{bootstrap} [MA\cdot m^{-2}]$", {"marker": "+"}),
-                    (tok.core_sources.source[{"code.name":  "bootstrap_current"}].profiles_1d.j_parallel,
+                    (Function(bs_r_nrom, baseline["Jbs"].values),
+                     r"astra", r"bootstrap current $[MA\cdot m^{-2}]$", {"marker": "+"}),
+                    (tok.core_sources.source[{"code.name":  "bootstrap_current"}].profiles_1d.j_parallel*1e-6,
                      r"fytok"),
                 ],
                 # (tok.core_profiles.profiles_1d.electrons.density,                                       r"$ n_e $"),

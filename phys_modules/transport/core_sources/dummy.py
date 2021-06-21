@@ -15,13 +15,12 @@ class CoreSourceDummy(CoreSources.Source):
     def __init__(self, d=None, *args,  **kwargs):
         super().__init__(collections.ChainMap({
             "identifier": {
-                "name": f"DummySource",
-                "index": -1,
+                "name": f"unspecified",
+                "index": 0,
                 "description": f"{self.__class__.__name__} Dummy Source "
             }}, d or {}), *args, **kwargs)
 
     def update(self, *args,  **kwargs):
-
         return super().update(*args, **kwargs)
 
 

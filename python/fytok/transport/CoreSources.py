@@ -283,9 +283,14 @@ class CoreSources(IDS):
         return self._grid.vacuum_toroidal_field
 
     @sp_property
-    def source(self) -> List[CoreSourcesSource]:
-        return self.get("source", [])
+    def source(self) -> List[Source]:
+        return List[CoreSources.Source](
+            self.get("source", []),
+            defualt_value_when_combine={
+                "identifier": {"name": "total", "index": 1,
+                               "description": "Total source; combines all sources"}
+            },
+            parent=self)
 
-    def update(self,  /, equilibrium: Equilibrium = None,  core_profiles: CoreProfiles = None, **kwargs) -> float:
-
-        return self.source.update(equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
+    def update(self, *args, **kwargs) -> None:
+        self.source.update(*args, **kwargs)
