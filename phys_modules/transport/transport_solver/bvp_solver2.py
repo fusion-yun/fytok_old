@@ -49,8 +49,8 @@ class TransportSolverBVP2(TransportSolver):
 
         self._core_profiles_next = self._core_profiles.profiles_1d
         self._core_profiles_prev = self._core_profiles.previous_state.profiles_1d
-        self._c_transp = self._core_transport.model.combine.profiles_1d
-        self._c_source = self._core_sources.source.combine.profiles_1d
+        self._c_transp = self._core_transport.model
+        self._c_source = self._core_sources.source
         self._eq = self._equilibrium.time_slice.profiles_1d
 
         self._inv_tau = 0 if abs(self._tau) < EPSILON else 1.0/self._tau
@@ -109,30 +109,42 @@ class TransportSolverBVP2(TransportSolver):
 
         self._Qimp_k_ns = (3*self._k_rho_bdry - self._k_phi * self._vpr.derivative())
 
-    def f_current(self,  var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray,  inv_tau=0, hyper_diff=1e-4, **kwargs):
+    def f_current(self,  var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray,
+                  inv_tau=0, hyper_diff=1e-4, **kwargs):
 
         # -----------------------------------------------------------------
         # Transport
         # plasma parallel conductivity,                                 [(Ohm*m)^-1]
-        conductivity_parallel = self._c_transp.conductivity_parallel
-        j_exp = self._c_source.j_parallel + self._c_source.get("j_decomposed.explicit_part", Function(0))
-        j_imp = self._c_source.get("j_decomposed.implicit_part", Function(0))
+        # j_exp = self._c_source.j_parallel + self._c_source.get("j_decomposed.explicit_part", Function(0))
+        # j_imp = self._c_source.get("j_decomposed.implicit_part", Function(0))
 
         ym = Function(x0, Y0[var_idx*2])
 
-        def func(x: np.ndarray,  Y: np.ndarray, p: Any = None) -> Tuple[np.ndarray, np.ndarray]:
+        def func(x: np.ndarray,  Y: np.ndarray,
+                 transp: CoreTransport.Model.Profiles1D,
+                 source: CoreSources.Source.Profiles1D,) -> Tuple[np.ndarray, np.ndarray]:
+
+            conductivity_parallel = transp.conductivity_parallel
+
             y = Y[var_idx*2]
             g = Y[var_idx*2+1]
             yp = Function(x, y).derivative(x)
 
             a = conductivity_parallel*self._rho_tor
+
             b = conductivity_parallel*self._rho_tor
+
             c = (constants.mu_0 * self._B0 * self._rho_tor_boundary)/(self._fpol**2)
+
             d = self._vpr * self._gm2 / self._fpol / (self._rho_tor_boundary)/(TWOPI)
-            e = (- constants.mu_0 * self._B0 * self._k_phi) * (conductivity_parallel * self._rho_tor**2/self._fpol**2)
-            S = -self._vpr * (j_exp + j_imp*y)/TWOPI
+
+            e = (- constants.mu_0 * self._B0 * self._k_phi) * \
+                (conductivity_parallel * self._rho_tor**2/self._fpol**2)
+
+            S = -self._vpr * (source.j_parallel)/TWOPI
 
             dy = (-g + e * y + hyper_diff * yp)/(d + hyper_diff)
+
             dg = (S - (a * y - b * ym)*inv_tau)*c
 
             return array_like(x, dy), array_like(x, dg)
@@ -180,25 +192,19 @@ class TransportSolverBVP2(TransportSolver):
 
         return func, bc_func
 
-    def f_particle(self, var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray,  inv_tau=0,  hyper_diff=1e-4, ** kwargs):
-        # Particle Transport
-        transp: Union[CoreTransport.Model.Profiles1D.Ion,
-                      CoreTransport.Model.Profiles1D.Electrons] = self._c_transp.fetch(var_id[:-1], NotImplemented)
-
-        diff = transp.particles.d
-
-        conv = transp.particles.v
-
-        source: Union[CoreSources.Source.Profiles1D.Ion,
-                      CoreSources.Source.Profiles1D.Electrons] = self._c_source.fetch(var_id[:-1], NotImplemented)
-
-        se_exp = source.particles + source.get("particles_decomposed.explicit_part", 0)
-
-        se_imp = source.get("particles_decomposed.implicit_part", 0)
+    def f_particle(self, var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray,
+                   inv_tau=0,  hyper_diff=1e-4, ** kwargs):
 
         ym = Function(x0, Y0[var_idx*2])
 
-        def func(x: np.ndarray,  Y: np.ndarray, p: Any = None) -> Tuple[np.ndarray, np.ndarray]:
+        def func(x: np.ndarray,  Y: np.ndarray,
+                 transp: CoreTransport.Model.Profiles1D,
+                 source: CoreSources.Source.Profiles1D,) -> Tuple[np.ndarray, np.ndarray]:
+            _transp: Union[CoreTransport.Model.Profiles1D.Ion,
+                           CoreTransport.Model.Profiles1D.Electrons] = transp.fetch(var_id[:-1], NotImplemented)
+
+            _source: Union[CoreSources.Source.Profiles1D.Ion,
+                           CoreSources.Source.Profiles1D.Electrons] = source.fetch(var_id[:-1], NotImplemented)
             y = Y[var_idx*2]
             g = Y[var_idx*2+1]
             yp = Function(x, y).derivative(x)
@@ -206,9 +212,9 @@ class TransportSolverBVP2(TransportSolver):
             a = self._vpr
             b = self._vprm
             c = self._rho_tor_boundary
-            d = self._vpr * self._gm3 * diff / self._rho_tor_boundary
-            e = self._vpr * self._gm3 * conv - self._vpr * self._rho_tor * self._k_phi
-            S = self._vpr * (se_exp + se_imp*y + self._k_rho_bdry)
+            d = self._vpr * self._gm3 * _transp.particles.d / self._rho_tor_boundary
+            e = self._vpr * self._gm3 * _transp.particles.v - self._vpr * self._rho_tor * self._k_phi
+            S = self._vpr * (_source.particles + self._k_rho_bdry)
 
             dy = (-g + e * y + hyper_diff * yp)/(d + hyper_diff)
 
@@ -237,7 +243,9 @@ class TransportSolverBVP2(TransportSolver):
 
         return func, bc_func
 
-    def f_energy(self, var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray, density: Union[Callable, int],  inv_tau=0,  hyper_diff=1e-4, **kwargs):
+    def f_energy(self, var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray,
+                 density: Union[Callable, int],
+                 inv_tau=0,  hyper_diff=1e-4, **kwargs):
 
         def _density(x, Y):
             if isinstance(density, int):
@@ -254,22 +262,19 @@ class TransportSolverBVP2(TransportSolver):
                 return ns, gs
 
                 # energy transport
-        transp: CoreTransport.Model.Profiles1D.Ion = self._c_transp.fetch(var_id[:-1], NotImplemented)
-
-        chi = transp.energy.d
-
-        v_pinch = transp.energy.v
-
-        source: Union[CoreSources.Source.Profiles1D.Ion,
-                      CoreSources.Source.Profiles1D.Electrons] = self._c_source.fetch(var_id[: -1], NotImplemented)
-
-        Qs_exp = source.energy + source.get("energy_decomposed.explicit_part", 0)
-
-        Qs_imp = source.get("energy_decomposed.implicit_part", 0)
 
         ym = Function(x0, Y0[var_idx*2])
 
-        def func(x: np.ndarray,  Y: np.ndarray, p: Any = None) -> Tuple[np.ndarray, np.ndarray]:
+        def func(x: np.ndarray,  Y: np.ndarray,
+                 transp: CoreTransport.Model.Profiles1D,
+                 source: CoreSources.Source.Profiles1D,) -> Tuple[np.ndarray, np.ndarray]:
+
+            _transp: Union[CoreTransport.Model.Profiles1D.Ion,
+                           CoreTransport.Model.Profiles1D.Electrons] = transp.fetch(var_id[:-1], NotImplemented)
+
+            _source: Union[CoreSources.Source.Profiles1D.Ion,
+                           CoreSources.Source.Profiles1D.Electrons] = source.fetch(var_id[: -1], NotImplemented)
+
             y = Y[var_idx*2]
             g = Y[var_idx*2+1]
 
@@ -280,14 +285,15 @@ class TransportSolverBVP2(TransportSolver):
             b = (3/2) * self._vpr35m * ym
             c = self._rho_tor_boundary * self._inv_vpr23
 
-            d = self._vpr * self._gm3 * n * chi / self._rho_tor_boundary - \
+            d = self._vpr * self._gm3 * n * _transp.energy.d / self._rho_tor_boundary - \
                 self._vpr * (3/4)*self._k_phi * self._rho_tor * ym
 
-            e = self._vpr * self._gm3 * n * v_pinch + 3/2*gamma
+            e = self._vpr * self._gm3 * n * _transp.energy.v + 3/2*gamma
 
-            S = self._vpr35 * (Qs_exp + (Qs_imp + self._Qimp_k_ns)*y)
+            S = self._vpr35 * (_source.energy + self._Qimp_k_ns * y)
 
             dy = (-g + e * y + hyper_diff * yp)/(d + hyper_diff)
+
             dg = (S - (a * y - b * ym)*inv_tau)*c
 
             return array_like(x, dy), array_like(x, dg)
@@ -310,9 +316,9 @@ class TransportSolverBVP2(TransportSolver):
         def bc_func(Ya: np.ndarray, Yb: np.ndarray, p: Any = None, /, _bc: Sequence = (u1, v1, w1)):
             u1, v1, w1 = _bc
             na, ga = _density(0, Ya)
-            u0 = - (self._vpr * self._gm3 * na * v_pinch + 3/2*ga)(0.0)
+            u0 = 0
             v0 = 1
-            w0 = 3/2*ga
+            w0 = 0
             return float(u0 * Ya[var_idx*2] + v0 * Ya[var_idx*2+1] - w0), float(u1 * Yb[var_idx*2] + v1 * Yb[var_idx*2+1] - w1)
 
         return func, bc_func
@@ -335,7 +341,7 @@ class TransportSolverBVP2(TransportSolver):
         def func(x: np.ndarray, Y: np.ndarray) -> np.ndarray:
             return \
                 np.sum([self._core_profiles_next["ion", {"label": ion_species[i]}].z*Y[ion_idx*2]
-                        for i, ion_idx in enumerate(ion_index)])+n_impurity(x),\
+                        for i, ion_idx in enumerate(ion_index)])+n_impurity(x), \
                 np.sum([self._core_profiles_next["ion", {"label": ion_species[i]}].z*Y[ion_idx*2+1]
                         for i, ion_idx in enumerate(ion_index)])+g_impurity(x)
         return func
@@ -353,31 +359,38 @@ class TransportSolverBVP2(TransportSolver):
     def _solve_equations(self, x0: np.ndarray, Y0: np.ndarray, eq_grp: Sequence, /,
                          tolerance=1.0e-3, max_nodes=250, **kwargs) -> BVPResult:
 
-        fc_list = [func(idx, var_id, x0, Y0, ** (_args[0] if len(_args) > 0 else {}))
-                   for idx, (var_id, func,  *_args) in enumerate(eq_grp)]
+        eq_list = [eq(idx, var_id, x0, Y0, ** (_args[0] if len(_args) > 0 else {}))
+                   for idx, (var_id, eq,  *_args) in enumerate(eq_grp)]
 
-        def func(x: np.ndarray, Y: np.ndarray, p=None, /, fc_list: Sequence[Tuple[Callable, Callable]] = fc_list) -> np.ndarray:
-            return np.vstack([array_like(x, d) for d in sum([list(func(x, Y, p)) for func, bc in fc_list], [])])
+        var_list = [var_id for var_id, eq,  *_args in eq_grp]
 
-        def bc_func(Ya: np.ndarray, Yb: np.ndarray, p=None, /, fc_list: Sequence[Tuple[Callable, Callable]] = fc_list) -> np.ndarray:
-            return np.asarray(sum([list(bc(Ya, Yb, p)) for func, bc in fc_list], []))
+        def func(x: np.ndarray, Y: np.ndarray, p=None, /, eq_list: Sequence[Tuple[Callable, Callable]] = eq_list) -> np.ndarray:
+            core_profiles = self._convert_to_core_profiles(x, Y, var_list)
+
+            self._c_transp.update(core_profiles=core_profiles)
+
+            self._c_source.update(core_profiles=core_profiles)
+
+            transp = self._c_transp.combine.profiles_1d
+
+            source = self._c_source.combine.profiles_1d
+
+            return np.vstack([array_like(x, d) for d in sum([list(func(x, Y, transp, source)) for func, bc in eq_list], [])])
+
+        def bc_func(Ya: np.ndarray, Yb: np.ndarray, p=None, /, eq_list: Sequence[Tuple[Callable, Callable]] = eq_list) -> np.ndarray:
+            return np.asarray(sum([list(bc(Ya, Yb, p)) for func, bc in eq_list], []))
 
         return solve_bvp(func, bc_func, x0, Y0, tolerance=tolerance, max_nodes=max_nodes, **kwargs)
 
-    def _convert_to_dict(Y: np.ndarray, var_list=[]):
-        if Y is None:
-            return None
-        profiles = Dict()
+    def _convert_to_core_profiles(self, x: np.ndarray, Y: np.ndarray, var_list=[]) -> CoreProfiles:
+        core_profiles = CoreProfiles(parent=self._parent)
+        profiles = core_profiles.profiles_1d
 
         for idx, path in enumerate(var_list):
-            if path[0] != 'ion':
-                profiles[path] = Y[idx*2]
-                profiles[path[:-1]+[f"{path[-1]}_flux"]] = Y[idx*2+1]
-            else:
-                profiles[path] = Y[idx*2]
-                profiles[path[:-1]+[{"label": path[-1]['label']+"_flux"}]] = Y[idx*2+1]
+            profiles[path] = Function(x, Y[idx*2])
+            profiles[path[:-1]+[f"{path[-1]}_flux"]] = Function(x, Y[idx*2+1])
 
-        return profiles
+        return core_profiles
 
     def solve_core(self,  /,
                    enable_ion_particle_solver: bool = False,
@@ -495,7 +508,7 @@ class TransportSolverBVP2(TransportSolver):
         self._core_profiles_next["rms_residuals"] = Function((sol.x[: -1]+sol.x[1:])*0.5, sol.rms_residuals)
 
         logger.info(
-            f"Solve transport equations {'Success' if sol.success else 'Failed'}] max reduisal={rms_residuals}:\n  {[var_id for var_id,*_ in eq_grp]}")
+            f"Solve transport equations [{'Success' if sol.success else 'Failed'}] : max reduisal={rms_residuals} \n  {[var_id for var_id,*_ in eq_grp]}")
 
         return rms_residuals
 

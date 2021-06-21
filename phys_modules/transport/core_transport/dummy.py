@@ -26,14 +26,9 @@ class TransportModeDummy(CoreTransport.Model):
                 "description": f"{self.__class__.__name__} Dummy CoreTransport.Model "
             }}, d or {}), *args, **kwargs)
 
-    def update(self, *args,
-               equilibrium: Equilibrium,
-               core_profiles: CoreProfiles,
-               **kwargs):
+    def update(self, *args, **kwargs):
 
-        super().update(*args,  **kwargs)
-
-        return 0.00
+        return super().update(*args,  **kwargs)
 
 
 __SP_EXPORT__ = TransportModeDummy
