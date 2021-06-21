@@ -66,11 +66,11 @@ class CoreSourcesElectrons(SpeciesElectron):
 class CoreSourcesIon(SpeciesIon):
     @sp_property
     def particles(self) -> Function:
-        return self.get("particles", None)
+        return self.get("particles", 0)
 
     @sp_property
     def particles_decomposed(self) -> Decomposition[Function]:
-        return self.get("particles_decomposed", None)
+        return self.get("particles_decomposed", {})
 
     @sp_property
     def energy(self) -> Function:
@@ -78,7 +78,7 @@ class CoreSourcesIon(SpeciesIon):
 
     @sp_property
     def energy_decomposed(self) -> Decomposition[Function]:
-        return self.get("energy_decomposed", None)
+        return self.get("energy_decomposed", {})
 
 
 class CoreSourcesNeutral(Profiles):

@@ -62,17 +62,17 @@ class RadialGrid:
 
         if axis is None:
             raise RuntimeError(f"Can not find axis {label}!")
-        elif np.allclose(axis, new_axis):
+        elif isinstance(axis, np.ndarray) and isinstance(new_axis, np.ndarray) and axis.shape == new_axis.shape and np.allclose(axis, new_axis):
             return self
 
         return RadialGrid(
             {
                 "psi_norm": Function(axis,  self.psi_norm)(new_axis) if label != "psi_norm" else new_axis,
-                "rho_tor_norm": Function(axis,  self.rho_tor_norm)(new_axis) if label != "rho_tor" else new_axis,
-                "rho_pol_norm": Function(axis,  self.rho_pol_norm)(new_axis) if label != "rho_pol_norm" else new_axis,
-                "area": Function(axis,  self.area)(new_axis) if label != "area" else new_axis,
-                "surface": Function(axis,  self.surface)(new_axis) if label != "surface" else new_axis,
-                "volume": Function(axis,  self.volume)(new_axis) if label != "volume" else new_axis,
+                "rho_tor_norm": Function(axis,  self.rho_tor_norm)(new_axis) if label != "rho_tor_norm" else new_axis,
+                # "rho_pol_norm": Function(axis,  self.rho_pol_norm)(new_axis) if label != "rho_pol_norm" else new_axis,
+                # "area": Function(axis,  self.area)(new_axis) if label != "area" else new_axis,
+                # "surface": Function(axis,  self.surface)(new_axis) if label != "surface" else new_axis,
+                # "volume": Function(axis,  self.volume)(new_axis) if label != "volume" else new_axis,
                 "dvolume_drho_tor": Function(axis,  self.dvolume_drho_tor)(new_axis),
             },
             self._psi_axis,
@@ -263,7 +263,7 @@ class MagneticCoordSystem(object):
         return RadialGrid(
             {
                 "psi_norm": self.psi_norm,
-                "rho_tor_norm": self.rho_tor,
+                "rho_tor_norm": self.rho_tor_norm,
                 "rho_pol_norm": getattr(self, "rho_pol_norm", None),
                 "area": getattr(self, "area", None),
                 "surface": self.surface,

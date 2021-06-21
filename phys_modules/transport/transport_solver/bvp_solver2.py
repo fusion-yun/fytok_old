@@ -362,15 +362,10 @@ class TransportSolverBVP2(TransportSolver):
 
         def func(x: np.ndarray, Y: np.ndarray, p=None, /, eq_list: Sequence[Tuple[Callable, Callable]] = eq_list) -> np.ndarray:
             core_profiles = self._convert_to_core_profiles(x, Y, var_list)
-
             self._c_transp.update(core_profiles=core_profiles)
-
             self._c_source.update(core_profiles=core_profiles)
-
             transp = self._c_transp.combine.profiles_1d
-
             source = self._c_source.combine.profiles_1d
-
             return np.vstack([array_like(x, d) for d in sum([list(func(x, Y, transp, source)) for func, bc in eq_list], [])])
 
         def bc_func(Ya: np.ndarray, Yb: np.ndarray, p=None, /, eq_list: Sequence[Tuple[Callable, Callable]] = eq_list) -> np.ndarray:
@@ -379,8 +374,8 @@ class TransportSolverBVP2(TransportSolver):
         return solve_bvp(func, bc_func, x0, Y0, tolerance=tolerance, max_nodes=max_nodes, **kwargs)
 
     def _convert_to_core_profiles(self, x: np.ndarray, Y: np.ndarray, var_list=[]) -> CoreProfiles:
-
-        core_profiles = CoreProfiles(grid=self._core_profiles_next.grid.remesh(x, "rho_tor_norm"))
+        new_grid = self._core_profiles_next.grid.remesh(x, "rho_tor_norm")
+        core_profiles = CoreProfiles(grid=new_grid)
 
         profiles = core_profiles.profiles_1d
 
