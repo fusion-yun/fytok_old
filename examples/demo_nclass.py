@@ -3,6 +3,7 @@ from operator import eq
 import pandas as pd
 
 from fytok.Tokamak import TWOPI, Tokamak
+from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.File import File
 from spdm.data.Function import Function, PiecewiseFunction
 from spdm.numlib import constants, np
@@ -49,6 +50,7 @@ if __name__ == "__main__":
 
     configure["equilibrium"] = {
         "code": {"name": "dummy"},
+        "vacuum_toroidal_field": eqdsk.find("vacuum_toroidal_field", {}),
         "time_slice": {
             "vacuum_toroidal_field": eqdsk.find("vacuum_toroidal_field", {}),
             "profiles_1d": eqdsk.find("profiles_1d"),
@@ -165,19 +167,28 @@ if __name__ == "__main__":
     # Core Source
     configure["core_sources"] = {
         "source": [
-            {
-                "code": {"name": "dummy"},
-                "profiles_1d": {
-                    "j_parallel": Function(bs_r_nrom, baseline["Jtot"].values*1e6),
-                    "electrons":{**atoms["e"],  "particles": S,         "energy": Qe},
-                    "ion": [
-                        {**atoms["D"],          "particles":S*0.5,      "energy":Q_DT*0.5},
-                        {**atoms["T"],          "particles":S*0.5,      "energy":Q_DT*0.5},
-                        {**atoms["He"],         "particles":0,          "energy":-Q_He}
-                    ]
-                }},
-            # {"code": {"name": "q_ei"}, }
-            # {"code": {"name": "bootstrap_current"}},
+            {"code": {"name": "dummy"},
+             "profiles_1d": {
+                "j_parallel": Function(
+                    bs_r_nrom,
+
+                    (
+                        # baseline["Jtot"].values
+                        baseline["Joh"].values
+                        # + baseline["Jbs"].values
+                        + baseline["Jnb"].values
+                        + baseline["Jrf"].values
+                    )
+
+                    * 1e6),
+                "electrons":{**atoms["e"],  "particles": S,         "energy": Qe},
+                "ion": [
+                    {**atoms["D"],          "particles":S*0.5,      "energy":Q_DT*0.5},
+                    {**atoms["T"],          "particles":S*0.5,      "energy":Q_DT*0.5},
+                    {**atoms["He"],         "particles":0,          "energy":-Q_He}
+                ]}},
+            # {"code": {"name": "collisional_equipartition"}, }
+            {"code": {"name": "bootstrap_current"}},
         ]}
 
     #  TransportSolver
@@ -487,15 +498,14 @@ if __name__ == "__main__":
 
     if True:  # CoreSources
         core_source_1d = tok.core_sources.source.combine.profiles_1d
-
+        tok.core_sources.source.update(equilibrium=tok.equilibrium, core_profiles=tok.core_profiles)
         plot_profiles(
             [
                 [
                     (Function(bs_r_nrom, baseline["Jtot"].values*1e6),  "astra",
                      r"$J_{\parallel} [A\cdot m^{-2}]$", {"marker": "+"}),
-                    (tok.core_sources.source[{"code.name": "dummy"}].profiles_1d.j_parallel,
-                     "dummy", r"$J_{\parallel} [A\cdot m^{-2}]$"),
-                    (core_source_1d.j_parallel,                     "fytok", r"$J_{\parallel} [MA\cdot m^{-2}]$"),
+                    (tok.core_sources.source.combine.profiles_1d.j_parallel,
+                     "fytok", r"$J_{\parallel} [A\cdot m^{-2}]$"),
                 ],
                 (core_source_1d.electrons.particles,       "fytok", r"$S_{e} [ m^{-3} s^-1]$"),
                 (core_source_1d.electrons.energy,          "fytok", r"$Q_{e}$"),
@@ -516,13 +526,12 @@ if __name__ == "__main__":
                 #     (Function(bs_r_nrom, baseline["Joh"].values), "astra",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
                 #     # (core_profile.j_ohmic,                        "fytok",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
                 # ],
-                # [
-                #     (Function(bs_r_nrom, baseline["Jbs"].values),
-                #      r"astra", r"$j_{bootstrap} [MA\cdot m^{-2}]$", {"marker": "+"}),
-                #     (core_source_1d.j_parallel*1.0e-6,                                          r"wesson"),
-
-                #     (tok.core_sources.source.combine.profiles_1d.j_parallel*1.0e-6,             r"fytok"),
-                # ],
+                [
+                    (Function(bs_r_nrom, baseline["Jbs"].values*1e6),
+                     r"astra", r"$j_{bootstrap} [MA\cdot m^{-2}]$", {"marker": "+"}),
+                    (tok.core_sources.source[{"code.name":  "bootstrap_current"}].profiles_1d.j_parallel,
+                     r"fytok"),
+                ],
                 # (tok.core_profiles.profiles_1d.electrons.density,                                       r"$ n_e $"),
                 # (tok.core_profiles.profiles_1d.electrons.temperature,                                   r"$ T_e $"),
                 # (tok.core_profiles.profiles_1d.electrons.temperature.dln(),          r"$\frac{T_e^{\prime}}{T_e}$"),
@@ -542,6 +551,7 @@ if __name__ == "__main__":
             # index_slice=slice(1, 110, 1),
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_sources.svg", transparent=True)
 
+    exit(0)
     ###################################################################################################
     # TransportSolver
     if True:

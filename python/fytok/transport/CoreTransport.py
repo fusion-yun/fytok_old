@@ -214,6 +214,8 @@ class CoreTransportModel(Actor):
     def __init__(self, *args, grid: Optional[RadialGrid] = None, ** kwargs):
         super().__init__(*args, **kwargs)
         self._grid = grid or getattr(self._parent, "_grid", None)
+        self._equilibrium = getattr(self._parent, "equilibrium", None)
+        self._core_profiles = getattr(self._parent, "core_profiles", None)
 
     @sp_property
     def code(self) -> IDSCode:
@@ -254,6 +256,14 @@ class CoreTransportModel(Actor):
     @sp_property
     def profiles_1d(self) -> CoreTransportProfiles1D:
         return self.get("profiles_1d", {})
+
+    def update(self,  *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None,  **kwargs) -> float:
+        time = super().update(*args, **kwargs)
+        if equilibrium is not None:
+            self._equilibrium = equilibrium
+        if core_profiles is not None:
+            self._core_profiles = core_profiles
+        return time
 
 
 class CoreTransport(IDS):

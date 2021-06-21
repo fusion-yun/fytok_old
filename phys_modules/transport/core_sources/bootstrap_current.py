@@ -13,18 +13,19 @@ from spdm.util.logger import logger
 class BootstrapCurrent(CoreSources.Source):
     def __init__(self, d=None, *args,  **kwargs):
         super().__init__(collections.ChainMap({
+            "code": {"name": "bootstrap_current"},
             "identifier": {
                 "name": f"bootstrap_current",
                 "index": 13,
                 "description": f"{self.__class__.__name__} Bootstrap current, based on  Tokamaks, 3ed, sec 14.12 J.A.Wesson 2003"
             }}, d or {}), *args, **kwargs)
 
-    def update(self, *args,
-               equilibrium: Equilibrium,
-               core_profiles: CoreProfiles,
-               **kwargs):
+    def update(self, *args, **kwargs):
 
         super().update(*args, **kwargs)
+
+        equilibrium: Equilibrium = self._equilibrium
+        core_profiles: CoreProfiles = self._core_profiles
 
         eV = constants.electron_volt
         B0 = abs(equilibrium.vacuum_toroidal_field.b0)
@@ -111,7 +112,7 @@ class BootstrapCurrent(CoreSources.Source):
         j_bootstrap = - j_bootstrap * x/(2.4+5.4*x+2.6*x**2) * Pe   \
             * equilibrium.time_slice.profiles_1d.fpol(psi_norm) * q / rho_tor_norm / (rho_tor[-1])**2 / (2.0*constants.pi*B0)
 
-        self.profiles_1d.j_parallel = Function(rho_tor_norm, j_bootstrap)
+        self.profiles_1d["j_parallel"] = Function(rho_tor_norm, j_bootstrap)
         return 0.0
 
 

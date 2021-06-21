@@ -12,7 +12,7 @@ from spdm.util.logger import logger
 from fytok.common.Atoms import atoms
 
 
-class CollisionalEnergyTansport(CoreSources.Source):
+class CollisionalEquipartition(CoreSources.Source):
     def __init__(self, d=None, *args,  **kwargs):
         super().__init__(collections.ChainMap({
             "identifier": {
@@ -58,4 +58,4 @@ class CollisionalEnergyTansport(CoreSources.Source):
         return 0.0
 
 
-__SP_EXPORT__ = CollisionalEnergyTansport
+__SP_EXPORT__ = CollisionalEquipartition
