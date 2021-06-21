@@ -12,13 +12,13 @@ from spdm.util.logger import logger
 from fytok.common.Atoms import atoms
 
 
-class CoreSourceQei(CoreSources.Source):
+class CollisionalEnergyTansport(CoreSources.Source):
     def __init__(self, d=None, *args,  **kwargs):
         super().__init__(collections.ChainMap({
             "identifier": {
-                "name": f"Qei Source",
-                "index": -1,
-                "description": f"{self.__class__.__name__} Qei Source "
+                "name": f"collisional_equipartition",
+                "index": 11,
+                "description": f"{self.__class__.__name__} Collisional Energy Tansport "
             }}, d or {}), *args, **kwargs)
 
     def update(self, *args,
@@ -58,4 +58,4 @@ class CoreSourceQei(CoreSources.Source):
         return 0.0
 
 
-__SP_EXPORT__ = CoreSourceQei
+__SP_EXPORT__ = CollisionalEnergyTansport

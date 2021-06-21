@@ -109,14 +109,12 @@ class TransportSolverBVP2(TransportSolver):
 
         self._Qimp_k_ns = (3*self._k_rho_bdry - self._k_phi * self._vpr.derivative())
 
-    def f_current(self,  var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray,
+    def transp_current(self,  var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray,
                   inv_tau=0, hyper_diff=1e-4, **kwargs):
 
         # -----------------------------------------------------------------
         # Transport
         # plasma parallel conductivity,                                 [(Ohm*m)^-1]
-        # j_exp = self._c_source.j_parallel + self._c_source.get("j_decomposed.explicit_part", Function(0))
-        # j_imp = self._c_source.get("j_decomposed.implicit_part", Function(0))
 
         ym = Function(x0, Y0[var_idx*2])
 
@@ -127,7 +125,9 @@ class TransportSolverBVP2(TransportSolver):
             conductivity_parallel = transp.conductivity_parallel
 
             y = Y[var_idx*2]
+
             g = Y[var_idx*2+1]
+
             yp = Function(x, y).derivative(x)
 
             a = conductivity_parallel*self._rho_tor
@@ -138,14 +138,21 @@ class TransportSolverBVP2(TransportSolver):
 
             d = self._vpr * self._gm2 / self._fpol / (self._rho_tor_boundary)/(TWOPI)
 
-            e = (- constants.mu_0 * self._B0 * self._k_phi) * \
-                (conductivity_parallel * self._rho_tor**2/self._fpol**2)
+            e = 0
 
-            S = -self._vpr * (source.j_parallel)/TWOPI
+            S = - self._vpr * (source.j_parallel)/TWOPI
 
             dy = (-g + e * y + hyper_diff * yp)/(d + hyper_diff)
 
-            dg = (S - (a * y - b * ym)*inv_tau)*c
+            dg = S
+
+            if not np.isclose(inv_tau, 0.0):
+                C = (constants.mu_0 * self._B0 * self._k_phi) * (conductivity_parallel * self._rho_tor**2/self._fpol**2)
+                dg = dg - (a * y - b * ym)*inv_tau
+                dg = dg + conductivity_parallel*self._Qimp_k_ns*y
+                dg = dg + Function(x, C).derivative(x)*y + C*dy
+
+            dg = S*c
 
             return array_like(x, dy), array_like(x, dg)
 
@@ -192,7 +199,7 @@ class TransportSolverBVP2(TransportSolver):
 
         return func, bc_func
 
-    def f_particle(self, var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray,
+    def transp_particle(self, var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray,
                    inv_tau=0,  hyper_diff=1e-4, ** kwargs):
 
         ym = Function(x0, Y0[var_idx*2])
@@ -207,18 +214,25 @@ class TransportSolverBVP2(TransportSolver):
                            CoreSources.Source.Profiles1D.Electrons] = source.fetch(var_id[:-1], NotImplemented)
             y = Y[var_idx*2]
             g = Y[var_idx*2+1]
+
             yp = Function(x, y).derivative(x)
 
             a = self._vpr
             b = self._vprm
             c = self._rho_tor_boundary
             d = self._vpr * self._gm3 * _transp.particles.d / self._rho_tor_boundary
-            e = self._vpr * self._gm3 * _transp.particles.v - self._vpr * self._rho_tor * self._k_phi
-            S = self._vpr * (_source.particles + self._k_rho_bdry)
+            e = self._vpr * self._gm3 * _transp.particles.v
+            S = self._vpr * _source.particles
 
             dy = (-g + e * y + hyper_diff * yp)/(d + hyper_diff)
 
-            dg = (S - (a * y - b * ym)*inv_tau)*c
+            dg = S
+            if not np.isclose(inv_tau, 0.0):
+                dg = dg - (a * y - b * ym)*inv_tau + self._vpr * self._k_rho_bdry
+                dg = dg + Function(x, self._vpr * x * self._k_phi).derivative(x)*y
+                dg = dg + self._vpr * x * self._k_phi * dy
+
+            dg = dg*c
 
             return array_like(x, dy), array_like(x, dg)
 
@@ -243,7 +257,7 @@ class TransportSolverBVP2(TransportSolver):
 
         return func, bc_func
 
-    def f_energy(self, var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray,
+    def transp_energy(self, var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray,
                  density: Union[Callable, int],
                  inv_tau=0,  hyper_diff=1e-4, **kwargs):
 
@@ -281,21 +295,30 @@ class TransportSolverBVP2(TransportSolver):
             n, gamma = _density(x, Y)
 
             yp = Function(x, y).derivative(x)
+
             a = (3/2) * self._vpr35 * y
+
             b = (3/2) * self._vpr35m * ym
+
             c = self._rho_tor_boundary * self._inv_vpr23
 
-            d = self._vpr * self._gm3 * n * _transp.energy.d / self._rho_tor_boundary - \
-                self._vpr * (3/4)*self._k_phi * self._rho_tor * ym
+            d = self._vpr * self._gm3 * n * _transp.energy.d / self._rho_tor_boundary
 
-            e = self._vpr * self._gm3 * n * _transp.energy.v + 3/2*gamma
+            e = self._vpr * self._gm3 * n * _transp.energy.v + 3/2 * gamma
 
-            S = self._vpr35 * (_source.energy + self._Qimp_k_ns * y)
+            S = self._vpr35 * _source.energy
 
             dy = (-g + e * y + hyper_diff * yp)/(d + hyper_diff)
 
-            dg = (S - (a * y - b * ym)*inv_tau)*c
+            dg = S
 
+            if not np.isclose(inv_tau, 0.0):
+                dg = dg - (a * y - b * ym)*inv_tau
+                dg = dg + self._vpr35 * self._Qimp_k_ns * y
+                dg = dg + Function(x,  self._vpr * (3/4)*self._k_phi * x * n).derivative(x) * y
+                dg = dg + self._vpr * (3/4)*self._k_phi * x * n*dy
+
+            dg = dg*c
             return array_like(x, dy), array_like(x, dg)
 
         # ----------------------------------------------
@@ -321,7 +344,7 @@ class TransportSolverBVP2(TransportSolver):
 
         # return path+["temperature"], (a, b, c, d, e, S), (u0, v0, w0,  u1, v1, w1)
 
-    def rotation_transport(self, var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray, inv_tau=None, hyper_diff=1e-4, **kwargs):
+    def transp_rotation(self, var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray, inv_tau=None, hyper_diff=1e-4, **kwargs):
         r"""
             Rotation Transport
             .. math::  \left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(V^{\prime\frac{5}{3}}\left\langle R\right\rangle \
@@ -464,22 +487,22 @@ class TransportSolverBVP2(TransportSolver):
 
         if enable_ion_particle_solver is True:
             eq_grp = [
-                (["psi"],                                        self.f_current,),
-                (["electrons", "temperature"],                   self.f_energy,
+                (["psi"],                                        self.transp_current,),
+                (["electrons", "temperature"],                   self.transp_energy,
                  {"density": self.quasi_neutral_condition_electron(["electrons"],
                                                                    ion_species=ion_species,
                                                                    impurities=(n_impurity, g_impurity),
                                                                    ion_index=range(2, 2+len(ion_species)))}),
-                *[(["ion", {"label": label}, "density"],         self.f_particle,) for label in ion_species],
-                *[(["ion", {"label": label}, "temperature"],     self.f_energy, {"density": 2+ion_idx})
+                *[(["ion", {"label": label}, "density"],         self.transp_particle,) for label in ion_species],
+                *[(["ion", {"label": label}, "temperature"],     self.transp_energy, {"density": 2+ion_idx})
                   for ion_idx, label in enumerate(ion_species)],
             ]
         else:
             eq_grp = [
-                (["psi"],                                        self.f_current,),
-                (["electrons", "density"],                       self.f_particle,),
-                (["electrons", "temperature"],                   self.f_energy, {"density": 1}),
-                *[(["ion", {"label": label}, "temperature"],     self.f_energy,
+                (["psi"],                                        self.transp_current,),
+                (["electrons", "density"],                       self.transp_particle,),
+                (["electrons", "temperature"],                   self.transp_energy, {"density": 1}),
+                *[(["ion", {"label": label}, "temperature"],     self.transp_energy,
                    {"density": self.quasi_neutral_condition_ion(["ion", {"label": label}],
                                                                 ion_species=ion_species,
                                                                 impurities=(n_impurity, g_impurity),

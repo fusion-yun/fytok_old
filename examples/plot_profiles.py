@@ -28,12 +28,12 @@ if __name__ == "__main__":
 
             ],
             [
-                (profile["Nalf"].values,                   r"He + alpha density", r"$10^{19}[m^{-3}]$"),
+                (profile["Nalf"].values,                   r"$He$ alpha density", r"$10^{19}[m^{-3}]$"),
                 (profile["Nz"].values,                       r"impurity density", r"$10^{19}[m^{-3}]$"),
                 (profile["Nb"].values,             r"fast NBI deuterium density", r"$10^{19}[m^{-3}]$"),
             ],
             [
-                (profile["Nalf"].values,                      r"He + alpha density", r"$10^{19}[m^{-3}]$"),
+                (profile["Nalf"].values,                      r"alpha density", r"$10^{19}[m^{-3}]$"),
                 (profile["Nath"].values,                      r"thermal He density", r"$10^{19}[m^{-3}]$"),
                 (profile["Naff"].values,      r"alpha prtcl. density (thin orbits)", r"$10^{19}[m^{-3}]$"),
                 (profile["Nalf"].values

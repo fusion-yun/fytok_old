@@ -38,8 +38,7 @@ if __name__ == "__main__":
         "wall": device.entry.find("wall"),
         "pf_active": device.entry.find("pf_active"),
         "tf": device.entry.find("tf"),
-        "magnetics": device.entry.find("magnetics"),
-    }
+        "magnetics": device.entry.find("magnetics"), }
 
     # Equilibrium
 
@@ -614,21 +613,7 @@ if __name__ == "__main__":
                 #  r"$[eV]$",  {"color": "red", "linestyle": "dashed"}),
 
 
-                # (core_source_1d.electrons.energy,          r"$Q_{e}$"),
 
-
-                # (core_profile.electrons["temperature_prime"], r"$T^{\prime}$", r"$T_e [eV m^-1]$"),
-                # (core_profile.electrons["heat_flux_prime"], r"$q^{\prime}$"),
-
-                # [
-                #     (core_profile.electrons["heat_flux"],      r"Total",  "Heat flux", {"color": "green", }),
-                #     (core_profile.electrons["diff_flux_T"],    r"Diffusive",  "", {"color": "black", }),
-                #     (core_profile.electrons["conv_flux_T"],    r"Convective", "",  {"color": "blue", }),
-
-                #     (core_profile.electrons["heat_flux"]
-                #      - core_profile.electrons["diff_flux_T"]
-                #      - core_profile.electrons["conv_flux_T"],     r"residual",  "", {"color": "red", "linestyle": "dashed"}),
-                # ],
 
 
                 ######################################################################
@@ -637,17 +622,6 @@ if __name__ == "__main__":
                     * [(ion.temperature,          f"${ion.label}$", r"$T_i [eV]$")
                         for ion in core_profile.ion if ion.label not in impurities],
                 ],
-                # [
-                #     (4*(constants.pi**2)*R0 * core_profile.grid.rho_tor, r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho$"),
-                #     (core_profile.electrons["vpr"],  r"vpr"),
-                # ],
-                # (core_profile.electrons["a"],  r"electron.a", r"$a$"),
-                # (core_profile.electrons["b"],  r"electron.b", r"$b$"),
-                # (core_profile.electrons["c"],  r"electron.c", r"$c$"),
-                # (core_profile.electrons["d"],  r"electron.d", r"$d$"),
-                # (core_profile.electrons["e"],  r"electron.e", r"$e$"),
-                # (core_profile.electrons["f"],  r"electron.f", r"$f$"),
-                # (core_profile.electrons["g"],  r"electron.f", r"$g$"),
 
                 # (core_profile.e_field.parallel,                    r"fytok",   r"$E_{\parallel} [V\cdot m^{-1}]$ "),
                 # (core_profile["rms_residuals"], r"rms residuals ",     r"",  {"color": "red", "linestyle": "dashed"}),

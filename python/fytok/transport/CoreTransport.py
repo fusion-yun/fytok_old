@@ -2,7 +2,7 @@ import collections
 from dataclasses import dataclass
 from typing import Optional
 
-from spdm.data.Function import Function
+from spdm.data.Function import Function, function_like
 from spdm.data.Node import Dict, List, Node, sp_property
 from spdm.data.Profiles import Profiles
 from spdm.flow.Actor import Actor
@@ -25,15 +25,15 @@ class TransportCoeff(Dict):
 
     @sp_property
     def d(self) -> Function:
-        return Function(self._parent.grid.rho_tor_norm, self.get("d", None))
+        return function_like(self._parent.grid.rho_tor_norm, self.get("d", None))
 
     @sp_property
     def v(self) -> Function:
-        return Function(self._parent.grid.rho_tor_norm,  self.get("v", None))
+        return function_like(self._parent.grid.rho_tor_norm,  self.get("v", None))
 
     @sp_property
     def flux(self) -> Function:
-        return Function(self._parent.grid.rho_tor_norm, self.get("flux", None))
+        return function_like(self._parent.grid.rho_tor_norm, self.get("flux", None))
 
 
 class CoreTransportElectrons(SpeciesElectron):
@@ -42,11 +42,11 @@ class CoreTransportElectrons(SpeciesElectron):
 
     @sp_property
     def particles(self) -> TransportCoeff:
-        return TransportCoeff(self.get("particles", {}), parent=self._parent)
+        return self.get("particles", {})
 
     @sp_property
     def energy(self) -> TransportCoeff:
-        return TransportCoeff(self.get("energy", {}), parent=self._parent)
+        return self.get("energy", {})
 
 
 class CoreTransportIonState(SpeciesIonState):
@@ -56,17 +56,17 @@ class CoreTransportIonState(SpeciesIonState):
     @sp_property
     def particles(self) -> TransportCoeff:
         """Transport quantities related to density equation of the charge state considered (thermal+non-thermal)	structure	"""
-        return TransportCoeff(self["particles"], parent=self._parent)
+        return self.get("particles", {})
 
     @sp_property
     def energy(self) -> TransportCoeff:
         """Transport quantities related to the energy equation of the charge state considered	structure	"""
-        return TransportCoeff(self["energy"], parent=self._parent)
+        return self.get("energy", {})
 
     @sp_property
     def momentum(self) -> TransportCoeff:
         """Transport coefficients related to the state momentum equations for various components (directions)"""
-        return TransportCoeff(self["momentum"], parent=self._parent)
+        return self.get("momentum", {})
 
 
 class CoreTransportMomentum(Dict):
@@ -152,22 +152,24 @@ class CoreTransportProfiles1D(Dict[Node]):
     @sp_property
     def grid_d(self) -> RadialGrid:
         """Grid for effective diffusivities and parallel conductivity"""
-        return self._grid.pullback(0.5*(self._grid.psi_norm[:-1]+self._grid.psi_norm[1:]))
+        return self._grid.remesh(0.5*(self._grid.psi_norm[:-1]+self._grid.psi_norm[1:]))
 
     @sp_property
     def grid_v(self) -> RadialGrid:
         """ Grid for effective convections  """
-        return self._grid.pullback(self._grid.psi_norm)
+        return self._grid.remesh(self._grid.psi_norm)
 
     @sp_property
     def grid_flux(self) -> RadialGrid:
         """ Grid for fluxes  """
-        return self._grid.pullback(0.5*(self._grid.psi_norm[:-1]+self._grid.psi_norm[1:]))
+        return self._grid.remesh(0.5*(self._grid.psi_norm[:-1]+self._grid.psi_norm[1:]))
 
     @sp_property
     def electrons(self) -> CoreTransportElectrons:
         """ Transport quantities related to the electrons """
-        return self.get('electrons', {})
+        res = self.get('electrons', {})
+
+        return res
 
     @sp_property
     def ion(self) -> List[CoreTransportIon]:
@@ -195,16 +197,12 @@ class CoreTransportProfiles1D(Dict[Node]):
 
     @sp_property
     def conductivity_parallel(self) -> Function:
-        return Function(self.grid_d.rho_tor_norm, self.get("conductivity_parallel", 0))
-
-    @sp_property
-    def j_bootstrap(self) -> Function:
-        return Function(self.grid_d.rho_tor_norm, self.get("j_bootstrap", 0))
+        return function_like(self.grid_d.rho_tor_norm, self.get("conductivity_parallel", 0))
 
     @sp_property
     def e_field_radial(self) -> Function:
         """ Radial component of the electric field (calculated e.g. by a neoclassical model) {dynamic} [V.m^-1]"""
-        return Function(self.grid_flux.rho_tor_norm, self.get("e_field_radial", 0))
+        return function_like(self.grid_flux.rho_tor_norm, self.get("e_field_radial", 0))
 
 
 class CoreTransportModel(Actor):
