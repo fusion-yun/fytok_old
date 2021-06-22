@@ -182,9 +182,13 @@ class CoreSourcesSource(Actor):
 
     def __init__(self,   *args, grid: Optional[RadialGrid] = None, **kwargs):
         super().__init__(*args, **kwargs)
-        self._grid = grid or getattr(self._parent, "_grid", None)
+        self._grid = grid or getattr(self._parent, "grid", None)
         self._equilibrium = getattr(self._parent, "equilibrium", None)
         self._core_profiles = getattr(self._parent, "core_profiles", None)
+
+    @property
+    def grid(self) -> RadialGrid:
+        return self._grid
 
     @sp_property
     def identifier(self) -> Identifier:
@@ -279,8 +283,12 @@ class CoreSources(IDS):
         self._grid = grid or getattr(self._parent, "_grid", None)
 
     @property
+    def grid(self) -> RadialGrid:
+        return self._grid
+
+    @property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        return self._grid.vacuum_toroidal_field
+        return self.grid.vacuum_toroidal_field
 
     @sp_property
     def source(self) -> List[Source]:

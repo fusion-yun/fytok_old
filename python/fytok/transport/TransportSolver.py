@@ -62,7 +62,7 @@ class TransportSolver(IDS):
 
         def __init__(self,   *args, grid: RadialGrid = None, **kwargs):
             super().__init__(*args, **kwargs)
-            self._grid = grid or self._parent._grid
+            self._grid = grid or getattr(self._parent, "grid", None)
 
         @property
         def grid(self) -> RadialGrid:
@@ -130,7 +130,7 @@ class TransportSolver(IDS):
                  edge_sources: EdgeSources = False,
                  **kwargs):
         super().__init__(*args, **kwargs)
-        self._grid = grid if grid is not None else self._parent._grid
+        self._grid = grid or getattr(self._parent, "grid")
 
         self._equilibrium = equilibrium or getattr(self._parent, "equilibrium", None)
         self._core_profiles = core_profiles or getattr(self._parent, "core_profiles", None)

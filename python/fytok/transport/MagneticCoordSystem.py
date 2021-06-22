@@ -65,6 +65,10 @@ class RadialGrid:
         elif isinstance(axis, np.ndarray) and isinstance(new_axis, np.ndarray) and axis.shape == new_axis.shape and np.allclose(axis, new_axis):
             return self
 
+        if isinstance(new_axis, int):
+            new_axis = np.linspace(0, 1.0, new_axis)
+        if not isinstance(new_axis, np.ndarray):
+            raise TypeError(new_axis)
         return RadialGrid(
             {
                 "psi_norm": Function(axis,  self.psi_norm)(new_axis) if label != "psi_norm" else new_axis,
@@ -101,7 +105,7 @@ class RadialGrid:
     @property
     def psi(self) -> np.ndarray:
         """Poloidal magnetic flux {dynamic} [Wb]. This quantity is COCOS-dependent, with the following transformation"""
-        return self.psi_norm * (self.psi_boundary-self.psi_magnetic_axis)+self.psi_magnetic_axis
+        return self._psi_norm * (self.psi_boundary-self.psi_magnetic_axis)+self.psi_magnetic_axis
 
     @cached_property
     def rho_tor_norm(self) -> np.ndarray:
@@ -688,7 +692,7 @@ class MagneticCoordSystem(object):
 
     @cached_property
     def psi(self) -> np.ndarray:
-        return self.psi_norm * (self.psi_boundary-self.psi_axis) + self.psi_axis
+        return self._psi_norm * (self.psi_boundary-self.psi_axis) + self.psi_axis
 
     @cached_property
     def dphi_dpsi(self) -> np.ndarray:

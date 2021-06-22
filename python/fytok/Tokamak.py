@@ -43,7 +43,7 @@ class Tokamak(Actor):
 
     """
 
-    def __init__(self, d=None, * args, grid: Union[RadialGrid, np.ndarray, None] = None, **kwargs):
+    def __init__(self, d=None, * args, grid=128, **kwargs):
         super().__init__(collections.ChainMap(d or {}, kwargs))
         self._time = 0.0
         self._grid = grid
@@ -55,7 +55,8 @@ class Tokamak(Actor):
     @property
     def grid(self):
         if not isinstance(self._grid, RadialGrid):
-            self._grid = self.equilibrium.time_slice.coordinate_system.radial_grid
+            self._grid = self.equilibrium.time_slice.coordinate_system.radial_grid.remesh(
+                self._grid, "rho_tor_norm")
         return self._grid
     # --------------------------------------------------------------------------
 

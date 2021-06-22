@@ -294,7 +294,7 @@ class CoreProfiles1D(Profiles):
     Neutral = CoreProfilesNeutral
 
     def __init__(self, *args, grid: RadialGrid = None, time=None, parent=None, **kwargs):
-        grid = grid or getattr(parent, "_grid", None)
+        grid = grid or getattr(parent, "grid", None)
         super().__init__(*args, axis=getattr(grid, "rho_tor_norm", None), parent=parent, **kwargs)
         self._grid = grid
         self._r0 = self._grid.vacuum_toroidal_field.r0
@@ -525,15 +525,15 @@ class CoreProfiles(IDS):
 
     def __init__(self,  *args, grid: Optional[RadialGrid] = None, ** kwargs):
         super().__init__(*args,  ** kwargs)
-        self._grid = grid or self._parent.grid
-
-    @property
-    def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        return self._grid.vacuum_toroidal_field
+        self._grid = grid or getattr(self._parent, "grid", None)
 
     @property
     def grid(self) -> RadialGrid:
         return self._grid
+        
+    @property
+    def vacuum_toroidal_field(self) -> VacuumToroidalField:
+        return self.grid.vacuum_toroidal_field
 
     @sp_property
     def profiles_1d(self) -> Profiles1D:

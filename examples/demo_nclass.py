@@ -190,7 +190,7 @@ if __name__ == "__main__":
     configure["transport_solver"] = {
         "code": {"name": "bvp_solver2"},
         "boundary_conditions_1d": {
-            "current": {"identifier": {"index": 1}, "value": [0.995*(psi_boundary-psi_axis)+psi_axis]},
+            "current": {"identifier": {"index": 1}, "value": [(psi_boundary-psi_axis)+psi_axis]},
             "electrons": {"particles": {"identifier": {"index": 1}, "value": [b_ne[-1]]},
                           "energy": {"identifier": {"index": 1}, "value": [b_Te[-1]]}},
             "ion": [
@@ -434,8 +434,7 @@ if __name__ == "__main__":
     if True:  # CoreTransport
         # core_transport1d_nc = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
         # core_transport1d_dummy = tok.core_transport.model[{"code.name": "dummy"}].profiles_1d
-
-        core_transport1d = tok.core_transport.model.combine.profiles_1d
+        # core_transport1d = tok.core_transport.model.combine.profiles_1d
 
         plot_profiles(
             [
@@ -457,7 +456,8 @@ if __name__ == "__main__":
 
                 [
                     (Function(bs_r_norm, baseline["Xi"].values),          r"astra", r"$\chi_{i}$", {"marker": "+"}),
-                    *[(ion.energy.d,  f"{ion.label}", r"$\chi_{i}$") for ion in core_transport1d.ion],
+                    *[(ion.energy.d,  f"{ion.label}", r"$\chi_{i}$")
+                      for ion in tok.core_transport.model.combine.profiles_1d.ion],
                 ],
 
                 # [
@@ -467,7 +467,7 @@ if __name__ == "__main__":
                 # ],
                 [
                     (Function(bs_r_norm, baseline["He"].values), "astra", r"$\chi_{e}$"),
-                    (core_transport1d.electrons.energy.d,  "fytok", r"$\chi_{e}$"),
+                    (tok.core_transport.model.combine.profiles_1d.electrons.energy.d,  "fytok", r"$\chi_{e}$"),
                 ],
 
                 # [
@@ -481,7 +481,7 @@ if __name__ == "__main__":
                               (2.0*constants.pi * tok.equilibrium.time_slice.vacuum_toroidal_field.r0)),     r"astra", r"$\sigma_{\parallel}$", {"marker": "+"}),
                     # (tok.core_transport.model[{"code.name": "spitzer"}].profiles_1d.conductivity_parallel,
                     #  "spitzer", r"$\sigma_{\parallel}$"),
-                    (core_transport1d.conductivity_parallel,  r"fytok"),
+                    (tok.core_transport.model.combine.profiles_1d.conductivity_parallel,  r"fytok"),
                 ],
 
                 # (core_transport1d.e_field_radial,                                             r"$E_{radial}$"),
@@ -494,7 +494,7 @@ if __name__ == "__main__":
             title=tok.core_transport.model[0].identifier.name,
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
-    if False:  # CoreSources
+    if True:  # CoreSources
         core_source_1d = tok.core_sources.source.combine.profiles_1d
         tok.core_sources.source.update(equilibrium=tok.equilibrium, core_profiles=tok.core_profiles)
         plot_profiles(
@@ -567,7 +567,7 @@ if __name__ == "__main__":
                 # (core_profile.electrons.pressure,                                                  r"$p_{e}$"),
 
             ],
-            x_axis=(core_source_1d.grid.rho_tor_norm, r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            x_axis=([0, 1.0], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             # x_axis=(bs_r_norm, r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             # x_axis=([0, 0.8], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             # annotation=core_transport.model[0].identifier.name,
@@ -668,7 +668,7 @@ if __name__ == "__main__":
                 ],
             ],
             # x_axis=(rho_tor_norm,                             r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-            x_axis=(core_profile.electrons.temperature.x_axis,  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            x_axis=([0, 1.0],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             title="Result of TransportSolver",
             # index_slice=slice(0, 200, 1),
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile_result.svg", transparent=True)

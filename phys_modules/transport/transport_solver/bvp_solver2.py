@@ -116,15 +116,15 @@ class TransportSolverBVP2(TransportSolver):
 
         self._B0m = self._equilibrium.previous_state.time_slice.vacuum_toroidal_field.b0
         # $rho_tor_{norm}$ normalized minor radius                [-]
-        self._rho_tor_norm = self._core_profiles_next.grid.rho_tor_norm
+        self._rho_tor_norm = self.grid.rho_tor_norm
 
-        self._psi_norm = self._core_profiles_next.grid.psi_norm
+        self._psi_norm = self.grid.psi_norm
 
         # Grid
         # $rho_tor$ not  normalized minor radius                [m]
-        self._rho_tor = Function(self._rho_tor_norm, self._core_profiles_next.grid.rho_tor)
+        self._rho_tor = Function(self._rho_tor_norm, self.grid.rho_tor)
 
-        self._rho_tor_boundary = self._core_profiles_next.grid.rho_tor[-1]
+        self._rho_tor_boundary = self.grid.rho_tor[-1]
 
         self._rho_tor_boundary_m = self._core_profiles_prev.grid.rho_tor[-1]
 
@@ -175,6 +175,7 @@ class TransportSolverBVP2(TransportSolver):
                  core_profiles: CoreProfiles.Profiles1D,
                  transp: CoreTransport.Model.Profiles1D,
                  source: CoreSources.Source.Profiles1D,
+                 var_idx=var_idx,
                  var_id=var_id) -> Tuple[np.ndarray, np.ndarray]:
 
             conductivity_parallel = transp.conductivity_parallel
@@ -269,6 +270,7 @@ class TransportSolverBVP2(TransportSolver):
 
             _source: Union[CoreSources.Source.Profiles1D.Ion,
                            CoreSources.Source.Profiles1D.Electrons] = source.fetch(var_id[:-1], NotImplemented)
+
             y = Y[var_idx*2]
             g = Y[var_idx*2+1]
 
@@ -284,6 +286,7 @@ class TransportSolverBVP2(TransportSolver):
             dy = (-g + e * y + hyper_diff * yp)/(d + hyper_diff)
 
             dg = S
+
             if not np.isclose(inv_tau, 0.0):
                 dg = dg - (a * y - b * ym)*inv_tau + self._vpr * self._k_rho_bdry
                 dg = dg + Function(x, self._vpr * x * self._k_phi).derivative(x)*y
@@ -291,7 +294,7 @@ class TransportSolverBVP2(TransportSolver):
 
             dg = dg*c
 
-            return array_like(x, dy), array_like(x, dg)
+            return dy, dg
 
         # -----------------------------------------------------------
         # boundary condition, value
@@ -362,7 +365,7 @@ class TransportSolverBVP2(TransportSolver):
                 dg = dg + self._vpr * (3/4)*self._k_phi * x * n*dy
 
             dg = dg*c
-            return array_like(x, dy), array_like(x, dg)
+            return dy, dg
 
         # ----------------------------------------------
         # Boundary Condition
@@ -445,7 +448,7 @@ class TransportSolverBVP2(TransportSolver):
                 profiles[path] = Function(x, Y[idx*2])
                 profiles[path[:-1]+[f"{path[-1]}_flux"]] = Function(x, Y[idx*2+1])
 
-            self.quasi_neutral_condition(profiles, particle_solver=particle_solver, impurities=impurities)
+            # self.quasi_neutral_condition(profiles, particle_solver=particle_solver, impurities=impurities)
 
             self._c_transp.update(core_profiles=self._core_profiles)
 
@@ -457,7 +460,9 @@ class TransportSolverBVP2(TransportSolver):
 
             source = self._c_source.combine.profiles_1d
 
-            return np.vstack([array_like(x, d) for d in sum([list(func(x, Y, c_profile, transp, source)) for func, bc in eq_list], [])])
+            res = sum([list(func(x, Y, c_profile, transp, source)) for func, bc in eq_list], [])
+
+            return np.vstack([array_like(x, d) for d in res])
 
         def bc_func(Ya: np.ndarray, Yb: np.ndarray, p=None, /, eq_list: Sequence[Tuple[Callable, Callable]] = eq_list) -> np.ndarray:
             return np.asarray(sum([list(bc(Ya, Yb, p)) for func, bc in eq_list], []))
@@ -466,41 +471,28 @@ class TransportSolverBVP2(TransportSolver):
 
     def solve_core(self,  /,
                    particle_solver: str = 'electron',
-                   ion_species: Sequence = None,
                    impurities: Sequence = [],
-
                    **kwargs) -> float:
 
-        if ion_species is None:
-            ion_species = [ion.label for ion in self._core_profiles_prev.ion if ion.label not in impurities]
-
-        # elif isinstance(ion_species, collections.abc.Sequence):
-        #     ion_species_list = [["ion", {"label": label}] for label in ion_species if label not in impurities]
-
-        # impurities_list = [["ion", {"label": label}] for label in impurities]
-
         if self._core_profiles_next.get("psi", None) is None:
-            self._core_profiles_next["psi"] = self._core_profiles_next.grid.psi
-        n_impurity = Function(0)
-        g_impurity = Function(0)
-        for label in impurities:
-            ion = self._core_profiles_next["ion", {"label": label}]
-            n_impurity = n_impurity + ion.z * ion.density
-            g_impurity = g_impurity + ion.z * ion.get("density_flux", 0)
+            self._core_profiles_next["psi"] = self.grid.psi
 
         if particle_solver == "electron":
             eq_grp = [
                 (["psi"],                                        self.transp_current,),
                 (["electrons", "density"],                       self.transp_particle,),
                 (["electrons", "temperature"],                   self.transp_energy, ),
-                *[(["ion", {"label": label}, "temperature"],     self.transp_energy,) for label in ion_species],
+                *[(["ion", {"label": ion.label}, "temperature"],     self.transp_energy, )
+                  for ion in self._core_profiles_next.ion if ion.label not in impurities],
             ]
         else:
             eq_grp = [
                 (["psi"],                                        self.transp_current,),
                 (["electrons", "temperature"],                   self.transp_energy,),
-                *[(["ion", {"label": label}, "density"],         self.transp_particle,) for label in ion_species],
-                *[(["ion", {"label": label}, "temperature"],     self.transp_energy, ) for label in ion_species],
+                *[(["ion", {"label": ion.label}, "density"],         self.transp_particle,)
+                  for ion in self._core_profiles_next.ion if ion.label not in impurities],
+                *[(["ion", {"label": ion.label}, "temperature"],     self.transp_energy, )
+                  for ion in self._core_profiles_next.ion if ion.label not in impurities],
             ]
 
         x = self._rho_tor_norm
