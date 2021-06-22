@@ -92,6 +92,7 @@ if __name__ == "__main__":
     # Core Transport
     conductivity_parallel = Function(bs_r_norm, baseline["Joh"].values*1.0e6 / baseline["U"].values *
                                      (2.0*constants.pi * R0))
+
     Cped = 0.2
     Ccore = 0.4
     chi = PiecewiseFunction([0, r_ped, 1.0],  [lambda x: 1.1*Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
@@ -168,16 +169,13 @@ if __name__ == "__main__":
              "profiles_1d": {
                 "j_parallel": Function(
                     bs_r_norm,
-
                     (
-                        # baseline["Jtot"].values
-                        baseline["Joh"].values
+                        baseline["Jtot"].values
+                        # baseline["Joh"].values
                         # + baseline["Jbs"].values
-                        + baseline["Jnb"].values
-                        + baseline["Jrf"].values
-                    )
-
-                    * 1e6),
+                        # + baseline["Jnb"].values
+                        # + baseline["Jrf"].values
+                    ) * 1e6),
                 "electrons":{**atoms["e"],  "particles": S,         "energy": Qe},
                 "ion": [
                     {**atoms["D"],          "particles":S*0.5,      "energy":Q_DT*0.5},
@@ -185,7 +183,7 @@ if __name__ == "__main__":
                     {**atoms["He"],         "particles":0,          "energy":-Q_He}
                 ]}},
             # {"code": {"name": "collisional_equipartition"}, }
-            {"code": {"name": "bootstrap_current"}},
+            # {"code": {"name": "bootstrap_current"}},
         ]}
 
     #  TransportSolver
@@ -496,7 +494,7 @@ if __name__ == "__main__":
             title=tok.core_transport.model[0].identifier.name,
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
-    if True:  # CoreSources
+    if False:  # CoreSources
         core_source_1d = tok.core_sources.source.combine.profiles_1d
         tok.core_sources.source.update(equilibrium=tok.equilibrium, core_profiles=tok.core_profiles)
         plot_profiles(
@@ -572,12 +570,10 @@ if __name__ == "__main__":
             x_axis=(core_source_1d.grid.rho_tor_norm, r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             # x_axis=(bs_r_norm, r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             # x_axis=([0, 0.8], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-
             # annotation=core_transport.model[0].identifier.name,
             # index_slice=slice(1, 110, 1),
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_sources.svg", transparent=True)
 
-    exit(0)
     ###################################################################################################
     # TransportSolver
     if True:

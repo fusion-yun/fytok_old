@@ -37,7 +37,60 @@ class TransportSolverBVP2(TransportSolver):
     r"""
         Solve transport equations :math:`\rho=\sqrt{ \Phi/\pi B_{0}}`
         See  :cite:`hinton_theory_1976,coster_european_2010,pereverzev_astraautomated_1991`
-    """
+
+            Solve transport equations
+
+            Current Equation
+
+            Args:
+                core_profiles       : profiles at :math:`t-1`
+                equilibrium         : Equilibrium
+                transports          : CoreTransport
+                sources             : CoreSources
+                boundary_condition  :
+
+            Note:
+                .. math ::  \sigma_{\parallel}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho} \right) \psi= \
+                            \frac{F^{2}}{\mu_{0}B_{0}\rho}\frac{\partial}{\partial\rho}\left[\frac{V^{\prime}}{4\pi^{2}}\left\langle \left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle \
+                            \frac{1}{F}\frac{\partial\psi}{\partial\rho}\right]-\frac{V^{\prime}}{2\pi\rho}\left(j_{ni,exp}+j_{ni,imp}\psi\right)
+                    :label: transport_current
+
+
+                if :math:`\psi` is not solved, then
+
+                ..  math ::  \psi =\int_{0}^{\rho}\frac{2\pi B_{0}}{q}\rho d\rho
+
+            Particle Transport
+            Note:
+
+                .. math::
+                    \left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\
+                    \left(V^{\prime}n_{s}\right)+\frac{\partial}{\partial\rho}\Gamma_{s}=\
+                    V^{\prime}\left(S_{s,exp}-S_{s,imp}\cdot n_{s}\right)
+                    :label: particle_density_transport
+
+                .. math::
+                    \Gamma_{s}\equiv-D_{s}\cdot\frac{\partial n_{s}}{\partial\rho}+v_{s}^{pinch}\cdot n_{s}
+                    :label: particle_density_gamma
+
+            Heat transport equations
+
+            Note:
+
+                ion
+
+                .. math:: \frac{3}{2}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\
+                            \left(n_{i}T_{i}V^{\prime\frac{5}{3}}\right)+V^{\prime\frac{2}{3}}\frac{\partial}{\partial\rho}\left(q_{i}+T_{i}\gamma_{i}\right)=\
+                            V^{\prime\frac{5}{3}}\left[Q_{i,exp}-Q_{i,imp}\cdot T_{i}+Q_{ei}+Q_{zi}+Q_{\gamma i}\right]
+                    :label: transport_ion_temperature
+
+                electron
+
+                .. math:: \frac{3}{2}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\
+                            \left(n_{e}T_{e}V^{\prime\frac{5}{3}}\right)+V^{\prime\frac{2}{3}}\frac{\partial}{\partial\rho}\left(q_{e}+T_{e}\gamma_{e}\right)=
+                            V^{\prime\frac{5}{3}}\left[Q_{e,exp}-Q_{e,imp}\cdot T_{e}+Q_{ei}-Q_{\gamma i}\right]
+                    :label: transport_electron_temperature
+        """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -110,7 +163,7 @@ class TransportSolverBVP2(TransportSolver):
         self._Qimp_k_ns = (3*self._k_rho_bdry - self._k_phi * self._vpr.derivative())
 
     def transp_current(self,  var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray,
-                  inv_tau=0, hyper_diff=1e-4, **kwargs):
+                       inv_tau=0, hyper_diff=1e-4, **kwargs):
 
         # -----------------------------------------------------------------
         # Transport
@@ -119,8 +172,10 @@ class TransportSolverBVP2(TransportSolver):
         ym = Function(x0, Y0[var_idx*2])
 
         def func(x: np.ndarray,  Y: np.ndarray,
+                 core_profiles: CoreProfiles.Profiles1D,
                  transp: CoreTransport.Model.Profiles1D,
-                 source: CoreSources.Source.Profiles1D,) -> Tuple[np.ndarray, np.ndarray]:
+                 source: CoreSources.Source.Profiles1D,
+                 var_id=var_id) -> Tuple[np.ndarray, np.ndarray]:
 
             conductivity_parallel = transp.conductivity_parallel
 
@@ -200,13 +255,15 @@ class TransportSolverBVP2(TransportSolver):
         return func, bc_func
 
     def transp_particle(self, var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray,
-                   inv_tau=0,  hyper_diff=1e-4, ** kwargs):
+                        inv_tau=0,  hyper_diff=1e-4, ** kwargs):
 
         ym = Function(x0, Y0[var_idx*2])
 
         def func(x: np.ndarray,  Y: np.ndarray,
+                 core_profiles: CoreProfiles.Profiles1D,
                  transp: CoreTransport.Model.Profiles1D,
-                 source: CoreSources.Source.Profiles1D,) -> Tuple[np.ndarray, np.ndarray]:
+                 source: CoreSources.Source.Profiles1D,
+                 var_id=var_id) -> Tuple[np.ndarray, np.ndarray]:
             _transp: Union[CoreTransport.Model.Profiles1D.Ion,
                            CoreTransport.Model.Profiles1D.Electrons] = transp.fetch(var_id[:-1], NotImplemented)
 
@@ -258,30 +315,15 @@ class TransportSolverBVP2(TransportSolver):
         return func, bc_func
 
     def transp_energy(self, var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray,
-                 density: Union[Callable, int],
-                 inv_tau=0,  hyper_diff=1e-4, **kwargs):
-
-        def _density(x, Y):
-            if isinstance(density, int):
-                ns = Y[density*2]
-                gs = Y[density*2+1]
-            elif callable(density):
-                ns, gs = density(x, Y)
-
-            if isinstance(x, np.ndarray) and isinstance(x, np.ndarray) and x.shape == ns.shape:
-                return ns, gs
-            elif isinstance(ns, np.ndarray) and isinstance(x, int):
-                return ns[x], gs[x]
-            else:
-                return ns, gs
-
-                # energy transport
+                      inv_tau=0,  hyper_diff=1e-4, **kwargs):
 
         ym = Function(x0, Y0[var_idx*2])
 
         def func(x: np.ndarray,  Y: np.ndarray,
+                 core_profiles: CoreProfiles.Profiles1D,
                  transp: CoreTransport.Model.Profiles1D,
-                 source: CoreSources.Source.Profiles1D,) -> Tuple[np.ndarray, np.ndarray]:
+                 source: CoreSources.Source.Profiles1D,
+                 var_id=var_id) -> Tuple[np.ndarray, np.ndarray]:
 
             _transp: Union[CoreTransport.Model.Profiles1D.Ion,
                            CoreTransport.Model.Profiles1D.Electrons] = transp.fetch(var_id[:-1], NotImplemented)
@@ -292,7 +334,8 @@ class TransportSolverBVP2(TransportSolver):
             y = Y[var_idx*2]
             g = Y[var_idx*2+1]
 
-            n, gamma = _density(x, Y)
+            n = core_profiles.get(var_id[:-1]+["density"], 0)
+            gamma = core_profiles.get(var_id[:-1]+["density_flux"], 0)
 
             yp = Function(x, y).derivative(x)
 
@@ -344,7 +387,8 @@ class TransportSolverBVP2(TransportSolver):
 
         # return path+["temperature"], (a, b, c, d, e, S), (u0, v0, w0,  u1, v1, w1)
 
-    def transp_rotation(self, var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray, inv_tau=None, hyper_diff=1e-4, **kwargs):
+    def transp_rotation(self, var_idx: int, var_id: Sequence, x0: np.ndarray, Y0: np.ndarray,
+                        inv_tau=None, hyper_diff=1e-4, **kwargs):
         r"""
             Rotation Transport
             .. math::  \left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\left(V^{\prime\frac{5}{3}}\left\langle R\right\rangle \
@@ -354,28 +398,36 @@ class TransportSolverBVP2(TransportSolver):
         logger.warning(f"TODO: Rotation Transport is not implemented!")
         return 0.0
 
-    def quasi_neutral_condition_electron(self, var_id: Sequence, /,  ion_species=[],   ion_index: Iterator[int] = [], impurities: Sequence[Callable] = []):
-        n_impurity, g_impurity = impurities
+    def quasi_neutral_condition(self, profiles: CoreProfiles.Profiles1D, particle_solver='electron',  impurities: Sequence = []):
+        n_imp = 0  # impurity
+        Z_total = 0
+        for ion in profiles.ion:
+            if ion.label in impurities:
+                n_imp = n_imp + ion.z*ion.density
+            else:
+                Z_total += ion.z
 
-        def func(x: np.ndarray, Y: np.ndarray) -> np.ndarray:
-            return \
-                np.sum([self._core_profiles_next["ion", {"label": ion_species[i]}].z*Y[ion_idx*2]
-                        for i, ion_idx in enumerate(ion_index)])+n_impurity(x), \
-                np.sum([self._core_profiles_next["ion", {"label": ion_species[i]}].z*Y[ion_idx*2+1]
-                        for i, ion_idx in enumerate(ion_index)])+g_impurity(x)
-        return func
+        if particle_solver == 'electron':
+            ni = profiles.electrons.density - n_imp
+            gi = profiles.electrons.get("density_flux", 0)
+            for ion in profiles.ion:
+                if ion.label in impurities:
+                    continue
+                profiles.ion[{"label": ion.label}, "density"] = ion.z/Z_total*ni
+                profiles.ion[{"label": ion.label}, "density_flux"] = ion.z/Z_total*gi
 
-    def quasi_neutral_condition_ion(self, var_id: Sequence, /,  ion_species=[],   electron_index: int = 1, impurities=[]):
-        factor = self._core_profiles_next[var_id].z / \
-            np.sum([self._core_profiles_next["ion", {"label": label}].z for label in ion_species])
-        n_impurity, g_impurity = impurities
+        else:
+            n_e = 0
+            g_e = 0
+            for ion in profiles.ion:
+                n_e = ion.z*ion.density
+                g_e = ion.z*ion.get("density_flux", 0)
 
-        def func(x: np.ndarray, Y: np.ndarray):
-            return factor*(Y[electron_index*2]-array_like(x, n_impurity)),  factor * (Y[electron_index*2+1]-array_like(x, g_impurity))
-
-        return func
+            profiles.electrons["density"] = n_e
+            profiles.electrons["density_flux"] = g_e
 
     def _solve_equations(self, x0: np.ndarray, Y0: np.ndarray, eq_grp: Sequence, /,
+                         particle_solver="electrons",  impurities=[],
                          tolerance=1.0e-3, max_nodes=250, **kwargs) -> BVPResult:
 
         eq_list = [eq(idx, var_id, x0, Y0, ** (_args[0] if len(_args) > 0 else {}))
@@ -383,94 +435,45 @@ class TransportSolverBVP2(TransportSolver):
 
         var_list = [var_id for var_id, eq,  *_args in eq_grp]
 
-        def func(x: np.ndarray, Y: np.ndarray, p=None, /, eq_list: Sequence[Tuple[Callable, Callable]] = eq_list) -> np.ndarray:
-            core_profiles = self._convert_to_core_profiles(x, Y, var_list)
-            self._c_transp.update(core_profiles=core_profiles)
-            self._c_source.update(core_profiles=core_profiles)
+        def func(x: np.ndarray, Y: np.ndarray, p=None, /,
+                 eq_list: Sequence[Tuple[Callable, Callable]] = eq_list) -> np.ndarray:
+            self._core_profiles._grid = self._core_profiles.grid.remesh(x, "rho_tor_norm")
+
+            profiles: CoreProfiles.Profiles1D = self._core_profiles.profiles_1d
+
+            for idx, path in enumerate(var_list):
+                profiles[path] = Function(x, Y[idx*2])
+                profiles[path[:-1]+[f"{path[-1]}_flux"]] = Function(x, Y[idx*2+1])
+
+            self.quasi_neutral_condition(profiles, particle_solver=particle_solver, impurities=impurities)
+
+            self._c_transp.update(core_profiles=self._core_profiles)
+
+            self._c_source.update(core_profiles=self._core_profiles)
+
+            c_profile = self._core_profiles.profiles_1d
+
             transp = self._c_transp.combine.profiles_1d
+
             source = self._c_source.combine.profiles_1d
-            return np.vstack([array_like(x, d) for d in sum([list(func(x, Y, transp, source)) for func, bc in eq_list], [])])
+
+            return np.vstack([array_like(x, d) for d in sum([list(func(x, Y, c_profile, transp, source)) for func, bc in eq_list], [])])
 
         def bc_func(Ya: np.ndarray, Yb: np.ndarray, p=None, /, eq_list: Sequence[Tuple[Callable, Callable]] = eq_list) -> np.ndarray:
             return np.asarray(sum([list(bc(Ya, Yb, p)) for func, bc in eq_list], []))
 
         return solve_bvp(func, bc_func, x0, Y0, tolerance=tolerance, max_nodes=max_nodes, **kwargs)
 
-    def _convert_to_core_profiles(self, x: np.ndarray, Y: np.ndarray, var_list=[]) -> CoreProfiles:
-        new_grid = self._core_profiles_next.grid.remesh(x, "rho_tor_norm")
-        core_profiles = CoreProfiles(grid=new_grid)
-
-        profiles = core_profiles.profiles_1d
-
-        for idx, path in enumerate(var_list):
-            profiles[path] = Y[idx*2]
-            profiles[path[:-1]+[f"{path[-1]}_flux"]] = Y[idx*2+1]
-
-        return core_profiles
-
     def solve_core(self,  /,
-                   enable_ion_particle_solver: bool = False,
+                   particle_solver: str = 'electron',
                    ion_species: Sequence = None,
                    impurities: Sequence = [],
 
                    **kwargs) -> float:
-        r"""
-            Solve transport equations
-
-            Current Equation
-
-            Args:
-                core_profiles       : profiles at :math:`t-1`
-                equilibrium         : Equilibrium
-                transports          : CoreTransport
-                sources             : CoreSources
-                boundary_condition  :
-
-            Note:
-                .. math ::  \sigma_{\parallel}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho} \right) \psi= \
-                            \frac{F^{2}}{\mu_{0}B_{0}\rho}\frac{\partial}{\partial\rho}\left[\frac{V^{\prime}}{4\pi^{2}}\left\langle \left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle \
-                            \frac{1}{F}\frac{\partial\psi}{\partial\rho}\right]-\frac{V^{\prime}}{2\pi\rho}\left(j_{ni,exp}+j_{ni,imp}\psi\right)
-                    :label: transport_current
-
-
-                if :math:`\psi` is not solved, then
-
-                ..  math ::  \psi =\int_{0}^{\rho}\frac{2\pi B_{0}}{q}\rho d\rho
-
-            Particle Transport
-            Note:
-
-                .. math::
-                    \left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\
-                    \left(V^{\prime}n_{s}\right)+\frac{\partial}{\partial\rho}\Gamma_{s}=\
-                    V^{\prime}\left(S_{s,exp}-S_{s,imp}\cdot n_{s}\right)
-                    :label: particle_density_transport
-
-                .. math::
-                    \Gamma_{s}\equiv-D_{s}\cdot\frac{\partial n_{s}}{\partial\rho}+v_{s}^{pinch}\cdot n_{s}
-                    :label: particle_density_gamma
-
-            Heat transport equations
-
-            Note:
-
-                ion
-
-                .. math:: \frac{3}{2}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\
-                            \left(n_{i}T_{i}V^{\prime\frac{5}{3}}\right)+V^{\prime\frac{2}{3}}\frac{\partial}{\partial\rho}\left(q_{i}+T_{i}\gamma_{i}\right)=\
-                            V^{\prime\frac{5}{3}}\left[Q_{i,exp}-Q_{i,imp}\cdot T_{i}+Q_{ei}+Q_{zi}+Q_{\gamma i}\right]
-                    :label: transport_ion_temperature
-
-                electron
-
-                .. math:: \frac{3}{2}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\
-                            \left(n_{e}T_{e}V^{\prime\frac{5}{3}}\right)+V^{\prime\frac{2}{3}}\frac{\partial}{\partial\rho}\left(q_{e}+T_{e}\gamma_{e}\right)=
-                            V^{\prime\frac{5}{3}}\left[Q_{e,exp}-Q_{e,imp}\cdot T_{e}+Q_{ei}-Q_{\gamma i}\right]
-                    :label: transport_electron_temperature
-        """
 
         if ion_species is None:
             ion_species = [ion.label for ion in self._core_profiles_prev.ion if ion.label not in impurities]
+
         # elif isinstance(ion_species, collections.abc.Sequence):
         #     ion_species_list = [["ion", {"label": label}] for label in ion_species if label not in impurities]
 
@@ -485,28 +488,19 @@ class TransportSolverBVP2(TransportSolver):
             n_impurity = n_impurity + ion.z * ion.density
             g_impurity = g_impurity + ion.z * ion.get("density_flux", 0)
 
-        if enable_ion_particle_solver is True:
+        if particle_solver == "electron":
             eq_grp = [
                 (["psi"],                                        self.transp_current,),
-                (["electrons", "temperature"],                   self.transp_energy,
-                 {"density": self.quasi_neutral_condition_electron(["electrons"],
-                                                                   ion_species=ion_species,
-                                                                   impurities=(n_impurity, g_impurity),
-                                                                   ion_index=range(2, 2+len(ion_species)))}),
-                *[(["ion", {"label": label}, "density"],         self.transp_particle,) for label in ion_species],
-                *[(["ion", {"label": label}, "temperature"],     self.transp_energy, {"density": 2+ion_idx})
-                  for ion_idx, label in enumerate(ion_species)],
+                (["electrons", "density"],                       self.transp_particle,),
+                (["electrons", "temperature"],                   self.transp_energy, ),
+                *[(["ion", {"label": label}, "temperature"],     self.transp_energy,) for label in ion_species],
             ]
         else:
             eq_grp = [
                 (["psi"],                                        self.transp_current,),
-                (["electrons", "density"],                       self.transp_particle,),
-                (["electrons", "temperature"],                   self.transp_energy, {"density": 1}),
-                *[(["ion", {"label": label}, "temperature"],     self.transp_energy,
-                   {"density": self.quasi_neutral_condition_ion(["ion", {"label": label}],
-                                                                ion_species=ion_species,
-                                                                impurities=(n_impurity, g_impurity),
-                                                                electron_index=1)}) for ion_idx, label in enumerate(ion_species)],
+                (["electrons", "temperature"],                   self.transp_energy,),
+                *[(["ion", {"label": label}, "density"],         self.transp_particle,) for label in ion_species],
+                *[(["ion", {"label": label}, "temperature"],     self.transp_energy, ) for label in ion_species],
             ]
 
         x = self._rho_tor_norm
@@ -514,7 +508,10 @@ class TransportSolverBVP2(TransportSolver):
         Y = np.vstack(sum([[array_like(x, self._core_profiles_prev.fetch(var_id, 0)), np.zeros_like(x)]
                            for var_id, *_ in eq_grp], []))
 
-        sol = self._solve_equations(x, Y, eq_grp, **kwargs)
+        sol = self._solve_equations(x, Y, eq_grp,
+                                    particle_solver=particle_solver,
+                                    impurities=impurities,
+                                    **kwargs)
 
         rms_residuals = np.max(sol.rms_residuals)
 
