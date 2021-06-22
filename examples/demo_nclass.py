@@ -93,18 +93,23 @@ if __name__ == "__main__":
     conductivity_parallel = Function(bs_r_norm, baseline["Joh"].values*1.0e6 / baseline["U"].values *
                                      (2.0*constants.pi * R0))
 
-    Cped = 0.2
+    Cped = 0.18
     Ccore = 0.4
-    chi = PiecewiseFunction([0, r_ped, 1.0],  [lambda x: 1.1*Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
-    chi_e = PiecewiseFunction([0, r_ped, 1.0], [lambda x:0.65 * Ccore*(1.0 + 3*(x**2)), lambda x: 1.2*Cped])
+    # Function(bs_r_norm, baseline["Xi"].values)  Cped = 0.2
+    chi = PiecewiseFunction([0, r_ped, 1.0],  [lambda x: Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
+    chi_e = PiecewiseFunction([0, r_ped, 1.0],  [lambda x: 0.5 * Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
 
-    # D = Function(
-    #     [lambda r:r < r_ped, lambda r:r >= r_ped],
-    #     [lambda x:  0.5+(x**4), lambda x: 0.11])
+    D = 0.1*(chi+chi_e)
 
-    D = PiecewiseFunction([0, r_ped, 1.0],  [lambda x:0.1 * Ccore*(1.0 + 3*(x**2)), lambda x: 0.2*Cped])
-    v_pinch = Function([0, r_ped, 1.0], lambda x: 0.4 * D(x) * x / R0)   # FIXME: The coefficient 0.4 is a guess.
-    v_pinch_T = Function([0, r_ped, 1.0], lambda x: 0.1*chi(x) * x / R0)
+    v_pinch_ne = Function([0, r_ped, 1.0], lambda x: 0.6 * D(x) * x / R0)
+    v_pinch_Te = Function([0, r_ped, 1.0], lambda x:  3 * chi_e(x) * x / R0)
+
+    v_pinch_ni = Function([0, r_ped, 1.0], lambda x:  D(x) * x / R0)
+    v_pinch_Ti = Function([0, r_ped, 1.0], lambda x:  chi(x) * x / R0)
+
+    # chi = PiecewiseFunction([0, r_ped, 1.0],  [lambda x: 1.0*Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
+    # chi_e = PiecewiseFunction([0, r_ped, 1.0], [lambda x:0.5 * Ccore*(1.0 + 3*(x**2)), lambda x: 0.8 * Cped])
+    # D = PiecewiseFunction([0, r_ped, 1.0],  [lambda x:0.1 * Ccore*(1.0 + 3*(x**2)), lambda x: 0.1*Cped])
 
     configure["core_transport"] = {
         "model": [
@@ -114,24 +119,24 @@ if __name__ == "__main__":
                     "conductivity_parallel": conductivity_parallel,
                     "electrons": {
                         **atoms["e"],
-                        "particles":   {"d": D, "v": -v_pinch},
-                        "energy":      {"d": chi_e, "v": -v_pinch_T},
+                        "particles":   {"d": D, "v": -v_pinch_ne},
+                        "energy":      {"d": chi_e, "v": v_pinch_Te},
                     },
                     "ion": [
                         {
                             **atoms["D"],
-                            "particles":{"d":  D, "v": v_pinch},
-                            "energy": {"d": chi, "v": v_pinch_T},
+                            "particles":{"d":  D, "v": v_pinch_ni},
+                            "energy": {"d": chi, "v": v_pinch_Ti},
                         },
                         {
                             **atoms["T"],
-                            "particles":{"d":  D, "v": v_pinch},
-                            "energy": {"d": chi, "v": v_pinch_T},
+                            "particles":{"d":  D, "v": v_pinch_ni},
+                            "energy": {"d": chi, "v": v_pinch_Ti},
                         },
                         {
                             **atoms["He"],
-                            "particles":{"d": 0.1 * (chi+chi_e), "v": 0},
-                            "energy": {"d": chi, "v": 0}, }
+                            "particles":{"d": D, "v": v_pinch_ni},
+                            "energy": {"d": chi, "v": v_pinch_Ti}, }
                     ]}
             },
 
@@ -139,7 +144,7 @@ if __name__ == "__main__":
             # {"code": {"name": "spitzer"}},
         ]}
 
-    S = Function(lambda x: 1e21 * np.exp(15.0*(x**2-1.0)))
+    S = Function(lambda x: 9e20 * np.exp(15.0*(x**2-1.0)))
 
     Qe = Function(bs_r_norm,
                   (baseline["Poh"].values
@@ -170,20 +175,29 @@ if __name__ == "__main__":
                 "j_parallel": Function(
                     bs_r_norm,
                     (
-                        baseline["Jtot"].values
-                        # baseline["Joh"].values
+                        # baseline["Jtot"].values
+                        baseline["Joh"].values
                         # + baseline["Jbs"].values
-                        # + baseline["Jnb"].values
-                        # + baseline["Jrf"].values
+                        + baseline["Jnb"].values
+                        + baseline["Jrf"].values
                     ) * 1e6),
-                "electrons":{**atoms["e"],  "particles": S,         "energy": Qe},
+                "electrons":{**atoms["e"],
+                             "particles": S,
+                             "energy": Function(bs_r_norm,
+                                                (baseline["Poh"].values
+                                                 + baseline["Pdte"].values
+                                                 + baseline["Paux"].values
+                                                 - baseline["Peic"].values
+                                                 - baseline["Prad"].values
+                                                 - baseline["Pneu"].values
+                                                 )*1e6/constants.electron_volt)},
                 "ion": [
                     {**atoms["D"],          "particles":S*0.5,      "energy":Q_DT*0.5},
                     {**atoms["T"],          "particles":S*0.5,      "energy":Q_DT*0.5},
                     {**atoms["He"],         "particles":0,          "energy":-Q_He}
                 ]}},
-            # {"code": {"name": "collisional_equipartition"}, }
-            # {"code": {"name": "bootstrap_current"}},
+            # {"code": {"name": "collisional_equipartition"}, },
+            {"code": {"name": "bootstrap_current"}},
         ]}
 
     #  TransportSolver
