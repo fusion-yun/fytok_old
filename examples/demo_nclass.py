@@ -116,7 +116,7 @@ if __name__ == "__main__":
             {
                 "code": {"name": "dummy"},
                 "profiles_1d": {
-                    "conductivity_parallel": conductivity_parallel,
+                    # "conductivity_parallel": conductivity_parallel,
                     "electrons": {
                         **atoms["e"],
                         "particles":   {"d": D, "v": -v_pinch_ne},
@@ -139,9 +139,8 @@ if __name__ == "__main__":
                             "energy": {"d": chi, "v": v_pinch_Ti}, }
                     ]}
             },
-
             # {"code": {"name": "neoclassical"}},
-            # {"code": {"name": "spitzer"}},
+            {"code": {"name": "spitzer"}},
         ]}
 
     S = Function(lambda x: 9e20 * np.exp(15.0*(x**2-1.0)))
@@ -177,7 +176,7 @@ if __name__ == "__main__":
                     (
                         # baseline["Jtot"].values
                         baseline["Joh"].values
-                        # + baseline["Jbs"].values
+                        + baseline["Jbs"].values
                         + baseline["Jnb"].values
                         + baseline["Jrf"].values
                     ) * 1e6),
@@ -197,7 +196,7 @@ if __name__ == "__main__":
                     {**atoms["He"],         "particles":0,          "energy":-Q_He}
                 ]}},
             # {"code": {"name": "collisional_equipartition"}, },
-            {"code": {"name": "bootstrap_current"}},
+            # {"code": {"name": "bootstrap_current"}},
         ]}
 
     #  TransportSolver
@@ -449,24 +448,10 @@ if __name__ == "__main__":
         # core_transport1d_nc = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
         # core_transport1d_dummy = tok.core_transport.model[{"code.name": "dummy"}].profiles_1d
         # core_transport1d = tok.core_transport.model.combine.profiles_1d
-
+        tok.core_transport.update()
+        
         plot_profiles(
             [
-                # [
-                #     (core_transport1d.electrons.particles.flux,                            "e",  r"$\Gamma$"),
-                #     *[(core_transport1d.ion[{"label": ion.label}].particles.flux,
-                #        f"{ion.label}", f"$\Gamma$") for ion in core_profile.ion],
-                # ],
-                # [
-                #     (core_transport1d.electrons.particles.d,                                  "e",     r"$D$"),
-                #     *[(core_transport1d.ion[{"label": ion.label}].particles.d,     f"{ion.label}", r"$D$")
-                #       for ion in core_profile.ion],
-                # ],
-                # [
-                #     (core_transport1d.electrons.particles.v,                        "e",              r"$v$"),
-                #     *[(core_transport1d.ion[{"label": ion.label}].particles.v, f"{ion.label}",  f"$v$")
-                #       for ion in core_profile.ion],
-                # ],
 
                 [
                     (Function(bs_r_norm, baseline["Xi"].values),          r"astra", r"$\chi_{i}$", {"marker": "+"}),
@@ -590,7 +575,7 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # TransportSolver
-    if True:
+    if False:
 
         core_profile = tok.core_profiles.profiles_1d
 

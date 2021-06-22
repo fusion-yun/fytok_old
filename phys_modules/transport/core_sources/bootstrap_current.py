@@ -116,7 +116,7 @@ class BootstrapCurrent(CoreSources.Source):
                                  - j_bootstrap * x/(2.4+5.4*x+2.6*x**2) * Pe
                                  * equilibrium.fpol(psi_norm) * q / rho_tor_norm / (rho_tor[-1])**2 / (2.0*constants.pi*B0))
 
-        self.profiles_1d["j_parallel"] = Function(self._grid.rho_tor_norm, np.hstack([j_bootstrap[0], j_bootstrap]))
+        self.profiles_1d["j_parallel"] = Function(self.grid.rho_tor_norm, np.hstack([j_bootstrap[0], j_bootstrap]))
         return 0.0
 
 

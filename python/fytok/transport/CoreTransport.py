@@ -167,9 +167,7 @@ class CoreTransportProfiles1D(Dict[Node]):
     @sp_property
     def electrons(self) -> CoreTransportElectrons:
         """ Transport quantities related to the electrons """
-        res = self.get('electrons', {})
-
-        return res
+        return self.get('electrons', {})
 
     @sp_property
     def ion(self) -> List[CoreTransportIon]:
@@ -214,8 +212,8 @@ class CoreTransportModel(Actor):
     def __init__(self, *args, grid: Optional[RadialGrid] = None, ** kwargs):
         super().__init__(*args, **kwargs)
         self._grid = grid or getattr(self._parent, "grid", None)
-        self._equilibrium = getattr(self._parent, "equilibrium", None)
-        self._core_profiles = getattr(self._parent, "core_profiles", None)
+        self._equilibrium = getattr(self._parent, "_equilibrium", None)
+        self._core_profiles = getattr(self._parent, "_core_profiles", None)
 
     @property
     def grid(self):
@@ -293,6 +291,8 @@ class CoreTransport(IDS):
     def __init__(self, *args, grid: RadialGrid = None, ** kwargs):
         super().__init__(*args,  **kwargs)
         self._grid = grid or getattr(self._parent, "grid", None)
+        self._equilibrium = getattr(self._parent, "equilibrium", None)
+        self._core_profiles = getattr(self._parent, "core_profiles", None)
 
     @property
     def grid(self):
