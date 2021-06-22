@@ -995,6 +995,7 @@ class Equilibrium(IDS):
     _IDS = "equilibrium"
     _actor_module_prefix = "transport.equilibrium."
     Constraints = EquilibriumConstraints
+    TimeSlice = EquilibriumTimeSlice
 
     @dataclass
     class State(IDS.State):
