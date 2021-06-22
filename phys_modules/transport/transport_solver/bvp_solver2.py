@@ -448,7 +448,7 @@ class TransportSolverBVP2(TransportSolver):
                 profiles[path] = Function(x, Y[idx*2])
                 profiles[path[:-1]+[f"{path[-1]}_flux"]] = Function(x, Y[idx*2+1])
 
-            # self.quasi_neutral_condition(profiles, particle_solver=particle_solver, impurities=impurities)
+            self.quasi_neutral_condition(profiles, particle_solver=particle_solver, impurities=impurities)
 
             self._c_transp.update(core_profiles=self._core_profiles)
 

@@ -177,7 +177,7 @@ if __name__ == "__main__":
                     (
                         # baseline["Jtot"].values
                         baseline["Joh"].values
-                        # + baseline["Jbs"].values
+                        + baseline["Jbs"].values
                         + baseline["Jnb"].values
                         + baseline["Jrf"].values
                     ) * 1e6),
@@ -197,7 +197,7 @@ if __name__ == "__main__":
                     {**atoms["He"],         "particles":0,          "energy":-Q_He}
                 ]}},
             # {"code": {"name": "collisional_equipartition"}, },
-            {"code": {"name": "bootstrap_current"}},
+            # {"code": {"name": "bootstrap_current"}},
         ]}
 
     #  TransportSolver
@@ -634,10 +634,10 @@ if __name__ == "__main__":
                     #     r"$n_e [ m^{-3}]$",  {"color": "red", "linestyle": "dashed"}),
                 ],
 
-                # [
-                #     (b_nDT/2,    r"astra $T_D$", r"$n_i [m^-3]$", {"marker": '+'}),
-                #     * [(ion.density,   f"${ion.label}$") for ion in core_profile.ion],
-                # ],
+                [
+                    (b_nDT/2,    r"astra $T_D$", r"$n_i [m^-3]$", {"marker": '+'}),
+                    * [(ion.density,   f"${ion.label}$") for ion in core_profile.ion],
+                ],
                 # [
                 #     (core_profile.electrons["density_flux"], r"Source",
                 #      r"$\Gamma_e$ Particle flux", {"color": "green", }),
@@ -676,8 +676,11 @@ if __name__ == "__main__":
                                   core_profile["psi"]), r"$\psi$", " rms residual [%]"),
 
                     (rms_residual(b_ne, core_profile.electrons.density), r"$n_e$"),
+                    *[(rms_residual(b_nDT/2, ion.density), f"$n_{ion.label}$")
+                      for ion in core_profile.ion if ion.label not in impurities],
                     (rms_residual(b_Te, core_profile.electrons.temperature), r"$T_e$"),
-                    (rms_residual(b_Ti, core_profile.ion[{"label": "D"}].temperature), r"$T_D$"),
+                    *[(rms_residual(b_Ti, ion.temperature), f"$T_{ion.label}$")
+                      for ion in core_profile.ion if ion.label not in impurities],
 
                 ],
             ],
