@@ -177,7 +177,7 @@ if __name__ == "__main__":
                     (
                         # baseline["Jtot"].values
                         baseline["Joh"].values
-                        + baseline["Jbs"].values
+                        # + baseline["Jbs"].values
                         + baseline["Jnb"].values
                         + baseline["Jrf"].values
                     ) * 1e6),
@@ -197,7 +197,7 @@ if __name__ == "__main__":
                     {**atoms["He"],         "particles":0,          "energy":-Q_He}
                 ]}},
             # {"code": {"name": "collisional_equipartition"}, },
-            # {"code": {"name": "bootstrap_current"}},
+            {"code": {"name": "bootstrap_current"}},
         ]}
 
     #  TransportSolver
@@ -657,9 +657,6 @@ if __name__ == "__main__":
                 ],
                 # (core_profile.electrons["temperature_error"], r"rms_residuals",
                 #  r"$[eV]$",  {"color": "red", "linestyle": "dashed"}),
-
-
-
 
 
                 ######################################################################

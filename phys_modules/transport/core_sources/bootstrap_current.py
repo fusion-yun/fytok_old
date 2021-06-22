@@ -7,6 +7,7 @@ from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreSources import CoreSources
 from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.Function import Function
+from spdm.numlib.misc import array_like
 from spdm.util.logger import logger
 
 
@@ -111,10 +112,11 @@ class BootstrapCurrent(CoreSources.Source):
         # eq 4.9.2
         # src.j_bootstrap = (-(q/B0/epsilon12))*j_bootstrap
 
-        j_bootstrap = - j_bootstrap * x/(2.4+5.4*x+2.6*x**2) * Pe   \
-            * equilibrium.fpol(psi_norm) * q / rho_tor_norm / (rho_tor[-1])**2 / (2.0*constants.pi*B0)
+        j_bootstrap = array_like(rho_tor_norm,
+                                 - j_bootstrap * x/(2.4+5.4*x+2.6*x**2) * Pe
+                                 * equilibrium.fpol(psi_norm) * q / rho_tor_norm / (rho_tor[-1])**2 / (2.0*constants.pi*B0))
 
-        self.profiles_1d["j_parallel"] = Function(rho_tor_norm, j_bootstrap)
+        self.profiles_1d["j_parallel"] = Function(self._grid.rho_tor_norm, np.hstack([j_bootstrap[0], j_bootstrap]))
         return 0.0
 
 

@@ -365,6 +365,10 @@ class TransportSolverBVP2(TransportSolver):
                 dg = dg + self._vpr * (3/4)*self._k_phi * x * n*dy
 
             dg = dg*c
+
+            dy = array_like(x, dy)
+            dg = array_like(x, dg)
+            dy[0] = 0
             return dy, dg
 
         # ----------------------------------------------
@@ -445,7 +449,7 @@ class TransportSolverBVP2(TransportSolver):
             profiles: CoreProfiles.Profiles1D = self._core_profiles.profiles_1d
 
             for idx, path in enumerate(var_list):
-                profiles[path] = Function(x, Y[idx*2])
+                profiles[path] = Function(x, np.abs(Y[idx*2]))
                 profiles[path[:-1]+[f"{path[-1]}_flux"]] = Function(x, Y[idx*2+1])
 
             self.quasi_neutral_condition(profiles, particle_solver=particle_solver, impurities=impurities)
