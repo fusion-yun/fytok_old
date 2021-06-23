@@ -893,8 +893,8 @@ class EquilibriumTimeSlice(Dict):
             axis.plot([], [], 'g-', label="Boundary")
 
         if separatrix is not False:
-            r0 = self._entry.find("boundary_separatrix.outline.r", None)
-            z0 = self._entry.find("boundary_separatrix.outline.z", None)
+            r0 = self._entry.get("boundary_separatrix.outline.r", None)
+            z0 = self._entry.get("boundary_separatrix.outline.z", None)
             if r0 is not None and z0 is not None:
                 axis.add_patch(plt.Polygon(np.vstack([r0, z0]).T, color='b', linestyle=':',
                                            linewidth=1.0, fill=False, closed=True))

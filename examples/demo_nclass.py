@@ -32,34 +32,34 @@ if __name__ == "__main__":
     # Configure
 
     configure = {
-        "wall": device.entry.find("wall"),
-        "pf_active": device.entry.find("pf_active"),
-        "tf": device.entry.find("tf"),
-        "magnetics": device.entry.find("magnetics"), }
+        "wall": device.entry.get("wall"),
+        "pf_active": device.entry.get("pf_active"),
+        "tf": device.entry.get("tf"),
+        "magnetics": device.entry.get("magnetics"), }
 
     # Equilibrium
 
-    R0 = eqdsk.find("vacuum_toroidal_field.r0")
-    psi_axis = eqdsk.find("global_quantities.psi_axis")
-    psi_boundary = eqdsk.find("global_quantities.psi_boundary")
+    R0 = eqdsk.get("vacuum_toroidal_field.r0")
+    psi_axis = eqdsk.get("global_quantities.psi_axis")
+    psi_boundary = eqdsk.get("global_quantities.psi_boundary")
     noise = 1  # np.random.random(bs_r_norm.shape)*0.1
 
     configure["equilibrium"] = {
         "code": {"name": "dummy"},
-        "vacuum_toroidal_field": eqdsk.find("vacuum_toroidal_field", {}),
+        "vacuum_toroidal_field": eqdsk.get("vacuum_toroidal_field", {}),
         "time_slice": {
-            "vacuum_toroidal_field": eqdsk.find("vacuum_toroidal_field", {}),
-            "profiles_1d": eqdsk.find("profiles_1d"),
+            "vacuum_toroidal_field": eqdsk.get("vacuum_toroidal_field", {}),
+            "profiles_1d": eqdsk.get("profiles_1d"),
             "profiles_2d": {
-                "psi": eqdsk.find("profiles_2d.psi")*TWOPI,
+                "psi": eqdsk.get("profiles_2d.psi")*TWOPI,
                 "grid_type": "rectangular",
                 "grid_index": 1,
                 "grid": {
-                    "dim1": eqdsk.find("profiles_2d.grid.dim1"),
-                    "dim2": eqdsk.find("profiles_2d.grid.dim2"),
+                    "dim1": eqdsk.get("profiles_2d.grid.dim1"),
+                    "dim2": eqdsk.get("profiles_2d.grid.dim2"),
                 }
             },
-            "boundary_separatrix": eqdsk.find("boundary"),
+            "boundary_separatrix": eqdsk.get("boundary"),
             "coordinate_system": {"psi_norm": {"axis": 0.0, "boundary": 0.995, "npoints": 256}}
             # "coordinate_system": {"psi_norm": baseline["Fp"].values[:-1]}
         }}
@@ -257,7 +257,7 @@ if __name__ == "__main__":
 
         magnetic_surface = tok.equilibrium.time_slice.coordinate_system
 
-        fpol = Function(eqdsk.find('profiles_1d.psi_norm'), eqdsk.find('profiles_1d.f'))
+        fpol = Function(eqdsk.get('profiles_1d.psi_norm'), eqdsk.get('profiles_1d.f'))
 
         # ffprime = fpol*fpol.derivative()/(psi_boundary-psi_axis)
 
@@ -265,7 +265,7 @@ if __name__ == "__main__":
             [
                 [
                     (Function(bs_psi_norm, baseline["q"].values), r"astra",  r"$q [-]$", {"marker": "+"}),
-                    (Function(eqdsk.find('profiles_1d.psi_norm'), eqdsk.find('profiles_1d.q')), "eqdsk"),
+                    (Function(eqdsk.get('profiles_1d.psi_norm'), eqdsk.get('profiles_1d.q')), "eqdsk"),
                     (magnetic_surface.q,  r"$fytok$", r"$[Wb]$"),
                     (magnetic_surface.dphi_dpsi,  r"$\frac{d\phi}{d\psi}$", r"$[Wb]$"),
                 ],
@@ -444,7 +444,7 @@ if __name__ == "__main__":
             x_axis=([0, 1.0],                                  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profiles.svg", transparent=True)
 
-    if True:  # CoreTransport
+    if False:  # CoreTransport
 
         tok.core_transport.update()
         core_transport = tok.core_transport.model.combine.profiles_1d
