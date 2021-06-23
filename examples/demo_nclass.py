@@ -32,16 +32,16 @@ if __name__ == "__main__":
     # Configure
 
     configure = {
-        "wall": device.entry.find("wall"),
-        "pf_active": device.entry.find("pf_active"),
-        "tf": device.entry.find("tf"),
-        "magnetics": device.entry.find("magnetics"), }
+        "wall": device.entry.find("wall", {}),
+        "pf_active": device.entry.find("pf_active", {}),
+        "tf": device.entry.find("tf", {}),
+        "magnetics": device.entry.find("magnetics", {}), }
 
     # Equilibrium
 
-    R0 = eqdsk.find("vacuum_toroidal_field.r0", None)
-    psi_axis = eqdsk.find("global_quantities.psi_axis", None)
-    psi_boundary = eqdsk.find("global_quantities.psi_boundary", None)
+    R0 = eqdsk.get("vacuum_toroidal_field.r0", None)
+    psi_axis = eqdsk.get("global_quantities.psi_axis", None)
+    psi_boundary = eqdsk.get("global_quantities.psi_boundary", None)
     noise = 1  # np.random.random(bs_r_norm.shape)*0.1
 
     configure["equilibrium"] = {
@@ -176,7 +176,7 @@ if __name__ == "__main__":
                     (
                         # baseline["Jtot"].values
                         baseline["Joh"].values
-                        + baseline["Jbs"].values
+                        # + baseline["Jbs"].values
                         + baseline["Jnb"].values
                         + baseline["Jrf"].values
                     ) * 1e6),
@@ -196,7 +196,7 @@ if __name__ == "__main__":
                     {**atoms["He"],         "particles":0,          "energy":-Q_He}
                 ]}},
             # {"code": {"name": "collisional_equipartition"}, },
-            # {"code": {"name": "bootstrap_current"}},
+            {"code": {"name": "bootstrap_current"}},
         ]}
 
     #  TransportSolver
@@ -445,18 +445,14 @@ if __name__ == "__main__":
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profiles.svg", transparent=True)
 
     if True:  # CoreTransport
-        # core_transport1d_nc = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
-        # core_transport1d_dummy = tok.core_transport.model[{"code.name": "dummy"}].profiles_1d
-        # core_transport1d = tok.core_transport.model.combine.profiles_1d
+
         tok.core_transport.update()
-        
+        core_transport = tok.core_transport.model.combine.profiles_1d
         plot_profiles(
             [
-
                 [
                     (Function(bs_r_norm, baseline["Xi"].values),          r"astra", r"$\chi_{i}$", {"marker": "+"}),
-                    *[(ion.energy.d,  f"{ion.label}", r"$\chi_{i}$")
-                      for ion in tok.core_transport.model.combine.profiles_1d.ion],
+                    *[(ion.energy.d,  f"{ion.label}", r"$\chi_{i}$") for ion in core_transport.ion],
                 ],
 
                 # [
@@ -464,9 +460,10 @@ if __name__ == "__main__":
                 #     # * [(np.log(core_transport1d_nc.ion[{"label": label}].energy.d),   f"${label}$", r"$ln \chi_{i,nc}$")
                 #     #     for label in ("H", "D", "He")],
                 # ],
+
                 [
                     (Function(bs_r_norm, baseline["He"].values), "astra", r"$\chi_{e}$"),
-                    (tok.core_transport.model.combine.profiles_1d.electrons.energy.d,  "fytok", r"$\chi_{e}$"),
+                    (core_transport.electrons.energy.d,  "fytok", r"$\chi_{e}$"),
                 ],
 
                 # [
@@ -478,15 +475,12 @@ if __name__ == "__main__":
                 [
                     (Function(bs_r_norm, baseline["Joh"].values*1.0e6 / baseline["U"].values *
                               (2.0*constants.pi * tok.equilibrium.time_slice.vacuum_toroidal_field.r0)),     r"astra", r"$\sigma_{\parallel}$", {"marker": "+"}),
-                    # (tok.core_transport.model[{"code.name": "spitzer"}].profiles_1d.conductivity_parallel,
-                    #  "spitzer", r"$\sigma_{\parallel}$"),
-                    (tok.core_transport.model.combine.profiles_1d.conductivity_parallel,  r"fytok"),
+
+                    (core_transport.conductivity_parallel,  r"fytok"),
                 ],
 
                 # (core_transport1d.e_field_radial,                                             r"$E_{radial}$"),
-                # (tok.equilibrium.time_slice[-1].profiles_1d.trapped_fraction(
-                # core_transport.model[0].profiles_1d[-1].grid_v.psi_norm),      r"trapped"),
-                # (core_profile.electrons.pressure,                                                  r"$p_{e}$"),
+
             ],
             x_axis=([0, 1.0],   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             # index_slice=slice(10, 110, 1),
@@ -494,76 +488,31 @@ if __name__ == "__main__":
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
     if True:  # CoreSources
-        core_source_1d = tok.core_sources.source.combine.profiles_1d
-        tok.core_sources.source.update(equilibrium=tok.equilibrium, core_profiles=tok.core_profiles)
+        tok.core_sources.update()
+
+        core_source = tok.core_sources.source.combine.profiles_1d
+
         plot_profiles(
             [
                 [
                     (Function(bs_r_norm, baseline["Jtot"].values*1e6),  "astra",
                      r"$J_{\parallel} [A\cdot m^{-2}]$", {"marker": "+"}),
-                    (tok.core_sources.source.combine.profiles_1d.j_parallel,
-                     "fytok", r"$J_{\parallel} [A\cdot m^{-2}]$"),
+                    (core_source.j_parallel,     "fytok", r"$J_{\parallel} [A\cdot m^{-2}]$"),
                 ],
                 # (core_source_1d.electrons.particles,       "fytok", r"$S_{e} [ m^{-3} s^-1]$"),
                 # (core_source_1d.electrons.energy,          "fytok", r"$Q_{e}$"),
                 # [
-                #     * [(ion.density,   f"${ion.label}$") for ion in core_profile.ion if ion.label not in impurities],
-                # ],
-                # [
-                #     (Function(bs_r_norm, baseline["Zeff"].values),          r"$Z_{eff}^{astra}$", {"marker": "+"}),
-                #     (core_profile.zeff,                                                              r"$z_{eff}$"),
-                # ],
-                # [
-                #     (Function(bs_r_norm, baseline["Joh"].values*1.0e6 / baseline["U"].values *
-                #               (2.0*constants.pi * tok.equilibrium.vacuum_toroidal_field.r0)),     r"$\sigma_{\parallel}^{astra}$", {"marker": "+"}),
-                #     (core_source_1d.conductivity_parallel,
-                #      r"$\sigma_{\parallel}^{wesson}$"),
-                # ],
-                # [
                 #     (Function(bs_r_norm, baseline["Joh"].values), "astra",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
                 #     # (core_profile.j_ohmic,                        "fytok",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
                 # ],
-                # [
-                #     (Function(bs_r_norm, baseline["NE"].values), r"astra",
-                #      r"$n_{e} [10^{19} m^{-3}]$ ", {"marker": "+"}),
-                #     (core_profile.electrons.density*1e-19, r"fytok"),
-                # ],
-                # [
-                #     (Function(bs_r_norm, baseline["TE"].values), r"astra", r"$T_{e} [keV]$ ", {"marker": "+"}),
-                #     (core_profile.electrons.temperature*1e-3, r"$fytok$"),
-                # ],
-                # (core_profile.electrons.density.derivative(), r"$dn_{e}$"),
 
-                # (core_profile.electrons.density.derivative()/core_profile.electrons.density, r"$dln n_{e}$"),
-                # [
-                #     (core_profile.electrons.temperature.derivative() / \
-                #      core_profile.electrons.temperature, r"electron", r"$dln T [-]$"),
-                #     *[(ion.temperature.derivative() / ion.temperature,
-                #        f"{ion.label}") for ion in core_profile.ion],
-
-                # ],
                 [
                     (Function(bs_r_norm, baseline["Jbs"].values),
                      r"astra", r"bootstrap current $[MA\cdot m^{-2}]$", {"marker": "+"}),
-                    (tok.core_sources.source[{"identifier.name": "bootstrap_current"}].profiles_1d.j_parallel*1e-6,
-                     r"fytok"),
+                    (core_source.j_parallel*1e-6,  r"fytok"),
                 ],
-                (rms_residual(Function(bs_r_norm, baseline["Jbs"].values), \
-                              tok.core_sources.source[{"identifier.name": "bootstrap_current"}].profiles_1d.j_parallel*1e-6),
+                (rms_residual(Function(bs_r_norm, baseline["Jbs"].values),  core_source.j_parallel*1e-6),
                  r"rms residual \n bootstrap current"),
-
-                # (tok.core_profiles.profiles_1d.electrons.density,                                       r"$ n_e $"),
-                # (tok.core_profiles.profiles_1d.electrons.temperature,                                   r"$ T_e $"),
-                # (tok.core_profiles.profiles_1d.electrons.temperature.dln(),          r"$\frac{T_e^{\prime}}{T_e}$"),
-                # (tok.core_profiles.profiles_1d.electrons.density.dln(),              r"$\frac{n_e^{\prime}}{n_e}$"),
-                # (tok.core_profiles.profiles_1d.electrons.pressure.dln(),             r"$\frac{p_e^{\prime}}{p_e}$"),
-                # (tok.core_profiles.profiles_1d.electrons.tau,                                          r"$\tau_e$"),
-                # (tok.core_profiles.profiles_1d.electrons.vT,                                          r"$v_{T,e}$"),
-
-                # (core_source_1d.e_field_radial,                                             r"$E_{radial}$"),
-                # (tok.equilibrium.time_slice[-1].profiles_1d.trapped_fraction(
-                # core_transport.model[0].profiles_1d[-1].grid_v.psi_norm),      r"trapped"),
-                # (core_profile.electrons.pressure,                                                  r"$p_{e}$"),
 
             ],
             x_axis=([0, 1.0], r"$\sqrt{\Phi/\Phi_{bdry}}$"),

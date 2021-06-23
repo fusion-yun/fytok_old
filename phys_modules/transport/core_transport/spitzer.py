@@ -83,8 +83,7 @@ class Spitzer(CoreTransport.Model):
         nu_e = R0*q[1:]/vTe[1:]/tau_e[1:]/epsilon32[1:]
         phi[1:] = fT[1:]/(1.0+(0.58+0.20*Zeff[1:])*nu_e)
         phi[0] = 0
-        logger.debug(phi[:3])
-
+        
         C = 0.56/Zeff*(3.0-Zeff)/(3.0+Zeff)
 
         eta = eta_s*Zeff/(1-phi)/(1.0-C*phi)*(1.0+0.27*(Zeff-1.0))/(1.0+0.47*(Zeff-1.0))
