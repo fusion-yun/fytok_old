@@ -1008,17 +1008,17 @@ class Equilibrium(IDS):
 
     @sp_property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        r0 = self.get("vacuum_toroidal_field.r0", NotImplemented)
-        b0 = abs(self.get("vacuum_toroidal_field.b0", NotImplemented))
-        return {"r0": r0, "b0": b0}
+        # r0 = self.get("vacuum_toroidal_field.r0", NotImplemented)
+        # b0 = abs(self.get("vacuum_toroidal_field.b0", NotImplemented))
+        return VacuumToroidalField(self.get("vacuum_toroidal_field", {}))
 
     @sp_property
     def grid_ggd(self) -> GGD:
-        return self.get("grid_ggd", {})
+        return self.get("grid_ggd")
 
     @sp_property
     def time_slice(self) -> EquilibriumTimeSlice:
-        return self.get("time_slice", {})
+        return self.get("time_slice")
 
     def update(self,  *args, constraints: Constraints, core_profiles=None, wall: Wall = None,
                pf_active: PFActive = None, magnetics: Magnetics = None, **kwargs):

@@ -61,7 +61,7 @@ class PFActiveCoil(Dict):
                 return RZTuple(**self.get("outline", {}))
 
             @dataclass
-            class Rectangle(Dict):
+            class Rectangle:
                 r: float = 0
                 z: float = 0
                 width: float = 0
@@ -73,7 +73,7 @@ class PFActiveCoil(Dict):
                 return self.get("rectangle", {})
 
             @dataclass
-            class Oblique(Dict):
+            class Oblique:
                 r: float
                 z: float
                 length: float = 0.0
@@ -101,19 +101,19 @@ class PFActiveCoil(Dict):
 
         @sp_property
         def geometry(self) -> Geometry:
-            return self.get("geometry", {})
+            return self.get("geometry")
 
     @sp_property
     def element(self) -> List[Element]:
-        return self.get("element", [])
+        return self.get("element")
 
     @sp_property
     def current(self) -> Signal:
-        return self.get("current", None)
+        return self.get("current")
 
     @sp_property
     def voltage(self) -> Signal:
-        return self.get("voltage", None)
+        return self.get("voltage")
 
 
 class PFActiveCircuit(Dict):

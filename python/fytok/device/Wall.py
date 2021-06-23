@@ -30,7 +30,7 @@ class WallLimiter(Dict):
 
     @sp_property
     def unit(self) -> List[Unit]:
-        return self["unit"]
+        return self.get("unit")
 
 
 class WallVessel(Dict):
@@ -43,15 +43,15 @@ class WallVessel(Dict):
 
         @sp_property
         def outline_outer(self) -> RZTuple:
-            return RZTuple(self["outline_outer"]["r"], self["outline_outer"]["z"])
+            return RZTuple(self["outline_outer.r"], self["outline_outer.z"])
 
         @sp_property
         def outline_inner(self) -> RZTuple:
-            return RZTuple(self["outline_inner"]["r"], self["outline_inner"]["z"])
+            return RZTuple(self["outline_inner.r"], self["outline_inner.z"])
 
     @sp_property
     def annular(self) -> Annular:
-        return self["annular"]
+        return self.get("annular", {})
 
 
 class WallDescription2D(Dict):
@@ -168,7 +168,7 @@ class Wall(IDS):
             axis = plt.gca()
 
         desc2d = self.description_2d[0]
-        
+
         vessel_inner_points = np.array([desc2d.vessel.annular.outline_inner.r,
                                         desc2d.vessel.annular.outline_inner.z]).transpose([1, 0])
 

@@ -30,7 +30,12 @@ class Species(Dict[Node]):
     Element = SpeciesElement
 
     def __init__(self,   *args, axis=None, parent=None,  **kwargs):
-        super().__init__(*args, axis=axis if axis is not None else parent.grid.rho_tor_norm, parent=parent, **kwargs)
+        if axis is None:
+            grid = getattr(parent, "_grid", None)
+            axis = getattr(grid, "rho_tor_norm", None)
+        if axis is None:
+            raise RuntimeError("axis is None")
+        super().__init__(*args, axis=axis, parent=parent, **kwargs)
 
     @sp_property
     def label(self) -> str:
