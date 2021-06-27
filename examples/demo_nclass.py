@@ -60,7 +60,7 @@ if __name__ == "__main__":
                 }
             },
             "boundary_separatrix": eqdsk.get("boundary"),
-            "coordinate_system": {"psi_norm": {"axis": 0.0, "boundary": 0.995, "npoints": 128}}
+            "coordinate_system": {"psi_norm": {"axis": 0.0, "boundary": 0.995, "npoints": 64}}
             # "coordinate_system": {"psi_norm": baseline["Fp"].values[:-1]}
         }}
 
@@ -507,7 +507,7 @@ if __name__ == "__main__":
                 [
                     (Function(bs_r_norm, baseline["Jbs"].values),
                      r"astra", r"bootstrap current $[MA\cdot m^{-2}]$", {"marker": "+"}),
-                    (core_source.j_parallel*1e-6,  r"fytok"),
+                    (tok.core_sources.source[1].profiles_1d.j_parallel*1e-6,  r"fytok"),
                 ],
                 (rms_residual(Function(bs_r_norm, baseline["Jbs"].values),  core_source.j_parallel*1e-6),
                  r"rms residual \n bootstrap current"),

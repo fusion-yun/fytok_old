@@ -1007,9 +1007,7 @@ class Equilibrium(IDS):
 
     @sp_property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        # r0 = self.get("vacuum_toroidal_field.r0", NotImplemented)
-        # b0 = abs(self.get("vacuum_toroidal_field.b0", NotImplemented))
-        return VacuumToroidalField(self.get("vacuum_toroidal_field", {}))
+        return self.get("vacuum_toroidal_field", {})
 
     @sp_property
     def grid_ggd(self) -> GGD:

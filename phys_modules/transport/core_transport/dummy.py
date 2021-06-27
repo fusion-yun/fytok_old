@@ -26,9 +26,8 @@ class TransportModeDummy(CoreTransport.Model):
                              "description": f"{self.__class__.__name__} Dummy CoreTransport.Model "
                          }, **kwargs)
 
-    def update(self, *args, **kwargs):
-
-        return super().update(*args,  **kwargs)
+    def refresh(self, *args, **kwargs):
+        return super().refresh(*args,  **kwargs)
 
 
 __SP_EXPORT__ = TransportModeDummy

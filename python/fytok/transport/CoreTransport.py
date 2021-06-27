@@ -305,7 +305,7 @@ class CoreTransport(IDS):
     def model(self) -> List[Model]:
         return List[CoreTransport.Model](
             self.get("model", []),
-            defualt_value_when_combine={
+            defualt_value={
                 "identifier": {"name": "combined", "index": 1,
                                "description": """Combination of data from available transport models.
                                 Representation of the total transport in the system"""}
@@ -313,5 +313,4 @@ class CoreTransport(IDS):
             parent=self)
 
     def refresh(self, *args, **kwargs) -> None:
-        res = [m.refresh(*args, **kwargs) for m in self.model]
-        return res
+        return self.model.refresh(*args, **kwargs)

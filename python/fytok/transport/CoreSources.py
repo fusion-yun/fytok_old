@@ -263,8 +263,8 @@ class CoreSourcesSource(Actor):
     def profiles_1d(self) -> Profiles1D:
         return self.get("profiles_1d", {})
 
-    def update(self,  *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None,  **kwargs) -> float:
-        time = super().update(*args, **kwargs)
+    def refresh(self,  *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None,  **kwargs) -> float:
+        time = super().refresh(*args, **kwargs)
         if equilibrium is not None:
             self._equilibrium = equilibrium
         if core_profiles is not None:
@@ -302,5 +302,5 @@ class CoreSources(IDS):
             },
             parent=self)
 
-    def update(self, *args, **kwargs) -> None:
-        self.source.update(*args, **kwargs)
+    def refresh(self, *args, **kwargs) -> None:
+        self.source.refresh(*args, **kwargs)

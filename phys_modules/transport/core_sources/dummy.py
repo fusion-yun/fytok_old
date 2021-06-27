@@ -13,13 +13,12 @@ from spdm.util.logger import logger
 
 class CoreSourceDummy(CoreSources.Source):
     def __init__(self, d=None, *args,  **kwargs):
-        super().__init__(d * args, **kwargs)
-        self.put(
-            "identifier", {
-                "name": f"unspecified",
-                "index": 0,
-                "description": f"{self.__class__.__name__} Dummy Source "
-            })
+        super().__init__(d,
+                         identifier={
+                             "name": f"unspecified",
+                             "index": 0,
+                             "description": f"{self.__class__.__name__} Dummy Source "
+                         }, **kwargs)
 
     def refresh(self, *args,  **kwargs):
         return super().refresh(*args, **kwargs)
