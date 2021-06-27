@@ -413,7 +413,7 @@ if __name__ == "__main__":
             title="Equlibrium",
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
-    if True:  # CoreProfile
+    if False:  # CoreProfile
 
         core_profile = tok.core_profiles.profiles_1d
 

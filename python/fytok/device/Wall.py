@@ -64,11 +64,11 @@ class WallDescription2D(Dict):
 
     @sp_property
     def limiter(self) -> Limiter:
-        return self["limiter"]
+        return self.get("limiter")
 
     @sp_property
     def vessel(self) -> Vessel:
-        return self["vessel"]
+        return self.get("vessel")
 
     def limiter_polygon(self):
         limiter_points = np.array([self.limiter.unit[0].outline.r,
@@ -152,15 +152,15 @@ class Wall(IDS):
 
     @sp_property
     def global_quantities(self) -> GlobalQuantities:
-        return self["global_quantities"]
+        return self.get("global_quantities")
 
     @sp_property
     def description_2d(self) -> List[Description2D]:
-        return self["description_2d"]
+        return self.get("description_2d")
 
     @sp_property
     def description_ggd(self) -> List[DescriptionGGD]:
-        return self["description_ggd"]
+        return self.get("description_ggd")
 
     def plot(self, axis=None, *args, **kwargs):
 

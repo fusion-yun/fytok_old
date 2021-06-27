@@ -260,16 +260,15 @@ class CoreTransportModel(Actor):
         return self.get("profiles_1d", {})
 
     def update(self,  *args, grid=None, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None,  **kwargs) -> float:
-        time = super().update(*args, **kwargs)
+        super().update(*args, **kwargs)
         if grid is not None:
             self._grid = grid
         if equilibrium is not None:
             self._equilibrium = equilibrium
         if core_profiles is not None:
             self._core_profiles = core_profiles
-
         super().reset()
-        return time
+        return self._time
 
 
 class CoreTransport(IDS):

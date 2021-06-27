@@ -883,7 +883,6 @@ class EquilibriumTimeSlice(Dict):
                 axis.plot([], [], 'rx', label="X-Point")
 
         if boundary is not False:
-
             boundary_points = np.vstack([self.boundary.outline.r,
                                          self.boundary.outline.z]).T
 
