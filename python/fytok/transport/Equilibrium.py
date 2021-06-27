@@ -775,8 +775,9 @@ class EquilibriumTimeSlice(Dict):
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
         return self.coordinate_system.vacuum_toroidal_field
 
-    def radial_grid(self, *args, **kwargs) -> RadialGrid:
-        return self.coordinate_system.radial_grid(*args, **kwargs)
+    @property
+    def radial_grid(self ) -> RadialGrid:
+        return self.coordinate_system.radial_grid 
 
     @sp_property
     def coordinate_system(self) -> MagneticCoordSystem:

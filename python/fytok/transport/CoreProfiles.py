@@ -293,12 +293,23 @@ class CoreProfiles1D(Profiles):
     Ion = CoreProfilesIon
     Neutral = CoreProfilesNeutral
 
-    def __init__(self, *args, grid: RadialGrid = None, time=None, parent=None, **kwargs):
-        grid = grid or getattr(parent, "grid", None)
-        super().__init__(*args, axis=getattr(grid, "rho_tor_norm", None), parent=parent, **kwargs)
-        self._grid = grid
+    def __init__(self, d, /, grid: RadialGrid,   **kwargs):
+        super().__init__(d,   **kwargs)
+
+        if isinstance(grid, RadialGrid):
+            rho_tor_norm = self.get("grid.rho_tor_norm", None)
+            if rho_tor_norm is not None:
+                self._grid = grid.remesh(rho_tor_norm, "rho_tor_norm")
+            else:
+                self._grid = grid
+        else:
+            self._grid = RadialGrid(**self.get("grid", {}))
         self._r0 = self._grid.vacuum_toroidal_field.r0
         self._b0 = self._grid.vacuum_toroidal_field.b0
+
+    @property
+    def axis(self) -> np.ndarray:
+        return self.grid.rho_tor_norm
 
     @property
     def grid(self) -> RadialGrid:
@@ -523,22 +534,19 @@ class CoreProfiles(IDS):
     class State(IDS.State):
         profiles_1d: CoreProfiles1D
 
-    def __init__(self,  *args, grid: Optional[RadialGrid] = None, ** kwargs):
-        super().__init__(*args,  ** kwargs)
-        self._grid = grid or getattr(self._parent, "grid", None)
+    def __init__(self,  d, /, grid: RadialGrid, ** kwargs):
+        super().__init__(d, ** kwargs)
 
-    @property
-    def grid(self) -> RadialGrid:
-        return self._grid
+        self._grid = grid
 
-    @property
+    @sp_property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        return self.grid.vacuum_toroidal_field
+        return self._grid.vacuum_toroidal_field
 
     @sp_property
     def profiles_1d(self) -> Profiles1D:
-        return self.get("profiles_1d", {})
+        return CoreProfiles.Profiles1D(self.get("profiles_1d"), grid=self._grid, parent=self)
 
     @sp_property
     def global_quantities(self) -> GlobalQuantities:
-        return self.get("global_quantities", {})
+        return self.get("global_quantities")

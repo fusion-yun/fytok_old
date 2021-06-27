@@ -43,21 +43,14 @@ class Tokamak(Actor):
 
     """
 
-    def __init__(self, d=None, * args, grid=128, **kwargs):
-        super().__init__(collections.ChainMap(d or {}, kwargs))
+    def __init__(self, d=None, * args,  **kwargs):
+        super().__init__(collections.ChainMap(d if d is not None else {}, kwargs))
         self._time = 0.0
-        self._grid = grid
 
     @property
     def time(self):
         return self._time
 
-    @property
-    def grid(self):
-        if not isinstance(self._grid, RadialGrid):
-            self._grid = self.equilibrium.time_slice.coordinate_system.radial_grid.remesh(
-                self._grid, "rho_tor_norm")
-        return self._grid
     # --------------------------------------------------------------------------
 
     @sp_property
@@ -83,12 +76,12 @@ class Tokamak(Actor):
 
     @sp_property
     def core_profiles(self) -> CoreProfiles:
-        return self.get("core_profiles")
+        return CoreProfiles(self.get("core_profiles"), grid=self.equilibrium.time_slice.coordinate_system.radial_grid, parent=self)
 
     @sp_property
     def core_transport(self) -> CoreTransport:
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return self.get("core_transport")
+        return CoreTransport(self.get("core_transport"), grid=self.equilibrium.time_slice.coordinate_system.radial_grid, parent=self)
 
     @sp_property
     def core_sources(self) -> CoreSources:
@@ -96,7 +89,7 @@ class Tokamak(Actor):
             Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return self.get("core_sources")
+        return CoreSources(self.get("core_sources"), grid=self.equilibrium.time_slice.coordinate_system.radial_grid, parent=self)
 
     @sp_property
     def edge_profiles(self) -> EdgeProfiles:

@@ -139,10 +139,8 @@ class CoreTransportProfiles1D(Dict[Node]):
     Electrons = CoreTransportElectrons
     Momentum = CoreTransportMomentum
 
-    def __init__(self, *args, grid: Optional[RadialGrid] = None, parent=None, ** kwargs):
-        if grid is None:
-            grid = parent._grid
-        super().__init__(*args, axis=grid.rho_tor_norm,   **kwargs)
+    def __init__(self, d, /, grid: RadialGrid, ** kwargs):
+        super().__init__(d, axis=grid.rho_tor_norm,   **kwargs)
         self._grid = grid
 
     @property
@@ -209,15 +207,9 @@ class CoreTransportModel(Actor):
 
     Profiles1D = CoreTransportProfiles1D
 
-    def __new__(cls, *args, **kwargs):
-        logger.debug(cls)
-        return super(Actor, cls).__new__(cls, *args, **kwargs)
-
-    def __init__(self, d, *args, grid: Optional[RadialGrid] = None, ** kwargs):
-        logger.debug(d)
-        super().__init__(d, *args, **kwargs)
-        logger.debug(self._entry.get("identifier"))
-        self._grid = grid or getattr(self._parent, "grid", None)
+    def __init__(self, d, /, grid: RadialGrid, ** kwargs):
+        super().__init__(d,  **kwargs)
+        self._grid = grid
         self._equilibrium = getattr(self._parent, "_equilibrium", None)
         self._core_profiles = getattr(self._parent, "_core_profiles", None)
 
@@ -262,8 +254,8 @@ class CoreTransportModel(Actor):
         return self.get("flux_multiplier", 1.0)
 
     @sp_property
-    def profiles_1d(self) -> CoreTransportProfiles1D:
-        return self.get("profiles_1d", {})
+    def profiles_1d(self) -> Profiles1D:
+        return CoreTransportModel.Profiles1D(self.get("profiles_1d", {}), grid=self._grid, parent=self)
 
     def refresh(self,  *args, grid=None, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None,  **kwargs) -> float:
         super().refresh(*args, **kwargs)
@@ -293,11 +285,11 @@ class CoreTransport(IDS):
     _IDS = "core_transport"
     Model = CoreTransportModel
 
-    def __init__(self, *args, grid: RadialGrid = None, ** kwargs):
-        super().__init__(*args,  **kwargs)
-        self._grid = grid or getattr(self._parent, "grid", None)
-        self._equilibrium = getattr(self._parent, "equilibrium", None)
-        self._core_profiles = getattr(self._parent, "core_profiles", None)
+    def __init__(self, d, /, grid: RadialGrid, ** kwargs):
+        super().__init__(d,  **kwargs)
+        self._grid = grid
+        self._equilibrium = kwargs.get("equilibrium", None) or getattr(self._parent, "equilibrium", None)
+        self._core_profiles = kwargs.get("core_profiles", None) or getattr(self._parent, "core_profiles", None)
 
     @property
     def grid(self):
@@ -317,7 +309,8 @@ class CoreTransport(IDS):
                                 Representation of the total transport in the system"""},
                 "code": {"name": _undefined_}
             },
-            parent=self)
+            parent=self,
+            grid=self._grid)
 
     def refresh(self, *args, **kwargs) -> None:
         return self.model.refresh(*args, **kwargs)

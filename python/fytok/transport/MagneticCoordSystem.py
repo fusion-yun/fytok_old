@@ -41,17 +41,18 @@ class RadialGrid:
         Radial grid
     """
 
-    def __init__(self, var_list: Mapping,
+    def __init__(self,
                  psi_axis: float,
                  psi_boundary: float,
                  rho_tor_boundary: float,
-                 vacuum_toroidal_field: VacuumToroidalField) -> None:
+                 vacuum_toroidal_field: VacuumToroidalField,
+                 **kwargs) -> None:
         self._psi_axis = psi_axis
         self._psi_boundary = psi_boundary
         self._rho_tor_boundary = rho_tor_boundary
         self._vacuum_toroidal_field = vacuum_toroidal_field
 
-        for k, v in var_list.items():
+        for k, v in kwargs.items():
             self.__dict__[f"_{k}"] = v
 
     def __serialize__(self) -> Dict:
@@ -70,19 +71,18 @@ class RadialGrid:
         if not isinstance(new_axis, np.ndarray):
             raise TypeError(new_axis)
         return RadialGrid(
-            {
-                "psi_norm": Function(axis,  self.psi_norm)(new_axis) if label != "psi_norm" else new_axis,
-                "rho_tor_norm": Function(axis,  self.rho_tor_norm)(new_axis) if label != "rho_tor_norm" else new_axis,
-                # "rho_pol_norm": Function(axis,  self.rho_pol_norm)(new_axis) if label != "rho_pol_norm" else new_axis,
-                # "area": Function(axis,  self.area)(new_axis) if label != "area" else new_axis,
-                # "surface": Function(axis,  self.surface)(new_axis) if label != "surface" else new_axis,
-                # "volume": Function(axis,  self.volume)(new_axis) if label != "volume" else new_axis,
-                "dvolume_drho_tor": Function(axis,  self.dvolume_drho_tor)(new_axis),
-            },
             self._psi_axis,
             self._psi_boundary,
             self._rho_tor_boundary,
-            self._vacuum_toroidal_field)
+            self._vacuum_toroidal_field,
+            psi_norm=Function(axis,  self.psi_norm)(new_axis) if label != "psi_norm" else new_axis,
+            rho_tor_norm=Function(axis,  self.rho_tor_norm)(new_axis) if label != "rho_tor_norm" else new_axis,
+            # rho_pol_norm=Function(axis,  self.rho_pol_norm)(new_axis) if label != "rho_pol_norm" else new_axis,
+            # area=Function(axis,  self.area)(new_axis) if label != "area" else new_axis,
+            # surface=Function(axis,  self.surface)(new_axis) if label != "surface" else new_axis,
+            # volume=Function(axis,  self.volume)(new_axis) if label != "volume" else new_axis,
+            dvolume_drho_tor=Function(axis,  self.dvolume_drho_tor)(new_axis),
+        )
 
     @property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
@@ -265,19 +265,21 @@ class MagneticCoordSystem(object):
     @cached_property
     def radial_grid(self) -> RadialGrid:
         return RadialGrid(
-            {
-                "psi_norm": self.psi_norm,
-                "rho_tor_norm": self.rho_tor_norm,
-                "rho_pol_norm": getattr(self, "rho_pol_norm", None),
-                "area": getattr(self, "area", None),
-                "surface": self.surface,
-                "dvolume_drho_tor": self.dvolume_drho_tor,
-                "volume": self.volume,
-            },
+
             self.psi_axis,
             self.psi_boundary,
             self.rho_tor[-1],
-            self.vacuum_toroidal_field)
+            self.vacuum_toroidal_field,
+            psi_norm= self.psi_norm,
+            rho_tor_norm= self.rho_tor_norm,
+            rho_pol_norm= getattr(self, "rho_pol_norm", None),
+            area= getattr(self, "area", None),
+            surface= self.surface,
+            dvolume_drho_tor= self.dvolume_drho_tor,
+            volume= self.volume,
+
+
+        )
 
     @property
     def grid_type_index(self) -> int:

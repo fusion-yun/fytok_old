@@ -80,6 +80,7 @@ if __name__ == "__main__":
 
     configure["core_profiles"] = {
         "profiles_1d": {
+            "grid": {"rho_tor_norm": np.linspace(0, 1.0, 128)},
             "electrons": {**atoms["e"], "density":              b_ne,   "temperature":        b_Te, },
             "ion": [
                 {**atoms["D"],          "density":         0.5*b_nDT,   "temperature":        b_Ti, },
@@ -446,8 +447,13 @@ if __name__ == "__main__":
 
     if True:  # CoreTransport
         core_transport_mode = tok.core_transport.model.combine
-        logger.debug(core_transport_mode.identifier)
+
+        logger.debug(np.asarray(core_transport_mode.profiles_1d.conductivity_parallel))
+
         tok.core_transport.refresh()
+
+        logger.debug(np.asarray(core_transport_mode.profiles_1d.conductivity_parallel))
+
         core_transport = core_transport_mode.profiles_1d
         plot_profiles(
             [
