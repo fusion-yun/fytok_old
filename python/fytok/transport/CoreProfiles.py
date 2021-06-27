@@ -307,17 +307,17 @@ class CoreProfiles1D(Profiles):
     @sp_property
     def electrons(self) -> CoreProfilesElectrons:
         """Quantities related to the electrons"""
-        return self.get("electrons")
+        return self.get("electrons", {})
 
     @sp_property
     def ion(self) -> List[CoreProfilesIon]:
         """Quantities related to the different ion species"""
-        return self.get("ion")
+        return self.get("ion", [])
 
     @sp_property
     def neutral(self) -> List[CoreProfilesNeutral]:
         """Quantities related to the different neutral species"""
-        return self.get("neutral")
+        return self.get("neutral", [])
 
     @sp_property
     def t_i_average(self) -> Function:
@@ -530,7 +530,7 @@ class CoreProfiles(IDS):
     @property
     def grid(self) -> RadialGrid:
         return self._grid
-        
+
     @property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
         return self.grid.vacuum_toroidal_field

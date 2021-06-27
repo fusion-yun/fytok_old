@@ -24,7 +24,7 @@ class TransportModeDummy(CoreTransport.Model):
                 "name": "dummy",
                 "index": 5,
                 "description": f"{self.__class__.__name__} Dummy CoreTransport.Model "
-            }}, d or {}), *args, **kwargs)
+            }}, Dict(d)), *args, **kwargs)
 
     def update(self, *args, **kwargs):
 

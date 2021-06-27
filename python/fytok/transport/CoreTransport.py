@@ -249,7 +249,7 @@ class CoreTransportModel(Actor):
             pedestal            | 24        | Transport level to give edge pedestal
             not_provided	    | 25        | No data provided
         """
-        return Identifier(**self["identifier"]._as_dict())
+        return self.get("identifier", {})
 
     @sp_property
     def flux_multiplier(self) -> float:
@@ -259,8 +259,8 @@ class CoreTransportModel(Actor):
     def profiles_1d(self) -> CoreTransportProfiles1D:
         return self.get("profiles_1d", {})
 
-    def update(self,  *args, grid=None, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None,  **kwargs) -> float:
-        super().update(*args, **kwargs)
+    def refresh(self,  *args, grid=None, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None,  **kwargs) -> float:
+        super().refresh(*args, **kwargs)
         if grid is not None:
             self._grid = grid
         if equilibrium is not None:
@@ -312,5 +312,6 @@ class CoreTransport(IDS):
             },
             parent=self)
 
-    def update(self, *args, **kwargs) -> None:
-        self.model.update(*args, **kwargs)
+    def refresh(self, *args, **kwargs) -> None:
+        res = [m.refresh(*args, **kwargs) for m in self.model]
+        return res

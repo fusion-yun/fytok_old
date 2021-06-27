@@ -60,7 +60,7 @@ if __name__ == "__main__":
                 }
             },
             "boundary_separatrix": eqdsk.get("boundary"),
-            "coordinate_system": {"psi_norm": {"axis": 0.0, "boundary": 0.995, "npoints": 256}}
+            "coordinate_system": {"psi_norm": {"axis": 0.0, "boundary": 0.995, "npoints": 128}}
             # "coordinate_system": {"psi_norm": baseline["Fp"].values[:-1]}
         }}
 
@@ -413,7 +413,7 @@ if __name__ == "__main__":
             title="Equlibrium",
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
-    if False:  # CoreProfile
+    if True:  # CoreProfile
 
         core_profile = tok.core_profiles.profiles_1d
 
@@ -444,9 +444,9 @@ if __name__ == "__main__":
             x_axis=([0, 1.0],                                  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profiles.svg", transparent=True)
 
-    if False:  # CoreTransport
+    if True:  # CoreTransport
 
-        tok.core_transport.update()
+        tok.core_transport.refresh()
         core_transport = tok.core_transport.model.combine.profiles_1d
         plot_profiles(
             [
@@ -487,11 +487,9 @@ if __name__ == "__main__":
             title=tok.core_transport.model[0].identifier.name,
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
-    if False:  # CoreSources
-        tok.core_sources.update()
-
+    if True:  # CoreSources
+        tok.core_sources.refresh()
         core_source = tok.core_sources.source.combine.profiles_1d
-
         plot_profiles(
             [
                 [
