@@ -8,7 +8,7 @@ from spdm.data.Profiles import Profiles
 from spdm.flow.Actor import Actor
 from spdm.numlib import np
 from spdm.util.logger import logger
-from spdm.util.utilities import _not_found_
+from spdm.util.utilities import _not_found_, _undefined_
 
 from ..common.IDS import IDS, IDSCode
 from ..common.Misc import Identifier, VacuumToroidalField
@@ -209,8 +209,14 @@ class CoreTransportModel(Actor):
 
     Profiles1D = CoreTransportProfiles1D
 
-    def __init__(self, *args, grid: Optional[RadialGrid] = None, ** kwargs):
-        super().__init__(*args, **kwargs)
+    def __new__(cls, *args, **kwargs):
+        logger.debug(cls)
+        return super(Actor, cls).__new__(cls, *args, **kwargs)
+
+    def __init__(self, d, *args, grid: Optional[RadialGrid] = None, ** kwargs):
+        logger.debug(d)
+        super().__init__(d, *args, **kwargs)
+        logger.debug(self._entry.get("identifier"))
         self._grid = grid or getattr(self._parent, "grid", None)
         self._equilibrium = getattr(self._parent, "_equilibrium", None)
         self._core_profiles = getattr(self._parent, "_core_profiles", None)
@@ -305,10 +311,11 @@ class CoreTransport(IDS):
     def model(self) -> List[Model]:
         return List[CoreTransport.Model](
             self.get("model", []),
-            defualt_value={
+            default_value={
                 "identifier": {"name": "combined", "index": 1,
                                "description": """Combination of data from available transport models.
-                                Representation of the total transport in the system"""}
+                                Representation of the total transport in the system"""},
+                "code": {"name": _undefined_}
             },
             parent=self)
 

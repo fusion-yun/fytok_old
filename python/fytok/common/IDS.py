@@ -137,8 +137,8 @@ class IDS(Actor):
 
     @sp_property
     def ids_properties(self) -> IDSProperties:
-        return IDSProperties(self["ids_properties"], parent=self)
+        return self.get("ids_properties", {})
 
     @sp_property
     def code(self) -> IDSCode:
-        return IDSCode(self['code'], parent=self)
+        return self.get('code', {})

@@ -445,9 +445,10 @@ if __name__ == "__main__":
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profiles.svg", transparent=True)
 
     if True:  # CoreTransport
-
+        core_transport_mode = tok.core_transport.model.combine
+        logger.debug(core_transport_mode.identifier)
         tok.core_transport.refresh()
-        core_transport = tok.core_transport.model.combine.profiles_1d
+        core_transport = core_transport_mode.profiles_1d
         plot_profiles(
             [
                 [
