@@ -21,18 +21,18 @@ class NeoClassical(CoreTransport.Model):
     """
 
     def __init__(self, d, *args, **kwargs):
-        super().__init__(collections.ChainMap({
-            "identifier": {
-                "name": "neoclassical",
-                "index": 5,
-                "description": f"{self.__class__.__name__}  Neoclassical model, based on  Tokamaks, 3ed, J.A.Wesson 2003"
-            }}, d or {}), *args, **kwargs)
+        super().__init__(d,
+                         identifier={
+                             "name": "neoclassical",
+                             "index": 5,
+                             "description": f"{self.__class__.__name__}  Neoclassical model, based on  Tokamaks, 3ed, J.A.Wesson 2003"
+                         }, **kwargs)
 
-    def update(self, *args,
+    def refresh(self, *args,
                equilibrium: Equilibrium,
                core_profiles: CoreProfiles,
                **kwargs):
-        super().update(*args, **kwargs)
+        super().refresh(*args, **kwargs)
 
         eV = constants.electron_volt
         B0 = abs(equilibrium.vacuum_toroidal_field.b0)

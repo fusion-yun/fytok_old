@@ -18,17 +18,17 @@ class Spitzer(CoreTransport.Model):
         - Tokamaks, Third Edition, Chapter 14  ,p727,  J.A.Wesson 2003
     """
 
-    def __init__(self, d=None, *args,  **kwargs):
-        super().__init__(collections.ChainMap({
-            "identifier": {
-                "name": f"neoclassical",
-                "index": 5,
-                "description": f"{self.__class__.__name__}  Neoclassical model, based on  Tokamaks, 3ed, J.A.Wesson 2003"
-            }}, d or {}), *args, **kwargs)
+    def __init__(self, d=None, /,  **kwargs):
+        super().__init__(d,
+                         identifier={
+                             "name": f"neoclassical",
+                             "index": 5,
+                             "description": f"{self.__class__.__name__}  Neoclassical model, based on  Tokamaks, 3ed, J.A.Wesson 2003"
+                         }, **kwargs)
 
-    def update(self, *args,  **kwargs):
+    def refresh(self, *args,  **kwargs):
 
-        super().update(*args, **kwargs)
+        super().refresh(*args, **kwargs)
 
         eV = constants.electron_volt
         B0 = self.grid.vacuum_toroidal_field.b0
@@ -83,7 +83,7 @@ class Spitzer(CoreTransport.Model):
         nu_e = R0*q[1:]/vTe[1:]/tau_e[1:]/epsilon32[1:]
         phi[1:] = fT[1:]/(1.0+(0.58+0.20*Zeff[1:])*nu_e)
         phi[0] = 0
-        
+
         C = 0.56/Zeff*(3.0-Zeff)/(3.0+Zeff)
 
         eta = eta_s*Zeff/(1-phi)/(1.0-C*phi)*(1.0+0.27*(Zeff-1.0))/(1.0+0.47*(Zeff-1.0))

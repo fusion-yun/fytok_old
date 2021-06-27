@@ -95,8 +95,8 @@ class TransportSolverBVP2(TransportSolver):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def update(self, *args, **kwargs):
-        super().update(*args, **kwargs)
+    def refresh(self, *args, **kwargs):
+        super().refresh(*args, **kwargs)
 
         self._tau = self._core_profiles.time - self._core_profiles.previous_state.time
 

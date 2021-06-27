@@ -13,20 +13,20 @@ from fytok.common.Atoms import atoms
 
 
 class CollisionalEquipartition(CoreSources.Source):
-    def __init__(self, d=None, *args,  **kwargs):
-        super().__init__(collections.ChainMap({
-            "identifier": {
-                "name": f"collisional_equipartition",
-                "index": 11,
-                "description": f"{self.__class__.__name__} Collisional Energy Tansport "
-            }}, d or {}), *args, **kwargs)
+    def __init__(self, d=None, /,  **kwargs):
+        super().__init__(d,
+                         identifier={
+                             "name": f"collisional_equipartition",
+                             "index": 11,
+                             "description": f"{self.__class__.__name__} Collisional Energy Tansport "
+                         },   **kwargs)
 
-    def update(self, *args,
-               equilibrium: Equilibrium,
-               core_profiles: CoreProfiles,
-               **kwargs):
+    def refresh(self, *args,
+                equilibrium: Equilibrium,
+                core_profiles: CoreProfiles,
+                **kwargs):
 
-        super().update(*args, **kwargs)
+        super().refresh(*args, **kwargs)
 
         Te = core_profiles.profiles_1d.electrons.temperature
         ne = core_profiles.profiles_1d.electrons.density

@@ -52,7 +52,7 @@ class EquilibriumFreeGS(Equilibrium):
                 current=self.time_slice.global_quantities.ip or 0.0,
                 boundary=freegs.boundary.freeBoundaryHagenow)
 
-    def update(self, *args, core_profiles: CoreProfiles = None, constraints: Equilibrium.Constraints = None, **kwargs):
+    def refresh(self, *args, core_profiles: CoreProfiles = None, constraints: Equilibrium.Constraints = None, **kwargs):
         self._update_device(*args, **kwargs)
 
         if core_profiles is None:

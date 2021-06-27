@@ -70,7 +70,7 @@ class IDSCode(Dict):
     @sp_property
     def name(self) -> str:
         """Name of software generating IDS {constant}	STR_0D"""
-        return self["name"] or f"{self._parent.__class__.__module__}.{self._parent.__class__.__name__}"
+        return self.get("name", None) or f"{self._parent.__class__.__module__}.{self._parent.__class__.__name__}"
 
     @sp_property
     def commit(self) -> str:

@@ -1,5 +1,5 @@
 import collections
-from  functools import cached_property
+from functools import cached_property
 
 from spdm.numlib import np
 from spdm.numlib import constants
@@ -26,11 +26,11 @@ class GyroBohm(CoreTransport.Model):
     def __init__(self,   *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def update(self, *args,
-               core_profiles: CoreProfiles.TimeSlice = None,
-               equilibrium: Equilibrium.TimeSlice = None,
-               **kwargs):
-        super().update(*args, core_profiles=core_profiles, equilibrium=equilibrium, **kwargs)
+    def refresh(self, *args,
+                core_profiles: CoreProfiles.TimeSlice = None,
+                equilibrium: Equilibrium.TimeSlice = None,
+                **kwargs):
+        super().refresh(*args, core_profiles=core_profiles, equilibrium=equilibrium, **kwargs)
         prof = self.profiles_1d[-1]
         rho_tor_norm = core_profiles.profiles_1d.grid.rho_tor_norm
         psi_norm = core_profiles.profiles_1d.grid.psi_norm

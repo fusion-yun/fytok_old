@@ -19,12 +19,12 @@ class TransportModeDummy(CoreTransport.Model):
     """
 
     def __init__(self, d, *args,  **kwargs):
-        super().__init__(collections.ChainMap({
-            "identifier": {
-                "name": "dummy",
-                "index": 5,
-                "description": f"{self.__class__.__name__} Dummy CoreTransport.Model "
-            }}, Dict(d)), *args, **kwargs)
+        super().__init__(d,
+                         identifier={
+                             "name": "dummy",
+                             "index": 5,
+                             "description": f"{self.__class__.__name__} Dummy CoreTransport.Model "
+                         }, **kwargs)
 
     def update(self, *args, **kwargs):
 

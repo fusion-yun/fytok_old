@@ -13,15 +13,16 @@ from spdm.util.logger import logger
 
 class CoreSourceDummy(CoreSources.Source):
     def __init__(self, d=None, *args,  **kwargs):
-        super().__init__(collections.ChainMap({
-            "identifier": {
+        super().__init__(d * args, **kwargs)
+        self.put(
+            "identifier", {
                 "name": f"unspecified",
                 "index": 0,
                 "description": f"{self.__class__.__name__} Dummy Source "
-            }}, d or {}), *args, **kwargs)
+            })
 
-    def update(self, *args,  **kwargs):
-        return super().update(*args, **kwargs)
+    def refresh(self, *args,  **kwargs):
+        return super().refresh(*args, **kwargs)
 
 
 __SP_EXPORT__ = CoreSourceDummy

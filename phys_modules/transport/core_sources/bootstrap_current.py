@@ -12,18 +12,18 @@ from spdm.util.logger import logger
 
 
 class BootstrapCurrent(CoreSources.Source):
-    def __init__(self, d=None, *args,  **kwargs):
-        super().__init__(collections.ChainMap({
-            "code": {"name": "bootstrap_current"},
-            "identifier": {
-                "name": f"bootstrap_current",
-                "index": 13,
-                "description": f"{self.__class__.__name__} Bootstrap current, based on  Tokamaks, 3ed, sec 14.12 J.A.Wesson 2003"
-            }}, d or {}), *args, **kwargs)
+    def __init__(self, d=None, /,  **kwargs):
+        super().__init__(d,
+                         code={"name": "bootstrap_current"},
+                         identifier={
+                             "name": f"bootstrap_current",
+                             "index": 13,
+                             "description": f"{self.__class__.__name__} Bootstrap current, based on  Tokamaks, 3ed, sec 14.12 J.A.Wesson 2003"
+                         }, **kwargs)
 
-    def update(self, *args, **kwargs):
+    def refresh(self, *args, **kwargs):
 
-        super().update(*args, **kwargs)
+        super().refresh(*args, **kwargs)
 
         equilibrium: Equilibrium.TimeSlice.Profiles1D = self._equilibrium.time_slice.profiles_1d
         core_profile: CoreProfiles.Profiles1D = self._core_profiles.profiles_1d

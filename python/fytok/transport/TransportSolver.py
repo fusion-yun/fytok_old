@@ -156,7 +156,7 @@ class TransportSolver(IDS):
     def boundary_conditions_1d(self) -> BoundaryConditions1D:
         return self.get("boundary_conditions_1d", {})
 
-    def update(self, /, boundary_conditions_1d=None, **kwargs):
+    def refresh(self, /, boundary_conditions_1d=None, **kwargs):
         return self.boundary_conditions_1d.update(boundary_conditions_1d)
 
     def solve_core(self, *args, max_nodes=1000, tolerance=1e-3, **kwargs):
