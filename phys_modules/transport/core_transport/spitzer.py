@@ -1,7 +1,9 @@
 
 import collections
+from fytok.transport.CoreProfiles import CoreProfiles
 
 from fytok.transport.CoreTransport import CoreTransport
+from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.Function import Function
 from spdm.numlib import constants, np
 from spdm.numlib.misc import array_like
@@ -26,7 +28,7 @@ class Spitzer(CoreTransport.Model):
                              "description": f"{self.__class__.__name__}  Neoclassical model, based on  Tokamaks, 3ed, J.A.Wesson 2003"
                          }, **kwargs)
 
-    def refresh(self, *args,  **kwargs):
+    def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles,  **kwargs):
 
         super().refresh(*args, **kwargs)
 
@@ -39,9 +41,9 @@ class Spitzer(CoreTransport.Model):
         psi_norm = self.grid.psi_norm
         psi = self.grid.psi
 
-        q = self._equilibrium.time_slice.profiles_1d.q(psi_norm)
+        q = equilibrium.time_slice.profiles_1d.q(psi_norm)
 
-        core_profile = self._core_profiles.profiles_1d
+        core_profile = core_profiles.profiles_1d
 
         # Tavg = np.sum([ion.density*ion.temperature for ion in core_profile.ion]) / \
         #     np.sum([ion.density for ion in core_profile.ion])

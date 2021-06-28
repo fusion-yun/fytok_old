@@ -229,12 +229,9 @@ class CoreTransportModel(Module):
 
     Profiles1D = CoreTransportProfiles1D
 
-    def __init__(self, d, /, grid: RadialGrid,  ** kwargs):
+    def __init__(self, d, /, grid: RadialGrid, ** kwargs):
         super().__init__(d,  **kwargs)
-
         self._grid = grid
-        self._equilibrium = getattr(self._parent, "_equilibrium", None)
-        self._core_profiles = getattr(self._parent, "_core_profiles", None)
 
     @property
     def grid(self):
@@ -269,10 +266,9 @@ class CoreTransport(IDS):
     _IDS = "core_transport"
     Model = CoreTransportModel
 
-    def __init__(self, d, /, grid: RadialGrid, ** inputs):
-        super().__init__(d)
+    def __init__(self, d, /, grid: RadialGrid, **kwargs):
+        super().__init__(d, **kwargs)
         self._grid = grid
-        self._inputs = inputs
 
     @property
     def grid(self):
@@ -286,7 +282,7 @@ class CoreTransport(IDS):
     def model(self) -> List[Model]:
         return List[CoreTransport.Model](self.get("model"),  parent=self,  grid=self._grid)
 
-    @cached_property
+    @property
     def model_combiner(self) -> Model:
         return self.model.combine({
             "identifier": {"name": "combined", "index": 1,
@@ -295,7 +291,7 @@ class CoreTransport(IDS):
             "code": {"name": _undefined_}
         })
 
-    def refresh(self, d=None, /, **inputs) -> None:
-        self.model.refresh(d, **collections.ChainMap(inputs, self._inputs))
-        if hasattr(self, "model_combiner"):
-            delattr(self, "model_combiner")
+    def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles, **kwargs) -> None:
+        self.model.refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
+        # if hasattr(self, "model_combiner"):
+        #     delattr(self, "model_combiner")

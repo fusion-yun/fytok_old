@@ -60,7 +60,7 @@ if __name__ == "__main__":
                 }
             },
             "boundary_separatrix": eqdsk.get("boundary"),
-            "coordinate_system": {"psi_norm": {"axis": 0.0, "boundary": 0.995, "npoints": 64}}
+            "coordinate_system": {"psi_norm": {"axis": 0.0, "boundary": 0.995, "npoints": 128}}
             # "coordinate_system": {"psi_norm": baseline["Fp"].values[:-1]}
         }}
 
@@ -445,16 +445,13 @@ if __name__ == "__main__":
             x_axis=([0, 1.0],                                  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profiles.svg", transparent=True)
 
-    if False:  # CoreTransport
-        core_transport_mode = tok.core_transport.model_combiner
+    if True:  # CoreTransport
 
-        # logger.debug(np.asarray(core_transport_mode.profiles_1d.conductivity_parallel))
+        tok.core_transport.refresh(equilibrium=tok.equilibrium, core_profiles=tok.core_profiles)
 
-        tok.core_transport.refresh()
+        core_transport_model = tok.core_transport.model_combiner
 
-        # logger.debug(np.asarray(core_transport_mode.profiles_1d.conductivity_parallel))
-
-        core_transport = core_transport_mode.profiles_1d
+        core_transport = core_transport_model.profiles_1d
 
         plot_profiles(
             [

@@ -12,7 +12,7 @@ _TState = TypeVar("_TState")
 
 
 class Module(Actor[_TState]):
-    _actor_module_prefix = _undefined_
+    # _actor_module_prefix = _undefined_
 
     def __init__(self,   d, /,
                  identifier: Union[Mapping, Identifier] = _undefined_,
@@ -20,12 +20,8 @@ class Module(Actor[_TState]):
                  comment: str = _undefined_,
                  **kwargs):
         super().__init__(d, **kwargs)
-        self.update({"identifier": identifier, "code": code, "comment": comment})
+        # self.update({"identifier": identifier,  "comment": comment})
         self._inputs = kwargs
-        logger.debug(f"Inititalize Module {guess_class_name(self.__class__)}")
-
-    def __del__(self):
-        logger.debug(f"Delete Module {guess_class_name(self.__class__)}")
 
     @sp_property
     def code(self) -> IDSCode:
@@ -40,5 +36,4 @@ class Module(Actor[_TState]):
         return self.get("comment", "")
 
     def refresh(self, d=None, /, **inputs) -> None:
-        logger.debug(f"Refresh SubModule {guess_class_name(self.__class__)}")
-        pass
+        return super().refresh(d, **inputs)
