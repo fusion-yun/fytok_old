@@ -20,16 +20,16 @@ class BootstrapCurrent(CoreSources.Source):
                              "description": f"{self.__class__.__name__} Bootstrap current, based on  Tokamaks, 3ed, sec 14.12 J.A.Wesson 2003"
                          }, **kwargs)
 
-    def refresh(self, *args, **kwargs):
+    def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles, **kwargs) -> None:
 
         super().refresh(*args, **kwargs)
 
-        equilibrium: Equilibrium.TimeSlice.Profiles1D = self._equilibrium.time_slice.profiles_1d
-        core_profile: CoreProfiles.Profiles1D = self._core_profiles.profiles_1d
+        equilibrium_1d = equilibrium.time_slice.profiles_1d
+        core_profiles_1d = core_profiles.profiles_1d
 
         eV = constants.electron_volt
-        B0 = abs(self._equilibrium.vacuum_toroidal_field.b0)
-        R0 = self._equilibrium.vacuum_toroidal_field.r0
+        B0 = abs(equilibrium.vacuum_toroidal_field.b0)
+        R0 = equilibrium.vacuum_toroidal_field.r0
 
         # rho_tor_norm = (core_profile.grid.rho_tor_norm[:-1]+core_profile.grid.rho_tor_norm[1:])*0.5
         # rho_tor = (core_profile.grid.rho_tor[:-1]+core_profile.grid.rho_tor[1:])*0.5
@@ -38,15 +38,15 @@ class BootstrapCurrent(CoreSources.Source):
         rho_tor = self._grid.rho_tor[1:]
         psi_norm = self._grid.psi_norm[1:]
 
-        q = equilibrium.q(psi_norm)
+        q = equilibrium_1d.q(psi_norm)
 
         # max(np.asarray(1.07e-4*((Te[0]/1000)**(1/2))/B0), rho_tor[0])   # Larmor radius,   eq 14.7.2
 
-        Te = core_profile.electrons.temperature(rho_tor_norm)
-        Ne = core_profile.electrons.density(rho_tor_norm)
-        Pe = core_profile.electrons.pressure(rho_tor_norm)
-        dlnTe = core_profile.electrons.temperature.derivative(rho_tor_norm)/Te
-        dlnNe = core_profile.electrons.density.derivative(rho_tor_norm)/Ne
+        Te = core_profiles_1d.electrons.temperature(rho_tor_norm)
+        Ne = core_profiles_1d.electrons.density(rho_tor_norm)
+        Pe = core_profiles_1d.electrons.pressure(rho_tor_norm)
+        dlnTe = core_profiles_1d.electrons.temperature.derivative(rho_tor_norm)/Te
+        dlnNe = core_profiles_1d.electrons.density.derivative(rho_tor_norm)/Ne
         dlnPe = dlnNe+dlnTe
 
         # Coulomb logarithm
@@ -55,7 +55,7 @@ class BootstrapCurrent(CoreSources.Source):
         #     (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000))*(Te >= 10)
         # (17.3 - 0.5*np.log(Ne/1e20) + 1.5*np.log(Te/1000))*(Te >= 10)
         # lnCoul = 14
-        lnCoul = core_profile.coulomb_logarithm(rho_tor_norm)
+        lnCoul = core_profiles_1d.coulomb_logarithm(rho_tor_norm)
 
         # electron collision time , eq 14.6.1
         tau_e = 1.09e16*((Te/1000.0)**(3/2))/Ne/lnCoul
@@ -69,13 +69,13 @@ class BootstrapCurrent(CoreSources.Source):
         nu_e = R0*q/vTe/tau_e/epsilon32
         # Zeff = core_profile.zeff
 
-        x = equilibrium.trapped_fraction(psi_norm)  # np.sqrt(2*epsilon)  #
+        x = equilibrium_1d.trapped_fraction(psi_norm)  # np.sqrt(2*epsilon)  #
         c1 = np.array((4.0+2.6*x)/(1.0+1.02*np.sqrt(nu_e)+1.07*nu_e)/(1.0 + 1.07 * epsilon32*nu_e))
         c3 = np.array((7.0+6.5*x)/(1.0+0.57*np.sqrt(nu_e)+0.61*nu_e)/(1.0 + 0.61 * epsilon32*nu_e) - c1*5/2)
 
         j_bootstrap = np.asarray(c1 * dlnPe + c3 * dlnTe)
 
-        for sp in core_profile.ion:
+        for sp in core_profiles_1d.ion:
 
             Ti = sp.temperature(rho_tor_norm)
             Ni = sp.density(rho_tor_norm)
@@ -113,7 +113,7 @@ class BootstrapCurrent(CoreSources.Source):
 
         j_bootstrap = array_like(rho_tor_norm,
                                  - j_bootstrap * x/(2.4+5.4*x+2.6*x**2) * Pe
-                                 * equilibrium.fpol(psi_norm) * q / rho_tor_norm / (rho_tor[-1])**2 / (2.0*constants.pi*B0))
+                                 * equilibrium_1d.fpol(psi_norm) * q / rho_tor_norm / (rho_tor[-1])**2 / (2.0*constants.pi*B0))
 
         self.profiles_1d["j_parallel"] = Function(self.grid.rho_tor_norm, np.hstack([j_bootstrap[0], j_bootstrap]))
         return 0.0

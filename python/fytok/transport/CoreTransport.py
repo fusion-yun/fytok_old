@@ -282,7 +282,7 @@ class CoreTransport(IDS):
     def model(self) -> List[Model]:
         return List[CoreTransport.Model](self.get("model"),  parent=self,  grid=self._grid)
 
-    @property
+    @cached_property
     def model_combiner(self) -> Model:
         return self.model.combine({
             "identifier": {"name": "combined", "index": 1,
@@ -293,5 +293,5 @@ class CoreTransport(IDS):
 
     def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles, **kwargs) -> None:
         self.model.refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
-        # if hasattr(self, "model_combiner"):
-        #     delattr(self, "model_combiner")
+        if hasattr(self, "model_combiner"):
+            delattr(self, "model_combiner")

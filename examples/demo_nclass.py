@@ -492,40 +492,40 @@ if __name__ == "__main__":
             title=tok.core_transport.model[0].identifier.name,
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
-    if False:  # CoreSources
-        tok.core_sources.refresh()
+    if True:  # CoreSources
+        tok.core_sources.refresh(equilibrium=tok.equilibrium, core_profiles=tok.core_profiles)
 
         core_source = tok.core_sources.source_combiner.profiles_1d
 
-        plot_profiles(
-            [
-                [
-                    (Function(bs_r_norm, baseline["Jtot"].values*1e6),  "astra",
-                     r"$J_{\parallel} [A\cdot m^{-2}]$", {"marker": "+"}),
-                    (core_source.j_parallel,     "fytok", r"$J_{\parallel} [A\cdot m^{-2}]$"),
-                ],
-                # (core_source_1d.electrons.particles,       "fytok", r"$S_{e} [ m^{-3} s^-1]$"),
-                # (core_source_1d.electrons.energy,          "fytok", r"$Q_{e}$"),
-                # [
-                #     (Function(bs_r_norm, baseline["Joh"].values), "astra",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
-                #     # (core_profile.j_ohmic,                        "fytok",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
-                # ],
+        # plot_profiles(
+        #     [
+        #         [
+        #             (Function(bs_r_norm, baseline["Jtot"].values*1e6),  "astra",
+        #              r"$J_{\parallel} [A\cdot m^{-2}]$", {"marker": "+"}),
+        #             (core_source.j_parallel,     "fytok", r"$J_{\parallel} [A\cdot m^{-2}]$"),
+        #         ],
+        #         # (core_source_1d.electrons.particles,       "fytok", r"$S_{e} [ m^{-3} s^-1]$"),
+        #         # (core_source_1d.electrons.energy,          "fytok", r"$Q_{e}$"),
+        #         # [
+        #         #     (Function(bs_r_norm, baseline["Joh"].values), "astra",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
+        #         #     # (core_profile.j_ohmic,                        "fytok",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
+        #         # ],
 
-                [
-                    (Function(bs_r_norm, baseline["Jbs"].values),
-                     r"astra", r"bootstrap current $[MA\cdot m^{-2}]$", {"marker": "+"}),
-                    (tok.core_sources.source[1].profiles_1d.j_parallel*1e-6,  r"fytok"),
-                ],
-                (rms_residual(Function(bs_r_norm, baseline["Jbs"].values),  core_source.j_parallel*1e-6),
-                 r"rms residual \n bootstrap current"),
+        #         [
+        #             (Function(bs_r_norm, baseline["Jbs"].values),
+        #              r"astra", r"bootstrap current $[MA\cdot m^{-2}]$", {"marker": "+"}),
+        #             (tok.core_sources.source[1].profiles_1d.j_parallel*1e-6,  r"fytok"),
+        #         ],
+        #         (rms_residual(Function(bs_r_norm, baseline["Jbs"].values),  core_source.j_parallel*1e-6),
+        #          r"rms residual \n bootstrap current"),
 
-            ],
-            x_axis=([0, 1.0], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-            # x_axis=(bs_r_norm, r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-            # x_axis=([0, 0.8], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-            # annotation=core_transport.model[0].identifier.name,
-            # index_slice=slice(1, 110, 1),
-            grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_sources.svg", transparent=True)
+        #     ],
+        #     x_axis=([0, 1.0], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+        #     # x_axis=(bs_r_norm, r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+        #     # x_axis=([0, 0.8], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+        #     # annotation=core_transport.model[0].identifier.name,
+        #     # index_slice=slice(1, 110, 1),
+        #     grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_sources.svg", transparent=True)
 
     ###################################################################################################
     # TransportSolver

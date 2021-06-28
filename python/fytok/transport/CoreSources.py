@@ -270,10 +270,9 @@ class CoreSources(IDS):
     _IDS = "core_sources"
     Source = CoreSourcesSource
 
-    def __init__(self, d, /, grid: RadialGrid, parent=None,  **inputs):
-        super().__init__(d, parent=parent)
+    def __init__(self, d, /, grid: RadialGrid,    **kwargs):
+        super().__init__(d, **kwargs)
         self._grid = grid
-        self._inputs = inputs
 
     @property
     def grid(self) -> RadialGrid:
@@ -295,7 +294,7 @@ class CoreSources(IDS):
             "code": {"name": _undefined_}
         })
 
-    def refresh(self, d=None, /, **inputs) -> None:
-        self.source.refresh(d, **collections.ChainMap(inputs, self._inputs))
+    def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles,  **kwargs) -> None:
+        self.source.refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
         if hasattr(self, "source_combiner"):
             delattr(self, "source_combiner")
