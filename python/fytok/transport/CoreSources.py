@@ -1,6 +1,6 @@
 import collections
 from dataclasses import dataclass
-import functools
+from functools import cached_property
 from typing import Optional
 
 from spdm.data.AttributeTree import AttributeTree
@@ -10,8 +10,10 @@ from spdm.data.Profiles import Profiles
 from spdm.flow.Actor import Actor
 from spdm.numlib import constants, np
 from spdm.util.logger import logger
+from spdm.util.utilities import _undefined_
 
 from ..common.IDS import IDS
+from ..common.Module import Module
 from ..common.Misc import Decomposition, Identifier, VacuumToroidalField
 from ..common.Species import Species, SpeciesElectron, SpeciesIon
 from .CoreProfiles import CoreProfiles
@@ -173,26 +175,8 @@ class CoreSourcesSpecies(Dict):
         return self.get("type", {})
 
 
-class CoreSourcesSource(Actor):
-    _actor_module_prefix = "transport.core_sources."
-
-    Species = CoreSourcesSpecies
-    Profiles1D = CoreSourcesProfiles1D
-    GlobalQuantities = CoreSourcesGlobalQuantities
-
-    def __init__(self,   *args, grid: Optional[RadialGrid] = None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._grid = grid or getattr(self._parent, "_grid", None)
-        self._equilibrium = getattr(self._parent, "_equilibrium", None)
-        self._core_profiles = getattr(self._parent, "_core_profiles", None)
-
-    @property
-    def grid(self) -> RadialGrid:
-        return self._grid
-
-    @sp_property
-    def identifier(self) -> Identifier:
-        r"""
+class CoreSourcesSource(Module):
+    r"""
             Source term identifier (process causing this source term). Available options (refer to the children of this identifier structure) :
 
             Name	                                   | Index	        | Description
@@ -249,7 +233,20 @@ class CoreSourcesSource(Actor):
             custom_8                                   | 908            | Custom source terms 8; content to be decided by data provided
             custom_9                                   | 909            | Custom source terms 9; content to be decided by data provided
         """
-        return self.get("identifier", {})
+
+    _actor_module_prefix = "transport.core_sources."
+
+    Species = CoreSourcesSpecies
+    Profiles1D = CoreSourcesProfiles1D
+    GlobalQuantities = CoreSourcesGlobalQuantities
+
+    def __init__(self,   d, /, grid: RadialGrid, **kwargs):
+        super().__init__(d, **kwargs)
+        self._grid = grid
+
+    @property
+    def grid(self) -> RadialGrid:
+        return self._grid
 
     @sp_property
     def species(self) -> Species:
@@ -257,19 +254,14 @@ class CoreSourcesSource(Actor):
 
     @sp_property
     def global_quantities(self) -> GlobalQuantities:
-        return self.get("global_quantities", {})
+        return CoreSourcesSource.GlobalQuantities(self.get("global_quantities"), parent=self, grid=self._grid)
 
     @sp_property
     def profiles_1d(self) -> Profiles1D:
-        return self.get("profiles_1d", {})
+        return CoreSourcesSource.Profiles1D(self.get("profiles_1d"), parent=self, grid=self._grid)
 
-    def refresh(self,  *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None,  **kwargs) -> float:
-        time = super().refresh(*args, **kwargs)
-        if equilibrium is not None:
-            self._equilibrium = equilibrium
-        if core_profiles is not None:
-            self._core_profiles = core_profiles
-        return time
+    def refresh(self,  d=None, /,  **inputs) -> None:
+        return super().refresh(d, **inputs)
 
 
 class CoreSources(IDS):
@@ -278,11 +270,10 @@ class CoreSources(IDS):
     _IDS = "core_sources"
     Source = CoreSourcesSource
 
-    def __init__(self, *args, grid: Optional[RadialGrid] = None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._grid = grid or getattr(self._parent, "grid", None)
-        self._equilibrium = getattr(self._parent, "equilibrium", None)
-        self._core_profiles = getattr(self._parent, "core_profiles", None)
+    def __init__(self, d, /, grid: RadialGrid, parent=None,  **inputs):
+        super().__init__(d, parent=parent)
+        self._grid = grid
+        self._inputs = inputs
 
     @property
     def grid(self) -> RadialGrid:
@@ -294,13 +285,17 @@ class CoreSources(IDS):
 
     @sp_property
     def source(self) -> List[Source]:
-        return List[CoreSources.Source](
-            self.get("source", []),
-            defualt_value_when_combine={
-                "identifier": {"name": "total", "index": 1,
-                               "description": "Total source; combines all sources"}
-            },
-            parent=self)
+        return List[CoreSources.Source](self.get("source"), parent=self, grid=self._grid)
 
-    def refresh(self, *args, **kwargs) -> None:
-        self.source.refresh(*args, **kwargs)
+    @cached_property
+    def source_combiner(self) -> Source:
+        return self.source.combine({
+            "identifier": {"name": "total", "index": 1,
+                           "description": "Total source; combines all sources"},
+            "code": {"name": _undefined_}
+        })
+
+    def refresh(self, d=None, /, **inputs) -> None:
+        self.source.refresh(d, **collections.ChainMap(inputs, self._inputs))
+        if hasattr(self, "source_combiner"):
+            delattr(self, "source_combiner")

@@ -445,16 +445,17 @@ if __name__ == "__main__":
             x_axis=([0, 1.0],                                  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profiles.svg", transparent=True)
 
-    if True:  # CoreTransport
-        core_transport_mode = tok.core_transport.model.combine
+    if False:  # CoreTransport
+        core_transport_mode = tok.core_transport.model_combiner
 
-        logger.debug(np.asarray(core_transport_mode.profiles_1d.conductivity_parallel))
+        # logger.debug(np.asarray(core_transport_mode.profiles_1d.conductivity_parallel))
 
         tok.core_transport.refresh()
 
-        logger.debug(np.asarray(core_transport_mode.profiles_1d.conductivity_parallel))
+        # logger.debug(np.asarray(core_transport_mode.profiles_1d.conductivity_parallel))
 
         core_transport = core_transport_mode.profiles_1d
+
         plot_profiles(
             [
                 [
@@ -494,9 +495,11 @@ if __name__ == "__main__":
             title=tok.core_transport.model[0].identifier.name,
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
-    if True:  # CoreSources
+    if False:  # CoreSources
         tok.core_sources.refresh()
-        core_source = tok.core_sources.source.combine.profiles_1d
+
+        core_source = tok.core_sources.source_combiner.profiles_1d
+
         plot_profiles(
             [
                 [

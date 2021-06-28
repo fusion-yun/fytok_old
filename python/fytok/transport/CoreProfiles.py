@@ -16,13 +16,13 @@ from .MagneticCoordSystem import TWOPI, RadialGrid
 
 
 class CoreProfilesElectrons(SpeciesElectron):
-    def __init__(self,   *args,  **kwargs):
-        super().__init__(*args,    **kwargs)
+    def __init__(self,   d, /, grid: RadialGrid,  **kwargs):
+        super().__init__(d, grid=grid, **kwargs)
 
     @sp_property
     def temperature(self) -> Function:
         """Temperature {dynamic} [eV]"""
-        return self.get("temperature", None)
+        return Function(self._grid.rho_tor_norm, self.get("temperature", None))
 
     # @property
     # def temperature_validity(self):
@@ -39,7 +39,7 @@ class CoreProfilesElectrons(SpeciesElectron):
     @sp_property
     def density(self) -> Function:
         """Density (thermal+non-thermal) {dynamic} [m^-3]"""
-        return self.get("density", None)
+        return Function(self._grid.rho_tor_norm, self.get("density", None))
     # @property
     # def density_validity(self):
     #     """Indicator of the validity of the density profile.
@@ -102,8 +102,8 @@ class CoreProfilesElectrons(SpeciesElectron):
 
 
 class CoreProfilesIon(SpeciesIon):
-    def __init__(self,   *args,   **kwargs):
-        super().__init__(*args,  **kwargs)
+    def __init__(self, *args,   **kwargs):
+        super().__init__(*args,  ** kwargs)
 
     @sp_property
     def z_ion_1d(self) -> Function:
@@ -288,13 +288,13 @@ class CoreProfilesNeutral(Species):
         return NotImplemented
 
 
-class CoreProfiles1D(Profiles):
+class CoreProfiles1D(Dict[Node]):
     Electrons = CoreProfilesElectrons
     Ion = CoreProfilesIon
     Neutral = CoreProfilesNeutral
 
     def __init__(self, d, /, grid: RadialGrid,   **kwargs):
-        super().__init__(d,   **kwargs)
+        super().__init__(d, ** kwargs)
 
         if isinstance(grid, RadialGrid):
             rho_tor_norm = self.get("grid.rho_tor_norm", None)
@@ -307,28 +307,33 @@ class CoreProfiles1D(Profiles):
         self._r0 = self._grid.vacuum_toroidal_field.r0
         self._b0 = self._grid.vacuum_toroidal_field.b0
 
+        def new_child(value, _axis=self._grid.rho_tor_norm):
+            return Function(_axis, value) if isinstance(value, np.ndarray) and value.shape == _axis.shape else value
+
+        self.__new_child__ = new_child
+
     @property
     def axis(self) -> np.ndarray:
-        return self.grid.rho_tor_norm
+        return self._grid.rho_tor_norm
 
     @property
     def grid(self) -> RadialGrid:
         return self._grid
 
     @sp_property
-    def electrons(self) -> CoreProfilesElectrons:
+    def electrons(self) -> Electrons:
         """Quantities related to the electrons"""
-        return self.get("electrons", {})
+        return CoreProfiles1D.Electrons(self.get("electrons", {}), grid=self._grid, parent=self)
 
     @sp_property
-    def ion(self) -> List[CoreProfilesIon]:
+    def ion(self) -> List[Ion]:
         """Quantities related to the different ion species"""
-        return self.get("ion", [])
+        return List[CoreProfiles1D.Ion](self.get("ion", []), grid=self._grid, parent=self)
 
     @sp_property
-    def neutral(self) -> List[CoreProfilesNeutral]:
+    def neutral(self) -> List[Neutral]:
         """Quantities related to the different neutral species"""
-        return self.get("neutral", [])
+        return List[CoreProfiles1D.Neutral](self.get("neutral", []), grid=self._grid, parent=self)
 
     @sp_property
     def t_i_average(self) -> Function:
@@ -470,8 +475,8 @@ class CoreProfiles1D(Profiles):
     def coulomb_logarithm(self) -> Function:
         """ Coulomb logarithm, Tokamaks   Ch.14.5 p727 ,2003
         """
-        Te = self.electrons.temperature(self._axis)
-        Ne = self.electrons.density(self._axis)
+        Te = self.electrons.temperature(self._grid.rho_tor_norm)
+        Ne = self.electrons.density(self._grid.rho_tor_norm)
 
         # Coulomb logarithm
         #  Ch.14.5 p727 Tokamaks 2003
@@ -479,13 +484,13 @@ class CoreProfiles1D(Profiles):
                 (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te >= 10))
 
     class EField(Dict[Node]):
-        def __init__(self,   *args, grid: RadialGrid = None,   **kwargs):
-            super().__init__(*args,  **kwargs)
-            self._grid = grid or self._parent._grid
+        def __init__(self,   d, /, grid: RadialGrid,   **kwargs):
+            super().__init__(d,  **kwargs)
+            self._grid = grid
 
         @sp_property
         def parallel(self) -> Function:
-            return Function(self._grid.rho_tor_norm, self["parallel"])
+            return Function(self._grid.rho_tor_norm, self.get("parallel", None))
 
     @sp_property
     def e_field(self) -> EField:
@@ -530,13 +535,8 @@ class CoreProfiles(IDS):
     Profiles1D = CoreProfiles1D
     GlobalQuantities = CoreProfilesGlobalQuantities
 
-    @dataclass
-    class State(IDS.State):
-        profiles_1d: CoreProfiles1D
-
     def __init__(self,  d, /, grid: RadialGrid, ** kwargs):
         super().__init__(d, ** kwargs)
-
         self._grid = grid
 
     @sp_property

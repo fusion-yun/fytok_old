@@ -14,7 +14,6 @@ from spdm.util.logger import logger
 class BootstrapCurrent(CoreSources.Source):
     def __init__(self, d=None, /,  **kwargs):
         super().__init__(d,
-                         code={"name": "bootstrap_current"},
                          identifier={
                              "name": f"bootstrap_current",
                              "index": 13,

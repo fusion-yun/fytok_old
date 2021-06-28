@@ -1,6 +1,7 @@
 import collections
 from dataclasses import dataclass
-from typing import Optional
+from functools import cached_property
+from typing import ChainMap, Optional
 
 from spdm.data.Function import Function, function_like
 from spdm.data.Node import Dict, List, Node, sp_property
@@ -14,6 +15,7 @@ from ..common.IDS import IDS, IDSCode
 from ..common.Misc import Identifier, VacuumToroidalField
 from ..common.Species import (Species, SpeciesElectron, SpeciesIon,
                               SpeciesIonState)
+from ..common.Module import Module
 from .CoreProfiles import CoreProfiles
 from .Equilibrium import Equilibrium
 from .MagneticCoordSystem import RadialGrid
@@ -100,19 +102,19 @@ class CoreTransportIon(SpeciesIon):
 
     @sp_property
     def particles(self) -> TransportCoeff:
-        return TransportCoeff(self["particles"], parent=self._parent)
+        return TransportCoeff(self.get("particles", {}), parent=self._parent)
 
     @sp_property
     def energy(self) -> TransportCoeff:
-        return TransportCoeff(self["energy"], parent=self._parent)
+        return TransportCoeff(self.get("energy", {}), parent=self._parent)
 
     @sp_property
     def momentum(self) -> CoreTransportMomentum:
-        return self["momentum"]
+        return self.get("momentum", {})
 
     @sp_property
     def state(self) -> List[CoreTransportIonState]:
-        return self["state"]
+        return List[CoreTransportIonState](self.get("state", []), parent=self, grid=self._grid)
 
 
 class CoreTransportNeutral(Species):
@@ -122,15 +124,15 @@ class CoreTransportNeutral(Species):
     @property
     def ion_index(self) -> int:
         """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
-        return self["ion_index"]
+        return self.get("ion_index", 0)
 
     @sp_property
     def particles(self) -> TransportCoeff:
-        return TransportCoeff(self["particles"], parent=self._parent)
+        return TransportCoeff(self.get("particles", {}), parent=self._parent)
 
     @sp_property
     def energy(self) -> TransportCoeff:
-        return TransportCoeff(self["energy"], parent=self._parent)
+        return TransportCoeff(self.get("energy", {}), parent=self._parent)
 
 
 class CoreTransportProfiles1D(Dict[Node]):
@@ -140,7 +142,7 @@ class CoreTransportProfiles1D(Dict[Node]):
     Momentum = CoreTransportMomentum
 
     def __init__(self, d, /, grid: RadialGrid, ** kwargs):
-        super().__init__(d, axis=grid.rho_tor_norm,   **kwargs)
+        super().__init__(d, **kwargs)
         self._grid = grid
 
     @property
@@ -163,19 +165,19 @@ class CoreTransportProfiles1D(Dict[Node]):
         return self._grid.remesh(0.5*(self._grid.psi_norm[:-1]+self._grid.psi_norm[1:]))
 
     @sp_property
-    def electrons(self) -> CoreTransportElectrons:
+    def electrons(self) -> Electrons:
         """ Transport quantities related to the electrons """
-        return self.get('electrons', {})
+        return CoreTransportProfiles1D.Electrons(self.get('electrons', {}), parent=self, grid=self._grid)
 
     @sp_property
-    def ion(self) -> List[CoreTransportIon]:
+    def ion(self) -> List[Ion]:
         """ Transport coefficients related to the various ion species """
-        return self.get('ion', [])
+        return List[CoreTransportProfiles1D.Ion](self.get('ion', []), parent=self, grid=self._grid)
 
     @sp_property
-    def neutral(self) -> List[CoreTransportNeutral]:
+    def neutral(self) -> List[Neutral]:
         """ Transport coefficients related to the various neutral species """
-        return self.get('neutral', [])
+        return List[CoreTransportProfiles1D.Neutral](self.get('neutral', []), parent=self, grid=self._grid)
 
     @sp_property
     def momentum(self) -> CoreTransportMomentum:
@@ -201,33 +203,8 @@ class CoreTransportProfiles1D(Dict[Node]):
         return function_like(self.grid_flux.rho_tor_norm, self.get("e_field_radial", 0))
 
 
-class CoreTransportModel(Actor):
-
-    _actor_module_prefix = "transport.core_transport."
-
-    Profiles1D = CoreTransportProfiles1D
-
-    def __init__(self, d, /, grid: RadialGrid, ** kwargs):
-        super().__init__(d,  **kwargs)
-        self._grid = grid
-        self._equilibrium = getattr(self._parent, "_equilibrium", None)
-        self._core_profiles = getattr(self._parent, "_core_profiles", None)
-
-    @property
-    def grid(self):
-        return self._grid
-
-    @sp_property
-    def code(self) -> IDSCode:
-        return self.get("code", {})
-
-    @sp_property
-    def comment(self) -> str:
-        return self.get("comment", "")
-
-    @sp_property
-    def identifier(self) -> Identifier:
-        r"""
+class CoreTransportModel(Module):
+    r"""
             Transport model identifier. Available options (refer to the children of this identifier structure) :
 
             Name	            | Index	    | Description
@@ -247,7 +224,21 @@ class CoreTransportModel(Actor):
             pedestal            | 24        | Transport level to give edge pedestal
             not_provided	    | 25        | No data provided
         """
-        return self.get("identifier", {})
+
+    _actor_module_prefix = "transport.core_transport."
+
+    Profiles1D = CoreTransportProfiles1D
+
+    def __init__(self, d, /, grid: RadialGrid,  ** kwargs):
+        super().__init__(d,  **kwargs)
+
+        self._grid = grid
+        self._equilibrium = getattr(self._parent, "_equilibrium", None)
+        self._core_profiles = getattr(self._parent, "_core_profiles", None)
+
+    @property
+    def grid(self):
+        return self._grid
 
     @sp_property
     def flux_multiplier(self) -> float:
@@ -257,16 +248,9 @@ class CoreTransportModel(Actor):
     def profiles_1d(self) -> Profiles1D:
         return CoreTransportModel.Profiles1D(self.get("profiles_1d", {}), grid=self._grid, parent=self)
 
-    def refresh(self,  *args, grid=None, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None,  **kwargs) -> float:
-        super().refresh(*args, **kwargs)
-        if grid is not None:
-            self._grid = grid
-        if equilibrium is not None:
-            self._equilibrium = equilibrium
-        if core_profiles is not None:
-            self._core_profiles = core_profiles
+    def refresh(self,  d=None, /,  **inputs) -> None:
+        super().refresh(d,  **inputs)
         super().reset()
-        return self._time
 
 
 class CoreTransport(IDS):
@@ -285,11 +269,10 @@ class CoreTransport(IDS):
     _IDS = "core_transport"
     Model = CoreTransportModel
 
-    def __init__(self, d, /, grid: RadialGrid, ** kwargs):
-        super().__init__(d,  **kwargs)
+    def __init__(self, d, /, grid: RadialGrid, ** inputs):
+        super().__init__(d)
         self._grid = grid
-        self._equilibrium = kwargs.get("equilibrium", None) or getattr(self._parent, "equilibrium", None)
-        self._core_profiles = kwargs.get("core_profiles", None) or getattr(self._parent, "core_profiles", None)
+        self._inputs = inputs
 
     @property
     def grid(self):
@@ -301,16 +284,18 @@ class CoreTransport(IDS):
 
     @sp_property
     def model(self) -> List[Model]:
-        return List[CoreTransport.Model](
-            self.get("model", []),
-            default_value={
-                "identifier": {"name": "combined", "index": 1,
-                               "description": """Combination of data from available transport models.
-                                Representation of the total transport in the system"""},
-                "code": {"name": _undefined_}
-            },
-            parent=self,
-            grid=self._grid)
+        return List[CoreTransport.Model](self.get("model"),  parent=self,  grid=self._grid)
 
-    def refresh(self, *args, **kwargs) -> None:
-        return self.model.refresh(*args, **kwargs)
+    @cached_property
+    def model_combiner(self) -> Model:
+        return self.model.combine({
+            "identifier": {"name": "combined", "index": 1,
+                           "description": """Combination of data from available transport models.
+                                Representation of the total transport in the system"""},
+            "code": {"name": _undefined_}
+        })
+
+    def refresh(self, d=None, /, **inputs) -> None:
+        self.model.refresh(d, **collections.ChainMap(inputs, self._inputs))
+        if hasattr(self, "model_combiner"):
+            delattr(self, "model_combiner")

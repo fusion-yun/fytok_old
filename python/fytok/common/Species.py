@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from fytok.transport.MagneticCoordSystem import RadialGrid
 from spdm.data.Node import Dict, List, Node, sp_property
-from spdm.numlib import constants
+from spdm.numlib import constants, np
 from spdm.util.logger import logger
 
 
@@ -29,26 +29,21 @@ class SpeciesElement(Dict):
 class Species(Dict[Node]):
     Element = SpeciesElement
 
-    def __init__(self,   *args, axis=None, parent=None,  **kwargs):
-        if axis is None:
-            grid = getattr(parent, "_grid", None)
-            axis = getattr(grid, "rho_tor_norm", None)
-        if axis is None:
-            raise RuntimeError("axis is None")
-        super().__init__(*args, axis=axis, parent=parent, **kwargs)
+    def __init__(self,  d, /, **kwargs):
+        super().__init__(d,  **kwargs)
 
     @sp_property
     def label(self) -> str:
         """String identifying ion (e.g. H+, D+, T+, He+2, C+, ...) {dynamic}    """
-        return self["label"]
+        return self.get("label", "")
 
     @sp_property
     def multiple_states_flag(self) -> int:
-        return self["multiple_states_flag"]
+        return self.get("multiple_states_flag", 0)
 
     @sp_property
     def element(self) -> List[Element]:
-        return self["element"]
+        return self.get("element", [])
 
     @sp_property
     def a(self) -> float:
@@ -61,9 +56,9 @@ class Species(Dict[Node]):
 
 
 class SpeciesElectron(Species):
-    def __init__(self, *args, grid=None, **kwargs):
-        super().__init__(*args,  **kwargs)
-        self._grid = grid or self._parent._grid
+    def __init__(self, d, /, grid: RadialGrid, **kwargs):
+        super().__init__(d,  **kwargs)
+        self._grid = grid
 
     @property
     def label(self) -> str:
@@ -115,9 +110,9 @@ class SpeciesIonState(Dict):
 
 
 class SpeciesIon(Species):
-    def __init__(self, *args, grid: RadialGrid = None, **kwargs):
-        super().__init__(*args,  **kwargs)
-        self._grid = grid or self._parent._grid
+    def __init__(self, d, /, grid: RadialGrid, **kwargs):
+        super().__init__(d,  **kwargs)
+        self._grid = grid
 
     @sp_property
     def z(self) -> float:

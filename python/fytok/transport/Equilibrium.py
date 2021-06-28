@@ -1,27 +1,27 @@
 import collections
 from dataclasses import dataclass
-from typing import Sequence, Union
+from typing import Sequence, TypeVar, Union
 
 import matplotlib.pyplot as plt
-from fytok.device.PFActive import PFActive
-from spdm.numlib import np
 import scipy
-from spdm.numlib import constants
 import scipy.integrate
+from fytok.device.PFActive import PFActive
+from fytok.transport.CoreProfiles import CoreProfiles
 from spdm.data.Field import Field
 from spdm.data.Function import Function
-from spdm.data.Node import Dict, List
+from spdm.data.Node import Dict, List, Node, sp_property
 from spdm.data.Profiles import Profiles
-from spdm.data.Node import sp_property
+from spdm.numlib import constants, np
 from spdm.util.logger import logger
 from spdm.util.utilities import _not_found_, try_get
 
-from ..device.Wall import Wall
-from ..device.PFActive import PFActive
-from ..device.Magnetics import Magnetics
 from ..common.GGD import GGD
 from ..common.IDS import IDS
 from ..common.Misc import RZTuple, VacuumToroidalField
+from ..common.Module import Module
+from ..device.Magnetics import Magnetics
+from ..device.PFActive import PFActive
+from ..device.Wall import Wall
 from .MagneticCoordSystem import MagneticCoordSystem, RadialGrid
 
 TOLERANCE = 1.0e-6
@@ -258,11 +258,8 @@ class EquilibriumGlobalQuantities(Dict):
 class EquilibriumProfiles1D(Profiles):
     """Equilibrium profiles(1D radial grid) as a function of the poloidal flux	"""
 
-    def __init__(self,  *args,  coord: MagneticCoordSystem = None, parent=None,    **kwargs):
-        if coord is None:
-            coord = parent.coordinate_system
-
-        super().__init__(*args, axis=coord.psi_norm, parent=parent, **kwargs)
+    def __init__(self,  d, /,  coord: MagneticCoordSystem, **kwargs):
+        super().__init__(d, axis=coord.psi_norm, **kwargs)
         self._coord = coord
         self._grid = self._coord.radial_grid
 
@@ -553,8 +550,8 @@ class EquilibriumProfiles2D(Dict):
         Equilibrium 2D profiles in the poloidal plane.
     """
 
-    def __init__(self,   *args, coord: MagneticCoordSystem = None,   ** kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self,  d, /, coord: MagneticCoordSystem,   ** kwargs):
+        super().__init__(d, **kwargs)
         self._coord = coord or getattr(self._parent, "coordinate_system", _not_found_)
 
     @sp_property
@@ -622,10 +619,8 @@ class EquilibriumBoundary(Dict):
         of the separatrix
     """
 
-    def __init__(self,  *args, coord: MagneticCoordSystem = None, parent=None,   ** kwargs):
-        if coord is None:
-            coord = parent.coordinate_system
-        super().__init__(*args, axis=coord.psi_norm, parent=parent, **kwargs)
+    def __init__(self,  d, /, coord: MagneticCoordSystem,     ** kwargs):
+        super().__init__(d,   **kwargs)
         self._coord = coord
 
     @sp_property
@@ -718,12 +713,11 @@ class EquilibriumBoundary(Dict):
         return NotImplemented
 
 
-class EquilibriumBoundarySeparatrix(Profiles):
+class EquilibriumBoundarySeparatrix(Dict[Node]):
 
-    def __init__(self,  *args, coord: MagneticCoordSystem = None, parent=None,   ** kwargs):
-        if coord is None:
-            coord = parent.coordinate_system
-        super().__init__(*args, axis=coord.psi_norm, parent=parent, **kwargs)
+    def __init__(self,  d, /, coord: MagneticCoordSystem,    ** kwargs):
+
+        super().__init__(d, **kwargs)
         self._coord = coord
 
     @sp_property
@@ -771,17 +765,8 @@ class EquilibriumTimeSlice(Dict):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    @sp_property
-    def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        return self.coordinate_system.vacuum_toroidal_field
-
-    @property
-    def radial_grid(self ) -> RadialGrid:
-        return self.coordinate_system.radial_grid 
-
-    @sp_property
-    def coordinate_system(self) -> MagneticCoordSystem:
         psirz = self.get("profiles_2d.psi", None)
+
         if not isinstance(psirz, Field):
             psirz = Field(psirz,
                           self.get("profiles_2d.grid.dim1"),
@@ -805,16 +790,7 @@ class EquilibriumTimeSlice(Dict):
         else:
             raise TypeError(f"{type(fpol)}")
 
-        # pressure = self.get("profiles_1d.pressure", None)
-
-        # if isinstance(pressure, Function):
-        #     pass
-        # elif isinstance(pressure, np.ndarray) and pressure.shape == p_psi_norm.shape:
-        #     pressure = Function(p_psi_norm, pressure)
-        # else:
-        #     raise TypeError(f"{type(pressure)}")
-
-        return MagneticCoordSystem(
+        self._coord = MagneticCoordSystem(
             psi_norm=psi_norm,
             psirz=psirz,
             fpol=fpol,
@@ -823,29 +799,41 @@ class EquilibriumTimeSlice(Dict):
             ntheta=self.get("coordinate_system.ntheta", None)
         )
 
+    @property
+    def coordinate_system(self) -> MagneticCoordSystem:
+        return self._coord
+
+    @sp_property
+    def vacuum_toroidal_field(self) -> VacuumToroidalField:
+        return self.coordinate_system.vacuum_toroidal_field
+
+    @property
+    def radial_grid(self) -> RadialGrid:
+        return self.coordinate_system.radial_grid
+
     @sp_property
     def constraints(self) -> Constraints:
         return self.get("constraints", {})
 
     @sp_property
     def profiles_1d(self) -> Profiles1D:
-        return self.get("profiles_1d", {})
+        return EquilibriumTimeSlice.Profiles1D(self.get("profiles_1d", {}), coord=self.coordinate_system, parent=self)
 
     @sp_property
     def profiles_2d(self) -> Profiles2D:
-        return self.get("profiles_2d", {})
+        return EquilibriumTimeSlice.Profiles2D(self.get("profiles_2d", {}), coord=self.coordinate_system, parent=self)
 
     @sp_property
     def global_quantities(self) -> GlobalQuantities:
-        return self.get("global_quantities", {})
+        return EquilibriumTimeSlice.GlobalQuantities(self.get("global_quantities", {}), coord=self.coordinate_system, parent=self)
 
     @sp_property
     def boundary(self) -> Boundary:
-        return self.get("boundary", {})
+        return EquilibriumTimeSlice.Boundary(self.get("boundary", {}), coord=self.coordinate_system, parent=self)
 
     @sp_property
     def boundary_separatrix(self) -> BoundarySeparatrix:
-        return self.get("boundary_separatrix", {})
+        return EquilibriumTimeSlice.BoundarySeparatrix(self.get("boundary_separatrix", {}), coord=self.coordinate_system, parent=self)
 
     def plot(self, axis=None, *args,
              scalar_field=[],
@@ -997,12 +985,6 @@ class Equilibrium(IDS):
     Constraints = EquilibriumConstraints
     TimeSlice = EquilibriumTimeSlice
 
-    @dataclass
-    class State(IDS.State):
-        vacuum_toroidal_field: VacuumToroidalField
-        time_slice: EquilibriumTimeSlice
-        grid_gdd: GGD
-
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -1015,12 +997,12 @@ class Equilibrium(IDS):
         return self.get("grid_ggd")
 
     @sp_property
-    def time_slice(self) -> EquilibriumTimeSlice:
+    def time_slice(self) -> TimeSlice:
         return self.get("time_slice")
 
-    def update(self,  *args, constraints: Constraints, core_profiles=None, wall: Wall = None,
-               pf_active: PFActive = None, magnetics: Magnetics = None, **kwargs):
-        super().update(*args, **kwargs)
+    def refresh(self,  *args, constraints: Constraints, core_profiles=None, wall: Wall = None,
+                pf_active: PFActive = None, magnetics: Magnetics = None, **kwargs):
+        super().refresh(*args, **kwargs)
 
     ####################################################################################
     # Plot profiles
@@ -1139,36 +1121,3 @@ class Equilibrium(IDS):
         fig.align_ylabels()
 
         return fig
-
-    # # Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip^2]  [-]
-    # self.global_quantities.beta_pol = NotImplemented
-    # # Toroidal beta, defined as the volume-averaged total perpendicular pressure divided by (B0^2/(2*mu0)), i.e. beta_toroidal = 2 mu0 int(p dV) / V / B0^2  [-]
-    # self.global_quantities.beta_tor = NotImplemented
-    # # Normalised toroidal beta, defined as 100 * beta_tor * a[m] * B0 [T] / ip [MA]  [-]
-    # self.global_quantities.beta_normal = NotImplemented
-    # # Plasma current (toroidal component). Positive sign means anti-clockwise when viewed from above.  [A].
-    # self.global_quantities.ip = NotImplemented
-    # # Internal inductance  [-]
-    # self.global_quantities.li_3 = NotImplemented
-    # # Total plasma volume  [m^3]
-    # self.global_quantities.volume = NotImplemented
-    # # Area of the LCFS poloidal cross section  [m^2]
-    # self.global_quantities.area = NotImplemented
-    # # Surface area of the toroidal flux surface  [m^2]
-    # self.global_quantities.surface = NotImplemented
-    # # Poloidal length of the magnetic surface  [m]
-    # self.global_quantities.length_pol = NotImplemented
-    # # Poloidal flux at the magnetic axis  [Wb].
-    # self.global_quantities.psi_axis = NotImplemented
-    # # Poloidal flux at the selected plasma boundary  [Wb].
-    # self.global_quantities.psi_boundary = NotImplemented
-    # # Magnetic axis position and toroidal field	structure
-    # self.global_quantities.magnetic_axis = NotImplemented
-    # # q at the magnetic axis  [-].
-    # self.global_quantities.q_axis = NotImplemented
-    # # q at the 95% poloidal flux surface (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)  [-].
-    # self.global_quantities.q_95 = NotImplemented
-    # # Minimum q value and position	structure
-    # self.global_quantities.q_min = NotImplemented
-    # # Plasma energy content = 3/2 * int(p,dV) with p being the total pressure (thermal + fast particles) [J]. Time-dependent; Scalar  [J]
-    # self.global_quantities.energy_mhd = NotImplemented

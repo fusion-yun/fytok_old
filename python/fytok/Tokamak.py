@@ -43,8 +43,8 @@ class Tokamak(Actor):
 
     """
 
-    def __init__(self, d=None, * args,  **kwargs):
-        super().__init__(collections.ChainMap(d if d is not None else {}, kwargs))
+    def __init__(self, d=None, /,  **kwargs):
+        super().__init__(d, **kwargs)
         self._time = 0.0
 
     @property
@@ -117,46 +117,46 @@ class Tokamak(Actor):
 
         time = super().advance(time=time, dt=dt)
 
-        self.wall.advance(time=time, update=False)
+        self.wall.advance(time=time, refresh=False)
 
-        self.pf_active.advance(time=time, update=False)
+        self.pf_active.advance(time=time, refresh=False)
 
-        self.equilibrium.advance(time=time, update=False)
+        self.equilibrium.advance(time=time, refresh=False)
 
-        self.core_profiles.advance(time=time, update=False)
+        self.core_profiles.advance(time=time, refresh=False)
 
-        self.core_sources.advance(time=time, update=False)
+        self.core_sources.advance(time=time, refresh=False)
 
-        self.core_transport.advance(time=time, update=False)
+        self.core_transport.advance(time=time, refresh=False)
 
-    def update(self, d=None, /, constraints: Equilibrium.Constraints = None, max_iteration=1, max_nodes=1250,  enable_edge=False,  tolerance=1.0e-6, **kwargs):
+    def refresh(self, d=None, /, constraints: Equilibrium.Constraints = None, max_iteration=1, max_nodes=1250,  enable_edge=False,  tolerance=1.0e-6, **kwargs):
 
-        super().update(d)
+        super().refresh(d)
 
         for nstep in range(max_iteration):
 
-            self.core_profiles.update()
+            self.core_profiles.refresh()
 
-            self.equilibrium.update(
+            self.equilibrium.refresh(
                 constraints=constraints,
                 core_profiles=self.core_profiles,
                 wall=self.wall,
                 pf_active=self.pf_active,
                 magnetics=self.magnetics)
 
-            self.core_sources.update(equilibrium=self.equilibrium, core_profiles=self.core_profiles)
+            self.core_sources.refresh(equilibrium=self.equilibrium, core_profiles=self.core_profiles)
 
-            self.core_transport.update(equilibrium=self.equilibrium, core_profiles=self.core_profiles)
+            self.core_transport.refresh(equilibrium=self.equilibrium, core_profiles=self.core_profiles)
 
             if enable_edge:
-                self.edge_transport.update(equilibrium=self.equilibrium, core_profiles=self.core_profiles)
+                self.edge_transport.refresh(equilibrium=self.equilibrium, core_profiles=self.core_profiles)
 
-                self.edge_sources.update(equilibrium=self.equilibrium, core_profiles=self.core_profiles)
+                self.edge_sources.refresh(equilibrium=self.equilibrium, core_profiles=self.core_profiles)
 
-                self.edge_profiles.update()
+                self.edge_profiles.refresh()
 
-            # TODO: update boundary condition
-            self.transport_solver.update()
+            # TODO: refresh boundary condition
+            self.transport_solver.refresh()
 
             redisual = self.transport_solver.solve(max_nodes=max_nodes, tolerance=tolerance, **kwargs)
 

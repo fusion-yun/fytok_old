@@ -12,7 +12,7 @@ from spdm.util.logger import logger
 
 
 class CoreSourceDummy(CoreSources.Source):
-    def __init__(self, d=None, *args,  **kwargs):
+    def __init__(self, d=None,/,  **kwargs):
         super().__init__(d,
                          identifier={
                              "name": f"unspecified",

@@ -2,11 +2,12 @@ import datetime
 import getpass
 import os
 from dataclasses import dataclass
-from typing import Mapping, Optional, Sequence
+from typing import Mapping, Optional, Sequence, TypeVar
 
 from spdm.data.Node import Dict, List, Node, sp_property
-from spdm.flow.Actor import Actor
 from spdm.util.logger import logger
+from spdm.util.utilities import _undefined_
+from spdm.flow.Actor import Actor
 
 
 class IDSProperties(Dict):
@@ -112,15 +113,19 @@ class IDSCode(Dict):
         return List[IDSCode.LibraryDesc](self["library"],   parent=self)
 
 
-class IDS(Actor):
+_TState = TypeVar("_TState")
+
+
+class IDS(Actor[_TState]):
     """
         %%%DESCRIPTION%%%.
         .. todo:: '___NAME___' IS NOT IMPLEMENTED
     """
     _IDS = "NOT_DEFINED"
 
-    def __init__(self,  *args, ** kwargs):
-        super().__init__(*args, ** kwargs)
+    def __init__(self,  d, /, ids_properties=_undefined_,  ** kwargs):
+        super().__init__(d, ** kwargs)
+        self.update({"ids_properties": ids_properties})
 
     def __serialize__(self, properties: Optional[Sequence] = None):
         res = super().__serialize__(properties=properties)
