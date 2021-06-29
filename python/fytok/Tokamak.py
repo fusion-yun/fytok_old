@@ -61,7 +61,7 @@ class Tokamak(Actor):
 
     @sp_property
     def wall(self) -> Wall:
-        return self.get("wall")
+        return self.fetch("wall")
 
     @sp_property
     def tf(self) -> TF:

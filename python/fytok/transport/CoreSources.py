@@ -6,7 +6,6 @@ from typing import Optional
 from spdm.data.AttributeTree import AttributeTree
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List, Node, sp_property
-from spdm.data.Profiles import Profiles
 from spdm.flow.Actor import Actor
 from spdm.numlib import constants, np
 from spdm.util.logger import logger
@@ -35,7 +34,7 @@ class CoreSourcesParticle(Dict):
 
     @sp_property
     def momentum(self):
-        return Profiles(self["momentum"], axis=self._parent.grid.rho_tor_norm, parent=self._parent)
+        return Dict(self.get("momentum"), parent=self._parent)
 
         # {
         #     "radial": Function(self._parent.grid.rho_tor_norm, self["momentum.radial"], parent=self._parent),
@@ -83,19 +82,19 @@ class CoreSourcesIon(SpeciesIon):
         return self.get("energy_decomposed", {})
 
 
-class CoreSourcesNeutral(Profiles):
+class CoreSourcesNeutral(Dict):
     def __init__(self,  *args,   **kwargs):
         super().__init__(* args,  **kwargs)
 
 
-class CoreSourcesProfiles1D(Profiles):
+class CoreSourcesProfiles1D(Dict):
 
     Electrons = CoreSourcesElectrons
     Ion = CoreSourcesIon
     Neutral = CoreSourcesNeutral
 
     def __init__(self, *args, grid: RadialGrid, **kwargs):
-        super().__init__(*args, axis=grid.rho_tor_norm, **kwargs)
+        super().__init__(*args,  **kwargs)
         self._grid = grid
 
     @property
@@ -116,31 +115,31 @@ class CoreSourcesProfiles1D(Profiles):
 
     @sp_property
     def total_ion_energy(self):
-        return np.sum([ion.energy for ion in self.ion])
+        return Function(self._grid.rho_tor_norm, np.sum([ion.energy for ion in self.ion]))
 
     @sp_property
     def total_ion_power_inside(self) -> Function:
-        return self.get("total_ion_power_inside", None)
+        return Function(self._grid.rho_tor_norm, self.get("total_ion_power_inside"))
 
     @sp_property
     def momentum_tor(self) -> Function:
-        return self.get("momentum_tor", None)
+        return Function(self._grid.rho_tor_norm, self.get("momentum_tor"))
 
     @sp_property
     def torque_tor_inside(self) -> Function:
-        return self.get("torque_tor_inside", None)
+        return Function(self._grid.rho_tor_norm, self.get("torque_tor_inside"))
 
     @sp_property
     def j_parallel(self) -> Function:
-        return self.get("j_parallel", None)
+        return Function(self._grid.rho_tor_norm, self.get("j_parallel"))
 
     @sp_property
     def current_parallel_inside(self) -> Function:
-        return self.get("current_parallel_inside", None)
+        return Function(self._grid.rho_tor_norm, self.get("current_parallel_inside"))
 
     @sp_property
     def conductivity_parallel(self) -> Function:
-        return self.get("conductivity_parallel", None)
+        return Function(self._grid.rho_tor_norm, self.get("conductivity_parallel"))
 
 
 class CoreSourcesGlobalQuantities(Dict):
@@ -299,4 +298,3 @@ class CoreSources(IDS):
     def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles,  **kwargs) -> None:
         self.source.refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
         self.source_combiner.refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles,  **kwargs)
-

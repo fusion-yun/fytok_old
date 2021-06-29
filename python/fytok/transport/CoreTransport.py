@@ -5,8 +5,6 @@ from typing import ChainMap, Optional
 
 from spdm.data.Function import Function, function_like
 from spdm.data.Node import Dict, List, Node, sp_property
-from spdm.data.Profiles import Profiles
-from spdm.flow.Actor import Actor
 from spdm.numlib import np
 from spdm.util.logger import logger
 from spdm.util.utilities import _not_found_, _undefined_

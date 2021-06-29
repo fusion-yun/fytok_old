@@ -294,7 +294,7 @@ class TransportSolverBVP2(TransportSolver):
         # -----------------------------------------------------------
         # boundary condition, value
         bc: TransportSolver.BoundaryConditions1D.BoundaryConditions =  \
-            self.boundary_conditions_1d.fetch(var_id[:-1]+["particles"], NotImplemented)
+            self.boundary_conditions_1d.get(var_id[:-1]+["particles"], NotImplemented)
         logger.debug(bc)
         # axis
         u0, v0, w0 = 0, 1, 0

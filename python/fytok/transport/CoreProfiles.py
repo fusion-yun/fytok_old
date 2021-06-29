@@ -5,7 +5,6 @@ from fytok.transport.Equilibrium import Equilibrium
 
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List, Node, sp_property
-from spdm.data.Profiles import Profiles
 from spdm.numlib import constants, np
 from spdm.util.logger import logger
 from spdm.util.utilities import _not_found_
@@ -352,7 +351,7 @@ class CoreProfiles1D(Dict[Node]):
     @sp_property
     def n_i_thermal_total(self) -> Function:
         """Total ion thermal density(sum over species and charge states) {dynamic}[m ^ -3]"""
-        return np.sum([np.asarray(ion.z_ion*ion.density_thermal) for ion in self.ion])
+        return Function(self._grid.rho_tor_norm, np.sum([np.asarray(ion.z_ion*ion.density_thermal) for ion in self.ion]))
 
     @sp_property
     def zeff(self) -> Function:
@@ -409,7 +408,7 @@ class CoreProfiles1D(Dict[Node]):
     @sp_property
     def current_parallel_inside(self) -> Function:
         """Parallel current driven inside the flux surface. Cumulative surface integral of j_total {dynamic}[A]"""
-        return self["current_parallel_inside"]
+        return Function(self._grid.rho_tor_norm, self.get("current_parallel_inside"))
 
     @sp_property
     def j_tor(self) -> Function:
@@ -435,13 +434,12 @@ class CoreProfiles1D(Dict[Node]):
     def j_bootstrap(self) -> Function:
         """Bootstrap current density = average(J_Bootstrap.B) / B0,
             where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
-        return self["j_bootstrap"]
+        return Function(self._grid.rho_tor_norm, self.get("j_bootstrap"))
 
     @sp_property
     def conductivity_parallel(self) -> Function:
         """Parallel conductivity {dynamic}[ohm ^ -1.m ^ -1]"""
-
-        return self["conductivity_parallel"]
+        return Function(self._grid.rho_tor_norm, self.get("conductivity_parallel"))
 
         # if isinstance(d, np.ndarray) or (hasattr(d.__class__, 'empty') and not d.empty):
         #     return d
@@ -474,8 +472,8 @@ class CoreProfiles1D(Dict[Node]):
 
         # Coulomb logarithm
         #  Ch.14.5 p727 Tokamaks 2003
-        return ((14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +
-                (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te >= 10))
+        return Function(self._grid.rho_tor_norm, ((14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +
+                                                  (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te >= 10)))
 
     class EField(Dict[Node]):
         def __init__(self,   d, /, grid: RadialGrid,   **kwargs):
@@ -495,7 +493,7 @@ class CoreProfiles1D(Dict[Node]):
     @sp_property
     def phi_potential(self) -> Function:
         """Electrostatic potential, averaged on the magnetic flux surface {dynamic}[V]"""
-        return self["phi_potential"]
+        return Function(self._grid.rho_tor_norm, self.get("phi_potential"))
 
     @sp_property
     def rotation_frequency_tor_sonic(self) -> Function:
@@ -503,18 +501,18 @@ class CoreProfiles1D(Dict[Node]):
         This quantity is the toroidal angular rotation frequency due to the ExB drift, introduced in formula(43) of Hinton and Wong,
         Physics of Fluids 3082 (1985), also referred to as sonic flow in regimes in which the toroidal velocity is dominant over the
         poloidal velocity Click here for further documentation. {dynamic}[s ^ -1]"""
-        return self["rotation_frequency_tor_sonic"]
+        return Function(self._grid.rho_tor_norm, self.get("rotation_frequency_tor_sonic"))
 
     @sp_property
     def q(self) -> Function:
         """Safety factor(IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic}[-].
         This quantity is COCOS-dependent, with the following transformation: """
-        return self["q"]
+        return Function(self._grid.rho_tor_norm, self.get("q"))
 
     @sp_property
     def magnetic_shear(self) -> Function:
         """Magnetic shear, defined as rho_tor/q . dq/drho_tor {dynamic}[-]"""
-        return self["magnetic_shear"]
+        return Function(self._grid.rho_tor_norm, self.get("magnetic_shear"))
 
 
 class CoreProfilesGlobalQuantities(Dict):
