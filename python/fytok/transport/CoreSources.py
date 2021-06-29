@@ -13,8 +13,8 @@ from spdm.util.logger import logger
 from spdm.util.utilities import _undefined_
 
 from ..common.IDS import IDS
-from ..common.Module import Module
 from ..common.Misc import Decomposition, Identifier, VacuumToroidalField
+from ..common.Module import Module
 from ..common.Species import Species, SpeciesElectron, SpeciesIon
 from .CoreProfiles import CoreProfiles
 from .Equilibrium import Equilibrium
@@ -94,8 +94,7 @@ class CoreSourcesProfiles1D(Profiles):
     Ion = CoreSourcesIon
     Neutral = CoreSourcesNeutral
 
-    def __init__(self, *args, grid: RadialGrid = None, parent=None, **kwargs):
-        grid = grid or parent._grid
+    def __init__(self, *args, grid: RadialGrid, **kwargs):
         super().__init__(*args, axis=grid.rho_tor_norm, **kwargs)
         self._grid = grid
 
@@ -104,16 +103,16 @@ class CoreSourcesProfiles1D(Profiles):
         return self._grid
 
     @sp_property
-    def electrons(self) -> CoreSourcesElectrons:
-        return self.get("electrons", {})
+    def electrons(self) -> Electrons:
+        return CoreSourcesProfiles1D.Electrons(self.get("electrons"), parent=self, grid=self.grid)
 
     @sp_property
-    def ion(self) -> List[CoreSourcesIon]:
-        return self.get("ion", [])
+    def ion(self) -> List[Ion]:
+        return List[CoreSourcesProfiles1D.Ion](self.get("ion"), parent=self, grid=self.grid)
 
     @sp_property
-    def neutral(self) -> List[CoreSourcesNeutral]:
-        return self.get("neutral", [])
+    def neutral(self) -> List[Neutral]:
+        return List[CoreSourcesProfiles1D.Neutral](self.get("neutral"), parent=self, grid=self.grid)
 
     @sp_property
     def total_ion_energy(self):
@@ -260,8 +259,11 @@ class CoreSourcesSource(Module):
     def profiles_1d(self) -> Profiles1D:
         return CoreSourcesSource.Profiles1D(self.get("profiles_1d"), parent=self, grid=self._grid)
 
-    def refresh(self,  d=None, /,  **inputs) -> None:
-        return super().refresh(d, **inputs)
+    def refresh(self, *args, core_profiles: CoreProfiles,  **kwargs) -> None:
+        self._grid = core_profiles.profiles_1d.grid
+        self.remove("profiles_1d")
+        self.remove("global_quantities")
+        return super().refresh(*args, core_profiles=core_profiles, **kwargs)
 
 
 class CoreSources(IDS):

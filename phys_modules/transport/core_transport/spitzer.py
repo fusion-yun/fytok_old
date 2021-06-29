@@ -29,8 +29,7 @@ class Spitzer(CoreTransport.Model):
                          }, **kwargs)
 
     def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles,  **kwargs):
-
-        super().refresh(*args, **kwargs)
+        super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
         eV = constants.electron_volt
         B0 = self.grid.vacuum_toroidal_field.b0

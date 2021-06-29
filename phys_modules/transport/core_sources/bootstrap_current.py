@@ -22,7 +22,7 @@ class BootstrapCurrent(CoreSources.Source):
 
     def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles, **kwargs) -> None:
 
-        super().refresh(*args, **kwargs)
+        super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
         equilibrium_1d = equilibrium.time_slice.profiles_1d
         core_profiles_1d = core_profiles.profiles_1d
@@ -115,8 +115,7 @@ class BootstrapCurrent(CoreSources.Source):
                                  - j_bootstrap * x/(2.4+5.4*x+2.6*x**2) * Pe
                                  * equilibrium_1d.fpol(psi_norm) * q / rho_tor_norm / (rho_tor[-1])**2 / (2.0*constants.pi*B0))
 
-        self.profiles_1d["j_parallel"] = Function(self.grid.rho_tor_norm, np.hstack([j_bootstrap[0], j_bootstrap]))
-        return 0.0
+        self["profiles_1d.j_parallel"] = Function(self.grid.rho_tor_norm, np.hstack([j_bootstrap[0], j_bootstrap]))
 
 
 __SP_EXPORT__ = BootstrapCurrent

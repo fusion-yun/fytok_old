@@ -21,12 +21,9 @@ class CollisionalEquipartition(CoreSources.Source):
                              "description": f"{self.__class__.__name__} Collisional Energy Tansport "
                          },   **kwargs)
 
-    def refresh(self, *args,
-                equilibrium: Equilibrium,
-                core_profiles: CoreProfiles,
-                **kwargs):
+    def refresh(self, *args,   equilibrium: Equilibrium,  core_profiles: CoreProfiles,     **kwargs):
 
-        super().refresh(*args, **kwargs)
+        super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
         Te = core_profiles.profiles_1d.electrons.temperature
         ne = core_profiles.profiles_1d.electrons.density

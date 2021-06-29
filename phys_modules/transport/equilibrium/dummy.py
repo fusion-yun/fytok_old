@@ -17,7 +17,7 @@ class EquilibriumDummy(Equilibrium):
         super().__init__(*args, **kwargs)
 
     def refresh(self, *args, core_profiles: CoreProfiles = None, constraints: Equilibrium.Constraints = None, **kwargs):
-        logger.debug(f"Dummy actor: do nothing!")
+        logger.debug(f"Dummy actor:  Nothing to do!")
 
 
 __SP_EXPORT__ = EquilibriumDummy

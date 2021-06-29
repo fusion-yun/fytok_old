@@ -245,9 +245,10 @@ class CoreTransportModel(Module):
     def profiles_1d(self) -> Profiles1D:
         return CoreTransportModel.Profiles1D(self.get("profiles_1d", {}), grid=self._grid, parent=self)
 
-    def refresh(self,  d=None, /,  **inputs) -> None:
-        super().refresh(d,  **inputs)
-        super().reset()
+    def refresh(self, *args, core_profiles: CoreProfiles, **kwargs) -> None:
+        self._grid = core_profiles.profiles_1d.grid
+        self.remove("profiles_1d")
+        return super().refresh(*args, core_profiles=core_profiles, **kwargs)
 
 
 class CoreTransport(IDS):

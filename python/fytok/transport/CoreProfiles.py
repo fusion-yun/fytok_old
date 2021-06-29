@@ -1,6 +1,7 @@
 import collections
 from dataclasses import dataclass
 from typing import Optional
+from fytok.transport.Equilibrium import Equilibrium
 
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List, Node, sp_property
@@ -293,17 +294,10 @@ class CoreProfiles1D(Dict[Node]):
     Ion = CoreProfilesIon
     Neutral = CoreProfilesNeutral
 
-    def __init__(self, d, /, grid: RadialGrid,   **kwargs):
-        super().__init__(d, ** kwargs)
+    def __init__(self, *args, grid: RadialGrid,   **kwargs):
+        super().__init__(*args, ** kwargs)
 
-        if isinstance(grid, RadialGrid):
-            rho_tor_norm = self.get("grid.rho_tor_norm", None)
-            if rho_tor_norm is not None:
-                self._grid = grid.remesh(rho_tor_norm, "rho_tor_norm")
-            else:
-                self._grid = grid
-        else:
-            self._grid = RadialGrid(**self.get("grid", {}))
+        self._grid = grid
         self._r0 = self._grid.vacuum_toroidal_field.r0
         self._b0 = self._grid.vacuum_toroidal_field.b0
 
@@ -535,11 +529,11 @@ class CoreProfiles(IDS):
     Profiles1D = CoreProfiles1D
     GlobalQuantities = CoreProfilesGlobalQuantities
 
-    def __init__(self,  d, /, grid: RadialGrid, ** kwargs):
-        super().__init__(d, ** kwargs)
+    def __init__(self, *args, grid: RadialGrid, ** kwargs):
+        super().__init__(*args, ** kwargs)
         self._grid = grid
 
-    @sp_property
+    @property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
         return self._grid.vacuum_toroidal_field
 
@@ -550,3 +544,7 @@ class CoreProfiles(IDS):
     @sp_property
     def global_quantities(self) -> GlobalQuantities:
         return self.get("global_quantities")
+
+    def refresh(self, *args, equlibrium: Equilibrium, **kwargs) -> None:
+        self._grid = equlibrium.time_slice.radial_grid.remesh(self._grid.rho_tor_norm)
+        self._entry.erase("profiles_1d")

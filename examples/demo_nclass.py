@@ -1,17 +1,16 @@
 from math import log
 from operator import eq
-import pandas as pd
 
+import pandas as pd
+from fytok.common.Atoms import atoms
 from fytok.Tokamak import TWOPI, Tokamak
 from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.File import File
 from spdm.data.Function import Function, PiecewiseFunction
 from spdm.numlib import constants, np
-from spdm.numlib.smooth import smooth_1d, rms_residual
+from spdm.numlib.smooth import rms_residual, smooth_1d
 from spdm.util.logger import logger
 from spdm.util.plot_profiles import plot_profiles, sp_figure
-from fytok.common.Atoms import atoms
-
 
 if __name__ == "__main__":
     logger.info("====== START ========")
@@ -31,11 +30,13 @@ if __name__ == "__main__":
     ###################################################################################################
     # Configure
 
-    configure = {
+    c_tokamak = {
         "wall": device.entry.get("wall"),
         "pf_active": device.entry.get("pf_active"),
         "tf": device.entry.get("tf"),
-        "magnetics": device.entry.get("magnetics"), }
+        "magnetics": device.entry.get("magnetics"),
+        "radial_grid": {"rho_tor_norm": np.linspace(0, 1.0, 100)},
+    }
 
     # Equilibrium
 
@@ -44,7 +45,7 @@ if __name__ == "__main__":
     psi_boundary = eqdsk.get("global_quantities.psi_boundary")
     noise = 1  # np.random.random(bs_r_norm.shape)*0.1
 
-    configure["equilibrium"] = {
+    c_tokamak["equilibrium"] = {
         "code": {"name": "dummy"},
         "vacuum_toroidal_field": eqdsk.get("vacuum_toroidal_field", {}),
         "time_slice": {
@@ -78,9 +79,8 @@ if __name__ == "__main__":
 
     # Zeff = Function(bs_r_norm, baseline["Zeff"].values)
 
-    configure["core_profiles"] = {
+    c_tokamak["core_profiles"] = {
         "profiles_1d": {
-            "grid": {"rho_tor_norm": np.linspace(0, 1.0, 128)},
             "electrons": {**atoms["e"], "density":              b_ne,   "temperature":        b_Te, },
             "ion": [
                 {**atoms["D"],          "density":         0.5*b_nDT,   "temperature":        b_Ti, },
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     # chi_e = PiecewiseFunction([0, r_ped, 1.0], [lambda x:0.5 * Ccore*(1.0 + 3*(x**2)), lambda x: 0.8 * Cped])
     # D = PiecewiseFunction([0, r_ped, 1.0],  [lambda x:0.1 * Ccore*(1.0 + 3*(x**2)), lambda x: 0.1*Cped])
 
-    configure["core_transport"] = {
+    c_tokamak["core_transport"] = {
         "model": [
             {
                 "code": {"name": "dummy"},
@@ -167,8 +167,9 @@ if __name__ == "__main__":
                      )*1e6/constants.electron_volt)
 
     impurities = ['He', 'Be', 'Ar']
+
     # Core Source
-    configure["core_sources"] = {
+    c_tokamak["core_sources"] = {
         "source": [
             {"code": {"name": "dummy"},
              "profiles_1d": {
@@ -201,7 +202,7 @@ if __name__ == "__main__":
         ]}
 
     #  TransportSolver
-    configure["transport_solver"] = {
+    c_tokamak["transport_solver"] = {
         "code": {"name": "bvp_solver2"},
         "boundary_conditions_1d": {
             "current": {"identifier": {"index": 1}, "value": [(psi_boundary-psi_axis)+psi_axis]},
@@ -222,9 +223,7 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # Initialize
-    tok = Tokamak(configure)
-
-    # logger.debug(configure)
+    tok = Tokamak(c_tokamak)
 
     ###################################################################################################
     # Plot profiles
@@ -453,6 +452,8 @@ if __name__ == "__main__":
 
         core_transport = core_transport_model.profiles_1d
 
+        logger.debug(core_transport.grid.rho_tor_norm.shape)
+
         plot_profiles(
             [
                 [
@@ -497,35 +498,36 @@ if __name__ == "__main__":
 
         core_source = tok.core_sources.source_combiner.profiles_1d
 
-        # plot_profiles(
-        #     [
-        #         [
-        #             (Function(bs_r_norm, baseline["Jtot"].values*1e6),  "astra",
-        #              r"$J_{\parallel} [A\cdot m^{-2}]$", {"marker": "+"}),
-        #             (core_source.j_parallel,     "fytok", r"$J_{\parallel} [A\cdot m^{-2}]$"),
-        #         ],
-        #         # (core_source_1d.electrons.particles,       "fytok", r"$S_{e} [ m^{-3} s^-1]$"),
-        #         # (core_source_1d.electrons.energy,          "fytok", r"$Q_{e}$"),
-        #         # [
-        #         #     (Function(bs_r_norm, baseline["Joh"].values), "astra",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
-        #         #     # (core_profile.j_ohmic,                        "fytok",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
-        #         # ],
+        plot_profiles(
+            [
+                [
+                    (Function(bs_r_norm, baseline["Jtot"].values*1e6),  "astra",
+                     r"$J_{\parallel} [A\cdot m^{-2}]$", {"marker": "+"}),
+                    (core_source.j_parallel,     "fytok", r"$J_{\parallel} [A\cdot m^{-2}]$"),
+                ],
+                # (core_source_1d.electrons.particles,       "fytok", r"$S_{e} [ m^{-3} s^-1]$"),
+                # (core_source_1d.electrons.energy,          "fytok", r"$Q_{e}$"),
+                # [
+                #     (Function(bs_r_norm, baseline["Joh"].values), "astra",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
+                #     # (core_profile.j_ohmic,                        "fytok",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
+                # ],
 
-        #         [
-        #             (Function(bs_r_norm, baseline["Jbs"].values),
-        #              r"astra", r"bootstrap current $[MA\cdot m^{-2}]$", {"marker": "+"}),
-        #             (tok.core_sources.source[1].profiles_1d.j_parallel*1e-6,  r"fytok"),
-        #         ],
-        #         (rms_residual(Function(bs_r_norm, baseline["Jbs"].values),  core_source.j_parallel*1e-6),
-        #          r"rms residual \n bootstrap current"),
+                [
+                    (Function(bs_r_norm, baseline["Jbs"].values),
+                     r"astra", r"bootstrap current $[MA\cdot m^{-2}]$", {"marker": "+"}),
+                    (tok.core_sources.source[{"code.name": "bootstrap_current"}]\
+                        .profiles_1d.j_parallel*1e-6,  r"fytok", "", {"marker": "*"}),
+                ],
+                [(rms_residual(Function(bs_r_norm, baseline["Jbs"].values*1e6),\
+                               tok.core_sources.source[{"code.name": "bootstrap_current"}].profiles_1d.j_parallel),
+                  r"bootstrap current", r"  rms residual $[\%]$"),
+                 (rms_residual(Function(bs_r_norm, baseline["Jtot"].values*1e6), core_source.j_parallel),
+                  r"total current", r"  rms residual $[\%]$"),
+                 ]
 
-        #     ],
-        #     x_axis=([0, 1.0], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-        #     # x_axis=(bs_r_norm, r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-        #     # x_axis=([0, 0.8], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-        #     # annotation=core_transport.model[0].identifier.name,
-        #     # index_slice=slice(1, 110, 1),
-        #     grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_sources.svg", transparent=True)
+            ],
+            x_axis=([0, 1.0], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_sources.svg", transparent=True)
 
     ###################################################################################################
     # TransportSolver
@@ -533,11 +535,11 @@ if __name__ == "__main__":
 
         core_profile = tok.core_profiles.profiles_1d
 
-        tok.update(enable_ion_particle_solver=False,
-                   max_nodes=500, tolerance=1.0e-4,
-                   impurities=impurities,
-                   verbose=2,
-                   bvp_rms_mask=[1.0/128, r_ped])
+        tok.refresh(enable_ion_particle_solver=False,
+                    max_nodes=500, tolerance=1.0e-4,
+                    impurities=impurities,
+                    verbose=2,
+                    bvp_rms_mask=[1.0/128, r_ped])
 
         plot_profiles(
             [

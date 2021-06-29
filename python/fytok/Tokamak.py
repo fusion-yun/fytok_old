@@ -43,14 +43,20 @@ class Tokamak(Actor):
 
     """
 
-    def __init__(self, d=None, /,  **kwargs):
-        super().__init__(d, **kwargs)
+    def __init__(self, *args,  **kwargs):
+        super().__init__(*args,  **kwargs)
         self._time = 0.0
 
     @property
     def time(self):
         return self._time
 
+    @sp_property
+    def radial_grid(self) -> RadialGrid:
+        rho_tor_norm = self.get("radial_grid.rho_tor_norm", None)
+        if rho_tor_norm is None:
+            rho_tor_norm = np.linspace(0, 1.0, 128)
+        return self.equilibrium.time_slice.radial_grid.remesh(rho_tor_norm, "rho_tor_norm")
     # --------------------------------------------------------------------------
 
     @sp_property
@@ -76,12 +82,12 @@ class Tokamak(Actor):
 
     @sp_property
     def core_profiles(self) -> CoreProfiles:
-        return CoreProfiles(self.get("core_profiles"), grid=self.equilibrium.time_slice.coordinate_system.radial_grid, parent=self)
+        return CoreProfiles(self.get("core_profiles"), grid=self.radial_grid, parent=self)
 
     @sp_property
     def core_transport(self) -> CoreTransport:
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return CoreTransport(self.get("core_transport"), grid=self.equilibrium.time_slice.coordinate_system.radial_grid, parent=self)
+        return CoreTransport(self.get("core_transport"), grid=self.radial_grid, parent=self)
 
     @sp_property
     def core_sources(self) -> CoreSources:
@@ -89,7 +95,7 @@ class Tokamak(Actor):
             Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return CoreSources(self.get("core_sources"), grid=self.equilibrium.time_slice.coordinate_system.radial_grid, parent=self)
+        return CoreSources(self.get("core_sources"), grid=self.radial_grid, parent=self)
 
     @sp_property
     def edge_profiles(self) -> EdgeProfiles:
@@ -135,8 +141,6 @@ class Tokamak(Actor):
 
         for nstep in range(max_iteration):
 
-            self.core_profiles.refresh()
-
             self.equilibrium.refresh(
                 constraints=constraints,
                 core_profiles=self.core_profiles,
@@ -157,6 +161,9 @@ class Tokamak(Actor):
 
             # TODO: refresh boundary condition
             self.transport_solver.refresh()
+
+            # Update grid
+            self.core_profiles.refresh(equilibrium=self.equilibrium)
 
             redisual = self.transport_solver.solve(max_nodes=max_nodes, tolerance=tolerance, **kwargs)
 

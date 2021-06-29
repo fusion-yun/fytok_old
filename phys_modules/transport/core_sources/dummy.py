@@ -12,7 +12,7 @@ from spdm.util.logger import logger
 
 
 class CoreSourceDummy(CoreSources.Source):
-    def __init__(self, d=None,/,  **kwargs):
+    def __init__(self, d=None, /,  **kwargs):
         super().__init__(d,
                          identifier={
                              "name": f"unspecified",
@@ -21,7 +21,7 @@ class CoreSourceDummy(CoreSources.Source):
                          }, **kwargs)
 
     def refresh(self, *args,  **kwargs):
-        return super().refresh(*args, **kwargs)
+        logger.debug(f"Dummy actor: Nothing to do!")
 
 
 __SP_EXPORT__ = CoreSourceDummy

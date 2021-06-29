@@ -26,8 +26,8 @@ class TransportModelDummy(CoreTransport.Model):
                              "description": f"{self.__class__.__name__} Dummy CoreTransport.Model "
                          }, **kwargs)
 
-    def refresh(self, *args, **kwargs):
-        return super().refresh(*args,  **kwargs)
+    def refresh(self, *args, **kwargs) -> None:
+        logger.debug(f"Dummy actor: Nothing to do!")
 
 
 __SP_EXPORT__ = TransportModelDummy

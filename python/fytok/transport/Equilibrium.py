@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import scipy
 import scipy.integrate
 from fytok.device.PFActive import PFActive
-from fytok.transport.CoreProfiles import CoreProfiles
 from spdm.data.Field import Field
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List, Node, sp_property
@@ -1000,8 +999,18 @@ class Equilibrium(IDS):
     def time_slice(self) -> TimeSlice:
         return self.get("time_slice")
 
-    def refresh(self,  *args, constraints: Constraints, core_profiles=None, wall: Wall = None,
-                pf_active: PFActive = None, magnetics: Magnetics = None, **kwargs):
+    def refresh(self,  *args, **kwargs):
+
+        # constraints: Constraints = None,
+        # core_profiles=None,
+        # wall: Wall = None,
+        # pf_active: PFActive = None,
+        # magnetics: Magnetics = None,
+
+        self.remove("time_slice")
+        self.remove("vacuum_toroidal_field")
+        self.remove("grid_ggd")
+
         super().refresh(*args, **kwargs)
 
     ####################################################################################
