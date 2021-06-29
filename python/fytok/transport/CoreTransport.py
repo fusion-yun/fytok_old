@@ -294,5 +294,4 @@ class CoreTransport(IDS):
 
     def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles, **kwargs) -> None:
         self.model.refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
-        if hasattr(self, "model_combiner"):
-            delattr(self, "model_combiner")
+        self.model_combiner.refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles,  **kwargs)

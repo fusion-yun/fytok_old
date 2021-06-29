@@ -119,7 +119,10 @@ class Tokamak(Actor):
     def transport_solver(self) -> TransportSolver:
         return self.get("transport_solver")
 
-    def advance(self,  dt=None, /,  time=None, **kwargs):
+    def refresh(self, *args, **kwargs):
+        super().refresh(*args, **kwargs)
+
+    def advance(self,  dt=None, time=None, **kwargs):
 
         time = super().advance(time=time, dt=dt)
 
@@ -135,9 +138,7 @@ class Tokamak(Actor):
 
         self.core_transport.advance(time=time, refresh=False)
 
-    def refresh(self, d=None, /, constraints: Equilibrium.Constraints = None, max_iteration=1, max_nodes=1250,  enable_edge=False,  tolerance=1.0e-6, **kwargs):
-
-        super().refresh(d)
+    def solve(self, *args, constraints: Equilibrium.Constraints = None, max_iteration=1, max_nodes=1250,  enable_edge=False,  tolerance=1.0e-6, **kwargs):
 
         for nstep in range(max_iteration):
 
@@ -159,13 +160,16 @@ class Tokamak(Actor):
 
                 self.edge_profiles.refresh()
 
-            # TODO: refresh boundary condition
-            self.transport_solver.refresh()
-
             # Update grid
             self.core_profiles.refresh(equilibrium=self.equilibrium)
 
-            redisual = self.transport_solver.solve(max_nodes=max_nodes, tolerance=tolerance, **kwargs)
+            # TODO: refresh boundary condition
+
+            redisual = self.transport_solver.solve(equilibrium=self.equilibrium,
+                                                   core_profiles=self.core_profiles,
+                                                   core_sources=self.core_sources,
+                                                   core_transport=self.core_transport,
+                                                   max_nodes=max_nodes, tolerance=tolerance, **kwargs)
 
             logger.debug(f"time={self.time}  iterator step {nstep}/{max_iteration} redisual={redisual}")
 

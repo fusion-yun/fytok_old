@@ -120,29 +120,8 @@ class TransportSolver(IDS):
         def ion(self) -> List[Ion]:
             return self.get("ion", [])
 
-    def __init__(self,  *args, grid: RadialGrid = None,
-                 equilibrium: Equilibrium = None,
-                 core_profiles: CoreProfiles = None,
-                 core_transport: CoreTransport = None,
-                 core_sources: CoreSources = None,
-                 edge_profiles: EdgeProfiles = False,
-                 edge_transport: EdgeTransport = False,
-                 edge_sources: EdgeSources = False,
-                 **kwargs):
+    def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._grid = grid or getattr(self._parent, "grid")
-
-        self._equilibrium = equilibrium or getattr(self._parent, "equilibrium", None)
-        self._core_profiles = core_profiles or getattr(self._parent, "core_profiles", None)
-        self._core_transport = core_transport or getattr(self._parent, "core_transport", None)
-        self._core_sources = core_sources or getattr(self._parent, "core_sources", None)
-        self._edge_profiles = edge_profiles or getattr(self._parent, "edge_profiles", False)
-        self._edge_transport = edge_transport or getattr(self._parent, "edge_transport", False)
-        self._edge_sources = edge_sources or getattr(self._parent, "edge_sources", False)
-
-    @property
-    def grid(self):
-        return self._grid
 
     @sp_property
     def solver(self) -> Identifier:
@@ -156,25 +135,44 @@ class TransportSolver(IDS):
     def boundary_conditions_1d(self) -> BoundaryConditions1D:
         return self.get("boundary_conditions_1d", {})
 
-    def refresh(self, /, boundary_conditions_1d=None, **kwargs):
-        return self.boundary_conditions_1d.update(boundary_conditions_1d)
+    def refresh(self, *args,
+                equilibrium: Equilibrium,
+                core_profiles: CoreProfiles,
+                core_transport: CoreTransport,
+                core_sources: CoreSources,
+                edge_profiles: EdgeProfiles = False,
+                edge_transport: EdgeTransport = False,
+                edge_sources: EdgeSources = False,
+                boundary_conditions_1d=None,
+                **kwargs):
+        self._core_profiles_next: CoreProfiles.Profiles1D = core_profiles.profiles_1d
+        self._core_profiles_prev: CoreProfiles.Profiles1D = core_profiles.previous_state.profiles_1d
+        self._equilibrium_next: Equilibrium.time_slice = equilibrium.time_slice
+        self._equilibrium_prev: Equilibrium.time_slice = equilibrium.previous_state.time_slice
+        self._core_transport: CoreTransport = core_transport.model_combiner.profiles_1d
+        self._core_sources: CoreSources = core_sources.source_combiner.profiles_1d
 
-    def solve_core(self, *args, max_nodes=1000, tolerance=1e-3, **kwargs):
+        self.boundary_conditions_1d.update(boundary_conditions_1d)
+        return
+
+    def solve_core(self, *args,  **kwargs):
         return NotImplemented
 
     def solve_edge(self, *args, **kwargs):
         return NotImplemented
 
-    def solve(self,  max_iter=1, tolerance=1.0e-3, max_nodes=1000, ** kwargs) -> float:
+    def solve(self, *args,  max_iter=1, tolerance=1.0e-3, max_nodes=1000, ** kwargs) -> float:
         """
             solve transport eqation
             return residual of core_profiles
         """
 
+        self.refresh(*args, **kwargs)
+
         for step in range(max_iter):
             logger.debug(f" Iteration step={step}: start")
 
-            residual = self.solve_core(tolerance=tolerance, max_nodes=max_nodes, **kwargs)
+            residual = self.solve_core(tolerance=tolerance, max_nodes=max_nodes)
 
             # if self._edge_profiles is not False:
             #     residual.append(self.solve_edge(tolerance=tolerance, **kwargs))

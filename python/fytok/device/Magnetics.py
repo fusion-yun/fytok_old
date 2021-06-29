@@ -202,25 +202,25 @@ class Magnetics(IDS):
     MagneticProbe = MagneticsMagneticProbe
     RogowskiCoil = MagneticsRogowskiCoil
 
-    def __init__(self,  *args,   ** kwargs):
+    def __init__(self,  *args,** kwargs):
         super().__init__(*args, ** kwargs)
 
     @sp_property
     def flux_loop(self) -> List[FluxLoop]:
         """Flux loops; partial flux loops can be described   """
-        return self["flux_loop"]
+        return self.get("flux_loop")
 
     @sp_property
     def b_field_pol_probe(self) -> List[MagneticProbe]:
         """Poloidal field probes    struct_array [max_size=200] """
-        return self["b_field_pol_probe"]
+        return self.get("b_field_pol_probe")
 
     @sp_property
     def b_field_tor_probe(self) -> List[MagneticProbe]:
         """Toroidal field probes    struct_array [max_size=20] """
-        return self["b_field_pol_probe"]
+        return self.get("b_field_pol_probe")
 
     @sp_property
     def rogowski_coil(self) -> List[RogowskiCoil]:
         """Set of Rogowski coils"""
-        return self["rogowski_coil"]
+        return self.get("rogowski_coil")

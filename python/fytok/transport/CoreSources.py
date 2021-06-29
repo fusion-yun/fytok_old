@@ -298,5 +298,5 @@ class CoreSources(IDS):
 
     def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles,  **kwargs) -> None:
         self.source.refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
-        if hasattr(self, "source_combiner"):
-            delattr(self, "source_combiner")
+        self.source_combiner.refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles,  **kwargs)
+

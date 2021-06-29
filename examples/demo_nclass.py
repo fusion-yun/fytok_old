@@ -533,13 +533,14 @@ if __name__ == "__main__":
     # TransportSolver
     if False:
 
-        core_profile = tok.core_profiles.profiles_1d
+        tok.solve(enable_ion_particle_solver=False,
+                  max_nodes=500,
+                  tolerance=1.0e-4,
+                  impurities=impurities,
+                  verbose=2,
+                  bvp_rms_mask=[1.0/128, r_ped])
 
-        tok.refresh(enable_ion_particle_solver=False,
-                    max_nodes=500, tolerance=1.0e-4,
-                    impurities=impurities,
-                    verbose=2,
-                    bvp_rms_mask=[1.0/128, r_ped])
+        core_profile = tok.core_profiles.profiles_1d
 
         plot_profiles(
             [

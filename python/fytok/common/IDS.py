@@ -123,9 +123,10 @@ class IDS(Actor[_TState]):
     """
     _IDS = "NOT_DEFINED"
 
-    def __init__(self,  d, /, ids_properties=_undefined_,  ** kwargs):
-        super().__init__(d, ** kwargs)
-        self.update({"ids_properties": ids_properties})
+    def __init__(self,  *args, ids_properties=_undefined_,  ** kwargs):
+        super().__init__(*args, ** kwargs)
+        if ids_properties is not _undefined_:
+            self.update({"ids_properties": ids_properties})
 
     def __serialize__(self, properties: Optional[Sequence] = None):
         res = super().__serialize__(properties=properties)

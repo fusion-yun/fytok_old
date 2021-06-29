@@ -545,6 +545,6 @@ class CoreProfiles(IDS):
     def global_quantities(self) -> GlobalQuantities:
         return self.get("global_quantities")
 
-    def refresh(self, *args, equlibrium: Equilibrium, **kwargs) -> None:
-        self._grid = equlibrium.time_slice.radial_grid.remesh(self._grid.rho_tor_norm)
-        self._entry.erase("profiles_1d")
+    def refresh(self, *args, equilibrium: Equilibrium, **kwargs) -> None:
+        self._grid = equilibrium.time_slice.radial_grid.remesh(self._grid.rho_tor_norm)
+        self.remove("profiles_1d")
