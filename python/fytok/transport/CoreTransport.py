@@ -139,8 +139,8 @@ class CoreTransportProfiles1D(Dict[Node]):
     Electrons = CoreTransportElectrons
     Momentum = CoreTransportMomentum
 
-    def __init__(self, d, /, grid: RadialGrid, ** kwargs):
-        super().__init__(d, **kwargs)
+    def __init__(self, *args, grid: RadialGrid, ** kwargs):
+        super().__init__(*args, **kwargs)
         self._grid = grid
 
     @property
@@ -178,27 +178,27 @@ class CoreTransportProfiles1D(Dict[Node]):
         return List[CoreTransportProfiles1D.Neutral](self.get('neutral', []), parent=self, grid=self._grid)
 
     @sp_property
-    def momentum(self) -> CoreTransportMomentum:
-        return self.get('momentum', {})
+    def momentum(self) -> Momentum:
+        return self.get('momentum')
 
     @sp_property
     def total_ion_energy(self) -> TransportCoeff:
         """ Transport coefficients for the total (summed over ion species) energy equation """
-        return self.get("total_ion_energy", {})
+        return self.get("total_ion_energy")
 
     @sp_property
     def momentum_tor(self) -> TransportCoeff:
         """ Transport coefficients for total toroidal momentum equation  """
-        return self.get("momentum_tor", {})
+        return self.get("momentum_tor")
 
     @sp_property
     def conductivity_parallel(self) -> Function:
-        return function_like(self.grid_d.rho_tor_norm, self.get("conductivity_parallel", 0))
+        return function_like(self.grid_d.rho_tor_norm, self.get("conductivity_parallel"))
 
     @sp_property
     def e_field_radial(self) -> Function:
         """ Radial component of the electric field (calculated e.g. by a neoclassical model) {dynamic} [V.m^-1]"""
-        return function_like(self.grid_flux.rho_tor_norm, self.get("e_field_radial", 0))
+        return function_like(self.grid_flux.rho_tor_norm, self.get("e_field_radial"))
 
 
 class CoreTransportModel(Module):
@@ -227,8 +227,8 @@ class CoreTransportModel(Module):
 
     Profiles1D = CoreTransportProfiles1D
 
-    def __init__(self, d, /, grid: RadialGrid, ** kwargs):
-        super().__init__(d,  **kwargs)
+    def __init__(self,  *args, grid: RadialGrid, ** kwargs):
+        super().__init__(*args, **kwargs)
         self._grid = grid
 
     @property
@@ -241,7 +241,7 @@ class CoreTransportModel(Module):
 
     @sp_property
     def profiles_1d(self) -> Profiles1D:
-        return CoreTransportModel.Profiles1D(self.get("profiles_1d", {}), grid=self._grid, parent=self)
+        return CoreTransportModel.Profiles1D(self.get("profiles_1d"), grid=self._grid, parent=self)
 
     def refresh(self, *args, core_profiles: CoreProfiles, **kwargs) -> None:
         self._grid = core_profiles.profiles_1d.grid
@@ -265,8 +265,8 @@ class CoreTransport(IDS):
     _IDS = "core_transport"
     Model = CoreTransportModel
 
-    def __init__(self, d, /, grid: RadialGrid, **kwargs):
-        super().__init__(d, **kwargs)
+    def __init__(self,  *args, grid: RadialGrid, **kwargs):
+        super().__init__(*args, **kwargs)
         self._grid = grid
 
     @property
