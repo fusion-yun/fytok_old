@@ -98,7 +98,9 @@ class TransportSolverBVP2(TransportSolver):
     def refresh(self, *args,  **kwargs):
         super().refresh(*args, **kwargs)
 
-        self._tau = self._core_profiles_next._parent.time - self._equilibrium_prev._parent.time
+        r_grid = self._core_profiles_next.profiles_1d.grid
+
+        self._tau = self._core_profiles_next.time - self._core_profiles_prev.time
 
         self._inv_tau = 0 if abs(self._tau) < EPSILON else 1.0/self._tau
 
@@ -110,17 +112,17 @@ class TransportSolverBVP2(TransportSolver):
 
         self._B0m = self._equilibrium_prev.vacuum_toroidal_field.b0
         # $rho_tor_{norm}$ normalized minor radius                [-]
-        self._rho_tor_norm = self._core_profiles_next.grid.rho_tor_norm
+        self._rho_tor_norm = r_grid.rho_tor_norm
 
-        self._psi_norm = self._core_profiles_next.grid.psi_norm
+        self._psi_norm = r_grid.psi_norm
 
         # Grid
         # $rho_tor$ not  normalized minor radius                [m]
-        self._rho_tor = Function(self._rho_tor_norm, self._core_profiles_next.grid.rho_tor)
+        self._rho_tor = Function(self._rho_tor_norm, r_grid.rho_tor)
 
-        self._rho_tor_boundary = self._core_profiles_next.grid.rho_tor[-1]
+        self._rho_tor_boundary = r_grid.rho_tor[-1]
 
-        self._rho_tor_boundary_m = self._core_profiles_prev.grid.rho_tor[-1]
+        self._rho_tor_boundary_m = self._core_profiles_prev.profiles_1d.grid.rho_tor[-1]
 
         self._k_B = (self._B0 - self._B0m) / (self._B0 + self._B0m) * self._inv_tau * 2.0
 
@@ -131,29 +133,32 @@ class TransportSolverBVP2(TransportSolver):
 
         # -----------------------------------------------------------
         # Equilibrium
+        eq_profile1d = self._equilibrium_next.time_slice.profiles_1d
+
         # diamagnetic function,$F=R B_\phi$                 [T*m]
-        self._fpol = Function(self._rho_tor_norm, self._equilibrium_next.profiles_1d.fpol(self._psi_norm))
+        self._fpol = Function(self._rho_tor_norm, eq_profile1d.fpol(self._psi_norm))
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        self._vpr = Function(self._rho_tor_norm, self._equilibrium_next.profiles_1d.dvolume_drho_tor(self._psi_norm))
+        self._vpr = Function(self._rho_tor_norm,
+                             eq_profile1d.dvolume_drho_tor(self._psi_norm))
 
-        self._vprm = Function(self._rho_tor_norm, self._equilibrium_prev.profiles_1d.dvolume_drho_tor(self._psi_norm))
+        self._vprm = Function(self._rho_tor_norm,
+                              self._equilibrium_prev.time_slice.profiles_1d.dvolume_drho_tor(self._psi_norm))
 
         self._vpr35 = self._vpr**(5/3)
         self._vpr35m = self._vprm**(5/3)
 
-        if np.isclose(self._equilibrium_next.profiles_1d.dvolume_drho_tor(self._psi_norm[0]), 0.0):
-            self._inv_vpr23 = Function(
-                self._rho_tor_norm[1:],  self._equilibrium_next.profiles_1d.dvolume_drho_tor(self._psi_norm[1:])**(-2/3))
+        if np.isclose(eq_profile1d.dvolume_drho_tor(self._psi_norm[0]), 0.0):
+            self._inv_vpr23 = Function(self._rho_tor_norm[1:],
+                                       eq_profile1d.dvolume_drho_tor(self._psi_norm[1:])**(-2/3))
         else:
-            self._inv_vpr23 = Function(
-                self._rho_tor_norm,  self._equilibrium_next.profiles_1d.dvolume_drho_tor(self._psi_norm)**(-2/3))
+            self._inv_vpr23 = Function(self._rho_tor_norm,  eq_profile1d.dvolume_drho_tor(self._psi_norm)**(-2/3))
 
         # $q$ safety factor                                 [-]
-        self._qsf = Function(self._rho_tor_norm,  self._equilibrium_next.profiles_1d.q(self._psi_norm))
-        self._gm1 = Function(self._rho_tor_norm,  self._equilibrium_next.profiles_1d.gm1(self._psi_norm))
-        self._gm2 = Function(self._rho_tor_norm,  self._equilibrium_next.profiles_1d.gm2(self._psi_norm))
-        self._gm3 = Function(self._rho_tor_norm,  self._equilibrium_next.profiles_1d.gm3(self._psi_norm))
+        self._qsf = Function(self._rho_tor_norm,  eq_profile1d.q(self._psi_norm))
+        self._gm1 = Function(self._rho_tor_norm,  eq_profile1d.gm1(self._psi_norm))
+        self._gm2 = Function(self._rho_tor_norm,  eq_profile1d.gm2(self._psi_norm))
+        self._gm3 = Function(self._rho_tor_norm,  eq_profile1d.gm3(self._psi_norm))
 
         self._Qimp_k_ns = (3*self._k_rho_bdry - self._k_phi * self._vpr.derivative())
 
@@ -261,10 +266,10 @@ class TransportSolverBVP2(TransportSolver):
                  source: CoreSources.Source.Profiles1D,
                  var_id=var_id) -> Tuple[np.ndarray, np.ndarray]:
             _transp: Union[CoreTransport.Model.Profiles1D.Ion,
-                           CoreTransport.Model.Profiles1D.Electrons] = transp.get(var_id[:-1], NotImplemented)
+                           CoreTransport.Model.Profiles1D.Electrons] = transp.get(var_id[:-1])
 
             _source: Union[CoreSources.Source.Profiles1D.Ion,
-                           CoreSources.Source.Profiles1D.Electrons] = source.get(var_id[:-1], NotImplemented)
+                           CoreSources.Source.Profiles1D.Electrons] = source.get(var_id[:-1])
 
             y = Y[var_idx*2]
             g = Y[var_idx*2+1]
@@ -293,9 +298,7 @@ class TransportSolverBVP2(TransportSolver):
 
         # -----------------------------------------------------------
         # boundary condition, value
-        bc: TransportSolver.BoundaryConditions1D.BoundaryConditions =  \
-            self.boundary_conditions_1d.get(var_id[:-1]+["particles"], NotImplemented)
-        logger.debug(bc)
+        bc: TransportSolver.BoundaryConditions1D.BoundaryConditions = self.boundary_conditions_1d[var_id[:-1]].particles
         # axis
         u0, v0, w0 = 0, 1, 0
 
@@ -368,8 +371,7 @@ class TransportSolverBVP2(TransportSolver):
 
         # ----------------------------------------------
         # Boundary Condition
-        bc: TransportSolver.BoundaryConditions1D.BoundaryConditions = \
-            self.boundary_conditions_1d[var_id[: -1]].energy
+        bc: TransportSolver.BoundaryConditions1D.BoundaryConditions = self.boundary_conditions_1d[var_id[: -1]].energy
 
         # axis
         u0, v0, w0 = 0, 1, 0
@@ -432,14 +434,14 @@ class TransportSolverBVP2(TransportSolver):
                          particle_solver="electrons",  impurities=[],
                          tolerance=1.0e-3, max_nodes=250, **kwargs) -> BVPResult:
 
-        eq_list = [eq(idx, var_id, x0, Y0, ** (_args[0] if len(_args) > 0 else {}))
-                   for idx, (var_id, eq,  *_args) in enumerate(eq_grp)]
+        eq_list = [equ(idx, var_id, x0, Y0, ** (_args[0] if len(_args) > 0 else {}))
+                   for idx, (var_id, equ,  *_args) in enumerate(eq_grp)]
 
         var_list = [var_id for var_id, eq,  *_args in eq_grp]
 
         def func(x: np.ndarray, Y: np.ndarray, p=None, /,
                  eq_list: Sequence[Tuple[Callable, Callable]] = eq_list) -> np.ndarray:
-            self._core_profiles_next._grid = self._core_profiles_next.grid.remesh(x, "rho_tor_norm")
+            self._core_profiles_next._grid = self._core_profiles_next.profiles_1d.grid.remesh(x, "rho_tor_norm")
 
             profiles: CoreProfiles.Profiles1D = self._core_profiles_next.profiles_1d
 
@@ -449,14 +451,17 @@ class TransportSolverBVP2(TransportSolver):
 
             self.quasi_neutral_condition(profiles, particle_solver=particle_solver, impurities=impurities)
 
-            self._core_transport._parent.refresh(equlibrium=self._equilibrium_next._parent,
-                                                 core_profiles=self._core_profiles_next._parent)
+            self._core_transport.refresh(equlibrium=self._equilibrium_next,   core_profiles=self._core_profiles_next)
 
-            self._core_sources._parent.refresh(equlibrium=self._equilibrium_next._parent,
-                                               core_profiles=self._core_profiles_next._parent)
+            self._core_sources.refresh(equlibrium=self._equilibrium_next,   core_profiles=self._core_profiles_next)
 
-            res = sum([list(func(x, Y, self._core_profiles_next, self._core_transport,  self._core_sources))
-                       for func, bc in eq_list], [])
+            c_profile_1d = self._core_profiles_next.profiles_1d
+            c_tansport_1d = self._core_transport.profiles_1d
+            c_sources_1d = self._core_sources.profiles_1d
+
+            logger.debug(c_tansport_1d.electrons)
+
+            res = sum([list(func(x, Y, c_profile_1d, c_tansport_1d,  c_sources_1d)) for func, bc in eq_list], [])
 
             return np.vstack([array_like(x, d) for d in res])
 
@@ -470,36 +475,33 @@ class TransportSolverBVP2(TransportSolver):
                    impurities: Sequence = [],
                    **kwargs) -> float:
 
-        if self._core_profiles_next.get("psi", _not_found_) is _not_found_:
-            self._core_profiles_next["psi"] = self._core_profiles_next.grid.psi
+        if self._core_profiles_next.profiles_1d.get("psi", _not_found_) is _not_found_:
+            self._core_profiles_next.profiles_1d["psi"] = self._core_profiles_next.profiles_1d.grid.psi
 
         if particle_solver == "electron":
             eq_grp = [
-                (["psi"],                                        self.transp_current,),
-                (["electrons", "density"],                       self.transp_particle,),
-                (["electrons", "temperature"],                   self.transp_energy, ),
+                (["psi"],                                               self.transp_current,),
+                (["electrons", "density"],                              self.transp_particle,),
+                (["electrons", "temperature"],                          self.transp_energy, ),
                 *[(["ion", {"label": ion.label}, "temperature"],     self.transp_energy, )
-                  for ion in self._core_profiles_next.ion if ion.label not in impurities],
+                  for ion in self._core_profiles_next.profiles_1d.ion if ion.label not in impurities],
             ]
         else:
             eq_grp = [
-                (["psi"],                                        self.transp_current,),
-                (["electrons", "temperature"],                   self.transp_energy,),
-                *[(["ion", {"label": ion.label}, "density"],         self.transp_particle,)
-                  for ion in self._core_profiles_next.ion if ion.label not in impurities],
+                (["psi"],                                               self.transp_current,),
+                (["electrons", "temperature"],                          self.transp_energy,),
+                *[(["ion", {"label": ion.label}, "density"],            self.transp_particle,)
+                  for ion in self._core_profiles_next.profiles_1d.ion if ion.label not in impurities],
                 *[(["ion", {"label": ion.label}, "temperature"],     self.transp_energy, )
-                  for ion in self._core_profiles_next.ion if ion.label not in impurities],
+                  for ion in self._core_profiles_next.profiles_1d.ion if ion.label not in impurities],
             ]
 
         x = self._rho_tor_norm
 
-        Y = np.vstack(sum([[array_like(x, self._core_profiles_prev.get(var_id, 0)), np.zeros_like(x)]
+        Y = np.vstack(sum([[array_like(x, self._core_profiles_prev.profiles_1d.get(var_id, 0)), np.zeros_like(x)]
                            for var_id, *_ in eq_grp], []))
 
-        sol = self._solve_equations(x, Y, eq_grp,
-                                    particle_solver=particle_solver,
-                                    impurities=impurities,
-                                    **kwargs)
+        sol = self._solve_equations(x, Y, eq_grp, particle_solver=particle_solver, impurities=impurities,   **kwargs)
 
         rms_residuals = np.max(sol.rms_residuals)
 

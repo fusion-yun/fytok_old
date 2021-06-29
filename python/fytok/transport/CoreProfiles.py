@@ -16,8 +16,9 @@ from .MagneticCoordSystem import TWOPI, RadialGrid
 
 
 class CoreProfilesElectrons(SpeciesElectron):
-    def __init__(self,   d, /, grid: RadialGrid,  **kwargs):
-        super().__init__(d, grid=grid, **kwargs)
+    def __init__(self,   *args, grid: RadialGrid = None,  **kwargs):
+        super().__init__(*args, **kwargs)
+        self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
 
     @sp_property
     def temperature(self) -> Function:
@@ -102,8 +103,9 @@ class CoreProfilesElectrons(SpeciesElectron):
 
 
 class CoreProfilesIon(SpeciesIon):
-    def __init__(self, *args,   **kwargs):
+    def __init__(self, *args, grid: RadialGrid = None,  **kwargs):
         super().__init__(*args,  ** kwargs)
+        self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
 
     @sp_property
     def z_ion_1d(self) -> Function:
@@ -212,13 +214,14 @@ class CoreProfilesIon(SpeciesIon):
 
 
 class CoreProfilesNeutral(Species):
-    def __init__(self,   *args, axis=None, parent=None, **kwargs):
-        super().__init__(*args, axis=axis if axis is not None else parent.grid.rho_tor_norm,  **kwargs)
+    def __init__(self,   *args,  grid: RadialGrid = None, **kwargs):
+        super().__init__(*args,  **kwargs)
+        self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
 
     @property
-    def ion_index(self):
+    def ion_index(self) -> int:
         """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
-        return self.__raw_get__("ion_index")
+        return self.get("ion_index", 0)
 
     @property
     def element(self):
@@ -545,4 +548,4 @@ class CoreProfiles(IDS):
 
     def refresh(self, *args, equilibrium: Equilibrium, **kwargs) -> None:
         self._grid = equilibrium.time_slice.radial_grid.remesh(self._grid.rho_tor_norm)
-        self.remove("profiles_1d")
+        # self.remove("profiles_1d")

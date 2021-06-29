@@ -452,8 +452,6 @@ if __name__ == "__main__":
 
         core_transport = core_transport_model.profiles_1d
 
-        logger.debug(core_transport.grid.rho_tor_norm.shape)
-
         plot_profiles(
             [
                 [
@@ -531,8 +529,7 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # TransportSolver
-    if False:
-
+    if True:
         tok.solve(enable_ion_particle_solver=False,
                   max_nodes=500,
                   tolerance=1.0e-4,

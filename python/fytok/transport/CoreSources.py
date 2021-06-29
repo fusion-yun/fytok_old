@@ -46,6 +46,9 @@ class CoreSourcesParticle(Dict):
 
 
 class CoreSourcesElectrons(SpeciesElectron):
+    def __init__(self, *args, grid: RadialGrid = None,  **kwargs):
+        super().__init__(*args,  ** kwargs)
+        self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
 
     @sp_property
     def particles(self) -> Function:
@@ -65,6 +68,10 @@ class CoreSourcesElectrons(SpeciesElectron):
 
 
 class CoreSourcesIon(SpeciesIon):
+    def __init__(self, *args, grid: RadialGrid = None,  **kwargs):
+        super().__init__(*args,  ** kwargs)
+        self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
+
     @sp_property
     def particles(self) -> Function:
         return self.get("particles", 0)
@@ -83,8 +90,10 @@ class CoreSourcesIon(SpeciesIon):
 
 
 class CoreSourcesNeutral(Dict):
-    def __init__(self,  *args,   **kwargs):
-        super().__init__(* args,  **kwargs)
+    def __init__(self, *args, grid: RadialGrid = None,  **kwargs):
+        super().__init__(*args,  ** kwargs)
+        self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
+
 
 
 class CoreSourcesProfiles1D(Dict):
@@ -93,9 +102,9 @@ class CoreSourcesProfiles1D(Dict):
     Ion = CoreSourcesIon
     Neutral = CoreSourcesNeutral
 
-    def __init__(self, *args, grid: RadialGrid, **kwargs):
-        super().__init__(*args,  **kwargs)
-        self._grid = grid
+    def __init__(self, *args, grid: RadialGrid = None,  **kwargs):
+        super().__init__(*args,  ** kwargs)
+        self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
 
     @property
     def grid(self) -> RadialGrid:

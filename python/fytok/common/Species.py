@@ -56,9 +56,8 @@ class Species(Dict[Node]):
 
 
 class SpeciesElectron(Species):
-    def __init__(self, d, /, grid: RadialGrid, **kwargs):
-        super().__init__(d,  **kwargs)
-        self._grid = grid
+    def __init__(self, *args,  **kwargs):
+        super().__init__(*args, **kwargs)
 
     @property
     def label(self) -> str:
@@ -110,9 +109,8 @@ class SpeciesIonState(Dict):
 
 
 class SpeciesIon(Species):
-    def __init__(self, d, /, grid: RadialGrid, **kwargs):
-        super().__init__(d,  **kwargs)
-        self._grid = grid
+    def __init__(self, *args,  **kwargs):
+        super().__init__(*args,  **kwargs)
 
     @sp_property
     def z(self) -> float:
@@ -122,12 +120,12 @@ class SpeciesIon(Species):
     def z_ion(self) -> float:
         """Ion charge (of the dominant ionisation state; lumped ions are allowed),
         volume averaged over plasma radius {dynamic} [Elementary Charge Unit]  FLT_0D  """
-        return self["z_ion"] or 1.0
+        return self.get("z_ion", 0.0)
 
     @sp_property
     def neutral_index(self) -> int:
         """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
-        return self["neutral_index"] or 0
+        return self.get("neutral_index", 0)
 
     @sp_property
     def z_ion_1d(self):
@@ -144,9 +142,9 @@ class SpeciesIon(Species):
     @sp_property
     def multiple_states_flag(self) -> int:
         """Multiple states calculation flag : 0-Only one state is considered; 1-Multiple states are considered and are described in the state  {dynamic}    """
-        return self["multiple_states_flag"] or 0
+        return self.get("multiple_states_flag", 0)
 
     @sp_property
     def state(self) -> List[SpeciesIonState]:
         """Quantities related to the different states of the species (ionisation, energy, excitation, ...)  struct_array [max_size=unbounded]  1- 1...N"""
-        return self["state"]
+        return self.get("state")

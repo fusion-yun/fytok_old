@@ -138,7 +138,7 @@ class Tokamak(Actor):
 
         self.core_transport.advance(time=time, refresh=False)
 
-    def solve(self, *args, constraints: Equilibrium.Constraints = None, max_iteration=1, max_nodes=1250,  enable_edge=False,  tolerance=1.0e-6, **kwargs):
+    def solve(self, *args, constraints: Equilibrium.Constraints = None, max_iteration=1, max_nodes=1250,  enable_edge=False,  tolerance=1.0e-6,  **kwargs):
 
         for nstep in range(max_iteration):
 
@@ -162,8 +162,6 @@ class Tokamak(Actor):
 
             # Update grid
             self.core_profiles.refresh(equilibrium=self.equilibrium)
-
-            # TODO: refresh boundary condition
 
             redisual = self.transport_solver.solve(equilibrium=self.equilibrium,
                                                    core_profiles=self.core_profiles,

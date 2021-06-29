@@ -25,28 +25,29 @@ class TransportCoeff(Dict):
 
     @sp_property
     def d(self) -> Function:
-        return self.get("d", None)
+        return function_like(self._parent.grid_d.rho_tor_norm, self.get("d"))
 
     @sp_property
     def v(self) -> Function:
-        return self.get("v", None)
+        return function_like(self._parent.grid_v.rho_tor_norm, self.get("v"))
 
     @sp_property
     def flux(self) -> Function:
-        return None
+        return function_like(self._parent.grid_flux.rho_tor_norm, self.get("flux"))
 
 
 class CoreTransportElectrons(SpeciesElectron):
-    def __init__(self,   *args,  **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, grid: RadialGrid = None,  **kwargs):
+        super().__init__(*args,  ** kwargs)
+        self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
 
     @sp_property
     def particles(self) -> TransportCoeff:
-        return self.get("particles", {})
+        return self.get("particles")
 
     @sp_property
     def energy(self) -> TransportCoeff:
-        return self.get("energy", {})
+        return self.get("energy")
 
 
 class CoreTransportIonState(SpeciesIonState):
@@ -95,20 +96,21 @@ class CoreTransportMomentum(Dict):
 
 
 class CoreTransportIon(SpeciesIon):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, grid: RadialGrid = None,  **kwargs):
+        super().__init__(*args,  ** kwargs)
+        self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
 
     @sp_property
     def particles(self) -> TransportCoeff:
-        return TransportCoeff(self.get("particles", {}), parent=self._parent)
+        return TransportCoeff(self.get("particles"), parent=self._parent)
 
     @sp_property
     def energy(self) -> TransportCoeff:
-        return TransportCoeff(self.get("energy", {}), parent=self._parent)
+        return TransportCoeff(self.get("energy"), parent=self._parent)
 
     @sp_property
     def momentum(self) -> CoreTransportMomentum:
-        return self.get("momentum", {})
+        return self.get("momentum")
 
     @sp_property
     def state(self) -> List[CoreTransportIonState]:
@@ -116,8 +118,9 @@ class CoreTransportIon(SpeciesIon):
 
 
 class CoreTransportNeutral(Species):
-    def __init__(self,   *args,  **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, grid: RadialGrid = None,  **kwargs):
+        super().__init__(*args,  ** kwargs)
+        self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
 
     @property
     def ion_index(self) -> int:
@@ -126,11 +129,11 @@ class CoreTransportNeutral(Species):
 
     @sp_property
     def particles(self) -> TransportCoeff:
-        return TransportCoeff(self.get("particles", {}), parent=self._parent)
+        return TransportCoeff(self.get("particles"), parent=self._parent)
 
     @sp_property
     def energy(self) -> TransportCoeff:
-        return TransportCoeff(self.get("energy", {}), parent=self._parent)
+        return TransportCoeff(self.get("energy"), parent=self._parent)
 
 
 class CoreTransportProfiles1D(Dict[Node]):
@@ -292,4 +295,4 @@ class CoreTransport(IDS):
 
     def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles, **kwargs) -> None:
         self.model.refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
-        self.model_combiner.refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles,  **kwargs)
+        # self.model_combiner.refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles,  **kwargs)

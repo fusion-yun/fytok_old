@@ -14,13 +14,13 @@ _TState = TypeVar("_TState")
 class Module(Actor[_TState]):
     # _actor_module_prefix = _undefined_
 
-    def __init__(self,   d, /,
+    def __init__(self,   *args,
                  identifier: Union[Mapping, Identifier] = _undefined_,
                  code: Union[Mapping, IDSCode] = _undefined_,
                  comment: str = _undefined_,
                  **kwargs):
-        super().__init__(d, **kwargs)
-        # self.update({"identifier": identifier,  "comment": comment})
+        super().__init__(*args, **kwargs)
+        self.update({"identifier": identifier,  "comment": comment})
         self._inputs = kwargs
 
     @sp_property
@@ -35,5 +35,5 @@ class Module(Actor[_TState]):
     def comment(self) -> str:
         return self.get("comment", "")
 
-    def refresh(self, d=None, /, **inputs) -> None:
-        return super().refresh(d, **inputs)
+    def refresh(self, *args, **kwargs) -> None:
+        return super().refresh(*args, **kwargs)
