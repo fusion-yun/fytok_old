@@ -544,21 +544,21 @@ if __name__ == "__main__":
                 # psi ,current
                 [
                     (Function(bs_r_norm, (bs_psi_norm*(psi_boundary-psi_axis)+psi_axis)),
-                     r"astra", r"$\psi [Wb]$", {"marker": "+"}),
+                     r"astra", r"$\psi [Wb]$", {"marker": '.', "linestyle": ''}),
                     (core_profile["psi"],  r"fytok", r"$\psi  [Wb]$"),
                 ],
 
                 ######################################################################
                 # electron particles
                 [
-                    (b_ne, r"astra", r"$n_e [m^{-3}]$",  {"marker": "+"}),
+                    (b_ne, r"astra", r"$n_e [m^{-3}]$",  {"marker": '.', "linestyle": ''}),
                     (core_profile.electrons.density, r"fytok", r"$n_e [ m^{-3}]$"),
                     # (core_profile.electrons["density_error"], r"rms residuals ",
                     #     r"$n_e [ m^{-3}]$",  {"color": "red", "linestyle": "dashed"}),
                 ],
 
                 [
-                    (b_nDT/2,    r"astra $T_D$", r"$n_i [m^-3]$", {"marker": '+'}),
+                    (b_nDT/2,    r"astra", r"$n_i [m^-3]$", {"marker": '.', "linestyle": ''}),
                     * [(ion.density,   f"${ion.label}$") for ion in core_profile.ion],
                 ],
                 # [
@@ -575,8 +575,8 @@ if __name__ == "__main__":
                 ######################################################################
                 # electron temperature
                 [
-                    (b_Te, r" (astra)", r"$T_e [eV]$",  {"marker": "+"}),
-                    (core_profile.electrons.temperature, r" (fytok)  ", r"$ [eV]$"),
+                    (b_Te*1e-3, r"astra", r"$T_e [KeV]$",  {"marker": '.', "linestyle": ''}),
+                    (core_profile.electrons.temperature*1e-3, r"fytok", r"$ [KeV]$"),
                 ],
                 # (core_profile.electrons["temperature_error"], r"rms_residuals",
                 #  r"$[eV]$",  {"color": "red", "linestyle": "dashed"}),
@@ -591,8 +591,8 @@ if __name__ == "__main__":
                 # ],
 
                 [
-                    (b_Ti,    r"astra $T_i$",       r"$T_{i} [eV]$", {"marker": '+'}),
-                    * [(ion.temperature,          f"${ion.label}$", r"$T_i [eV]$")
+                    (b_Ti*1e-3,    r"astra $T_i$",       r"$T_{i} [KeV]$", {"marker": '.', "linestyle": ''}),
+                    * [(ion.temperature*1e-3,          f"${ion.label}$", r"$T_i [KeV]$")
                         for ion in core_profile.ion if ion.label not in impurities],
                 ],
 
