@@ -479,19 +479,19 @@ class CoreProfiles1D(Dict[Node]):
                                                   (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te >= 10)))
 
     class EField(Dict[Node]):
-        def __init__(self,   d, /, grid: RadialGrid,   **kwargs):
-            super().__init__(d,  **kwargs)
-            self._grid = grid
+        def __init__(self,   *args, grid: RadialGrid = None,   **kwargs):
+            super().__init__(*args ,**kwargs)
+            self._grid = grid if grid is not None else getattr(self._parent, "_grid")
 
         @sp_property
         def parallel(self) -> Function:
-            return Function(self._grid.rho_tor_norm, self.get("parallel", None))
+            return Function(self._grid.rho_tor_norm, self.get("parallel", 0))
 
     @sp_property
     def e_field(self) -> EField:
         """Electric field, averaged on the magnetic surface. E.g for the parallel component, average(E.B) / B0,
             using core_profiles/vacuum_toroidal_field/b0[V.m ^ -1]  """
-        return self.get("e_field", {})
+        return CoreProfiles1D.EField(self.get("e_field"), parent=self)
 
     @sp_property
     def phi_potential(self) -> Function:

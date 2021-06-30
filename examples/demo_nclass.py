@@ -35,7 +35,7 @@ if __name__ == "__main__":
         "pf_active": device.entry.get("pf_active"),
         "tf": device.entry.get("tf"),
         "magnetics": device.entry.get("magnetics"),
-        "radial_grid": {"rho_tor_norm": np.linspace(0, 1.0, 100)},
+        "radial_grid": {"rho_tor_norm": np.linspace(0, 0.995, 100)},
     }
 
     # Equilibrium
@@ -47,10 +47,17 @@ if __name__ == "__main__":
 
     c_tokamak["equilibrium"] = {
         "code": {"name": "dummy"},
-        "vacuum_toroidal_field": eqdsk.get("vacuum_toroidal_field", {}),
+        "vacuum_toroidal_field": {
+            "b0": eqdsk.get("vacuum_toroidal_field.b0"),
+            "r0": eqdsk.get("vacuum_toroidal_field.r0"),
+        },
         "time_slice": {
-            "vacuum_toroidal_field": eqdsk.get("vacuum_toroidal_field", {}),
-            "profiles_1d": eqdsk.get("profiles_1d"),
+            "vacuum_toroidal_field": {
+                "b0": eqdsk.get("vacuum_toroidal_field.b0"),
+                "r0": eqdsk.get("vacuum_toroidal_field.r0"),
+            },
+            "global_quantities": eqdsk.get("global_quantities"),
+            "profiles_1d":   eqdsk.get("profiles_1d"),
             "profiles_2d": {
                 "psi": eqdsk.get("profiles_2d.psi")*TWOPI,
                 "grid_type": "rectangular",
@@ -228,6 +235,8 @@ if __name__ == "__main__":
     ###################################################################################################
     # Plot profiles
 
+    e_psi = eqdsk.get('profiles_1d.psi')
+
     if True:  # Equilibrium
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
@@ -257,17 +266,13 @@ if __name__ == "__main__":
 
         magnetic_surface = tok.equilibrium.time_slice.coordinate_system
 
-        fpol = Function(eqdsk.get('profiles_1d.psi_norm'), eqdsk.get('profiles_1d.f'))
-
-        # ffprime = fpol*fpol.derivative()/(psi_boundary-psi_axis)
-
         plot_profiles(
             [
                 [
                     (Function(bs_psi_norm, baseline["q"].values), r"astra",  r"$q [-]$", {"marker": "+"}),
-                    (Function(eqdsk.get('profiles_1d.psi_norm'), eqdsk.get('profiles_1d.q')), "eqdsk"),
+                    # (Function(eqdsk.get('profiles_1d.psi_norm'), eqdsk.get('profiles_1d.q')), "eqdsk"),
                     (magnetic_surface.q,  r"$fytok$", r"$[Wb]$"),
-                    (magnetic_surface.dphi_dpsi,  r"$\frac{d\phi}{d\psi}$", r"$[Wb]$"),
+                    # (magnetic_surface.dphi_dpsi,  r"$\frac{d\phi}{d\psi}$", r"$[Wb]$"),
                 ],
                 [
                     (Function(bs_psi_norm, baseline["rho"].values), r"astra", r"$\rho_{tor}[m]$",  {"marker": "+"}),
@@ -292,10 +297,9 @@ if __name__ == "__main__":
                     # (magnetic_surface.volume1, r"$V$ from $\rho_{tor}$"),
                 ],
 
-
                 [
-                    (np.abs(fpol), "eqdsk"),
-                    (magnetic_surface.fpol,  r"$F_{pol}$", r"$[Wb]$"),
+                    (Function([0, 1], eqdsk.get('profiles_1d.f')), "eqdsk", r"$F_{pol} [Wb\cdot m]$"),
+                    (magnetic_surface.fpol,  r"fytok", r"$[Wb]$"),
                 ],
 
 
@@ -338,15 +342,6 @@ if __name__ == "__main__":
 
         plot_profiles(
             [
-                # (eq_profile.dpressure_dpsi,                                                       r"$dP/d\psi$"),
-                # [
-                #     (Function(eq_profile.psi_norm,  eq_profile.f_df_dpsi),  r"$ff^{\prime}_{0}$" ),
-                #     (eq_profile.ffprime,                                                       r"$ff^{\prime}$"),
-                # ],
-                # [
-                #     (Function(eq_profile.psi_norm, np.abs(eq_profile.f)),  r"$\left|f_{pol0}\right|$" ),
-                #     (eq_profile.fpol,                                                                 r"$fpol$"),
-                # ],
 
                 [
                     (Function(bs_psi_norm, baseline["q"].values),            r"astra",  r"$q [-]$", {"marker": "+"}),
@@ -503,12 +498,11 @@ if __name__ == "__main__":
                      r"$J_{\parallel} [A\cdot m^{-2}]$", {"marker": "+"}),
                     (core_source.j_parallel,     "fytok", r"$J_{\parallel} [A\cdot m^{-2}]$"),
                 ],
-                # (core_source_1d.electrons.particles,       "fytok", r"$S_{e} [ m^{-3} s^-1]$"),
-                # (core_source_1d.electrons.energy,          "fytok", r"$Q_{e}$"),
-                # [
-                #     (Function(bs_r_norm, baseline["Joh"].values), "astra",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
-                #     # (core_profile.j_ohmic,                        "fytok",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
-                # ],
+
+                [
+                    (Function(bs_r_norm, baseline["Joh"].values), "astra",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
+                    (core_profile.j_ohmic,                        "fytok",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
+                ],
 
                 [
                     (Function(bs_r_norm, baseline["Jbs"].values),
@@ -529,7 +523,7 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # TransportSolver
-    if True:
+    if False:
         tok.solve(enable_ion_particle_solver=False,
                   max_nodes=500,
                   tolerance=1.0e-4,

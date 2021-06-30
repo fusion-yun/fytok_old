@@ -139,8 +139,7 @@ class TransportSolverBVP2(TransportSolver):
         self._fpol = Function(self._rho_tor_norm, eq_profile1d.fpol(self._psi_norm))
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        self._vpr = Function(self._rho_tor_norm,
-                             eq_profile1d.dvolume_drho_tor(self._psi_norm))
+        self._vpr = Function(self._rho_tor_norm,  eq_profile1d.dvolume_drho_tor(self._psi_norm))
 
         self._vprm = Function(self._rho_tor_norm,
                               self._equilibrium_prev.time_slice.profiles_1d.dvolume_drho_tor(self._psi_norm))
@@ -208,9 +207,10 @@ class TransportSolverBVP2(TransportSolver):
                 dg = dg + conductivity_parallel*self._Qimp_k_ns*y
                 dg = dg + Function(x, C).derivative(x)*y + C*dy
 
-            dg = S*c
-
-            return array_like(x, dy), array_like(x, dg)
+            
+            dy = array_like(x, dy)
+            dg = array_like(x, S*c)
+            return dy, dg
 
         # -----------------------------------------------------------
         # boundary condition, value
@@ -266,10 +266,10 @@ class TransportSolverBVP2(TransportSolver):
                  source: CoreSources.Source.Profiles1D,
                  var_id=var_id) -> Tuple[np.ndarray, np.ndarray]:
             _transp: Union[CoreTransport.Model.Profiles1D.Ion,
-                           CoreTransport.Model.Profiles1D.Electrons] = transp.get(var_id[:-1])
+                           CoreTransport.Model.Profiles1D.Electrons] = transp.fetch(var_id[:-1])
 
             _source: Union[CoreSources.Source.Profiles1D.Ion,
-                           CoreSources.Source.Profiles1D.Electrons] = source.get(var_id[:-1])
+                           CoreSources.Source.Profiles1D.Electrons] = source.fetch(var_id[:-1])
 
             y = Y[var_idx*2]
             g = Y[var_idx*2+1]
@@ -327,10 +327,10 @@ class TransportSolverBVP2(TransportSolver):
                  var_id=var_id) -> Tuple[np.ndarray, np.ndarray]:
 
             _transp: Union[CoreTransport.Model.Profiles1D.Ion,
-                           CoreTransport.Model.Profiles1D.Electrons] = transp.get(var_id[:-1], NotImplemented)
+                           CoreTransport.Model.Profiles1D.Electrons] = transp.fetch(var_id[:-1])
 
             _source: Union[CoreSources.Source.Profiles1D.Ion,
-                           CoreSources.Source.Profiles1D.Electrons] = source.get(var_id[: -1], NotImplemented)
+                           CoreSources.Source.Profiles1D.Electrons] = source.fetch(var_id[: -1])
 
             y = Y[var_idx*2]
             g = Y[var_idx*2+1]
@@ -459,8 +459,6 @@ class TransportSolverBVP2(TransportSolver):
             c_tansport_1d = self._core_transport.profiles_1d
             c_sources_1d = self._core_sources.profiles_1d
 
-            logger.debug(c_tansport_1d.electrons)
-
             res = sum([list(func(x, Y, c_profile_1d, c_tansport_1d,  c_sources_1d)) for func, bc in eq_list], [])
 
             return np.vstack([array_like(x, d) for d in res])
@@ -481,10 +479,10 @@ class TransportSolverBVP2(TransportSolver):
         if particle_solver == "electron":
             eq_grp = [
                 (["psi"],                                               self.transp_current,),
-                (["electrons", "density"],                              self.transp_particle,),
-                (["electrons", "temperature"],                          self.transp_energy, ),
-                *[(["ion", {"label": ion.label}, "temperature"],     self.transp_energy, )
-                  for ion in self._core_profiles_next.profiles_1d.ion if ion.label not in impurities],
+                # (["electrons", "density"],                              self.transp_particle,),
+                # (["electrons", "temperature"],                          self.transp_energy, ),
+                # *[(["ion", {"label": ion.label}, "temperature"],     self.transp_energy, )
+                #   for ion in self._core_profiles_next.profiles_1d.ion if ion.label not in impurities],
             ]
         else:
             eq_grp = [

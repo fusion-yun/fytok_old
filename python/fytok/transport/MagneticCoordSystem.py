@@ -188,12 +188,13 @@ class MagneticCoordSystem(object):
     def __init__(self,
                  psirz: Field,
                  fpol: Union[np.ndarray, Function],
+                 Ip: float,
                  R0: float,
                  B0: float,
                  psi_norm: np.ndarray = None,
                  ntheta: int = 128,
                  grid_type_index: int = 13,
-                 cocos_index=11):
+                 cocos=11):
         """
             Initialize FluxSurface
         """
@@ -202,11 +203,11 @@ class MagneticCoordSystem(object):
         self._grid_type_index = grid_type_index
 
         # @TODO: COCOS transformation
-        self._s_B0 = np.sign(B0)
-        self._s_fpol = np.sign(fpol[0])
+        self._s_Bp = np.sign(B0)
+        self._s_Ip = np.sign(Ip)
 
         self._ntheta = ntheta if ntheta is not None else 128
-        self._b0 = np.abs(B0)
+        self._b0 = B0
         self._r0 = R0
         self._fvac = self._b0*self._r0
 
@@ -215,48 +216,16 @@ class MagneticCoordSystem(object):
         if psi_norm is None:
             psi_norm = 128
         if isinstance(psi_norm, int):
-            self._psi_norm = np.linspace(0.001, 0.99, psi_norm)
+            self._psi_norm = np.linspace(0.0, 0.99, psi_norm)
         else:
             self._psi_norm = np.asarray(psi_norm)
 
-        if isinstance(fpol, Function):
-            self._fpol = np.abs(fpol)
-        elif isinstance(fpol, np.ndarray) and fpol.shape == self._psi_norm.shape:
-            self._fpol = Function(self._psi_norm, np.abs(fpol))
+        if isinstance(fpol, np.ndarray):
+            self._fpol: Function = Function(np.linspace(0, 1.0, len(fpol)), fpol)
+        elif isinstance(fpol, Function):
+            self._fpol: Function = fpol
         else:
-            raise TypeError(f"{type(fpol)}")
-
-        # if isinstance(pprime, Function):
-        #     self._ffprime = pprime
-        # elif isinstance(pprime, np.ndarray) and pprime.shape == self._psi_norm.shape:
-        #     self._pprime = Function(self._psi_norm, pprime)
-        # else:
-        #     raise TypeError(f"{type(pprime)}")
-
-        # dim1=self["grid.dim1"]
-        # dim2=self["grid.dim2"]
-
-        # if isinstance(dim1, np.ndarray):
-        #     u=dim1
-        # elif dim1 == None:
-        #     u=np.linspace(0.0001,  0.99,  len(self._ffprime))
-        # elif isinstance(dim1, int):
-        #     u=np.linspace(0.0001,  0.99,  dim1)
-        # else:
-        #     u=np.asarray([dim1])
-
-        # if isinstance(dim2, np.ndarray):
-        #     v=dim2
-        # elif dim2 == None:
-        #     v=np.linspace(0.0,  1.0,  128)
-        # elif isinstance(dim2, int):
-        #     v=np.linspace(0.0, 1.0,  dim2)
-        # elif isinstance(dim2, np.ndarray):
-        #     v=dim2
-        # else:
-        #     v=np.asarray([dim2])
-
-        # self._uv=[u, v]
+            raise TypeError(type(fpol))
 
     @property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
@@ -265,20 +234,17 @@ class MagneticCoordSystem(object):
     @cached_property
     def radial_grid(self) -> RadialGrid:
         return RadialGrid(
-
             self.psi_axis,
             self.psi_boundary,
             self.rho_tor[-1],
             self.vacuum_toroidal_field,
-            psi_norm= self.psi_norm,
-            rho_tor_norm= self.rho_tor_norm,
-            rho_pol_norm= getattr(self, "rho_pol_norm", None),
-            area= getattr(self, "area", None),
-            surface= self.surface,
-            dvolume_drho_tor= self.dvolume_drho_tor,
-            volume= self.volume,
-
-
+            psi_norm=self.psi_norm,
+            rho_tor_norm=self.rho_tor_norm,
+            rho_pol_norm=getattr(self, "rho_pol_norm", None),
+            area=getattr(self, "area", None),
+            surface=self.surface,
+            dvolume_drho_tor=self.dvolume_drho_tor,
+            volume=self.volume,
         )
 
     @property
@@ -417,15 +383,7 @@ class MagneticCoordSystem(object):
                     else:
                         raise RuntimeError(f"{level},{o_point.psi},{(max(theta),min(theta))}")
 
-                    # idx = [i for i, pt in points if np.allclose(pt, x_pt)]
-                    # if len(idx) != 2:
-                    #     logger.debug(f"irregular magnetic surface! ")
-                    #     continue
-                    # theta = theta[idx[0]:idx[1]]
-                    # points = points[idx[0]:idx[1]]
-
     def find_surface_by_psi_norm(self, psi_norm: Union[float, Sequence], *args,   **kwargs) -> Iterator[Tuple[float, GeoObject]]:
-
         yield from self.find_surface(np.asarray(psi_norm)*(self.psi_boundary-self.psi_axis)+self.psi_axis, *args,  **kwargs)
 
     ###############################
@@ -613,7 +571,7 @@ class MagneticCoordSystem(object):
         return -self.psirz(r,  z, dx=1) / r/TWOPI
 
     def Btor(self, r: _TCoord, z: _TCoord) -> _TCoord:
-        return self.fpol(self.psi_norm_rz(r, z)) / r
+        return self._fpol(self.psi_norm_rz(r, z)) / r
 
     def Bpol(self, r: _TCoord, z: _TCoord) -> _TCoord:
         r"""
@@ -708,7 +666,7 @@ class MagneticCoordSystem(object):
             .. math:: q(\psi) =\frac{d\Phi}{2\pi d\psi} =\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{2\pi}
         """
 
-        return self.dphi_dpsi  # self.fpol * self.gm1 * self.dvolume_dpsi
+        return self.dphi_dpsi *self._s_Bp  # self.fpol * self.gm1 * self.dvolume_dpsi
 
     @cached_property
     def magnetic_shear(self) -> np.ndarray:
@@ -776,7 +734,7 @@ class MagneticCoordSystem(object):
         """
             Derivative of Psi with respect to Rho_Tor[Wb/m].
         """
-        return (TWOPI)*self._b0*self.rho_tor/self.q
+        return (TWOPI*self._s_Bp)*self._b0*self.rho_tor/self.q 
 
     @cached_property
     def dphi_dvolume(self) -> np.ndarray:

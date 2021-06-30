@@ -1,10 +1,17 @@
-import sys
 import collections
+import math
+import sys
+
+import freegs
 import matplotlib.pyplot as plt
 import numpy as np
+from spdm.util.plot_profiles import plot_profiles
+from fytok.Tokamak import Tokamak
 from scipy import special
-import math
-
+from spdm.data.Collection import Collection
+from spdm.data.Entry import open_entry
+from spdm.data.Node import _next_
+from spdm.util.logger import logger
 
 sys.path.append("/home/salmon/workspace/freegs/")
 sys.path.append("/home/salmon/workspace/fytok/python")
@@ -12,15 +19,7 @@ sys.path.append("/home/salmon/workspace/SpDev/SpDB")
 
 
 if __name__ == "__main__":
-    from spdm.util.logger import logger
-    from spdm.data.Collection import Collection
-    from fytok.Tokamak import Tokamak
-    from spdm.util.logger import logger
-    from spdm.data.Profile import Profile
-    from spdm.data.Entry import open_entry
-    from fytok.Plot import plot_profiles
-    from spdm.data.Node import _next_
-    import freegs
+
 
     tok = Tokamak(open_entry("east+mdsplus:///home/salmon/public_data/~t/?tree_name=efit_east", shot=55555, time_slice=20))
 
