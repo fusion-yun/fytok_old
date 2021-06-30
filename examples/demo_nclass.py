@@ -35,12 +35,13 @@ if __name__ == "__main__":
         "pf_active": device.entry.get("pf_active"),
         "tf": device.entry.get("tf"),
         "magnetics": device.entry.get("magnetics"),
-        "radial_grid": {"rho_tor_norm": np.linspace(0, 0.995, 100)},
+        "radial_grid": {"rho_tor_norm": np.linspace(0, 0.9995, 100)},
     }
 
     # Equilibrium
 
     R0 = eqdsk.get("vacuum_toroidal_field.r0")
+    B0 = eqdsk.get("vacuum_toroidal_field.b0")
     psi_axis = eqdsk.get("global_quantities.psi_axis")
     psi_boundary = eqdsk.get("global_quantities.psi_boundary")
     noise = 1  # np.random.random(bs_r_norm.shape)*0.1
@@ -101,7 +102,7 @@ if __name__ == "__main__":
     conductivity_parallel = Function(bs_r_norm, baseline["Joh"].values*1.0e6 / baseline["U"].values *
                                      (2.0*constants.pi * R0))
 
-    Cped = 0.18
+    Cped = 0.17
     Ccore = 0.4
     # Function(bs_r_norm, baseline["Xi"].values)  Cped = 0.2
     chi = PiecewiseFunction([0, r_ped, 1.0],  [lambda x: Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
@@ -109,8 +110,8 @@ if __name__ == "__main__":
 
     D = 0.1*(chi+chi_e)
 
-    v_pinch_ne = Function([0, r_ped, 1.0], lambda x: 0.6 * D(x) * x / R0)
-    v_pinch_Te = Function([0, r_ped, 1.0], lambda x:  3 * chi_e(x) * x / R0)
+    v_pinch_ne = Function([0, r_ped, 1.0], lambda x: -0.6 * D(x) * x / R0)
+    v_pinch_Te = Function([0, r_ped, 1.0], lambda x:  2.5 * chi_e(x) * x / R0)
 
     v_pinch_ni = Function([0, r_ped, 1.0], lambda x:  D(x) * x / R0)
     v_pinch_Ti = Function([0, r_ped, 1.0], lambda x:  chi(x) * x / R0)
@@ -124,22 +125,22 @@ if __name__ == "__main__":
             {
                 "code": {"name": "dummy"},
                 "profiles_1d": {
-                    # "conductivity_parallel": conductivity_parallel,
+                    "conductivity_parallel": conductivity_parallel,
                     "electrons": {
                         **atoms["e"],
-                        "particles":   {"d": D, "v": -v_pinch_ne},
+                        "particles":   {"d": D,     "v": v_pinch_ne},
                         "energy":      {"d": chi_e, "v": v_pinch_Te},
                     },
                     "ion": [
                         {
                             **atoms["D"],
                             "particles":{"d":  D, "v": v_pinch_ni},
-                            "energy": {"d": chi, "v": v_pinch_Ti},
+                            "energy": {"d":  chi, "v": v_pinch_Ti},
                         },
                         {
                             **atoms["T"],
                             "particles":{"d":  D, "v": v_pinch_ni},
-                            "energy": {"d": chi, "v": v_pinch_Ti},
+                            "energy": {"d":  chi, "v": v_pinch_Ti},
                         },
                         {
                             **atoms["He"],
@@ -148,19 +149,19 @@ if __name__ == "__main__":
                     ]}
             },
             # {"code": {"name": "neoclassical"}},
-            {"code": {"name": "spitzer"}},
+            # {"code": {"name": "spitzer"}},
         ]}
 
     S = Function(lambda x: 9e20 * np.exp(15.0*(x**2-1.0)))
 
-    Qe = Function(bs_r_norm,
-                  (baseline["Poh"].values
-                   + baseline["Pdte"].values
-                   + baseline["Paux"].values
-                   - baseline["Peic"].values
-                   - baseline["Prad"].values
-                   - baseline["Pneu"].values
-                   )*1e6/constants.electron_volt)
+    Q_e = Function(bs_r_norm,
+                   (baseline["Poh"].values
+                    + baseline["Pdte"].values
+                    + baseline["Paux"].values
+                    - baseline["Peic"].values
+                    - baseline["Prad"].values
+                    # - baseline["Pneu"].values
+                    )*1e6/constants.electron_volt)
 
     Q_DT = Function(bs_r_norm,
                     (baseline["Peic"].values
@@ -183,29 +184,22 @@ if __name__ == "__main__":
                 "j_parallel": Function(
                     bs_r_norm,
                     (
-                        # baseline["Jtot"].values
-                        baseline["Joh"].values
+                        baseline["Jtot"].values
+                        # baseline["Joh"].values
                         # + baseline["Jbs"].values
-                        + baseline["Jnb"].values
-                        + baseline["Jrf"].values
+                        # + baseline["Jnb"].values
+                        # + baseline["Jrf"].values
                     ) * 1e6),
                 "electrons":{**atoms["e"],
                              "particles": S,
-                             "energy": Function(bs_r_norm,
-                                                (baseline["Poh"].values
-                                                 + baseline["Pdte"].values
-                                                 + baseline["Paux"].values
-                                                 - baseline["Peic"].values
-                                                 - baseline["Prad"].values
-                                                 - baseline["Pneu"].values
-                                                 )*1e6/constants.electron_volt)},
+                             "energy": Q_e},
                 "ion": [
                     {**atoms["D"],          "particles":S*0.5,      "energy":Q_DT*0.5},
                     {**atoms["T"],          "particles":S*0.5,      "energy":Q_DT*0.5},
-                    {**atoms["He"],         "particles":0,          "energy":-Q_He}
+                    {**atoms["He"],         "particles":0,          "energy":Q_He}
                 ]}},
             # {"code": {"name": "collisional_equipartition"}, },
-            {"code": {"name": "bootstrap_current"}},
+            # {"code": {"name": "bootstrap_current"}},
         ]}
 
     #  TransportSolver
@@ -346,7 +340,8 @@ if __name__ == "__main__":
                 [
                     (Function(bs_psi_norm, baseline["q"].values),            r"astra",  r"$q [-]$", {"marker": "+"}),
                     (eq_profile.q,                                      r"fytok",  r"$q [-]$"),
-                    (eq_profile.dphi_dpsi,                        r"$\frac{d\phi}{d\psi}$"),
+                    (eq_profile.dphi_dpsi*np.sign(B0),
+                     f"${np.sign(B0)}\\frac{{d\\phi}}{{d\\psi}}$"),
                 ],
                 [
                     (Function(bs_psi_norm, baseline["rho"].values), r"astra", r"$\rho_{tor}[m]$",  {"marker": "+"}),
@@ -494,28 +489,37 @@ if __name__ == "__main__":
         plot_profiles(
             [
                 [
-                    (Function(bs_r_norm, baseline["Jtot"].values*1e6),  "astra",
-                     r"$J_{\parallel} [A\cdot m^{-2}]$", {"marker": "+"}),
-                    (core_source.j_parallel,     "fytok", r"$J_{\parallel} [A\cdot m^{-2}]$"),
+                    (Function(bs_r_norm, baseline["Jtot"].values),  "astra",
+                     r"$J_{\parallel} [MA\cdot m^{-2}]$", {"marker": "+"}),
+                    (core_source.j_parallel*1e-6,     "fytok", r"$J_{\parallel} [A\cdot m^{-2}]$"),
+                ],
+
+                # [
+                #     (Function(bs_r_norm, baseline["Joh"].values), "astra",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
+                #     (core_profile.j_ohmic,                        "fytok",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
+                # ],
+
+                # [
+                #     (Function(bs_r_norm, baseline["Jbs"].values),
+                #      r"astra", r"bootstrap current $[MA\cdot m^{-2}]$", {"marker": "+"}),
+                #     (tok.core_sources.source[{"code.name": "bootstrap_current"}]
+                #         .profiles_1d.j_parallel*1e-6,  r"fytok", "", {"marker": "*"}),
+                # ],
+                [
+                    #     (rms_residual(Function(bs_r_norm, baseline["Jbs"].values*1e6),
+                    #                tok.core_sources.source[{"code.name": "bootstrap_current"}].profiles_1d.j_parallel),
+                    #   r"bootstrap current", r"  rms residual $[\%]$"),
+                    (rms_residual(Function(bs_r_norm, baseline["Jtot"].values), core_source.j_parallel*1e-6),
+                     r"total current", r"  rms residual $[\%]$"),
                 ],
 
                 [
-                    (Function(bs_r_norm, baseline["Joh"].values), "astra",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
-                    (core_profile.j_ohmic,                        "fytok",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
+                    (core_source.electrons.energy,   "electron",    r"$Q [eV\cdot m^{-3} s^{-1}]$"),
+
+                    *[(ion.energy*1e-6,  f"{ion.label}", f"$Q_{ion.label}$")
+                      for ion in core_source.ion if ion.label not in impurities],
                 ],
 
-                [
-                    (Function(bs_r_norm, baseline["Jbs"].values),
-                     r"astra", r"bootstrap current $[MA\cdot m^{-2}]$", {"marker": "+"}),
-                    (tok.core_sources.source[{"code.name": "bootstrap_current"}]\
-                        .profiles_1d.j_parallel*1e-6,  r"fytok", "", {"marker": "*"}),
-                ],
-                [(rms_residual(Function(bs_r_norm, baseline["Jbs"].values*1e6),\
-                               tok.core_sources.source[{"code.name": "bootstrap_current"}].profiles_1d.j_parallel),
-                  r"bootstrap current", r"  rms residual $[\%]$"),
-                 (rms_residual(Function(bs_r_norm, baseline["Jtot"].values*1e6), core_source.j_parallel),
-                  r"total current", r"  rms residual $[\%]$"),
-                 ]
 
             ],
             x_axis=([0, 1.0], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
@@ -523,7 +527,7 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # TransportSolver
-    if False:
+    if True:
         tok.solve(enable_ion_particle_solver=False,
                   max_nodes=500,
                   tolerance=1.0e-4,
@@ -542,22 +546,8 @@ if __name__ == "__main__":
                     (Function(bs_r_norm, (bs_psi_norm*(psi_boundary-psi_axis)+psi_axis)),
                      r"astra", r"$\psi [Wb]$", {"marker": "+"}),
                     (core_profile["psi"],  r"fytok", r"$\psi  [Wb]$"),
-                    # (core_profile["psi_error"], r"residual", r"",  {"color": "red", "linestyle": "dashed"}),
                 ],
-                # [
-                #     (Function(bs_r_norm, baseline["Fp"].values), r"astra", r"$\psi/\psi_{bdry}  [-]$", {"marker": "+"}),
-                #     ((core_profile["psi"]-core_profile["psi"][0])/(core_profile["psi"][-1]-core_profile["psi"][0]), r"fytok", r"$\psi  [-]$"),
-                # ],
-                # [
-                #     (Function(bs_r_norm, baseline["Jtot"].values), "astra",   r"$J_{\parallel} [MA]$", {"marker": "+"}),
-                #     (tok.core_sources.source.combine.profiles_1d.j_parallel/1e6,    "fytok",   r"$J_{\parallel} [MA]$"),
-                # ],
-                # [
-                #     (conductivity_parallel, "astra", r"$\sigma_{\parallel}$", {"marker": "+"}),
-                #     (tok.core_transport.model.combine.profiles_1d.conductivity_parallel,   "fytok"),
-                # ],
-                # (core_profile["sol.current.fpol"],  r"sol.current.fpol", r"$fpol$"),
-                # (core_profile["sol.current.gm2"],  r"sol.current.gm2", r"$gm2$"),
+
                 ######################################################################
                 # electron particles
                 [
@@ -583,7 +573,7 @@ if __name__ == "__main__":
                 #         r"residual",  "", {"color": "red", }),
                 # ],
                 ######################################################################
-                # electron energy
+                # electron temperature
                 [
                     (b_Te, r" (astra)", r"$T_e [eV]$",  {"marker": "+"}),
                     (core_profile.electrons.temperature, r" (fytok)  ", r"$ [eV]$"),
@@ -593,14 +583,19 @@ if __name__ == "__main__":
 
 
                 ######################################################################
+                # ion temperature
+                # [
+                #     (core_profile.electrons.get("density_flux"), r"$\Gamma_e$", r"$\Gamma_i$"),
+                #     * [(ion.get("density_flux"),          f"$\\Gamma_{ion.label}$", r"$\Gamma_i [eV]$")
+                #         for ion in core_profile.ion if ion.label not in impurities],
+                # ],
+
                 [
                     (b_Ti,    r"astra $T_i$",       r"$T_{i} [eV]$", {"marker": '+'}),
                     * [(ion.temperature,          f"${ion.label}$", r"$T_i [eV]$")
                         for ion in core_profile.ion if ion.label not in impurities],
                 ],
 
-                # (core_profile.e_field.parallel,                    r"fytok",   r"$E_{\parallel} [V\cdot m^{-1}]$ "),
-                # (core_profile["rms_residuals"], r"rms residuals ",     r"",  {"color": "red", "linestyle": "dashed"}),
                 [
                     (rms_residual(Function(bs_r_norm, (bs_psi_norm*(psi_boundary-psi_axis)+psi_axis)),
                                   core_profile["psi"]), r"$\psi$", " rms residual [%]"),

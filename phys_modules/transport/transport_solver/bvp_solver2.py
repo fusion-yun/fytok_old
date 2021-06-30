@@ -122,6 +122,8 @@ class TransportSolverBVP2(TransportSolver):
 
         self._rho_tor_boundary = r_grid.rho_tor[-1]
 
+        logger.debug( self._rho_tor_boundary )
+
         self._rho_tor_boundary_m = self._core_profiles_prev.profiles_1d.grid.rho_tor[-1]
 
         self._k_B = (self._B0 - self._B0m) / (self._B0 + self._B0m) * self._inv_tau * 2.0
@@ -139,13 +141,14 @@ class TransportSolverBVP2(TransportSolver):
         self._fpol = Function(self._rho_tor_norm, eq_profile1d.fpol(self._psi_norm))
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        self._vpr = Function(self._rho_tor_norm,  eq_profile1d.dvolume_drho_tor(self._psi_norm))
+
+        self._vpr = Function(self._rho_tor_norm, eq_profile1d.dvolume_drho_tor(self._psi_norm))
 
         self._vprm = Function(self._rho_tor_norm,
                               self._equilibrium_prev.time_slice.profiles_1d.dvolume_drho_tor(self._psi_norm))
 
-        self._vpr35 = self._vpr**(5/3)
-        self._vpr35m = self._vprm**(5/3)
+        self._vpr5_3 = np.abs(self._vpr)**(5/3)
+        self._vpr5_3m = np.abs(self._vprm)**(5/3)
 
         if np.isclose(eq_profile1d.dvolume_drho_tor(self._psi_norm[0]), 0.0):
             self._inv_vpr23 = Function(self._rho_tor_norm[1:],
@@ -207,7 +210,6 @@ class TransportSolverBVP2(TransportSolver):
                 dg = dg + conductivity_parallel*self._Qimp_k_ns*y
                 dg = dg + Function(x, C).derivative(x)*y + C*dy
 
-            
             dy = array_like(x, dy)
             dg = array_like(x, S*c)
             return dy, dg
@@ -265,6 +267,7 @@ class TransportSolverBVP2(TransportSolver):
                  transp: CoreTransport.Model.Profiles1D,
                  source: CoreSources.Source.Profiles1D,
                  var_id=var_id) -> Tuple[np.ndarray, np.ndarray]:
+
             _transp: Union[CoreTransport.Model.Profiles1D.Ion,
                            CoreTransport.Model.Profiles1D.Electrons] = transp.fetch(var_id[:-1])
 
@@ -325,7 +328,6 @@ class TransportSolverBVP2(TransportSolver):
                  transp: CoreTransport.Model.Profiles1D,
                  source: CoreSources.Source.Profiles1D,
                  var_id=var_id) -> Tuple[np.ndarray, np.ndarray]:
-
             _transp: Union[CoreTransport.Model.Profiles1D.Ion,
                            CoreTransport.Model.Profiles1D.Electrons] = transp.fetch(var_id[:-1])
 
@@ -336,13 +338,14 @@ class TransportSolverBVP2(TransportSolver):
             g = Y[var_idx*2+1]
 
             n = core_profiles.get(var_id[:-1]+["density"], 0)
+
             gamma = core_profiles.get(var_id[:-1]+["density_flux"], 0)
 
             yp = Function(x, y).derivative(x)
 
-            a = (3/2) * self._vpr35 * y
+            a = (3/2) * self._vpr5_3 * y
 
-            b = (3/2) * self._vpr35m * ym
+            b = (3/2) * self._vpr5_3m * ym
 
             c = self._rho_tor_boundary * self._inv_vpr23
 
@@ -350,7 +353,7 @@ class TransportSolverBVP2(TransportSolver):
 
             e = self._vpr * self._gm3 * n * _transp.energy.v + 3/2 * gamma
 
-            S = self._vpr35 * _source.energy
+            S = self._vpr5_3 * _source.energy
 
             dy = (-g + e * y + hyper_diff * yp)/(d + hyper_diff)
 
@@ -358,7 +361,7 @@ class TransportSolverBVP2(TransportSolver):
 
             if not np.isclose(inv_tau, 0.0):
                 dg = dg - (a * y - b * ym)*inv_tau
-                dg = dg + self._vpr35 * self._Qimp_k_ns * y
+                dg = dg + self._vpr5_3 * self._Qimp_k_ns * y
                 dg = dg + Function(x,  self._vpr * (3/4)*self._k_phi * x * n).derivative(x) * y
                 dg = dg + self._vpr * (3/4)*self._k_phi * x * n*dy
 
@@ -424,8 +427,8 @@ class TransportSolverBVP2(TransportSolver):
             n_e = 0
             g_e = 0
             for ion in profiles.ion:
-                n_e = ion.z*ion.density
-                g_e = ion.z*ion.get("density_flux", 0)
+                n_e = n_e + ion.z*ion.density
+                g_e = g_e + ion.z*ion.get("density_flux", 0)
 
             profiles.electrons["density"] = n_e
             profiles.electrons["density_flux"] = g_e
@@ -446,7 +449,7 @@ class TransportSolverBVP2(TransportSolver):
             profiles: CoreProfiles.Profiles1D = self._core_profiles_next.profiles_1d
 
             for idx, path in enumerate(var_list):
-                profiles[path] = Function(x, np.abs(Y[idx*2]))
+                profiles[path] = Function(x, Y[idx*2])
                 profiles[path[:-1]+[f"{path[-1]}_flux"]] = Function(x, Y[idx*2+1])
 
             self.quasi_neutral_condition(profiles, particle_solver=particle_solver, impurities=impurities)
@@ -479,10 +482,10 @@ class TransportSolverBVP2(TransportSolver):
         if particle_solver == "electron":
             eq_grp = [
                 (["psi"],                                               self.transp_current,),
-                # (["electrons", "density"],                              self.transp_particle,),
-                # (["electrons", "temperature"],                          self.transp_energy, ),
-                # *[(["ion", {"label": ion.label}, "temperature"],     self.transp_energy, )
-                #   for ion in self._core_profiles_next.profiles_1d.ion if ion.label not in impurities],
+                (["electrons", "density"],                              self.transp_particle,),
+                (["electrons", "temperature"],                          self.transp_energy, ),
+                *[(["ion", {"label": ion.label}, "temperature"],     self.transp_energy, )
+                  for ion in self._core_profiles_next.profiles_1d.ion if ion.label not in impurities],
             ]
         else:
             eq_grp = [
