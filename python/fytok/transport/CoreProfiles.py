@@ -40,7 +40,7 @@ class CoreProfilesElectrons(SpeciesElectron):
     @sp_property
     def density(self) -> Function:
         """Density (thermal+non-thermal) {dynamic} [m^-3]"""
-        return Function(self._grid.rho_tor_norm, self.get("density", None))
+        return Function(self._grid.rho_tor_norm, self.get("density"))
     # @property
     # def density_validity(self):
     #     """Indicator of the validity of the density profile.

@@ -6,6 +6,7 @@ from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.Entry import _next_
 from spdm.data.Function import Function
 from spdm.numlib import constants, np
+from spdm.numlib.misc import array_like
 from spdm.util.logger import logger
 from spdm.util.utilities import _not_found_
 
@@ -29,13 +30,13 @@ class NeoClassical(CoreTransport.Model):
                          }, **kwargs)
 
     def refresh(self, *args,
-               equilibrium: Equilibrium,
-               core_profiles: CoreProfiles,
-               **kwargs):
-        super().refresh(*args, **kwargs)
+                equilibrium: Equilibrium,
+                core_profiles: CoreProfiles,
+                **kwargs):
+        super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
         eV = constants.electron_volt
-        B0 = abs(equilibrium.vacuum_toroidal_field.b0)
+        B0 = equilibrium.vacuum_toroidal_field.b0
         R0 = equilibrium.vacuum_toroidal_field.r0
 
         core_profile = core_profiles.profiles_1d
@@ -58,7 +59,7 @@ class NeoClassical(CoreTransport.Model):
         lnCoul = core_profile.coulomb_logarithm(rho_tor_norm)
         # electron collision time , eq 14.6.1
 
-        rho_tor[0] = max(1.07e-4*((Te[0]/1000)**(1/2))/B0, rho_tor[0])  # Larmor radius,   eq 14.7.2
+        rho_tor[0] = max(1.07e-4*((Te[0]/1000)**(1/2))/np.abs(B0), rho_tor[0])  # Larmor radius,   eq 14.7.2
 
         epsilon = (rho_tor/R0)
         epsilon12 = np.sqrt(epsilon)
@@ -68,8 +69,9 @@ class NeoClassical(CoreTransport.Model):
         #  Sec 14.11 Chang-Hinton formula for \Chi_i
 
         # Shafranov shift
-        delta_ = Function(rho_tor, np.array(
-            equilibrium.time_slice.profiles_1d.geometric_axis.r(psi_norm)-R0)).derivative(rho_tor_norm)
+        delta_ = Function(rho_tor,
+                          equilibrium.time_slice.profiles_1d.geometric_axis.r(psi_norm)-R0)\
+            .derivative(rho_tor_norm)
 
         # impurity ions
         nZI = 0.0
@@ -79,13 +81,13 @@ class NeoClassical(CoreTransport.Model):
 
         sum1 = 0.0
         sum2 = 0.0
-        for sp in core_profile.ion:
-            Ti = sp.temperature(rho_tor_norm)
-            Ni = sp.density(rho_tor_norm)
+        for ion in core_profile.ion:
+            Ti = ion.temperature(rho_tor_norm)
+            Ni = ion.density(rho_tor_norm)
 
-            mi = sp.a
-            Zi = sp.z_ion_1d
-            Zi2 = sp.z_ion_square_1d
+            mi = ion.a
+            Zi = ion.z_ion_1d
+            Zi2 = ion.z_ion_square_1d
             alpha = (nZI/(Ni*Zi*Zi))
 
             # Larmor radius, Tokamaks 3ed, eq 14.7.2
@@ -108,38 +110,16 @@ class NeoClassical(CoreTransport.Model):
 
             chi_i = chi_i/epsilon32*(q**2)*(rho_i**2)/(1.0+0.74*mu_i*epsilon32)
 
-            sp_trans = self.profiles_1d.ion.find({"label": sp.label}, only_first=True, default_value=_not_found_)
-            if sp_trans is _not_found_:
-                self.profiles_1d.ion[_next_] = {
-                    "label": sp.label,
-                    "z_ion": sp.z_ion,
-                    "neutral_index": sp.neutral_index,
-                    "element": sp.element._as_list(),
-                }
-            sp_trans = self.profiles_1d.ion[{"label": sp.label}]
-
-            # TODO: Need node to support conditional insertion
-            # sp_trans = self.profiles_1d.ion.insert({"label": sp.label},
-            #                                        {_next_: {
-            #                                            "label": sp.label,
-            #                                            "z_ion": sp.z_ion,
-            #                                            "neutral_index": sp.neutral_index,
-            #                                            "element": sp.element._as_list(),
-            #                                        }},
-            #                                        only_first=True)
-
-            if sp_trans is _not_found_:
-                logger.error(f"Can not add ion {sp.label}!")
-            else:
-                sp_trans.energy.d = chi_i
-                sp_trans.particles.d = chi_i/3.0
+            chi_i = array_like(rho_tor_norm, chi_i)
+            self["profiles_1d.ion", {"label": ion.label}, "energy.d"] = chi_i
+            self["profiles_1d.ion", {"label": ion.label}, "particles.d"] = chi_i/3.0
 
             #########################################################################
 
-            sum1 = sum1 + chi_i/3.0*sp.pressure.derivative(rho_tor_norm)*Zi/Ti
+            sum1 = sum1 + chi_i/3.0*ion.pressure.derivative(rho_tor_norm)*Zi/Ti
             sum2 = sum2 + chi_i/3.0*Ni*Zi2 / Ti
 
-        self.profiles_1d.e_field_radial = sum1/sum2
+        self["profiles_1d.e_field_radial"] = sum1/sum2
 
         return 0.0
 
