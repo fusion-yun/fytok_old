@@ -125,7 +125,7 @@ if __name__ == "__main__":
             {
                 "code": {"name": "dummy"},
                 "profiles_1d": {
-                    "conductivity_parallel": conductivity_parallel,
+                    # "conductivity_parallel": conductivity_parallel,
                     "electrons": {
                         **atoms["e"],
                         "particles":   {"d": D,     "v": v_pinch_ne},
@@ -149,7 +149,7 @@ if __name__ == "__main__":
                     ]}
             },
             # {"code": {"name": "neoclassical"}},
-            # {"code": {"name": "spitzer"}},
+            {"code": {"name": "spitzer"}},
         ]}
 
     S = Function(lambda x: 9e20 * np.exp(15.0*(x**2-1.0)))
@@ -184,11 +184,11 @@ if __name__ == "__main__":
                 "j_parallel": Function(
                     bs_r_norm,
                     (
-                        baseline["Jtot"].values
-                        # baseline["Joh"].values
+                        # baseline["Jtot"].values
+                        baseline["Joh"].values
                         # + baseline["Jbs"].values
-                        # + baseline["Jnb"].values
-                        # + baseline["Jrf"].values
+                        + baseline["Jnb"].values
+                        + baseline["Jrf"].values
                     ) * 1e6),
                 "electrons":{**atoms["e"],
                              "particles": S,
@@ -199,7 +199,7 @@ if __name__ == "__main__":
                     {**atoms["He"],         "particles":0,          "energy":Q_He}
                 ]}},
             # {"code": {"name": "collisional_equipartition"}, },
-            # {"code": {"name": "bootstrap_current"}},
+            {"code": {"name": "bootstrap_current"}},
         ]}
 
     #  TransportSolver
@@ -263,24 +263,26 @@ if __name__ == "__main__":
         plot_profiles(
             [
                 [
-                    (Function(bs_psi_norm, baseline["q"].values), r"astra",  r"$q [-]$", {"marker": "+"}),
+                    (Function(bs_psi_norm, baseline["q"].values), r"astra",
+                     r"$q [-]$", {"marker": '.', "linestyle": ''}),
                     # (Function(eqdsk.get('profiles_1d.psi_norm'), eqdsk.get('profiles_1d.q')), "eqdsk"),
                     (magnetic_surface.q,  r"$fytok$", r"$[Wb]$"),
                     # (magnetic_surface.dphi_dpsi,  r"$\frac{d\phi}{d\psi}$", r"$[Wb]$"),
                 ],
                 [
-                    (Function(bs_psi_norm, baseline["rho"].values), r"astra", r"$\rho_{tor}[m]$",  {"marker": "+"}),
+                    (Function(bs_psi_norm, baseline["rho"].values), r"astra",
+                     r"$\rho_{tor}[m]$",  {"marker": '.', "linestyle": ''}),
                     (magnetic_surface.rho_tor,  r"$\rho$", r"$[m]$"),
                 ],
                 [
                     (Function(bs_psi_norm, baseline["x"].values),           r"astra",
-                     r"$\frac{\rho_{tor}}{\rho_{tor,bdry}}$", {"marker": "+"}),
+                     r"$\frac{\rho_{tor}}{\rho_{tor,bdry}}$", {"marker": '.', "linestyle": ''}),
                     (magnetic_surface.rho_tor_norm,  r"$\bar{\rho}$", r"$[-]$"),
                 ],
 
                 [
                     (Function(bs_psi_norm, 4*(constants.pi**2)*magnetic_surface.vacuum_toroidal_field.r0 * baseline["rho"].values),
-                     r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho$",  {"marker": "+"}),
+                     r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho$",  {"marker": '.', "linestyle": ''}),
                     (magnetic_surface.dvolume_drho_tor, r"$dV/d\rho_{tor}$", r"$[m^2]$"),
                 ],
 
@@ -301,11 +303,9 @@ if __name__ == "__main__":
                 (magnetic_surface.phi,  r"$\phi$", r"$[Wb]$"),
                 (magnetic_surface.psi_norm,  r"$\bar{\psi}$", r"$[-]$"),
 
-                (magnetic_surface.dpsi_drho_tor, r"$\frac{d\psi}{d\rho_{tor}}$", "", {"marker": "."}),
 
-                # (magnetic_surface.drho_tor_dpsi, r"$\frac{d\rho_{tor}}{d\psi}$", "", {"marker": "."}),
                 [
-                    (magnetic_surface.dpsi_drho_tor,  r"$\frac{d\psi}{d\rho_{tor}}$"),
+                    (magnetic_surface.dpsi_drho_tor, r"$\frac{d\psi}{d\rho_{tor}}$", "", {"marker": '.'}),
                     (magnetic_surface.dvolume_drho_tor/magnetic_surface.dvolume_dpsi,
                      r"$\frac{dV}{d\rho_{tor}} / \frac{dV}{d\psi}$")
                 ],
@@ -338,40 +338,42 @@ if __name__ == "__main__":
             [
 
                 [
-                    (Function(bs_psi_norm, baseline["q"].values),            r"astra",  r"$q [-]$", {"marker": "+"}),
+                    (Function(bs_psi_norm, baseline["q"].values),
+                     r"astra",  r"$q [-]$", {"marker": '.', "linestyle": ''}),
                     (eq_profile.q,                                      r"fytok",  r"$q [-]$"),
                     (eq_profile.dphi_dpsi*np.sign(B0),
                      f"${np.sign(B0)}\\frac{{d\\phi}}{{d\\psi}}$"),
                 ],
                 [
-                    (Function(bs_psi_norm, baseline["rho"].values), r"astra", r"$\rho_{tor}[m]$",  {"marker": "+"}),
+                    (Function(bs_psi_norm, baseline["rho"].values), r"astra",
+                     r"$\rho_{tor}[m]$",  {"marker": '.', "linestyle": ''}),
                     (eq_profile.rho_tor,                                      r"fytok",    r"$\rho_{tor}[m]$"),
                 ],
                 [
                     (Function(bs_psi_norm, baseline["x"].values),           r"astra",
-                     r"$\frac{\rho_{tor}}{\rho_{tor,bdry}}$", {"marker": "+"}),
+                     r"$\frac{\rho_{tor}}{\rho_{tor,bdry}}$", {"marker": '.', "linestyle": ''}),
                     (eq_profile.rho_tor_norm,                        r"fytok"),
                 ],
 
                 [
                     (Function(bs_psi_norm, baseline["shif"].values),
-                     r"astra", "$\Delta$ shafranov \n shift $[m]$ ", {"marker": "+"}),
+                     r"astra", "$\Delta$ shafranov \n shift $[m]$ ", {"marker": '.', "linestyle": ''}),
                     (eq_profile.geometric_axis.r-tok.equilibrium.time_slice.vacuum_toroidal_field.r0,
                      r"fytok", "shafranov \n shift $\Delta [m]$ "),
                 ],
                 [
                     (Function(bs_psi_norm, baseline["k"].values),
-                     r"astra", r"$elongation[-]$", {"marker": "+"}),
+                     r"astra", r"$elongation[-]$", {"marker": '.', "linestyle": ''}),
                     (eq_profile.elongation,                                 r"fytok", r"$elongation[-]$"),
                 ],
                 [
-                    (4*(constants.pi**2)*tok.equilibrium.time_slice.vacuum_toroidal_field.r0*tok.equilibrium.time_slice.profiles_1d.rho_tor,
+                    (4*(constants.pi**2)*R0*tok.equilibrium.time_slice.profiles_1d.rho_tor,
                      r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho , dV/d\rho$"),
                     (tok.equilibrium.time_slice.profiles_1d.dvolume_drho_tor,   r"$V^{\prime}$", r"$dV/d\rho$"),
                 ],
                 [
                     (Function(bs_psi_norm, baseline["Jtot"].values*1e6),   r"astra",
-                     r"$j_{\parallel} [A\cdot m^{-2}]$", {"marker": "+"}),
+                     r"$j_{\parallel} [A\cdot m^{-2}]$", {"marker": '.', "linestyle": ''}),
                     (eq_profile.j_parallel,                                         r"fytok",     r"$j_{\parallel}$"),
                 ],
 
@@ -410,23 +412,24 @@ if __name__ == "__main__":
         plot_profiles(
             [
                 [
-                    (b_ne,  "electron astra",    r"$n_{e} [m \cdot s^{-3}]$", {"marker": "+"}),
-                    (b_nDT*0.5,  "D astra",    r"$n_{D} [m \cdot s^{-3}]$", {"marker": "+"}),
-                    (b_nHe,  "He astra",    r"$n_{He} [m \cdot s^{-3}]$", {"marker": "+"}),
+                    (b_ne,  "electron astra",    r"$n_{e} [m \cdot s^{-3}]$", {"marker": '.', "linestyle": ''}),
+                    (b_nDT*0.5,  "D astra",    r"$n_{D} [m \cdot s^{-3}]$", {"marker": '.', "linestyle": ''}),
+                    (b_nHe,  "He astra",    r"$n_{He} [m \cdot s^{-3}]$", {"marker": '.', "linestyle": ''}),
 
                     (core_profile.electrons.density,             r"$electron$", ),
                     *[(ion.density,          f"${ion.label}$") for ion in core_profile.ion],
 
                 ],
                 [
-                    (b_Te,    r"astra $T_i$",       r"T $[eV]$", {"marker": "+"}),
-                    (b_Ti,    r"astra $T_i$",       r"$T_{i}$", {"marker": "+"}),
+                    (b_Te,    r"astra $T_i$",       r"T $[eV]$", {"marker": '.', "linestyle": ''}),
+                    (b_Ti,    r"astra $T_i$",       r"$T_{i}$", {"marker": '.', "linestyle": ''}),
                     (core_profile.electrons.temperature,       r"$e$", r"T $[eV]$"),
                     *[(ion.temperature,      f"${ion.label}$") for ion in core_profile.ion],
                 ],
 
                 [
-                    (Function(bs_r_norm, baseline["Zeff"].values),       r"astra", r"$Z_{eff}  [-]$", {"marker": "+"}),
+                    (Function(bs_r_norm, baseline["Zeff"].values),       r"astra",
+                     r"$Z_{eff}  [-]$", {"marker": '.', "linestyle": ''}),
                     (core_profile.zeff,                                   r"$fytok$"),
                 ],
                 (core_profile.grid.psi,                                    r"$\psi$"),
@@ -445,18 +448,20 @@ if __name__ == "__main__":
         plot_profiles(
             [
                 [
-                    (Function(bs_r_norm, baseline["Xi"].values),          r"astra", r"$\chi_{i}$", {"marker": "+"}),
+                    (Function(bs_r_norm, baseline["Xi"].values),          r"astra",
+                     r"$\chi_{i}$", {"marker": '.', "linestyle": ''}),
                     *[(ion.energy.d,  f"{ion.label}", r"$\chi_{i}$") for ion in core_transport.ion],
                 ],
 
                 # [
-                #     (Function(bs_r_norm,  np.log(baseline["XiNC"].values)),  "astra", r"$ln \chi_{i,nc}$", {"marker": "+"}),
+                #     (Function(bs_r_norm,  np.log(baseline["XiNC"].values)),  "astra", r"$ln \chi_{i,nc}$", {"marker": '.', "linestyle": ''}),
                 #     # * [(np.log(core_transport1d_nc.ion[{"label": label}].energy.d),   f"${label}$", r"$ln \chi_{i,nc}$")
                 #     #     for label in ("H", "D", "He")],
                 # ],
 
                 [
-                    (Function(bs_r_norm, baseline["He"].values), "astra", r"$\chi_{e}$"),
+                    (Function(bs_r_norm, baseline["He"].values), "astra",
+                     r"$\chi_{e}$", {"marker": '.', "linestyle": ''}),
                     (core_transport.electrons.energy.d,  "fytok", r"$\chi_{e}$"),
                 ],
 
@@ -468,7 +473,7 @@ if __name__ == "__main__":
 
                 [
                     (Function(bs_r_norm, baseline["Joh"].values*1.0e6 / baseline["U"].values *
-                              (2.0*constants.pi * tok.equilibrium.time_slice.vacuum_toroidal_field.r0)),     r"astra", r"$\sigma_{\parallel}$", {"marker": "+"}),
+                              (2.0*constants.pi * tok.equilibrium.time_slice.vacuum_toroidal_field.r0)),     r"astra", r"$\sigma_{\parallel}$", {"marker": '.', "linestyle": ''}),
 
                     (core_transport.conductivity_parallel,  r"fytok"),
                 ],
@@ -490,7 +495,7 @@ if __name__ == "__main__":
             [
                 [
                     (Function(bs_r_norm, baseline["Jtot"].values),  "astra",
-                     r"$J_{\parallel} [MA\cdot m^{-2}]$", {"marker": "+"}),
+                     r"$J_{\parallel} [MA\cdot m^{-2}]$", {"marker": '.', "linestyle": ''}),
                     (core_source.j_parallel*1e-6,     "fytok", r"$J_{\parallel} [A\cdot m^{-2}]$"),
                 ],
 
@@ -499,16 +504,16 @@ if __name__ == "__main__":
                 #     (core_profile.j_ohmic,                        "fytok",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
                 # ],
 
-                # [
-                #     (Function(bs_r_norm, baseline["Jbs"].values),
-                #      r"astra", r"bootstrap current $[MA\cdot m^{-2}]$", {"marker": "+"}),
-                #     (tok.core_sources.source[{"code.name": "bootstrap_current"}]
-                #         .profiles_1d.j_parallel*1e-6,  r"fytok", "", {"marker": "*"}),
-                # ],
                 [
-                    #     (rms_residual(Function(bs_r_norm, baseline["Jbs"].values*1e6),
-                    #                tok.core_sources.source[{"code.name": "bootstrap_current"}].profiles_1d.j_parallel),
-                    #   r"bootstrap current", r"  rms residual $[\%]$"),
+                    (Function(bs_r_norm, baseline["Jbs"].values),
+                     r"astra", r"bootstrap current $[MA\cdot m^{-2}]$", {"marker": '.', "linestyle": ''}),
+                    (tok.core_sources.source[{"code.name": "bootstrap_current"}
+                                             ].profiles_1d.j_parallel*1e-6,  r"fytok",),
+                ],
+                [
+                    (rms_residual(Function(bs_r_norm, baseline["Jbs"].values*1e6),
+                                  tok.core_sources.source[{"code.name": "bootstrap_current"}].profiles_1d.j_parallel),
+                     r"bootstrap current", r"  rms residual $[\%]$"),
                     (rms_residual(Function(bs_r_norm, baseline["Jtot"].values), core_source.j_parallel*1e-6),
                      r"total current", r"  rms residual $[\%]$"),
                 ],
