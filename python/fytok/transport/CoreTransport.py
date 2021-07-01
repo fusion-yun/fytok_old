@@ -25,15 +25,15 @@ class TransportCoeff(Dict):
 
     @sp_property
     def d(self) -> Function:
-        return function_like(self._parent.grid_d.rho_tor_norm, self.get("d"))
+        return function_like(self._parent._parent.grid_d.rho_tor_norm, self.get("d"))
 
     @sp_property
     def v(self) -> Function:
-        return function_like(self._parent.grid_v.rho_tor_norm, self.get("v"))
+        return function_like(self._parent._parent.grid_v.rho_tor_norm, self.get("v"))
 
     @sp_property
     def flux(self) -> Function:
-        return function_like(self._parent.grid_flux.rho_tor_norm, self.get("flux"))
+        return function_like(self._parent._parent.grid_flux.rho_tor_norm, self.get("flux"))
 
 
 class CoreTransportElectrons(SpeciesElectron):
@@ -102,11 +102,11 @@ class CoreTransportIon(SpeciesIon):
 
     @sp_property
     def particles(self) -> TransportCoeff:
-        return TransportCoeff(self.get("particles"), parent=self._parent)
+        return TransportCoeff(self.get("particles"), parent=self)
 
     @sp_property
     def energy(self) -> TransportCoeff:
-        return TransportCoeff(self.get("energy"), parent=self._parent)
+        return TransportCoeff(self.get("energy"), parent=self)
 
     @sp_property
     def momentum(self) -> CoreTransportMomentum:

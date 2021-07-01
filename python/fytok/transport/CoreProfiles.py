@@ -296,10 +296,10 @@ class CoreProfiles1D(Dict[Node]):
     Ion = CoreProfilesIon
     Neutral = CoreProfilesNeutral
 
-    def __init__(self, *args, grid: RadialGrid,   **kwargs):
-        super().__init__(*args, ** kwargs)
+    def __init__(self,   *args,  grid: RadialGrid = None, **kwargs):
+        super().__init__(*args,  **kwargs)
+        self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
 
-        self._grid = grid
         self._r0 = self._grid.vacuum_toroidal_field.r0
         self._b0 = self._grid.vacuum_toroidal_field.b0
 
@@ -480,7 +480,7 @@ class CoreProfiles1D(Dict[Node]):
 
     class EField(Dict[Node]):
         def __init__(self,   *args, grid: RadialGrid = None,   **kwargs):
-            super().__init__(*args ,**kwargs)
+            super().__init__(*args, **kwargs)
             self._grid = grid if grid is not None else getattr(self._parent, "_grid")
 
         @sp_property
@@ -519,8 +519,10 @@ class CoreProfiles1D(Dict[Node]):
 
 
 class CoreProfilesGlobalQuantities(Dict):
-    def __init__(self, *args, **kwargs):
+    def __init__(self,   *args,  grid: RadialGrid = None, **kwargs):
         super().__init__(*args,  **kwargs)
+        self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
+
 
 
 class CoreProfiles(IDS):
@@ -530,9 +532,10 @@ class CoreProfiles(IDS):
     Profiles1D = CoreProfiles1D
     GlobalQuantities = CoreProfilesGlobalQuantities
 
-    def __init__(self, *args, grid: RadialGrid, ** kwargs):
-        super().__init__(*args, ** kwargs)
-        self._grid = grid
+    def __init__(self,   *args,  grid: RadialGrid = None, **kwargs):
+        super().__init__(*args,  **kwargs)
+        self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
+
 
     @property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:

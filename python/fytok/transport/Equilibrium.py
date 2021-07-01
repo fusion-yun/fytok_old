@@ -1,5 +1,6 @@
 import collections
 from dataclasses import dataclass
+from functools import cached_property
 from typing import Sequence, TypeVar, Union
 
 import matplotlib.pyplot as plt
@@ -66,8 +67,9 @@ class EquilibriumConstraints(Dict):
     Constraints0D = EquilibriumConstraints0D
     PurePosition = EquilibriumConstraintsPurePosition
 
-    def __init__(self, *args,   **kwargs):
-        super().__init__(*args,    **kwargs)
+    def __init__(self,  *args, coord: MagneticCoordSystem = None,    ** kwargs):
+        super().__init__(*args, **kwargs)
+        self._coord: MagneticCoordSystem = coord or getattr(self._parent.coordinate_system)
 
     @sp_property
     def b_field_tor_vacuum_r(self) -> Constraints0D:
@@ -156,9 +158,9 @@ class EquilibriumConstraints(Dict):
 
 
 class EquilibriumGlobalQuantities(Dict):
-    def __init__(self,   *args,  coord: MagneticCoordSystem = None,  **kwargs):
+    def __init__(self,  *args, coord: MagneticCoordSystem = None,    ** kwargs):
         super().__init__(*args, **kwargs)
-        self._coord = coord or self._parent.coordinate_system
+        self._coord = coord or getattr(self._parent,"coordinate_system",None)
 
     @sp_property
     def beta_pol(self):
@@ -256,9 +258,10 @@ class EquilibriumGlobalQuantities(Dict):
 class EquilibriumProfiles1D(Dict):
     """Equilibrium profiles(1D radial grid) as a function of the poloidal flux	"""
 
-    def __init__(self,  d, /,  coord: MagneticCoordSystem, **kwargs):
-        super().__init__(d,   **kwargs)
-        self._coord: MagneticCoordSystem = coord
+    def __init__(self,  *args, coord: MagneticCoordSystem = None,    ** kwargs):
+        super().__init__(*args, **kwargs)
+        self._coord = coord or getattr(self._parent,"coordinate_system",None)
+
         self._grid = self._coord.radial_grid
         self._axis = self._grid.psi_norm
 
@@ -546,9 +549,9 @@ class EquilibriumProfiles2D(Dict):
         Equilibrium 2D profiles in the poloidal plane.
     """
 
-    def __init__(self,  d, /, coord: MagneticCoordSystem,   ** kwargs):
-        super().__init__(d, **kwargs)
-        self._coord = coord or getattr(self._parent, "coordinate_system", _not_found_)
+    def __init__(self,  *args, coord: MagneticCoordSystem = None,    ** kwargs):
+        super().__init__(*args, **kwargs)
+        self._coord = coord or getattr(self._parent,"coordinate_system",None)
 
     @sp_property
     def grid_type(self) -> RadialGrid:
@@ -615,9 +618,9 @@ class EquilibriumBoundary(Dict):
         of the separatrix
     """
 
-    def __init__(self,  *args, coord: MagneticCoordSystem,     ** kwargs):
-        super().__init__(*args,   **kwargs)
-        self._coord = coord
+    def __init__(self,  *args, coord: MagneticCoordSystem = None,    ** kwargs):
+        super().__init__(*args, **kwargs)
+        self._coord = coord or getattr(self._parent,"coordinate_system",None)
 
     @sp_property
     def type(self):
@@ -711,10 +714,9 @@ class EquilibriumBoundary(Dict):
 
 class EquilibriumBoundarySeparatrix(Dict[Node]):
 
-    def __init__(self,  d, /, coord: MagneticCoordSystem,    ** kwargs):
-
-        super().__init__(d, **kwargs)
-        self._coord = coord
+    def __init__(self,  *args, coord: MagneticCoordSystem = None,    ** kwargs):
+        super().__init__(*args, **kwargs)
+        self._coord = coord or getattr(self._parent,"coordinate_system",None)
 
     @sp_property
     def type(self):
@@ -761,7 +763,7 @@ class EquilibriumTimeSlice(Dict):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    @sp_property
+    @cached_property
     def coordinate_system(self) -> MagneticCoordSystem:
         psirz = self.get("profiles_2d.psi", None)
 

@@ -18,9 +18,7 @@
     ],
     "python.analysis.extraPaths": [
         "${workspaceFolder}/python",
-        "${workspaceFolder}/../SpDB/python",
         "${workspaceFolder}/phys_modules",
-
+        "${workspaceFolder}/../SpDB/python",
     ],
-    "python.pythonPath": "/fuyun/software/Python/3.8.2-GCCcore-9.3.0/bin/python",
 }

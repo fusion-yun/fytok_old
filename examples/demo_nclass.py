@@ -477,6 +477,7 @@ if __name__ == "__main__":
 
                     (core_transport.conductivity_parallel,  r"fytok"),
                 ],
+                # [(ion.energy.d,  f"{ion.label}", r"Neoclassical $\chi_{i}$") for ion in tok.core_transport.model[{"code.name":"neoclassical"}].profiles_1d.ion],
 
                 # (core_transport1d.e_field_radial,                                             r"$E_{radial}$"),
 
