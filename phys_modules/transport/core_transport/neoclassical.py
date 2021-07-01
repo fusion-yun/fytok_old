@@ -41,10 +41,10 @@ class NeoClassical(CoreTransport.Model):
 
         core_profile = core_profiles.profiles_1d
 
-        rho_tor_norm = core_profile.grid.rho_tor_norm
-        rho_tor = core_profile.grid.rho_tor
-        psi_norm = core_profile.grid.psi_norm
-        psi = core_profile.grid.psi
+        rho_tor_norm = self.profiles_1d.grid_d.rho_tor_norm
+        rho_tor = self.profiles_1d.grid_d.rho_tor
+        psi_norm = self.profiles_1d.grid_d.psi_norm
+        psi = self.profiles_1d.grid_d.psi
         q = equilibrium.time_slice.profiles_1d.q(psi_norm)
 
         # Tavg = np.sum([ion.density*ion.temperature for ion in core_profile.ion]) / \
@@ -111,15 +111,18 @@ class NeoClassical(CoreTransport.Model):
             chi_i = chi_i/epsilon32*(q**2)*(rho_i**2)/(1.0+0.74*mu_i*epsilon32)
 
             chi_i = array_like(rho_tor_norm, chi_i)
-            self["profiles_1d.ion", {"label": ion.label}, "energy.d"] = chi_i
-            self["profiles_1d.ion", {"label": ion.label}, "particles.d"] = chi_i/3.0
+
+            self.profiles_1d.ion.update({
+                "energy.d": chi_i,
+                "particles.d": chi_i/3.0,
+            }, predication={"label": ion.label})
 
             #########################################################################
 
             sum1 = sum1 + chi_i/3.0*ion.pressure.derivative(rho_tor_norm)*Zi/Ti
             sum2 = sum2 + chi_i/3.0*Ni*Zi2 / Ti
 
-        self["profiles_1d.e_field_radial"] = sum1/sum2
+        self.profiles_1d["e_field_radial"] = sum1/sum2
 
         return 0.0
 
