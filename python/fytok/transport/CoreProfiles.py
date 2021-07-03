@@ -324,7 +324,7 @@ class CoreProfiles1D(Dict[Node]):
     @sp_property
     def ion(self) -> List[Ion]:
         """Quantities related to the different ion species"""
-        return List[CoreProfiles1D.Ion](self.get("ion", []), grid=self._grid, parent=self)
+        return List[CoreProfiles1D.Ion](self.get("ion", []), parent=self,  grid=self._grid)
 
     @sp_property
     def neutral(self) -> List[Neutral]:
@@ -524,7 +524,6 @@ class CoreProfilesGlobalQuantities(Dict):
         self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
 
 
-
 class CoreProfiles(IDS):
     """CoreProfiles
     """
@@ -535,7 +534,6 @@ class CoreProfiles(IDS):
     def __init__(self,   *args,  grid: RadialGrid = None, **kwargs):
         super().__init__(*args,  **kwargs)
         self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
-
 
     @property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:

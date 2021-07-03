@@ -26,11 +26,11 @@ class WallLimiter(Dict):
 
         @sp_property
         def outline(self) -> RZTuple:
-            return RZTuple(self["outline.r"], self["outline.z"])
+            return self.get("outline", {})
 
     @sp_property
     def unit(self) -> List[Unit]:
-        return self.get("unit")
+        return self.get("unit", [])
 
 
 class WallVessel(Dict):
@@ -68,7 +68,7 @@ class WallDescription2D(Dict):
 
     @sp_property
     def vessel(self) -> Vessel:
-        return self.fetch("vessel")
+        return self.get("vessel")
 
     def limiter_polygon(self):
         limiter_points = np.array([self.limiter.unit[0].outline.r,

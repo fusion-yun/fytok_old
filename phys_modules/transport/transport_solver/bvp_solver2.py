@@ -122,7 +122,7 @@ class TransportSolverBVP2(TransportSolver):
 
         self._rho_tor_boundary = r_grid.rho_tor[-1]
 
-        logger.debug( self._rho_tor_boundary )
+        logger.debug(self._rho_tor_boundary)
 
         self._rho_tor_boundary_m = self._core_profiles_prev.profiles_1d.grid.rho_tor[-1]
 
@@ -301,7 +301,8 @@ class TransportSolverBVP2(TransportSolver):
 
         # -----------------------------------------------------------
         # boundary condition, value
-        bc: TransportSolver.BoundaryConditions1D.BoundaryConditions = self.boundary_conditions_1d[var_id[:-1]].particles
+        bc: TransportSolver.BoundaryConditions1D.BoundaryConditions = \
+            self.boundary_conditions_1d.fetch(var_id[:-1]).particles
         # axis
         u0, v0, w0 = 0, 1, 0
 
@@ -374,7 +375,7 @@ class TransportSolverBVP2(TransportSolver):
 
         # ----------------------------------------------
         # Boundary Condition
-        bc: TransportSolver.BoundaryConditions1D.BoundaryConditions = self.boundary_conditions_1d[var_id[: -1]].energy
+        bc: TransportSolver.BoundaryConditions1D.BoundaryConditions = self.boundary_conditions_1d.fetch(var_id[: -1]).energy
 
         # axis
         u0, v0, w0 = 0, 1, 0
@@ -481,10 +482,10 @@ class TransportSolverBVP2(TransportSolver):
 
         if particle_solver == "electron":
             eq_grp = [
-                (["psi"],                                               self.transp_current,),
+                (["psi"],                                                self.transp_current,),
                 (["electrons", "density"],                              self.transp_particle,),
-                (["electrons", "temperature"],                          self.transp_energy, ),
-                *[(["ion", {"label": ion.label}, "temperature"],     self.transp_energy, )
+                (["electrons", "temperature"],                           self.transp_energy, ),
+                *[(["ion", {"label": ion.label}, "temperature"],         self.transp_energy, )
                   for ion in self._core_profiles_next.profiles_1d.ion if ion.label not in impurities],
             ]
         else:

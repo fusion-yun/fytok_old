@@ -450,7 +450,7 @@ if __name__ == "__main__":
                 [
                     (Function(bs_r_norm, baseline["Xi"].values),          r"astra",
                      r"$\chi_{i}$", {"marker": '.', "linestyle": ''}),
-                    *[(ion.energy.d,  f"{ion.label}", r"$\chi_{i}$") for ion in core_transport.ion],
+                    # *[(ion.energy.d,  f"{ion.label}", r"$\chi_{i}$") for ion in core_transport.ion],
                 ],
 
                 # [
