@@ -512,8 +512,7 @@ if __name__ == "__main__":
                 [
                     (Function(bs_r_norm, baseline["Jbs"].values),
                      r"astra", r"bootstrap current $[MA\cdot m^{-2}]$", {"marker": '.', "linestyle": ''}),
-                    (tok.core_sources.source[{"code.name": "bootstrap_current"}].profiles_1d.j_parallel*1e-6,
-                     r"fytok",),
+                    (tok.core_sources.source[{"code.name": "bootstrap_current"}].profiles_1d.j_parallel*1e-6, r"fytok",),
                 ],
                 [
                     (rms_residual(Function(bs_r_norm, baseline["Jbs"].values*1e6),

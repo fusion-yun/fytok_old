@@ -122,8 +122,6 @@ class TransportSolverBVP2(TransportSolver):
 
         self._rho_tor_boundary = r_grid.rho_tor[-1]
 
-        logger.debug(self._rho_tor_boundary)
-
         self._rho_tor_boundary_m = self._core_profiles_prev.profiles_1d.grid.rho_tor[-1]
 
         self._k_B = (self._B0 - self._B0m) / (self._B0 + self._B0m) * self._inv_tau * 2.0
@@ -375,7 +373,8 @@ class TransportSolverBVP2(TransportSolver):
 
         # ----------------------------------------------
         # Boundary Condition
-        bc: TransportSolver.BoundaryConditions1D.BoundaryConditions = self.boundary_conditions_1d.fetch(var_id[: -1]).energy
+        bc: TransportSolver.BoundaryConditions1D.BoundaryConditions = self.boundary_conditions_1d.fetch(
+            var_id[: -1]).energy
 
         # axis
         u0, v0, w0 = 0, 1, 0
@@ -447,23 +446,21 @@ class TransportSolverBVP2(TransportSolver):
                  eq_list: Sequence[Tuple[Callable, Callable]] = eq_list) -> np.ndarray:
             self._core_profiles_next._grid = self._core_profiles_next.profiles_1d.grid.remesh(x, "rho_tor_norm")
 
-            profiles: CoreProfiles.Profiles1D = self._core_profiles_next.profiles_1d
+            profiles_1d: CoreProfiles.Profiles1D = self._core_profiles_next.profiles_1d
 
-            for idx, path in enumerate(var_list):
-                profiles[path] = Function(x, Y[idx*2])
-                profiles[path[:-1]+[f"{path[-1]}_flux"]] = Function(x, Y[idx*2+1])
+            for idx, var_id in enumerate(var_list):
+                profiles_1d[var_id] = Function(x, Y[idx*2])
+                profiles_1d[var_id[:-1]+[f"{var_id[-1]}_flux"]] = Function(x, Y[idx*2+1])
 
-            self.quasi_neutral_condition(profiles, particle_solver=particle_solver, impurities=impurities)
+            self.quasi_neutral_condition(profiles_1d, particle_solver=particle_solver, impurities=impurities)
 
             self._core_transport.refresh(equlibrium=self._equilibrium_next,   core_profiles=self._core_profiles_next)
 
             self._core_sources.refresh(equlibrium=self._equilibrium_next,   core_profiles=self._core_profiles_next)
 
-            c_profile_1d = self._core_profiles_next.profiles_1d
-            c_tansport_1d = self._core_transport.profiles_1d
-            c_sources_1d = self._core_sources.profiles_1d
-
-            res = sum([list(func(x, Y, c_profile_1d, c_tansport_1d,  c_sources_1d)) for func, bc in eq_list], [])
+            res = sum([list(func(x, Y, profiles_1d,
+                                 self._core_transport.profiles_1d,
+                                 self._core_sources.profiles_1d)) for func, bc in eq_list], [])
 
             return np.vstack([array_like(x, d) for d in res])
 
@@ -485,8 +482,8 @@ class TransportSolverBVP2(TransportSolver):
                 (["psi"],                                                self.transp_current,),
                 (["electrons", "density"],                              self.transp_particle,),
                 (["electrons", "temperature"],                           self.transp_energy, ),
-                *[(["ion", {"label": ion.label}, "temperature"],         self.transp_energy, )
-                  for ion in self._core_profiles_next.profiles_1d.ion if ion.label not in impurities],
+                # *[(["ion", {"label": ion.label}, "temperature"],         self.transp_energy, )
+                #   for ion in self._core_profiles_next.profiles_1d.ion if ion.label not in impurities],
             ]
         else:
             eq_grp = [
@@ -507,10 +504,13 @@ class TransportSolverBVP2(TransportSolver):
 
         rms_residuals = np.max(sol.rms_residuals)
 
-        for idx, (var_id, * _) in enumerate(eq_grp):
-            self._core_profiles_next[var_id] = Function(sol.x, sol.y[idx*2])
+        profiles_1d = self._core_profiles_next.profiles_1d
 
-        self._core_profiles_next["rms_residuals"] = Function((sol.x[: -1]+sol.x[1:])*0.5, sol.rms_residuals)
+        for idx, (var_id, * _) in enumerate(eq_grp):
+            profiles_1d[var_id] = Function(sol.x, sol.y[idx*2])
+            profiles_1d[var_id[:-1]+[f"{var_id[-1]}_flux"]] = Function(sol.x, sol.y[idx*2+1])
+
+        profiles_1d["rms_residuals"] = Function((sol.x[: -1]+sol.x[1:])*0.5, sol.rms_residuals)
 
         logger.info(
             f"Solve transport equations [{'Success' if sol.success else 'Failed'}] : max reduisal={rms_residuals} \n  {[var_id for var_id,*_ in eq_grp]}")
