@@ -148,7 +148,7 @@ if __name__ == "__main__":
                             "energy": {"d": chi, "v": v_pinch_Ti}, }
                     ]}
             },
-            {"code": {"name": "neoclassical"}},
+            # {"code": {"name": "neoclassical"}},
             {"code": {"name": "spitzer"}},
         ]}
 
@@ -445,6 +445,8 @@ if __name__ == "__main__":
 
         core_transport = core_transport_model.profiles_1d
 
+        # nc_model = tok.core_transport.model[{"identifier.name": "neoclassical"}]
+        
         plot_profiles(
             [
                 [
@@ -478,8 +480,8 @@ if __name__ == "__main__":
 
                     (core_transport.conductivity_parallel,  r"fytok"),
                 ],
-                [(ion.energy.d,  f"{ion.label}", r"Neoclassical $\chi_{i}$")
-                 for ion in tok.core_transport.model.find({"code.name": "neoclassical"}).profiles_1d.ion],
+                # [(ion.energy.d,  f"{ion.label}", r"Neoclassical $\chi_{i}$")
+                #  for ion in tok.core_transport.model[{"identifier.name": "neoclassical"}].profiles_1d.ion],
 
                 # (core_transport1d.e_field_radial,                                             r"$E_{radial}$"),
 
@@ -510,12 +512,12 @@ if __name__ == "__main__":
                 [
                     (Function(bs_r_norm, baseline["Jbs"].values),
                      r"astra", r"bootstrap current $[MA\cdot m^{-2}]$", {"marker": '.', "linestyle": ''}),
-                    (tok.core_sources.source.find({"code.name": "bootstrap_current"}).profiles_1d.j_parallel*1e-6,
+                    (tok.core_sources.source[{"code.name": "bootstrap_current"}].profiles_1d.j_parallel*1e-6,
                      r"fytok",),
                 ],
                 [
                     (rms_residual(Function(bs_r_norm, baseline["Jbs"].values*1e6),
-                                  tok.core_sources.source.find({"code.name": "bootstrap_current"}).profiles_1d.j_parallel),
+                                  tok.core_sources.source[{"code.name": "bootstrap_current"}].profiles_1d.j_parallel),
                      r"bootstrap current", r"  rms residual $[\%]$"),
                     (rms_residual(Function(bs_r_norm, baseline["Jtot"].values), core_source.j_parallel*1e-6),
                      r"total current", r"  rms residual $[\%]$"),
