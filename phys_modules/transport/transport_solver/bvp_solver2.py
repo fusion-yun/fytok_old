@@ -482,8 +482,8 @@ class TransportSolverBVP2(TransportSolver):
                 (["psi"],                                                self.transp_current,),
                 (["electrons", "density"],                              self.transp_particle,),
                 (["electrons", "temperature"],                           self.transp_energy, ),
-                # *[(["ion", {"label": ion.label}, "temperature"],         self.transp_energy, )
-                #   for ion in self._core_profiles_next.profiles_1d.ion if ion.label not in impurities],
+                *[(["ion", {"label": ion.label}, "temperature"],         self.transp_energy, )
+                  for ion in self._core_profiles_next.profiles_1d.ion if ion.label not in impurities],
             ]
         else:
             eq_grp = [

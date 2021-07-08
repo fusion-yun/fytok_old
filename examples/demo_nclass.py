@@ -89,10 +89,10 @@ if __name__ == "__main__":
 
     c_tokamak["core_profiles"] = {
         "profiles_1d": {
-            "electrons": {**atoms["e"], "density":              b_ne,   "temperature":        b_Te, },
+            "electrons": {**atoms["e"], "density":              b_ne[0],   "temperature":        b_Te, },
             "ion": [
-                {**atoms["D"],          "density":         0.5*b_nDT,   "temperature":        b_Ti, },
-                {**atoms["T"],          "density":         0.5*b_nDT,   "temperature":        b_Ti, },
+                {**atoms["D"],          "density":         0.5*b_nDT[0],   "temperature":        b_Ti, },
+                {**atoms["T"],          "density":         0.5*b_nDT[0],   "temperature":        b_Ti, },
                 {**atoms["He"],         "density":             b_nHe,   "temperature":        b_Ti, },
                 {**atoms["Be"],         "density":         0.02*b_ne,   "temperature":        b_Ti, },
                 {**atoms["Ar"],         "density":       0.0012*b_ne,   "temperature":        b_Ti, },
@@ -446,13 +446,13 @@ if __name__ == "__main__":
         core_transport = core_transport_model.profiles_1d
 
         # nc_model = tok.core_transport.model[{"identifier.name": "neoclassical"}]
-        
+
         plot_profiles(
             [
                 [
                     (Function(bs_r_norm, baseline["Xi"].values),          r"astra",
                      r"$\chi_{i}$", {"marker": '.', "linestyle": ''}),
-                    # *[(ion.energy.d,  f"{ion.label}", r"$\chi_{i}$") for ion in core_transport.ion],
+                    *[(ion.energy.d,  f"{ion.label}", r"$\chi_{i}$") for ion in core_transport.ion],
                 ],
 
                 # [
@@ -512,7 +512,8 @@ if __name__ == "__main__":
                 [
                     (Function(bs_r_norm, baseline["Jbs"].values),
                      r"astra", r"bootstrap current $[MA\cdot m^{-2}]$", {"marker": '.', "linestyle": ''}),
-                    (tok.core_sources.source[{"code.name": "bootstrap_current"}].profiles_1d.j_parallel*1e-6, r"fytok",),
+                    (tok.core_sources.source[{"code.name": "bootstrap_current"}
+                                             ].profiles_1d.j_parallel*1e-6, r"fytok",),
                 ],
                 [
                     (rms_residual(Function(bs_r_norm, baseline["Jbs"].values*1e6),
@@ -522,12 +523,12 @@ if __name__ == "__main__":
                      r"total current", r"  rms residual $[\%]$"),
                 ],
 
-                [
-                    (core_source.electrons.energy,   "electron",    r"$Q [eV\cdot m^{-3} s^{-1}]$"),
+                # [
+                (core_source.electrons.energy,   "electron",    r"$Q [eV\cdot m^{-3} s^{-1}]$"),
 
-                    *[(ion.energy*1e-6,  f"{ion.label}", f"$Q_{ion.label}$")
-                      for ion in core_source.ion if ion.label not in impurities],
-                ],
+                *[(ion.energy*1e-6,  f"{ion.label}", f"$Q_{ion.label}$")
+                  for ion in core_source.ion if ion.label not in impurities],
+                # ],
 
 
             ],
@@ -542,7 +543,7 @@ if __name__ == "__main__":
                   tolerance=1.0e-4,
                   impurities=impurities,
                   verbose=2,
-                  bvp_rms_mask=[1.0/128, r_ped])
+                  bvp_rms_mask=[r_ped])
 
         core_profile = tok.core_profiles.profiles_1d
 

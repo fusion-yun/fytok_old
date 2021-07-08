@@ -32,6 +32,10 @@ class Species(Dict[Node]):
     def __init__(self,  d, /, **kwargs):
         super().__init__(d,  **kwargs)
 
+    @property
+    def nid(self) -> str:
+        return self.get("label", None)
+
     @sp_property
     def label(self) -> str:
         """String identifying ion (e.g. H+, D+, T+, He+2, C+, ...) {dynamic}    """

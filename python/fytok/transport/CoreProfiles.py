@@ -366,7 +366,7 @@ class CoreProfiles1D(Dict[Node]):
             # zeff = 0.0
             # for ion in self.ion:
             #     zeff = zeff + np.asarray(ion.z_ion*ion.z_ion*ion.density)
-            return sum([np.asarray(ion.z_ion*ion.z_ion*ion.density) for ion in self.ion]) / self.electrons.density
+            return sum([(ion.z_ion*ion.z_ion*ion.density) for ion in self.ion]) / self.electrons.density
 
     @sp_property
     def zeff_fit(self) -> Function:
