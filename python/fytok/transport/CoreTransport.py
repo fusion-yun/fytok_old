@@ -25,15 +25,15 @@ class TransportCoeff(Dict):
 
     @sp_property
     def d(self) -> Function:
-        return function_like(self._parent._parent.grid_d.rho_tor_norm, self.get("d",0))
+        return function_like(self._parent._parent.grid_d.rho_tor_norm, self.get("d", 0))
 
     @sp_property
     def v(self) -> Function:
-        return function_like(self._parent._parent.grid_v.rho_tor_norm, self.get("v",0))
+        return function_like(self._parent._parent.grid_v.rho_tor_norm, self.get("v", 0))
 
     @sp_property
     def flux(self) -> Function:
-        return function_like(self._parent._parent.grid_flux.rho_tor_norm, self.get("flux",0))
+        return function_like(self._parent._parent.grid_flux.rho_tor_norm, self.get("flux", 0))
 
 
 class CoreTransportElectrons(SpeciesElectron):
@@ -43,11 +43,11 @@ class CoreTransportElectrons(SpeciesElectron):
 
     @sp_property
     def particles(self) -> TransportCoeff:
-        return self.get("particles")
+        return self.get("particles",{})
 
     @sp_property
     def energy(self) -> TransportCoeff:
-        return self.get("energy")
+        return self.get("energy",{})
 
 
 class CoreTransportIonState(SpeciesIonState):
@@ -244,7 +244,7 @@ class CoreTransportModel(Module):
 
     @sp_property
     def profiles_1d(self) -> Profiles1D:
-        return CoreTransportModel.Profiles1D(self.get("profiles_1d"), grid=self._grid, parent=self)
+        return CoreTransportModel.Profiles1D(self.get("profiles_1d", {}), grid=self._grid, parent=self)
 
     def refresh(self, *args, core_profiles: CoreProfiles, **kwargs) -> None:
         self._grid = core_profiles.profiles_1d.grid

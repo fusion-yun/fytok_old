@@ -89,10 +89,10 @@ if __name__ == "__main__":
 
     c_tokamak["core_profiles"] = {
         "profiles_1d": {
-            "electrons": {**atoms["e"], "density":              b_ne[0],   "temperature":        b_Te, },
+            "electrons": {**atoms["e"], "density":              b_ne,   "temperature":        b_Te, },
             "ion": [
-                {**atoms["D"],          "density":         0.5*b_nDT[0],   "temperature":        b_Ti, },
-                {**atoms["T"],          "density":         0.5*b_nDT[0],   "temperature":        b_Ti, },
+                {**atoms["D"],          "density":         0.5*b_nDT,   "temperature":        b_Ti, },
+                {**atoms["T"],          "density":         0.5*b_nDT,   "temperature":        b_Ti, },
                 {**atoms["He"],         "density":             b_nHe,   "temperature":        b_Ti, },
                 {**atoms["Be"],         "density":         0.02*b_ne,   "temperature":        b_Ti, },
                 {**atoms["Ar"],         "density":       0.0012*b_ne,   "temperature":        b_Ti, },
@@ -148,7 +148,7 @@ if __name__ == "__main__":
                             "energy": {"d": chi, "v": v_pinch_Ti}, }
                     ]}
             },
-            # {"code": {"name": "neoclassical"}},
+            {"code": {"name": "neoclassical"}},
             {"code": {"name": "spitzer"}},
         ]}
 
@@ -405,7 +405,7 @@ if __name__ == "__main__":
             title="Equlibrium",
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
-    if True:  # CoreProfile
+    if True:  # CoreProfile initialize value
 
         core_profile = tok.core_profiles.profiles_1d
 
@@ -435,7 +435,7 @@ if __name__ == "__main__":
                 (core_profile.grid.psi,                                    r"$\psi$"),
             ],
             x_axis=([0, 1.0],                                  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-            grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profiles.svg", transparent=True)
+            grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profiles_initialize.svg", transparent=True)
 
     if True:  # CoreTransport
 
@@ -445,7 +445,7 @@ if __name__ == "__main__":
 
         core_transport = core_transport_model.profiles_1d
 
-        # nc_model = tok.core_transport.model[{"identifier.name": "neoclassical"}]
+        nc_profiles_1d = tok.core_transport.model[{"identifier.name": "neoclassical"}].profiles_1d
 
         plot_profiles(
             [
@@ -480,8 +480,12 @@ if __name__ == "__main__":
 
                     (core_transport.conductivity_parallel,  r"fytok"),
                 ],
-                # [(ion.energy.d,  f"{ion.label}", r"Neoclassical $\chi_{i}$")
-                #  for ion in tok.core_transport.model[{"identifier.name": "neoclassical"}].profiles_1d.ion],
+
+                [(ion.energy.d,  f"{ion.label}", r"Neoclassical $\chi_{NC}$")
+                 for ion in nc_profiles_1d.ion if ion.label not in impurities],
+
+                [(ion.particles.d,  f"{ion.label}", r"Neoclassical $D_{NC}$")
+                 for ion in nc_profiles_1d.ion if ion.label not in impurities],
 
                 # (core_transport1d.e_field_radial,                                             r"$E_{radial}$"),
 
@@ -537,7 +541,7 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # TransportSolver
-    if True:
+    if False:
         tok.solve(enable_ion_particle_solver=False,
                   max_nodes=500,
                   tolerance=1.0e-4,
@@ -623,6 +627,6 @@ if __name__ == "__main__":
             x_axis=([0, 1.0],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             title="Result of TransportSolver",
             # index_slice=slice(0, 200, 1),
-            grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profile_result.svg", transparent=True)
+            grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profiles_result.svg", transparent=True)
 
     logger.info("====== DONE ========")

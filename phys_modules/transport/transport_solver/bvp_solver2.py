@@ -208,8 +208,10 @@ class TransportSolverBVP2(TransportSolver):
                 dg = dg + conductivity_parallel*self._Qimp_k_ns*y
                 dg = dg + Function(x, C).derivative(x)*y + C*dy
 
+            dg = dg*c
+
             dy = array_like(x, dy)
-            dg = array_like(x, S*c)
+            dg = array_like(x, dg)
             return dy, dg
 
         # -----------------------------------------------------------
@@ -294,7 +296,8 @@ class TransportSolverBVP2(TransportSolver):
                 dg = dg + self._vpr * x * self._k_phi * dy
 
             dg = dg*c
-
+            dy = array_like(x, dy)
+            dg = array_like(x, dg)
             return dy, dg
 
         # -----------------------------------------------------------

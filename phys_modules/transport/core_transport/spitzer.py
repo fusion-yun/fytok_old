@@ -23,9 +23,9 @@ class Spitzer(CoreTransport.Model):
     def __init__(self, d=None, /,  **kwargs):
         super().__init__(d,
                          identifier={
-                             "name": f"neoclassical",
+                             "name": f"spitzer",
                              "index": 5,
-                             "description": f"{self.__class__.__name__}  Neoclassical model, based on  Tokamaks, 3ed, J.A.Wesson 2003"
+                             "description": f"{self.__class__.__name__} Spitzer Resistivity"
                          }, **kwargs)
 
     def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles,  **kwargs):

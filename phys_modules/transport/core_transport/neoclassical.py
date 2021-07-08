@@ -113,7 +113,7 @@ class NeoClassical(CoreTransport.Model):
             chi_i = array_like(rho_tor_norm, chi_i)
 
             self.profiles_1d.ion[{"label": ion.label}].energy["d"] = chi_i
-            self.profiles_1d.ion[{"label": ion.label}].particles["d"] = chi_i/3.0,
+            self.profiles_1d.ion[{"label": ion.label}].particles["d"] = chi_i/3.0
 
             #########################################################################
 
