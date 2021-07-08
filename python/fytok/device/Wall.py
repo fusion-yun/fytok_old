@@ -43,11 +43,11 @@ class WallVessel(Dict):
 
         @sp_property
         def outline_outer(self) -> RZTuple:
-            return self.get("outline_outer")
+            return self.get("outline_outer", {})
 
         @sp_property
         def outline_inner(self) -> RZTuple:
-            return self.get("outline_inner")
+            return self.get("outline_inner", {})
 
     @sp_property
     def annular(self) -> Annular:

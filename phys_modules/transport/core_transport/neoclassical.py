@@ -4,7 +4,7 @@ from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreTransport import CoreTransport
 from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.Entry import _next_
-from spdm.data.Function import Function
+from spdm.data.Function import Function, function_like
 from spdm.numlib import constants, np
 from spdm.numlib.misc import array_like
 from spdm.util.logger import logger
@@ -110,10 +110,11 @@ class NeoClassical(CoreTransport.Model):
 
             chi_i = chi_i/epsilon32*(q**2)*(rho_i**2)/(1.0+0.74*mu_i*epsilon32)
 
-            chi_i = array_like(rho_tor_norm, chi_i)
+            chi_i = array_like(rho_tor_norm, chi_i*25) # 25 for test
 
-            self.profiles_1d.ion[{"label": ion.label}].energy["d"] = chi_i
-            self.profiles_1d.ion[{"label": ion.label}].particles["d"] = chi_i/3.0
+            self.profiles_1d.ion[{"label": ion.label}].energy["d"] = function_like(rho_tor_norm, chi_i)
+
+            self.profiles_1d.ion[{"label": ion.label}].particles["d"] = function_like(rho_tor_norm, chi_i/3.0)
 
             #########################################################################
 

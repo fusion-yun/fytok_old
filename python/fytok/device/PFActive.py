@@ -140,18 +140,18 @@ class PFActive(IDS):
 
     @sp_property
     def coil(self) -> List[Coil]:
-        return self.get("coil")
+        return self.get("coil", [])
 
     @sp_property
     def circuit(self) -> List[Circuit]:
         """Circuits, connecting multiple PF coils to multiple supplies,
             defining the current and voltage relationships in the system"""
-        return self.get("circuit")
+        return self.get("circuit", [])
 
     @sp_property
     def supply(self) -> List[Supply]:
         """PF power supplies"""
-        return self.get("supply")
+        return self.get("supply", [])
 
     def plot(self, axis=None, *args, with_circuit=False, **kwargs):
 

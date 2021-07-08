@@ -452,7 +452,8 @@ if __name__ == "__main__":
                 [
                     (Function(bs_r_norm, baseline["Xi"].values),          r"astra",
                      r"$\chi_{i}$", {"marker": '.', "linestyle": ''}),
-                    *[(ion.energy.d,  f"{ion.label}", r"$\chi_{i}$") for ion in core_transport.ion],
+                    *[(core_transport.ion[{"label": ion.label}].energy.d,
+                       f"{ion.label}", r"$\chi_{i}$") for ion in core_profile.ion if ion.label not in impurities],
                 ],
 
                 # [
@@ -480,10 +481,13 @@ if __name__ == "__main__":
 
                     (core_transport.conductivity_parallel,  r"fytok"),
                 ],
+                [
+                    (Function(bs_r_norm, baseline["XiNC"].values), "astra",
+                     "neoclassical  $\\chi_{NC}$ \n ion heat conductivity"),
 
-                [(ion.energy.d,  f"{ion.label}", r"Neoclassical $\chi_{NC}$")
-                 for ion in nc_profiles_1d.ion if ion.label not in impurities],
-
+                    *[(ion.energy.d,  f"{ion.label}", r"Neoclassical $\chi_{NC}$")
+                      for ion in nc_profiles_1d.ion if ion.label not in impurities],
+                ],
                 [(ion.particles.d,  f"{ion.label}", r"Neoclassical $D_{NC}$")
                  for ion in nc_profiles_1d.ion if ion.label not in impurities],
 
