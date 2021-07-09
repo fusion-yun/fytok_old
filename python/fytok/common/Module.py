@@ -12,16 +12,9 @@ _TState = TypeVar("_TState")
 
 
 class Module(Actor[_TState]):
-    # _actor_module_prefix = _undefined_
 
-    def __init__(self,   *args,
-                 identifier: Union[Mapping, Identifier] = _undefined_,
-                 code: Union[Mapping, IDSCode] = _undefined_,
-                 comment: str = _undefined_,
-                 **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.update({"identifier": identifier,  "comment": comment})
-        self._inputs = kwargs
 
     @sp_property
     def code(self) -> IDSCode:

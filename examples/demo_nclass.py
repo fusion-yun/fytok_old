@@ -149,6 +149,7 @@ if __name__ == "__main__":
                     ]}
             },
             {"code": {"name": "neoclassical"}},
+            # {"code": {"name": "nclass"}},
             {"code": {"name": "spitzer"}},
         ]}
 
@@ -190,9 +191,7 @@ if __name__ == "__main__":
                         + baseline["Jnb"].values
                         + baseline["Jrf"].values
                     ) * 1e6),
-                "electrons":{**atoms["e"],
-                             "particles": S,
-                             "energy": Q_e},
+                "electrons":{**atoms["e"],  "particles": S, "energy": Q_e},
                 "ion": [
                     {**atoms["D"],          "particles":S*0.5,      "energy":Q_DT*0.5},
                     {**atoms["T"],          "particles":S*0.5,      "energy":Q_DT*0.5},
@@ -241,7 +240,7 @@ if __name__ == "__main__":
                       "separatrix": True,
                       #   "scalar_field": [("psirz", {"levels": 16, "linewidths": 0.1}), ],
                   }
-                  ) .savefig("/home/salmon/workspace/output/tokamak.png", transparent=True)
+                  ) .savefig("/home/salmon/workspace/output/tokamak.svg", transparent=True)
 
         # _, spearatrix_surf = next(magnetic_surface.find_surface_by_psi_norm([1.0]))
         # bpol = np.asarray([magnetic_surface.Bpol(p[0], p[1]) for p in spearatrix_surf.points()])
@@ -254,7 +253,7 @@ if __name__ == "__main__":
 
         #      ],
         #     x_axis=([0, 1], "u"),
-        #     grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_surf.png", transparent=True)
+        #     grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_surf.svg", transparent=True)
 
     if True:
 
@@ -329,7 +328,7 @@ if __name__ == "__main__":
             x_axis=(magnetic_surface.psi_norm,      r"$\bar{\psi}$"),
 
             title="Equlibrium",
-            grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_coord.png", transparent=True)
+            grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_coord.svg", transparent=True)
 
     if True:
         eq_profile = tok.equilibrium.time_slice.profiles_1d
@@ -403,7 +402,7 @@ if __name__ == "__main__":
             # x_axis=([0, 1.0],                                                r"$\psi/\psi_{bdry}$"),
 
             title="Equlibrium",
-            grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.png", transparent=True)
+            grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
     if True:  # CoreProfile initialize value
 
@@ -435,7 +434,7 @@ if __name__ == "__main__":
                 (core_profile.grid.psi,                                    r"$\psi$"),
             ],
             x_axis=([0, 1.0],                                  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-            grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profiles_initialize.png", transparent=True)
+            grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profiles_initialize.svg", transparent=True)
 
     if True:  # CoreTransport
 
@@ -445,7 +444,7 @@ if __name__ == "__main__":
 
         core_transport = core_transport_model.profiles_1d
 
-        nc_profiles_1d = tok.core_transport.model[{"identifier.name": "neoclassical"}].profiles_1d
+        nc_profiles_1d = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
 
         plot_profiles(
             [
@@ -496,8 +495,8 @@ if __name__ == "__main__":
             ],
             x_axis=([0, 1.0],   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             # index_slice=slice(10, 110, 1),
-            title=tok.core_transport.model[0].identifier.name,
-            grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.png", transparent=True)
+            title=tok.core_transport.model[0].code.name,
+            grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
     if True:  # CoreSources
         tok.core_sources.refresh(equilibrium=tok.equilibrium, core_profiles=tok.core_profiles)
@@ -541,7 +540,7 @@ if __name__ == "__main__":
 
             ],
             x_axis=([0, 1.0], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-            grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_sources.png", transparent=True)
+            grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_sources.svg", transparent=True)
 
     ###################################################################################################
     # TransportSolver
@@ -631,6 +630,6 @@ if __name__ == "__main__":
             x_axis=([0, 1.0],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             title="Result of TransportSolver",
             # index_slice=slice(0, 200, 1),
-            grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profiles_result.png", transparent=True)
+            grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_profiles_result.svg", transparent=True)
 
     logger.info("====== DONE ========")

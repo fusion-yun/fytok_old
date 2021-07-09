@@ -30,19 +30,13 @@ NCLASS_MSG = [
 
 class NClass(CoreTransportModel):
     def __init__(self, d=None, *args,   **kwargs):
-        super().__init__(collections.ChainMap({
-            "identifier": {
-                "name": "neoclassical",
-                "index": 5,
-                "description": f"{self.__class__.__name__}"
-            }}, d or {}), *args, **kwargs)
+        super().__init__(d, *args,
+                         identifier={"name": "neoclassical", "index": 5, "description": f"{self.__class__.__name__}"},
+                         code={"name": "nclass"},
+                         *args, **kwargs)
 
-    def update(self,
-               equilibrium: Equilibrium,
-               core_profiles: CoreProfiles,
-               **kwargs):
-
-        super().update(equilibrium=equilibrium, core_profiles=core_profiles)
+    def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles,  **kwargs):
+        super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
         # core_transport.identifier = {
         #     "name": "neoclassical",
@@ -116,7 +110,7 @@ class NClass(CoreTransportModel):
         rho_tor_bdry = rho_tor[-1]
 
         bt0_pr = eq_profile.fpol * eq_profile.gm1 / eq_profile.gm9
-        gph_pr = eq_profile.gm1*eq_profile.dvolume_drho_tor_norm * rho_tor_bdry
+        gph_pr = eq_profile.gm1*eq_profile.dvolume_drho_tor * rho_tor_bdry
 
         b0 = equilibrium.vacuum_toroidal_field.b0
         r0 = equilibrium.vacuum_toroidal_field.r0

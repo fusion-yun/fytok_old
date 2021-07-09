@@ -22,12 +22,13 @@ class NeoClassical(CoreTransport.Model):
     """
 
     def __init__(self, d, *args, **kwargs):
-        super().__init__(d,
-                         identifier={
-                             "name": "neoclassical",
-                             "index": 5,
-                             "description": f"{self.__class__.__name__}  Neoclassical model, based on  Tokamaks, 3ed, J.A.Wesson 2003"
-                         }, **kwargs)
+        super().__init__(d, *args,
+                         identifier={"name": "neoclassical", "index": 5,
+                                     "description": f"{self.__class__.__name__}  Neoclassical model, based on  Tokamaks, 3ed, J.A.Wesson 2003"
+                                     },
+                         code={"name": "NeoClassical"},
+
+                         ** kwargs)
 
     def refresh(self, *args,
                 equilibrium: Equilibrium,
@@ -110,7 +111,7 @@ class NeoClassical(CoreTransport.Model):
 
             chi_i = chi_i/epsilon32*(q**2)*(rho_i**2)/(1.0+0.74*mu_i*epsilon32)
 
-            chi_i = array_like(rho_tor_norm, chi_i*25) # 25 for test
+            chi_i = array_like(rho_tor_norm, chi_i*25)  # 25 for test
 
             self.profiles_1d.ion[{"label": ion.label}].energy["d"] = function_like(rho_tor_norm, chi_i)
 
