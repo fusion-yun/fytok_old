@@ -149,6 +149,7 @@ if __name__ == "__main__":
                     ]}
             },
             {"code": {"name": "neoclassical"}},
+            {"code": {"name": "glf23"}},
             # {"code": {"name": "nclass"}},
             {"code": {"name": "spitzer"}},
         ]}

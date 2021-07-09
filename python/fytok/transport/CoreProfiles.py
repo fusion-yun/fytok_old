@@ -491,7 +491,7 @@ class CoreProfiles1D(Dict[Node]):
     def e_field(self) -> EField:
         """Electric field, averaged on the magnetic surface. E.g for the parallel component, average(E.B) / B0,
             using core_profiles/vacuum_toroidal_field/b0[V.m ^ -1]  """
-        return CoreProfiles1D.EField(self.get("e_field"), parent=self)
+        return self.get("e_field", {})
 
     @sp_property
     def phi_potential(self) -> Function:

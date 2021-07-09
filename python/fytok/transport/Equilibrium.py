@@ -160,7 +160,7 @@ class EquilibriumConstraints(Dict):
 class EquilibriumGlobalQuantities(Dict):
     def __init__(self,  *args, coord: MagneticCoordSystem = None,    ** kwargs):
         super().__init__(*args, **kwargs)
-        self._coord = coord or getattr(self._parent,"coordinate_system",None)
+        self._coord = coord or getattr(self._parent, "coordinate_system", None)
 
     @sp_property
     def beta_pol(self):
@@ -260,7 +260,7 @@ class EquilibriumProfiles1D(Dict):
 
     def __init__(self,  *args, coord: MagneticCoordSystem = None,    ** kwargs):
         super().__init__(*args, **kwargs)
-        self._coord = coord or getattr(self._parent,"coordinate_system",None)
+        self._coord = coord or getattr(self._parent, "coordinate_system", None)
 
         self._grid = self._coord.radial_grid
         self._axis = self._grid.psi_norm
@@ -551,7 +551,7 @@ class EquilibriumProfiles2D(Dict):
 
     def __init__(self,  *args, coord: MagneticCoordSystem = None,    ** kwargs):
         super().__init__(*args, **kwargs)
-        self._coord = coord or getattr(self._parent,"coordinate_system",None)
+        self._coord = coord or getattr(self._parent, "coordinate_system", None)
 
     @sp_property
     def grid_type(self) -> RadialGrid:
@@ -620,7 +620,7 @@ class EquilibriumBoundary(Dict):
 
     def __init__(self,  *args, coord: MagneticCoordSystem = None,    ** kwargs):
         super().__init__(*args, **kwargs)
-        self._coord = coord or getattr(self._parent,"coordinate_system",None)
+        self._coord = coord or getattr(self._parent, "coordinate_system", None)
 
     @sp_property
     def type(self):
@@ -716,7 +716,7 @@ class EquilibriumBoundarySeparatrix(Dict[Node]):
 
     def __init__(self,  *args, coord: MagneticCoordSystem = None,    ** kwargs):
         super().__init__(*args, **kwargs)
-        self._coord = coord or getattr(self._parent,"coordinate_system",None)
+        self._coord = coord or getattr(self._parent, "coordinate_system", None)
 
     @sp_property
     def type(self):
@@ -992,17 +992,6 @@ class Equilibrium(IDS):
         return self.get("time_slice")
 
     def refresh(self,  *args, **kwargs):
-
-        # constraints: Constraints = None,
-        # core_profiles=None,
-        # wall: Wall = None,
-        # pf_active: PFActive = None,
-        # magnetics: Magnetics = None,
-
-        self.remove("time_slice")
-        self.remove("vacuum_toroidal_field")
-        self.remove("grid_ggd")
-
         super().refresh(*args, **kwargs)
 
     ####################################################################################

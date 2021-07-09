@@ -215,10 +215,10 @@ c
       integer neq, iflagin(30), ilhmax, ilh, ikymaxtot,
      >  lprint, ieq, j1, j2, j, i, jmax,
      >  iar, ifail, jroot(4), itheta, iky, iky0, iroot, iglf
-      REAL(KIND=8) epsilon
+      REAL(KIND=4) epsilon
       parameter ( neq = 12, epsilon = 1.D-34 )
 c
-      REAL(KIND=8) pi, xparam(30),yparam(2*nmode),
+      REAL(KIND=4) pi, xparam(30),yparam(2*nmode),
      >  nroot,ky0,rms_theta,rlti,rlte,rlne,rlni,dil,taui,
      >  rmin,rmaj,q,rlnimp,amassimp,zimp,mimp,
      >  aikymax, aiky, apwt, aiwt,
@@ -241,35 +241,35 @@ c
      >  n_i,p_par,p_per,n_t,p_t,u_par,n_u,a_par,ph,t_u,n_e,
      >  n_im,p_im_par,p_im_per
 c     complex u_im_par
-      REAL(KIND=8) b0,g0,g1,g2,g3,g12,g23,
+      REAL(KIND=4) b0,g0,g1,g2,g3,g12,g23,
      >  b0i,g0i,g1i,g2i,g3i,g12i,g23i
       COMPLEX(KIND=8) f0,f1
-      REAL(KIND=8) k_par,ky,kx,k_per,k_m,
+      REAL(KIND=4) k_par,ky,kx,k_per,k_m,
      >  w_s, w_d, w_d0, w_cd,
      >  reps,xnueff,betae0,k_par0
       COMPLEX(KIND=8) xmu,lamda_d,
      >  xnu_par_par,xnu_par_per,xnu_per_par,xnu_per_per
-      REAL(KIND=8) gam_par,gam_per,x_par,x_per,xt_mhd,yt_mhd,
+      REAL(KIND=4) gam_par,gam_per,x_par,x_per,xt_mhd,yt_mhd,
      >  th,tc,fh,fc,
      >  phi_norm,gamma_r
       COMPLEX(KIND=8) chknu,chknt,chknt2
-      REAL(KIND=8) phi_renorm,gamma_net
+      REAL(KIND=4) phi_renorm,gamma_net
 c
 c...Declarations for eigenvaluesolver
 c
-      REAL(KIND=8) zgamax
+      REAL(KIND=4) zgamax
 c
 c... solver varaibles
 c
       parameter ( iar=neq )
 c     integer iai, ivr, ivi, intger(neq) ! if NAG solver f02ake used
 c     parameter ( iai=neq, ivr=neq, ivi=neq )
-      REAL(KIND=8) ar(iar,neq), ai(iar,neq), rr(neq), ri(neq)
+      REAL(KIND=4) ar(iar,neq), ai(iar,neq), rr(neq), ri(neq)
      &  , vr(iar,neq), vi(iar,neq)
-      REAL(KIND=8) br(iar,neq), bi(iar,neq), beta_tom(neq), ztemp1
+      REAL(KIND=4) br(iar,neq), bi(iar,neq), beta_tom(neq), ztemp1
  
       integer matz
-      REAL(KIND=8) fv1(neq),fv2(neq),fv3(neq)
+      REAL(KIND=4) fv1(neq),fv2(neq),fv3(neq)
 c
 c amat(i,j) = complex matrix A
 c zevec(j) = complex eigenvector
@@ -278,9 +278,9 @@ c
       parameter ( lwork=198 )
       COMPLEX(KIND=8) mata(iar,neq),cvr(iar,neq),cvl(iar,neq),w(neq)
       COMPLEX(KIND=8) work(lwork)
-      REAL(KIND=8) rwork(2*neq)
+      REAL(KIND=4) rwork(2*neq)
       COMPLEX(KIND=8) zevec(neq,neq), zomega(neq)
-      REAL(KIND=8) gammaroot(4),freqroot(4),phi_normroot(4)
+      REAL(KIND=4) gammaroot(4),freqroot(4),phi_normroot(4)
 c
 c---:----1----:----2----:----3----:----4----:----5----:----6----:----7-c
 c
@@ -1540,10 +1540,10 @@ c set flag ngrow_k_gf: found at least one unstable mode for this k
 c
       if(xparam(24).gt.0.D0) then
         if(gamma.gt.0.D0)then
-          ph_m=dabs(gamma)**(1.D0-adamp)*gamma_r**adamp/(k_m*ky)/
-     >    dsqrt(1.D0+(dabs(alpha_star*gamma_star+
+          ph_m=abs(gamma)**(1.D0-adamp)*gamma_r**adamp/(k_m*ky)/
+     >    dsqrt(1.D0+(abs(alpha_star*gamma_star+
      >    alpha_e*gamma_e+alpha_mode*gamma_mode)/
-     >    (dabs(gamma)+.00001D0))**xparam(24))
+     >    (abs(gamma)+.00001D0))**xparam(24))
           if(ipert_gf.eq.0)ngrow_k_gf(iky0)=1
         else
            ph_m=0.D0 
@@ -1877,7 +1877,7 @@ c
       subroutine cgg_glf(nm,n,ar,ai,wr,wi,matz,zr,zi,fv1,fv2,fv3,ierr)
 
       integer n,nm,is1,is2,ierr,matz
-      REAL(KIND=8) ar(nm,n),ai(nm,n),wr(n),wi(n),zr(nm,n),zi(nm,n),
+      REAL(KIND=4) ar(nm,n),ai(nm,n),wr(n),wi(n),zr(nm,n),zi(nm,n),
      x       fv1(n),fv2(n),fv3(n)
 
 c     this subroutine calls the recommended sequence of
@@ -1941,8 +1941,8 @@ c     .......... find both eigenvalues and eigenvectors ..........
       subroutine cbabk2(nm,n,low,igh,scale,m,zr,zi)
 
       integer i,j,k,m,n,ii,nm,igh,low
-      REAL(KIND=8) scale(n),zr(nm,m),zi(nm,m)
-      REAL(KIND=8) s
+      REAL(KIND=4) scale(n),zr(nm,m),zi(nm,m)
+      REAL(KIND=4) s
 
 c     this subroutine is a translation of the algol procedure
 c     cbabk2, which is a complex version of balbak,
@@ -2025,8 +2025,8 @@ c                igh+1 step 1 until n do -- ..........
       subroutine cbal(nm,n,ar,ai,low,igh,scale)
 
       integer i,j,k,l,m,n,jj,nm,igh,low,iexc
-      REAL(KIND=8) ar(nm,n),ai(nm,n),scale(n)
-      REAL(KIND=8) c,f,g,r,s,b2,radix
+      REAL(KIND=4) ar(nm,n),ai(nm,n),scale(n)
+      REAL(KIND=4) c,f,g,r,s,b2,radix
       logical noconv
 
 c     this subroutine is a translation of the algol procedure
@@ -2205,11 +2205,11 @@ c     .......... now balance ..........
       end subroutine
 
       subroutine cdiv(ar,ai,br,bi,cr,ci)
-      REAL(KIND=8) ar,ai,br,bi,cr,ci
+      REAL(KIND=4) ar,ai,br,bi,cr,ci
 
 c     complex division, (cr,ci) = (ar,ai)/(br,bi)
 
-      REAL(KIND=8) s,ars,ais,brs,bis
+      REAL(KIND=4) s,ars,ais,brs,bis
       s = abs(br) + abs(bi)
       ars = ar/s
       ais = ai/s
@@ -2224,8 +2224,8 @@ c     complex division, (cr,ci) = (ar,ai)/(br,bi)
       subroutine comqr(nm,n,low,igh,hr,hi,wr,wi,ierr)
 
       integer i,j,l,n,en,ll,nm,igh,itn,its,low,lp1,enm1,ierr
-      REAL(KIND=8) hr(nm,n),hi(nm,n),wr(n),wi(n)
-      REAL(KIND=8) si,sr,ti,tr,xi,xr,yi,yr,zzi,zzr,norm,tst1,tst2,
+      REAL(KIND=4) hr(nm,n),hi(nm,n),wr(n),wi(n)
+      REAL(KIND=4) si,sr,ti,tr,xi,xr,yi,yr,zzi,zzr,norm,tst1,tst2,
      x       pythag !PSI ,dlapy3gf
 
 c     this subroutine is a translation of a unitary analogue of the
@@ -2453,9 +2453,9 @@ C  MESHED overflow control WITH triangular multiply (10/30/89 BSG)
 
       integer i,j,k,l,m,n,en,ii,jj,ll,nm,nn,igh,ip1,
      x        itn,its,low,lp1,enm1,iend,ierr
-      REAL(KIND=8) hr(nm,n),hi(nm,n),wr(n),wi(n),zr(nm,n),zi(nm,n),
+      REAL(KIND=4) hr(nm,n),hi(nm,n),wr(n),wi(n),zr(nm,n),zi(nm,n),
      x       ortr(igh),orti(igh)
-      REAL(KIND=8) si,sr,ti,tr,xi,xr,yi,yr,zzi,zzr,norm,tst1,tst2,
+      REAL(KIND=4) si,sr,ti,tr,xi,xr,yi,yr,zzi,zzr,norm,tst1,tst2,
      x       pythag !PIS, dlapy3gf
 
 c     this subroutine is a translation of a unitary analogue of the
@@ -2863,8 +2863,8 @@ c                converged after 30*n iterations ..........
       subroutine corth(nm,n,low,igh,ar,ai,ortr,orti)
 
       integer i,j,m,n,ii,jj,la,mp,nm,igh,kp1,low
-      REAL(KIND=8) ar(nm,n),ai(nm,n),ortr(igh),orti(igh)
-      REAL(KIND=8) f,g,h,fi,fr,scale,pythag !PIS ,dlapy3gf
+      REAL(KIND=4) ar(nm,n),ai(nm,n),ortr(igh),orti(igh)
+      REAL(KIND=4) f,g,h,fi,fr,scale,pythag   ,dlapy3gf
 
 c     this subroutine is a translation of a complex analogue of
 c     the algol procedure orthes, num. math. 12, 349-368(1968)
@@ -2996,12 +2996,12 @@ c     .......... for j=igh step -1 until m do -- ..........
       end subroutine
 
       subroutine csroot(xr,xi,yr,yi)
-      REAL(KIND=8) xr,xi,yr,yi
+      REAL(KIND=4) xr,xi,yr,yi
 
 c     (yr,yi) = complex sqrt(xr,xi)
 c     branch chosen so that yr .ge. 0.0 and sign(yi) .eq. sign(xi)
 
-      REAL(KIND=8) s,tr,ti,pythag !PIS ,dlapy3gf
+      REAL(KIND=4) s,tr,ti,pythag !PIS ,dlapy3gf
       tr = xr
       ti = xi
       s = sqrt(0.5d0*(dlapy3gf(tr,ti) + abs(tr)))
@@ -3014,12 +3014,12 @@ c     branch chosen so that yr .ge. 0.0 and sign(yi) .eq. sign(xi)
       end subroutine
 
 
-      REAL(KIND=8) function pythag(a,b)
-      REAL(KIND=8) a,b
+      REAL(KIND=4) function pythag(a,b)
+      REAL(KIND=4) a,b
 
 c     finds sqrt(a**2+b**2) without overflow or destructive underflow
 
-      REAL(KIND=8) p,r,s,t,u
+      REAL(KIND=4) p,r,s,t,u
 crew changed dmax1 to max
       p = max(abs(a),abs(b))
       if (p .eq. 0.000) go to 20
@@ -3037,7 +3037,64 @@ c        write(*,*) 't = ',t
    20 pythag = p
       return
       end function
+
 c
+      REAL(KIND=4) FUNCTION DLAPY3GF( X, Y )
+*
+*  -- LAPACK auxiliary routine (version 3.0) --
+*     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
+*     Courant Institute, Argonne National Lab, and Rice University
+*     October 31, 1992
+*
+*     .. Scalar Arguments ..
+       REAL(KIND=4)   X, Y, Z
+*     ..
+*
+*  Purpose
+*  =======
+*
+*  DLAPY3GF returns sqrt(x**2+y**2+z**2), taking care not to cause
+*  unnecessary overflow.
+*
+*  Arguments
+*  =========
+*
+*  X       (input)  REAL(KIND=4)
+*  Y       (input)  REAL(KIND=4)
+*  Z       (input)  REAL(KIND=4)
+*          X, Y and Z specify the values x, y and z.
+*
+*  =====================================================================
+*
+*     .. Parameters ..
+      REAL(KIND=4)   ZERO
+      PARAMETER          ( ZERO = 0.0)
+*     ..
+*     .. Local Scalars ..
+      REAL(KIND=4)   W, XABS, YABS, ZABS
+*     ..
+*     .. Intrinsic Functions ..
+      INTRINSIC          ABS, MAX, SQRT
+*     ..
+*     .. Executable Statements ..
+*
+      Z = 0
+      XABS = ABS( X )
+      YABS = ABS( Y )
+      ZABS = ABS( Z )
+      W = MAX( XABS, YABS, ZABS )
+      IF( W.EQ.ZERO ) THEN
+         DLAPY3GF = ZERO
+      ELSE
+         DLAPY3GF = W*SQRT(( XABS / W )**2+(YABS/W )**2+(ZABS / W)**2)
+      END IF
+      RETURN
+*
+*     End of DLAPY3GF
+c
+      end function
+
+
 
 
 

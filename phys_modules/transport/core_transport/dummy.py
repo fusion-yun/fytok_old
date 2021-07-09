@@ -19,15 +19,15 @@ class TransportModelDummy(CoreTransport.Model):
     """
 
     def __init__(self, d, *args,   **kwargs):
-        super().__init__(d,
-                         identifier={
-                             "name": "dummy",
-                             "index": 5,
-                             "description": f"{self.__class__.__name__} Dummy CoreTransport.Model "
-                         }, **kwargs)
+        super().__init__(collections.ChainMap({
+            "identifier": {"name": "dummy", "index": 5,
+                           "description": f"{self.__class__.__name__} Dummy CoreTransport.Model "},
+            "code": {"name": "spitzer"}}, d or {}),
+
+            *args, **kwargs)
 
     def refresh(self, *args, **kwargs) -> None:
-        logger.debug(f"Dummy actor: Nothing to do!")
+        super().refresh(*args, **kwargs)
 
 
 __SP_EXPORT__ = TransportModelDummy

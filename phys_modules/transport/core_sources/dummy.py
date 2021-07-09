@@ -12,16 +12,16 @@ from spdm.util.logger import logger
 
 
 class CoreSourceDummy(CoreSources.Source):
-    def __init__(self, d=None, /,  **kwargs):
-        super().__init__(d,
-                         identifier={
-                             "name": f"unspecified",
-                             "index": 0,
-                             "description": f"{self.__class__.__name__} Dummy Source "
-                         }, **kwargs)
+    def __init__(self, d=None, *args,  **kwargs):
+
+        super().__init__(collections.ChainMap({
+            "identifier": {"name": "unspecified", "index": 5,
+                           "description": f"{self.__class__.__name__} Dummy CoreTransport.Model "},
+            "code": {"name": "dummy"}}, d or {}),
+            *args, **kwargs)
 
     def refresh(self, *args,  **kwargs):
-        logger.debug(f"Dummy actor: Nothing to do!")
+        super().refresh(*args, **kwargs)
 
 
 __SP_EXPORT__ = CoreSourceDummy

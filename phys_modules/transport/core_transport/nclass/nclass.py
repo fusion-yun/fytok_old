@@ -1,14 +1,14 @@
 import collections
 import collections.abc
 
-from spdm.numlib import np
-from spdm.numlib import constants
 from fytok.transport.CoreProfiles import CoreProfiles, CoreProfiles1D
 from fytok.transport.CoreSources import CoreSources
-from fytok.transport.CoreTransport import (CoreTransport,  CoreTransportModel)
+from fytok.transport.CoreTransport import CoreTransport, CoreTransportModel
 from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.Function import Function
 from spdm.data.Node import _next_
+from spdm.numlib import constants, np
+from spdm.numlib.misc import array_like
 from spdm.util.logger import logger
 
 from .nclass_mod import nclass_mod
@@ -37,13 +37,6 @@ class NClass(CoreTransportModel):
 
     def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles,  **kwargs):
         super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
-
-        # core_transport.identifier = {
-        #     "name": "neoclassical",
-        #     "index": 5,
-        #     "description": "by NCLASS"
-        # }
-
         eq_profile = equilibrium.time_slice.profiles_1d
         core_profile = core_profiles.profiles_1d
         core_trans_prof = self.profiles_1d
@@ -126,21 +119,21 @@ class NClass(CoreTransportModel):
         # Electron,Ion densities, temperatures and mass
 
         Ts = [core_profile.electrons.temperature, *[ion.temperature for ion in core_profile.ion]]
-        dTs = [t.derivative for t in Ts]
+        dTs = [t.derivative() for t in Ts]
 
         ns = [core_profile.electrons.density, *[ion.density for ion in core_profile.ion]]
 
         dpsi_drho_tor_norm = eq_profile.dpsi_drho_tor_norm
 
-        dPs = [core_profile.electrons.pressure.derivative * dpsi_drho_tor_norm,
-               *[ion.pressure.derivative * dpsi_drho_tor_norm for ion in core_profile.ion]]
+        dPs = [core_profile.electrons.pressure.derivative() * dpsi_drho_tor_norm,
+               *[ion.pressure.derivative() * dpsi_drho_tor_norm for ion in core_profile.ion]]
 
         amu = [constants.m_e/constants.m_u,   # Electron mass in amu
                * [sum([(element.a*element.atoms_n) for element in ion.element]) for ion in core_profile.ion]]
 
         q = eq_profile.q
 
-        dq_drho_tor = q.derivative*eq_profile.dpsi_drho_tor
+        dq_drho_tor = q.derivative()*eq_profile.dpsi_drho_tor
         dphi_drho_tor = q*eq_profile.dpsi_drho_tor
         fpol = eq_profile.fpol
         kappa = eq_profile.elongation
@@ -154,8 +147,40 @@ class NClass(CoreTransportModel):
 
         ele = core_trans_prof.electrons
 
+        x_rho = core_trans_prof.grid_d.rho_tor_norm
+
+        profiles = {
+            "electrons": {
+                "particles": {
+                    "flux": array_like(x_rho, 0),
+                    "d": array_like(x_rho, 0),
+                    "v": array_like(x_rho, 0),
+                },
+                "energy": {
+                    "flux": array_like(x_rho, 0),
+                    "d": array_like(x_rho, 0),
+                    "v": array_like(x_rho, 0),
+                },
+            },
+            "ion": []
+        }
+        for ion in core_trans_prof.ion:
+            profiles["ion"].append({
+                "label": ion.label,
+                "particles": {
+                    "flux": array_like(x_rho, 0),
+                    "d": array_like(x_rho, 0),
+                    "v": array_like(x_rho, 0),
+                },
+                "energy": {
+                    "flux": array_like(x_rho, 0),
+                    "d": array_like(x_rho, 0),
+                    "v": array_like(x_rho, 0),
+                },
+            })
+
         # Set input for NCLASS
-        for ipr, x in enumerate(core_trans_prof.grid_d.rho_tor_norm):
+        for ipr, x in enumerate(x_rho):
             x_psi = psi_norm(x)
             xqs = q(x_psi)
             # Geometry and electrical field calculations
@@ -216,13 +241,13 @@ class NClass(CoreTransportModel):
             inputs = (
                 m_i,                                              # number of isotopes (> 1) [-]
                 m_z,                                              # highest charge state [-]
-                eq_profile.gm5(x_psi),                        # <B**2> [T**2]
-                eq_profile.gm4(x_psi),                        # <1/B**2> [1/T**2]
-                core_profile.e_field.parallel(x_psi)*b0,         # <E.B> [V*T/m]
-                constants.mu_0*fpol(x_psi) / dpsi_drho_tor,  # mu_0*F/(dPsi/dr) [rho/m]
+                eq_profile.gm5(x_psi),                            # <B**2> [T**2]
+                eq_profile.gm4(x_psi),                            # <1/B**2> [1/T**2]
+                core_profile.e_field.parallel(x_psi)*b0,          # <E.B> [V*T/m]
+                constants.mu_0*fpol(x_psi) / dpsi_drho_tor,       # mu_0*F/(dPsi/dr) [rho/m]
                 p_fm,                                             # poloidal moments of drift factor for PS [/m**2]
-                eq_profile.trapped_fraction(x_psi),           # trapped fraction [-]
-                eq_profile.gm6(x_psi),                        # <grad(rho)**2/B**2> [rho**2/m**2/T**2]
+                eq_profile.trapped_fraction(x_psi),               # trapped fraction [-]
+                eq_profile.gm6(x_psi),                            # <grad(rho)**2/B**2> [rho**2/m**2/T**2]
                 dphi_drho_tor(x_psi),                             # potential gradient Phi' [V/rho]
                 ((dpsi_drho_tor**2) * dq_drho_tor(x_psi)),        # Psi'(Phi'/Psi')' [V/rho**2]
                 p_ngrth,                                          # <n.grad(Theta)> [/m]
@@ -313,7 +338,7 @@ class NClass(CoreTransportModel):
                 xi_s,       # charge weighted density factor of s [-]
                 tau_ss,     # 90 degree scattering time [s]
             ) = outputs
-
+            
             if iflag != 0:
                 msg = NCLASS_MSG[iflag+4]
                 if iflag < 0:
@@ -327,31 +352,31 @@ class NClass(CoreTransportModel):
             # Update utheta with edotb rescaling
             utheta_s[:, 2, :] = p_etap*(jparallel - p_jbbs)*utheta_s[:, 2, :]
 
-            # Electron particle flux
-            ele.particles.flux[ipr] = np.sum(glf_s[:, 0])
-            ele.particles.d[ipr] = dn_s[0]/grad_rho_tor2
-            ele.particles.v[ipr] = vnnt_s[0] + vneb_s[0]*p_etap*(jparallel - p_jbbs)
+            # # Electron particle flux
+            profiles["electrons"]["particles"]["flux"][ipr] = np.sum(glf_s[:, 0])
+            profiles["electrons"]["particles"]["d"][ipr] = dn_s[0]/grad_rho_tor2
+            profiles["electrons"]["particles"]["v"][ipr] = vnnt_s[0] + vneb_s[0]*p_etap*(jparallel - p_jbbs)
             # Electrons  heat flux
-            ele.energy.flux[ipr] = np.sum(qfl_s[:, 0])
-            ele.energy.d[ipr] = chi_s[0]/grad_rho_tor2
-            ele.energy.v[ipr] = vqnt_s[0] + vqeb_s[0]*p_etap*(jparallel - p_jbbs)
+            profiles["electrons"]["energy"]["flux"][ipr] = np.sum(qfl_s[:, 0])
+            profiles["electrons"]["energy"]["d"][ipr] = chi_s[0]/grad_rho_tor2
+            profiles["electrons"]["energy"]["v"][ipr] = vqnt_s[0] + vqeb_s[0]*p_etap*(jparallel - p_jbbs)
 
             # core_trans_prof.chieff[ipr] = chi_s[1]/grad_rho_tor2  # need to set 0.0
 
             # Ion heatfluxes
             for k, sp in enumerate(core_trans_prof.ion):
                 # ion particle fluxes
-                sp.particles.flux[ipr] = np.sum(glf_s[:, k + 1])
-                sp.particles.d[ipr] = dn_s[k + 1]/grad_rho_tor2
-                sp.particles.v[ipr] = vnnt_s[k + 1] + vneb_s[k + 1]*p_etap*(jparallel - p_jbbs)
+                profiles["ion"][k]["particles"]["flux"][ipr] = np.sum(glf_s[:, k + 1])
+                profiles["ion"][k]["particles"]["d"][ipr] = dn_s[k + 1]/grad_rho_tor2
+                profiles["ion"][k]["particles"]["v"][ipr] = vnnt_s[k + 1] + vneb_s[k + 1]*p_etap*(jparallel - p_jbbs)
                 # Ion heat flux
-                sp.energy.flux[ipr] = np.sum(qfl_s[:, k + 1])
-                sp.energy.d[ipr] = chi_s[k + 1]/grad_rho_tor2
-                sp.energy.v[ipr] = vqnt_s[k + 1] + vqeb_s[k + 1]*p_etap*(jparallel - p_jbbs)
+                profiles["ion"][k]["energy"]["flux"][ipr] = np.sum(qfl_s[:, k + 1])
+                profiles["ion"][k]["energy"]["d"][ipr] = chi_s[k + 1]/grad_rho_tor2
+                profiles["ion"][k]["energy"]["v"][ipr] = vqnt_s[k + 1] + vqeb_s[k + 1]*p_etap*(jparallel - p_jbbs)
                 # sp.deff[ipr] = dn_s[k + 1]/grad_rho_tor2
 
-                # Ionic rotational  momentum transport
-                # sp.momentum.d[ipr] = 0.0  # Need to set
+            # Ionic rotational  momentum transport
+            # sp.momentum.d[ipr] = 0.0  # Need to set
 
             # update poloidal velocities
             # rotation_frequency_tor_sonic
@@ -359,14 +384,14 @@ class NClass(CoreTransportModel):
 
             # Update toroidal velocities
             # if k != 1:
-                # profiles_rm.vtor[ipr] = r0*p_fpolhat[i]/p_fpol[i]*profiles_rm.e_rad[i] +\
-                #     p_fpolhat[i]*profiles_rm.vpol[ipr] - r0 * \
-                #     p_fpolhat[i]/p_fpol[i]*e_r[3]
+            # profiles_rm.vtor[ipr] = r0*p_fpolhat[i]/p_fpol[i]*profiles_rm.e_rad[i] +\
+            #     p_fpolhat[i]*profiles_rm.vpol[ipr] - r0 * \
+            #     p_fpolhat[i]/p_fpol[i]*e_r[3]
 
             # core_trans_prof.electrons.particles.d.eff[ipr] = dn_s[1]/grad_rho_tor2  # need to set
 
             # rotational momentum transport
-            core_trans_prof.momentum_tor.d[ipr] = 0.0
+            # core_trans_prof.momentum_tor.d[ipr] = 0.0
 
             # resistivity and <j dot B>
             # core_trans_prof.conductivity_parallel[ipr] = 1.0 / p_etap
@@ -376,6 +401,21 @@ class NClass(CoreTransportModel):
             # core_profile.e_field.radial[ipr] = NotImplemented  # p_fpol[i]/r0/fhat*profiles_rm.vtor[i, 1]
             # core_profile.e_field.poloidal[ipr] = NotImplemented  # -p_fpol[i]/r0*profiles_rm.vpol[i, 1]
             # core_profile.e_field.toroidal[ipr] = NotImplemented  # p_fpol[i]/r0/fhat*profiles_rm.vtor[i, 1]
+
+        core_trans_prof.electrons.particles["d"] = Function(x_rho, profiles["electrons"]["particles"]["d"])
+        core_trans_prof.electrons.particles["v"] = Function(x_rho, profiles["electrons"]["particles"]["v"])
+        core_trans_prof.electrons.particles["flux"] = Function(x_rho, profiles["electrons"]["particles"]["flux"])
+        core_trans_prof.electrons.energy["d"] = Function(x_rho, profiles["electrons"]["energy"]["d"])
+        core_trans_prof.electrons.energy["v"] = Function(x_rho, profiles["electrons"]["energy"]["v"])
+        core_trans_prof.electrons.energy["flux"] = Function(x_rho, profiles["electrons"]["energy"]["flux"])
+
+        for idx, ion in enumerate(core_trans_prof.ion):
+            ion.particles["d"] = Function(x_rho, profiles["ion"][idx]["particles"]["d"])
+            ion.particles["v"] = Function(x_rho, profiles["ion"][idx]["particles"]["v"])
+            ion.particles["flux"] = Function(x_rho, profiles["ion"][idx]["particles"]["flux"])
+            ion.energy["d"] = Function(x_rho, profiles["ion"][idx]["energy"]["d"])
+            ion.energy["v"] = Function(x_rho, profiles["ion"][idx]["energy"]["v"])
+            ion.energy["flux"] = Function(x_rho, profiles["ion"][idx]["energy"]["flux"])
 
         # Extend to edge values
         # core_trans_prof.chi[-1, :] = core_trans_prof.chi[-1 - 1, :]
