@@ -1,11 +1,11 @@
 import collections
+import collections.abc
 
 from spdm.numlib import np
 from spdm.numlib import constants
 from fytok.transport.CoreProfiles import CoreProfiles, CoreProfiles1D
 from fytok.transport.CoreSources import CoreSources
-from fytok.transport.CoreTransport import (CoreTransport,
-                                           CoreTransportModel)
+from fytok.transport.CoreTransport import (CoreTransport,  CoreTransportModel)
 from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.Function import Function
 from spdm.data.Node import _next_
@@ -29,11 +29,11 @@ NCLASS_MSG = [
 
 
 class NClass(CoreTransportModel):
-    def __init__(self, d=None, *args,   **kwargs):
-        super().__init__(d, *args,
-                         identifier={"name": "neoclassical", "index": 5, "description": f"{self.__class__.__name__}"},
-                         code={"name": "nclass"},
-                         *args, **kwargs)
+    def __init__(self, d: collections.abc.Mapping = None,  *args, **kwargs):
+        super().__init__(collections.ChainMap(
+            {"identifier": {"name": "neoclassical", "index": 5,  "description": f"{self.__class__.__name__}"},
+             "code": {"name": "nclass"}}, d or {}),
+            *args, **kwargs)
 
     def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles,  **kwargs):
         super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)

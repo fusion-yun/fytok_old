@@ -21,14 +21,12 @@ class NeoClassical(CoreTransport.Model):
         - Tokamaks, 3ed,  J.A.Wesson 2003
     """
 
-    def __init__(self, d, *args, **kwargs):
-        super().__init__(d, *args,
-                         identifier={"name": "neoclassical", "index": 5,
-                                     "description": f"{self.__class__.__name__}  Neoclassical model, based on  Tokamaks, 3ed, J.A.Wesson 2003"
-                                     },
-                         code={"name": "NeoClassical"},
-
-                         ** kwargs)
+    def __init__(self, d=None,  *args, **kwargs):
+        super().__init__(collections.ChainMap(
+            {"identifier": {"name": "neoclassical", "index": 5,
+                            "description": f"{self.__class__.__name__}  Neoclassical model, based on  Tokamaks, 3ed, J.A.Wesson 2003"},
+             "code": {"name": "neoclassical"}}, d or {}),
+            *args, ** kwargs)
 
     def refresh(self, *args,
                 equilibrium: Equilibrium,

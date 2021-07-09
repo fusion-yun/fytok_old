@@ -1,7 +1,8 @@
 
 import collections
-from fytok.transport.CoreProfiles import CoreProfiles
+import collections.abc
 
+from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreTransport import CoreTransport
 from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.Function import Function
@@ -20,13 +21,13 @@ class Spitzer(CoreTransport.Model):
         - Tokamaks, Third Edition, Chapter 14  ,p727,  J.A.Wesson 2003
     """
 
-    def __init__(self, d=None, /,  **kwargs):
-        super().__init__(d,
-                         identifier={
-                             "name": f"spitzer",
-                             "index": 5,
-                             "description": f"{self.__class__.__name__} Spitzer Resistivity"
-                         }, **kwargs)
+    def __init__(self, d: collections.abc.Mapping = None, *args,  **kwargs):
+        super().__init__(collections.ChainMap(
+            {"identifier": {"name": f"neoclassical", "index": 5,
+                            "description": f"{self.__class__.__name__} Spitzer Resistivity"},
+             "code": {"name": "spitzer"}},
+            d or {}),
+            *args, **kwargs)
 
     def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles,  **kwargs):
         super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
@@ -88,7 +89,7 @@ class Spitzer(CoreTransport.Model):
         C = 0.56/Zeff*(3.0-Zeff)/(3.0+Zeff)
 
         eta = eta_s*Zeff/(1-phi)/(1.0-C*phi)*(1.0+0.27*(Zeff-1.0))/(1.0+0.47*(Zeff-1.0))
-        
+
         self["profiles_1d.conductivity_parallel"] = Function(rho_tor_norm, array_like(rho_tor_norm, 1.0/eta))
 
         return 0.00

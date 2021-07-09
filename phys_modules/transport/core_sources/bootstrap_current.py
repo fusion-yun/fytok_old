@@ -12,13 +12,12 @@ from spdm.util.logger import logger
 
 
 class BootstrapCurrent(CoreSources.Source):
-    def __init__(self, d=None, /,  **kwargs):
-        super().__init__(d,
-                         identifier={
-                             "name": f"bootstrap_current",
-                             "index": 13,
-                             "description": f"{self.__class__.__name__} Bootstrap current, based on  Tokamaks, 3ed, sec 14.12 J.A.Wesson 2003"
-                         }, **kwargs)
+    def __init__(self, d: collections.abc.Mapping = None,  *args, **kwargs):
+        super().__init__(collections.ChainMap(
+            {"identifier": {"name": f"bootstrap_current",  "index": 13,
+                            "description": f"{self.__class__.__name__} Bootstrap current, based on  Tokamaks, 3ed, sec 14.12 J.A.Wesson 2003"},
+             "code": {"name": "bootstrap_current"}}, d or {}),
+            *args, **kwargs)
 
     def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles, **kwargs) -> None:
 
