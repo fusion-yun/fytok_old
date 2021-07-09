@@ -43,11 +43,11 @@ class CoreTransportElectrons(SpeciesElectron):
 
     @sp_property
     def particles(self) -> TransportCoeff:
-        return self.get("particles",{})
+        return self.get("particles", {})
 
     @sp_property
     def energy(self) -> TransportCoeff:
-        return self.get("energy",{})
+        return self.get("energy", {})
 
 
 class CoreTransportIonState(SpeciesIonState):
@@ -230,9 +230,9 @@ class CoreTransportModel(Module):
 
     Profiles1D = CoreTransportProfiles1D
 
-    def __init__(self,  *args, grid: RadialGrid, ** kwargs):
+    def __init__(self,  *args, grid: RadialGrid = _undefined_, ** kwargs):
         super().__init__(*args, **kwargs)
-        self._grid = grid
+        self._grid = grid if grid is not _undefined_ else getattr(self._parent, 'grid')
 
     @property
     def grid(self):
@@ -268,9 +268,9 @@ class CoreTransport(IDS):
     _IDS = "core_transport"
     Model = CoreTransportModel
 
-    def __init__(self,  *args, grid: RadialGrid, **kwargs):
+    def __init__(self,  *args, grid: RadialGrid = _undefined_, **kwargs):
         super().__init__(*args, **kwargs)
-        self._grid = grid
+        self._grid = grid if grid is not _undefined_ else getattr(self._parent, 'radial_grid')
 
     @property
     def grid(self):

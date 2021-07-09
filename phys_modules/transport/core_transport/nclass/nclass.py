@@ -5,7 +5,7 @@ from spdm.numlib import constants
 from fytok.transport.CoreProfiles import CoreProfiles, CoreProfiles1D
 from fytok.transport.CoreSources import CoreSources
 from fytok.transport.CoreTransport import (CoreTransport,
-                                                   CoreTransportModel)
+                                           CoreTransportModel)
 from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.Function import Function
 from spdm.data.Node import _next_
@@ -38,8 +38,8 @@ class NClass(CoreTransportModel):
             }}, d or {}), *args, **kwargs)
 
     def update(self,
-               equilibrium: Equilibrium.TimeSlice,
-               core_profiles: CoreProfiles.TimeSlice,
+               equilibrium: Equilibrium,
+               core_profiles: CoreProfiles,
                **kwargs):
 
         super().update(equilibrium=equilibrium, core_profiles=core_profiles)
@@ -50,9 +50,9 @@ class NClass(CoreTransportModel):
         #     "description": "by NCLASS"
         # }
 
-        eq_profile = equilibrium.profiles_1d
+        eq_profile = equilibrium.time_slice.profiles_1d
         core_profile = core_profiles.profiles_1d
-        core_trans_prof = self.profiles_1d[-1]
+        core_trans_prof = self.profiles_1d
 
         # core_trans_prof.ion = [{
         #     "label": ion.label,
@@ -116,7 +116,7 @@ class NClass(CoreTransportModel):
         rho_tor_bdry = rho_tor[-1]
 
         bt0_pr = eq_profile.fpol * eq_profile.gm1 / eq_profile.gm9
-        gph_pr = eq_profile.gm1*eq_profile.vprime * rho_tor_bdry
+        gph_pr = eq_profile.gm1*eq_profile.dvolume_drho_tor_norm * rho_tor_bdry
 
         b0 = equilibrium.vacuum_toroidal_field.b0
         r0 = equilibrium.vacuum_toroidal_field.r0

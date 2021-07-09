@@ -30,9 +30,9 @@ class GLF23(CoreTransport.Model):
     def __init__(self, d, *args,  **kwargs):
         super().__init__(collections.ChainMap({
             "identifier": {
-                "name": "anomalous",
+                "name": "glf23",
                 "index": 6,
-                "description": f"{self.__class__.__name__}"
+                "description": f"{self.__class__.__name__} anomalous"
             }}, d or {}), *args, **kwargs)
 
     def update(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles, **kwargs):

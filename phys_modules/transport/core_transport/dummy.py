@@ -18,7 +18,7 @@ class TransportModelDummy(CoreTransport.Model):
 
     """
 
-    def __init__(self, d, /,   **kwargs):
+    def __init__(self, d, *args,   **kwargs):
         super().__init__(d,
                          identifier={
                              "name": "dummy",

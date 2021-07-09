@@ -533,7 +533,7 @@ class CoreProfiles(IDS):
 
     def __init__(self,   *args,  grid: RadialGrid = None, **kwargs):
         super().__init__(*args,  **kwargs)
-        self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
+        self._grid = grid if grid is not None else getattr(self._parent, "radial_grid", NotImplemented)
 
     @property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:

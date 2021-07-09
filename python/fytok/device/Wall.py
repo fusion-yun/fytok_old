@@ -30,7 +30,7 @@ class WallLimiter(Dict):
 
     @sp_property
     def unit(self) -> List[Unit]:
-        return self.get("unit", [])
+        return self.get("unit")
 
 
 class WallVessel(Dict):
@@ -51,7 +51,7 @@ class WallVessel(Dict):
 
     @sp_property
     def annular(self) -> Annular:
-        return self.get("annular", {})
+        return self.get("annular")
 
 
 class WallDescription2D(Dict):
