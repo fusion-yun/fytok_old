@@ -5,7 +5,7 @@ c
 c
     
       INTEGER I,N
-      REAL(KIND=8) f1(N), f2(N), f(1000)
+      REAL f1(N), f2(N), f(1000)
 
 
 c copy input array f1 to local storage array (maxlength =  1000 point)

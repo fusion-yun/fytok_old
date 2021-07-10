@@ -12,7 +12,9 @@ from spdm.data.Node import _next_
 from spdm.numlib import constants, np
 from spdm.util.logger import logger
 
-from .glf23_mod import glf2d
+from .glf23_mod import glf2d, glf
+logger.debug(glf2d.__doc__)
+# logger.debug(glf.__doc__)
 
 
 class GLF23(CoreTransport.Model):
@@ -28,7 +30,8 @@ class GLF23(CoreTransport.Model):
 
     def __init__(self, d=None, *args,  **kwargs):
         super().__init__(collections.ChainMap(
-            {"identifier": {"name": "anomalous", "index": 6,  "description": f"anomalous {self.__class__.__name__}"},
+            {"identifier": {"name": "anomalous", "index": 6,
+                            "description": f"anomalous {self.__class__.__name__}"},
              "code": {"name": "glf23"}}, d or {}),
             *args, **kwargs)
 

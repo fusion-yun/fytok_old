@@ -44,14 +44,14 @@ C-----------------------------------------------------------------------
  
       IMPLICIT NONE
       INTEGER N, NA
-      REAL(KIND=8) AR(N,NA),AI(N,NA),BR(N,NA),BI(N,NA)
+      double precision AR(N,NA),AI(N,NA),BR(N,NA),BI(N,NA)
  
 C-----------------------------------------------------------------------
 C DECALRATIONS FOR OUTPUT VARIABLES
 C-----------------------------------------------------------------------
  
-      REAL(KIND=8) ALFR(N),ALFI(N),BETA(N)
-      REAL(KIND=8) ZVR(N,NA), ZVI(N,NA)
+      double precision ALFR(N),ALFI(N),BETA(N)
+      double precision ZVR(N,NA), ZVI(N,NA)
       INTEGER IFAIL
  
 C-----------------------------------------------------------------------
@@ -59,8 +59,8 @@ C LOCAL VARIABLES
 C-----------------------------------------------------------------------
  
       LOGICAL WANTX
-      REAL(KIND=8) EPS1
-      REAL(KIND=8) ZERO,ZONE
+      double precision EPS1
+      double precision ZERO,ZONE
  
 C-----------------------------------------------------------------------
 C START OF ACTUAL CODING
@@ -82,11 +82,11 @@ C
 C
       IMPLICIT NONE
       INTEGER I,J,K,L,N,K1,LB,L1,NM,NK1,NM1
-      REAL(KIND=8) AR(NM,N),AI(NM,N),BR(NM,N),BI(NM,N),
+      double precision AR(NM,N),AI(NM,N),BR(NM,N),BI(NM,N),
      &       ZR(NM,N),ZI(NM,N)
-      REAL(KIND=8) R,S,T,TI,U1,U2,XI,XR,YI,YR,RHO,U1I
+      double precision R,S,T,TI,U1,U2,XI,XR,YI,YR,RHO,U1I
       LOGICAL MATZ
-      REAL(KIND=8) ZERO,ZONE
+      double precision ZERO,ZONE
 C
 C     THIS SUBROUTINE IS A COMPLEX ANALOGUE OF THE FIRST STEP OF THE
 C     QZ ALGORITHM FOR SOLVING GENERALIZED MATRIX EIGENVALUE PROBLEMS,
@@ -369,18 +369,18 @@ C
       IMPLICIT NONE
       INTEGER I,J,K,L,N,EN,K1,K2,LL,L1,NA,NM,ITS,KM1,LM1,
      X        ENM2,IERR,LOR1,ENORN
-      REAL(KIND=8) AR(NM,N),AI(NM,N),BR(NM,N),BI(NM,N),
+      double precision AR(NM,N),AI(NM,N),BR(NM,N),BI(NM,N),
      X       ALFR(N),ALFI(N),
      X       BETA(N),ZR(NM,N),ZI(NM,N)
-      REAL(KIND=8) R,S,A1,A2,EP,SH,U1,U2,XI,XR,YI,YR,
+      double precision R,S,A1,A2,EP,SH,U1,U2,XI,XR,YI,YR,
      X       ANI,A1I,A33,A34,A43,A44,
      X       BNI,B11,B33,B44,SHI,U1I,A33I,A34I,A43I,A44I,B33I,B44I,
      X       EPSA,EPSB,EPS1,ANORM,BNORM,B3344,B3344I
       INTEGER max
       LOGICAL MATZ
-      COMPLEX(KIND=8) Z3
+      double COMPLEX Z3
 C
-      REAL(KIND=8) ZERO,ZONE,ZTWO
+      double precision ZERO,ZONE,ZTWO
 C
 C
 C
@@ -754,12 +754,12 @@ C
 C
       IMPLICIT NONE
       INTEGER I,J,K,M,N,EN,II,JJ,NA,NM,NN
-      REAL(KIND=8) AR(NM,N),AI(NM,N),BR(NM,N),BI(NM,N),
+      double precision AR(NM,N),AI(NM,N),BR(NM,N),BI(NM,N),
      X       ALFR(N),ALFI(N),
      X       BETA(N),ZR(NM,N),ZI(NM,N)
-      REAL(KIND=8) R,T,RI,TI,XI,ALMI,ALMR,BETM,EPSB
-      COMPLEX(KIND=8) Z3
-      REAL(KIND=8) ZERO
+      double precision R,T,RI,TI,XI,ALMI,ALMR,BETM,EPSB
+      double COMPLEX Z3
+      double precision ZERO
 C
 C
 C
@@ -818,20 +818,20 @@ C
       IF (N .LE. 1) GO TO 1001
       EPSB = BR(N,1)
 C     ********** FOR EN=N STEP -1 UNTIL 2 DO -- **********
-      DO 800 NN = 2, N
+      DO  NN = 2, N
          EN = N + 2 - NN
          NA = EN - 1
          ALMR = ALFR(EN)
          ALMI = ALFI(EN)
          BETM = BETA(EN)
 C     ********** FOR I=EN-1 STEP -1 UNTIL 1 DO -- **********
-         DO 700 II = 1, NA
+         DO  II = 1, NA
             I = EN - II
             R = 0.0D0
             RI = 0.0D0
             M = I + 1
 C
-            DO 610 J = M, EN
+            DO  J = M, EN
                T = BETM * AR(I,J) - ALMR * BR(I,J) + ALMI * BI(I,J)
                TI = BETM * AI(I,J) - ALMR * BI(I,J) - ALMI * BR(I,J)
                IF (J .EQ. EN) GO TO 605
@@ -840,7 +840,7 @@ C
                TI = XI
   605          R = R + T
                RI = RI + TI
-  610       CONTINUE
+            END DO
 C
             T = ALMR * BETA(I) - BETM * ALFR(I)
             TI = ALMI * BETA(I) - BETM * ALFI(I)
@@ -848,40 +848,40 @@ C
             Z3 = DCMPLX(R,RI) / DCMPLX(T,TI)
             BR(I,EN) = DBLE(Z3)
             BI(I,EN) = DIMAG(Z3)
-  700    CONTINUE
+         END DO
 C
-  800 CONTINUE
+      END DO
 C     ********** END BACK SUBSTITUTION.
 C                TRANSFORM TO ORIGINAL COORDINATE SYSTEM.
 C                FOR J=N STEP -1 UNTIL 2 DO -- **********
-      DO 880 JJ = 2, N
+      DO  JJ = 2, N
          J = N + 2 - JJ
          M = J - 1
 C
-         DO 880 I = 1, N
+         DO  I = 1, N
 C
-            DO 860 K = 1, M
+            DO  K = 1, M
                ZR(I,J) = ZR(I,J) + ZR(I,K) * BR(K,J) - ZI(I,K) * BI(K,J)
                ZI(I,J) = ZI(I,J) + ZR(I,K) * BI(K,J) + ZI(I,K) * BR(K,J)
-  860       CONTINUE
-C
-  880 CONTINUE
+            END DO
+         END DO   
+      END DO
 C     ********** NORMALIZE SO THAT MODULUS OF LARGEST
 C                COMPONENT OF EACH VECTOR IS 1 **********
-      DO 950 J = 1, N
+      DO  J = 1, N
          T = 0.0D0
 C
-         DO 930 I = 1, N
+         DO  I = 1, N
             R = abs(DCMPLX(ZR(I,J),ZI(I,J)))
             IF (R .GT. T) T = R
-  930    CONTINUE
+         END DO
 C
-         DO 940 I = 1, N
+         DO  I = 1, N
             ZR(I,J) = ZR(I,J) / T
             ZI(I,J) = ZI(I,J) / T
-  940    CONTINUE
+         END DO
 C
-  950 CONTINUE
+      END DO
 C
  1001 RETURN
 C     ********** LAST CARD OF CQZVEC **********

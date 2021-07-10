@@ -116,10 +116,6 @@ if __name__ == "__main__":
     v_pinch_ni = Function([0, r_ped, 1.0], lambda x:  D(x) * x / R0)
     v_pinch_Ti = Function([0, r_ped, 1.0], lambda x:  chi(x) * x / R0)
 
-    # chi = PiecewiseFunction([0, r_ped, 1.0],  [lambda x: 1.0*Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
-    # chi_e = PiecewiseFunction([0, r_ped, 1.0], [lambda x:0.5 * Ccore*(1.0 + 3*(x**2)), lambda x: 0.8 * Cped])
-    # D = PiecewiseFunction([0, r_ped, 1.0],  [lambda x:0.1 * Ccore*(1.0 + 3*(x**2)), lambda x: 0.1*Cped])
-
     c_tokamak["core_transport"] = {
         "model": [
             {

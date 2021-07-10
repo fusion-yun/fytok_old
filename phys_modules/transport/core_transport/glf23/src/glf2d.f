@@ -6,7 +6,7 @@
 ! 29mar1999 fgtok -s rr.table "dmc:  rename intrinsic REAL -> AREAL"
 !
 ! dmc -- Cray/workstation portable real*8<-->complex*16 conversion routines
- 
+
 !#include "f77_dcomplx.h"
  
 c
@@ -207,7 +207,7 @@ c***********************************************************************
 c
       implicit none
 c
-      include 'glf.inc'
+      include 'glf.m'
 c
 c Glf is common block, which must contain all the _gf inputs and outputs
 c
@@ -215,10 +215,10 @@ c
       integer neq, iflagin(30), ilhmax, ilh, ikymaxtot,
      >  lprint, ieq, j1, j2, j, i, jmax,
      >  iar, ifail, jroot(4), itheta, iky, iky0, iroot, iglf
-      REAL(KIND=4) epsilon
+      double precision epsilon
       parameter ( neq = 12, epsilon = 1.D-34 )
 c
-      REAL(KIND=4) pi, xparam(30),yparam(2*nmode),
+      double precision pi, xparam(30),yparam(2*nmode),
      >  nroot,ky0,rms_theta,rlti,rlte,rlne,rlni,dil,taui,
      >  rmin,rmaj,q,rlnimp,amassimp,zimp,mimp,
      >  aikymax, aiky, apwt, aiwt,
@@ -236,51 +236,51 @@ c
      >  adamp,alpha_star,gamma_star,alpha_e,gamma_e,
      >  kyf,gamma,freq,ph_m,d_hat,d_im_hat,
      >  chii_hat,chie_hat,exch_hat
-      COMPLEX(KIND=8) xi, idelta,
+      double COMPLEX xi, idelta,
      >  v(1:12), amat(1:12,1:12),
      >  n_i,p_par,p_per,n_t,p_t,u_par,n_u,a_par,ph,t_u,n_e,
      >  n_im,p_im_par,p_im_per
 c     complex u_im_par
-      REAL(KIND=4) b0,g0,g1,g2,g3,g12,g23,
+      double precision b0,g0,g1,g2,g3,g12,g23,
      >  b0i,g0i,g1i,g2i,g3i,g12i,g23i
-      COMPLEX(KIND=8) f0,f1
-      REAL(KIND=4) k_par,ky,kx,k_per,k_m,
+      double COMPLEX f0,f1
+      double precision k_par,ky,kx,k_per,k_m,
      >  w_s, w_d, w_d0, w_cd,
      >  reps,xnueff,betae0,k_par0
-      COMPLEX(KIND=8) xmu,lamda_d,
+      double COMPLEX xmu,lamda_d,
      >  xnu_par_par,xnu_par_per,xnu_per_par,xnu_per_per
-      REAL(KIND=4) gam_par,gam_per,x_par,x_per,xt_mhd,yt_mhd,
+      double precision gam_par,gam_per,x_par,x_per,xt_mhd,yt_mhd,
      >  th,tc,fh,fc,
      >  phi_norm,gamma_r
-      COMPLEX(KIND=8) chknu,chknt,chknt2
-      REAL(KIND=4) phi_renorm,gamma_net
+      double COMPLEX chknu,chknt,chknt2
+      double precision phi_renorm,gamma_net
 c
 c...Declarations for eigenvaluesolver
 c
-      REAL(KIND=4) zgamax
+      double precision zgamax
 c
 c... solver varaibles
 c
       parameter ( iar=neq )
 c     integer iai, ivr, ivi, intger(neq) ! if NAG solver f02ake used
 c     parameter ( iai=neq, ivr=neq, ivi=neq )
-      REAL(KIND=4) ar(iar,neq), ai(iar,neq), rr(neq), ri(neq)
+      double precision ar(iar,neq), ai(iar,neq), rr(neq), ri(neq)
      &  , vr(iar,neq), vi(iar,neq)
-      REAL(KIND=4) br(iar,neq), bi(iar,neq), beta_tom(neq), ztemp1
+      double precision br(iar,neq), bi(iar,neq), beta_tom(neq), ztemp1
  
       integer matz
-      REAL(KIND=4) fv1(neq),fv2(neq),fv3(neq)
+      double precision fv1(neq),fv2(neq),fv3(neq)
 c
 c amat(i,j) = complex matrix A
 c zevec(j) = complex eigenvector
 c
       integer lwork
       parameter ( lwork=198 )
-      COMPLEX(KIND=8) mata(iar,neq),cvr(iar,neq),cvl(iar,neq),w(neq)
-      COMPLEX(KIND=8) work(lwork)
-      REAL(KIND=4) rwork(2*neq)
-      COMPLEX(KIND=8) zevec(neq,neq), zomega(neq)
-      REAL(KIND=4) gammaroot(4),freqroot(4),phi_normroot(4)
+      double complex mata(iar,neq),cvr(iar,neq),cvl(iar,neq),w(neq)
+      double complex work(lwork)
+      double precision rwork(2*neq)
+      double COMPLEX zevec(neq,neq), zomega(neq)
+      double precision gammaroot(4),freqroot(4),phi_normroot(4)
 c
 c---:----1----:----2----:----3----:----4----:----5----:----6----:----7-c
 c
@@ -296,7 +296,7 @@ c inputs.........................................................
       do i=1,30
        iflagin(i)=iflagin_gf(i)
        xparam(i)=xparam_gf(i)
-      enddo
+      end do
  
       ilhmax=1
       ikymaxtot=ikymax_gf
@@ -313,7 +313,7 @@ c
       if (xparam_gf(10).gt.0.) then
         ilhmax=2
         ikymaxtot=2*ikymax_gf
-      endif
+      end if
 c
       nroot=nroot_gf
       ky0=xky0_gf
@@ -356,8 +356,8 @@ c
       if(ipert_gf.eq.0)then
        do j=0,nmode
         ngrow_k_gf(j) = 0
-       enddo
-      endif
+       end do
+      end if
 c
       idelta=0.D0
 c     if(ilh.eq.1) idelta=xi*xparam(1)+xparam(2)
@@ -365,7 +365,7 @@ c     if(ilh.eq.1) idelta=xi*xparam(1)+xparam(2)
 c.................................................................
 c
       if (lprint.gt.0) open(1)
-      ieq  = nroot
+      ieq  = INT(nroot)
 c
       if (lprint.eq.99) then
       write(1,*) 'ky0,rms_theta,rlti,rlte,rlne,rlni,taui,rmin,rmaj,q: ',
@@ -566,7 +566,7 @@ cgms         iky=iky0-ikymax_gf
 c
       if (ilh.eq.2) then
        nroot=6
-       ieq=nroot
+       ieq=INT(nroot)
        xnu=0.D0
        betae=1.D-6
        rlte=rlti_gf
@@ -1314,7 +1314,7 @@ c
         jobvr = 'V'
         do j1=1,neq
          do j2=1,ieq
-           mata(j1,j2) = cmplx(ar(j1,j2),ai(j1,j2))
+           mata(j1,j2) = COMPLEX(ar(j1,j2),ai(j1,j2))
          enddo
         enddo
 c
@@ -1540,10 +1540,10 @@ c set flag ngrow_k_gf: found at least one unstable mode for this k
 c
       if(xparam(24).gt.0.D0) then
         if(gamma.gt.0.D0)then
-          ph_m=abs(gamma)**(1.D0-adamp)*gamma_r**adamp/(k_m*ky)/
-     >    dsqrt(1.D0+(abs(alpha_star*gamma_star+
+          ph_m=dabs(gamma)**(1.D0-adamp)*gamma_r**adamp/(k_m*ky)/
+     >    dsqrt(1.D0+(dabs(alpha_star*gamma_star+
      >    alpha_e*gamma_e+alpha_mode*gamma_mode)/
-     >    (abs(gamma)+.00001D0))**xparam(24))
+     >    (dabs(gamma)+.00001D0))**xparam(24))
           if(ipert_gf.eq.0)ngrow_k_gf(iky0)=1
         else
            ph_m=0.D0 
@@ -1877,7 +1877,7 @@ c
       subroutine cgg_glf(nm,n,ar,ai,wr,wi,matz,zr,zi,fv1,fv2,fv3,ierr)
 
       integer n,nm,is1,is2,ierr,matz
-      REAL(KIND=4) ar(nm,n),ai(nm,n),wr(n),wi(n),zr(nm,n),zi(nm,n),
+      double precision ar(nm,n),ai(nm,n),wr(n),wi(n),zr(nm,n),zi(nm,n),
      x       fv1(n),fv2(n),fv3(n)
 
 c     this subroutine calls the recommended sequence of
@@ -1941,8 +1941,8 @@ c     .......... find both eigenvalues and eigenvectors ..........
       subroutine cbabk2(nm,n,low,igh,scale,m,zr,zi)
 
       integer i,j,k,m,n,ii,nm,igh,low
-      REAL(KIND=4) scale(n),zr(nm,m),zi(nm,m)
-      REAL(KIND=4) s
+      double precision scale(n),zr(nm,m),zi(nm,m)
+      double precision s
 
 c     this subroutine is a translation of the algol procedure
 c     cbabk2, which is a complex version of balbak,
@@ -2005,7 +2005,7 @@ c                igh+1 step 1 until n do -- ..........
          i = ii
          if (i .ge. low .and. i .le. igh) go to 140
          if (i .lt. low) i = low - ii
-         k = scale(i)
+         k =INT(scale(i))
          if (k .eq. i) go to 140
 
          do 130 j = 1, m
@@ -2025,8 +2025,8 @@ c                igh+1 step 1 until n do -- ..........
       subroutine cbal(nm,n,ar,ai,low,igh,scale)
 
       integer i,j,k,l,m,n,jj,nm,igh,low,iexc
-      REAL(KIND=4) ar(nm,n),ai(nm,n),scale(n)
-      REAL(KIND=4) c,f,g,r,s,b2,radix
+      double precision ar(nm,n),ai(nm,n),scale(n)
+      double precision c,f,g,r,s,b2,radix
       logical noconv
 
 c     this subroutine is a translation of the algol procedure
@@ -2139,20 +2139,21 @@ c     .......... search for columns isolating an eigenvalue
 c                and push them left ..........
   130 k = k + 1
 
-  140 do 170 j = k, l
+  140 do j = k, l
 
          do 150 i = k, l
             if (i .eq. j) go to 150
             if (ar(i,j) .ne. 0.000 .or. ai(i,j) .ne. 0.000) go to 170
-  150    continue
+  150    end do
 
          m = k
          iexc = 2
          go to 20
-  170 continue
+  170 end do
 c     .......... now balance the submatrix in rows k to l ..........
-      do 180 i = k, l
-  180 scale(i) = 1.000
+      do i = k, l
+          scale(i) = 1.000
+      end do
 c     .......... iterative loop for norm reduction ..........
   190 noconv = .false.
 
@@ -2205,11 +2206,11 @@ c     .......... now balance ..........
       end subroutine
 
       subroutine cdiv(ar,ai,br,bi,cr,ci)
-      REAL(KIND=4) ar,ai,br,bi,cr,ci
+      double precision ar,ai,br,bi,cr,ci
 
 c     complex division, (cr,ci) = (ar,ai)/(br,bi)
 
-      REAL(KIND=4) s,ars,ais,brs,bis
+      double precision s,ars,ais,brs,bis
       s = abs(br) + abs(bi)
       ars = ar/s
       ais = ai/s
@@ -2224,9 +2225,9 @@ c     complex division, (cr,ci) = (ar,ai)/(br,bi)
       subroutine comqr(nm,n,low,igh,hr,hi,wr,wi,ierr)
 
       integer i,j,l,n,en,ll,nm,igh,itn,its,low,lp1,enm1,ierr
-      REAL(KIND=4) hr(nm,n),hi(nm,n),wr(n),wi(n)
-      REAL(KIND=4) si,sr,ti,tr,xi,xr,yi,yr,zzi,zzr,norm,tst1,tst2,
-     x       pythag !PSI ,dlapy3gf
+      double precision hr(nm,n),hi(nm,n),wr(n),wi(n)
+      double precision si,sr,ti,tr,xi,xr,yi,yr,zzi,zzr,norm,tst1,tst2,
+     &   dlapy3gf
 
 c     this subroutine is a translation of a unitary analogue of the
 c     algol procedure  comlr, num. math. 12, 369-376(1968) by martin
@@ -2453,10 +2454,10 @@ C  MESHED overflow control WITH triangular multiply (10/30/89 BSG)
 
       integer i,j,k,l,m,n,en,ii,jj,ll,nm,nn,igh,ip1,
      x        itn,its,low,lp1,enm1,iend,ierr
-      REAL(KIND=4) hr(nm,n),hi(nm,n),wr(n),wi(n),zr(nm,n),zi(nm,n),
+      double precision hr(nm,n),hi(nm,n),wr(n),wi(n),zr(nm,n),zi(nm,n),
      x       ortr(igh),orti(igh)
-      REAL(KIND=4) si,sr,ti,tr,xi,xr,yi,yr,zzi,zzr,norm,tst1,tst2,
-     x       pythag !PIS, dlapy3gf
+      double precision si,sr,ti,tr,xi,xr,yi,yr,zzi,zzr,norm,tst1,tst2,
+     x       dlapy3gf
 
 c     this subroutine is a translation of a unitary analogue of the
 c     algol procedure  comlr2, num. math. 16, 181-204(1970) by peters
@@ -2551,35 +2552,34 @@ c     .......... norm below is negative of h formed in corth ..........
          norm = hr(i,i-1) * ortr(i) + hi(i,i-1) * orti(i)
          ip1 = i + 1
 
-         do 110 k = ip1, igh
+         do  k = ip1, igh
             ortr(k) = hr(k,i-1)
             orti(k) = hi(k,i-1)
-  110    continue
+         end do
 
-         do 130 j = i, igh
+         do  j = i, igh
             sr = 0.000
             si = 0.000
-            do 115 k = i, igh
+            do  k = i, igh
                sr = sr + ortr(k) * zr(k,j) + orti(k) * zi(k,j)
                si = si + ortr(k) * zi(k,j) - orti(k) * zr(k,j)
-  115       continue
-c
-crew inserted norm+1.d-100
+            end do
+
             sr = sr / (norm+1.d-100)
             si = si / (norm+1.d-100)
 
-            do 120 k = i, igh
+            do  k = i, igh
                zr(k,j) = zr(k,j) + sr * ortr(k) - si * orti(k)
                zi(k,j) = zi(k,j) + sr * orti(k) + si * ortr(k)
-  120       continue
+            end do
 
-  130    continue
+          end do
 
-  140 continue
+  140 end do
 c     .......... create real subdiagonal elements ..........
   150 l = low + 1
 
-      do 170 i = l, igh
+      do  i = l, igh
          ll = min0(i+1,igh)
          if (hi(i,i-1) .eq. 0.000) go to 170
          norm = dlapy3gf(hr(i,i-1),hi(i,i-1))
@@ -2589,31 +2589,31 @@ crew     inserted norm+1.d-100
          hr(i,i-1) = norm
          hi(i,i-1) = 0.000
 
-         do 155 j = i, n
+         do  j = i, n
             si = yr * hi(i,j) - yi * hr(i,j)
             hr(i,j) = yr * hr(i,j) + yi * hi(i,j)
             hi(i,j) = si
-  155    continue
+         end do
 
-         do 160 j = 1, ll
+         do  j = 1, ll
             si = yr * hi(j,i) + yi * hr(j,i)
             hr(j,i) = yr * hr(j,i) - yi * hi(j,i)
             hi(j,i) = si
-  160    continue
+         end do
 
-         do 165 j = low, igh
+         do  j = low, igh
             si = yr * zi(j,i) + yi * zr(j,i)
             zr(j,i) = yr * zr(j,i) - yi * zi(j,i)
             zi(j,i) = si
-  165    continue
+         end do
 
-  170 continue
+  170 end do
 c     .......... store roots isolated by cbal ..........
-  180 do 200 i = 1, n
+  180 do i = 1, n
          if (i .ge. low .and. i .le. igh) go to 200
          wr(i) = hr(i,i)
          wi(i) = hi(i,i)
-  200 continue
+  200 end do
 
       en = igh
       tr = 0.000
@@ -2770,12 +2770,13 @@ c     .......... all roots found.  backsubstitute to find
 c                vectors of upper triangular form ..........
   680 norm = 0.000
 
-      do 720 i = 1, n
+      do i = 1, n
 
-         do 720 j = i, n
+         do j = i, n
             tr = abs(hr(i,j)) + abs(hi(i,j))
             if (tr .gt. norm) norm = tr
-  720 continue
+         end do 
+      end do
 
       if (n .eq. 1 .or. norm .eq. 0.000) go to 1001
 c     .......... for en=n step -1 until 2 do -- ..........
@@ -2836,22 +2837,24 @@ c     .......... vectors of isolated roots ..........
 c     .......... multiply by transformation matrix to give
 c                vectors of original full matrix.
 c                for j=n step -1 until low do -- ..........
-      do 880 jj = low, N
+      do jj = low, N
          j = n + low - jj
          m = min0(j,igh)
 
-         do 880 i = low, igh
+         do  i = low, igh
             zzr = 0.000
             zzi = 0.000
 
-            do 860 k = low, m
+            do  k = low, m
                zzr = zzr + zr(i,k) * hr(k,j) - zi(i,k) * hi(k,j)
                zzi = zzi + zr(i,k) * hi(k,j) + zi(i,k) * hr(k,j)
-  860       continue
+            end do
 
             zr(i,j) = zzr
             zi(i,j) = zzi
-  880 continue
+         end do
+
+      end do
 
       go to 1001
 c     .......... set error -- all eigenvalues have not
@@ -2863,8 +2866,8 @@ c                converged after 30*n iterations ..........
       subroutine corth(nm,n,low,igh,ar,ai,ortr,orti)
 
       integer i,j,m,n,ii,jj,la,mp,nm,igh,kp1,low
-      REAL(KIND=4) ar(nm,n),ai(nm,n),ortr(igh),orti(igh)
-      REAL(KIND=4) f,g,h,fi,fr,scale,pythag   ,dlapy3gf
+      double precision ar(nm,n),ai(nm,n),ortr(igh),orti(igh)
+      double precision f,g,h,fi,fr,scale,dlapy3gf
 
 c     this subroutine is a translation of a complex analogue of
 c     the algol procedure orthes, num. math. 12, 349-368(1968)
@@ -2921,9 +2924,9 @@ c     ------------------------------------------------------------------
          orti(m) = 0.000
          scale = 0.000
 c     .......... scale column (algol tol then not needed) ..........
-         do 90 i = m, igh
-   90    scale = scale + abs(ar(i,m-1)) + abs(ai(i,m-1))
-
+         do i = m, igh
+            scale = scale + dabs(ar(i,m-1)) + dabs(ai(i,m-1))
+         end do   
          if (scale .eq. 0.000) go to 180
          mp = m + igh
 c     .......... for i=igh step -1 until m do -- ..........
@@ -2934,7 +2937,7 @@ c     .......... for i=igh step -1 until m do -- ..........
             h = h + ortr(i) * ortr(i) + orti(i) * orti(i)
   100    continue
 
-         g = sqrt(h)
+         g = dsqrt(h)
          f = dlapy3gf(ortr(m),orti(m))
          if (f .eq. 0.000) go to 103
          h = h + f * g
@@ -2996,15 +2999,15 @@ c     .......... for j=igh step -1 until m do -- ..........
       end subroutine
 
       subroutine csroot(xr,xi,yr,yi)
-      REAL(KIND=4) xr,xi,yr,yi
+      double precision xr,xi,yr,yi
 
 c     (yr,yi) = complex sqrt(xr,xi)
 c     branch chosen so that yr .ge. 0.0 and sign(yi) .eq. sign(xi)
 
-      REAL(KIND=4) s,tr,ti,pythag !PIS ,dlapy3gf
+      double precision s,tr,ti,dlapy3gf
       tr = xr
       ti = xi
-      s = sqrt(0.5d0*(dlapy3gf(tr,ti) + abs(tr)))
+      s = dsqrt(0.5d0*(dlapy3gf(tr,ti) + dabs(tr)))
       if (tr .ge. 0.000) yr = s
       if (ti .lt. 0.000) s = -s
       if (tr .le. 0.000) yi = s
@@ -3014,21 +3017,21 @@ c     branch chosen so that yr .ge. 0.0 and sign(yi) .eq. sign(xi)
       end subroutine
 
 
-      REAL(KIND=4) function pythag(a,b)
-      REAL(KIND=4) a,b
+      double precision function pythag(a,b)
+      double precision a,b
 
 c     finds sqrt(a**2+b**2) without overflow or destructive underflow
 
-      REAL(KIND=4) p,r,s,t,u
+      double precision p,r,s,t,u
 crew changed dmax1 to max
-      p = max(abs(a),abs(b))
+      p = max(dabs(a),dabs(b))
       if (p .eq. 0.000) go to 20
 crew changed dmin1 to min
-      r = (min(abs(a),abs(b))/p)**2
+      r = (min(dabs(a),dabs(b))/p)**2
    10 continue
          t = 4.000 + r
 c        write(*,*) 't = ',t
-         if (abs(t-4.000) .lt. 1.e-5) go to 20
+         if (dabs(t-4.000) .lt. 1.e-5) go to 20
          s = r / t
          u = 1.000 + 2.000*s
          p = u*p
@@ -3037,9 +3040,8 @@ c        write(*,*) 't = ',t
    20 pythag = p
       return
       end function
-
 c
-      REAL(KIND=4) FUNCTION DLAPY3GF( X, Y )
+      DOUBLE PRECISION FUNCTION DLAPY3GF( X, Y )
 *
 *  -- LAPACK auxiliary routine (version 3.0) --
 *     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
@@ -3047,7 +3049,7 @@ c
 *     October 31, 1992
 *
 *     .. Scalar Arguments ..
-       REAL(KIND=4)   X, Y, Z
+      DOUBLE PRECISION   X, Y, Z
 *     ..
 *
 *  Purpose
@@ -3059,43 +3061,41 @@ c
 *  Arguments
 *  =========
 *
-*  X       (input)  REAL(KIND=4)
-*  Y       (input)  REAL(KIND=4)
-*  Z       (input)  REAL(KIND=4)
+*  X       (input) DOUBLE PRECISION
+*  Y       (input) DOUBLE PRECISION
+*  Z       (input) DOUBLE PRECISION
 *          X, Y and Z specify the values x, y and z.
 *
 *  =====================================================================
 *
 *     .. Parameters ..
-      REAL(KIND=4)   ZERO
-      PARAMETER          ( ZERO = 0.0)
+      DOUBLE PRECISION   ZERO
+      PARAMETER          ( ZERO = 0.0D0 )
 *     ..
 *     .. Local Scalars ..
-      REAL(KIND=4)   W, XABS, YABS, ZABS
+      DOUBLE PRECISION   W, XABS, YABS, ZABS
 *     ..
 *     .. Intrinsic Functions ..
-      INTRINSIC          ABS, MAX, SQRT
+      INTRINSIC          DABS, MAX, DSQRT
 *     ..
 *     .. Executable Statements ..
 *
       Z = 0
-      XABS = ABS( X )
-      YABS = ABS( Y )
-      ZABS = ABS( Z )
+      XABS = DABS( X )
+      YABS = DABS( Y )
+      ZABS = DABS( Z )
       W = MAX( XABS, YABS, ZABS )
       IF( W.EQ.ZERO ) THEN
          DLAPY3GF = ZERO
       ELSE
-         DLAPY3GF = W*SQRT(( XABS / W )**2+(YABS/W )**2+(ZABS / W)**2)
+         DLAPY3GF = W*DSQRT( ( XABS / W )**2+( YABS / W )**2+
+     $            ( ZABS / W )**2 )
       END IF
       RETURN
 *
 *     End of DLAPY3GF
 c
       end function
-
-
-
 
 
 
