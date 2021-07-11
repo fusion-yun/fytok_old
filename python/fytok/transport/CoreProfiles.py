@@ -108,6 +108,10 @@ class CoreProfilesIon(SpeciesIon):
         self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
 
     @sp_property
+    def is_impurity(self) -> bool:
+        return self.get("is_impurity", False)
+
+    @sp_property
     def z_ion_1d(self) -> Function:
         d = self.get("z_ion_id", default_value=_not_found_)
         if isinstance(d, np.ndarray):
@@ -468,7 +472,8 @@ class CoreProfiles1D(Dict[Node]):
 
     @sp_property
     def coulomb_logarithm(self) -> Function:
-        """ Coulomb logarithm, Tokamaks   Ch.14.5 p727 ,2003
+        """ Coulomb logarithm, 
+            @ref: Tokamaks 2003  Ch.14.5 p727 ,2003
         """
         Te = self.electrons.temperature(self._grid.rho_tor_norm)
         Ne = self.electrons.density(self._grid.rho_tor_norm)
@@ -477,6 +482,16 @@ class CoreProfiles1D(Dict[Node]):
         #  Ch.14.5 p727 Tokamaks 2003
         return Function(self._grid.rho_tor_norm, ((14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +
                                                   (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te >= 10)))
+
+    @sp_property
+    def electron_collision_time(self) -> Function:
+        """ electron collision time ,
+            @ref: Tokamak 2003, eq 14.6.1
+        """
+        Te = self.electrons.temperature(self._grid.rho_tor_norm)
+        Ne = self.electrons.density(self._grid.rho_tor_norm)
+        lnCoul = self.coulomb_logarithm(self._grid.rho_tor_norm)
+        return 1.09e16*((Te/1000.0)**(3/2))/Ne/lnCoul
 
     class EField(Dict[Node]):
         def __init__(self,   *args, grid: RadialGrid = None,   **kwargs):
