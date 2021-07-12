@@ -110,9 +110,16 @@ if __name__ == "__main__":
 
     core_transport.refresh(equilibrium=equilibrium, core_profiles=core_profiles)
 
-    logger.debug(np.asarray(core_transport.model[0].profiles_1d.electrons.energy.d))
-    logger.debug(np.asarray(core_transport.model[0].profiles_1d.electrons.particles.d))
-    logger.debug(np.asarray(core_transport.model[0].profiles_1d.ion[0].label))
-    logger.debug(np.asarray(core_transport.model[0].profiles_1d.ion[0].particles.d))
-    logger.debug(np.asarray(core_transport.model[0].profiles_1d.ion[0].energy.d))
-    logger.debug(np.asarray(core_transport.model[0].profiles_1d.ion[0].momentum.parallel.d))
+    plot_profiles(
+        [
+            (core_transport.model[0].profiles_1d.electrons.particles.d, "electron", r"$D_e$"),
+            (core_transport.model[0].profiles_1d.electrons.energy.d, "electron", r"$\chi_e$"),
+            (core_transport.model[0].profiles_1d.ion[0].particles.d, "ion", r"$D_i$"),
+            (core_transport.model[0].profiles_1d.ion[0].energy.d, "ion", r"$\chi_i$"),
+            # (core_transport.model[0].profiles_1d.ion[0].momentum.parallel.d, "ion", r"$\chi_i$"),
+        ],
+        # x_axis=(rho_tor_norm,                             r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+        x_axis=([0, 0.9],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+        title="Result of GLF23",
+        grid=True, fontsize=10) \
+        .savefig("/home/salmon/workspace/output/core_transport_glf23.svg", transparent=True)
