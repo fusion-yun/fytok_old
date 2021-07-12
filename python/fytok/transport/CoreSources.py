@@ -73,6 +73,10 @@ class CoreSourcesIon(SpeciesIon):
         self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
 
     @sp_property
+    def is_impurity(self) -> bool:
+        return self.get("is_impurity", False)
+
+    @sp_property
     def particles(self) -> Function:
         return self.get("particles", 0)
 
@@ -93,7 +97,6 @@ class CoreSourcesNeutral(Dict):
     def __init__(self, *args, grid: RadialGrid = None,  **kwargs):
         super().__init__(*args,  ** kwargs)
         self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
-
 
 
 class CoreSourcesProfiles1D(Dict):

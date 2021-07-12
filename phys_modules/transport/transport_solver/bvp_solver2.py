@@ -408,11 +408,11 @@ class TransportSolverBVP2(TransportSolver):
         logger.warning(f"TODO: Rotation Transport is not implemented!")
         return 0.0
 
-    def quasi_neutral_condition(self, profiles: CoreProfiles.Profiles1D, particle_solver='electron',  impurities: Sequence = []):
+    def quasi_neutral_condition(self, profiles: CoreProfiles.Profiles1D, particle_solver='electron'):
         n_imp = 0  # impurity
         Z_total = 0
         for ion in profiles.ion:
-            if ion.label in impurities:
+            if ion.is_impurity:
                 n_imp = n_imp + ion.z*ion.density
             else:
                 Z_total += ion.z
@@ -421,7 +421,7 @@ class TransportSolverBVP2(TransportSolver):
             ni = profiles.electrons.density - n_imp
             gi = profiles.electrons.get("density_flux", 0)
             for ion in profiles.ion:
-                if ion.label in impurities:
+                if ion.is_impurity:
                     continue
                 profiles.ion[{"label": ion.label}, "density"] = ion.z/Z_total*ni
                 profiles.ion[{"label": ion.label}, "density_flux"] = ion.z/Z_total*gi
@@ -437,7 +437,7 @@ class TransportSolverBVP2(TransportSolver):
             profiles.electrons["density_flux"] = g_e
 
     def _solve_equations(self, x0: np.ndarray, Y0: np.ndarray, eq_grp: Sequence, /,
-                         particle_solver="electrons",  impurities=[],
+                         particle_solver="electrons",
                          tolerance=1.0e-3, max_nodes=250, **kwargs) -> BVPResult:
 
         eq_list = [equ(idx, var_id, x0, Y0, ** (_args[0] if len(_args) > 0 else {}))
@@ -455,7 +455,7 @@ class TransportSolverBVP2(TransportSolver):
                 profiles_1d[var_id] = Function(x, Y[idx*2])
                 profiles_1d[var_id[:-1]+[f"{var_id[-1]}_flux"]] = Function(x, Y[idx*2+1])
 
-            self.quasi_neutral_condition(profiles_1d, particle_solver=particle_solver, impurities=impurities)
+            self.quasi_neutral_condition(profiles_1d, particle_solver=particle_solver)
 
             self._core_transport.refresh(equlibrium=self._equilibrium_next,   core_profiles=self._core_profiles_next)
 
@@ -472,10 +472,7 @@ class TransportSolverBVP2(TransportSolver):
 
         return solve_bvp(func, bc_func, x0, Y0, tolerance=tolerance, max_nodes=max_nodes, **kwargs)
 
-    def solve_core(self,  /,
-                   particle_solver: str = 'electron',
-                   impurities: Sequence = [],
-                   **kwargs) -> float:
+    def solve_core(self,  /,  particle_solver: str = 'electron',   **kwargs) -> float:
 
         if self._core_profiles_next.profiles_1d.get("psi", _not_found_) is _not_found_:
             self._core_profiles_next.profiles_1d["psi"] = self._core_profiles_next.profiles_1d.grid.psi
@@ -483,19 +480,19 @@ class TransportSolverBVP2(TransportSolver):
         if particle_solver == "electron":
             eq_grp = [
                 (["psi"],                                                self.transp_current,),
-                (["electrons", "density"],                              self.transp_particle,),
+                (["electrons", "density"],                               self.transp_particle,),
                 (["electrons", "temperature"],                           self.transp_energy, ),
                 *[(["ion", {"label": ion.label}, "temperature"],         self.transp_energy, )
-                  for ion in self._core_profiles_next.profiles_1d.ion if ion.label not in impurities],
+                  for ion in self._core_profiles_next.profiles_1d.ion if not ion.is_impurity],
             ]
         else:
             eq_grp = [
                 (["psi"],                                               self.transp_current,),
                 (["electrons", "temperature"],                          self.transp_energy,),
                 *[(["ion", {"label": ion.label}, "density"],            self.transp_particle,)
-                  for ion in self._core_profiles_next.profiles_1d.ion if ion.label not in impurities],
-                *[(["ion", {"label": ion.label}, "temperature"],     self.transp_energy, )
-                  for ion in self._core_profiles_next.profiles_1d.ion if ion.label not in impurities],
+                  for ion in self._core_profiles_next.profiles_1d.ion if not ion.is_impurity],
+                *[(["ion", {"label": ion.label}, "temperature"],        self.transp_energy, )
+                  for ion in self._core_profiles_next.profiles_1d.ion if not ion.is_impurity],
             ]
 
         x = self._rho_tor_norm
@@ -503,7 +500,7 @@ class TransportSolverBVP2(TransportSolver):
         Y = np.vstack(sum([[array_like(x, self._core_profiles_prev.profiles_1d.get(var_id, 0)), np.zeros_like(x)]
                            for var_id, *_ in eq_grp], []))
 
-        sol = self._solve_equations(x, Y, eq_grp, particle_solver=particle_solver, impurities=impurities,   **kwargs)
+        sol = self._solve_equations(x, Y, eq_grp, particle_solver=particle_solver, **kwargs)
 
         rms_residuals = np.max(sol.rms_residuals)
 

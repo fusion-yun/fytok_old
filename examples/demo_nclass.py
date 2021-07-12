@@ -93,9 +93,9 @@ if __name__ == "__main__":
             "ion": [
                 {**atoms["D"],          "density":         0.5*b_nDT,   "temperature":        b_Ti, },
                 {**atoms["T"],          "density":         0.5*b_nDT,   "temperature":        b_Ti, },
-                {**atoms["He"],         "density":             b_nHe,   "temperature":        b_Ti, },
-                {**atoms["Be"],         "density":         0.02*b_ne,   "temperature":        b_Ti, },
-                {**atoms["Ar"],         "density":       0.0012*b_ne,   "temperature":        b_Ti, },
+                {**atoms["He"],         "density":             b_nHe,   "temperature":        b_Ti, "is_impurity":True},
+                {**atoms["Be"],         "density":         0.02*b_ne,   "temperature":        b_Ti, "is_impurity":True},
+                {**atoms["Ar"],         "density":       0.0012*b_ne,   "temperature":        b_Ti, "is_impurity":True},
             ]}}
 
     # Core Transport
@@ -171,8 +171,6 @@ if __name__ == "__main__":
                     (- baseline["Pdti"].values
                      - baseline["Pdte"].values
                      )*1e6/constants.electron_volt)
-
-    impurities = ['He', 'Be', 'Ar']
 
     # Core Source
     c_tokamak["core_sources"] = {
@@ -449,7 +447,7 @@ if __name__ == "__main__":
                     (Function(bs_r_norm, baseline["Xi"].values),          r"astra",
                      r"$\chi_{i}$", {"marker": '.', "linestyle": ''}),
                     *[(core_transport.ion[{"label": ion.label}].energy.d,
-                       f"{ion.label}", r"$\chi_{i}$") for ion in core_profile.ion if ion.label not in impurities],
+                       f"{ion.label}", r"$\chi_{i}$") for ion in core_profile.ion if not ion.is_impurity],
                 ],
 
                 # [
@@ -482,10 +480,10 @@ if __name__ == "__main__":
                      "neoclassical  $\\chi_{NC}$ \n ion heat conductivity", {"marker": '.', "linestyle": ''}),
 
                     *[(ion.energy.d,  f"{ion.label}", r"Neoclassical $\chi_{NC}$")
-                      for ion in nc_profiles_1d.ion if ion.label not in impurities],
+                      for ion in nc_profiles_1d.ion if not ion.is_impurity],
                 ],
                 [(ion.particles.d,  f"{ion.label}", r"Neoclassical $D_{NC}$")
-                 for ion in nc_profiles_1d.ion if ion.label not in impurities],
+                 for ion in nc_profiles_1d.ion if not ion.is_impurity],
 
                 # (core_transport1d.e_field_radial,                                             r"$E_{radial}$"),
 
@@ -531,7 +529,7 @@ if __name__ == "__main__":
                 (core_source.electrons.energy,   "electron",    r"$Q [eV\cdot m^{-3} s^{-1}]$"),
 
                 *[(ion.energy*1e-6,  f"{ion.label}", f"$Q_{ion.label}$")
-                  for ion in core_source.ion if ion.label not in impurities],
+                  for ion in core_source.ion if not ion.is_impurity],
                 # ],
 
 
@@ -545,7 +543,6 @@ if __name__ == "__main__":
         tok.solve(enable_ion_particle_solver=False,
                   max_nodes=500,
                   tolerance=1.0e-4,
-                  impurities=impurities,
                   verbose=2,
                   bvp_rms_mask=[r_ped])
 
@@ -601,13 +598,13 @@ if __name__ == "__main__":
                 # [
                 #     (core_profile.electrons.get("density_flux"), r"$\Gamma_e$", r"$\Gamma_i$"),
                 #     * [(ion.get("density_flux"),          f"$\\Gamma_{ion.label}$", r"$\Gamma_i [eV]$")
-                #         for ion in core_profile.ion if ion.label not in impurities],
+                #         for ion in core_profile.ion if  not ion.is_impurity],
                 # ],
 
                 [
                     (b_Ti*1e-3,    r"astra $T_i$",       r"$T_{i} [KeV]$", {"marker": '.', "linestyle": ''}),
                     * [(ion.temperature*1e-3,          f"${ion.label}$", r"$T_i [KeV]$")
-                        for ion in core_profile.ion if ion.label not in impurities],
+                        for ion in core_profile.ion if not ion.is_impurity],
                 ],
 
                 [
@@ -616,10 +613,10 @@ if __name__ == "__main__":
 
                     (rms_residual(b_ne, core_profile.electrons.density), r"$n_e$"),
                     *[(rms_residual(b_nDT/2, ion.density), f"$n_{ion.label}$")
-                      for ion in core_profile.ion if ion.label not in impurities],
+                      for ion in core_profile.ion if not ion.is_impurity],
                     (rms_residual(b_Te, core_profile.electrons.temperature), r"$T_e$"),
                     *[(rms_residual(b_Ti, ion.temperature), f"$T_{ion.label}$")
-                      for ion in core_profile.ion if ion.label not in impurities],
+                      for ion in core_profile.ion if not ion.is_impurity],
 
                 ],
             ],

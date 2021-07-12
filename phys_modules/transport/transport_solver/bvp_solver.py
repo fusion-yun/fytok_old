@@ -478,7 +478,6 @@ class TransportSolverBVP(TransportSolver):
                    verbose=2,
                    enable_ion_particle_solver: bool = False,
                    ion_species: Sequence = None,
-                   impurities: Sequence = [],
                    **kwargs) -> float:
         r"""
             Solve transport equations

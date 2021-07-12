@@ -59,7 +59,7 @@ class GLF23(CoreTransport.Model):
         Ti = 0  # np.zeros_like(rho_tor)
         Ni = 0  # np.zeros_like(rho_tor)
         Nimp = 0
-   
+
         for ion in core_profiles_1d.ion:
             if not ion.is_impurity:
                 Ti = Ti+ion.temperature(rho_tor_norm)*ion.density(rho_tor_norm)
@@ -77,8 +77,6 @@ class GLF23(CoreTransport.Model):
         apwt = Ni/Ne
         aiwt = Nimp/Ne
         taui = Ti/Te
-        rmin = rho_tor_norm
-        rmaj = R0/rho_bdry
 
         magnetic_shear = eq_profiles_1d.magnetic_shear(psi_norm)
 
@@ -106,7 +104,7 @@ class GLF23(CoreTransport.Model):
 
         if True:  # set glf parameter
             glf.nmode = 15
-
+            glf.lprint_gf = 98
             # eigen_gf = 0 use cgg eigenvalue solver (default)
             #           = 1 use generalized tomsqz eigenvalue solver
             #           = 2 use zgeev eigenvalue solver
@@ -204,10 +202,20 @@ class GLF23(CoreTransport.Model):
             #
             #      turn on EXB shear stabilization
             #      alpha_e_gf=1. full on ExB shear
-            glf.alpha_e_gf = 0.0  # alpha_e
+            glf.alpha_e_gf = 0   # alpha_e
             #     turn on high-k eta-e modes
             glf.xparam_gf[10] = 1.0
-
+            #  xwell amount of magnetic well xwell*min(alpha,1)
+            #  park=1  (0) is a control parameter to turn on (off) parallel motion
+            #       0.405 best at zero beta and 2.5x larger at high beta..see iflagin(3)
+            #  ghat=1  (0) is a control parameter to turn on (off) curvature drift
+            #  gchat=1 (0) is a control parameter to turn on (off) div EXB motion
+            #  adamp= radial mode damping exponent  1/4 < adamp < 3/4
+            #       0.25 from direct fit of simulations varying radial mode damping
+            #   but 0.75 is better fit to rlti dependence
+            #  alpha_star O(1-3)  gyyrobohm breaking coef for diamg. rot. shear
+            glf.alpha_star_gf = 0.0
+            glf.alpha_mode_gf = 0.0
         #
         # settings for retuned GLF23 model
         #
@@ -249,9 +257,9 @@ class GLF23(CoreTransport.Model):
             #  taui=Ti/Te
             glf.taui_gf = taui[idx]
             #  rmin=r/a
-            glf.rmin_gf = rmin[idx]
+            glf.rmin_gf = rho_tor_norm[idx]
             #  rmaj=Rmaj/a
-            glf.rmaj_gf = rmaj
+            glf.rmaj_gf = R0/rho_bdry
             # q
             glf.q_gf = q[idx]
 
@@ -267,18 +275,6 @@ class GLF23(CoreTransport.Model):
             #  elong= local elongation or kappa
             glf.elong_gf = elongation[idx]
 
-            #  xwell amount of magnetic well xwell*min(alpha,1)
-            #  park=1  (0) is a control parameter to turn on (off) parallel motion
-            #       0.405 best at zero beta and 2.5x larger at high beta..see iflagin(3)
-            #  ghat=1  (0) is a control parameter to turn on (off) curvature drift
-            #  gchat=1 (0) is a control parameter to turn on (off) div EXB motion
-            #  adamp= radial mode damping exponent  1/4 < adamp < 3/4
-            #       0.25 from direct fit of simulations varying radial mode damping
-            #   but 0.75 is better fit to rlti dependence
-            #  alpha_star O(1-3)  gyyrobohm breaking coef for diamg. rot. shear
-            glf.alpha_star_gf = 0.0
-            glf.alpha_mode_gf = 0.0
-
             #  gamma_star ion diamagnetic rot shear rate in units of c_s/a
             glf.gamma_star_gf = 0.0  # vstarp_m[idx]
             #  alpha_e O(1-3)   doppler rot shear coef
@@ -293,11 +289,11 @@ class GLF23(CoreTransport.Model):
             #  kdamp model damping normally 0.
 
             #  atomic number working hydrogen gas
-            glf.amassgas_gf = 0.0  # amassgas_exp
+            glf.amassgas_gf = 1.0  # amassgas_exp
             # zimp_exp,       ! effective Z of impurity
             glf.zpmnimp = 1.0
             # amassimp_exp,   ! effective A of impurity
-            glf.amassimp_gf = 0.0  # amassimp_exp[idx]
+            glf.amassimp_gf = 1.0  # amassimp_exp[idx]
 
             # impurity dynamics not turned on by default
             # and simple dilution included (idengrad=2, dil_gf=1-nim/nem)
@@ -356,13 +352,22 @@ class GLF23(CoreTransport.Model):
         self.profiles_1d.electrons.energy["d"] = Function(rho_tor_norm, chie_m)
 
         for ion in core_profiles_1d.ion:
-            trans_ion = self.profiles_1d.ion[_next_]
-            trans_ion.update({"label": ion.label, "a": ion.a, "z": ion.z})
-            if not ion.is_impurity:
-                trans_ion.particles["d"] = Function(rho_tor_norm, diff_m)
-                trans_ion.energy["d"] = Function(rho_tor_norm,  chii_m)
-            else:
-                trans_ion.particles["d"] = Function(rho_tor_norm, diff_im_m)
+            self.profiles_1d.ion[_next_] = {
+                "label": ion.label,
+                "a": ion.a,
+                "z": ion.z,
+                "is_impurity": ion.is_impurity}
+
+        trans_ion: CoreTransportModel.Profiles1D.Ion = self.profiles_1d.ion.combine(predication={"is_impurity": False})
+
+        trans_ion.particles["d"] = Function(rho_tor_norm, diff_m)
+        trans_ion.energy["d"] = Function(rho_tor_norm,  chii_m)
+        trans_ion.momentum.toroidal["d"] = Function(rho_tor_norm, etaphi_m)
+        trans_ion.momentum.parallel["d"] = Function(rho_tor_norm, etapar_m)
+        trans_ion.momentum["perpendicular.d"] = Function(rho_tor_norm, etaper_m)
+
+        trans_imp: CoreTransportModel.Profiles1D.Ion = self.profiles_1d.ion.combine(predication={"is_impurity": True})
+        trans_imp.particles["d"] = Function(rho_tor_norm, diff_im_m)
 
 
 __SP_EXPORT__ = GLF23
