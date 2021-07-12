@@ -68,7 +68,7 @@ if __name__ == "__main__":
 
     equilibrium = Equilibrium(c_equilibrium)
 
-    radial_grid = equilibrium.time_slice.radial_grid.remesh(np.linspace(0, 1.0, 128), "rho_tor_norm")
+    radial_grid = equilibrium.time_slice.radial_grid.remesh(np.linspace(0, 0.99, 256), "rho_tor_norm")
 
     # Core profile
     r_ped = 0.96  # np.sqrt(0.88)
@@ -112,14 +112,27 @@ if __name__ == "__main__":
 
     plot_profiles(
         [
-            (core_transport.model[0].profiles_1d.electrons.particles.d, "electron", r"$D_e$"),
-            (core_transport.model[0].profiles_1d.electrons.energy.d, "electron", r"$\chi_e$"),
+            # (core_transport.model[0].profiles_1d.electrons.particles.d, "electron", r"$D_e$"),
             (core_transport.model[0].profiles_1d.ion[0].particles.d, "ion", r"$D_i$"),
+            (core_transport.model[0].profiles_1d.electrons.energy.d, "electron", r"$\chi_e$"),
             (core_transport.model[0].profiles_1d.ion[0].energy.d, "ion", r"$\chi_i$"),
+            (core_transport.model[0].profiles_1d["debug_q"], "q", r"$[-]$"),
+            (core_transport.model[0].profiles_1d["debug_beta_e"], "beta_e", r"$[-]$"),
+            (core_transport.model[0].profiles_1d["debug_zeff"], "zeff", r"$[-]$"),
+            (core_transport.model[0].profiles_1d["debug_geo_fac"], "geo_fac", r"$[-]$"),
+            (core_transport.model[0].profiles_1d["debug_cgyrobohm_m"], "gyrobohm", r"$[-]$"),
+            (core_transport.model[0].profiles_1d["debug_magnetic_shear"], "magnetic_shear", r"$[-]$"),
+            (core_transport.model[0].profiles_1d["debug_elongation"], "elongation", r"$[-]$"),
+            (core_transport.model[0].profiles_1d["debug_zeff"], "zeff", r"$[-]$"),
+            (core_transport.model[0].profiles_1d["debug_rlti"], "rlti", r"$[-]$"),
+            (core_transport.model[0].profiles_1d["debug_rlte"], "rlte", r"$[-]$"),
+            (core_transport.model[0].profiles_1d["debug_rlni"], "rlni", r"$[-]$"),
+            (core_transport.model[0].profiles_1d["debug_rlne"], "rlne", r"$[-]$"),
+            (core_transport.model[0].profiles_1d["debug_taui"], "taui", r"$[-]$"),
             # (core_transport.model[0].profiles_1d.ion[0].momentum.parallel.d, "ion", r"$\chi_i$"),
         ],
         # x_axis=(rho_tor_norm,                             r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-        x_axis=([0, 0.9],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+        x_axis=([0.05, 0.8],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
         title="Result of GLF23",
         grid=True, fontsize=10) \
         .savefig("/home/salmon/workspace/output/core_transport_glf23.svg", transparent=True)

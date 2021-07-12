@@ -13,7 +13,7 @@ from spdm.data.Function import Function
 from spdm.data.Node import _next_
 from spdm.numlib import constants, np
 from spdm.numlib.misc import array_like
-from spdm.util.logger import logger
+from spdm.util.logger import logger, SP_NO_DEBUG
 
 from .glf23_mod import glf2d, glf
 
@@ -41,17 +41,16 @@ class GLF23(CoreTransport.Model):
         super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
         core_profiles_1d = core_profiles.profiles_1d
         eq_profiles_1d = equilibrium.time_slice.profiles_1d
-        rho_tor = np.asarray(self.profiles_1d.grid_d.rho_tor)
-        rho_tor_norm = np.asarray(self.profiles_1d.grid_d.rho_tor_norm)
-        psi_norm = np.asarray(self.profiles_1d.grid_d.psi_norm)
+        rho_tor = np.asarray(self.profiles_1d.grid.rho_tor)
+        rho_tor_norm = np.asarray(self.profiles_1d.grid.rho_tor_norm)
+        psi_norm = np.asarray(self.profiles_1d.grid.psi_norm)
         rho_bdry = self.grid.rho_tor[-1]
 
         grad_rho = eq_profiles_1d.gm7(psi_norm)
         grad_rho2 = eq_profiles_1d.gm3(psi_norm)
-        r_inboard = eq_profiles_1d.r_inboard(psi_norm)
-        r_outboard = eq_profiles_1d.r_outboard(psi_norm)
-        r_minor = (r_outboard-r_inboard)*0.5
-        r_major = (r_outboard+r_inboard)*0.5
+
+        r_minor = eq_profiles_1d.minor_radius(psi_norm)
+        r_major = eq_profiles_1d.geometric_axis.r(psi_norm)
 
         drho_da = Function(psi_norm, rho_tor).derivative(psi_norm) / Function(psi_norm, r_minor).derivative(psi_norm)
 
@@ -60,18 +59,18 @@ class GLF23(CoreTransport.Model):
         drho_da_r_rho = drho_da*r_minor/rho_bdry/(rho_tor_norm)
 
         R0 = self.grid.vacuum_toroidal_field.r0
-        B0 = self.grid.vacuum_toroidal_field.b0
+        B0 = np.abs(self.grid.vacuum_toroidal_field.b0)
 
         elongation = eq_profiles_1d.elongation(psi_norm)
         q = eq_profiles_1d.q(psi_norm)
-        sqrt_kappa_a = rho_bdry*np.sqrt(elongation)
+        sqrt_kappa = np.sqrt(elongation)
 
-        Te = core_profiles_1d.electrons.temperature(rho_tor_norm)
-        Ne = core_profiles_1d.electrons.density(rho_tor_norm)
+        Te = core_profiles_1d.electrons.temperature(rho_tor_norm)*1.0e-3
+        Ne = core_profiles_1d.electrons.density(rho_tor_norm)*1.0e-19
         dlogTe = Function(rho_tor, Te).derivative(rho_tor)/Te
         dlogNe = Function(rho_tor, Ne).derivative(rho_tor)/Ne
-        rlte = sqrt_kappa_a * dlogTe
-        rlne = sqrt_kappa_a * dlogNe
+        rlte = r_minor * sqrt_kappa * dlogTe
+        rlne = r_minor * sqrt_kappa * dlogNe
 
         Ti = 0  # np.zeros_like(rho_tor)
         Ni = 0  # np.zeros_like(rho_tor)
@@ -83,21 +82,22 @@ class GLF23(CoreTransport.Model):
             if not ion.is_impurity:
                 A_H += ion.a
                 ion_count += 1
-                Ti = Ti+ion.temperature(rho_tor_norm)*ion.density(rho_tor_norm)
-                Ni = Ni+ion.density(rho_tor_norm)
+                Ti = Ti+ion.temperature(rho_tor_norm)*1.0e-3 * ion.density(rho_tor_norm)*1.0e-19
+                Ni = Ni+ion.density(rho_tor_norm)*1.0e-19
             else:
-                Nimp = Nimp+ion.density(rho_tor_norm)
+                Nimp = Nimp+ion.density(rho_tor_norm)*1.0e-19
         # atomic number working hydrogen gas
         A_H /= ion_count
 
-        Ti = Ti/Ni
+        Ti /= Ni
+
         # Ti = array_like(rho_tor, Ti)
         # Ni = array_like(rho_tor, Ni)
         dlogTi = Function(rho_tor, Ti).derivative(rho_tor)/Ti
         dlogNi = Function(rho_tor, Ni).derivative(rho_tor)/Ni
-        rlti = sqrt_kappa_a * dlogTi
-        rlni = sqrt_kappa_a * dlogNi
-        rlnimp = sqrt_kappa_a * Function(rho_tor, Ni).derivative(rho_tor)/Nimp
+        rlti = r_minor * sqrt_kappa * dlogTi
+        rlni = r_minor * sqrt_kappa * dlogNi
+        rlnimp = r_minor * sqrt_kappa * Function(rho_tor, Nimp).derivative(rho_tor)/Nimp
 
         dil = 1.0-Ni/Ne
         apwt = Ni/Ne
@@ -106,9 +106,9 @@ class GLF23(CoreTransport.Model):
 
         magnetic_shear = eq_profiles_1d.magnetic_shear(psi_norm)
 
-        zeff = core_profiles_1d.zeff(rho_tor_norm)
+        zeff = core_profiles_1d.zeff(rho_tor_norm)*1.0e-19
 
-        beta_e = Ne*Te/(B0**2)/(PI*8)
+        beta_e = Ne*Te/(B0**2)/(PI*8)*1.0e19*1.0e3*constants.electron_volt
 
         # MHD alpha parameter
         alpha_m = drho_da * q**2 * r_major/rho_bdry * beta_e * ((Ti/Te*Ni/Ne) * (dlogNi+dlogTi) + dlogTe+dlogNe)
@@ -137,16 +137,16 @@ class GLF23(CoreTransport.Model):
         if True:  # set glf parameter
 
             # print debug information
-            glf.lprint_gf = 98
+            glf.lprint_gf = 0 if SP_NO_DEBUG else 98
 
             # eigen_gf = 0 use cgg eigenvalue solver (default)
             #           = 1 use generalized tomsqz eigenvalue solver
             #           = 2 use zgeev eigenvalue solver
-            glf.eigen_gf = self.get("code.parameters.eigenvalue_solver", 0)
+            glf.eigen_gf = 2  # self.get("code.parameters.eigenvalue_solver", 0)
 
             #  nroot number of equations
             # 8 for pure plasma, 12 for full impurity dynamics
-            glf.nroot_gf = 12 if self.get("code.parameters.enable_impurity", False) else 8
+            glf.nroot_gf = 8  # 12 if self.get("code.parameters.enable_impurity", False) else 8
 
             #  iflagin(1:20) control flags
 
@@ -274,7 +274,8 @@ class GLF23(CoreTransport.Model):
 
             glf.cnorm_gf = 100.0
 
-            glf.ikymax_gf = 10
+            glf.ikymax_gf = self.get("max_num_of_ky", 20)
+
             glf.xkymin_gf = .020
             glf.xkymax_gf = .50
 
@@ -304,7 +305,7 @@ class GLF23(CoreTransport.Model):
             #  kdamp model damping normally 0.
 
             #  atomic number working hydrogen gas
-            glf.amassgas_gf = A_H  # amassgas_exp
+            glf.amassgas_gf = 1  # A_H  # amassgas_exp
             # zimp_exp,       ! effective Z of impurity
             glf.zpmnimp = 1.0
             # amassimp_exp,   ! effective A of impurity
@@ -395,12 +396,13 @@ class GLF23(CoreTransport.Model):
             # amassimp_gf=amassimp_exp ! FL made radially dependent
 
             #######################################################################
-            # Model
-
-            #######################################################################
             # Call GLF2D
-
-            glf2d(iglf)
+            try:
+                glf2d(iglf)
+            except ValueError as error:
+                logger.error("f2py Error:")
+                logger.exception(error)
+                raise RuntimeError(f"glf2d: failed")
 
             #
             #######################################################################
@@ -441,7 +443,7 @@ class GLF23(CoreTransport.Model):
             # exch_hat anomalous e to i energy exchange
             exch_m[idx] = glf.exch_gf
 
-        self.profiles_1d.electrons.particles["d"] = Function(rho_tor_norm, diff_m)
+        # self.profiles_1d.electrons.particles["d"] = Function(rho_tor_norm, diff_m)
         self.profiles_1d.electrons.energy["d"] = Function(rho_tor_norm, chi_e_m)
 
         for ion in core_profiles_1d.ion:
@@ -461,6 +463,23 @@ class GLF23(CoreTransport.Model):
 
         trans_imp: CoreTransportModel.Profiles1D.Ion = self.profiles_1d.ion.combine(predication={"is_impurity": True})
         trans_imp.particles["d"] = Function(rho_tor_norm, diff_im_m)
+        self.profiles_1d["debug_Ti"] = Function(rho_tor_norm, Ti)
+        self.profiles_1d["debug_Te"] = Function(rho_tor_norm, Te)
+
+        self.profiles_1d["debug_rlti"] = Function(rho_tor_norm, rlti)
+        self.profiles_1d["debug_rlte"] = Function(rho_tor_norm, rlte)
+        self.profiles_1d["debug_rlni"] = Function(rho_tor_norm, rlni)
+        self.profiles_1d["debug_rlne"] = Function(rho_tor_norm, rlne)
+        self.profiles_1d["debug_taui"] = Function(rho_tor_norm, taui)
+        self.profiles_1d["debug_beta_e"] = Function(rho_tor_norm, beta_e)
+
+        self.profiles_1d["debug_geo_fac"] = Function(rho_tor_norm, geo_fac)
+        self.profiles_1d["debug_cgyrobohm_m"] = Function(rho_tor_norm, cgyrobohm_m)
+        self.profiles_1d["debug_magnetic_shear"] = Function(rho_tor_norm, magnetic_shear)
+        self.profiles_1d["debug_elongation"] = Function(rho_tor_norm, elongation)
+        self.profiles_1d["debug_zeff"] = Function(rho_tor_norm, zeff)
+        self.profiles_1d["debug_q"] = Function(rho_tor_norm, q)
+        self.profiles_1d["debug_beta_e"] = Function(rho_tor_norm, beta_e)
 
 
 __SP_EXPORT__ = GLF23
