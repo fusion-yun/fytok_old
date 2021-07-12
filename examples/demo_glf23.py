@@ -117,6 +117,13 @@ if __name__ == "__main__":
             (core_transport.model[0].profiles_1d.electrons.energy.d, "electron", r"$\chi_e$"),
             (core_transport.model[0].profiles_1d.ion[0].energy.d, "ion", r"$\chi_i$"),
             (core_transport.model[0].profiles_1d["debug_q"], "q", r"$[-]$"),
+            (core_transport.model[0].profiles_1d["debug_r_minor"], "r_minor", r"$[-]$"),
+            (core_transport.model[0].profiles_1d["debug_r_major"], "r_major", r"$[-]$"),
+
+            (core_transport.model[0].profiles_1d["debug_psi_norm"], "psi_norm", r"$[-]$"),
+            (core_transport.model[0].profiles_1d["debug_alpha_m"], "debug_alpha_m", r"$[-]$"),
+
+
             (core_transport.model[0].profiles_1d["debug_beta_e"], "beta_e", r"$[-]$"),
             (core_transport.model[0].profiles_1d["debug_zeff"], "zeff", r"$[-]$"),
             (core_transport.model[0].profiles_1d["debug_geo_fac"], "geo_fac", r"$[-]$"),
@@ -132,7 +139,7 @@ if __name__ == "__main__":
             # (core_transport.model[0].profiles_1d.ion[0].momentum.parallel.d, "ion", r"$\chi_i$"),
         ],
         # x_axis=(rho_tor_norm,                             r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-        x_axis=([0.05, 0.8],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+        x_axis=([0.05, 0.9],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
         title="Result of GLF23",
         grid=True, fontsize=10) \
         .savefig("/home/salmon/workspace/output/core_transport_glf23.svg", transparent=True)

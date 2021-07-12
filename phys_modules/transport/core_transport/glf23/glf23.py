@@ -45,12 +45,15 @@ class GLF23(CoreTransport.Model):
         rho_tor_norm = np.asarray(self.profiles_1d.grid.rho_tor_norm)
         psi_norm = np.asarray(self.profiles_1d.grid.psi_norm)
         rho_bdry = self.grid.rho_tor[-1]
+        R0 = self.grid.vacuum_toroidal_field.r0
+        B0 = np.abs(self.grid.vacuum_toroidal_field.b0)
 
         grad_rho = eq_profiles_1d.gm7(psi_norm)
         grad_rho2 = eq_profiles_1d.gm3(psi_norm)
-
+        a = eq_profiles_1d.minor_radius(1.0)
         r_minor = eq_profiles_1d.minor_radius(psi_norm)
         r_major = eq_profiles_1d.geometric_axis.r(psi_norm)
+        a_norm = r_minor/a
 
         drho_da = Function(psi_norm, rho_tor).derivative(psi_norm) / Function(psi_norm, r_minor).derivative(psi_norm)
 
@@ -58,19 +61,15 @@ class GLF23(CoreTransport.Model):
 
         drho_da_r_rho = drho_da*r_minor/rho_bdry/(rho_tor_norm)
 
-        R0 = self.grid.vacuum_toroidal_field.r0
-        B0 = np.abs(self.grid.vacuum_toroidal_field.b0)
-
         elongation = eq_profiles_1d.elongation(psi_norm)
         q = eq_profiles_1d.q(psi_norm)
         sqrt_kappa = np.sqrt(elongation)
 
         Te = core_profiles_1d.electrons.temperature(rho_tor_norm)*1.0e-3
         Ne = core_profiles_1d.electrons.density(rho_tor_norm)*1.0e-19
-        dlogTe = Function(rho_tor, Te).derivative(rho_tor)/Te
-        dlogNe = Function(rho_tor, Ne).derivative(rho_tor)/Ne
-        rlte = r_minor * sqrt_kappa * dlogTe
-        rlne = r_minor * sqrt_kappa * dlogNe
+        logger.debug(r_minor[:5])
+        rlte = Function(a_norm, Te).derivative(a_norm)/Te
+        rlne = Function(a_norm, Ne).derivative(a_norm)/Ne
 
         Ti = 0  # np.zeros_like(rho_tor)
         Ni = 0  # np.zeros_like(rho_tor)
@@ -93,11 +92,10 @@ class GLF23(CoreTransport.Model):
 
         # Ti = array_like(rho_tor, Ti)
         # Ni = array_like(rho_tor, Ni)
-        dlogTi = Function(rho_tor, Ti).derivative(rho_tor)/Ti
-        dlogNi = Function(rho_tor, Ni).derivative(rho_tor)/Ni
-        rlti = r_minor * sqrt_kappa * dlogTi
-        rlni = r_minor * sqrt_kappa * dlogNi
-        rlnimp = r_minor * sqrt_kappa * Function(rho_tor, Nimp).derivative(rho_tor)/Nimp
+        rlti = Function(a_norm, Ti).derivative(a_norm)/Ti
+        rlni = Function(a_norm, Ni).derivative(a_norm)/Ni
+
+        rlnimp = Function(a_norm, Nimp).derivative(a_norm)/Nimp
 
         dil = 1.0-Ni/Ne
         apwt = Ni/Ne
@@ -106,7 +104,7 @@ class GLF23(CoreTransport.Model):
 
         magnetic_shear = eq_profiles_1d.magnetic_shear(psi_norm)
 
-        zeff = core_profiles_1d.zeff(rho_tor_norm)*1.0e-19
+        zeff = core_profiles_1d.zeff(rho_tor_norm)
 
         beta_e = Ne*Te/(B0**2)/(PI*8)*1.0e19*1.0e3*constants.electron_volt
 
@@ -135,9 +133,12 @@ class GLF23(CoreTransport.Model):
         ########################################################################
 
         if True:  # set glf parameter
-
+            # alpha_e,        ! 1 full (0 no) no ExB shear stab
+            # x_alpha,        ! 1 full (0 no) alpha stabilization  with alpha_exp
+            #                 !-1 full (0 no) self consistent alpha_m stab.
+            x_alpha = self.get("code.parameter.x_alpha", 0)
             # print debug information
-            glf.lprint_gf = 0 if SP_NO_DEBUG else 98
+            glf.lprint_gf = 0  # if SP_NO_DEBUG else 98
 
             # eigen_gf = 0 use cgg eigenvalue solver (default)
             #           = 1 use generalized tomsqz eigenvalue solver
@@ -385,6 +386,7 @@ class GLF23(CoreTransport.Model):
             glf.shat_gf = magnetic_shear[idx]
 
             #  alpha local shear parameter or MHD pressure grad (s-alpha diagram)
+            glf.alpha_gf = 0.0  # x_alpha*alpha_m[idx]
             #  elong= local elongation or kappa
             glf.elong_gf = elongation[idx]
 
@@ -465,6 +467,8 @@ class GLF23(CoreTransport.Model):
         trans_imp.particles["d"] = Function(rho_tor_norm, diff_im_m)
         self.profiles_1d["debug_Ti"] = Function(rho_tor_norm, Ti)
         self.profiles_1d["debug_Te"] = Function(rho_tor_norm, Te)
+        self.profiles_1d["debug_r_minor"] = Function(rho_tor_norm, r_minor)
+        self.profiles_1d["debug_r_major"] = Function(rho_tor_norm, r_major)
 
         self.profiles_1d["debug_rlti"] = Function(rho_tor_norm, rlti)
         self.profiles_1d["debug_rlte"] = Function(rho_tor_norm, rlte)
@@ -472,6 +476,7 @@ class GLF23(CoreTransport.Model):
         self.profiles_1d["debug_rlne"] = Function(rho_tor_norm, rlne)
         self.profiles_1d["debug_taui"] = Function(rho_tor_norm, taui)
         self.profiles_1d["debug_beta_e"] = Function(rho_tor_norm, beta_e)
+        self.profiles_1d["debug_alpha_m"] = Function(rho_tor_norm, alpha_m)
 
         self.profiles_1d["debug_geo_fac"] = Function(rho_tor_norm, geo_fac)
         self.profiles_1d["debug_cgyrobohm_m"] = Function(rho_tor_norm, cgyrobohm_m)
@@ -480,6 +485,7 @@ class GLF23(CoreTransport.Model):
         self.profiles_1d["debug_zeff"] = Function(rho_tor_norm, zeff)
         self.profiles_1d["debug_q"] = Function(rho_tor_norm, q)
         self.profiles_1d["debug_beta_e"] = Function(rho_tor_norm, beta_e)
+        self.profiles_1d["debug_psi_norm"] = Function(rho_tor_norm, psi_norm)
 
 
 __SP_EXPORT__ = GLF23
