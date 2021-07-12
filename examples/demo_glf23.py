@@ -112,3 +112,7 @@ if __name__ == "__main__":
 
     logger.debug(np.asarray(core_transport.model[0].profiles_1d.electrons.energy.d))
     logger.debug(np.asarray(core_transport.model[0].profiles_1d.electrons.particles.d))
+    logger.debug(np.asarray(core_transport.model[0].profiles_1d.ion[0].label))
+    logger.debug(np.asarray(core_transport.model[0].profiles_1d.ion[0].particles.d))
+    logger.debug(np.asarray(core_transport.model[0].profiles_1d.ion[0].energy.d))
+    logger.debug(np.asarray(core_transport.model[0].profiles_1d.ion[0].momentum.parallel.d))
