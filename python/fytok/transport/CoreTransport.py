@@ -247,9 +247,8 @@ class CoreTransportModel(Module):
         return CoreTransportModel.Profiles1D(self.get("profiles_1d", {}), grid=self._grid, parent=self)
 
     def refresh(self, *args, core_profiles: CoreProfiles, **kwargs) -> None:
+        super().refresh(*args, core_profiles=core_profiles, **kwargs)
         self._grid = core_profiles.profiles_1d.grid
-        self.remove("profiles_1d")
-        return super().refresh(*args, core_profiles=core_profiles, **kwargs)
 
 
 class CoreTransport(IDS):
@@ -294,5 +293,7 @@ class CoreTransport(IDS):
         })
 
     def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles, **kwargs) -> None:
+        if "model_combiner" in self.__dict__:
+            del self.__dict__["model_combiner"]
+
         self.model.refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
-        # self.model_combiner.refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles,  **kwargs)

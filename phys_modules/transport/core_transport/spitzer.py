@@ -90,9 +90,9 @@ class Spitzer(CoreTransport.Model):
 
         eta = eta_s*Zeff/(1-phi)/(1.0-C*phi)*(1.0+0.27*(Zeff-1.0))/(1.0+0.47*(Zeff-1.0))
 
-        self["profiles_1d.conductivity_parallel"] = Function(rho_tor_norm, array_like(rho_tor_norm, 1.0/eta))
+        self.profiles_1d["conductivity_parallel"] = Function(rho_tor_norm, array_like(rho_tor_norm, 1.0/eta))
 
-        return 0.00
+        return
 
 
 __SP_EXPORT__ = Spitzer

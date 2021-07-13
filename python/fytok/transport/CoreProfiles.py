@@ -108,10 +108,6 @@ class CoreProfilesIon(SpeciesIon):
         self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
 
     @sp_property
-    def is_impurity(self) -> bool:
-        return self.get("is_impurity", False)
-
-    @sp_property
     def z_ion_1d(self) -> Function:
         d = self.get("z_ion_id", default_value=_not_found_)
         if isinstance(d, np.ndarray):

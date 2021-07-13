@@ -145,9 +145,9 @@ if __name__ == "__main__":
                     ]}
             },
             {"code": {"name": "neoclassical"}},
-            {"code": {"name": "glf23"}},
-            # {"code": {"name": "nclass"}},
             {"code": {"name": "spitzer"}},
+            # {"code": {"name": "glf23"}},
+            # {"code": {"name": "nclass"}},
         ]}
 
     S = Function(lambda x: 9e20 * np.exp(15.0*(x**2-1.0)))
@@ -473,17 +473,17 @@ if __name__ == "__main__":
                               (2.0*constants.pi * tok.equilibrium.time_slice.vacuum_toroidal_field.r0)),
                      r"astra", r"$\sigma_{\parallel}$", {"marker": '.', "linestyle": ''}),
 
-                    (core_transport.conductivity_parallel,  r"fytok"),
+                    (core_transport.conductivity_parallel,  r"fytok", r"$\sigma_{\parallel}$"),
                 ],
-                [
-                    (Function(bs_r_norm, baseline["XiNC"].values), "astra",
-                     "neoclassical  $\\chi_{NC}$ \n ion heat conductivity", {"marker": '.', "linestyle": ''}),
+                # [
+                #     (Function(bs_r_norm, baseline["XiNC"].values), "astra",
+                #      "neoclassical  $\\chi_{NC}$ \n ion heat conductivity", {"marker": '.', "linestyle": ''}),
 
-                    *[(ion.energy.d,  f"{ion.label}", r"Neoclassical $\chi_{NC}$")
-                      for ion in nc_profiles_1d.ion if not ion.is_impurity],
-                ],
-                [(ion.particles.d,  f"{ion.label}", r"Neoclassical $D_{NC}$")
-                 for ion in nc_profiles_1d.ion if not ion.is_impurity],
+                #     *[(ion.energy.d,  f"{ion.label}", r"Neoclassical $\chi_{NC}$")
+                #       for ion in nc_profiles_1d.ion if not ion.is_impurity],
+                # ],
+                # [(ion.particles.d,  f"{ion.label}", r"Neoclassical $D_{NC}$")
+                #  for ion in nc_profiles_1d.ion if not ion.is_impurity],
 
                 # (core_transport1d.e_field_radial,                                             r"$E_{radial}$"),
 

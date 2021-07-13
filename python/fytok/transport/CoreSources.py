@@ -73,10 +73,6 @@ class CoreSourcesIon(SpeciesIon):
         self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
 
     @sp_property
-    def is_impurity(self) -> bool:
-        return self.get("is_impurity", False)
-
-    @sp_property
     def particles(self) -> Function:
         return self.get("particles", 0)
 
@@ -272,8 +268,8 @@ class CoreSourcesSource(Module):
 
     def refresh(self, *args, core_profiles: CoreProfiles,  **kwargs) -> None:
         self._grid = core_profiles.profiles_1d.grid
-        self.remove("profiles_1d")
-        self.remove("global_quantities")
+        # self.remove("profiles_1d")
+        # self.remove("global_quantities")
         return super().refresh(*args, core_profiles=core_profiles, **kwargs)
 
 

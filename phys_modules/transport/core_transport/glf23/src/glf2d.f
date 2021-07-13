@@ -1697,7 +1697,7 @@ c
        diff_gf=diff_gf+diff_k_gf(iky)*del_k
        diff_im_gf=diff_im_gf+diff_im_k_gf(iky)*del_k
        chii_gf=chii_gf+chii_k_gf(iky)*del_k
-       chie_gf=100.0 !chie_gf+chie_k_gf(iky)*del_k
+       chie_gf=chie_gf+chie_k_gf(iky)*del_k
        exch_gf=exch_gf+exch_k_gf(iky)*del_k
        eta_par_gf=eta_par_gf+eta_par_k_gf(iky)*del_k
        eta_per_gf=eta_per_gf+eta_per_k_gf(iky)*del_k

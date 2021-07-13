@@ -117,6 +117,10 @@ class SpeciesIon(Species):
         super().__init__(*args,  **kwargs)
 
     @sp_property
+    def is_impurity(self) -> bool:
+        return self.get("is_impurity", False)
+
+    @sp_property
     def z(self) -> float:
         return self.z_ion
 
