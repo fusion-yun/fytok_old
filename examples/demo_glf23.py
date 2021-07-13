@@ -119,15 +119,15 @@ if __name__ == "__main__":
             (core_transport.model[0].profiles_1d["debug_q"], "q", r"$[-]$"),
             (core_transport.model[0].profiles_1d["debug_r_minor"], "r_minor", r"$[-]$"),
             (core_transport.model[0].profiles_1d["debug_r_major"], "r_major", r"$[-]$"),
+            (core_transport.model[0].profiles_1d["debug_drho_tor_norm_dr"], r"$\frac{d\rho_{tor_norm}}{dr}$", r"$[-]$"),
+            (core_transport.model[0].profiles_1d["debug_gyrobohm_unit"], "gyrobohm_unit", r"$[-]$"),
 
             (core_transport.model[0].profiles_1d["debug_psi_norm"], "psi_norm", r"$[-]$"),
-            (core_transport.model[0].profiles_1d["debug_alpha_m"], "debug_alpha_m", r"$[-]$"),
 
 
             (core_transport.model[0].profiles_1d["debug_beta_e"], "beta_e", r"$[-]$"),
             (core_transport.model[0].profiles_1d["debug_zeff"], "zeff", r"$[-]$"),
             (core_transport.model[0].profiles_1d["debug_geo_fac"], "geo_fac", r"$[-]$"),
-            (core_transport.model[0].profiles_1d["debug_cgyrobohm_m"], "gyrobohm", r"$[-]$"),
             (core_transport.model[0].profiles_1d["debug_magnetic_shear"], "magnetic_shear", r"$[-]$"),
             (core_transport.model[0].profiles_1d["debug_elongation"], "elongation", r"$[-]$"),
             (core_transport.model[0].profiles_1d["debug_zeff"], "zeff", r"$[-]$"),
