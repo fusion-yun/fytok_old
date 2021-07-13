@@ -481,7 +481,7 @@ class GLF23(CoreTransport.Model):
                 "z": ion.z,
                 "is_impurity": ion.is_impurity}
 
-        trans_ion: CoreTransportModel.Profiles1D.Ion = self.profiles_1d.ion[_next_] #.combine(predication={"is_impurity": False})
+        trans_ion: CoreTransportModel.Profiles1D.Ion = self.profiles_1d.ion[0] #.combine(predication={"is_impurity": False})
 
         trans_ion.particles["d"] = Function(rho_tor_norm,  diff_m)
         trans_ion.energy["d"] = Function(rho_tor_norm, chi_i_m)

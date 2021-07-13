@@ -139,7 +139,7 @@ if __name__ == "__main__":
             # (core_transport.model[0].profiles_1d.ion[0].momentum.parallel.d, "ion", r"$\chi_i$"),
         ],
         # x_axis=(rho_tor_norm,                             r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-        x_axis=([0.05, 0.5],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+        x_axis=([0.05, 0.95],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
         title="Result of GLF23",
         grid=True, fontsize=10) \
         .savefig("/home/salmon/workspace/output/core_transport_glf23.svg", transparent=True)

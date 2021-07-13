@@ -52,11 +52,17 @@ class Species(Dict[Node]):
     @sp_property
     def a(self) -> float:
         """Mass of ion {dynamic} [Atomic Mass Unit]"""
-        return sum([a.a*a.atoms_n for a in self.element])
+        res = self.get("a", None)
+        if res is None:
+            res = sum([a.a*a.atoms_n for a in self.element])
+        return res
 
     @sp_property
     def z(self) -> float:
-        return NotImplemented
+        res = self.get("z", None)
+        if res is None:
+            res = self.get("z_ion", NotImplemented)
+        return res
 
 
 class SpeciesElectron(Species):
@@ -121,14 +127,10 @@ class SpeciesIon(Species):
         return self.get("is_impurity", False)
 
     @sp_property
-    def z(self) -> float:
-        return self.z_ion
-
-    @sp_property
     def z_ion(self) -> float:
         """Ion charge (of the dominant ionisation state; lumped ions are allowed),
         volume averaged over plasma radius {dynamic} [Elementary Charge Unit]  FLT_0D  """
-        return self.get("z_ion", 0.0)
+        return self.z
 
     @sp_property
     def neutral_index(self) -> int:
