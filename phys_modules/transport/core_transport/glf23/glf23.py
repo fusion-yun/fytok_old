@@ -50,6 +50,9 @@ class GLF23(CoreTransport.Model):
         rho_tor_norm = np.asarray(self.profiles_1d.grid.rho_tor_norm)
         psi_norm = np.asarray(self.profiles_1d.grid.psi_norm)
 
+        n_grid_point = len(rho_tor_norm)
+        nmode = 20 # <=20
+
         #
         a = self.grid.rho_tor[-1]
 
@@ -64,15 +67,18 @@ class GLF23(CoreTransport.Model):
 
         r = r_minor
 
+        dr_drho_tor_norm = Function(rho_tor_norm, r).derivative(rho_tor_norm)
+
+        drho_tor_norm_dr = 1.0/dr_drho_tor_norm
+
+        drho_tor_norm_dr_r_rho_tor_norm = drho_tor_norm_dr*r/a/(rho_tor_norm+EPSILON)
+
         grad_rho = eq_profiles_1d.gm7(psi_norm)
         grad_rho2 = eq_profiles_1d.gm3(psi_norm)
-
-        dr_drho_tor_norm = Function(rho_tor_norm, r).derivative(rho_tor_norm)
-        drho_tor_norm_dr = 1.0/dr_drho_tor_norm
-        drho_tor_norm_dr_r_rho_tor_norm = drho_tor_norm_dr*r/a/(rho_tor_norm+EPSILON)
         geo_fac = grad_rho/grad_rho2*drho_tor_norm_dr
 
         elongation = eq_profiles_1d.elongation(psi_norm)
+
         q = eq_profiles_1d.q(psi_norm)
 
         Te = core_profiles_1d.electrons.temperature(rho_tor_norm)
@@ -120,54 +126,43 @@ class GLF23(CoreTransport.Model):
         # Shafranov shift
         shafranov_shift = eq_profiles_1d.shape_property.geometric_axis.r(psi_norm)-R0
 
-        m_i = constants.m_p
+        c_s = np.sqrt(constants.electron_volt/constants.m_p*Te*Z_i)
 
-        c_s = np.sqrt(Te*constants.electron_volt/m_i)
-
-        omega_i = (constants.elementary_charge/m_i)*(Z_i/A_i)*B0
+        omega_i = (constants.elementary_charge/constants.m_p)*(Z_i/A_i)*B0
 
         rho_s = c_s/omega_i
 
         # local gyrobohm unit of diffusion $c_{s}\left(\rho_{s}^{2}/a\right)$
         gyrobohm_unit = c_s*(rho_s**2/a)
 
-        logger.debug((m_i, Te[0]/1000, c_s[0], omega_i, rho_s[0], B0, constants.c))
+        logger.debug((Te[0]/1000, c_s[0], omega_i, rho_s[0], B0))
 
-        ##########################################
-        # for output
-        diff_m = np.zeros_like(rho_tor_norm)
-        diff_im_m = np.zeros_like(rho_tor_norm)
-        chi_e_m = np.zeros_like(rho_tor_norm)
-        chi_i_m = np.zeros_like(rho_tor_norm)
-        chi_e_e_m = np.zeros_like(rho_tor_norm)
-        exch_m = np.zeros_like(rho_tor_norm)
-        eta_phi_m = np.zeros_like(rho_tor_norm)
-        eta_par_m = np.zeros_like(rho_tor_norm)
-        eta_per_m = np.zeros_like(rho_tor_norm)
+        ######################################################################
+        # INPUT
 
         # from nclass import nclass
         iglf = 1
-        ######################################################################
-        # INPUT
-        ########################################################################
 
         if True:  # set glf parameter
-            # alpha_e,        ! 1 full (0 no) no ExB shear stab
-            # x_alpha,        ! 1 full (0 no) alpha stabilization  with alpha_exp
-            #                 !-1 full (0 no) self consistent alpha_m stab.
-            x_alpha = self.get("code.parameter.x_alpha", 0)
+
+            # Function configure
+            #
             # print debug information
             glf.lprint_gf = 0  # if SP_NO_DEBUG else 98
 
             # eigen_gf = 0 use cgg eigenvalue solver (default)
             #           = 1 use generalized tomsqz eigenvalue solver
             #           = 2 use zgeev eigenvalue solver
-            glf.eigen_gf = 2  # self.get("code.parameters.eigenvalue_solver", 0)
+            glf.eigen_gf = 1  # self.get("code.parameters.eigenvalue_solver", 0)
 
             #  nroot number of equations
             # 8 for pure plasma, 12 for full impurity dynamics
             glf.nroot_gf = 8  # 12 if self.get("code.parameters.enable_impurity", False) else 8
 
+            # alpha_e,        ! 1 full (0 no) no ExB shear stab
+            # x_alpha,        ! 1 full (0 no) alpha stabilization  with alpha_exp
+            #                 !-1 full (0 no) self consistent alpha_m stab.
+            x_alpha = self.get("code.parameter.x_alpha", 0)
             #  iflagin(1:20) control flags
 
             #   iflagin(1) 0 use ky=ky0; 1 use landau damping point
@@ -182,10 +177,13 @@ class GLF23(CoreTransport.Model):
             #   iflagin(4) 0 trapped electron Waltz EoS 1 weiland EoS
             glf.iflagin_gf[4 - 1] = 0
 
-            #   iflagin(5) rms_theta 0:fixed; 1 inverse to q/2 ; 2 inverse to root q/2
-            #                        3: inverse to xparam(13)*(q/2-1)+1.
-            #              5 for retuned rms-theta
-            glf.iflagin_gf[5 - 1] = 5
+            #   iflagin(5) rms_theta
+            #           0:fixed;
+            #           1 inverse to q/2 ;
+            #           2 inverse to root q/2
+            #           3: inverse to xparam(13)*(q/2-1)+1.
+            #           5 for retuned rms-theta
+            glf.iflagin_gf[5 - 1] = 3
 
             #  xparam(1:20) control parameters
 
@@ -270,7 +268,7 @@ class GLF23(CoreTransport.Model):
             glf.ghat_gf = 1
 
             #  gchat=1 (0) is a control parameter to turn on (off) div EXB motion
-            glf.gchat_gf = 1
+            glf.gchat_gf = 0
 
             #  adamp= radial mode damping exponent  1/4 < adamp < 3/4
             #       0.25 from direct fit of simulations varying radial mode damping
@@ -294,8 +292,8 @@ class GLF23(CoreTransport.Model):
 
             glf.cnorm_gf = 100.0
 
-            glf.ikymax_gf = self.get("max_num_of_ky", 10)
-
+            glf.nmode = nmode
+            glf.ikymax_gf = nmode
             glf.xkymin_gf = .020
             glf.xkymax_gf = .50
 
@@ -352,7 +350,53 @@ class GLF23(CoreTransport.Model):
             glf.adamp_gf = .700           # radial mode damping exponent
             glf.alpha_p_gf = 0.350        # parallel velocity shear fit
             glf.park_gf = 0.80            # parallel ion motion fit
-            glf.bt_flag = 1               # use real geometry ExB shear
+            # glf.bt_flag = 1               # use real geometry ExB shear
+
+        ########################################################################
+        # Output
+
+        #  plasma diffusivity for ions
+        diff_m = np.zeros_like(rho_tor_norm)
+
+        #  plasma diffusivity for impurities
+        diff_im_m = np.zeros_like(rho_tor_norm)
+
+        # electron energy diffusivity
+        chi_e_m = np.zeros_like(rho_tor_norm)
+
+        # ion energy diffusivity
+        chi_i_m = np.zeros_like(rho_tor_norm)
+
+        chi_e_e_m = np.zeros_like(rho_tor_norm)
+
+        # anomalous e to i energy exchange
+        exch_m = np.zeros_like(rho_tor_norm)
+
+        # toroidal momentun diffusivity
+        eta_phi_m = np.zeros_like(rho_tor_norm)
+
+        # parallel component of toroidal momentum diffusivity
+        eta_par_m = np.zeros_like(rho_tor_norm)
+
+        # perpendicular
+        eta_per_m = np.zeros_like(rho_tor_norm)
+
+        # leading mode growth rate in c_s/a
+        gamma = np.zeros_like(rho_tor_norm)
+
+        # leading mode freq rate in c_s/a
+        freq = np.zeros_like(rho_tor_norm)
+
+        kyf = np.zeros_like(rho_tor_norm)
+
+        rlti = np.linspace(0.0, 5.0, n_grid_point)
+
+        xkyf_k = np.zeros([n_grid_point, nmode])
+        gamma_k = np.zeros([n_grid_point, nmode])
+        freq_k = np.zeros([n_grid_point, nmode])
+        diff_k = np.zeros([n_grid_point, nmode])
+        chi_e_k = np.zeros([n_grid_point, nmode])
+        chi_i_k = np.zeros([n_grid_point, nmode])
 
         for idx, x in enumerate(rho_tor_norm):
 
@@ -364,54 +408,54 @@ class GLF23(CoreTransport.Model):
             glf.rlti_gf = rlti[idx]
 
             #  rlte=a/L_Te
-            glf.rlte_gf = rlte[idx]
+            glf.rlte_gf = 3.0  # rlte[idx]
 
             #  rlne= a/L_ne
-            glf.rlne_gf = rlne[idx]
+            glf.rlne_gf = 1.0  # rlne[idx]
 
             #  rlni= a/L_ni
-            glf.rlni_gf = rlni[idx]
+            glf.rlni_gf = 1.0  # rlni[idx]
 
             #  rlnimp= a/L_nim
-            glf.rlnimp_gf = rlnimp[idx]
+            glf.rlnimp_gf = 3.0  # rlnimp[idx]
 
             #  dil=1.-ni_0/ne_0  dilution
-            glf.dil_gf = 1.0 - Ni[idx]/Ne[idx]
+            glf.dil_gf = 0.0  # 1.0 - Ni[idx]/Ne[idx]
 
             #  apwt = ni_0/ne_0
-            glf.apwt_gf = Ni[idx]/Ne[idx]
+            glf.apwt_gf = 1.0  # Ni[idx]/Ne[idx]
 
             #  aiwt = nim_0/ne_0
-            glf.aiwt_gf = Nimp[idx]/Ne[idx]
+            glf.aiwt_gf = 0.0  # Nimp[idx]/Ne[idx]
 
             #  taui=Ti/Te
-            glf.taui_gf = Ti[idx]/Te[idx]
+            glf.taui_gf = 1.0  # Ti[idx]/Te[idx]
 
             #  rmin=r/a
-            glf.rmin_gf = r_minor[idx]/a
+            glf.rmin_gf = 0.5  # r_minor[idx]/a
 
             #  rmaj=Rmaj/a
-            glf.rmaj_gf = r_major[idx]/a
+            glf.rmaj_gf = 3  # r_major[idx]/a
 
             # q
-            glf.q_gf = q[idx]
+            glf.q_gf = 2.0  # q[idx]
 
             #  xnu=nu_ei/(c_s/a)
             glf.xnu_gf = 0.0  # cxnu*xnu_m[idx]
 
             #  betae=neTe/(B**2/(8pi))  0 is electrostatic
-            glf.betae_gf = beta_e[idx]
+            glf.betae_gf = 0.0  # beta_e[idx]
 
             #  shat= dlnr/drho used only for parallel dynamics part
-            glf.shat_gf = magnetic_shear[idx]
+            glf.shat_gf = 1.0  # magnetic_shear[idx]
 
             #  alpha local shear parameter or MHD pressure grad (s-alpha diagram)
             glf.alpha_gf = 0.0
 
             #  elong= local elongation or kappa
-            glf.elong_gf = elongation[idx]
+            glf.elong_gf = 1.6  # elongation[idx]
 
-            glf.zimp_gf = zeff[idx]
+            glf.zimp_gf = 1.6  # zeff[idx]
 
             # glf.amassimp_gf=12.0
 
@@ -427,17 +471,19 @@ class GLF23(CoreTransport.Model):
                 logger.exception(error)
                 raise RuntimeError(f"glf2d: failed")
 
-            #
-            #######################################################################
             #######################################################################
             # OUTPUT
-            #######################################################################
             # yparam(20) output diagnostics
-            # logger.debug(glf.yparam)
+
             # kyf  value of ky used
+            kyf[idx] = glf.xky_gf[0]
+
             # gamma   leading mode growth rate in c_s/a
+            gamma[idx] = glf.gamma_gf[0]
 
             # freq    leading mode freq rate in c_s/a
+            freq[idx] = glf.freq_gf[0]
+
             # ph_m    (e phi /T_e)/(rho_s/a)  saturation value
 
             # d_hat    plasma diffusivity for ions
@@ -466,6 +512,13 @@ class GLF23(CoreTransport.Model):
             # exch_hat anomalous e to i energy exchange
             exch_m[idx] = glf.exch_gf
 
+            xkyf_k[idx, :] = glf.xkyf_k_gf
+            gamma_k[idx, :] = glf.gamma_k_gf[0]
+            freq_k[idx, :] = glf.freq_k_gf[0]
+            diff_k[idx, :] = glf.diff_k_gf
+            chi_e_k[idx, :] = glf.chie_k_gf
+            chi_i_k[idx, :] = glf.chii_k_gf
+
         # self.profiles_1d.electrons.particles["d"] = Function(rho_tor_norm, diff_m)
         self.profiles_1d.electrons.energy["d"] = Function(rho_tor_norm,  chi_e_m)
 
@@ -479,11 +532,24 @@ class GLF23(CoreTransport.Model):
         # .combine(predication={"is_impurity": False})
         trans_ion: CoreTransportModel.Profiles1D.Ion = self.profiles_1d.ion[0]
 
-        trans_ion.particles["d"] = Function(rho_tor_norm,  diff_m*gyrobohm_unit*geo_fac)
-        trans_ion.energy["d"] = Function(rho_tor_norm, chi_i_m*gyrobohm_unit*geo_fac)
-        trans_ion.momentum.toroidal["d"] = Function(rho_tor_norm,  eta_phi_m*gyrobohm_unit*geo_fac)
-        trans_ion.momentum.parallel["d"] = Function(rho_tor_norm,  eta_par_m*gyrobohm_unit*geo_fac)
-        trans_ion.momentum["perpendicular.d"] = Function(rho_tor_norm,  eta_per_m*gyrobohm_unit*geo_fac)
+        trans_ion.particles["d"] = Function(rho_tor_norm,  diff_m)
+        trans_ion.energy["d"] = Function(rho_tor_norm, chi_i_m)
+        trans_ion.momentum.toroidal["d"] = Function(rho_tor_norm,  eta_phi_m)
+        trans_ion.momentum.parallel["d"] = Function(rho_tor_norm,  eta_par_m)
+        trans_ion.momentum["perpendicular.d"] = Function(rho_tor_norm,  eta_per_m)
+
+
+        self.profiles_1d["debug_xkyf_k"] = xkyf_k
+        self.profiles_1d["debug_gamma_k"] = gamma_k
+        self.profiles_1d["debug_freq_k"] = freq_k
+        self.profiles_1d["debug_diff_k"] = diff_k
+        self.profiles_1d["debug_chi_e_k"] = chi_e_k
+        self.profiles_1d["debug_chi_i_k"] = chi_i_k
+
+        self.profiles_1d["debug_gamma"] = Function(rho_tor_norm, gamma)
+        self.profiles_1d["debug_freq"] = Function(rho_tor_norm, freq)
+        self.profiles_1d["debug_kyf"] = Function(rho_tor_norm, kyf)
+        self.profiles_1d["debug_rho_s"] = Function(rho_tor_norm, rho_s)
 
         # trans_imp: CoreTransportModel.Profiles1D.Ion = self.profiles_1d.ion.combine(predication={"is_impurity": True})
         # trans_imp.particles["d"] = Function(rho_tor_norm, diff_im_m)

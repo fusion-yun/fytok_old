@@ -68,7 +68,7 @@ if __name__ == "__main__":
 
     equilibrium = Equilibrium(c_equilibrium)
 
-    radial_grid = equilibrium.time_slice.radial_grid.remesh(np.linspace(0, 0.99, 256), "rho_tor_norm")
+    radial_grid = equilibrium.time_slice.radial_grid.remesh(np.linspace(0.04, 0.9, 101), "rho_tor_norm")
 
     # Core profile
     r_ped = 0.96  # np.sqrt(0.88)
@@ -121,10 +121,7 @@ if __name__ == "__main__":
             (core_transport.model[0].profiles_1d["debug_r_major"], "r_major", r"$[-]$"),
             (core_transport.model[0].profiles_1d["debug_drho_tor_norm_dr"], r"$\frac{d\rho_{tor_norm}}{dr}$", r"$[-]$"),
             (core_transport.model[0].profiles_1d["debug_gyrobohm_unit"], "gyrobohm_unit", r"$[-]$"),
-
             (core_transport.model[0].profiles_1d["debug_psi_norm"], "psi_norm", r"$[-]$"),
-
-
             (core_transport.model[0].profiles_1d["debug_beta_e"], "beta_e", r"$[-]$"),
             (core_transport.model[0].profiles_1d["debug_zeff"], "zeff", r"$[-]$"),
             (core_transport.model[0].profiles_1d["debug_geo_fac"], "geo_fac", r"$[-]$"),
@@ -143,5 +140,42 @@ if __name__ == "__main__":
         title="Result of GLF23",
         grid=True, fontsize=10) \
         .savefig("/home/salmon/workspace/output/core_transport_glf23.svg", transparent=True)
+
+    rlti = np.asarray(core_transport.model[0].profiles_1d["debug_rlti"])
+
+    plot_profiles(
+        [
+            (np.asarray(core_transport.model[0].profiles_1d["debug_gamma"]), r"$\gamma$", r"$[-]$"),
+            (np.asarray(core_transport.model[0].profiles_1d["debug_freq"]), "freq", r"$[-]$"),
+            (np.asarray(core_transport.model[0].profiles_1d.electrons.energy.d),  r"$\chi_e$"),
+            (np.asarray(core_transport.model[0].profiles_1d.ion[0].energy.d), r"$\chi_i$"),
+            (np.asarray(core_transport.model[0].profiles_1d.ion[0].particles.d), r"$D_i$"),
+
+            # (core_transport.model[0].profiles_1d["debug_kyf"], "debug_kyf", r"$[-]$"),
+        ],
+        x_axis=(rlti,  r"$a/L_T$"),
+        title="Result of GLF23",
+        grid=True, fontsize=10) \
+        .savefig("/home/salmon/workspace/output/core_transport_rlti.svg", transparent=True)
+
+    xkyf_k = core_transport.model[0].profiles_1d.get("debug_xkyf_k")
+    gamma_k = core_transport.model[0].profiles_1d.get("debug_gamma_k")
+    freq_k = core_transport.model[0].profiles_1d.get("debug_freq_k")
+    diff_k = core_transport.model[0].profiles_1d.get("debug_diff_k")
+    chi_e_k = core_transport.model[0].profiles_1d.get("debug_chi_e_k")
+    chi_i_k = core_transport.model[0].profiles_1d.get("debug_chi_i_k")
+
+    num = xkyf_k.shape[0]
+    plot_profiles(
+        [
+            [(Function(xkyf_k[idx], gamma_k[idx]), f"$a/L_T={rlti[idx]:.2f}$", r"${\gamma}/{\left(c_{s}/a\right)}$")                for idx in range(0, num, 20)],
+            [(Function(xkyf_k[idx], diff_k[idx]),  f"$a/L_T={rlti[idx]:.2f}$", r"$   {D_i}/{\left(c_{s}\rho_{s}^2/a\right)}$")      for idx in range(0, num, 20)],
+            [(Function(xkyf_k[idx], chi_e_k[idx]), f"$a/L_T={rlti[idx]:.2f}$", r"${\chi_e}/{\left(c_{s}\rho_{s}^2/a\right)}$")      for idx in range(0, num, 20)],
+            [(Function(xkyf_k[idx], chi_i_k[idx]), f"$a/L_T={rlti[idx]:.2f}$", r"${\chi_i}/{\left(c_{s}\rho_{s}^2/a\right)}$")      for idx in range(0, num, 20)],
+        ],
+        x_axis=([0.02, 0.5],  r"$k_y \rho_s$"),
+        title="Result of GLF23",
+        grid=True, fontsize=10) \
+        .savefig("/home/salmon/workspace/output/core_transport_k.svg", transparent=True)
 
     logger.debug("DONE")
