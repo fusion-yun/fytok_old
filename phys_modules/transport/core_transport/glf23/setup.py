@@ -4,28 +4,29 @@ from numpy.distutils.log import set_verbosity
 glf_version = "v1.61"
 
 
-mod_glf23 = Extension(name='mod_glf23',
-                      language='f77',
-                      f2py_options=["--debug-capi"],
-                      sources=[
-                          f'src/{glf_version}/callglf2d.f',
-                          f'src/{glf_version}/glf2d.F',
-                          f'src/{glf_version}/r8tomsqz.F',
-                               #    f'src/{glf_version}/callglf2d_DV.f',
-                               #    f'src/{glf_version}/glf.m',
-                               #    f'src/{glf_version}/f77_dcomplx.h',
-                          f'src/{glf_version}/blas_zgeev.f',
-                          f'src/{glf_version}/zgeev.f'
-                      ],
-                      library_dirs=['/fuyun/software/OpenBLAS/0.3.9-GCC-9.3.0/lib'],
-                      libraries=['openblas'],
-                      #   extra_f77_compile_args=[
-                      #       '-Wno-maybe-uninitialized',
-                      #       '-Wno-unused-label',
-                      #       '-Wno-unused-variable',
-                      #       '-Wno-unused-dummy-argument'
-                      #   ]
-                      )
+mod_glf23 = Extension(
+    name='mod_glf23',
+    language='f77',
+    f2py_options=["--debug-capi"],
+    sources=[
+        f'src/{glf_version}/callglf2d.f',
+        f'src/{glf_version}/glf2d.F',
+        f'src/{glf_version}/r8tomsqz.F',
+        #    f'src/{glf_version}/callglf2d_DV.f',
+        #    f'src/{glf_version}/glf.m',
+        #    f'src/{glf_version}/f77_dcomplx.h',
+        f'src/{glf_version}/blas_zgeev.f',
+        f'src/{glf_version}/zgeev.f'
+    ],
+    library_dirs=['/fuyun/software/OpenBLAS/0.3.9-GCC-9.3.0/lib'],
+    libraries=['openblas'],
+    #   extra_f77_compile_args=[
+    #       '-Wno-maybe-uninitialized',
+    #       '-Wno-unused-label',
+    #       '-Wno-unused-variable',
+    #       '-Wno-unused-dummy-argument'
+    #   ]
+)
 
 if __name__ == "__main__":
     from numpy.distutils.core import setup
