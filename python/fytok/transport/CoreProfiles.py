@@ -334,17 +334,17 @@ class CoreProfiles1D(Dict[Node]):
     @sp_property
     def t_i_average(self) -> Function:
         """Ion temperature(averaged on charge states and ion species) {dynamic}[eV]"""
-        return np.sum([np.asarray(ion.temperature*ion.density) for ion in self.ion])/np.sum([np.asarray(ion.density) for ion in self.ion])
+        return sum([ion.z*ion.temperature*ion.density for ion in self.ion]) / self.n_i_total
 
     @sp_property
     def t_i_average_fit(self) -> Function:
         """Information on the fit used to obtain the t_i_average profile[eV]"""
-        return self["t_i_average_fit"]
+        return NotImplemented
 
     @sp_property
     def n_i_total(self) -> Function:
         """ total ion density(sum over species and charge states)   (thermal+non-thermal) {dynamic}[-]"""
-        return Function(self._axis, np.sum([np.asarray(ion.z_ion*ion.density) for ion in self.ion]))
+        return sum([(ion.z * ion.density) for ion in self.ion])
 
     @sp_property
     def n_i_total_over_n_e(self) -> Function:
@@ -354,19 +354,12 @@ class CoreProfiles1D(Dict[Node]):
     @sp_property
     def n_i_thermal_total(self) -> Function:
         """Total ion thermal density(sum over species and charge states) {dynamic}[m ^ -3]"""
-        return Function(self._grid.rho_tor_norm, np.sum([np.asarray(ion.z_ion*ion.density_thermal) for ion in self.ion]))
+        return sum([ion.z*ion.density_thermal for ion in self.ion])
 
     @sp_property
     def zeff(self) -> Function:
         """Effective charge {dynamic}[-]"""
-        d = self.get("zeff", _not_found_)
-        if isinstance(d, np.ndarray):
-            return d
-        else:
-            # zeff = 0.0
-            # for ion in self.ion:
-            #     zeff = zeff + np.asarray(ion.z_ion*ion.z_ion*ion.density)
-            return sum([(ion.z_ion*ion.z_ion*ion.density) for ion in self.ion]) / self.electrons.density
+        return sum([(ion.z_ion*ion.z_ion*ion.density) for ion in self.ion]) / self.n_i_total
 
     @sp_property
     def zeff_fit(self) -> Function:
@@ -380,14 +373,14 @@ class CoreProfiles1D(Dict[Node]):
         return NotImplemented
 
     @sp_property
-    def pressure_ion_total(self) -> Function:
+    def pressure(self) -> Function:
         """Total(sum over ion species) thermal ion pressure {dynamic}[Pa]"""
         return np.sum([ion.pressure for ion in self.ion])
 
     @sp_property
     def pressure_thermal(self) -> Function:
         """Thermal pressure(electrons+ions) {dynamic}[Pa]"""
-        return NotImplemented
+        return sum([ion.pressure_thermal for ion in self.ion])+self.electrons.pressure_thermal
 
     @sp_property
     def pressure_perpendicular(self) -> Function:

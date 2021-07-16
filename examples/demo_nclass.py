@@ -450,11 +450,11 @@ if __name__ == "__main__":
                        f"{ion.label}", r"$\chi_{i}$") for ion in core_profile.ion if not ion.is_impurity],
                 ],
 
-                # [
-                #     (Function(bs_r_norm,  np.log(baseline["XiNC"].values)),  "astra", r"$ln \chi_{i,nc}$", {"marker": '.', "linestyle": ''}),
-                #     # * [(np.log(core_transport1d_nc.ion[{"label": label}].energy.d),   f"${label}$", r"$ln \chi_{i,nc}$")
-                #     #     for label in ("H", "D", "He")],
-                # ],
+                [
+                    (Function(bs_r_norm,  np.log(baseline["XiNC"].values)),  "astra", r"$ln \chi_{i,nc}$", {"marker": '.', "linestyle": ''}),
+                    # * [(np.log(core_transport1d_nc.ion[{"label": label}].energy.d),   f"${label}$", r"$ln \chi_{i,nc}$")
+                    #     for label in ("H", "D", "He")],
+                ],
 
                 [
                     (Function(bs_r_norm, baseline["He"].values), "astra",
@@ -489,8 +489,7 @@ if __name__ == "__main__":
 
             ],
             x_axis=([0, 1.0],   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-            # index_slice=slice(10, 110, 1),
-            title=tok.core_transport.model[0].code.name,
+            title="combine",
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
     if True:  # CoreSources

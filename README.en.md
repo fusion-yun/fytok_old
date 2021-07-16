@@ -1,10 +1,13 @@
-# fy_trans
+# FyTok
 
 #### Description
-燃烧等离子体输运
+  
+  Tokamak integrated modeling and analysis toolkit.
 
 #### Software Architecture
 Software architecture description
+
+![Image](docs/figures/FuYunSystem.png "FuYun")
 
 #### Installation
 
@@ -26,7 +29,7 @@ Software architecture description
 4.  Create Pull Request
 
 
-#### Gitee Feature
+####  Feature
 
 1.  You can use Readme\_XXX.md to support different languages, such as Readme\_en.md, Readme\_zh.md
 2.  Gitee blog [blog.gitee.com](https://blog.gitee.com)
