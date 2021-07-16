@@ -7,93 +7,103 @@ c added i_dengrad switch for dilution
 c 08-apr-04 Imbeaux, add output for impurity diffusivity, diffznem and diffz_m
 c 13-may-04 Imbeaux, add output for csda_m
 ************************************************************************
-       subroutine callglf2d(
-     >                 !INPUTS
-     > leigen,         ! eigenvalue solver
-     >                 ! 0 for cgg (default), 1 for tomsqz, 2 for zgeev
-     > nroot,          ! no. roots,8 for default, 12 for impurity dynamics
-     > iglf,           ! 0 for original GLF23, 1 for retuned version
-     > jshoot,         ! jshoot=0 time-dep code;jshoot=1 shooting code
-     > jmm,            ! grid number;jmm=0 does full grid jm=1 to jmaxm-1
-     > jmaxm,          ! profile grids 0 to jmaxm
-     > itport_pt,      ! 1:5 transport flags
-     > irotstab,       ! 0 to use egamma_exp; 1 use egamma_m
-     > te_m,           ! 0:jmaxm te Kev           itport_pt(2)=1 transport
-     > ti_m,           ! 0:jmaxm ti Kev           itport_pt(3)=1 transport
-     > ne_m,           ! 0:jmaxm ne 10**19 1/m**3
-     > ni_m,           ! 0:jmaxm ni 10**19 1/m**3 itport_pt(1)=1 transport
-     > ns_m,           ! 0:jmaxm ns 10**19 1/m**3 
-     > i_grad,         ! default 0, for D-V method use i_grad=1 to input gradients
-     > idengrad,       ! default 2, for simple dilution
-     > zpte_in,        ! externally provided log gradient te w.r.t rho (i_grad=1)
-     > zpti_in,        ! externally provided log gradient ti w.r.t rho
-     > zpne_in,        ! externally provided log gradient ne w.r.t rho
-     > zpni_in,        ! externally provided log gradient ni w.r.t rho
-     > angrotp_exp,    ! 0:jmaxm exp plasma toroidal angular velocity 1/sec
-     >                 ! if itport_pt(4)=0 itport_pt(5)=0
-     > egamma_exp,     ! 0:jmaxm exp exb shear rate in units of csda_exp
-     >                 ! if itport_pt(4)=-1 itport_pt(5)=0
-     > gamma_p_exp,    ! 0:jmaxm exp par. vel. shear rate in units of csda_exp
-     >                 ! if itport_pt(4)=-1 itport_pt(5)=0
-     > vphi_m,         ! 0:jmaxm toroidal velocity m/sec
-     >                 ! if itport_pt(4)=1 itport_pt(5)=0 otherwise output
-     > vpar_m,         ! 0:jmaxm parallel velocity m/sec
-     >                 ! if itport_pt(4)=1 itport_pt(5)=1 otherwise output
-     > vper_m,         ! 0:jmaxm perp. velocity m/sec
-     >                 ! if itport_pt(4)=1 itport_pt(5)=1 otherwise output
-     > zeff_exp,       ! 0:jmaxm ne in 10**19 1/m**3
-     > bt_exp,         ! vaccuum axis toroidal field in tesla
-     > bt_flag,        ! switch for effective toroidal field use in rhosda
-     > rho,            ! 0:jmaxm 0 < rho < 1 normalized toroidal flux (rho=rho/rho(a))
-     > arho_exp,       ! rho(a), toroidal flux at last closed flux surface (LCFS)
-     >                 !   toroidal flux= B0*rho_phys**2/2 (m)
-     >                 !   B0=bt_exp, arho_exp=rho_phys_LCFS
-     > gradrho_exp,    ! 0:jmaxm dimensionless <|grad rho_phys |**2>
-     > gradrhosq_exp,  ! 0:jmaxm dimensionless <|grad rho_phys |>
-     >                 !NOTE:can set arho_exp=1.,if gradrho_exp=<|grad rho |>
-     >                 !                 and gradrhosq_exp = <|grad rho |**2>
-     > rmin_exp,       ! 0:jmaxm minor radius in meters
-     > rmaj_exp,       ! 0:jmaxm major radius in meters
-     > rmajor_exp,     ! axis major radius
-     > zimp_exp,       ! effective Z of impurity
-     > amassimp_exp,   ! effective A of impurity
-     > q_exp,          ! 0:jmaxm safety factor
-     > shat_exp,       ! 0:jmaxm magnetic shear, d (ln q_exp)/ d (ln rho)
-     > alpha_exp,      ! 0:jmaxm MHD alpha from experiment
-     > elong_exp,      ! 0:jmaxm elongation
-     > amassgas_exp,   !  atomic number working hydrogen gas
-     > alpha_e,        ! 1 full (0 no) no ExB shear stab
-     > x_alpha,        ! 1 full (0 no) alpha stabilization  with alpha_exp
-     >                 !-1 full (0 no) self consistent alpha_m stab.
-     > i_delay,        !i_delay time delay for ExB shear should be non-zero only
-     >                 ! once per step and is less than or equal 10
-     >                 !OUTPUTS
-     > diffnem,        ! ion plasma diffusivity in m**2/sec
-     > chietem,        ! electron ENERGY diffuivity in m**2/sec
-     > chiitim,        ! ion      ENERGY diffuivity in m**2/sec
-     > etaphim,        ! toroidal velocity diffusivity in m**2/sec
-     > etaparm,        ! parallel velocity diffusivity in m**2/sec
-     > etaperm,        ! perpendicular velocity diffusivity in m**2/sec
-     > exchm,          ! turbulent electron to ion ENERGY exchange in MW/m**3
-     >                 ! 0:jmaxm values
-     >  diff_m,
-     >  diffz_m,       ! impurity  diffusivity in m**2/sec  Added 08/04/2004 by F. Imbeaux    
-     >  chie_m,
-     >  chii_m,
-     >  etaphi_m,
-     >  etapar_m,
-     >  etaper_m,
-     >  exch_m,
-     >
-     >  egamma_m,      !0:jmaxm exb shear rate in units of local csda_m
-     >  egamma_d,      !0:jmaxm exb shear rate delayed by i_delay steps
-     >  gamma_p_m,     !0:jmaxm par. vel. shear rate in units of local csda_m
-     >  anrate_m,      !0:jmaxm leading mode rate in unints of local csda_m
-     >  anrate2_m,     !0:jmaxm 2nd mode rate in units of local csda_m
-     >  anfreq_m,      !0:jmaxm leading mode frequency
-     >  anfreq2_m,      !0:jmaxm 2nd mode frequency
-     >  csda_m         !0:jmaxm output added for renormalization outside GLF (F.I. 13/05/2004)
-     > )
+       subroutine callglf2d(lprint,leigen,nroot,iglf,jshoot,jmm,jmaxm,
+     >    itport_pt,irotstab,te_m,ti_m,ne_m,ni_m,ns_m,i_grad,idengrad,
+     >    zpte_in,zpti_in,zpne_in,zpni_in,angrotp_exp,egamma_exp,
+     >    gamma_p_exp,vphi_m,vpar_m,vper_m,zeff_exp,bt_exp,bt_flag,rho,
+     >    arho_exp,gradrho_exp,gradrhosq_exp,rmin_exp,rmaj_exp,
+     >    rmajor_exp,zimp_exp,amassimp_exp,q_exp,shat_exp,alpha_exp,
+     >    elong_exp,amassgas_exp,alpha_e,x_alpha,i_delay,diffnem,
+     >    chietem,chiitim,etaphim,etaparm,etaperm,exchm,diff_m,diffz_m,
+     >    chie_m,chii_m,etaphi_m,etapar_m,etaper_m,exch_m,egamma_m,
+     >    egamma_d,gamma_p_m,anrate_m,anrate2_m,anfreq_m,anfreq2_m,
+     >    csda_m)
+c************************************************************************
+c                 !INPUTS
+c leigen,         ! eigenvalue solver
+c                 ! 0 for cgg (default), 1 for tomsqz, 2 for zgeev
+c nroot,          ! no. roots,8 for default, 12 for impurity dynamics
+c iglf,           ! 0 for original GLF23, 1 for retuned version
+c jshoot,         ! jshoot=0 time-dep code;jshoot=1 shooting code
+c jmm,            ! grid number;jmm=0 does full grid jm=1 to jmaxm-1
+c jmaxm,          ! profile grids 0 to jmaxm
+c itport_pt,      ! 1:5 transport flags
+c irotstab,       ! 0 to use egamma_exp; 1 use egamma_m
+c te_m,           ! 0:jmaxm te Kev           itport_pt(2)=1 transport
+c ti_m,           ! 0:jmaxm ti Kev           itport_pt(3)=1 transport
+c ne_m,           ! 0:jmaxm ne 10**19 1/m**3
+c ni_m,           ! 0:jmaxm ni 10**19 1/m**3 itport_pt(1)=1 transport
+c ns_m,           ! 0:jmaxm ns 10**19 1/m**3 
+c i_grad,         ! default 0, for D-V method use i_grad=1 to input gradients
+c idengrad,       ! default 2, for simple dilution
+c zpte_in,        ! externally provided log gradient te w.r.t rho (i_grad=1)
+c zpti_in,        ! externally provided log gradient ti w.r.t rho
+c zpne_in,        ! externally provided log gradient ne w.r.t rho
+c zpni_in,        ! externally provided log gradient ni w.r.t rho
+c angrotp_exp,    ! 0:jmaxm exp plasma toroidal angular velocity 1/sec
+c                 ! if itport_pt(4)=0 itport_pt(5)=0
+c egamma_exp,     ! 0:jmaxm exp exb shear rate in units of csda_exp
+c                 ! if itport_pt(4)=-1 itport_pt(5)=0
+c gamma_p_exp,    ! 0:jmaxm exp par. vel. shear rate in units of csda_exp
+c                 ! if itport_pt(4)=-1 itport_pt(5)=0
+c vphi_m,         ! 0:jmaxm toroidal velocity m/sec
+c                 ! if itport_pt(4)=1 itport_pt(5)=0 otherwise output
+c vpar_m,         ! 0:jmaxm parallel velocity m/sec
+c                 ! if itport_pt(4)=1 itport_pt(5)=1 otherwise output
+c vper_m,         ! 0:jmaxm perp. velocity m/sec
+c                 ! if itport_pt(4)=1 itport_pt(5)=1 otherwise output
+c zeff_exp,       ! 0:jmaxm ne in 10**19 1/m**3
+c bt_exp,         ! vaccuum axis toroidal field in tesla
+c bt_flag,        ! switch for effective toroidal field use in rhosda
+c rho,            ! 0:jmaxm 0 < rho < 1 normalized toroidal flux (rho=rho/rho(a))
+c arho_exp,       ! rho(a), toroidal flux at last closed flux surface (LCFS)
+c                 !   toroidal flux= B0*rho_phys**2/2 (m)
+c                 !   B0=bt_exp, arho_exp=rho_phys_LCFS
+c gradrho_exp,    ! 0:jmaxm dimensionless <|grad rho_phys |**2>
+c gradrhosq_exp,  ! 0:jmaxm dimensionless <|grad rho_phys |>
+c                 !NOTE:can set arho_exp=1.,if gradrho_exp=<|grad rho |>
+c                 !                 and gradrhosq_exp = <|grad rho |**2>
+c rmin_exp,       ! 0:jmaxm minor radius in meters
+c rmaj_exp,       ! 0:jmaxm major radius in meters
+c rmajor_exp,     ! axis major radius
+c zimp_exp,       ! effective Z of impurity
+c amassimp_exp,   ! effective A of impurity
+c q_exp,          ! 0:jmaxm safety factor
+c shat_exp,       ! 0:jmaxm magnetic shear, d (ln q_exp)/ d (ln rho)
+c alpha_exp,      ! 0:jmaxm MHD alpha from experiment
+c elong_exp,      ! 0:jmaxm elongation
+c amassgas_exp,   !  atomic number working hydrogen gas
+c alpha_e,        ! 1 full (0 no) no ExB shear stab
+c x_alpha,        ! 1 full (0 no) alpha stabilization  with alpha_exp
+c                 !-1 full (0 no) self consistent alpha_m stab.
+c i_delay,        !i_delay time delay for ExB shear should be non-zero only
+c                 ! once per step and is less than or equal 10
+c                 !OUTPUTS
+c diffnem,        ! ion plasma diffusivity in m**2/sec
+c chietem,        ! electron ENERGY diffuivity in m**2/sec
+c chiitim,        ! ion      ENERGY diffuivity in m**2/sec
+c etaphim,        ! toroidal velocity diffusivity in m**2/sec
+c etaparm,        ! parallel velocity diffusivity in m**2/sec
+c etaperm,        ! perpendicular velocity diffusivity in m**2/sec
+c exchm,          ! turbulent electron to ion ENERGY exchange in MW/m**3
+c                 ! 0:jmaxm values
+c  diff_m,
+c  diffz_m,       ! impurity  diffusivity in m**2/sec  Added 08/04/2004 by F. Imbeaux    
+c  chie_m,
+c  chii_m,
+c  etaphi_m,
+c  etapar_m,
+c  etaper_m,
+c  exch_m,
+c
+c  egamma_m,      !0:jmaxm exb shear rate in units of local csda_m
+c  egamma_d,      !0:jmaxm exb shear rate delayed by i_delay steps
+c  gamma_p_m,     !0:jmaxm par. vel. shear rate in units of local csda_m
+c  anrate_m,      !0:jmaxm leading mode rate in unints of local csda_m
+c  anrate2_m,     !0:jmaxm 2nd mode rate in units of local csda_m
+c  anfreq_m,      !0:jmaxm leading mode frequency
+c  anfreq2_m,      !0:jmaxm 2nd mode frequency
+c  csda_m         !0:jmaxm output added for renormalization outside GLF (F.I. 13/05/2004)
 c************************************************************************
  
 c see glf2d documentation for use of diffusivities in transport equations
@@ -111,51 +121,42 @@ c.......end common block....................
  
 c.......begin dimensions.................
  
-      double precision epsilon, zeps, zpi
-      parameter ( epsilon = 1.D-34, zeps = 1.D-6 )
+      double precision epsilon,zeps,zpi
+      parameter ( epsilon = 1.D-34,zeps = 1.D-6 )
  
 c external arrays
  
-      integer jmaxm, jshoot, jmm, i_grad, idengrad, itport_pt(1:5),
-     >  i_delay, j, jin, jout, jm, irotstab, iglf,
-     >  jpt, jptf, jptt, jj, ii, ik, bt_flag, leigen, nroot
-      double precision alpha_e, x_alpha, xalpha,
-     >  diffnem, diffznem,chietem,chiitim,etaphim,
-     >  etaparm, etaperm, exchm,
-     >  rmajor_exp, zimp_exp, amassimp_exp, 
-     >  bt_exp, arho_exp, amassgas_exp,
-     >  cbetae, cxnu, relx, cmodel, drho, zeff_e,
-     >  zpmte, zpmti, zpmne, zpmni, vstar_sign,
-     >  egeo_local, pgeo_local, rdrho_local, rdrho_local_p1, fc,
-     >  akappa1, alpha_neo, alpha_neo_hold,
-     >  zpmne_q, zpmni_q, zpmnimp, gfac
-      double precision te_m(0:jmaxm),ti_m(0:jmaxm),
-     >  ne_m(0:jmaxm),ni_m(0:jmaxm), ns_m(0:jmaxm),
-     >  vphi_m(0:jmaxm),angrotp_exp(0:jmaxm),
-     >  egamma_exp(0:jmaxm),gamma_p_exp(0:jmaxm),
-     >  vpar_m(0:jmaxm),vper_m(0:jmaxm),
-     >  rho(0:jmaxm),rmin_exp(0:jmaxm),rmaj_exp(0:jmaxm),
-     >  gradrho_exp(0:jmaxm),gradrhosq_exp(0:jmaxm),
-     >  zeff_exp(0:jmaxm),q_exp(0:jmaxm),shat_exp(0:jmaxm),
-     >  bteff_exp(0:jmaxm)
+      integer jmaxm,jshoot,jmm,i_grad,idengrad,itport_pt(1:5),i_delay,j,
+     >   jin,jout,jm,irotstab,iglf,jpt,jptf,jptt,jj,ii,ik,bt_flag,
+     >   leigen,nroot,lprint
+      double precision alpha_e,x_alpha,xalpha,diffnem,diffznem,chietem,
+     >   chiitim,etaphim,etaparm,etaperm,exchm,rmajor_exp,zimp_exp,
+     >   amassimp_exp,bt_exp,arho_exp,amassgas_exp,cbetae,cxnu,relx,
+     >   cmodel,drho,zeff_e,zpmte,zpmti,zpmne,zpmni,vstar_sign,
+     >   egeo_local,pgeo_local,rdrho_local,rdrho_local_p1,fc,akappa1,
+     >   alpha_neo,alpha_neo_hold,zpmne_q,zpmni_q,zpmnimp,gfac
+      double precision te_m(0:jmaxm),ti_m(0:jmaxm),ne_m(0:jmaxm),
+     >   ni_m(0:jmaxm),ns_m(0:jmaxm),vphi_m(0:jmaxm),
+     >   angrotp_exp(0:jmaxm),egamma_exp(0:jmaxm),gamma_p_exp(0:jmaxm),
+     >   vpar_m(0:jmaxm),vper_m(0:jmaxm),rho(0:jmaxm),rmin_exp(0:jmaxm),
+     >   rmaj_exp(0:jmaxm),gradrho_exp(0:jmaxm),gradrhosq_exp(0:jmaxm),
+     >   zeff_exp(0:jmaxm),q_exp(0:jmaxm),shat_exp(0:jmaxm),
+     >   bteff_exp(0:jmaxm)
       double precision alpha_exp(0:jmaxm),elong_exp(0:jmaxm),
-     >  diff_m(0:jmaxm),chie_m(0:jmaxm),chii_m(0:jmaxm),
-     >  diffz_m(0:jmaxm),
-     >  etaphi_m(0:jmaxm),
-     >  etapar_m(0:jmaxm),etaper_m(0:jmaxm), exch_m(0:jmaxm),
-     >  egamma_m(0:jmaxm),egamma_d(0:jmaxm,10),gamma_p_m(0:jmaxm),
-     >  anrate_m(0:jmaxm), anrate2_m(0:jmaxm),
-     >  anfreq_m(0:jmaxm), anfreq2_m(0:jmaxm), csda_m(0:jmaxm)
+     >   diff_m(0:jmaxm),chie_m(0:jmaxm),chii_m(0:jmaxm),
+     >   diffz_m(0:jmaxm),etaphi_m(0:jmaxm),etapar_m(0:jmaxm),
+     >   etaper_m(0:jmaxm),exch_m(0:jmaxm),egamma_m(0:jmaxm),
+     >   egamma_d(0:jmaxm,10),gamma_p_m(0:jmaxm),anrate_m(0:jmaxm),
+     >   anrate2_m(0:jmaxm),anfreq_m(0:jmaxm),anfreq2_m(0:jmaxm),
+     >   csda_m(0:jmaxm)
  
 c internal arrays (which can be converted to externals)
  
-      double precision zpte_in, zpti_in, zpne_in, zpni_in,
-     >  zpte_m(0:jmaxm),zpti_m(0:jmaxm),
-     >  zpne_m(0:jmaxm),zpni_m(0:jmaxm),
-     >  drhodr(0:jmaxm),drhodrrrho(0:jmaxm),geofac(0:jmaxm),
-     >  rhosda_m(0:jmaxm),cgyrobohm_m(0:jmaxm),
-     >  betae_m(0:jmaxm),xnu_m(0:jmaxm),
-     >  alpha_m(0:jmaxm),vstarp_m(0:jmaxm)
+      double precision zpte_in,zpti_in,zpne_in,zpni_in,zpte_m(0:jmaxm),
+     >   zpti_m(0:jmaxm),zpne_m(0:jmaxm),zpni_m(0:jmaxm),
+     >   drhodr(0:jmaxm),drhodrrrho(0:jmaxm),geofac(0:jmaxm),
+     >   rhosda_m(0:jmaxm),cgyrobohm_m(0:jmaxm),betae_m(0:jmaxm),
+     >   xnu_m(0:jmaxm),alpha_m(0:jmaxm),vstarp_m(0:jmaxm)
  
 c working arrays and variables
  
@@ -179,8 +180,8 @@ c     real*8 dnfreq_m(0:jmaxm)
  
 c some internals
 
-      double precision tem,tim,nem,nim,nsm,zeffm, aiwt_jp1, 
-     >       xnimp_jp1, xnimp, vnewk3x
+      double precision tem,tim,nem,nim,nsm,zeffm,aiwt_jp1,xnimp_jp1,
+     >   xnimp,vnewk3x
  
 c.......end   dimensions.................
  
@@ -189,7 +190,7 @@ c    jm must be greater than 0 and less than jmaxm
 c
 c
 c...constants
-      zpi = atan2 ( 0.0D0, -1.0D0 )
+      zpi = atan2 ( 0.0D0,-1.0D0 )
 c
 cdmc      write(6,7701) zpi
 cdmc 7701 format(' zpi = ',1pe17.10)
@@ -322,8 +323,9 @@ c     glf23 parameters
 cxx      settings same as function glf23_v4_1_10
  
 ck      write(6,*)  'jmm=',jmm,'going in'
-
       eigen_gf = leigen
+      lprint_gf = lprint
+
 c      nroot_gf=8     ! 8 for pure plasma, 12 for full impurity dynamics
       nroot_gf=nroot
       iflagin_gf(1)=0
@@ -520,9 +522,8 @@ c      betai_m(jm) = 400.*nim*tim/(1.e5*bt_exp**2)
  
  
 crew    gks collisionality (xnu/w_star_i)*(ky*rho_i)
-       vnewk3x=
-     >   0.117D0*nem*tem**(-1.5D0)/(tim**0.5D0)*arho_exp*
-     >   (amassgas_exp/2.D0)**0.5D0
+       vnewk3x=0.117D0*nem*tem**(-1.5D0)/(tim**0.5D0)*arho_exp*
+     >    (amassgas_exp/2.D0)**0.5D0
 crew   as used in gks multiply by 1/2 and takout any 1/2 factor in solfp
 crew          vnewk3x=vnewk3x/2.
        xnu_m(jm) =vnewk3x/(2.D0*tem/tim)**0.5D0
@@ -560,41 +561,39 @@ c
 c
 c... some geometric factors
 c
-        geofac(j)=gradrho_exp(j)*(rho(j)-rho(j-1))*arho_exp
-     >   /(rmin_exp(j)-rmin_exp(j-1)+epsilon)/gradrhosq_exp(j)
+        geofac(j)=gradrho_exp(j)*(rho(j)-rho(j-1))*
+     >     arho_exp/(rmin_exp(j)-rmin_exp(j-1)+
+     >     epsilon)/gradrhosq_exp(j)
  
-        drhodr(j)=(rho(j)-rho(j-1))*arho_exp/
-     >   (rmin_exp(j)-rmin_exp(j-1)+epsilon)
+        drhodr(j)=(rho(j)-rho(j-1))*arho_exp/(rmin_exp(j)-rmin_exp(j-1)+
+     >     epsilon)
  
-        drhodrrrho(j)=drhodr(j)*rmin_exp(j)/
-     >   arho_exp/(rho(j)+epsilon)
+        drhodrrrho(j)=drhodr(j)*rmin_exp(j)/arho_exp/(rho(j)+epsilon)
 c
 c... local rate unit
 c
-       csda_m(j)=9.79D5*(te_m(j)*1.D3)**.5D0/
-     >    (arho_exp*100.D0)/amassgas_exp**0.5D0
+       csda_m(j)=9.79D5*(te_m(j)*1.D3)**.5D0/(arho_exp*
+     >    100.D0)/amassgas_exp**0.5D0
 c
 c... local rho_star
 c Note: use effective B-field if bt_flag > 0
 c
        if (bt_flag .gt. 0) then
-         bteff_exp(j)=bt_exp*rho(j)*arho_exp/
-     >         rmin_exp(j)*drhodr(j)
-         rhosda_m(j)=((1.02D2*(te_m(j)*1.D3)**.5D0)/bteff_exp(j)
-     >         /1.D4)*amassgas_exp**.5D0/(arho_exp*100.D0)
+         bteff_exp(j)=bt_exp*rho(j)*arho_exp/rmin_exp(j)*drhodr(j)
+         rhosda_m(j)=((1.02D2*(te_m(j)*1.D3)**.5D0)/bteff_exp(j)/1.D4)*
+     >      amassgas_exp**.5D0/(arho_exp*100.D0)
        else
-         rhosda_m(j)=((1.02D2*(te_m(j)*1.D3)**.5D0)/bt_exp/1.D4)
-     >         *amassgas_exp**.5D0/(arho_exp*100.D0)
+         rhosda_m(j)=((1.02D2*(te_m(j)*1.D3)**.5D0)/bt_exp/1.D4)*
+     >      amassgas_exp**.5D0/(arho_exp*100.D0)
        endif
       enddo
 c
 c   local gyrobohm unit of diffusion
 c
-       cgyrobohm_m(jm)=1.D-4*
-     >  9.79D5*(tem*1.D3)**.5D0/(arho_exp*100.D0)
-     >  *(1.02D2*(tem*1.D3)**.5D0/bt_exp/1.D4)**2*amassgas_exp**.5D0
+       cgyrobohm_m(jm)=1.D-4*9.79D5*(tem*1.D3)**.5D0/(arho_exp*100.D0)*
+     >    (1.02D2*(tem*1.D3)**.5D0/bt_exp/1.D4)**2*amassgas_exp**.5D0
 c 
-      do j=jm-jptf, jm+jpt
+      do j=jm-jptf,jm+jpt
         drho=rho(j-1)-rho(j)+epsilon
         zpte_m(j)=-(dlog(te_m(j-1))-dlog(te_m(j)))/drho
         zpti_m(j)=-(dlog(ti_m(j-1))-dlog(ti_m(j)))/drho
@@ -623,11 +622,8 @@ c
  
 c MHD alpha parameter
  
-         alpha_m(jm)=drhodr(jm)*
-     >    q_exp(jm)**2*rmaj_exp(jm)/arho_exp*
-     >    betae_m(jm)*((tim/tem*nim/nem)*
-     >   (zpmni+zpmti)
-     >    +zpmne+zpmte)
+         alpha_m(jm)=drhodr(jm)*q_exp(jm)**2*rmaj_exp(jm)/arho_exp*
+     >      betae_m(jm)*((tim/tem*nim/nem)*(zpmni+zpmti)+zpmne+zpmte)
  
 c vstarp_m is diamagnetic part of egamma_m (doppler shear rate)
 c vstar_sign is negative for negative vstar_i. Thus for co-injection or positive
@@ -643,17 +639,14 @@ c angrot toroidal rotation cancels the diamgnetic rotation
           rdrho_local=rmin_exp(j-jptf)/arho_exp/rho(j-jptf)
           rdrho_local_p1=rmin_exp(j+jpt)/arho_exp/rho(j+jpt)
  
-        vstarp_m(jm)=(
-     > +egeo_local*vstar_sign*
-     > (rho(j+jpt)*rdrho_local_p1+rho(j-jptf)*rdrho_local)/2.D0*(
-     >(ti_m(j+jpt)/te_m(j+jpt))*csda_m(j+jpt)*
-     > (zpti_m(j+jpt)+zpni_m(j+jpt))
-     >  *pgeo_local*rhosda_m(j+jpt)/rho(j+jpt)/rdrho_local_p1
-     >-(ti_m(j-jptf)/te_m(j-jptf))*csda_m(j-jptf)*
-     > (zpti_m(j-jptf)+zpni_m(j-jptf))
-     >  *pgeo_local*rhosda_m(j-jptf)/rho(j-jptf)/rdrho_local
-     >  )/(rho(j+jpt)-rho(j-jptf)+epsilon)/csda_m(j)
-     >  )
+        vstarp_m(jm)=(+egeo_local*vstar_sign*(rho(j+jpt)*rdrho_local_p1+
+     >     rho(j-jptf)*rdrho_local)/2.D0*((ti_m(j+jpt)/te_m(j+jpt))*
+     >     csda_m(j+jpt)*(zpti_m(j+jpt)+zpni_m(j+jpt))*pgeo_local*
+     >     rhosda_m(j+jpt)/rho(j+jpt)/rdrho_local_p1-(ti_m(j-
+     >     jptf)/te_m(j-jptf))*csda_m(j-jptf)*(zpti_m(j-jptf)+zpni_m(j-
+     >     jptf))*pgeo_local*rhosda_m(j-jptf)/rho(j-
+     >     jptf)/rdrho_local)/(rho(j+jpt)-rho(j-jptf)+
+     >     epsilon)/csda_m(j))
 c
        do jj=1,2
  
@@ -663,8 +656,8 @@ c
 
 c banana regime ie collisionless limit formulas
  
-        fc=1-1.46D0*(rmin_exp(j)/rmaj_exp(j))**0.5D0+
-     >      0.46D0*(rmin_exp(j)/rmaj_exp(j))**1.5D0
+        fc=1-1.46D0*(rmin_exp(j)/rmaj_exp(j))**0.5D0+0.46D0*
+     >     (rmin_exp(j)/rmaj_exp(j))**1.5D0
         akappa1=0.8839D0*fc/(0.3477D0+0.4058D0*fc)
         alpha_neo=-akappa1+1.D0
         alpha_neo_hold=alpha_neo
@@ -687,14 +680,13 @@ cx        angrotp_exp(j)=corot*angrotp_exp(j)
           rdrho_local=rmin_exp(j)/arho_exp/(rho(j)+epsilon)
  
         ve(j)=-(ti_m(j)/te_m(j))*csda_m(j)*arho_exp*rhosda_m(j)*
-     > (zpni_m(j)+alpha_neo*zpti_m(j))*vstar_sign*pgeo_local
-     > -rho(j)*rdrho_local*
-     >  arho_exp/rmajor_exp/q_exp(j)*rmajor_exp*angrotp_exp(j)
+     >     (zpni_m(j)+alpha_neo*zpti_m(j))*vstar_sign*pgeo_local-rho(j)*
+     >     rdrho_local*arho_exp/rmajor_exp/q_exp(j)*rmajor_exp*
+     >     angrotp_exp(j)
  
-        vpar(j)=rmajor_exp*angrotp_exp(j)-vstar_sign*
-     > (ti_m(j)/te_m(j))*csda_m(j)*arho_exp*rhosda_m(j)*pgeo_local*
-     >((alpha_neo-1.D0)*zpti_m(j))*rho(j)*rdrho_local*
-     > arho_exp/rmajor_exp/q_exp(j)
+        vpar(j)=rmajor_exp*angrotp_exp(j)-vstar_sign*(ti_m(j)/te_m(j))*
+     >     csda_m(j)*arho_exp*rhosda_m(j)*pgeo_local*((alpha_neo-1.D0)*
+     >     zpti_m(j))*rho(j)*rdrho_local*arho_exp/rmajor_exp/q_exp(j)
  
 c        vmode(j)=anfreq_m(j)/(ky_j(j)+epsilon)*
 c     >    csda_m(j)*arho_exp*rhosda_m(j)
@@ -704,9 +696,8 @@ c     >    csda_m(j)*arho_exp*rhosda_m(j)
  
          vpar_m(j)=vpar(j)
  
-         vper_m(j)=ve(j)
-     >  +(ti_m(j)/te_m(j))*csda_m(j)*arho_exp*rhosda_m(j)*
-     >   (zpni_m(j)+zpti_m(j))*vstar_sign*pgeo_local
+         vper_m(j)=ve(j)+(ti_m(j)/te_m(j))*csda_m(j)*arho_exp*
+     >      rhosda_m(j)*(zpni_m(j)+zpti_m(j))*vstar_sign*pgeo_local
        endif
  
        if(abs(itport_pt(4)).eq.1.and.itport_pt(5).eq.1) then
@@ -716,28 +707,24 @@ c     >    csda_m(j)*arho_exp*rhosda_m(j)
        if(abs(itport_pt(4)).eq.1.and.itport_pt(5).eq.0) then
 c this option vpar is vphi vexb from neo+vphi
          ve(j)=-(ti_m(j)/te_m(j))*csda_m(j)*arho_exp*rhosda_m(j)*
-     >  (zpni_m(j)+alpha_neo*zpti_m(j))*vstar_sign*pgeo_local
-     >  -rho(j)*rdrho_local*
-     >   arho_exp/rmajor_exp/q_exp(j)*vphi_m(j)
+     >      (zpni_m(j)+alpha_neo*zpti_m(j))*vstar_sign*pgeo_local-
+     >      rho(j)*rdrho_local*arho_exp/rmajor_exp/q_exp(j)*vphi_m(j)
  
-         vpar(j)=vphi_m(j)-vstar_sign*
-     >   (ti_m(j)/te_m(j))*csda_m(j)*arho_exp*rhosda_m(j)*pgeo_local*
-     >   ((alpha_neo-1.D0)*zpti_m(j))*rho(j)*rdrho_local*
-     >   arho_exp/rmajor_exp/q_exp(j)
+         vpar(j)=vphi_m(j)-vstar_sign*(ti_m(j)/te_m(j))*csda_m(j)*
+     >      arho_exp*rhosda_m(j)*pgeo_local*((alpha_neo-1.D0)*
+     >      zpti_m(j))*rho(j)*rdrho_local*arho_exp/rmajor_exp/q_exp(j)
  
          vpar_m(j)=vpar(j)
  
-         vper_m(j)=ve(j)
-     >   +(ti_m(j)/te_m(j))*csda_m(j)*arho_exp*rhosda_m(j)*
-     >   (zpni_m(j)+zpti_m(j))*vstar_sign*pgeo_local
+         vper_m(j)=ve(j)+(ti_m(j)/te_m(j))*csda_m(j)*arho_exp*
+     >      rhosda_m(j)*(zpni_m(j)+zpti_m(j))*vstar_sign*pgeo_local
        endif
  
        if(itport_pt(5).eq.1) then
 c this option vexb from vper and vpar with neo dampng built into
 c vpar and vper transport equations
-         ve(j)=vper_m(j)
-     >   -(ti_m(j)/te_m(j))*csda_m(j)*arho_exp*rhosda_m(j)*
-     >   (zpni_m(j)+zpti_m(j))*vstar_sign*pgeo_local
+         ve(j)=vper_m(j)-(ti_m(j)/te_m(j))*csda_m(j)*arho_exp*
+     >      rhosda_m(j)*(zpni_m(j)+zpti_m(j))*vstar_sign*pgeo_local
        endif
  
 c       vexb_m(j)=ve(j)
@@ -757,13 +744,12 @@ c
         rdrho_local=rmin_exp(j-jptf)/arho_exp/rho(j-jptf)
         rdrho_local_p1=rmin_exp(j+jpt)/arho_exp/rho(j+jpt)
 c
-        egamma_m(jm)=relx*egamma_m(jm)+(1.D0-relx)*(
-     >  egeo_local*drhodrrrho(j)*
-     >  (rho(j-jptf)+rho(j+jpt))/(q_exp(j-jptf)+q_exp(j+jpt))*
-     >  (ve(j+jpt)*q_exp(j+jpt)/rho(j+jpt)/rdrho_local_p1-
-     >  ve(j-jptf)*q_exp(j-jptf)/rho(j-jptf)/rdrho_local)/
-     >  (rho(j+jpt)-rho(j-jptf)+epsilon)/arho_exp/csda_m(j)
-     >  )
+        egamma_m(jm)=relx*egamma_m(jm)+(1.D0-relx)*(egeo_local*
+     >     drhodrrrho(j)*(rho(j-jptf)+rho(j+jpt))/(q_exp(j-jptf)+
+     >     q_exp(j+jpt))*(ve(j+jpt)*q_exp(j+jpt)/rho(j+
+     >     jpt)/rdrho_local_p1-ve(j-jptf)*q_exp(j-jptf)/rho(j-
+     >     jptf)/rdrho_local)/(rho(j+jpt)-rho(j-jptf)+
+     >     epsilon)/arho_exp/csda_m(j))
 c
 c       write(*,*) jm, rho(jm), egamma_m(jm), ' egamma'
 c
@@ -775,14 +761,11 @@ c    >  vmode(j-jptf)/rho(j-jptf)/rdrho_local)/
 c    >  (rho(j+jpt)-rho(j-jptf)+epsilon)/arho_exp/csda_m(j)
 c    >  )
  
-        gamma_p_m(jm)=relx*gamma_p_m(jm)+(1.D0-relx)*(
-     >   -drhodr(j)*
-     >   (vpar(j+jpt)-vpar(j-jptf))
-     >   /(rho(j+jpt)-rho(j-jptf)+epsilon)/arho_exp/csda_m(j)
-     >  )
+        gamma_p_m(jm)=relx*gamma_p_m(jm)+(1.D0-relx)*(-drhodr(j)*
+     >     (vpar(j+jpt)-vpar(j-jptf))/(rho(j+jpt)-rho(j-jptf)+
+     >     epsilon)/arho_exp/csda_m(j))
  
-       if (jm.eq.1.and.gamma_p_m(jm).gt.10)
-     >    gamma_p_m(jm)=10.D0
+       if (jm.eq.1.and.gamma_p_m(jm).gt.10)gamma_p_m(jm)=10.D0
         alpha_neo=alpha_neo_hold
  
 c.......end   setups...........
@@ -856,7 +839,7 @@ c     > (alog(q_exp(jm-1))-alog(q_exp(jm)))/(rho(jm-1)-rho(jm))
        rmaj_gf=rmaj_exp(jm)/arho_exp
        rmin_gf=rmin_exp(jm)/arho_exp
        q_gf=q_exp(jm)
-       betae_gf=dmax1(cbetae*betae_m(jm), 1.D-6)
+       betae_gf=dmax1(cbetae*betae_m(jm),1.D-6)
        shat_gf=shat_exp(jm)*drhodrrrho(jm)
  
        if(xalpha.lt.0.) alpha_gf=-xalpha*alpha_m(jm)
@@ -886,14 +869,11 @@ c      amassimp_gf=12.D0
        if (idengrad.eq.2) dil_gf=1.D0-nim/nem
        if (idengrad.eq.3) then
          apwt_gf=nim/nem
-         aiwt_jp1=(zeffm*nem-ni_m(jm+1)
-     >            -ns_m(jm+1))/(zimp_gf**2*nem)
+         aiwt_jp1=(zeffm*nem-ni_m(jm+1)-ns_m(jm+1))/(zimp_gf**2*nem)
          xnimp_jp1=aiwt_jp1*ne_m(jm+1)
-         aiwt_gf=(zeffm*nem
-     >           -nim-ns_m(jm))/(zimp_gf**2*ne_m(jm))
+         aiwt_gf=(zeffm*nem-nim-ns_m(jm))/(zimp_gf**2*ne_m(jm))
          xnimp=aiwt_gf*ne_m(jm)
-         zpmnimp=-(dlog(xnimp_jp1)-dlog(xnimp))/
-     >           (rho(jm+1)-rho(jm))
+         zpmnimp=-(dlog(xnimp_jp1)-dlog(xnimp))/(rho(jm+1)-rho(jm))
          rlnimp_gf=zpmnimp*elong_exp(jm)**0.5
 c         write(*,*) 'xnimp, nem, zeffm, nim :', xnimp, nem, zeffm, nim
        endif
@@ -986,8 +966,8 @@ ck       kevdsecpmw=1.6022e-19*1.0e3*1.e-6
  
 ck      exch_m(jm)=1.e19*
 ck     > kevdsecpmw*nem*tem*csda_m(jm)*rhosda_m(jm)**2*exch_gf*cmodel
-      exch_m(jm)=1.D19*1.6022D-19*1.0D3*1.D-6*
-     > nem*tem*csda_m(jm)*rhosda_m(jm)**2*exch_gf*cmodel
+      exch_m(jm)=1.D19*1.6022D-19*1.0D3*1.D-6*nem*tem*csda_m(jm)*
+     >   rhosda_m(jm)**2*exch_gf*cmodel
  
       exchm=exch_m(jm)
  

@@ -508,7 +508,7 @@ class CoreProfiles1D(Dict[Node]):
         This quantity is the toroidal angular rotation frequency due to the ExB drift, introduced in formula(43) of Hinton and Wong,
         Physics of Fluids 3082 (1985), also referred to as sonic flow in regimes in which the toroidal velocity is dominant over the
         poloidal velocity Click here for further documentation. {dynamic}[s ^ -1]"""
-        return Function(self._grid.rho_tor_norm, self.get("rotation_frequency_tor_sonic"))
+        return Function(self._grid.rho_tor_norm, self.get("rotation_frequency_tor_sonic", 0))
 
     @sp_property
     def q(self) -> Function:
@@ -519,7 +519,8 @@ class CoreProfiles1D(Dict[Node]):
     @sp_property
     def magnetic_shear(self) -> Function:
         """Magnetic shear, defined as rho_tor/q . dq/drho_tor {dynamic}[-]"""
-        return Function(self._grid.rho_tor_norm, self.get("magnetic_shear"))
+        return Function(self._grid.rho_tor_norm, self.q.derivative(self._grid.rho_tor_norm)/self.q(self._grid.rho_tor_norm)*self._grid.rho_tor_norm)
+        # return Function(self._grid.rho_tor_norm, self.get("magnetic_shear"))
 
 
 class CoreProfilesGlobalQuantities(Dict):

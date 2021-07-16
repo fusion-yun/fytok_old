@@ -783,8 +783,8 @@ c check adiabatic property that chkf should be 1.0  (finite xnu)
       if (lprint.eq.98) then
         write(2,*) 'ky,g1,g2,g3,g12,g23,w_s,w_d,w_cd: ',
      >    ky,g1,g2,g12,g23,w_s,w_d,w_cd
-        write(2,*) 'f0,taui,k_par,reps: ',
-     >    f0,taui,k_par,k_per,reps
+        write(2,*) 'f0,taui,k_par,reps,b0i,g1i: ',
+     >    f0,taui,k_par,k_per,reps,b0i,g1i
         write(2,*) 'chi_par_1,chi_per_1,gam_par,gam_per:',
      >    chi_par_1,chi_per_1,gam_par,gam_per
         write(2,*) 'x_par,x_per,xmu:',
