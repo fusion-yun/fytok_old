@@ -21,6 +21,7 @@ mod_glf23 = Extension(name='mod_glf23',
                           '-Wno-unused-variable',
                           '-Wno-unused-dummy-argument'
                       ])
+                      
 if __name__ == "__main__":
     from numpy.distutils.core import setup
     setup(name='glf23',

@@ -15,7 +15,7 @@ from spdm.numlib import constants, np
 from spdm.numlib.misc import array_like
 from spdm.util.logger import logger, SP_NO_DEBUG
 
-from .glf23_mod import glf2d, glf
+from .mod_glf23 import callglf2d
 
 PI = constants.pi
 EPSILON = 1.0e-34
