@@ -11,7 +11,7 @@ from spdm.numlib import constants, np
 from spdm.numlib.misc import array_like
 from spdm.util.logger import logger
 
-from .nclass_mod import nclass_mod
+from .mod_nclass import nclass_mod
 
 NCLASS_MSG = [
     "iflag=-4 warning: no viscosity",

@@ -2418,7 +2418,7 @@
           iflag=1
           write(*,*) 'NCLASS_DECOMP/ERROR:singular matrix(1)',aamax
 !          write(*,*) 'a=',a
-          CALL mexErrMsgTxt('erreur nclas_decomp')
+          ! CALL mexErrMsgTxt('erreur nclas_decomp')
           GOTO 9999
 
         ENDIF

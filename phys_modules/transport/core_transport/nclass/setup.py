@@ -3,11 +3,13 @@ from numpy.distutils.core import Extension
 mod_nclass = Extension(
     name='mod_nclass',
     language='f90',
-    f2py_options=["--debug-capi", "only:", "nclass", ":"],
+    f2py_options=["--debug-capi", "only:", "call_nclass", ":"],
     sources=[
         # NOTE: Order is important!!!!
-        f'/home/salmon/workspace/fytok/phys_modules/transport/core_transport/nclass/src/spec_kind_mod.f90',
-        f'/home/salmon/workspace/fytok/phys_modules/transport/core_transport/nclass/src/nclass_mod.f90',
+        f'src/spec_kind_mod.f90',
+        f'src/nclass_mod.f90',
+        f'src/call_nclass.f90',
+
     ],
 )
 
@@ -15,9 +17,8 @@ if __name__ == "__main__":
     from numpy.distutils.core import setup
     setup(name='nclass',
           version='0.0.1',
-          description="Fymodule for calling the  NeoCLASSical transport properties.",
-          long_description=\
-f"""This is a `FyModule` for calling the  NeoCLASSical transport properties.    
+          description="Fymodule for calling the  NeoCLASSical.",
+          long_description=f"""This is a `FyModule` for calling the  NeoCLASSical.    
     `FyModule` is the extended component of the tokamak integrated modeling and analysis tool `FyTok`. 
     
     For information about 'FyTok', please see 
