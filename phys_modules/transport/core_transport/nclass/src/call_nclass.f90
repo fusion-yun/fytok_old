@@ -1,9 +1,9 @@
 
 SUBROUTINE call_nclass(nrho, nion, R0, B0, rho_bdry, rho_tor_norm, amu_i, &
                        Ts, Ns, dTs, dNs, &
-                       psi, r_in, r_out, vprime, F_dia, &
+                       psi, r_axis, vprime, F_dia, q, &
                        gm1, gm2, gm3, gm4, gm5, gm6, gm7, gm8, gm9, &
-                       elongation, eparallel, &
+                       elongation, eparallel, trapped_fraction, &
                        jboot, sigma, te_flux, ti_flux, ne_flux, ni_flux, &
                        te_diff, ti_diff, ne_diff, ni_diff, te_vconv, ti_vconv, ne_vconv, ni_vconv)
 
@@ -20,10 +20,11 @@ SUBROUTINE call_nclass(nrho, nion, R0, B0, rho_bdry, rho_tor_norm, amu_i, &
     REAL(KIND=rspec), intent(in) :: R0, B0, rho_bdry
     REAL(KIND=rspec), intent(in), DIMENSION(nion + 1) ::  amu_i
 
-    REAL(KIND=rspec), intent(in), DIMENSION(nrho, nion + 1) ::  Ts, dTs  ! Temerature in [Kev]
-    REAL(KIND=rspec), intent(in), DIMENSION(nrho, nion + 1) ::  Ns, dNs  ! Temerature in [Kev]
-    REAL(KIND=rspec), intent(in), DIMENSION(nrho):: rho_tor_norm, r_in, r_out, psi, vprime,&
-    & gm1, gm2, gm3, gm4, gm5, gm6, gm7, gm8, gm9, elongation, eparallel, F_dia
+    REAL(KIND=rspec), intent(in), DIMENSION(nrho, nion + 1) ::  Ts, dTs  ! Temerature in [ev]
+    REAL(KIND=rspec), intent(in), DIMENSION(nrho, nion + 1) ::  Ns, dNs  ! Density in [m^-3]
+    REAL(KIND=rspec), intent(in), DIMENSION(nrho):: rho_tor_norm, psi, vprime, r_axis, &
+                                                    gm1, gm2, gm3, gm4, gm5, gm6, gm7, gm8, gm9, elongation, eparallel, F_dia, &
+                                                    trapped_fraction, q
 
     ! OUTPUT
 
@@ -61,7 +62,8 @@ SUBROUTINE call_nclass(nrho, nion, R0, B0, rho_bdry, rho_tor_norm, amu_i, &
 
     !Declaration of input variables
 
-    REAL(KIND=rspec) :: p_b2, p_bm2, p_eb, p_fhat, p_fm(3), p_ft, p_grbm2, p_grphi, p_gr2phi, p_ngrth, &
+    REAL(KIND=rspec) :: p_eb, p_fhat, p_fm(3), &
+                        p_grphi, p_gr2phi, p_ngrth, &
                         grt_i(nion + 1), temp_i(nion + 1), vti(nion + 1), &
                         den_iz(nion + 1, mxmz), grp_iz(nion + 1, mxmz), fex_iz(3, nion + 1, mxmz)
 
@@ -100,37 +102,31 @@ SUBROUTINE call_nclass(nrho, nion, R0, B0, rho_bdry, rho_tor_norm, amu_i, &
 
     REAL(KIND=rspec) pcharge(nion + 1), pmasse(nion + 1)
 
-    ! REAL(KIND=rspec) ni(200), xr0, xeps
+    ! REAL(KIND=rspec) ni(200), x_r_axis, xeps
 
-    REAL(KIND=rspec)  :: bt0, dencut, dent, xbeta, xdelp, xvpr, ab, xgph, eps2, b, a, c, xm, rminx
+    REAL(KIND=rspec)  :: bt0, dencut, dent, xbeta,  xvpr, ab, xgph, eps2, b, a, c, xm, rminx
     REAL(KIND=rspec)  :: dentot, chitp, vconv, etatemp(4), xi(nion + 1, mxmz)
 
     integer ::m_i, m_z, nspec, ipr
     integer :: icharge, kmmaj, ksmaj
-    REAL(KIND=rspec) rhomax, q0, rkappa0, c_pot1, xqs, xr0, xeps
+    REAL(KIND=rspec) q0, c_pot1, x_q, x_r_axis, xeps
 
     REAL(KIND=rspec) tabtr(1000, nrho)
 
-    REAL(KIND=rspec) grad_rho2(nrho), xfs_pr(nrho), bt0_pr(nrho), xr0_pr(nrho), &
-        psidrho(nrho), rminx_pr(nrho), p_ft_pr(nrho), xqs_pr(nrho), &
-        xvpr_pr(nrho), gph_pr(nrho), grho2_pr(nrho), dpsidrho(nrho), &
-        p_b2_pr(nrho), p_bm2_pr(nrho), grho_pr(nrho), p_eb_pr(nrho), &
+    REAL(KIND=rspec) grad_rho2, grad_rho, &
+        xfs_pr(nrho), bt0_pr(nrho), &
+        psidrho(nrho), rminx_pr(nrho), &
+        gph_pr(nrho), &
+        p_eb_pr(nrho), &
         ergrho(nrho), inter(nrho), gr2phi(nrho), &
-        force1(nrho), force2(nrho), force3(nrho), p_grbm2_pr(nrho), &
+        force1(nrho), force2(nrho), force3(nrho), &
         xfs, rap(nrho), denz2(nion + 1)
 
     integer ::  m
     integer :: itp1, i, ia, ima, ki, kspec, iza, j, indsave
 
     itp1 = 1
-    !____________
-    ! data access
-    !____________
-    nspec = nion + 1 ! add electron species
-    ! pmasse(1) = 1   ! electron
-    ! pmasse(2:nspec) = coreprof(itp1)%composition%amn  ! species mass
-    ! pcharge(1) = -1    ! electron
-    ! pcharge(2:nspec) = coreprof(itp1)%composition%zn
+
     !----------------------------------------------------------------------
     ! Model options
     !  kboot           : internal option for metrics
@@ -170,9 +166,17 @@ SUBROUTINE call_nclass(nrho, nion, R0, B0, rho_bdry, rho_tor_norm, amu_i, &
     !                 = 0 -> off
     !                 =   -> else on
     !------------------------------------------------------------------
-    ! kpfirsch = 1
-    ! m_i = nspec
-    ! m_z = 0
+    kpfirsch = 1
+
+    !------------------------------------------------------------------
+
+    nspec = nion + 1 ! add electron species
+    m_i = nspec
+    m_z = 0
+    ! pmasse(1) = 1   ! electron
+    ! pmasse(2:nspec) = coreprof(itp1)%composition%amn  ! species mass
+    ! pcharge(1) = -1    ! electron
+    ! pcharge(2:nspec) = coreprof(itp1)%composition%zn
     ! DO i = 1, nspec
     !     icharge = nint(pcharge(i))
     !     IF (icharge .gt. m_z) m_z = icharge
@@ -185,128 +189,22 @@ SUBROUTINE call_nclass(nrho, nion, R0, B0, rho_bdry, rho_tor_norm, amu_i, &
     !  c_den          : density cutoff below which species is ignored (/m**3)
     !------------------------------------------------------------------------
     c_den = 1.0e10
-    ! !-----------------------------------------------------------------------------
-    ! !  p_grphi        : radial electric field Phi' (V/rho)
-    ! !  p_gr2phi       : radial electric field gradient Psi'(Phi'/Psi')' (V/rho**2)
-    ! !-----------------------------------------------------------------------------
+    !-----------------------------------------------------------------------------
+    !  p_grphi        : radial electric field Phi' (V/rho)
+    !  p_gr2phi       : radial electric field gradient Psi'(Phi'/Psi')' (V/rho**2)
+    !-----------------------------------------------------------------------------
 
-    ! x(1:nrho) = rho/rho_bdry
-    ! !----------------------
-    ! ! temprature in keV
-    ! !----------------------
-    ! ! Ts(1:nrho, 1) = coreprof(itp1)%te%value(1:nrho)/1000.0
-    ! ! do kspec = 2, nspec
-    ! !     Ts(1:nrho, kspec) = coreprof(itp1)%ti%value(:, kspec - 1)/1000.0
-    ! ! end do
-    ! ! Ns(1:nrho, 1) = coreprof(itp1)%ne%value
-    ! ! ni = 0
-    ! ! do kspec = 2, nspec
-    ! !     Ns(1:nrho, kspec) = coreprof(itp1)%ni%value(:, kspec - 1)
-    ! !     ni(:) = ni(:) + Ns(:, kspec)
-    ! ! end do
-    ! ! do kspec = 1, nspec
-    ! !     !print*,"calcul de dTi/dx, Ti= ",tempi(101,kspec)
-    ! !     !print*,"kspec=",kspec
-    ! !     call cos_rpdederive(dTs(:, kspec), nrho, x, Ts(:, kspec), 0, 2, 2, 1)
-    ! ! end do
-    ! ! !      den    : coreprof(itp1).ne.value
-    ! ! do kspec = 1, nspec
-    ! !     !print*,"calcul de dni/dx, ni= ",den(1:4,kspec)
-    ! !     !print*,"kspec=",kspec
-    ! !     call cos_rpdederive(dNs(:, kspec), nrho, x, Ns(:, kspec), 0, 2, 2, 1)
-    ! ! end do
-    ! !     equilibrium data
-    ! !!!psi(1:nrho)                    = coreprof(itp1)%psi%value
-    ! ! dpc
-    ! !!!psi(1:nrho)                    = equilibrium(1)%profiles_1d%psi
-    ! !psi(1:nrho) = interpolate(equilibrium(1)%profiles_1d%rho_tor, equilibrium(1)%profiles_1d%psi, rho(1:nrho))
-    ! ! CALL l3interp(equilibrium(1)%profiles_1d%psi, equilibrium(1)%profiles_1d%rho_tor, size(equilibrium(1)%profiles_1d%rho_tor), &
-    ! !               psi, rho, nrho)
-    ! ! cpd
-    ! ! call cos_rpdederive(psidrho, nrho, rho, psi, 0, 2, 2, 1)
-    ! !!!r_in(1:nrho)                           = equilibrium(1)%profiles_1d%r_inboard
-    ! !r_in(1:nrho) = interpolate(equilibrium(1)%profiles_1d%rho_tor, equilibrium(1)%profiles_1d%r_inboard, rho(1:nrho))
-    ! ! CALL l3interp(equilibrium(1)%profiles_1d%r_inboard, equilibrium(1)%profiles_1d%rho_tor, size(equilibrium(1)%profiles_1d%rho_tor), &
-    ! !               r_in, rho, nrho)
-    ! !!!r_out(1:nrho)                          = equilibrium(1)%profiles_1d%r_outboard
-    ! !r_out(1:nrho) = interpolate(equilibrium(1)%profiles_1d%rho_tor, equilibrium(1)%profiles_1d%r_outboard, rho(1:nrho))
-    ! ! CALL l3interp(equilibrium(1)%profiles_1d%r_outboard, equilibrium(1)%profiles_1d%rho_tor, size(equilibrium(1)%profiles_1d%rho_tor), &
-    ! !               r_out, rho, nrho)
-    ! xr0_pr = (r_out + r_in)/2
-    ! xr0_pr = r_out               !!! ??? DPC
+    q0 = q(1)
 
-    ! !rminx_pr(1:nrho)                       = equilibrium%profiles_1d%rho_rttorfl
-    ! rminx_pr(1:nrho) = rho(1:nrho)
-    ! !!!p_ft_pr(1:nrho)                        = equilibrium(1)%profiles_1d%ftrap
-    ! !p_ft_pr(1:nrho) = interpolate(equilibrium(1)%profiles_1d%rho_tor, equilibrium(1)%profiles_1d%ftrap, rho(1:nrho))
-    ! ! CALL l3interp(equilibrium(1)%profiles_1d%ftrap, equilibrium(1)%profiles_1d%rho_tor, size(equilibrium(1)%profiles_1d%rho_tor), &
-    ! !               p_ft_pr, rho, nrho)
-    ! !xqs_pr(1:nrho)                         = coreprof%profiles1d%q%value
-    ! !!!xqs_pr(1:nrho)                         = equilibrium(1)%profiles_1d%q
-    ! !xqs_pr(1:nrho) = interpolate(equilibrium(1)%profiles_1d%rho_tor, equilibrium(1)%profiles_1d%q, rho(1:nrho))
-    ! ! CALL l3interp(equilibrium(1)%profiles_1d%q, equilibrium(1)%profiles_1d%rho_tor, size(equilibrium(1)%profiles_1d%rho_tor), &
-    ! !               xqs_pr, rho, nrho)
-    ! q0 = xqs_pr(1)
-    ! !!!DPC-EQ-4.08b-problem
-    ! !!!xvpr_pr(1:nrho)                        = equilibrium(1)%profiles_1d%vprime
-    ! !dpsidrho(1:nrho) = interpolate(equilibrium(1)%profiles_1d%rho_tor, equilibrium(1)%profiles_1d%dpsidrho_tor, rho(1:nrho))
-    ! ! CALL l3interp(equilibrium(1)%profiles_1d%dpsidrho_tor, equilibrium(1)%profiles_1d%rho_tor, size(equilibrium(1)%profiles_1d%rho_tor),  &
-    ! !               dpsidrho, rho, nrho)
-    ! !xvpr_pr(1:nrho) = interpolate(equilibrium(1)%profiles_1d%rho_tor, equilibrium(1)%profiles_1d%vprime, rho(1:nrho))
-    ! ! CALL l3interp(equilibrium(1)%profiles_1d%vprime, equilibrium(1)%profiles_1d%rho_tor, size(equilibrium(1)%profiles_1d%rho_tor), &
-    ! !               xvpr_pr, rho, nrho)
-    ! xvpr_pr = xvpr_pr*dpsidrho*rho(nrho)
+    bt0_pr(1:nrho) = F_dia*gm1/gm9
+    gph_pr(1:nrho) = gm1*rho_bdry*vprime(1:nrho)
+    ! gph_pr(1:nrho) = gm1(1:nrho)*rho_bdry*vprime
 
-    ! !!!gm1(1:nrho)                            = equilibrium(1)%profiles_1d%gm1
-    ! !gm1(1:nrho) = interpolate(equilibrium(1)%profiles_1d%rho_tor, equilibrium(1)%profiles_1d%gm1, rho(1:nrho))
-    ! ! CALL l3interp(equilibrium(1)%profiles_1d%gm1, equilibrium(1)%profiles_1d%rho_tor, size(equilibrium(1)%profiles_1d%rho_tor), &
-    ! !               gm1, rho, nrho)
-    ! !!!gm9(1:nrho)                            = equilibrium(1)%profiles_1d%gm9
-    ! !gm9(1:nrho) = interpolate(equilibrium(1)%profiles_1d%rho_tor, equilibrium(1)%profiles_1d%gm9, rho(1:nrho))
-    ! ! CALL l3interp(equilibrium(1)%profiles_1d%gm9, equilibrium(1)%profiles_1d%rho_tor, size(equilibrium(1)%profiles_1d%rho_tor), &
-    ! !   gm9, rho, nrho)
-    ! !!!bt0_pr(1:nrho)                         = equilibrium(1)%profiles_1d%F_dia * gm1 / gm9
-    ! !bt0_pr(1:nrho) = interpolate(equilibrium(1)%profiles_1d%rho_tor, equilibrium(1)%profiles_1d%F_dia, rho(1:nrho)) * gm1 / gm9
-    ! ! CALL l3interp(equilibrium(1)%profiles_1d%F_dia * gm1 / gm9, equilibrium(1)%profiles_1d%rho_tor, size(equilibrium(1)%profiles_1d%rho_tor),  &
-    ! !               bt0_pr, rho, nrho)
-    ! !!!gph_pr(1:nrho)                         = equilibrium(1)%profiles_1d%gm1 * rho_bdry * xvpr_pr(1:nrho)
-    ! gph_pr(1:nrho) = gm1(1:nrho)*rho_bdry*xvpr_pr
-    ! !!!grad_rho2 (1:nrho)                      = equilibrium(1)%profiles_1d%gm3
-    ! !grad_rho2(1:nrho) = interpolate(equilibrium(1)%profiles_1d%rho_tor, equilibrium(1)%profiles_1d%gm3, rho(1:nrho))
-    ! ! CALL l3interp(equilibrium(1)%profiles_1d%gm3, equilibrium(1)%profiles_1d%rho_tor, size(equilibrium(1)%profiles_1d%rho_tor), &
-    ! !               grad_rho2, rho, nrho)
-    ! !!!p_b2_pr(1:nrho)                        = equilibrium(1)%profiles_1d%gm5
-    ! !p_b2_pr(1:nrho) = interpolate(equilibrium(1)%profiles_1d%rho_tor, equilibrium(1)%profiles_1d%gm5, rho(1:nrho))
-    ! ! CALL l3interp(equilibrium(1)%profiles_1d%gm5, equilibrium(1)%profiles_1d%rho_tor, size(equilibrium(1)%profiles_1d%rho_tor), &
-    ! !               p_b2_pr, rho, nrho)
-    ! !!!p_bm2_pr(1:nrho)                       = equilibrium(1)%profiles_1d%gm4
-    ! !p_bm2_pr(1:nrho) = interpolate(equilibrium(1)%profiles_1d%rho_tor, equilibrium(1)%profiles_1d%gm4, rho(1:nrho))
-    ! ! CALL l3interp(equilibrium(1)%profiles_1d%gm4, equilibrium(1)%profiles_1d%rho_tor, size(equilibrium(1)%profiles_1d%rho_tor), &
-    ! !               p_bm2_pr, rho, nrho)
-    ! !!!p_grbm2_pr(1:nrho)                     = equilibrium(1)%profiles_1d%gm6
-    ! !p_grbm2_pr(1:nrho) = interpolate(equilibrium(1)%profiles_1d%rho_tor, equilibrium(1)%profiles_1d%gm6, rho(1:nrho))
-    ! ! CALL l3interp(equilibrium(1)%profiles_1d%gm6, equilibrium(1)%profiles_1d%rho_tor, size(equilibrium(1)%profiles_1d%rho_tor), &
-    ! !               p_grbm2_pr, rho, nrho)
-    ! !!!grho_pr(1:nrho)                        = equilibrium(1)%profiles_1d%gm7
-    ! !grho_pr(1:nrho) = interpolate(equilibrium(1)%profiles_1d%rho_tor, equilibrium(1)%profiles_1d%gm7, rho(1:nrho))
-    ! ! CALL l3interp(equilibrium(1)%profiles_1d%gm7, equilibrium(1)%profiles_1d%rho_tor, size(equilibrium(1)%profiles_1d%rho_tor), &
-    ! !               grho_pr, rho, nrho)
-    ! rkappa0 = elongation
-
-    ! p_eb_pr(1:nrho) = coreprof(itp1)%profiles1d%eparallel%value
-    ! !p_eb_pr                        = p_eb_pr * bt0_pr
-    ! p_eb_pr = p_eb_pr*B0
-    ! c_potb = rkappa0*bt0/2/q0/q0
-    ! c_potl = q0*xr0
-
-    ! !attention a prendre de l'equilibre
-    ! !ergrho(1:nrho)                         = er / grho_pr
-    ! ergrho(1:nrho) = 0
+    p_eb_pr = eparallel*bt0_pr
+    c_potb = elongation(1)*B0/2/q0/q0
+    c_potl = q0*x_r_axis
 
     ! inter(2:nrho) = -ergrho(2:nrho)/psidrho(2:nrho)
-    ! call cos_zconversion(inter, nrho)
-    ! !print*,"calcul de dinter/dx, inter= ",inter(1:4)
-    ! call cos_rpdederive(gr2phi, nrho, rho, inter, 0, 2, 2, 1)
     ! gr2phi = psidrho*gr2phi
     !      not in the CPO
     !      force1          =    1st moment of external forces for the main ion (datak.source.total.q ?)
@@ -325,7 +223,7 @@ SUBROUTINE call_nclass(nrho, nion, R0, B0, rho_bdry, rho_tor_norm, amu_i, &
     !--------------------------------------------------------------------|
     ! xfs     : external poloidal current has a flux surface (A)|
     !--------------------------------------------------------------------|
-    xfs_pr = 2.0*z_pi*xr0_pr*bt0_pr/z_mu0
+    xfs_pr = 2.0*z_pi*r_axis*bt0_pr/z_mu0
     !-----------------------
     ! Loop over radial nodes
     !-----------------------
@@ -333,29 +231,28 @@ SUBROUTINE call_nclass(nrho, nion, R0, B0, rho_bdry, rho_tor_norm, amu_i, &
         !
         ! external force set to zero
         !
+        grad_rho2 = gm3(ipr)
+        grad_rho = gm7(ipr)
         p_grphi = 0.0
         p_gr2phi = 0.0
         fex_iz(1, kmmaj, ksmaj) = force1(ipr)
         fex_iz(2, kmmaj, ksmaj) = force2(ipr)
         fex_iz(3, kmmaj, ksmaj) = force3(ipr)
         dencut = 1e10
-        xr0 = xr0_pr(ipr)
+        x_r_axis = r_axis(ipr)
         rminx = rminx_pr(ipr)
-        xqs = xqs_pr(ipr)
+        x_q = q(ipr)
         if (ipr .eq. 4) then
 
-            !  xqs = 0.6772616311415705
+            !  x_q = 0.6772616311415705
 
         end if
-        p_ft = p_ft_pr(ipr)
         bt0 = bt0_pr(ipr)
-        xdelp = xvpr_pr(ipr)
-        xvpr = xdelp
+        xvpr = vprime(ipr)
         ab = 1.0
-        p_b2 = p_b2_pr(ipr)
-        p_bm2 = p_bm2_pr(ipr)
-        q0 = xqs_pr(1)
-        xeps = rminx/xr0
+
+        q0 = q(1)
+        xeps = rminx/x_r_axis
         xgph = gph_pr(ipr)/4/z_pi/z_pi
         xfs = xfs_pr(ipr)
         DO ima = 1, m_i
@@ -394,17 +291,16 @@ SUBROUTINE call_nclass(nrho, nion, R0, B0, rho_bdry, rho_tor_norm, amu_i, &
         if (xgph .eq. 0) then
             xgph = 0.01
         end if
-        p_fhat = xqs/xgph
-        p_grbm2 = p_grbm2_pr(ipr)
+        p_fhat = x_q/xgph
         p_eb = p_eb_pr(ipr)
-        c_potb = rkappa0*bt0/2/q0/q0
-        c_potl = q0*xr0
+        c_potb = elongation(1)*bt0/2/q0/q0
+        c_potl = q0*x_r_axis
         IF (kboot .eq. 1) THEN
             !-----------------
-            !         Hirshman
+            ! Hirshman
             !-----------------
-            p_ngrth = (xeps/(xqs*xr0))**2/2.0
-            p_fm(1) = xqs*xr0
+            p_ngrth = (xeps/(x_q*x_r_axis))**2/2.0
+            p_fm(1) = x_q*x_r_axis
             p_fm(2) = 0.0
             p_fm(3) = 0.0
         ELSEIF (kboot .eq. 2) then
@@ -412,12 +308,12 @@ SUBROUTINE call_nclass(nrho, nion, R0, B0, rho_bdry, rho_tor_norm, amu_i, &
             !         Kessel
             !---------------
             p_ngrth = 0.0
-            p_fm(1) = xqs*xr0/xeps**1.5
+            p_fm(1) = x_q*x_r_axis/xeps**1.5
         ELSE
             !---------------
             !         Shaing
             !---------------
-            p_ngrth = 1.0/(xqs*xr0)
+            p_ngrth = 1.0/(x_q*x_r_axis)
             DO m = 1, 3
                 p_fm(m) = 0
             END DO
@@ -425,7 +321,7 @@ SUBROUTINE call_nclass(nrho, nion, R0, B0, rho_bdry, rho_tor_norm, amu_i, &
                 eps2 = xeps**2
                 b = sqrt(1.0 - eps2)
                 a = (1.0 - b)/xeps
-                c = (b**3.0)*(xqs*xr0)**2
+                c = (b**3.0)*(x_q*x_r_axis)**2
                 DO m = 1, 3
                     xm = float(m)
                     p_fm(m) = xm*a**(2.0*xm)*(1.0 + xm*b)/c
@@ -477,18 +373,106 @@ SUBROUTINE call_nclass(nrho, nion, R0, B0, rho_bdry, rho_tor_norm, amu_i, &
             l_pfirsch = .false.
         end if
 
-        CALL nclass(m_i, m_z, p_b2, p_bm2, p_eb,     &
-             &              p_fhat, p_fm, p_ft, p_grbm2, p_grphi,  &
-             &              p_gr2phi, p_ngrth, amu_i, grt_i, temp_i,   &
-             &              den_iz, fex_iz, grp_iz, ipr, iflag,    &
-             &              l_banana, l_pfirsch, l_potato, k_order, c_den,    &
-             &              c_potb, c_potl, p_etap, p_jbbs, p_jbex,   &
-             &              p_jboh, m_s, jm_s, jz_s, bsjbp_s,  &
-             &              bsjbt_s, gfl_s, dn_s, vnnt_s, vneb_s,   &
-             &              vnex_s, dp_ss, dt_ss, upar_s, utheta_s, &
-             &              qfl_s, chi_s, vqnt_s, vqeb_s, vqex_s,   &
-             &              chip_ss, chit_ss, calm_i, caln_ii, capm_ii,  &
-             &              capn_ii, ymu_s, sqz_s, xi_s, tau_ss)
+        CALL nclass( &!                 -------------------------------------------------------------------------
+            !                           INPUT
+            m_i, &!                         m_i                  -number of isotopes (> 1) [-]
+            m_z, &!                         m_z                  -highest charge state [-]
+            gm5(ipr), &!                    p_b2                 -<B**2> [T**2]
+            gm4(ipr), &!                    p_bm2                -<1/B**2> [/T**2]
+            p_eb, &!                        p_eb                 -<E.B> [V*T/m]
+            p_fhat, &!                      p_fhat               -mu_0*F/(dPsi/dr) [rho/m]
+            p_fm, &!                        p_fm(m)              -poloidal moments of drift factor for PS [/m**2]
+            trapped_fraction(ipr), &!       p_ft                 -trapped fraction [-]
+            gm6(ipr), &!                    p_grbm2              -<grad(rho)**2/B**2> [rho**2/m**2/T**2]
+            p_grphi, &!                     p_grphi              -potential gradient Phi' [V/rho]
+            p_gr2phi, &!                    p_gr2phi             -second potential gradient Psi'(Phi'/Psi')' [V/rho**2]
+            p_ngrth, &!                     p_ngrth              -<n.grad(Theta)> [/m]
+            amu_i, &!                       amu_i(i)             -atomic mass number [-]
+            grt_i, &!                       grt_i(i)             -temperature gradient [keV/rho]
+            temp_i, &!                      temp_i(i)            -temperature [keV]
+            den_iz, &!                      den_iz(i,z)          -density [/m**3]
+            fex_iz, &!                      fex_iz(3,i,z)        -moments of external parallel force [T*n/m**3]
+            grp_iz, &!                      grp_iz(i,z)          -pressure gradient [keV/m**3/rho]
+            ipr, &!
+            !                           -------------------------------------------------------------------------
+            !                           OUTPUT
+            iflag, &!                       iflag               -error and warning flag [-]
+            !                                                       =-1 warning
+            !                                                       =0 no warnings or errors
+            !                                                       =1 error
+            !                           -------------------------------------------------------------------------
+            !                           Optional input:
+            l_banana, &!                    L_BANANA            -option to include banana viscosity [logical]
+            l_pfirsch, &!                   L_PFIRSCH           -option to include Pfirsch-Schluter viscosity [logical]
+            l_potato, &!                    L_POTATO            -option to include potato orbits [logical]
+            k_order, &!                     K_ORDER             -order of v moments to be solved [-]
+            !                                                     =2 u and q (default)
+            !                                                     =3 u, q, and u2
+            !                                                     =else error
+            c_den, &!                       C_DEN-density cutoff below which species is ignored (default 1.e10) [/m**3]
+            c_potb, &!                      C_POTB-kappa(0)*Bt(0)/[2*q(0)**2] [T]
+            c_potl, &!                      C_POTL-q(0)*R(0) [m]
+            !                           -------------------------------------------------------------------------
+            !                           OUTPUT:
+            !                           * Terms summed over species
+            p_etap, &!                      P_ETAP-parallel electrical resistivity [Ohm*m]
+            p_jbbs, &!                      P_JBBS-<J_bs.B> [A*T/m**2]
+            p_jbex, &!                      P_JBEX-<J_ex.B> current response to fex_iz [A*T/m**2]
+            p_jboh, &!                      P_JBOH-<J_OH.B> Ohmic current [A*T/m**2]
+            !                           * Species mapping
+            m_s, &!                         M_S                 -number of species [ms>1]
+            jm_s, &!                        JM_S(s)             -isotope number of s [-]
+            jz_s, &!                        JZ_S(s)             -charge state of s [-]
+            !                           * Bootstrap current and electrical resistivity
+            bsjbp_s, &!                     BSJBP_S(s)          -<J_bs.B> driven by unit p'/p of s [A*T*rho/m**2]
+            bsjbt_s, &!                     BSJBT_S(s)          -<J_bs.B> driven by unit T'/T of s [A*T*rho/m**2]
+            !                           * Continuity equation
+            gfl_s, &!                       GFL_S(m,s)-radial particle flux comps of s [rho/m**3/s]
+            !                                          m=1, banana-plateau, p' and T'
+            !                                          m=2, Pfirsch-Schluter
+            !                                          m=3, classical
+            !                                          m=4, banana-plateau, <E.B>
+            !                                          m=5, banana-plateau, external parallel force fex_iz
+            dn_s, &!                        DN_S(s)             -diffusion coefficients (diag comp) [rho**2/s]
+            vnnt_s, &!                      VNNT_S(s)           -convection velocity (off diag p',T' comps) [rho/s]
+            vneb_s, &!                      VNEB_S(s)           -<E.B> particle convection velocity [rho/s]
+            vnex_s, &!                      VNEX_S(s)           -external force particle convection velocity [rho/s]
+            dp_ss, &!                       DP_SS(s1,s2)-diffusion coefficient of s2 on p'/p of s1 [rho**2/s]
+            dt_ss, &!                       DT_SS(s1,s2)-diffusion coefficient of s2 on T'/T of s1 [rho**2/s]
+            !                            * Momentum equation
+            upar_s, &!                      UPAR_S(3,m,s)-parallel flow of s from force m [T*m/s]
+            !                                             m=1, p', T', Phi'
+            !                                             m=2, <E.B>
+            !                                             m=3, fex_iz
+            utheta_s, &!                    UTHETA_S(3,m,s)-poloidal flow of s from force m [m/s/T]
+            !                                               m=1, p', T'
+            !                                               m=2, <E.B>
+            !                                               m=3, fex_iz
+            !                            * Energy equation
+            qfl_s, &!                       QFL_S(m,s)-radial heat conduction flux comps of s [W*rho/m**3]
+            !                                           m=1, banana-plateau, p' and T'
+            !                                           m=2, Pfirsch-Schluter
+            !                                           m=3, classical
+            !                                           m=4, banana-plateau, <E.B>
+            !                                           m=5, banana-plateau, external parallel force fex_iz
+            chi_s, &!                       CHI_S(s)            -conduction coefficients (diag comp) [rho**2/s]
+            vqnt_s, &!                      VQNT_S(s)           -conduction velocity (off diag p',T' comps) [rho/s]
+            vqeb_s, &!                      VQEB_S(s)           -<E.B> heat convection velocity [rho/s]
+            vqex_s, &!                      VQEX_S(s)           -external force heat convection velocity [rho/s]
+            chip_ss, &!                     CHIP_SS(s1,s2)-heat cond coefficient of s2 on p'/p of s1 [rho**2/s]
+            chit_ss, &!                     CHIT_SS(s1,s2)-heat cond coefficient of s2 on T'/T of s1 [rho**2/s]
+            !                            * Friction coefficients
+            calm_i, &!                      CAPM_II(K_ORDER,K_ORDER,m_i,m_i)-test particle (tp) friction matrix [-]
+            caln_ii, &!                     CAPN_II(K_ORDER,K_ORDER,m_i,m_i)-field particle (fp) friction matrix [-]
+            capm_ii, &!                     CALM_I(K_ORDER,K_ORDER,m_i)-tp eff friction matrix [kg/m**3/s]
+            capn_ii, &!                     CALN_II(K_ORDER,K_ORDER,m_i,m_i)-fp eff friction matrix [kg/m**3/s]
+            !                            * Viscosity coefficients
+            ymu_s, &!                       YMU_S(s)-normalized viscosity for s [kg/m**3/s]
+            !                            * Miscellaneous
+            sqz_s, &!                       SQZ_S(s)            -orbit squeezing factor for s [-]
+            xi_s, &!                        XI_S(s)             -charge weighted density factor of s [-]
+            tau_ss &!                       TAU_SS(s1,s2)       -90 degree scattering time [s]
+            )
 
         ! OUTPUT
         !
@@ -553,18 +537,18 @@ SUBROUTINE call_nclass(nrho, nion, R0, B0, rho_bdry, rho_tor_norm, amu_i, &
                 tabtr(13, ipr) = tabtr(13, ipr) + gfl_s(j, ima)
             END DO
         END DO
-        te_flux(ipr) = tabtr(10, ipr)*rho_bdry/grad_rho2(ipr)
-        !   ti_neo_flux(ipr,1)  =   tabtr(11,ipr) * rho_bdry / grad_rho2(ipr)
-        ne_flux(ipr) = tabtr(12, ipr)*rho_bdry/grad_rho2(ipr)
-        !   ni_flux(ipr,1)  =   tabtr(13,ipr) * rho_bdry / grad_rho2(ipr)
+        te_flux(ipr) = tabtr(10, ipr)*rho_bdry/grad_rho2
+        !   ti_neo_flux(ipr,1)  =   tabtr(11,ipr) * rho_bdry / grad_rho2
+        ne_flux(ipr) = tabtr(12, ipr)*rho_bdry/grad_rho2
+        !   ni_flux(ipr,1)  =   tabtr(13,ipr) * rho_bdry / grad_rho2
         do ima = 2, m_i
             ti_flux(ipr, ima - 1) = 0.0d0
             ni_flux(ipr, ima - 1) = 0.0d0
             do j = 1, 5
                 ti_flux(ipr, ima - 1) = &
-                  &  ti_flux(ipr, ima - 1) + qfl_s(j, ima)*rho_bdry/grad_rho2(ipr)
+                  &  ti_flux(ipr, ima - 1) + qfl_s(j, ima)*rho_bdry/grad_rho2
                 ni_flux(ipr, ima - 1) = &
-                  &  ni_flux(ipr, ima - 1) + gfl_s(j, ima)*rho_bdry/grad_rho2(ipr)
+                  &  ni_flux(ipr, ima - 1) + gfl_s(j, ima)*rho_bdry/grad_rho2
             end do
         end do
         !--------------------------------------------------------------------
@@ -582,22 +566,22 @@ SUBROUTINE call_nclass(nrho, nion, R0, B0, rho_bdry, rho_tor_norm, amu_i, &
         ! tabtr(19)  : sum heat ionic convection velocity (rho/s)
         !--------------------------------------------------------------------
         tabtr(14, ipr) = dn_s(1)
-        ne_diff(ipr) = tabtr(14, ipr)*rho_bdry**2/grad_rho2(ipr)
+        ne_diff(ipr) = tabtr(14, ipr)*rho_bdry**2/grad_rho2
         tabtr(15, ipr) = vnnt_s(1) + vneb_s(1) + gfl_s(5, 1)/Ns(ipr, 1) + vnex_s(1)
-        ne_vconv(ipr) = -tabtr(15, ipr)*rho_bdry/grad_rho2(ipr)
+        ne_vconv(ipr) = -tabtr(15, ipr)*rho_bdry/grad_rho2
         tabtr(16, ipr) = chit_ss(1, 1) + chip_ss(1, 1)
-        ! te_diff(ipr) = tabtr(16, ipr)*rho_bdry**2/grad_rho2(ipr)*Ns(ipr, 1)
-        te_diff(ipr) = tabtr(16, ipr)*rho_bdry**2/grad_rho2(ipr)
+        ! te_diff(ipr) = tabtr(16, ipr)*rho_bdry**2/grad_rho2*Ns(ipr, 1)
+        te_diff(ipr) = tabtr(16, ipr)*rho_bdry**2/grad_rho2
         tabtr(17, ipr) = tabtr(10, ipr)/(den_iz(1, 1)*temp_i(1)*z_j7kv) + tabtr(16, ipr)*grt_i(1)/temp_i(1)
-        te_vconv(ipr) = -tabtr(17, ipr)*rho_bdry/grad_rho2(ipr)
+        te_vconv(ipr) = -tabtr(17, ipr)*rho_bdry/grad_rho2
         tabtr(18, ipr) = 0.0
         dentot = 0.0
         DO ima = 2, m_i
             chitp = chit_ss(ima, ima) + chip_ss(ima, ima)
             tabtr(18, ipr) = tabtr(18, ipr) + chitp*Ns(ipr, ima)
             vconv = tabtr(11, ipr)/(Ns(ipr, ima)*temp_i(ima)*z_j7kv) + chitp*grt_i(2)/temp_i(2)
-            ti_diff(ipr, ima - 1) = chitp*rho_bdry**2.0/grad_rho2(ipr)
-            ti_vconv(ipr, ima - 1) = -vconv*rho_bdry/grad_rho2(ipr)
+            ti_diff(ipr, ima - 1) = chitp*rho_bdry**2.0/grad_rho2
+            ti_vconv(ipr, ima - 1) = -vconv*rho_bdry/grad_rho2
             dentot = dentot + Ns(ipr, ima)
         END DO
         tabtr(18, ipr) = tabtr(18, ipr)/dentot
@@ -622,9 +606,7 @@ SUBROUTINE call_nclass(nrho, nion, R0, B0, rho_bdry, rho_tor_norm, amu_i, &
         !-------------------------------------------------------|
         indsave = 26
         DO m = 1, m_i
-
             tabtr(indsave + m, ipr) = upar_s(1, 1, m) + upar_s(1, 2, m) + upar_s(1, 3, m)
-
         END DO
         indsave = indsave + m_i
         !---------------------------------------------------------|
@@ -643,7 +625,7 @@ SUBROUTINE call_nclass(nrho, nion, R0, B0, rho_bdry, rho_tor_norm, amu_i, &
         !
         DO m = 2, m_i
             tabtr(indsave + m, ipr) = dn_s(m)
-            ni_diff(ipr, m - 1) = dn_s(m)*rho_bdry**2/grad_rho2(ipr)
+            ni_diff(ipr, m - 1) = dn_s(m)*rho_bdry**2/grad_rho2
         END DO
         !
         ! Total convection velocity per species and load state
@@ -651,7 +633,7 @@ SUBROUTINE call_nclass(nrho, nion, R0, B0, rho_bdry, rho_tor_norm, amu_i, &
         indsave = indsave + m_i - 1
         DO m = 2, m_i
             tabtr(indsave + m, ipr) = vnnt_s(m) + vneb_s(m) + gfl_s(5, m)/Ns(ipr, m) + vnex_s(m)
-            ni_vconv(ipr, m - 1) = -tabtr(indsave + m, ipr)*rho_bdry/grad_rho2(ipr)
+            ni_vconv(ipr, m - 1) = -tabtr(indsave + m, ipr)*rho_bdry/grad_rho2
         END DO
 
     END DO !    DO ipr = 1, nrho
