@@ -88,8 +88,8 @@ if __name__ == "__main__":
         "profiles_1d": {
             "electrons": {**atoms["e"], "density":              b_ne,   "temperature":        b_Te, },
             "ion": [
-                {**atoms["H"],          "density":              b_ne,   "temperature":        b_Ti, },
-                # {**atoms["T"],          "density":         0.5*b_nDT,   "temperature":        b_Ti, },
+                {**atoms["D"],          "density":         0.5*b_nDT,   "temperature":        b_Ti, },
+                {**atoms["T"],          "density":         0.5*b_nDT,   "temperature":        b_Ti, },
                 # {**atoms["He"],         "density":             b_nHe,   "temperature":        b_Ti, "is_impurity":False},
                 # {**atoms["Be"],         "density":         0.02*b_ne,   "temperature":        b_Ti, "is_impurity":True},
                 # {**atoms["Ar"],         "density":       0.0012*b_ne,   "temperature":        b_Ti, "is_impurity":True},
@@ -123,7 +123,7 @@ if __name__ == "__main__":
         x_axis=([0.05, 0.95],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
         title="Result of GLF23",
         grid=True, fontsize=10) \
-        .savefig("/home/salmon/workspace/output/core_transport_glf23.svg", transparent=True)
+        .savefig("/home/salmon/workspace/output/core_transport_glf23.png", transparent=True)
 
     # rlti = np.asarray(core_transport.model[0].profiles_1d["debug_rlti"])
     # plot_profiles(
