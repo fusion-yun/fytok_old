@@ -970,7 +970,7 @@ class Equilibrium(IDS):
         #    Poloidal plane coordinate   : (\rho,\theta,\phi)
     """
     _IDS = "equilibrium"
-    _actor_module_prefix = "transport.equilibrium."
+    _actor_module_prefix = "fymodules.transport.equilibrium."
     Constraints = EquilibriumConstraints
     TimeSlice = EquilibriumTimeSlice
 

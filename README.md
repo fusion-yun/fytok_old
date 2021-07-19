@@ -3,7 +3,7 @@ Summary 概述
 
 ___FyTok___  托卡马克数值模拟器
 
-![Image](docs/figures/FuYunSystem.png "FuYun")
+![Image](docs/figures/fytok.svg "FuYun")
 
 软件架构
 --------------------------

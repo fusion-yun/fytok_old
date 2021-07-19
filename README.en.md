@@ -7,7 +7,7 @@
 #### Software Architecture
 Software architecture description
 
-![Image](docs/figures/FuYunSystem.png "FuYun")
+![Image](docs/figures/fytok.svg "FuYun")
 
 #### Installation
 

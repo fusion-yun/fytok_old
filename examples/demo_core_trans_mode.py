@@ -17,8 +17,6 @@ from spdm.numlib.smooth import rms_residual, smooth_1d
 from spdm.util.logger import logger
 from spdm.util.plot_profiles import plot_profiles, sp_figure
 
-sys.path.append("/home/salmon/workspace/fytok/phys_modules/transport/core_transport/")
-
 if __name__ == "__main__":
     device = File("/home/salmon/workspace/fytok/data/mapping/ITER/imas/3/static/config.xml")
 
@@ -100,10 +98,10 @@ if __name__ == "__main__":
     c_core_transport = {
         "model": [
 
-            # {"code": {"name": "neoclassical"}},
+            {"code": {"name": "neoclassical"}},
+            {"code": {"name": "spitzer"}},
             # {"code": {"name": "glf23"}},
-            {"code": {"name": "nclass"}},
-            # {"code": {"name": "spitzer"}},
+            # {"code": {"name": "nclass"}},
         ]}
 
     core_transport = CoreTransport(c_core_transport, grid=radial_grid)
