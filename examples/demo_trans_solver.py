@@ -52,26 +52,26 @@ if __name__ == "__main__":
             "b0": eqdsk.get("vacuum_toroidal_field.b0"),
             "r0": eqdsk.get("vacuum_toroidal_field.r0"),
         },
-        "time_slice": {
-            "vacuum_toroidal_field": {
-                "b0": eqdsk.get("vacuum_toroidal_field.b0"),
-                "r0": eqdsk.get("vacuum_toroidal_field.r0"),
-            },
-            "global_quantities": eqdsk.get("global_quantities"),
-            "profiles_1d":   eqdsk.get("profiles_1d"),
-            "profiles_2d": {
-                "psi": eqdsk.get("profiles_2d.psi")*TWOPI,
-                "grid_type": "rectangular",
-                "grid_index": 1,
-                "grid": {
-                    "dim1": eqdsk.get("profiles_2d.grid.dim1"),
-                    "dim2": eqdsk.get("profiles_2d.grid.dim2"),
-                }
-            },
-            "boundary_separatrix": eqdsk.get("boundary"),
-            "coordinate_system": {"psi_norm": {"axis": 0.0, "boundary": 0.995, "npoints": 128}}
-            # "coordinate_system": {"psi_norm": baseline["Fp"].values[:-1]}
-        }}
+
+        "vacuum_toroidal_field": {
+            "b0": eqdsk.get("vacuum_toroidal_field.b0"),
+            "r0": eqdsk.get("vacuum_toroidal_field.r0"),
+        },
+        "global_quantities": eqdsk.get("global_quantities"),
+        "profiles_1d":   eqdsk.get("profiles_1d"),
+        "profiles_2d": {
+            "psi": eqdsk.get("profiles_2d.psi")*TWOPI,
+            "grid_type": "rectangular",
+            "grid_index": 1,
+            "grid": {
+                "dim1": eqdsk.get("profiles_2d.grid.dim1"),
+                "dim2": eqdsk.get("profiles_2d.grid.dim2"),
+            }
+        },
+        "boundary_separatrix": eqdsk.get("boundary"),
+        "coordinate_system": {"psi_norm": {"axis": 0.0, "boundary": 0.995, "npoints": 128}}
+        # "coordinate_system": {"psi_norm": baseline["Fp"].values[:-1]}
+    }
 
     # Core profile
     r_ped = 0.96  # np.sqrt(0.88)
@@ -254,7 +254,7 @@ if __name__ == "__main__":
 
     if True:
 
-        magnetic_surface = tok.equilibrium.time_slice.coordinate_system
+        magnetic_surface = tok.equilibrium.coordinate_system
 
         plot_profiles(
             [
@@ -277,7 +277,7 @@ if __name__ == "__main__":
                 ],
 
                 [
-                    (Function(bs_psi_norm, 4*(constants.pi**2)*magnetic_surface.vacuum_toroidal_field.r0 * baseline["rho"].values),
+                    (Function(bs_psi_norm, 4*(constants.pi**2)*magnetic_surface.r0 * baseline["rho"].values),
                      r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho$",  {"marker": '.', "linestyle": ''}),
                     (magnetic_surface.dvolume_drho_tor, r"$dV/d\rho_{tor}$", r"$[m^2]$"),
                 ],
@@ -354,7 +354,7 @@ if __name__ == "__main__":
                 [
                     (Function(bs_psi_norm, baseline["shif"].values),
                      r"astra", "$\Delta$ shafranov \n shift $[m]$ ", {"marker": '.', "linestyle": ''}),
-                    (eq_profile.geometric_axis.r-tok.equilibrium.time_slice.vacuum_toroidal_field.r0,
+                    (eq_profile.geometric_axis.r-tok.equilibrium.vacuum_toroidal_field.r0,
                      r"fytok", "shafranov \n shift $\Delta [m]$ "),
                 ],
                 [
@@ -473,7 +473,7 @@ if __name__ == "__main__":
 
                 [
                     (Function(bs_r_norm, baseline["Joh"].values*1.0e6 / baseline["U"].values *
-                              (2.0*constants.pi * tok.equilibrium.time_slice.vacuum_toroidal_field.r0)),
+                              (2.0*constants.pi * tok.equilibrium.vacuum_toroidal_field.r0)),
                      r"astra", r"$\sigma_{\parallel}$", {"marker": '.', "linestyle": ''}),
 
                     (core_transport.conductivity_parallel,  r"fytok", r"$\sigma_{\parallel}$"),

@@ -56,7 +56,7 @@ class Tokamak(Actor):
         rho_tor_norm = self.get("radial_grid.rho_tor_norm", None)
         if rho_tor_norm is None:
             rho_tor_norm = np.linspace(0, 1.0, 128)
-        return self.equilibrium.time_slice.radial_grid.remesh(rho_tor_norm, "rho_tor_norm")
+        return self.equilibrium.radial_grid.remesh(rho_tor_norm, "rho_tor_norm")
     # --------------------------------------------------------------------------
 
     @sp_property

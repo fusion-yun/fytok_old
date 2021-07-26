@@ -53,10 +53,10 @@ class TransportSolverBVP(TransportSolver):
         self._inv_tau = 0 if abs(self._tau) < EPSILON else 1.0/self._tau
 
         # $R_0$ characteristic major radius of the device   [m]
-        self._R0 = self._equilibrium.time_slice.vacuum_toroidal_field.r0
+        self._R0 = self._equilibrium.vacuum_toroidal_field.r0
 
         # $B_0$ magnetic field measured at $R_0$            [T]
-        self._B0 = self._equilibrium.time_slice.vacuum_toroidal_field.b0
+        self._B0 = self._equilibrium.vacuum_toroidal_field.b0
 
         self._B0m = self._equilibrium.previous_state.time_slice.vacuum_toroidal_field.b0
         # $rho_tor_{norm}$ normalized minor radius                [-]

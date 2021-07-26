@@ -301,7 +301,7 @@ if __name__ == "__main__":
     imas_obj.equilibrium.grids_ggd[0].grid[0].index = 0
     imas_obj.equilibrium.grids_ggd[0].time = 1.234
     imas_obj["imas_obj"]["equilibrium"]["grids_ggd"][0]
-    imas_obj.equilibrium.time_slice.resize(1)
+    imas_obj.equilibrium.resize(1)
     imas_obj.equilibrium.time.resize(1)
     imas_obj.equilibrium.time[0] = 0.0
 

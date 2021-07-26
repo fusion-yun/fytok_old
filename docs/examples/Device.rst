@@ -47,10 +47,10 @@
         #
         # 获取二维数据
         #
-        psirz=entry.equilibrium.time_slice.profiles_2d.psi()
+        psirz=entry.equilibrium.profiles_2d.psi()
         if len(psirz)>0:
-            r, z = np.meshgrid(  entry.equilibrium.time_slice.profiles_2d.grid.dim1(),
-                                entry.equilibrium.time_slice.profiles_2d.grid.dim2(), indexing='ij')
+            r, z = np.meshgrid(  entry.equilibrium.profiles_2d.grid.dim1(),
+                                entry.equilibrium.profiles_2d.grid.dim2(), indexing='ij')
             plt.contour(r,z, psirz, levels= 30,linewidths=0.5)
         #
         # 完成绘图

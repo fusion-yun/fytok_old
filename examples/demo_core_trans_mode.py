@@ -43,30 +43,25 @@ if __name__ == "__main__":
             "b0": eqdsk.get("vacuum_toroidal_field.b0"),
             "r0": eqdsk.get("vacuum_toroidal_field.r0"),
         },
-        "time_slice": {
-            "vacuum_toroidal_field": {
-                "b0": eqdsk.get("vacuum_toroidal_field.b0"),
-                "r0": eqdsk.get("vacuum_toroidal_field.r0"),
-            },
-            "global_quantities": eqdsk.get("global_quantities"),
-            "profiles_1d":   eqdsk.get("profiles_1d"),
-            "profiles_2d": {
-                "psi": eqdsk.get("profiles_2d.psi")*TWOPI,
-                "grid_type": "rectangular",
-                "grid_index": 1,
-                "grid": {
-                    "dim1": eqdsk.get("profiles_2d.grid.dim1"),
-                    "dim2": eqdsk.get("profiles_2d.grid.dim2"),
-                }
-            },
-            "boundary_separatrix": eqdsk.get("boundary"),
-            "coordinate_system": {"psi_norm": {"axis": 0.0, "boundary": 0.995, "npoints": 128}}
-            # "coordinate_system": {"psi_norm": baseline["Fp"].values[:-1]}
-        }}
+        "global_quantities": eqdsk.get("global_quantities"),
+        "profiles_1d":   eqdsk.get("profiles_1d"),
+        "profiles_2d": {
+            "psi": eqdsk.get("profiles_2d.psi")*TWOPI,
+            "grid_type": "rectangular",
+            "grid_index": 1,
+            "grid": {
+                "dim1": eqdsk.get("profiles_2d.grid.dim1"),
+                "dim2": eqdsk.get("profiles_2d.grid.dim2"),
+            }
+        },
+        "boundary_separatrix": eqdsk.get("boundary"),
+        "coordinate_system": {"psi_norm": {"axis": 0.0, "boundary": 0.995, "npoints": 128}}
+        # "coordinate_system": {"psi_norm": baseline["Fp"].values[:-1]}
+    }
 
     equilibrium = Equilibrium(c_equilibrium)
 
-    radial_grid = equilibrium.time_slice.radial_grid.remesh(np.linspace(0.04, 0.9, 101), "rho_tor_norm")
+    radial_grid = equilibrium.radial_grid.remesh(np.linspace(0.04, 0.9, 101), "rho_tor_norm")
 
     # Core profile
     r_ped = 0.96  # np.sqrt(0.88)

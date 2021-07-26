@@ -465,7 +465,7 @@ class CoreProfiles1D(Dict[Node]):
         # Coulomb logarithm
         #  Ch.14.5 p727 Tokamaks 2003
         return Function(self._grid.rho_tor_norm, ((14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +
-                                                       (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te >= 10)))
+                                                  (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te >= 10)))
 
     @sp_property
     def electron_collision_time(self) -> Function:
@@ -559,10 +559,6 @@ class CoreProfiles(IDS):
         super().__init__(*args,  **kwargs)
         self._grid = grid if grid is not None else getattr(self._parent, "radial_grid", NotImplemented)
 
-    @property
-    def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        return self._grid.vacuum_toroidal_field
-
     @sp_property
     def profiles_1d(self) -> Profiles1D:
         return CoreProfiles.Profiles1D(self.get("profiles_1d"), grid=self._grid, parent=self)
@@ -572,5 +568,5 @@ class CoreProfiles(IDS):
         return self.get("global_quantities")
 
     def refresh(self, *args, equilibrium: Equilibrium, **kwargs) -> None:
-        self._grid = equilibrium.time_slice.radial_grid.remesh(self._grid.rho_tor_norm)
+        self._grid = equilibrium.radial_grid.remesh(self._grid.rho_tor_norm)
         # self.remove("profiles_1d")
