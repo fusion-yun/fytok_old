@@ -75,10 +75,10 @@ if __name__ == "__main__":
     b_Te = Function(bs_r_norm, smooth_1d(bs_r_norm, baseline["TE"].values, i_end=i_ped-10, window_len=21)*1000)
     b_Ti = Function(bs_r_norm, smooth_1d(bs_r_norm, baseline["TI"].values, i_end=i_ped-10, window_len=21)*1000)
     b_ne = Function(bs_r_norm, smooth_1d(bs_r_norm, baseline["NE"].values, i_end=i_ped-10, window_len=21)*1.0e19)
+    b_nDT = Function(bs_r_norm, smooth_1d(bs_r_norm, baseline["Nd+t"].values, i_end=i_ped-10, window_len=21)*1.0e19)
+    b_nHe = Function(bs_r_norm, smooth_1d(bs_r_norm, baseline["Nalf"].values, i_end=i_ped-10, window_len=21)*1.0e19)
 
-    b_nHe = Function(bs_r_norm, baseline["Nalf"].values*1.0e19)
-    # nDT = Function(bs_r_norm, baseline["Nd+t"].values*1.0e19)
-    b_nDT = b_ne * (1.0 - 0.02*4 - 0.0012*18) - b_nHe*2.0
+    # b_nDT = b_ne * (1.0 - 0.02*4 - 0.0012*18) - b_nHe*2.0
 
     # Zeff = Function(bs_r_norm, baseline["Zeff"].values)
 

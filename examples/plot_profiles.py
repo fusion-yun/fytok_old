@@ -5,6 +5,7 @@ import pandas as pd
 from spdm.numlib import constants
 from spdm.util.logger import logger
 from spdm.util.plot_profiles import plot_profiles
+from spdm.numlib.smooth import rms_residual, smooth_1d
 
 if __name__ == "__main__":
     profile = pd.read_csv('/home/salmon/workspace/data/15MA inductive - burn/profile.txt', sep='\t')
@@ -12,21 +13,35 @@ if __name__ == "__main__":
     plot_profiles(
         [
             [
-                # (profile["NE"].values,                                                           r"$N_{e}$"),
-                # (profile["Nd+t"].values,                        r"Nd,thermal + Nt thermalised fuel density"),
-                (profile["NE"].values
-                 - profile["Nd+t"].values
-                 - profile["Nalf"].values*2,                                r"$N_{e}-N_{DT}-N_{\alpha}*2$", r"$10^{19}[m^{-3}]$"),
-                (profile["Nz"].values*profile["Zeff"].values,                                   r"$N_{z}$"),
-                (profile["Nb"].values,                                       r"fast NBI deuterium density"),
-
-                # (profile["NE"].values
-                #  - profile["Nd+t"].values
-                #  - profile["Nz"].values*profile["Zeff"].values
-                #  - profile["Nalf"].values*2,
-                #  r"rms",  {"color": "red", "linestyle": "dashed"}),
-
+                (profile["NE"].values-profile["Nd+t"].values-profile["Nalf"].values*2, r"$N_{z0}$"),
+                # (profile["NE"].values*(0.02*4 + 0.0012*18), r"$N_{e}*(0.02*4 + 0.0012*18)$"),
+                (profile["Nz"].values,                        r"impurity density"),
             ],
+            ((profile["NE"].values-profile["Nd+t"].values-profile["Nalf"].values*2)/profile["Nz"].values, r"$N_{z0}$"),
+            ((profile["NE"].values*profile["Zeff"].values
+              - profile["Nd+t"].values
+              - profile["Nalf"].values * 4) /
+             profile["Nz"].values, r"$Z_{imp}$"),
+            (profile["Zeff"].values, r"$Z_{eff}$"),
+            (rms_residual(profile["Nd+t"].values, profile["NE"].values*(1 - 0.02*4 - 0.0012*18) -
+                          profile["Nalf"].values * 2),
+             r"NDT", r"  rms residual $[\%]$", {"color": "red", "linestyle": "dashed"}),
+
+            #  - (0.02*4 - 0.0012*18)*profile["NE"].values,   r"$N_{e}-N_{DT}-N_{\alpha}*2-N_{imp}*Z$", r"$10^{19}[m^{-3}]$",
+            #  {"color": "red", "linestyle": "dashed"}),
+            # (profile["Nz"].values/profile["NE"].values-0.02,                                   r"$N_{z}$"),
+            # ((0.02*4 - 0.0012*18)*profile["NE"].values, "N_imp"),
+            # ((0.02 - 0.0012)*profile["NE"].values, "N_imp2"),
+
+            # (profile["Nb"].values,                                       r"fast NBI deuterium density"),
+
+            # (profile["NE"].values
+            #  - profile["Nd+t"].values
+            #  - profile["Nz"].values
+            #  - profile["Nalf"].values*2,
+            #  r"rms",  {"color": "red", "linestyle": "dashed"}),
+
+
             [
                 (profile["Nalf"].values,                   r"$He$ alpha density", r"$10^{19}[m^{-3}]$"),
                 (profile["Nz"].values,                       r"impurity density", r"$10^{19}[m^{-3}]$"),
@@ -48,36 +63,36 @@ if __name__ == "__main__":
 
             ],
             [
-                (profile["Jext"].values,                                r"ext", r"$J [mA\cdot m^{-2}]$"),
-                (profile["Jnb"].values,                                 r"nb",  r"$J [mA\cdot m^{-2}]$"),
-                (profile["Jrf"].values,                                 r"rf",  r"$J [mA\cdot m^{-2}]$"),
+                (profile["Jext"].values,                                r"ext", r"$J [MA\cdot m^{-2}]$"),
+                (profile["Jnb"].values,                                 r"nb",  r"$J [MA\cdot m^{-2}]$"),
+                (profile["Jrf"].values,                                 r"rf",  r"$J [MA\cdot m^{-2}]$"),
                 (profile["Jext"].values
                  - profile["Jnb"].values
-                 - profile["Jrf"].values,                  r"$J_{ext}-J_{nb}-J_{rf}$", r"$J [mA\cdot m^{-2}]$",
+                 - profile["Jrf"].values,                  r"$J_{ext}-J_{nb}-J_{rf}$", r"$J [MA\cdot m^{-2}]$",
                  {"color": "red", "linestyle": "dashed"}),
             ],
 
             [
-                (profile["Jnoh"].values,                                r"$j_{noh}$", r"$J [mA\cdot m^{-2}]$"),
-                (profile["Jbs"].values,                           r"$j_{bootstrap}$", r"$J [mA\cdot m^{-2}]$"),
-                (profile["Jnb"].values,                                  r"$j_{nb}$", r"$J [mA\cdot m^{-2}]$"),
-                (profile["Jrf"].values,                                  r"$j_{rf}$", r"$J [mA\cdot m^{-2}]$"),
+                (profile["Jnoh"].values,                                r"$j_{noh}$", r"$J [MA\cdot m^{-2}]$"),
+                (profile["Jbs"].values,                           r"$j_{bootstrap}$", r"$J [MA\cdot m^{-2}]$"),
+                (profile["Jnb"].values,                                  r"$j_{nb}$", r"$J [MA\cdot m^{-2}]$"),
+                (profile["Jrf"].values,                                  r"$j_{rf}$", r"$J [MA\cdot m^{-2}]$"),
 
                 (profile["Jnoh"].values
                  - profile["Jbs"].values
                  - profile["Jnb"].values
-                 - profile["Jrf"].values,           r"$J_{noh}-J_{bs}-J_{nb}-J_{rf}$", r"$J [mA\cdot m^{-2}]$",
+                 - profile["Jrf"].values,           r"$J_{noh}-J_{bs}-J_{nb}-J_{rf}$", r"$J [MA\cdot m^{-2}]$",
                  {"color": "red", "linestyle": "dashed"}),
             ],
 
             [
 
-                (profile["Jtot"].values,                          r" parallel ",  r"$J [mA\cdot m^{-2}]$"),
-                (profile["Joh"].values,                                  r"oh  ", r"$J [mA\cdot m^{-2}]$"),
-                (profile["Jnoh"].values,                                r"noh ",  r"$J [mA\cdot m^{-2}]$"),
+                (profile["Jtot"].values,                          r" parallel ",  r"$J [MA\cdot m^{-2}]$"),
+                (profile["Joh"].values,                                  r"oh  ", r"$J [MA\cdot m^{-2}]$"),
+                (profile["Jnoh"].values,                                r"noh ",  r"$J [MA\cdot m^{-2}]$"),
                 (profile["Jtot"].values
                  - profile["Jnoh"].values
-                 - profile["Joh"].values,           r"$j_{\parallel}-j_{oh}-j_{noh}$", r"$J [mA\cdot m^{-2}]$",
+                 - profile["Joh"].values,           r"$j_{\parallel}-j_{oh}-j_{noh}$", r"$J [MA\cdot m^{-2}]$",
                  {"color": "red", "linestyle": "dashed"}),
 
             ],
@@ -135,8 +150,6 @@ if __name__ == "__main__":
             (profile["shif"].values,                                                r"shafranov shift"),
             (profile["k"].values,                                                        r"elongation"),
             (profile["He"].values,                                       r"electron heat conductivity"),
-
-
         ],
         x_axis=(profile["x"].values,                                   r"$\rho_{N}$"),
         # index_slice=slice(-100,None, 1),

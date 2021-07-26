@@ -80,10 +80,12 @@ if __name__ == "__main__":
     b_Te = Function(bs_r_norm, smooth_1d(bs_r_norm, baseline["TE"].values, i_end=i_ped-10, window_len=21)*1000)
     b_Ti = Function(bs_r_norm, smooth_1d(bs_r_norm, baseline["TI"].values, i_end=i_ped-10, window_len=21)*1000)
     b_ne = Function(bs_r_norm, smooth_1d(bs_r_norm, baseline["NE"].values, i_end=i_ped-10, window_len=21)*1.0e19)
+    b_nDT = Function(bs_r_norm, smooth_1d(bs_r_norm, baseline["Nd+t"].values, i_end=i_ped-10, window_len=21)*1.0e19)
+    b_nHe = Function(bs_r_norm, smooth_1d(bs_r_norm, baseline["Nalf"].values, i_end=i_ped-10, window_len=21)*1.0e19)
 
-    b_nHe = Function(bs_r_norm, baseline["Nalf"].values*1.0e19)
+    # b_nHe = Function(bs_r_norm, baseline["Nalf"].values*1.0e19)
     # nDT = Function(bs_r_norm, baseline["Nd+t"].values*1.0e19)
-    b_nDT = b_ne * (1.0 - 0.02*4 - 0.0012*18) - b_nHe*2.0
+    # b_nDT = b_ne * (1.0 - 0.02*4 - 0.0012*18) - b_nHe*2.0
 
     # Zeff = Function(bs_r_norm, baseline["Zeff"].values)
 
@@ -144,7 +146,7 @@ if __name__ == "__main__":
                             "energy": {"d": chi, "v": v_pinch_Ti}, }
                     ]}
             },
-            {"code": {"name": "neoclassical"}},
+            # {"code": {"name": "neoclassical"}},
             {"code": {"name": "spitzer"}},
             # {"code": {"name": "glf23"}},
             # {"code": {"name": "nclass"}},
@@ -205,10 +207,10 @@ if __name__ == "__main__":
                           "energy": {"identifier": {"index": 1}, "value": [b_Te[-1]]}},
             "ion": [
                 {**atoms["D"],
-                 "particles": {"identifier": {"index": 1}, "value": [b_nDT[-1]]},
+                 "particles": {"identifier": {"index": 1}, "value": [0.5*b_nDT[-1]]},
                  "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}},
                 {**atoms["T"],
-                 "particles": {"identifier": {"index": 1}, "value": [b_nDT[-1]]},
+                 "particles": {"identifier": {"index": 1}, "value": [0.5*b_nDT[-1]]},
                  "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}},
                 {**atoms["He"],
                  "particles": {"identifier": {"index": 1}, "value": [b_nHe[-1]]},
@@ -326,7 +328,7 @@ if __name__ == "__main__":
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_coord.svg", transparent=True)
 
     if True:
-        eq_profile = tok.equilibrium.time_slice.profiles_1d
+        eq_profile = tok.equilibrium.profiles_1d
 
         plot_profiles(
             [
@@ -361,9 +363,9 @@ if __name__ == "__main__":
                     (eq_profile.elongation,                                 r"fytok", r"$elongation[-]$"),
                 ],
                 [
-                    (4*(constants.pi**2)*R0*tok.equilibrium.time_slice.profiles_1d.rho_tor,
+                    (4*(constants.pi**2)*R0*tok.equilibrium.profiles_1d.rho_tor,
                      r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho , dV/d\rho$"),
-                    (tok.equilibrium.time_slice.profiles_1d.dvolume_drho_tor,   r"$V^{\prime}$", r"$dV/d\rho$"),
+                    (tok.equilibrium.profiles_1d.dvolume_drho_tor,   r"$V^{\prime}$", r"$dV/d\rho$"),
                 ],
                 [
                     (Function(bs_psi_norm, baseline["Jtot"].values*1e6),   r"astra",
@@ -451,7 +453,8 @@ if __name__ == "__main__":
                 ],
 
                 [
-                    (Function(bs_r_norm,  np.log(baseline["XiNC"].values)),  "astra", r"$ln \chi_{i,nc}$", {"marker": '.', "linestyle": ''}),
+                    (Function(bs_r_norm,  np.log(baseline["XiNC"].values)),
+                     "astra", r"$ln \chi_{i,nc}$", {"marker": '.', "linestyle": ''}),
                     # * [(np.log(core_transport1d_nc.ion[{"label": label}].energy.d),   f"${label}$", r"$ln \chi_{i,nc}$")
                     #     for label in ("H", "D", "He")],
                 ],

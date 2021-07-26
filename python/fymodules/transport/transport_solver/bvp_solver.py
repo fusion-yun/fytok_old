@@ -48,7 +48,7 @@ class TransportSolverBVP(TransportSolver):
         self._core_profiles_prev = self._core_profiles.previous_state.profiles_1d
         self._c_transp = self._core_transport.model.combine.profiles_1d
         self._c_source = self._core_sources.source.combine.profiles_1d
-        self._eq = self._equilibrium.time_slice.profiles_1d
+        self._eq = self._equilibrium.profiles_1d
 
         self._inv_tau = 0 if abs(self._tau) < EPSILON else 1.0/self._tau
 
@@ -88,7 +88,7 @@ class TransportSolverBVP(TransportSolver):
         self._vpr = Function(self._rho_tor_norm, self._eq.dvolume_drho_tor(self._psi_norm))
 
         self._vprm = Function(self._rho_tor_norm,
-                              self._equilibrium.previous_state.time_slice.profiles_1d.dvolume_drho_tor(self._psi_norm))
+                              self._equilibrium.previous_state.profiles_1d.dvolume_drho_tor(self._psi_norm))
 
         self._vpr35 = self._vpr**(5/3)
         self._vpr35m = self._vprm**(5/3)

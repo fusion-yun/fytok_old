@@ -55,7 +55,7 @@ class TransportSolver(IDS):
         :math:`\rho=\sqrt{ \Phi/\pi B_{0}}`
     """
     _IDS = "transport_solver_numerics"
-    _actor_module_prefix = "transport.transport_solver."
+    _actor_module_prefix = "fymodules.transport.transport_solver."
 
     class BoundaryConditions1D(Dict):
         BoundaryConditions = _BC

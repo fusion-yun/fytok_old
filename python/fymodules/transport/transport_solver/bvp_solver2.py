@@ -133,7 +133,7 @@ class TransportSolverBVP2(TransportSolver):
 
         # -----------------------------------------------------------
         # Equilibrium
-        eq_profile1d = self._equilibrium_next.time_slice.profiles_1d
+        eq_profile1d = self._equilibrium_next.profiles_1d
 
         # diamagnetic function,$F=R B_\phi$                 [T*m]
         self._fpol = Function(self._rho_tor_norm, eq_profile1d.fpol(self._psi_norm))
@@ -143,7 +143,7 @@ class TransportSolverBVP2(TransportSolver):
         self._vpr = Function(self._rho_tor_norm, eq_profile1d.dvolume_drho_tor(self._psi_norm))
 
         self._vprm = Function(self._rho_tor_norm,
-                              self._equilibrium_prev.time_slice.profiles_1d.dvolume_drho_tor(self._psi_norm))
+                              self._equilibrium_prev.profiles_1d.dvolume_drho_tor(self._psi_norm))
 
         self._vpr5_3 = np.abs(self._vpr)**(5/3)
         self._vpr5_3m = np.abs(self._vprm)**(5/3)

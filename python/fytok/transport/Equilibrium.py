@@ -529,7 +529,7 @@ class EquilibriumProfiles1D(Dict):
         """
         d = self.get("trapped_fraction", _not_found_)
         if d is _not_found_:
-            epsilon = self.rho_tor/self._coord.vacuum_toroidal_field.r0
+            epsilon = self.rho_tor/self._coord.r0
             d = np.asarray(1.0 - (1-epsilon)**2/np.sqrt(1.0-epsilon**2)/(1+1.46*np.sqrt(epsilon)))
         return function_like(self._coord.psi_norm, d)
 
@@ -749,10 +749,55 @@ class EquilibriumBoundarySeparatrix(Dict[Node]):
         return self.get("psi_norm", 1.0)
 
 
-class EquilibriumTimeSlice(Dict):
+class Equilibrium(IDS):
+    r"""
+        Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
+
+        Reference:
+            - O. Sauter and S. Yu Medvedev, "Tokamak coordinate conventions: COCOS", Computer Physics Communications 184, 2 (2013), pp. 293--302.
+
+        COCOS  11
+
+        #    Top view
+        #             ***************
+        #            *               *
+        #           *   ***********   *
+        #          *   *           *   *
+        #         *   *             *   *
+        #         *   *             *   *
+        #     Ip  v   *             *   ^  \phi
+        #         *   *    Z o--->R *   *
+        #         *   *             *   *
+        #         *   *             *   *
+        #         *   *     Bpol    *   *
+        #          *   *     o     *   *
+        #           *   ***********   *
+        #            *               *
+        #             ***************
+        #               Bpol x
+        #            Poloidal view
+        #        ^Z
+        #        |
+        #        |       ************
+        #        |      *            *
+        #        |     *         ^    *
+        #        |     *   \rho /     *
+        #        |     *       /      *
+        #        +-----*------X-------*---->R
+        #        |     *  Ip, \phi   *
+        #        |     *              *
+        #        |      *            *
+        #        |       *****<******
+        #        |       Bpol,\theta
+        #        |
+        #            Cylindrical coordinate      : (R,\phi,Z)
+        #    Poloidal plane coordinate   : (\rho,\theta,\phi)
     """
-       Time slice of   Equilibrium
-    """
+    _IDS = "equilibrium"
+    _actor_module_prefix = "fymodules.transport.equilibrium."
+
+    Constraints = EquilibriumConstraints
+
     Profiles1D = EquilibriumProfiles1D
     Profiles2D = EquilibriumProfiles2D
     GlobalQuantities = EquilibriumGlobalQuantities
@@ -762,6 +807,13 @@ class EquilibriumTimeSlice(Dict):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+
+    @sp_property
+    def grid_ggd(self) -> GGD:
+        return self.get("grid_ggd")
+
+    def refresh(self,  *args, **kwargs):
+        super().refresh(*args, **kwargs)
 
     @cached_property
     def coordinate_system(self) -> MagneticCoordSystem:
@@ -794,7 +846,7 @@ class EquilibriumTimeSlice(Dict):
 
     @sp_property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        return self.coordinate_system.vacuum_toroidal_field
+        return {"r0": self.coordinate_system.r0, "b0": self.coordinate_system.b0}
 
     @property
     def radial_grid(self) -> RadialGrid:
@@ -806,23 +858,23 @@ class EquilibriumTimeSlice(Dict):
 
     @sp_property
     def profiles_1d(self) -> Profiles1D:
-        return EquilibriumTimeSlice.Profiles1D(self.get("profiles_1d", {}), coord=self.coordinate_system, parent=self)
+        return Equilibrium.Profiles1D(self.get("profiles_1d", {}), coord=self.coordinate_system, parent=self)
 
     @sp_property
     def profiles_2d(self) -> Profiles2D:
-        return EquilibriumTimeSlice.Profiles2D(self.get("profiles_2d", {}), coord=self.coordinate_system, parent=self)
+        return Equilibrium.Profiles2D(self.get("profiles_2d", {}), coord=self.coordinate_system, parent=self)
 
     @sp_property
     def global_quantities(self) -> GlobalQuantities:
-        return EquilibriumTimeSlice.GlobalQuantities(self.get("global_quantities", {}), coord=self.coordinate_system, parent=self)
+        return Equilibrium.GlobalQuantities(self.get("global_quantities", {}), coord=self.coordinate_system, parent=self)
 
     @sp_property
     def boundary(self) -> Boundary:
-        return EquilibriumTimeSlice.Boundary(self.get("boundary", {}), coord=self.coordinate_system, parent=self)
+        return Equilibrium.Boundary(self.get("boundary", {}), coord=self.coordinate_system, parent=self)
 
     @sp_property
     def boundary_separatrix(self) -> BoundarySeparatrix:
-        return EquilibriumTimeSlice.BoundarySeparatrix(self.get("boundary_separatrix", {}), coord=self.coordinate_system, parent=self)
+        return Equilibrium.BoundarySeparatrix(self.get("boundary_separatrix", {}), coord=self.coordinate_system, parent=self)
 
     def plot(self, axis=None, *args,
              scalar_field=[],
@@ -925,189 +977,147 @@ class EquilibriumTimeSlice(Dict):
         return axis
 
 
-class Equilibrium(IDS):
-    r"""
-        Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
+# class EquilibriumOld(IDS):
 
-        Reference:
-            - O. Sauter and S. Yu Medvedev, "Tokamak coordinate conventions: COCOS", Computer Physics Communications 184, 2 (2013), pp. 293--302.
+#     _IDS = "equilibrium"
+#     _actor_module_prefix = "fymodules.transport.equilibrium."
+#     Constraints = EquilibriumConstraints
+#     # TimeSlice = EquilibriumTimeSlice
 
-        COCOS  11
+#     def __init__(self,  *args, **kwargs):
+#         super().__init__(*args, **kwargs)
 
-        #    Top view
-        #             ***************
-        #            *               *
-        #           *   ***********   *
-        #          *   *           *   *
-        #         *   *             *   *
-        #         *   *             *   *
-        #     Ip  v   *             *   ^  \phi
-        #         *   *    Z o--->R *   *
-        #         *   *             *   *
-        #         *   *             *   *
-        #         *   *     Bpol    *   *
-        #          *   *     o     *   *
-        #           *   ***********   *
-        #            *               *
-        #             ***************
-        #               Bpol x
-        #            Poloidal view
-        #        ^Z
-        #        |
-        #        |       ************
-        #        |      *            *
-        #        |     *         ^    *
-        #        |     *   \rho /     *
-        #        |     *       /      *
-        #        +-----*------X-------*---->R
-        #        |     *  Ip, \phi   *
-        #        |     *              *
-        #        |      *            *
-        #        |       *****<******
-        #        |       Bpol,\theta
-        #        |
-        #            Cylindrical coordinate      : (R,\phi,Z)
-        #    Poloidal plane coordinate   : (\rho,\theta,\phi)
-    """
-    _IDS = "equilibrium"
-    _actor_module_prefix = "fymodules.transport.equilibrium."
-    Constraints = EquilibriumConstraints
-    TimeSlice = EquilibriumTimeSlice
+#     @sp_property
+#     def vacuum_toroidal_field(self) -> VacuumToroidalField:
+#         r0 = self.get("vacuum_toroidal_field.r0")
+#         b0 = self.get("vacuum_toroidal_field.b0")
+#         return {"r0": r0, "b0": b0}
 
-    def __init__(self,  *args, **kwargs):
-        super().__init__(*args, **kwargs)
+#     @sp_property
+#     def grid_ggd(self) -> GGD:
+#         return self.get("grid_ggd")
 
-    @sp_property
-    def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        r0 = self.get("vacuum_toroidal_field.r0")
-        b0 = self.get("vacuum_toroidal_field.b0")
-        return {"r0": r0, "b0": b0}
+#     @sp_property
+#     def time_slice(self) -> TimeSlice:
+#         return self.get("time_slice")
 
-    @sp_property
-    def grid_ggd(self) -> GGD:
-        return self.get("grid_ggd")
+#     def refresh(self,  *args, **kwargs):
+#         super().refresh(*args, **kwargs)
 
-    @sp_property
-    def time_slice(self) -> TimeSlice:
-        return self.get("time_slice")
+#     ####################################################################################
+#     # Plot profiles
 
-    def refresh(self,  *args, **kwargs):
-        super().refresh(*args, **kwargs)
+#     def plot(self, axis=None, *args,   time_slice=True, ggd=False, **kwargs):
+#         if time_slice is not False:
+#             axis = self.time_slice.plot(axis, *args, **kwargs)
+#         if ggd:
+#             axis = self.grid_ggd.plot(axis, *args, **kwargs)
+#         return axis
 
-    ####################################################################################
-    # Plot profiles
+#     def fetch_profile(self, d):
+#         if isinstance(d, str):
+#             data = d
+#             opts = {"label": d}
+#         elif isinstance(d, collections.abc.Mapping):
+#             data = d.get("name", None)
+#             opts = d.get("opts", {})
+#         elif isinstance(d, tuple):
+#             data, opts = d
+#         elif isinstance(d, Dict):
+#             data = d.data
+#             opts = d.opts
+#         else:
+#             raise TypeError(f"Illegal profile type! {d}")
 
-    def plot(self, axis=None, *args,   time_slice=True, ggd=False, **kwargs):
-        if time_slice is not False:
-            axis = self.time_slice.plot(axis, *args, **kwargs)
-        if ggd:
-            axis = self.grid_ggd.plot(axis, *args, **kwargs)
-        return axis
+#         if isinstance(opts, str):
+#             opts = {"label": opts}
 
-    def fetch_profile(self, d):
-        if isinstance(d, str):
-            data = d
-            opts = {"label": d}
-        elif isinstance(d, collections.abc.Mapping):
-            data = d.get("name", None)
-            opts = d.get("opts", {})
-        elif isinstance(d, tuple):
-            data, opts = d
-        elif isinstance(d, Dict):
-            data = d.data
-            opts = d.opts
-        else:
-            raise TypeError(f"Illegal profile type! {d}")
+#         if isinstance(data, str):
+#             nlist = data.split(".")
+#             if len(nlist) == 1:
+#                 data = self.profiles_1d[nlist[0]]
+#             elif nlist[0] == 'cache':
+#                 data = self.profiles_1d[nlist[1:]]
+#             else:
+#                 data = self.profiles_1d[nlist]
+#         elif isinstance(data, list):
+#             data = np.array(data)
+#         elif isinstance(d, np.ndarray):
+#             pass
+#         else:
+#             raise TypeError(f"Illegal data type! {type(data)}")
 
-        if isinstance(opts, str):
-            opts = {"label": opts}
+#         return data, opts
 
-        if isinstance(data, str):
-            nlist = data.split(".")
-            if len(nlist) == 1:
-                data = self.profiles_1d[nlist[0]]
-            elif nlist[0] == 'cache':
-                data = self.profiles_1d[nlist[1:]]
-            else:
-                data = self.profiles_1d[nlist]
-        elif isinstance(data, list):
-            data = np.array(data)
-        elif isinstance(d, np.ndarray):
-            pass
-        else:
-            raise TypeError(f"Illegal data type! {type(data)}")
+#     def plot_profiles(self, fig_axis, axis, profiles):
+#         if not isinstance(profiles, list):
+#             profiles = [profiles]
 
-        return data, opts
+#         for idx, data in enumerate(profiles):
+#             ylabel = None
+#             opts = {}
+#             if isinstance(data, tuple):
+#                 data, ylabel = data
+#             if isinstance(data, str):
+#                 ylabel = data
 
-    def plot_profiles(self, fig_axis, axis, profiles):
-        if not isinstance(profiles, list):
-            profiles = [profiles]
+#             if not isinstance(data, list):
+#                 data = [data]
 
-        for idx, data in enumerate(profiles):
-            ylabel = None
-            opts = {}
-            if isinstance(data, tuple):
-                data, ylabel = data
-            if isinstance(data, str):
-                ylabel = data
+#             for d in data:
+#                 value, opts = self.fetch_profile(d)
 
-            if not isinstance(data, list):
-                data = [data]
+#                 if value is not NotImplemented and value is not None and len(value) > 0:
+#                     fig_axis[idx].plot(axis.data, value, **opts)
+#                 else:
+#                     logger.error(f"Can not find profile '{d}'")
 
-            for d in data:
-                value, opts = self.fetch_profile(d)
+#             fig_axis[idx].legend(fontsize=6)
 
-                if value is not NotImplemented and value is not None and len(value) > 0:
-                    fig_axis[idx].plot(axis.data, value, **opts)
-                else:
-                    logger.error(f"Can not find profile '{d}'")
+#             if ylabel:
+#                 fig_axis[idx].set_ylabel(ylabel, fontsize=6).set_rotation(0)
+#             fig_axis[idx].labelsize = "media"
+#             fig_axis[idx].tick_params(labelsize=6)
+#         return fig_axis[-1]
 
-            fig_axis[idx].legend(fontsize=6)
+    # def plot_full(self, *args,
+    #               axis=("psi_norm",   r'$(\psi-\psi_{axis})/(\psi_{boundary}-\psi_{axis}) [-]$'),
+    #               profiles=None,
+    #               profiles_2d=[],
+    #               vec_field=[],
+    #               surface_mesh=False,
+    #               **kwargs):
 
-            if ylabel:
-                fig_axis[idx].set_ylabel(ylabel, fontsize=6).set_rotation(0)
-            fig_axis[idx].labelsize = "media"
-            fig_axis[idx].tick_params(labelsize=6)
-        return fig_axis[-1]
+    #     axis, axis_opts = self.fetch_profile(axis)
 
-    def plot_full(self, *args,
-                  axis=("psi_norm",   r'$(\psi-\psi_{axis})/(\psi_{boundary}-\psi_{axis}) [-]$'),
-                  profiles=None,
-                  profiles_2d=[],
-                  vec_field=[],
-                  surface_mesh=False,
-                  **kwargs):
+    #     assert (axis.data is not NotImplemented)
+    #     nprofiles = len(profiles) if profiles is not None else 0
+    #     if profiles is None or nprofiles <= 1:
+    #         fig, ax_right = plt.subplots(ncols=1, nrows=1, sharex=True)
+    #     else:
+    #         fig, axs = plt.subplots(ncols=2, nrows=nprofiles, sharex=True)
+    #         # left
+    #         ax_left = self.plot_profiles(axs[:, 0], axis, profiles)
 
-        axis, axis_opts = self.fetch_profile(axis)
+    #         ax_left.set_xlabel(axis_opts.get("label", "[-]"), fontsize=6)
 
-        assert (axis.data is not NotImplemented)
-        nprofiles = len(profiles) if profiles is not None else 0
-        if profiles is None or nprofiles <= 1:
-            fig, ax_right = plt.subplots(ncols=1, nrows=1, sharex=True)
-        else:
-            fig, axs = plt.subplots(ncols=2, nrows=nprofiles, sharex=True)
-            # left
-            ax_left = self.plot_profiles(axs[:, 0], axis, profiles)
+    #         # right
+    #         gs = axs[0, 1].get_gridspec()
+    #         for ax in axs[:, 1]:
+    #             ax.remove()  # remove the underlying axes
+    #         ax_right = fig.add_subplot(gs[:, 1])
 
-            ax_left.set_xlabel(axis_opts.get("label", "[-]"), fontsize=6)
+    #     if surface_mesh:
+    #         self.coordinate_system.plot(ax_right)
 
-            # right
-            gs = axs[0, 1].get_gridspec()
-            for ax in axs[:, 1]:
-                ax.remove()  # remove the underlying axes
-            ax_right = fig.add_subplot(gs[:, 1])
+    #     self.plot(ax_right, profiles=profiles_2d, vec_field=vec_field, **kwargs.get("equilibrium", {}))
 
-        if surface_mesh:
-            self.coordinate_system.plot(ax_right)
+    #     self._tokamak.plot_machine(ax_right, **kwargs.get("machine", {}))
 
-        self.plot(ax_right, profiles=profiles_2d, vec_field=vec_field, **kwargs.get("equilibrium", {}))
+    #     ax_right.legend()
+    #     fig.tight_layout()
 
-        self._tokamak.plot_machine(ax_right, **kwargs.get("machine", {}))
+    #     fig.subplots_adjust(hspace=0)
+    #     fig.align_ylabels()
 
-        ax_right.legend()
-        fig.tight_layout()
-
-        fig.subplots_adjust(hspace=0)
-        fig.align_ylabels()
-
-        return fig
+    #     return fig

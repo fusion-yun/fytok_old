@@ -33,15 +33,15 @@ class Spitzer(CoreTransport.Model):
         super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
         eV = constants.electron_volt
-        B0 = self.grid.vacuum_toroidal_field.b0
-        R0 = self.grid.vacuum_toroidal_field.r0
+        B0 = self.grid.b0
+        R0 = self.grid.r0
 
         rho_tor_norm = self.grid.rho_tor_norm
         rho_tor = self.grid.rho_tor
         psi_norm = self.grid.psi_norm
         psi = self.grid.psi
 
-        q = equilibrium.time_slice.profiles_1d.q(psi_norm)
+        q = equilibrium.profiles_1d.q(psi_norm)
 
         core_profile = core_profiles.profiles_1d
 

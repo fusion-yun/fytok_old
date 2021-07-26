@@ -196,12 +196,12 @@ class CoreTransportProfiles1D(Dict[Node]):
 
     @sp_property
     def conductivity_parallel(self) -> Function:
-        return function_like(self.grid_d.rho_tor_norm, self.get("conductivity_parallel"))
+        return function_like(self.grid_d.rho_tor_norm, self.get("conductivity_parallel", None))
 
     @sp_property
     def e_field_radial(self) -> Function:
         """ Radial component of the electric field (calculated e.g. by a neoclassical model) {dynamic} [V.m^-1]"""
-        return function_like(self.grid_flux.rho_tor_norm, self.get("e_field_radial"))
+        return function_like(self.grid_flux.rho_tor_norm, self.get("e_field_radial", None))
 
 
 class CoreTransportModel(Module):
@@ -235,7 +235,7 @@ class CoreTransportModel(Module):
         self._grid = grid if grid is not _undefined_ else getattr(self._parent, 'grid')
 
     @property
-    def grid(self):
+    def grid(self) -> RadialGrid:
         return self._grid
 
     @sp_property
@@ -295,5 +295,4 @@ class CoreTransport(IDS):
     def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles, **kwargs) -> None:
         if "model_combiner" in self.__dict__:
             del self.__dict__["model_combiner"]
-
         self.model.refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)

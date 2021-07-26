@@ -23,7 +23,7 @@ class BootstrapCurrent(CoreSources.Source):
 
         super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
-        equilibrium_1d = equilibrium.time_slice.profiles_1d
+        equilibrium_1d = equilibrium.profiles_1d
         core_profiles_1d = core_profiles.profiles_1d
 
         eV = constants.electron_volt

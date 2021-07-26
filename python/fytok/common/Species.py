@@ -74,7 +74,7 @@ class SpeciesElectron(Species):
         return "electron"
 
     @sp_property
-    def a(self):
+    def a(self)->float:
         """Mass of elctron {dynamic} [Atomic Mass Unit]"""
         return constants.m_e/constants.m_u
 
