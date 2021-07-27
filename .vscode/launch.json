@@ -9,7 +9,7 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
-            "cwd": "${workspaceFolder}/phys_modules/transport/core_transport/nclass",
+            "cwd": "${workspaceFolder}/../output",
             "args": [
                 "build_ext",
                 "--force",
@@ -19,6 +19,7 @@
             "justMyCode": false
         },
         {
+            "cwd": "${workspaceFolder}/../output",
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",

@@ -42,11 +42,11 @@ class RadialGrid:
     """
 
     def __init__(self,
-                 psi_axis: float,
-                 psi_boundary: float,
-                 rho_tor_boundary: float,
                  r0: float,
                  b0: float,
+                 psi_axis: float = 0,
+                 psi_boundary: float = 1,
+                 rho_tor_boundary: float = 1,
                  ** kwargs) -> None:
         self._psi_axis = psi_axis
         self._psi_boundary = psi_boundary
@@ -73,11 +73,11 @@ class RadialGrid:
         if not isinstance(new_axis, np.ndarray):
             raise TypeError(new_axis)
         return RadialGrid(
-            self._psi_axis,
-            self._psi_boundary,
-            self._rho_tor_boundary,
             r0=self._r0,
             b0=self._b0,
+            psi_axis=self._psi_axis,
+            psi_boundary=self._psi_boundary,
+            rho_tor_boundary=self._rho_tor_boundary,
             psi_norm=Function(axis,  self.psi_norm)(new_axis) if label != "psi_norm" else new_axis,
             rho_tor_norm=Function(axis,  self.rho_tor_norm)(new_axis) if label != "rho_tor_norm" else new_axis,
             # rho_pol_norm=Function(axis,  self.rho_pol_norm)(new_axis) if label != "rho_pol_norm" else new_axis,
@@ -249,11 +249,11 @@ class MagneticCoordSystem(object):
     @cached_property
     def radial_grid(self) -> RadialGrid:
         return RadialGrid(
-            self.psi_axis,
-            self.psi_boundary,
-            self.rho_tor[-1],
             r0=self.r0,
             b0=self.b0,
+            psi_axis=self.psi_axis,
+            psi_boundary=self.psi_boundary,
+            rho_tor_boudnary=self.rho_tor[-1],
             psi_norm=self.psi_norm,
             rho_tor_norm=self.rho_tor_norm,
             rho_pol_norm=getattr(self, "rho_pol_norm", None),
