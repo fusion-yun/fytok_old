@@ -52,11 +52,6 @@ if __name__ == "__main__":
             "b0": eqdsk.get("vacuum_toroidal_field.b0"),
             "r0": eqdsk.get("vacuum_toroidal_field.r0"),
         },
-
-        "vacuum_toroidal_field": {
-            "b0": eqdsk.get("vacuum_toroidal_field.b0"),
-            "r0": eqdsk.get("vacuum_toroidal_field.r0"),
-        },
         "global_quantities": eqdsk.get("global_quantities"),
         "profiles_1d":   eqdsk.get("profiles_1d"),
         "profiles_2d": {
@@ -86,7 +81,6 @@ if __name__ == "__main__":
     # b_nHe = Function(bs_r_norm, baseline["Nalf"].values*1.0e19)
     # nDT = Function(bs_r_norm, baseline["Nd+t"].values*1.0e19)
     # b_nDT = b_ne * (1.0 - 0.02*4 - 0.0012*18) - b_nHe*2.0
-
     # Zeff = Function(bs_r_norm, baseline["Zeff"].values)
 
     c_tokamak["core_profiles"] = {
@@ -120,8 +114,7 @@ if __name__ == "__main__":
 
     c_tokamak["core_transport"] = {
         "model": [
-            {
-                "code": {"name": "dummy"},
+            {"code": {"name": "dummy"},
                 "profiles_1d": {
                     # "conductivity_parallel": conductivity_parallel,
                     "electrons": {
@@ -145,9 +138,9 @@ if __name__ == "__main__":
                             "particles":{"d": D, "v": v_pinch_ni},
                             "energy": {"d": chi, "v": v_pinch_Ti}, }
                     ]}
-            },
-            # {"code": {"name": "neoclassical"}},
+             },
             {"code": {"name": "spitzer"}},
+            # {"code": {"name": "neoclassical"}},
             # {"code": {"name": "glf23"}},
             # {"code": {"name": "nclass"}},
         ]}
@@ -194,8 +187,9 @@ if __name__ == "__main__":
                     {**atoms["T"],          "particles":S*0.5,      "energy":Q_DT*0.5},
                     {**atoms["He"],         "particles":0,          "energy":Q_He}
                 ]}},
-            # {"code": {"name": "collisional_equipartition"}, },
             {"code": {"name": "bootstrap_current"}},
+            # {"code": {"name": "collisional_equipartition"}, },
+
         ]}
 
     #  TransportSolver
@@ -441,7 +435,7 @@ if __name__ == "__main__":
 
         core_transport = core_transport_model.profiles_1d
 
-        nc_profiles_1d = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
+        # nc_profiles_1d = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
 
         plot_profiles(
             [
@@ -495,7 +489,7 @@ if __name__ == "__main__":
             title="combine",
             grid=True, fontsize=10) .savefig("/home/salmon/workspace/output/core_transport.svg", transparent=True)
 
-    if True:  # CoreSources
+    if False:  # CoreSources
         tok.core_sources.refresh(equilibrium=tok.equilibrium, core_profiles=tok.core_profiles)
 
         core_source = tok.core_sources.source_combiner.profiles_1d

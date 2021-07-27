@@ -46,7 +46,7 @@ class RadialGrid:
                  b0: float,
                  psi_axis: float = 0,
                  psi_boundary: float = 1,
-                 rho_tor_boundary: float = 1,
+                 rho_tor_boundary: float = None,
                  ** kwargs) -> None:
         self._psi_axis = psi_axis
         self._psi_boundary = psi_boundary
@@ -253,7 +253,7 @@ class MagneticCoordSystem(object):
             b0=self.b0,
             psi_axis=self.psi_axis,
             psi_boundary=self.psi_boundary,
-            rho_tor_boudnary=self.rho_tor[-1],
+            rho_tor_boundary=self.rho_tor[-1],
             psi_norm=self.psi_norm,
             rho_tor_norm=self.rho_tor_norm,
             rho_pol_norm=getattr(self, "rho_pol_norm", None),
