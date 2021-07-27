@@ -116,7 +116,7 @@ if __name__ == "__main__":
         x_axis=([0.05, 0.95],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
         title="Result of GLF23",
         grid=True, fontsize=10) \
-        .savefig("/home/salmon/workspace/output/core_transport_glf23.png", transparent=True)
+        .savefig("/home/salmon/workspace/output/core_transport_glf23.svg", transparent=True)
 
     # rlti = np.asarray(core_transport.model[0].profiles_1d["debug_rlti"])
     # plot_profiles(

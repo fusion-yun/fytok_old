@@ -122,11 +122,7 @@ class TransportSolverBVP2(TransportSolver):
 
         self._rho_tor_boundary = r_grid.rho_tor_boundary
 
-        logger.debug(self._rho_tor_boundary)
-
         self._rho_tor_boundary_m = self._core_profiles_prev.profiles_1d.grid.rho_tor_boundary
-
-        logger.debug(self._rho_tor_boundary_m)
 
         self._k_B = (self._B0 - self._B0m) / (self._B0 + self._B0m) * self._inv_tau * 2.0
 
