@@ -327,7 +327,7 @@ class CoreProfiles1D(Dict[Node]):
     @sp_property
     def t_i_average(self) -> Function:
         """Ion temperature(averaged on charge states and ion species) {dynamic}[eV]"""
-        return sum([ion.z*ion.temperature*ion.density for ion in self.ion]) / self.n_i_total
+        return sum([ion.z_ion_1d*ion.temperature*ion.density for ion in self.ion]) / self.n_i_total
 
     @sp_property
     def t_i_average_fit(self) -> Function:
@@ -432,6 +432,11 @@ class CoreProfiles1D(Dict[Node]):
             sigma = self.j_ohmic/self.e_field.parallel
         return Function(self._grid.rho_tor_norm, sigma)
 
+    @sp_property
+    def beta_pol(self) -> Function:
+        """Poloidal beta profile. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip ^ 2][-]"""
+        return NotImplemented
+        
         # if isinstance(d, np.ndarray) or (hasattr(d.__class__, 'empty') and not d.empty):
         #     return d
 

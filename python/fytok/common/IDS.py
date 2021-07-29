@@ -89,9 +89,9 @@ class IDSCode(Dict):
         return self["repository"]
 
     @sp_property
-    def parameters(self) -> str:
-        r"""List of the code specific parameters in XML format {constant}	STR_0D"""
-        return self["parameters"]
+    def parameters(self) -> dict:
+        r"""List of the code specific parameters  {constant}	dict"""
+        return self.get("parameters", {})
 
     @sp_property
     def output_flag(self) -> Sequence[int]:

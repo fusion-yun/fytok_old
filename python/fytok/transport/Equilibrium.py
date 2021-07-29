@@ -540,12 +540,12 @@ class EquilibriumProfiles1D(Dict):
         return function_like(self._axis, d)
 
     @sp_property
-    def b_field_max(self):
+    def b_field_max(self)->Function:
         """Maximum(modulus(B)) on the flux surface(always positive, irrespective of the sign convention for the B-field direction)[T]"""
         return NotImplemented
 
     @sp_property
-    def beta_pol(self):
+    def beta_pol(self)->Function:
         """Poloidal beta profile. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip ^ 2][-]"""
         return NotImplemented
 
