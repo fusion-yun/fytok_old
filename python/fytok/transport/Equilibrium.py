@@ -1,4 +1,6 @@
 import collections
+import collections.abc
+
 from dataclasses import dataclass
 from functools import cached_property
 from typing import Sequence, TypeVar, Union
@@ -258,18 +260,10 @@ class EquilibriumGlobalQuantities(Dict):
 class EquilibriumProfiles1D(Dict):
     """Equilibrium profiles(1D radial grid) as a function of the poloidal flux	"""
 
-    def __init__(self,  *args,  grid: RadialGrid = None,    ** kwargs):
+    def __init__(self,  *args,  coord: MagneticCoordSystem = None,    ** kwargs):
         super().__init__(*args, **kwargs)
-
-        if grid is not None:
-            self._grid = grid
-        else:
-            self._grid = getattr(self._parent, "radial_grid", None)
-        self._axis = self._grid.psi_norm
-
-    @property
-    def _coord(self) -> MagneticCoordSystem:
-        return self._parent.coordinate_system
+        self._coord = coord if coord is not None else self._parent.coordinate_system
+        self._axis = self._coord.psi_norm
 
     @sp_property
     def ffprime(self) -> Function:
@@ -309,17 +303,19 @@ class EquilibriumProfiles1D(Dict):
         """Toroidal current driven inside the flux surface.
           .. math:: I_{pl}\equiv\int_{S_{\zeta}}\mathbf{j}\cdot dS_{\zeta}=\frac{\text{gm2}}{4\pi^{2}\mu_{0}}\frac{\partial V}{\partial\psi}\left(\frac{\partial\psi}{\partial\rho}\right)^{2}
          {dynamic}[A]"""
-        return function_like(self._axis, self._coord.plasma_current)
+        return self.gm2 * self.dvolume_drho_tor / self.dpsi_drho_tor/constants.mu_0
 
     @sp_property
     def j_tor(self) -> Function:
         r"""Flux surface averaged toroidal current density = average(j_tor/R) / average(1/R) {dynamic}[A.m ^ -2]. """
-        return self.plasma_current.derivative() / (self._coord.psi_boundary - self._coord.psi_axis)/self.dvolume_dpsi * self._r0
+        return self.plasma_current.derivative() / (self._coord.psi_boundary - self._coord.psi_axis)/self.dvolume_dpsi * self._coord.r0
 
     @sp_property
     def j_parallel(self) -> Function:
         r"""Flux surface averaged parallel current density = average(j.B) / B0, where B0 = Equilibrium/Global/Toroidal_Field/B0 {dynamic}[A/m ^ 2]. """
-        return function_like(self._axis, self._coord.j_parallel)
+        fvac = self._coord._fvac
+        d = np.asarray(Function(np.asarray(self.volume), np.asarray(fvac*self.plasma_current/self.fpol)).derivative())
+        return self._coord.r0*(self.fpol / fvac)**2 * d
 
     @sp_property
     def psi_norm(self) -> Function:
@@ -540,12 +536,12 @@ class EquilibriumProfiles1D(Dict):
         return function_like(self._axis, d)
 
     @sp_property
-    def b_field_max(self)->Function:
+    def b_field_max(self) -> Function:
         """Maximum(modulus(B)) on the flux surface(always positive, irrespective of the sign convention for the B-field direction)[T]"""
         return NotImplemented
 
     @sp_property
-    def beta_pol(self)->Function:
+    def beta_pol(self) -> Function:
         """Poloidal beta profile. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip ^ 2][-]"""
         return NotImplemented
 
@@ -661,7 +657,7 @@ class EquilibriumBoundary(Dict):
     def psi_norm(self) -> float:
         """Value of the normalised poloidal flux at which the boundary is taken (typically 99.x %),
             the flux being normalised to its value at the separatrix """
-        return self.get("psi_norm", self._coord.psi_norm[-1])
+        return self.get("psi_norm", 0.999)
 
     @sp_property
     def shape_property(self) -> MagneticCoordSystem.ShapePropety:
@@ -811,9 +807,8 @@ class Equilibrium(IDS):
     Boundary = EquilibriumBoundary
     BoundarySeparatrix = EquilibriumBoundarySeparatrix
 
-    def __init__(self, *args, radial_grid: RadialGrid = None, **kwargs) -> None:
+    def __init__(self, *args,  **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self._radial_grid = radial_grid
 
     @sp_property
     def grid_ggd(self) -> GGD:
@@ -822,7 +817,7 @@ class Equilibrium(IDS):
     def refresh(self,  *args, **kwargs):
         super().refresh(*args, **kwargs)
 
-    @cached_property
+    @sp_property
     def coordinate_system(self) -> MagneticCoordSystem:
         psirz = self.get("profiles_2d.psi", None)
 
@@ -834,33 +829,40 @@ class Equilibrium(IDS):
 
         psi_norm = self.get("coordinate_system.psi_norm", None)
 
-        if not isinstance(psi_norm, np.ndarray):
-            psi_norm_bdry = self.get("coordinate_system.psi_norm.boundary", 0.995)
-            psi_norm_axis = self.get("coordinate_system.psi_norm.axis", 0.0001)
-            npoints = self.get("coordinate_system.psi_norm.npoints", 128)
-            psi_norm = np.linspace(psi_norm_axis, psi_norm_bdry, npoints)
+        eq_psi = self.get("profiles_1d.psi", None)
+
+        if isinstance(psi_norm, np.ndarray):
+            pass
+        elif isinstance(psi_norm, int):
+            psi_norm_bdry = self.get("boundary.psi_norm", 0.995)
+            psi_norm = np.linspace(0.0, psi_norm_bdry, psi_norm)
+        elif isinstance(psi_norm, None) and eq_psi is not None:
+            psi_axis = self.get("global_quantities.psi_axis", eq_psi[0])
+            psi_bdry = self.get("global_quantities.psi_boundary", eq_psi[-1])
+            psi_norm = (eq_psi-psi_axis)/(psi_bdry-psi_axis)
+        else:
+            raise RuntimeError(f"psi_norm is not defined!")
+
+        fpol = Function(eq_psi, self.get("profiles_1d.f"))
 
         return MagneticCoordSystem(
-            psi_norm=psi_norm,
-            psirz=psirz,
-            fpol=self.get("profiles_1d.f"),
+            psirz,
             Ip=self.get("global_quantities.ip"),
-            B0=self.get("vacuum_toroidal_field.b0"),
-            R0=self.get("vacuum_toroidal_field.r0"),
-            ntheta=self.get("coordinate_system.ntheta", None),
-            cocos=self.get("cocos", _not_found_),
+            B0=self.vacuum_toroidal_field.b0,
+            R0=self.vacuum_toroidal_field.r0,
+            fpol=fpol,
+            psi_norm=psi_norm,
+            theta=self.get("coordinate_system.theta", None),
+            cocos=self.get("coordinate_system.cocos", _not_found_),
         )
+
+    @cached_property
+    def radial_grid(self) -> RadialGrid:
+        return self.coordinate_system.radial_grid()
 
     @sp_property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        return {"r0": self.coordinate_system.r0, "b0": self.coordinate_system.b0}
-
-    @property
-    def radial_grid(self) -> RadialGrid:
-        if self._radial_grid is None:
-            return self.coordinate_system.radial_grid
-        else:
-            return self._radial_grid
+        return {"r0": self.get("vacuum_toroidal_field.r0"), "b0": self.get("vacuum_toroidal_field.b0")}
 
     @sp_property
     def constraints(self) -> Constraints:
@@ -926,23 +928,23 @@ class Equilibrium(IDS):
             boundary_points = np.vstack([self.boundary.outline.r,
                                          self.boundary.outline.z]).T
 
-            axis.add_patch(plt.Polygon(boundary_points, color='g', linestyle='solid',
-                                       linewidth=0.2, fill=False, closed=True))
+            axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='solid',
+                                       linewidth=0.5, fill=False, closed=True))
 
             axis.plot([], [], 'g-', label="Boundary")
 
         if separatrix is not False:
-            r0 = self._entry.get("boundary_separatrix.outline.r", None)
-            z0 = self._entry.get("boundary_separatrix.outline.z", None)
-            if r0 is not None and z0 is not None:
-                axis.add_patch(plt.Polygon(np.vstack([r0, z0]).T, color='b', linestyle=':',
-                                           linewidth=1.0, fill=False, closed=True))
+            # r0 = self._entry.get("boundary_separatrix.outline.r", None)
+            # z0 = self._entry.get("boundary_separatrix.outline.z", None)
+            # if r0 is not None and z0 is not None:
+            #     axis.add_patch(plt.Polygon(np.vstack([r0, z0]).T, color='b', linestyle=':',
+            #                                linewidth=1.0, fill=False, closed=True))
 
             boundary_points = np.vstack([self.boundary_separatrix.outline.r,
                                          self.boundary_separatrix.outline.z]).T
 
             axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
-                                       linewidth=0.2, fill=False, closed=False))
+                                       linewidth=0.5, fill=False, closed=False))
             axis.plot([], [], 'r--', label="Separatrix")
 
         if contour is not False:

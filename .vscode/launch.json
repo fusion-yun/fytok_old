@@ -5,27 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: setup",
-            "type": "python",
-            "request": "launch",
-            "program": "${file}",
-            "cwd": "${workspaceFolder}/../output",
-            "args": [
-                "build_ext",
-                "--force",
-                "--inplace"
-            ],
-            "console": "integratedTerminal",
-            "justMyCode": false
-        },
-        {
-            "cwd": "${workspaceFolder}/../output",
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "justMyCode": false
+            "justMyCode": false,
+            "cwd": "${workspaceFolder}/../output",
         }
     ]
 }

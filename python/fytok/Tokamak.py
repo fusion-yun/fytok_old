@@ -1,19 +1,14 @@
 
-import collections
-import datetime
-import getpass
-from typing import ChainMap, Union
-from matplotlib.colors import to_rgb
 
 import matplotlib.pyplot as plt
+from matplotlib.colors import to_rgb
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, Node, sp_property
 from spdm.flow.Actor import Actor
 from spdm.numlib import constants, np
 from spdm.util.logger import logger
 
-##################################
-from .common.Misc import VacuumToroidalField
+# ---------------------------------
 from .device.Magnetics import Magnetics
 from .device.PFActive import PFActive
 from .device.TF import TF
@@ -31,9 +26,6 @@ from .transport.Equilibrium import Equilibrium
 from .transport.MagneticCoordSystem import RadialGrid
 from .transport.TransportSolver import TransportSolver
 
-##################################
-TWOPI = constants.pi*2.0
-
 
 class Tokamak(Actor):
     """Tokamak
@@ -45,19 +37,13 @@ class Tokamak(Actor):
 
     def __init__(self, *args,  **kwargs):
         super().__init__(*args,  **kwargs)
-        self._time = 0.0
-
-    @property
-    def time(self):
-        return self._time
 
     @sp_property
     def radial_grid(self) -> RadialGrid:
-        rho_tor_norm = self.get("radial_grid.rho_tor_norm", None)
-        if rho_tor_norm is None:
-            rho_tor_norm = np.linspace(0, 1.0, 128)
-        return self.equilibrium.radial_grid.remesh(rho_tor_norm, "rho_tor_norm")
-    # --------------------------------------------------------------------------
+        rgrid = self.get("radial_grid", None)
+        if not isinstance(rgrid, RadialGrid):
+            rgrid = self.equilibrium.radial_grid.remesh(rgrid)
+        return rgrid
 
     @sp_property
     def wall(self) -> Wall:
@@ -78,16 +64,16 @@ class Tokamak(Actor):
 
     @sp_property
     def equilibrium(self) -> Equilibrium:
-        return self.get("equilibrium")
+        return self.get("equilibrium", {"code": {"name": "dummy"}})
 
     @sp_property
     def core_profiles(self) -> CoreProfiles:
-        return CoreProfiles(self.get("core_profiles"), grid=self.radial_grid, parent=self)
+        return self.get("core_profiles")
 
     @sp_property
     def core_transport(self) -> CoreTransport:
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return CoreTransport(self.get("core_transport"), grid=self.radial_grid, parent=self)
+        return self.get("core_transport")
 
     @sp_property
     def core_sources(self) -> CoreSources:
@@ -95,7 +81,7 @@ class Tokamak(Actor):
             Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return CoreSources(self.get("core_sources"), grid=self.radial_grid, parent=self)
+        return self.get("core_sources")
 
     @sp_property
     def edge_profiles(self) -> EdgeProfiles:
