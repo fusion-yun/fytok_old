@@ -59,7 +59,7 @@ class RadialGrid:
         return {k[3:]: v for k, v in self.__dict__.items() if k.startswith('_f_')}
 
     def remesh(self, new_axis: np.ndarray, label: str = "psi_norm"):
-        axis = self.__dict__.get(f"_{label}", None)
+        axis = self.__dict__.get(f"_f_{label}", None)
 
         if axis is None:
             raise RuntimeError(f"Can not find axis {label}!")

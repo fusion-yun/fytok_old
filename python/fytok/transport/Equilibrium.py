@@ -760,40 +760,40 @@ class Equilibrium(IDS):
 
         COCOS  11
 
-        #    Top view
-        #             ***************
-        #            *               *
-        #           *   ***********   *
-        #          *   *           *   *
-        #         *   *             *   *
-        #         *   *             *   *
-        #     Ip  v   *             *   ^  \phi
-        #         *   *    Z o--->R *   *
-        #         *   *             *   *
-        #         *   *             *   *
-        #         *   *     Bpol    *   *
-        #          *   *     o     *   *
-        #           *   ***********   *
-        #            *               *
-        #             ***************
-        #               Bpol x
-        #            Poloidal view
-        #        ^Z
-        #        |
-        #        |       ************
-        #        |      *            *
-        #        |     *         ^    *
-        #        |     *   \rho /     *
-        #        |     *       /      *
-        #        +-----*------X-------*---->R
-        #        |     *  Ip, \phi   *
-        #        |     *              *
-        #        |      *            *
-        #        |       *****<******
-        #        |       Bpol,\theta
-        #        |
-        #            Cylindrical coordinate      : (R,\phi,Z)
-        #    Poloidal plane coordinate   : (\rho,\theta,\phi)
+            Top view
+                     ***************
+                    *               *
+                   *   ***********   *
+                  *   *           *   *
+                 *   *             *   *
+                 *   *             *   *
+             Ip  v   *             *   ^  \phi
+                 *   *    Z o--->R *   *
+                 *   *             *   *
+                 *   *             *   *
+                 *   *     Bpol    *   *
+                  *   *     o     *   *
+                   *   ***********   *
+                    *               *
+                     ***************
+                       Bpol x
+                    Poloidal view
+                ^Z
+                |
+                |       ************
+                |      *            *
+                |     *         ^    *
+                |     *   \rho /     *
+                |     *       /      *
+                +-----*------X-------*---->R
+                |     *  Ip, \phi   *
+                |     *              *
+                |      *            *
+                |       *****<******
+                |       Bpol,\theta
+                |
+                    Cylindrical coordinate      : (R,\phi,Z)
+            Poloidal plane coordinate   : (\rho,\theta,\phi)
     """
     _IDS = "equilibrium"
     _actor_module_prefix = "fymodules.transport.equilibrium."

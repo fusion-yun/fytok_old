@@ -10,20 +10,19 @@ from spdm.util.logger import logger
 from spdm.util.utilities import _not_found_
 
 from ..common.IDS import IDS
-from ..common.Misc import VacuumToroidalField
 from ..common.Species import Species, SpeciesElectron, SpeciesIon
 from .MagneticCoordSystem import TWOPI, RadialGrid
 
 
 class CoreProfilesElectrons(SpeciesElectron):
-    def __init__(self,   *args, grid: RadialGrid = None,  **kwargs):
+    def __init__(self,   *args, radial_grid: RadialGrid,  **kwargs):
         super().__init__(*args, **kwargs)
-        self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
+        self._radial_grid = radial_grid
 
     @sp_property
     def temperature(self) -> Function:
         """Temperature {dynamic} [eV]"""
-        return Function(self._grid.rho_tor_norm, self.get("temperature", None))
+        return Function(self._radial_grid.rho_tor_norm, self.get("temperature", None))
 
     # @property
     # def temperature_validity(self):
@@ -40,7 +39,7 @@ class CoreProfilesElectrons(SpeciesElectron):
     @sp_property
     def density(self) -> Function:
         """Density (thermal+non-thermal) {dynamic} [m^-3]"""
-        return Function(self._grid.rho_tor_norm, self.get("density"))
+        return Function(self._radial_grid.rho_tor_norm, self.get("density"))
     # @property
     # def density_validity(self):
     #     """Indicator of the validity of the density profile.
@@ -103,30 +102,30 @@ class CoreProfilesElectrons(SpeciesElectron):
 
 
 class CoreProfilesIon(SpeciesIon):
-    def __init__(self, *args, grid: RadialGrid = None,  **kwargs):
+    def __init__(self, *args, radial_grid: RadialGrid,  **kwargs):
         super().__init__(*args,  ** kwargs)
-        self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
+        self._radial_grid = radial_grid
 
     @sp_property
     def z_ion_1d(self) -> Function:
         d = self.get("z_ion_id", default_value=_not_found_)
         if isinstance(d, np.ndarray):
-            return Function(self._grid.rho_tor_norm, d)
+            return Function(self._radial_grid.rho_tor_norm, d)
         else:
-            return Function(self._grid.rho_tor_norm, self.z)
+            return Function(self._radial_grid.rho_tor_norm, self.z)
 
     @sp_property
     def z_ion_square_1d(self) -> Function:
         d = self.get("z_ion_square_1d", default_value=_not_found_)
         if isinstance(d, np.ndarray):
-            return Function(self._grid.rho_tor_norm, d)
+            return Function(self._radial_grid.rho_tor_norm, d)
         else:
-            return Function(self._grid.rho_tor_norm, self.z_ion*self.z_ion)
+            return Function(self._radial_grid.rho_tor_norm, self.z_ion*self.z_ion)
 
     @sp_property
     def temperature(self) -> Function:
         """Temperature (average over charge states when multiple charge states are considered) {dynamic} [eV]  """
-        return Function(self._grid.rho_tor_norm, self.get("temperature", 0))
+        return Function(self._radial_grid.rho_tor_norm, self.get("temperature", 0))
 
     # @property
     # def temperature_validity(self):
@@ -145,7 +144,7 @@ class CoreProfilesIon(SpeciesIon):
     @sp_property
     def density(self) -> Function:
         """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        return Function(self._grid.rho_tor_norm, self.get("density", 0))
+        return Function(self._radial_grid.rho_tor_norm, self.get("density", 0))
         # d = self[]
         # if not isinstance(d, np.ndarray) or d != None:
         #     return d
@@ -214,9 +213,9 @@ class CoreProfilesIon(SpeciesIon):
 
 
 class CoreProfilesNeutral(Species):
-    def __init__(self,   *args,  grid: RadialGrid = None, **kwargs):
+    def __init__(self,   *args,  radial_grid: RadialGrid, **kwargs):
         super().__init__(*args,  **kwargs)
-        self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
+        self._radial_grid = radial_grid
 
     @property
     def ion_index(self) -> int:
@@ -296,33 +295,33 @@ class CoreProfiles1D(Dict[Node]):
     Ion = CoreProfilesIon
     Neutral = CoreProfilesNeutral
 
-    def __init__(self,   *args,  grid: RadialGrid = None, **kwargs):
+    def __init__(self,   *args,  radial_grid: RadialGrid, **kwargs):
         super().__init__(*args,  **kwargs)
-        self._grid: RadialGrid = grid if grid is not None else getattr(self._parent, "_grid", None)
+        self._radial_grid = radial_grid
 
-        def new_child(value, _axis=self._grid.rho_tor_norm):
+        def new_child(value, _axis=self._radial_grid.rho_tor_norm):
             return Function(_axis, value) if isinstance(value, np.ndarray) and value.shape == _axis.shape else value
 
         self.__new_child__ = new_child
 
-    @property
+    @sp_property
     def grid(self) -> RadialGrid:
-        return self._grid
+        return self._radial_grid
 
     @sp_property
     def electrons(self) -> Electrons:
         """Quantities related to the electrons"""
-        return CoreProfiles1D.Electrons(self.get("electrons", {}), grid=self._grid, parent=self)
+        return CoreProfiles1D.Electrons(self.get("electrons", {}), radial_grid=self._radial_grid, parent=self)
 
     @sp_property
     def ion(self) -> List[Ion]:
         """Quantities related to the different ion species"""
-        return List[CoreProfiles1D.Ion](self.get("ion", []), parent=self,  grid=self._grid)
+        return List[CoreProfiles1D.Ion](self.get("ion", []), parent=self,  radial_grid=self._radial_grid)
 
     @sp_property
     def neutral(self) -> List[Neutral]:
         """Quantities related to the different neutral species"""
-        return List[CoreProfiles1D.Neutral](self.get("neutral", []), grid=self._grid, parent=self)
+        return List[CoreProfiles1D.Neutral](self.get("neutral", []), radial_grid=self._radial_grid, parent=self)
 
     @sp_property
     def t_i_average(self) -> Function:
@@ -394,13 +393,13 @@ class CoreProfiles1D(Dict[Node]):
         """Total parallel current density = average(jtot.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
         jtol = self.get("j_total", _not_found_)
         if jtol is _not_found_:
-            jtol = self.current_parallel_inside.derivative * self._grid.r0*TWOPI/self.grid.dvolume_drho_tor
-        return Function(self._grid.rho_tor_norm, jtol)
+            jtol = self.current_parallel_inside.derivative * self._radial_grid.r0*TWOPI/self._radial_grid.dvolume_drho_tor
+        return Function(self._radial_grid.rho_tor_norm, jtol)
 
     @sp_property
     def current_parallel_inside(self) -> Function:
         """Parallel current driven inside the flux surface. Cumulative surface integral of j_total {dynamic}[A]"""
-        return Function(self._grid.rho_tor_norm, self.get("current_parallel_inside"))
+        return Function(self._radial_grid.rho_tor_norm, self.get("current_parallel_inside"))
 
     @sp_property
     def j_tor(self) -> Function:
@@ -422,7 +421,7 @@ class CoreProfiles1D(Dict[Node]):
     def j_bootstrap(self) -> Function:
         """Bootstrap current density = average(J_Bootstrap.B) / B0,
             where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
-        return Function(self._grid.rho_tor_norm, self.get("j_bootstrap"))
+        return Function(self._radial_grid.rho_tor_norm, self.get("j_bootstrap"))
 
     @sp_property
     def conductivity_parallel(self) -> Function:
@@ -430,13 +429,13 @@ class CoreProfiles1D(Dict[Node]):
         sigma = self.get("conductivity_parallel", _not_found_)
         if sigma is _not_found_:
             sigma = self.j_ohmic/self.e_field.parallel
-        return Function(self._grid.rho_tor_norm, sigma)
+        return Function(self._radial_grid.rho_tor_norm, sigma)
 
     @sp_property
     def beta_pol(self) -> Function:
         """Poloidal beta profile. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip ^ 2][-]"""
         return NotImplemented
-        
+
         # if isinstance(d, np.ndarray) or (hasattr(d.__class__, 'empty') and not d.empty):
         #     return d
 
@@ -464,28 +463,28 @@ class CoreProfiles1D(Dict[Node]):
         """ Coulomb logarithm,
             @ref: Tokamaks 2003  Ch.14.5 p727 ,2003
         """
-        Te = self.electrons.temperature(self._grid.rho_tor_norm)
-        Ne = self.electrons.density(self._grid.rho_tor_norm)
+        Te = self.electrons.temperature(self._radial_grid.rho_tor_norm)
+        Ne = self.electrons.density(self._radial_grid.rho_tor_norm)
 
         # Coulomb logarithm
         #  Ch.14.5 p727 Tokamaks 2003
-        return Function(self._grid.rho_tor_norm, ((14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +
-                                                  (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te >= 10)))
+        return Function(self._radial_grid.rho_tor_norm, ((14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +
+                                                         (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te >= 10)))
 
     @sp_property
     def electron_collision_time(self) -> Function:
         """ electron collision time ,
             @ref: Tokamak 2003, eq 14.6.1
         """
-        Te = self.electrons.temperature(self._grid.rho_tor_norm)
-        Ne = self.electrons.density(self._grid.rho_tor_norm)
-        lnCoul = self.coulomb_logarithm(self._grid.rho_tor_norm)
+        Te = self.electrons.temperature(self._radial_grid.rho_tor_norm)
+        Ne = self.electrons.density(self._radial_grid.rho_tor_norm)
+        lnCoul = self.coulomb_logarithm(self._radial_grid.rho_tor_norm)
         return 1.09e16*((Te/1000.0)**(3/2))/Ne/lnCoul
 
     class EField(Dict[Node]):
-        def __init__(self,   *args, grid: RadialGrid = None,   **kwargs):
+        def __init__(self,   *args, radial_grid: RadialGrid,   **kwargs):
             super().__init__(*args, **kwargs)
-            self._grid = grid if grid is not None else getattr(self._parent, "_grid")
+            self._radial_grid = radial_grid
 
         @sp_property
         def parallel(self) -> Function:
@@ -496,24 +495,24 @@ class CoreProfiles1D(Dict[Node]):
                     logger.error(f"Can not calculate E_parallel from vloop!")
                     e_par = 0.0
                 else:
-                    e_par = vloop/(TWOPI*self._grid.r0)
-            return Function(self._grid.rho_tor_norm, e_par)
+                    e_par = vloop/(TWOPI*self._radial_grid.r0)
+            return Function(self._radial_grid.rho_tor_norm, e_par)
 
         @sp_property
         def radial(self) -> Function:
-            return Function(self._grid.rho_tor_norm, self.get("radial", 0))
+            return Function(self._radial_grid.rho_tor_norm, self.get("radial", 0))
 
         @sp_property
         def diamagnetic(self) -> Function:
-            return Function(self._grid.rho_tor_norm, self.get("diamagnetic", 0))
+            return Function(self._radial_grid.rho_tor_norm, self.get("diamagnetic", 0))
 
         @sp_property
         def poloidal(self) -> Function:
-            return Function(self._grid.rho_tor_norm, self.get("poloidal", 0))
+            return Function(self._radial_grid.rho_tor_norm, self.get("poloidal", 0))
 
         @sp_property
         def toroidal(self) -> Function:
-            return Function(self._grid.rho_tor_norm, self.get("toroidal", 0))
+            return Function(self._radial_grid.rho_tor_norm, self.get("toroidal", 0))
 
     @sp_property
     def e_field(self) -> EField:
@@ -524,7 +523,7 @@ class CoreProfiles1D(Dict[Node]):
     @sp_property
     def phi_potential(self) -> Function:
         """Electrostatic potential, averaged on the magnetic flux surface {dynamic}[V]"""
-        return Function(self._grid.rho_tor_norm, self.get("phi_potential"))
+        return Function(self._radial_grid.rho_tor_norm, self.get("phi_potential"))
 
     @sp_property
     def rotation_frequency_tor_sonic(self) -> Function:
@@ -532,25 +531,25 @@ class CoreProfiles1D(Dict[Node]):
         This quantity is the toroidal angular rotation frequency due to the ExB drift, introduced in formula(43) of Hinton and Wong,
         Physics of Fluids 3082 (1985), also referred to as sonic flow in regimes in which the toroidal velocity is dominant over the
         poloidal velocity Click here for further documentation. {dynamic}[s ^ -1]"""
-        return Function(self._grid.rho_tor_norm, self.get("rotation_frequency_tor_sonic", 0))
+        return Function(self._radial_grid.rho_tor_norm, self.get("rotation_frequency_tor_sonic", 0))
 
     @sp_property
     def q(self) -> Function:
         """Safety factor(IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic}[-].
         This quantity is COCOS-dependent, with the following transformation: """
-        return Function(self._grid.rho_tor_norm, self.get("q"))
+        return Function(self._radial_grid.rho_tor_norm, self.get("q"))
 
     @sp_property
     def magnetic_shear(self) -> Function:
         """Magnetic shear, defined as rho_tor/q . dq/drho_tor {dynamic}[-]"""
-        return Function(self._grid.rho_tor_norm, self.q.derivative(self._grid.rho_tor_norm)/self.q(self._grid.rho_tor_norm)*self._grid.rho_tor_norm)
-        # return Function(self._grid.rho_tor_norm, self.get("magnetic_shear"))
+        return Function(self._radial_grid.rho_tor_norm, self.q.derivative(self._radial_grid.rho_tor_norm)/self.q(self._radial_grid.rho_tor_norm)*self._radial_grid.rho_tor_norm)
+        # return Function(self._radial_grid.rho_tor_norm, self.get("magnetic_shear"))
 
 
 class CoreProfilesGlobalQuantities(Dict):
-    def __init__(self,   *args,  grid: RadialGrid = None, **kwargs):
+    def __init__(self,   *args,  radial_grid: RadialGrid, **kwargs):
         super().__init__(*args,  **kwargs)
-        self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
+        self._radial_grid = radial_grid
 
 
 class CoreProfiles(IDS):
@@ -560,18 +559,22 @@ class CoreProfiles(IDS):
     Profiles1D = CoreProfiles1D
     GlobalQuantities = CoreProfilesGlobalQuantities
 
-    def __init__(self,   *args,  grid: RadialGrid = None, **kwargs):
+    def __init__(self,   *args,  radial_grid: RadialGrid, **kwargs):
         super().__init__(*args,  **kwargs)
-        self._grid = grid if grid is not None else getattr(self._parent, "radial_grid", NotImplemented)
+        self._radial_grid = radial_grid
 
     @sp_property
     def profiles_1d(self) -> Profiles1D:
-        return CoreProfiles.Profiles1D(self.get("profiles_1d"), grid=self._grid, parent=self)
+        return CoreProfiles.Profiles1D(self.get("profiles_1d"), radial_grid=self._radial_grid, parent=self)
 
     @sp_property
     def global_quantities(self) -> GlobalQuantities:
-        return self.get("global_quantities")
+        return CoreProfiles.GlobalQuantities(self.get("global_quantities"), radial_grid=self._radial_grid, parent=self)
 
     def refresh(self, *args, equilibrium: Equilibrium, **kwargs) -> None:
-        self._grid = equilibrium.radial_grid.remesh(self._grid.rho_tor_norm)
+        # rho_tor_norm = getattr(self._radial_grid, "rho_tor_norm", None)
+        # if rho_tor_norm is not None:
+        #     self._radial_grid = equilibrium.radial_grid.remesh(rho_tor_norm,label="rho_tor_norm")
+        # else:
+        self._radial_grid = equilibrium.radial_grid
         # self.remove("profiles_1d")

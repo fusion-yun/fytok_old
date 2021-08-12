@@ -62,18 +62,22 @@ class Tokamak(Actor):
         return self.get("magnetics")
     # --------------------------------------------------------------------------
 
+    @property
+    def radial_grid(self) -> RadialGrid:
+        return self.equilibrium.radial_grid
+
     @sp_property
     def equilibrium(self) -> Equilibrium:
-        return self.get("equilibrium", {"code": {"name": "dummy"}})
+        return Equilibrium(self.get("equilibrium", {"code": {"name": "dummy"}}), parent=self)
 
     @sp_property
     def core_profiles(self) -> CoreProfiles:
-        return self.get("core_profiles")
+        return CoreProfiles(self.get("core_profiles"), radial_grid=self.radial_grid, parent=self)
 
     @sp_property
     def core_transport(self) -> CoreTransport:
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return self.get("core_transport")
+        return CoreTransport(self.get("core_transport"), radial_grid=self.radial_grid, parent=self)
 
     @sp_property
     def core_sources(self) -> CoreSources:
@@ -81,7 +85,7 @@ class Tokamak(Actor):
             Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return self.get("core_sources")
+        return CoreSources(self.get("core_sources"), radial_grid=self.radial_grid, parent=self)
 
     @sp_property
     def edge_profiles(self) -> EdgeProfiles:
@@ -103,7 +107,7 @@ class Tokamak(Actor):
 
     @sp_property
     def transport_solver(self) -> TransportSolver:
-        return self.get("transport_solver")
+        return TransportSolver(self.get("transport_solver"), radial_grid=self.radial_grid, parent=self)
 
     def refresh(self, *args, **kwargs):
         super().refresh(*args, **kwargs)

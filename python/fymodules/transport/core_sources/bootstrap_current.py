@@ -33,9 +33,9 @@ class BootstrapCurrent(CoreSources.Source):
         # rho_tor_norm = (core_profile.grid.rho_tor_norm[:-1]+core_profile.grid.rho_tor_norm[1:])*0.5
         # rho_tor = (core_profile.grid.rho_tor[:-1]+core_profile.grid.rho_tor[1:])*0.5
         # psi_norm = (core_profile.grid.psi_norm[:-1]+core_profile.grid.psi_norm[1:])*0.5
-        rho_tor_norm = self._grid.rho_tor_norm[1:]
-        rho_tor = self._grid.rho_tor[1:]
-        psi_norm = self._grid.psi_norm[1:]
+        rho_tor_norm = self.radial_grid.rho_tor_norm[1:]
+        rho_tor = self.radial_grid.rho_tor[1:]
+        psi_norm = self.radial_grid.psi_norm[1:]
 
         q = equilibrium_1d.q(psi_norm)
 
@@ -114,7 +114,7 @@ class BootstrapCurrent(CoreSources.Source):
                                  - j_bootstrap * x/(2.4+5.4*x+2.6*x**2) * Pe
                                  * fpol * q / rho_tor_norm / (rho_tor[-1])**2 / (2.0*constants.pi*B0))
 
-        self["profiles_1d.j_parallel"] = Function(self.grid.rho_tor_norm, np.hstack([j_bootstrap[0], j_bootstrap]))
+        self["profiles_1d.j_parallel"] = Function(self.radial_grid.rho_tor_norm, np.hstack([j_bootstrap[0], j_bootstrap]))
 
 
 __SP_EXPORT__ = BootstrapCurrent
