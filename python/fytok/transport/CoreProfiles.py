@@ -574,7 +574,7 @@ class CoreProfiles(IDS):
     def refresh(self, *args, equilibrium: Equilibrium, **kwargs) -> None:
         # rho_tor_norm = getattr(self._radial_grid, "rho_tor_norm", None)
         # if rho_tor_norm is not None:
-        #     self._radial_grid = equilibrium.radial_grid.remesh(rho_tor_norm,label="rho_tor_norm")
+        #     self._radial_grid = equilibrium.radial_grid.remesh(rho_tor_norm, label="rho_tor_norm")
         # else:
-        self._radial_grid = equilibrium.radial_grid
-        # self.remove("profiles_1d")
+        self._radial_grid = equilibrium.radial_grid.remesh("rho_tor_norm")
+        # del self["profiles_1d"]

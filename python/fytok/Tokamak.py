@@ -64,7 +64,7 @@ class Tokamak(Actor):
 
     @property
     def radial_grid(self) -> RadialGrid:
-        return self.equilibrium.radial_grid
+        return self.equilibrium.radial_grid.remesh("rho_tor_norm")
 
     @sp_property
     def equilibrium(self) -> Equilibrium:

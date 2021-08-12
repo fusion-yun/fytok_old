@@ -447,7 +447,7 @@ class TransportSolverBVP2(TransportSolver):
 
         def func(x: np.ndarray, Y: np.ndarray, p=None, /,
                  eq_list: Sequence[Tuple[Callable, Callable]] = eq_list) -> np.ndarray:
-            self._core_profiles_next._grid = self._core_profiles_next.profiles_1d.grid.remesh(x, "rho_tor_norm")
+            self._core_profiles_next._radial_grid = self._core_profiles_next.profiles_1d.grid.remesh("rho_tor_norm", x)
 
             profiles_1d: CoreProfiles.Profiles1D = self._core_profiles_next.profiles_1d
 

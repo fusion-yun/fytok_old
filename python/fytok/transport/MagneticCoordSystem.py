@@ -58,7 +58,7 @@ class RadialGrid:
     def __serialize__(self) -> Dict:
         return {k[3:]: v for k, v in self.__dict__.items() if k.startswith('_f_')}
 
-    def remesh(self, new_axis: np.ndarray, label: str = "psi_norm"):
+    def remesh(self, label: str = "psi_norm", new_axis: np.ndarray = None, ):
         axis = self.__dict__.get(f"_f_{label}", None)
 
         if axis is None:
@@ -66,10 +66,13 @@ class RadialGrid:
         elif isinstance(axis, np.ndarray) and isinstance(new_axis, np.ndarray) and axis.shape == new_axis.shape and np.allclose(axis, new_axis):
             return self
 
-        if isinstance(new_axis, int):
+        if new_axis is None:
+            new_axis = np.linspace(axis[0], axis[-1], len(axis))
+        elif isinstance(new_axis, int):
             new_axis = np.linspace(0, 1.0, new_axis)
-        if not isinstance(new_axis, np.ndarray):
+        elif not isinstance(new_axis, np.ndarray):
             raise TypeError(new_axis)
+
         return RadialGrid(
             r0=self._r0,
             b0=self._b0,
@@ -109,7 +112,7 @@ class RadialGrid:
 
     @property
     def psi_norm(self) -> np.ndarray:
-        return self.__dict__.get("_f_psi_norm", 0)
+        return self["_f_psi_norm"]
 
     @property
     def psi(self) -> np.ndarray:
@@ -122,7 +125,7 @@ class RadialGrid:
             at the equilibrium boundary (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation,
             see time_slice/boundary/b_flux_pol_norm in the equilibrium IDS) {dynamic} [-]
         """
-        return self.__dict__.get("_f_rho_tor_norm", 0)
+        return self["_f_rho_tor_norm"]
 
     @property
     def rho_tor(self) -> np.ndarray:
