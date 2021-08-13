@@ -380,12 +380,12 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # TransportSolver
-    if False:
+    if True:
 
         tok["transport_solver"] = {
             "code": {"name": "bvp_solver2"},
             "boundary_conditions_1d": {
-                "current": {"identifier": {"index": 1}, "value": [tok.equilibrium.global_quantities.psi_boundary]},
+                "current": {"identifier": {"index": 1}, "value": [psi_boundary]},
                 "electrons": {"particles": {"identifier": {"index": 1}, "value": [b_ne[-1]]},
                               "energy": {"identifier": {"index": 1}, "value": [b_Te[-1]]}},
 
