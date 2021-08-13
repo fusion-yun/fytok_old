@@ -33,6 +33,7 @@ class Spitzer(CoreTransport.Model):
         super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
         eV = constants.electron_volt
+        
         B0 = self.radial_grid.b0
         R0 = self.radial_grid.r0
 

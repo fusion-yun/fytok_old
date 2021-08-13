@@ -409,16 +409,17 @@ class TransportSolverBVP2(TransportSolver):
         return 0.0
 
     def quasi_neutral_condition(self, profiles: CoreProfiles.Profiles1D, particle_solver='electron'):
+        x = profiles.grid.rho_tor_norm
         n_imp = 0  # impurity
         Z_total = 0
         for ion in profiles.ion:
             if ion.is_impurity:
-                n_imp = n_imp + ion.z*ion.density
+                n_imp = n_imp + ion.z*ion.density(x)
             else:
                 Z_total += ion.z
 
         if particle_solver == 'electron':
-            ni = profiles.electrons.density - n_imp
+            ni = profiles.electrons.density(x) - n_imp
             gi = profiles.electrons.get("density_flux", 0)
             for ion in profiles.ion:
                 if ion.is_impurity:
@@ -430,7 +431,7 @@ class TransportSolverBVP2(TransportSolver):
             n_e = 0
             g_e = 0
             for ion in profiles.ion:
-                n_e = n_e + ion.z*ion.density
+                n_e = n_e + ion.z*ion.density(x)
                 g_e = g_e + ion.z*ion.get("density_flux", 0)
 
             profiles.electrons["density"] = n_e
@@ -447,9 +448,10 @@ class TransportSolverBVP2(TransportSolver):
 
         def func(x: np.ndarray, Y: np.ndarray, p=None, /,
                  eq_list: Sequence[Tuple[Callable, Callable]] = eq_list) -> np.ndarray:
-            self._core_profiles_next._radial_grid = self._core_profiles_next.profiles_1d.grid.remesh("rho_tor_norm", x)
 
-            profiles_1d: CoreProfiles.Profiles1D = self._core_profiles_next.profiles_1d
+            self._core_profiles_next.refresh(radial_grid=self._equilibrium_next.radial_grid.remesh("rho_tor_norm", x))
+
+            profiles_1d: CoreProfiles = self._core_profiles_next.profiles_1d
 
             for idx, var_id in enumerate(var_list):
                 profiles_1d[var_id] = Function(x, Y[idx*2])
@@ -482,8 +484,8 @@ class TransportSolverBVP2(TransportSolver):
                 (["psi"],                                                self.transp_current,),
                 (["electrons", "density"],                               self.transp_particle,),
                 (["electrons", "temperature"],                           self.transp_energy, ),
-                *[(["ion", {"label": ion.label}, "temperature"],         self.transp_energy, )
-                  for ion in self._core_profiles_next.profiles_1d.ion if not ion.is_impurity],
+                # *[(["ion", {"label": ion.label}, "temperature"],         self.transp_energy, )
+                #   for ion in self._core_profiles_next.profiles_1d.ion if not ion.is_impurity],
             ]
         else:
             eq_grp = [

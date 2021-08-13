@@ -15,9 +15,12 @@ from .MagneticCoordSystem import TWOPI, RadialGrid
 
 
 class CoreProfilesElectrons(SpeciesElectron):
-    def __init__(self,   *args, radial_grid: RadialGrid,  **kwargs):
+    def __init__(self,   *args,   **kwargs):
         super().__init__(*args, **kwargs)
-        self._radial_grid = radial_grid
+
+    @property
+    def _radial_grid(self) -> RadialGrid:
+        return self._parent._radial_grid
 
     @sp_property
     def temperature(self) -> Function:
@@ -102,9 +105,12 @@ class CoreProfilesElectrons(SpeciesElectron):
 
 
 class CoreProfilesIon(SpeciesIon):
-    def __init__(self, *args, radial_grid: RadialGrid,  **kwargs):
+    def __init__(self, *args,  **kwargs):
         super().__init__(*args,  ** kwargs)
-        self._radial_grid = radial_grid
+
+    @property
+    def _radial_grid(self) -> RadialGrid:
+        return self._parent._radial_grid
 
     @sp_property
     def z_ion_1d(self) -> Function:
@@ -125,7 +131,7 @@ class CoreProfilesIon(SpeciesIon):
     @sp_property
     def temperature(self) -> Function:
         """Temperature (average over charge states when multiple charge states are considered) {dynamic} [eV]  """
-        return Function(self._radial_grid.rho_tor_norm, self.get("temperature", 0))
+        return Function(self._radial_grid.rho_tor_norm, self.get("temperature"))
 
     # @property
     # def temperature_validity(self):
@@ -144,7 +150,7 @@ class CoreProfilesIon(SpeciesIon):
     @sp_property
     def density(self) -> Function:
         """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        return Function(self._radial_grid.rho_tor_norm, self.get("density", 0))
+        return Function(self._radial_grid.rho_tor_norm, self.get("density"))
         # d = self[]
         # if not isinstance(d, np.ndarray) or d != None:
         #     return d
@@ -213,9 +219,12 @@ class CoreProfilesIon(SpeciesIon):
 
 
 class CoreProfilesNeutral(Species):
-    def __init__(self,   *args,  radial_grid: RadialGrid, **kwargs):
+    def __init__(self,   *args,  **kwargs):
         super().__init__(*args,  **kwargs)
-        self._radial_grid = radial_grid
+
+    @property
+    def _radial_grid(self) -> RadialGrid:
+        return self._parent._radial_grid
 
     @property
     def ion_index(self) -> int:
@@ -295,14 +304,16 @@ class CoreProfiles1D(Dict[Node]):
     Ion = CoreProfilesIon
     Neutral = CoreProfilesNeutral
 
-    def __init__(self,   *args,  radial_grid: RadialGrid, **kwargs):
+    def __init__(self,   *args,  **kwargs):
         super().__init__(*args,  **kwargs)
-        self._radial_grid = radial_grid
 
-        def new_child(value, _axis=self._radial_grid.rho_tor_norm):
-            return Function(_axis, value) if isinstance(value, np.ndarray) and value.shape == _axis.shape else value
+    @property
+    def _radial_grid(self) -> RadialGrid:
+        return self._parent._radial_grid
 
-        self.__new_child__ = new_child
+    def __new_child__(self, value):
+        _axis = self._radial_grid.rho_tor_norm
+        return Function(_axis, value) if isinstance(value, np.ndarray) and value.shape == _axis.shape else value
 
     @sp_property
     def grid(self) -> RadialGrid:
@@ -547,9 +558,12 @@ class CoreProfiles1D(Dict[Node]):
 
 
 class CoreProfilesGlobalQuantities(Dict):
-    def __init__(self,   *args,  radial_grid: RadialGrid, **kwargs):
+    def __init__(self,   *args,   **kwargs):
         super().__init__(*args,  **kwargs)
-        self._radial_grid = radial_grid
+
+    @property
+    def _radial_grid(self) -> RadialGrid:
+        return self._parent._radial_grid
 
 
 class CoreProfiles(IDS):
@@ -559,22 +573,20 @@ class CoreProfiles(IDS):
     Profiles1D = CoreProfiles1D
     GlobalQuantities = CoreProfilesGlobalQuantities
 
-    def __init__(self,   *args,  radial_grid: RadialGrid, **kwargs):
+    def __init__(self,   *args,  radial_grid: RadialGrid = None, **kwargs):
         super().__init__(*args,  **kwargs)
-        self._radial_grid = radial_grid
+        self.refresh(radial_grid=radial_grid)
+
+    def refresh(self, *args,  radial_grid: RadialGrid = None, **kwargs) -> None:
+        if radial_grid is None:
+            self._radial_grid = getattr(self._parent, "_radial_grid")
+        else:
+            self._radial_grid = radial_grid
 
     @sp_property
     def profiles_1d(self) -> Profiles1D:
-        return CoreProfiles.Profiles1D(self.get("profiles_1d"), radial_grid=self._radial_grid, parent=self)
+        return self.get("profiles_1d", {})
 
     @sp_property
     def global_quantities(self) -> GlobalQuantities:
-        return CoreProfiles.GlobalQuantities(self.get("global_quantities"), radial_grid=self._radial_grid, parent=self)
-
-    def refresh(self, *args, equilibrium: Equilibrium, **kwargs) -> None:
-        # rho_tor_norm = getattr(self._radial_grid, "rho_tor_norm", None)
-        # if rho_tor_norm is not None:
-        #     self._radial_grid = equilibrium.radial_grid.remesh(rho_tor_norm, label="rho_tor_norm")
-        # else:
-        self._radial_grid = equilibrium.radial_grid.remesh("rho_tor_norm")
-        # del self["profiles_1d"]
+        return self.get("global_quantities", {})

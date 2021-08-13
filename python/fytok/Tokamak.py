@@ -151,7 +151,8 @@ class Tokamak(Actor):
                 self.edge_profiles.refresh()
 
             # Update grid
-            self.core_profiles.refresh(equilibrium=self.equilibrium)
+            # radial_grid = self.equilibrium.radial_grid.remesh("rho_tor_norm")
+            # self.core_profiles.refresh(radial_grid=radial_grid)
 
             redisual = self.transport_solver.solve(equilibrium=self.equilibrium,
                                                    core_profiles=self.core_profiles,

@@ -112,7 +112,7 @@ class RadialGrid:
 
     @property
     def psi_norm(self) -> np.ndarray:
-        return self["_f_psi_norm"]
+        return self.__dict__.get("_f_psi_norm")
 
     @property
     def psi(self) -> np.ndarray:
@@ -125,7 +125,8 @@ class RadialGrid:
             at the equilibrium boundary (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation,
             see time_slice/boundary/b_flux_pol_norm in the equilibrium IDS) {dynamic} [-]
         """
-        return self["_f_rho_tor_norm"]
+        return self.__dict__.get("_f_rho_tor_norm")
+
 
     @property
     def rho_tor(self) -> np.ndarray:
@@ -136,26 +137,26 @@ class RadialGrid:
     @property
     def rho_pol_norm(self) -> np.ndarray:
         r"""Normalised poloidal flux coordinate = sqrt((psi(rho)-psi(magnetic_axis)) / (psi(LCFS)-psi(magnetic_axis))) {dynamic} [-]"""
-        return self.__dict__.get("_f_rho_pol_norm", 0)
+        return self.__dict__.get("_f_rho_pol_norm")
 
     @property
     def area(self) -> np.ndarray:
         """Cross-sectional area of the flux surface {dynamic} [m^2]"""
-        return self.__dict__.get("_f_area", 0)
+        return self.__dict__.get("_f_area")
 
     @property
     def surface(self) -> np.ndarray:
         """Surface area of the toroidal flux surface {dynamic} [m^2]"""
-        return self.__dict__.get("_f_surface", 0)
+        return self.__dict__.get("_f_surface")
 
     @property
     def volume(self) -> np.ndarray:
         """Volume enclosed inside the magnetic surface {dynamic} [m^3]"""
-        return self.__dict__.get("_f_volume", 0)
+        return self.__dict__.get("_f_volume")
 
     @property
     def dvolume_drho_tor(self) -> np.ndarray:
-        return self.__dict__.get("_f_dvolume_drho_tor", 0)
+        return self.__dict__.get("_f_dvolume_drho_tor")
 
 
 class MagneticCoordSystem(object):
