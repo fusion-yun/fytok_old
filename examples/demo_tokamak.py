@@ -50,7 +50,7 @@ if __name__ == "__main__":
     b_ne = Function(bs_r_norm,  profiles["NE"].values*1.0e19)
 
     b_nHe = Function(bs_r_norm,  profiles["Nalf"].values * 1.0e19)
-    b_nDT = Function(bs_r_norm,  profiles["Nd+t"].values * 1.0e19)
+    b_ni = Function(bs_r_norm,  profiles["Nd+t"].values * 1.0e19*0.5)
     b_nImp = Function(bs_r_norm, profiles["Nz"].values * 1.0e19)
     b_zeff = Function(bs_r_norm,   profiles["Zeff"].values)
     bs_psi_norm = profiles["Fp"].values
@@ -75,18 +75,17 @@ if __name__ == "__main__":
                           "boundary": {"psi_norm": 0.995},
                           "coordinate_system": {"psi_norm": np.linspace(0.001, 0.995, 128), "theta": 128}}
 
-    if True:  # plot tokamak
+    sp_figure(tok,
+              wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
+              pf_active={"facecolor": 'red'},
+              equilibrium={
+                  "contour": [0, 2],
+                  "boundary": True,
+                  "separatrix": True,
+              }
+              ) .savefig(output_path/"tokamak.svg", transparent=True)
 
-        sp_figure(tok,
-                  wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
-                  pf_active={"facecolor": 'red'},
-                  equilibrium={
-                      "contour": [0, 2],
-                      "boundary": True,
-                      "separatrix": True,
-                      #   "scalar_field": [("psirz", {"levels": 16, "linewidths": 0.1}), ],
-                  }
-                  ) .savefig(output_path/"tokamak.svg", transparent=True)
+    if True:  # plot tokamak
 
         magnetic_surface = tok.equilibrium.coordinate_system
 
@@ -244,7 +243,7 @@ if __name__ == "__main__":
             [
                 [
                     (b_ne,      "electron astra",   r"density $n [m \cdot s^{-3}]$", {"marker": '.', "linestyle": ''}),
-                    (b_nDT*0.5, "D astra",          r"density $n [m \cdot s^{-3}]$", {"marker": '.', "linestyle": ''}),
+                    (b_ni, "D astra",          r"density $n [m \cdot s^{-3}]$", {"marker": '.', "linestyle": ''}),
                     (b_nHe,     "He astra",         r"density $n [m \cdot s^{-3}]$", {"marker": '.', "linestyle": ''}),
 
                     (core_profile.electrons.density,             r"$electron$", ),
@@ -391,27 +390,27 @@ if __name__ == "__main__":
 
                 "ion": [
                     {**atoms["D"],
-                     "particles": {"identifier": {"index": 1}, "value": [0.5*b_nDT[-1]]},
+                     "particles": {"identifier": {"index": 1}, "value": [0.5*b_ni[-1]]},
                      "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}},
                     {**atoms["T"],
-                     "particles": {"identifier": {"index": 1}, "value": [0.5*b_nDT[-1]]},
+                     "particles": {"identifier": {"index": 1}, "value": [0.5*b_ni[-1]]},
                      "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}},
                     {**atoms["He"],
                      "particles": {"identifier": {"index": 1}, "value": [b_nHe[-1]]},
                      "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}}
                 ]
             }}
+
+        core_profile = tok.core_profiles.profiles_1d
+
         tok.solve(enable_ion_particle_solver=False,
                   max_nodes=500,
                   tolerance=1.0e-4,
                   verbose=2,
                   bvp_rms_mask=[r_ped])
 
-        core_profile = tok.core_profiles.profiles_1d
-
         plot_profiles(
             [
-
                 ######################################################################
                 # psi ,current
                 [
@@ -421,14 +420,12 @@ if __name__ == "__main__":
                 ],
 
                 ######################################################################
-                # electron particles
+                # electron
                 [
                     (b_ne, r"astra", r"$n_e [m^{-3}]$",  {"marker": '.', "linestyle": ''}),
                     (core_profile.electrons.density, r"fytok", r"$n_e [ m^{-3}]$"),
-                    # (core_profile.electrons["density_error"], r"rms residuals ",
-                    #     r"$n_e [ m^{-3}]$",  {"color": "red", "linestyle": "dashed"}),
-                ],
 
+                ],
 
                 # [
                 #     (core_profile.electrons["density_flux"], r"Source",
@@ -441,44 +438,40 @@ if __name__ == "__main__":
                 #         - core_profile.electrons["conv_flux"],
                 #         r"residual",  "", {"color": "red", }),
                 # ],
-                ######################################################################
-                # electron temperature
+
                 [
                     (b_Te*1e-3, r"astra", r"$T_e [KeV]$",  {"marker": '.', "linestyle": ''}),
                     (core_profile.electrons.temperature*1e-3, r"fytok", r"$ [KeV]$"),
                 ],
-                # (core_profile.electrons["temperature_error"], r"rms_residuals",
-                #  r"$[eV]$",  {"color": "red", "linestyle": "dashed"}),
-
 
                 ######################################################################
-                # ion temperature
-                # [
-                #     (b_nDT/2,    r"astra", r"$n_i [m^-3]$", {"marker": '.', "linestyle": ''}),
-                #     * [(ion.density,   f"${ion.label}$") for ion in core_profile.ion],
-                # ],
+                # ion
+                [
+                    (b_ni,    r"astra", r"$n_i [m^-3]$", {"marker": '.', "linestyle": ''}),
+                    * [(ion.density,   f"${ion.label}$") for ion in core_profile.ion if not ion.is_impurity],
+                ],
                 # [
                 #     (core_profile.electrons.get("density_flux"), r"$\Gamma_e$", r"$\Gamma_i$"),
                 #     * [(ion.get("density_flux"),          f"$\\Gamma_{ion.label}$", r"$\Gamma_i [eV]$")
                 #         for ion in core_profile.ion if  not ion.is_impurity],
                 # ],
-                # [
-                #     (b_Ti*1e-3,    r"astra $T_i$",       r"$T_{i} [KeV]$", {"marker": '.', "linestyle": ''}),
-                #     * [(ion.temperature*1e-3,          f"${ion.label}$", r"$T_i [KeV]$")
-                #         for ion in core_profile.ion if not ion.is_impurity],
-                # ],
+                [
+                    (b_Ti*1e-3,    r"astra $T_i$",       r"$T_{i} [KeV]$", {"marker": '.', "linestyle": ''}),
+                    * [(ion.temperature*1e-3,  f"${ion.label}$", r"$T_i [KeV]$")
+                        for ion in core_profile.ion if not ion.is_impurity],
+                ],
 
                 [
-                    # (rms_residual(Function(bs_r_norm, bs_psi), core_profile["psi"]), r"$\psi$", " rms residual [%]"),
+                    (rms_residual(Function(bs_r_norm, bs_psi), core_profile["psi"]), r"$\psi$", " rms residual [%]"),
 
                     (rms_residual(b_ne, core_profile.electrons.density), r"$n_e$"),
 
                     (rms_residual(b_Te, core_profile.electrons.temperature), r"$T_e$"),
 
-                    # *[(rms_residual(b_nDT/2, ion.density), f"$n_{ion.label}$")
-                    #   for ion in core_profile.ion if not ion.is_impurity],
-                    # *[(rms_residual(b_Ti, ion.temperature), f"$T_{ion.label}$")
-                    #   for ion in core_profile.ion if not ion.is_impurity],
+                    *[(rms_residual(b_ni, ion.density), f"$n_{ion.label}$")
+                      for ion in core_profile.ion if not ion.is_impurity],
+                    *[(rms_residual(b_Ti, ion.temperature), f"$T_{ion.label}$")
+                      for ion in core_profile.ion if not ion.is_impurity],
 
                 ],
             ],

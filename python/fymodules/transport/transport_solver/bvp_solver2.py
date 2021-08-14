@@ -449,7 +449,7 @@ class TransportSolverBVP2(TransportSolver):
         def func(x: np.ndarray, Y: np.ndarray, p=None, /,
                  eq_list: Sequence[Tuple[Callable, Callable]] = eq_list) -> np.ndarray:
 
-            self._core_profiles_next.refresh(radial_grid=self._equilibrium_next.radial_grid.remesh("rho_tor_norm", x))
+            # self._core_profiles_next.refresh(radial_grid=self._equilibrium_next.radial_grid.remesh("rho_tor_norm", x))
 
             profiles_1d: CoreProfiles = self._core_profiles_next.profiles_1d
 
@@ -459,9 +459,9 @@ class TransportSolverBVP2(TransportSolver):
 
             self.quasi_neutral_condition(profiles_1d, particle_solver=particle_solver)
 
-            self._core_transport.refresh(equlibrium=self._equilibrium_next,   core_profiles=self._core_profiles_next)
+            self._core_transport.refresh(equlibrium=self._equilibrium_next,  core_profiles=self._core_profiles_next)
 
-            self._core_sources.refresh(equlibrium=self._equilibrium_next,   core_profiles=self._core_profiles_next)
+            self._core_sources.refresh(equlibrium=self._equilibrium_next,  core_profiles=self._core_profiles_next)
 
             res = sum([list(func(x, Y, profiles_1d,
                                  self._core_transport.profiles_1d,
@@ -484,8 +484,8 @@ class TransportSolverBVP2(TransportSolver):
                 (["psi"],                                                self.transp_current,),
                 (["electrons", "density"],                               self.transp_particle,),
                 (["electrons", "temperature"],                           self.transp_energy, ),
-                # *[(["ion", {"label": ion.label}, "temperature"],         self.transp_energy, )
-                #   for ion in self._core_profiles_next.profiles_1d.ion if not ion.is_impurity],
+                *[(["ion", {"label": ion.label}, "temperature"],         self.transp_energy, )
+                  for ion in self._core_profiles_next.profiles_1d.ion if not ion.is_impurity],
             ]
         else:
             eq_grp = [

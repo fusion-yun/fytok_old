@@ -30,15 +30,17 @@ def load_core_profiles(profiles: Union[str, pathlib.Path]):
 
     b_Te = Function(bs_r_norm, smooth_1d(bs_r_norm, profiles["TE"].values, i_end=i_ped-10, window_len=21)*1000)
     b_Ti = Function(bs_r_norm, smooth_1d(bs_r_norm, profiles["TI"].values, i_end=i_ped-10, window_len=21)*1000)
+
     b_ne = Function(bs_r_norm, smooth_1d(bs_r_norm, profiles["NE"].values, i_end=i_ped-10, window_len=21)*1.0e19)
+    b_nDT = Function(bs_r_norm, smooth_1d(bs_r_norm, profiles["Nd+t"].values, i_end=i_ped-10, window_len=21)*1.0e19*0.5)
 
     b_nHe = Function(bs_r_norm, smooth_1d(bs_r_norm, profiles["Nalf"].values, i_end=i_ped-10, window_len=21)*1.0e19)
-    b_nDT = Function(bs_r_norm, smooth_1d(bs_r_norm, profiles["Nd+t"].values, i_end=i_ped-10, window_len=21)*1.0e19)
     b_nImp = Function(bs_r_norm, smooth_1d(bs_r_norm, profiles["Nz"].values, i_end=i_ped-10, window_len=21)*1.0e19)
+
     b_zeff = Function(bs_r_norm,   profiles["Zeff"].values)
 
-    z_eff_star = b_zeff-(b_nDT+4*b_nHe)/b_ne
-    z_imp = 1-(b_nDT+2*b_nHe)/b_ne
+    z_eff_star = b_zeff-(b_nDT*2.0+4*b_nHe)/b_ne
+    z_imp = 1-(b_nDT*2.0+2*b_nHe)/b_ne
     b = -2*z_imp/(0.02+0.0012)
     c = (z_imp**2-0.02*z_eff_star)/0.0012/(0.02+0.0012)
 
@@ -53,9 +55,9 @@ def load_core_profiles(profiles: Union[str, pathlib.Path]):
         "rho_tor": profiles["rho"].values,
         "electrons": {**atoms["e"], "density":       b_ne,   "temperature": b_Te, },
         "ion": [
-            {**atoms["D"],  "density":  0.5*b_nDT,  "temperature": b_Ti, },
-            {**atoms["T"],  "density":  0.5*b_nDT,  "temperature": b_Ti, },
-            {**atoms["He"], "density":      b_nHe,  "temperature": b_Ti},
+            {**atoms["D"],  "density":      b_nDT,  "temperature": b_Ti, },
+            {**atoms["T"],  "density":      b_nDT,  "temperature": b_Ti, },
+            {**atoms["He"], "density":      b_nHe,  "temperature": b_Ti,  "is_impurity":True},
             {**atoms["Be"], "density":  0.02*b_ne,  "temperature": b_Ti,
              "z_ion_1d":Function(bs_r_norm, z_Be),  "is_impurity":True},
             {**atoms["Ar"], "density":0.0012*b_ne,  "temperature": b_Ti,
@@ -69,9 +71,7 @@ def load_core_profiles(profiles: Union[str, pathlib.Path]):
         "j_non_inductive": Function(bs_r_norm, profiles["Jnoh"].values*1.0e6),
         # "j_bootstrap": Function(bs_r_norm, profiles["Jbs"].values*1.0e6),
         "j_total": Function(bs_r_norm, profiles["Jtot"].values*1.0e6),
-
         "XiNC": Function(bs_r_norm, profiles["XiNC"].values),
-
     }
 
 

@@ -248,7 +248,7 @@ class CoreTransportModel(Module):
 
     def refresh(self, *args, core_profiles: CoreProfiles, **kwargs) -> None:
         super().refresh(*args, core_profiles=core_profiles, **kwargs)
-        self._radial_grid = core_profiles.profiles_1d.grid
+        # self._radial_grid = core_profiles.profiles_1d.grid
 
 
 class CoreTransport(IDS):

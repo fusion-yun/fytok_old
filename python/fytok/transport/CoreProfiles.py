@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Optional
 from fytok.transport.Equilibrium import Equilibrium
 
-from spdm.data.Function import Function
+from spdm.data.Function import Function, function_like
 from spdm.data.Node import Dict, List, Node, sp_property
 from spdm.numlib import constants, np
 from spdm.util.logger import logger
@@ -150,7 +150,7 @@ class CoreProfilesIon(SpeciesIon):
     @sp_property
     def density(self) -> Function:
         """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        return Function(self._radial_grid.rho_tor_norm, self.get("density"))
+        return function_like(self._radial_grid.rho_tor_norm, self.get("density"))
         # d = self[]
         # if not isinstance(d, np.ndarray) or d != None:
         #     return d
