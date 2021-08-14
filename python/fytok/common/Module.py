@@ -28,5 +28,5 @@ class Module(Actor[_TState]):
     def comment(self) -> str:
         return self.get("comment", "")
 
-    def refresh(self, *args, **kwargs) -> None:
+    def refresh(self, *args, **kwargs) -> float:
         return super().refresh(*args, **kwargs)

@@ -232,7 +232,7 @@ class CoreTransportModel(Module):
 
     def __init__(self,  *args, radial_grid: RadialGrid, ** kwargs):
         super().__init__(*args, **kwargs)
-        self._radial_grid = radial_grid  
+        self._radial_grid = radial_grid
 
     @property
     def radial_grid(self) -> RadialGrid:
@@ -246,9 +246,8 @@ class CoreTransportModel(Module):
     def profiles_1d(self) -> Profiles1D:
         return CoreTransportModel.Profiles1D(self.get("profiles_1d", {}), radial_grid=self._radial_grid, parent=self)
 
-    def refresh(self, *args, core_profiles: CoreProfiles, **kwargs) -> None:
-        super().refresh(*args, core_profiles=core_profiles, **kwargs)
-        # self._radial_grid = core_profiles.profiles_1d.grid
+    def refresh(self, *args, core_profiles: CoreProfiles, **kwargs) -> float:
+        return super().refresh(*args, core_profiles=core_profiles, **kwargs)
 
 
 class CoreTransport(IDS):
@@ -272,7 +271,7 @@ class CoreTransport(IDS):
         self._radial_grid = radial_grid
 
     @property
-    def radial_grid(self)->RadialGrid:
+    def radial_grid(self) -> RadialGrid:
         return self._radial_grid
 
     @property
@@ -292,7 +291,7 @@ class CoreTransport(IDS):
             "code": {"name": _undefined_}
         })
 
-    def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles, **kwargs) -> None:
+    def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles, **kwargs) -> float:
         if "model_combiner" in self.__dict__:
             del self.__dict__["model_combiner"]
-        self.model.refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
+        return sum([model.refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles,  **kwargs) for model in self.model])

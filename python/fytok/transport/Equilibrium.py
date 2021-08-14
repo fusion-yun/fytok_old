@@ -69,9 +69,11 @@ class EquilibriumConstraints(Dict):
     Constraints0D = EquilibriumConstraints0D
     PurePosition = EquilibriumConstraintsPurePosition
 
-    def __init__(self,  *args, coord: MagneticCoordSystem = None,    ** kwargs):
+    def __init__(self,  *args, ** kwargs):
         super().__init__(*args, **kwargs)
-        self._coord: MagneticCoordSystem = coord or getattr(self._parent.coordinate_system)
+
+    def refresh(self, *args, **kwargs):
+        return
 
     @sp_property
     def b_field_tor_vacuum_r(self) -> Constraints0D:
@@ -814,8 +816,9 @@ class Equilibrium(IDS):
     def grid_ggd(self) -> GGD:
         return self.get("grid_ggd")
 
-    def refresh(self,  *args, **kwargs):
-        super().refresh(*args, **kwargs)
+    def refresh(self,  *args, **kwargs) -> float:
+        residual = super().refresh(*args, **kwargs)
+        return residual
 
     @sp_property
     def coordinate_system(self) -> MagneticCoordSystem:

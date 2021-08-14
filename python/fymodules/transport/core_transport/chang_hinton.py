@@ -27,12 +27,14 @@ class ChangHiton(CoreTransport.Model):
         super().__init__(*args, **kwargs)
 
     def refresh(self, *args,
-                core_profiles: CoreProfiles.TimeSlice = None,
-                equilibrium: Equilibrium.TimeSlice = None,
-                **kwargs):
-        super().refresh(*args,   **kwargs)
+                core_profiles: CoreProfiles = None,
+                equilibrium: Equilibrium = None,
+                **kwargs) -> float:
+        residual = super().refresh(*args, **kwargs)
 
-        raise NotImplementedError()
+        logger.warning(f"Not IMPLEMENTED!")
+
+        return residual
 
 
 __SP_EXPORT__ = ChangHiton

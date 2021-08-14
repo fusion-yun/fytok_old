@@ -20,8 +20,8 @@ class CoreSourceDummy(CoreSources.Source):
             "code": {"name": "dummy"}}, d or {}),
             *args, **kwargs)
 
-    def refresh(self, *args,  **kwargs):
-        super().refresh(*args, **kwargs)
+    def refresh(self, *args,  **kwargs) -> float:
+        return super().refresh(*args, **kwargs)
 
 
 __SP_EXPORT__ = CoreSourceDummy

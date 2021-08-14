@@ -401,17 +401,17 @@ if __name__ == "__main__":
                 ]
             }}
 
-        core_profile = tok.core_profiles.profiles_1d
+        residual = tok.refresh(enable_ion_particle_solver=False,
+                               max_nodes=500,
+                               tolerance=1.0e-4,
+                               verbose=2,
+                               bvp_rms_mask=[r_ped])
+        
 
-        tok.solve(enable_ion_particle_solver=False,
-                  max_nodes=500,
-                  tolerance=1.0e-4,
-                  verbose=2,
-                  bvp_rms_mask=[r_ped])
+        core_profile = tok.core_profiles.profiles_1d
 
         plot_profiles(
             [
-                ######################################################################
                 # psi ,current
                 [
                     (Function(bs_r_norm, bs_psi),
@@ -419,7 +419,6 @@ if __name__ == "__main__":
                     (core_profile["psi"],  r"fytok", r"$\psi  [Wb]$"),
                 ],
 
-                ######################################################################
                 # electron
                 [
                     (b_ne, r"astra", r"$n_e [m^{-3}]$",  {"marker": '.', "linestyle": ''}),
@@ -427,39 +426,24 @@ if __name__ == "__main__":
 
                 ],
 
-                # [
-                #     (core_profile.electrons["density_flux"], r"Source",
-                #      r"$\Gamma_e$ Particle flux", {"color": "green", }),
-                #     (core_profile.electrons["diff_flux"],    r"Diffusive ",  "", {"color": "black", }),
-                #     (core_profile.electrons["conv_flux"],    r"Convective ", "",  {"color": "blue", }),
-                #     (
-                #         core_profile.electrons["density_flux"]
-                #         - core_profile.electrons["diff_flux"]
-                #         - core_profile.electrons["conv_flux"],
-                #         r"residual",  "", {"color": "red", }),
-                # ],
-
                 [
-                    (b_Te*1e-3, r"astra", r"$T_e [KeV]$",  {"marker": '.', "linestyle": ''}),
-                    (core_profile.electrons.temperature*1e-3, r"fytok", r"$ [KeV]$"),
+                    (b_Te, r"astra $T_e$", r"$[eV]$",  {"marker": '.', "linestyle": ''}),
+                    (core_profile.electrons.temperature, r"fytok  $T_e$", r"$[eV]$"),
                 ],
 
-                ######################################################################
                 # ion
                 [
                     (b_ni,    r"astra", r"$n_i [m^-3]$", {"marker": '.', "linestyle": ''}),
                     * [(ion.density,   f"${ion.label}$") for ion in core_profile.ion if not ion.is_impurity],
                 ],
-                # [
-                #     (core_profile.electrons.get("density_flux"), r"$\Gamma_e$", r"$\Gamma_i$"),
-                #     * [(ion.get("density_flux"),          f"$\\Gamma_{ion.label}$", r"$\Gamma_i [eV]$")
-                #         for ion in core_profile.ion if  not ion.is_impurity],
-                # ],
+
                 [
-                    (b_Ti*1e-3,    r"astra $T_i$",       r"$T_{i} [KeV]$", {"marker": '.', "linestyle": ''}),
-                    * [(ion.temperature*1e-3,  f"${ion.label}$", r"$T_i [KeV]$")
+                    (b_Ti,    r"astra $T_i$",       r"$T_{i} [eV]$", {"marker": '.', "linestyle": ''}),
+                    * [(ion.temperature,  f"${ion.label} T_i $", r"$[eV]$")
                         for ion in core_profile.ion if not ion.is_impurity],
                 ],
+
+                ######################################################################
 
                 [
                     (rms_residual(Function(bs_r_norm, bs_psi), core_profile["psi"]), r"$\psi$", " rms residual [%]"),
@@ -475,10 +459,8 @@ if __name__ == "__main__":
 
                 ],
             ],
-            # x_axis=(rho_tor_norm,                             r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             x_axis=([0, 1.0],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             title="Result of TransportSolver",
-            # index_slice=slice(0, 200, 1),
-            grid=True, fontsize=10) .savefig(output_path/"core_profiles_result.svg", transparent=True)
+            grid=True, fontsize=10).savefig(output_path/"core_profiles_result.svg", transparent=True)
 
     logger.info("====== DONE ========")

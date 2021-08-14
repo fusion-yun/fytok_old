@@ -573,15 +573,12 @@ class CoreProfiles(IDS):
     Profiles1D = CoreProfiles1D
     GlobalQuantities = CoreProfilesGlobalQuantities
 
-    def __init__(self,   *args,  radial_grid: RadialGrid = None, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args,  **kwargs)
-        self.refresh(radial_grid=radial_grid)
 
-    def refresh(self, *args,  radial_grid: RadialGrid = None, **kwargs) -> None:
-        if radial_grid is None:
-            self._radial_grid = getattr(self._parent, "_radial_grid")
-        else:
-            self._radial_grid = radial_grid
+    def refresh(self, *args,  **kwargs) -> float:
+        residual = super().refresh(*args, **kwargs)
+        return residual
 
     @sp_property
     def profiles_1d(self) -> Profiles1D:

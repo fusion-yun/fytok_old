@@ -4,7 +4,7 @@
 
 from dataclasses import dataclass, field
 from math import log
-from typing import Mapping, Optional
+from typing import Mapping, Optional, Tuple
 
 from fytok.common.Species import SpeciesElectron, SpeciesIon
 from fytok.transport.EdgeProfiles import EdgeProfiles
@@ -49,7 +49,7 @@ class _BC(Dict):
         return self.get('identifier', {"index": 1})
 
 
-class TransportSolver(IDS):
+class CoreTransportSolver(IDS):
     r"""
         Solve transport equations
         :math:`\rho=\sqrt{ \Phi/\pi B_{0}}`
@@ -102,7 +102,7 @@ class TransportSolver(IDS):
 
         @sp_property
         def electrons(self) -> Electrons:
-            return TransportSolver.BoundaryConditions1D.Electrons(self.get("electrons"), parent=self, grid=self._grid)
+            return CoreTransportSolver.BoundaryConditions1D.Electrons(self.get("electrons"), parent=self, grid=self._grid)
 
         @sp_property
         def ion(self) -> List[Ion]:
@@ -136,51 +136,20 @@ class TransportSolver(IDS):
     def boundary_conditions_1d(self) -> BoundaryConditions1D:
         return self.get("boundary_conditions_1d")
 
-    def refresh(self, *args,
-                equilibrium: Equilibrium,
-                core_profiles: CoreProfiles,
-                core_transport: CoreTransport,
-                core_sources: CoreSources,
-                edge_profiles: EdgeProfiles = False,
-                edge_transport: EdgeTransport = False,
-                edge_sources: EdgeSources = False,
-                boundary_conditions_1d=None,
-                **kwargs):
-        self._core_profiles_next: CoreProfiles = core_profiles
-        self._core_profiles_prev: CoreProfiles = core_profiles.previous_state
-        self._equilibrium_next: Equilibrium = equilibrium
-        self._equilibrium_prev: Equilibrium = equilibrium.previous_state
-        self._core_transport: CoreTransport.Model = core_transport.model_combiner
-        self._core_sources: CoreSources.Source = core_sources.source_combiner
-
+    def refresh(self, *args,  boundary_conditions_1d=None,  **kwargs):
         self.boundary_conditions_1d.update(boundary_conditions_1d)
         return
 
-    def solve_core(self, *args,  **kwargs):
-        return NotImplemented
-
-    def solve_edge(self, *args, **kwargs):
-        return NotImplemented
-
-    def solve(self, *args,  max_iter=1, tolerance=1.0e-3,   ** kwargs) -> float:
+    def solve(self, /,
+              core_profiles_prev: CoreProfiles,
+              core_transport: CoreTransport.Model,
+              core_sources: CoreSources.Source,
+              equilibrium_next: Equilibrium,
+              equilibrium_prev: Equilibrium = None,
+              **kwargs) -> Tuple[float, CoreProfiles]:
         """
-            solve transport eqation
-            return residual of core_profiles
+            solve transport eqation until residual < tolerance
+            return residual , core_profiles, edge_profiles
         """
 
-        self.refresh(*args, **kwargs)
-
-        for step in range(max_iter):
-            logger.debug(f" Iteration step={step}: start")
-
-            residual = self.solve_core(tolerance=tolerance,  ** kwargs)
-
-            # if self._edge_profiles is not False:
-            #     residual.append(self.solve_edge(tolerance=tolerance, **kwargs))
-
-            logger.debug(f" Iteration step={step}: stop   residual={residual}  ")
-
-            if residual < tolerance:
-                break
-
-        return residual
+        return 0.0, core_profiles_prev

@@ -17,14 +17,16 @@ from .device.Wall import Wall
 from .transport.CoreProfiles import CoreProfiles
 from .transport.CoreSources import CoreSources
 from .transport.CoreTransport import CoreTransport
+from .transport.CoreTransportSolver import CoreTransportSolver
 # ---------------------------------
 from .transport.EdgeProfiles import EdgeProfiles
 from .transport.EdgeSources import EdgeSources
 from .transport.EdgeTransport import EdgeTransport
+from .transport.EdgeTransportSolver import EdgeTransportSolver
 # ---------------------------------
 from .transport.Equilibrium import Equilibrium
+from .transport.EquilibriumSolver import EquilibriumSolver
 from .transport.MagneticCoordSystem import RadialGrid
-from .transport.TransportSolver import TransportSolver
 
 
 class Tokamak(Actor):
@@ -62,30 +64,27 @@ class Tokamak(Actor):
         return self.get("magnetics")
     # --------------------------------------------------------------------------
 
-    @property
-    def radial_grid(self) -> RadialGrid:
-        return self.equilibrium.radial_grid.remesh("rho_tor_norm")
-
     @sp_property
     def equilibrium(self) -> Equilibrium:
-        return Equilibrium(self.get("equilibrium", {"code": {"name": "dummy"}}), parent=self)
+        return self.get("equilibrium", {})
 
     @sp_property
     def core_profiles(self) -> CoreProfiles:
-        return CoreProfiles(self.get("core_profiles"), radial_grid=self.radial_grid, parent=self)
+        return self.get("core_profiles")
 
     @sp_property
     def core_transport(self) -> CoreTransport:
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return CoreTransport(self.get("core_transport"), radial_grid=self.radial_grid, parent=self)
+        return CoreTransport(self.get("core_transport"), radial_grid=self.radial_grid,   parent=self)
 
     @sp_property
     def core_sources(self) -> CoreSources:
-        """Core plasma thermal source terms (for the transport equations of the thermal species).
+        """
+            Core plasma thermal source terms (for the transport equations of the thermal species).
             Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return CoreSources(self.get("core_sources"), radial_grid=self.radial_grid, parent=self)
+        return CoreSources(self.get("core_sources"), radial_grid=self.radial_grid,   parent=self)
 
     @sp_property
     def edge_profiles(self) -> EdgeProfiles:
@@ -93,8 +92,9 @@ class Tokamak(Actor):
 
     @sp_property
     def edge_transport(self) -> EdgeTransport:
-        """Edge plasma transport. Energy terms correspond to the full kinetic energy equation
-         (i.e. the energy flux takes into account the energy transported by the particle flux)
+        """
+            Edge plasma transport. Energy terms correspond to the full kinetic energy equation
+            (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
         return self.get("edge_transport")
 
@@ -106,69 +106,91 @@ class Tokamak(Actor):
         return self.get("edge_sources")
 
     @sp_property
-    def transport_solver(self) -> TransportSolver:
-        return TransportSolver(self.get("transport_solver"), radial_grid=self.radial_grid, parent=self)
+    def core_transport_solver(self) -> CoreTransportSolver:
+        return CoreTransportSolver(self.get("core_transport_solver"),   parent=self)
 
-    def refresh(self, *args, **kwargs):
-        super().refresh(*args, **kwargs)
+    @sp_property
+    def edge_transport_solver(self) -> EdgeTransportSolver:
+        return CoreTransportSolver(self.get("core_transport_solver"),   parent=self)
 
-    def advance(self,  dt=None, time=None, **kwargs):
+    @sp_property
+    def equilibrium_solver(self) -> EquilibriumSolver:
+        return EquilibriumSolver(self.get("equilibrium_solver"),   parent=self)
 
-        time = super().advance(time=time, dt=dt)
+    def refresh(self, *args, time=None,   max_iteration=1, tolerance=1.0e-6,  **kwargs) -> float:
+        super().refresh(time=time)
 
-        self.wall.advance(time=time, refresh=False)
+        self.wall.refresh(time=time)
 
-        self.pf_active.advance(time=time, refresh=False)
+        self.pf_active.refresh(time=time)
 
-        self.equilibrium.advance(time=time, refresh=False)
+        self.magnetics.refresh(time=time)
 
-        self.core_profiles.advance(time=time, refresh=False)
+        self.equilibrium_solver.refresh(time=time, wall=self.wall, pf_active=self.pf_active, magnetics=self.magnetics)
 
-        self.core_sources.advance(time=time, refresh=False)
+        equilibrium_prev = self.equilibrium
 
-        self.core_transport.advance(time=time, refresh=False)
+        core_profiles_prev = self.core_profiles
 
-    def solve(self, *args, constraints: Equilibrium.Constraints = None, max_iteration=1, max_nodes=1250,  enable_edge=False,  tolerance=1.0e-6,  **kwargs):
+        edge_profiles_prev = self.edge_profiles
+
+        self.core_sources.refresh(
+            time=time,
+            equilibrium=equilibrium_prev,
+            core_profiles=core_profiles_prev)
+
+        self.core_transport.refresh(
+            time=time,
+            equilibrium=equilibrium_prev,
+            core_profiles=core_profiles_prev)
+
+        residual = 0.0
 
         for nstep in range(max_iteration):
+            residual, equilibrium_next = self.equilibrium_solver.solve(
+                equilibrium_prev=equilibrium_prev,
+                core_profiles=core_profiles_prev)
 
-            self.equilibrium.refresh(
-                constraints=constraints,
-                core_profiles=self.core_profiles,
-                wall=self.wall,
-                pf_active=self.pf_active,
-                magnetics=self.magnetics)
+            residual_core, core_profiles_next = self.core_transport_solver.solve(
+                core_profiles=core_profiles_prev,
+                core_sources=self.core_sources.source_combiner,
+                core_transport=self.core_transport.model_combiner,
+                equilibrium_next=equilibrium_next,
+                equilibrium_prev=equilibrium_prev,
+                tolerance=tolerance,
+                **kwargs)
 
-            self.core_sources.refresh(equilibrium=self.equilibrium, core_profiles=self.core_profiles)
+            residual_edge,  edge_profiles_next = self.edge_transport_solver.solve(
+                edge_profiles_prev=edge_profiles_prev,
+                edge_sources=self.edge_sources.source_combiner,
+                edge_transport=self.edge_transport.model_combiner,
+                equilibrium_next=equilibrium_next,
+                equilibrium_prev=equilibrium_prev,
+                tolerance=tolerance,
+                **kwargs)
 
-            self.core_transport.refresh(equilibrium=self.equilibrium, core_profiles=self.core_profiles)
+            residual += residual_edge+residual_core
 
-            if enable_edge:
-                self.edge_transport.refresh(equilibrium=self.equilibrium, core_profiles=self.core_profiles)
+            logger.debug(f"time={self.time}  iterator step {nstep}/{max_iteration} residual={residual}")
 
-                self.edge_sources.refresh(equilibrium=self.equilibrium, core_profiles=self.core_profiles)
-
-                self.edge_profiles.refresh()
-
-            # Update grid
-            # radial_grid = self.equilibrium.radial_grid.remesh("rho_tor_norm")
-            # self.core_profiles.refresh(radial_grid=radial_grid)
-
-            redisual = self.transport_solver.solve(equilibrium=self.equilibrium,
-                                                   core_profiles=self.core_profiles,
-                                                   core_sources=self.core_sources,
-                                                   core_transport=self.core_transport,
-                                                   max_nodes=max_nodes, tolerance=tolerance, **kwargs)
-
-            logger.debug(f"time={self.time}  iterator step {nstep}/{max_iteration} redisual={redisual}")
-
-            if redisual < tolerance:
+            if residual < tolerance:
                 break
 
-        if redisual > tolerance:
+            equilibrium_prev = equilibrium_next
+            core_profiles_prev = core_profiles_next
+            edge_profiles_prev = edge_profiles_next
+
+        self["equlibrium"] = equilibrium_next
+
+        self["core_profiles"] = core_profiles_next
+
+        self["edge_profiles"] = edge_profiles_next
+
+        if residual > 1.0e-4:
             logger.warning(
                 f"The solution does not converge, and the number of iterations exceeds the maximum {max_iteration}")
-        return redisual
+
+        return residual
 
     def plot(self, axis=None, /,  **kwargs):
 

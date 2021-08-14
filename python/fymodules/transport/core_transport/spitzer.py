@@ -29,11 +29,11 @@ class Spitzer(CoreTransport.Model):
             d or {}),
             *args, **kwargs)
 
-    def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles,  **kwargs):
-        super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
+    def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles,  **kwargs)->float:
+        residual = super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
         eV = constants.electron_volt
-        
+
         B0 = self.radial_grid.b0
         R0 = self.radial_grid.r0
 
@@ -93,7 +93,7 @@ class Spitzer(CoreTransport.Model):
 
         self.profiles_1d["conductivity_parallel"] = Function(rho_tor_norm, array_like(rho_tor_norm, 1.0/eta))
 
-        return
+        return residual
 
 
 __SP_EXPORT__ = Spitzer

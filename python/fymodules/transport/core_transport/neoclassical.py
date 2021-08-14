@@ -31,8 +31,8 @@ class NeoClassical(CoreTransport.Model):
     def refresh(self, *args,
                 equilibrium: Equilibrium,
                 core_profiles: CoreProfiles,
-                **kwargs):
-        super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
+                **kwargs) -> float:
+        residual = super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
         eV = constants.electron_volt
         B0 = equilibrium.vacuum_toroidal_field.b0
@@ -209,7 +209,7 @@ class NeoClassical(CoreTransport.Model):
         self.profiles_1d["j_bootstrap"] = function_like(rho_tor_norm, j_bootstrap)
         self.profiles_1d["j_ohmic"] = function_like(rho_tor_norm, core_profiles_1d.e_field.parallel(rho_tor_norm)/eta)
 
-        return 0.0
+        return residual
 
 
 __SP_EXPORT__ = NeoClassical

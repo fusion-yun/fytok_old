@@ -474,7 +474,7 @@ class TransportSolverBVP2(TransportSolver):
 
         return solve_bvp(func, bc_func, x0, Y0, tolerance=tolerance, max_nodes=max_nodes, **kwargs)
 
-    def solve_core(self,  /,  particle_solver: str = 'electron',   **kwargs) -> float:
+    def solve_core(self,  /,  particle_solver: str = 'electron',  **kwargs) -> Tuple[float, CoreProfiles]:
 
         if self._core_profiles_next.profiles_1d.get("psi", _not_found_) is _not_found_:
             self._core_profiles_next.profiles_1d["psi"] = self._core_profiles_next.profiles_1d.grid.psi
@@ -517,7 +517,7 @@ class TransportSolverBVP2(TransportSolver):
         logger.info(
             f"Solve transport equations [{'Success' if sol.success else 'Failed'}] : max reduisal={rms_residuals} \n  {[var_id for var_id,*_ in eq_grp]}")
 
-        return rms_residuals
+        return rms_residuals, self._core_profiles_next
 
 
 __SP_EXPORT__ = TransportSolverBVP2

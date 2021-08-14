@@ -250,10 +250,6 @@ class CoreSourcesSource(Module):
         super().__init__(d, **kwargs)
         self._radial_grid = radial_grid
 
-    @property
-    def radial_grid(self) -> RadialGrid:
-        return self._radial_grid
-
     @sp_property
     def species(self) -> Species:
         return self.get("species", {})
@@ -303,6 +299,8 @@ class CoreSources(IDS):
             "code": {"name": _undefined_}
         })
 
-    def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles,  **kwargs) -> None:
-        self.source.refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
-        self.source_combiner.refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles,  **kwargs)
+    def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles,  **kwargs) -> float:
+        if "source_combiner" in self.__dict__:
+            del self.__dict__["source_combiner"]
+
+        return sum([src.refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles,  **kwargs) for src in self.source])

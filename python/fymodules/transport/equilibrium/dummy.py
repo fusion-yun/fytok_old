@@ -16,9 +16,13 @@ class EquilibriumDummy(Equilibrium):
     def __init__(self, *args,  **kwargs):
         super().__init__(*args, **kwargs)
 
-    def refresh(self, *args, core_profiles: CoreProfiles = None, constraints: Equilibrium.Constraints = None, **kwargs):
-        return
-        # super().refresh(*args, core_profiles=core_profiles, constraints=constraints, **kwargs)
+    def refresh(self, *args, time=None,  **kwargs) -> float:
+        residual = super().refresh(time=time)
+        if len(args) > 0:
+            self.update(args[0])
+        if len(kwargs) > 0:
+            self.update(kwargs)
+        return residual
 
 
 __SP_EXPORT__ = EquilibriumDummy
