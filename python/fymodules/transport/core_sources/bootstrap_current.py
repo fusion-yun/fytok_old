@@ -25,7 +25,7 @@ class BootstrapCurrent(CoreSources.Source):
 
         equilibrium_1d = equilibrium.profiles_1d
         core_profiles_1d = core_profiles.profiles_1d
-
+        profiles_1d = self.profiles_1d
         eV = constants.electron_volt
         B0 = equilibrium.vacuum_toroidal_field.b0
         R0 = equilibrium.vacuum_toroidal_field.r0
@@ -33,9 +33,9 @@ class BootstrapCurrent(CoreSources.Source):
         # rho_tor_norm = (core_profile.grid.rho_tor_norm[:-1]+core_profile.grid.rho_tor_norm[1:])*0.5
         # rho_tor = (core_profile.grid.rho_tor[:-1]+core_profile.grid.rho_tor[1:])*0.5
         # psi_norm = (core_profile.grid.psi_norm[:-1]+core_profile.grid.psi_norm[1:])*0.5
-        rho_tor_norm = self._radial_grid.rho_tor_norm[1:]
-        rho_tor = self._radial_grid.rho_tor[1:]
-        psi_norm = self._radial_grid.psi_norm[1:]
+        rho_tor_norm = profiles_1d.grid.rho_tor_norm[1:]
+        rho_tor = profiles_1d.grid.rho_tor[1:]
+        psi_norm = profiles_1d.grid.psi_norm[1:]
 
         q = equilibrium_1d.q(psi_norm)
 
@@ -115,7 +115,7 @@ class BootstrapCurrent(CoreSources.Source):
                                  * fpol * q / rho_tor_norm / (rho_tor[-1])**2 / (2.0*constants.pi*B0))
 
         self["profiles_1d.j_parallel"] = Function(
-            self._radial_grid.rho_tor_norm, np.hstack([j_bootstrap[0], j_bootstrap]))
+            profiles_1d.grid.rho_tor_norm, np.hstack([j_bootstrap[0], j_bootstrap]))
 
         return residual
 

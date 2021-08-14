@@ -1,12 +1,11 @@
 import collections
 from dataclasses import dataclass
 from functools import cached_property
-from math import isclose
 from typing import Callable, Iterator, Mapping, Sequence, Tuple, TypeVar, Union
 
 from spdm.data.Field import Field
 from spdm.data.Function import Function, function_like
-from spdm.data.Node import Dict, List
+from spdm.data.Node import Dict, List, sp_property
 from spdm.geometry.CubicSplineCurve import CubicSplineCurve
 from spdm.geometry.GeoObject import GeoObject, _TCoord
 from spdm.geometry.Point import Point
@@ -34,32 +33,16 @@ class OXPoint:
 
 # OXPoint = collections.namedtuple('OXPoint', "r z psi")
 
-class RadialGrid:
+class RadialGrid(Dict):
     r"""
         Radial grid
     """
 
-    def __init__(self,
-                 r0: float = 1.0,
-                 b0: float = 1.0,
-                 psi_axis: float = 0,
-                 psi_boundary: float = 1,
-                 rho_tor_boundary: float = None,
-                 ** kwargs) -> None:
-        self._psi_axis = psi_axis
-        self._psi_boundary = psi_boundary
-        self._rho_tor_boundary = rho_tor_boundary
-        self._r0 = r0
-        self._b0 = b0
-
-        for k, v in kwargs.items():
-            self.__dict__[f"_f_{k}"] = v
-
-    def __serialize__(self) -> Dict:
-        return {k[3:]: v for k, v in self.__dict__.items() if k.startswith('_f_')}
+    def __init__(self, *args, ** kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
     def remesh(self, label: str = "psi_norm", new_axis: np.ndarray = None, ):
-        axis = self.__dict__.get(f"_f_{label}", None)
+        axis = self.get(f"{label}", None)
 
         if axis is None:
             raise RuntimeError(f"Can not find axis {label}!")
@@ -74,11 +57,11 @@ class RadialGrid:
             raise TypeError(new_axis)
 
         return RadialGrid(
-            r0=self._r0,
-            b0=self._b0,
-            psi_axis=self._psi_axis,
-            psi_boundary=self._psi_boundary,
-            rho_tor_boundary=self._rho_tor_boundary,
+            r0=self.r0,
+            b0=self.b0,
+            psi_axis=self.psi_axis,
+            psi_boundary=self.psi_boundary,
+            rho_tor_boundary=self.rho_tor_boundary,
             psi_norm=Function(axis,  self.psi_norm)(new_axis) if label != "psi_norm" else new_axis,
             rho_tor_norm=Function(axis,  self.rho_tor_norm)(new_axis) if label != "rho_tor_norm" else new_axis,
             # rho_pol_norm=Function(axis,  self.rho_pol_norm)(new_axis) if label != "rho_pol_norm" else new_axis,
@@ -88,75 +71,78 @@ class RadialGrid:
             dvolume_drho_tor=Function(axis,  self.dvolume_drho_tor)(new_axis),
         )
 
-    @property
+    @sp_property
     def r0(self) -> float:
-        return self._r0
+        return self.get("r0")
 
-    @property
+    @sp_property
     def b0(self) -> float:
-        return self._b0
+        return self.get("b0")
 
-    @property
-    def psi_magnetic_axis(self) -> float:
+    @sp_property
+    def psi_axis(self) -> float:
         """Poloidal flux at the magnetic axis  [Wb]."""
-        return self._psi_axis
+        return self["psi_axis"]
 
-    @property
+    @sp_property
+    def psi_magnetic_axis(self) -> float:
+        return self.psi_axis
+
+    @sp_property
     def psi_boundary(self) -> float:
         """Poloidal flux at the selected plasma boundary  [Wb]."""
-        return self._psi_boundary
+        return self["psi_boundary"]
 
-    @property
+    @sp_property
     def rho_tor_boundary(self) -> float:
-        return self._rho_tor_boundary
+        return self.get("rho_tor_boundary")
 
-    @property
+    @sp_property
     def psi_norm(self) -> np.ndarray:
-        return self.__dict__.get("_f_psi_norm")
+        return self.get("psi_norm")
 
     @property
     def psi(self) -> np.ndarray:
         """Poloidal magnetic flux {dynamic} [Wb]. This quantity is COCOS-dependent, with the following transformation"""
-        return self.psi_norm * (self.psi_boundary-self.psi_magnetic_axis)+self.psi_magnetic_axis
+        return self.psi_norm * (self.psi_boundary-self.psi_axis)+self.psi_axis
 
-    @cached_property
+    @sp_property
     def rho_tor_norm(self) -> np.ndarray:
         r"""Normalised toroidal flux coordinate. The normalizing value for rho_tor_norm, is the toroidal flux coordinate
             at the equilibrium boundary (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation,
             see time_slice/boundary/b_flux_pol_norm in the equilibrium IDS) {dynamic} [-]
         """
-        return self.__dict__.get("_f_rho_tor_norm")
+        return self.get("rho_tor_norm")
 
-
-    @property
+    @sp_property
     def rho_tor(self) -> np.ndarray:
         r"""Toroidal flux coordinate. rho_tor = sqrt(b_flux_tor/(pi*b0)) ~ sqrt(pi*r^2*b0/(pi*b0)) ~ r [m].
             The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0 {dynamic} [m]"""
-        return self.rho_tor_norm*self._rho_tor_boundary
+        return self.rho_tor_norm*self.rho_tor_boundary
 
-    @property
+    @sp_property
     def rho_pol_norm(self) -> np.ndarray:
         r"""Normalised poloidal flux coordinate = sqrt((psi(rho)-psi(magnetic_axis)) / (psi(LCFS)-psi(magnetic_axis))) {dynamic} [-]"""
-        return self.__dict__.get("_f_rho_pol_norm")
+        return self.get("rho_pol_norm")
 
-    @property
+    @sp_property
     def area(self) -> np.ndarray:
         """Cross-sectional area of the flux surface {dynamic} [m^2]"""
-        return self.__dict__.get("_f_area")
+        return self.get("area")
 
-    @property
+    @sp_property
     def surface(self) -> np.ndarray:
         """Surface area of the toroidal flux surface {dynamic} [m^2]"""
-        return self.__dict__.get("_f_surface")
+        return self.get("surface")
 
-    @property
+    @sp_property
     def volume(self) -> np.ndarray:
         """Volume enclosed inside the magnetic surface {dynamic} [m^3]"""
-        return self.__dict__.get("_f_volume")
+        return self.get("volume")
 
-    @property
+    @sp_property
     def dvolume_drho_tor(self) -> np.ndarray:
-        return self.__dict__.get("_f_dvolume_drho_tor")
+        return self.get("dvolume_drho_tor")
 
 
 class MagneticCoordSystem(object):

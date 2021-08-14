@@ -41,13 +41,6 @@ class Tokamak(Actor):
         super().__init__(*args,  **kwargs)
 
     @sp_property
-    def radial_grid(self) -> RadialGrid:
-        rgrid = self.get("radial_grid", None)
-        if not isinstance(rgrid, RadialGrid):
-            rgrid = self.equilibrium.radial_grid.remesh(rgrid)
-        return rgrid
-
-    @sp_property
     def wall(self) -> Wall:
         return self.get("wall")
 
@@ -75,7 +68,7 @@ class Tokamak(Actor):
     @sp_property
     def core_transport(self) -> CoreTransport:
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return CoreTransport(self.get("core_transport"), radial_grid=self.radial_grid,   parent=self)
+        return self.get("core_transport")
 
     @sp_property
     def core_sources(self) -> CoreSources:
@@ -84,7 +77,7 @@ class Tokamak(Actor):
             Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return CoreSources(self.get("core_sources"), radial_grid=self.radial_grid,   parent=self)
+        return self.get("core_sources")
 
     @sp_property
     def edge_profiles(self) -> EdgeProfiles:
@@ -107,15 +100,15 @@ class Tokamak(Actor):
 
     @sp_property
     def core_transport_solver(self) -> CoreTransportSolver:
-        return CoreTransportSolver(self.get("core_transport_solver"),   parent=self)
+        return CoreTransportSolver(self.get("core_transport_solver"), parent=self)
 
     @sp_property
     def edge_transport_solver(self) -> EdgeTransportSolver:
-        return CoreTransportSolver(self.get("core_transport_solver"),   parent=self)
+        return EdgeTransportSolver(self.get("edge_transport_solver"), parent=self)
 
     @sp_property
     def equilibrium_solver(self) -> EquilibriumSolver:
-        return EquilibriumSolver(self.get("equilibrium_solver"),   parent=self)
+        return self.get("equilibrium_solver")
 
     def refresh(self, *args, time=None,   max_iteration=1, tolerance=1.0e-6,  **kwargs) -> float:
         super().refresh(time=time)
@@ -152,7 +145,7 @@ class Tokamak(Actor):
                 core_profiles=core_profiles_prev)
 
             residual_core, core_profiles_next = self.core_transport_solver.solve(
-                core_profiles=core_profiles_prev,
+                core_profiles_prev=core_profiles_prev,
                 core_sources=self.core_sources.source_combiner,
                 core_transport=self.core_transport.model_combiner,
                 equilibrium_next=equilibrium_next,

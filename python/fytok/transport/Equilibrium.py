@@ -71,6 +71,7 @@ class EquilibriumConstraints(Dict):
 
     def __init__(self,  *args, ** kwargs):
         super().__init__(*args, **kwargs)
+        self._coord: MagneticCoordSystem = self._parent.coordinate_system
 
     def refresh(self, *args, **kwargs):
         return
@@ -162,9 +163,9 @@ class EquilibriumConstraints(Dict):
 
 
 class EquilibriumGlobalQuantities(Dict):
-    def __init__(self,  *args, coord: MagneticCoordSystem = None,    ** kwargs):
+    def __init__(self,  *args,   ** kwargs):
         super().__init__(*args, **kwargs)
-        self._coord = coord or getattr(self._parent, "coordinate_system", None)
+        self._coord: MagneticCoordSystem = self._parent.coordinate_system
 
     @sp_property
     def beta_pol(self):
@@ -262,10 +263,17 @@ class EquilibriumGlobalQuantities(Dict):
 class EquilibriumProfiles1D(Dict):
     """Equilibrium profiles(1D radial grid) as a function of the poloidal flux	"""
 
-    def __init__(self,  *args,  coord: MagneticCoordSystem = None,    ** kwargs):
+    def __init__(self,  *args, ** kwargs):
         super().__init__(*args, **kwargs)
-        self._coord = coord if coord is not None else self._parent.coordinate_system
+        self._coord: MagneticCoordSystem = self._parent.coordinate_system
         self._axis = self._coord.psi_norm
+
+    @sp_property
+    def grid(self) -> RadialGrid:
+        g = self.get("grid", None)
+        if not isinstance(g, RadialGrid):
+            g = self._coord.radial_grid(g)
+        return g
 
     @sp_property
     def ffprime(self) -> Function:
@@ -553,17 +561,13 @@ class EquilibriumProfiles2D(Dict):
         Equilibrium 2D profiles in the poloidal plane.
     """
 
-    def __init__(self,  *args, coord: MagneticCoordSystem = None,    ** kwargs):
+    def __init__(self,  *args, ** kwargs):
         super().__init__(*args, **kwargs)
-        self._coord = coord or getattr(self._parent, "coordinate_system", None)
+        self._coord: MagneticCoordSystem = self._parent.coordinate_system
 
     @sp_property
     def grid_type(self) -> RadialGrid:
         return self._coord.grid_type
-
-    @sp_property
-    def grid(self):
-        return self._coord.grid
 
     @sp_property
     def r(self) -> np.ndarray:
@@ -622,9 +626,9 @@ class EquilibriumBoundary(Dict):
         of the separatrix
     """
 
-    def __init__(self,  *args, coord: MagneticCoordSystem = None,    ** kwargs):
+    def __init__(self,  *args,  ** kwargs):
         super().__init__(*args, **kwargs)
-        self._coord = coord or getattr(self._parent, "coordinate_system", None)
+        self._coord: MagneticCoordSystem = self._parent.coordinate_system
 
     @sp_property
     def type(self):
@@ -718,9 +722,9 @@ class EquilibriumBoundary(Dict):
 
 class EquilibriumBoundarySeparatrix(Dict[Node]):
 
-    def __init__(self,  *args, coord: MagneticCoordSystem = None,    ** kwargs):
+    def __init__(self,  *args, ** kwargs):
         super().__init__(*args, **kwargs)
-        self._coord = coord or getattr(self._parent, "coordinate_system", None)
+        self._coord: MagneticCoordSystem = self._parent.coordinate_system
 
     @sp_property
     def type(self):
@@ -873,23 +877,23 @@ class Equilibrium(IDS):
 
     @sp_property
     def profiles_1d(self) -> Profiles1D:
-        return Equilibrium.Profiles1D(self.get("profiles_1d", {}), grid=self.radial_grid, parent=self)
+        return Equilibrium.Profiles1D(self.get("profiles_1d", {}),   parent=self)
 
     @sp_property
     def profiles_2d(self) -> Profiles2D:
-        return Equilibrium.Profiles2D(self.get("profiles_2d", {}), coord=self.coordinate_system, parent=self)
+        return Equilibrium.Profiles2D(self.get("profiles_2d", {}),  parent=self)
 
     @sp_property
     def global_quantities(self) -> GlobalQuantities:
-        return Equilibrium.GlobalQuantities(self.get("global_quantities", {}), coord=self.coordinate_system, parent=self)
+        return Equilibrium.GlobalQuantities(self.get("global_quantities", {}), parent=self)
 
     @sp_property
     def boundary(self) -> Boundary:
-        return Equilibrium.Boundary(self.get("boundary", {}), coord=self.coordinate_system, parent=self)
+        return Equilibrium.Boundary(self.get("boundary", {}),   parent=self)
 
     @sp_property
     def boundary_separatrix(self) -> BoundarySeparatrix:
-        return Equilibrium.BoundarySeparatrix(self.get("boundary_separatrix", {}), coord=self.coordinate_system, parent=self)
+        return Equilibrium.BoundarySeparatrix(self.get("boundary_separatrix", {}),  parent=self)
 
     def plot(self, axis=None, *args,
              scalar_field=[],

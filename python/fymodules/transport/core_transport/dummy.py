@@ -23,7 +23,6 @@ class TransportModelDummy(CoreTransport.Model):
             "identifier": {"name": "dummy", "index": 5,
                            "description": f"{self.__class__.__name__} Dummy CoreTransport.Model "},
             "code": {"name": "spitzer"}}, d or {}),
-
             *args, **kwargs)
 
     def refresh(self, *args, **kwargs) -> float:

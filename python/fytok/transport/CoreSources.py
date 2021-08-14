@@ -26,11 +26,11 @@ class CoreSourcesParticle(Dict):
 
     @sp_property
     def particles(self):
-        return Function(self._parent.radial_grid.rho_tor_norm, self["particles"], parent=self._parent)
+        return Function(self._parent.grid.rho_tor_norm, self["particles"], parent=self._parent)
 
     @sp_property
     def energy(self):
-        return Function(self._parent.radial_grid.rho_tor_norm, self["energy"], parent=self._parent)
+        return Function(self._parent.grid.rho_tor_norm, self["energy"], parent=self._parent)
 
     @sp_property
     def momentum(self):
@@ -46,9 +46,8 @@ class CoreSourcesParticle(Dict):
 
 
 class CoreSourcesElectrons(SpeciesElectron):
-    def __init__(self, *args, radial_grid: RadialGrid = None,  **kwargs):
+    def __init__(self, *args,    **kwargs):
         super().__init__(*args,  ** kwargs)
-        self._radial_grid = radial_grid if radial_grid is not None else getattr(self._parent, "_radial_grid", None)
 
     @sp_property
     def particles(self) -> Function:
@@ -68,9 +67,8 @@ class CoreSourcesElectrons(SpeciesElectron):
 
 
 class CoreSourcesIon(SpeciesIon):
-    def __init__(self, *args, radial_grid: RadialGrid = None,  **kwargs):
+    def __init__(self, *args,    **kwargs):
         super().__init__(*args,  ** kwargs)
-        self._radial_grid = radial_grid if radial_grid is not None else getattr(self._parent, "_radial_grid", None)
 
     @sp_property
     def particles(self) -> Function:
@@ -90,9 +88,8 @@ class CoreSourcesIon(SpeciesIon):
 
 
 class CoreSourcesNeutral(Dict):
-    def __init__(self, *args, radial_grid: RadialGrid = None,  **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args,  ** kwargs)
-        self._radial_grid = radial_grid if radial_grid is not None else getattr(self._parent, "_radial_grid", None)
 
 
 class CoreSourcesProfiles1D(Dict):
@@ -101,53 +98,52 @@ class CoreSourcesProfiles1D(Dict):
     Ion = CoreSourcesIon
     Neutral = CoreSourcesNeutral
 
-    def __init__(self, *args, radial_grid: RadialGrid = None,  **kwargs):
+    def __init__(self, *args,    **kwargs):
         super().__init__(*args,  ** kwargs)
-        self._radial_grid = radial_grid if radial_grid is not None else getattr(self._parent, "_radial_grid", None)
 
-    @property
-    def radial_grid(self) -> RadialGrid:
-        return self._radial_grid
+    @sp_property
+    def grid(self) -> RadialGrid:
+        return self.get("grid")
 
     @sp_property
     def electrons(self) -> Electrons:
-        return CoreSourcesProfiles1D.Electrons(self.get("electrons"), parent=self, radial_grid=self.radial_grid)
+        return CoreSourcesProfiles1D.Electrons(self.get("electrons"), parent=self)
 
     @sp_property
     def ion(self) -> List[Ion]:
-        return List[CoreSourcesProfiles1D.Ion](self.get("ion"), parent=self, radial_grid=self.radial_grid)
+        return List[CoreSourcesProfiles1D.Ion](self.get("ion"), parent=self)
 
     @sp_property
     def neutral(self) -> List[Neutral]:
-        return List[CoreSourcesProfiles1D.Neutral](self.get("neutral"), parent=self, radial_grid=self.radial_grid)
+        return List[CoreSourcesProfiles1D.Neutral](self.get("neutral"), parent=self)
 
     @sp_property
     def total_ion_energy(self):
-        return Function(self._radial_grid.rho_tor_norm, np.sum([ion.energy for ion in self.ion]))
+        return Function(self.grid.rho_tor_norm, np.sum([ion.energy for ion in self.ion]))
 
     @sp_property
     def total_ion_power_inside(self) -> Function:
-        return Function(self._radial_grid.rho_tor_norm, self.get("total_ion_power_inside"))
+        return Function(self.grid.rho_tor_norm, self.get("total_ion_power_inside"))
 
     @sp_property
     def momentum_tor(self) -> Function:
-        return Function(self._radial_grid.rho_tor_norm, self.get("momentum_tor"))
+        return Function(self.grid.rho_tor_norm, self.get("momentum_tor"))
 
     @sp_property
     def torque_tor_inside(self) -> Function:
-        return Function(self._radial_grid.rho_tor_norm, self.get("torque_tor_inside"))
+        return Function(self.grid.rho_tor_norm, self.get("torque_tor_inside"))
 
     @sp_property
     def j_parallel(self) -> Function:
-        return Function(self._radial_grid.rho_tor_norm, self.get("j_parallel"))
+        return Function(self.grid.rho_tor_norm, self.get("j_parallel"))
 
     @sp_property
     def current_parallel_inside(self) -> Function:
-        return Function(self._radial_grid.rho_tor_norm, self.get("current_parallel_inside"))
+        return Function(self.grid.rho_tor_norm, self.get("current_parallel_inside"))
 
     @sp_property
     def conductivity_parallel(self) -> Function:
-        return Function(self._radial_grid.rho_tor_norm, self.get("conductivity_parallel"))
+        return Function(self.grid.rho_tor_norm, self.get("conductivity_parallel"))
 
 
 class CoreSourcesGlobalQuantities(Dict):
@@ -246,9 +242,8 @@ class CoreSourcesSource(Module):
     Profiles1D = CoreSourcesProfiles1D
     GlobalQuantities = CoreSourcesGlobalQuantities
 
-    def __init__(self,   d, /, radial_grid: RadialGrid, **kwargs):
+    def __init__(self,   d, /,  **kwargs):
         super().__init__(d, **kwargs)
-        self._radial_grid = radial_grid
 
     @sp_property
     def species(self) -> Species:
@@ -256,17 +251,16 @@ class CoreSourcesSource(Module):
 
     @sp_property
     def global_quantities(self) -> GlobalQuantities:
-        return CoreSourcesSource.GlobalQuantities(self.get("global_quantities"), parent=self, radial_grid=self._radial_grid)
+        return CoreSourcesSource.GlobalQuantities(self.get("global_quantities"), parent=self)
 
     @sp_property
     def profiles_1d(self) -> Profiles1D:
-        return CoreSourcesSource.Profiles1D(self.get("profiles_1d"), parent=self, radial_grid=self._radial_grid)
+        return CoreSourcesSource.Profiles1D(self.get("profiles_1d"), parent=self)
 
-    def refresh(self, *args, core_profiles: CoreProfiles,  **kwargs) -> None:
-        self._radial_grid = core_profiles.profiles_1d.grid
-        # self.remove("profiles_1d")
-        # self.remove("global_quantities")
-        return super().refresh(*args, core_profiles=core_profiles, **kwargs)
+    def refresh(self, *args, core_profiles: CoreProfiles,  **kwargs) -> float:
+        residual = super().refresh(*args,  **kwargs)
+        self.profiles_1d["grid"] = core_profiles.profiles_1d.grid
+        return residual
 
 
 class CoreSources(IDS):
@@ -275,21 +269,16 @@ class CoreSources(IDS):
     _IDS = "core_sources"
     Source = CoreSourcesSource
 
-    def __init__(self, *args, radial_grid: RadialGrid,    **kwargs):
+    def __init__(self, *args,    **kwargs):
         super().__init__(*args, **kwargs)
-        self._radial_grid = radial_grid
 
-    @property
-    def radial_grid(self) -> RadialGrid:
-        return self._radial_grid
-
-    @property
+    @sp_property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        return self.radial_grid.vacuum_toroidal_field
+        return self.get("vacuum_toroidal_field")
 
     @sp_property
     def source(self) -> List[Source]:
-        return List[CoreSources.Source](self.get("source"), parent=self, radial_grid=self._radial_grid)
+        return List[CoreSources.Source](self.get("source"), parent=self)
 
     @cached_property
     def source_combiner(self) -> Source:
@@ -299,8 +288,7 @@ class CoreSources(IDS):
             "code": {"name": _undefined_}
         })
 
-    def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles,  **kwargs) -> float:
+    def refresh(self, *args,   **kwargs) -> float:
         if "source_combiner" in self.__dict__:
             del self.__dict__["source_combiner"]
-
-        return sum([src.refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles,  **kwargs) for src in self.source])
+        return sum([src.refresh(*args, **kwargs) for src in self.source])

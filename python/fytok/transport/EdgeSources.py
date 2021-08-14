@@ -25,7 +25,7 @@ class EdgeSources(IDS):
 
     @sp_property
     def source(self) -> List[Source]:
-        return List[EdgeSources.Source](self.get("source"), parent=self, radial_grid=self._radial_grid)
+        return self.get("source") 
 
     @cached_property
     def source_combiner(self) -> Source:

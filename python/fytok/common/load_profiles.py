@@ -2,6 +2,7 @@ import collections
 import pathlib
 import sys
 from typing import Union
+from fytok.transport.MagneticCoordSystem import RadialGrid
 
 import numpy as np
 import pandas as pd
@@ -16,14 +17,13 @@ from spdm.util.logger import logger
 from .Atoms import atoms
 
 
-def load_core_profiles(profiles: Union[str, pathlib.Path]):
-    if isinstance(profiles, (str, pathlib.Path)):
-        profiles = pd.read_csv(profiles, sep='\t')
-    # else:  # if not isinstance(profiles, collections.abc.Mapping):
-    #     raise TypeError(type(profiles))
+def load_core_profiles(profiles, grid: RadialGrid):
 
     bs_psi_norm = profiles["Fp"].values
     bs_r_norm = profiles["x"].values
+
+    grid = grid.remesh("rho_tor_norm", bs_r_norm)
+
     # Core profile
     r_ped = 0.96  # np.sqrt(0.88)
     i_ped = np.argmin(np.abs(bs_r_norm-r_ped))
@@ -49,9 +49,10 @@ def load_core_profiles(profiles: Union[str, pathlib.Path]):
     # b_nDT = b_ne * (1.0 - 0.02*4 - 0.0012*18) - b_nHe*2.0
 
     # Zeff = Function(bs_r_norm, baseline["Zeff"].values)
-    # e_parallel = baseline["U"].values / (2.0*constants.pi * R0)
+    # e_parallel = baseline["U"].values / (2.0*constants.pi * grid.r0)
 
     return {
+        "grid": grid,
         "rho_tor": profiles["rho"].values,
         "electrons": {**atoms["e"], "density":       b_ne,   "temperature": b_Te, },
         "ion": [
@@ -64,7 +65,7 @@ def load_core_profiles(profiles: Union[str, pathlib.Path]):
              "z_ion_1d":Function(bs_r_norm, z_Ar),  "is_impurity":True},
         ],
         # "e_field": {"parallel": Function(bs_r_norm, e_parallel)},
-        # "conductivity_parallel": Function(bs_r_norm, baseline["Joh"].values*1.0e6 / baseline["U"].values * (2.0*constants.pi * R0)),
+        # "conductivity_parallel": Function(bs_r_norm, baseline["Joh"].values*1.0e6 / baseline["U"].values * (2.0*constants.pi * grid.r0)),
         "zeff": Function(bs_r_norm, profiles["Zeff"].values),
         "vloop": Function(bs_r_norm, profiles["U"].values),
         "j_ohmic": Function(bs_r_norm, profiles["Joh"].values*1.0e6),
@@ -75,9 +76,7 @@ def load_core_profiles(profiles: Union[str, pathlib.Path]):
     }
 
 
-def load_core_transport(profiles: Union[str, pathlib.Path], R0: float, B0: float):
-    if isinstance(profiles, (str, pathlib.Path)):
-        profiles = pd.read_csv(profiles, sep='\t')
+def load_core_transport(profiles, grid: RadialGrid):
 
     bs_psi_norm = profiles["Fp"].values
 
@@ -89,7 +88,7 @@ def load_core_transport(profiles: Union[str, pathlib.Path], R0: float, B0: float
 
     # Core Transport
     conductivity_parallel = Function(bs_r_norm, profiles["Joh"].values*1.0e6 / profiles["U"].values *
-                                     (2.0*constants.pi * R0))
+                                     (2.0*constants.pi * grid.r0))
 
     Cped = 0.17
     Ccore = 0.4
@@ -99,16 +98,17 @@ def load_core_transport(profiles: Union[str, pathlib.Path], R0: float, B0: float
 
     D = 0.1*(chi+chi_e)
 
-    v_pinch_ne = Function([0, r_ped, 1.0], lambda x: -0.6 * D(x) * x / R0)
-    v_pinch_Te = Function([0, r_ped, 1.0], lambda x:  2.5 * chi_e(x) * x / R0)
+    v_pinch_ne = Function([0, r_ped, 1.0], lambda x: -0.6 * D(x) * x / grid.r0)
+    v_pinch_Te = Function([0, r_ped, 1.0], lambda x:  2.5 * chi_e(x) * x / grid.r0)
 
-    v_pinch_ni = Function([0, r_ped, 1.0], lambda x:  D(x) * x / R0)
-    v_pinch_Ti = Function([0, r_ped, 1.0], lambda x:  chi(x) * x / R0)
+    v_pinch_ni = Function([0, r_ped, 1.0], lambda x:  D(x) * x / grid.r0)
+    v_pinch_Ti = Function([0, r_ped, 1.0], lambda x:  chi(x) * x / grid.r0)
 
     conductivity_parallel = Function(
-        bs_r_norm, profiles["Joh"].values*1.0e6 / profiles["U"].values * (2.0*constants.pi * R0))
+        bs_r_norm, profiles["Joh"].values*1.0e6 / profiles["U"].values * (2.0*constants.pi * grid.r0))
 
     return {
+        "grid": grid,
         "conductivity_parallel": conductivity_parallel,
         "electrons": {
             **atoms["e"],
@@ -133,9 +133,7 @@ def load_core_transport(profiles: Union[str, pathlib.Path], R0: float, B0: float
         ]}
 
 
-def load_core_source(profiles: Union[str, pathlib.Path], R0: float, B0: float, **kwargs):
-    if isinstance(profiles, (str, pathlib.Path)):
-        profiles = pd.read_csv(profiles, sep='\t', **kwargs)
+def load_core_source(profiles, grid: RadialGrid):
 
     bs_r_norm = profiles["x"].values
 
@@ -163,6 +161,7 @@ def load_core_source(profiles: Union[str, pathlib.Path], R0: float, B0: float, *
 
     # Core Source
     return {
+        "grid": grid,
         "j_parallel": Function(
             bs_r_norm,
             (
