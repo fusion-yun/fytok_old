@@ -316,17 +316,17 @@ class CoreProfiles1D(Dict[Node]):
     @sp_property
     def electrons(self) -> Electrons:
         """Quantities related to the electrons"""
-        return CoreProfiles1D.Electrons(self.get("electrons", {}),  parent=self)
+        return self.get("electrons")
 
     @sp_property
     def ion(self) -> List[Ion]:
         """Quantities related to the different ion species"""
-        return List[CoreProfiles1D.Ion](self.get("ion", []), parent=self)
+        return self.get("ion", [])
 
     @sp_property
     def neutral(self) -> List[Neutral]:
         """Quantities related to the different neutral species"""
-        return List[CoreProfiles1D.Neutral](self.get("neutral", []),  parent=self)
+        return self.get("neutral", [])
 
     @sp_property
     def t_i_average(self) -> Function:

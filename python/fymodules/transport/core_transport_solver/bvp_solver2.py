@@ -268,18 +268,18 @@ class CoreTransportSolverBVP2(CoreTransportSolver):
 
             _source: Union[CoreSources.Source.Profiles1D.Ion,
                            CoreSources.Source.Profiles1D.Electrons] = self._core_sources.profiles_1d.fetch(var_id)
-            logger.debug(var_id+["density"])
-            _density = self._core_profiles_next.get(var_id+["density"])
 
-            _density_flux = self._core_profiles_next.get(var_id+["density_flux"])
+            _density = self._core_profiles_next.profiles_1d.fetch(var_id+["density"])
+
+            _density_flux = self._core_profiles_next.profiles_1d.fetch(var_id+["density_flux"])
 
             ym = Function(x0, Y0[var_idx*2])
             y = Y[var_idx*2]
             g = Y[var_idx*2+1]
 
-            n = _density(x)
+            n = _density
 
-            gamma = _density_flux(x)
+            gamma = _density_flux
 
             yp = Function(x, y).derivative(x)
 
@@ -524,21 +524,18 @@ class CoreTransportSolverBVP2(CoreTransportSolver):
 
             return np.vstack([array_like(x, d) for d in res])
 
-        
         def bc_func(Ya: np.ndarray, Yb: np.ndarray, p=None, /,
                     _eq_grp: Sequence[Tuple[Callable, Callable]] = eq_grp) -> np.ndarray:
-            
+
             return np.asarray(sum([list(bc(idx, Ya, Yb, p)) for idx, (var_id,  fc,  bc) in enumerate(_eq_grp)], []))
 
         sol = solve_bvp(func, bc_func, x0, Y0, tolerance=tolerance, max_nodes=max_nodes, **kwargs)
 
         residual += np.max(sol.rms_residuals)
 
-        for idx, var_id, * _ in enumerate(eq_grp):
+        for idx, (var_id, * _) in enumerate(eq_grp):
             profiles_1d[var_id] = Function(sol.x, sol.y[idx*2])
             profiles_1d[var_id[:-1]+[f"{var_id[-1]}_flux"]] = Function(sol.x, sol.y[idx*2+1])
-
-        logger.debug(self._core_profiles_next.profiles_1d.electrons.density)
 
         profiles_1d["rms_residuals"] = Function((sol.x[: -1]+sol.x[1:])*0.5, sol.rms_residuals)
 
