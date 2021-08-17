@@ -110,8 +110,11 @@ class Tokamak(Actor):
     def equilibrium_solver(self) -> EquilibriumSolver:
         return self.get("equilibrium_solver")
 
-    def refresh(self, *args, time=None,   max_iteration=1, tolerance=1.0e-6, transp_solver_opt=None,   **kwargs) -> float:
+    def refresh(self, *args, time=None, tolerance=1.0e-4,   max_iteration=1, **kwargs) -> float:
+
         super().refresh(time=time)
+
+        dt = None
 
         self.wall.refresh(time=time)
 
@@ -141,26 +144,27 @@ class Tokamak(Actor):
 
         for nstep in range(max_iteration):
             residual, equilibrium_next = self.equilibrium_solver.solve(
+                dt=dt,
                 equilibrium_prev=equilibrium_prev,
                 core_profiles=core_profiles_prev)
 
             residual_core, core_profiles_next = self.core_transport_solver.solve(
+                dt=dt,
                 core_profiles_prev=core_profiles_prev,
                 core_sources=self.core_sources.source_combiner,
                 core_transport=self.core_transport.model_combiner,
                 equilibrium_next=equilibrium_next,
                 equilibrium_prev=equilibrium_prev,
-                tolerance=tolerance,
-                **(transp_solver_opt or {}))
+            )
 
             residual_edge,  edge_profiles_next = self.edge_transport_solver.solve(
+                dt=dt,
                 edge_profiles_prev=edge_profiles_prev,
                 edge_sources=self.edge_sources.source_combiner,
                 edge_transport=self.edge_transport.model_combiner,
                 equilibrium_next=equilibrium_next,
                 equilibrium_prev=equilibrium_prev,
-                tolerance=tolerance,
-                **kwargs)
+            )
 
             residual += residual_edge+residual_core
 

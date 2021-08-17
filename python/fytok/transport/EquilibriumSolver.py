@@ -26,9 +26,10 @@ class EquilibriumSolver(IDS):
         super().__init__(*args, **kwargs)
 
     def solve(self, /,
+
               equilibrium_prev: Equilibrium,
               core_profiles: CoreProfiles,
-              tolerance=1.0e-3,
+              dt: float = None,
               ** kwargs) -> Tuple[float, Equilibrium]:
 
         return 0.0, equilibrium_prev

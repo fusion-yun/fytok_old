@@ -146,13 +146,12 @@ class CoreTransportSolver(IDS):
               core_sources: CoreSources.Source,
               equilibrium_next: Equilibrium,
               equilibrium_prev: Equilibrium = None,
+              dt: float = None,
               **kwargs) -> Tuple[float, CoreProfiles]:
         """
             solve transport eqation until residual < tolerance
             return residual , core_profiles, edge_profiles
         """
-       
-        
 
         core_profiles_next = CoreProfiles({})
         profiles = core_profiles_next.profiles_1d

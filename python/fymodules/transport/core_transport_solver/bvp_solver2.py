@@ -369,12 +369,12 @@ class CoreTransportSolverBVP2(CoreTransportSolver):
         logger.warning(f"TODO: Rotation Transport is not implemented!")
         return 0.0
 
-    def create_solver_electrons(self, *args,
-                                core_profiles_prev_1d: CoreProfiles.Profiles1D,
-                                core_transport_1d: CoreTransport.Model.Profiles1D,
-                                core_sources_1d: CoreSources.Source.Profiles1D,
-                                hyper_diff=1.0e-4,
-                                **kwargsd):
+    def create_solver_for_qn_ion(self, /,
+                                 core_profiles_prev_1d: CoreProfiles.Profiles1D,
+                                 core_transport_1d: CoreTransport.Model.Profiles1D,
+                                 core_sources_1d: CoreSources.Source.Profiles1D,
+                                 hyper_diff=1.0e-4,
+                                 **kwargs):
         x0 = core_profiles_prev_1d.grid.rho_tor_norm
         Y0 = []
         var_list = []
@@ -495,12 +495,12 @@ class CoreTransportSolverBVP2(CoreTransportSolver):
 
         return var_list, x0, Y0, eq_list, bc_list, other_var_list
 
-    def create_solver_ion(self, *args,
-                          core_profiles_prev_1d: CoreProfiles.Profiles1D,
-                          core_transport_1d: CoreTransport.Model.Profiles1D,
-                          core_sources_1d: CoreSources.Source.Profiles1D,
-                          hyper_diff=1.0e-4,
-                          **kwargsd):
+    def create_solver_for_qn_ele(self, /,
+                                 core_profiles_prev_1d: CoreProfiles.Profiles1D,
+                                 core_transport_1d: CoreTransport.Model.Profiles1D,
+                                 core_sources_1d: CoreSources.Source.Profiles1D,
+                                 hyper_diff=1.0e-4,
+                                 **kwargsd):
         x0 = core_profiles_prev_1d.grid.rho_tor_norm
         Y0 = []
         var_list = []
@@ -568,7 +568,7 @@ class CoreTransportSolverBVP2(CoreTransportSolver):
                     n_src=_n_src,
                     hyper_diff=hyper_diff))
 
-                bc_list.append(lambda Ya, Yb, _idx=len(Y0), _bc=self.boundary_conditions_1d.electrons.particles:
+                bc_list.append(lambda Ya, Yb, _idx=len(Y0), _bc=self.boundary_conditions_1d.ion[{"label": ion.label}].particles:
                                self.bc_particle(Ya[_idx], Ya[_idx+1], Yb[_idx], Yb[_idx+1], _bc))
 
                 Y0.append(core_profiles_prev_1d.electrons.density(x0))
@@ -705,17 +705,22 @@ class CoreTransportSolverBVP2(CoreTransportSolver):
               core_sources: CoreSources.Source,
               equilibrium_next: Equilibrium,
               equilibrium_prev: Equilibrium = None,
-              dt=None,
-              quasi_neutral_condition: str = None,
-              hyper_diff=1.0e-4,
-              tolerance=1.0e-3,
-              max_nodes=250, **kwargs) -> Tuple[float, CoreProfiles]:
+              dt: float = None,
+              **kwargs) -> Tuple[float, CoreProfiles]:
         """
 
-            quasi_neutral_condition: 
-                = electrons : n_e= sum(n_i*z_i) 
+            quasi_neutral_condition:
+                = electrons : n_e= sum(n_i*z_i)
                 = ion       : n_i0*z_i0=n_i1*z_i1 ...
         """
+        parameters = collections.ChainMap(kwargs, self.get("code.parameters", {}))
+        
+        quasi_neutral_condition = parameters.get("quasi_neutral_condition", None)
+        hyper_diff = parameters.get("hyper_diff", 1.0e-4)
+        tolerance = parameters.get("tolerance", 1.0e-3)
+        max_nodes = parameters.get("max_nodes", 250)
+        bvp_rms_mask = parameters.get("bvp_rms_mask", [])
+
         self.update_global_variable(
             core_profiles_prev=core_profiles_prev,
             core_transport=core_transport,
@@ -723,20 +728,17 @@ class CoreTransportSolverBVP2(CoreTransportSolver):
             equilibrium_next=equilibrium_next,
             equilibrium_prev=equilibrium_prev,
             dt=dt,
-            hyper_diff=hyper_diff,
         )
 
         if quasi_neutral_condition == "electrons":
-
-            var_list, x0, Y0, eq_list, bc_list, *_ = self.create_solver_ion(
+            var_list, x0, Y0, eq_list, bc_list, *_ = self.create_solver_for_qn_ele(
                 core_profiles_prev_1d=core_profiles_prev.profiles_1d,
                 core_transport_1d=core_transport.profiles_1d,
                 core_sources_1d=core_sources.profiles_1d,
                 hyper_diff=hyper_diff
             )
-
         else:
-            var_list, x0, Y0, eq_list, bc_list, *_ = self.create_solver_electrons(
+            var_list, x0, Y0, eq_list, bc_list, *_ = self.create_solver_for_qn_ion(
                 core_profiles_prev_1d=core_profiles_prev.profiles_1d,
                 core_transport_1d=core_transport.profiles_1d,
                 core_sources_1d=core_sources.profiles_1d,
@@ -750,7 +752,7 @@ class CoreTransportSolverBVP2(CoreTransportSolver):
         def bc_func(Ya: np.ndarray, Yb: np.ndarray, /, _bc_list=bc_list) -> np.ndarray:
             return np.asarray(sum([list(bc(Ya, Yb)) for bc in _bc_list], []))
 
-        sol = solve_bvp(func, bc_func, x0, Y0, tolerance=tolerance, max_nodes=max_nodes, **kwargs)
+        sol = solve_bvp(func, bc_func, x0, Y0, tolerance=tolerance, max_nodes=max_nodes, bvp_rms_mask=bvp_rms_mask)
 
         residual = np.max(sol.rms_residuals)
 
@@ -781,14 +783,16 @@ class CoreTransportSolverBVP2(CoreTransportSolver):
             profiles_1d_next[var_id] = Function(rho_tor_norm, sol.y[idx*2])
             profiles_1d_next[var_id[:-1]+[f"{var_id[-1]}_flux"]] = Function(rho_tor_norm, sol.y[idx*2+1])
 
+        n_imp = sum([ion.z_ion_1d(rho_tor_norm)*ion.density(rho_tor_norm)
+                     for ion in core_profiles_prev.profiles_1d.ion if ion.is_impurity])
+
         if quasi_neutral_condition == "electrons":
-            profiles_1d_next.electrons["density"] = sum(
+            n_ion = sum(
                 [ion.z_ion_1d(rho_tor_norm)*ion.density(rho_tor_norm) for ion in profiles_1d_next.ion if not ion.is_impurity])
+
+            profiles_1d_next.electrons["density"] = n_ion+n_imp
         else:
             n_e = profiles_1d_next.electrons.density(rho_tor_norm)
-
-            n_imp = sum([ion.z_ion_1d(rho_tor_norm)*ion.density(rho_tor_norm)
-                         for ion in core_profiles_prev.profiles_1d.ion if ion.is_impurity])
 
             num_of_ion = sum([1 for ion in profiles_1d_next.ion if not ion.is_impurity])
 

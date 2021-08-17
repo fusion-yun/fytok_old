@@ -383,7 +383,14 @@ if __name__ == "__main__":
     if True:
 
         tok["core_transport_solver"] = {
-            "code": {"name": "bvp_solver2"},
+            "code": {"name": "bvp_solver2",
+                     "parameters": {
+                         "tolerance": 1.0e-4,
+                         "quasi_neutral_condition": "electrons",
+                         "max_nodes": 500,
+                         "verbose": 2,
+                         "bvp_rms_mask": [r_ped]}
+                     },
             "boundary_conditions_1d": {
                 "current": {"identifier": {"index": 1}, "value": [psi_boundary]},
                 "electrons": {"particles": {"identifier": {"index": 1}, "value": [b_ne[-1]]},
@@ -391,10 +398,10 @@ if __name__ == "__main__":
 
                 "ion": [
                     {**atoms["D"],
-                     "particles": {"identifier": {"index": 1}, "value": [0.5*b_ni[-1]]},
+                     "particles": {"identifier": {"index": 1}, "value": [b_ni[-1]]},
                      "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}},
                     {**atoms["T"],
-                     "particles": {"identifier": {"index": 1}, "value": [0.5*b_ni[-1]]},
+                     "particles": {"identifier": {"index": 1}, "value": [b_ni[-1]]},
                      "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}},
                     {**atoms["He"],
                      "particles": {"identifier": {"index": 1}, "value": [b_nHe[-1]]},
@@ -402,13 +409,9 @@ if __name__ == "__main__":
                 ]
             }}
 
-        residual = tok.refresh(
-            tolerance=1.0e-4,
-            transp_solver_opt={
-                "quasi_neutral_condition": "electrons",
-                "max_nodes": 500,
-                "verbose": 2,
-                "bvp_rms_mask": [r_ped]})
+        residual = tok.refresh()
+
+        quasi_neutral_cond = tok.core_transport_solver.get('code.parameters.quasi_neutral_condition', 'ion')
 
         core_profile_1d = tok.core_profiles.profiles_1d
 
@@ -446,39 +449,27 @@ if __name__ == "__main__":
                         for ion in core_profile_1d.ion if not ion.is_impurity],
                 ],
 
-                ######################################################################
+                # ---------------------------------------------------------------------------------------------------
 
-                (core_profile_1d["rms_residuals"], r"rms_residual"),
+                (core_profile_1d["rms_residuals"]*100, r"bvp rms_residual", "[%]"),
 
-                # (core_profile_1d.conductivity_parallel, "", r"$\sigma_{\parallel}$"),
 
-                # (core_profile_1d.j_total, "", r"$J_{total}$"),
+                [
+                    (rms_residual(Function(bs_r_norm, bs_psi), core_profile_1d["psi"]), r"$\psi$", " rms residual [%]"),
 
-                # (core_profile_1d["rho_tor_norm"], "", r"$\rho^{tor}$"),
+                    (rms_residual(b_ne, core_profile_1d.electrons.density), r"$n_e$"),
 
-                # (core_profile_1d["psi_norm"], "", r"$\psi$"),
-                # [
-                #     (core_profile_1d["vpr"], "profile", r"$V^{\prime}$"),
-                #     (core_profile_1d["vpr2"], "eq", r"$V^{\prime}_{eq}$"),
-                # ],
-                # (core_profile_1d["gm2"], "", r"$GM2$"),
+                    (rms_residual(b_Te, core_profile_1d.electrons.temperature), r"$T_e$"),
 
-                # [
-                #     (rms_residual(Function(bs_r_norm, bs_psi), core_profile_1d["psi"]), r"$\psi$", " rms residual [%]"),
+                    *[(rms_residual(b_ni, ion.density), f"$n_{ion.label}$")
+                      for ion in core_profile_1d.ion if not ion.is_impurity],
+                    *[(rms_residual(b_Ti, ion.temperature), f"$T_{ion.label}$")
+                      for ion in core_profile_1d.ion if not ion.is_impurity],
 
-                #     (rms_residual(b_ne, core_profile_1d.electrons.density), r"$n_e$"),
-
-                #     (rms_residual(b_Te, core_profile_1d.electrons.temperature), r"$T_e$"),
-
-                #     *[(rms_residual(b_ni, ion.density), f"$n_{ion.label}$")
-                #       for ion in core_profile_1d.ion if not ion.is_impurity],
-                #     *[(rms_residual(b_Ti, ion.temperature), f"$T_{ion.label}$")
-                #       for ion in core_profile_1d.ion if not ion.is_impurity],
-
-                # ],
+                ],
             ],
             x_axis=([0, 1.0],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-            title="Result of TransportSolver",
-            grid=True, fontsize=10).savefig(output_path/"core_profiles_result.svg", transparent=True)
+            title=f" Quasi-neutral condition '{quasi_neutral_cond}'",
+            grid=True, fontsize=10).savefig(output_path/f"core_profiles_result_{quasi_neutral_cond}.svg", transparent=True)
 
     logger.info("====== DONE ========")
