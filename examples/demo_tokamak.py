@@ -386,7 +386,7 @@ if __name__ == "__main__":
             "code": {"name": "bvp_solver2",
                      "parameters": {
                          "tolerance": 1.0e-4,
-                        #  "quasi_neutral_condition": "electrons",
+                         #  "quasi_neutral_condition": "electrons",
                          "max_nodes": 500,
                          "verbose": 2,
                          "bvp_rms_mask": [r_ped]}
@@ -428,30 +428,31 @@ if __name__ == "__main__":
 
                 # electron
                 [
-                    (b_ne, r"astra", r"$n_e [m^{-3}]$",  {"marker": '.', "linestyle": ''}),
-                    (core_profile_1d.electrons.density, r"fytok", r"$n_e [ m^{-3}]$"),
+                    (b_ne/1.0e19, r"astra", r"$n_e [10^{19} m^{-3}]$",  {"marker": '.', "linestyle": ''}),
+                    (core_profile_1d.electrons.density/1.0e19, r"fytok", r"$n_e [10^{19} m^{-3}]$"),
                 ],
 
                 [
-                    (b_Te, r"astra", r"$T_e [eV]$",  {"marker": '.', "linestyle": ''}),
-                    (core_profile_1d.electrons.temperature, r"fytok", r"$T_e [eV]$"),
+                    (b_Te/1000.0, r"astra", r"$T_e [keV]$",  {"marker": '.', "linestyle": ''}),
+                    (core_profile_1d.electrons.temperature/1000.0, r"fytok", r"$T_e [keV]$"),
                 ],
 
                 # ion
                 [
-                    (b_ni,    r"astra", r"$n_i [m^-3]$", {"marker": '.', "linestyle": ''}),
-                    * [(ion.density,   f"${ion.label}$") for ion in core_profile_1d.ion if not ion.is_impurity],
+                    (b_ni/1.0e19,    r"astra", r"$n_i  \_ [10^{19} m^-3]$", {"marker": '.', "linestyle": ''}),
+                    * [(ion.density/1.0e19,   f"${ion.label}$", r"$n_i  \_ [10^{19} m^-3]$")
+                        for ion in core_profile_1d.ion if not ion.is_impurity],
                 ],
 
                 [
-                    (b_Ti,    r"astra",       r"$T_{i} [eV]$", {"marker": '.', "linestyle": ''}),
-                    * [(ion.temperature,  f"fytok ${ion.label}$", r"$T_{i} [eV]$")
+                    (b_Ti/1000.0,    r"astra",       r"$T_{i} \_ [keV]$", {"marker": '.', "linestyle": ''}),
+                    * [(ion.temperature/1000.0,  f"fytok ${ion.label}$", r"$T_{i} [keV]$")
                         for ion in core_profile_1d.ion if not ion.is_impurity],
                 ],
 
                 # ---------------------------------------------------------------------------------------------------
 
-                (core_profile_1d["rms_residuals"]*100, r"bvp rms_residual", "[%]"),
+                (core_profile_1d["rms_residuals"]*100, r"bvp", r"residual $[\%]$"),
 
 
                 [

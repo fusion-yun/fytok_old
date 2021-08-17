@@ -18,12 +18,14 @@ class CoreProfilesElectrons(SpeciesElectron):
     def __init__(self,   *args,   **kwargs):
         super().__init__(*args, **kwargs)
 
-
+    @property
+    def grid(self) -> RadialGrid:
+        return self._parent.grid
 
     @sp_property
     def temperature(self) -> Function:
         """Temperature {dynamic} [eV]"""
-        return Function(self._parent.grid.rho_tor_norm, self.get("temperature", None))
+        return function_like(self.grid.rho_tor_norm, self.get("temperature", 0))
 
     # @property
     # def temperature_validity(self):
@@ -40,7 +42,11 @@ class CoreProfilesElectrons(SpeciesElectron):
     @sp_property
     def density(self) -> Function:
         """Density (thermal+non-thermal) {dynamic} [m^-3]"""
-        return Function(self._parent.grid.rho_tor_norm, self.get("density"))
+        d = self.get("density", None)
+        if d is not None:
+            return function_like(self.grid.rho_tor_norm, d)
+        else:
+            return self.density_thermal+self.density_fast
     # @property
     # def density_validity(self):
     #     """Indicator of the validity of the density profile.
@@ -53,44 +59,49 @@ class CoreProfilesElectrons(SpeciesElectron):
     # def density_fit(self):
     #     """Information on the fit used to obtain the density profile [m^-3]"""
     #     return NotImplemented
-    # @property
-    # def density_thermal(self):
-    #     """Density of thermal particles {dynamic} [m^-3]"""
-    #     return NotImplemented
-    # @property
-    # def density_fast(self):
-    #     """Density of fast (non-thermal) particles {dynamic} [m^-3]"""
-    #     return NotImplemented
+
+    @property
+    def density_thermal(self):
+        """Density of thermal particles {dynamic} [m^-3]"""
+        return function_like(self.grid.rho_tor_norm, self.get("density_thermal", 0))
+
+    @property
+    def density_fast(self):
+        """Density of fast (non-thermal) particles {dynamic} [m^-3]"""
+        return function_like(self.grid.rho_tor_norm, self.get("density_fast", 0))
 
     @sp_property
     def pressure(self) -> Function:
         """Pressure(thermal+non-thermal) {dynamic}[Pa]"""
-        return self.density*self.temperature*constants.electron_volt
-
-        # if self.pressure_fast_perpendicular is not NotImplemented:
-        #     return self.pressure_thermal+self.pressure_fast_perpendicular+self.pressure_fast_parallel
-        # else:
-        #     return self.pressure_thermal
+        d = self.get("pressure", None)
+        if d is not None:
+            return function_like(self.grid.rho_tor_norm, d)
+        else:
+            return self.pressure_thermal+self.pressure_fast_parallel+self.pressure_fast_perpendicular
 
     @sp_property
     def pressure_thermal(self) -> Function:
         """Pressure(thermal) associated with random motion ~average((v-average(v)) ^ 2) {dynamic}[Pa]"""
-        return self.density*self.temperature*constants.electron_volt
+        d = self.get("pressure_thermal", None)
+        if d is not None:
+            return function_like(self.grid.rho_tor_norm, d)
+        else:
+            return self.density*self.temperature*constants.electron_volt
 
     @sp_property
     def pressure_fast_perpendicular(self) -> Function:
         """Fast(non-thermal) perpendicular pressure {dynamic}[Pa]"""
-        return NotImplemented
+        return function_like(self.grid.rho_tor_norm, self.get("pressure_fast_perpendicular", 0))
 
     @sp_property
     def pressure_fast_parallel(self) -> Function:
         """Fast(non-thermal) parallel pressure {dynamic}[Pa]"""
-        return NotImplemented
+        return function_like(self.grid.rho_tor_norm, self.get("pressure_fast_parallel", 0))
 
     @sp_property
     def collisionality_norm(self) -> Function:
         """Collisionality normalised to the bounce frequency {dynamic}[-]"""
-        return NotImplemented
+        return function_like(self.grid.rho_tor_norm, self.get("collisionality_norm", 0))
 
     @sp_property
     def tau(self) -> Function:
@@ -112,24 +123,24 @@ class CoreProfilesIon(SpeciesIon):
 
     @sp_property
     def z_ion_1d(self) -> Function:
-        d = self.get("z_ion_id", default_value=_not_found_)
-        if isinstance(d, np.ndarray):
-            return Function(self.grid.rho_tor_norm, d)
+        d = self.get("z_ion_id", None)
+        if d is not None:
+            return function_like(self.grid.rho_tor_norm, d)
         else:
-            return Function(self.grid.rho_tor_norm, self.z)
+            return function_like(self.grid.rho_tor_norm, self.z)
 
     @sp_property
     def z_ion_square_1d(self) -> Function:
-        d = self.get("z_ion_square_1d", default_value=_not_found_)
-        if isinstance(d, np.ndarray):
-            return Function(self.grid.rho_tor_norm, d)
+        d = self.get("z_ion_square_1d", None)
+        if d is not None:
+            return function_like(self.grid.rho_tor_norm, d)
         else:
-            return Function(self.grid.rho_tor_norm, self.z_ion*self.z_ion)
+            return function_like(self.grid.rho_tor_norm, self.z_ion*self.z_ion)
 
     @sp_property
     def temperature(self) -> Function:
         """Temperature (average over charge states when multiple charge states are considered) {dynamic} [eV]  """
-        return Function(self.grid.rho_tor_norm, self.get("temperature"))
+        return function_like(self.grid.rho_tor_norm, self.get("temperature", 0))
 
     # @property
     # def temperature_validity(self):
@@ -148,12 +159,11 @@ class CoreProfilesIon(SpeciesIon):
     @sp_property
     def density(self) -> Function:
         """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        return function_like(self.grid.rho_tor_norm, self.get("density"))
-        # d = self[]
-        # if not isinstance(d, np.ndarray) or d != None:
-        #     return d
-        # else:
-        #     return self.density_fast+self.density_thermal
+        d = self.get("density", None)
+        if d is not None:
+            return function_like(self.grid.rho_tor_norm, d)
+        else:
+            return self.density_fast+self.density_thermal
 
     # @property
     # def density_validity(self):
@@ -172,48 +182,53 @@ class CoreProfilesIon(SpeciesIon):
     @property
     def density_thermal(self) -> Function:
         """Density (thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        return self["density_thermal"]
+        return function_like(self.grid.rho_tor_norm, self.get("density_thermal", 0))
 
     @property
     def density_fast(self) -> Function:
         """Density of fast (non-thermal) particles (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        return self["density_fast"]
+        return function_like(self.grid.rho_tor_norm, self.get("density_fast", 0))
 
     @sp_property
     def pressure(self) -> Function:
         """Pressure (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-        # if self.pressure_fast_perpendicular is not NotImplemented:
-        #     return self.pressure_thermal+self.pressure_fast_perpendicular+self.pressure_fast_parallel
-        # else:
-        return self.density*self.temperature*constants.electron_volt
+        d = self.get("pressure_thermal", None)
+        if d is not None:
+            return function_like(self.grid.rho_tor_norm, d)
+        else:
+            return self.pressure_thermal+self.pressure_fast_parallel+self.pressure_fast_perpendicular
 
     @sp_property
     def pressure_thermal(self) -> Function:
         """Pressure (thermal) associated with random motion ~average((v-average(v))^2)
         (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-        return self.density_thermal*self.temperature*constants.electron_volt
+        d = self.get("pressure_thermal", None)
+        if d is not None:
+            return function_like(self.grid.rho_tor_norm, d)
+        else:
+            return self.density_thermal*self.temperature*constants.electron_volt
 
     @sp_property
     def pressure_fast_perpendicular(self) -> Function:
         """Fast (non-thermal) perpendicular pressure (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-        return self["pressure_fast_perpendicular"]
+        return function_like(self.grid.rho_tor_norm, self.get("pressure_fast_perpendicular", 0))
 
     @sp_property
     def pressure_fast_parallel(self) -> Function:
         """Fast (non-thermal) parallel pressure (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-        return self["pressure_fast_parallel"]
+        return function_like(self.grid.rho_tor_norm, self.get("pressure_fast_parallel", 0))
 
     @sp_property
     def rotation_frequency_tor(self) -> Function:
         """Toroidal rotation frequency (i.e. toroidal velocity divided by the major radius at which the toroidal velocity is taken)
         (average over charge states when multiple charge states are considered) {dynamic} [rad.s^-1]  """
-        return self["rotation_frequency_tor"]
+        return function_like(self.grid.rho_tor_norm, self.get("rotation_frequency_tor", 0))
 
     @sp_property
     def velocity(self) -> Function:
         """Velocity (average over charge states when multiple charge states are considered) at the position of maximum major
         radius on every flux surface [m.s^-1]    """
-        return self["velocity"]
+        return function_like(self.grid.rho_tor_norm, self.get("velocity", 0))
 
 
 class CoreProfilesNeutral(Species):
@@ -473,7 +488,7 @@ class CoreProfiles1D(Dict[Node]):
 
         # Coulomb logarithm
         #  Ch.14.5 p727 Tokamaks 2003
-   
+
         return Function(self.grid.rho_tor_norm, ((14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +
                                                  (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te >= 10)))
 

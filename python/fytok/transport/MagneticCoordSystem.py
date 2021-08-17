@@ -705,7 +705,7 @@ class MagneticCoordSystem(object):
     @cached_property
     def phi_boundary(self) -> float:
         if not np.isclose(self.psi_norm[-1], 1.0):
-            logger.warning(f"FIXME: psi_norm boudnary is not {self.psi_norm[-1]} != 1.0 ")
+            logger.warning(f"FIXME: psi_norm boudnary is {self.psi_norm[-1]} != 1.0 ")
 
         return self.phi[-1]
         # else:
