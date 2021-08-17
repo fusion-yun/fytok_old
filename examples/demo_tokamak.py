@@ -405,13 +405,13 @@ if __name__ == "__main__":
         residual = tok.refresh(
             tolerance=1.0e-4,
             transp_solver_opt={
-                "enable_ion_particle_solver": False,
+                "quasi_neutral_condition": "electrons",
                 "max_nodes": 500,
                 "verbose": 2,
-                "bvp_rms_mask": [0, r_ped]})
+                "bvp_rms_mask": [r_ped]})
 
         core_profile_1d = tok.core_profiles.profiles_1d
-    if True:
+
         plot_profiles(
             [
                 # psi ,current
@@ -421,7 +421,7 @@ if __name__ == "__main__":
                     (core_profile_1d["psi"],  r"fytok", r"$\psi  [Wb]$", {"marker": '+', "linestyle": '-'}),
                 ],
 
-                (core_profile_1d["psi_flux"],  r"fytok", r"$\Gamma_{\psi}$", {"marker": '+', "linestyle": '-'}),
+                # (core_profile_1d["psi_flux"],  r"fytok", r"$\Gamma_{\psi}$", {"marker": '+', "linestyle": '-'}),
 
                 # electron
                 [
@@ -435,10 +435,10 @@ if __name__ == "__main__":
                 ],
 
                 # ion
-                # [
-                #     (b_ni,    r"astra", r"$n_i [m^-3]$", {"marker": '.', "linestyle": ''}),
-                #     * [(ion.density,   f"${ion.label}$") for ion in core_profile_1d.ion if not ion.is_impurity],
-                # ],
+                [
+                    (b_ni,    r"astra", r"$n_i [m^-3]$", {"marker": '.', "linestyle": ''}),
+                    * [(ion.density,   f"${ion.label}$") for ion in core_profile_1d.ion if not ion.is_impurity],
+                ],
 
                 [
                     (b_Ti,    r"astra",       r"$T_{i} [eV]$", {"marker": '.', "linestyle": ''}),

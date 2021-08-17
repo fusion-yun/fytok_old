@@ -20,7 +20,7 @@ from fytok.transport.Equilibrium import Equilibrium
 from fytok.transport.MagneticCoordSystem import RadialGrid
 from matplotlib.pyplot import loglog
 from numpy.core.fromnumeric import var
-from spdm.data.Function import Function
+from spdm.data.Function import Function, function_like
 from spdm.data.Node import Dict, List, _not_found_, sp_property
 from spdm.numlib import constants, np
 from spdm.numlib.bvp import BVPResult, solve_bvp
@@ -455,8 +455,10 @@ class CoreTransportSolverBVP2(CoreTransportSolver):
         Z_total = sum([ion.z for ion in core_profiles_prev_1d.ion if not ion.is_impurity])
 
         n_imp = sum([ion.z_ion_1d*ion.density for ion in core_profiles_prev_1d.ion if ion.is_impurity])
+        g_imp = sum([ion.z_ion_1d*ion.get("density_flux", 0) for ion in core_profiles_prev_1d.ion if ion.is_impurity])
         # g_imp = sum([ion.z_ion_1d*ion.density_flux for ion in core_profiles_1d.ion if not ion.is_impurity])
 
+        num_of_ion = np.sum([1 for ion in core_profiles_prev_1d.ion if not ion.is_impurity])
         # ions
         for ion in core_profiles_prev_1d.ion:
             if ion.is_impurity:
@@ -466,14 +468,15 @@ class CoreTransportSolverBVP2(CoreTransportSolver):
                            _ym=core_profiles_prev_1d.ion[{"label": ion.label}].temperature,
                            _ne_idx=ne_idx,
                            _n_imp=n_imp,
-                           _n_ratio=ion.z/Z_total,
+                           _g_imp=g_imp,
+                           _n_ratio=1/num_of_ion/ion.z,
                            _q_trans=core_transport_1d.ion[{"label": ion.label}].energy,
                            _q_src=core_sources_1d.ion[{"label": ion.label}].energy:
                            self.transp_energy(
                 x, Y[_idx], Y[_idx+1],
                 ym=_ym,
                 density=_n_ratio*(Y[_ne_idx] - _n_imp(x)),
-                g_density=_n_ratio*(Y[_ne_idx+1]),
+                g_density=_n_ratio*(Y[_ne_idx+1] - _g_imp(x)),
                 q_diff=_q_trans.d,
                 q_vconv=_q_trans.v,
                 q_src=_q_src,
@@ -534,63 +537,66 @@ class CoreTransportSolverBVP2(CoreTransportSolver):
         var_list.append(["psi"])
 
         # ion   temperature
-        Z_total = sum([ion.z for ion in core_profiles_prev_1d.ion if not ion.is_impurity])
 
-        n_imp = sum([ion.z_ion_1d*ion.density for ion in core_profiles_prev_1d.ion if ion.is_impurity])
-        g_imp = sum([ion.z_ion_1d*ion.get("density_flux", 0)
-                     for ion in core_profiles_prev_1d.ion if not ion.is_impurity])
+        n_imp = 0  # sum([ion.z_ion_1d*ion.density for ion in core_profiles_prev_1d.ion if ion.is_impurity])
+
+        g_imp = 0  # sum([ion.z_ion_1d*ion.get("density_flux", 0) for ion in core_profiles_prev_1d.ion if ion.is_impurity])
 
         ion_list = []
-        
+
         # ions
         for ion in core_profiles_prev_1d.ion:
             if ion.is_impurity:
+                n_imp = n_imp+ion.z_ion_1d*ion.density
+                g_imp = g_imp \
+                    + ion.z_ion_1d * function_like(core_profiles_prev_1d.grid.rho_tor_norm, ion.get("density_flux", 0))
                 continue
-            ion_list.append((len(Y0), ion.z))
-            # density
-            eq_list.append(lambda x, Y, _idx=len(Y0):
-                           self.transp_particle(
-                x, Y[_idx], Y[_idx+1],
-                ym=core_profiles_prev_1d.electrons.density,
-                n_diff=core_transport_1d.electrons.particles.d,
-                n_vconv=core_transport_1d.electrons.particles.v,
-                n_src=core_sources_1d.electrons.particles,
-                hyper_diff=hyper_diff))
+            else:
+                ion_list.append((len(Y0), ion.z))
+                # density
+                eq_list.append(lambda x, Y, _idx=len(Y0):
+                               self.transp_particle(
+                    x, Y[_idx], Y[_idx+1],
+                    ym=core_profiles_prev_1d.electrons.density,
+                    n_diff=core_transport_1d.electrons.particles.d,
+                    n_vconv=core_transport_1d.electrons.particles.v,
+                    n_src=core_sources_1d.electrons.particles,
+                    hyper_diff=hyper_diff))
 
-            bc_list.append(lambda Ya, Yb, _idx=len(Y0), _bc=self.boundary_conditions_1d.electrons.particles:
-                           self.bc_particle(Ya[_idx], Ya[_idx+1], Yb[_idx], Yb[_idx+1], _bc))
+                bc_list.append(lambda Ya, Yb, _idx=len(Y0), _bc=self.boundary_conditions_1d.electrons.particles:
+                               self.bc_particle(Ya[_idx], Ya[_idx+1], Yb[_idx], Yb[_idx+1], _bc))
 
-            Y0.append(core_profiles_prev_1d.electrons.density(x0))
+                Y0.append(core_profiles_prev_1d.electrons.density(x0))
 
-            Y0.append(np.zeros_like(x0))
+                Y0.append(np.zeros_like(x0))
 
-            var_list.append(["ion", {"label": ion.label}, "density"])
+                var_list.append(["ion", {"label": ion.label}, "density"])
 
-            # temperature
-            eq_list.append(lambda x, Y, _idx=len(Y0),
-                           _ym=core_profiles_prev_1d.ion[{"label": ion.label}].temperature,
-                           _q_trans=core_transport_1d.ion[{"label": ion.label}].energy,
-                           _q_src=core_sources_1d.ion[{"label": ion.label}].energy:
-                           self.transp_energy(
-                x, Y[_idx], Y[_idx+1],
-                ym=_ym,
-                density=Y[_idx-2],
-                g_density=Y[_idx-1],
-                q_diff=_q_trans.d,
-                q_vconv=_q_trans.v,
-                q_src=_q_src,
-                hyper_diff=hyper_diff))
+                # temperature
+                eq_list.append(lambda x, Y, _idx=len(Y0),
+                               _ym=core_profiles_prev_1d.ion[{"label": ion.label}].temperature,
+                               _q_trans=core_transport_1d.ion[{"label": ion.label}].energy,
+                               _q_src=core_sources_1d.ion[{"label": ion.label}].energy:
+                               self.transp_energy(
+                    x, Y[_idx], Y[_idx+1],
+                    ym=_ym,
+                    density=Y[_idx-2],
+                    g_density=Y[_idx-1],
+                    q_diff=_q_trans.d,
+                    q_vconv=_q_trans.v,
+                    q_src=_q_src,
+                    hyper_diff=hyper_diff))
 
-            bc_list.append(lambda Ya, Yb, _idx=len(Y0), _bc=self.boundary_conditions_1d.ion[{"label": ion.label}].energy:
-                           self.bc_energy(Ya[_idx], Ya[_idx+1], Yb[_idx], Yb[_idx+1], _bc))
+                bc_list.append(lambda Ya, Yb, _idx=len(Y0), _bc=self.boundary_conditions_1d.ion[{"label": ion.label}].energy:
+                               self.bc_energy(Ya[_idx], Ya[_idx+1], Yb[_idx], Yb[_idx+1], _bc))
 
-            var_list.append(["ion", {"label": ion.label}, "temperature"])
+                var_list.append(["ion", {"label": ion.label}, "temperature"])
 
-            Y0.append(core_profiles_prev_1d.ion[{"label": ion.label}].temperature(x0))
+                Y0.append(core_profiles_prev_1d.ion[{"label": ion.label}].temperature(x0))
 
-            Y0.append(np.zeros_like(x0))
+                Y0.append(np.zeros_like(x0))
 
-        # electron temperature
+        # electrons temperature
         eq_list.append(lambda x, Y, _idx=len(Y0),
                        _ym=core_profiles_prev_1d.electrons.temperature,
                        _n_imp=n_imp,
@@ -695,11 +701,16 @@ class CoreTransportSolverBVP2(CoreTransportSolver):
               equilibrium_next: Equilibrium,
               equilibrium_prev: Equilibrium = None,
               dt=None,
-              quasi_neutral: str = "electrons",
+              quasi_neutral_condition: str = None,
               hyper_diff=1.0e-4,
               tolerance=1.0e-3,
               max_nodes=250, **kwargs) -> Tuple[float, CoreProfiles]:
+        """
 
+            quasi_neutral_condition: 
+                = electrons : n_e= sum(n_i*z_i) 
+                = ion       : n_i0*z_i0=n_i1*z_i1 ...
+        """
         self.update_global_variable(
             core_profiles_prev=core_profiles_prev,
             core_transport=core_transport,
@@ -710,16 +721,18 @@ class CoreTransportSolverBVP2(CoreTransportSolver):
             hyper_diff=hyper_diff,
         )
 
-        if quasi_neutral == "electrons":
-            var_list, x0, Y0, eq_list, bc_list, *_ = self.create_solver_electrons(
+        if quasi_neutral_condition == "electrons":
+
+            var_list, x0, Y0, eq_list, bc_list, *_ = self.create_solver_ion(
                 core_profiles_prev_1d=core_profiles_prev.profiles_1d,
                 core_transport_1d=core_transport.profiles_1d,
                 core_sources_1d=core_sources.profiles_1d,
                 hyper_diff=hyper_diff
             )
+
         else:
-            var_list, x0, Y0, eq_list, bc_list, *_ = self.create_solver_ion(
-                core_profiles_1d=core_profiles_prev.profiles_1d,
+            var_list, x0, Y0, eq_list, bc_list, *_ = self.create_solver_electrons(
+                core_profiles_prev_1d=core_profiles_prev.profiles_1d,
                 core_transport_1d=core_transport.profiles_1d,
                 core_sources_1d=core_sources.profiles_1d,
                 hyper_diff=hyper_diff
@@ -750,6 +763,8 @@ class CoreTransportSolverBVP2(CoreTransportSolver):
             {**atoms[ion.label],
              "z_ion_1d":ion.z_ion_1d(rho_tor_norm),
              "is_impurity":ion.is_impurity,
+             "density": ion.density if ion.is_impurity else 0,
+             "temperature":ion.temperature if ion.is_impurity else 0,
              }
             for ion in core_profiles_prev.profiles_1d.ion
         ]
@@ -761,6 +776,25 @@ class CoreTransportSolverBVP2(CoreTransportSolver):
         for idx, var_id in enumerate(var_list):
             profiles_1d_next[var_id] = Function(rho_tor_norm, sol.y[idx*2])
             profiles_1d_next[var_id[:-1]+[f"{var_id[-1]}_flux"]] = Function(rho_tor_norm, sol.y[idx*2+1])
+
+        if quasi_neutral_condition == "electrons":
+            profiles_1d_next.electrons["density"] = np.sum(
+                [ion.z_ion_1d(rho_tor_norm)*ion.density(rho_tor_norm) for ion in profiles_1d_next.ion])
+        else:
+            n_e = profiles_1d_next.electrons.density(rho_tor_norm)
+
+            n_imp = sum([ion.z_ion_1d(rho_tor_norm)*ion.density(rho_tor_norm)
+                         for ion in core_profiles_prev.profiles_1d.ion if ion.is_impurity])
+
+            num_of_ion = sum([1 for ion in profiles_1d_next.ion if not ion.is_impurity])
+
+            n_i_prop = (n_e-n_imp) / num_of_ion
+
+            for ion in profiles_1d_next.ion:
+                if not ion.is_impurity:
+                    ion["density"] = n_i_prop/ion.z
+                else:
+                    logger.debug("TODO:get impurity density  from n_e")
 
         profiles_1d_next["rms_residuals"] = Function((rho_tor_norm[: -1]+rho_tor_norm[1:])*0.5, sol.rms_residuals)
 

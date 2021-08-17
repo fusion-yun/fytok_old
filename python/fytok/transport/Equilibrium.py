@@ -895,15 +895,16 @@ class Equilibrium(IDS):
     def boundary_separatrix(self) -> BoundarySeparatrix:
         return Equilibrium.BoundarySeparatrix(self.get("boundary_separatrix", {}),  parent=self)
 
-    def plot(self, axis=None, *args,
+    def plot(self, axis=None, /,
              scalar_field=[],
              vector_field=[],
              boundary=False,
              separatrix=True,
              contour=False,
-             levels=32, oxpoints=True,
+             oxpoints=True,
              **kwargs):
-        """learn from freegs
+        """
+            plot o-point,x-point,lcfs,separatrix and contour of psi
         """
         if axis is None:
             axis = plt.gca()
@@ -994,149 +995,3 @@ class Equilibrium(IDS):
                             vf, uf, **opts)
 
         return axis
-
-
-# class EquilibriumOld(IDS):
-
-#     _IDS = "equilibrium"
-#     _actor_module_prefix = "fymodules.transport.equilibrium."
-#     Constraints = EquilibriumConstraints
-#     # TimeSlice = EquilibriumTimeSlice
-
-#     def __init__(self,  *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-
-#     @sp_property
-#     def vacuum_toroidal_field(self) -> VacuumToroidalField:
-#         r0 = self.get("vacuum_toroidal_field.r0")
-#         b0 = self.get("vacuum_toroidal_field.b0")
-#         return {"r0": r0, "b0": b0}
-
-#     @sp_property
-#     def grid_ggd(self) -> GGD:
-#         return self.get("grid_ggd")
-
-#     @sp_property
-#     def time_slice(self) -> TimeSlice:
-#         return self.get("time_slice")
-
-#     def refresh(self,  *args, **kwargs):
-#         super().refresh(*args, **kwargs)
-
-#     ####################################################################################
-#     # Plot profiles
-
-#     def plot(self, axis=None, *args,   time_slice=True, ggd=False, **kwargs):
-#         if time_slice is not False:
-#             axis = self.time_slice.plot(axis, *args, **kwargs)
-#         if ggd:
-#             axis = self.grid_ggd.plot(axis, *args, **kwargs)
-#         return axis
-
-#     def fetch_profile(self, d):
-#         if isinstance(d, str):
-#             data = d
-#             opts = {"label": d}
-#         elif isinstance(d, collections.abc.Mapping):
-#             data = d.get("name", None)
-#             opts = d.get("opts", {})
-#         elif isinstance(d, tuple):
-#             data, opts = d
-#         elif isinstance(d, Dict):
-#             data = d.data
-#             opts = d.opts
-#         else:
-#             raise TypeError(f"Illegal profile type! {d}")
-
-#         if isinstance(opts, str):
-#             opts = {"label": opts}
-
-#         if isinstance(data, str):
-#             nlist = data.split(".")
-#             if len(nlist) == 1:
-#                 data = self.profiles_1d[nlist[0]]
-#             elif nlist[0] == 'cache':
-#                 data = self.profiles_1d[nlist[1:]]
-#             else:
-#                 data = self.profiles_1d[nlist]
-#         elif isinstance(data, list):
-#             data = np.array(data)
-#         elif isinstance(d, np.ndarray):
-#             pass
-#         else:
-#             raise TypeError(f"Illegal data type! {type(data)}")
-
-#         return data, opts
-
-#     def plot_profiles(self, fig_axis, axis, profiles):
-#         if not isinstance(profiles, list):
-#             profiles = [profiles]
-
-#         for idx, data in enumerate(profiles):
-#             ylabel = None
-#             opts = {}
-#             if isinstance(data, tuple):
-#                 data, ylabel = data
-#             if isinstance(data, str):
-#                 ylabel = data
-
-#             if not isinstance(data, list):
-#                 data = [data]
-
-#             for d in data:
-#                 value, opts = self.fetch_profile(d)
-
-#                 if value is not NotImplemented and value is not None and len(value) > 0:
-#                     fig_axis[idx].plot(axis.data, value, **opts)
-#                 else:
-#                     logger.error(f"Can not find profile '{d}'")
-
-#             fig_axis[idx].legend(fontsize=6)
-
-#             if ylabel:
-#                 fig_axis[idx].set_ylabel(ylabel, fontsize=6).set_rotation(0)
-#             fig_axis[idx].labelsize = "media"
-#             fig_axis[idx].tick_params(labelsize=6)
-#         return fig_axis[-1]
-
-    # def plot_full(self, *args,
-    #               axis=("psi_norm",   r'$(\psi-\psi_{axis})/(\psi_{boundary}-\psi_{axis}) [-]$'),
-    #               profiles=None,
-    #               profiles_2d=[],
-    #               vec_field=[],
-    #               surface_mesh=False,
-    #               **kwargs):
-
-    #     axis, axis_opts = self.fetch_profile(axis)
-
-    #     assert (axis.data is not NotImplemented)
-    #     nprofiles = len(profiles) if profiles is not None else 0
-    #     if profiles is None or nprofiles <= 1:
-    #         fig, ax_right = plt.subplots(ncols=1, nrows=1, sharex=True)
-    #     else:
-    #         fig, axs = plt.subplots(ncols=2, nrows=nprofiles, sharex=True)
-    #         # left
-    #         ax_left = self.plot_profiles(axs[:, 0], axis, profiles)
-
-    #         ax_left.set_xlabel(axis_opts.get("label", "[-]"), fontsize=6)
-
-    #         # right
-    #         gs = axs[0, 1].get_gridspec()
-    #         for ax in axs[:, 1]:
-    #             ax.remove()  # remove the underlying axes
-    #         ax_right = fig.add_subplot(gs[:, 1])
-
-    #     if surface_mesh:
-    #         self.coordinate_system.plot(ax_right)
-
-    #     self.plot(ax_right, profiles=profiles_2d, vec_field=vec_field, **kwargs.get("equilibrium", {}))
-
-    #     self._tokamak.plot_machine(ax_right, **kwargs.get("machine", {}))
-
-    #     ax_right.legend()
-    #     fig.tight_layout()
-
-    #     fig.subplots_adjust(hspace=0)
-    #     fig.align_ylabels()
-
-    #     return fig
