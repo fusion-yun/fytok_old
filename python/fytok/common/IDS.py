@@ -125,6 +125,7 @@ class IDS(Actor[_TState]):
 
     def __init__(self,  *args, ** kwargs):
         super().__init__(*args, ** kwargs)
+        logger.debug(self.__class__.__name__)
 
     def __serialize__(self, properties: Optional[Sequence] = None):
         res = super().__serialize__(properties=properties)

@@ -632,18 +632,45 @@ class CoreTransportSolverBVP2(CoreTransportSolver):
 
         return var_list, x0, Y0, eq_list, bc_list, other_var_list
 
-    def update_global_variable(self,
-                               core_profiles_prev: CoreProfiles,
-                               equilibrium_next: Equilibrium,
-                               equilibrium_prev: Equilibrium = None,
-                               dt=None,
-                               **kwargs):
-        # $rho_tor_{norm}$ normalized minor radius                [-]
-        rho_tor_norm = core_profiles_prev.profiles_1d.grid.rho_tor_norm
+    # def update_global_variable(self,
+    #                            core_profiles_prev: CoreProfiles,
+    #                            equilibrium_next: Equilibrium,
+    #                            equilibrium_prev: Equilibrium = None,
+    #                            dt=None,
+    #                            **kwargs):
 
-        psi_norm = core_profiles_prev.profiles_1d.grid.psi_norm
+    def solve(self, /,
+              core_profiles_prev: CoreProfiles,
+              core_transport: CoreTransport.Model,
+              core_sources: CoreSources.Source,
+              equilibrium_next: Equilibrium,
+              equilibrium_prev: Equilibrium = None,
+              dt: float = None,
+              **kwargs) -> Tuple[float, CoreProfiles]:
+        """
+            quasi_neutral_condition:
+                = electrons : n_e= sum(n_i*z_i)
+                = ion       : n_i0*z_i0=n_i1*z_i1 ...
+        """
 
         # -----------------------------------------------------------
+        # Get parameters for solver
+        #
+        parameters = collections.ChainMap(kwargs, self.get("code.parameters", {}))
+
+        quasi_neutral_condition = parameters.get("quasi_neutral_condition", None)
+        hyper_diff = parameters.get("hyper_diff", 1.0e-4)
+        tolerance = parameters.get("tolerance", 1.0e-3)
+        max_nodes = parameters.get("max_nodes", 250)
+        bvp_rms_mask = parameters.get("bvp_rms_mask", [])
+
+        # -----------------------------------------------------------
+        # Setup common variables
+        #
+        # $rho_tor_{norm}$ normalized minor radius                [-]
+        rho_tor_norm = core_profiles_prev.profiles_1d.grid.rho_tor_norm
+        psi_norm = core_profiles_prev.profiles_1d.grid.psi_norm
+
         # Equilibrium
 
         if equilibrium_prev is None:
@@ -699,36 +726,17 @@ class CoreTransportSolverBVP2(CoreTransportSolver):
 
         self._Qimp_k_ns = (3*self._k_rho_bdry - self._k_phi * self._vpr.derivative())
 
-    def solve(self, /,
-              core_profiles_prev: CoreProfiles,
-              core_transport: CoreTransport.Model,
-              core_sources: CoreSources.Source,
-              equilibrium_next: Equilibrium,
-              equilibrium_prev: Equilibrium = None,
-              dt: float = None,
-              **kwargs) -> Tuple[float, CoreProfiles]:
-        """
-
-            quasi_neutral_condition:
-                = electrons : n_e= sum(n_i*z_i)
-                = ion       : n_i0*z_i0=n_i1*z_i1 ...
-        """
-        parameters = collections.ChainMap(kwargs, self.get("code.parameters", {}))
-        
-        quasi_neutral_condition = parameters.get("quasi_neutral_condition", None)
-        hyper_diff = parameters.get("hyper_diff", 1.0e-4)
-        tolerance = parameters.get("tolerance", 1.0e-3)
-        max_nodes = parameters.get("max_nodes", 250)
-        bvp_rms_mask = parameters.get("bvp_rms_mask", [])
-
-        self.update_global_variable(
-            core_profiles_prev=core_profiles_prev,
-            core_transport=core_transport,
-            core_sources=core_sources,
-            equilibrium_next=equilibrium_next,
-            equilibrium_prev=equilibrium_prev,
-            dt=dt,
-        )
+        # self.update_global_variable(
+        #     core_profiles_prev=core_profiles_prev,
+        #     core_transport=core_transport,
+        #     core_sources=core_sources,
+        #     equilibrium_next=equilibrium_next,
+        #     equilibrium_prev=equilibrium_prev,
+        #     dt=dt,
+        # )
+        # -----------------------------------------------------------
+        # Setup equation group
+        #
 
         if quasi_neutral_condition == "electrons":
             var_list, x0, Y0, eq_list, bc_list, *_ = self.create_solver_for_qn_ele(
@@ -752,7 +760,13 @@ class CoreTransportSolverBVP2(CoreTransportSolver):
         def bc_func(Ya: np.ndarray, Yb: np.ndarray, /, _bc_list=bc_list) -> np.ndarray:
             return np.asarray(sum([list(bc(Ya, Yb)) for bc in _bc_list], []))
 
+        # --------------------------------------------------------------------------------------------
+        # Solve equation group
+        #
         sol = solve_bvp(func, bc_func, x0, Y0, tolerance=tolerance, max_nodes=max_nodes, bvp_rms_mask=bvp_rms_mask)
+
+        # --------------------------------------------------------------------------------------------
+        # Update result
 
         residual = np.max(sol.rms_residuals)
 

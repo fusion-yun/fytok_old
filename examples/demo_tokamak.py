@@ -386,7 +386,7 @@ if __name__ == "__main__":
             "code": {"name": "bvp_solver2",
                      "parameters": {
                          "tolerance": 1.0e-4,
-                         "quasi_neutral_condition": "electrons",
+                        #  "quasi_neutral_condition": "electrons",
                          "max_nodes": 500,
                          "verbose": 2,
                          "bvp_rms_mask": [r_ped]}
