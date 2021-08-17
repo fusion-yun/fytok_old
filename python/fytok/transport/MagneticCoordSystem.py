@@ -255,6 +255,7 @@ class MagneticCoordSystem(object):
             surface=self.surface,
             dvolume_drho_tor=self.dvolume_drho_tor,
             volume=self.volume,
+            **kwargs
         )
 
     @property

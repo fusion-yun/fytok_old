@@ -151,15 +151,8 @@ class CoreTransportSolver(IDS):
             solve transport eqation until residual < tolerance
             return residual , core_profiles, edge_profiles
         """
-        self._core_profiles_prev = core_profiles_prev
-        self._core_transport = core_transport
-        self._core_sources = core_sources
-        self._equilibrium_next = equilibrium_next
-        self._equilibrium_prev = equilibrium_prev
-
-        equilibrium_1d = equilibrium_next.profiles_1d
-        core_transport_1d = core_transport.profiles_1d
-        core_sources_1d = core_sources.profiles_1d
+       
+        
 
         core_profiles_next = CoreProfiles({})
         profiles = core_profiles_next.profiles_1d

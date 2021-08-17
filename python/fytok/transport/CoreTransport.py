@@ -192,12 +192,12 @@ class CoreTransportProfiles1D(Dict[Node]):
 
     @sp_property
     def conductivity_parallel(self) -> Function:
-        return function_like(self.grid_d.rho_tor_norm, self.get("conductivity_parallel", None))
+        return function_like(self.grid_d.rho_tor_norm, self.get("conductivity_parallel"))
 
     @sp_property
     def e_field_radial(self) -> Function:
         """ Radial component of the electric field (calculated e.g. by a neoclassical model) {dynamic} [V.m^-1]"""
-        return function_like(self.grid_flux.rho_tor_norm, self.get("e_field_radial", None))
+        return function_like(self.grid_flux.rho_tor_norm, self.get("e_field_radial"))
 
 
 class CoreTransportModel(Module):

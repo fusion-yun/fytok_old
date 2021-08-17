@@ -402,11 +402,13 @@ if __name__ == "__main__":
                 ]
             }}
 
-        residual = tok.refresh(enable_ion_particle_solver=False,
-                               max_nodes=500,
-                               tolerance=1.0e-4,
-                               verbose=2,
-                               bvp_rms_mask=[r_ped])
+        residual = tok.refresh(
+            tolerance=1.0e-4,
+            transp_solver_opt={
+                "enable_ion_particle_solver": False,
+                "max_nodes": 500,
+                "verbose": 2,
+                "bvp_rms_mask": [0, r_ped]})
 
         core_profile_1d = tok.core_profiles.profiles_1d
     if True:
@@ -416,19 +418,20 @@ if __name__ == "__main__":
                 [
                     (Function(bs_r_norm, bs_psi),
                      r"astra", r"$\psi [Wb]$", {"marker": '.', "linestyle": ''}),
-                    (core_profile_1d["psi"],  r"fytok", r"$\psi  [Wb]$"),
+                    (core_profile_1d["psi"],  r"fytok", r"$\psi  [Wb]$", {"marker": '+', "linestyle": '-'}),
                 ],
+
+                (core_profile_1d["psi_flux"],  r"fytok", r"$\Gamma_{\psi}$", {"marker": '+', "linestyle": '-'}),
 
                 # electron
                 [
                     (b_ne, r"astra", r"$n_e [m^{-3}]$",  {"marker": '.', "linestyle": ''}),
                     (core_profile_1d.electrons.density, r"fytok", r"$n_e [ m^{-3}]$"),
-
                 ],
 
                 [
-                    (b_Te, r"astra $T_e$", r"$[eV]$",  {"marker": '.', "linestyle": ''}),
-                    (core_profile_1d.electrons.temperature, r"fytok  $T_e$", r"$[eV]$"),
+                    (b_Te, r"astra", r"$T_e [eV]$",  {"marker": '.', "linestyle": ''}),
+                    (core_profile_1d.electrons.temperature, r"fytok", r"$T_e [eV]$"),
                 ],
 
                 # ion
@@ -437,13 +440,28 @@ if __name__ == "__main__":
                 #     * [(ion.density,   f"${ion.label}$") for ion in core_profile_1d.ion if not ion.is_impurity],
                 # ],
 
-                # [
-                #     (b_Ti,    r"astra $T_i$",       r"$T_{i} [eV]$", {"marker": '.', "linestyle": ''}),
-                #     * [(ion.temperature,  f"${ion.label} T_i $", r"$[eV]$")
-                #         for ion in core_profile_1d.ion if not ion.is_impurity],
-                # ],
+                [
+                    (b_Ti,    r"astra",       r"$T_{i} [eV]$", {"marker": '.', "linestyle": ''}),
+                    * [(ion.temperature,  f"fytok ${ion.label}$", r"$T_{i} [eV]$")
+                        for ion in core_profile_1d.ion if not ion.is_impurity],
+                ],
 
                 ######################################################################
+
+                (core_profile_1d["rms_residuals"], r"rms_residual"),
+
+                # (core_profile_1d.conductivity_parallel, "", r"$\sigma_{\parallel}$"),
+
+                # (core_profile_1d.j_total, "", r"$J_{total}$"),
+
+                # (core_profile_1d["rho_tor_norm"], "", r"$\rho^{tor}$"),
+
+                # (core_profile_1d["psi_norm"], "", r"$\psi$"),
+                # [
+                #     (core_profile_1d["vpr"], "profile", r"$V^{\prime}$"),
+                #     (core_profile_1d["vpr2"], "eq", r"$V^{\prime}_{eq}$"),
+                # ],
+                # (core_profile_1d["gm2"], "", r"$GM2$"),
 
                 # [
                 #     (rms_residual(Function(bs_r_norm, bs_psi), core_profile_1d["psi"]), r"$\psi$", " rms residual [%]"),

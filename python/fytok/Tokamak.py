@@ -110,7 +110,7 @@ class Tokamak(Actor):
     def equilibrium_solver(self) -> EquilibriumSolver:
         return self.get("equilibrium_solver")
 
-    def refresh(self, *args, time=None,   max_iteration=1, tolerance=1.0e-6,  **kwargs) -> float:
+    def refresh(self, *args, time=None,   max_iteration=1, tolerance=1.0e-6, transp_solver_opt=None,   **kwargs) -> float:
         super().refresh(time=time)
 
         self.wall.refresh(time=time)
@@ -151,7 +151,7 @@ class Tokamak(Actor):
                 equilibrium_next=equilibrium_next,
                 equilibrium_prev=equilibrium_prev,
                 tolerance=tolerance,
-                **kwargs)
+                **(transp_solver_opt or {}))
 
             residual_edge,  edge_profiles_next = self.edge_transport_solver.solve(
                 edge_profiles_prev=edge_profiles_prev,
