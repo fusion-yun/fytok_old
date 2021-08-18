@@ -140,19 +140,19 @@ class CoreTransportSolver(IDS):
         return 0.0
 
     def solve(self, /,
+              core_profiles_next: CoreProfiles,
               core_profiles_prev: CoreProfiles,
               core_transport: CoreTransport.Model,
               core_sources: CoreSources.Source,
               equilibrium_next: Equilibrium,
               equilibrium_prev: Equilibrium = None,
               dt: float = None,
-              **kwargs) -> Tuple[float, CoreProfiles]:
+              **kwargs) -> float:
         """
             solve transport eqation until residual < tolerance
             return residual , core_profiles, edge_profiles
         """
 
-        core_profiles_next = CoreProfiles({})
         profiles = core_profiles_next.profiles_1d
         profiles["grid"] = core_profiles_prev.profiles_1d.grid
 
@@ -177,4 +177,4 @@ class CoreTransportSolver(IDS):
             for ion in core_profiles_prev.profiles_1d.ion
         ]
 
-        return 0.0, core_profiles_next
+        return 0.0

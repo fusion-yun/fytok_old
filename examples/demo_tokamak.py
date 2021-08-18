@@ -382,36 +382,39 @@ if __name__ == "__main__":
     # TransportSolver
     if True:
 
-        tok["core_transport_solver"] = {
-            "code": {"name": "bvp_solver2",
-                     "parameters": {
-                         "tolerance": 1.0e-4,
-                         #  "quasi_neutral_condition": "electrons",
-                         "max_nodes": 500,
-                         "verbose": 2,
-                         "bvp_rms_mask": [r_ped]}
-                     },
-            "boundary_conditions_1d": {
-                "current": {"identifier": {"index": 1}, "value": [psi_boundary]},
-                "electrons": {"particles": {"identifier": {"index": 1}, "value": [b_ne[-1]]},
-                              "energy": {"identifier": {"index": 1}, "value": [b_Te[-1]]}},
+        tok["core_transport_solver"] = [
+            {"code": {"name": "core_impurity", "parameters": {}}},
+            {"code": {"name": "core_neutrals", "parameters": {}}},
+            {
+                "code": {"name": "bvp_solver2",
+                         "parameters": {
+                             "tolerance": 1.0e-4,
+                             "particle_solver": "electrons",
+                             "max_nodes": 500,
+                             "verbose": 2,
+                             "bvp_rms_mask": [r_ped]}
+                         },
+                "boundary_conditions_1d": {
+                    "current": {"identifier": {"index": 1}, "value": [psi_boundary]},
+                    "electrons": {"particles": {"identifier": {"index": 1}, "value": [b_ne[-1]]},
+                                  "energy": {"identifier": {"index": 1}, "value": [b_Te[-1]]}},
 
-                "ion": [
-                    {**atoms["D"],
-                     "particles": {"identifier": {"index": 1}, "value": [b_ni[-1]]},
-                     "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}},
-                    {**atoms["T"],
-                     "particles": {"identifier": {"index": 1}, "value": [b_ni[-1]]},
-                     "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}},
-                    {**atoms["He"],
-                     "particles": {"identifier": {"index": 1}, "value": [b_nHe[-1]]},
-                     "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}}
-                ]
-            }}
+                    "ion": [
+                        {**atoms["D"],
+                         "particles": {"identifier": {"index": 1}, "value": [b_ni[-1]]},
+                         "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}},
+                        {**atoms["T"],
+                         "particles": {"identifier": {"index": 1}, "value": [b_ni[-1]]},
+                         "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}},
+                        {**atoms["He"],
+                         "particles": {"identifier": {"index": 1}, "value": [b_nHe[-1]]},
+                         "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}}
+                    ]
+                }}]
 
         residual = tok.refresh()
 
-        quasi_neutral_cond = tok.core_transport_solver.get('code.parameters.quasi_neutral_condition', 'ion')
+        particle_solver = tok.core_transport_solver[2].get('code.parameters.particle_solver', 'ion')
 
         core_profile_1d = tok.core_profiles.profiles_1d
 
@@ -470,7 +473,7 @@ if __name__ == "__main__":
                 ],
             ],
             x_axis=([0, 1.0],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-            title=f" Quasi-neutral condition '{quasi_neutral_cond}'",
-            grid=True, fontsize=10).savefig(output_path/f"core_profiles_result_{quasi_neutral_cond}.svg", transparent=True)
+            title=f" Particle solver '{particle_solver}'",
+            grid=True, fontsize=10).savefig(output_path/f"core_profiles_result_{particle_solver}.svg", transparent=True)
 
     logger.info("====== DONE ========")

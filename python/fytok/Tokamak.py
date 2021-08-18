@@ -3,7 +3,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.colors import to_rgb
 from spdm.data.Function import Function
-from spdm.data.Node import Dict, Node, sp_property
+from spdm.data.Node import Dict, Node, sp_property, List
 from spdm.flow.Actor import Actor
 from spdm.numlib import constants, np
 from spdm.util.logger import logger
@@ -99,12 +99,12 @@ class Tokamak(Actor):
         return self.get("edge_sources")
 
     @sp_property
-    def core_transport_solver(self) -> CoreTransportSolver:
-        return CoreTransportSolver(self.get("core_transport_solver"), parent=self)
+    def core_transport_solver(self) -> List[CoreTransportSolver]:
+        return List[CoreTransportSolver](self.get("core_transport_solver", []), parent=self)
 
     @sp_property
-    def edge_transport_solver(self) -> EdgeTransportSolver:
-        return EdgeTransportSolver(self.get("edge_transport_solver"), parent=self)
+    def edge_transport_solver(self) -> List[EdgeTransportSolver]:
+        return List[EdgeTransportSolver](self.get("edge_transport_solver", []), parent=self)
 
     @sp_property
     def equilibrium_solver(self) -> EquilibriumSolver:
@@ -143,30 +143,38 @@ class Tokamak(Actor):
         residual = 0.0
 
         for nstep in range(max_iteration):
-            residual, equilibrium_next = self.equilibrium_solver.solve(
-                dt=dt,
-                equilibrium_prev=equilibrium_prev,
-                core_profiles=core_profiles_prev)
 
-            residual_core, core_profiles_next = self.core_transport_solver.solve(
-                dt=dt,
+            core_profiles_next = CoreProfiles()
+            edge_profiles_next = EdgeProfiles()
+
+            equilibrium_next = equilibrium_prev  # Equilibrium()
+
+            residual = self.equilibrium_solver.solve(
+                equilibrium_next=equilibrium_next,
+                equilibrium_prev=equilibrium_prev,
+                core_profiles=core_profiles_prev,
+                dt=dt,)
+
+            residual += sum([solver.solve(
+                core_profiles_next=core_profiles_next,
                 core_profiles_prev=core_profiles_prev,
+                equilibrium_next=equilibrium_next,
+                equilibrium_prev=equilibrium_prev,
                 core_sources=self.core_sources.source_combiner,
                 core_transport=self.core_transport.model_combiner,
+                dt=dt,) for solver in self.core_transport_solver])
+
+            logger.debug(residual)
+
+            residual += sum([solver.solve(
+                edge_profiles_next=edge_profiles_next,
+                edge_profiles_prev=edge_profiles_prev,
                 equilibrium_next=equilibrium_next,
                 equilibrium_prev=equilibrium_prev,
-            )
-
-            residual_edge,  edge_profiles_next = self.edge_transport_solver.solve(
-                dt=dt,
-                edge_profiles_prev=edge_profiles_prev,
                 edge_sources=self.edge_sources.source_combiner,
                 edge_transport=self.edge_transport.model_combiner,
-                equilibrium_next=equilibrium_next,
-                equilibrium_prev=equilibrium_prev,
-            )
-
-            residual += residual_edge+residual_core
+                dt=dt,
+            ) for solver in self.edge_transport_solver], 0)
 
             logger.debug(f"time={self.time}  iterator step {nstep}/{max_iteration} residual={residual}")
 

@@ -30,6 +30,6 @@ class EquilibriumSolver(IDS):
               equilibrium_prev: Equilibrium,
               core_profiles: CoreProfiles,
               dt: float = None,
-              ** kwargs) -> Tuple[float, Equilibrium]:
+              ** kwargs) -> float:
 
-        return 0.0, equilibrium_prev
+        return 0.0
