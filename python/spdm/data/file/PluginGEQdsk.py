@@ -266,6 +266,13 @@ def sp_geqdsk_to_imas_equilibrium(geqdsk, eq: Dict = None) -> Dict:
     eq["profiles_1d.dpressure_dpsi"] = geqdsk["pprim"]
     eq["profiles_1d.q"] = geqdsk["qpsi"]
     eq["profiles_1d.psi"] = np.linspace(geqdsk["simag"], geqdsk["sibry"], nw)
+    eq["profiles_1d.grid"] = {
+        "r0": geqdsk["rcentr"],
+        "b0": geqdsk["bcentr"],
+        "psi_norm": np.linspace(0, 1.0,  nw),
+        "psi_axis": geqdsk["simag"],
+        "psi_boundary": geqdsk["sibry"],
+    }
 
     return eq
 

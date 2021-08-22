@@ -82,7 +82,7 @@ class RadialGrid(Dict):
     @sp_property
     def psi_axis(self) -> float:
         """Poloidal flux at the magnetic axis  [Wb]."""
-        return self["psi_axis"]
+        return self.get("psi_axis")
 
     @sp_property
     def psi_magnetic_axis(self) -> float:

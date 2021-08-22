@@ -1,5 +1,4 @@
 
-# This is file is generated from template
 from ..common.IDS import IDS
 import collections
 import collections.abc

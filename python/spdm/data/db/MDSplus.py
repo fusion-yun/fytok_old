@@ -10,9 +10,9 @@ from spdm.util.urilib import urisplit, uriunsplit
 
 import MDSplus as mds
 
-from ..Collection import Collection
-from ..Document import Document
-from ..Entry import Entry
+from spdm.data.Collection import Collection
+from spdm.data.Document import Document
+from spdm.data.Entry import Entry
 from ...util.dict_util import format_string_recursive
 
 

@@ -265,8 +265,14 @@ class EquilibriumProfiles1D(Dict):
 
     def __init__(self,  *args, ** kwargs):
         super().__init__(*args, **kwargs)
-        self._coord: MagneticCoordSystem = self._parent.coordinate_system
-        self._axis = self._coord.psi_norm
+
+    @property
+    def _coord(self) -> MagneticCoordSystem:
+        return self._parent.coordinate_system
+
+    @property
+    def _axis(self) -> np.ndarray:
+        return self._coord.psi_norm
 
     @sp_property
     def grid(self) -> RadialGrid:

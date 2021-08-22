@@ -383,13 +383,13 @@ if __name__ == "__main__":
     if True:
 
         tok["core_transport_solver"] = [
-            {"code": {"name": "core_impurity", "parameters": {}}},
-            {"code": {"name": "core_neutrals", "parameters": {}}},
+            # {"code": {"name": "core_impurity", "parameters": {}}},
+            # {"code": {"name": "core_neutrals", "parameters": {}}},
             {
                 "code": {"name": "bvp_solver2",
                          "parameters": {
                              "tolerance": 1.0e-4,
-                             "particle_solver": "electrons",
+                             "particle_solver": "ion",
                              "max_nodes": 500,
                              "verbose": 2,
                              "bvp_rms_mask": [r_ped]}
@@ -442,13 +442,13 @@ if __name__ == "__main__":
 
                 # ion
                 [
-                    (b_ni/1.0e19,    r"astra", r"$n_i  \_ [10^{19} m^-3]$", {"marker": '.', "linestyle": ''}),
-                    * [(ion.density/1.0e19,   f"${ion.label}$", r"$n_i  \_ [10^{19} m^-3]$")
+                    (b_ni/1.0e19,    r"astra", r"$n_i  \, [10^{19} m^-3]$", {"marker": '.', "linestyle": ''}),
+                    * [(ion.density/1.0e19,   f"${ion.label}$", r"$n_i  \, [10^{19} m^-3]$")
                         for ion in core_profile_1d.ion if not ion.is_impurity],
                 ],
 
                 [
-                    (b_Ti/1000.0,    r"astra",       r"$T_{i} \_ [keV]$", {"marker": '.', "linestyle": ''}),
+                    (b_Ti/1000.0,    r"astra",       r"$T_{i} \, [keV]$", {"marker": '.', "linestyle": ''}),
                     * [(ion.temperature/1000.0,  f"fytok ${ion.label}$", r"$T_{i} [keV]$")
                         for ion in core_profile_1d.ion if not ion.is_impurity],
                 ],
