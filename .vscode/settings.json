@@ -12,12 +12,12 @@
     "python.testing.unittestEnabled": false,
     "python.testing.promptToConfigure": false,
     "python.autoComplete.extraPaths": [
-        "${workspaceFolder}/external/SpDM/python",
+        "${workspaceFolder}/external/SpDB/python",
         "${workspaceFolder}/python",
     ],
     "python.analysis.extraPaths": [
+        "${workspaceFolder}/external/SpDB/python",
         "${workspaceFolder}/python",
-        "${workspaceFolder}/external/SpDM/python",
     ],
 
 }
