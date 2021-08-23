@@ -149,17 +149,17 @@ class CoreTransportProfiles1D(Dict[Node]):
     @sp_property
     def grid_d(self) -> RadialGrid:
         """Grid for effective diffusivities and parallel conductivity"""
-        return self.grid.remesh(0.5*(self.grid.psi_norm[:-1]+self.grid.psi_norm[1:]))
+        return self.grid.remesh("rho_tor_norm", 0.5*(self.grid.rho_tor_norm[:-1]+self.grid.rho_tor_norm[1:]))
 
     @sp_property
     def grid_v(self) -> RadialGrid:
         """ Grid for effective convections  """
-        return self.grid.remesh(self.grid.psi_norm)
+        return self.grid.remesh("rho_tor_norm", self.grid.rho_tor_norm)
 
     @sp_property
     def grid_flux(self) -> RadialGrid:
         """ Grid for fluxes  """
-        return self.grid.remesh(0.5*(self.grid.psi_norm[:-1]+self.grid.psi_norm[1:]))
+        return self.grid.remesh("rho_tor_norm", 0.5*(self.grid.rho_tor_norm[:-1]+self.grid.rho_tor_norm[1:]))
 
     @sp_property
     def electrons(self) -> Electrons:
@@ -230,6 +230,10 @@ class CoreTransportModel(Module):
         super().__init__(*args, **kwargs)
 
     @sp_property
+    def grid(self) -> RadialGrid:
+        return self.get("grid", None) or self._parent.grid
+
+    @sp_property
     def flux_multiplier(self) -> float:
         return self.get("flux_multiplier", 1.0)
 
@@ -238,9 +242,9 @@ class CoreTransportModel(Module):
         return CoreTransportModel.Profiles1D(self.get("profiles_1d"),   parent=self)
 
     def refresh(self, *args, core_profiles: CoreProfiles, **kwargs) -> float:
-        residual = super().refresh(*args, core_profiles=core_profiles, **kwargs)
+        super().refresh(*args, core_profiles=core_profiles, **kwargs)
         self.profiles_1d["grid"] = core_profiles.profiles_1d.grid
-        return residual
+        return 0.0
 
 
 class CoreTransport(IDS):
@@ -267,6 +271,10 @@ class CoreTransport(IDS):
         return VacuumToroidalField(**self.get("vacuum_toroidal_field", {}))
 
     @sp_property
+    def grid(self) -> RadialGrid:
+        return self.get("grid")
+
+    @sp_property
     def model(self) -> List[Model]:
         return List[CoreTransport.Model](self.get("model"),  parent=self)
 
@@ -282,4 +290,4 @@ class CoreTransport(IDS):
     def refresh(self, *args,   **kwargs) -> float:
         if "model_combiner" in self.__dict__:
             del self.__dict__["model_combiner"]
-        return sum([model.refresh(*args, **kwargs) for model in self.model])
+        return sum([(model.refresh(*args, **kwargs) or 0.0) for model in self.model])

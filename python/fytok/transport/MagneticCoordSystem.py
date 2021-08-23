@@ -1,6 +1,8 @@
 import collections
+import collections.abc
 from dataclasses import dataclass
 from functools import cached_property
+from math import isclose
 from typing import Callable, Iterator, Mapping, Sequence, Tuple, TypeVar, Union
 
 from spdm.data.Field import Field
@@ -95,7 +97,7 @@ class RadialGrid(Dict):
 
     @sp_property
     def rho_tor_boundary(self) -> float:
-        return self.get("rho_tor_boundary")
+        return self["rho_tor_boundary"]
 
     @sp_property
     def psi_norm(self) -> np.ndarray:
@@ -142,10 +144,10 @@ class RadialGrid(Dict):
 
     @sp_property
     def dvolume_drho_tor(self) -> np.ndarray:
-        return self.get("dvolume_drho_tor")
+        return self.get("dvolume_drho_tor", None)
 
 
-class MagneticCoordSystem(object):
+class MagneticCoordSystem(Dict):
     r"""
         Flux surface coordinate system on a square grid of flux and poloidal angle
 
@@ -184,49 +186,48 @@ class MagneticCoordSystem(object):
         (TWOPI,     -1,             -1),  # 18
     ]
 
-    def __init__(self,
-                 psirz: Field,
-                 /,
-                 Ip: float,
-                 B0: float,
-                 R0: float,
-                 fpol: Function,
-                 psi_norm: np.ndarray,
-                 theta: int = None,
-                 grid_type_index: int = 13,
-                 cocos=11):
+    def __init__(self,  *args, **kwargs):
         """
             Initialize FluxSurface
         """
+        super().__init__(*args, **kwargs)
 
-        super().__init__()
-        self._grid_type_index = grid_type_index
-        self._psirz = psirz
+        self._grid_type_index: int = self.get("grid_type_index", 13)
+        self._psirz: Field = self.get("psirz")
 
-        # @TODO: COCOS transformation
-        self._s_Bp = np.sign(B0)
-        self._s_Ip = np.sign(Ip)
-        self._s_2PI = 1.0/(constants.pi*2.0)  # 1.0/(TWOPI ** (1-e_Bp))
-        self._cocos = cocos
-
-        self._b0 = B0
-        self._r0 = R0
+        self._Ip: float = self.get("Ip")
+        self._b0: float = self.get("B0")
+        self._r0: float = self.get("R0")
         self._fvac = self._b0*self._r0
 
-        if theta is None:
-            theta = 128
+        # @TODO: COCOS transformation
+        self._cocos = self.get("cocos", 11)
+        self._s_Bp = np.sign(self._b0)
+        self._s_Ip = np.sign(self._Ip)
+        self._s_2PI = 1.0/(constants.pi*2.0)  # 1.0/(TWOPI ** (1-e_Bp))
 
-        if isinstance(theta, int):
-            self._theta = np.linspace(0, TWOPI, theta)
-        else:
-            self._theta = np.asarray(theta)
-            if not np.isclose(self._theta[0], self._theta[-1]):
+        self._fpol_by_psi: Function = self.get("fpol_by_psi", None)
+        self._pprime_by_psi: Function = self.get("pprime_by_psi", None)
+
+        self._psi_norm: np.ndarray = self.get("psi_norm", None)
+        self._theta: Union[int, np.ndarray] = self.get("theta", 128)
+
+        if isinstance(self._theta, int):
+            self._theta = np.linspace(0, TWOPI, self._theta)
+        elif isinstance(self._theta, np.ndarray):
+            if not isclose(self._theta[0], self._theta[-1]):
                 self._theta.append(self._theta[0])
+        else:
+            raise RuntimeError(f"theta grid is not defined!")
 
-        assert(isinstance(fpol, Function))
-        self._fpol = fpol
-        assert(isinstance(psi_norm, np.ndarray))
-        self._psi_norm = psi_norm
+        if isinstance(self._psi_norm, collections.abc.Mapping):
+            psi_norm_axis = self._psi_norm.get("axis", 0.0)
+            psi_norm_bdry = self._psi_norm.get("boundary", 1.0)
+            npoints = self._psi_norm.get("npoints", 128)
+            self._psi_norm = np.linspace(psi_norm_axis, psi_norm_bdry, npoints)
+
+        if not isinstance(self._psi_norm, np.ndarray):
+            raise RuntimeError(f"psi_norm grid is not defined!")
 
     @property
     def r0(self) -> float:
@@ -240,8 +241,8 @@ class MagneticCoordSystem(object):
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
         return {"r0": self.r0, "b0": self.b0}
 
-    def radial_grid(self, *args, **kwargs) -> RadialGrid:
-
+    @cached_property
+    def radial_grid(self) -> RadialGrid:
         return RadialGrid(
             r0=self.r0,
             b0=self.b0,
@@ -250,12 +251,11 @@ class MagneticCoordSystem(object):
             rho_tor_boundary=self.rho_tor[-1],
             psi_norm=self.psi_norm,
             rho_tor_norm=self.rho_tor_norm,
-            rho_pol_norm=getattr(self, "rho_pol_norm", None),
-            area=getattr(self, "area", None),
-            surface=self.surface,
-            dvolume_drho_tor=self.dvolume_drho_tor,
-            volume=self.volume,
-            **kwargs
+            # rho_pol_norm=self.rho_pol_norm,
+            # area=self.area,
+            # surface=self.surface,
+            # dvolume_drho_tor=self.dvolume_drho_tor,
+            # volume=self.volume,
         )
 
     @property
@@ -586,7 +586,7 @@ class MagneticCoordSystem(object):
         return -self.psirz(r,  z, dx=1) / r/TWOPI
 
     def Btor(self, r: _TCoord, z: _TCoord) -> _TCoord:
-        return self._fpol(self.psi_norm_rz(r, z)) / r
+        return self._fpol_by_psi(self.psi_norm_rz(r, z)) / r
 
     def Bpol(self, r: _TCoord, z: _TCoord) -> _TCoord:
         r"""
@@ -653,16 +653,8 @@ class MagneticCoordSystem(object):
 
     @property
     def psi_norm(self) -> np.ndarray:
-        if self._psi_norm is None and isinstance(self._psi, np.ndarray):
-            self._psi_norm = (self._psi-self.psi_axis)/(self.psi_boundary - self.psi_axis)
-
-        if isinstance(self._psi_norm, int):
-            self._psi_norm = np.linspace(0, 1.0, self._psi_norm)
-        elif self._psi_norm is not None:
-            self._psi_norm = np.asarray(self._psi_norm)
-        else:
+        if not isinstance(self._psi_norm, np.ndarray):
             raise RuntimeError(f"psi_norm is not defined!")
-
         return self._psi_norm
 
     @property
@@ -672,7 +664,7 @@ class MagneticCoordSystem(object):
     @cached_property
     def fpol(self) -> np.ndarray:
         """Diamagnetic function (F=R B_Phi)  [T.m]."""
-        return self._fpol(self.psi)
+        return self._fpol_by_psi(self.psi)
 
     @cached_property
     def dphi_dpsi(self) -> np.ndarray:

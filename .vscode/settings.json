@@ -12,14 +12,12 @@
     "python.testing.unittestEnabled": false,
     "python.testing.promptToConfigure": false,
     "python.autoComplete.extraPaths": [
-        "${workspaceFolder}/phys_modules",
-        "${workspaceFolder}/../SpDB/python",
+        "${workspaceFolder}/external/SpDM/python",
         "${workspaceFolder}/python",
     ],
     "python.analysis.extraPaths": [
         "${workspaceFolder}/python",
-        "${workspaceFolder}/phys_modules",
-        "${workspaceFolder}/../SpDB/python",
+        "${workspaceFolder}/external/SpDM/python",
     ],
 
 }

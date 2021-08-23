@@ -270,16 +270,9 @@ class EquilibriumProfiles1D(Dict):
     def _coord(self) -> MagneticCoordSystem:
         return self._parent.coordinate_system
 
-    @property
+    @cached_property
     def _axis(self) -> np.ndarray:
-        return self._coord.psi_norm
-
-    @sp_property
-    def grid(self) -> RadialGrid:
-        g = self.get("grid", None)
-        if not isinstance(g, RadialGrid):
-            g = self._coord.radial_grid(g)
-        return g
+        return self._coord.radial_grid.psi_norm
 
     @sp_property
     def ffprime(self) -> Function:
@@ -840,38 +833,21 @@ class Equilibrium(IDS):
                           self.get("profiles_2d.grid.dim2"),
                           mesh="rectilinear")
 
-        psi_norm = self.get("coordinate_system.psi_norm", None)
-
-        eq_psi = self.get("profiles_1d.psi", None)
-
-        if isinstance(psi_norm, np.ndarray):
-            pass
-        elif isinstance(psi_norm, int):
-            psi_norm_bdry = self.get("boundary.psi_norm", 0.995)
-            psi_norm = np.linspace(0.0, psi_norm_bdry, psi_norm)
-        elif isinstance(psi_norm, None) and eq_psi is not None:
-            psi_axis = self.get("global_quantities.psi_axis", eq_psi[0])
-            psi_bdry = self.get("global_quantities.psi_boundary", eq_psi[-1])
-            psi_norm = (eq_psi-psi_axis)/(psi_bdry-psi_axis)
-        else:
-            raise RuntimeError(f"psi_norm is not defined!")
-
-        fpol = Function(eq_psi, self.get("profiles_1d.f"))
+        psi_1d = self.get("profiles_1d.psi", None)
 
         return MagneticCoordSystem(
-            psirz,
+            self.get("coordinate_system", {}),
+            psirz=psirz,
+            B0=self.get("vacuum_toroidal_field.b0"),
+            R0=self.get("vacuum_toroidal_field.r0"),
             Ip=self.get("global_quantities.ip"),
-            B0=self.vacuum_toroidal_field.b0,
-            R0=self.vacuum_toroidal_field.r0,
-            fpol=fpol,
-            psi_norm=psi_norm,
-            theta=self.get("coordinate_system.theta", None),
-            cocos=self.get("coordinate_system.cocos", _not_found_),
+            fpol_by_psi=Function(psi_1d,  self.get("profiles_1d.f")),
+            pprime_by_psi=Function(psi_1d,  self.get("profiles_1d.dpressure_dpsi", None)),
         )
 
-    @cached_property
+    @property
     def radial_grid(self) -> RadialGrid:
-        return self.coordinate_system.radial_grid()
+        return self.coordinate_system.radial_grid
 
     @sp_property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:

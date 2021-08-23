@@ -1,0 +1,3 @@
+[submodule "external/SpDM"]
+	path = external/SpDM
+	url = git@gitee.com:SimPla/SpDM.git

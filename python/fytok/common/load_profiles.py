@@ -70,7 +70,7 @@ def load_core_profiles(profiles, grid: RadialGrid):
         "vloop": Function(bs_r_norm, profiles["U"].values),
         "j_ohmic": Function(bs_r_norm, profiles["Joh"].values*1.0e6),
         "j_non_inductive": Function(bs_r_norm, profiles["Jnoh"].values*1.0e6),
-        # "j_bootstrap": Function(bs_r_norm, profiles["Jbs"].values*1.0e6),
+        "j_bootstrap": Function(bs_r_norm, profiles["Jbs"].values*1.0e6),
         "j_total": Function(bs_r_norm, profiles["Jtot"].values*1.0e6),
         "XiNC": Function(bs_r_norm, profiles["XiNC"].values),
     }
