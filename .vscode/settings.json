@@ -13,10 +13,12 @@
     "python.testing.promptToConfigure": false,
     "python.autoComplete.extraPaths": [
         "${workspaceFolder}/external/SpDB/python",
+        "${workspaceFolder}/external/SpFlow/python",
         "${workspaceFolder}/python",
     ],
     "python.analysis.extraPaths": [
         "${workspaceFolder}/external/SpDB/python",
+        "${workspaceFolder}/external/SpFlow/python",
         "${workspaceFolder}/python",
     ],
 
