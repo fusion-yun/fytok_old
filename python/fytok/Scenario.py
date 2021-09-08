@@ -4,7 +4,7 @@ from functools import cached_property
 import scipy
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, Node, _next_
-from spdm.numlib import np
+import numpy as np
 from spdm.util.logger import logger
 
 from .operation.PulseSchedule import PulseSchedule

@@ -1,4 +1,4 @@
-from spdm.numlib import constants
+from scipy import constants
 
 atoms = {
     "e": {

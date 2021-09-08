@@ -7,7 +7,7 @@ from spdm.data.AttributeTree import AttributeTree
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List, Node, sp_property
 from spdm.flow.Actor import Actor
-from spdm.numlib import constants, np
+from scipy import constants
 from spdm.util.logger import logger
 from spdm.util.utilities import _undefined_
 

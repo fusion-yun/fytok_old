@@ -6,8 +6,8 @@ from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreTransport import CoreTransport
 from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.Function import Function
-from spdm.numlib import constants, np
-from spdm.numlib.misc import array_like
+from scipy import constants
+from fytok.numlib.misc import array_like
 from spdm.util.logger import logger
 
 

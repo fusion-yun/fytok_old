@@ -4,7 +4,7 @@ import pathlib
 import re
 from functools import cached_property
 
-from spdm.numlib import np
+import numpy as np
 from spdm.util.logger import logger
 from spdm.util.urilib import urisplit, uriunsplit
 

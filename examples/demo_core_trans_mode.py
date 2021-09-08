@@ -12,8 +12,8 @@ from fytok.Tokamak import TWOPI, Tokamak
 from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.File import File
 from spdm.data.Function import Function, PiecewiseFunction
-from spdm.numlib import constants, np
-from spdm.numlib.smooth import rms_residual, smooth_1d
+from scipy import constants
+from fytok.numlib.smooth import rms_residual, smooth_1d
 from spdm.util.logger import logger
 from spdm.util.plot_profiles import plot_profiles, sp_figure
 

@@ -5,7 +5,6 @@ from matplotlib.colors import to_rgb
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, Node, sp_property, List
 from spdm.flow.Actor import Actor
-from spdm.numlib import constants, np
 from spdm.util.logger import logger
 
 # ---------------------------------

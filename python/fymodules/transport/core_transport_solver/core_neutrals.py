@@ -19,8 +19,8 @@ from matplotlib.pyplot import loglog
 from numpy.core.fromnumeric import var
 from spdm.data.Function import Function, function_like
 from spdm.data.Node import Dict, List, _not_found_
-from spdm.numlib import constants, np
-from spdm.numlib.misc import array_like
+from scipy import constants
+from fytok.numlib.misc import array_like
 from spdm.util.logger import logger
 
 EPSILON = 1.0e-15

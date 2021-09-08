@@ -1,11 +1,12 @@
 import collections
 from dataclasses import dataclass
 from typing import Optional
-from fytok.transport.Equilibrium import Equilibrium
 
+import numpy as np
+from fytok.transport.Equilibrium import Equilibrium
+from scipy import constants
 from spdm.data.Function import Function, function_like
 from spdm.data.Node import Dict, List, Node, sp_property
-from spdm.numlib import constants, np
 from spdm.util.logger import logger
 from spdm.util.utilities import _not_found_
 
@@ -413,7 +414,8 @@ class CoreProfiles1D(Dict[Node]):
         """Total parallel current density = average(jtot.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
         jtol = self.get("j_total", _not_found_)
         if jtol is _not_found_:
-            jtol = self.current_parallel_inside.derivative * self.grid.r0*TWOPI/self.grid.dvolume_drho_tor
+            jtol = self.current_parallel_inside.derivative * \
+                self.grid.r0*TWOPI/self.grid.dvolume_drho_tor
         return Function(self.grid.rho_tor_norm, jtol)
 
     @sp_property

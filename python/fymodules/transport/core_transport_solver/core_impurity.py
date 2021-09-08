@@ -22,9 +22,9 @@ from matplotlib.pyplot import loglog
 from numpy.core.fromnumeric import var
 from spdm.data.Function import Function, function_like
 from spdm.data.Node import Dict, List, _not_found_, sp_property
-from spdm.numlib import constants, np
-from spdm.numlib.bvp import BVPResult, solve_bvp
-from spdm.numlib.misc import array_like
+from scipy import constants
+from fytok.numlib.bvp import BVPResult, solve_bvp
+from fytok.numlib.misc import array_like
 from spdm.util.logger import logger
 from spdm.util.utilities import convert_to_named_tuple
 

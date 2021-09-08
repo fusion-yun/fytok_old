@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Any, Generic, TypeVar, Union
 
 from spdm.data.Node import Dict, sp_property
-from spdm.numlib import np
+import numpy as np
 
 # VacuumToroidalField = collections.namedtuple("VacuumToroidalField", "r0 b0", defaults=(0.0, 0.0))
 # Identifier = collections.namedtuple("Identifier", " ", defaults=("unamed", 0, ""))

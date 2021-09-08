@@ -8,7 +8,7 @@ from fytok.transport.EdgeSources import EdgeSources
 from fytok.transport.EdgeTransport import EdgeTransport
 from spdm.data.AttributeTree import AttributeTree
 from spdm.data.Node import Dict, List, _not_found_, sp_property
-from spdm.numlib import constants, np
+from scipy import constants
 from spdm.util.logger import logger
 
 from ..common.IDS import IDS

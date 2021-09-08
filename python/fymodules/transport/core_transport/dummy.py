@@ -1,8 +1,7 @@
 
 import collections
 
-from spdm.numlib import np
-from spdm.numlib import constants
+import numpy as np
 from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreTransport import CoreTransport
 from fytok.transport.Equilibrium import Equilibrium

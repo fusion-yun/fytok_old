@@ -2,6 +2,7 @@ import pathlib
 from math import log
 from operator import eq
 
+import numpy as np
 import pandas as pd
 from fytok.common.Atoms import atoms
 from fytok.common.load_profiles import (load_core_profiles, load_core_source,
@@ -12,9 +13,9 @@ from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreSources import CoreSources
 from fytok.transport.CoreTransport import CoreTransport
 from fytok.transport.Equilibrium import Equilibrium
+from scipy import constants
 from spdm.data.File import File
 from spdm.data.Function import Function, PiecewiseFunction
-from spdm.numlib import constants, np
 from spdm.util.logger import logger
 from spdm.util.plot_profiles import plot_profiles, sp_figure
 

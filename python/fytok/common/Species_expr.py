@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 
 from fytok.transport.MagneticCoordSystem import RadialGrid
 from spdm.data.Node import Dict, List, Node
-from spdm.numlib import constants, np
+from scipy import constants
 from spdm.util.logger import logger
 
 

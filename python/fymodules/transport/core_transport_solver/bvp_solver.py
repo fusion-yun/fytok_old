@@ -19,8 +19,8 @@ from fytok.transport.MagneticCoordSystem import RadialGrid
 from fytok.transport.TransportSolver import TransportSolver
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List, _not_found_, sp_property
-from spdm.numlib import constants, np
-from spdm.numlib.bvp import solve_bvp
+from scipy import constants
+from fytok.numlib.bvp import solve_bvp
 from spdm.util.logger import logger
 from spdm.util.utilities import convert_to_named_tuple
 

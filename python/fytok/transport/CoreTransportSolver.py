@@ -6,16 +6,16 @@ from dataclasses import dataclass, field
 from math import log
 from typing import Mapping, Optional, Tuple
 
+import numpy as np
 from fytok.common.Species import SpeciesElectron, SpeciesIon
+from scipy import constants
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List, _not_found_, sp_property
-from spdm.numlib import constants, np
 from spdm.util.logger import logger
 
+from ..common.Atoms import atoms
 from ..common.IDS import IDS
 from ..common.Misc import Identifier
-from ..common.Atoms import atoms
-
 from .CoreProfiles import CoreProfiles
 from .CoreSources import CoreSources
 from .CoreTransport import CoreTransport
@@ -61,7 +61,8 @@ class CoreTransportSolver(IDS):
 
         def __init__(self, *args, grid: RadialGrid = None,  **kwargs):
             super().__init__(*args,  ** kwargs)
-            self._grid = grid if grid is not None else getattr(self._parent, "_grid", None)
+            self._grid = grid if grid is not None else getattr(
+                self._parent, "_grid", None)
 
         @property
         def grid(self) -> RadialGrid:

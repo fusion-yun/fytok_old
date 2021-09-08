@@ -1,7 +1,7 @@
 import unittest
 
 import matplotlib.pyplot as plt
-from spdm.numlib import np
+import numpy as np
 from spdm.data.Coordinates import Coordinates
 from spdm.data.Field import Field
 from spdm.util.logger import logger
