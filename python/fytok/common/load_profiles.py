@@ -2,18 +2,18 @@ import collections
 import pathlib
 import sys
 from typing import Union
-from fytok.transport.MagneticCoordSystem import RadialGrid
 
 import numpy as np
 import pandas as pd
 import scipy.constants
+from fytok.transport.MagneticCoordSystem import RadialGrid
 from spdm.data.Entry import Entry
 from spdm.data.File import File
 from spdm.data.Function import Function, PiecewiseFunction, function_like
 from spdm.numlib import constants, np
-from spdm.numlib.smooth import rms_residual, smooth_1d
 from spdm.util.logger import logger
 
+from ..numlib.smooth import rms_residual, smooth_1d
 from .Atoms import atoms
 
 
@@ -28,14 +28,20 @@ def load_core_profiles(profiles, grid: RadialGrid):
     r_ped = 0.96  # np.sqrt(0.88)
     i_ped = np.argmin(np.abs(bs_r_norm-r_ped))
 
-    b_Te = Function(bs_r_norm, smooth_1d(bs_r_norm, profiles["TE"].values, i_end=i_ped-10, window_len=21)*1000)
-    b_Ti = Function(bs_r_norm, smooth_1d(bs_r_norm, profiles["TI"].values, i_end=i_ped-10, window_len=21)*1000)
+    b_Te = Function(bs_r_norm, smooth_1d(
+        bs_r_norm, profiles["TE"].values, i_end=i_ped-10, window_len=21)*1000)
+    b_Ti = Function(bs_r_norm, smooth_1d(
+        bs_r_norm, profiles["TI"].values, i_end=i_ped-10, window_len=21)*1000)
 
-    b_ne = Function(bs_r_norm, smooth_1d(bs_r_norm, profiles["NE"].values, i_end=i_ped-10, window_len=21)*1.0e19)
-    b_nDT = Function(bs_r_norm, smooth_1d(bs_r_norm, profiles["Nd+t"].values, i_end=i_ped-10, window_len=21)*1.0e19*0.5)
+    b_ne = Function(bs_r_norm, smooth_1d(
+        bs_r_norm, profiles["NE"].values, i_end=i_ped-10, window_len=21)*1.0e19)
+    b_nDT = Function(bs_r_norm, smooth_1d(
+        bs_r_norm, profiles["Nd+t"].values, i_end=i_ped-10, window_len=21)*1.0e19*0.5)
 
-    b_nHe = Function(bs_r_norm, smooth_1d(bs_r_norm, profiles["Nalf"].values, i_end=i_ped-10, window_len=21)*1.0e19)
-    b_nImp = Function(bs_r_norm, smooth_1d(bs_r_norm, profiles["Nz"].values, i_end=i_ped-10, window_len=21)*1.0e19)
+    b_nHe = Function(bs_r_norm, smooth_1d(
+        bs_r_norm, profiles["Nalf"].values, i_end=i_ped-10, window_len=21)*1.0e19)
+    b_nImp = Function(bs_r_norm, smooth_1d(
+        bs_r_norm, profiles["Nz"].values, i_end=i_ped-10, window_len=21)*1.0e19)
 
     b_zeff = Function(bs_r_norm,   profiles["Zeff"].values)
 
@@ -58,7 +64,8 @@ def load_core_profiles(profiles, grid: RadialGrid):
         "ion": [
             {**atoms["D"],  "density":      b_nDT,  "temperature": b_Ti, },
             {**atoms["T"],  "density":      b_nDT,  "temperature": b_Ti, },
-            {**atoms["He"], "density":      b_nHe,  "temperature": b_Ti,  "is_impurity":True},
+            {**atoms["He"], "density":      b_nHe,
+                "temperature": b_Ti,  "is_impurity":True},
             {**atoms["Be"], "density":  0.02*b_ne,  "temperature": b_Ti,
              "z_ion_1d":Function(bs_r_norm, z_Be),  "is_impurity":True},
             {**atoms["Ar"], "density":0.0012*b_ne,  "temperature": b_Ti,
@@ -93,13 +100,16 @@ def load_core_transport(profiles, grid: RadialGrid):
     Cped = 0.17
     Ccore = 0.4
     # Function(bs_r_norm, profiles["Xi"].values)  Cped = 0.2
-    chi = PiecewiseFunction([0, r_ped, 1.0],  [lambda x: Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
-    chi_e = PiecewiseFunction([0, r_ped, 1.0],  [lambda x: 0.5 * Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
+    chi = PiecewiseFunction(
+        [0, r_ped, 1.0],  [lambda x: Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
+    chi_e = PiecewiseFunction(
+        [0, r_ped, 1.0],  [lambda x: 0.5 * Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
 
     D = 0.1*(chi+chi_e)
 
     v_pinch_ne = Function([0, r_ped, 1.0], lambda x: -0.6 * D(x) * x / grid.r0)
-    v_pinch_Te = Function([0, r_ped, 1.0], lambda x:  2.5 * chi_e(x) * x / grid.r0)
+    v_pinch_Te = Function(
+        [0, r_ped, 1.0], lambda x:  2.5 * chi_e(x) * x / grid.r0)
 
     v_pinch_ni = Function([0, r_ped, 1.0], lambda x:  D(x) * x / grid.r0)
     v_pinch_Ti = Function([0, r_ped, 1.0], lambda x:  chi(x) * x / grid.r0)

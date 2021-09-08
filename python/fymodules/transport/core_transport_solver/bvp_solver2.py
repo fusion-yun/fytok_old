@@ -9,22 +9,21 @@ from math import isclose, log
 from typing import (Any, Callable, Iterator, Mapping, Optional, Sequence,
                     Tuple, Type, Union)
 
+import numpy as np
 from fytok.common.Atoms import atoms
 from fytok.common.IDS import IDS
 from fytok.common.Misc import Identifier, VacuumToroidalField
+from fytok.numlib.bvp import BVPResult, solve_bvp
+from fytok.numlib.misc import array_like
 from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreSources import CoreSources
 from fytok.transport.CoreTransport import CoreTransport, TransportCoeff
 from fytok.transport.CoreTransportSolver import CoreTransportSolver
 from fytok.transport.Equilibrium import Equilibrium
 from fytok.transport.MagneticCoordSystem import RadialGrid
-from matplotlib.pyplot import loglog
-from numpy.core.fromnumeric import var
+from scipy import constants
 from spdm.data.Function import Function, function_like
 from spdm.data.Node import Dict, List, _not_found_, sp_property
-from spdm.numlib import constants, np
-from spdm.numlib.bvp import BVPResult, solve_bvp
-from spdm.numlib.misc import array_like
 from spdm.util.logger import logger
 from spdm.util.utilities import convert_to_named_tuple
 

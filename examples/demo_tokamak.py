@@ -1,10 +1,12 @@
+import pathlib
 from math import log
 from operator import eq
-import pathlib
 
 import pandas as pd
 from fytok.common.Atoms import atoms
-from fytok.common.load_profiles import load_core_profiles, load_equilibrium, load_core_transport, load_core_source
+from fytok.common.load_profiles import (load_core_profiles, load_core_source,
+                                        load_core_transport, load_equilibrium)
+from fytok.numlib.smooth import rms_residual, smooth_1d
 from fytok.Tokamak import Tokamak
 from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreSources import CoreSources
@@ -13,7 +15,6 @@ from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.File import File
 from spdm.data.Function import Function, PiecewiseFunction
 from spdm.numlib import constants, np
-from spdm.numlib.smooth import rms_residual, smooth_1d
 from spdm.util.logger import logger
 from spdm.util.plot_profiles import plot_profiles, sp_figure
 
@@ -234,7 +235,7 @@ if __name__ == "__main__":
 
     if True:  # CoreProfile initialize value
 
-        tok["core_profiles.profiles_1d"] = load_core_profiles(profiles, grid=tok.equilibrium.profiles_1d.grid)
+        tok["core_profiles.profiles_1d"] = load_core_profiles(profiles, grid=tok.equilibrium.radial_grid)
 
         core_profile_1d = tok.core_profiles.profiles_1d
 

@@ -13,9 +13,10 @@ from spdm.geometry.GeoObject import GeoObject, _TCoord
 from spdm.geometry.Point import Point
 from spdm.mesh.CurvilinearMesh import CurvilinearMesh
 from spdm.mesh.Mesh import Mesh
-from spdm.numlib import constants, np
-from spdm.numlib.contours import find_countours
-from spdm.numlib.optimize import find_critical_points
+from scipy import constants
+import numpy as  np
+from ..numlib.contours import find_countours
+from ..numlib.optimize import find_critical_points
 from spdm.util.logger import logger
 
 from ..common.Misc import RZTuple, VacuumToroidalField
