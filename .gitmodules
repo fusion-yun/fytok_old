@@ -1,3 +1,6 @@
 [submodule "external/SpDB"]
 	path = external/SpDB
 	url = git@gitee.com:SimPla/SpDB.git
+[submodule "external/SpFlow"]
+	path = external/SpFlow
+	url = git@gitee.com:SimPla/SpFlow.git
