@@ -1,35 +1,41 @@
+from .version import __version__
 import pprint
 import pathlib
 import sys
 __path__ = __import__('pkgutil').extend_path(__path__, __name__)
-__version__= '0.0.0'
 
 
-mod_path = [(pathlib.Path(__path__[0])/"../../phys_modules").resolve()]
+external_path = (pathlib.Path(__path__[0])/"../../external").resolve()
 
-# ext_path = (pathlib.Path(__path__[0])/"../../external").resolve()
+external_pkg_path = []
 
-# if ext_path.exists():
-#     for d in ext_path.iterdir():
-#         if not d.is_dir():
-#             continue
-#         elif (d/"python").is_dir():
-#             mod_path.append(d/"python")
-#         else:
-#             mod_path.append(d)
+if external_path.exists():
+    for d in external_path.iterdir():
+        if not d.is_dir():
+            continue
+        elif (d/"python").is_dir():
+            external_pkg_path.append(d/"python")
+        else:
+            external_pkg_path.append(d)
 
-mod_path = [p.as_posix() for p in mod_path]
+external_pkg_path = [p.as_posix() for p in external_pkg_path]
 
-sys.path.extend(mod_path)
+sys.path.extend(external_pkg_path)
 
+phys_modules_path = [
+    (pathlib.Path(__path__[0])/"../../phys_modules").resolve().as_posix()]
+
+sys.path.extend(phys_modules_path)
 
 try:
     from spdm.util.logger import logger
-except Exception as error:
-    pprint.pprint(sys.path)
-    pprint.pprint(mod_path)
-    pprint.pprint(f"Error: {error}")
-
+except ModuleNotFoundError as error:
+    raise error
 else:
-    logger.info(f"Using FyTok \t: {__version__}")
-    logger.info(f"FY_MODULE_PATH={':'.join(mod_path)}")
+
+    logger.info(f"""Using FyTok \t: {__version__}
+    EXTERNAL_PYTHON_PATH={':'.join(external_pkg_path)}
+    FY_MODULE_PATH={':'.join(phys_modules_path)}
+""")
+
+    # logger.info(f"FY_MODULE_PATH={':'.join(ext_mod_path)}")
