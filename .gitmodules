@@ -4,3 +4,6 @@
 [submodule "external/SpFlow"]
 	path = external/SpFlow
 	url = git@gitee.com:SimPla/SpFlow.git
+[submodule "data"]
+	path = data
+	url = git@gitee.com:fusion_yun/fytokdata.git
