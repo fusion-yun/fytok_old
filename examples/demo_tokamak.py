@@ -1,6 +1,4 @@
 import pathlib
-from math import log
-from operator import eq
 
 import numpy as np
 import pandas as pd
@@ -9,15 +7,11 @@ from fytok.common.load_profiles import (load_core_profiles, load_core_source,
                                         load_core_transport, load_equilibrium)
 from fytok.numlib.smooth import rms_residual, smooth_1d
 from fytok.Tokamak import Tokamak
-from fytok.transport.CoreProfiles import CoreProfiles
-from fytok.transport.CoreSources import CoreSources
-from fytok.transport.CoreTransport import CoreTransport
-from fytok.transport.Equilibrium import Equilibrium
 from scipy import constants
 from spdm.data.File import File
 from spdm.data.Function import Function, PiecewiseFunction
 from spdm.util.logger import logger
-from spdm.util.plot_profiles import plot_profiles, sp_figure
+from spdm.view.plot_profiles import plot_profiles, sp_figure
 
 if __name__ == "__main__":
     logger.info("====== START ========")
@@ -25,7 +19,8 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # baseline
-    device_desc = File("/home/salmon/workspace/fytok/data/mapping/ITER/imas/3/static/config.xml").entry
+    device_desc = File(
+        "/home/salmon/workspace/fytok/data/mapping/ITER/imas/3/static/config.xml").entry
 
     eqdsk_file = File(
         "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="geqdsk").entry
@@ -66,7 +61,8 @@ if __name__ == "__main__":
     ###################################################################################################
     # Initialize Tokamak
 
-    tok = Tokamak(**device_desc.get_many(["wall", "pf_active", "tf", "magnetics"]))
+    tok = Tokamak(
+        **device_desc.get_many(["wall", "pf_active", "tf", "magnetics"]))
 
     # Equilibrium
     eqdsk = load_equilibrium(eqdsk_file)
@@ -77,7 +73,8 @@ if __name__ == "__main__":
                           "coordinate_system": {"psi_norm": np.linspace(0.001, 0.995, 128), "theta": 128}}
 
     sp_figure(tok,
-              wall={"limiter": {"edgecolor": "green"},  "vessel": {"edgecolor": "blue"}},
+              wall={"limiter": {"edgecolor": "green"},
+                    "vessel": {"edgecolor": "blue"}},
               pf_active={"facecolor": 'red'},
               equilibrium={
                   "contour": [0, 2],
@@ -112,13 +109,15 @@ if __name__ == "__main__":
                 [
                     (Function(bs_psi_norm, profiles["x"].values),           r"astra",
                      r"$\frac{\rho_{tor}}{\rho_{tor,bdry}}$", {"marker": '.', "linestyle": ''}),
-                    (magnetic_surface.rho_tor_norm,  r"$\bar{\rho}$", r"$[-]$"),
+                    (magnetic_surface.rho_tor_norm,
+                     r"$\bar{\rho}$", r"$[-]$"),
                 ],
 
                 [
                     (Function(bs_psi_norm, 4*(constants.pi**2) * R0 * profiles["rho"].values),
                      r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho$",  {"marker": '.', "linestyle": ''}),
-                    (magnetic_surface.dvolume_drho_tor, r"$dV/d\rho_{tor}$", r"$[m^2]$"),
+                    (magnetic_surface.dvolume_drho_tor,
+                     r"$dV/d\rho_{tor}$", r"$[m^2]$"),
                 ],
 
                 (magnetic_surface.dvolume_dpsi, r"$\frac{dV}{d\psi}$"),
@@ -136,7 +135,8 @@ if __name__ == "__main__":
 
 
                 [
-                    (magnetic_surface.dpsi_drho_tor, r"$\frac{d\psi}{d\rho_{tor}}$", "", {"marker": '.'}),
+                    (magnetic_surface.dpsi_drho_tor,
+                     r"$\frac{d\psi}{d\rho_{tor}}$", "", {"marker": '.'}),
                     (magnetic_surface.dvolume_drho_tor/magnetic_surface.dvolume_dpsi,
                      r"$\frac{dV}{d\rho_{tor}} / \frac{dV}{d\psi}$")
                 ],
@@ -147,11 +147,16 @@ if __name__ == "__main__":
                 # (magnetic_surface.dpsi_drho_tor, r"$\frac{d\rho_{tor}}{d\psi}$", "", {"marker": "."}),
 
 
-                (magnetic_surface.gm1,                                             r"$gm1=\left<\frac{1}{R^2}\right>$"),
-                (magnetic_surface.gm2,                    r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
-                (magnetic_surface.gm3,                                r"$gm3=\left<\left|\nabla \rho\right|^2\right>$"),
-                (magnetic_surface.gm7,                                  r"$gm7=\left<\left|\nabla \rho\right|\right>$"),
-                (magnetic_surface.gm8,                                                         r"$gm8=\left<R\right>$"),
+                (magnetic_surface.gm1,
+                 r"$gm1=\left<\frac{1}{R^2}\right>$"),
+                (magnetic_surface.gm2,
+                 r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
+                (magnetic_surface.gm3,
+                 r"$gm3=\left<\left|\nabla \rho\right|^2\right>$"),
+                (magnetic_surface.gm7,
+                 r"$gm7=\left<\left|\nabla \rho\right|\right>$"),
+                (magnetic_surface.gm8,
+                 r"$gm8=\left<R\right>$"),
 
                 # (magnetic_surface.dphi_dpsi,                                                  r"$\frac{d\phi}{d\psi}$"),
                 # (magnetic_surface.dpsi_drho_tor,                                        r"$\frac{d\psi}{d\rho_{tor}}$"),
@@ -169,14 +174,16 @@ if __name__ == "__main__":
                 [
                     (Function(bs_psi_norm, profiles["q"].values),
                      r"astra",  r"$q [-]$", {"marker": '.', "linestyle": ''}),
-                    (eq_profile.q,                                      r"fytok",  r"$q [-]$"),
+                    (eq_profile.q,
+                     r"fytok",  r"$q [-]$"),
                     (eq_profile.dphi_dpsi*np.sign(B0)/constants.pi/2.0,
                      r"$\frac{\sigma_{B_{p}}}{\left(2\pi\right)^{1-e_{B_{p}}}}\frac{d\Phi_{tor}}{d\psi_{ref}}$"),
                 ],
                 [
                     (Function(bs_psi_norm, profiles["rho"].values), r"astra",
                      r"$\rho_{tor}[m]$",  {"marker": '.', "linestyle": ''}),
-                    (eq_profile.rho_tor,                                      r"fytok",    r"$\rho_{tor}[m]$"),
+                    (eq_profile.rho_tor,
+                     r"fytok",    r"$\rho_{tor}[m]$"),
                 ],
                 [
                     (Function(bs_psi_norm, profiles["x"].values),           r"astra",
@@ -193,12 +200,14 @@ if __name__ == "__main__":
                 [
                     (Function(bs_psi_norm, profiles["k"].values),
                      r"astra", r"$elongation[-]$", {"marker": '.', "linestyle": ''}),
-                    (eq_profile.elongation,                                 r"fytok", r"$elongation[-]$"),
+                    (eq_profile.elongation,
+                     r"fytok", r"$elongation[-]$"),
                 ],
                 [
                     (4*(constants.pi**2) * R0*tok.equilibrium.profiles_1d.rho_tor,
                      r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho , dV/d\rho$"),
-                    (tok.equilibrium.profiles_1d.dvolume_drho_tor,   r"$V^{\prime}$", r"$dV/d\rho$"),
+                    (tok.equilibrium.profiles_1d.dvolume_drho_tor,
+                     r"$V^{\prime}$", r"$dV/d\rho$"),
                 ],
                 # [
                 #     (Function(bs_psi_norm, profiles["Jtot"].values*1e6),   r"astra",
@@ -236,39 +245,51 @@ if __name__ == "__main__":
 
     if True:  # CoreProfile initialize value
 
-        tok["core_profiles.profiles_1d"] = load_core_profiles(profiles, grid=tok.equilibrium.radial_grid)
+        tok["core_profiles.profiles_1d"] = load_core_profiles(
+            profiles, grid=tok.equilibrium.radial_grid)
 
         core_profile_1d = tok.core_profiles.profiles_1d
 
         plot_profiles(
             [
                 [
-                    (b_ne,      "electron astra",   r"density $n [m \cdot s^{-3}]$", {"marker": '.', "linestyle": ''}),
-                    (b_ni, "D astra",          r"density $n [m \cdot s^{-3}]$", {"marker": '.', "linestyle": ''}),
-                    (b_nHe,     "He astra",         r"density $n [m \cdot s^{-3}]$", {"marker": '.', "linestyle": ''}),
+                    (b_ne,      "electron astra",
+                     r"density $n [m \cdot s^{-3}]$", {"marker": '.', "linestyle": ''}),
+                    (b_ni, "D astra",
+                     r"density $n [m \cdot s^{-3}]$", {"marker": '.', "linestyle": ''}),
+                    (b_nHe,     "He astra",
+                     r"density $n [m \cdot s^{-3}]$", {"marker": '.', "linestyle": ''}),
 
                     (core_profile_1d.electrons.density,             r"$electron$", ),
-                    *[(ion.density,          f"${ion.label}$") for ion in core_profile_1d.ion],
+                    *[(ion.density,          f"${ion.label}$")
+                      for ion in core_profile_1d.ion],
 
                 ],
                 [
-                    (b_Te,    r"astra $T_e$",       r"$T [eV]$", {"marker": '.', "linestyle": ''}),
-                    (b_Ti,    r"astra $T_i$",       r"$T [eV]$", {"marker": '.', "linestyle": ''}),
-                    (core_profile_1d.electrons.temperature,       r"$e$", r"T $[eV]$"),
-                    *[(ion.temperature,      f"${ion.label}$") for ion in core_profile_1d.ion],
+                    (b_Te,    r"astra $T_e$",       r"$T [eV]$", {
+                     "marker": '.', "linestyle": ''}),
+                    (b_Ti,    r"astra $T_i$",       r"$T [eV]$", {
+                     "marker": '.', "linestyle": ''}),
+                    (core_profile_1d.electrons.temperature,
+                     r"$e$", r"T $[eV]$"),
+                    *[(ion.temperature,      f"${ion.label}$")
+                      for ion in core_profile_1d.ion],
                 ],
 
                 [
                     (Function(bs_r_norm, profiles["Zeff"].values),       r"astra",
                      r"$Z_{eff}  [-]$", {"marker": '.', "linestyle": ''}),
-                    (core_profile_1d.zeff,                                   r"$fytok$"),
+                    (core_profile_1d.zeff,
+                     r"$fytok$"),
                 ],
                 [
-                    (Function(bs_eq_psi_norm, bs_eq_psi)(core_profile_1d.grid.psi_norm), "astra",      r"$\psi$"),
+                    (Function(bs_eq_psi_norm, bs_eq_psi)
+                     (core_profile_1d.grid.psi_norm), "astra",      r"$\psi$"),
                     (core_profile_1d.grid.psi,              r"fytok"),
                 ]
             ],
-            x_axis=([0, 1.0],                                  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            x_axis=([0, 1.0],
+                    r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             grid=True, fontsize=10) .savefig(output_path/"core_profiles_initialize.svg", transparent=True)
 
     if True:  # CoreTransport
@@ -300,13 +321,15 @@ if __name__ == "__main__":
                 [
                     (Function(bs_r_norm, profiles["He"].values), "astra",
                      r"$\chi_{e}$", {"marker": '.', "linestyle": ''}),
-                    (core_transport.electrons.energy.d,  "fytok", r"$\chi_{e}$"),
+                    (core_transport.electrons.energy.d,
+                     "fytok", r"$\chi_{e}$"),
                 ],
                 [
                     (Function(bs_r_norm, profiles["Joh"].values*1.0e6 / profiles["U"].values * (2.0*constants.pi * R0)),
                      r"astra", r"$\sigma_{\parallel}$", {"marker": '.', "linestyle": ''}),
 
-                    (core_transport.conductivity_parallel,  r"fytok", r"$\sigma_{\parallel}$"),
+                    (core_transport.conductivity_parallel,
+                     r"fytok", r"$\sigma_{\parallel}$"),
                 ],
 
 
@@ -335,11 +358,13 @@ if __name__ == "__main__":
 
     if True:  # CoreSources
         tok["core_sources.source"] = [
-            {"code": {"name": "dummy"}, "profiles_1d": load_core_source(profiles, tok.core_profiles.profiles_1d.grid)},
+            {"code": {"name": "dummy"}, "profiles_1d": load_core_source(
+                profiles, tok.core_profiles.profiles_1d.grid)},
             {"code": {"name": "bootstrap_current"}},
         ]
 
-        tok.core_sources.refresh(equilibrium=tok.equilibrium, core_profiles=tok.core_profiles)
+        tok.core_sources.refresh(
+            equilibrium=tok.equilibrium, core_profiles=tok.core_profiles)
 
         core_source = tok.core_sources.source_combiner.profiles_1d
 
@@ -348,13 +373,15 @@ if __name__ == "__main__":
                 [
                     (Function(bs_r_norm, profiles["Jtot"].values),  "astra",
                      r"$J_{\parallel} [MA\cdot m^{-2}]$", {"marker": '.', "linestyle": ''}),
-                    (core_source.j_parallel*1e-6,     "fytok", r"$J_{\parallel} [A\cdot m^{-2}]$"),
+                    (core_source.j_parallel*1e-6,     "fytok",
+                     r"$J_{\parallel} [A\cdot m^{-2}]$"),
                 ],
 
                 [
                     (Function(bs_r_norm, profiles["Joh"].values), "astra",
                      r"$j_{ohmic} [MA\cdot m^{-2}]$", {"marker": '.', "linestyle": ''}),
-                    (core_profile_1d.j_ohmic*1e-6,                   "fytok",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
+                    (core_profile_1d.j_ohmic*1e-6,
+                     "fytok",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
                 ],
 
                 [
@@ -372,7 +399,8 @@ if __name__ == "__main__":
                 ],
 
                 [
-                    (core_source.electrons.energy,  "electron",      r"$Q [eV\cdot m^{-3} s^{-1}]$"),
+                    (core_source.electrons.energy,  "electron",
+                     r"$Q [eV\cdot m^{-3} s^{-1}]$"),
                     *[(ion.energy*1e-6,             f"{ion.label}",  r"$Q [eV\cdot m^{-3} s^{-1}]$")
                       for ion in core_source.ion if not ion.is_impurity],
                 ],
@@ -416,7 +444,8 @@ if __name__ == "__main__":
 
         residual = tok.refresh()
 
-        particle_solver = tok.core_transport_solver[2].get('code.parameters.particle_solver', 'ion')
+        particle_solver = tok.core_transport_solver[2].get(
+            'code.parameters.particle_solver', 'ion')
 
         core_profile_1d = tok.core_profiles.profiles_1d
 
@@ -426,42 +455,51 @@ if __name__ == "__main__":
                 [
                     (Function(bs_r_norm, bs_psi),
                      r"astra", r"$\psi [Wb]$", {"marker": '.', "linestyle": ''}),
-                    (core_profile_1d["psi"],  r"fytok", r"$\psi  [Wb]$", {"marker": '+', "linestyle": '-'}),
+                    (core_profile_1d["psi"],  r"fytok", r"$\psi  [Wb]$", {
+                     "marker": '+', "linestyle": '-'}),
                 ],
 
                 # (core_profile_1d["psi_flux"],  r"fytok", r"$\Gamma_{\psi}$", {"marker": '+', "linestyle": '-'}),
 
                 # electron
                 [
-                    (b_ne/1.0e19, r"astra", r"$n_e [10^{19} m^{-3}]$",  {"marker": '.', "linestyle": ''}),
-                    (core_profile_1d.electrons.density/1.0e19, r"fytok", r"$n_e [10^{19} m^{-3}]$"),
+                    (b_ne/1.0e19, r"astra",
+                     r"$n_e [10^{19} m^{-3}]$",  {"marker": '.', "linestyle": ''}),
+                    (core_profile_1d.electrons.density/1.0e19,
+                     r"fytok", r"$n_e [10^{19} m^{-3}]$"),
                 ],
 
                 [
-                    (b_Te/1000.0, r"astra", r"$T_e [keV]$",  {"marker": '.', "linestyle": ''}),
-                    (core_profile_1d.electrons.temperature/1000.0, r"fytok", r"$T_e [keV]$"),
+                    (b_Te/1000.0, r"astra",
+                     r"$T_e [keV]$",  {"marker": '.', "linestyle": ''}),
+                    (core_profile_1d.electrons.temperature / \
+                     1000.0, r"fytok", r"$T_e [keV]$"),
                 ],
 
                 # ion
                 [
-                    (b_ni/1.0e19,    r"astra", r"$n_i  \, [10^{19} m^-3]$", {"marker": '.', "linestyle": ''}),
+                    (b_ni/1.0e19,    r"astra",
+                     r"$n_i  \, [10^{19} m^-3]$", {"marker": '.', "linestyle": ''}),
                     * [(ion.density/1.0e19,   f"${ion.label}$", r"$n_i  \, [10^{19} m^-3]$")
                         for ion in core_profile_1d.ion if not ion.is_impurity],
                 ],
 
                 [
-                    (b_Ti/1000.0,    r"astra",       r"$T_{i} \, [keV]$", {"marker": '.', "linestyle": ''}),
+                    (b_Ti/1000.0,    r"astra",
+                     r"$T_{i} \, [keV]$", {"marker": '.', "linestyle": ''}),
                     * [(ion.temperature/1000.0,  f"fytok ${ion.label}$", r"$T_{i} [keV]$")
                         for ion in core_profile_1d.ion if not ion.is_impurity],
                 ],
 
                 # ---------------------------------------------------------------------------------------------------
 
-                (core_profile_1d["rms_residuals"]*100, r"bvp", r"residual $[\%]$"),
+                (core_profile_1d["rms_residuals"]
+                 * 100, r"bvp", r"residual $[\%]$"),
 
 
                 [
-                    (rms_residual(Function(bs_r_norm, bs_psi), core_profile_1d["psi"]), r"$\psi$", " rms residual [%]"),
+                    (rms_residual(Function(bs_r_norm, bs_psi),
+                     core_profile_1d["psi"]), r"$\psi$", " rms residual [%]"),
 
                     (rms_residual(b_ne, core_profile_1d.electrons.density), r"$n_e$"),
 

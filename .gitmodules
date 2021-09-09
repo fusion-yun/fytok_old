@@ -7,3 +7,6 @@
 [submodule "data"]
 	path = data
 	url = git@gitee.com:fusion_yun/fytokdata.git
+[submodule "external/SpView"]
+	path = external/SpView
+	url = git@gitee.com:SimPla/spview.git
