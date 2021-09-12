@@ -62,12 +62,12 @@ class Tokamak(Actor):
 
     @sp_property
     def core_profiles(self) -> CoreProfiles:
-        return self.get("core_profiles")
+        return self.get("core_profiles", {})
 
     @sp_property
     def core_transport(self) -> CoreTransport:
         """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return self.get("core_transport")
+        return self.get("core_transport", {})
 
     @sp_property
     def core_sources(self) -> CoreSources:
@@ -80,7 +80,7 @@ class Tokamak(Actor):
 
     @sp_property
     def edge_profiles(self) -> EdgeProfiles:
-        return self.get("edge_profiles")
+        return self.get("edge_profiles", {})
 
     @sp_property
     def edge_transport(self) -> EdgeTransport:
@@ -88,14 +88,14 @@ class Tokamak(Actor):
             Edge plasma transport. Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return self.get("edge_transport")
+        return self.get("edge_transport", {})
 
     @sp_property
     def edge_sources(self) -> EdgeSources:
         """Edge plasma sources. Energy terms correspond to the full kinetic energy equation
          (i.e. the energy flux takes into account the energy transported by the particle flux)
         """
-        return self.get("edge_sources")
+        return self.get("edge_sources", {})
 
     @sp_property
     def core_transport_solver(self) -> List[CoreTransportSolver]:
@@ -107,7 +107,7 @@ class Tokamak(Actor):
 
     @sp_property
     def equilibrium_solver(self) -> EquilibriumSolver:
-        return self.get("equilibrium_solver")
+        return self.get("equilibrium_solver", {})
 
     def refresh(self, *args, time=None, tolerance=1.0e-4,   max_iteration=1, **kwargs) -> float:
 
@@ -121,7 +121,8 @@ class Tokamak(Actor):
 
         self.magnetics.refresh(time=time)
 
-        self.equilibrium_solver.refresh(time=time, wall=self.wall, pf_active=self.pf_active, magnetics=self.magnetics)
+        self.equilibrium_solver.refresh(
+            time=time, wall=self.wall, pf_active=self.pf_active, magnetics=self.magnetics)
 
         equilibrium_prev = self.equilibrium
 
@@ -175,7 +176,8 @@ class Tokamak(Actor):
                 dt=dt,
             ) for solver in self.edge_transport_solver], 0)
 
-            logger.debug(f"time={self.time}  iterator step {nstep}/{max_iteration} residual={residual}")
+            logger.debug(
+                f"time={self.time}  iterator step {nstep}/{max_iteration} residual={residual}")
 
             if residual < tolerance:
                 break

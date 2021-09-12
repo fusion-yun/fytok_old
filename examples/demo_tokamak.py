@@ -1,3 +1,4 @@
+from copy import deepcopy
 import pathlib
 
 import numpy as np
@@ -20,10 +21,10 @@ if __name__ == "__main__":
     ###################################################################################################
     # baseline
     device_desc = File(
-        "/home/salmon/workspace/fytok/data/mapping/ITER/imas/3/static/config.xml").entry
+        "/home/salmon/workspace/fytokdata/mapping/ITER/imas/3/static/config.xml", format="XML").read()
 
     eqdsk_file = File(
-        "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="geqdsk").entry
+        "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="geqdsk").read()
     # "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
     # "/home/salmon/workspace/data/Limiter plasmas-7.5MA li=1.1/Limiter plasmas 7.5MA-EQDSK/Limiter_7.5MA_outbord.EQDSK",
     # profiles = pd.read_csv('/home/salmon/workspace/data/15MA inductive - burn/profile.txt', sep='\t')
@@ -60,9 +61,9 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # Initialize Tokamak
+    d = device_desc.get_many(["wall", "pf_active", "tf", "magnetics"])
 
-    tok = Tokamak(
-        **device_desc.get_many(["wall", "pf_active", "tf", "magnetics"]))
+    tok = Tokamak(**d)
 
     # Equilibrium
     eqdsk = load_equilibrium(eqdsk_file)
@@ -444,7 +445,7 @@ if __name__ == "__main__":
 
         residual = tok.refresh()
 
-        particle_solver = tok.core_transport_solver[2].get(
+        particle_solver = tok.core_transport_solver[0].get(
             'code.parameters.particle_solver', 'ion')
 
         core_profile_1d = tok.core_profiles.profiles_1d

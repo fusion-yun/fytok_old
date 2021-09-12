@@ -6,15 +6,15 @@
   "python.testing.unittestEnabled": false,
   "python.testing.promptToConfigure": false,
   "python.autoComplete.extraPaths": [
-    "${workspaceFolder}/external/SpDB/python",
-    "${workspaceFolder}/external/SpFlow/python",
-    "${workspaceFolder}/external/SpView/python",
+    "${workspaceFolder}/../SpDB/python",
+    "${workspaceFolder}/../SpFlow/python",
+    "${workspaceFolder}/../SpView/python",
     "${workspaceFolder}/python"
   ],
   "python.analysis.extraPaths": [
-    "${workspaceFolder}/external/SpDB/python",
-    "${workspaceFolder}/external/SpFlow/python",
-    "${workspaceFolder}/external/SpView/python",
+    "${workspaceFolder}/../SpDB/python",
+    "${workspaceFolder}/../SpFlow/python",
+    "${workspaceFolder}/../SpView/python",
     "${workspaceFolder}/python"
   ]
 }

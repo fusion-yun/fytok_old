@@ -251,11 +251,11 @@ class CoreSourcesSource(Module):
 
     @sp_property
     def global_quantities(self) -> GlobalQuantities:
-        return CoreSourcesSource.GlobalQuantities(self.get("global_quantities"), parent=self)
+        return CoreSourcesSource.GlobalQuantities(self.get("global_quantities", {}), parent=self)
 
     @sp_property
     def profiles_1d(self) -> Profiles1D:
-        return CoreSourcesSource.Profiles1D(self.get("profiles_1d"), parent=self)
+        return CoreSourcesSource.Profiles1D(self.get("profiles_1d", {}), parent=self)
 
     def refresh(self, *args, core_profiles: CoreProfiles,  **kwargs) -> float:
         residual = super().refresh(*args,  **kwargs)
