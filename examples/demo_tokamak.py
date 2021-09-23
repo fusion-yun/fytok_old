@@ -164,7 +164,7 @@ if __name__ == "__main__":
             ],
             # x_axis=(magnetic_surface.rho_tor_norm,      r"$\bar{\rho}_{tor}$"),
             x_axis=(magnetic_surface.psi_norm,      r"$\bar{\psi}$"),
-            title="Equlibrium",
+            title="Equilibrium",
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_coord.svg", transparent=True)
 
         eq_profile = tok.equilibrium.profiles_1d
@@ -241,7 +241,7 @@ if __name__ == "__main__":
             x_axis=(eq_profile._coord.psi_norm,      r"$\psi/\psi_{bdry}$"),
             # x_axis=([0, 1.0],                                                r"$\psi/\psi_{bdry}$"),
 
-            title="Equlibrium",
+            title="Equilibrium",
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
     if True:  # CoreProfile initialize value
