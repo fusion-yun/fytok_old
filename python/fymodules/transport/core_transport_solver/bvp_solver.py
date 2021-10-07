@@ -124,32 +124,32 @@ class TransportSolverBVP(TransportSolver):
             Note:
                 Generalized form of transport equations:
 
-                .. math::
-                    \frac{a\left(x\right)\cdot Y\left(x,t\right)-b\left(x\right)\cdot Y\left(x,t-1\right)}{\tau}+\
-                    \frac{1}{c\left(x\right)}\frac{\partial}{\partial x}\Gamma\left(x,t\right)=f\left(x\right)-g\left(x\right)\cdot Y\left(x,t\right)
-                    :label: generalized_trans_eq
+            .. math::
+                \frac{a\left(x\right)\cdot Y\left(x,t\right)-b\left(x\right)\cdot Y\left(x,t-1\right)}{\tau}+\
+                \frac{1}{c\left(x\right)}\frac{\partial}{\partial x}\Gamma\left(x,t\right)=f\left(x\right)-g\left(x\right)\cdot Y\left(x,t\right)
+                :label: generalized_trans_eq
 
-                .. math::
-                    \Gamma\left(x,t\right)\equiv-d\left(x\right)\cdot\frac{\partial Y\left(x,t\right)}{\partial\rho}+e\left(x\right)\cdot Y\left(x,t\right)
+            .. math::
+                \Gamma\left(x,t\right)\equiv-d\left(x\right)\cdot\frac{\partial Y\left(x,t\right)}{\partial\rho}+e\left(x\right)\cdot Y\left(x,t\right)
+                :label: generalized_trans_eq_gamma
+
+            where   :math:`Y` is the function, :math:`t` is time , :math:`x` is the radial coordinate.
+
+            The boundary conditions are given by
+
+            .. math::
+                    u\left(x_{bnd}\right)\cdot Y\left(x_{bnd},t\right)+v\left(x_{bnd}\right)\cdot\Gamma\left(x_{bnd},t\right)=w\left(x_{bnd}\right)
                     :label: generalized_trans_eq_gamma
 
-                where   :math:`Y` is the function, :math:`t` is time , :math:`x` is the radial coordinate.
+            These equations were rewriten as a first-order ODE group
 
-                The boundary conditions are given by
-
-                .. math::
-                        u\left(x_{bnd}\right)\cdot Y\left(x_{bnd},t\right)+v\left(x_{bnd}\right)\cdot\Gamma\left(x_{bnd},t\right)=w\left(x_{bnd}\right)
-                        :label: generalized_trans_eq_gamma
-
-                These equations were rewriten as a first-order ODE group
-
-                .. math::
-                    \begin{cases}
-                        \frac{\partial Y\left(x,t\right)}{\partial\rho} & =  -\frac{\Gamma\left(x,t\right)-e\left(x\right)\cdot Y\left(x,t\right)}{d\left(x\right)}\\
-                        \frac{\partial\Gamma\left(x,t\right)}{\partial x} & =    c\left(x\right)\left[f\left(x\right)-g\left(x\right)\cdot Y\left(x,t\right)-\
-                                 \frac{a\left(x\right)\cdot Y\left(x,t\right)-b\left(x\right)\cdot Y\left(x,t-1\right)}{\tau}\right]
-                    \end{cases}
-                    :label: generalized_trans_eq_first_order
+            .. math::
+                \begin{cases}
+                    \frac{\partial Y\left(x,t\right)}{\partial\rho} & =  -\frac{\Gamma\left(x,t\right)-e\left(x\right)\cdot Y\left(x,t\right)}{d\left(x\right)}\\
+                    \frac{\partial\Gamma\left(x,t\right)}{\partial x} & =    c\left(x\right)\left[f\left(x\right)-g\left(x\right)\cdot Y\left(x,t\right)-\
+                                \frac{a\left(x\right)\cdot Y\left(x,t\right)-b\left(x\right)\cdot Y\left(x,t-1\right)}{\tau}\right]
+                \end{cases}
+                :label: generalized_trans_eq_first_order
         """
         a, b, c, d, e, f, g = coeff
 

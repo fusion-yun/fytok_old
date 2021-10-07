@@ -420,7 +420,7 @@ if __name__ == "__main__":
                 "code": {"name": "bvp_solver2",
                          "parameters": {
                              "tolerance": 1.0e-4,
-                             "particle_solver": "ion",
+                             "particle_solver": "electrons",
                              "max_nodes": 500,
                              "verbose": 2,
                              "bvp_rms_mask": [r_ped]}

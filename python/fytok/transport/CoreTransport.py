@@ -108,7 +108,7 @@ class CoreTransportIon(SpeciesIon):
 
     @sp_property
     def momentum(self) -> CoreTransportMomentum:
-        return self.get("momentum")
+        return self.get("momentum",{})
 
     @sp_property
     def state(self) -> List[CoreTransportIonState]:
@@ -239,7 +239,7 @@ class CoreTransportModel(Module):
 
     @sp_property
     def profiles_1d(self) -> Profiles1D:
-        return CoreTransportModel.Profiles1D(self.get("profiles_1d"),   parent=self)
+        return CoreTransportModel.Profiles1D(self.get("profiles_1d", {}),   parent=self)
 
     def refresh(self, *args, core_profiles: CoreProfiles, **kwargs) -> float:
         super().refresh(*args, core_profiles=core_profiles, **kwargs)

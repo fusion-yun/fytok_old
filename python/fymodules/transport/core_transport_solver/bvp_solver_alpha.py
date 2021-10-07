@@ -33,7 +33,7 @@ TOLERANCE = 1.0e-6
 TWOPI = 2.0 * constants.pi
 
 
-class CoreTransportSolverBVP2(CoreTransportSolver):
+class CoreTransportSolverBVPAlpha(CoreTransportSolver):
     r"""
         Solve transport equations :math:`\rho=\sqrt{ \Phi/\pi B_{0}}`
         See  :cite:`hinton_theory_1976,coster_european_2010,pereverzev_astraautomated_1991`
@@ -774,4 +774,4 @@ class CoreTransportSolverBVP2(CoreTransportSolver):
         return residual
 
 
-__SP_EXPORT__ = CoreTransportSolverBVP2
+__SP_EXPORT__ = CoreTransportSolverBVPAlpha
