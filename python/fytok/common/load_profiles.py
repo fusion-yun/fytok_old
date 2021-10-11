@@ -38,7 +38,7 @@ def load_core_profiles(profiles, grid: RadialGrid):
         bs_r_norm, profiles["Nd+t"].values, i_end=i_ped-10, window_len=21)*1.0e19*0.5)
 
     b_nHe = Function(bs_r_norm, smooth_1d(
-        bs_r_norm, profiles["Nalf"].values, i_end=i_ped-10, window_len=21)*1.0e19)
+        bs_r_norm, profiles["Nath"].values, i_end=i_ped-10, window_len=21)*1.0e19)
     b_nImp = Function(bs_r_norm, smooth_1d(
         bs_r_norm, profiles["Nz"].values, i_end=i_ped-10, window_len=21)*1.0e19)
 
@@ -61,10 +61,9 @@ def load_core_profiles(profiles, grid: RadialGrid):
         "rho_tor": profiles["rho"].values,
         "electrons": {**atoms["e"], "density":       b_ne,   "temperature": b_Te, },
         "ion": [
-            {**atoms["D"],  "density":      b_nDT,  "temperature": b_Ti, },
-            {**atoms["T"],  "density":      b_nDT,  "temperature": b_Ti, },
-            {**atoms["He"], "density":      b_nHe,
-                "temperature": b_Ti,  "is_impurity":True},
+            {**atoms["D"],  "density":      b_nDT,  "temperature": b_Ti},
+            {**atoms["T"],  "density":      b_nDT,  "temperature": b_Ti},
+            {**atoms["He"], "density":      b_nHe,  "temperature": b_Ti},
             {**atoms["Be"], "density":  0.02*b_ne,  "temperature": b_Ti,
              "z_ion_1d":Function(bs_r_norm, z_Be),  "is_impurity":True},
             {**atoms["Ar"], "density":0.0012*b_ne,  "temperature": b_Ti,
@@ -184,7 +183,7 @@ def load_core_source(profiles, grid: RadialGrid):
         "ion": [
             {**atoms["D"],          "particles":S*0.5,      "energy":Q_DT*0.5},
             {**atoms["T"],          "particles":S*0.5,      "energy":Q_DT*0.5},
-            {**atoms["He"],         "particles":0,          "energy":Q_He}
+            {**atoms["He"],         "particles":S*0.1,          "energy":Q_He}
         ]}
 
 

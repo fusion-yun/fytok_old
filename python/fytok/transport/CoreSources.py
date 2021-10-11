@@ -107,15 +107,15 @@ class CoreSourcesProfiles1D(Dict):
 
     @sp_property
     def electrons(self) -> Electrons:
-        return self.get("electrons")
+        return self.get("electrons", {})
 
     @sp_property
     def ion(self) -> List[Ion]:
-        return self.get("ion")
+        return self.get("ion", [])
 
     @sp_property
     def neutral(self) -> List[Neutral]:
-        return self.get("neutral")
+        return self.get("neutral", [])
 
     @sp_property
     def total_ion_energy(self):
