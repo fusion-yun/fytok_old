@@ -141,41 +141,23 @@ class CoreTransportSolver(IDS):
         return 0.0
 
     def solve(self, /,
-              core_profiles_next: CoreProfiles,
               core_profiles_prev: CoreProfiles,
-              core_transport: CoreTransport.Model,
-              core_sources: CoreSources.Source,
+              core_transport: CoreTransport,
+              core_sources: CoreSources,
               equilibrium_next: Equilibrium,
               equilibrium_prev: Equilibrium = None,
               dt: float = None,
-              **kwargs) -> float:
+              **kwargs) -> CoreProfiles:
         """
-            solve transport eqation until residual < tolerance
-            return residual , core_profiles, edge_profiles
+            solve transport equation until residual < tolerance
+            return core_profiles
         """
+        raise NotImplementedError()
 
-        profiles = core_profiles_next.profiles_1d
-        profiles["grid"] = core_profiles_prev.profiles_1d.grid
-
-        psi_norm = profiles.grid.psi_norm
-        rho_tor_norm = profiles.grid.rho_tor_norm
-
-        # profiles["q"] = equilibrium_1d.q(psi_norm)
-        # profiles["magnetic_shear"] = equilibrium_1d.magnetic_shear(psi_norm)
-
-        # profiles["conductivity_parallel"] = core_transport_1d.conductivity_parallel(rho_tor_norm)
-        # profiles["j_tor"] = equilibrium_1d.j_tor(psi_norm)
-        # profiles["j_total"] = core_sources_1d.j_parallel(rho_tor_norm)
-        # profiles["j_bootstrap"] = core_transport_1d.fetch('j_bootstrap')(rho_tor_norm)
-
-        profiles["electrons"] = {**atoms["e"]}
-        profiles["ion"] = [
-            {**atoms[ion.label],
-             "z_ion_1d":ion.z_ion_1d(rho_tor_norm),
-             "is_impurity":ion.is_impurity,
-             "density":ion.density(rho_tor_norm),
-             "energy":ion.temperature(rho_tor_norm)}
-            for ion in core_profiles_prev.profiles_1d.ion
-        ]
-
-        return 0.0
+        # return CoreProfiles({
+        #     "profiles_1d": {
+        #         "grid": core_profiles_prev.profiles_1d.grid,
+        #         "electrons": {"label": "e"},
+        #         "ion": [{"label": ion.label} for ion in core_profiles_prev.profiles_1d.ion]
+        #     }
+        # })

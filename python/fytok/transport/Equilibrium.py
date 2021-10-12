@@ -817,9 +817,9 @@ class Equilibrium(IDS):
     def grid_ggd(self) -> GGD:
         return self.get("grid_ggd")
 
-    def refresh(self,  *args, **kwargs) -> float:
-        residual = super().refresh(*args, **kwargs)
-        return residual
+    def refresh(self,  *args, **kwargs):
+        super().refresh(*args, **kwargs)
+        return self
 
     @sp_property
     def coordinate_system(self) -> MagneticCoordSystem:

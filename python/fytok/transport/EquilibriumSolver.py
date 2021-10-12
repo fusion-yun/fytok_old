@@ -26,10 +26,9 @@ class EquilibriumSolver(IDS):
         super().__init__(*args, **kwargs)
 
     def solve(self, /,
-
               equilibrium_prev: Equilibrium,
               core_profiles: CoreProfiles,
               dt: float = None,
               ** kwargs) -> float:
 
-        return 0.0
+        return equilibrium_prev

@@ -25,17 +25,16 @@ class EdgeTransportSolver(IDS):
         super().__init__(*args, **kwargs)
 
     def solve(self, /,
-              edge_profiles_next: EdgeProfiles,
               edge_profiles_prev: EdgeProfiles,
               edge_transport: EdgeTransport.Model,
               edge_sources: EdgeSources.Source,
               equilibrium_prev: Equilibrium,
               equilibrium_next: Equilibrium,
               tolerance=1.0e-3,
-              ** kwargs) -> float:
+              ** kwargs) -> EdgeProfiles:
         """
-            solve transport eqation until residual < tolerance
+            solve transport equation until residual < tolerance
             return residual , core_profiles, edge_profiles
         """
 
-        return 0.0 
+        return edge_profiles_prev

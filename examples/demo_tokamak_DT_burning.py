@@ -247,8 +247,7 @@ if __name__ == "__main__":
 
     if True:  # CoreProfile initialize value
 
-        tok["core_profiles.profiles_1d"] = load_core_profiles(
-            profiles, grid=tok.equilibrium.radial_grid)
+        tok["core_profiles.profiles_1d"] = load_core_profiles(profiles, grid=tok.equilibrium.radial_grid)
 
         core_profile_1d = tok.core_profiles.profiles_1d
 
@@ -363,7 +362,7 @@ if __name__ == "__main__":
             {"code": {"name": "dummy"}, "profiles_1d": load_core_source(
                 profiles, tok.core_profiles.profiles_1d.grid)},
             {"code": {"name": "bootstrap_current"}},
-            {"code": {"name": "fusion_reaction"}},
+            # {"code": {"name": "fusion_reaction"}},
         ]
 
         tok.core_sources.refresh(
@@ -415,40 +414,42 @@ if __name__ == "__main__":
     # TransportSolver
     if True:
 
-        tok["core_transport_solver"] = [
-            # {"code": {"name": "core_impurity", "parameters": {}}},
-            # {"code": {"name": "core_neutrals", "parameters": {}}},
-            {
-                "code": {"name": "bvp_solver_nonlinear",
-                         "parameters": {
-                             "tolerance": 1.0e-4,
-                             "particle_solver": "ion",  # "electrons",
-                             "max_nodes": 500,
-                             "verbose": 2,
-                             "bvp_rms_mask": [r_ped]}
-                         },
-                "boundary_conditions_1d": {
-                    "current": {"identifier": {"index": 1}, "value": [psi_boundary]},
-                    "electrons": {"particles": {"identifier": {"index": 1}, "value": [b_ne[-1]]},
-                                  "energy": {"identifier": {"index": 1}, "value": [b_Te[-1]]}},
+        tok["core_transport_solver"] = {
+            "code": {
+                "name": "bvp_solver_nonlinear",
+                "parameters": {
+                        "tolerance": 1.0e-4,
+                        "particle_solver": "ion",  # "electrons",
+                        "max_nodes": 500,
+                        "verbose": 2,
+                        "bvp_rms_mask": [r_ped],
 
-                    "ion": [
-                        {**atoms["D"],
-                         "particles": {"identifier": {"index": 1}, "value": [b_ni[-1]]},
-                         "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}},
-                        {**atoms["T"],
-                         "particles": {"identifier": {"index": 1}, "value": [b_ni[-1]]},
-                         "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}},
-                        {**atoms["He"],
-                         "particles": {"identifier": {"index": 1}, "value": [b_nHe[-1]]},
-                         "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}}
-                    ]
-                }}]
+                }
+            },
+            "fusion_reaction": [r"D(t,n)\alpha"],
+            "boundary_conditions_1d": {
+                "current": {"identifier": {"index": 1}, "value": [psi_boundary]},
+                "electrons": {"particles": {"identifier": {"index": 1}, "value": [b_ne[-1]]},
+                              "energy": {"identifier": {"index": 1}, "value": [b_Te[-1]]}},
+
+                "ion": [
+                    {"label": "D",
+                     "particles": {"identifier": {"index": 1}, "value": [b_ni[-1]]},
+                     "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}},
+                    {"label": "T",
+                     "particles": {"identifier": {"index": 1}, "value": [b_ni[-1]]},
+                     "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}},
+                    {"label": "He",
+                     "particles": {"identifier": {"index": 1}, "value": [b_nHe[-1]]},
+                     "energy": {"identifier": {"index": 1}, "value": [b_Ti[-1]]}}
+                ]
+            }}
+
+        particle_solver = tok.core_transport_solver.get('code.parameters.particle_solver', 'ion')
+
+        logger.debug(tok.core_transport_solver)
 
         residual = tok.refresh()
-
-        particle_solver = tok.core_transport_solver[0].get(
-            'code.parameters.particle_solver', 'ion')
 
         core_profile_1d = tok.core_profiles.profiles_1d
 
@@ -496,8 +497,7 @@ if __name__ == "__main__":
 
                 # ---------------------------------------------------------------------------------------------------
 
-                (core_profile_1d["rms_residuals"]
-                 * 100, r"bvp", r"residual $[\%]$"),
+                (core_profile_1d["rms_residuals"] * 100, r"bvp", r"residual $[\%]$"),
 
 
                 [
@@ -520,8 +520,7 @@ if __name__ == "__main__":
             grid=True, fontsize=10)\
             .savefig(output_path/f"core_profiles_result_{particle_solver}.svg", transparent=True)
 
-        ion_He: CoreProfiles.Profiles1D.Ion = core_profile_1d.ion[{
-            "label": "He"}]
+        ion_He: CoreProfiles.Profiles1D.Ion = core_profile_1d.ion[{"label": "He"}]
 
         plot_profiles(
             [

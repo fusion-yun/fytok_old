@@ -13,7 +13,6 @@ from spdm.data.Function import Function, PiecewiseFunction, function_like
 from spdm.util.logger import logger
 
 from ..numlib.smooth import rms_residual, smooth_1d
-from .Atoms import atoms
 
 
 def load_core_profiles(profiles, grid: RadialGrid):
@@ -59,15 +58,15 @@ def load_core_profiles(profiles, grid: RadialGrid):
     return {
         "grid": grid,
         "rho_tor": profiles["rho"].values,
-        "electrons": {**atoms["e"], "density":       b_ne,   "temperature": b_Te, },
+        "electrons": {"label": "e", "density":       b_ne,   "temperature": b_Te, },
         "ion": [
-            {**atoms["D"],  "density":      b_nDT,  "temperature": b_Ti},
-            {**atoms["T"],  "density":      b_nDT,  "temperature": b_Ti},
-            {**atoms["He"], "density":      b_nHe,  "temperature": b_Ti},
-            {**atoms["Be"], "density":  0.02*b_ne,  "temperature": b_Ti,
-             "z_ion_1d":Function(bs_r_norm, z_Be),  "is_impurity":True},
-            {**atoms["Ar"], "density":0.0012*b_ne,  "temperature": b_Ti,
-             "z_ion_1d":Function(bs_r_norm, z_Ar),  "is_impurity":True},
+            {"label": "D",  "density":      b_nDT,  "temperature": b_Ti},
+            {"label": "T",  "density":      b_nDT,  "temperature": b_Ti},
+            {"label": "He", "density":      b_nHe,  "temperature": b_Ti},
+            {"label": "Be", "density":  0.02*b_ne,  "temperature": b_Ti,
+             "z_ion_1d": Function(bs_r_norm, z_Be),  "is_impurity": True},
+            {"label": "Ar", "density": 0.0012*b_ne,  "temperature": b_Ti,
+             "z_ion_1d": Function(bs_r_norm, z_Ar),  "is_impurity": True},
         ],
         # "e_field": {"parallel": Function(bs_r_norm, e_parallel)},
         # "conductivity_parallel": Function(bs_r_norm, baseline["Joh"].values*1.0e6 / baseline["U"].values * (2.0*constants.pi * grid.r0)),
@@ -119,24 +118,24 @@ def load_core_transport(profiles, grid: RadialGrid):
         "grid": grid,
         "conductivity_parallel": conductivity_parallel,
         "electrons": {
-            **atoms["e"],
+            "label": "e",
             "particles":   {"d": D,     "v": v_pinch_ne},
             "energy":      {"d": chi_e, "v": v_pinch_Te},
         },
         "ion": [
             {
-                **atoms["D"],
-                "particles":{"d":  D, "v": v_pinch_ni},
+                "label": "D",
+                "particles": {"d":  D, "v": v_pinch_ni},
                 "energy": {"d":  chi, "v": v_pinch_Ti},
             },
             {
-                **atoms["T"],
-                "particles":{"d":  D, "v": v_pinch_ni},
+                "label": "T",
+                "particles": {"d":  D, "v": v_pinch_ni},
                 "energy": {"d":  chi, "v": v_pinch_Ti},
             },
             {
-                **atoms["He"],
-                "particles":{"d": D, "v": v_pinch_ni},
+                "label": "He",
+                "particles": {"d": D, "v": v_pinch_ni},
                 "energy": {"d": chi, "v": v_pinch_Ti}, }
         ]}
 
@@ -179,11 +178,11 @@ def load_core_source(profiles, grid: RadialGrid):
                 + profiles["Jnb"].values
                 + profiles["Jrf"].values
             ) * 1e6),
-        "electrons": {**atoms["e"],  "particles": S, "energy": Q_e},
+        "electrons": {"label": "e",  "particles": S, "energy": Q_e},
         "ion": [
-            {**atoms["D"],          "particles":S*0.5,      "energy":Q_DT*0.5},
-            {**atoms["T"],          "particles":S*0.5,      "energy":Q_DT*0.5},
-            {**atoms["He"],         "particles":S*0.1,          "energy":Q_He}
+            {"label": "D",          "particles": S*0.5,      "energy": Q_DT*0.5},
+            {"label": "T",          "particles": S*0.5,      "energy": Q_DT*0.5},
+            {"label": "He",         "particles": S*0.1,      "energy": Q_He}
         ]}
 
 

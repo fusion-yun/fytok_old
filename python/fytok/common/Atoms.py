@@ -56,10 +56,11 @@ atoms = {
     }
 }
 
-nuclear_reaction = {
+fusion_reaction = {
     r"D(t,n)\alpha": {
         "reactants": ["D", "T"],
-        "product": ["He", "n"],
+        "products": ["He", "n"],
+        "energy": 13.5e6,  # eV
         "reactivities":
         Function(
             # eV

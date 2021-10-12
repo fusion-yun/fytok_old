@@ -1,9 +1,10 @@
 import collections
 from dataclasses import dataclass
 
+from fytok.common.Atoms import atoms
 from fytok.transport.MagneticCoordSystem import RadialGrid
-from spdm.data.Node import Dict, List, Node, sp_property
 from scipy import constants
+from spdm.data.Node import Dict, List, Node, sp_property
 from spdm.util.logger import logger
 
 
@@ -30,7 +31,7 @@ class Species(Dict[Node]):
     Element = SpeciesElement
 
     def __init__(self,  d, /, **kwargs):
-        super().__init__(d,  **kwargs)
+        super().__init__(d, ** collections.ChainMap(kwargs, atoms.get(d.get("label"), {})))
 
     @property
     def nid(self) -> str:
@@ -74,8 +75,8 @@ class SpeciesElectron(Species):
         return "electron"
 
     @sp_property
-    def a(self)->float:
-        """Mass of elctron {dynamic} [Atomic Mass Unit]"""
+    def a(self) -> float:
+        """Mass of electron {dynamic} [Atomic Mass Unit]"""
         return constants.m_e/constants.m_u
 
     @sp_property

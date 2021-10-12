@@ -20,29 +20,29 @@ from .Equilibrium import Equilibrium
 from .MagneticCoordSystem import RadialGrid
 
 
-class CoreSourcesParticle(Dict):
-    def __init__(self, *args,  **kwargs):
-        super().__init__(*args, **kwargs)
+# class CoreSourcesParticle(Dict):
+#     def __init__(self, *args,  **kwargs):
+#         super().__init__(*args, **kwargs)
 
-    @sp_property
-    def particles(self):
-        return Function(self._parent.grid.rho_tor_norm, self["particles"], parent=self._parent)
+#     @sp_property
+#     def particles(self):
+#         return Function(self._parent.grid.rho_tor_norm, self["particles"], parent=self._parent)
 
-    @sp_property
-    def energy(self):
-        return Function(self._parent.grid.rho_tor_norm, self["energy"], parent=self._parent)
+#     @sp_property
+#     def energy(self):
+#         return Function(self._parent.grid.rho_tor_norm, self["energy"], parent=self._parent)
 
-    @sp_property
-    def momentum(self):
-        return Dict(self.get("momentum"), parent=self._parent)
+#     @sp_property
+#     def momentum(self):
+#         return Dict(self.get("momentum"), parent=self._parent)
 
-        # {
-        #     "radial": Function(self._parent.radial_grid.rho_tor_norm, self["momentum.radial"], parent=self._parent),
-        #     "diamagnetic": Function(self._parent.radial_grid.rho_tor_norm, self["momentum.diamagnetic"], parent=self._parent),
-        #     "parallel": Function(self._parent.radial_grid.rho_tor_norm, self["momentum.parallel"], parent=self._parent),
-        #     "poloidal": Function(self._parent.radial_grid.rho_tor_norm, self["momentum.poloidal"], parent=self._parent),
-        #     "toroidal": Function(self._parent.radial_grid.rho_tor_norm, self["momentum.toroidal"], parent=self._parent)
-        # }
+# {
+#     "radial": Function(self._parent.radial_grid.rho_tor_norm, self["momentum.radial"], parent=self._parent),
+#     "diamagnetic": Function(self._parent.radial_grid.rho_tor_norm, self["momentum.diamagnetic"], parent=self._parent),
+#     "parallel": Function(self._parent.radial_grid.rho_tor_norm, self["momentum.parallel"], parent=self._parent),
+#     "poloidal": Function(self._parent.radial_grid.rho_tor_norm, self["momentum.poloidal"], parent=self._parent),
+#     "toroidal": Function(self._parent.radial_grid.rho_tor_norm, self["momentum.toroidal"], parent=self._parent)
+# }
 
 
 class CoreSourcesElectrons(SpeciesElectron):
@@ -87,15 +87,14 @@ class CoreSourcesIon(SpeciesIon):
         return self.get("energy_decomposed", {})
 
 
-class CoreSourcesNeutral(Dict):
+class CoreSourcesNeutral(Species):
     def __init__(self, *args, **kwargs):
         super().__init__(*args,  ** kwargs)
 
 
 class CoreSourcesProfiles1D(Dict):
-
-    Electrons = CoreSourcesElectrons
     Ion = CoreSourcesIon
+    Electrons = CoreSourcesElectrons
     Neutral = CoreSourcesNeutral
 
     def __init__(self, *args,    **kwargs):

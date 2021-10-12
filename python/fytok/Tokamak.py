@@ -98,95 +98,87 @@ class Tokamak(Actor):
         return self.get("edge_sources", {})
 
     @sp_property
-    def core_transport_solver(self) -> List[CoreTransportSolver]:
-        return List[CoreTransportSolver](self.get("core_transport_solver", []), parent=self)
+    def core_transport_solver(self) -> CoreTransportSolver:
+        return self.get("core_transport_solver", {})
 
     @sp_property
-    def edge_transport_solver(self) -> List[EdgeTransportSolver]:
-        return List[EdgeTransportSolver](self.get("edge_transport_solver", []), parent=self)
+    def edge_transport_solver(self) -> EdgeTransportSolver:
+        return self.get("edge_transport_solver", {})
 
     @sp_property
     def equilibrium_solver(self) -> EquilibriumSolver:
         return self.get("equilibrium_solver", {})
 
+    def check_converge(self, /, **kwargs):
+        return 0.0
+
     def refresh(self, *args, time=None, tolerance=1.0e-4,   max_iteration=1, **kwargs) -> float:
 
-        super().refresh(time=time)
+        time_prev = self.time
+        time_next = time if time is not None else time_prev
 
-        dt = None
+        dt = time_next-time_prev
 
-        self.wall.refresh(time=time)
+        super().refresh(time=time_next)
 
-        self.pf_active.refresh(time=time)
+        self.wall.refresh(time=time_next)
 
-        self.magnetics.refresh(time=time)
+        self.pf_active.refresh(time=time_next)
 
-        self.equilibrium_solver.refresh(
-            time=time, wall=self.wall, pf_active=self.pf_active, magnetics=self.magnetics)
-
-        equilibrium_prev = self.equilibrium
+        self.magnetics.refresh(time=time_next)
 
         core_profiles_prev = self.core_profiles
-
         edge_profiles_prev = self.edge_profiles
+        equilibrium_prev = self.equilibrium
 
-        self.core_sources.refresh(
-            time=time,
-            equilibrium=equilibrium_prev,
-            core_profiles=core_profiles_prev)
+        for step_num in range(max_iteration):
 
-        self.core_transport.refresh(
-            time=time,
-            equilibrium=equilibrium_prev,
-            core_profiles=core_profiles_prev)
-
-        residual = 0.0
-
-        for nstep in range(max_iteration):
-
-            core_profiles_next = CoreProfiles()
-            edge_profiles_next = EdgeProfiles()
-
-            equilibrium_next = equilibrium_prev  # Equilibrium()
-
-            residual = self.equilibrium_solver.solve(
-                equilibrium_next=equilibrium_next,
+            equilibrium_next = self.equilibrium_solver.solve(
+                time=time,
                 equilibrium_prev=equilibrium_prev,
                 core_profiles=core_profiles_prev,
-                dt=dt,)
+                edge_profiles=edge_profiles_prev,
+                wall=self.wall,
+                pf_active=self.pf_active,
+                magnetics=self.magnetics)
 
-            residual += sum([solver.solve(
+            core_profiles_next = self.core_transport_solver.solve(
+                equilibrium_prev=equilibrium_prev,
+                equilibrium_next=equilibrium_next,
+                core_profiles_prev=core_profiles_prev,
+                core_sources=self.core_sources,
+                core_transport=self.core_transport,
+                dt=dt
+            )
+
+            edge_profiles_next = self.edge_transport_solver.solve(
+                equilibrium_next=equilibrium_next,
+                equilibrium_prev=equilibrium_prev,
+                edge_profiles_prev=edge_profiles_prev,
+                edge_sources=self.edge_sources,
+                edge_transport=self.edge_transport,
+                dt=dt
+            )
+
+            residual = self.check_converge(
+                equilibrium_prev=equilibrium_prev,
+                equilibrium_next=equilibrium_next,
                 core_profiles_next=core_profiles_next,
                 core_profiles_prev=core_profiles_prev,
-                equilibrium_next=equilibrium_next,
-                equilibrium_prev=equilibrium_prev,
-                core_sources=self.core_sources.source_combiner,
-                core_transport=self.core_transport.model_combiner,
-                dt=dt,) for solver in self.core_transport_solver])
-
-            logger.debug(residual)
-
-            residual += sum([solver.solve(
                 edge_profiles_next=edge_profiles_next,
                 edge_profiles_prev=edge_profiles_prev,
-                equilibrium_next=equilibrium_next,
-                equilibrium_prev=equilibrium_prev,
-                edge_sources=self.edge_sources.source_combiner,
-                edge_transport=self.edge_transport.model_combiner,
-                dt=dt,
-            ) for solver in self.edge_transport_solver], 0)
+            )
 
-            logger.debug(
-                f"time={self.time}  iterator step {nstep}/{max_iteration} residual={residual}")
+            logger.debug(f"time={self.time}  iterator step {step_num}/{max_iteration} residual={residual}")
 
             if residual < tolerance:
                 break
+            else:
+                equilibrium_prev = equilibrium_next
+                core_profiles_prev = core_profiles_next
+                edge_profiles_prev = edge_profiles_next
 
-            equilibrium_prev = equilibrium_next
-            core_profiles_prev = core_profiles_next
-            edge_profiles_prev = edge_profiles_next
-
-        self["equlibrium"] = equilibrium_next
+        self["equilibrium"] = equilibrium_next
 
         self["core_profiles"] = core_profiles_next
 
@@ -196,7 +188,7 @@ class Tokamak(Actor):
             logger.warning(
                 f"The solution does not converge, and the number of iterations exceeds the maximum {max_iteration}")
 
-        return residual
+        return self.time
 
     def plot(self, axis=None, /,  **kwargs):
 
