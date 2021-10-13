@@ -7,6 +7,11 @@ atoms = {
         "z": -1,
         "element": [{"a": constants.m_e/constants.m_p, "z_n": 1, "atoms_n": 1}],
     },
+    "electron": {
+        "label": "e",
+        "z": -1,
+        "element": [{"a": constants.m_e/constants.m_p, "z_n": 1, "atoms_n": 1}],
+    },
     "n": {
         "label": "n",
         "z": 0,

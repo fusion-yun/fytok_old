@@ -361,7 +361,7 @@ if __name__ == "__main__":
         tok["core_sources.source"] = [
             {"code": {"name": "dummy"}, "profiles_1d": load_core_source(
                 profiles, tok.core_profiles.profiles_1d.grid)},
-            {"code": {"name": "bootstrap_current"}},
+            # {"code": {"name": "bootstrap_current"}},
             # {"code": {"name": "fusion_reaction"}},
         ]
 
@@ -386,19 +386,19 @@ if __name__ == "__main__":
                      "fytok",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
                 ],
 
-                [
-                    (Function(bs_r_norm, profiles["Jbs"].values),
-                     r"astra", "bootstrap current \n $[MA\\cdot m^{-2}]$", {"marker": '.', "linestyle": ''}),
-                    (tok.core_sources.source[{"code.name": "bootstrap_current"}].profiles_1d.j_parallel*1e-6,
-                     r"fytok",),
-                ],
-                [
-                    (rms_residual(Function(bs_r_norm, profiles["Jbs"].values*1e6),
-                                  tok.core_sources.source[{"code.name": "bootstrap_current"}].profiles_1d.j_parallel),
-                     r"bootstrap current", r"  rms residual $[\%]$"),
-                    (rms_residual(Function(bs_r_norm, profiles["Jtot"].values), core_source.j_parallel*1e-6),
-                     r"total current", r"  rms residual $[\%]$"),
-                ],
+                # [
+                #     (Function(bs_r_norm, profiles["Jbs"].values),
+                #      r"astra", "bootstrap current \n $[MA\\cdot m^{-2}]$", {"marker": '.', "linestyle": ''}),
+                #     (tok.core_sources.source[{"code.name": "bootstrap_current"}].profiles_1d.j_parallel*1e-6,
+                #      r"fytok",),
+                # ],
+                # [
+                #     (rms_residual(Function(bs_r_norm, profiles["Jbs"].values*1e6),
+                #                   tok.core_sources.source[{"code.name": "bootstrap_current"}].profiles_1d.j_parallel),
+                #      r"bootstrap current", r"  rms residual $[\%]$"),
+                #     (rms_residual(Function(bs_r_norm, profiles["Jtot"].values), core_source.j_parallel*1e-6),
+                #      r"total current", r"  rms residual $[\%]$"),
+                # ],
 
                 [
                     (core_source.electrons.energy,  "electron",
@@ -419,7 +419,7 @@ if __name__ == "__main__":
                 "name": "bvp_solver_nonlinear",
                 "parameters": {
                         "tolerance": 1.0e-4,
-                        "particle_solver": "ion",  # "electrons",
+                        "particle_solver": "electrons",
                         "max_nodes": 500,
                         "verbose": 2,
                         "bvp_rms_mask": [r_ped],
@@ -447,9 +447,7 @@ if __name__ == "__main__":
 
         particle_solver = tok.core_transport_solver.get('code.parameters.particle_solver', 'ion')
 
-        logger.debug(tok.core_transport_solver)
-
-        residual = tok.refresh()
+        tok.refresh()
 
         core_profile_1d = tok.core_profiles.profiles_1d
 

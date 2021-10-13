@@ -59,14 +59,8 @@ class CoreTransportSolver(IDS):
     class BoundaryConditions1D(Dict):
         BoundaryConditions = _BC
 
-        def __init__(self, *args, grid: RadialGrid = None,  **kwargs):
+        def __init__(self, *args,   **kwargs):
             super().__init__(*args,  ** kwargs)
-            self._grid = grid if grid is not None else getattr(
-                self._parent, "_grid", None)
-
-        @property
-        def grid(self) -> RadialGrid:
-            return self._grid
 
         class Electrons(SpeciesElectron):
             def __init__(self, *args, **kwargs):
@@ -102,23 +96,23 @@ class CoreTransportSolver(IDS):
 
         @sp_property
         def electrons(self) -> Electrons:
-            return CoreTransportSolver.BoundaryConditions1D.Electrons(self.get("electrons"), parent=self, grid=self._grid)
+            return self.get("electrons",{})
 
         @sp_property
         def ion(self) -> List[Ion]:
-            return self.get("ion")
+            return self.get("ion", [])
 
         @sp_property
         def current(self) -> BoundaryConditions:
-            return self.get("current")
+            return self.get("current", {})
 
         @sp_property
         def energy_ion_total(self) -> BoundaryConditions:
-            return self.get("energy_ion_total")
+            return self.get("energy_ion_total", {})
 
         @sp_property
         def momentum_tor(self) -> BoundaryConditions:
-            return self.get("momentum_tor")
+            return self.get("momentum_tor", {})
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args,  ** kwargs)
@@ -133,7 +127,7 @@ class CoreTransportSolver(IDS):
 
     @sp_property
     def boundary_conditions_1d(self) -> BoundaryConditions1D:
-        return self.get("boundary_conditions_1d")
+        return self.get("boundary_conditions_1d", {})
 
     def refresh(self, *args,  boundary_conditions_1d=None,  **kwargs):
         if boundary_conditions_1d is not None:

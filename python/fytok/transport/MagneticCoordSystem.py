@@ -111,7 +111,7 @@ class RadialGrid(Dict):
 
     @sp_property
     def rho_tor_norm(self) -> np.ndarray:
-        r"""Normalised toroidal flux coordinate. The normalizing value for rho_tor_norm, is the toroidal flux coordinate
+        r"""Normalized toroidal flux coordinate. The normalizing value for rho_tor_norm, is the toroidal flux coordinate
             at the equilibrium boundary (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation,
             see time_slice/boundary/b_flux_pol_norm in the equilibrium IDS) {dynamic} [-]
         """
@@ -125,7 +125,7 @@ class RadialGrid(Dict):
 
     @sp_property
     def rho_pol_norm(self) -> np.ndarray:
-        r"""Normalised poloidal flux coordinate = sqrt((psi(rho)-psi(magnetic_axis)) / (psi(LCFS)-psi(magnetic_axis))) {dynamic} [-]"""
+        r"""Normalized poloidal flux coordinate = sqrt((psi(rho)-psi(magnetic_axis)) / (psi(LCFS)-psi(magnetic_axis))) {dynamic} [-]"""
         return self.get("rho_pol_norm")
 
     @sp_property
