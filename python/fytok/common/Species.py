@@ -128,6 +128,10 @@ class SpeciesIon(Species):
         return self.get("is_impurity", False)
 
     @sp_property
+    def has_fast_particle(self) -> bool:
+        return self.get("has_fast_particle", False)
+
+    @sp_property
     def z_ion(self) -> float:
         """Ion charge (of the dominant ionisation state; lumped ions are allowed),
         volume averaged over plasma radius {dynamic} [Elementary Charge Unit]  FLT_0D  """

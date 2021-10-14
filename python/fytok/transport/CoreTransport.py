@@ -35,6 +35,21 @@ class TransportCoeff(Dict):
     def flux(self) -> Function:
         return function_like(self._parent._parent.grid_flux.rho_tor_norm, self.get("flux", 0))
 
+    @sp_property
+    def d_fast_factor(self) -> Function:
+        """ NOT IN IMAS """
+        return function_like(self._parent._parent.grid_d.rho_tor_norm, self.get("d_fast_factor", 1))
+
+    @sp_property
+    def v_fast_factor(self) -> Function:
+        """ NOT IN IMAS """
+        return function_like(self._parent._parent.grid_v.rho_tor_norm, self.get("v_fast_factor", 1))
+
+    @sp_property
+    def flux_fast_factor(self) -> Function:
+        """ NOT IN IMAS """
+        return function_like(self._parent._parent.grid_flux.rho_tor_norm, self.get("flux_fast", 1))
+
 
 class CoreTransportElectrons(SpeciesElectron):
     def __init__(self, *args,   **kwargs):

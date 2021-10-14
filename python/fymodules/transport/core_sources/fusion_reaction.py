@@ -68,8 +68,9 @@ class FusionReaction(CoreSources.Source):
         self._reactivities = nuclear_reaction[r"D(t,n)\alpha"]["reactivities"]
 
     def refresh(self, *args,   equilibrium: Equilibrium,  core_profiles: CoreProfiles,     **kwargs) -> None:
-        residual = super().refresh(*args, equilibrium=equilibrium,
-                                   core_profiles=core_profiles, **kwargs)
+
+        super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
+
         core_profiles_1d = core_profiles.profiles_1d
 
         rho_tor_norm = core_profiles_1d.grid.rho_tor_norm
@@ -78,27 +79,33 @@ class FusionReaction(CoreSources.Source):
 
         ionD: CoreProfiles.Profiles1D.Ion = core_profiles_1d.ion[{"label": "D"}]
 
-        # ionHe: CoreProfiles.Profiles1D.Ion =\
-        #     core_profiles.profiles_1d.ion.get({"label": "He"})
-        # ionAlpha: CoreProfiles.Profiles1D.Ion =\
-        #     core_profiles.profiles_1d.ion.get({"label": "alpha"})
+        ionHe: CoreProfiles.Profiles1D.Ion = core_profiles_1d.ion[{"label": "He"}]
 
         nD = ionD.density(rho_tor_norm)
         nT = ionT.density(rho_tor_norm)
         TD = ionD.temperature(rho_tor_norm)
         TT = ionD.temperature(rho_tor_norm)
+        Te = core_profiles_1d.electrons.temperature(rho_tor_norm)
+
+        nAlpha = ionHe.density_fast(rho_tor_norm)
 
         Ti = (nD*TD + nT*TT)/(nD+nT)
 
         sDT = Function(rho_tor_norm, nD*nT*self._reactivities(Ti))
 
-        self.profiles_1d["ion"] = [{"label": "D", "particles": -sDT},
-                                   {"label": "T", "particles": -sDT},
-                                   {"label": "He", "particles": sDT}, ]
+        lnGamma = 17
 
-        # self.profiles_1d.neutral.put({"label": "p", "particle": sDT})
-        # self.profiles_1d.electrons["temperature"] = P_alpha
-        logger.debug("D(t,n)alpha")
+        tau_slowing_down = 1.99 * ((Te/1000)**(3/2))/lnGamma
+
+        slow_rate = nAlpha / tau_slowing_down
+
+        self.profiles_1d["ion"] = [
+            {"label": "D", "particles": -sDT},
+            {"label": "T", "particles": -sDT},
+            {"label": "He",
+             "particles_fast": sDT-slow_rate,
+             "particles": slow_rate},
+        ]
 
 
 __SP_EXPORT__ = FusionReaction

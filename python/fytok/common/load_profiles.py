@@ -62,7 +62,7 @@ def load_core_profiles(profiles, grid: RadialGrid):
         "ion": [
             {"label": "D",  "density":      b_nDT,  "temperature": b_Ti},
             {"label": "T",  "density":      b_nDT,  "temperature": b_Ti},
-            {"label": "He", "density":      b_nHe,  "temperature": b_Ti},
+            {"label": "He", "density_thermal":      b_nHe,  "temperature": b_Ti},
             {"label": "Be", "density":  0.02*b_ne,  "temperature": b_Ti,
              "z_ion_1d": Function(bs_r_norm, z_Be),  "is_impurity": True},
             {"label": "Ar", "density": 0.0012*b_ne,  "temperature": b_Ti,
@@ -97,16 +97,13 @@ def load_core_transport(profiles, grid: RadialGrid):
     Cped = 0.17
     Ccore = 0.4
     # Function(bs_r_norm, profiles["Xi"].values)  Cped = 0.2
-    chi = PiecewiseFunction(
-        [0, r_ped, 1.0],  [lambda x: Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
-    chi_e = PiecewiseFunction(
-        [0, r_ped, 1.0],  [lambda x: 0.5 * Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
+    chi = PiecewiseFunction([0, r_ped, 1.0],  [lambda x: Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
+    chi_e = PiecewiseFunction([0, r_ped, 1.0],  [lambda x: 0.5 * Ccore*(1.0 + 3*(x**2)), lambda x: Cped])
 
     D = 0.1*(chi+chi_e)
 
     v_pinch_ne = Function([0, r_ped, 1.0], lambda x: -0.6 * D(x) * x / grid.r0)
-    v_pinch_Te = Function(
-        [0, r_ped, 1.0], lambda x:  2.5 * chi_e(x) * x / grid.r0)
+    v_pinch_Te = Function([0, r_ped, 1.0], lambda x:  2.5 * chi_e(x) * x / grid.r0)
 
     v_pinch_ni = Function([0, r_ped, 1.0], lambda x:  D(x) * x / grid.r0)
     v_pinch_Ti = Function([0, r_ped, 1.0], lambda x:  chi(x) * x / grid.r0)

@@ -75,6 +75,11 @@ class CoreSourcesIon(SpeciesIon):
         return self.get("particles")
 
     @sp_property
+    def particles_fast(self) -> Function:
+        """ NOT IN IMAS """
+        return self.get("particles_fast")
+
+    @sp_property
     def particles_decomposed(self) -> Decomposition[Function]:
         return self.get("particles_decomposed", {})
 

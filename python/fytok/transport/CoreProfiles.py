@@ -166,6 +166,16 @@ class CoreProfilesIon(SpeciesIon):
         else:
             return self.density_fast+self.density_thermal
 
+    @sp_property
+    def density_flux(self) -> Function:
+        """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
+        d = self.get("density_flux", None)
+        if d is not None:
+            return function_like(self.grid.rho_tor_norm, d)
+        else:
+            return function_like(self.grid.rho_tor_norm, self.get("density_fast_flux", 0)) + \
+                function_like(self.grid.rho_tor_norm, self.get("density_thermal_flux", 0))
+
     # @property
     # def density_validity(self):
     #     """Indicator of the validity of the density profile.
