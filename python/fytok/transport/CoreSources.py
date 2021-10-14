@@ -2,7 +2,7 @@ import collections
 from dataclasses import dataclass
 from functools import cached_property
 from typing import Optional
-
+import numpy as np
 from spdm.data.AttributeTree import AttributeTree
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List, Node, sp_property
@@ -72,7 +72,7 @@ class CoreSourcesIon(SpeciesIon):
 
     @sp_property
     def particles(self) -> Function:
-        return self.get("particles", 0)
+        return self.get("particles")
 
     @sp_property
     def particles_decomposed(self) -> Decomposition[Function]:
@@ -80,7 +80,7 @@ class CoreSourcesIon(SpeciesIon):
 
     @sp_property
     def energy(self) -> Function:
-        return self.get("energy", 0)
+        return self.get("energy")
 
     @sp_property
     def energy_decomposed(self) -> Decomposition[Function]:
@@ -290,4 +290,6 @@ class CoreSources(IDS):
     def refresh(self, *args,   **kwargs) -> float:
         if "source_combiner" in self.__dict__:
             del self.__dict__["source_combiner"]
-        return sum([src.refresh(*args, **kwargs) for src in self.source])
+
+        for src in self.source:
+            src.refresh(*args, **kwargs)

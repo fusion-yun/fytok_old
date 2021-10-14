@@ -108,7 +108,7 @@ class CoreTransportIon(SpeciesIon):
 
     @sp_property
     def momentum(self) -> CoreTransportMomentum:
-        return self.get("momentum",{})
+        return self.get("momentum", {})
 
     @sp_property
     def state(self) -> List[CoreTransportIonState]:
@@ -287,7 +287,8 @@ class CoreTransport(IDS):
             "code": {"name": _undefined_}
         })
 
-    def refresh(self, *args,   **kwargs) -> float:
+    def refresh(self, *args,   **kwargs) -> None:
         if "model_combiner" in self.__dict__:
             del self.__dict__["model_combiner"]
-        return sum([(model.refresh(*args, **kwargs) or 0.0) for model in self.model])
+        for model in self.model:
+            model.refresh(*args, **kwargs)

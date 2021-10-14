@@ -9,6 +9,7 @@ from fytok.transport.Equilibrium import Equilibrium
 from scipy import constants
 from spdm.data.Function import Function, function_like
 from spdm.util.logger import logger
+from fytok.numlib.misc import array_like
 
 from fytok.common.Atoms import nuclear_reaction
 
@@ -66,19 +67,16 @@ class FusionReaction(CoreSources.Source):
 
         self._reactivities = nuclear_reaction[r"D(t,n)\alpha"]["reactivities"]
 
-    def refresh(self, *args,   equilibrium: Equilibrium,  core_profiles: CoreProfiles,     **kwargs) -> float:
+    def refresh(self, *args,   equilibrium: Equilibrium,  core_profiles: CoreProfiles,     **kwargs) -> None:
         residual = super().refresh(*args, equilibrium=equilibrium,
                                    core_profiles=core_profiles, **kwargs)
         core_profiles_1d = core_profiles.profiles_1d
-        profiles_1d = self.profiles_1d
 
-        rho_tor_norm = profiles_1d.grid.rho_tor_norm
+        rho_tor_norm = core_profiles_1d.grid.rho_tor_norm
 
-        ionT: CoreProfiles.Profiles1D.Ion =\
-            core_profiles_1d.ion.get({"label": "T"})
+        ionT: CoreProfiles.Profiles1D.Ion = core_profiles_1d.ion[{"label": "T"}]
 
-        ionD: CoreProfiles.Profiles1D.Ion =\
-            core_profiles_1d.ion.get({"label": "D"})
+        ionD: CoreProfiles.Profiles1D.Ion = core_profiles_1d.ion[{"label": "D"}]
 
         # ionHe: CoreProfiles.Profiles1D.Ion =\
         #     core_profiles.profiles_1d.ion.get({"label": "He"})
@@ -92,17 +90,15 @@ class FusionReaction(CoreSources.Source):
 
         Ti = (nD*TD + nT*TT)/(nD+nT)
 
-        sDT = nD*nT*self._reactivities(Ti)
+        sDT = Function(rho_tor_norm, nD*nT*self._reactivities(Ti))
 
-        self.profiles_1d.ion[{"label": "D"}]["particles"] = -sDT
-        self.profiles_1d.ion[{"label": "T"}]["particles"] = -sDT
-        self.profiles_1d.ion[{"label": "He"}]["particles"] = sDT
+        self.profiles_1d["ion"] = [{"label": "D", "particles": -sDT},
+                                   {"label": "T", "particles": -sDT},
+                                   {"label": "He", "particles": sDT}, ]
 
         # self.profiles_1d.neutral.put({"label": "p", "particle": sDT})
-
         # self.profiles_1d.electrons["temperature"] = P_alpha
         logger.debug("D(t,n)alpha")
-        return 0.0
 
 
 __SP_EXPORT__ = FusionReaction

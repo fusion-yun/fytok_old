@@ -359,17 +359,15 @@ if __name__ == "__main__":
 
     if True:  # CoreSources
         tok["core_sources.source"] = [
-            {"code": {"name": "dummy"}, "profiles_1d": load_core_source(
-                profiles, tok.core_profiles.profiles_1d.grid)},
+            {"code": {"name": "dummy"}, "profiles_1d": load_core_source(profiles, tok.core_profiles.profiles_1d.grid)},
             # {"code": {"name": "bootstrap_current"}},
-            # {"code": {"name": "fusion_reaction"}},
+            {"code": {"name": "fusion_reaction"}},
         ]
 
-        tok.core_sources.refresh(
-            equilibrium=tok.equilibrium, core_profiles=tok.core_profiles)
+        tok.core_sources.refresh(equilibrium=tok.equilibrium, core_profiles=tok.core_profiles)
 
         core_source = tok.core_sources.source_combiner.profiles_1d
-
+        core_source_fusion = tok.core_sources.source[{"code.name": "fusion_reaction"}].profiles_1d
         plot_profiles(
             [
                 [
@@ -399,6 +397,13 @@ if __name__ == "__main__":
                 #     (rms_residual(Function(bs_r_norm, profiles["Jtot"].values), core_source.j_parallel*1e-6),
                 #      r"total current", r"  rms residual $[\%]$"),
                 # ],
+                [
+                    (core_source_fusion.ion[{"label": "D"}].particles,    r"D",  r"$S_{DT} [m^3 s^{-1}]$",),
+                    (core_source_fusion.ion[{"label": "T"}].particles,    r"T",  r"$S_{DT} [m^3 s^{-1}]$",),
+                    (core_source_fusion.ion[{"label": "He"}].particles,   r"He", r"$S_{DT} [m^3 s^{-1}]$",),
+                    (core_source.ion[{"label": "D"}].particles,           r"$D_{total}$", r"$S_{DT} [m^3 s^{-1}]$",),
+
+                ],
 
                 [
                     (core_source.electrons.energy,  "electron",
@@ -419,11 +424,10 @@ if __name__ == "__main__":
                 "name": "bvp_solver_nonlinear",
                 "parameters": {
                         "tolerance": 1.0e-4,
-                        "particle_solver": "electrons",
+                        "particle_solver": "ion",
                         "max_nodes": 500,
                         "verbose": 2,
                         "bvp_rms_mask": [r_ped],
-
                 }
             },
             "fusion_reaction": [r"D(t,n)\alpha"],
@@ -489,7 +493,7 @@ if __name__ == "__main__":
                 [
                     (b_Ti/1000.0,    r"astra",
                      r"$T_{i} \, [keV]$", {"marker": '.', "linestyle": ''}),
-                    * [(ion.temperature/1000.0,  f"fytok ${ion.label}$", r"$T_{i} [keV]$")
+                    * [(ion.temperature/1000.0,  f"fytok {ion.label}$", r"$T_{i} [keV]$")
                         for ion in core_profile_1d.ion if not ion.is_impurity and ion.label != "He"],
                 ],
 

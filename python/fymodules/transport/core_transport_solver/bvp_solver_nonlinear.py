@@ -255,10 +255,14 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
 
         flux = array_like(x, core_profiles_1d.ion[var[1]].get("density_flux", 0))
 
+        ion_src: CoreSources.Source.Profiles1D.Ion = self._core_sources_1d.ion[var[1]]
+
+        ion_transp: CoreTransport.Model.Profiles1D.Ion = self._core_transport_1d.ion[var[1]]
+        
         return self.transp_particle(x, y, flux, ym,
-                                    self._core_transport_1d.ion[var[1]].particles.d(x),
-                                    self._core_transport_1d.ion[var[1]].particles.v(x),
-                                    self._core_sources_1d.ion[var[1]].particles(x))
+                                    ion_transp.particles.d(x),
+                                    ion_transp.particles.v(x),
+                                    ion_src.particles(x))
 
     def bc_ion_particle(self, ya: float, ga: float, yb: float, gb: float, var):
         return self.bc_particle(ya, ga, yb, gb, self.boundary_conditions_1d.ion[var[1]].particles)
@@ -450,16 +454,6 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
 
     def quasi_neutrality_condition(self, core_profiles_1d: CoreProfiles.Profiles1D) -> None:
 
-        # if not self._enable_impurity:
-
-        #     for ion in profiles_1d_next.ion:
-        #         if not ion.is_impurity:
-        #             continue
-        #         ion["density"] = core_profiles_prev.profiles_1d.ion[{"label": ion.label}].density
-        #         ion["density_flux"] = core_profiles_prev.profiles_1d.ion[{"label": ion.label}].get("density_flux", 0)
-        #         ion["z_ion_1d"] = core_profiles_prev.profiles_1d.ion[{"label": ion.label}].z_ion_1d
-        #         ion["z_ion_square_1d"] = core_profiles_prev.profiles_1d.ion[{"label": ion.label}].z_ion_square_1d
-
         rho_tor_norm = core_profiles_1d.grid.rho_tor_norm
 
         density_imp = sum([ion.z_ion_1d(rho_tor_norm)*ion.density(rho_tor_norm)
@@ -483,8 +477,11 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
 
             density_ion = sum([ion.z*ion.density(rho_tor_norm)
                                for ion in core_profiles_1d.ion if not ion.is_impurity])
+            density_flux_ion = sum([ion.z*ion.get("density_flux")
+                                    for ion in core_profiles_1d.ion if not ion.is_impurity])
 
             core_profiles_1d.electrons["density"] = density_ion + density_imp
+            core_profiles_1d.electrons["density_flux"] = density_flux_ion + density_flux_imp
 
         # core_profiles_next. profiles_1d.grid.rho_tor_norm
 
@@ -557,6 +554,7 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
         self._core_transport = core_transport
 
         self._core_transport_1d = self._core_transport.model_combiner.profiles_1d
+
         self._core_sources_1d = self._core_sources.source_combiner.profiles_1d
 
         self._eq_prev = equilibrium_prev
