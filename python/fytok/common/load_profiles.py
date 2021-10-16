@@ -180,7 +180,7 @@ def load_core_source(profiles, grid: RadialGrid):
         "ion": [
             {"label": "D",          "particles": S*0.5,      "energy": Q_DT*0.5},
             {"label": "T",          "particles": S*0.5,      "energy": Q_DT*0.5},
-            {"label": "He",         "particles": S*0.005,      "energy": Q_He}
+            {"label": "He",         "particles": S*0.01,      "energy": Q_He}
         ]}
 
 

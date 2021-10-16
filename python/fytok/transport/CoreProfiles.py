@@ -163,7 +163,7 @@ class CoreProfilesIon(SpeciesIon):
         if self.has_fast_particle:
             return self.density_fast+self.density_thermal
         else:
-            return function_like(self.grid.rho_tor_norm, self.get("density"))
+            return function_like(self.grid.rho_tor_norm, self.get("density", None))
 
     @sp_property
     def density_flux(self) -> Function:

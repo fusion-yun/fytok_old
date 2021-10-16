@@ -733,26 +733,26 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
         else:
             # self._var_list.append((["electrons", "temperature"],
             #                        self.transp_electrons_energy, self.bc_electrons_energy))
-            self._var_list.append((["ion", {"label": "He"}, "density_fast"],
-                                   self.transp_ion_particle_fast, self.bc_ion_particle_fast))
-            self._var_list.append((["ion", {"label": "He"}, "density_thermal"],
-                                   self.transp_ion_particle_thermal, self.bc_ion_particle))
-            # for ion in core_profiles_1d.ion:
-            #     if ion.is_impurity:
-            #         # TODO: impurity  transport
-            #         continue
-            #     elif ion.has_fast_particle:
-            #         self._var_list.append((["ion", {"label": ion.label}, "density_fast"],
-            #                                self.transp_ion_particle_fast, self.bc_ion_particle))
-            #         self._var_list.append((["ion", {"label": ion.label}, "density_thermal"],
-            #                                self.transp_ion_particle_thermal, self.bc_ion_particle))
-            #         # self._var_list.append((["ion", {"label": ion.label}, "temperature"],
-            #         #                        self.transp_ion_energy, self.bc_ion_energy))
-            #     else:
-            #         self._var_list.append((["ion", {"label": ion.label}, "density"],
-            #                                self.transp_ion_particle, self.bc_ion_particle))
-            #         # self._var_list.append((["ion", {"label": ion.label}, "temperature"],
-            #         #                        self.transp_ion_energy, self.bc_ion_energy))
+            # self._var_list.append((["ion", {"label": "He"}, "density_fast"],
+            #                        self.transp_ion_particle_fast, self.bc_ion_particle_fast))
+            # self._var_list.append((["ion", {"label": "He"}, "density_thermal"],
+            #                        self.transp_ion_particle_thermal, self.bc_ion_particle))
+            for ion in core_profiles_1d.ion:
+                if ion.is_impurity:
+                    # TODO: impurity  transport
+                    continue
+                elif ion.has_fast_particle:
+                    self._var_list.append((["ion", {"label": ion.label}, "density_fast"],
+                                           self.transp_ion_particle_fast, self.bc_ion_particle_fast))
+                    self._var_list.append((["ion", {"label": ion.label}, "density_thermal"],
+                                           self.transp_ion_particle_thermal, self.bc_ion_particle))
+                    # self._var_list.append((["ion", {"label": ion.label}, "temperature"],
+                    #                        self.transp_ion_energy, self.bc_ion_energy))
+                else:
+                    self._var_list.append((["ion", {"label": ion.label}, "density"],
+                                           self.transp_ion_particle, self.bc_ion_particle))
+                    # self._var_list.append((["ion", {"label": ion.label}, "temperature"],
+                    #                        self.transp_ion_energy, self.bc_ion_energy))
 
     def solve(self, /,
               core_profiles_prev: CoreProfiles,
