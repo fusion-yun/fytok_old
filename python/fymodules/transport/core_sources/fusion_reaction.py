@@ -86,6 +86,7 @@ class FusionReaction(CoreSources.Source):
         TD = ionD.temperature(rho_tor_norm)
         TT = ionD.temperature(rho_tor_norm)
         Te = core_profiles_1d.electrons.temperature(rho_tor_norm)
+        Ne = core_profiles_1d.electrons.density(rho_tor_norm)
 
         nAlpha = ionHe.density_fast(rho_tor_norm)
 
@@ -93,19 +94,27 @@ class FusionReaction(CoreSources.Source):
 
         sDT = Function(rho_tor_norm, nD*nT*self._reactivities(Ti))
 
-        lnGamma = 17
+        if not ionHe.has_fast_particle:
+            self.profiles_1d["ion"] = [
+                {"label": "D", "particles": -sDT},
+                {"label": "T", "particles": -sDT},
+                {"label": "He", "particles": sDT},
+            ]
+        else:
+            lnGamma = 17
 
-        tau_slowing_down = 1.99 * ((Te/1000)**(3/2))/lnGamma
+            tau_slowing_down = 1.99 * ((Te/1000)**(3/2))/(Ne*1.0e-19*lnGamma)
 
-        slow_rate = nAlpha / tau_slowing_down
+            S_slowing_down = Function(rho_tor_norm, nAlpha / tau_slowing_down)
 
-        self.profiles_1d["ion"] = [
-            {"label": "D", "particles": -sDT},
-            {"label": "T", "particles": -sDT},
-            {"label": "He",
-             "particles_fast": sDT-slow_rate,
-             "particles": slow_rate},
-        ]
+            self.profiles_1d["ion"] = [
+                {"label": "D", "particles": -sDT},
+                {"label": "T", "particles": -sDT},
+                {"label": "He",
+                 "particles_fast": sDT-S_slowing_down,
+                 "particles": S_slowing_down
+                 },
+            ]
 
 
 __SP_EXPORT__ = FusionReaction

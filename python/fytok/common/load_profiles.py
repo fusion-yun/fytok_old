@@ -133,7 +133,8 @@ def load_core_transport(profiles, grid: RadialGrid):
             {
                 "label": "He",
                 "particles": {"d": D, "v": v_pinch_ni},
-                "energy": {"d": chi, "v": v_pinch_Ti}, }
+                "energy": {"d": chi, "v": v_pinch_Ti},
+            }
         ]}
 
 
@@ -179,7 +180,7 @@ def load_core_source(profiles, grid: RadialGrid):
         "ion": [
             {"label": "D",          "particles": S*0.5,      "energy": Q_DT*0.5},
             {"label": "T",          "particles": S*0.5,      "energy": Q_DT*0.5},
-            {"label": "He",         "particles": S*0.1,      "energy": Q_He}
+            {"label": "He",         "particles": S*0.005,      "energy": Q_He}
         ]}
 
 

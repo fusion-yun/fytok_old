@@ -38,12 +38,12 @@ class TransportCoeff(Dict):
     @sp_property
     def d_fast_factor(self) -> Function:
         """ NOT IN IMAS """
-        return function_like(self._parent._parent.grid_d.rho_tor_norm, self.get("d_fast_factor", 1))
+        return function_like(self._parent._parent.grid.rho_tor_norm, self.get("d_fast_factor", 1))
 
     @sp_property
     def v_fast_factor(self) -> Function:
         """ NOT IN IMAS """
-        return function_like(self._parent._parent.grid_v.rho_tor_norm, self.get("v_fast_factor", 1))
+        return function_like(self._parent._parent.grid.rho_tor_norm, self.get("v_fast_factor", 1))
 
     @sp_property
     def flux_fast_factor(self) -> Function:

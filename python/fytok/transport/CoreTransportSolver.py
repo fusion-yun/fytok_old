@@ -87,6 +87,10 @@ class CoreTransportSolver(IDS):
                 return self.get("particles")
 
             @sp_property
+            def particles_fast(self) -> _BC:
+                return self.get("particles_fast")
+
+            @sp_property
             def energy(self) -> _BC:
                 return self.get("energy")
 
@@ -96,7 +100,7 @@ class CoreTransportSolver(IDS):
 
         @sp_property
         def electrons(self) -> Electrons:
-            return self.get("electrons",{})
+            return self.get("electrons", {})
 
         @sp_property
         def ion(self) -> List[Ion]:

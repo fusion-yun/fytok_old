@@ -61,12 +61,12 @@ class CoreProfilesElectrons(SpeciesElectron):
     #     """Information on the fit used to obtain the density profile [m^-3]"""
     #     return NotImplemented
 
-    @property
+    @sp_property
     def density_thermal(self):
         """Density of thermal particles {dynamic} [m^-3]"""
         return function_like(self.grid.rho_tor_norm, self.get("density_thermal", 0))
 
-    @property
+    @sp_property
     def density_fast(self):
         """Density of fast (non-thermal) particles {dynamic} [m^-3]"""
         return function_like(self.grid.rho_tor_norm, self.get("density_fast", 0))
@@ -160,21 +160,20 @@ class CoreProfilesIon(SpeciesIon):
     @sp_property
     def density(self) -> Function:
         """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        d = self.get("density", None)
-        if d is not None:
-            return function_like(self.grid.rho_tor_norm, d)
-        else:
+        if self.has_fast_particle:
             return self.density_fast+self.density_thermal
+        else:
+            return function_like(self.grid.rho_tor_norm, self.get("density"))
 
     @sp_property
     def density_flux(self) -> Function:
         """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        d = self.get("density_flux", None)
-        if d is not None:
-            return function_like(self.grid.rho_tor_norm, d)
-        else:
+        if self.has_fast_particle:
+
             return function_like(self.grid.rho_tor_norm, self.get("density_fast_flux", 0)) + \
                 function_like(self.grid.rho_tor_norm, self.get("density_thermal_flux", 0))
+        else:
+            return function_like(self.grid.rho_tor_norm, self.get("density_flux", None))
 
     # @property
     # def density_validity(self):
@@ -190,15 +189,15 @@ class CoreProfilesIon(SpeciesIon):
     #     """Information on the fit used to obtain the density profile [m^-3]    """
     #     return NotImplemented
 
-    @property
+    @sp_property
     def density_thermal(self) -> Function:
         """Density (thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        return function_like(self.grid.rho_tor_norm, self.get("density_thermal", 0))
+        return function_like(self.grid.rho_tor_norm, self.get("density_thermal", None))
 
-    @property
+    @sp_property
     def density_fast(self) -> Function:
         """Density of fast (non-thermal) particles (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        return function_like(self.grid.rho_tor_norm, self.get("density_fast", 0))
+        return function_like(self.grid.rho_tor_norm, self.get("density_fast", None))
 
     @sp_property
     def pressure(self) -> Function:
@@ -257,7 +256,7 @@ class CoreProfilesNeutral(Species):
 
     @property
     def element(self):
-        """List of elements forming the atom or molecule  struct_array [max_size=unbounded]  1- 1...N"""
+        """List of elements forming the atom or molecule  structure_array [max_size=unbounded]  1- 1...N"""
         return NotImplemented
 
     @property
