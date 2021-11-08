@@ -1,14 +1,13 @@
-from copy import deepcopy
 import pathlib
-from fytok.transport.CoreProfiles import CoreProfiles
 
 import numpy as np
 import pandas as pd
 from fytok.common.Atoms import atoms
 from fytok.common.load_profiles import (load_core_profiles, load_core_source,
                                         load_core_transport, load_equilibrium)
-from fytok.numlib.smooth import rms_residual, smooth_1d
+from fytok.numlib.smooth import rms_residual
 from fytok.Tokamak import Tokamak
+from fytok.transport.CoreProfiles import CoreProfiles
 from scipy import constants
 from spdm.data.File import File
 from spdm.data.Function import Function, PiecewiseFunction
@@ -22,7 +21,7 @@ if __name__ == "__main__":
     ###################################################################################################
     # baseline
     device_desc = File(
-        "/home/salmon/workspace/fytokdata/mapping/ITER/imas/3/static/config.xml", format="XML").read()
+        "/home/salmon/workspace/fytok/data/mapping/ITER/imas/3/static/config.xml", format="XML").read()
 
     eqdsk_file = File(
         "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="geqdsk").read()
@@ -83,7 +82,7 @@ if __name__ == "__main__":
                   "boundary": True,
                   "separatrix": True,
               }
-              ) .savefig(output_path/"tokamak.svg", transparent=True)
+              ) .savefig(output_path/"tokamak.png", transparent=True)
 
     if True:  # plot tokamak
 
@@ -92,7 +91,7 @@ if __name__ == "__main__":
         plot_profiles(
             [
                 [
-                    (bs_eq_fpol, "eqdsk", r"$F_{pol} [Wb\cdot m]$"),
+                    (bs_eq_fpol, "astra", r"$F_{pol} [Wb\cdot m]$", bs_line_style),
                     (magnetic_surface.fpol,  r"fytok", r"$[Wb]$"),
                 ],
 
@@ -120,26 +119,26 @@ if __name__ == "__main__":
                      r"$dV/d\rho_{tor}$", r"$[m^2]$"),
                 ],
 
-                (magnetic_surface.dvolume_dpsi, r"$\frac{dV}{d\psi}$"),
+                # (magnetic_surface.dvolume_dpsi, r"$\frac{dV}{d\psi}$"),
 
-                [
-                    (magnetic_surface.volume, r"$V$  from $\psi$"),
-                    # (magnetic_surface.volume1, r"$V$ from $\rho_{tor}$"),
-                ],
-
-
-
-                (magnetic_surface.psi,  r"$\psi$", r"$[Wb]$"),
-                (magnetic_surface.phi,  r"$\phi$", r"$[Wb]$"),
-                (magnetic_surface.psi_norm,  r"$\bar{\psi}$", r"$[-]$"),
+                # [
+                #     (magnetic_surface.volume, r"$V$  from $\psi$"),
+                #     # (magnetic_surface.volume1, r"$V$ from $\rho_{tor}$"),
+                # ],
 
 
-                [
-                    (magnetic_surface.dpsi_drho_tor,
-                     r"$\frac{d\psi}{d\rho_{tor}}$", "", {"marker": '.'}),
-                    (magnetic_surface.dvolume_drho_tor/magnetic_surface.dvolume_dpsi,
-                     r"$\frac{dV}{d\rho_{tor}} / \frac{dV}{d\psi}$")
-                ],
+
+                # (magnetic_surface.psi,  r"$\psi$", r"$[Wb]$"),
+                # (magnetic_surface.phi,  r"$\phi$", r"$[Wb]$"),
+                # (magnetic_surface.psi_norm,  r"$\bar{\psi}$", r"$[-]$"),
+
+
+                # [
+                #     (magnetic_surface.dpsi_drho_tor,
+                #      r"$\frac{d\psi}{d\rho_{tor}}$", "", {"marker": '.'}),
+                #     (magnetic_surface.dvolume_drho_tor/magnetic_surface.dvolume_dpsi,
+                #      r"$\frac{dV}{d\rho_{tor}} / \frac{dV}{d\psi}$")
+                # ],
                 # (magnetic_surface.drho_tor_dpsi*magnetic_surface.dpsi_drho_tor,
                 #  r"$\frac{d\rho_{tor}}{d\psi} \cdot \frac{d\psi}{d\rho_{tor}}$"),
                 # (magnetic_surface.gm2_,
@@ -164,7 +163,7 @@ if __name__ == "__main__":
             # x_axis=(magnetic_surface.rho_tor_norm,      r"$\bar{\rho}_{tor}$"),
             x_axis=(magnetic_surface.psi_norm,      r"$\bar{\psi}$"),
             title="Equilibrium",
-            grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_coord.svg", transparent=True)
+            grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_coord.png", transparent=True)
 
         eq_profile = tok.equilibrium.profiles_1d
 
@@ -241,7 +240,7 @@ if __name__ == "__main__":
             # x_axis=([0, 1.0],                                                r"$\psi/\psi_{bdry}$"),
 
             title="Equilibrium",
-            grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
+            grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.png", transparent=True)
 
     if True:  # CoreProfile initialize value
 
@@ -278,7 +277,7 @@ if __name__ == "__main__":
                 ]
             ],
             x_axis=([0, 1.0], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-            grid=True, fontsize=10) .savefig(output_path/"core_profiles_initialize.svg", transparent=True)
+            grid=True, fontsize=10) .savefig(output_path/"core_profiles_initialize.png", transparent=True)
 
     if True:  # CoreTransport
         tok["core_transport.model"] = [
@@ -348,12 +347,12 @@ if __name__ == "__main__":
             ],
             x_axis=([0, 1.0],   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             title="combine",
-            grid=True, fontsize=10) .savefig(output_path/"core_transport.svg", transparent=True)
+            grid=True, fontsize=10) .savefig(output_path/"core_transport.png", transparent=True)
 
     if True:  # CoreSources
         tok["core_sources.source"] = [
             {"code": {"name": "dummy"}, "profiles_1d": load_core_source(profiles, tok.core_profiles.profiles_1d.grid)},
-            # {"code": {"name": "bootstrap_current"}},
+            {"code": {"name": "bootstrap_current"}},
             {"code": {"name": "fusion_reaction"}},
         ]
 
@@ -365,19 +364,20 @@ if __name__ == "__main__":
             [
                 [
                     (Function(bs_r_norm, profiles["Jtot"].values),  "astra",
-                     r"$J_{\parallel} [MA\cdot m^{-2}]$", bs_line_style),
-                    (core_source.j_parallel*1e-6,     "fytok", r"$J_{\parallel} [A\cdot m^{-2}]$"),
+                     "$J_{total}=j_{bootstrap}+j_{\\Omega}$ \n $[MA\\cdot m^{-2}]$", bs_line_style),
+                    (core_source.j_parallel*1e-6,     "fytok", ""),
                 ],
 
+                # [
+                #     # (Function(bs_r_norm, profiles["Joh"].values), "astra",
+                #     #  r"$j_{ohmic} [MA\cdot m^{-2}]$", bs_line_style),
+                #     (core_profile_1d.j_ohmic*1e-6, " ",    r"$j_{\Omega} [MA\cdot m^{-2}]$"),
+                # ],
                 [
-                    (Function(bs_r_norm, profiles["Joh"].values), "astra",
-                     r"$j_{ohmic} [MA\cdot m^{-2}]$", bs_line_style),
-                    (core_profile_1d.j_ohmic*1e-6, "fytok",    r"$j_{ohmic} [MA\cdot m^{-2}]$"),
-                ],
-                [
+                    (core_source.electrons.particles,       "electron",  r"$S[m ^ {-3} s ^ {-1}]$"),
                     (core_source.ion[{"label": "D"}].particles,   "D",  r"$S[m ^ {-3} s ^ {-1}]$"),
                     (core_source.ion[{"label": "T"}].particles,   "T",  r"$S[m ^ {-3} s ^ {-1}]$"),
-                    (core_source.ion[{"label": "He"}].particles,  "He",  r"$S[m ^ {-3} s ^ {-1}]$"),
+                    #     (core_source.ion[{"label": "He"}].particles,  "He",  r"$S[m ^ {-3} s ^ {-1}]$"),
                 ],
                 # [
                 #     (Function(bs_r_norm, profiles["Jbs"].values),
@@ -391,17 +391,17 @@ if __name__ == "__main__":
                 #      r"bootstrap current", r"  rms residual $[\%]$"),
                 #     (rms_residual(Function(bs_r_norm, profiles["Jtot"].values), core_source.j_parallel*1e-6),
                 #      r"total current", r"  rms residual $[\%]$"),
-                # ],
-                [
-                    (core_source.ion[{"label": "D"}].particles,    r"D",  r"$S_{DT} [m^3 s^{-1}]$",),
-                    (core_source.ion[{"label": "T"}].particles,    r"T",  r"$S_{DT} [m^3 s^{-1}]$",),
-                    (core_source.ion[{"label": "He"}].particles_fast,   r"fast", r"$S_{\alpha} [m^3 s^{-1}]$",),
+                # # ],
+                # [
+                #     (core_source.ion[{"label": "D"}].particles,    r"D",  r"$S_{DT} [m^3 s^{-1}]$",),
+                #     (core_source.ion[{"label": "T"}].particles,    r"T",  r"$S_{DT} [m^3 s^{-1}]$",),
+                #     (core_source.ion[{"label": "He"}].particles_fast,   r"fast", r"$S_{\alpha} [m^3 s^{-1}]$",),
 
-                ],
-                [
-                    (core_source_fusion.ion[{"label": "He"}].particles,   r"thermal", r"$S_{\alpha} [m^3 s^{-1}]$",),
-                ],
-                (core_source.ion[{"label": "D"}].particles,           r"$D_{total}$", r"$S_{DT} [m^3 s^{-1}]$",),
+                # ],
+                # [
+                #     (core_source_fusion.ion[{"label": "He"}].particles,   r"thermal", r"$S_{\alpha} [m^3 s^{-1}]$",),
+                # ],
+                # (core_source.ion[{"label": "D"}].particles,           r"$D_{total}$", r"$S_{DT} [m^3 s^{-1}]$",),
 
 
 
@@ -412,7 +412,7 @@ if __name__ == "__main__":
                 ],
             ],
             x_axis=([0, 1.0], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-            grid=True, fontsize=10) .savefig(output_path/"core_sources.svg", transparent=True)
+            grid=True, fontsize=10) .savefig(output_path/"core_sources.png", transparent=True)
 
     ###################################################################################################
     # TransportSolver
@@ -531,7 +531,7 @@ if __name__ == "__main__":
             ],
             x_axis=([0, 1.0],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             title=f" Particle solver '{particle_solver}'",
-            grid=True, fontsize=10).savefig(output_path/f"core_profiles_result_{particle_solver}.svg", transparent=True)
+            grid=True, fontsize=10).savefig(output_path/f"core_profiles_result_{particle_solver}.png", transparent=True)
 
         plot_profiles(
             [
