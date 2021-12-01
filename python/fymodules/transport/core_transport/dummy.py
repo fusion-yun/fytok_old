@@ -7,7 +7,7 @@ from fytok.transport.CoreTransport import CoreTransport
 from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List, Node
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 
 
 class TransportModelDummy(CoreTransport.Model):

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from spdm.data.Node import Dict, List
 from spdm.data.Node import sp_property
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 from sympy import Point, Polygon
 
 from ..common.IDS import IDS

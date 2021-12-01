@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from fytok.common.Misc import Identifier, RZTuple, Signal
 from spdm.data.Node import Dict, List, sp_property
 import numpy as np
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 
 from ..common.IDS import IDS
 

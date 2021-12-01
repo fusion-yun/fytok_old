@@ -24,7 +24,7 @@ from fytok.transport.MagneticCoordSystem import RadialGrid
 from scipy import constants
 from spdm.data.Function import Function, function_like
 from spdm.data.Node import Dict, List, _not_found_, sp_property
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 from spdm.util.utilities import convert_to_named_tuple
 
 EPSILON = 1.0e-15

@@ -1,7 +1,7 @@
 
 from spdm.data.Node import Dict, List, Node, sp_property, TypeVar, Sequence
 from spdm.flow.Actor import Actor
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 from spdm.util.utilities import _undefined_, guess_class_name
 from typing import Mapping, Union
 from .Misc import Identifier

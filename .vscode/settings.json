@@ -16,5 +16,6 @@
     "${workspaceFolder}/../SpFlow/python",
     "${workspaceFolder}/../SpView/python",
     "${workspaceFolder}/python"
-  ]
+  ],
+  "cSpell.words": ["fytok", "spdm"]
 }

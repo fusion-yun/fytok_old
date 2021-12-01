@@ -28,7 +28,7 @@ phys_modules_path = [
 sys.path.extend(phys_modules_path)
 
 try:
-    from spdm.util.logger import logger
+    from spdm.common.logger import logger
 except ModuleNotFoundError as error:
     raise error
 else:

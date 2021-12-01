@@ -10,7 +10,7 @@ from scipy import constants
 from spdm.data.Entry import Entry
 from spdm.data.File import File
 from spdm.data.Function import Function, PiecewiseFunction, function_like
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 
 from ..numlib.smooth import rms_residual, smooth_1d
 

@@ -1,7 +1,7 @@
 from spdm.data.Node import Dict, List
 from spdm.data.Node import sp_property
 from spdm.flow.Actor import Actor
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 
 from ..common.Misc import Identifier
 

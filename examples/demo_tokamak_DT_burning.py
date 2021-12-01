@@ -2,16 +2,14 @@ import pathlib
 
 import numpy as np
 import pandas as pd
-from fytok.common.Atoms import atoms
 from fytok.common.load_profiles import (load_core_profiles, load_core_source,
                                         load_core_transport, load_equilibrium)
 from fytok.numlib.smooth import rms_residual
 from fytok.Tokamak import Tokamak
-from fytok.transport.CoreProfiles import CoreProfiles
 from scipy import constants
+from spdm.common.logger import logger
 from spdm.data.File import File
-from spdm.data.Function import Function, PiecewiseFunction
-from spdm.util.logger import logger
+from spdm.data.Function import Function
 from spdm.view.plot_profiles import plot_profiles, sp_figure
 
 if __name__ == "__main__":
@@ -146,16 +144,11 @@ if __name__ == "__main__":
                 # (magnetic_surface.dpsi_drho_tor, r"$\frac{d\rho_{tor}}{d\psi}$", "", {"marker": "."}),
 
 
-                (magnetic_surface.gm1,
-                 r"$gm1=\left<\frac{1}{R^2}\right>$"),
-                (magnetic_surface.gm2,
-                 r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
-                (magnetic_surface.gm3,
-                 r"$gm3=\left<\left|\nabla \rho\right|^2\right>$"),
-                (magnetic_surface.gm7,
-                 r"$gm7=\left<\left|\nabla \rho\right|\right>$"),
-                (magnetic_surface.gm8,
-                 r"$gm8=\left<R\right>$"),
+                (magnetic_surface.gm1, r"$gm1=\left<\frac{1}{R^2}\right>$"),
+                (magnetic_surface.gm2, r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
+                (magnetic_surface.gm3, r"$gm3=\left<\left|\nabla \rho\right|^2\right>$"),
+                (magnetic_surface.gm7, r"$gm7=\left<\left|\nabla \rho\right|\right>$"),
+                (magnetic_surface.gm8, r"$gm8=\left<R\right>$"),
 
                 # (magnetic_surface.dphi_dpsi,                                                  r"$\frac{d\phi}{d\psi}$"),
                 # (magnetic_surface.dpsi_drho_tor,                                        r"$\frac{d\psi}{d\rho_{tor}}$"),
@@ -171,10 +164,8 @@ if __name__ == "__main__":
             [
 
                 [
-                    (Function(bs_psi_norm, profiles["q"].values),
-                     r"astra",  r"$q [-]$", bs_line_style),
-                    (eq_profile.q,
-                     r"fytok",  r"$q [-]$"),
+                    (Function(bs_psi_norm, profiles["q"].values), r"astra",  r"$q [-]$", bs_line_style),
+                    (eq_profile.q, r"fytok",  r"$q [-]$"),
                     (eq_profile.dphi_dpsi*np.sign(B0)/constants.pi/2.0,
                      r"$\frac{\sigma_{B_{p}}}{\left(2\pi\right)^{1-e_{B_{p}}}}\frac{d\Phi_{tor}}{d\psi_{ref}}$"),
                 ],
@@ -197,16 +188,13 @@ if __name__ == "__main__":
                      r"fytok", "shafranov \n shift $\Delta [m]$ "),
                 ],
                 [
-                    (Function(bs_psi_norm, profiles["k"].values),
-                     r"astra", r"$elongation[-]$", bs_line_style),
-                    (eq_profile.elongation,
-                     r"fytok", r"$elongation[-]$"),
+                    (Function(bs_psi_norm, profiles["k"].values), r"astra", r"$elongation[-]$", bs_line_style),
+                    (eq_profile.elongation,  r"fytok", r"$elongation[-]$"),
                 ],
                 [
                     (4*(constants.pi**2) * R0*tok.equilibrium.profiles_1d.rho_tor,
                      r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho , dV/d\rho$"),
-                    (tok.equilibrium.profiles_1d.dvolume_drho_tor,
-                     r"$V^{\prime}$", r"$dV/d\rho$"),
+                    (tok.equilibrium.profiles_1d.dvolume_drho_tor, r"$V^{\prime}$", r"$dV/d\rho$"),
                 ],
                 # [
                 #     (Function(bs_psi_norm, profiles["Jtot"].values*1e6),   r"astra",

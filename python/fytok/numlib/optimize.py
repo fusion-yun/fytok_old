@@ -7,7 +7,7 @@ import numpy as np
 from scipy import optimize
 from scipy.ndimage.filters import maximum_filter, minimum_filter
 from scipy.ndimage.morphology import binary_erosion, generate_binary_structure
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 from scipy.optimize import fsolve, minimize, root_scalar
 
 

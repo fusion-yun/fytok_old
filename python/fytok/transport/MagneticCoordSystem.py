@@ -17,7 +17,7 @@ from scipy import constants
 import numpy as  np
 from ..numlib.contours import find_countours
 from ..numlib.optimize import find_critical_points
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 
 from ..common.Misc import RZTuple, VacuumToroidalField
 

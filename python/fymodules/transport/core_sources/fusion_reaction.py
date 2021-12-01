@@ -8,7 +8,7 @@ from fytok.transport.CoreSources import CoreSources
 from fytok.transport.Equilibrium import Equilibrium
 from scipy import constants
 from spdm.data.Function import Function, function_like
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 from fytok.numlib.misc import array_like
 
 from fytok.common.Atoms import nuclear_reaction

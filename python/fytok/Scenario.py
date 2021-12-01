@@ -5,7 +5,7 @@ import scipy
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, Node, _next_
 import numpy as np
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 
 from .operation.PulseSchedule import PulseSchedule
 from .Tokamak import Tokamak

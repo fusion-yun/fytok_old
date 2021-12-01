@@ -11,7 +11,7 @@ from scipy import special
 from spdm.data.Collection import Collection
 from spdm.data.Entry import open_entry
 from spdm.data.Node import _next_
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 
 sys.path.append("/home/salmon/workspace/freegs/")
 sys.path.append("/home/salmon/workspace/fytok/python")

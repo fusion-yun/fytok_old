@@ -1,6 +1,6 @@
 import os
 
-from ..util.logger import logger
+from ..common.logger import logger
 
 ENABLE_JAX = os.environ.get("SP_JAX", False)
 

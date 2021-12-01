@@ -11,7 +11,7 @@ from fytok.common.Species import SpeciesElectron, SpeciesIon
 from scipy import constants
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List, _not_found_, sp_property
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 
 from ..common.Atoms import atoms
 from ..common.IDS import IDS

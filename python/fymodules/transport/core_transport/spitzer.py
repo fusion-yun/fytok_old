@@ -8,7 +8,7 @@ from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.Function import Function
 from scipy import constants
 from fytok.numlib.misc import array_like
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 
 
 class Spitzer(CoreTransport.Model):

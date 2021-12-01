@@ -8,7 +8,7 @@ from fytok.transport.Equilibrium import Equilibrium
 from scipy import constants
 from spdm.data.Entry import _next_
 from spdm.data.Function import Function, function_like
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 from spdm.util.utilities import _not_found_
 
 

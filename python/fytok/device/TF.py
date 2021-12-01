@@ -5,7 +5,7 @@ from copy import copy
 import numpy as np
 from spdm.data.Node import Dict, List
 from spdm.data.Node import sp_property
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 from ..common.Signal import Signal
 from ..common.IDS import IDS
 

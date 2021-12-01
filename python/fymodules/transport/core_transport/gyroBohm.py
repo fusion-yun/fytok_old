@@ -10,7 +10,7 @@ from fytok.transport.MagneticCoordSystem import RadialGrid
 from spdm.data.Function import Function
 from spdm.data.Node import _next_
 from spdm.data.TimeSeries import TimeSeries, TimeSlice
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 
 
 class GyroBohm(CoreTransport.Model):

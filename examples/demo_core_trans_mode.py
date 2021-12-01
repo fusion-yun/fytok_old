@@ -14,7 +14,7 @@ from spdm.data.File import File
 from spdm.data.Function import Function, PiecewiseFunction
 from scipy import constants
 from fytok.numlib.smooth import rms_residual, smooth_1d
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 from spdm.util.plot_profiles import plot_profiles, sp_figure
 
 if __name__ == "__main__":

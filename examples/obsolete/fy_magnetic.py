@@ -12,7 +12,7 @@ import numpy as np
 from freegs.coil import Coil
 from freegs.machine import Machine, Wall
 from spdm.data.Collection import Collection
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 
 sys.path.append("/home/salmon/workspace/freegs/")
 sys.path.append("/home/salmon/workspace/fytok/python")

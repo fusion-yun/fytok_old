@@ -21,7 +21,7 @@ from spdm.data.Function import Function, function_like
 from spdm.data.Node import Dict, List, _not_found_
 from scipy import constants
 from fytok.numlib.misc import array_like
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 
 EPSILON = 1.0e-15
 TOLERANCE = 1.0e-6

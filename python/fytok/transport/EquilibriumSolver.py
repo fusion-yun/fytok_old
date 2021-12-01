@@ -6,10 +6,10 @@ from fytok.common.Species import SpeciesElectron, SpeciesIon
 from fytok.transport.EdgeProfiles import EdgeProfiles
 from fytok.transport.EdgeSources import EdgeSources
 from fytok.transport.EdgeTransport import EdgeTransport
-from spdm.data.AttributeTree import AttributeTree
+
 from spdm.data.Node import Dict, List, _not_found_, sp_property
 from scipy import constants
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 
 from ..common.IDS import IDS
 from ..common.Misc import Identifier

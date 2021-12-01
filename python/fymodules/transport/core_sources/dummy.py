@@ -7,7 +7,7 @@ from fytok.transport.CoreSources import CoreSources
 from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List, Node
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 
 
 class CoreSourceDummy(CoreSources.Source):

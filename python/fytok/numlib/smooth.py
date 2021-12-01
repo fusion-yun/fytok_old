@@ -3,7 +3,7 @@ import logging
 
 import numpy as np
 
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 from spdm.data.Function import Function
 
 

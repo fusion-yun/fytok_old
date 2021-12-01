@@ -5,7 +5,7 @@ from fytok.common.Atoms import atoms
 from fytok.transport.MagneticCoordSystem import RadialGrid
 from scipy import constants
 from spdm.data.Node import Dict, List, Node, sp_property
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 
 
 class SpeciesElement(Dict):

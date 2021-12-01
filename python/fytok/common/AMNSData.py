@@ -12,7 +12,7 @@ from spdm.data.Field import Field
 from spdm.data.Function import Function, function_like
 from spdm.data.Node import Dict, List, Node, sp_property
 from scipy import constants
-from spdm.util.logger import logger
+from spdm.common.logger import logger
 from spdm.util.utilities import _not_found_, _undefined_, try_get
 
 
