@@ -9,6 +9,8 @@ from spdm.common.logger import logger
 from spdm.util.utilities import _undefined_
 from spdm.flow.Actor import Actor
 
+from .Module import Module
+
 
 class IDSProperties(Dict):
     def __init__(self, *args, **kwargs):
@@ -113,10 +115,7 @@ class IDSCode(Dict):
         return List[IDSCode.LibraryDesc](self["library"],   parent=self)
 
 
-_TState = TypeVar("_TState")
-
-
-class IDS(Actor[_TState]):
+class IDS(Module):
     """
         %%%DESCRIPTION%%%.
         .. todo:: '___NAME___' IS NOT IMPLEMENTED

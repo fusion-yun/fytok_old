@@ -237,7 +237,7 @@ class CoreTransportModel(Module):
             not_provided	    | 25        | No data provided
         """
 
-    _actor_module_prefix = "fymodules.transport.core_transport."
+    _fy_module_prefix = "fymodules.transport.core_transport."
 
     Profiles1D = CoreTransportProfiles1D
 

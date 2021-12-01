@@ -239,7 +239,7 @@ class CoreSourcesSource(Module):
             custom_9                                   | 909            | Custom source terms 9; content to be decided by data provided
         """
 
-    _actor_module_prefix = "fymodules.transport.core_sources."
+    _fy_module_prefix = "fymodules.transport.core_sources."
 
     Species = CoreSourcesSpecies
     Profiles1D = CoreSourcesProfiles1D

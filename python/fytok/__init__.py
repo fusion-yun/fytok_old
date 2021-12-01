@@ -1,7 +1,9 @@
-from .version import __version__
-import pprint
 import pathlib
+import pprint
 import sys
+
+from .version import __version__
+
 __path__ = __import__('pkgutil').extend_path(__path__, __name__)
 
 
