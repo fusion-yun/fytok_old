@@ -5,7 +5,6 @@ from typing import Optional
 import numpy as np
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List, Node, sp_property
-from spdm.flow.Actor import Actor
 from scipy import constants
 from spdm.common.logger import logger
 from spdm.util.utilities import _undefined_

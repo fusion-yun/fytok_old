@@ -7,7 +7,6 @@ from typing import Mapping, Optional, Sequence, TypeVar
 from spdm.data.Node import Dict, List, Node, sp_property
 from spdm.common.logger import logger
 from spdm.util.utilities import _undefined_
-from spdm.flow.Actor import Actor
 
 from .Module import Module
 

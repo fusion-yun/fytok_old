@@ -1,11 +1,11 @@
 
 
 import matplotlib.pyplot as plt
-from spdm.data.Function import Function
-from spdm.data.Node import Dict, Node, sp_property, List
-from spdm.flow.Actor import Actor
 from spdm.common.logger import logger
+from spdm.data.Function import Function
+from spdm.data.Node import Dict, List, Node, sp_property
 
+from .common.Module import Module
 # ---------------------------------
 from .device.Magnetics import Magnetics
 from .device.PFActive import PFActive
@@ -27,7 +27,7 @@ from .transport.EquilibriumSolver import EquilibriumSolver
 from .transport.MagneticCoordSystem import RadialGrid
 
 
-class Tokamak(Actor):
+class Tokamak(Module):
     """Tokamak
         功能：
             - 描述装置在单一时刻的状态，

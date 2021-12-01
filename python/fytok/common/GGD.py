@@ -1,7 +1,5 @@
-from spdm.data.Node import Dict, List
-from spdm.data.Node import sp_property
-from spdm.flow.Actor import Actor
 from spdm.common.logger import logger
+from spdm.data.Node import Dict, List, sp_property
 
 from ..common.Misc import Identifier
 
@@ -35,7 +33,7 @@ class GGDGrid(Dict):
         return List[GGDGridSubset](self["grid_subset"], parent=self)
 
 
-class GGD(Actor):
+class GGD(Dict):
     r"""General Grid Define
     """
 
