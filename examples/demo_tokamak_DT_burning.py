@@ -18,8 +18,7 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # baseline
-    device_desc = File(
-        "/home/salmon/workspace/fytok/data/mapping/ITER/imas/3/static/config.xml", format="XML").read()
+    device_desc = File("/home/salmon/workspace/fytok/data/mapping/ITER/imas/3/static/config.xml", format="XML").read()
 
     eqdsk_file = File(
         "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="geqdsk").read()
@@ -59,7 +58,7 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # Initialize Tokamak
-    d = device_desc.get(["wall", "pf_active", "tf", "magnetics"])
+    d = device_desc.get({"wall", "pf_active", "tf", "magnetics"}, None)
 
     tok = Tokamak(**d)
 
