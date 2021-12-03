@@ -2,12 +2,17 @@ import collections
 from dataclasses import dataclass
 from functools import cached_property
 from typing import Optional
+
 import numpy as np
-from spdm.data.Function import Function
-from spdm.data.Node import Dict, List, Node, sp_property
 from scipy import constants
 from spdm.common.logger import logger
-from spdm.util.utilities import _undefined_
+from spdm.common.tags import _undefined_
+from spdm.data.Dict import Dict
+from spdm.data.Entry import Entry
+from spdm.data.Function import Function, function_like
+from spdm.data.List import List
+from spdm.data.Node import Node
+from spdm.data.sp_property import sp_property
 
 from ..common.IDS import IDS
 from ..common.Misc import Decomposition, Identifier, VacuumToroidalField
@@ -16,7 +21,6 @@ from ..common.Species import Species, SpeciesElectron, SpeciesIon
 from .CoreProfiles import CoreProfiles
 from .Equilibrium import Equilibrium
 from .MagneticCoordSystem import RadialGrid
-
 
 # class CoreSourcesParticle(Dict):
 #     def __init__(self, *args,  **kwargs):

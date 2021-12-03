@@ -4,7 +4,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Generic, TypeVar, Union
 
-from spdm.data.Node import Dict, sp_property
+from spdm.data.Dict import Dict
+from spdm.data.sp_property import sp_property
 import numpy as np
 
 # VacuumToroidalField = collections.namedtuple("VacuumToroidalField", "r0 b0", defaults=(0.0, 0.0))

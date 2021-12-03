@@ -1,5 +1,9 @@
 from spdm.common.logger import logger
-from spdm.data.Node import Dict, List, sp_property
+from spdm.data.Dict import Dict
+from spdm.data.Entry import Entry
+from spdm.data.List import List
+from spdm.data.Node import Node
+from spdm.data.sp_property import sp_property
 
 from ..common.Misc import Identifier
 

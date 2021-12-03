@@ -1,11 +1,17 @@
 import collections
 from dataclasses import dataclass
 
-from fytok.common.Atoms import atoms
-from fytok.transport.MagneticCoordSystem import RadialGrid
 from scipy import constants
-from spdm.data.Node import Dict, List, Node, sp_property
 from spdm.common.logger import logger
+from spdm.data.Dict import Dict
+from spdm.data.Entry import Entry
+from spdm.data.Function import Function, function_like
+from spdm.data.List import List
+from spdm.data.Node import Node
+from spdm.data.sp_property import sp_property
+
+from ..common.Atoms import atoms
+from ..transport.MagneticCoordSystem import RadialGrid
 
 
 class SpeciesElement(Dict):

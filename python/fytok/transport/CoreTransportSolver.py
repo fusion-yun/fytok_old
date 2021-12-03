@@ -7,15 +7,19 @@ from math import log
 from typing import Mapping, Optional, Tuple
 
 import numpy as np
-from fytok.common.Species import SpeciesElectron, SpeciesIon
 from scipy import constants
-from spdm.data.Function import Function
-from spdm.data.Node import Dict, List, _not_found_, sp_property
 from spdm.common.logger import logger
+from spdm.data.Dict import Dict
+from spdm.data.Entry import Entry
+from spdm.data.Function import Function, function_like
+from spdm.data.List import List
+from spdm.data.Node import Node
+from spdm.data.sp_property import sp_property
 
 from ..common.Atoms import atoms
 from ..common.IDS import IDS
 from ..common.Misc import Identifier
+from ..common.Species import SpeciesElectron, SpeciesIon
 from .CoreProfiles import CoreProfiles
 from .CoreSources import CoreSources
 from .CoreTransport import CoreTransport

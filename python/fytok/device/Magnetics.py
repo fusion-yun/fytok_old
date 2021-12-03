@@ -1,10 +1,13 @@
 import numpy as np
-from spdm.data.Node import Dict, List, _not_found_
-from spdm.data.Node import sp_property
+from spdm.data.Dict import Dict
+from spdm.data.Entry import Entry
+from spdm.data.List import List
+from spdm.data.Node import Node
+from spdm.data.sp_property import sp_property
 
 from ..common.IDS import IDS
-from ..common.Signal import Signal
 from ..common.Misc import Identifier
+from ..common.Signal import Signal
 
 
 class MagneticsFluxLoop(Dict):
@@ -202,7 +205,7 @@ class Magnetics(IDS):
     MagneticProbe = MagneticsMagneticProbe
     RogowskiCoil = MagneticsRogowskiCoil
 
-    def __init__(self,  *args,** kwargs):
+    def __init__(self,  *args, ** kwargs):
         super().__init__(*args, ** kwargs)
 
     @sp_property

@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from typing import Any, Union
 
 import numpy as np
-from spdm.data.Node import Dict
-from spdm.data.Node import sp_property
+from spdm.data.Dict import Dict
+from spdm.data.sp_property import sp_property
 
 
 @dataclass

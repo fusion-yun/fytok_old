@@ -5,13 +5,16 @@ import collections.abc
 from spdm.common.logger import logger
 from spdm.common.SpObject import SpObject
 from spdm.common.tags import _undefined_
+from spdm.data.Dict import Dict
 from spdm.data.Entry import Entry
-from spdm.data.Node import Dict, Node, sp_property
+from spdm.data.List import List
+from spdm.data.Node import Node
+from spdm.data.sp_property import sp_property
 
 from .Misc import Identifier
 
 
-class Module(SpObject, Dict[Node]):
+class Module(Dict[Node]):
 
     def __new__(cls, desc=None, *args, **kwargs):
 

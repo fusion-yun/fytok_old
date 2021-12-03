@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # Initialize Tokamak
-    d = device_desc.get_many(["wall", "pf_active", "tf", "magnetics"])
+    d = device_desc.get(["wall", "pf_active", "tf", "magnetics"])
 
     tok = Tokamak(**d)
 

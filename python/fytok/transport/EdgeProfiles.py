@@ -1,4 +1,3 @@
-from spdm.data.Node import Dict
 from ..common.IDS import IDS
 
 

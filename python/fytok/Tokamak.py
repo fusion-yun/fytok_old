@@ -3,7 +3,10 @@
 import matplotlib.pyplot as plt
 from spdm.common.logger import logger
 from spdm.data.Function import Function
-from spdm.data.Node import Dict, List, Node, sp_property
+from spdm.data.Node import Node
+from spdm.data.Dict import Dict
+from spdm.data.List import List
+from spdm.data.sp_property import sp_property
 
 from .common.Module import Module
 # ---------------------------------

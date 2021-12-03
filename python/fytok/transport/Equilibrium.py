@@ -8,10 +8,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 from fytok.device.PFActive import PFActive
 from scipy import constants
+from spdm.common.logger import logger
+from spdm.data.Dict import Dict
+from spdm.data.Entry import Entry
 from spdm.data.Field import Field
 from spdm.data.Function import Function, function_like
-from spdm.data.Node import Dict, List, Node, sp_property
-from spdm.common.logger import logger
+from spdm.data.List import List
+from spdm.data.Node import Node
+from spdm.data.sp_property import sp_property
 from spdm.util.utilities import _not_found_, _undefined_, try_get
 
 from ..common.GGD import GGD
