@@ -5,23 +5,21 @@ from functools import cached_property
 from math import isclose
 from typing import Callable, Iterator, Mapping, Sequence, Tuple, TypeVar, Union
 
+import numpy as np
+from scipy import constants
+from spdm.common.logger import logger
+from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property,Function
 from spdm.data.Field import Field
-from spdm.data.Function import Function, function_like
-from spdm.data.Dict import Dict
-from spdm.data.List import List
-from spdm.data.sp_property import sp_property
+from spdm.data.Function import function_like
 from spdm.geometry.CubicSplineCurve import CubicSplineCurve
 from spdm.geometry.GeoObject import GeoObject, _TCoord
 from spdm.geometry.Point import Point
 from spdm.mesh.CurvilinearMesh import CurvilinearMesh
 from spdm.mesh.Mesh import Mesh
-from scipy import constants
-import numpy as np
-from ..numlib.contours import find_countours
-from ..numlib.optimize import find_critical_points
-from spdm.common.logger import logger
 
 from ..common.Misc import RZTuple, VacuumToroidalField
+from ..numlib.contours import find_countours
+from ..numlib.optimize import find_critical_points
 
 TOLERANCE = 1.0e-6
 EPS = np.finfo(float).eps

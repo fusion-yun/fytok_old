@@ -3,12 +3,7 @@ from dataclasses import dataclass
 
 from scipy import constants
 from spdm.common.logger import logger
-from spdm.data.Dict import Dict
-from spdm.data.Entry import Entry
-from spdm.data.Function import Function, function_like
-from spdm.data.List import List
-from spdm.data.Node import Node
-from spdm.data.sp_property import sp_property
+from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property,Function
 
 from ..common.Atoms import atoms
 from ..transport.MagneticCoordSystem import RadialGrid

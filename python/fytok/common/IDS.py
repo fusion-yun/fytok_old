@@ -5,11 +5,7 @@ from dataclasses import dataclass
 from typing import Mapping, Optional, Sequence, TypeVar
 
 from spdm.common.logger import logger
-from spdm.data.Dict import Dict
-from spdm.data.Entry import Entry
-from spdm.data.List import List
-from spdm.data.Node import Node
-from spdm.data.sp_property import sp_property
+from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property,Function
 from spdm.common.tags import _undefined_
 
 from .Module import Module

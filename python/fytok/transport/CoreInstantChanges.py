@@ -1,7 +1,8 @@
 
 from functools import cached_property
 
-from spdm.data.Node import Dict, Node, _not_found_
+from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property,Function
+
 from ..common.IDS import IDS
 from ..common.Misc import Identifier, VacuumToroidalField
 from .CoreProfiles import CoreProfiles1D

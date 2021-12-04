@@ -1,5 +1,5 @@
 from scipy import constants
-from spdm.data.Function import Function
+from spdm.data import Function
 import numpy as np
 atoms = {
     "e": {

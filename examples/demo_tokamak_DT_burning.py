@@ -8,8 +8,7 @@ from fytok.numlib.smooth import rms_residual
 from fytok.Tokamak import Tokamak
 from scipy import constants
 from spdm.common.logger import logger
-from spdm.data.File import File
-from spdm.data.Function import Function
+from spdm.data import File, Function
 from spdm.view.plot_profiles import plot_profiles, sp_figure
 
 if __name__ == "__main__":

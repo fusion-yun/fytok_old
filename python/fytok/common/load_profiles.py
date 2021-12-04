@@ -5,14 +5,14 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-from fytok.transport.MagneticCoordSystem import RadialGrid
 from scipy import constants
-from spdm.data.Entry import Entry
-from spdm.data.File import File
-from spdm.data.Function import Function, PiecewiseFunction, function_like
 from spdm.common.logger import logger
+from spdm.data import (Dict, Entry, File, Function, Link, List, Node, Path,
+                       Query, function_like, sp_property)
+from spdm.data.Function import PiecewiseFunction, function_like
 
 from ..numlib.smooth import rms_residual, smooth_1d
+from ..transport.MagneticCoordSystem import RadialGrid
 
 
 def load_core_profiles(profiles, grid: RadialGrid):
