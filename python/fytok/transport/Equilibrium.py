@@ -629,7 +629,7 @@ class EquilibriumBoundary(Dict):
 
     def __init__(self,  *args,  ** kwargs):
         super().__init__(*args, **kwargs)
-        self._coord: MagneticCoordSystem = self._parent.coordinate_system
+        # self._coord: MagneticCoordSystem = self._parent.coordinate_system
 
     @sp_property
     def type(self):
@@ -639,7 +639,7 @@ class EquilibriumBoundary(Dict):
     @sp_property
     def outline(self) -> RZTuple:
         """RZ outline of the plasma boundary  """
-        _, surf = next(self._coord.find_surface(self.psi, o_point=True))
+        _, surf = next(self._parent.coordinate_system.find_surface(self.psi, o_point=True))
         return RZTuple(*surf.xyz)
 
     @sp_property
@@ -649,16 +649,16 @@ class EquilibriumBoundary(Dict):
 
     @sp_property
     def psi_axis(self) -> float:
-        return self._coord.psi_axis
+        return self._parent.coordinate_system.psi_axis
 
     @sp_property
     def psi_boundary(self) -> float:
-        return self._coord.psi_boundary
+        return self._parent.coordinate_system.psi_boundary
 
     @sp_property
     def psi(self) -> float:
         """Value of the poloidal flux at which the boundary is taken  [Wb]"""
-        return self.psi_norm*(self._coord.psi_boundary-self._coord.psi_axis)+self._coord.psi_axis
+        return self.psi_norm*(self._parent.coordinate_system.psi_boundary-self._parent.coordinate_system.psi_axis)+self._parent.coordinate_system.psi_axis
 
     @sp_property
     def psi_norm(self) -> float:
@@ -668,7 +668,7 @@ class EquilibriumBoundary(Dict):
 
     @sp_property
     def shape_property(self) -> MagneticCoordSystem.ShapePropety:
-        return self._coord.shape_property(self.psi_norm)
+        return self._parent.coordinate_system.shape_property(self.psi_norm)
 
     @sp_property
     def geometric_axis(self) -> RZTuple:
@@ -817,10 +817,6 @@ class Equilibrium(IDS):
     def __init__(self, *args,  **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    @sp_property
-    def grid_ggd(self) -> GGD:
-        return self.get("grid_ggd")
-
     def refresh(self,  *args, **kwargs):
         super().refresh(*args, **kwargs)
         return self
@@ -848,39 +844,55 @@ class Equilibrium(IDS):
 
     coordinate_system: MagneticCoordSystem = sp_property(create_coordinate_system)
 
+    vacuum_toroidal_field: VacuumToroidalField = sp_property()
+
+    grid_ggd: GGD = sp_property()
+
+    constraints: Constraints = sp_property()
+
+    profiles_1d: Profiles1D = sp_property()
+
+    profiles_2d: Profiles2D = sp_property()
+
+    global_quantities: GlobalQuantities = sp_property()
+
+    boundary: Boundary = sp_property()
+
+    boundary_separatrix: BoundarySeparatrix = sp_property()
+
     @property
     def radial_grid(self) -> RadialGrid:
         return self.coordinate_system.radial_grid
 
     # @sp_property
+    # def grid_ggd(self) -> GGD:
+    #     return self.get("grid_ggd")
+    # @sp_property
     # def vacuum_toroidal_field(self) -> VacuumToroidalField:
     #     return {"r0": self.get("vacuum_toroidal_field.r0"), "b0": self.get("vacuum_toroidal_field.b0")}
 
-    vacuum_toroidal_field: VacuumToroidalField = sp_property()
+    # @sp_property
+    # def constraints(self) -> Constraints:
+    #     return self.get("constraints", {})
 
-    @sp_property
-    def constraints(self) -> Constraints:
-        return self.get("constraints", {})
+    # @sp_property
+    # def profiles_1d(self) -> Profiles1D:
+    #     return Equilibrium.Profiles1D(self.get("profiles_1d", {}),   parent=self)
 
-    @sp_property
-    def profiles_1d(self) -> Profiles1D:
-        return Equilibrium.Profiles1D(self.get("profiles_1d", {}),   parent=self)
+    # @sp_property
+    # def profiles_2d(self) -> Profiles2D:
+    #     return Equilibrium.Profiles2D(self.get("profiles_2d", {}),  parent=self)
 
-    @sp_property
-    def profiles_2d(self) -> Profiles2D:
-        return Equilibrium.Profiles2D(self.get("profiles_2d", {}),  parent=self)
+    # @sp_property
+    # def global_quantities(self) -> GlobalQuantities:
+    #     return Equilibrium.GlobalQuantities(self.get("global_quantities", {}), parent=self)
 
-    @sp_property
-    def global_quantities(self) -> GlobalQuantities:
-        return Equilibrium.GlobalQuantities(self.get("global_quantities", {}), parent=self)
-
-    @sp_property
-    def boundary(self) -> Boundary:
-        return Equilibrium.Boundary(self.get("boundary", {}),   parent=self)
-
-    @sp_property
-    def boundary_separatrix(self) -> BoundarySeparatrix:
-        return Equilibrium.BoundarySeparatrix(self.get("boundary_separatrix", {}),  parent=self)
+    # @sp_property
+    # def boundary(self) -> Boundary:
+    #     return Equilibrium.Boundary(self.get("boundary", {}),   parent=self)
+    # @sp_property
+    # def boundary_separatrix(self) -> BoundarySeparatrix:
+    #     return Equilibrium.BoundarySeparatrix(self.get("boundary_separatrix", {}),  parent=self)
 
     def plot(self, axis=None, /,
              scalar_field=[],
