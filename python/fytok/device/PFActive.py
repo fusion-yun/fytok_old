@@ -6,58 +6,34 @@ import matplotlib.pyplot as plt
 import numpy as np
 from fytok.common.Misc import Identifier, RZTuple, Signal
 from spdm.common.logger import logger
-from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property,Function
+from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property, Function
 
 from ..common.IDS import IDS
 
 
 class PFActiveCoil(Dict):
-    def __init__(self,  *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
-    @sp_property
-    def name(self) -> str:
-        return self["name"]
-
-    @sp_property
-    def identifier(self) -> str:
-        return self["identifier"]
+    name: str = sp_property()
+    identifier: str = sp_property()
 
     class Element(Dict):
-        def __init__(self,   *args, **kwargs):
-            super().__init__(*args, **kwargs)
 
-        @sp_property
-        def name(self) -> str:
-            """Name of this element {static}	STR_0D	"""
-            return self.get("name", 0.0)
+        name: str = sp_property(doc="""Name of this element {static}	STR_0D	""")
 
-        @sp_property
-        def identifier(self) -> Identifier:
-            """Identifier of this element {static}	STR_0D	"""
-            return self.get("identifier", " 0.0")
+        identifier: str = sp_property(doc="""Identifier of this element {static}	STR_0D	""")
 
-        @sp_property
-        def turns_with_sign(self) -> str:
-            """Number of effective turns in the element for calculating magnetic fields of the coil/loop; 
-            includes the sign of the number of turns (positive means current is counter-clockwise when seen from above) {static} [-]	FLT_0D	"""
-            return self.get("turns_with_sign", 1)
+        turns_with_sign: float = sp_property(doc="""Number of effective turns in the element for calculating magnetic fields of the coil/loop;
+            includes the sign of the number of turns (positive means current is counter-clockwise when seen from above) {static} [-]	FLT_0D	""", default_value=1)
 
-        @sp_property
-        def area(self) -> str:
-            """Cross-sectional areas of the element {static} [m^2]	FLT_0D    """
-            return self.get("area", 0.0)
+        area: float = sp_property(doc="""Cross-sectional areas of the element {static} [m^2]	FLT_0D    """, default_value=0.0)
 
         class Geometry(Dict):
-            @sp_property
-            def geometry_type(self) -> int:
-                """Type used to describe the element shape (1:'outline', 2:'rectangle', 3:'oblique', 4:'arcs of circle') {static}	INT_0D	"""
-                return self.get("geometry_type", None)
 
-            @sp_property
-            def outline(self) -> RZTuple:
-                """Irregular outline of the element. Do NOT repeat the first point.	structure	"""
-                return RZTuple(**self.get("outline", {}))
+            geometry_type: int = sp_property(
+                doc="""Type used to describe the element shape (1:'outline', 2:'rectangle', 3:'oblique', 4:'arcs of circle') {static}	INT_0D	""", default_value=2)
+
+            outline: RZTuple = sp_property(doc="""Irregular outline of the element. Do NOT repeat the first point.	structure	""",
+                                           default_value={})
 
             @dataclass
             class Rectangle:
@@ -66,10 +42,7 @@ class PFActiveCoil(Dict):
                 width: float = 0
                 height: float = 0
 
-            @sp_property
-            def rectangle(self) -> Rectangle:
-                """Rectangular description of the element	structure	"""
-                return self.get("rectangle", {})
+            rectangle: Rectangle = sp_property(doc="""Rectangular description of the element	structure	""")
 
             @dataclass
             class Oblique:
@@ -79,10 +52,7 @@ class PFActiveCoil(Dict):
                 thickness: float = 0.0
                 beta: float = 0.0
 
-            @sp_property
-            def oblique(self) -> Oblique:
-                """Trapezoidal description of the element	structure	"""
-                return self.get("oblique", {})
+            oblique: Oblique = sp_property(doc="""Trapezoidal description of the element	structure	""")
 
             @dataclass
             class ArcsOfCircle(Dict):
@@ -90,39 +60,26 @@ class PFActiveCoil(Dict):
                 z: np.ndarray
                 curvature_radii: np.ndarray
 
-            @sp_property
-            def arcs_of_circle(self) -> ArcsOfCircle:
-                """
-                    Description of the element contour by a set of arcs of circle. For each of these, the position of the start point is given together 
+            arcs_of_circle: ArcsOfCircle = sp_property(doc="""
+                    Description of the element contour by a set of arcs of circle. For each of these, the position of the start point is given together
                     with the curvature radius. The end point is given by the start point of the next arc of circle.
-                """
-                return self.get("", {})
+                """)
 
-        @sp_property
-        def geometry(self) -> Geometry:
-            return self.get("geometry")
+        geometry: Geometry = sp_property()
 
-    @sp_property
-    def element(self) -> List[Element]:
-        return self.get("element")
+    element: List[Element] = sp_property()
 
-    @sp_property
-    def current(self) -> Signal:
-        return self.get("current")
+    current: Signal = sp_property()
 
-    @sp_property
-    def voltage(self) -> Signal:
-        return self.get("voltage")
+    voltage: Signal = sp_property()
 
 
 class PFActiveCircuit(Dict):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    pass
 
 
 class PFActiveSupply(Dict):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    pass
 
 
 class PFActive(IDS):
@@ -134,23 +91,12 @@ class PFActive(IDS):
     Circuit = PFActiveCircuit
     Supply = PFActiveSupply
 
-    def __init__(self, *args,  **kwargs):
-        super().__init__(*args,  **kwargs)
+    coil: List[Coil] = sp_property()
 
-    @sp_property
-    def coil(self) -> List[Coil]:
-        return self.get("coil")
+    circuit: List[Coil] = sp_property(doc="""Circuits, connecting multiple PF coils to multiple supplies,
+            defining the current and voltage relationships in the system""")
 
-    @sp_property
-    def circuit(self) -> List[Circuit]:
-        """Circuits, connecting multiple PF coils to multiple supplies,
-            defining the current and voltage relationships in the system"""
-        return self.get("circuit")
-
-    @sp_property
-    def supply(self) -> List[Supply]:
-        """PF power supplies"""
-        return self.get("supply")
+    supply: List[Coil] = sp_property(doc="""PF power supplies""")
 
     def plot(self, axis=None, *args, with_circuit=False, **kwargs):
 
@@ -158,6 +104,7 @@ class PFActive(IDS):
             axis = plt.gca()
         for coil in self.coil:
             rect = coil.element[0].geometry.rectangle
+            
             axis.add_patch(plt.Rectangle((rect.r - rect.width / 2.0,  rect.z - rect.height / 2.0),
                                          rect.width,  rect.height,
                                          **collections.ChainMap(kwargs,  {"fill": False})))

@@ -3,9 +3,8 @@ import collections
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Generic, TypeVar, Union
-from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property,Function
-import numpy as np
 
+import numpy as np
 # VacuumToroidalField = collections.namedtuple("VacuumToroidalField", "r0 b0", defaults=(0.0, 0.0))
 # Identifier = collections.namedtuple("Identifier", " ", defaults=("unamed", 0, ""))
 

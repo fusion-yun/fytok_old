@@ -8,7 +8,7 @@ from typing import Callable, Iterator, Mapping, Sequence, Tuple, TypeVar, Union
 import numpy as np
 from scipy import constants
 from spdm.common.logger import logger
-from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property,Function
+from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property, Function
 from spdm.data.Field import Field
 from spdm.data.Function import function_like
 from spdm.geometry.CubicSplineCurve import CubicSplineCurve
@@ -41,9 +41,6 @@ class RadialGrid(Dict):
         Radial grid
     """
 
-    def __init__(self, *args, ** kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
     def remesh(self, label: str = "psi_norm", new_axis: np.ndarray = None, ):
         axis = self.get(f"{label}", None)
 
@@ -74,78 +71,38 @@ class RadialGrid(Dict):
             dvolume_drho_tor=Function(axis,  self.dvolume_drho_tor)(new_axis),
         )
 
-    @sp_property
-    def r0(self) -> float:
-        return self.get("r0")
+    r0: float = sp_property()
+    b0: float = sp_property()
 
-    @sp_property
-    def b0(self) -> float:
-        return self.get("b0")
+    psi_axis: float = sp_property(doc="""Poloidal flux at the magnetic axis  [Wb].""")
+    psi_magnetic_axis: float = sp_property()
+    psi_boundary: float = sp_property(doc="""Poloidal flux at the selected plasma boundary  [Wb].""")
+    rho_tor_boundary: float = sp_property()
+    psi_norm:  np.ndarray = sp_property()
 
-    @sp_property
-    def psi_axis(self) -> float:
-        """Poloidal flux at the magnetic axis  [Wb]."""
-        return self.get("psi_axis")
+    psi: np.ndarray = sp_property(lambda self: self.psi_norm * (self.psi_boundary-self.psi_axis)+self.psi_axis,
+                                  doc="""Poloidal magnetic flux {dynamic} [Wb]. This quantity is COCOS-dependent, with the following transformation""")
 
-    @sp_property
-    def psi_magnetic_axis(self) -> float:
-        return self.psi_axis
-
-    @sp_property
-    def psi_boundary(self) -> float:
-        """Poloidal flux at the selected plasma boundary  [Wb]."""
-        return self["psi_boundary"]
-
-    @sp_property
-    def rho_tor_boundary(self) -> float:
-        return self["rho_tor_boundary"]
-
-    @sp_property
-    def psi_norm(self) -> np.ndarray:
-        return self.get("psi_norm")
-
-    @property
-    def psi(self) -> np.ndarray:
-        """Poloidal magnetic flux {dynamic} [Wb]. This quantity is COCOS-dependent, with the following transformation"""
-        return self.psi_norm * (self.psi_boundary-self.psi_axis)+self.psi_axis
-
-    @sp_property
-    def rho_tor_norm(self) -> np.ndarray:
-        r"""Normalized toroidal flux coordinate. The normalizing value for rho_tor_norm, is the toroidal flux coordinate
-            at the equilibrium boundary (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation,
+    rho_tor_norm: np.ndarray = sp_property(
+        doc="""Normalized toroidal flux coordinate. The normalizing value for rho_tor_norm, is the toroidal flux coordinate
+            at the equilibrium boundary (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibrium calculation,
             see time_slice/boundary/b_flux_pol_norm in the equilibrium IDS) {dynamic} [-]
-        """
-        return self.get("rho_tor_norm")
+        """)
 
-    @sp_property
-    def rho_tor(self) -> np.ndarray:
-        r"""Toroidal flux coordinate. rho_tor = sqrt(b_flux_tor/(pi*b0)) ~ sqrt(pi*r^2*b0/(pi*b0)) ~ r [m].
-            The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0 {dynamic} [m]"""
-        return self.rho_tor_norm*self.rho_tor_boundary
+    rho_tor: np.ndarray = sp_property(lambda self: self.rho_tor_norm*self.rho_tor_boundary,
+                                      doc="""Toroidal flux coordinate. rho_tor = sqrt(b_flux_tor/(pi*b0)) ~ sqrt(pi*r^2*b0/(pi*b0)) ~ r [m].
+            The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0 {dynamic} [m]""")
 
-    @sp_property
-    def rho_pol_norm(self) -> np.ndarray:
-        r"""Normalized poloidal flux coordinate = sqrt((psi(rho)-psi(magnetic_axis)) / (psi(LCFS)-psi(magnetic_axis))) {dynamic} [-]"""
-        return self.get("rho_pol_norm")
+    rho_pol_norm:  np.ndarray = sp_property(
+        doc="""Normalized poloidal flux coordinate = sqrt((psi(rho)-psi(magnetic_axis)) / (psi(LCFS)-psi(magnetic_axis))) {dynamic} [-]""")
 
-    @sp_property
-    def area(self) -> np.ndarray:
-        """Cross-sectional area of the flux surface {dynamic} [m^2]"""
-        return self.get("area")
+    area:  np.ndarray = sp_property(doc="""Cross-sectional area of the flux surface {dynamic} [m^2]""")
 
-    @sp_property
-    def surface(self) -> np.ndarray:
-        """Surface area of the toroidal flux surface {dynamic} [m^2]"""
-        return self.get("surface")
+    surface:  np.ndarray = sp_property(doc="""Surface area of the toroidal flux surface {dynamic} [m^2]""")
 
-    @sp_property
-    def volume(self) -> np.ndarray:
-        """Volume enclosed inside the magnetic surface {dynamic} [m^3]"""
-        return self.get("volume")
+    volume:  np.ndarray = sp_property(doc="""Volume enclosed inside the magnetic surface {dynamic} [m^3]""")
 
-    @sp_property
-    def dvolume_drho_tor(self) -> np.ndarray:
-        return self.get("dvolume_drho_tor", None)
+    dvolume_drho_tor: np.ndarray = sp_property()
 
 
 class MagneticCoordSystem(Dict):
@@ -197,7 +154,7 @@ class MagneticCoordSystem(Dict):
         self._psirz: Field = self.get("psirz")
 
         self._Ip: float = self.get("Ip")
-        self._b0: float = self.get("B0")
+        self._b0: float = self.get("B0", None)
         self._r0: float = self.get("R0")
         self._fvac = self._b0*self._r0
 

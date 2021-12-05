@@ -5,16 +5,12 @@ from fytok.device.PFActive import PFActive
 from fytok.device.Wall import Wall
 from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.Equilibrium import Equilibrium
-from spdm.data.Function import Function
-from spdm.data.Node import Dict
 from scipy import constants
 from spdm.common.logger import logger
+from spdm.data import Dict, Function
 
 
 class EquilibriumDummy(Equilibrium):
-
-    def __init__(self, *args,  **kwargs):
-        super().__init__(*args, **kwargs)
 
     def refresh(self, *args, time=None,  **kwargs) -> float:
         residual = super().refresh(time=time)

@@ -9,7 +9,7 @@ import numpy as np
 from fytok.device.PFActive import PFActive
 from scipy import constants
 from spdm.common.logger import logger
-from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property,Function
+from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property, Function
 from spdm.data.Entry import Entry
 from spdm.data.Field import Field
 from spdm.data.Function import Function, function_like
@@ -825,8 +825,7 @@ class Equilibrium(IDS):
         super().refresh(*args, **kwargs)
         return self
 
-    @sp_property
-    def coordinate_system(self) -> MagneticCoordSystem:
+    def create_coordinate_system(self) -> MagneticCoordSystem:
         psirz = self.get("profiles_2d.psi", None)
 
         if not isinstance(psirz, Field):
@@ -847,13 +846,17 @@ class Equilibrium(IDS):
             pprime_by_psi=Function(psi_1d,  self.get("profiles_1d.dpressure_dpsi", None)),
         )
 
+    coordinate_system: MagneticCoordSystem = sp_property(create_coordinate_system)
+
     @property
     def radial_grid(self) -> RadialGrid:
         return self.coordinate_system.radial_grid
 
-    @sp_property
-    def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        return {"r0": self.get("vacuum_toroidal_field.r0"), "b0": self.get("vacuum_toroidal_field.b0")}
+    # @sp_property
+    # def vacuum_toroidal_field(self) -> VacuumToroidalField:
+    #     return {"r0": self.get("vacuum_toroidal_field.r0"), "b0": self.get("vacuum_toroidal_field.b0")}
+
+    vacuum_toroidal_field: VacuumToroidalField = sp_property()
 
     @sp_property
     def constraints(self) -> Constraints:

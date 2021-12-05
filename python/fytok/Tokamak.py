@@ -2,7 +2,7 @@
 
 import matplotlib.pyplot as plt
 from spdm.common.logger import logger
-from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property,Function
+from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property, Function
 
 from .common.Module import Module
 # ---------------------------------
@@ -31,81 +31,120 @@ class Tokamak(Module):
         功能：
             - 描述装置在单一时刻的状态，
             - 在时间推进时，确定各个子系统之间的依赖和演化关系，
-
     """
 
     def __init__(self, *args,  **kwargs):
         super().__init__(*args,  **kwargs)
 
-    @sp_property
-    def wall(self) -> Wall:
-        return self.get("wall")
+    wall: Wall = sp_property()
 
-    @sp_property
-    def tf(self) -> TF:
-        return self.get("tf")
+    tf: TF = sp_property()
 
-    @sp_property
-    def pf_active(self) -> PFActive:
-        return self.get("pf_active")
+    pf_active: PFActive = sp_property()
 
-    @sp_property
-    def magnetics(self) -> Magnetics:
-        return self.get("magnetics")
-    # --------------------------------------------------------------------------
+    magnetics: Magnetics = sp_property()
 
-    @sp_property
-    def equilibrium(self) -> Equilibrium:
-        return self.get("equilibrium", {})
+    equilibrium: Equilibrium = sp_property()
 
-    @sp_property
-    def core_profiles(self) -> CoreProfiles:
-        return self.get("core_profiles")
+    core_profiles: CoreProfiles = sp_property()
 
-    @sp_property
-    def core_transport(self) -> CoreTransport:
-        """Core plasma transport of particles, energy, momentum and poloidal flux."""
-        return self.get("core_transport", {})
+    core_transport: CoreTransport = sp_property(
+        doc="""Core plasma transport of particles, energy, momentum and poloidal flux.""")
 
-    @sp_property
-    def core_sources(self) -> CoreSources:
-        """
+    core_sources: CoreSources = sp_property(
+        doc="""
             Core plasma thermal source terms (for the transport equations of the thermal species).
             Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
-        """
-        return self.get("core_sources")
+        """)
 
-    @sp_property
-    def edge_profiles(self) -> EdgeProfiles:
-        return self.get("edge_profiles", {})
+    edge_profiles: EdgeProfiles = sp_property()
 
-    @sp_property
-    def edge_transport(self) -> EdgeTransport:
-        """
+    edge_transport: EdgeTransport = sp_property(
+        doc="""
             Edge plasma transport. Energy terms correspond to the full kinetic energy equation
             (i.e. the energy flux takes into account the energy transported by the particle flux)
-        """
-        return self.get("edge_transport", {})
-
-    @sp_property
-    def edge_sources(self) -> EdgeSources:
-        """Edge plasma sources. Energy terms correspond to the full kinetic energy equation
+        """)
+    edge_sources: EdgeSources = sp_property(
+        doc="""Edge plasma sources. Energy terms correspond to the full kinetic energy equation
          (i.e. the energy flux takes into account the energy transported by the particle flux)
-        """
-        return self.get("edge_sources", {})
+        """)
 
-    @sp_property
-    def core_transport_solver(self) -> CoreTransportSolver:
-        return self.get("core_transport_solver", {})
+    core_transport_solver: CoreTransportSolver = sp_property()
 
-    @sp_property
-    def edge_transport_solver(self) -> EdgeTransportSolver:
-        return self.get("edge_transport_solver", {})
+    edge_transport_solver: EdgeTransportSolver = sp_property()
 
-    @sp_property
-    def equilibrium_solver(self) -> EquilibriumSolver:
-        return self.get("equilibrium_solver", {})
+    equilibrium_solver: EquilibriumSolver = sp_property()
+
+    # @sp_property
+    # def wall(self) -> Wall:
+    #     return self.get("wall")
+
+    # @sp_property
+    # def tf(self) -> TF:
+    #     return self.get("tf")
+
+    # @sp_property
+    # def pf_active(self) -> PFActive:
+    #     return self.get("pf_active")
+
+    # @sp_property
+    # def magnetics(self) -> Magnetics:
+    #     return self.get("magnetics")
+    # --------------------------------------------------------------------------
+
+    # @sp_property
+    # def equilibrium(self) -> Equilibrium:
+    #     return self.get("equilibrium", {})
+
+    # @sp_property
+    # def core_profiles(self) -> CoreProfiles:
+    #     return self.get("core_profiles")
+
+    # @sp_property
+    # def core_transport(self) -> CoreTransport:
+    #     """Core plasma transport of particles, energy, momentum and poloidal flux."""
+    #     return self.get("core_transport", {})
+
+    # @sp_property
+    # def core_sources(self) -> CoreSources:
+    #     """
+    #         Core plasma thermal source terms (for the transport equations of the thermal species).
+    #         Energy terms correspond to the full kinetic energy equation
+    #         (i.e. the energy flux takes into account the energy transported by the particle flux)
+    #     """
+    #     return self.get("core_sources")
+
+    # @sp_property
+    # def edge_profiles(self) -> EdgeProfiles:
+    #     return self.get("edge_profiles", {})
+
+    # @sp_property
+    # def edge_transport(self) -> EdgeTransport:
+    #     """
+    #         Edge plasma transport. Energy terms correspond to the full kinetic energy equation
+    #         (i.e. the energy flux takes into account the energy transported by the particle flux)
+    #     """
+    #     return self.get("edge_transport", {})
+
+    # @sp_property
+    # def edge_sources(self) -> EdgeSources:
+    #     """Edge plasma sources. Energy terms correspond to the full kinetic energy equation
+    #      (i.e. the energy flux takes into account the energy transported by the particle flux)
+    #     """
+    #     return self.get("edge_sources", {})
+
+    # @sp_property
+    # def core_transport_solver(self) -> CoreTransportSolver:
+    #     return self.get("core_transport_solver", {})
+
+    # @sp_property
+    # def edge_transport_solver(self) -> EdgeTransportSolver:
+    #     return self.get("edge_transport_solver", {})
+
+    # @sp_property
+    # def equilibrium_solver(self) -> EquilibriumSolver:
+    #     return self.get("equilibrium_solver", {})
 
     def check_converge(self, /, **kwargs):
         return 0.0

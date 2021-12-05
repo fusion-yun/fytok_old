@@ -3,7 +3,7 @@ import collections
 import matplotlib.pyplot as plt
 import numpy as np
 from spdm.common.logger import logger
-from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property,Function
+from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property, Function
 from sympy import Point, Polygon
 
 from ..common.IDS import IDS
@@ -11,46 +11,26 @@ from ..common.Misc import RZTuple
 
 
 class WallGlobalQuantities(Dict):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    pass
 
 
 class WallLimiter(Dict):
-    def __init__(self,  *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     class Unit(Dict):
-        def __init__(self,  *args, **kwargs):
-            super().__init__(*args, **kwargs)
+        outline: RZTuple = sp_property()
 
-        @sp_property
-        def outline(self) -> RZTuple:
-            return self.get("outline", {})
-
-    @sp_property
-    def unit(self) -> List[Unit]:
-        return self.get("unit")
+    unit:  List[Unit] = sp_property()
 
 
 class WallVessel(Dict):
-    def __init__(self,   *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     class Annular(Dict):
-        def __init__(self,  *args, **kwargs):
-            super().__init__(*args, **kwargs)
 
-        @sp_property
-        def outline_outer(self) -> RZTuple:
-            return self.get("outline_outer", {})
+        outline_outer: RZTuple = sp_property(default={})
 
-        @sp_property
-        def outline_inner(self) -> RZTuple:
-            return self.get("outline_inner", {})
+        outline_inner: RZTuple = sp_property(default={})
 
-    @sp_property
-    def annular(self) -> Annular:
-        return self.get("annular")
+    annular: Annular = sp_property()
 
 
 class WallDescription2D(Dict):
@@ -58,16 +38,9 @@ class WallDescription2D(Dict):
     Limiter = WallLimiter
     Vessel = WallVessel
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    limiter: WallLimiter = sp_property()
 
-    @sp_property
-    def limiter(self) -> Limiter:
-        return self.get("limiter")
-
-    @sp_property
-    def vessel(self) -> Vessel:
-        return self.get("vessel")
+    vessel: WallVessel = sp_property()
 
     def limiter_polygon(self):
         limiter_points = np.array([self.limiter.unit[0].outline.r,
@@ -133,8 +106,7 @@ class WallDescription2D(Dict):
 
 
 class WallDescriptionGGD(Dict):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    pass
 
 
 class Wall(IDS):
@@ -146,20 +118,11 @@ class Wall(IDS):
     DescriptionGGD = WallDescriptionGGD
     GlobalQuantities = WallGlobalQuantities
 
-    def __init__(self, *args,  **kwargs):
-        super().__init__(*args, **kwargs)
+    global_quantities: GlobalQuantities = sp_property()
 
-    @sp_property
-    def global_quantities(self) -> GlobalQuantities:
-        return self.get("global_quantities")
+    description_2d: List[Description2D] = sp_property()
 
-    @sp_property
-    def description_2d(self) -> List[Description2D]:
-        return self.get("description_2d")
-
-    @sp_property
-    def description_ggd(self) -> List[DescriptionGGD]:
-        return self.get("description_ggd")
+    description_ggd: List[DescriptionGGD] = sp_property()
 
     def plot(self, axis=None, *args, **kwargs):
 

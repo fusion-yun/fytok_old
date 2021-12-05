@@ -57,9 +57,8 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # Initialize Tokamak
-    d = device_desc.get({"wall", "pf_active", "tf", "magnetics"}, None)
 
-    tok = Tokamak(**d)
+    tok = Tokamak(device_desc.get({"wall", "pf_active", "tf", "magnetics"}).dump())
 
     # Equilibrium
     eqdsk = load_equilibrium(eqdsk_file)
