@@ -8,7 +8,7 @@ from fytok.numlib.smooth import rms_residual
 from fytok.Tokamak import Tokamak
 from scipy import constants
 from spdm.common.logger import logger
-from spdm.data import File, Function
+from spdm.data import File, Function, Query
 from spdm.view.plot_profiles import plot_profiles, sp_figure
 
 if __name__ == "__main__":
@@ -77,7 +77,7 @@ if __name__ == "__main__":
                   "boundary": True,
                   "separatrix": True,
               }
-              ) .savefig(output_path/"tokamak.png", transparent=True)
+              ) .savefig(output_path/"tokamak.svg", transparent=True)
 
     if True:  # plot tokamak
 
@@ -153,7 +153,7 @@ if __name__ == "__main__":
             # x_axis=(magnetic_surface.rho_tor_norm,      r"$\bar{\rho}_{tor}$"),
             x_axis=(magnetic_surface.psi_norm,      r"$\bar{\psi}$"),
             title="Equilibrium",
-            grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_coord.png", transparent=True)
+            grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_coord.svg", transparent=True)
 
         eq_profile = tok.equilibrium.profiles_1d
 
@@ -221,18 +221,18 @@ if __name__ == "__main__":
                 #      r"$\left<\frac{1}{R^2}\right>$"),
                 # ]
             ],
-            x_axis=(eq_profile._coord.psi_norm,      r"$\psi/\psi_{bdry}$"),
+            x_axis=(eq_profile._parent.coordinate_system.psi_norm,      r"$\psi/\psi_{bdry}$"),
             # x_axis=([0, 1.0],                                                r"$\psi/\psi_{bdry}$"),
 
             title="Equilibrium",
-            grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.png", transparent=True)
+            grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
     if True:  # CoreProfile initialize value
 
         tok["core_profiles.profiles_1d"] = load_core_profiles(profiles, grid=tok.equilibrium.radial_grid)
 
         core_profile_1d = tok.core_profiles.profiles_1d
-        core_profile_1d.ion[{"label": "He"}, "has_fast_particle"] = True
+        core_profile_1d.ion[Query({"label": "He"}), "has_fast_particle"] = True
 
         plot_profiles(
             [
@@ -262,7 +262,7 @@ if __name__ == "__main__":
                 ]
             ],
             x_axis=([0, 1.0], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-            grid=True, fontsize=10) .savefig(output_path/"core_profiles_initialize.png", transparent=True)
+            grid=True, fontsize=10) .savefig(output_path/"core_profiles_initialize.svg", transparent=True)
 
     if True:  # CoreTransport
         tok["core_transport.model"] = [
@@ -332,7 +332,7 @@ if __name__ == "__main__":
             ],
             x_axis=([0, 1.0],   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             title="combine",
-            grid=True, fontsize=10) .savefig(output_path/"core_transport.png", transparent=True)
+            grid=True, fontsize=10) .savefig(output_path/"core_transport.svg", transparent=True)
 
     if True:  # CoreSources
         tok["core_sources.source"] = [
@@ -397,7 +397,7 @@ if __name__ == "__main__":
                 ],
             ],
             x_axis=([0, 1.0], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-            grid=True, fontsize=10) .savefig(output_path/"core_sources.png", transparent=True)
+            grid=True, fontsize=10) .savefig(output_path/"core_sources.svg", transparent=True)
 
     ###################################################################################################
     # TransportSolver
@@ -516,7 +516,7 @@ if __name__ == "__main__":
             ],
             x_axis=([0, 1.0],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             title=f" Particle solver '{particle_solver}'",
-            grid=True, fontsize=10).savefig(output_path/f"core_profiles_result_{particle_solver}.png", transparent=True)
+            grid=True, fontsize=10).savefig(output_path/f"core_profiles_result_{particle_solver}.svg", transparent=True)
 
         plot_profiles(
             [
@@ -579,6 +579,6 @@ if __name__ == "__main__":
             ],
             x_axis=([0, 1.0],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             title=f" Particle solver '{particle_solver}'",
-            grid=True, fontsize=10).savefig(output_path/f"core_profiles_result_{particle_solver}_alpha.png", transparent=True)
+            grid=True, fontsize=10).savefig(output_path/f"core_profiles_result_{particle_solver}_alpha.svg", transparent=True)
 
     logger.info("====== DONE ========")

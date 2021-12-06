@@ -62,13 +62,13 @@ class RadialGrid(Dict):
             psi_axis=self.psi_axis,
             psi_boundary=self.psi_boundary,
             rho_tor_boundary=self.rho_tor_boundary,
-            psi_norm=Function(axis,  self.psi_norm)(new_axis) if label != "psi_norm" else new_axis,
-            rho_tor_norm=Function(axis,  self.rho_tor_norm)(new_axis) if label != "rho_tor_norm" else new_axis,
+            psi_norm=function_like(axis,  self.psi_norm)(new_axis) if label != "psi_norm" else new_axis,
+            rho_tor_norm=function_like(axis,  self.rho_tor_norm)(new_axis) if label != "rho_tor_norm" else new_axis,
             # rho_pol_norm=Function(axis,  self.rho_pol_norm)(new_axis) if label != "rho_pol_norm" else new_axis,
             # area=Function(axis,  self.area)(new_axis) if label != "area" else new_axis,
             # surface=Function(axis,  self.surface)(new_axis) if label != "surface" else new_axis,
             # volume=Function(axis,  self.volume)(new_axis) if label != "volume" else new_axis,
-            dvolume_drho_tor=Function(axis,  self.dvolume_drho_tor)(new_axis),
+            dvolume_drho_tor=function_like(axis,  self.dvolume_drho_tor)(new_axis),
         )
 
     r0: float = sp_property()
@@ -151,11 +151,11 @@ class MagneticCoordSystem(Dict):
         super().__init__(*args, **kwargs)
 
         self._grid_type_index: int = self.get("grid_type_index", 13)
-        self._psirz: Field = self.get("psirz")
+        self._psirz: Field = self.get("psirz", NotImplemented)
 
-        self._Ip: float = self.get("Ip")
-        self._b0: float = self.get("B0", None)
-        self._r0: float = self.get("R0")
+        self._Ip: float = self.get("Ip", NotImplemented)
+        self._b0: float = self.get("B0", NotImplemented)
+        self._r0: float = self.get("R0", NotImplemented)
         self._fvac = self._b0*self._r0
 
         # @TODO: COCOS transformation
@@ -187,6 +187,8 @@ class MagneticCoordSystem(Dict):
         if not isinstance(self._psi_norm, np.ndarray):
             raise RuntimeError(f"psi_norm grid is not defined!")
 
+        logger.debug(f"Create MagneticCoordSystem: type index={self._grid_type_index} primary='psi'  ")
+
     @property
     def r0(self) -> float:
         return self._r0
@@ -212,7 +214,7 @@ class MagneticCoordSystem(Dict):
             # rho_pol_norm=self.rho_pol_norm,
             # area=self.area,
             # surface=self.surface,
-            # dvolume_drho_tor=self.dvolume_drho_tor,
+            dvolume_drho_tor=self.dvolume_drho_tor,
             # volume=self.volume,
         )
 
@@ -398,7 +400,7 @@ class MagneticCoordSystem(Dict):
     ###############################
 
     @dataclass
-    class ShapePropety:
+    class ShapeProperty:
         # RZ position of the geometric axis of the magnetic surfaces (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the surface)
         geometric_axis: RZTuple
         # Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary)[m]
@@ -420,7 +422,7 @@ class MagneticCoordSystem(Dict):
         # Radial coordinate(major radius) on the outboard side of the magnetic axis[m]
         r_outboard: np.ndarray  # r_outboard,
 
-    def shape_property(self, psi_norm: Union[float, Sequence[float]] = None) -> ShapePropety:
+    def shape_property(self, psi_norm: Union[float, Sequence[float]] = None) -> ShapeProperty:
         def shape_box(s: GeoObject):
             r, z = s.xyz
             if isinstance(s, Point):
@@ -452,7 +454,7 @@ class MagneticCoordSystem(Dict):
         else:
             rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard = sbox.T
         if isinstance(rmax, np.ndarray) and np.isclose(rmax[0], rmin[0]):
-            return MagneticCoordSystem.ShapePropety(
+            return MagneticCoordSystem.ShapeProperty(
                 # RZ position of the geometric axis of the magnetic surfaces (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the surface)
                 RZTuple(
                     function_like(psi_norm, (rmin+rmax)*0.5),
@@ -484,7 +486,7 @@ class MagneticCoordSystem(Dict):
                 function_like(psi_norm, r_outboard),  # "r_outboard":
             )
         else:
-            return MagneticCoordSystem.ShapePropety(
+            return MagneticCoordSystem.ShapeProperty(
                 # RZ position of the geometric axis of the magnetic surfaces (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the surface)
                 RZTuple((rmin+rmax)*0.5, (zmin+zmax)*0.5),
                 # Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary)[m]
@@ -518,8 +520,6 @@ class MagneticCoordSystem(Dict):
 
         mesh = CurvilinearMesh([surf for _, surf in self.find_surface_by_psi_norm(self._psi_norm, o_point=True)],
                                [self._psi_norm, self._theta/TWOPI], cycle=[False, True])
-
-        logger.debug(f"Create mesh: type index={self._grid_type_index} primary='psi'  ")
 
         return mesh
 
