@@ -6,7 +6,7 @@ import numpy as np
 from scipy import constants
 from spdm.common.logger import logger
 from spdm.common.tags import _not_found_
-from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property,Function, Function, function_like
+from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property, Function, Function, function_like
 
 from ..common.IDS import IDS
 from ..common.Species import Species, SpeciesElectron, SpeciesIon
@@ -114,8 +114,6 @@ class CoreProfilesElectrons(SpeciesElectron):
 
 
 class CoreProfilesIon(SpeciesIon):
-    def __init__(self, *args,  **kwargs):
-        super().__init__(*args,  ** kwargs)
 
     @property
     def grid(self) -> RadialGrid:
@@ -337,20 +335,11 @@ class CoreProfiles1D(Dict[Node]):
     def grid(self) -> RadialGrid:
         return self.get("grid")
 
-    @sp_property
-    def electrons(self) -> Electrons:
-        """Quantities related to the electrons"""
-        return self.get("electrons")
+    electrons: Electrons = sp_property(doc="""Quantities related to the electrons""")
 
-    @sp_property
-    def ion(self) -> List[Ion]:
-        """Quantities related to the different ion species"""
-        return self.get("ion", [])
+    ion: List[Ion] = sp_property(doc="""Quantities related to the different ion species""")
 
-    @sp_property
-    def neutral(self) -> List[Neutral]:
-        """Quantities related to the different neutral species"""
-        return self.get("neutral", [])
+    neutral: List[Ion] = sp_property(doc="""Quantities related to the different neutral species""")
 
     @sp_property
     def t_i_average(self) -> Function:

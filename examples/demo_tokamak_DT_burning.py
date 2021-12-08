@@ -17,7 +17,7 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # baseline
-    device_desc = File("/home/salmon/workspace/fytok/data/mapping/ITER/imas/3/static/config.xml", format="XML").read()
+    device_desc = File("/home/salmon/workspace/fytok_data/mapping/ITER/imas/3/static/config.xml", format="XML").read()
 
     eqdsk_file = File(
         "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="geqdsk").read()
@@ -66,20 +66,21 @@ if __name__ == "__main__":
     tok["equilibrium"] = {**eqdsk,
                           "code": {"name": "dummy"},
                           "boundary": {"psi_norm": 0.995},
-                          "coordinate_system": {"psi_norm": np.linspace(0.001, 0.995, 64), "theta": 128}}
+                          "coordinate_system": {"psi_norm": np.linspace(0.001, 0.995, 16), "theta": 64}}
 
-    sp_figure(tok,
-              wall={"limiter": {"edgecolor": "green"},
-                    "vessel": {"edgecolor": "blue"}},
-              pf_active={"facecolor": 'red'},
-              equilibrium={
-                  "contour": [0, 2],
-                  "boundary": True,
-                  "separatrix": True,
-              }
-              ) .savefig(output_path/"tokamak.svg", transparent=True)
+    if False:
+        sp_figure(tok,
+                  wall={"limiter": {"edgecolor": "green"},
+                        "vessel": {"edgecolor": "blue"}},
+                  pf_active={"facecolor": 'red'},
+                  equilibrium={
+                      "contour": [0, 2],
+                      "boundary": True,
+                      "separatrix": True,
+                  }
+                  ) .savefig(output_path/"tokamak.svg", transparent=True)
 
-    if True:  # plot tokamak
+    if False:  # plot tokamak
 
         magnetic_surface = tok.equilibrium.coordinate_system
 
@@ -282,29 +283,30 @@ if __name__ == "__main__":
 
         core_transport_model = tok.core_transport.model_combiner
 
-        core_transport = core_transport_model.profiles_1d
+        core_transport_profiles_1d = core_transport_model.profiles_1d
 
         # nc_profiles_1d = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
-        fast_alpha_profiles_1d = tok.core_transport.model[{"code.name": "fast_alpha"}].profiles_1d
+        fast_alpha_profiles_1d = tok.core_transport.model[Query({"code.name": "fast_alpha"})].profiles_1d
+
+        logger.debug(core_transport_profiles_1d.ion[Query({"label": "He"}, only_first=True)].energy.d)
+
         plot_profiles(
             [
                 [
-                    (Function(bs_r_norm, profiles["Xi"].values),          r"astra",
-                     r"$\chi_{i}$", bs_line_style),
-                    *[(core_transport.ion[{"label": ion.label}].energy.d,
+                    (Function(bs_r_norm, profiles["Xi"].values), r"astra", r"$\chi_{i}$", bs_line_style),
+                    *[(core_transport_profiles_1d.ion[Query({"label": ion.label})].energy.d,
                        f"{ion.label}", r"$\chi_{i}$") for ion in core_profile_1d.ion if not ion.is_impurity],
                 ],
                 [
-                    (Function(bs_r_norm, profiles["He"].values), "astra",
-                     r"$\chi_{e}$", bs_line_style),
-                    (core_transport.electrons.energy.d,
+                    (Function(bs_r_norm, profiles["He"].values), "astra", r"$\chi_{e}$", bs_line_style),
+                    (core_transport_profiles_1d.electrons.energy.d,
                      "fytok", r"$\chi_{e}$"),
                 ],
                 [
                     (Function(bs_r_norm, profiles["Joh"].values*1.0e6 / profiles["U"].values * (2.0*constants.pi * R0)),
                      r"astra", r"$\sigma_{\parallel}$", bs_line_style),
 
-                    (core_transport.conductivity_parallel,  r"fytok", r"$\sigma_{\parallel}$"),
+                    (core_transport_profiles_1d.conductivity_parallel,  r"fytok", r"$\sigma_{\parallel}$"),
                 ],
 
                 [(ion.particles.d_fast_factor, f"{ion.label}", r"$D_{\alpha}/D_{He}$")
@@ -344,7 +346,7 @@ if __name__ == "__main__":
         tok.core_sources.refresh(equilibrium=tok.equilibrium, core_profiles=tok.core_profiles)
 
         core_source = tok.core_sources.source_combiner.profiles_1d
-        core_source_fusion = tok.core_sources.source[{"code.name": "fusion_reaction"}].profiles_1d
+        core_source_fusion = tok.core_sources.source[Query({"code.name": "fusion_reaction"})].profiles_1d
         plot_profiles(
             [
                 [
@@ -360,8 +362,8 @@ if __name__ == "__main__":
                 # ],
                 [
                     (core_source.electrons.particles,       "electron",  r"$S[m ^ {-3} s ^ {-1}]$"),
-                    (core_source.ion[{"label": "D"}].particles,   "D",  r"$S[m ^ {-3} s ^ {-1}]$"),
-                    (core_source.ion[{"label": "T"}].particles,   "T",  r"$S[m ^ {-3} s ^ {-1}]$"),
+                    (core_source.ion[Query({"label": "D"})].particles,   "D",  r"$S[m ^ {-3} s ^ {-1}]$"),
+                    (core_source.ion[Query({"label": "T"})].particles,   "T",  r"$S[m ^ {-3} s ^ {-1}]$"),
                     #     (core_source.ion[{"label": "He"}].particles,  "He",  r"$S[m ^ {-3} s ^ {-1}]$"),
                 ],
                 # [
@@ -401,7 +403,7 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # TransportSolver
-    if True:
+    if False:
 
         tok["core_transport_solver"] = {
             "code": {

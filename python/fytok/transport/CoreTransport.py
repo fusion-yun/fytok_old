@@ -6,7 +6,7 @@ from typing import ChainMap, Optional
 import numpy as np
 from spdm.common.logger import logger
 from spdm.common.tags import _not_found_, _undefined_
-from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property,Function
+from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property, Function, function_like
 
 from ..common.IDS import IDS, IDSCode
 from ..common.Misc import Identifier, VacuumToroidalField
@@ -19,132 +19,76 @@ from .MagneticCoordSystem import RadialGrid
 
 
 class TransportCoeff(Dict):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args,  ** kwargs)
+    d: Function = sp_property(lambda self: function_like(self._parent._parent.grid_d.rho_tor_norm, self.get("d", 0)))
 
-    @sp_property
-    def d(self) -> Function:
-        return function_like(self._parent._parent.grid_d.rho_tor_norm, self.get("d", 0))
+    v: Function = sp_property(lambda self: function_like(self._parent._parent.grid_v.rho_tor_norm, self.get("v", 0)))
 
-    @sp_property
-    def v(self) -> Function:
-        return function_like(self._parent._parent.grid_v.rho_tor_norm, self.get("v", 0))
+    flux: Function = sp_property(
+        lambda self: function_like(self._parent._parent.grid_flux.rho_tor_norm, self.get("flux", 0)))
 
-    @sp_property
-    def flux(self) -> Function:
-        return function_like(self._parent._parent.grid_flux.rho_tor_norm, self.get("flux", 0))
+    d_fast_factor: Function = sp_property(
+        lambda self: function_like(self._parent._parent.grid.rho_tor_norm, self.get("d_fast_factor", 1)), doc=""" NOT IN IMAS """)
 
-    @sp_property
-    def d_fast_factor(self) -> Function:
-        """ NOT IN IMAS """
-        return function_like(self._parent._parent.grid.rho_tor_norm, self.get("d_fast_factor", 1))
+    v_fast_factor: Function = sp_property(
+        lambda self: function_like(self._parent._parent.grid.rho_tor_norm, self.get("v_fast_factor", 1)),
+        doc=""" NOT IN IMAS """)
 
-    @sp_property
-    def v_fast_factor(self) -> Function:
-        """ NOT IN IMAS """
-        return function_like(self._parent._parent.grid.rho_tor_norm, self.get("v_fast_factor", 1))
-
-    @sp_property
-    def flux_fast_factor(self) -> Function:
-        """ NOT IN IMAS """
-        return function_like(self._parent._parent.grid_flux.rho_tor_norm, self.get("flux_fast", 1))
+    flux_fast_factor: Function = sp_property(
+        lambda self:  function_like(self._parent._parent.grid_flux.rho_tor_norm, self.get("flux_fast", 1)),
+        doc=""" NOT IN IMAS """)
 
 
 class CoreTransportElectrons(SpeciesElectron):
-    def __init__(self, *args,   **kwargs):
-        super().__init__(*args,  ** kwargs)
 
-    @sp_property
-    def particles(self) -> TransportCoeff:
-        return self.get("particles", {})
+    particles: TransportCoeff = sp_property()
 
-    @sp_property
-    def energy(self) -> TransportCoeff:
-        return self.get("energy", {})
+    energy: TransportCoeff = sp_property()
 
 
 class CoreTransportIonState(SpeciesIonState):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
 
-    @sp_property
-    def particles(self) -> TransportCoeff:
-        """Transport quantities related to density equation of the charge state considered (thermal+non-thermal)	structure	"""
-        return self.get("particles", {})
+    particles: TransportCoeff = sp_property(
+        doc="""Transport quantities related to density equation of the charge state considered (thermal+non-thermal)	structure	""")
 
-    @sp_property
-    def energy(self) -> TransportCoeff:
-        """Transport quantities related to the energy equation of the charge state considered	structure	"""
-        return self.get("energy", {})
+    energy: TransportCoeff = sp_property(
+        doc="""Transport quantities related to the energy equation of the charge state considered	structure	""")
 
-    @sp_property
-    def momentum(self) -> TransportCoeff:
-        """Transport coefficients related to the state momentum equations for various components (directions)"""
-        return self.get("momentum", {})
+    momentum: TransportCoeff = sp_property(
+        doc="""Transport coefficients related to the state momentum equations for various components (directions)""")
 
 
 class CoreTransportMomentum(Dict):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args,  **kwargs)
 
-    @sp_property
-    def radial(self) -> TransportCoeff:
-        return TransportCoeff(self["radial"], parent=self._parent)
+    radial: TransportCoeff = sp_property()
 
-    @sp_property
-    def diamagnetic(self) -> TransportCoeff:
-        return TransportCoeff(self["diamagnetic"], parent=self._parent)
+    diamagnetic: TransportCoeff = sp_property()
 
-    @sp_property
-    def parallel(self) -> TransportCoeff:
-        return TransportCoeff(self["parallel"], parent=self._parent)
+    parallel: TransportCoeff = sp_property()
 
-    @sp_property
-    def poloidal(self) -> TransportCoeff:
-        return TransportCoeff(self["poloidal"], parent=self._parent)
+    poloidal: TransportCoeff = sp_property()
 
-    @sp_property
-    def toroidal(self) -> TransportCoeff:
-        return TransportCoeff(self["toroidal"], parent=self._parent)
+    toroidal: TransportCoeff = sp_property()
 
 
 class CoreTransportIon(SpeciesIon):
-    def __init__(self, *args,   **kwargs):
-        super().__init__(*args,  ** kwargs)
 
-    @sp_property
-    def particles(self) -> TransportCoeff:
-        return TransportCoeff(self.get("particles", {}), parent=self)
+    particles: TransportCoeff = sp_property()
 
-    @sp_property
-    def energy(self) -> TransportCoeff:
-        return TransportCoeff(self.get("energy", {}), parent=self)
+    energy: TransportCoeff = sp_property()
 
-    @sp_property
-    def momentum(self) -> CoreTransportMomentum:
-        return self.get("momentum", {})
+    momentum: CoreTransportMomentum = sp_property()
 
-    @sp_property
-    def state(self) -> List[CoreTransportIonState]:
-        return List[CoreTransportIonState](self.get("state", []), parent=self, grid=self.grid)
+    state: List[CoreTransportIonState] = sp_property()
 
 
 class CoreTransportNeutral(Species):
-    def __init__(self, *args,  **kwargs):
-        super().__init__(*args,  ** kwargs)
 
-    @property
-    def ion_index(self) -> int:
-        """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
-        return self.get("ion_index", 0)
+    ion_index: int = sp_property(default_value=0,
+                                 doc="""Index of the corresponding neutral species in the ../../neutral array {dynamic}    """)
 
-    @sp_property
-    def particles(self) -> TransportCoeff:
-        return TransportCoeff(self.get("particles"), parent=self._parent)
+    particles: TransportCoeff = sp_property()
 
-    @sp_property
-    def energy(self) -> TransportCoeff:
-        return TransportCoeff(self.get("energy"), parent=self._parent)
+    energy: TransportCoeff = sp_property()
 
 
 class CoreTransportProfiles1D(Dict[Node]):
@@ -153,65 +97,45 @@ class CoreTransportProfiles1D(Dict[Node]):
     Electrons = CoreTransportElectrons
     Momentum = CoreTransportMomentum
 
-    def __init__(self, *args,   ** kwargs):
-        super().__init__(*args, **kwargs)
+    grid: RadialGrid = sp_property()
 
-    @sp_property
-    def grid(self) -> RadialGrid:
-        return self.get("grid")
+    # grid_d: RadialGrid = sp_property(
+    #     lambda self: self.grid.remesh("rho_tor_norm", 0.5*(self.grid.rho_tor_norm[:-1]+self.grid.rho_tor_norm[1:])),
+    #     doc="""Grid for effective diffusivity and parallel conductivity""")
 
-    @sp_property
+    @ sp_property
     def grid_d(self) -> RadialGrid:
-        """Grid for effective diffusivities and parallel conductivity"""
+        logger.debug(self.grid.rho_tor_norm)
         return self.grid.remesh("rho_tor_norm", 0.5*(self.grid.rho_tor_norm[:-1]+self.grid.rho_tor_norm[1:]))
 
-    @sp_property
-    def grid_v(self) -> RadialGrid:
-        """ Grid for effective convections  """
-        return self.grid.remesh("rho_tor_norm", self.grid.rho_tor_norm)
+    grid_v: RadialGrid = sp_property(
+        lambda self: self.grid.remesh("rho_tor_norm", self.grid.rho_tor_norm),
+        doc=""" Grid for effective convections  """)
 
-    @sp_property
-    def grid_flux(self) -> RadialGrid:
-        """ Grid for fluxes  """
-        return self.grid.remesh("rho_tor_norm", 0.5*(self.grid.rho_tor_norm[:-1]+self.grid.rho_tor_norm[1:]))
+    grid_flux: RadialGrid = sp_property(
+        lambda self: self.grid.remesh("rho_tor_norm", 0.5*(self.grid.rho_tor_norm[:-1]+self.grid.rho_tor_norm[1:])),
+        doc=""" Grid for fluxes  """)
 
-    @sp_property
-    def electrons(self) -> Electrons:
-        """ Transport quantities related to the electrons """
-        return self.get('electrons', {})
+    electrons: Electrons = sp_property(doc=""" Transport quantities related to the electrons """)
 
-    @sp_property
-    def ion(self) -> List[Ion]:
-        """ Transport coefficients related to the various ion species """
-        return self.get('ion', [])
+    ion: List[Ion] = sp_property(doc=""" Transport coefficients related to the various ion species """)
 
-    @sp_property
-    def neutral(self) -> List[Neutral]:
-        """ Transport coefficients related to the various neutral species """
-        return self.get('neutral', [])
+    neutral: List[Neutral] = sp_property(doc=""" Transport coefficients related to the various neutral species """)
 
-    @sp_property
-    def momentum(self) -> Momentum:
-        return self.get('momentum')
+    momentum: Momentum = sp_property()
 
-    @sp_property
-    def total_ion_energy(self) -> TransportCoeff:
-        """ Transport coefficients for the total (summed over ion species) energy equation """
-        return self.get("total_ion_energy")
+    total_ion_energy: TransportCoeff = sp_property(
+        doc=""" Transport coefficients for the total (summed over ion species) energy equation """)
 
-    @sp_property
-    def momentum_tor(self) -> TransportCoeff:
-        """ Transport coefficients for total toroidal momentum equation  """
-        return self.get("momentum_tor")
+    momentum_tor: TransportCoeff = sp_property(
+        doc=""" Transport coefficients for total toroidal momentum equation  """)
 
-    @sp_property
-    def conductivity_parallel(self) -> Function:
-        return function_like(self.grid_d.rho_tor_norm, self.get("conductivity_parallel"))
+    conductivity_parallel: Function = sp_property(
+        lambda self: function_like(self.grid_d.rho_tor_norm, self.get("conductivity_parallel")))
 
-    @sp_property
-    def e_field_radial(self) -> Function:
-        """ Radial component of the electric field (calculated e.g. by a neoclassical model) {dynamic} [V.m^-1]"""
-        return function_like(self.grid_flux.rho_tor_norm, self.get("e_field_radial"))
+    e_field_radial: Function = sp_property(
+        lambda self:  function_like(self.grid_flux.rho_tor_norm, self.get("e_field_radial")),
+        doc=""" Radial component of the electric field (calculated e.g. by a neoclassical model) {dynamic} [V.m^-1]""")
 
 
 class CoreTransportModel(Module):
@@ -240,25 +164,15 @@ class CoreTransportModel(Module):
 
     Profiles1D = CoreTransportProfiles1D
 
-    def __init__(self,  *args, ** kwargs):
-        super().__init__(*args, **kwargs)
+    grid: RadialGrid = sp_property()
 
-    @sp_property
-    def grid(self) -> RadialGrid:
-        return self.get("grid", None) or self._parent.grid
+    flux_multiplier: float = sp_property(default_value=1.0)
 
-    @sp_property
-    def flux_multiplier(self) -> float:
-        return self.get("flux_multiplier", 1.0)
+    profiles_1d: Profiles1D = sp_property()
 
-    @sp_property
-    def profiles_1d(self) -> Profiles1D:
-        return CoreTransportModel.Profiles1D(self.get("profiles_1d", {}),   parent=self)
-
-    def refresh(self, *args, core_profiles: CoreProfiles, **kwargs) -> float:
+    def refresh(self, *args, core_profiles: CoreProfiles, **kwargs) -> None:
         super().refresh(*args, core_profiles=core_profiles, **kwargs)
         self.profiles_1d["grid"] = core_profiles.profiles_1d.grid
-        return 0.0
 
 
 class CoreTransport(IDS):
@@ -277,28 +191,20 @@ class CoreTransport(IDS):
     _IDS = "core_transport"
     Model = CoreTransportModel
 
-    def __init__(self,  *args,   **kwargs):
-        super().__init__(*args, **kwargs)
+    vacuum_toroidal_field: VacuumToroidalField = sp_property()
 
-    @sp_property
-    def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        return VacuumToroidalField(**self.get("vacuum_toroidal_field", {}))
+    grid: RadialGrid = sp_property()
 
-    @sp_property
-    def grid(self) -> RadialGrid:
-        return self.get("grid")
+    model: List[Model] = sp_property()
 
-    @sp_property
-    def model(self) -> List[Model]:
-        return List[CoreTransport.Model](self.get("model"),  parent=self)
-
-    @cached_property
+    @ cached_property
     def model_combiner(self) -> Model:
         return self.model.combine({
             "identifier": {"name": "combined", "index": 1,
                            "description": """Combination of data from available transport models.
                                 Representation of the total transport in the system"""},
-            "code": {"name": _undefined_}
+            "code": {"name": _undefined_},
+            # "profiles_1d": {"grid": self.grid}
         })
 
     def refresh(self, *args,   **kwargs) -> None:

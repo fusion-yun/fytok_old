@@ -7,7 +7,7 @@ import numpy as np
 from scipy import constants
 from spdm.common.logger import logger
 from spdm.common.tags import _undefined_
-from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property,Function,Function
+from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property, Function, Function
 
 from ..common.IDS import IDS
 from ..common.Misc import Decomposition, Identifier, VacuumToroidalField
@@ -23,22 +23,22 @@ from .MagneticCoordSystem import RadialGrid
 
 #     @sp_property
 #     def particles(self):
-#         return Function(self._parent.grid.rho_tor_norm, self["particles"], parent=self._parent)
+#         return Function(self._parent.grid.rho_tor_norm, self["particles"]._parent)
 
 #     @sp_property
 #     def energy(self):
-#         return Function(self._parent.grid.rho_tor_norm, self["energy"], parent=self._parent)
+#         return Function(self._parent.grid.rho_tor_norm, self["energy"]._parent)
 
 #     @sp_property
 #     def momentum(self):
-#         return Dict(self.get("momentum"), parent=self._parent)
+#         return Dict(self.get("momentum")._parent)
 
 # {
-#     "radial": Function(self._parent.radial_grid.rho_tor_norm, self["momentum.radial"], parent=self._parent),
-#     "diamagnetic": Function(self._parent.radial_grid.rho_tor_norm, self["momentum.diamagnetic"], parent=self._parent),
-#     "parallel": Function(self._parent.radial_grid.rho_tor_norm, self["momentum.parallel"], parent=self._parent),
-#     "poloidal": Function(self._parent.radial_grid.rho_tor_norm, self["momentum.poloidal"], parent=self._parent),
-#     "toroidal": Function(self._parent.radial_grid.rho_tor_norm, self["momentum.toroidal"], parent=self._parent)
+#     "radial": Function(self._parent.radial_grid.rho_tor_norm, self["momentum.radial"]._parent),
+#     "diamagnetic": Function(self._parent.radial_grid.rho_tor_norm, self["momentum.diamagnetic"]._parent),
+#     "parallel": Function(self._parent.radial_grid.rho_tor_norm, self["momentum.parallel"]._parent),
+#     "poloidal": Function(self._parent.radial_grid.rho_tor_norm, self["momentum.poloidal"]._parent),
+#     "toroidal": Function(self._parent.radial_grid.rho_tor_norm, self["momentum.toroidal"]._parent)
 # }
 
 
@@ -252,11 +252,11 @@ class CoreSourcesSource(Module):
 
     @sp_property
     def global_quantities(self) -> GlobalQuantities:
-        return CoreSourcesSource.GlobalQuantities(self.get("global_quantities", {}), parent=self)
+        return CoreSourcesSource.GlobalQuantities(self.get("global_quantities", {}))
 
     @sp_property
     def profiles_1d(self) -> Profiles1D:
-        return CoreSourcesSource.Profiles1D(self.get("profiles_1d", {}), parent=self)
+        return CoreSourcesSource.Profiles1D(self.get("profiles_1d", {}))
 
     def refresh(self, *args, core_profiles: CoreProfiles,  **kwargs) -> float:
         residual = super().refresh(*args,  **kwargs)
@@ -270,16 +270,9 @@ class CoreSources(IDS):
     _IDS = "core_sources"
     Source = CoreSourcesSource
 
-    def __init__(self, *args,    **kwargs):
-        super().__init__(*args, **kwargs)
+    vacuum_toroidal_field: VacuumToroidalField = sp_property()
 
-    @sp_property
-    def vacuum_toroidal_field(self) -> VacuumToroidalField:
-        return self.get("vacuum_toroidal_field")
-
-    @sp_property
-    def source(self) -> List[Source]:
-        return List[CoreSources.Source](self.get("source"), parent=self)
+    source: List[Source] = sp_property()
 
     @cached_property
     def source_combiner(self) -> Source:
