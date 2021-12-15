@@ -43,8 +43,6 @@ from .MagneticCoordSystem import RadialGrid
 
 
 class CoreSourcesElectrons(SpeciesElectron):
-    def __init__(self, *args,    **kwargs):
-        super().__init__(*args,  ** kwargs)
 
     @sp_property
     def particles(self) -> Function:
@@ -64,8 +62,6 @@ class CoreSourcesElectrons(SpeciesElectron):
 
 
 class CoreSourcesIon(SpeciesIon):
-    def __init__(self, *args,    **kwargs):
-        super().__init__(*args,  ** kwargs)
 
     @sp_property
     def particles(self) -> Function:
@@ -90,8 +86,7 @@ class CoreSourcesIon(SpeciesIon):
 
 
 class CoreSourcesNeutral(Species):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args,  ** kwargs)
+    pass
 
 
 class CoreSourcesProfiles1D(Dict):
@@ -99,24 +94,15 @@ class CoreSourcesProfiles1D(Dict):
     Electrons = CoreSourcesElectrons
     Neutral = CoreSourcesNeutral
 
-    def __init__(self, *args,    **kwargs):
-        super().__init__(*args,  ** kwargs)
-
     @sp_property
     def grid(self) -> RadialGrid:
         return self.get("grid")
 
-    @sp_property
-    def electrons(self) -> Electrons:
-        return self.get("electrons", {})
+    electrons: Electrons = sp_property()
 
-    @sp_property
-    def ion(self) -> List[Ion]:
-        return self.get("ion", [])
+    ion: List[Ion] = sp_property()
 
-    @sp_property
-    def neutral(self) -> List[Neutral]:
-        return self.get("neutral", [])
+    neutral: List[Neutral] = sp_property()
 
     @sp_property
     def total_ion_energy(self):
@@ -152,8 +138,7 @@ class CoreSourcesGlobalQuantities(Dict):
         Total source quantities integrated over the plasma volume or surface {dynamic}
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    pass
 
 
 class CoreSourcesSpecies(Dict):
@@ -243,20 +228,11 @@ class CoreSourcesSource(Module):
     Profiles1D = CoreSourcesProfiles1D
     GlobalQuantities = CoreSourcesGlobalQuantities
 
-    def __init__(self,   d, /,  **kwargs):
-        super().__init__(d, **kwargs)
+    species: Species = sp_property()
 
-    @sp_property
-    def species(self) -> Species:
-        return self.get("species", {})
+    global_quantities: GlobalQuantities = sp_property()
 
-    @sp_property
-    def global_quantities(self) -> GlobalQuantities:
-        return CoreSourcesSource.GlobalQuantities(self.get("global_quantities", {}))
-
-    @sp_property
-    def profiles_1d(self) -> Profiles1D:
-        return CoreSourcesSource.Profiles1D(self.get("profiles_1d", {}))
+    profiles_1d: Profiles1D = sp_property()
 
     def refresh(self, *args, core_profiles: CoreProfiles,  **kwargs) -> float:
         residual = super().refresh(*args,  **kwargs)
@@ -279,7 +255,7 @@ class CoreSources(IDS):
         return self.source.combine({
             "identifier": {"name": "total", "index": 1,
                            "description": "Total source; combines all sources"},
-            "code": {"name": _undefined_}
+            "code": {"name": None}
         })
 
     def refresh(self, *args,   **kwargs) -> float:

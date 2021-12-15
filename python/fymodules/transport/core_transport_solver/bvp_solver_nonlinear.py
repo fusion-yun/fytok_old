@@ -23,9 +23,10 @@ from fytok.transport.Equilibrium import Equilibrium
 from fytok.transport.MagneticCoordSystem import RadialGrid
 from numpy.core.defchararray import array
 from scipy import constants
-from spdm.data.Function import Function, function_like
-from spdm.data.Node import Dict, List, _not_found_, sp_property
 from spdm.common.logger import logger
+from spdm.common.tags import _not_found_
+from spdm.data import (Dict, Function, List, Path, Query, function_like,
+                       sp_property)
 from spdm.util.utilities import convert_to_named_tuple
 
 EPSILON = 1.0e-15
@@ -535,11 +536,11 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
         #     profiles_1d_next[var_id] = Function(rho_tor_norm, sol.y[idx*2])
         #     profiles_1d_next[var_id[:-1]+[f"{var_id[-1]}_flux"]] = Function(rho_tor_norm, sol.y[idx*2+1])
 
-    def _gather(self, x: np.ndarray, core_profiles_1d) -> np.ndarray:
+    def _gather(self, x: np.ndarray, core_profiles_1d: CoreProfiles.Profiles1D) -> np.ndarray:
         assert(len(self._var_list) > 0)
         y_list = [
-            [array_like(x, core_profiles_1d.get(var, 0)),
-             array_like(x, core_profiles_1d.get(var[:-1]+[var[-1]+"_flux"], 0))]
+            [array_like(x, core_profiles_1d.get(Path(var), 0)),
+             array_like(x, core_profiles_1d.get(Path(var[:-1]+[var[-1]+"_flux"]), 0))]
             for var, *_ in self._var_list
         ]
         return np.vstack(sum(y_list, []))
@@ -570,8 +571,8 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
         core_profiles_1d = core_profiles.profiles_1d
 
         for idx, (var, *_) in enumerate(self._var_list):
-            core_profiles_1d[var] = Function(x, y[idx*2])
-            core_profiles_1d[var[:-1]+[var[-1]+"_flux"]] = Function(x, y[idx*2+1])
+            core_profiles_1d[Path(var)] = Function(x, y[idx*2])
+            core_profiles_1d[Path(var[:-1]+[var[-1]+"_flux"])] = Function(x, y[idx*2+1])
 
         self.quasi_neutrality_condition(core_profiles.profiles_1d)
 
@@ -591,13 +592,13 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
         self._core_sources_1d = self._core_sources.source_combiner.profiles_1d
 
         # equations
-        dy_list = np.vstack(sum([list(eq(x, self._core_profiles_iter.profiles_1d, var))
+        dy_list = np.vstack(sum([list(eq(x, self._core_profiles_iter.profiles_1d, Path(var)))
                             for var, eq, *_ in self._var_list], []))
 
         return dy_list
 
     def _bc(self, Ya: np.ndarray, Yb: np.ndarray, p: np.ndarray = None) -> np.ndarray:
-        res_list = sum([list(bc(Ya[idx*2], Ya[idx*2+1],  Yb[idx*2], Yb[idx*2+1], var))
+        res_list = sum([list(bc(Ya[idx*2], Ya[idx*2+1],  Yb[idx*2], Yb[idx*2+1], Path(var)))
                         for idx, (var, eq, bc) in enumerate(self._var_list)], [])
         return res_list
 
@@ -617,7 +618,7 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
                 = ion       : n_i0*z_i0=n_i1*z_i1 ...
         """
 
-        self._parameters = collections.ChainMap(kwargs, self.get("code.parameters", {}))
+        self._parameters = collections.ChainMap(kwargs, self.get("code.parameters", {}).dump())
 
         self._core_sources = core_sources
 
@@ -728,7 +729,7 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
                     # TODO: impurity  transport
                     continue
                 else:
-                    self._var_list.append((["ion", {"label": ion.label}, "temperature"],
+                    self._var_list.append((["ion", Query({"label": ion.label}), "temperature"],
                                            self.transp_ion_energy, self.bc_ion_energy))
         else:
             # self._var_list.append((["electrons", "temperature"],
@@ -742,14 +743,14 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
                     # TODO: impurity  transport
                     continue
                 elif ion.has_fast_particle:
-                    self._var_list.append((["ion", {"label": ion.label}, "density_fast"],
+                    self._var_list.append((["ion", Query({"label": ion.label}), "density_fast"],
                                            self.transp_ion_particle_fast, self.bc_ion_particle_fast))
-                    self._var_list.append((["ion", {"label": ion.label}, "density_thermal"],
+                    self._var_list.append((["ion", Query({"label": ion.label}), "density_thermal"],
                                            self.transp_ion_particle_thermal, self.bc_ion_particle))
                     # self._var_list.append((["ion", {"label": ion.label}, "temperature"],
                     #                        self.transp_ion_energy, self.bc_ion_energy))
                 else:
-                    self._var_list.append((["ion", {"label": ion.label}, "density"],
+                    self._var_list.append((["ion", Query({"label": ion.label}), "density"],
                                            self.transp_ion_particle, self.bc_ion_particle))
                     # self._var_list.append((["ion", {"label": ion.label}, "temperature"],
                     #                        self.transp_ion_energy, self.bc_ion_energy))

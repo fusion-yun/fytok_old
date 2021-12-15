@@ -9,7 +9,7 @@ from typing import Mapping, Optional, Tuple
 import numpy as np
 from scipy import constants
 from spdm.common.logger import logger
-from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property,Function
+from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property, Function
 
 from ..common.Atoms import atoms
 from ..common.IDS import IDS
@@ -29,22 +29,13 @@ TOLERANCE = 1.0e-6
 
 TWOPI = 2.0 * constants.pi
 
-
 class _BC(Dict):
-    def __init__(self,  *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
-    @sp_property
-    def value(self) -> np.ndarray:
-        return self.get('value', [0.0])
+    value: np.ndarray = sp_property()
 
-    @sp_property
-    def rho_tor_norm(self) -> float:
-        return self.get('rho_tor_norm', 1.0)
+    rho_tor_norm: float = sp_property()
 
-    @sp_property
-    def identifier(self) -> Identifier:
-        return self.get('identifier', {"index": 1})
+    identifier: Identifier = sp_property()
 
 
 class CoreTransportSolver(IDS):
@@ -58,79 +49,37 @@ class CoreTransportSolver(IDS):
     class BoundaryConditions1D(Dict):
         BoundaryConditions = _BC
 
-        def __init__(self, *args,   **kwargs):
-            super().__init__(*args,  ** kwargs)
-
         class Electrons(SpeciesElectron):
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args,   **kwargs)
+            particles: _BC = sp_property()
 
-            @sp_property
-            def particles(self) -> _BC:
-                return self.get("particles")
+            energy: _BC = sp_property()
 
-            @sp_property
-            def energy(self) -> _BC:
-                return self.get("energy")
-
-            @sp_property
-            def rho_tor_norm(self) -> float:
-                return self.get("rho_tor_norm", 1.0)
+            rho_tor_norm: float = sp_property(default=1.0)
 
         class Ion(SpeciesIon):
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args,   **kwargs)
+            particles: _BC = sp_property()
 
-            @sp_property
-            def particles(self) -> _BC:
-                return self.get("particles")
+            particles_fast: _BC = sp_property()
 
-            @sp_property
-            def particles_fast(self) -> _BC:
-                return self.get("particles_fast")
+            energy: _BC = sp_property()
 
-            @sp_property
-            def energy(self) -> _BC:
-                return self.get("energy")
+            rho_tor_norm: float = sp_property(default=1.0)
 
-            @sp_property
-            def rho_tor_norm(self) -> float:
-                return self.get("rho_tor_norm", 1.0)
+        electrons: Electrons = sp_property()
 
-        @sp_property
-        def electrons(self) -> Electrons:
-            return self.get("electrons", {})
+        ion: List[Ion] = sp_property()
 
-        @sp_property
-        def ion(self) -> List[Ion]:
-            return self.get("ion", [])
+        current: BoundaryConditions = sp_property()
 
-        @sp_property
-        def current(self) -> BoundaryConditions:
-            return self.get("current", {})
+        energy_ion_total: BoundaryConditions = sp_property()
 
-        @sp_property
-        def energy_ion_total(self) -> BoundaryConditions:
-            return self.get("energy_ion_total", {})
+        momentum_tor: BoundaryConditions = sp_property()
 
-        @sp_property
-        def momentum_tor(self) -> BoundaryConditions:
-            return self.get("momentum_tor", {})
+    solver: Identifier = sp_property()
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args,  ** kwargs)
+    primary_coordinate: Identifier = sp_property()
 
-    @sp_property
-    def solver(self) -> Identifier:
-        return self.get("solver")
-
-    @sp_property
-    def primary_coordinate(self) -> Identifier:
-        return self.get("primary_coordinate")
-
-    @sp_property
-    def boundary_conditions_1d(self) -> BoundaryConditions1D:
-        return self.get("boundary_conditions_1d", {})
+    boundary_conditions_1d: BoundaryConditions1D = sp_property()
 
     def refresh(self, *args,  boundary_conditions_1d=None,  **kwargs):
         if boundary_conditions_1d is not None:

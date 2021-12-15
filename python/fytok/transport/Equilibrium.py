@@ -793,9 +793,6 @@ class Equilibrium(IDS):
     Boundary = EquilibriumBoundary
     BoundarySeparatrix = EquilibriumBoundarySeparatrix
 
-    def __init__(self, *args,  **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
     def refresh(self,  *args, **kwargs):
         super().refresh(*args, **kwargs)
         return self

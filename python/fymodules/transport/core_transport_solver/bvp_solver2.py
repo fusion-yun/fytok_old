@@ -22,9 +22,10 @@ from fytok.transport.CoreTransportSolver import CoreTransportSolver
 from fytok.transport.Equilibrium import Equilibrium
 from fytok.transport.MagneticCoordSystem import RadialGrid
 from scipy import constants
-from spdm.data.Function import Function, function_like
-from spdm.data.Node import Dict, List, _not_found_, sp_property
 from spdm.common.logger import logger
+from spdm.common.tags import _not_found_
+from spdm.data import Dict, Function, List, sp_property
+from spdm.data.Function import function_like
 from spdm.util.utilities import convert_to_named_tuple
 
 EPSILON = 1.0e-15

@@ -5,23 +5,22 @@
 import collections
 import enum
 from math import log
-from typing import Mapping, Optional, Type, Union, Sequence
-
-from matplotlib.pyplot import loglog
+from typing import Mapping, Optional, Sequence, Type, Union
 
 from fytok.common.IDS import IDS
 from fytok.common.Misc import Identifier
+from fytok.numlib.bvp import solve_bvp
 from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreSources import CoreSources
 from fytok.transport.CoreTransport import CoreTransport
 from fytok.transport.Equilibrium import Equilibrium
 from fytok.transport.MagneticCoordSystem import RadialGrid
 from fytok.transport.TransportSolver import TransportSolver
+from matplotlib.pyplot import loglog
+from scipy import constants
+from spdm.common.logger import logger
 from spdm.data.Function import Function
 from spdm.data.Node import Dict, List, _not_found_, sp_property
-from scipy import constants
-from fytok.numlib.bvp import solve_bvp
-from spdm.common.logger import logger
 from spdm.util.utilities import convert_to_named_tuple
 
 EPSILON = 1.0e-15

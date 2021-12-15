@@ -581,17 +581,9 @@ class CoreProfiles(IDS):
     Profiles1D = CoreProfiles1D
     GlobalQuantities = CoreProfilesGlobalQuantities
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args,  **kwargs)
+    def refresh(self, *args,  **kwargs) -> None:
+        super().refresh(*args, **kwargs)
 
-    def refresh(self, *args,  **kwargs) -> float:
-        residual = super().refresh(*args, **kwargs)
-        return residual
+    profiles_1d: Profiles1D = sp_property()
 
-    @sp_property
-    def profiles_1d(self) -> Profiles1D:
-        return self.get("profiles_1d", {})
-
-    @sp_property
-    def global_quantities(self) -> GlobalQuantities:
-        return self.get("global_quantities", {})
+    global_quantities: GlobalQuantities = sp_property()

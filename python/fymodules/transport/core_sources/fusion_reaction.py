@@ -2,16 +2,13 @@
 import collections
 
 import numpy as np
+from fytok.common.Atoms import nuclear_reaction
 from fytok.numlib.misc import array_like
 from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreSources import CoreSources
 from fytok.transport.Equilibrium import Equilibrium
 from scipy import constants
-from spdm.data.Function import Function, function_like
-from spdm.common.logger import logger
-from fytok.numlib.misc import array_like
-
-from fytok.common.Atoms import nuclear_reaction
+from spdm.data import Function, Query, function_like
 
 
 class FusionReaction(CoreSources.Source):
@@ -75,11 +72,11 @@ class FusionReaction(CoreSources.Source):
 
         rho_tor_norm = core_profiles_1d.grid.rho_tor_norm
 
-        ionT: CoreProfiles.Profiles1D.Ion = core_profiles_1d.ion[{"label": "T"}]
+        ionT: CoreProfiles.Profiles1D.Ion = core_profiles_1d.ion[Query({"label": "T"})]
 
-        ionD: CoreProfiles.Profiles1D.Ion = core_profiles_1d.ion[{"label": "D"}]
+        ionD: CoreProfiles.Profiles1D.Ion = core_profiles_1d.ion[Query({"label": "D"})]
 
-        ionHe: CoreProfiles.Profiles1D.Ion = core_profiles_1d.ion[{"label": "He"}]
+        ionHe: CoreProfiles.Profiles1D.Ion = core_profiles_1d.ion[Query({"label": "He"})]
 
         nD = ionD.density(rho_tor_norm)
         nT = ionT.density(rho_tor_norm)

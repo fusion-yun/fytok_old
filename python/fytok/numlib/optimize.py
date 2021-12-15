@@ -7,9 +7,8 @@ import numpy as np
 from scipy import optimize
 from scipy.ndimage.filters import maximum_filter, minimum_filter
 from scipy.ndimage.morphology import binary_erosion, generate_binary_structure
-from spdm.common.logger import logger
 from scipy.optimize import fsolve, minimize, root_scalar
-
+from spdm.common.logger import logger
 
 SP_EXPERIMENTAL = os.environ.get("SP_EXPERIMENTAL", False)
 
@@ -85,8 +84,7 @@ def minimize_filter(func: Callable[..., float], xmin: float, ymin: float, xmax: 
         ysol = Y[ix, iy]
 
         if True:
-            sol = minimize(func, np.asarray([xsol, ysol]),   bounds=[
-                           (xmin, xmax), (ymin, ymax)])
+            sol = minimize(func, np.asarray([xsol, ysol]),   bounds=[(xmin, xmax), (ymin, ymax)])
             xsol, ysol = sol.x
             if sol.success and abs(sol.fun) < EPSILON and (xsol >= xmin or xsol <= xmax or ysol >= ymin or ysol <= ymax):
                 yield xsol, ysol
@@ -150,15 +148,13 @@ def find_critical_points_2d_experimental(func: Callable[..., float], xmin, ymin,
     def grad_func(p): return func(*p, grid=False)
 
     for x, y in minimize_filter_2d_experimental(grad_func, xmin, ymin, xmax, ymax, tolerance=tolerance):
-        D = func(x, y, dx=2, grid=False) * func(x, y, dy=2,
-                                                grid=False) - (func(x, y,  dx=1, dy=1, grid=False))**2
+        D = func(x, y, dx=2, grid=False) * func(x, y, dy=2, grid=False) - (func(x, y,  dx=1, dy=1, grid=False))**2
         yield x, y, func(x, y, grid=False), D
 
 
 def find_critical_points(func: Callable[..., float], xmin: float, ymin: float, xmax: float, ymax: float, tolerance=EPSILON):
 
-    def grad2_func(p): return func(*p, dx=1, grid=False)**2 + \
-        func(*p, dy=1, grid=False)**2
+    def grad2_func(p): return func(*p, dx=1, grid=False)**2 + func(*p, dy=1, grid=False)**2
 
     for xsol, ysol in minimize_filter(grad2_func, xmin, ymin, xmax, ymax, tolerance=tolerance):
         D = func(xsol, ysol, dx=2, grid=False) * func(xsol, ysol, dy=2, grid=False) - \

@@ -197,13 +197,13 @@ class CoreTransport(IDS):
 
     model: List[Model] = sp_property()
 
-    @ cached_property
+    @cached_property
     def model_combiner(self) -> Model:
         return self.model.combine({
             "identifier": {"name": "combined", "index": 1,
                            "description": """Combination of data from available transport models.
                                 Representation of the total transport in the system"""},
-            "code": {"name": _undefined_},
+            "code": {"name": None},
             # "profiles_1d": {"grid": self.grid}
         })
 

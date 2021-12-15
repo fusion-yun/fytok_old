@@ -66,9 +66,9 @@ if __name__ == "__main__":
     tok["equilibrium"] = {**eqdsk,
                           "code": {"name": "dummy"},
                           "boundary": {"psi_norm": 0.995},
-                          "coordinate_system": {"psi_norm": np.linspace(0.001, 0.995, 16), "theta": 64}}
+                          "coordinate_system": {"psi_norm": np.linspace(0.001, 0.995, 64), "theta": 64}}
 
-    if False:
+    if True:
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},
                         "vessel": {"edgecolor": "blue"}},
@@ -286,9 +286,7 @@ if __name__ == "__main__":
         core_transport_profiles_1d = core_transport_model.profiles_1d
 
         # nc_profiles_1d = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
-        fast_alpha_profiles_1d = tok.core_transport.model[Query({"code.name": "fast_alpha"})].profiles_1d
-
-        logger.debug(core_transport_profiles_1d.ion[Query({"label": "He"}, only_first=True)].energy.d)
+        # fast_alpha_profiles_1d = tok.core_transport.model[Query({"code.name": "fast_alpha"})].profiles_1d
 
         plot_profiles(
             [
@@ -309,8 +307,8 @@ if __name__ == "__main__":
                     (core_transport_profiles_1d.conductivity_parallel,  r"fytok", r"$\sigma_{\parallel}$"),
                 ],
 
-                [(ion.particles.d_fast_factor, f"{ion.label}", r"$D_{\alpha}/D_{He}$")
-                 for ion in fast_alpha_profiles_1d.ion],
+                # [(ion.particles.d_fast_factor, f"{ion.label}", r"$D_{\alpha}/D_{He}$")
+                #  for ion in fast_alpha_profiles_1d.ion],
 
 
                 # [
@@ -345,14 +343,15 @@ if __name__ == "__main__":
 
         tok.core_sources.refresh(equilibrium=tok.equilibrium, core_profiles=tok.core_profiles)
 
-        core_source = tok.core_sources.source_combiner.profiles_1d
-        core_source_fusion = tok.core_sources.source[Query({"code.name": "fusion_reaction"})].profiles_1d
+        core_source_profiles_1d = tok.core_sources.source_combiner.profiles_1d
+
+        # core_source_fusion = tok.core_sources.source[Query({"code.name": "fusion_reaction"})].profiles_1d
         plot_profiles(
             [
                 [
                     (Function(bs_r_norm, profiles["Jtot"].values),  "astra",
                      "$J_{total}=j_{bootstrap}+j_{\\Omega}$ \n $[MA\\cdot m^{-2}]$", bs_line_style),
-                    (core_source.j_parallel*1e-6,     "fytok", ""),
+                    (core_source_profiles_1d.j_parallel*1e-6,     "fytok", ""),
                 ],
 
                 # [
@@ -361,9 +360,9 @@ if __name__ == "__main__":
                 #     (core_profile_1d.j_ohmic*1e-6, " ",    r"$j_{\Omega} [MA\cdot m^{-2}]$"),
                 # ],
                 [
-                    (core_source.electrons.particles,       "electron",  r"$S[m ^ {-3} s ^ {-1}]$"),
-                    (core_source.ion[Query({"label": "D"})].particles,   "D",  r"$S[m ^ {-3} s ^ {-1}]$"),
-                    (core_source.ion[Query({"label": "T"})].particles,   "T",  r"$S[m ^ {-3} s ^ {-1}]$"),
+                    (core_source_profiles_1d.electrons.particles,       "electron",  r"$S[m ^ {-3} s ^ {-1}]$"),
+                    (core_source_profiles_1d.ion[Query({"label": "D"})].particles,   "D",  r"$S[m ^ {-3} s ^ {-1}]$"),
+                    (core_source_profiles_1d.ion[Query({"label": "T"})].particles,   "T",  r"$S[m ^ {-3} s ^ {-1}]$"),
                     #     (core_source.ion[{"label": "He"}].particles,  "He",  r"$S[m ^ {-3} s ^ {-1}]$"),
                 ],
                 # [
@@ -393,9 +392,9 @@ if __name__ == "__main__":
 
 
                 [
-                    (core_source.electrons.energy,  "electron",      r"$Q [eV\cdot m^{-3} s^{-1}]$"),
-                    *[(ion.energy*1e-6,             f"{ion.label}",  r"$Q [eV\cdot m^{-3} s^{-1}]$")
-                      for ion in core_source.ion if not ion.is_impurity],
+                    (core_source_profiles_1d.electrons.energy,  "electron",      r"$Q [eV\cdot m^{-3} s^{-1}]$"),
+                    # *[(ion.energy*1e-6,             f"{ion.label}",  r"$Q [eV\cdot m^{-3} s^{-1}]$")
+                    #   for ion in core_source_profiles_1d.ion if not ion.is_impurity],
                 ],
             ],
             x_axis=([0, 1.0], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
@@ -403,7 +402,7 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # TransportSolver
-    if False:
+    if True:
 
         tok["core_transport_solver"] = {
             "code": {
@@ -447,7 +446,7 @@ if __name__ == "__main__":
         b_nHe_fast = Function(bs_r_norm,  profiles["Naff"].values * 1.0e19)
         b_nHe_thermal = Function(bs_r_norm,  profiles["Nath"].values * 1.0e19)
 
-        ionHe = core_profile_1d.ion[{"label": "He"}]
+        ionHe = core_profile_1d.ion[Query({"label": "He"})]
 
         plot_profiles(
             [
@@ -499,7 +498,7 @@ if __name__ == "__main__":
 
                 # ---------------------------------------------------------------------------------------------------
 
-                (core_profile_1d["rms_residuals"] * 100, r"bvp", r"residual $[\%]$"),
+                # (core_profile_1d["rms_residuals"] * 100, r"bvp", r"residual $[\%]$"),
 
                 [
                     # (rms_residual(Function(bs_r_norm, bs_psi),
@@ -549,15 +548,15 @@ if __name__ == "__main__":
                 #         for ion in core_profile_1d.ion if not ion.is_impurity],
                 # ],
 
-                (fast_alpha_profiles_1d.ion[{"label": "He"}].particles.d_fast_factor,
-                 f""r"$D_{\alpha}/D_{He}$", r"$D_{\alpha}/D_{He}$"),
+                # (fast_alpha_profiles_1d.ion[{"label": "He"}].particles.d_fast_factor,
+                #  f""r"$D_{\alpha}/D_{He}$", r"$D_{\alpha}/D_{He}$"),
 
                 # [
                 #     (core_source_fusion.ion[{"label": "He"}].particles,
                 #      r"$[ n_{\alpha}/\tau^{*}_{SD}]$", r"$S_{He} [m^3 s^{-1}]$",),
 
-                (core_source_fusion.ion[{"label": "He"}].particles_fast,
-                 r"$n_{D} n_{T} \left<\sigma_{DT}\right>- n_{\alpha}/\tau^{*}_{SD}$", r"$S_{\alpha} [m^3 s^{-1}]$",),
+                # (core_source_fusion.ion[{"label": "He"}].particles_fast,
+                #  r"$n_{D} n_{T} \left<\sigma_{DT}\right>- n_{\alpha}/\tau^{*}_{SD}$", r"$S_{\alpha} [m^3 s^{-1}]$",),
                 # ],
 
 

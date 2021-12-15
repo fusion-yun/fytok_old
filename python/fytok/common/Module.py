@@ -5,7 +5,8 @@ import collections.abc
 from spdm.common.logger import logger
 from spdm.common.SpObject import SpObject
 from spdm.common.tags import _undefined_
-from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property,Function
+from spdm.data import (Dict, Entry, File, Function, Link, List, Node, Path,
+                       Query, sp_property)
 
 from .Misc import Identifier
 
@@ -23,7 +24,7 @@ class Module(Dict[Node]):
         elif isinstance(desc, collections.abc.Mapping):
             cls_name = desc.get("code", {}).get("name", None)
         elif isinstance(desc, Entry):
-            cls_name = desc.get("code.name", "")
+            cls_name = desc.get("code.name", None)
 
         if isinstance(cls_name, str):
             cls_name = f"{prefix}{cls_name}"
