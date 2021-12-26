@@ -13,9 +13,9 @@ from ..common.IDS import IDS
 from ..common.Misc import Decomposition, Identifier, VacuumToroidalField
 from ..common.Module import Module
 from ..common.Species import Species, SpeciesElectron, SpeciesIon
-from .CoreProfiles import CoreProfiles
-from .Equilibrium import Equilibrium
-from .MagneticCoordSystem import RadialGrid
+from ..transport.CoreProfiles import CoreProfiles
+from ..transport.Equilibrium import Equilibrium
+from ..transport.MagneticCoordSystem import RadialGrid
 
 # class CoreSourcesParticle(Dict):
 #     def __init__(self, *args,  **kwargs):

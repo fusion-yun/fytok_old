@@ -7,11 +7,11 @@ from fytok.transport.CoreTransport import CoreTransport
 import numpy as np
 import pandas as pd
 import scipy.constants
-from fytok.common.Atoms import atoms
+from fytok.constants.Atoms import atoms
 from fytok.Tokamak import TWOPI, Tokamak
 from fytok.transport.Equilibrium import Equilibrium
 from spdm.data.File import File
-from spdm.data.Function import Function, PiecewiseFunction
+from spdm.data import Function, PiecewiseFunction
 from scipy import constants
 from fytok.numlib.smooth import rms_residual, smooth_1d
 from spdm.common.logger import logger

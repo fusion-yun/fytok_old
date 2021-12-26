@@ -2,12 +2,12 @@ import collections
 
 import matplotlib.pyplot as plt
 import numpy as np
-from spdm.common.logger import logger
-from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property, Function
-from sympy import Point, Polygon
-
 from ..common.IDS import IDS
 from ..common.Misc import RZTuple
+from spdm.common.logger import logger
+from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
+                       sp_property)
+from sympy import Point, Polygon
 
 
 class WallGlobalQuantities(Dict):

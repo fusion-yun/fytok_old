@@ -1,10 +1,11 @@
 import collections
 from dataclasses import dataclass, field
 
-from fytok.transport.MagneticCoordSystem import RadialGrid
-from spdm.data import Dict, List, Node
+import numpy as np
+from ..transport.MagneticCoordSystem import RadialGrid
 from scipy import constants
 from spdm.common.logger import logger
+from spdm.data import Dict, List, Node
 
 
 @dataclass

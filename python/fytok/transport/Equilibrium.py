@@ -6,17 +6,16 @@ from typing import Sequence, TypeVar, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
-from fytok.device.PFActive import PFActive
 from scipy import constants
 from spdm.common.logger import logger
-from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property, Function
+from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
+                       function_like, sp_property)
 from spdm.data.Entry import Entry
 from spdm.data.Field import Field
-from spdm.data.Function import Function, function_like
 from spdm.data.List import List
-from spdm.data.Node import Node
 from spdm.data.sp_property import sp_property
-from spdm.util.utilities import _not_found_, _undefined_, try_get
+from spdm.common.tags import _not_found_, _undefined_
+from spdm.util.utilities import try_get
 
 from ..common.GGD import GGD
 from ..common.IDS import IDS

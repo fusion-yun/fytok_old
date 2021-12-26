@@ -6,16 +6,17 @@ from typing import ChainMap, Optional
 import numpy as np
 from spdm.common.logger import logger
 from spdm.common.tags import _not_found_, _undefined_
-from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property, Function, function_like
+from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
+                       function_like, sp_property)
 
 from ..common.IDS import IDS, IDSCode
 from ..common.Misc import Identifier, VacuumToroidalField
 from ..common.Module import Module
 from ..common.Species import (Species, SpeciesElectron, SpeciesIon,
                               SpeciesIonState)
-from .CoreProfiles import CoreProfiles
-from .Equilibrium import Equilibrium
-from .MagneticCoordSystem import RadialGrid
+from ..transport.CoreProfiles import CoreProfiles
+from ..transport.Equilibrium import Equilibrium
+from ..transport.MagneticCoordSystem import RadialGrid
 
 
 class TransportCoeff(Dict):

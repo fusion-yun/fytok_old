@@ -1,9 +1,9 @@
 from functools import cached_property
 
-from spdm.common.tags import _not_found_, _undefined_
-from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property,Function
-
 from ..common.IDS import IDS
+from spdm.common.tags import _not_found_, _undefined_
+from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
+                       sp_property)
 
 
 class EdgeSourcesSource(Dict):

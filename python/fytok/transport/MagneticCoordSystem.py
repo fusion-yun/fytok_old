@@ -8,7 +8,8 @@ from typing import Callable, Iterator, Mapping, Sequence, Tuple, TypeVar, Union
 import numpy as np
 from scipy import constants
 from spdm.common.logger import logger
-from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property, Function
+from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
+                       sp_property)
 from spdm.data.Field import Field
 from spdm.data.Function import function_like
 from spdm.geometry.CubicSplineCurve import CubicSplineCurve

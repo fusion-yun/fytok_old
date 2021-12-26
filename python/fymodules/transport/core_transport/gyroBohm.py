@@ -2,15 +2,15 @@ import collections
 from functools import cached_property
 
 import numpy as np
-from scipy import constants
 from fytok.transport.CoreProfiles import CoreProfiles
-from fytok.transport.CoreTransport import CoreTransport, CoreTransportProfiles1D
+from fytok.transport.CoreTransport import (CoreTransport,
+                                           CoreTransportProfiles1D)
 from fytok.transport.Equilibrium import Equilibrium
 from fytok.transport.MagneticCoordSystem import RadialGrid
-from spdm.data.Function import Function
-from spdm.data.Node import _next_
-from spdm.data.TimeSeries import TimeSeries, TimeSlice
+from scipy import constants
 from spdm.common.logger import logger
+from spdm.common.tags import _next_
+from spdm.data import Function
 
 
 class GyroBohm(CoreTransport.Model):

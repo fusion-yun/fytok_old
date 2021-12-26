@@ -1,15 +1,14 @@
 import collections
 from functools import cached_property
 
-import scipy
-from spdm.data.Function import Function
-from spdm.data.Node import Dict, Node, _next_
 import numpy as np
+import scipy
 from spdm.common.logger import logger
+from spdm.data import Dict, Function, Node
 
+from .transport.CoreTransportSolver import CoreTransportSolver
 from .operation.PulseSchedule import PulseSchedule
 from .Tokamak import Tokamak
-from .transport.TransportSolver import TransportSolver
 
 
 class Scenario(Dict):
@@ -27,11 +26,11 @@ class Scenario(Dict):
 
     @cached_property
     def pulse_schedule(self):
-        return PulseSchedule(self["pluse_schedule"], parent=self)
+        return PulseSchedule(self["pulse_schedule"], parent=self)
 
     @cached_property
     def transport_solver(self):
-        return TransportSolver(self["transport_solver"], parent=self)
+        return CoreTransportSolver(self["core_transport_solver"], parent=self)
 
     # --------------------------------------------------------------------------
 

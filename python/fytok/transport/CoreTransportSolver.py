@@ -11,15 +11,15 @@ from scipy import constants
 from spdm.common.logger import logger
 from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property, Function
 
-from ..common.Atoms import atoms
+from ..constants.Atoms import atoms
 from ..common.IDS import IDS
 from ..common.Misc import Identifier
 from ..common.Species import SpeciesElectron, SpeciesIon
-from .CoreProfiles import CoreProfiles
-from .CoreSources import CoreSources
-from .CoreTransport import CoreTransport
-from .Equilibrium import Equilibrium
-from .MagneticCoordSystem import RadialGrid
+from ..transport.CoreProfiles import CoreProfiles
+from ..transport.CoreSources import CoreSources
+from ..transport.CoreTransport import CoreTransport
+from ..transport.Equilibrium import Equilibrium
+from ..transport.MagneticCoordSystem import RadialGrid
 
 # from .EdgeProfiles import EdgeProfiles
 # from .EdgeSources import EdgeSources

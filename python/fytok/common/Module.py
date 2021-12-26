@@ -2,13 +2,12 @@
 import collections
 import collections.abc
 
+from ..common.Misc import Identifier
 from spdm.common.logger import logger
 from spdm.common.SpObject import SpObject
 from spdm.common.tags import _undefined_
 from spdm.data import (Dict, Entry, File, Function, Link, List, Node, Path,
                        Query, sp_property)
-
-from .Misc import Identifier
 
 
 class Module(Dict[Node]):

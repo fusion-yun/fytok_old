@@ -13,14 +13,13 @@ from fytok.numlib.bvp import solve_bvp
 from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreSources import CoreSources
 from fytok.transport.CoreTransport import CoreTransport
+from fytok.transport.CoreTransportSolver import CoreTransportSolver
 from fytok.transport.Equilibrium import Equilibrium
 from fytok.transport.MagneticCoordSystem import RadialGrid
-from fytok.transport.TransportSolver import TransportSolver
-from matplotlib.pyplot import loglog
 from scipy import constants
 from spdm.common.logger import logger
-from spdm.data.Function import Function
-from spdm.data.Node import Dict, List, _not_found_, sp_property
+from spdm.common.tags import _not_found_
+from spdm.data import Dict, Function, List, sp_property
 from spdm.util.utilities import convert_to_named_tuple
 
 EPSILON = 1.0e-15
@@ -29,7 +28,7 @@ TOLERANCE = 1.0e-6
 TWOPI = 2.0 * constants.pi
 
 
-class TransportSolverBVP(TransportSolver):
+class TransportSolverBVP(CoreTransportSolver):
     r"""
         Solve transport equations :math:`\rho=\sqrt{ \Phi/\pi B_{0}}`
         See  :cite:`hinton_theory_1976,coster_european_2010,pereverzev_astraautomated_1991`
@@ -231,7 +230,7 @@ class TransportSolverBVP(TransportSolver):
                           core_profiles_prev: CoreProfiles.Profiles1D,
                           transp: CoreTransport.Model.Profiles1D,
                           source: CoreSources.Source.Profiles1D,
-                          bc: TransportSolver.BoundaryConditions1D.BoundaryConditions,
+                          bc: CoreTransportSolver.BoundaryConditions1D.BoundaryConditions,
                           **kwargs):
 
         # -----------------------------------------------------------------
@@ -326,8 +325,8 @@ class TransportSolverBVP(TransportSolver):
                            core_profiles_prev: Union[CoreProfiles.Profiles1D.Electrons, CoreProfiles.Profiles1D.Ion],
                            transp: Union[CoreTransport.Model.Profiles1D.Electrons, CoreTransport.Model.Profiles1D.Ion],
                            source: Union[CoreSources.Source.Profiles1D.Electrons, CoreSources.Source.Profiles1D.Ion],
-                           bc: Union[TransportSolver.BoundaryConditions1D.Electrons,
-                                     TransportSolver.BoundaryConditions1D.Ion],
+                           bc: Union[CoreTransportSolver.BoundaryConditions1D.Electrons,
+                                     CoreTransportSolver.BoundaryConditions1D.Ion],
                            ** kwargs
                            ):
         # Particle Transport
@@ -387,8 +386,8 @@ class TransportSolverBVP(TransportSolver):
                          core_profiles_prev: Union[CoreProfiles.Profiles1D.Electrons, CoreProfiles.Profiles1D.Ion],
                          transp: Union[CoreTransport.Model.Profiles1D.Electrons, CoreTransport.Model.Profiles1D.Ion],
                          source: Union[CoreSources.Source.Profiles1D.Electrons, CoreSources.Source.Profiles1D.Ion],
-                         bc: Union[TransportSolver.BoundaryConditions1D.Electrons,
-                                   TransportSolver.BoundaryConditions1D.Ion],
+                         bc: Union[CoreTransportSolver.BoundaryConditions1D.Electrons,
+                                   CoreTransportSolver.BoundaryConditions1D.Ion],
                          **kwargs
                          ):
 
@@ -460,7 +459,7 @@ class TransportSolverBVP(TransportSolver):
                            core_profiles_prev: CoreProfiles.Profiles1D,
                            transp:  CoreTransport.Model.Profiles1D,
                            source: CoreSources.Source.Profiles1D,
-                           bc:  TransportSolver.BoundaryConditions1D,
+                           bc:  CoreTransportSolver.BoundaryConditions1D,
                            **kwargs):
         r"""
             Rotation Transport

@@ -3,15 +3,15 @@ from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
-from scipy import constants
-from spdm.common.logger import logger
-from spdm.common.tags import _not_found_
-from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property, Function, Function, function_like
-
 from ..common.IDS import IDS
 from ..common.Species import Species, SpeciesElectron, SpeciesIon
 from ..transport.Equilibrium import Equilibrium
-from .MagneticCoordSystem import TWOPI, RadialGrid
+from ..transport.MagneticCoordSystem import TWOPI, RadialGrid
+from scipy import constants
+from spdm.common.logger import logger
+from spdm.common.tags import _not_found_
+from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
+                       function_like, sp_property)
 
 
 class CoreProfilesElectrons(SpeciesElectron):

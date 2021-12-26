@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="zh" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fytok.numlib.bvp module &mdash; 《托卡马克集成建模和分析框架》API Reference 0.0.1-alpha 文档</title><link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "tex2jax_process|mathjax_process|math|output_area"}})</script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="索引" href="../../genindex.html" />
+    <link rel="search" title="搜索" href="../../search.html" />
+    <link rel="next" title="fytok.numlib.common module" href="fytok.numlib.common.html" />
+    <link rel="prev" title="fytok.numlib namespace" href="fytok.numlib.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> 《托卡马克集成建模和分析框架》API Reference
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="fytok.html">fytok package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="fytok.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="fytok.auxiliary.html">fytok.auxiliary namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.common.html">fytok.common namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.constants.html">fytok.constants namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.device.html">fytok.device namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.diagnosis.html">fytok.diagnosis namespace</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="fytok.numlib.html">fytok.numlib namespace</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="fytok.numlib.html#submodules">Submodules</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.operation.html">fytok.operation namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.plasma.html">fytok.plasma namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.transport.html">fytok.transport namespace</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="fytok.html#submodules">Submodules</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../fymodules/modules.html">fymodules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../spdm/modules.html">spdm</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">《托卡马克集成建模和分析框架》API Reference</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="fytok.html">fytok package</a> &raquo;</li>
+          <li><a href="fytok.numlib.html">fytok.numlib namespace</a> &raquo;</li>
+      <li>fytok.numlib.bvp module</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="module-fytok.numlib.bvp">
+<span id="fytok-numlib-bvp-module"></span><h1>fytok.numlib.bvp module<a class="headerlink" href="#module-fytok.numlib.bvp" title="永久链接至标题">¶</a></h1>
+<p>this file is copy from scipy.bvp</p>
+<dl class="py function">
+<dt id="fytok.numlib.bvp.estimate_fun_jac">
+<code class="sig-prename descclassname">fytok.numlib.bvp.</code><code class="sig-name descname">estimate_fun_jac</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fun</span></em>, <em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">p</span></em>, <em class="sig-param"><span class="n">f0</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.numlib.bvp.estimate_fun_jac" title="永久链接至目标">¶</a></dt>
+<dd><p>Estimate derivatives of an ODE system rhs with forward differences.</p>
+<dl class="field-list simple">
+<dt class="field-odd">返回</dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>df_dy</strong> (<em>ndarray, shape (n, n, m)</em>) -- Derivatives with respect to y. An element (i, j, q) corresponds to
+d f_i(x_q, y_q) / d (y_q)_j.</p></li>
+<li><p><strong>df_dp</strong> (<em>ndarray with shape (n, k, m) or None</em>) -- Derivatives with respect to p. An element (i, j, q) corresponds to
+d f_i(x_q, y_q, p) / d p_j. If <cite>p</cite> is empty, None is returned.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="fytok.numlib.bvp.estimate_bc_jac">
+<code class="sig-prename descclassname">fytok.numlib.bvp.</code><code class="sig-name descname">estimate_bc_jac</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">bc</span></em>, <em class="sig-param"><span class="n">ya</span></em>, <em class="sig-param"><span class="n">yb</span></em>, <em class="sig-param"><span class="n">p</span></em>, <em class="sig-param"><span class="n">bc0</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.numlib.bvp.estimate_bc_jac" title="永久链接至目标">¶</a></dt>
+<dd><p>Estimate derivatives of boundary conditions with forward differences.</p>
+<dl class="field-list simple">
+<dt class="field-odd">返回</dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>dbc_dya</strong> (<em>ndarray, shape (n + k, n)</em>) -- Derivatives with respect to ya. An element (i, j) corresponds to
+d bc_i / d ya_j.</p></li>
+<li><p><strong>dbc_dyb</strong> (<em>ndarray, shape (n + k, n)</em>) -- Derivatives with respect to yb. An element (i, j) corresponds to
+d bc_i / d ya_j.</p></li>
+<li><p><strong>dbc_dp</strong> (<em>ndarray with shape (n + k, k) or None</em>) -- Derivatives with respect to p. An element (i, j) corresponds to
+d bc_i / d p_j. If <cite>p</cite> is empty, None is returned.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="fytok.numlib.bvp.compute_jac_indices">
+<code class="sig-prename descclassname">fytok.numlib.bvp.</code><code class="sig-name descname">compute_jac_indices</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">n</span></em>, <em class="sig-param"><span class="n">m</span></em>, <em class="sig-param"><span class="n">k</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.numlib.bvp.compute_jac_indices" title="永久链接至目标">¶</a></dt>
+<dd><p>Compute indices for the collocation system Jacobian construction.</p>
+<p>See <cite>construct_global_jac</cite> for the explanation.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="fytok.numlib.bvp.stacked_matmul">
+<code class="sig-prename descclassname">fytok.numlib.bvp.</code><code class="sig-name descname">stacked_matmul</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">a</span></em>, <em class="sig-param"><span class="n">b</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.numlib.bvp.stacked_matmul" title="永久链接至目标">¶</a></dt>
+<dd><p>Stacked matrix multiply: out[i,:,:] = np.dot(a[i,:,:], b[i,:,:]).</p>
+<p>In our case a[i, :, :] and b[i, :, :] are always square.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="fytok.numlib.bvp.construct_global_jac">
+<code class="sig-prename descclassname">fytok.numlib.bvp.</code><code class="sig-name descname">construct_global_jac</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">n</span></em>, <em class="sig-param"><span class="n">m</span></em>, <em class="sig-param"><span class="n">k</span></em>, <em class="sig-param"><span class="n">i_jac</span></em>, <em class="sig-param"><span class="n">j_jac</span></em>, <em class="sig-param"><span class="n">h</span></em>, <em class="sig-param"><span class="n">df_dy</span></em>, <em class="sig-param"><span class="n">df_dy_middle</span></em>, <em class="sig-param"><span class="n">df_dp</span></em>, <em class="sig-param"><span class="n">df_dp_middle</span></em>, <em class="sig-param"><span class="n">dbc_dya</span></em>, <em class="sig-param"><span class="n">dbc_dyb</span></em>, <em class="sig-param"><span class="n">dbc_dp</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.numlib.bvp.construct_global_jac" title="永久链接至目标">¶</a></dt>
+<dd><p>Construct the Jacobian of the collocation system.</p>
+<p>There are n * m + k functions: m - 1 collocations residuals, each
+containing n components, followed by n + k boundary condition residuals.</p>
+<p>There are n * m + k variables: m vectors of y, each containing n
+components, followed by k values of vector p.</p>
+<p>For example, let m = 4, n = 2 and k = 1, then the Jacobian will have
+the following sparsity structure:</p>
+<blockquote>
+<div><p>1 1 2 2 0 0 0 0  5
+1 1 2 2 0 0 0 0  5
+0 0 1 1 2 2 0 0  5
+0 0 1 1 2 2 0 0  5
+0 0 0 0 1 1 2 2  5
+0 0 0 0 1 1 2 2  5</p>
+<p>3 3 0 0 0 0 4 4  6
+3 3 0 0 0 0 4 4  6
+3 3 0 0 0 0 4 4  6</p>
+</div></blockquote>
+<p>Zeros denote identically zero values, other values denote different kinds
+of blocks in the matrix (see below). The blank row indicates the separation
+of collocation residuals from boundary conditions. And the blank column
+indicates the separation of y values from p values.</p>
+<p>Refer to <a href="#id20"><span class="problematic" id="id1">[1]_</span></a>  (p. 306) for the formula of n x n blocks for derivatives
+of collocation residuals with respect to y.</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n</strong> (<em>int</em>) -- Number of equations in the ODE system.</p></li>
+<li><p><strong>m</strong> (<em>int</em>) -- Number of nodes in the mesh.</p></li>
+<li><p><strong>k</strong> (<em>int</em>) -- Number of the unknown parameters.</p></li>
+<li><p><strong>i_jac</strong> (<em>ndarray</em>) -- <p>Row and column indices returned by <cite>compute_jac_indices</cite>. They
+represent different blocks in the Jacobian matrix in the following
+order (see the scheme above):</p>
+<blockquote>
+<div><ul>
+<li><p>1: m - 1 diagonal n x n blocks for the collocation residuals.</p></li>
+<li><p>2: m - 1 off-diagonal n x n blocks for the collocation residuals.</p></li>
+<li><p>3 : (n + k) x n block for the dependency of the boundary</p></li>
+</ul>
+<p>conditions on ya.
+* 4: (n + k) x n block for the dependency of the boundary
+conditions on yb.
+* 5: (m - 1) * n x k block for the dependency of the collocation
+residuals on p.
+* 6: (n + k) x k block for the dependency of the boundary
+conditions on p.</p>
+</div></blockquote>
+</p></li>
+<li><p><strong>j_jac</strong> (<em>ndarray</em>) -- <p>Row and column indices returned by <cite>compute_jac_indices</cite>. They
+represent different blocks in the Jacobian matrix in the following
+order (see the scheme above):</p>
+<blockquote>
+<div><ul>
+<li><p>1: m - 1 diagonal n x n blocks for the collocation residuals.</p></li>
+<li><p>2: m - 1 off-diagonal n x n blocks for the collocation residuals.</p></li>
+<li><p>3 : (n + k) x n block for the dependency of the boundary</p></li>
+</ul>
+<p>conditions on ya.
+* 4: (n + k) x n block for the dependency of the boundary
+conditions on yb.
+* 5: (m - 1) * n x k block for the dependency of the collocation
+residuals on p.
+* 6: (n + k) x k block for the dependency of the boundary
+conditions on p.</p>
+</div></blockquote>
+</p></li>
+<li><p><strong>df_dy</strong> (<em>ndarray</em><em>, </em><em>shape</em><em> (</em><em>n</em><em>, </em><em>n</em><em>, </em><em>m</em><em>)</em>) -- Jacobian of f with respect to y computed at the mesh nodes.</p></li>
+<li><p><strong>df_dy_middle</strong> (<em>ndarray</em><em>, </em><em>shape</em><em> (</em><em>n</em><em>, </em><em>n</em><em>, </em><em>m - 1</em><em>)</em>) -- Jacobian of f with respect to y computed at the middle between the
+mesh nodes.</p></li>
+<li><p><strong>df_dp</strong> (<em>ndarray with shape</em><em> (</em><em>n</em><em>, </em><em>k</em><em>, </em><em>m</em><em>) or </em><em>None</em>) -- Jacobian of f with respect to p computed at the mesh nodes.</p></li>
+<li><p><strong>df_dp_middle</strong> (<em>ndarray with shape</em><em> (</em><em>n</em><em>, </em><em>k</em><em>, </em><em>m - 1</em><em>) or </em><em>None</em>) -- Jacobian of f with respect to p computed at the middle between the
+mesh nodes.</p></li>
+<li><p><strong>dbc_dya</strong> (<em>ndarray</em><em>, </em><em>shape</em><em> (</em><em>n</em><em>, </em><em>n</em><em>)</em>) -- Jacobian of bc with respect to ya and yb.</p></li>
+<li><p><strong>dbc_dyb</strong> (<em>ndarray</em><em>, </em><em>shape</em><em> (</em><em>n</em><em>, </em><em>n</em><em>)</em>) -- Jacobian of bc with respect to ya and yb.</p></li>
+<li><p><strong>dbc_dp</strong> (<em>ndarray with shape</em><em> (</em><em>n</em><em>, </em><em>k</em><em>) or </em><em>None</em>) -- Jacobian of bc with respect to p.</p></li>
+</ul>
+</dd>
+<dt class="field-even">返回</dt>
+<dd class="field-even"><p><strong>J</strong> -- Jacobian of the collocation system in a sparse form.</p>
+</dd>
+<dt class="field-odd">返回类型</dt>
+<dd class="field-odd"><p>csc_matrix, shape (n * m + k, n * m + k)</p>
+</dd>
+</dl>
+<p class="rubric">引用</p>
+<dl class="footnote brackets">
+<dt class="label" id="id2"><span class="brackets">1</span></dt>
+<dd><ol class="upperalpha simple" start="10">
+<li><p>Kierzenka, L. F. Shampine, &quot;A BVP Solver Based on Residual</p></li>
+</ol>
+</dd>
+</dl>
+<p>Control and the Maltab PSE&quot;, ACM Trans. Math. Softw., Vol. 27,
+Number 3, pp. 299-316, 2001.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="fytok.numlib.bvp.collocation_fun">
+<code class="sig-prename descclassname">fytok.numlib.bvp.</code><code class="sig-name descname">collocation_fun</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fun</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">p</span></em>, <em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">h</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.numlib.bvp.collocation_fun" title="永久链接至目标">¶</a></dt>
+<dd><p>Evaluate collocation residuals.</p>
+<p>This function lies in the core of the method. The solution is sought
+as a cubic C1 continuous spline with derivatives matching the ODE rhs
+at given nodes <cite>x</cite>. Collocation conditions are formed from the equality
+of the spline derivatives and rhs of the ODE system in the middle points
+between nodes.</p>
+<p>Such method is classified to Lobbato IIIA family in ODE literature.
+Refer to <a href="#id21"><span class="problematic" id="id3">[1]_</span></a> for the formula and some discussion.</p>
+<dl class="field-list simple">
+<dt class="field-odd">返回</dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>col_res</strong> (<em>ndarray, shape (n, m - 1)</em>) -- Collocation residuals at the middle points of the mesh intervals.</p></li>
+<li><p><strong>y_middle</strong> (<em>ndarray, shape (n, m - 1)</em>) -- Values of the cubic spline evaluated at the middle points of the mesh
+intervals.</p></li>
+<li><p><strong>f</strong> (<em>ndarray, shape (n, m)</em>) -- RHS of the ODE system evaluated at the mesh nodes.</p></li>
+<li><p><strong>f_middle</strong> (<em>ndarray, shape (n, m - 1)</em>) -- RHS of the ODE system evaluated at the middle points of the mesh
+intervals (and using <cite>y_middle</cite>).</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">引用</p>
+<dl class="footnote brackets">
+<dt class="label" id="id4"><span class="brackets">1</span></dt>
+<dd><p>J. Kierzenka, L. F. Shampine, &quot;A BVP Solver Based on Residual
+Control and the Maltab PSE&quot;, ACM Trans. Math. Softw., Vol. 27,
+Number 3, pp. 299-316, 2001.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="fytok.numlib.bvp.prepare_sys">
+<code class="sig-prename descclassname">fytok.numlib.bvp.</code><code class="sig-name descname">prepare_sys</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">n</span></em>, <em class="sig-param"><span class="n">m</span></em>, <em class="sig-param"><span class="n">k</span></em>, <em class="sig-param"><span class="n">fun</span></em>, <em class="sig-param"><span class="n">bc</span></em>, <em class="sig-param"><span class="n">fun_jac</span></em>, <em class="sig-param"><span class="n">bc_jac</span></em>, <em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">h</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.numlib.bvp.prepare_sys" title="永久链接至目标">¶</a></dt>
+<dd><p>Create the function and the Jacobian for the collocation system.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="fytok.numlib.bvp.solve_newton">
+<code class="sig-prename descclassname">fytok.numlib.bvp.</code><code class="sig-name descname">solve_newton</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">n</span></em>, <em class="sig-param"><span class="n">m</span></em>, <em class="sig-param"><span class="n">h</span></em>, <em class="sig-param"><span class="n">col_fun</span></em>, <em class="sig-param"><span class="n">bc</span></em>, <em class="sig-param"><span class="n">jac</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">p</span></em>, <em class="sig-param"><span class="n">B</span></em>, <em class="sig-param"><span class="n">bvp_tol</span></em>, <em class="sig-param"><span class="n">bc_tol</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.numlib.bvp.solve_newton" title="永久链接至目标">¶</a></dt>
+<dd><p>Solve the nonlinear collocation system by a Newton method.</p>
+<p>This is a simple Newton method with a backtracking line search. As
+advised in <a href="#id22"><span class="problematic" id="id5">[1]_</span></a>, an affine-invariant criterion function F = ||J^-1 r||^2
+is used, where J is the Jacobian matrix at the current iteration and r is
+the vector or collocation residuals (values of the system lhs).</p>
+<p>The method alters between full Newton iterations and the fixed-Jacobian
+iterations based</p>
+<p>There are other tricks proposed in <a href="#id23"><span class="problematic" id="id6">[1]_</span></a>, but they are not used as they
+don't seem to improve anything significantly, and even break the
+convergence on some test problems I tried.</p>
+<p>All important parameters of the algorithm are defined inside the function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n</strong> (<em>int</em>) -- Number of equations in the ODE system.</p></li>
+<li><p><strong>m</strong> (<em>int</em>) -- Number of nodes in the mesh.</p></li>
+<li><p><strong>h</strong> (<em>ndarray</em><em>, </em><em>shape</em><em> (</em><em>m-1</em><em>,</em><em>)</em>) -- Mesh intervals.</p></li>
+<li><p><strong>col_fun</strong> (<em>callable</em>) -- Function computing collocation residuals.</p></li>
+<li><p><strong>bc</strong> (<em>callable</em>) -- Function computing boundary condition residuals.</p></li>
+<li><p><strong>jac</strong> (<em>callable</em>) -- Function computing the Jacobian of the whole system (including
+collocation and boundary condition residuals). It is supposed to
+return csc_matrix.</p></li>
+<li><p><strong>y</strong> (<em>ndarray</em><em>, </em><em>shape</em><em> (</em><em>n</em><em>, </em><em>m</em><em>)</em>) -- Initial guess for the function values at the mesh nodes.</p></li>
+<li><p><strong>p</strong> (<em>ndarray</em><em>, </em><em>shape</em><em> (</em><em>k</em><em>,</em><em>)</em>) -- Initial guess for the unknown parameters.</p></li>
+<li><p><strong>B</strong> (<em>ndarray with shape</em><em> (</em><em>n</em><em>, </em><em>n</em><em>) or </em><em>None</em>) -- Matrix to force the S y(a) = 0 condition for a problems with the
+singular term. If None, the singular term is assumed to be absent.</p></li>
+<li><p><strong>bvp_tol</strong> (<em>float</em>) -- Tolerance to which we want to solve a BVP.</p></li>
+<li><p><strong>bc_tol</strong> (<em>float</em>) -- Tolerance to which we want to satisfy the boundary conditions.</p></li>
+</ul>
+</dd>
+<dt class="field-even">返回</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>y</strong> (<em>ndarray, shape (n, m)</em>) -- Final iterate for the function values at the mesh nodes.</p></li>
+<li><p><strong>p</strong> (<em>ndarray, shape (k,)</em>) -- Final iterate for the unknown parameters.</p></li>
+<li><p><strong>singular</strong> (<em>bool</em>) -- True, if the LU decomposition failed because Jacobian turned out
+to be singular.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">引用</p>
+<dl class="footnote brackets">
+<dt class="label" id="id7"><span class="brackets">1</span></dt>
+<dd><ol class="upperalpha simple" start="21">
+<li><p>Ascher, R. Mattheij and R. Russell &quot;Numerical Solution of</p></li>
+</ol>
+</dd>
+</dl>
+<p>Boundary Value Problems for Ordinary Differential Equations&quot;</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="fytok.numlib.bvp.print_iteration_header">
+<code class="sig-prename descclassname">fytok.numlib.bvp.</code><code class="sig-name descname">print_iteration_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#fytok.numlib.bvp.print_iteration_header" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="fytok.numlib.bvp.print_iteration_progress">
+<code class="sig-prename descclassname">fytok.numlib.bvp.</code><code class="sig-name descname">print_iteration_progress</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">iteration</span></em>, <em class="sig-param"><span class="n">residual</span></em>, <em class="sig-param"><span class="n">bc_residual</span></em>, <em class="sig-param"><span class="n">total_nodes</span></em>, <em class="sig-param"><span class="n">nodes_added</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.numlib.bvp.print_iteration_progress" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt id="fytok.numlib.bvp.BVPResult">
+<em class="property">class </em><code class="sig-prename descclassname">fytok.numlib.bvp.</code><code class="sig-name descname">BVPResult</code><a class="headerlink" href="#fytok.numlib.bvp.BVPResult" title="永久链接至目标">¶</a></dt>
+<dd><p>基类：<code class="xref py py-class docutils literal notranslate"><span class="pre">scipy.optimize.optimize.OptimizeResult</span></code></p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="fytok.numlib.bvp.estimate_rms_residuals">
+<code class="sig-prename descclassname">fytok.numlib.bvp.</code><code class="sig-name descname">estimate_rms_residuals</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fun</span></em>, <em class="sig-param"><span class="n">sol</span></em>, <em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">h</span></em>, <em class="sig-param"><span class="n">p</span></em>, <em class="sig-param"><span class="n">r_middle</span></em>, <em class="sig-param"><span class="n">f_middle</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.numlib.bvp.estimate_rms_residuals" title="永久链接至目标">¶</a></dt>
+<dd><p>Estimate rms values of collocation residuals using Lobatto quadrature.</p>
+<p>The residuals are defined as the difference between the derivatives of
+our solution and rhs of the ODE system. We use relative residuals, i.e.
+normalized by 1 + np.abs(f). RMS values are computed as sqrt from the
+normalized integrals of the squared relative residuals over each interval.
+Integrals are estimated using 5-point Lobatto quadrature <a href="#id24"><span class="problematic" id="id8">[1]_</span></a>, we use the
+fact that residuals at the mesh nodes are identically zero.</p>
+<p>In [2] they don't normalize integrals by interval lengths, which gives
+a higher rate of convergence of the residuals by the factor of h**0.5.
+I chose to do such normalization for an ease of interpretation of return
+values as RMS estimates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">返回</dt>
+<dd class="field-odd"><p><strong>rms_res</strong> -- Estimated rms values of the relative residuals over each interval.</p>
+</dd>
+<dt class="field-even">返回类型</dt>
+<dd class="field-even"><p>ndarray, shape (m - 1,)</p>
+</dd>
+</dl>
+<p class="rubric">引用</p>
+<dl class="footnote brackets">
+<dt class="label" id="id9"><span class="brackets">1</span></dt>
+<dd><p><a class="reference external" href="http://mathworld.wolfram.com/LobattoQuadrature.html">http://mathworld.wolfram.com/LobattoQuadrature.html</a></p>
+</dd>
+<dt class="label" id="id10"><span class="brackets">2</span></dt>
+<dd><ol class="upperalpha simple" start="10">
+<li><p>Kierzenka, L. F. Shampine, &quot;A BVP Solver Based on Residual</p></li>
+</ol>
+</dd>
+</dl>
+<p>Control and the Maltab PSE&quot;, ACM Trans. Math. Softw., Vol. 27,
+Number 3, pp. 299-316, 2001.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="fytok.numlib.bvp.modify_mesh">
+<code class="sig-prename descclassname">fytok.numlib.bvp.</code><code class="sig-name descname">modify_mesh</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">insert_1</span></em>, <em class="sig-param"><span class="n">insert_2</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.numlib.bvp.modify_mesh" title="永久链接至目标">¶</a></dt>
+<dd><p>Insert nodes into a mesh.</p>
+<p>Nodes removal logic is not established, its impact on the solver is
+presumably negligible. So only insertion is done in this function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>ndarray</em><em>, </em><em>shape</em><em> (</em><em>m</em><em>,</em><em>)</em>) -- Mesh nodes.</p></li>
+<li><p><strong>insert_1</strong> (<em>ndarray</em>) -- Intervals to each insert 1 new node in the middle.</p></li>
+<li><p><strong>insert_2</strong> (<em>ndarray</em>) -- Intervals to each insert 2 new nodes, such that divide an interval
+into 3 equal parts.</p></li>
+</ul>
+</dd>
+<dt class="field-even">返回</dt>
+<dd class="field-even"><p><strong>x_new</strong> -- New mesh nodes.</p>
+</dd>
+<dt class="field-odd">返回类型</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+<p class="rubric">提示</p>
+<p><cite>insert_1</cite> and <cite>insert_2</cite> should not have common values.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="fytok.numlib.bvp.wrap_functions">
+<code class="sig-prename descclassname">fytok.numlib.bvp.</code><code class="sig-name descname">wrap_functions</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fun</span></em>, <em class="sig-param"><span class="n">bc</span></em>, <em class="sig-param"><span class="n">fun_jac</span></em>, <em class="sig-param"><span class="n">bc_jac</span></em>, <em class="sig-param"><span class="n">k</span></em>, <em class="sig-param"><span class="n">a</span></em>, <em class="sig-param"><span class="n">S</span></em>, <em class="sig-param"><span class="n">D</span></em>, <em class="sig-param"><span class="n">dtype</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.numlib.bvp.wrap_functions" title="永久链接至目标">¶</a></dt>
+<dd><p>Wrap functions for unified usage in the solver.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="fytok.numlib.bvp.solve_bvp">
+<code class="sig-prename descclassname">fytok.numlib.bvp.</code><code class="sig-name descname">solve_bvp</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fun</span></em>, <em class="sig-param"><span class="n">bc</span></em>, <em class="sig-param"><span class="n">x</span></em>, <em class="sig-param"><span class="n">y</span></em>, <em class="sig-param"><span class="n">p</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="n">S</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fun_jac</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">bc_jac</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">tol</span><span class="o">=</span><span class="default_value">0.001</span></em>, <em class="sig-param"><span class="n">max_nodes</span><span class="o">=</span><span class="default_value">1000</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">bc_tol</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">bvp_rms_mask</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.numlib.bvp.solve_bvp" title="永久链接至目标">¶</a></dt>
+<dd><p>Solve a boundary-value problem for a system of ODEs.</p>
+<p>This function numerically solves a first order system of ODEs subject to
+two-point boundary conditions:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dy</span> <span class="o">/</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="o">+</span> <span class="n">S</span> <span class="o">*</span> <span class="n">y</span> <span class="o">/</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">a</span><span class="p">),</span> <span class="n">a</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="n">b</span>
+<span class="n">bc</span><span class="p">(</span><span class="n">y</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">y</span><span class="p">(</span><span class="n">b</span><span class="p">),</span> <span class="n">p</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<p>Here x is a 1-dimensional independent variable, y(x) is a n-dimensional
+vector-valued function and p is a k-dimensional vector of unknown
+parameters which is to be found along with y(x). For the problem to be
+determined there must be n + k boundary conditions, i.e. bc must be
+(n + k)-dimensional function.</p>
+<p>The last singular term in the right-hand side of the system is optional.
+It is defined by an n-by-n matrix S, such that the solution must satisfy
+S y(a) = 0. This condition will be forced during iterations, so it must not
+contradict boundary conditions. See <a href="#id25"><span class="problematic" id="id11">[2]_</span></a> for the explanation how this term
+is handled when solving BVPs numerically.</p>
+<p>Problems in a complex domain can be solved as well. In this case y and p
+are considered to be complex, and f and bc are assumed to be complex-valued
+functions, but x stays real. Note that f and bc must be complex
+differentiable (satisfy Cauchy-Riemann equations <a class="footnote-reference brackets" href="#id19" id="id12">4</a>), otherwise you
+should rewrite your problem for real and imaginary parts separately. To
+solve a problem in a complex domain, pass an initial guess for y with a
+complex data type (see below).</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fun</strong> (<em>callable</em>) -- Right-hand side of the system. The calling signature is <code class="docutils literal notranslate"><span class="pre">fun(x,</span> <span class="pre">y)</span></code>,
+or <code class="docutils literal notranslate"><span class="pre">fun(x,</span> <span class="pre">y,</span> <span class="pre">p)</span></code> if parameters are present. All arguments are
+ndarray: <code class="docutils literal notranslate"><span class="pre">x</span></code> with shape (m,), <code class="docutils literal notranslate"><span class="pre">y</span></code> with shape (n, m), meaning that
+<code class="docutils literal notranslate"><span class="pre">y[:,</span> <span class="pre">i]</span></code> corresponds to <code class="docutils literal notranslate"><span class="pre">x[i]</span></code>, and <code class="docutils literal notranslate"><span class="pre">p</span></code> with shape (k,). The
+return value must be an array with shape (n, m) and with the same
+layout as <code class="docutils literal notranslate"><span class="pre">y</span></code>.</p></li>
+<li><p><strong>bc</strong> (<em>callable</em>) -- Function evaluating residuals of the boundary conditions. The calling
+signature is <code class="docutils literal notranslate"><span class="pre">bc(ya,</span> <span class="pre">yb)</span></code>, or <code class="docutils literal notranslate"><span class="pre">bc(ya,</span> <span class="pre">yb,</span> <span class="pre">p)</span></code> if parameters are
+present. All arguments are ndarray: <code class="docutils literal notranslate"><span class="pre">ya</span></code> and <code class="docutils literal notranslate"><span class="pre">yb</span></code> with shape (n,),
+and <code class="docutils literal notranslate"><span class="pre">p</span></code> with shape (k,). The return value must be an array with
+shape (n + k,).</p></li>
+<li><p><strong>x</strong> (<em>array_like</em><em>, </em><em>shape</em><em> (</em><em>m</em><em>,</em><em>)</em>) -- Initial mesh. Must be a strictly increasing sequence of real numbers
+with <code class="docutils literal notranslate"><span class="pre">x[0]=a</span></code> and <code class="docutils literal notranslate"><span class="pre">x[-1]=b</span></code>.</p></li>
+<li><p><strong>y</strong> (<em>array_like</em><em>, </em><em>shape</em><em> (</em><em>n</em><em>, </em><em>m</em><em>)</em>) -- Initial guess for the function values at the mesh nodes, i-th column
+corresponds to <code class="docutils literal notranslate"><span class="pre">x[i]</span></code>. For problems in a complex domain pass <cite>y</cite>
+with a complex data type (even if the initial guess is purely real).</p></li>
+<li><p><strong>p</strong> (<em>array_like with shape</em><em> (</em><em>k</em><em>,</em><em>) or </em><em>None</em><em>, </em><em>optional</em>) -- Initial guess for the unknown parameters. If None (default), it is
+assumed that the problem doesn't depend on any parameters.</p></li>
+<li><p><strong>S</strong> (<em>array_like with shape</em><em> (</em><em>n</em><em>, </em><em>n</em><em>) or </em><em>None</em>) -- Matrix defining the singular term. If None (default), the problem is
+solved without the singular term.</p></li>
+<li><p><strong>fun_jac</strong> (<em>callable</em><em> or </em><em>None</em><em>, </em><em>optional</em>) -- <p>Function computing derivatives of f with respect to y and p. The
+calling signature is <code class="docutils literal notranslate"><span class="pre">fun_jac(x,</span> <span class="pre">y)</span></code>, or <code class="docutils literal notranslate"><span class="pre">fun_jac(x,</span> <span class="pre">y,</span> <span class="pre">p)</span></code> if
+parameters are present. The return must contain 1 or 2 elements in the
+following order:</p>
+<blockquote>
+<div><ul>
+<li><p>df_dy : array_like with shape (n, n, m) where an element</p></li>
+</ul>
+<p>(i, j, q) equals to d f_i(x_q, y_q, p) / d (y_q)_j.
+* df_dp : array_like with shape (n, k, m) where an element
+(i, j, q) equals to d f_i(x_q, y_q, p) / d p_j.</p>
+</div></blockquote>
+<p>Here q numbers nodes at which x and y are defined, whereas i and j
+number vector components. If the problem is solved without unknown
+parameters df_dp should not be returned.</p>
+<p>If <cite>fun_jac</cite> is None (default), the derivatives will be estimated
+by the forward finite differences.</p>
+</p></li>
+<li><p><strong>bc_jac</strong> (<em>callable</em><em> or </em><em>None</em><em>, </em><em>optional</em>) -- <p>Function computing derivatives of bc with respect to ya, yb and p.
+The calling signature is <code class="docutils literal notranslate"><span class="pre">bc_jac(ya,</span> <span class="pre">yb)</span></code>, or <code class="docutils literal notranslate"><span class="pre">bc_jac(ya,</span> <span class="pre">yb,</span> <span class="pre">p)</span></code>
+if parameters are present. The return must contain 2 or 3 elements in
+the following order:</p>
+<blockquote>
+<div><ul>
+<li><p>dbc_dya : array_like with shape (n, n) where an element (i, j)</p></li>
+</ul>
+<p>equals to d bc_i(ya, yb, p) / d ya_j.
+* dbc_dyb : array_like with shape (n, n) where an element (i, j)
+equals to d bc_i(ya, yb, p) / d yb_j.
+* dbc_dp : array_like with shape (n, k) where an element (i, j)
+equals to d bc_i(ya, yb, p) / d p_j.</p>
+</div></blockquote>
+<p>If the problem is solved without unknown parameters dbc_dp should not
+be returned.</p>
+<p>If <cite>bc_jac</cite> is None (default), the derivatives will be estimated by
+the forward finite differences.</p>
+</p></li>
+<li><p><strong>tol</strong> (<em>float</em><em>, </em><em>optional</em>) -- Desired tolerance of the solution. If we define <code class="docutils literal notranslate"><span class="pre">r</span> <span class="pre">=</span> <span class="pre">y'</span> <span class="pre">-</span> <span class="pre">f(x,</span> <span class="pre">y)</span></code>
+where y is the found solution, then the solver tries to achieve on each
+mesh interval <code class="docutils literal notranslate"><span class="pre">norm(r</span> <span class="pre">/</span> <span class="pre">(1</span> <span class="pre">+</span> <span class="pre">abs(f))</span> <span class="pre">&lt;</span> <span class="pre">tol</span></code>, where <code class="docutils literal notranslate"><span class="pre">norm</span></code> is
+estimated in a root mean squared sense (using a numerical quadrature
+formula). Default is 1e-3.</p></li>
+<li><p><strong>max_nodes</strong> (<em>int</em><em>, </em><em>optional</em>) -- Maximum allowed number of the mesh nodes. If exceeded, the algorithm
+terminates. Default is 1000.</p></li>
+<li><p><strong>verbose</strong> (<em>{0</em><em>, </em><em>1</em><em>, </em><em>2}</em><em>, </em><em>optional</em>) -- <p>Level of algorithm's verbosity:</p>
+<blockquote>
+<div><ul>
+<li><p>0 (default) : work silently.</p></li>
+<li><p>1 : display a termination report.</p></li>
+<li><p>2 : display progress during iterations.</p></li>
+</ul>
+</div></blockquote>
+</p></li>
+<li><p><strong>bc_tol</strong> (<em>float</em><em>, </em><em>optional</em>) -- Desired absolute tolerance for the boundary condition residuals: <cite>bc</cite>
+value should satisfy <code class="docutils literal notranslate"><span class="pre">abs(bc)</span> <span class="pre">&lt;</span> <span class="pre">bc_tol</span></code> component-wise.
+Equals to <cite>tol</cite> by default. Up to 10 iterations are allowed to achieve this
+tolerance.</p></li>
+<li><p><strong>discontinuity</strong> (list <em>experimental</em>) -- NOTE: add by salmon
+List of discontinuity points</p></li>
+</ul>
+</dd>
+<dt class="field-even">返回</dt>
+<dd class="field-even"><p><ul>
+<li><p><em>Bunch object with the following fields defined</em></p></li>
+<li><p><strong>sol</strong> (<em>PPoly</em>) -- Found solution for y as <cite>scipy.interpolate.PPoly</cite> instance, a C1
+continuous cubic spline.</p></li>
+<li><p><strong>p</strong> (<em>ndarray or None, shape (k,)</em>) -- Found parameters. None, if the parameters were not present in the
+problem.</p></li>
+<li><p><strong>x</strong> (<em>ndarray, shape (m,)</em>) -- Nodes of the final mesh.</p></li>
+<li><p><strong>y</strong> (<em>ndarray, shape (n, m)</em>) -- Solution values at the mesh nodes.</p></li>
+<li><p><strong>yp</strong> (<em>ndarray, shape (n, m)</em>) -- Solution derivatives at the mesh nodes.</p></li>
+<li><p><strong>rms_residuals</strong> (<em>ndarray, shape (m - 1,)</em>) -- RMS values of the relative residuals over each mesh interval (see the
+description of <cite>tol</cite> parameter).</p></li>
+<li><p><strong>niter</strong> (<em>int</em>) -- Number of completed iterations.</p></li>
+<li><p><strong>status</strong> (<em>int</em>) --</p>
+<p>Reason for algorithm termination:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>0: The algorithm converged to the desired accuracy.</p></li>
+<li><p>1: The maximum number of mesh nodes is exceeded.</p></li>
+<li><p>2: A singular Jacobian encountered when solving the collocation</p></li>
+</ul>
+<p>system.</p>
+</div></blockquote>
+</li>
+<li><p><strong>message</strong> (<em>string</em>) -- Verbal description of the termination reason.</p></li>
+<li><p><strong>success</strong> (<em>bool</em>) -- True if the algorithm converged to the desired accuracy (<code class="docutils literal notranslate"><span class="pre">status=0</span></code>).</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">提示</p>
+<p>This function implements a 4-th order collocation algorithm with the
+control of residuals similar to <a href="#id26"><span class="problematic" id="id13">[1]_</span></a>. A collocation system is solved
+by a damped Newton method with an affine-invariant criterion function as
+described in <a class="footnote-reference brackets" href="#id18" id="id14">3</a>.</p>
+<p>Note that in <a href="#id27"><span class="problematic" id="id15">[1]_</span></a>  integral residuals are defined without normalization
+by interval lengths. So their definition is different by a multiplier of
+h**0.5 (h is an interval length) from the definition used here.</p>
+<div class="versionadded">
+<p><span class="versionmodified added">0.18.0 新版功能.</span></p>
+</div>
+<p class="rubric">引用</p>
+<dl class="footnote brackets">
+<dt class="label" id="id16"><span class="brackets">1</span></dt>
+<dd><p>J. Kierzenka, L. F. Shampine, &quot;A BVP Solver Based on Residual
+Control and the Maltab PSE&quot;, ACM Trans. Math. Softw., Vol. 27,
+Number 3, pp. 299-316, 2001.</p>
+</dd>
+<dt class="label" id="id17"><span class="brackets">2</span></dt>
+<dd><p>L.F. Shampine, P. H. Muir and H. Xu, &quot;A User-Friendly Fortran BVP
+Solver&quot;.</p>
+</dd>
+<dt class="label" id="id18"><span class="brackets"><a class="fn-backref" href="#id14">3</a></span></dt>
+<dd><p>U. Ascher, R. Mattheij and R. Russell &quot;Numerical Solution of
+Boundary Value Problems for Ordinary Differential Equations&quot;.</p>
+</dd>
+<dt class="label" id="id19"><span class="brackets"><a class="fn-backref" href="#id12">4</a></span></dt>
+<dd><p><a class="reference external" href="https://en.wikipedia.org/wiki/Cauchy-Riemann_equations">Cauchy-Riemann equations</a> on
+Wikipedia.</p>
+</dd>
+</dl>
+<p class="rubric">实际案例</p>
+<p>In the first example we solve Bratu's problem:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">y</span><span class="s1">&#39;&#39;</span> <span class="o">+</span> <span class="n">k</span> <span class="o">*</span> <span class="n">exp</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">y</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="n">y</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<p>for k = 1.</p>
+<p>We rewrite the equation as a first order system and implement its
+right-hand side evaluation:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">y1</span><span class="s1">&#39; = y2</span>
+<span class="n">y2</span><span class="s1">&#39; = -exp(y1)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">fun</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">])))</span>
+</pre></div>
+</div>
+<p>Implement evaluation of the boundary condition residuals:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">bc</span><span class="p">(</span><span class="n">ya</span><span class="p">,</span> <span class="n">yb</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ya</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">yb</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+</pre></div>
+</div>
+<p>Define the initial mesh with 5 nodes:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This problem is known to have two solutions. To obtain both of them we
+use two different initial guesses for y. We denote them by subscripts
+a and b.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">y_a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+</pre></div>
+</div>
+<p>Now we are ready to run the solver.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">scipy.integrate</span> <span class="kn">import</span> <span class="n">solve_bvp</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res_a</span> <span class="o">=</span> <span class="n">solve_bvp</span><span class="p">(</span><span class="n">fun</span><span class="p">,</span> <span class="n">bc</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y_a</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">res_b</span> <span class="o">=</span> <span class="n">solve_bvp</span><span class="p">(</span><span class="n">fun</span><span class="p">,</span> <span class="n">bc</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y_b</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Let's plot the two found solutions. We take an advantage of having the
+solution in a spline form to produce a smooth plot.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x_plot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_plot_a</span> <span class="o">=</span> <span class="n">res_a</span><span class="o">.</span><span class="n">sol</span><span class="p">(</span><span class="n">x_plot</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_plot_b</span> <span class="o">=</span> <span class="n">res_b</span><span class="o">.</span><span class="n">sol</span><span class="p">(</span><span class="n">x_plot</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_plot</span><span class="p">,</span> <span class="n">y_plot_a</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;y_a&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_plot</span><span class="p">,</span> <span class="n">y_plot_b</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;y_b&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>We see that the two solutions have similar shape, but differ in scale
+significantly.</p>
+<p>In the second example we solve a simple Sturm-Liouville problem:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">y</span><span class="s1">&#39;&#39;</span> <span class="o">+</span> <span class="n">k</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">y</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">=</span> <span class="n">y</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<p>It is known that a non-trivial solution y = A * sin(k * x) is possible for
+k = pi * n, where n is an integer. To establish the normalization constant
+A = 1 we add a boundary condition:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">y</span><span class="s1">&#39;(0) = k</span>
+</pre></div>
+</div>
+<p>Again we rewrite our equation as a first order system and implement its
+right-hand side evaluation:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">y1</span><span class="s1">&#39; = y2</span>
+<span class="n">y2</span><span class="s1">&#39; = -k**2 * y1</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">fun</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">k</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">y</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="n">k</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+</pre></div>
+</div>
+<p>Note that parameters p are passed as a vector (with one element in our
+case).</p>
+<p>Implement the boundary conditions:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">bc</span><span class="p">(</span><span class="n">ya</span><span class="p">,</span> <span class="n">yb</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">k</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ya</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">yb</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ya</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">k</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Setup the initial mesh and guess for y. We aim to find the solution for
+k = 2 * pi, to achieve that we set values of y to approximately follow
+sin(2 * pi * x):</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+</pre></div>
+</div>
+<p>Run the solver with 6 as an initial guess for k.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sol</span> <span class="o">=</span> <span class="n">solve_bvp</span><span class="p">(</span><span class="n">fun</span><span class="p">,</span> <span class="n">bc</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="p">[</span><span class="mi">6</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>We see that the found k is approximately correct:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sol</span><span class="o">.</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">6.28329460046</span>
+</pre></div>
+</div>
+<p>And finally plot the solution to see the anticipated sinusoid:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">x_plot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y_plot</span> <span class="o">=</span> <span class="n">sol</span><span class="o">.</span><span class="n">sol</span><span class="p">(</span><span class="n">x_plot</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_plot</span><span class="p">,</span> <span class="n">y_plot</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="fytok.numlib.html" class="btn btn-neutral float-left" title="fytok.numlib namespace" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="fytok.numlib.common.html" class="btn btn-neutral float-right" title="fytok.numlib.common module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 版权所有 2021, 于治 YUZhi@ipp.ac.cn .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

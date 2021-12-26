@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="zh" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fytok.transport.CoreSources module &mdash; 《托卡马克集成建模和分析框架》API Reference 0.0.1-alpha 文档</title><link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "tex2jax_process|mathjax_process|math|output_area"}})</script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="索引" href="../../genindex.html" />
+    <link rel="search" title="搜索" href="../../search.html" />
+    <link rel="next" title="fytok.transport.CoreTransport module" href="fytok.transport.CoreTransport.html" />
+    <link rel="prev" title="fytok.transport.CoreProfiles module" href="fytok.transport.CoreProfiles.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> 《托卡马克集成建模和分析框架》API Reference
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="fytok.html">fytok package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="fytok.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="fytok.auxiliary.html">fytok.auxiliary namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.common.html">fytok.common namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.constants.html">fytok.constants namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.device.html">fytok.device namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.diagnosis.html">fytok.diagnosis namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.numlib.html">fytok.numlib namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.operation.html">fytok.operation namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.plasma.html">fytok.plasma namespace</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="fytok.transport.html">fytok.transport namespace</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="fytok.transport.html#submodules">Submodules</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="fytok.html#submodules">Submodules</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../fymodules/modules.html">fymodules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../spdm/modules.html">spdm</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">《托卡马克集成建模和分析框架》API Reference</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="fytok.html">fytok package</a> &raquo;</li>
+          <li><a href="fytok.transport.html">fytok.transport namespace</a> &raquo;</li>
+      <li>fytok.transport.CoreSources module</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="module-fytok.transport.CoreSources">
+<span id="fytok-transport-coresources-module"></span><h1>fytok.transport.CoreSources module<a class="headerlink" href="#module-fytok.transport.CoreSources" title="永久链接至标题">¶</a></h1>
+<dl class="py class">
+<dt id="fytok.transport.CoreSources.CoreSourcesElectrons">
+<em class="property">class </em><code class="sig-prename descclassname">fytok.transport.CoreSources.</code><code class="sig-name descname">CoreSourcesElectrons</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesElectrons" title="永久链接至目标">¶</a></dt>
+<dd><p>基类：<a class="reference internal" href="fytok.common.Species.html#fytok.common.Species.SpeciesElectron" title="fytok.common.Species.SpeciesElectron"><code class="xref py py-class docutils literal notranslate"><span class="pre">fytok.common.Species.SpeciesElectron</span></code></a></p>
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesElectrons.particles">
+<code class="sig-name descname">particles</code><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesElectrons.particles" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesElectrons.particles_decomposed">
+<code class="sig-name descname">particles_decomposed</code><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesElectrons.particles_decomposed" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesElectrons.energy">
+<code class="sig-name descname">energy</code><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesElectrons.energy" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesElectrons.energy_decomposed">
+<code class="sig-name descname">energy_decomposed</code><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesElectrons.energy_decomposed" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="fytok.transport.CoreSources.CoreSourcesIon">
+<em class="property">class </em><code class="sig-prename descclassname">fytok.transport.CoreSources.</code><code class="sig-name descname">CoreSourcesIon</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesIon" title="永久链接至目标">¶</a></dt>
+<dd><p>基类：<a class="reference internal" href="fytok.common.Species.html#fytok.common.Species.SpeciesIon" title="fytok.common.Species.SpeciesIon"><code class="xref py py-class docutils literal notranslate"><span class="pre">fytok.common.Species.SpeciesIon</span></code></a></p>
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesIon.particles">
+<code class="sig-name descname">particles</code><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesIon.particles" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesIon.particles_fast">
+<code class="sig-name descname">particles_fast</code><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesIon.particles_fast" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesIon.particles_decomposed">
+<code class="sig-name descname">particles_decomposed</code><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesIon.particles_decomposed" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesIon.energy">
+<code class="sig-name descname">energy</code><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesIon.energy" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesIon.energy_decomposed">
+<code class="sig-name descname">energy_decomposed</code><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesIon.energy_decomposed" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="fytok.transport.CoreSources.CoreSourcesNeutral">
+<em class="property">class </em><code class="sig-prename descclassname">fytok.transport.CoreSources.</code><code class="sig-name descname">CoreSourcesNeutral</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesNeutral" title="永久链接至目标">¶</a></dt>
+<dd><p>基类：<a class="reference internal" href="fytok.common.Species.html#fytok.common.Species.Species" title="fytok.common.Species.Species"><code class="xref py py-class docutils literal notranslate"><span class="pre">fytok.common.Species.Species</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fytok.transport.CoreSources.CoreSourcesProfiles1D">
+<em class="property">class </em><code class="sig-prename descclassname">fytok.transport.CoreSources.</code><code class="sig-name descname">CoreSourcesProfiles1D</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesProfiles1D" title="永久链接至目标">¶</a></dt>
+<dd><p>基类：<code class="xref py py-class docutils literal notranslate"><span class="pre">spdm.data.Dict.Dict</span></code></p>
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesProfiles1D.Ion">
+<code class="sig-name descname">Ion</code><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesProfiles1D.Ion" title="永久链接至目标">¶</a></dt>
+<dd><p><a class="reference internal" href="#fytok.transport.CoreSources.CoreSourcesIon" title="fytok.transport.CoreSources.CoreSourcesIon"><code class="xref py py-class docutils literal notranslate"><span class="pre">CoreSourcesIon</span></code></a> 的别名</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesProfiles1D.Electrons">
+<code class="sig-name descname">Electrons</code><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesProfiles1D.Electrons" title="永久链接至目标">¶</a></dt>
+<dd><p><a class="reference internal" href="#fytok.transport.CoreSources.CoreSourcesElectrons" title="fytok.transport.CoreSources.CoreSourcesElectrons"><code class="xref py py-class docutils literal notranslate"><span class="pre">CoreSourcesElectrons</span></code></a> 的别名</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesProfiles1D.Neutral">
+<code class="sig-name descname">Neutral</code><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesProfiles1D.Neutral" title="永久链接至目标">¶</a></dt>
+<dd><p><a class="reference internal" href="#fytok.transport.CoreSources.CoreSourcesNeutral" title="fytok.transport.CoreSources.CoreSourcesNeutral"><code class="xref py py-class docutils literal notranslate"><span class="pre">CoreSourcesNeutral</span></code></a> 的别名</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesProfiles1D.grid">
+<code class="sig-name descname">grid</code><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesProfiles1D.grid" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesProfiles1D.electrons">
+<code class="sig-name descname">electrons</code><em class="property">: <a class="reference internal" href="#fytok.transport.CoreSources.CoreSourcesElectrons" title="fytok.transport.CoreSources.CoreSourcesElectrons">fytok.transport.CoreSources.CoreSourcesElectrons</a></em><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesProfiles1D.electrons" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesProfiles1D.ion">
+<code class="sig-name descname">ion</code><em class="property">: spdm.data.List.List<span class="p">[</span><a class="reference internal" href="#fytok.transport.CoreSources.CoreSourcesIon" title="fytok.transport.CoreSources.CoreSourcesIon">fytok.transport.CoreSources.CoreSourcesIon</a><span class="p">]</span></em><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesProfiles1D.ion" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesProfiles1D.neutral">
+<code class="sig-name descname">neutral</code><em class="property">: spdm.data.List.List<span class="p">[</span><a class="reference internal" href="#fytok.transport.CoreSources.CoreSourcesNeutral" title="fytok.transport.CoreSources.CoreSourcesNeutral">fytok.transport.CoreSources.CoreSourcesNeutral</a><span class="p">]</span></em><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesProfiles1D.neutral" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesProfiles1D.total_ion_energy">
+<code class="sig-name descname">total_ion_energy</code><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesProfiles1D.total_ion_energy" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesProfiles1D.total_ion_power_inside">
+<code class="sig-name descname">total_ion_power_inside</code><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesProfiles1D.total_ion_power_inside" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesProfiles1D.momentum_tor">
+<code class="sig-name descname">momentum_tor</code><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesProfiles1D.momentum_tor" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesProfiles1D.torque_tor_inside">
+<code class="sig-name descname">torque_tor_inside</code><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesProfiles1D.torque_tor_inside" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesProfiles1D.j_parallel">
+<code class="sig-name descname">j_parallel</code><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesProfiles1D.j_parallel" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesProfiles1D.current_parallel_inside">
+<code class="sig-name descname">current_parallel_inside</code><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesProfiles1D.current_parallel_inside" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesProfiles1D.conductivity_parallel">
+<code class="sig-name descname">conductivity_parallel</code><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesProfiles1D.conductivity_parallel" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="fytok.transport.CoreSources.CoreSourcesGlobalQuantities">
+<em class="property">class </em><code class="sig-prename descclassname">fytok.transport.CoreSources.</code><code class="sig-name descname">CoreSourcesGlobalQuantities</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesGlobalQuantities" title="永久链接至目标">¶</a></dt>
+<dd><p>基类：<code class="xref py py-class docutils literal notranslate"><span class="pre">spdm.data.Dict.Dict</span></code></p>
+<p>Total source quantities integrated over the plasma volume or surface {dynamic}</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fytok.transport.CoreSources.CoreSourcesSpecies">
+<em class="property">class </em><code class="sig-prename descclassname">fytok.transport.CoreSources.</code><code class="sig-name descname">CoreSourcesSpecies</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesSpecies" title="永久链接至目标">¶</a></dt>
+<dd><p>基类：<code class="xref py py-class docutils literal notranslate"><span class="pre">spdm.data.Dict.Dict</span></code></p>
+<dl class="py method">
+<dt id="fytok.transport.CoreSources.CoreSourcesSpecies.type">
+<code class="sig-name descname">type</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="fytok.common.Misc.html#fytok.common.Misc.Identifier" title="fytok.common.Misc.Identifier">fytok.common.Misc.Identifier</a><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesSpecies.type" title="永久链接至目标">¶</a></dt>
+<dd><p>Species type. index=1 for electron; index=2 for ion species in a single/average state (refer to ion structure); index=3 for ion species in a particular state (refer to ion/state structure); index=4 for neutral species in a single/average state (refer to neutral structure); index=5 for neutral species in a particular state (refer to neutral/state structure); index=6 for neutron; index=7 for photon. Available options (refer to the children of this identifier structure) :</p>
+<p>Name               | Index      |  Description
+---------------+------------+----------------------------------------------------------------
+unspecified    | 0          |  unspecified
+electron       | 1          |  Electron
+ion            | 2          |  Ion species in a single/average state; refer to ion-structure
+ion_state      | 3          |  Ion species in a particular state; refer to ion/state-structure
+neutral            | 4              |  Neutral species in a single/average state; refer to neutral-structure
+neutral_state  | 5          |  Neutral species in a particular state; refer to neutral/state-structure
+neutron        | 6          |  Neutron
+photon         | 7          |  Photon</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="fytok.transport.CoreSources.CoreSourcesSource">
+<em class="property">class </em><code class="sig-prename descclassname">fytok.transport.CoreSources.</code><code class="sig-name descname">CoreSourcesSource</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">desc</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesSource" title="永久链接至目标">¶</a></dt>
+<dd><p>基类：<a class="reference internal" href="fytok.common.Module.html#fytok.common.Module.Module" title="fytok.common.Module.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">fytok.common.Module.Module</span></code></a></p>
+<p>Source term identifier (process causing this source term). Available options (refer to the children of this identifier structure) :</p>
+<p>Name                                           | Index              | Description
+-------------------------------------------+----------------+-----------------------------------------------------------------------
+unspecified                                |  0                 | Unspecified source type
+total                                      |  1                 | Total source; combines all sources
+nbi                                        |  2                 | Source from Neutral Beam Injection
+ec                                         |  3                 | Sources from electron cyclotron heating and current drive
+lh                                         |  4                 | Sources from lower hybrid heating and current drive
+ic                                         |  5                 | Sources from heating at the ion cyclotron range of frequencies
+fusion                                         |  6             | Sources from fusion reactions, e.g. alpha particle heating
+ohmic                                          |  7             | Source from ohmic heating
+bremsstrahlung                             |  8                 | Source from bremsstrahlung; radiation losses are negative sources
+synchrotron_radiation                      |  9                 | Source from synchrotron radiation; radiation losses are negative sources
+line_radiation                             | 10                 | Source from line radiation; radiation losses are negative sources
+collisional_equipartition                  | 11                 | Collisional equipartition
+cold_neutrals                              | 12                 | Source of cold neutrals
+bootstrap_current                          | 13                 | Bootstrap current
+pellet                                     | 14                 | Sources from injection
+auxiliary                                  | 100            | Source from auxiliary systems, e.g. heating and current drive systems
+ic_nbi                                     | 101            | A combination of the ic and nbi sources
+ic_fusion                                  | 102            | A combination of the ic and fusion sources
+ic_nbi_fusion                              | 103            | A combination of the ic and fusion sources
+ec_lh                                      | 104            | A combination of the ec and lh sources
+ec_ic                                      | 105            | A combination of the ec and ic sources
+lh_ic                                      | 106            | A combination of the lh and ic sources
+ec_lh_ic                                   | 107            | A combination of the ec, lh and ic sources
+gas_puff                                   | 108            | Gas puff
+killer_gas_puff                            | 109            | Killer gas puff
+radiation                                  | 200            | Total radiation source; radiation losses are negative sources
+cyclotron_radiation                        | 201            | Source from cyclotron radiation; radiation losses are negative sources
+cyclotron_synchrotron_radiation            | 202            | Source from combined cyclotron and synchrotron radiation; radiation losses are negative sources
+impurity_radiation                         | 203            | Line radiation and Bremsstrahlung source; radiation losses are negative sources.
+particles_to_wall                          | 303            | Particle pumping by the wall; negative source for plasma and positive source for the wall
+particles_to_pump                          | 304            | Particle pumping by external pump; negative source for plasma and positive source for the pump
+charge_exchange                            | 305            | Source from charge exchange. Charge exchange losses are negative sources
+transport                                  | 400            | Source term related to transport processes
+neoclassical                               | 401            | Source term related to neoclassical processes
+equipartition                              | 402            | Equipartition due to collisions and turbulence
+turbulent_equipartition                    | 403            | Turbulent equipartition
+runaways                                   | 501            | Source from run-away processes; includes both electron and ion run-away
+ionisation                                 | 601            | Source from ionisation processes (not accounting for charge exchange)
+recombination                              | 602            | Source from recombination processes (not accounting for charge exchange)
+excitation                                 | 603            | Source from excitation processes
+database                                   | 801            | Source from database entry
+gaussian                                   | 802            | Artificial source with a gaussian profile
+custom_1                                   | 901            | Custom source terms 1; content to be decided by data provided
+custom_2                                   | 902            | Custom source terms 2; content to be decided by data provided
+custom_3                                   | 903            | Custom source terms 3; content to be decided by data provided
+custom_4                                   | 904            | Custom source terms 4; content to be decided by data provided
+custom_5                                   | 905            | Custom source terms 5; content to be decided by data provided
+custom_6                                   | 906            | Custom source terms 6; content to be decided by data provided
+custom_7                                   | 907            | Custom source terms 7; content to be decided by data provided
+custom_8                                   | 908            | Custom source terms 8; content to be decided by data provided
+custom_9                                   | 909            | Custom source terms 9; content to be decided by data provided</p>
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesSource.Species">
+<code class="sig-name descname">Species</code><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesSource.Species" title="永久链接至目标">¶</a></dt>
+<dd><p><a class="reference internal" href="#fytok.transport.CoreSources.CoreSourcesSpecies" title="fytok.transport.CoreSources.CoreSourcesSpecies"><code class="xref py py-class docutils literal notranslate"><span class="pre">CoreSourcesSpecies</span></code></a> 的别名</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesSource.Profiles1D">
+<code class="sig-name descname">Profiles1D</code><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesSource.Profiles1D" title="永久链接至目标">¶</a></dt>
+<dd><p><a class="reference internal" href="#fytok.transport.CoreSources.CoreSourcesProfiles1D" title="fytok.transport.CoreSources.CoreSourcesProfiles1D"><code class="xref py py-class docutils literal notranslate"><span class="pre">CoreSourcesProfiles1D</span></code></a> 的别名</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesSource.GlobalQuantities">
+<code class="sig-name descname">GlobalQuantities</code><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesSource.GlobalQuantities" title="永久链接至目标">¶</a></dt>
+<dd><p><a class="reference internal" href="#fytok.transport.CoreSources.CoreSourcesGlobalQuantities" title="fytok.transport.CoreSources.CoreSourcesGlobalQuantities"><code class="xref py py-class docutils literal notranslate"><span class="pre">CoreSourcesGlobalQuantities</span></code></a> 的别名</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesSource.species">
+<code class="sig-name descname">species</code><em class="property">: <a class="reference internal" href="#fytok.transport.CoreSources.CoreSourcesSpecies" title="fytok.transport.CoreSources.CoreSourcesSpecies">fytok.transport.CoreSources.CoreSourcesSpecies</a></em><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesSource.species" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesSource.global_quantities">
+<code class="sig-name descname">global_quantities</code><em class="property">: <a class="reference internal" href="#fytok.transport.CoreSources.CoreSourcesGlobalQuantities" title="fytok.transport.CoreSources.CoreSourcesGlobalQuantities">fytok.transport.CoreSources.CoreSourcesGlobalQuantities</a></em><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesSource.global_quantities" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSourcesSource.profiles_1d">
+<code class="sig-name descname">profiles_1d</code><em class="property">: <a class="reference internal" href="#fytok.transport.CoreSources.CoreSourcesProfiles1D" title="fytok.transport.CoreSources.CoreSourcesProfiles1D">fytok.transport.CoreSources.CoreSourcesProfiles1D</a></em><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesSource.profiles_1d" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="fytok.transport.CoreSources.CoreSourcesSource.refresh">
+<code class="sig-name descname">refresh</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="n">core_profiles</span><span class="p">:</span> <span class="n"><a class="reference internal" href="fytok.transport.CoreProfiles.html#fytok.transport.CoreProfiles.CoreProfiles" title="fytok.transport.CoreProfiles.CoreProfiles">fytok.transport.CoreProfiles.CoreProfiles</a></span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesSource.refresh" title="永久链接至目标">¶</a></dt>
+<dd><p>Function: update the current state of the Module without advancing the time.
+Return  : return the residual between the updated state and the previous state</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="fytok.transport.CoreSources.CoreSources">
+<em class="property">class </em><code class="sig-prename descclassname">fytok.transport.CoreSources.</code><code class="sig-name descname">CoreSources</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">desc</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.transport.CoreSources.CoreSources" title="永久链接至目标">¶</a></dt>
+<dd><p>基类：<a class="reference internal" href="fytok.common.IDS.html#fytok.common.IDS.IDS" title="fytok.common.IDS.IDS"><code class="xref py py-class docutils literal notranslate"><span class="pre">fytok.common.IDS.IDS</span></code></a></p>
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSources.Source">
+<code class="sig-name descname">Source</code><a class="headerlink" href="#fytok.transport.CoreSources.CoreSources.Source" title="永久链接至目标">¶</a></dt>
+<dd><p><a class="reference internal" href="#fytok.transport.CoreSources.CoreSourcesSource" title="fytok.transport.CoreSources.CoreSourcesSource"><code class="xref py py-class docutils literal notranslate"><span class="pre">CoreSourcesSource</span></code></a> 的别名</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSources.vacuum_toroidal_field">
+<code class="sig-name descname">vacuum_toroidal_field</code><em class="property">: <a class="reference internal" href="fytok.common.Misc.html#fytok.common.Misc.VacuumToroidalField" title="fytok.common.Misc.VacuumToroidalField">fytok.common.Misc.VacuumToroidalField</a></em><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSources.vacuum_toroidal_field" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSources.source">
+<code class="sig-name descname">source</code><em class="property">: spdm.data.List.List<span class="p">[</span><a class="reference internal" href="#fytok.transport.CoreSources.CoreSourcesSource" title="fytok.transport.CoreSources.CoreSourcesSource">fytok.transport.CoreSources.CoreSourcesSource</a><span class="p">]</span></em><em class="property"> = None</em><a class="headerlink" href="#fytok.transport.CoreSources.CoreSources.source" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.transport.CoreSources.CoreSources.source_combiner">
+<code class="sig-name descname">source_combiner</code><a class="headerlink" href="#fytok.transport.CoreSources.CoreSources.source_combiner" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="fytok.transport.CoreSources.CoreSources.refresh">
+<code class="sig-name descname">refresh</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#fytok.transport.CoreSources.CoreSources.refresh" title="永久链接至目标">¶</a></dt>
+<dd><p>Function: update the current state of the Module without advancing the time.
+Return  : return the residual between the updated state and the previous state</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="fytok.transport.CoreProfiles.html" class="btn btn-neutral float-left" title="fytok.transport.CoreProfiles module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="fytok.transport.CoreTransport.html" class="btn btn-neutral float-right" title="fytok.transport.CoreTransport module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 版权所有 2021, 于治 YUZhi@ipp.ac.cn .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

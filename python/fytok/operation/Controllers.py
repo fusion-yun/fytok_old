@@ -1,18 +1,14 @@
 
-from spdm.data.Node import sp_property
-
-from spdm.data.Node import Dict, _not_found_, List
-from ..common.IDS import IDS,
+from ..common.IDS import IDS
+from spdm.data import Dict, List,  sp_property
 
 
 class ControllersLineController(Dict):
-    def __init__(self,  *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    pass
 
 
 class ControllersNonLinearController(Dict):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    pass
 
 
 class Controllers(IDS):
@@ -24,13 +20,6 @@ class Controllers(IDS):
     LineController = ControllersLineController
     NonLinearController = ControllersNonLinearController
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    linear_controller: List[LineController] = sp_property()
 
-    @sp_property
-    def linear_controller(self) -> List[LineController]:
-        return self["linear_controller"]
-
-    @sp_property
-    def nonlinear_controller(self) -> List[NonLinearController]:
-        return self["nonlinear_controller"]
+    nonlinear_controller: List[NonLinearController] = sp_property()

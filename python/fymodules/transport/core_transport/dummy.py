@@ -5,7 +5,7 @@ import numpy as np
 from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreTransport import CoreTransport
 from fytok.transport.Equilibrium import Equilibrium
-from spdm.data.Function import Function
+from spdm.data import Function
 from spdm.data import Dict, List, Node
 from spdm.common.logger import logger
 

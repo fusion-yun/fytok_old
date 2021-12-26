@@ -4,7 +4,7 @@ import logging
 import numpy as np
 
 from spdm.common.logger import logger
-from spdm.data.Function import Function
+from spdm.data import Function
 
 
 def smooth(x, window_len=11, window='hanning'):

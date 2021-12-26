@@ -2,7 +2,8 @@
 
 import matplotlib.pyplot as plt
 from spdm.common.logger import logger
-from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property, Function
+from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
+                       sp_property)
 
 from .common.Module import Module
 # ---------------------------------

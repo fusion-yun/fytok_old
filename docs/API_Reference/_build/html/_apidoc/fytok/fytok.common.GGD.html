@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="zh" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fytok.common.GGD module &mdash; 《托卡马克集成建模和分析框架》API Reference 0.0.1-alpha 文档</title><link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "tex2jax_process|mathjax_process|math|output_area"}})</script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="索引" href="../../genindex.html" />
+    <link rel="search" title="搜索" href="../../search.html" />
+    <link rel="next" title="fytok.common.IDS module" href="fytok.common.IDS.html" />
+    <link rel="prev" title="fytok.common namespace" href="fytok.common.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> 《托卡马克集成建模和分析框架》API Reference
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="fytok.html">fytok package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="fytok.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="fytok.auxiliary.html">fytok.auxiliary namespace</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="fytok.common.html">fytok.common namespace</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="fytok.common.html#submodules">Submodules</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.constants.html">fytok.constants namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.device.html">fytok.device namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.diagnosis.html">fytok.diagnosis namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.numlib.html">fytok.numlib namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.operation.html">fytok.operation namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.plasma.html">fytok.plasma namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.transport.html">fytok.transport namespace</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="fytok.html#submodules">Submodules</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../fymodules/modules.html">fymodules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../spdm/modules.html">spdm</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">《托卡马克集成建模和分析框架》API Reference</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="fytok.html">fytok package</a> &raquo;</li>
+          <li><a href="fytok.common.html">fytok.common namespace</a> &raquo;</li>
+      <li>fytok.common.GGD module</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="module-fytok.common.GGD">
+<span id="fytok-common-ggd-module"></span><h1>fytok.common.GGD module<a class="headerlink" href="#module-fytok.common.GGD" title="永久链接至标题">¶</a></h1>
+<dl class="py class">
+<dt id="fytok.common.GGD.GGDGridSubset">
+<em class="property">class </em><code class="sig-prename descclassname">fytok.common.GGD.</code><code class="sig-name descname">GGDGridSubset</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.common.GGD.GGDGridSubset" title="永久链接至目标">¶</a></dt>
+<dd><p>基类：<code class="xref py py-class docutils literal notranslate"><span class="pre">spdm.data.Dict.Dict</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fytok.common.GGD.GGDSpace">
+<em class="property">class </em><code class="sig-prename descclassname">fytok.common.GGD.</code><code class="sig-name descname">GGDSpace</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.common.GGD.GGDSpace" title="永久链接至目标">¶</a></dt>
+<dd><p>基类：<code class="xref py py-class docutils literal notranslate"><span class="pre">spdm.data.Dict.Dict</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fytok.common.GGD.GGDGrid">
+<em class="property">class </em><code class="sig-prename descclassname">fytok.common.GGD.</code><code class="sig-name descname">GGDGrid</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.common.GGD.GGDGrid" title="永久链接至目标">¶</a></dt>
+<dd><p>基类：<code class="xref py py-class docutils literal notranslate"><span class="pre">spdm.data.Dict.Dict</span></code></p>
+<dl class="py attribute">
+<dt id="fytok.common.GGD.GGDGrid.identifier">
+<code class="sig-name descname">identifier</code><em class="property"> = None</em><a class="headerlink" href="#fytok.common.GGD.GGDGrid.identifier" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.common.GGD.GGDGrid.space">
+<code class="sig-name descname">space</code><em class="property"> = None</em><a class="headerlink" href="#fytok.common.GGD.GGDGrid.space" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.common.GGD.GGDGrid.grid_subset">
+<code class="sig-name descname">grid_subset</code><em class="property"> = None</em><a class="headerlink" href="#fytok.common.GGD.GGDGrid.grid_subset" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="fytok.common.GGD.GGD">
+<em class="property">class </em><code class="sig-prename descclassname">fytok.common.GGD.</code><code class="sig-name descname">GGD</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.common.GGD.GGD" title="永久链接至目标">¶</a></dt>
+<dd><p>基类：<code class="xref py py-class docutils literal notranslate"><span class="pre">spdm.data.Dict.Dict</span></code></p>
+<p>General Grid Define</p>
+<dl class="py attribute">
+<dt id="fytok.common.GGD.GGD.grid">
+<code class="sig-name descname">grid</code><em class="property"> = None</em><a class="headerlink" href="#fytok.common.GGD.GGD.grid" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="fytok.common.GGD.GGD.plot">
+<code class="sig-name descname">plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">axis</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="n">ggd</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.common.GGD.GGD.plot" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="fytok.common.html" class="btn btn-neutral float-left" title="fytok.common namespace" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="fytok.common.IDS.html" class="btn btn-neutral float-right" title="fytok.common.IDS module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 版权所有 2021, 于治 YUZhi@ipp.ac.cn .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

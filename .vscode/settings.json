@@ -1,21 +1,21 @@
 {
   "restructuredtext.confPath": "${workspaceFolder}/docs",
-  "python.testing.unittestArgs": ["-v", "-s", "./tests", "-p", "test_*.py"],
+  "python.testing.unittestEnabled": true,
+  "python.testing.unittestArgs": ["-v", "-s", "./tests/", "-p", "test_*.py"],
   "python.testing.pytestEnabled": false,
   "python.testing.nosetestsEnabled": false,
-  "python.testing.unittestEnabled": false,
   "python.testing.promptToConfigure": false,
-  "python.autoComplete.extraPaths": [
-    "${workspaceFolder}/../SpDB/python",
-    "${workspaceFolder}/../SpFlow/python",
-    "${workspaceFolder}/../SpView/python",
-    "${workspaceFolder}/python"
-  ],
-  "python.analysis.extraPaths": [
-    "${workspaceFolder}/../SpDB/python",
-    "${workspaceFolder}/../SpFlow/python",
-    "${workspaceFolder}/../SpView/python",
-    "${workspaceFolder}/python"
-  ],
+  // "python.autoComplete.extraPaths": [
+  //   "${workspaceFolder}/../SpDB/python",
+  //   "${workspaceFolder}/../SpFlow/python",
+  //   "${workspaceFolder}/../SpView/python",
+  //   "${workspaceFolder}/python"
+  // ],
+  // "python.analysis.extraPaths": [
+  //   "${workspaceFolder}/../SpDB/python",
+  //   "${workspaceFolder}/../SpFlow/python",
+  //   "${workspaceFolder}/../SpView/python",
+  //   "${workspaceFolder}/python"
+  // ],
   "cSpell.words": ["fytok", "spdm"]
 }

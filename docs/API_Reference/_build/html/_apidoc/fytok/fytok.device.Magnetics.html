@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="zh" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fytok.device.Magnetics module &mdash; 《托卡马克集成建模和分析框架》API Reference 0.0.1-alpha 文档</title><link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "tex2jax_process|mathjax_process|math|output_area"}})</script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="索引" href="../../genindex.html" />
+    <link rel="search" title="搜索" href="../../search.html" />
+    <link rel="next" title="fytok.device.PFActive module" href="fytok.device.PFActive.html" />
+    <link rel="prev" title="fytok.device.IronCore module" href="fytok.device.IronCore.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> 《托卡马克集成建模和分析框架》API Reference
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="fytok.html">fytok package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="fytok.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="fytok.auxiliary.html">fytok.auxiliary namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.common.html">fytok.common namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.constants.html">fytok.constants namespace</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="fytok.device.html">fytok.device namespace</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="fytok.device.html#submodules">Submodules</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.diagnosis.html">fytok.diagnosis namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.numlib.html">fytok.numlib namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.operation.html">fytok.operation namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.plasma.html">fytok.plasma namespace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fytok.transport.html">fytok.transport namespace</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="fytok.html#submodules">Submodules</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../fymodules/modules.html">fymodules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../spdm/modules.html">spdm</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">《托卡马克集成建模和分析框架》API Reference</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="fytok.html">fytok package</a> &raquo;</li>
+          <li><a href="fytok.device.html">fytok.device namespace</a> &raquo;</li>
+      <li>fytok.device.Magnetics module</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="section" id="module-fytok.device.Magnetics">
+<span id="fytok-device-magnetics-module"></span><h1>fytok.device.Magnetics module<a class="headerlink" href="#module-fytok.device.Magnetics" title="永久链接至标题">¶</a></h1>
+<dl class="py class">
+<dt id="fytok.device.Magnetics.MagneticsFluxLoop">
+<em class="property">class </em><code class="sig-prename descclassname">fytok.device.Magnetics.</code><code class="sig-name descname">MagneticsFluxLoop</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.device.Magnetics.MagneticsFluxLoop" title="永久链接至目标">¶</a></dt>
+<dd><p>基类：<code class="xref py py-class docutils literal notranslate"><span class="pre">spdm.data.Dict.Dict</span></code></p>
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.MagneticsFluxLoop.name">
+<code class="sig-name descname">name</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.MagneticsFluxLoop.name" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.MagneticsFluxLoop.identifier">
+<code class="sig-name descname">identifier</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.MagneticsFluxLoop.identifier" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.MagneticsFluxLoop.type">
+<code class="sig-name descname">type</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.MagneticsFluxLoop.type" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.MagneticsFluxLoop.position">
+<code class="sig-name descname">position</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.MagneticsFluxLoop.position" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.MagneticsFluxLoop.indices_differential">
+<code class="sig-name descname">indices_differential</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.MagneticsFluxLoop.indices_differential" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.MagneticsFluxLoop.area">
+<code class="sig-name descname">area</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.MagneticsFluxLoop.area" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.MagneticsFluxLoop.gm9">
+<code class="sig-name descname">gm9</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.MagneticsFluxLoop.gm9" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.MagneticsFluxLoop.flux">
+<code class="sig-name descname">flux</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.MagneticsFluxLoop.flux" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.MagneticsFluxLoop.voltage">
+<code class="sig-name descname">voltage</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.MagneticsFluxLoop.voltage" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="fytok.device.Magnetics.MagneticsMagneticProbe">
+<em class="property">class </em><code class="sig-prename descclassname">fytok.device.Magnetics.</code><code class="sig-name descname">MagneticsMagneticProbe</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.device.Magnetics.MagneticsMagneticProbe" title="永久链接至目标">¶</a></dt>
+<dd><p>基类：<code class="xref py py-class docutils literal notranslate"><span class="pre">spdm.data.Dict.Dict</span></code></p>
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.MagneticsMagneticProbe.name">
+<code class="sig-name descname">name</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.MagneticsMagneticProbe.name" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.MagneticsMagneticProbe.identifier">
+<code class="sig-name descname">identifier</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.MagneticsMagneticProbe.identifier" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.MagneticsMagneticProbe.type">
+<code class="sig-name descname">type</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.MagneticsMagneticProbe.type" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.MagneticsMagneticProbe.position">
+<code class="sig-name descname">position</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.MagneticsMagneticProbe.position" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.MagneticsMagneticProbe.poloidal_angle">
+<code class="sig-name descname">poloidal_angle</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.MagneticsMagneticProbe.poloidal_angle" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.MagneticsMagneticProbe.toroidal_angle">
+<code class="sig-name descname">toroidal_angle</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.MagneticsMagneticProbe.toroidal_angle" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.MagneticsMagneticProbe.indices_differential">
+<code class="sig-name descname">indices_differential</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.MagneticsMagneticProbe.indices_differential" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.MagneticsMagneticProbe.bandwidth_3db">
+<code class="sig-name descname">bandwidth_3db</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.MagneticsMagneticProbe.bandwidth_3db" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.MagneticsMagneticProbe.area">
+<code class="sig-name descname">area</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.MagneticsMagneticProbe.area" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.MagneticsMagneticProbe.length">
+<code class="sig-name descname">length</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.MagneticsMagneticProbe.length" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.MagneticsMagneticProbe.turns">
+<code class="sig-name descname">turns</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.MagneticsMagneticProbe.turns" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.MagneticsMagneticProbe.field">
+<code class="sig-name descname">field</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.MagneticsMagneticProbe.field" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.MagneticsMagneticProbe.voltage">
+<code class="sig-name descname">voltage</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.MagneticsMagneticProbe.voltage" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.MagneticsMagneticProbe.non_linear_response">
+<code class="sig-name descname">non_linear_response</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.MagneticsMagneticProbe.non_linear_response" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="fytok.device.Magnetics.MagneticsRogowskiCoil">
+<em class="property">class </em><code class="sig-prename descclassname">fytok.device.Magnetics.</code><code class="sig-name descname">MagneticsRogowskiCoil</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.device.Magnetics.MagneticsRogowskiCoil" title="永久链接至目标">¶</a></dt>
+<dd><p>基类：<code class="xref py py-class docutils literal notranslate"><span class="pre">spdm.data.Dict.Dict</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="fytok.device.Magnetics.Magnetics">
+<em class="property">class </em><code class="sig-prename descclassname">fytok.device.Magnetics.</code><code class="sig-name descname">Magnetics</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">desc</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.device.Magnetics.Magnetics" title="永久链接至目标">¶</a></dt>
+<dd><p>基类：<a class="reference internal" href="fytok.common.IDS.html#fytok.common.IDS.IDS" title="fytok.common.IDS.IDS"><code class="xref py py-class docutils literal notranslate"><span class="pre">fytok.common.IDS.IDS</span></code></a></p>
+<p>Magnetic diagnostics for equilibrium identification and plasma shape control.</p>
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.Magnetics.FluxLoop">
+<code class="sig-name descname">FluxLoop</code><a class="headerlink" href="#fytok.device.Magnetics.Magnetics.FluxLoop" title="永久链接至目标">¶</a></dt>
+<dd><p><a class="reference internal" href="#fytok.device.Magnetics.MagneticsFluxLoop" title="fytok.device.Magnetics.MagneticsFluxLoop"><code class="xref py py-class docutils literal notranslate"><span class="pre">MagneticsFluxLoop</span></code></a> 的别名</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.Magnetics.MagneticProbe">
+<code class="sig-name descname">MagneticProbe</code><a class="headerlink" href="#fytok.device.Magnetics.Magnetics.MagneticProbe" title="永久链接至目标">¶</a></dt>
+<dd><p><a class="reference internal" href="#fytok.device.Magnetics.MagneticsMagneticProbe" title="fytok.device.Magnetics.MagneticsMagneticProbe"><code class="xref py py-class docutils literal notranslate"><span class="pre">MagneticsMagneticProbe</span></code></a> 的别名</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.Magnetics.RogowskiCoil">
+<code class="sig-name descname">RogowskiCoil</code><a class="headerlink" href="#fytok.device.Magnetics.Magnetics.RogowskiCoil" title="永久链接至目标">¶</a></dt>
+<dd><p><a class="reference internal" href="#fytok.device.Magnetics.MagneticsRogowskiCoil" title="fytok.device.Magnetics.MagneticsRogowskiCoil"><code class="xref py py-class docutils literal notranslate"><span class="pre">MagneticsRogowskiCoil</span></code></a> 的别名</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.Magnetics.flux_loop">
+<code class="sig-name descname">flux_loop</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.Magnetics.flux_loop" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.Magnetics.b_field_pol_probe">
+<code class="sig-name descname">b_field_pol_probe</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.Magnetics.b_field_pol_probe" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.Magnetics.b_field_tor_probe">
+<code class="sig-name descname">b_field_tor_probe</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.Magnetics.b_field_tor_probe" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="fytok.device.Magnetics.Magnetics.rogowski_coil">
+<code class="sig-name descname">rogowski_coil</code><em class="property"> = None</em><a class="headerlink" href="#fytok.device.Magnetics.Magnetics.rogowski_coil" title="永久链接至目标">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="fytok.device.IronCore.html" class="btn btn-neutral float-left" title="fytok.device.IronCore module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="fytok.device.PFActive.html" class="btn btn-neutral float-right" title="fytok.device.PFActive module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 版权所有 2021, 于治 YUZhi@ipp.ac.cn .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,6 +1,5 @@
 import collections
 
-import matplotlib.pyplot as plt
 from fytok.device.PFActive import PFActive
 from fytok.device.Wall import Wall
 from fytok.transport.CoreProfiles import CoreProfiles

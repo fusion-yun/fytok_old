@@ -2,7 +2,7 @@
 import collections
 
 import numpy as np
-from fytok.common.Atoms import nuclear_reaction
+from fytok.constants.Atoms import nuclear_reaction
 from fytok.numlib.misc import array_like
 from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreSources import CoreSources
@@ -19,46 +19,45 @@ class FusionReaction(CoreSources.Source):
             CoreSources ([type]): [description]
 
 
+        $\\alpha$输运模型参考[@angioniGyrokineticCalculationsDiffusive2008; @angioniGyrokineticSimulationsImpurity2009]
 
-        $\alpha$输运模型参考[@angioniGyrokineticCalculationsDiffusive2008; @angioniGyrokineticSimulationsImpurity2009]
-
-        * energetic $\alpha$ particle density $n_{\alpha}$
+        * energetic $\\alpha$ particle density $n_{\\alpha}$
 
         $$
-        \frac{\partial n_{\alpha}}{\partial t}+\nabla\left(-D_{\alpha}\nabla n_{\alpha}+Vn_{\alpha}\right)=-\frac{n_{\alpha}}{\tau_{sd}^{*}}+n_{D}n_{T}\left\langle \sigma v\right\rangle _{DT}
+        \\frac{\\partial n_{\\alpha}}{\\partial t}+\\nabla\\left(-D_{\\alpha}\\nabla n_{\\alpha}+Vn_{\\alpha}\\right)=-\\frac{n_{\\alpha}}{\\tau_{sd}^{*}}+n_{D}n_{T}\\left\\langle \\sigma v\\right\\rangle _{DT}
         $$
 
         * $He$ ash density $n_{He}$
 
         $$
-        \frac{\partial n_{He}}{\partial t}+\nabla\left(-D_{He}\nabla n_{He}+Vn_{He}\right)=\frac{n_{\alpha}}{\tau_{sd}^{*}}
+        \\frac{\\partial n_{He}}{\\partial t}+\\nabla\\left(-D_{He}\\nabla n_{He}+Vn_{He}\\right)=\\frac{n_{\\alpha}}{\\tau_{sd}^{*}}
         $$
 
         where
         $$
-        \tau_{sd}^{*}=\ln\left(v_{\alpha}^{3}/v_{c}^{3}+1\right)\left(m_{e}m_{\alpha}v_{e}^{3}\right)/\left(64\sqrt{\pi}e^{4}n_{e}\ln\Lambda\right)
+        \\tau_{sd}^{*}=\\ln\\left(v_{\\alpha}^{3}/v_{c}^{3}+1\\right)\\left(m_{e}m_{\\alpha}v_{e}^{3}\\right)/\\left(64\\sqrt{\\pi}e^{4}n_{e}\\ln\\Lambda\\right)
         $$
         is the actual thermalization slowing down time.
 
-        energetic $\alpha$ particle flux
+        energetic $\\alpha$ particle flux
         $$
-        \frac{R\Gamma_{\alpha}}{n_{\alpha}}=D_{\alpha}\left(\frac{R}{L_{n_{\alpha}}}C_{p_{\alpha}}\right)
+        \\frac{R\\Gamma_{\\alpha}}{n_{\\alpha}}=D_{\\alpha}\\left(\\frac{R}{L_{n_{\\alpha}}}C_{p_{\\alpha}}\\right)
         $$
         where
         $$
-        D_{\alpha}=D_{\text{He}}\left[0.02+4.5\left(\frac{T_{e}}{E_{\alpha}}\right)+8\left(\frac{T_{e}}{E_{\alpha}}\right)^{2}+350\left(\frac{T_{e}}{E_{\alpha}}\right)^{3}\right]
+        D_{\\alpha}=D_{\\text{He}}\\left[0.02+4.5\\left(\\frac{T_{e}}{E_{\\alpha}}\\right)+8\\left(\\frac{T_{e}}{E_{\\alpha}}\\right)^{2}+350\\left(\\frac{T_{e}}{E_{\\alpha}}\\right)^{3}\\right]
         $$
         and
         $$
-        C_{p_{\alpha}}=\frac{3}{2}\frac{R}{L_{T_{e}}}\left[\frac{1}{\log\left[\left(E_{\alpha}/E_{c}\right)^{3/2}+1\right]\left[1+\left(E_{c}/E_{\alpha}\right)^{3/2}\right]}-1\right]
+        C_{p_{\\alpha}}=\\frac{3}{2}\\frac{R}{L_{T_{e}}}\\left[\\frac{1}{\\log\\left[\\left(E_{\\alpha}/E_{c}\\right)^{3/2}+1\\right]\\left[1+\\left(E_{c}/E_{\\alpha}\\right)^{3/2}\\right]}-1\\right]
         $$
-        Here $E_{c}$ is the slowing down critical energy. We remind that $E_{c}/E_{\alpha}=33.05 T_e/E_{\alpha}$, where $E_{\alpha}=3500 keV$  is the thirth energy of $\alpha$ particles.
+        Here $E_{c}$ is the slowing down critical energy. We remind that $E_{c}/E_{\\alpha}=33.05 T_e/E_{\\alpha}$, where $E_{\\alpha}=3500 keV$  is the thirth energy of $\\alpha$ particles.
     """
 
     def __init__(self, d: collections.abc.Mapping = None,  *args, **kwargs):
         super().__init__(collections.ChainMap(
             {"identifier": {"name": f"fusion",  "index": 13,
-                            "description": f"  $D + T -> \alpha$ burning and slowing down "},
+                            "description": f"  $D + T -> \\alpha$ burning and slowing down "},
              "code": {"name": "fusion_reaction"}}, d or {}),
             *args, **kwargs)
 

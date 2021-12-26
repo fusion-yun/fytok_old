@@ -5,7 +5,7 @@ import collections.abc
 from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreTransport import CoreTransport
 from fytok.transport.Equilibrium import Equilibrium
-from spdm.data.Function import Function
+from spdm.data import Function
 from scipy import constants
 from fytok.numlib.misc import array_like
 from spdm.common.logger import logger
@@ -14,10 +14,8 @@ from spdm.common.logger import logger
 class Spitzer(CoreTransport.Model):
     """
         Spitzer Resistivity
-        ===============================
-
+        
         References:
-        =============
         - Tokamaks, Third Edition, Chapter 14  ,p727,  J.A.Wesson 2003
     """
 

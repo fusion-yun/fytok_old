@@ -6,12 +6,12 @@ from functools import cached_property
 from typing import Sequence, TypeVar, Union
 
 import scipy
-from spdm.data.Field import Field
-from spdm.data.Function import Function, function_like
-from spdm.data.Node import Dict, List, Node, sp_property
 from scipy import constants
 from spdm.common.logger import logger
-from spdm.util.utilities import _not_found_, _undefined_, try_get
+from spdm.common.tags import _not_found_, _undefined_
+from spdm.data import Dict, Function, List, Node, function_like, sp_property
+from spdm.data.Field import Field
+from spdm.util.utilities import try_get
 
 from ..common.GGD import GGD
 from ..common.IDS import IDS

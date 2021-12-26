@@ -4,11 +4,11 @@ from dataclasses import dataclass
 
 import matplotlib.pyplot as plt
 import numpy as np
-from fytok.common.Misc import Identifier, RZTuple, Signal
-from spdm.common.logger import logger
-from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property, Function
-
 from ..common.IDS import IDS
+from ..common.Misc import Identifier, RZTuple, Signal
+from spdm.common.logger import logger
+from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
+                       sp_property)
 
 
 class PFActiveCoil(Dict):

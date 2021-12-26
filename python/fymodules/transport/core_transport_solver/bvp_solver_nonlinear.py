@@ -10,9 +10,9 @@ from typing import (Any, Callable, Iterator, Mapping, Optional, Sequence,
                     Tuple, Type, Union)
 
 import numpy as np
-from fytok.common.Atoms import atoms
 from fytok.common.IDS import IDS
 from fytok.common.Misc import Identifier, VacuumToroidalField
+from fytok.constants.Atoms import atoms
 from fytok.numlib.bvp import BVPResult, solve_bvp
 from fytok.numlib.misc import array_like
 from fytok.transport.CoreProfiles import CoreProfiles

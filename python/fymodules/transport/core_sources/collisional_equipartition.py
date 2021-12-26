@@ -2,14 +2,14 @@
 import collections
 
 import numpy as np
-from scipy import constants
+from fytok.constants.Atoms import atoms
 from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreSources import CoreSources
 from fytok.transport.Equilibrium import Equilibrium
-from spdm.data.Function import Function
-from spdm.data.Node import Dict, List, Node, _next_
+from scipy import constants
 from spdm.common.logger import logger
-from fytok.common.Atoms import atoms
+from spdm.common.tags import _next_
+from spdm.data import Dict, Function, List, Node
 
 
 class CollisionalEquipartition(CoreSources.Source):

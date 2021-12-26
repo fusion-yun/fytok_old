@@ -1,6 +1,6 @@
 import numpy as np
-from spdm.data.Node import Dict, List
-from spdm.data.Node import sp_property
+from spdm.data import Dict, List
+from spdm.data  import sp_property
 
 from ..common.IDS import IDS
 from ..common.Misc import Signal

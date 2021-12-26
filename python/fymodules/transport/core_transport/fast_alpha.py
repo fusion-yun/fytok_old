@@ -6,10 +6,9 @@ from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreTransport import CoreTransport
 from fytok.transport.Equilibrium import Equilibrium
 from scipy import constants
-from spdm.data.Entry import _next_
-from spdm.data.Function import Function, function_like
 from spdm.common.logger import logger
-from spdm.util.utilities import _not_found_
+from spdm.common.tags import _next_, _not_found_
+from spdm.data import Function, function_like
 
 
 class FastAlpha(CoreTransport.Model):

@@ -12,7 +12,7 @@ from scipy.sparse import coo_matrix, csc_matrix
 from scipy.sparse.linalg import splu
 from spdm.common.logger import logger
 
-from .spline import create_spline_for_bvp
+from ..numlib.spline import create_spline_for_bvp
 
 EPS = np.finfo(float).eps
 

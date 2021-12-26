@@ -3,11 +3,11 @@ import collections
 from copy import copy
 
 import numpy as np
-from spdm.common.logger import logger
-from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property,Function
-
 from ..common.IDS import IDS
 from ..common.Signal import Signal
+from spdm.common.logger import logger
+from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
+                       sp_property)
 
 
 class TF(IDS):

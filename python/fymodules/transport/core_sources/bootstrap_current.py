@@ -7,7 +7,7 @@ from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreSources import CoreSources
 from fytok.transport.Equilibrium import Equilibrium
 from scipy import constants
-from spdm.data.Function import Function
+from spdm.data import Function
 from spdm.common.logger import logger
 
 

@@ -4,11 +4,11 @@ import os
 from dataclasses import dataclass
 from typing import Mapping, Optional, Sequence, TypeVar
 
+from ..common.Module import Module
 from spdm.common.logger import logger
-from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property,Function
 from spdm.common.tags import _undefined_
-
-from .Module import Module
+from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
+                       sp_property)
 
 
 class IDSProperties(Dict):
@@ -21,12 +21,7 @@ class IDSProperties(Dict):
         return self["comment"]
 
     @sp_property
-    def homogeneous_time(self):
-        """This node must be filled (with 0, 1, or 2) for the IDS to be valid. If 1, the time of this IDS is homogeneous,
-            i.e. If 1, the time values for this IDS are stored in the time node just below the root of this IDS. 
-                 If 0, the time values are stored in the various time fields at lower levels in the tree.
-                 In the case only constant or static nodes are filled within the IDS, homogeneous_time must be set to 2 {constant}	INT_0D	"""
-
+    def homogeneous_time(self) -> float:
         h_time = getattr(self._parent.__class__, "_homogeneous_time", None)
 
         if h_time is None:

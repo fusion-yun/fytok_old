@@ -3,8 +3,9 @@ import numpy as np
 from scipy import constants
 from spdm.common.logger import logger
 from spdm.common.tags import _not_found_
-from spdm.data import (Dict, List, Node,  sp_property)
-from ..common.Atoms import atoms
+from spdm.data import Dict, List, Node, sp_property
+
+from ..constants.Atoms import atoms
 
 
 class SpeciesElement(Dict):

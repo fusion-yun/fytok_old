@@ -6,22 +6,20 @@ from math import isclose, log
 from typing import (Any, Callable, Iterator, Mapping, Optional, Sequence,
                     Tuple, Type, Union)
 
-from fytok.common.Atoms import atoms
 from fytok.common.IDS import IDS
 from fytok.common.Misc import Identifier, VacuumToroidalField
+from fytok.constants.Atoms import atoms
+from fytok.numlib.misc import array_like
 from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreSources import CoreSources
 from fytok.transport.CoreTransport import CoreTransport, TransportCoeff
 from fytok.transport.CoreTransportSolver import CoreTransportSolver
 from fytok.transport.Equilibrium import Equilibrium
 from fytok.transport.MagneticCoordSystem import RadialGrid
-from matplotlib.pyplot import loglog
-from numpy.core.fromnumeric import var
-from spdm.data.Function import Function, function_like
-from spdm.data.Node import Dict, List, _not_found_
 from scipy import constants
-from fytok.numlib.misc import array_like
 from spdm.common.logger import logger
+from spdm.common.tags import _not_found_
+from spdm.data import Dict, Function, List, function_like
 
 EPSILON = 1.0e-15
 TOLERANCE = 1.0e-6

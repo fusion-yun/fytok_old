@@ -1,12 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from spdm.data.Collection import Collection
-from spdm.data.Node import Dict
-from spdm.data.File import File
-from spdm.data.Function import Function
-from spdm.common.logger import logger
-from spdm.util.plot_profiles import plot_profiles
 from fytok.Tokamak import Tokamak
+from spdm.common.logger import logger
+from spdm.data import Dict, Function, Collection
+from spdm.data.File import File
+from spdm.util.plot_profiles import plot_profiles
 
 if __name__ == "__main__":
 
