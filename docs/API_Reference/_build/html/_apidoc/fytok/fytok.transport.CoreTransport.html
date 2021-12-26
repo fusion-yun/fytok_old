@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>fytok.transport.CoreTransport module &mdash; 《托卡马克集成建模和分析框架》API Reference 0.0.1-alpha 文档</title><link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <title>fytok.transport.CoreTransport module &mdash; 《托卡马克集成建模和分析框架》 API Reference 0.0.1-alpha 文档</title><link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -28,7 +28,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../../index.html" class="icon icon-home"> 《托卡马克集成建模和分析框架》API Reference
+            <a href="../../index.html" class="icon icon-home"> 《托卡马克集成建模和分析框架》 API Reference
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -59,7 +59,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../fymodules/modules.html">fymodules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../spdm/modules.html">spdm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../fymodule-restricted/modules.html">fymodules</a></li>
 </ul>
 
         </div>
@@ -68,7 +68,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../index.html">《托卡马克集成建模和分析框架》API Reference</a>
+          <a href="../../index.html">《托卡马克集成建模和分析框架》 API Reference</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -388,10 +388,10 @@ Return  : return the residual between the updated state and the previous state</
 <p>Core plasma transport of particles, energy, momentum and poloidal flux. The transport of particles, energy and momentum is described by
 diffusion coefficients,  <span class="math notranslate nohighlight">\(D\)</span>, and convection velocities,  <span class="math notranslate nohighlight">\(v\)</span>. These are defined by the total fluxes of particles, energy and momentum, across a
 flux surface given by : <span class="math notranslate nohighlight">\(V^{\prime}\left[-DY^{\prime}\left|\nabla\rho_{tor,norm}\right|^{2}+vY\left|\nabla\rho_{tor,norm}\right|\right]\)</span>,
-where  <span class="math notranslate nohighlight">\(Y\)</span> represents the particles, energy and momentum density, respectively, while  <span class="math notranslate nohighlight">\(V\)</span> is the volume inside a flux surface, the primes denote
+where <span class="math notranslate nohighlight">\(Y\)</span> represents the particles, energy and momentum density, respectively, while  <span class="math notranslate nohighlight">\(V\)</span> is the volume inside a flux surface, the primes denote
 derivatives with respect to <span class="math notranslate nohighlight">\(\rho_{tor,norm}\)</span> and
 <span class="math notranslate nohighlight">\(\left\langle X\right\rangle\)</span> is the flux surface average of a quantity  <span class="math notranslate nohighlight">\(X\)</span>. This formulation remains valid when changing simultaneously
-<span class="math notranslate nohighlight">\(\rho_{tor,norm}\)</span> into <span class="math notranslate nohighlight">\(\rho_{tor}\)</span>
+<span class="math notranslate nohighlight">\(\rho_{tor,norm}\)</span> into <span class="math notranslate nohighlight">\(rho_{tor}\)</span>
 in the gradient terms and in the derivatives denoted by the prime. The average flux stored in the IDS as sibling of  <span class="math notranslate nohighlight">\(D\)</span> and  <span class="math notranslate nohighlight">\(v\)</span> is the total
 flux described above divided by the flux surface area <span class="math notranslate nohighlight">\(V^{\prime}\left\langle \left|\nabla\rho_{tor,norm}\right|\right\rangle\)</span> .
 Note that the energy flux includes the energy transported by the particle flux.</p>

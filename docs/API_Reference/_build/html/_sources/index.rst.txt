@@ -3,15 +3,11 @@
 
 
 .. toctree::
-    :maxdepth: 3
+    :maxdepth: 5
 
     _apidoc/fytok/fytok
     _apidoc/fymodules/modules
-    _apidoc/spdm/modules
+    _apidoc/fymodule-restricted/modules
 
 
-Indices and tables
-==================
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+

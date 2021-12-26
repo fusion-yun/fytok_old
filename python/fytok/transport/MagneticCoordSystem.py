@@ -111,11 +111,13 @@ class MagneticCoordSystem(Dict):
     r"""
         Flux surface coordinate system on a square grid of flux and poloidal angle
 
-        .. math::
+        $$
             V^{\prime}\left(\rho\right)=\frac{\partial V}{\partial\rho}=2\pi\int_{0}^{2\pi}\sqrt{g}d\theta=2\pi\oint\frac{R}{\left|\nabla\rho\right|}dl
+        $$
 
-        .. math::
+        $$
             \left\langle\alpha\right\rangle\equiv\frac{2\pi}{V^{\prime}}\int_{0}^{2\pi}\alpha\sqrt{g}d\theta=\frac{2\pi}{V^{\prime}}\varoint\alpha\frac{R}{\left|\nabla\rho\right|}dl
+        $$
 
         Magnetic Flux Coordinates
         psi         :                     ,  flux function , $B \cdot \nabla \psi=0$ need not to be the poloidal flux funcion $\Psi$
@@ -124,7 +126,7 @@ class MagneticCoordSystem(Dict):
     """
     COCOS_INDEX = 11
     COCOS_TABLE = [
-        # e_Bp ,    \sigma_{Bp},    \sigma_{R\varphi\Z}
+        # e_Bp ,    $\sigma_{Bp}$,    $\sigma_{R\varphi\Z}$
         None,                             # 0
         (1,         +1,             +1),  # 1
         (1,         +1,             -1),  # 2
@@ -550,7 +552,7 @@ class MagneticCoordSystem(Dict):
 
     def Bpol(self, r: _TCoord, z: _TCoord) -> _TCoord:
         r"""
-            .. math:: B_{pol} =   |\nabla \psi|/2 \pi R
+            $B_{pol}= \left|\nabla \psi \right|/2 \pi R $
         """
         return self.grad_psi(r, z) / r / (TWOPI)
 
@@ -597,14 +599,15 @@ class MagneticCoordSystem(Dict):
     @cached_property
     def dvolume_dpsi(self) -> np.ndarray:
         r"""
-            .. math:: V^{\prime} =  2 \pi  \int{ R / |\nabla \psi| * dl }
-            .. math:: V^{\prime}(psi)= 2 \pi  \int{ dl * R / |\nabla \psi|}
+            $ V^{\prime} =  2 \pi  \int{ R / \left|\nabla \psi \right| * dl }$
+
+            $ V^{\prime}(psi)= 2 \pi  \int{ dl * R / \left|\nabla \psi \right|}$
         """
         return self._surface_integral()
 
     def surface_average(self,  func,   /, value_axis: Union[float, Callable[[float, float], float]] = None, **kwargs) -> np.ndarray:
         r"""
-            .. math:: \left\langle \alpha\right\rangle \equiv\frac{2\pi}{V^{\prime}}\oint\alpha\frac{Rdl}{\left|\nabla\psi\right|}
+            $\left\langle \alpha\right\rangle \equiv\frac{2\pi}{V^{\prime}}\oint\alpha\frac{Rdl}{\left|\nabla\psi\right|}$
         """
         return self._surface_integral(func)/self.dvolume_dpsi
 
@@ -635,7 +638,7 @@ class MagneticCoordSystem(Dict):
         r"""
             Safety factor
             (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)[-].
-            .. math:: q(\psi) =\frac{d\Phi}{2\pi d\psi} =\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{2\pi}
+            $ q(\psi) =\frac{d\Phi}{2\pi d\psi} =\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{2\pi}$
         """
         return self.dphi_dpsi * self._s_Bp * self._s_2PI
 
@@ -648,8 +651,7 @@ class MagneticCoordSystem(Dict):
     def phi(self) -> np.ndarray:
         r"""
             Note:
-            .. math::
-                \Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi
+            $\Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi$
         """
 
         return Function(self.psi_norm, self.dphi_dpsi).antiderivative(self.psi_norm)*(self.psi_boundary-self.psi_axis)
@@ -706,10 +708,10 @@ class MagneticCoordSystem(Dict):
     @cached_property
     def drho_tor_dpsi(self) -> np.ndarray:
         r"""
-            .. math::
-                \frac{d\rho_{tor}}{d\psi} =\frac{d}{d\psi}\sqrt{\frac{\Phi_{tor}}{\pi B_{0}}} \
+            $\frac{d\rho_{tor}}{d\psi} =\frac{d}{d\psi}\sqrt{\frac{\Phi_{tor}}{\pi B_{0}}} \
                                         =\frac{1}{2\sqrt{\pi B_{0}\Phi_{tor}}}\frac{d\Phi_{tor}}{d\psi} \
                                         =\frac{q}{2\pi B_{0}\rho_{tor}}
+            $
         """
         return 1.0/self.dpsi_drho_tor
 
@@ -727,8 +729,9 @@ class MagneticCoordSystem(Dict):
     @cached_property
     def gm1(self) -> np.ndarray:
         r"""
-            Flux surface averaged 1/R ^ 2  [m ^ -2]
-            .. math: : \left\langle\frac{1}{R^{2}}\right\rangle
+            Flux surface averaged $1/R ^ 2  \left[m ^ {-2}\right]$
+
+            $\left\langle \frac{1}{R^{2}} \right\rangle$
         """
         return self.surface_average(lambda r, z: 1.0/(r**2))
 
@@ -739,8 +742,9 @@ class MagneticCoordSystem(Dict):
     @cached_property
     def gm2(self) -> np.ndarray:
         r"""
-            Flux surface averaged .. math: : \left | \nabla \rho_{tor}\right|^2/R^2  [m^-2]
-            .. math:: \left\langle\left |\frac{\nabla\rho}{R}\right|^{2}\right\rangle
+            Flux surface averaged $\left| \nabla \rho_{tor}\right|^2/R^2  [m^-2]$
+
+            $\left\langle\left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle$
         """
 
         gm2_ = self.surface_average(lambda r, z: self.grad_psi2(r, z)/(r**2))[1:] / (self.dpsi_drho_tor[1:] ** 2)
@@ -749,8 +753,9 @@ class MagneticCoordSystem(Dict):
     @cached_property
     def gm3(self) -> np.ndarray:
         r"""
-            Flux surface averaged .. math: : \left | \nabla \rho_{tor}\right|^2  [-]
-            .. math:: {\left\langle \left |\nabla\rho\right|^{2}\right\rangle}
+            Flux surface averaged $\left| \nabla \rho_{tor}\right|^2  [-]$
+
+            $\left\langle \left|\nabla\rho\right|^{2}\right\rangle$
         """
         gm3_ = self.surface_average(self.grad_psi2)[1:] / (self.dpsi_drho_tor[1:] ** 2)
 
@@ -759,24 +764,28 @@ class MagneticCoordSystem(Dict):
     @cached_property
     def gm4(self) -> np.ndarray:
         r"""
-            Flux surface averaged 1/B ^ 2  [T ^ -2]
-            .. math: : \left\langle \frac{1}{B^{2}}\right\rangle
+            Flux surface averaged $1/B^2$  [T ^ -2]
+
+            $\left\langle \frac{1}{B^{2}}\right\rangle$
         """
         return self.surface_average(lambda r, z: 1.0/self.B2(r, z))
 
     @cached_property
     def gm5(self) -> np.ndarray:
         r"""
-            Flux surface averaged B ^ 2  [T ^ 2]
-            .. math: : \left\langle B^{2}\right\rangle
+            Flux surface averaged $B ^ 2  [T ^ 2]$
+
+            $ \left\langle B^{2}\right\rangle$
         """
         return self.surface_average(lambda r, z: self.B2(r, z))
 
     @cached_property
     def gm6(self) -> np.ndarray:
         r"""
-            Flux surface averaged  .. math: : \left | \nabla \rho_{tor}\right|^2/B^2  [T^-2]
-            .. math:: \left\langle \frac{\left |\nabla\rho\right|^{2}}{B^{2}}\right\rangle
+            Flux surface averaged  $\left| \nabla \rho_{tor}\right|^2/B^2  [T^-2]$
+
+            $\left\langle \frac{\left |\nabla\rho\right|^{2}}{B^{2}}\right\rangle$
+
         """
         gm6_ = self.surface_average(lambda r, z: self.grad_psi2(r, z)/self.B2(r, z))[1:] / (self.dpsi_drho_tor[1:] ** 2)
 
@@ -785,8 +794,9 @@ class MagneticCoordSystem(Dict):
     @cached_property
     def gm7(self) -> np.ndarray:
         r"""
-            Flux surface averaged .. math:: \left | \nabla \rho_{tor}\right |  [-]
-            .. math: : \left\langle \left |\nabla\rho\right |\right\rangle
+            Flux surface averaged $\left| \nabla \rho_{tor}\right|$ [-]
+
+            $\left\langle \left |\nabla\rho\right |\right\rangle$
         """
         gm7_ = self.surface_average(lambda r, z: np.sqrt(self.grad_psi2(r, z)))[1:] / self.dpsi_drho_tor[1:]
         return Function(self.psi_norm[1:], gm7_)(self.psi_norm)
@@ -795,15 +805,15 @@ class MagneticCoordSystem(Dict):
     def gm8(self) -> np.ndarray:
         r"""
             Flux surface averaged R[m]
-            .. math: : \left\langle R\right\rangle
+            $\left\langle R\right\rangle$
         """
         return self.surface_average(lambda r, z: r)
 
     @cached_property
     def gm9(self) -> np.ndarray:
         r"""
-            Flux surface averaged 1/R[m ^ -1]
-            .. math: : \left\langle \frac{1}{R}\right\rangle
+            Flux surface averaged $1/R[m ^{-1}]$
+            $\left\langle \frac{1}{R}\right\rangle$
         """
         return self.surface_average(lambda r, z: 1.0 / r)
 

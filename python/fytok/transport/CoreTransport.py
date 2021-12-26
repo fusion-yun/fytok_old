@@ -179,14 +179,14 @@ class CoreTransportModel(Module):
 class CoreTransport(IDS):
     r"""
         Core plasma transport of particles, energy, momentum and poloidal flux. The transport of particles, energy and momentum is described by
-        diffusion coefficients,  :math:`D`, and convection velocities,  :math:`v`. These are defined by the total fluxes of particles, energy and momentum, across a
-        flux surface given by : :math:`V^{\prime}\left[-DY^{\prime}\left|\nabla\rho_{tor,norm}\right|^{2}+vY\left|\nabla\rho_{tor,norm}\right|\right]`,
-        where  :math:`Y` represents the particles, energy and momentum density, respectively, while  :math:`V` is the volume inside a flux surface, the primes denote
-        derivatives with respect to :math:`\rho_{tor,norm}` and
-        :math:`\left\langle X\right\rangle` is the flux surface average of a quantity  :math:`X`. This formulation remains valid when changing simultaneously
-        :math:`\rho_{tor,norm}` into :math:`\rho_{tor}`
-        in the gradient terms and in the derivatives denoted by the prime. The average flux stored in the IDS as sibling of  :math:`D` and  :math:`v` is the total
-        flux described above divided by the flux surface area :math:`V^{\prime}\left\langle \left|\nabla\rho_{tor,norm}\right|\right\rangle` .
+        diffusion coefficients,  $D$, and convection velocities,  $v$. These are defined by the total fluxes of particles, energy and momentum, across a
+        flux surface given by : $V^{\prime}\left[-DY^{\prime}\left|\nabla\rho_{tor,norm}\right|^{2}+vY\left|\nabla\rho_{tor,norm}\right|\right]$,
+        where $Y$ represents the particles, energy and momentum density, respectively, while  $V$ is the volume inside a flux surface, the primes denote
+        derivatives with respect to $\rho_{tor,norm}$ and
+        $\left\langle X\right\rangle$ is the flux surface average of a quantity  $X$. This formulation remains valid when changing simultaneously
+        $\rho_{tor,norm}$ into $rho_{tor}$
+        in the gradient terms and in the derivatives denoted by the prime. The average flux stored in the IDS as sibling of  $D$ and  $v$ is the total
+        flux described above divided by the flux surface area $V^{\prime}\left\langle \left|\nabla\rho_{tor,norm}\right|\right\rangle$ .
         Note that the energy flux includes the energy transported by the particle flux.
     """
     _IDS = "core_transport"

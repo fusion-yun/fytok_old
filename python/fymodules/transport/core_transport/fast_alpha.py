@@ -14,8 +14,9 @@ from spdm.data import Function, function_like
 class FastAlpha(CoreTransport.Model):
     """
         FastAlpha   Model
-        ===============================
-        @reference
+
+        Reference:
+
         [1] Angioni, C., Peeters, A. G., Pereverzev, G. V., Bottino, A., Candy, J., Dux, R., Fable, E., Hein, T., & Waltz, R. E. (2009). 
             Gyrokinetic simulations of impurity, He ash and α particle transport and consequences on ITER transport modelling. 
             Nuclear Fusion, 49(5), 055013. https://doi.org/10.1088/0029-5515/49/5/055013

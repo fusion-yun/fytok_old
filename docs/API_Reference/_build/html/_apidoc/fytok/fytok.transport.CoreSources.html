@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>fytok.transport.CoreSources module &mdash; 《托卡马克集成建模和分析框架》API Reference 0.0.1-alpha 文档</title><link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <title>fytok.transport.CoreSources module &mdash; 《托卡马克集成建模和分析框架》 API Reference 0.0.1-alpha 文档</title><link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/graphviz.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -28,7 +28,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../../index.html" class="icon icon-home"> 《托卡马克集成建模和分析框架》API Reference
+            <a href="../../index.html" class="icon icon-home"> 《托卡马克集成建模和分析框架》 API Reference
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -59,7 +59,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../fymodules/modules.html">fymodules</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../spdm/modules.html">spdm</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../fymodule-restricted/modules.html">fymodules</a></li>
 </ul>
 
         </div>
@@ -68,7 +68,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../index.html">《托卡马克集成建模和分析框架》API Reference</a>
+          <a href="../../index.html">《托卡马克集成建模和分析框架》 API Reference</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -245,17 +245,60 @@
 <dl class="py method">
 <dt id="fytok.transport.CoreSources.CoreSourcesSpecies.type">
 <code class="sig-name descname">type</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="fytok.common.Misc.html#fytok.common.Misc.Identifier" title="fytok.common.Misc.Identifier">fytok.common.Misc.Identifier</a><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesSpecies.type" title="永久链接至目标">¶</a></dt>
-<dd><p>Species type. index=1 for electron; index=2 for ion species in a single/average state (refer to ion structure); index=3 for ion species in a particular state (refer to ion/state structure); index=4 for neutral species in a single/average state (refer to neutral structure); index=5 for neutral species in a particular state (refer to neutral/state structure); index=6 for neutron; index=7 for photon. Available options (refer to the children of this identifier structure) :</p>
-<p>Name               | Index      |  Description
----------------+------------+----------------------------------------------------------------
-unspecified    | 0          |  unspecified
-electron       | 1          |  Electron
-ion            | 2          |  Ion species in a single/average state; refer to ion-structure
-ion_state      | 3          |  Ion species in a particular state; refer to ion/state-structure
-neutral            | 4              |  Neutral species in a single/average state; refer to neutral-structure
-neutral_state  | 5          |  Neutral species in a particular state; refer to neutral/state-structure
-neutron        | 6          |  Neutron
-photon         | 7          |  Photon</p>
+<dd><blockquote>
+<div><p>Species type. index=1 for electron; index=2 for ion species in a single/average state (refer to ion structure);
+index=3 for ion species in a particular state (refer to ion/state structure);
+index=4 for neutral species in a single/average state (refer to neutral structure);
+index=5 for neutral species in a particular state (refer to neutral/state structure);
+index=6 for neutron; index=7 for photon. Available options (refer to the children of this identifier structure) :</p>
+</div></blockquote>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 12%" />
+<col style="width: 73%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Name</p></th>
+<th class="head"><p>Index</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>unspecified</p></td>
+<td><p>0</p></td>
+<td><p>unspecified</p></td>
+</tr>
+<tr class="row-odd"><td><p>electron</p></td>
+<td><p>1</p></td>
+<td><p>Electron</p></td>
+</tr>
+<tr class="row-even"><td><p>ion</p></td>
+<td><p>2</p></td>
+<td><p>Ion species in a single/average state; refer to ion-structure</p></td>
+</tr>
+<tr class="row-odd"><td><p>ion_state</p></td>
+<td><p>3</p></td>
+<td><p>Ion species in a particular state; refer to ion/state-structure</p></td>
+</tr>
+<tr class="row-even"><td><p>neutral</p></td>
+<td><p>4</p></td>
+<td><p>Neutral species in a single/average state; refer to neutral-structure</p></td>
+</tr>
+<tr class="row-odd"><td><p>neutral_state</p></td>
+<td><p>5</p></td>
+<td><p>Neutral species in a particular state; refer to neutral/state-structure</p></td>
+</tr>
+<tr class="row-even"><td><p>neutron</p></td>
+<td><p>6</p></td>
+<td><p>Neutron</p></td>
+</tr>
+<tr class="row-odd"><td><p>photon</p></td>
+<td><p>7</p></td>
+<td><p>Photon</p></td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 </dd></dl>
@@ -265,59 +308,223 @@ photon         | 7          |  Photon</p>
 <em class="property">class </em><code class="sig-prename descclassname">fytok.transport.CoreSources.</code><code class="sig-name descname">CoreSourcesSource</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">desc</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesSource" title="永久链接至目标">¶</a></dt>
 <dd><p>基类：<a class="reference internal" href="fytok.common.Module.html#fytok.common.Module.Module" title="fytok.common.Module.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">fytok.common.Module.Module</span></code></a></p>
 <p>Source term identifier (process causing this source term). Available options (refer to the children of this identifier structure) :</p>
-<p>Name                                           | Index              | Description
--------------------------------------------+----------------+-----------------------------------------------------------------------
-unspecified                                |  0                 | Unspecified source type
-total                                      |  1                 | Total source; combines all sources
-nbi                                        |  2                 | Source from Neutral Beam Injection
-ec                                         |  3                 | Sources from electron cyclotron heating and current drive
-lh                                         |  4                 | Sources from lower hybrid heating and current drive
-ic                                         |  5                 | Sources from heating at the ion cyclotron range of frequencies
-fusion                                         |  6             | Sources from fusion reactions, e.g. alpha particle heating
-ohmic                                          |  7             | Source from ohmic heating
-bremsstrahlung                             |  8                 | Source from bremsstrahlung; radiation losses are negative sources
-synchrotron_radiation                      |  9                 | Source from synchrotron radiation; radiation losses are negative sources
-line_radiation                             | 10                 | Source from line radiation; radiation losses are negative sources
-collisional_equipartition                  | 11                 | Collisional equipartition
-cold_neutrals                              | 12                 | Source of cold neutrals
-bootstrap_current                          | 13                 | Bootstrap current
-pellet                                     | 14                 | Sources from injection
-auxiliary                                  | 100            | Source from auxiliary systems, e.g. heating and current drive systems
-ic_nbi                                     | 101            | A combination of the ic and nbi sources
-ic_fusion                                  | 102            | A combination of the ic and fusion sources
-ic_nbi_fusion                              | 103            | A combination of the ic and fusion sources
-ec_lh                                      | 104            | A combination of the ec and lh sources
-ec_ic                                      | 105            | A combination of the ec and ic sources
-lh_ic                                      | 106            | A combination of the lh and ic sources
-ec_lh_ic                                   | 107            | A combination of the ec, lh and ic sources
-gas_puff                                   | 108            | Gas puff
-killer_gas_puff                            | 109            | Killer gas puff
-radiation                                  | 200            | Total radiation source; radiation losses are negative sources
-cyclotron_radiation                        | 201            | Source from cyclotron radiation; radiation losses are negative sources
-cyclotron_synchrotron_radiation            | 202            | Source from combined cyclotron and synchrotron radiation; radiation losses are negative sources
-impurity_radiation                         | 203            | Line radiation and Bremsstrahlung source; radiation losses are negative sources.
-particles_to_wall                          | 303            | Particle pumping by the wall; negative source for plasma and positive source for the wall
-particles_to_pump                          | 304            | Particle pumping by external pump; negative source for plasma and positive source for the pump
-charge_exchange                            | 305            | Source from charge exchange. Charge exchange losses are negative sources
-transport                                  | 400            | Source term related to transport processes
-neoclassical                               | 401            | Source term related to neoclassical processes
-equipartition                              | 402            | Equipartition due to collisions and turbulence
-turbulent_equipartition                    | 403            | Turbulent equipartition
-runaways                                   | 501            | Source from run-away processes; includes both electron and ion run-away
-ionisation                                 | 601            | Source from ionisation processes (not accounting for charge exchange)
-recombination                              | 602            | Source from recombination processes (not accounting for charge exchange)
-excitation                                 | 603            | Source from excitation processes
-database                                   | 801            | Source from database entry
-gaussian                                   | 802            | Artificial source with a gaussian profile
-custom_1                                   | 901            | Custom source terms 1; content to be decided by data provided
-custom_2                                   | 902            | Custom source terms 2; content to be decided by data provided
-custom_3                                   | 903            | Custom source terms 3; content to be decided by data provided
-custom_4                                   | 904            | Custom source terms 4; content to be decided by data provided
-custom_5                                   | 905            | Custom source terms 5; content to be decided by data provided
-custom_6                                   | 906            | Custom source terms 6; content to be decided by data provided
-custom_7                                   | 907            | Custom source terms 7; content to be decided by data provided
-custom_8                                   | 908            | Custom source terms 8; content to be decided by data provided
-custom_9                                   | 909            | Custom source terms 9; content to be decided by data provided</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 28%" />
+<col style="width: 11%" />
+<col style="width: 61%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>Name</p></td>
+<td><p>Index</p></td>
+<td><p>Description</p></td>
+</tr>
+<tr class="row-even"><td><p>unspecified</p></td>
+<td><p>0</p></td>
+<td><p>Unspecified source type</p></td>
+</tr>
+<tr class="row-odd"><td><p>total</p></td>
+<td><p>1</p></td>
+<td><p>Total source; combines all sources</p></td>
+</tr>
+<tr class="row-even"><td><p>nbi</p></td>
+<td><p>2</p></td>
+<td><p>Source from Neutral Beam Injection</p></td>
+</tr>
+<tr class="row-odd"><td><p>ec</p></td>
+<td><p>3</p></td>
+<td><p>Sources from electron cyclotron heating and current drive</p></td>
+</tr>
+<tr class="row-even"><td><p>lh</p></td>
+<td><p>4</p></td>
+<td><p>Sources from lower hybrid heating and current drive</p></td>
+</tr>
+<tr class="row-odd"><td><p>ic</p></td>
+<td><p>5</p></td>
+<td><p>Sources from heating at the ion cyclotron range of frequencies</p></td>
+</tr>
+<tr class="row-even"><td><p>fusion</p></td>
+<td><p>6</p></td>
+<td><p>Sources from fusion reactions, e.g. alpha particle heating</p></td>
+</tr>
+<tr class="row-odd"><td><p>ohmic</p></td>
+<td><p>7</p></td>
+<td><p>Source from ohmic heating</p></td>
+</tr>
+<tr class="row-even"><td><p>bremsstrahlung</p></td>
+<td><p>8</p></td>
+<td><p>Source from bremsstrahlung; radiation losses are negative sources</p></td>
+</tr>
+<tr class="row-odd"><td><p>synchrotron_radiation</p></td>
+<td><p>9</p></td>
+<td><p>Source from synchrotron radiation; radiation losses are negative sources</p></td>
+</tr>
+<tr class="row-even"><td><p>line_radiation</p></td>
+<td><p>10</p></td>
+<td><p>Source from line radiation; radiation losses are negative sources</p></td>
+</tr>
+<tr class="row-odd"><td><p>collisional_equipartition</p></td>
+<td><p>11</p></td>
+<td><p>Collisional equipartition</p></td>
+</tr>
+<tr class="row-even"><td><p>cold_neutrals</p></td>
+<td><p>12</p></td>
+<td><p>Source of cold neutrals</p></td>
+</tr>
+<tr class="row-odd"><td><p>bootstrap_current</p></td>
+<td><p>13</p></td>
+<td><p>Bootstrap current</p></td>
+</tr>
+<tr class="row-even"><td><p>pellet</p></td>
+<td><p>14</p></td>
+<td><p>Sources from injection</p></td>
+</tr>
+<tr class="row-odd"><td><p>auxiliary</p></td>
+<td><p>100</p></td>
+<td><p>Source from auxiliary systems, e.g. heating and current drive systems</p></td>
+</tr>
+<tr class="row-even"><td><p>ic_nbi</p></td>
+<td><p>101</p></td>
+<td><p>A combination of the ic and nbi sources</p></td>
+</tr>
+<tr class="row-odd"><td><p>ic_fusion</p></td>
+<td><p>102</p></td>
+<td><p>A combination of the ic and fusion sources</p></td>
+</tr>
+<tr class="row-even"><td><p>ic_nbi_fusion</p></td>
+<td><p>103</p></td>
+<td><p>A combination of the ic and fusion sources</p></td>
+</tr>
+<tr class="row-odd"><td><p>ec_lh</p></td>
+<td><p>104</p></td>
+<td><p>A combination of the ec and lh sources</p></td>
+</tr>
+<tr class="row-even"><td><p>ec_ic</p></td>
+<td><p>105</p></td>
+<td><p>A combination of the ec and ic sources</p></td>
+</tr>
+<tr class="row-odd"><td><p>lh_ic</p></td>
+<td><p>106</p></td>
+<td><p>A combination of the lh and ic sources</p></td>
+</tr>
+<tr class="row-even"><td><p>ec_lh_ic</p></td>
+<td><p>107</p></td>
+<td><p>A combination of the ec, lh and ic sources</p></td>
+</tr>
+<tr class="row-odd"><td><p>gas_puff</p></td>
+<td><p>108</p></td>
+<td><p>Gas puff</p></td>
+</tr>
+<tr class="row-even"><td><p>killer_gas_puff</p></td>
+<td><p>109</p></td>
+<td><p>Killer gas puff</p></td>
+</tr>
+<tr class="row-odd"><td><p>radiation</p></td>
+<td><p>200</p></td>
+<td><p>Total radiation source; radiation losses are negative sources</p></td>
+</tr>
+<tr class="row-even"><td><p>cyclotron_radiation</p></td>
+<td><p>201</p></td>
+<td><p>Source from cyclotron radiation; radiation losses are negative sources</p></td>
+</tr>
+<tr class="row-odd"><td><p>cyclotron_synchrotron_radiation</p></td>
+<td><p>202</p></td>
+<td><p>Source from combined cyclotron and synchrotron radiation; radiation losses are negative sources</p></td>
+</tr>
+<tr class="row-even"><td><p>impurity_radiation</p></td>
+<td><p>203</p></td>
+<td><p>Line radiation and Bremsstrahlung source; radiation losses are negative sources.</p></td>
+</tr>
+<tr class="row-odd"><td><p>particles_to_wall</p></td>
+<td><p>303</p></td>
+<td><p>Particle pumping by the wall; negative source for plasma and positive source for the wall</p></td>
+</tr>
+<tr class="row-even"><td><p>particles_to_pump</p></td>
+<td><p>304</p></td>
+<td><p>Particle pumping by external pump; negative source for plasma and positive source for the pump</p></td>
+</tr>
+<tr class="row-odd"><td><p>charge_exchange</p></td>
+<td><p>305</p></td>
+<td><p>Source from charge exchange. Charge exchange losses are negative sources</p></td>
+</tr>
+<tr class="row-even"><td><p>transport</p></td>
+<td><p>400</p></td>
+<td><p>Source term related to transport processes</p></td>
+</tr>
+<tr class="row-odd"><td><p>neoclassical</p></td>
+<td><p>401</p></td>
+<td><p>Source term related to neoclassical processes</p></td>
+</tr>
+<tr class="row-even"><td><p>equipartition</p></td>
+<td><p>402</p></td>
+<td><p>Equipartition due to collisions and turbulence</p></td>
+</tr>
+<tr class="row-odd"><td><p>turbulent_equipartition</p></td>
+<td><p>403</p></td>
+<td><p>Turbulent equipartition</p></td>
+</tr>
+<tr class="row-even"><td><p>runaways</p></td>
+<td><p>501</p></td>
+<td><p>Source from run-away processes; includes both electron and ion run-away</p></td>
+</tr>
+<tr class="row-odd"><td><p>ionisation</p></td>
+<td><p>601</p></td>
+<td><p>Source from ionisation processes (not accounting for charge exchange)</p></td>
+</tr>
+<tr class="row-even"><td><p>recombination</p></td>
+<td><p>602</p></td>
+<td><p>Source from recombination processes (not accounting for charge exchange)</p></td>
+</tr>
+<tr class="row-odd"><td><p>excitation</p></td>
+<td><p>603</p></td>
+<td><p>Source from excitation processes</p></td>
+</tr>
+<tr class="row-even"><td><p>database</p></td>
+<td><p>801</p></td>
+<td><p>Source from database entry</p></td>
+</tr>
+<tr class="row-odd"><td><p>gaussian</p></td>
+<td><p>802</p></td>
+<td><p>Artificial source with a gaussian profile</p></td>
+</tr>
+<tr class="row-even"><td><p>custom_1</p></td>
+<td><p>901</p></td>
+<td><p>Custom source terms 1; content to be decided by data provided</p></td>
+</tr>
+<tr class="row-odd"><td><p>custom_2</p></td>
+<td><p>902</p></td>
+<td><p>Custom source terms 2; content to be decided by data provided</p></td>
+</tr>
+<tr class="row-even"><td><p>custom_3</p></td>
+<td><p>903</p></td>
+<td><p>Custom source terms 3; content to be decided by data provided</p></td>
+</tr>
+<tr class="row-odd"><td><p>custom_4</p></td>
+<td><p>904</p></td>
+<td><p>Custom source terms 4; content to be decided by data provided</p></td>
+</tr>
+<tr class="row-even"><td><p>custom_5</p></td>
+<td><p>905</p></td>
+<td><p>Custom source terms 5; content to be decided by data provided</p></td>
+</tr>
+<tr class="row-odd"><td><p>custom_6</p></td>
+<td><p>906</p></td>
+<td><p>Custom source terms 6; content to be decided by data provided</p></td>
+</tr>
+<tr class="row-even"><td><p>custom_7</p></td>
+<td><p>907</p></td>
+<td><p>Custom source terms 7; content to be decided by data provided</p></td>
+</tr>
+<tr class="row-odd"><td><p>custom_8</p></td>
+<td><p>908</p></td>
+<td><p>Custom source terms 8; content to be decided by data provided</p></td>
+</tr>
+<tr class="row-even"><td><p>custom_9</p></td>
+<td><p>909</p></td>
+<td><p>Custom source terms 9; content to be decided by data provided</p></td>
+</tr>
+</tbody>
+</table>
 <dl class="py attribute">
 <dt id="fytok.transport.CoreSources.CoreSourcesSource.Species">
 <code class="sig-name descname">Species</code><a class="headerlink" href="#fytok.transport.CoreSources.CoreSourcesSource.Species" title="永久链接至目标">¶</a></dt>

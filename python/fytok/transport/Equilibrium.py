@@ -8,13 +8,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import constants
 from spdm.common.logger import logger
+from spdm.common.tags import _not_found_, _undefined_
 from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
                        function_like, sp_property)
 from spdm.data.Entry import Entry
 from spdm.data.Field import Field
 from spdm.data.List import List
 from spdm.data.sp_property import sp_property
-from spdm.common.tags import _not_found_, _undefined_
 from spdm.util.utilities import try_get
 
 from ..common.GGD import GGD
@@ -744,7 +744,7 @@ class Equilibrium(IDS):
             - O. Sauter and S. Yu Medvedev, "Tokamak coordinate conventions: COCOS", Computer Physics Communications 184, 2 (2013), pp. 293--302.
 
         COCOS  11
-
+        ```{text}
             Top view
                      ***************
                     *               *
@@ -777,8 +777,9 @@ class Equilibrium(IDS):
                 |       *****<******
                 |       Bpol,\theta
                 |
-                    Cylindrical coordinate      : (R,\phi,Z)
-            Poloidal plane coordinate   : (\rho,\theta,\phi)
+                    Cylindrical coordinate      : $(R,\phi,Z)$
+            Poloidal plane coordinate   : $(\rho,\theta,\phi)$
+        ```
     """
     _IDS = "equilibrium"
     _fy_module_prefix = "fymodules.transport.equilibrium."

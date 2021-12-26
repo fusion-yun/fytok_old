@@ -23,8 +23,8 @@ help:
 apidoc:
 # @$(SPHINXAPIDOC) -feMT -o "$(APIDOCDIR)"/fymodules	../../python/fymodules
 	@$(SPHINXAPIDOC)  -o "$(APIDOCDIR)"/fytok 		$(CODE_ROOTDIR)/fytok
-	@$(SPHINXAPIDOC)  -o "$(APIDOCDIR)"/fymodules 	$(CODE_ROOTDIR)/fymodules
-	@$(SPHINXAPIDOC)  -o "$(APIDOCDIR)"/spdm 	  	$(CODE_ROOTDIR)/spdm
+	@$(SPHINXAPIDOC)  -o "$(APIDOCDIR)"/fymodules 	$(CODE_ROOTDIR)/fymodules 
+	@$(SPHINXAPIDOC)  -o "$(APIDOCDIR)"/fymodule-restricted 	/home/salmon/workspace/fymodule-restricted/python/fymodules
 # @$(SPHINXAPIDOC) -feMT -o "$(APIDOCDIR)"/auxiliary 	../../python/fytok/auxiliary 	
 # @$(SPHINXAPIDOC) -feMT -o "$(APIDOCDIR)"/common  	../../python/fytok/common 	
 # @$(SPHINXAPIDOC) -feMT -o "$(APIDOCDIR)"/device  	../../python/fytok/device
