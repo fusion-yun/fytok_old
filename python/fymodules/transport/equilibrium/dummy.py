@@ -1,11 +1,11 @@
 import collections
 
-from fytok.device.PFActive import PFActive
-from fytok.device.Wall import Wall
-from fytok.transport.CoreProfiles import CoreProfiles
-from fytok.transport.Equilibrium import Equilibrium
+from fytok.modules.device.PFActive import PFActive
+from fytok.modules.device.Wall import Wall
+from fytok.modules.transport.CoreProfiles import CoreProfiles
+from fytok.modules.transport.Equilibrium import Equilibrium
 from scipy import constants
-from spdm.common.logger import logger
+from spdm.logger import logger
 from spdm.data import Dict, Function
 
 

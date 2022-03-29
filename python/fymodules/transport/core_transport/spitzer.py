@@ -1,20 +1,20 @@
 
 import collections
 import collections.abc
-
-from fytok.transport.CoreProfiles import CoreProfiles
-from fytok.transport.CoreTransport import CoreTransport
-from fytok.transport.Equilibrium import Equilibrium
-from spdm.data import Function
-from scipy import constants
+import numpy as np
+from fytok.modules.transport.CoreProfiles import CoreProfiles
+from fytok.modules.transport.CoreTransport import CoreTransport
+from fytok.modules.transport.Equilibrium import Equilibrium
 from fytok.numlib.misc import array_like
-from spdm.common.logger import logger
+from scipy import constants
+from spdm.data import Function
+from spdm.logger import logger
 
 
 class Spitzer(CoreTransport.Model):
     """
         Spitzer Resistivity
-        
+
         References:
         - Tokamaks, Third Edition, Chapter 14  ,p727,  J.A.Wesson 2003
     """
@@ -27,18 +27,20 @@ class Spitzer(CoreTransport.Model):
             d or {}),
             *args, **kwargs)
 
-    def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles,  **kwargs)->float:
+    def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles,  **kwargs) -> float:
         residual = super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
         eV = constants.electron_volt
 
-        B0 = self.radial_grid.b0
-        R0 = self.radial_grid.r0
+        radial_grid = core_profiles.profiles_1d.grid
 
-        rho_tor_norm = self.radial_grid.rho_tor_norm
-        rho_tor = self.radial_grid.rho_tor
-        psi_norm = self.radial_grid.psi_norm
-        psi = self.radial_grid.psi
+        B0 = radial_grid.b0
+        R0 = radial_grid.r0
+
+        rho_tor_norm = radial_grid.rho_tor_norm
+        rho_tor = radial_grid.rho_tor
+        psi_norm = radial_grid.psi_norm
+        psi = radial_grid.psi
 
         q = equilibrium.profiles_1d.q(psi_norm)
 

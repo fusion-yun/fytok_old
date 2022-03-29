@@ -2,13 +2,13 @@
 import collections
 
 import numpy as np
+from fytok.modules.transport.CoreProfiles import CoreProfiles
+from fytok.modules.transport.CoreSources import CoreSources
+from fytok.modules.transport.Equilibrium import Equilibrium
 from fytok.numlib.misc import array_like
-from fytok.transport.CoreProfiles import CoreProfiles
-from fytok.transport.CoreSources import CoreSources
-from fytok.transport.Equilibrium import Equilibrium
 from scipy import constants
 from spdm.data import Function
-from spdm.common.logger import logger
+from spdm.logger import logger
 
 
 class BootstrapCurrent(CoreSources.Source):

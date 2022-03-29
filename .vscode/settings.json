@@ -1,5 +1,4 @@
 {
-  "restructuredtext.confPath": "${workspaceFolder}/docs",
   "python.testing.unittestEnabled": true,
   "python.testing.unittestArgs": ["-v", "-s", "./tests/", "-p", "test_*.py"],
   "python.testing.pytestEnabled": false,
@@ -17,5 +16,9 @@
   //   "${workspaceFolder}/../SpView/python",
   //   "${workspaceFolder}/python"
   // ],
-  "cSpell.words": ["fytok", "spdm"]
+  "cSpell.words": [
+    "fytok",
+    "spdm"
+  ],
+
 }

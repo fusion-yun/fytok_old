@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy import constants
-from spdm.common.logger import logger
+from spdm.logger import logger
 from spdm.util.plot_profiles import plot_profiles
 from fytok.numlib.smooth import rms_residual, smooth_1d
 

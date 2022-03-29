@@ -25,15 +25,15 @@ external_pkg_path = [p.as_posix() for p in external_pkg_path]
 
 sys.path.extend(external_pkg_path)
 
-phys_modules_path = [(pathlib.Path(__path__[0])/"../../fymodules").resolve().as_posix()]
+phys_modules_path = [(pathlib.Path(__path__[0])/"../../fymodules/modules").resolve().as_posix()]
 
 sys.path.extend(phys_modules_path)
 
-from .Scenario import Scenario
-from .Tokamak import Tokamak
+from .modules.Scenario import Scenario
+from .modules.Tokamak import Tokamak
 
 # try:
-#     from spdm.common.logger import logger
+#     from spdm.logger import logger
 # except ModuleNotFoundError as error:
 #     raise error
 # else:

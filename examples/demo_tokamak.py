@@ -3,15 +3,15 @@ import pathlib
 
 import numpy as np
 import pandas as pd
-from fytok.constants.Atoms import atoms
-from fytok.common.load_profiles import (load_core_profiles, load_core_source,
+from fytok.modules.constants.Atoms import atoms
+from fytok.load_profiles import (load_core_profiles, load_core_source,
                                         load_core_transport, load_equilibrium)
 from fytok.numlib.smooth import rms_residual, smooth_1d
-from fytok.Tokamak import Tokamak
+from fytok.modules.Tokamak import Tokamak
 from scipy import constants
 from spdm.data.File import File
-from spdm.data import Function, PiecewiseFunction
-from spdm.common.logger import logger
+from spdm.data.Function import Function, PiecewiseFunction
+from spdm.logger import logger
 from spdm.view.plot_profiles import plot_profiles, sp_figure
 
 if __name__ == "__main__":
@@ -246,8 +246,7 @@ if __name__ == "__main__":
 
     if True:  # CoreProfile initialize value
 
-        tok["core_profiles.profiles_1d"] = load_core_profiles(
-            profiles, grid=tok.equilibrium.radial_grid)
+        tok["core_profiles.profiles_1d"] = load_core_profiles(profiles, grid=tok.equilibrium.radial_grid)
 
         core_profile_1d = tok.core_profiles.profiles_1d
 

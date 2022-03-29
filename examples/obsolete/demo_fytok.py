@@ -6,7 +6,7 @@ from fytok.Tokamak import Tokamak
 from spdm.data.Collection import Collection
 from spdm.data.File import File
 from spdm.data import Function
-from spdm.common.logger import logger
+from spdm.logger import logger
 from spdm.util.plot_profiles import plot_profiles, sp_figure
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 import os
 
-# from spdm.common.logger import logger
+# from spdm.logger import logger
 
 ENABLE_JAX = os.environ.get("SP_ENABLE_JAX", False)
 

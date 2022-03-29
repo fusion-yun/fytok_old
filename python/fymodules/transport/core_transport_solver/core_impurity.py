@@ -6,22 +6,22 @@ from math import isclose, log
 from typing import (Any, Callable, Iterator, Mapping, Optional, Sequence,
                     Tuple, Type, Union)
 
-from fytok.common.IDS import IDS
 from fytok.common.Misc import Identifier, VacuumToroidalField
 from fytok.constants.Atoms import atoms
+from fytok.IDS import IDS
+from fytok.modules.transport.CoreProfiles import CoreProfiles
+from fytok.modules.transport.CoreSources import CoreSources
+from fytok.modules.transport.CoreTransport import CoreTransport, TransportCoeff
+from fytok.modules.transport.CoreTransportSolver import CoreTransportSolver
+from fytok.modules.transport.Equilibrium import Equilibrium
+from fytok.modules.transport.MagneticCoordSystem import RadialGrid
 from fytok.numlib.bvp import BVPResult, solve_bvp
 from fytok.numlib.misc import array_like
 from fytok.plasma.Radiation import Radiation
-from fytok.transport.CoreProfiles import CoreProfiles
-from fytok.transport.CoreSources import CoreSources
-from fytok.transport.CoreTransport import CoreTransport, TransportCoeff
-from fytok.transport.CoreTransportSolver import CoreTransportSolver
-from fytok.transport.Equilibrium import Equilibrium
-from fytok.transport.MagneticCoordSystem import RadialGrid
 from scipy import constants
-from spdm.common.logger import logger
-from spdm.common.tags import _not_found_
 from spdm.data import Dict, Function, List, function_like, sp_property
+from spdm.logger import logger
+from spdm.tags import _not_found_
 from spdm.util.utilities import convert_to_named_tuple
 
 EPSILON = 1.0e-15

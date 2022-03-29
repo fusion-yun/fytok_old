@@ -2,12 +2,12 @@ import collections
 
 import numpy as np
 from fytok.numlib.misc import array_like
-from fytok.transport.CoreProfiles import CoreProfiles
-from fytok.transport.CoreTransport import CoreTransport
-from fytok.transport.Equilibrium import Equilibrium
+from fytok.modules.transport.CoreProfiles import CoreProfiles
+from fytok.modules.transport.CoreTransport import CoreTransport
+from fytok.modules.transport.Equilibrium import Equilibrium
 from scipy import constants
-from spdm.common.logger import logger
-from spdm.common.tags import _next_, _not_found_
+from spdm.logger import logger
+from spdm.tags import _next_, _not_found_
 from spdm.data import Function, function_like
 
 

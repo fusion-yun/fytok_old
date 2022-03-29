@@ -2,13 +2,13 @@ import pathlib
 
 import numpy as np
 import pandas as pd
-from fytok.common.load_profiles import (load_core_profiles, load_core_source,
-                                        load_core_transport, load_equilibrium)
+from fytok.load_profiles import (load_core_profiles, load_core_source,
+                                 load_core_transport, load_equilibrium)
+from fytok.modules.Tokamak import Tokamak
 from fytok.numlib.smooth import rms_residual
-from fytok.Tokamak import Tokamak
 from scipy import constants
-from spdm.common.logger import logger
 from spdm.data import File, Function, Query
+from spdm.logger import logger
 from spdm.view.plot_profiles import plot_profiles, sp_figure
 
 if __name__ == "__main__":
@@ -271,8 +271,8 @@ if __name__ == "__main__":
                 "code": {"name": "dummy"},
                 "profiles_1d": load_core_transport(profiles, tok.core_profiles.profiles_1d.grid)
             },
-            {"code": {"name": "fast_alpha"}},
-            # {"code": {"name": "spitzer"}},
+            # {"code": {"name": "fast_alpha"}},
+            {"code": {"name": "spitzer"}},
             # {"code": {"name": "neoclassical"}},
             # {"code": {"name": "glf23"}},
             # {"code": {"name": "nclass"}},

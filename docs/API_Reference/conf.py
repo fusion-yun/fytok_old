@@ -19,7 +19,7 @@ sys.path.insert(0, '/home/salmon/workspace/freegs')
 print(sys.path)
 # -- Project information -----------------------------------------------------
 
-project = '《托卡马克集成建模和分析框架》 API Reference'
+project = 'FyTok API Reference'
 copyright = '2021, 于治 YUZhi@ipp.ac.cn '
 author = '于治 (yuzhi@ipp.ac.cn)'
 

@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 from scipy import interpolate
 from scipy.interpolate import CubicSpline, PPoly
-from spdm.common.logger import logger
+from spdm.logger import logger
 
 
 def create_spline(x, y, **kwargs) -> PPoly:

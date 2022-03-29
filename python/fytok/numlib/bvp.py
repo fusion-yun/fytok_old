@@ -10,7 +10,7 @@ from numpy.linalg import norm, pinv
 from scipy.optimize import OptimizeResult
 from scipy.sparse import coo_matrix, csc_matrix
 from scipy.sparse.linalg import splu
-from spdm.common.logger import logger
+from spdm.logger import logger
 
 from ..numlib.spline import create_spline_for_bvp
 

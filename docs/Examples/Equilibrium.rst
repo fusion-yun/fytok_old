@@ -14,7 +14,7 @@
 实例  
 -------------
 
->>> from spdm.common.logger import logger  
+>>> from spdm.logger import logger  
 >>> from spdm.data.Entry import open_entry  # UDA 访问入口
 >>> from fytok.Tokamak import Tokamak       # Tokamak module
 >>> import matplotlib.pyplot as plt

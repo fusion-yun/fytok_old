@@ -12,7 +12,7 @@ sys.path.append("/home/salmon/workspace/SpDev/SpDB")
 sys.path.append("/home/salmon/workspace/freegs/")
 
 from spdm.data import Collection
-from spdm.common.logger import logger
+from spdm.logger import logger
 
 from freegs.machine import Machine,Wall
 import freegs.equilibrium as equilibrium

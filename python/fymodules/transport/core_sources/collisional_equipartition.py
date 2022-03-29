@@ -2,13 +2,13 @@
 import collections
 
 import numpy as np
-from fytok.constants.Atoms import atoms
-from fytok.transport.CoreProfiles import CoreProfiles
-from fytok.transport.CoreSources import CoreSources
-from fytok.transport.Equilibrium import Equilibrium
+from fytok.modules.constants.Atoms import atoms
+from fytok.modules.transport.CoreProfiles import CoreProfiles
+from fytok.modules.transport.CoreSources import CoreSources
+from fytok.modules.transport.Equilibrium import Equilibrium
 from scipy import constants
-from spdm.common.logger import logger
-from spdm.common.tags import _next_
+from spdm.logger import logger
+from spdm.tags import _next_
 from spdm.data import Dict, Function, List, Node
 
 
