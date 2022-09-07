@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import ChainMap, Optional
 
+from importlib_metadata import metadata
+
 import numpy as np
 from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
                        function_like, sp_property)

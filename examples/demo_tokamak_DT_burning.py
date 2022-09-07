@@ -271,7 +271,7 @@ if __name__ == "__main__":
                 "code": {"name": "dummy"},
                 "profiles_1d": load_core_transport(profiles, tok.core_profiles.profiles_1d.grid)
             },
-            # {"code": {"name": "fast_alpha"}},
+            {"code": {"name": "fast_alpha"}},
             {"code": {"name": "spitzer"}},
             # {"code": {"name": "neoclassical"}},
             # {"code": {"name": "glf23"}},

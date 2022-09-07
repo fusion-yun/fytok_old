@@ -13,18 +13,20 @@ from .Identifier import Identifier
 
 class Module(Dict[Node]):
 
-    def __new__(cls, desc=None, *args, **kwargs):
+    def __new__(cls, desc=None, *args, metadata=None, **kwargs):
 
         prefix = getattr(cls, "_fy_module_prefix", None)
 
         cls_name = None
+        if metadata is None:
+            metadata = desc
 
         if cls is not Module and prefix is None:
             pass
-        elif isinstance(desc, collections.abc.Mapping):
-            cls_name = desc.get("code", {}).get("name", None)
-        elif isinstance(desc, Entry):
-            cls_name = desc.get("code.name", None)
+        elif isinstance(metadata, collections.abc.Mapping):
+            cls_name = metadata.get("code", {}).get("name", None)
+        elif isinstance(metadata, Entry):
+            cls_name = metadata.get("code.name", None)
 
         if isinstance(cls_name, str):
             cls_name = f"{prefix}{cls_name}"
