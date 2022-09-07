@@ -2,6 +2,7 @@ import collections
 import collections.abc
 from dataclasses import dataclass
 from functools import cached_property
+from pprint import pprint
 from typing import Sequence, TypeVar, Union
 
 import matplotlib.pyplot as plt
@@ -793,29 +794,32 @@ class Equilibrium(IDS):
     Boundary = EquilibriumBoundary
     BoundarySeparatrix = EquilibriumBoundarySeparatrix
 
+    def __init__(self,  *args, ** kwargs):
+        super().__init__(*args, ** kwargs)
+
     def refresh(self,  *args, **kwargs):
         super().refresh(*args, **kwargs)
         return self
 
     def create_coordinate_system(self) -> MagneticCoordSystem:
-        psirz = self.get("profiles_2d.psi", None)
+        psirz = self.profiles_2d._entry.get("psi", None)
 
         if not isinstance(psirz, Field):
             psirz = Field(psirz,
-                          self.get("profiles_2d.grid.dim1"),
-                          self.get("profiles_2d.grid.dim2"),
+                          self.profiles_2d._entry.get("grid.dim1", None),
+                          self.profiles_2d._entry.get("grid.dim2", None),
                           mesh="rectilinear")
 
-        psi_1d = self.get("profiles_1d.psi", None)
-
+        psi_1d = self.profiles_1d._entry.get("psi", None)
+        
         return MagneticCoordSystem(
-            self.get("coordinate_system", {}),
+            self._entry.get("coordinate_system", {}),
             psirz=psirz,
-            B0=self.get("vacuum_toroidal_field.b0"),
-            R0=self.get("vacuum_toroidal_field.r0"),
-            Ip=self.get("global_quantities.ip"),
-            fpol_by_psi=Function(psi_1d,  self.get("profiles_1d.f")),
-            pprime_by_psi=Function(psi_1d,  self.get("profiles_1d.dpressure_dpsi", None)),
+            B0=self.vacuum_toroidal_field.b0,
+            R0=self.vacuum_toroidal_field.r0,
+            Ip=self.global_quantities._entry.get("ip", None),
+            fpol_by_psi=Function(psi_1d,  self.profiles_1d._entry.get("f", None)),
+            pprime_by_psi=Function(psi_1d,  self.profiles_1d._entry.get("dpressure_dpsi", None)),
         )
 
     coordinate_system: MagneticCoordSystem = sp_property(create_coordinate_system)

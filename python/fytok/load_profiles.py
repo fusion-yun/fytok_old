@@ -184,13 +184,14 @@ def load_core_source(profiles, grid: RadialGrid):
         ]}
 
 
-def load_equilibrium(eqdsk):
+def load_equilibrium(eqdsk, coordinate_system: Dict = {"theta": 64}, **kwargs):
     if not isinstance(eqdsk, Entry):
         eqdsk = File(eqdsk, format="geqdsk").entry
 
     R0 = eqdsk.get("vacuum_toroidal_field.r0")
     B0 = eqdsk.get("vacuum_toroidal_field.b0")
-
+    psi = np.asarray(eqdsk.get("profiles_1d.psi", None))
+    psi_norm = (psi-psi[0])/(psi[-1]-psi[0])
     return {
         "vacuum_toroidal_field": {"b0": B0, "r0": R0, },
         "global_quantities": eqdsk.get("global_quantities"),
@@ -205,6 +206,6 @@ def load_equilibrium(eqdsk):
             }
         },
         "boundary_separatrix": eqdsk.get("boundary"),
-
-        # "coordinate_system": {"psi_norm": baseline["Fp"].values[:-1]}
+        "coordinate_system": {**coordinate_system, "psi_norm": psi_norm},
+        **kwargs
     }

@@ -1,15 +1,23 @@
-import pathlib
 
-import numpy as np
-import pandas as pd
+import sys
+sys.path.append("/home/salmon/workspace/fytok/python")
+sys.path.append("/home/salmon/workspace/SpDB/python")
+sys.path.append("/home/salmon/workspace/SpView/python")
+sys.path.append("/home/salmon/workspace/fymodule-restricted/python")
+
+###################
+
+from spdm.view.plot_profiles import plot_profiles, sp_figure
+from spdm.logger import logger
+from spdm.data import File, Function, Query
+from scipy import constants
+from fytok.numlib.smooth import rms_residual
+from fytok.modules.Tokamak import Tokamak
 from fytok.load_profiles import (load_core_profiles, load_core_source,
                                  load_core_transport, load_equilibrium)
-from fytok.modules.Tokamak import Tokamak
-from fytok.numlib.smooth import rms_residual
-from scipy import constants
-from spdm.data import File, Function, Query
-from spdm.logger import logger
-from spdm.view.plot_profiles import plot_profiles, sp_figure
+import pandas as pd
+import numpy as np
+import pathlib
 
 if __name__ == "__main__":
     logger.info("====== START ========")
@@ -61,13 +69,11 @@ if __name__ == "__main__":
     tok = Tokamak(device_desc.get({"wall", "pf_active", "tf", "magnetics"}).dump())
 
     # Equilibrium
-    eqdsk = load_equilibrium(eqdsk_file)
 
-    tok["equilibrium"] = {**eqdsk,
+    tok["equilibrium"] = {**load_equilibrium(eqdsk_file),
                           "code": {"name": "dummy"},
                           "boundary": {"psi_norm": 0.995},
                           "coordinate_system": {"psi_norm": np.linspace(0.001, 0.995, 64), "theta": 64}}
-
     if True:
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},
@@ -80,7 +86,7 @@ if __name__ == "__main__":
                   }
                   ) .savefig(output_path/"tokamak.svg", transparent=True)
 
-    if False:  # plot tokamak
+    if True:  # plot tokamak
 
         magnetic_surface = tok.equilibrium.coordinate_system
 
@@ -228,6 +234,8 @@ if __name__ == "__main__":
             title="Equilibrium",
             grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
 
+    exit()
+
     if True:  # CoreProfile initialize value
 
         tok["core_profiles.profiles_1d"] = load_core_profiles(profiles, grid=tok.equilibrium.radial_grid)
@@ -271,8 +279,8 @@ if __name__ == "__main__":
                 "code": {"name": "dummy"},
                 "profiles_1d": load_core_transport(profiles, tok.core_profiles.profiles_1d.grid)
             },
-            {"code": {"name": "fast_alpha"}},
-            {"code": {"name": "spitzer"}},
+            # {"code": {"name": "fast_alpha"}},
+            # {"code": {"name": "spitzer"}},
             # {"code": {"name": "neoclassical"}},
             # {"code": {"name": "glf23"}},
             # {"code": {"name": "nclass"}},
@@ -337,8 +345,8 @@ if __name__ == "__main__":
     if True:  # CoreSources
         tok["core_sources.source"] = [
             {"code": {"name": "dummy"}, "profiles_1d": load_core_source(profiles, tok.core_profiles.profiles_1d.grid)},
-            {"code": {"name": "bootstrap_current"}},
-            {"code": {"name": "fusion_reaction"}},
+            # {"code": {"name": "bootstrap_current"}},
+            # {"code": {"name": "fusion_reaction"}},
         ]
 
         tok.core_sources.refresh(equilibrium=tok.equilibrium, core_profiles=tok.core_profiles)
