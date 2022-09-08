@@ -37,6 +37,6 @@ if __name__ == "__main__":
     psi_norm = np.linspace(0.0, 0.995, 128)
     print(eq.profiles_2d.grid_type.index)
     print(eq.profiles_2d.grid.dim1)
-    print(eq.profiles_1d.rho_tor)
+    print(eq.global_quantities.magnetic_axis.r)
     # print(eq.profiles_1d.q(psi_norm))
     # print(eq.profiles_1d.dpressure_dpsi(psi_norm))

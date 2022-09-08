@@ -206,10 +206,10 @@ class EquilibriumGlobalQuantities(Dict):
         """Poloidal length of the magnetic surface[m]"""
         return NotImplemented
 
-    @sp_property
+    @cached_property
     def magnetic_axis(self):
         """Magnetic axis position and toroidal field	structure"""
-        return to_named_tuple(self._parent.coordinate_system.magnetic_axis)
+        return convert_to_named_tuple(self._parent.coordinate_system.magnetic_axis)
 
     @sp_property
     def x_points(self):

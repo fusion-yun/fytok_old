@@ -383,11 +383,11 @@ class MagneticCoordSystem(Dict):
         if not o:
             raise RuntimeError(f"Can not find magnetic axis")
 
-        return Dict({
+        return {
             "r": o[0].r,
             "z": o[0].z,
             "b_field_tor": NotImplemented
-        })
+        }
 
     @cached_property
     def psi_axis(self) -> float:
