@@ -38,5 +38,6 @@ if __name__ == "__main__":
     print(eq.profiles_2d.grid_type.index)
     print(eq.profiles_2d.grid.dim1)
     print(eq.global_quantities.magnetic_axis.r)
-    print(eq.profiles_2d.psi)
+    print(eq.profiles_1d.f_df_dpsi(psi_norm))
+    print(eq.profiles_1d.dpressure_dpsi(psi_norm))
     # print(eq.profiles_1d.dpressure_dpsi(psi_norm))

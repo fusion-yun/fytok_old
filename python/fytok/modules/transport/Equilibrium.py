@@ -264,13 +264,12 @@ class EquilibriumProfiles1D(Dict):
     @sp_property
     def ffprime(self) -> Function:
         """	Derivative of F w.r.t. Psi, multiplied with F[T ^ 2.m ^ 2/Wb]. """
-        # return self._parent._ffprime  # function_like(self.psi_norm, self._parent.coordinate_system.ffprime(self.psi_norm))
-        return function_like(self._axis, self._parent.coordinate_system.f_df_dpsi)
+        return function_like(self.psi_norm, self._parent.coordinate_system.ffprime)
 
     @sp_property
     def f_df_dpsi(self) -> Function:
         """	Derivative of F w.r.t. Psi, multiplied with F[T ^ 2.m ^ 2/Wb]. """
-        return function_like(self._axis, self._parent.coordinate_system.f_df_dpsi)
+        return function_like(self._axis, self._parent.coordinate_system.ffprime)
 
     @sp_property
     def fpol(self) -> Function:

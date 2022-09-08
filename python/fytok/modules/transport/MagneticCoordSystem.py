@@ -633,6 +633,16 @@ class MagneticCoordSystem(Dict):
         return self._fpol_by_psi(self.psi)
 
     @cached_property
+    def ffprime(self) -> np.ndarray:
+        """Diamagnetic function (F=R B_Phi)  [T.m]."""
+        return self._fpol_by_psi(self.psi_norm)*self._fpol_by_psi.derivative(self.psi_norm)
+
+    @cached_property
+    def pprime(self) -> np.ndarray:
+        """Diamagnetic function (F=R B_Phi)  [T.m]."""
+        return self._pprime_by_psi(self.psi_norm)
+
+    @cached_property
     def dphi_dpsi(self) -> np.ndarray:
         return self.fpol * self.gm1 * self.dvolume_dpsi / TWOPI
 
