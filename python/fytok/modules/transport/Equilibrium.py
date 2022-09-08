@@ -282,16 +282,16 @@ class EquilibriumProfiles1D(Dict):
         return self.fpol
 
     @sp_property
-    def pprime(self) -> Function:
-        return function_like(self._axis, self.get("dpressure_dpsi"))
-
-    @sp_property
     def pressure(self) -> Function:
         return function_like(self._axis, self.get("pressure"))
 
     @sp_property
     def dpressure_dpsi(self) -> Function:
-        return self.pprime
+        return function_like(self._axis, self.get("dpressure_dpsi"))
+
+    @property
+    def pprime(self) -> Function:
+        return self.dpressure_dpsi
 
     @sp_property
     def plasma_current(self) -> Function:
