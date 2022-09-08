@@ -557,9 +557,9 @@ class EquilibriumProfiles2D(Dict):
     def grid_type(self):
         return convert_to_named_tuple(self._entry.get("grid_type", {}))
 
-    @sp_property
-    def grid_type_index(self) -> int:
-        return self._parent.coordinate_system.grid_type_index
+    @cached_property
+    def psi(self) -> np.ndarray:
+        return self._parent.coordinate_system._psirz._array
 
     @sp_property
     def r(self) -> np.ndarray:
@@ -571,10 +571,10 @@ class EquilibriumProfiles2D(Dict):
         """Values of the Height on the grid  [m] """
         return self._parent.coordinate_system.z
 
-    @sp_property
-    def psi(self):
-        """Values of the poloidal flux at the grid in the poloidal plane  [Wb]. """
-        return self.apply_psifunc(lambda p: p, unit="Wb")
+    # @sp_property
+    # def psi(self):
+    #     """Values of the poloidal flux at the grid in the poloidal plane  [Wb]. """
+    #     return self.apply_psifunc(lambda p: p, unit="Wb")
 
     @sp_property
     def theta(self):

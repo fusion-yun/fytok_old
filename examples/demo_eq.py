@@ -29,7 +29,7 @@ if __name__ == "__main__":
     desc = load_equilibrium(eqdsk_file,
                             coordinate_system={
                                 "psi_norm": {"axis": 0.0, "boundary": 0.995, "npoints": 32},
-                                "ntheta": 64},
+                                "theta": 64},
                             code={"name": "dummy"},
                             boundary={"psi_norm": 0.995}
                             )
@@ -38,5 +38,5 @@ if __name__ == "__main__":
     print(eq.profiles_2d.grid_type.index)
     print(eq.profiles_2d.grid.dim1)
     print(eq.global_quantities.magnetic_axis.r)
-    # print(eq.profiles_1d.q(psi_norm))
+    print(eq.profiles_2d.psi)
     # print(eq.profiles_1d.dpressure_dpsi(psi_norm))
