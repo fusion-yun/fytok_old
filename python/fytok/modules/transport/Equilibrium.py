@@ -2,6 +2,7 @@ import collections
 import collections.abc
 from dataclasses import dataclass
 from functools import cached_property
+from http.client import NOT_FOUND
 from pprint import pprint
 from typing import Sequence, TypeVar, Union
 
@@ -10,9 +11,7 @@ import numpy as np
 from scipy import constants
 from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
                        function_like, sp_property)
-from spdm.data.Entry import Entry
-from spdm.data.List import List
-from spdm.data.sp_property import sp_property
+
 from spdm.logger import logger
 from spdm.tags import _not_found_, _undefined_
 from spdm.util.utilities import try_get
@@ -210,7 +209,7 @@ class EquilibriumGlobalQuantities(Dict):
     @sp_property
     def magnetic_axis(self):
         """Magnetic axis position and toroidal field	structure"""
-        return self._parent.coordinate_system.magnetic_axis
+        return to_named_tuple(self._parent.coordinate_system.magnetic_axis)
 
     @sp_property
     def x_points(self):
@@ -551,8 +550,16 @@ class EquilibriumProfiles2D(Dict):
     """
 
     @sp_property
-    def grid_type(self) -> RadialGrid:
-        return self._parent.coordinate_system.grid_type
+    def grid(self) -> Dict:
+        return self._entry.get("grid", {})
+
+    @sp_property
+    def grid_type(self) -> Dict:
+        return self._entry.get("grid_type", {})
+
+    @sp_property
+    def grid_type_index(self) -> int:
+        return self._parent.coordinate_system.grid_type_index
 
     @sp_property
     def r(self) -> np.ndarray:

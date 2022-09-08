@@ -29,12 +29,14 @@ if __name__ == "__main__":
     desc = load_equilibrium(eqdsk_file,
                             coordinate_system={
                                 "psi_norm": {"axis": 0.0, "boundary": 0.995, "npoints": 32},
-                                "theta": 64},
+                                "ntheta": 64},
                             code={"name": "dummy"},
                             boundary={"psi_norm": 0.995}
                             )
     eq = Equilibrium(desc)
     psi_norm = np.linspace(0.0, 0.995, 128)
-    print(eq.profiles_1d.rho_tor(psi_norm))
-    print(eq.profiles_1d.q(psi_norm))
-    print(eq.profiles_1d.dpressure_dpsi(psi_norm))
+    print(eq.profiles_2d.grid_type.get("index"))
+    print(eq.profiles_2d.grid.get("dim1"))
+    # print(eq.profiles_1d.rho_tor(psi_norm))
+    # print(eq.profiles_1d.q(psi_norm))
+    # print(eq.profiles_1d.dpressure_dpsi(psi_norm))

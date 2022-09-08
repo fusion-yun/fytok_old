@@ -184,7 +184,7 @@ def load_core_source(profiles, grid: RadialGrid):
         ]}
 
 
-def load_equilibrium(eqdsk, coordinate_system: Dict = {"theta": 64}, **kwargs):
+def load_equilibrium(eqdsk,  **kwargs):
     if not isinstance(eqdsk, Entry):
         eqdsk = File(eqdsk, format="geqdsk").entry
 
@@ -198,15 +198,14 @@ def load_equilibrium(eqdsk, coordinate_system: Dict = {"theta": 64}, **kwargs):
         "profiles_1d": eqdsk.get("profiles_1d"),
         "profiles_2d": {
             "psi": eqdsk.get("profiles_2d.psi"),
-            "grid_type": "rectangular",
-            "grid_index": 1,
+            "grid_type": {
+                "name": "rectangular",
+                "index": 1},
             "grid": {
                 "dim1": eqdsk.get("profiles_2d.grid.dim1"),
                 "dim2": eqdsk.get("profiles_2d.grid.dim2"),
             }
         },
         "boundary_separatrix": eqdsk.get("boundary"),
-        # {**coordinate_system, "psi_norm": eqdsk.get("profiles_1d.grid.psi_norm", None)},
-        "coordinate_system": coordinate_system,
         ** kwargs
     }

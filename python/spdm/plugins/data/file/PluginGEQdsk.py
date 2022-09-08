@@ -255,8 +255,8 @@ def sp_geqdsk_to_imas_equilibrium(geqdsk, eq: Dict = None) -> Dict:
     zmin = geqdsk["zmid"] - geqdsk["zdim"]/2
     zmax = geqdsk["zmid"] + geqdsk["zdim"]/2
 
-    eq["profiles_2d.grid_type"] = "rectangular"
-    eq["profiles_2d.grid_index"] = 1
+    eq["profiles_2d.grid_type.name"] = "rectangular"
+    eq["profiles_2d.grid_type.index"] = 1
     eq["profiles_2d.grid.dim1"] = np.linspace(rmin, rmax, nw)
     eq["profiles_2d.grid.dim2"] = np.linspace(zmin, zmax, nh)
     eq["profiles_2d.psi"] = geqdsk["psirz"].T
