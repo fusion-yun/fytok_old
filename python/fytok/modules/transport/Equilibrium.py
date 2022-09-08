@@ -5,7 +5,7 @@ from functools import cached_property
 from http.client import NOT_FOUND
 from pprint import pprint
 from typing import Sequence, TypeVar, Union
-
+from spdm.util.utilities import convert_to_named_tuple
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import constants
@@ -549,13 +549,13 @@ class EquilibriumProfiles2D(Dict):
         Equilibrium 2D profiles in the poloidal plane.
     """
 
-    @sp_property
-    def grid(self) -> Dict:
-        return self._entry.get("grid", {})
+    @cached_property
+    def grid(self):
+        return convert_to_named_tuple(self._entry.get("grid", {}))
 
-    @sp_property
-    def grid_type(self) -> Dict:
-        return self._entry.get("grid_type", {})
+    @cached_property
+    def grid_type(self):
+        return convert_to_named_tuple(self._entry.get("grid_type", {}))
 
     @sp_property
     def grid_type_index(self) -> int:
