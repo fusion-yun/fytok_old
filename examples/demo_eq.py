@@ -27,16 +27,14 @@ if __name__ == "__main__":
     eqdsk_file = File(
         "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="geqdsk").read()
     desc = load_equilibrium(eqdsk_file,
-                            coordinate_system={"theta": 64},
+                            coordinate_system={
+                                "psi_norm": {"axis": 0.0, "boundary": 0.995, "npoints": 32},
+                                "theta": 64},
                             code={"name": "dummy"},
                             boundary={"psi_norm": 0.995}
                             )
-    print(type(desc))
-
-    pprint(desc["coordinate_system"])
-
     eq = Equilibrium(desc)
-
-    print(np.asarray(eq.profiles_1d.rho_tor))
-    print(np.asarray(eq.profiles_1d.q))
-    print(np.asarray(eq.profiles_1d.dpressure_dpsi))
+    psi_norm = np.linspace(0.0, 0.995, 128)
+    print(eq.profiles_1d.rho_tor(psi_norm))
+    print(eq.profiles_1d.q(psi_norm))
+    print(eq.profiles_1d.dpressure_dpsi(psi_norm))

@@ -811,7 +811,7 @@ class Equilibrium(IDS):
                           mesh="rectilinear")
 
         psi_1d = self.profiles_1d._entry.get("psi", None)
-        
+
         return MagneticCoordSystem(
             self._entry.get("coordinate_system", {}),
             psirz=psirz,

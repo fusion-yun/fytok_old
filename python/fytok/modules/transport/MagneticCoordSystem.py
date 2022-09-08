@@ -47,7 +47,8 @@ class RadialGrid(Dict):
 
         if axis is None:
             raise RuntimeError(f"Can not find axis {label}!")
-        elif isinstance(axis, np.ndarray) and isinstance(new_axis, np.ndarray) and axis.shape == new_axis.shape and np.allclose(axis, new_axis):
+        elif isinstance(axis, np.ndarray) and isinstance(new_axis, np.ndarray) \
+                and axis.shape == new_axis.shape and np.allclose(axis, new_axis):
             return self
 
         if new_axis is None:
@@ -171,7 +172,6 @@ class MagneticCoordSystem(Dict):
         self._fpol_by_psi: Function = self.get("fpol_by_psi", None)
         self._pprime_by_psi: Function = self.get("pprime_by_psi", None)
 
-        self._psi_norm: np.ndarray = self.get("psi_norm", None)
         self._theta: Union[int, np.ndarray] = self.get("theta", 128)
 
         if isinstance(self._theta, int):
@@ -182,12 +182,15 @@ class MagneticCoordSystem(Dict):
         else:
             raise RuntimeError(f"theta grid is not defined!")
 
-        if isinstance(self._psi_norm, collections.abc.Mapping):
-            psi_norm_axis = self._psi_norm.get("axis", 0.0)
-            psi_norm_bdry = self._psi_norm.get("boundary", 1.0)
-            npoints = self._psi_norm.get("npoints", 128)
-            self._psi_norm = np.linspace(psi_norm_axis, psi_norm_bdry, npoints)
+        psi_norm: np.ndarray = self.get("psi_norm", None)
 
+        if isinstance(psi_norm, collections.abc.Mapping):
+            psi_norm_axis = psi_norm.get("axis", 0.0)
+            psi_norm_bdry = psi_norm.get("boundary", 1.0)
+            npoints = psi_norm.get("npoints", 128)
+            self._psi_norm = np.linspace(psi_norm_axis, psi_norm_bdry, npoints)
+        else:
+            self._psi_norm = psi_norm
         if not isinstance(self._psi_norm, np.ndarray):
             raise RuntimeError(f"psi_norm grid is not defined!")
 
