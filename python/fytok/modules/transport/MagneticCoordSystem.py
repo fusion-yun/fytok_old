@@ -36,7 +36,11 @@ class OXPoint:
     psi: float
 
 
+def extrapolate_left(x, d):
+    d[0] = d[1]+(d[1]-d[2])/(x[1]-x[2])*(x[0]-x[1])
+    return d
 # OXPoint = collections.namedtuple('OXPoint', "r z psi")
+
 
 class RadialGrid(Dict):
     r"""
@@ -668,7 +672,6 @@ class MagneticCoordSystem(Dict):
             Note:
             $\Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi$
         """
-
         return Function(self.psi_norm, self.dphi_dpsi).antiderivative(self.psi_norm)*(self.psi_boundary-self.psi_axis)
 
     @cached_property
@@ -704,7 +707,7 @@ class MagneticCoordSystem(Dict):
     @cached_property
     def dvolume_drho_tor(self) -> np.ndarray:
         """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
-        return (TWOPI**2) * self.rho_tor/(self.gm1)/(self._fvac/self.fpol)/self._R0
+        return extrapolate_left(self._psi_norm, (TWOPI**2) * self.rho_tor/(self.gm1)/(self._fvac/self.fpol)/self._R0)
 
     # @cached_property
     # def volume1(self) -> np.ndarray:
@@ -733,7 +736,7 @@ class MagneticCoordSystem(Dict):
         """
             Derivative of Psi with respect to Rho_Tor[Wb/m].
         """
-        return (self._s_Bp)*self._B0*self.rho_tor/self.q
+        return extrapolate_left(self._psi_norm, (self._s_Bp)*self._B0*self.rho_tor/self.q)
 
     @cached_property
     def dphi_dvolume(self) -> np.ndarray:
