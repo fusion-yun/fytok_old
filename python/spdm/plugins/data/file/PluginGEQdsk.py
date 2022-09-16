@@ -263,20 +263,12 @@ def sp_geqdsk_to_imas_equilibrium(geqdsk, eq: Dict = None) -> Dict:
 
     # profile
 
-    psi_norm = np.linspace(geqdsk["simag"], geqdsk["sibry"], nw)
-    eq["profiles_1d.f"] = function_like(psi_norm, geqdsk["fpol"])
-    eq["profiles_1d.f_df_dpsi"] = function_like(psi_norm, geqdsk["ffprim"])
-    eq["profiles_1d.pressure"] = function_like(psi_norm, geqdsk["pres"])
-    eq["profiles_1d.dpressure_dpsi"] = function_like(psi_norm, geqdsk["pprim"])
-    eq["profiles_1d.q"] = function_like(psi_norm, geqdsk["qpsi"])
-    eq["profiles_1d.psi"] = psi_norm*(geqdsk["sibry"]-geqdsk["simag"])+geqdsk["simag"]
-    # eq["profiles_1d.grid"] = {
-    #     "r0": geqdsk["rcentr"],
-    #     "b0": geqdsk["bcentr"],
-    #     "psi_norm": np.linspace(0, 1.0,  nw),
-    #     "psi_axis": geqdsk["simag"],
-    #     "psi_boundary": geqdsk["sibry"],
-    # }
+    eq["profiles_1d.f"] = geqdsk["fpol"]
+    eq["profiles_1d.f_df_dpsi"] = geqdsk["ffprim"]
+    eq["profiles_1d.pressure"] = geqdsk["pres"]
+    eq["profiles_1d.dpressure_dpsi"] = geqdsk["pprim"]
+    eq["profiles_1d.q"] = geqdsk["qpsi"]
+    eq["profiles_1d.psi"] = np.linspace(geqdsk["simag"], geqdsk["sibry"], nw)
 
     return eq
 

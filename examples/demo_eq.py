@@ -17,27 +17,19 @@ if True:
     from spdm.logger import logger
 
 
-###########################
+eqdsk_file = File(
+    "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="geqdsk").read()
+desc = load_equilibrium(eqdsk_file,
+                        coordinate_system={
+                            "psi_norm": np.linspace(0, 0.995, 32),
+                            "theta": 64},
+                        code={"name": "dummy"},
+                        boundary={"psi_norm": 0.995}
+                        )
+eq = Equilibrium(desc)
+psi_norm = np.linspace(0.0, 0.995, 32)
 
-
-# from spdm.view.plot_profiles import plot_profiles, sp_figure
-
-
-if __name__ == "__main__":
-    eqdsk_file = File(
-        "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="geqdsk").read()
-    desc = load_equilibrium(eqdsk_file,
-                            coordinate_system={
-                                "psi_norm": {"axis": 0.0, "boundary": 0.995, "npoints": 32},
-                                "theta": 64},
-                            code={"name": "dummy"},
-                            boundary={"psi_norm": 0.995}
-                            )
-    eq = Equilibrium(desc)
-    psi_norm = np.linspace(0.0, 0.995, 32)
-    # print(eq.profiles_2d.grid_type.index)
-    # print(eq.profiles_2d.grid.dim1)
-    # print(eq.global_quantities.magnetic_axis.r)
-    # print(eq.profiles_1d.f_df_dpsi(psi_norm))
-    print(eq.profiles_1d.pressure(psi_norm))
-    print(eq.profiles_1d.dpressure_dpsi(psi_norm))
+p = eq.profiles_1d.pressure
+pprint(p()[:10])
+pprint(p(psi_norm)[:10])
+pprint(eq.profiles_1d.q())

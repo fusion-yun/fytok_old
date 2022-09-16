@@ -2,19 +2,16 @@ import collections
 import collections.abc
 from dataclasses import dataclass
 from functools import cached_property
-from http.client import NOT_FOUND
 from pprint import pprint
 from typing import Sequence, TypeVar, Union
-from spdm.util.utilities import convert_to_named_tuple
-import matplotlib.pyplot as plt
+
 import numpy as np
 from scipy import constants
 from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
                        function_like, sp_property)
-
 from spdm.logger import logger
 from spdm.tags import _not_found_, _undefined_
-from spdm.util.utilities import try_get
+from spdm.util.utilities import convert_to_named_tuple, try_get
 
 from ...Field import Field
 from ...IDS import IDS
@@ -160,6 +157,9 @@ class EquilibriumConstraints(Dict):
 
 
 class EquilibriumGlobalQuantities(Dict):
+    @property
+    def _coord(self) -> MagneticCoordSystem:
+        return self._parent.coordinate_system
 
     @sp_property
     def beta_pol(self):
@@ -209,23 +209,23 @@ class EquilibriumGlobalQuantities(Dict):
     @cached_property
     def magnetic_axis(self):
         """Magnetic axis position and toroidal field	structure"""
-        return convert_to_named_tuple(self._parent.coordinate_system.magnetic_axis)
+        return convert_to_named_tuple(self._coord.magnetic_axis)
 
     @sp_property
     def x_points(self):
-        _, x = self._parent.coordinate_system.critical_points
+        _, x = self._coord.critical_points
         return x
 
     @sp_property
     def psi_axis(self) -> float:
         """Poloidal flux at the magnetic axis[Wb]."""
-        o, _ = self._parent.coordinate_system.critical_points
+        o, _ = self._coord.critical_points
         return o[0].psi
 
     @sp_property
     def psi_boundary(self) -> float:
         """Poloidal flux at the selected plasma boundary[Wb]."""
-        _, x = self._parent.coordinate_system.critical_points
+        _, x = self._coord.critical_points
         if len(x) > 0:
             return x[0].psi
         else:
@@ -258,40 +258,45 @@ class EquilibriumProfiles1D(Dict):
     """Equilibrium profiles(1D radial grid) as a function of the poloidal flux	"""
 
     @cached_property
-    def _axis(self) -> np.ndarray:
-        return self._parent.coordinate_system.radial_grid.psi_norm
+    def _predefined_psi_norm(self):
+        psi = self._entry.get("psi", None)
+        return (psi-psi[0])/(psi[-1]-psi[0])
+
+    @sp_property
+    def pressure(self) -> Function:
+        return function_like(self._predefined_psi_norm, self._entry.get("pressure", None))
+
+    @sp_property
+    def dpressure_dpsi(self) -> Function:
+        return function_like(self._predefined_psi_norm,  self._entry.get("dpressure_dpsi", None))
+
+    @property
+    def pprime(self) -> Function:
+        return self.dpressure_dpsi
+
+    @property
+    def _coord(self) -> MagneticCoordSystem:
+        return self._parent.coordinate_system
 
     @sp_property
     def ffprime(self) -> Function:
         """	Derivative of F w.r.t. Psi, multiplied with F[T ^ 2.m ^ 2/Wb]. """
-        return function_like(self.psi_norm, self._parent.coordinate_system.ffprime)
+        return function_like(self._coord.psi_norm, self._coord.ffprime)
 
     @sp_property
     def f_df_dpsi(self) -> Function:
         """	Derivative of F w.r.t. Psi, multiplied with F[T ^ 2.m ^ 2/Wb]. """
-        return function_like(self._axis, self._parent.coordinate_system.ffprime)
+        return function_like(self._coord.psi_norm, self._coord.ffprime)
 
     @sp_property
     def fpol(self) -> Function:
         """Diamagnetic function(F=R B_Phi)[T.m]."""
-        return function_like(self._axis, self._parent.coordinate_system.fpol)
+        return function_like(self._coord.psi_norm, self._coord.fpol)
 
     @sp_property
     def f(self) -> Function:
         """Diamagnetic function(F=R B_Phi)[T.m]."""
         return self.fpol
-
-    @sp_property
-    def pressure(self) -> Function:
-        return function_like(self._axis, self.get("pressure"))
-
-    @sp_property
-    def dpressure_dpsi(self) -> Function:
-        return function_like(self._axis, self.get("dpressure_dpsi"))
-
-    @property
-    def pprime(self) -> Function:
-        return self.dpressure_dpsi
 
     @sp_property
     def plasma_current(self) -> Function:
@@ -303,91 +308,91 @@ class EquilibriumProfiles1D(Dict):
     @sp_property
     def j_tor(self) -> Function:
         r"""Flux surface averaged toroidal current density = average(j_tor/R) / average(1/R) {dynamic}[A.m ^ -2]. """
-        return self.plasma_current.derivative() / (self._parent.coordinate_system.psi_boundary - self._parent.coordinate_system.psi_axis)/self.dvolume_dpsi * self._parent.coordinate_system.r0
+        return self.plasma_current.derivative() / (self._coord.psi_boundary - self._coord.psi_axis)/self.dvolume_dpsi * self._coord.r0
 
     @sp_property
     def j_parallel(self) -> Function:
         r"""Flux surface averaged parallel current density = average(j.B) / B0, where B0 = Equilibrium/Global/Toroidal_Field/B0 {dynamic}[A/m ^ 2]. """
-        fvac = self._parent.coordinate_system._fvac
+        fvac = self._coord._fvac
         d = np.asarray(Function(np.asarray(self.volume), np.asarray(fvac*self.plasma_current/self.fpol)).derivative())
-        return self._parent.coordinate_system.r0*(self.fpol / fvac)**2 * d
+        return self._coord.r0*(self.fpol / fvac)**2 * d
 
     @sp_property
     def psi_norm(self) -> Function:
         """Normalized poloidal flux[Wb]. """
-        return function_like(self._axis, self._axis)
+        return function_like(self._coord.psi_norm, self._coord.psi_norm)
 
     @sp_property
     def psi(self) -> Function:
         """Poloidal flux[Wb]. """
-        return function_like(self._axis, self._parent.coordinate_system.psi)
+        return function_like(self._coord.psi_norm, self._coord.psi)
 
     @sp_property
     def dphi_dpsi(self) -> Function:
-        return function_like(self._axis, self._parent.coordinate_system.dphi_dpsi)
+        return function_like(self._coord.psi_norm, self._coord.dphi_dpsi)
 
     @sp_property
     def q(self) -> Function:
-        return function_like(self._axis, self._parent.coordinate_system.q)
+        return function_like(self._coord.psi_norm, self._coord.q)
 
     @sp_property
     def phi(self) -> Function:
-        return function_like(self._axis, self._parent.coordinate_system.phi)
+        return function_like(self._coord.psi_norm, self._coord.phi)
 
     @sp_property
     def rho_tor(self) -> Function:
         """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0[m]"""
-        return function_like(self._axis, self._parent.coordinate_system.rho_tor)
+        return function_like(self._coord.psi_norm, self._coord.rho_tor)
 
     @sp_property
     def rho_tor_norm(self) -> Function:
-        return function_like(self._axis, self._parent.coordinate_system.rho_tor_norm)
+        return function_like(self._coord.psi_norm, self._coord.rho_tor_norm)
 
     @sp_property
     def drho_tor_dpsi(self) -> Function:
-        return function_like(self._axis, self._parent.coordinate_system.drho_tor_dpsi)
+        return function_like(self._coord.psi_norm, self._coord.drho_tor_dpsi)
 
     @sp_property
     def rho_volume_norm(self) -> Function:
         """Normalised square root of enclosed volume(radial coordinate). The normalizing value is the enclosed volume at the equilibrium boundary
             (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibium calculation)[-]"""
-        return function_like(self._axis, self._parent.coordinate_system.rho_volume_norm)
+        return function_like(self._coord.psi_norm, self._coord.rho_volume_norm)
 
     @sp_property
     def area(self) -> Function:
         """Cross-sectional area of the flux surface[m ^ 2]"""
-        return function_like(self._axis, self._parent.coordinate_system.area)
+        return function_like(self._coord.psi_norm, self._coord.area)
 
     @sp_property
     def darea_dpsi(self) -> Function:
         """Radial derivative of the cross-sectional area of the flux surface with respect to psi[m ^ 2.Wb ^ -1]. """
-        return function_like(self._axis, self._parent.coordinate_system.darea_dpsi)
+        return function_like(self._coord.psi_norm, self._coord.darea_dpsi)
 
     @sp_property
     def darea_drho_tor(self) -> Function	:
         """Radial derivative of the cross-sectional area of the flux surface with respect to rho_tor[m]"""
-        return function_like(self._axis, self._parent.coordinate_system.darea_drho_tor)
+        return function_like(self._coord.psi_norm, self._coord.darea_drho_tor)
 
     @sp_property
     def surface(self):
         """Surface area of the toroidal flux surface[m ^ 2]"""
-        return function_like(self._axis, self._parent.coordinate_system.surface)
+        return function_like(self._coord.psi_norm, self._coord.surface)
 
     @sp_property
     def volume(self) -> Function:
         """Volume enclosed in the flux surface[m ^ 3]"""
-        return function_like(self._axis, self._parent.coordinate_system.volume)
+        return function_like(self._coord.psi_norm, self._coord.volume)
 
     @sp_property
     def dvolume_dpsi(self) -> Function:
         r"""
             Radial derivative of the volume enclosed in the flux surface with respect to Psi[m ^ 3.Wb ^ -1].
         """
-        return function_like(self._axis, self._parent.coordinate_system.dvolume_dpsi)
+        return function_like(self._coord.psi_norm, self._coord.dvolume_dpsi)
 
     @sp_property
     def dpsi_drho_tor(self) -> Function:
-        return function_like(self._axis, self._parent.coordinate_system.dpsi_drho_tor)
+        return function_like(self._coord.psi_norm, self._coord.dpsi_drho_tor)
 
     @sp_property
     def dpsi_drho_tor_norm(self) -> Function:
@@ -395,11 +400,11 @@ class EquilibriumProfiles1D(Dict):
 
     @sp_property
     def dvolume_drho_tor(self) -> Function:
-        return function_like(self._axis, self._parent.coordinate_system.dvolume_drho_tor)
+        return function_like(self._coord.psi_norm, self._coord.dvolume_drho_tor)
 
     @cached_property
     def shape_property(self) -> MagneticCoordSystem.ShapeProperty:
-        return self._parent.coordinate_system.shape_property()
+        return self._coord.shape_property()
 
     @sp_property
     def geometric_axis(self) -> RZTuple:
@@ -448,7 +453,7 @@ class EquilibriumProfiles1D(Dict):
             Flux surface averaged 1/R ^ 2  [m ^ -2]
             .. math: : \left\langle\frac{1}{R^{2}}\right\rangle
         """
-        return function_like(self._axis, self._parent.coordinate_system.gm1)
+        return function_like(self._coord.psi_norm, self._coord.gm1)
 
     @sp_property
     def gm2(self) -> Function:
@@ -456,7 +461,7 @@ class EquilibriumProfiles1D(Dict):
             Flux surface averaged .. math: : \left | \nabla \rho_{tor}\right|^2/R^2  [m^-2]
             .. math:: \left\langle\left |\frac{\nabla\rho}{R}\right|^{2}\right\rangle
         """
-        return function_like(self._axis, self._parent.coordinate_system.gm2)
+        return function_like(self._coord.psi_norm, self._coord.gm2)
 
     @sp_property
     def gm3(self) -> Function:
@@ -464,7 +469,7 @@ class EquilibriumProfiles1D(Dict):
             Flux surface averaged .. math: : \left | \nabla \rho_{tor}\right|^2  [-]
             .. math:: {\left\langle \left |\nabla\rho\right|^{2}\right\rangle}
         """
-        return function_like(self._axis, self._parent.coordinate_system.gm3)
+        return function_like(self._coord.psi_norm, self._coord.gm3)
 
     @sp_property
     def gm4(self) -> Function:
@@ -472,7 +477,7 @@ class EquilibriumProfiles1D(Dict):
             Flux surface averaged 1/B ^ 2  [T ^ -2]
             .. math: : \left\langle \frac{1}{B^{2}}\right\rangle
         """
-        return function_like(self._axis, self._parent.coordinate_system.gm4)
+        return function_like(self._coord.psi_norm, self._coord.gm4)
 
     @sp_property
     def gm5(self) -> Function:
@@ -480,7 +485,7 @@ class EquilibriumProfiles1D(Dict):
             Flux surface averaged B ^ 2  [T ^ 2]
             .. math: : \left\langle B^{2}\right\rangle
         """
-        return function_like(self._axis, self._parent.coordinate_system.gm5)
+        return function_like(self._coord.psi_norm, self._coord.gm5)
 
     @sp_property
     def gm6(self) -> Function:
@@ -488,9 +493,9 @@ class EquilibriumProfiles1D(Dict):
             Flux surface averaged  .. math: : \left | \nabla \rho_{tor}\right|^2/B^2  [T^-2]
             .. math:: \left\langle \frac{\left |\nabla\rho\right|^{2}}{B^{2}}\right\rangle
         """
-        return function_like(self._axis, self._parent.coordinate_system.gm6)
+        return function_like(self._coord.psi_norm, self._coord.gm6)
 
-        # return function_like(self._grid.psi_norm, self._parent.coordinate_system.surface_average(self.norm_grad_rho_tor**2/self._parent.coordinate_system.B2))
+        # return function_like(self._grid.psi_norm, self._coord.surface_average(self.norm_grad_rho_tor**2/self._coord.B2))
 
     @sp_property
     def gm7(self) -> Function:
@@ -498,7 +503,7 @@ class EquilibriumProfiles1D(Dict):
             Flux surface averaged .. math:: \left | \nabla \rho_{tor}\right |  [-]
             .. math: : \left\langle \left |\nabla\rho\right |\right\rangle
         """
-        return function_like(self._axis, self._parent.coordinate_system.gm7)
+        return function_like(self._coord.psi_norm, self._coord.gm7)
 
     @sp_property
     def gm8(self) -> Function:
@@ -506,7 +511,7 @@ class EquilibriumProfiles1D(Dict):
             Flux surface averaged R[m]
             .. math: : \left\langle R\right\rangle
         """
-        return function_like(self._axis, self._parent.coordinate_system.gm8)
+        return function_like(self._coord.psi_norm, self._coord.gm8)
 
     @sp_property
     def gm9(self) -> Function:
@@ -514,12 +519,12 @@ class EquilibriumProfiles1D(Dict):
             Flux surface averaged 1/R[m ^ -1]
             .. math: : \left\langle \frac{1}{R}\right\rangle
         """
-        return function_like(self._axis, self._parent.coordinate_system.gm9)
+        return function_like(self._coord.psi_norm, self._coord.gm9)
 
     @sp_property
     def magnetic_shear(self) -> Function:
         """Magnetic shear, defined as rho_tor/q . dq/drho_tor[-]	 """
-        return function_like(self._axis, self._parent.coordinate_system.magnetic_shear)
+        return function_like(self._coord.psi_norm, self._coord.magnetic_shear)
 
     @sp_property
     def trapped_fraction(self) -> Function:
@@ -528,9 +533,9 @@ class EquilibriumProfiles1D(Dict):
         """
         d = self.get("trapped_fraction", _not_found_)
         if d is _not_found_:
-            epsilon = self.rho_tor/self._parent.coordinate_system.r0
+            epsilon = self.rho_tor/self._coord.r0
             d = np.asarray(1.0 - (1-epsilon)**2/np.sqrt(1.0-epsilon**2)/(1+1.46*np.sqrt(epsilon)))
-        return function_like(self._axis, d)
+        return function_like(self._coord.psi_norm, d)
 
     @sp_property
     def b_field_max(self) -> Function:
@@ -547,6 +552,9 @@ class EquilibriumProfiles2D(Dict):
     """
         Equilibrium 2D profiles in the poloidal plane.
     """
+    @property
+    def _coord(self) -> MagneticCoordSystem:
+        return self._parent.coordinate_system
 
     @cached_property
     def grid(self):
@@ -558,17 +566,17 @@ class EquilibriumProfiles2D(Dict):
 
     @cached_property
     def psi(self) -> np.ndarray:
-        return self._parent.coordinate_system._psirz._array
+        return self._coord._psirz._array
 
     @sp_property
     def r(self) -> np.ndarray:
         """Values of the major radius on the grid  [m] """
-        return self._parent.coordinate_system.r
+        return self._coord.r
 
     @sp_property
     def z(self) -> np.ndarray:
         """Values of the Height on the grid  [m] """
-        return self._parent.coordinate_system.z
+        return self._coord.z
 
     # @sp_property
     # def psi(self):
@@ -598,17 +606,17 @@ class EquilibriumProfiles2D(Dict):
     @sp_property
     def b_field_r(self):
         """R component of the poloidal magnetic field  [T]"""
-        return Field(self._parent.coordinate_system.Br, self._parent.coordinate_system.r, self._parent.coordinate_system.z, mesh_type="curvilinear")
+        return Field(self._coord.Br, self._coord.r, self._coord.z, mesh_type="curvilinear")
 
     @sp_property
     def b_field_z(self):
         """Z component of the poloidal magnetic field  [T]"""
-        return Field(self._parent.coordinate_system.Bz, self._parent.coordinate_system.r, self._parent.coordinate_system.z, mesh_type="curvilinear")
+        return Field(self._coord.Bz, self._coord.r, self._coord.z, mesh_type="curvilinear")
 
     @sp_property
     def b_field_tor(self):
         """Toroidal component of the magnetic field  [T]"""
-        return Field(self._parent.coordinate_system.Btor, self._parent.coordinate_system.r, self._parent.coordinate_system.z, mesh_type="curvilinear")
+        return Field(self._coord.Btor, self._coord.r, self._coord.z, mesh_type="curvilinear")
 
 
 class EquilibriumBoundary(Dict):
@@ -616,6 +624,9 @@ class EquilibriumBoundary(Dict):
         Description of the plasma boundary used by fixed-boundary codes and typically chosen at psi_norm = 99.x%
         of the separatrix
     """
+    @property
+    def _coord(self) -> MagneticCoordSystem:
+        return self._parent.coordinate_system
 
     @sp_property
     def type(self):
@@ -625,7 +636,7 @@ class EquilibriumBoundary(Dict):
     @sp_property
     def outline(self) -> RZTuple:
         """RZ outline of the plasma boundary  """
-        _, surf = next(self._parent.coordinate_system.find_surface(self.psi, o_point=True))
+        _, surf = next(self._coord.find_surface(self.psi, o_point=True))
         return RZTuple(surf.xyz[0], surf.xyz[1])
 
     @sp_property
@@ -635,16 +646,16 @@ class EquilibriumBoundary(Dict):
 
     @sp_property
     def psi_axis(self) -> float:
-        return self._parent.coordinate_system.psi_axis
+        return self._coord.psi_axis
 
     @sp_property
     def psi_boundary(self) -> float:
-        return self._parent.coordinate_system.psi_boundary
+        return self._coord.psi_boundary
 
     @sp_property
     def psi(self) -> float:
         """Value of the poloidal flux at which the boundary is taken  [Wb]"""
-        return self.psi_norm*(self._parent.coordinate_system.psi_boundary-self._parent.coordinate_system.psi_axis)+self._parent.coordinate_system.psi_axis
+        return self._coord.psi_norm*(self._coord.psi_boundary-self._coord.psi_axis)+self._coord.psi_axis
 
     @sp_property
     def psi_norm(self) -> float:
@@ -652,9 +663,9 @@ class EquilibriumBoundary(Dict):
             the flux being normalised to its value at the separatrix """
         return self.get("psi_norm", 0.999)
 
-    @sp_property
+    @property
     def shape_property(self) -> MagneticCoordSystem.ShapeProperty:
-        return self._parent.coordinate_system.shape_property(self.psi_norm)
+        return self._coord.shape_property(self._coord.psi_norm)
 
     @sp_property
     def geometric_axis(self) -> RZTuple:
@@ -709,8 +720,9 @@ class EquilibriumBoundary(Dict):
 
 class EquilibriumBoundarySeparatrix(Dict[Node]):
 
-    def __init__(self,  *args, ** kwargs):
-        super().__init__(*args, **kwargs)
+    @property
+    def _coord(self) -> MagneticCoordSystem:
+        return self._parent.coordinate_system
 
     @sp_property
     def type(self):
@@ -720,21 +732,21 @@ class EquilibriumBoundarySeparatrix(Dict[Node]):
     @sp_property
     def outline(self) -> RZTuple:
         """RZ outline of the plasma boundary  """
-        _, surf = next(self._parent.coordinate_system.find_surface_by_psi_norm(1.0, o_point=None))
+        _, surf = next(self._coord.find_surface_by_psi_norm(1.0, o_point=None))
         return RZTuple(*surf.xyz)
 
     @sp_property
     def psi_axis(self) -> float:
-        return self._parent.coordinate_system.psi_axis
+        return self._coord.psi_axis
 
     @sp_property
     def psi_boundary(self) -> float:
-        return self._parent.coordinate_system.psi_boundary
+        return self._coord.psi_boundary
 
     @sp_property
     def psi(self) -> float:
         """Value of the poloidal flux at which the boundary is taken  [Wb]"""
-        return self.psi_norm*(self._parent.coordinate_system.psi_boundary-self._parent.coordinate_system.psi_axis)+self._parent.coordinate_system.psi_axis
+        return self._coord.psi_norm*(self._parent.coordinate_system.psi_boundary-self._parent.coordinate_system.psi_axis)+self._parent.coordinate_system.psi_axis
 
     @sp_property
     def psi_norm(self) -> float:
@@ -816,16 +828,17 @@ class Equilibrium(IDS):
                           self.profiles_2d._entry.get("grid.dim2", None),
                           mesh="rectilinear")
 
-        psi_1d = self.profiles_1d._entry.get("psi", None)
+        psi = self.profiles_1d._entry.get("psi", None)
+        psi_norm = (psi-psi[0])/(psi[-1]-psi[0])
 
         return MagneticCoordSystem(
-            self._entry.get("coordinate_system", {}),
+            **self._entry.get("coordinate_system", {}),
             psirz=psirz,
             B0=self.vacuum_toroidal_field.b0,
             R0=self.vacuum_toroidal_field.r0,
             Ip=self.global_quantities._entry.get("ip", None),
-            fpol_by_psi=Function(psi_1d,  self.profiles_1d._entry.get("f", None)),
-            pprime_by_psi=Function(psi_1d,  self.profiles_1d._entry.get("dpressure_dpsi", None)),
+            fpol=function_like(psi_norm, self.profiles_1d._entry.get("f", None)),
+            pprime=function_like(psi_norm, self.profiles_1d._entry.get("dpressure_dpsi", None)),
         )
 
     coordinate_system: MagneticCoordSystem = sp_property(create_coordinate_system)
@@ -891,6 +904,11 @@ class Equilibrium(IDS):
         """
             plot o-point,x-point,lcfs,separatrix and contour of psi
         """
+        try:
+            import matplotlib.pyplot as plt
+        except ModuleNotFoundError as error:
+            logger.error(f"Can not load matplotlib! [{error}]")
+            return
         if axis is None:
             axis = plt.gca()
 

@@ -190,7 +190,6 @@ def load_equilibrium(eqdsk,  **kwargs):
 
     R0 = eqdsk.get("vacuum_toroidal_field.r0")
     B0 = eqdsk.get("vacuum_toroidal_field.b0")
-    psi = np.asarray(eqdsk.get("profiles_1d.psi", None))
 
     return {
         "vacuum_toroidal_field": {"b0": B0, "r0": R0, },

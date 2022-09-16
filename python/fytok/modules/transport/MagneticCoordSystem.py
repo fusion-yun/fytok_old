@@ -6,9 +6,10 @@ from math import isclose
 from typing import Callable, Iterator, Mapping, Sequence, Tuple, TypeVar, Union
 
 import numpy as np
+
+
 from scipy import constants
-from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
-                       sp_property)
+from spdm.data import (Dict, Function, sp_property)
 from spdm.data.Function import function_like
 from spdm.logger import logger
 
@@ -149,60 +150,63 @@ class MagneticCoordSystem(Dict):
         (TWOPI,     -1,             -1),  # 18
     ]
 
-    def __init__(self,  *args, **kwargs):
+    def __init__(self,  *args,
+                 psirz: Field,
+                 B0: float,
+                 R0: float,
+                 Ip: float,
+                 fpol:     Union[Function, np.ndarray],
+
+                 psi_norm: Union[int, np.ndarray] = 128,
+                 theta:    Union[int, np.ndarray] = 32,
+                 grid_type_index=13,
+                 **kwargs):
         """
             Initialize FluxSurface
         """
         super().__init__(*args, **kwargs)
+        self._grid_type_index = grid_type_index
 
-        self._grid_type_index: int = self.get("grid_type_index", 13)
-        self._psirz: Field = self.get("psirz", NotImplemented)
+        self._psirz = psirz
 
-        self._Ip: float = self.get("Ip", NotImplemented)
-        self._b0: float = self.get("B0", NotImplemented)
-        self._r0: float = self.get("R0", NotImplemented)
-        self._fvac = self._b0*self._r0
+        self._Ip = Ip
+        self._B0 = B0
+        self._R0 = R0
+        self._fvac = self._B0*self._R0
 
         # @TODO: COCOS transformation
         self._cocos = self.get("cocos", 11)
-        self._s_Bp = np.sign(self._b0)
+        self._s_Bp = np.sign(self._B0)
         self._s_Ip = np.sign(self._Ip)
         self._s_2PI = 1.0/(constants.pi*2.0)  # 1.0/(TWOPI ** (1-e_Bp))
 
-        self._fpol_by_psi: Function = self.get("fpol_by_psi", None)
-        self._pprime_by_psi: Function = self.get("pprime_by_psi", None)
-
-        self._theta: Union[int, np.ndarray] = self.get("theta", 128)
-
-        if isinstance(self._theta, int):
-            self._theta = np.linspace(0, TWOPI, self._theta)
-        elif isinstance(self._theta, np.ndarray):
+        if isinstance(theta, int):
+            self._theta = np.linspace(0, TWOPI, theta)
+        elif isinstance(theta, np.ndarray):
+            self._theta = theta
             if not isclose(self._theta[0], self._theta[-1]):
                 self._theta.append(self._theta[0])
         else:
             raise RuntimeError(f"theta grid is not defined!")
 
-        psi_norm: np.ndarray = self.get("psi_norm", None)
-
-        if isinstance(psi_norm, collections.abc.Mapping):
-            psi_norm_axis = psi_norm.get("axis", 0.0)
-            psi_norm_bdry = psi_norm.get("boundary", 1.0)
-            npoints = psi_norm.get("npoints", 128)
-            self._psi_norm = np.linspace(psi_norm_axis, psi_norm_bdry, npoints)
-        else:
+        if isinstance(psi_norm, int):
+            self._psi_norm = np.linspace(0.0, 1.0, psi_norm)
+        elif isinstance(psi_norm, np.ndarray):
             self._psi_norm = psi_norm
         if not isinstance(self._psi_norm, np.ndarray):
             raise RuntimeError(f"psi_norm grid is not defined!")
 
-        logger.debug(f"Create MagneticCoordSystem: type index={self._grid_type_index} primary='psi'  ")
+        self._fpol = function_like(self._psi_norm, fpol)
+
+        # logger.debug(f"Create MagneticCoordSystem: type index={self._grid_type_index} primary='psi'  ")
 
     @property
     def r0(self) -> float:
-        return self._r0
+        return self._R0
 
     @property
     def b0(self) -> float:
-        return self._b0
+        return self._B0
 
     @property
     def vacuum_toroidal_field(self) -> VacuumToroidalField:
@@ -298,7 +302,7 @@ class MagneticCoordSystem(Dict):
         if not isinstance(psi, (collections.abc.Sequence, np.ndarray)):
             psi = [psi]
 
-        psi = np.asarray(psi)
+        psi = np.asarray(psi, dtype=float)
 
         if o_point is None or o_point is False:
             for level, col in find_countours(F, R, Z, levels=psi):
@@ -319,7 +323,7 @@ class MagneticCoordSystem(Dict):
                         if x_point is None:
                             raise RuntimeError(f"No X-point ")
                         logger.warning(f"The magnetic surface average is not well defined on the separatrix!")
-                        xpt = np.asarray([x_point.r, x_point.z])
+                        xpt = np.asarray([x_point.r, x_point.z], dtype=float)
                         b = points[1:]
                         a = points[:-1]
                         d = b-a
@@ -372,7 +376,7 @@ class MagneticCoordSystem(Dict):
                         raise RuntimeError(f"{level},{o_point.psi},{(max(theta),min(theta))}")
 
     def find_surface_by_psi_norm(self, psi_norm: Union[float, Sequence], *args,   **kwargs) -> Iterator[Tuple[float, GeoObject]]:
-        yield from self.find_surface(np.asarray(psi_norm)*(self.psi_boundary-self.psi_axis)+self.psi_axis, *args,  **kwargs)
+        yield from self.find_surface(np.asarray(psi_norm, dtype=float)*(self.psi_boundary-self.psi_axis)+self.psi_axis, *args,  **kwargs)
 
     ###############################
     # 0-D
@@ -454,7 +458,7 @@ class MagneticCoordSystem(Dict):
         elif not isinstance(psi_norm, (np.ndarray, collections.abc.MutableSequence)):
             psi_norm = [psi_norm]
 
-        sbox = np.asarray([[*shape_box(s)] for _, s in self.find_surface_by_psi_norm(psi_norm)])
+        sbox = np.asarray([[*shape_box(s)] for _, s in self.find_surface_by_psi_norm(psi_norm)], dtype=float)
 
         if sbox.shape[0] == 1:
             rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard = sbox[0]
@@ -551,7 +555,7 @@ class MagneticCoordSystem(Dict):
         return -self.psirz(r,  z, dx=1) / r/TWOPI
 
     def Btor(self, r: _TCoord, z: _TCoord) -> _TCoord:
-        return self._fpol_by_psi(self.psi_norm_rz(r, z)) / r
+        return self._fpol(self.psi_norm_rz(r, z)) / r
 
     def Bpol(self, r: _TCoord, z: _TCoord) -> _TCoord:
         r"""
@@ -595,9 +599,9 @@ class MagneticCoordSystem(Dict):
             surface_list = self.find_surface_by_psi_norm(surface_list, o_point=True)
 
         if func is not None:
-            return np.asarray([(axis.integral(lambda r, z, _func=func, _bpol=self.Bpol:_func(r, z)/_bpol(r, z)) if not np.isclose(p, 0) else func(r0, z0) * c0) for p, axis in surface_list])
+            return np.asarray([(axis.integral(lambda r, z, _func=func, _bpol=self.Bpol:_func(r, z)/_bpol(r, z)) if not np.isclose(p, 0) else func(r0, z0) * c0) for p, axis in surface_list], dtype=float)
         else:
-            return np.asarray([(axis.integral(lambda r, z, _func=func, _bpol=self.Bpol:1.0/_bpol(r, z)) if not np.isclose(p, 0) else c0) for p, axis in surface_list])
+            return np.asarray([(axis.integral(lambda r, z, _func=func, _bpol=self.Bpol:1.0/_bpol(r, z)) if not np.isclose(p, 0) else c0) for p, axis in surface_list], dtype=float)
 
     @cached_property
     def dvolume_dpsi(self) -> np.ndarray:
@@ -619,8 +623,6 @@ class MagneticCoordSystem(Dict):
 
     @property
     def psi_norm(self) -> np.ndarray:
-        if not isinstance(self._psi_norm, np.ndarray):
-            raise RuntimeError(f"psi_norm is not defined!")
         return self._psi_norm
 
     @property
@@ -630,17 +632,17 @@ class MagneticCoordSystem(Dict):
     @cached_property
     def fpol(self) -> np.ndarray:
         """Diamagnetic function (F=R B_Phi)  [T.m]."""
-        return self._fpol_by_psi(self.psi)
+        return self._fpol(self.psi_norm)
 
     @cached_property
     def ffprime(self) -> np.ndarray:
         """Diamagnetic function (F=R B_Phi)  [T.m]."""
-        return self._fpol_by_psi(self.psi_norm)*self._fpol_by_psi.derivative(self.psi_norm)
+        return self._fpol(self.psi_norm)*self._fpol.derivative(self.psi_norm)
 
-    @cached_property
-    def pprime(self) -> np.ndarray:
-        """Diamagnetic function (F=R B_Phi)  [T.m]."""
-        return self._pprime_by_psi(self.psi_norm)
+    # @cached_property
+    # def pprime(self) -> np.ndarray:
+    #     """Diamagnetic function (F=R B_Phi)  [T.m]."""
+    #     return self._pprime(self.psi_norm)
 
     @cached_property
     def dphi_dpsi(self) -> np.ndarray:
@@ -675,17 +677,15 @@ class MagneticCoordSystem(Dict):
             logger.warning(f"FIXME: psi_norm boudnary is {self.psi_norm[-1]} != 1.0 ")
 
         return self.phi[-1]
-        # else:
-        #     raise NotImplementedError()
 
     @cached_property
     def rho_boundary(self) -> float:
-        return np.sqrt(self.phi_boundary/(constants.pi * self._b0))
+        return np.sqrt(self.phi_boundary/(constants.pi * self._B0))
 
     @cached_property
     def rho_tor(self) -> np.ndarray:
         """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0[m]"""
-        return np.sqrt(self.phi/(constants.pi * self._b0))
+        return np.sqrt(self.phi/(constants.pi * self._B0))
 
     @cached_property
     def rho_tor_norm(self) -> np.ndarray:
@@ -704,7 +704,7 @@ class MagneticCoordSystem(Dict):
     @cached_property
     def dvolume_drho_tor(self) -> np.ndarray:
         """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
-        return (TWOPI**2) * self.rho_tor/(self.gm1)/(self._fvac/self.fpol)/self._r0
+        return (TWOPI**2) * self.rho_tor/(self.gm1)/(self._fvac/self.fpol)/self._R0
 
     # @cached_property
     # def volume1(self) -> np.ndarray:
@@ -733,7 +733,7 @@ class MagneticCoordSystem(Dict):
         """
             Derivative of Psi with respect to Rho_Tor[Wb/m].
         """
-        return (self._s_Bp)*self._b0*self.rho_tor/self.q
+        return (self._s_Bp)*self._B0*self.rho_tor/self.q
 
     @cached_property
     def dphi_dvolume(self) -> np.ndarray:
@@ -834,7 +834,7 @@ class MagneticCoordSystem(Dict):
 
         R, Z = field.mesh.xy
 
-        F = np.asarray(field)
+        F = np.asarray(field, dtype=float)
 
         for level, col in find_countours(F, R, Z, levels=levels):
             for segment in col:
