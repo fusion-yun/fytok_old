@@ -39,6 +39,8 @@ class OXPoint:
 def extrapolate_left(x, d):
     d[0] = d[1]+(d[1]-d[2])/(x[1]-x[2])*(x[0]-x[1])
     return d
+    # return Function(x[1:], d[1:])(x)
+
 # OXPoint = collections.namedtuple('OXPoint', "r z psi")
 
 
@@ -763,8 +765,8 @@ class MagneticCoordSystem(Dict):
             $\left\langle\left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle$
         """
 
-        gm2_ = self.surface_average(lambda r, z: self.grad_psi2(r, z)/(r**2))[1:] / (self.dpsi_drho_tor[1:] ** 2)
-        return Function(self.psi_norm[1:], gm2_)(self.psi_norm)
+        return extrapolate_left(self._psi_norm,
+                                self.surface_average(lambda r, z: self.grad_psi2(r, z)/(r**2)) / (self.dpsi_drho_tor ** 2))
 
     @cached_property
     def gm3(self) -> np.ndarray:
@@ -772,9 +774,8 @@ class MagneticCoordSystem(Dict):
             Flux surface averaged $\left| \nabla \rho_{tor}\right|^2  [-]$
             $\left\langle \left|\nabla\rho\right|^{2}\right\rangle$
         """
-        gm3_ = self.surface_average(self.grad_psi2)[1:] / (self.dpsi_drho_tor[1:] ** 2)
-
-        return Function(self.psi_norm[1:], gm3_)(self.psi_norm)
+        return extrapolate_left(self._psi_norm,
+                                self.surface_average(self.grad_psi2) / (self.dpsi_drho_tor ** 2))
 
     @cached_property
     def gm4(self) -> np.ndarray:
@@ -793,9 +794,8 @@ class MagneticCoordSystem(Dict):
             $\left\langle \frac{\left |\nabla\rho\right|^{2}}{B^{2}}\right\rangle$
 
         """
-        gm6_ = self.surface_average(lambda r, z: self.grad_psi2(r, z)/self.B2(r, z))[1:] / (self.dpsi_drho_tor[1:] ** 2)
-
-        return Function(self.psi_norm[1:], gm6_)(self.psi_norm)
+        return extrapolate_left(self._psi_norm,
+                                self.surface_average(lambda r, z: self.grad_psi2(r, z)/self.B2(r, z)) / (self.dpsi_drho_tor ** 2))
 
     @cached_property
     def gm7(self) -> np.ndarray:
@@ -803,8 +803,8 @@ class MagneticCoordSystem(Dict):
             Flux surface averaged $\left| \nabla \rho_{tor}\right|$ [-]
             $\left\langle \left |\nabla\rho\right |\right\rangle$
         """
-        gm7_ = self.surface_average(lambda r, z: np.sqrt(self.grad_psi2(r, z)))[1:] / self.dpsi_drho_tor[1:]
-        return Function(self.psi_norm[1:], gm7_)(self.psi_norm)
+        return extrapolate_left(self._psi_norm,
+                                self.surface_average(lambda r, z: np.sqrt(self.grad_psi2(r, z))) / self.dpsi_drho_tor)
 
     @cached_property
     def gm8(self) -> np.ndarray:
