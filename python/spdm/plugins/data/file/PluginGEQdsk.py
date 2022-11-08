@@ -5,6 +5,7 @@ from spdm.logger import logger
 from spdm.data import (Dict, Entry, File, Link, List, Node, Path, Query,
                        sp_property)
 from spdm.data.Function import function_like
+from scipy import interpolate
 
 
 def sp_read_geqdsk(file):
@@ -121,7 +122,7 @@ def sp_write_geqdsk(p, file):
     nw = p["nw"]
     nh = p["nh"]
 
-    file.write("%48s%4i%4i%4i\n" % (p["description"], 3, p["nw"], p["nh"]))
+    file.write("%48s%4i%4i%4i\n" % (p.get("description", "NO DESCRIPTION"), 3, p["nw"], p["nh"]))
     file.write("%16.9e%16.9e%16.9e%16.9e%16.9e\n" %
                (p["rdim"], p["zdim"], p["rcentr"], p["rleft"], p["zmid"]))
     file.write("%16.9e%16.9e%16.9e%16.9e%16.9e\n" %
@@ -152,7 +153,6 @@ def sp_write_geqdsk(p, file):
 
 
 def sp_imas_equilibrium_to_geqdsk(eq, nw=125, nh=125):
-    from fytok.numlib import interpolate
 
     coord_r = eq.coordinate_system.r
     coord_z = eq.coordinate_system.z
@@ -169,7 +169,7 @@ def sp_imas_equilibrium_to_geqdsk(eq, nw=125, nh=125):
     zmaxis = eq.global_quantities.magnetic_axis.z
     simag = eq.global_quantities.psi_axis
     sibry = eq.global_quantities.psi_boundary
-    bcentr = eq.global_quantities.magnetic_axis.b_field_tor
+    bcentr = eq.vacuum_toroidal_field.b0
     current = eq.global_quantities.ip
 
     # boundary
@@ -181,26 +181,22 @@ def sp_imas_equilibrium_to_geqdsk(eq, nw=125, nh=125):
         [1, rbbs.size]), axis=0).transpose()
     # psi
 
-    grid_r, grid_z = np.mgrid[rleft:rleft + rdim: nw *
-                              1j, zmid - zdim / 2: zmid + zdim / 2: nh * 1j]
-    coord_r = np.append(coord_r[:, :], coord_r[:, 0].reshape(
-        coord_r.shape[0], 1), axis=1)
-    coord_z = np.append(coord_z[:, :], coord_z[:, 0].reshape(
-        coord_z.shape[0], 1), axis=1)
-    points = np.append(coord_r.reshape(
-        [coord_r.size, 1]), coord_z.reshape([coord_z.size, 1]), axis=1)
-    psi = eq.profiles_2d[1].psi
+    grid_r, grid_z = np.mgrid[rleft:rleft + rdim: nw * 1j, zmid - zdim / 2: zmid + zdim / 2: nh * 1j]
+    coord_r = np.append(coord_r[:, :], coord_r[:, 0].reshape(coord_r.shape[0], 1), axis=1)
+    coord_z = np.append(coord_z[:, :], coord_z[:, 0].reshape(coord_z.shape[0], 1), axis=1)
+    points = np.append(coord_r.reshape([coord_r.size, 1]), coord_z.reshape([coord_z.size, 1]), axis=1)
+    psi = eq.profiles_2d.psi
+    psi = np.append(psi[:, :], psi[:, 0].reshape(psi.shape[0], 1), axis=1)
     values = psi[:coord_r.shape[0], :coord_r.shape[1]].reshape(points.shape[0])
-    psirz = interpolate.griddata(
-        points, values, (grid_r, grid_z), method='cubic').transpose()
+    psirz = interpolate.griddata(points, values, (grid_r, grid_z), method='cubic').transpose()
 
     # profile
-
-    fpol = eq.profiles_1d.f
-    pres = eq.profiles_1d.pressure
-    ffprim = eq.profiles_1d.f_df_dpsi
-    pprim = eq.profiles_1d.dpressure_dpsi
-    qpsi = eq.profiles_1d.q
+    psi_norm = np.linspace(0.0, 1.0, nw)
+    fpol = eq.profiles_1d.f(psi_norm)
+    pres = eq.profiles_1d.pressure(psi_norm)
+    ffprim = eq.profiles_1d.f_df_dpsi(psi_norm)
+    pprim = eq.profiles_1d.dpressure_dpsi(psi_norm)
+    qpsi = eq.profiles_1d.q(psi_norm)
 
     return {
         "nw": nw,
@@ -222,7 +218,8 @@ def sp_imas_equilibrium_to_geqdsk(eq, nw=125, nh=125):
         "pres": pres,
         "ffprim": ffprim,
         "pprim": pprim,
-        "qpsi": qpsi
+        "qpsi": qpsi,
+        "limrz": np.array([])
 
     }
 

@@ -635,7 +635,7 @@ class EquilibriumBoundary(Dict):
 
     @sp_property
     def outline(self) -> RZTuple:
-        """RZ outline of the plasma boundary  """
+        """RZ outline of the plasma boundary  """        
         _, surf = next(self._coord.find_surface(self.psi, o_point=True))
         return RZTuple(surf.xyz[0], surf.xyz[1])
 
@@ -655,7 +655,7 @@ class EquilibriumBoundary(Dict):
     @sp_property
     def psi(self) -> float:
         """Value of the poloidal flux at which the boundary is taken  [Wb]"""
-        return self._coord.psi_norm*(self._coord.psi_boundary-self._coord.psi_axis)+self._coord.psi_axis
+        return self.psi_norm*(self._coord.psi_boundary-self._coord.psi_axis)+self._coord.psi_axis
 
     @sp_property
     def psi_norm(self) -> float:
@@ -665,7 +665,7 @@ class EquilibriumBoundary(Dict):
 
     @property
     def shape_property(self) -> MagneticCoordSystem.ShapeProperty:
-        return self._coord.shape_property(self._coord.psi_norm)
+        return self._coord.shape_property(self.psi_norm)
 
     @sp_property
     def geometric_axis(self) -> RZTuple:

@@ -29,7 +29,11 @@ desc = load_equilibrium(eqdsk_file,
 eq = Equilibrium(desc)
 psi_norm = np.linspace(0.0, 0.995, 32)
 
-p = eq.profiles_1d.pressure
-pprint(p()[:10])
-pprint(p(psi_norm)[:10])
-pprint(eq.profiles_1d.q())
+print(eq.vacuum_toroidal_field.b0)
+
+eqdsk_file = File("test.geqdsk", mode="w", format="geqdsk").write(eq)
+
+
+# pprint(p()[:10])
+# pprint(p(psi_norm)[:10])
+# pprint(eq.profiles_1d.q())
