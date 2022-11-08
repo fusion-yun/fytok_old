@@ -6,6 +6,8 @@ from spdm.data import (Dict, Entry, File, Link, List, Node, Path, Query,
                        sp_property)
 from spdm.data.Function import function_like
 from scipy import interpolate
+from fytok.modules.device.Wall import Wall
+from fytok.modules.transport.Equilibrium import Equilibrium
 
 
 def sp_read_geqdsk(file):
@@ -152,13 +154,20 @@ def sp_write_geqdsk(p, file):
     return
 
 
-def sp_imas_equilibrium_to_geqdsk(eq, nw=125, nh=125):
+def sp_imas_to_geqdsk(d: Dict, nw=256, nh=256):
 
-    coord_r = eq.coordinate_system.r
-    coord_z = eq.coordinate_system.z
-    rleft = coord_r.min()
-    rdim = coord_r.max() - coord_r.min()
-    zdim = coord_z.max() - coord_z.min()
+    eq: Equilibrium = d["equilibrium"]
+
+    wall: Wall = d["wall"]
+
+    limiter_r = wall.description_2d[0].limiter.unit[0].outline.r
+    limiter_z = wall.description_2d[0].limiter.unit[0].outline.z
+    limrz = np.append(limiter_r.reshape([1, limiter_r.size]),
+                      limiter_z.reshape([1, limiter_z.size]), axis=0).transpose()
+    rleft = limiter_r.min()
+    rmid = 0.5*(limiter_r.max() + limiter_r.min())
+    rdim = (limiter_r.max() - limiter_r.min())*1.2
+    zdim = (limiter_z.max() - limiter_z.min())*1.2
 
     # rdim = 0.0
     # zdim = 0.0
@@ -181,14 +190,14 @@ def sp_imas_equilibrium_to_geqdsk(eq, nw=125, nh=125):
         [1, rbbs.size]), axis=0).transpose()
     # psi
 
-    grid_r, grid_z = np.mgrid[rleft:rleft + rdim: nw * 1j, zmid - zdim / 2: zmid + zdim / 2: nh * 1j]
-    coord_r = np.append(coord_r[:, :], coord_r[:, 0].reshape(coord_r.shape[0], 1), axis=1)
-    coord_z = np.append(coord_z[:, :], coord_z[:, 0].reshape(coord_z.shape[0], 1), axis=1)
-    points = np.append(coord_r.reshape([coord_r.size, 1]), coord_z.reshape([coord_z.size, 1]), axis=1)
-    psi = eq.profiles_2d.psi
-    psi = np.append(psi[:, :], psi[:, 0].reshape(psi.shape[0], 1), axis=1)
-    values = psi[:coord_r.shape[0], :coord_r.shape[1]].reshape(points.shape[0])
-    psirz = interpolate.griddata(points, values, (grid_r, grid_z), method='cubic').transpose()
+    grid_r, grid_z = np.mgrid[rmid-rdim/2:rmid + rdim/2: nw * 1j, zmid - zdim / 2: zmid + zdim / 2: nh * 1j]
+    # coord_r = np.append(coord_r[:, :], coord_r[:, 0].reshape(coord_r.shape[0], 1), axis=1)
+    # coord_z = np.append(coord_z[:, :], coord_z[:, 0].reshape(coord_z.shape[0], 1), axis=1)
+    # points = np.append(coord_r.reshape([coord_r.size, 1]), coord_z.reshape([coord_z.size, 1]), axis=1)
+    psirz = eq.profiles_2d.psi(grid_r, grid_z).transpose()
+    # psi = np.append(psi[:, :], psi[:, 0].reshape(psi.shape[0], 1), axis=1)
+    # values = psi[:coord_r.shape[0], :coord_r.shape[1]].reshape(points.shape[0])
+    # psirz = interpolate.griddata(points, values, (grid_r, grid_z), method='cubic').transpose()
 
     # profile
     psi_norm = np.linspace(0.0, 1.0, nw)
@@ -219,14 +228,14 @@ def sp_imas_equilibrium_to_geqdsk(eq, nw=125, nh=125):
         "ffprim": ffprim,
         "pprim": pprim,
         "qpsi": qpsi,
-        "limrz": np.array([])
+        "limrz": limrz
 
     }
 
 
 def sp_geqdsk_to_imas_equilibrium(geqdsk, eq: Dict = None) -> Dict:
     if eq is None:
-        eq = Dict()
+        eq = Dict()        
 
     # eq.time = 0.0
     eq["vacuum_toroidal_field.r0"] = geqdsk["rcentr"]
@@ -289,8 +298,8 @@ class GEQdskFile(File):
     def read(self, lazy=False) -> Entry:
         return sp_geqdsk_to_imas_equilibrium(sp_read_geqdsk(self._fid)).entry
 
-    def write(self, d):
-        geqdsk = sp_imas_equilibrium_to_geqdsk(d)
+    def write(self, d, *args, **kwargs):
+        geqdsk = sp_imas_to_geqdsk(d, *args, **kwargs)
         sp_write_geqdsk(geqdsk, self._fid)
 
 

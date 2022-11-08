@@ -565,8 +565,8 @@ class EquilibriumProfiles2D(Dict):
         return convert_to_named_tuple(self._entry.get("grid_type", {}))
 
     @cached_property
-    def psi(self) -> np.ndarray:
-        return self._coord._psirz(self._coord.r,self._coord.z)
+    def psi(self) -> Field:
+        return self._coord._psirz #(self._coord.r,self._coord.z)
 
     @sp_property
     def r(self) -> np.ndarray:

@@ -3,6 +3,7 @@ import numpy as np
 import pathlib
 from scipy import constants
 from pprint import pprint
+from fytok.modules.device.Wall import Wall
 
 if True:
     import sys
@@ -26,12 +27,20 @@ desc = load_equilibrium(eqdsk_file,
                         code={"name": "dummy"},
                         boundary={"psi_norm": 0.995}
                         )
+device_desc = File("/home/salmon/workspace/fytok_data/mapping/ITER/imas/3/static/config.xml", format="XML").read()
+
 eq = Equilibrium(desc)
+
+wall = Wall(device_desc.get("wall"))
+
+wall.description_2d[0].limiter.unit[0].outline.r
+
 psi_norm = np.linspace(0.0, 0.995, 32)
 
-print(eq.vacuum_toroidal_field.b0)
 
-eqdsk_file = File("test.geqdsk", mode="w", format="geqdsk").write(eq)
+eqdsk_file = File("test.geqdsk", mode="w", format="geqdsk").write({
+    "equilibrium": eq, "wall": wall
+})
 
 
 # pprint(p()[:10])
