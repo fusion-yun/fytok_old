@@ -566,7 +566,7 @@ class EquilibriumProfiles2D(Dict):
 
     @cached_property
     def psi(self) -> np.ndarray:
-        return self._coord._psirz._array
+        return self._coord._psirz(self._coord.r,self._coord.z)
 
     @sp_property
     def r(self) -> np.ndarray:

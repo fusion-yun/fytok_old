@@ -1,14 +1,14 @@
 import collections
 
 import numpy as np
-from fytok.numlib.misc import array_like
 from fytok.modules.transport.CoreProfiles import CoreProfiles
 from fytok.modules.transport.CoreTransport import CoreTransport
 from fytok.modules.transport.Equilibrium import Equilibrium
+from fytok.numlib.misc import array_like
 from scipy import constants
+from spdm.data import Function, function_like
 from spdm.logger import logger
 from spdm.tags import _next_, _not_found_
-from spdm.data import Function, function_like
 
 
 class FastAlpha(CoreTransport.Model):

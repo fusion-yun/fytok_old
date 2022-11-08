@@ -174,8 +174,8 @@ def sp_imas_equilibrium_to_geqdsk(eq, nw=125, nh=125):
 
     # boundary
 
-    rbbs = eq.boundary.lcfs.r
-    zbbs = eq.boundary.lcfs.z
+    rbbs = eq.boundary.outline.r
+    zbbs = eq.boundary.outline.z
 
     bbsrz = np.append(rbbs.reshape([1, rbbs.size]), zbbs.reshape(
         [1, rbbs.size]), axis=0).transpose()

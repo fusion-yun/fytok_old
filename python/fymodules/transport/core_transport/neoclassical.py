@@ -1,13 +1,12 @@
-import collections
-
-from fytok.numlib.misc import array_like
+import numpy as np
 from fytok.modules.transport.CoreProfiles import CoreProfiles
 from fytok.modules.transport.CoreTransport import CoreTransport
 from fytok.modules.transport.Equilibrium import Equilibrium
+from fytok.numlib.misc import array_like
 from scipy import constants
-from spdm.logger import logger
 from spdm.data import Function, function_like
 from spdm.data.Entry import _next_
+from spdm.logger import logger
 from spdm.tags import _not_found_
 
 
