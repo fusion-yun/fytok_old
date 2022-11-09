@@ -163,6 +163,7 @@ class MagneticCoordSystem(Dict):
                  Ip: float,
                  fpol:     Union[Function, np.ndarray],
 
+                 psi:      np.ndarray = None,
                  psi_norm: Union[int, np.ndarray] = 128,
                  theta:    Union[int, np.ndarray] = 32,
                  grid_type_index=13,
@@ -194,6 +195,12 @@ class MagneticCoordSystem(Dict):
                 self._theta.append(self._theta[0])
         else:
             raise RuntimeError(f"theta grid is not defined!")
+
+        if psi_norm is None:
+            if psi is not None:
+                psi_norm = (psi-psi[0])/(psi[-1]-psi[0])
+            else:
+                psi_norm = 128
 
         if isinstance(psi_norm, int):
             self._psi_norm = np.linspace(0.0, 1.0, psi_norm)
@@ -273,10 +280,10 @@ class MagneticCoordSystem(Dict):
             Rmid = (bbox[0] + bbox[2])/2.0
             Zmid = (bbox[1] + bbox[3])/2.0
 
-            opoints.sort(key=lambda x: (x.r - Rmid)**2 + (x.z - Zmid)**2)           
+            opoints.sort(key=lambda x: (x.r - Rmid)**2 + (x.z - Zmid)**2)
 
-            o_r=opoints[0].r
-            o_z=opoints[0].z
+            o_r = opoints[0].r
+            o_z = opoints[0].z
             # TOOD: NEED　IMPROVMENT!!
             xpoints.sort(key=lambda x: (x.r - o_r)**2 + (x.z - o_z)**2)
             # psi_axis = opoints[0].psi
@@ -840,7 +847,7 @@ class MagneticCoordSystem(Dict):
 
         R, Z = field.mesh.xy
 
-        F = np.asarray(field(R,Z), dtype=float)
+        F = np.asarray(field(R, Z), dtype=float)
 
         for level, col in find_countours(F, R, Z, levels=levels):
             for segment in col:

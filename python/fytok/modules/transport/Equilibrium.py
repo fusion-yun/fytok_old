@@ -566,7 +566,7 @@ class EquilibriumProfiles2D(Dict):
 
     @cached_property
     def psi(self) -> Field:
-        return self._coord._psirz #(self._coord.r,self._coord.z)
+        return self._coord._psirz  # (self._coord.r,self._coord.z)
 
     @sp_property
     def r(self) -> np.ndarray:
@@ -635,7 +635,7 @@ class EquilibriumBoundary(Dict):
 
     @sp_property
     def outline(self) -> RZTuple:
-        """RZ outline of the plasma boundary  """        
+        """RZ outline of the plasma boundary  """
         _, surf = next(self._coord.find_surface(self.psi, o_point=True))
         return RZTuple(surf.xyz[0], surf.xyz[1])
 
@@ -828,17 +828,17 @@ class Equilibrium(IDS):
                           self.profiles_2d._entry.get("grid.dim2", None),
                           mesh="rectilinear")
 
-        psi = self.profiles_1d._entry.get("psi", None)
-        psi_norm = (psi-psi[0])/(psi[-1]-psi[0])
-
         return MagneticCoordSystem(
             **self._entry.get("coordinate_system", {}),
             psirz=psirz,
             B0=self.vacuum_toroidal_field.b0,
             R0=self.vacuum_toroidal_field.r0,
             Ip=self.global_quantities._entry.get("ip", None),
-            fpol=function_like(psi_norm, self.profiles_1d._entry.get("f", None)),
-            pprime=function_like(psi_norm, self.profiles_1d._entry.get("dpressure_dpsi", None)),
+            psi=self.profiles_1d._entry.get("psi", None),
+            fpol=self.profiles_1d._entry.get("f", None),
+            pprime=self.profiles_1d._entry.get("dpressure_dpsi", None),
+            # fpol=function_like(psi_norm, self.profiles_1d._entry.get("f", None)),
+            # pprime=function_like(psi_norm, self.profiles_1d._entry.get("dpressure_dpsi", None)),
         )
 
     coordinate_system: MagneticCoordSystem = sp_property(create_coordinate_system)
