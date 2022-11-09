@@ -140,6 +140,8 @@ def sp_write_geqdsk(p, file):
             file.write("%16.9e" % d[n])
             if (n == count - 1) or ((n + 1) % 5 == 0):
                 file.write('\n')
+            else:
+                file.write(' ')
 
     _write_data(p["fpol"])
     _write_data(p["pres"])
