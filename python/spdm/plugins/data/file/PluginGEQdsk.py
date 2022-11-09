@@ -154,7 +154,7 @@ def sp_write_geqdsk(p, file):
     return
 
 
-def sp_imas_to_geqdsk(d: Dict, nw=256, nh=256):
+def sp_imas_to_geqdsk(d: Dict, nw=128, nh=128):
 
     eq: Equilibrium = d["equilibrium"]
 
@@ -166,8 +166,8 @@ def sp_imas_to_geqdsk(d: Dict, nw=256, nh=256):
                       limiter_z.reshape([1, limiter_z.size]), axis=0).transpose()
     rleft = limiter_r.min()
     rmid = 0.5*(limiter_r.max() + limiter_r.min())
-    rdim = (limiter_r.max() - limiter_r.min())*1.2
-    zdim = (limiter_z.max() - limiter_z.min())*1.2
+    rdim = (limiter_r.max() - limiter_r.min())
+    zdim = (limiter_z.max() - limiter_z.min())
 
     # rdim = 0.0
     # zdim = 0.0

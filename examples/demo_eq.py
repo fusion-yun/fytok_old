@@ -18,8 +18,8 @@ if True:
     from spdm.logger import logger
 
 
-eqdsk_file = File(
-    "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="geqdsk").read()
+eqdsk_file = File("/home/salmon/workspace/atec/ATEC_craft/g070754.003740", format="geqdsk").read()
+    #"/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="geqdsk").read()
 desc = load_equilibrium(eqdsk_file,
                         coordinate_system={
                             "psi_norm": np.linspace(0, 0.995, 32),
@@ -27,7 +27,7 @@ desc = load_equilibrium(eqdsk_file,
                         code={"name": "dummy"},
                         boundary={"psi_norm": 0.995}
                         )
-device_desc = File("/home/salmon/workspace/fytok_data/mapping/ITER/imas/3/static/config.xml", format="XML").read()
+device_desc = File("/home/salmon/workspace/fytok_data/mapping/EAST/imas/3/static/config.xml", format="XML").read()
 
 eq = Equilibrium(desc)
 

@@ -746,7 +746,7 @@ class EquilibriumBoundarySeparatrix(Dict[Node]):
     @sp_property
     def psi(self) -> float:
         """Value of the poloidal flux at which the boundary is taken  [Wb]"""
-        return self._coord.psi_norm*(self._parent.coordinate_system.psi_boundary-self._parent.coordinate_system.psi_axis)+self._parent.coordinate_system.psi_axis
+        return self._coord.psi_norm*(self._coord.psi_boundary-self._coord.psi_axis)+self._coord.psi_axis
 
     @sp_property
     def psi_norm(self) -> float:

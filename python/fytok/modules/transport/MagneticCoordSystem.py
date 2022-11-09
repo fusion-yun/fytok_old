@@ -273,11 +273,14 @@ class MagneticCoordSystem(Dict):
             Rmid = (bbox[0] + bbox[2])/2.0
             Zmid = (bbox[1] + bbox[3])/2.0
 
-            opoints.sort(key=lambda x: (x.r - Rmid)**2 + (x.z - Zmid)**2)
+            opoints.sort(key=lambda x: (x.r - Rmid)**2 + (x.z - Zmid)**2)           
 
-            psi_axis = opoints[0].psi
-
-            xpoints.sort(key=lambda x: (x.psi - psi_axis)**2)
+            o_r=opoints[0].r
+            o_z=opoints[0].z
+            # TOOD: NEED　IMPROVMENT!!
+            xpoints.sort(key=lambda x: (x.r - o_r)**2 + (x.z - o_z)**2)
+            # psi_axis = opoints[0].psi
+            #xpoints.sort(key=lambda x: (x.psi - psi_axis)**2)
 
         return opoints, xpoints
 
@@ -837,7 +840,7 @@ class MagneticCoordSystem(Dict):
 
         R, Z = field.mesh.xy
 
-        F = np.asarray(field, dtype=float)
+        F = np.asarray(field(R,Z), dtype=float)
 
         for level, col in find_countours(F, R, Z, levels=levels):
             for segment in col:
