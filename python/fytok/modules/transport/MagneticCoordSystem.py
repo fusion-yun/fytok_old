@@ -162,8 +162,6 @@ class MagneticCoordSystem(Dict):
                  R0: float,
                  Ip: float,
                  fpol:     Union[Function, np.ndarray],
-
-                 psi:      np.ndarray = None,
                  psi_norm: Union[int, np.ndarray] = 128,
                  theta:    Union[int, np.ndarray] = 32,
                  grid_type_index=13,
@@ -196,20 +194,20 @@ class MagneticCoordSystem(Dict):
         else:
             raise RuntimeError(f"theta grid is not defined!")
 
-        if psi_norm is None:
-            if psi is not None:
-                psi_norm = (psi-psi[0])/(psi[-1]-psi[0])
-            else:
-                psi_norm = 128
-
         if isinstance(psi_norm, int):
             self._psi_norm = np.linspace(0.0, 1.0, psi_norm)
         elif isinstance(psi_norm, np.ndarray):
             self._psi_norm = psi_norm
-        if not isinstance(self._psi_norm, np.ndarray):
+        else:
             raise RuntimeError(f"psi_norm grid is not defined!")
 
-        self._fpol = function_like(self._psi_norm, fpol)
+        if isinstance(fpol, Function):
+            self._fpol = fpol
+        elif isinstance(fpol, np.ndarray):
+            if len(fpol) == len(self._psi_norm):
+                self._fpol = function_like(self._psi_norm, fpol)
+            else:
+                self._fpol = function_like(np.linspace(0, 1.0, len(fpol)), fpol)
 
         # logger.debug(f"Create MagneticCoordSystem: type index={self._grid_type_index} primary='psi'  ")
 

@@ -1,5 +1,6 @@
 import collections
 import collections.abc
+from collections import ChainMap
 from dataclasses import dataclass
 from functools import cached_property
 from pprint import pprint
@@ -22,6 +23,7 @@ from ..device.Magnetics import Magnetics
 from ..device.PFActive import PFActive
 from ..device.Wall import Wall
 from .MagneticCoordSystem import MagneticCoordSystem, RadialGrid
+
 
 TOLERANCE = 1.0e-6
 EPS = np.finfo(float).eps
@@ -157,29 +159,41 @@ class EquilibriumConstraints(Dict):
 
 
 class EquilibriumGlobalQuantities(Dict):
+
     @property
     def _coord(self) -> MagneticCoordSystem:
         return self._parent.coordinate_system
 
-    @sp_property
-    def beta_pol(self):
-        """Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip ^ 2][-]"""
-        return NotImplemented
+    beta_pol: float = sp_property(doc="""Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip ^ 2][-]""")
 
-    @sp_property
-    def beta_tor(self):
-        """Toroidal beta, defined as the volume-averaged total perpendicular pressure divided by(B0 ^ 2/(2*mu0)), i.e. beta_toroidal = 2 mu0 int(p dV) / V / B0 ^ 2  [-]"""
-        return NotImplemented
+    beta_tor: float = sp_property(
+        doc="""Toroidal beta, defined as the volume-averaged total perpendicular pressure divided by(B0 ^ 2/(2*mu0)), i.e. beta_toroidal = 2 mu0 int(p dV) / V / B0 ^ 2  [-]""")
 
-    @sp_property
-    def beta_normal(self):
-        """Normalised toroidal beta, defined as 100 * beta_tor * a[m] * B0[T] / ip[MA][-]"""
-        return NotImplemented
+    beta_normal: float = sp_property(
+        doc="Normalised toroidal beta, defined as 100 * beta_tor * a[m] * B0[T] / ip[MA][-]")
 
-    @sp_property
-    def ip(self):
-        """Plasma current(toroidal component). Positive sign means anti-clockwise when viewed from above.  [A]."""
-        return self._parent.profiles_1d.plasma_current[-1]
+    ip: float = sp_property(
+        doc="Plasma current(toroidal component). Positive sign means anti-clockwise when viewed from above.  [A].")
+
+    # @sp_property
+    # def beta_pol(self):
+    #     """Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip ^ 2][-]"""
+    #     return NotImplemented
+
+    # @sp_property
+    # def beta_tor(self):
+    #     """Toroidal beta, defined as the volume-averaged total perpendicular pressure divided by(B0 ^ 2/(2*mu0)), i.e. beta_toroidal = 2 mu0 int(p dV) / V / B0 ^ 2  [-]"""
+    #     return NotImplemented
+    #
+    # @sp_property
+    # def beta_normal(self):
+    #     """Normalised toroidal beta, defined as 100 * beta_tor * a[m] * B0[T] / ip[MA][-]"""
+    #     return NotImplemented
+    #
+    # @sp_property
+    # def ip(self):
+    #     """Plasma current(toroidal component). Positive sign means anti-clockwise when viewed from above.  [A]."""
+    #     return NotImplemented #self._parent.profiles_1d.plasma_current[-1]
 
     @sp_property
     def li_3(self):
@@ -815,11 +829,34 @@ class Equilibrium(IDS):
     def __init__(self,  *args, ** kwargs):
         super().__init__(*args, ** kwargs)
 
-    def refresh(self,  *args, **kwargs):
+    def refresh(self,  *args,
+                wall: Wall = _undefined_,
+                pf_active: PFActive = _undefined_,
+                core_profiles=_undefined_,
+                **kwargs):
         super().refresh(*args, **kwargs)
-        return self
 
-    def create_coordinate_system(self) -> MagneticCoordSystem:
+        # self.profiles_1d.pressure = core_profiles.profiles_1d.pressure
+        # self.profiles_1d.pressure = core_profiles.profiles_1d.fpol
+
+        # # call Eq solver
+        # psi_2d = self._eq_solver(
+        #     {
+        #         "vacuum_toroidal_field": self.vacuum_toroidal_field,
+        #         "global_quantities": {"ip": self.global_quantities.ip,
+        #                               "bet": self.global_quantities.betn
+        #                               }
+        #     }
+        # )
+        # self.profiles_2d.psi = psi_2d
+        # return {
+        #     "psi": psi_2d,
+        #     "fpol": fpol,
+        #     "pprime": pprime,
+        # }
+        return
+
+    def create_coordinate_system(self, **kwargs) -> MagneticCoordSystem:
         psirz = self.profiles_2d._entry.get("psi", None)
 
         if not isinstance(psirz, Field):
@@ -828,22 +865,33 @@ class Equilibrium(IDS):
                           self.profiles_2d._entry.get("grid.dim2", None),
                           mesh="rectilinear")
 
+        psi_1d = self.profiles_1d._entry.get("psi")
+        fpol_1d = self.profiles_1d._entry.get("f",_not_found_)
+        if not isinstance(psi_1d,np.ndarray) or len(psi_1d) != len(fpol_1d):
+            psi_1d = np.linspace(0, 1.0, len(fpol_1d))
+
+        if isinstance(psi_1d, np.ndarray):
+            psi_1d = (psi_1d-psi_1d[0])/(psi_1d[-1]-psi_1d[0])
+
+        # pprime_1d = self.profiles_1d._entry.get("dpressure_dpsi", None)
+
         return MagneticCoordSystem(
-            **self._entry.get("coordinate_system", {}),
+            **collections.ChainMap(kwargs, self._entry.get("coordinate_system", {})),
             psirz=psirz,
             B0=self.vacuum_toroidal_field.b0,
             R0=self.vacuum_toroidal_field.r0,
-            Ip=self.global_quantities._entry.get("ip", None),
-            psi=self.profiles_1d._entry.get("psi", None),
-            fpol=self.profiles_1d._entry.get("f", None),
-            pprime=self.profiles_1d._entry.get("dpressure_dpsi", None),
+            Ip=self.global_quantities._entry.get("ip"),
+            fpol=function_like(psi_1d, fpol_1d),
+            # pprime=self.profiles_1d._entry.get("dpressure_dpsi", None),
             # fpol=function_like(psi_norm, self.profiles_1d._entry.get("f", None)),
             # pprime=function_like(psi_norm, self.profiles_1d._entry.get("dpressure_dpsi", None)),
         )
 
-    coordinate_system: MagneticCoordSystem = sp_property(create_coordinate_system)
+    time: float = sp_property()
 
     vacuum_toroidal_field: VacuumToroidalField = sp_property()
+
+    coordinate_system: MagneticCoordSystem = sp_property(create_coordinate_system)
 
     grid_ggd: GGD = sp_property()
 
@@ -859,7 +907,7 @@ class Equilibrium(IDS):
 
     boundary_separatrix: BoundarySeparatrix = sp_property()
 
-    @property
+    @ property
     def radial_grid(self) -> RadialGrid:
         return self.coordinate_system.radial_grid
 
@@ -896,9 +944,9 @@ class Equilibrium(IDS):
     def plot(self, axis=None, /,
              scalar_field=[],
              vector_field=[],
-             boundary=False,
+             boundary=True,
              separatrix=True,
-             contour=False,
+             contour=True,
              oxpoints=True,
              **kwargs):
         """
