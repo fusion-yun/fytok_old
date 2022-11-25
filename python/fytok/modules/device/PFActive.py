@@ -104,6 +104,7 @@ class PFActive(IDS):
 
         if axis is None:
             axis = plt.gca()
+            
         for coil in self.coil:
             rect = coil.element[0].geometry.rectangle
 

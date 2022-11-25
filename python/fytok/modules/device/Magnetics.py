@@ -1,9 +1,15 @@
+import matplotlib.pyplot as plt
 import numpy as np
-from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property,Function
+import collections
+from dataclasses import dataclass
+
+from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
+                       sp_property)
 
 from ...IDS import IDS
 from ..common.Misc import Identifier
 from ..common.Signal import Signal
+from ..common.Misc import RZTuple, VacuumToroidalField
 
 
 class MagneticsFluxLoop(Dict):
@@ -15,10 +21,7 @@ class MagneticsFluxLoop(Dict):
         """Name of the probe {static}  """
         return self["name"]
 
-    @sp_property
-    def identifier(self) -> str:
-        """ID of the probe {static}  """
-        return self["identifier"]
+    identifier: str = sp_property(doc="""ID of the probe {static}  """)
 
     @sp_property
     def type(self) -> Identifier:
@@ -37,10 +40,8 @@ class MagneticsFluxLoop(Dict):
         """
         return Identifier(**self.get("type", _not_found_)._as_dict())
 
-    @sp_property
-    def position(self):
-        """List of (R,Z,phi) points defining the position of the loop (see data structure documentation FLUXLOOPposition.pdf) {static}   """
-        return NotImplemented
+    position: RZTuple = sp_property(doc="""List of (R,Z,phi) points defining the position of the loop (see data structure documentation FLUXLOOPposition.pdf) {static}   """
+                                    )
 
     @sp_property
     def indices_differential(self):
@@ -72,18 +73,10 @@ class MagneticsFluxLoop(Dict):
 
 
 class MagneticsMagneticProbe(Dict):
-    def __init__(self,   *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
-    @sp_property
-    def name(self):
-        """Name of the probe {static}  """
-        return str(self["name"])
+    name: str = sp_property(doc="Name of the probe {static}  ")
 
-    @sp_property
-    def identifier(self):
-        """ID of the probe {static}  """
-        return str(self["identifier"])
+    identifier: str = sp_property(doc="ID of the probe {static}")
 
     @sp_property
     def type(self):
@@ -103,28 +96,19 @@ class MagneticsMagneticProbe(Dict):
         return Identifier(self["type"])
 
     @sp_property
-    def position(self):
+    def position(self) -> RZTuple:
         """R, Z, Phi position of the coil centre    structure    """
-        return NotImplemented
-        # return Dict(
-        #     r=float(self["position.r"]),
-        #     z=float(self["position.z)"],
-        #     phi=float(self["position.phi"])
-        # )
 
-    @sp_property
-    def poloidal_angle(self):
-        """Angle of the sensor normal vector (n) with respect to horizontal plane (clockwise as in cocos=11 theta-like angle).
+        return RZTuple(self.get("position.r"), self.get("position.z"))
+
+    poloidal_angle: float = sp_property(doc="""Angle of the sensor normal vector (n) with respect to horizontal plane (clockwise as in cocos=11 theta-like angle).
         Zero if sensor normal vector fully in the horizontal plane and oriented towards increasing major radius. Values in [0 , 2Pi]
-        """
-        return self["poloidal_angle"]
+        """)
 
-    @sp_property
-    def toroidal_angle(self):
-        """Angle of the projection of the sensor normal vector (n) in the horizontal plane with the increasing R direction (i.e. grad(R))
+    toroidal_angle: float = sp_property(doc="""Angle of the projection of the sensor normal vector (n) in the horizontal plane with the increasing R direction (i.e. grad(R))
         (angle is counter-clockwise from above as in cocos=11 phi-like angle). Values should be taken modulo pi with values within (-pi/2,pi/2].
         Zero if projected sensor normal is parallel to grad(R), pi/2 if it is parallel to grad(phi). """
-        return self["toroidal_angle"]
+                                        )
 
     @sp_property
     def indices_differential(self):
@@ -152,16 +136,11 @@ class MagneticsMagneticProbe(Dict):
         """Turns in the coil, including sign {static}    INT_0D    """
         return self._cache.turns
 
-    @sp_property
-    def field(self):
-        """Magnetic field component in direction of sensor normal axis (n) averaged over sensor volume defined by area and length,
+    field: Signal = sp_property(doc="""Magnetic field component in direction of sensor normal axis (n) averaged over sensor volume defined by area and length,
         where n = cos(poloidal_angle)*cos(toroidal_angle)*grad(R) - sin(poloidal_angle)*grad(Z) + cos(poloidal_angle)*sin(toroidal_angle)*grad(Phi)/norm(grad(Phi)) [T].
-        This quantity is COCOS-dependent, with the following transformation :"""
-        return Signal(self.time, data=self._cache.field)
+        This quantity is COCOS-dependent, with the following transformation :""")
 
-    @sp_property
-    def voltage(self):
-        """Voltage on the coil terminals [V]
+    voltage: Signal = sp_property(doc="""Voltage on the coil terminals [V]
 
            .data            : Data {dynamic} [as_parent]
            .validity_timed : Indicator of the validity of the data for each time slice.
@@ -174,12 +153,7 @@ class MagneticsMagneticProbe(Dict):
                               * -1: means problem identified in the data processing (request verification by the diagnostic RO),
                               * -2: invalid data, should not be used (values lower than -2 have a code-specific meaning detailing the origin of their invalidity) {constant}
            .time           : time(:)    Time {dynamic} [s]
-        """
-        return Signal(time=self.time,
-                      data=self._cache.voltage.data,
-                      validity_timed=self._cache.voltage.validity_timed,
-                      validity=int(self._cache.voltage.validity)
-                      )
+        """)
 
     @sp_property
     def non_linear_response(self):
@@ -209,17 +183,26 @@ class Magnetics(IDS):
         """Flux loops; partial flux loops can be described   """
         return self.get("flux_loop")
 
-    @sp_property
-    def b_field_pol_probe(self) -> List[MagneticProbe]:
-        """Poloidal field probes    struct_array [max_size=200] """
-        return self.get("b_field_pol_probe")
+    b_field_pol_probe: List[MagneticProbe] = sp_property(doc="""Poloidal field probes   struct_array [max_size=200] """)
 
-    @sp_property
-    def b_field_tor_probe(self) -> List[MagneticProbe]:
-        """Toroidal field probes    struct_array [max_size=20] """
-        return self.get("b_field_pol_probe")
+    b_field_tor_probe: List[MagneticProbe] = sp_property(doc="""Toroidal field probes    struct_array [max_size=20] """)
 
     @sp_property
     def rogowski_coil(self) -> List[RogowskiCoil]:
         """Set of Rogowski coils"""
         return self.get("rogowski_coil")
+
+    def plot(self, axis=None, *args, with_circuit=False, **kwargs):
+
+        if axis is None:
+            axis = plt.gca()
+        for p_probe in self.b_field_tor_probe:
+            pos = p_probe.position
+
+            axis.add_patch(plt.Circle((pos.r, pos.z), 0.01))
+            axis.text(pos.r, pos.z, p_probe.name,
+                      horizontalalignment='center',
+                      verticalalignment='center',
+                      fontsize='xx-small')
+
+        return axis
