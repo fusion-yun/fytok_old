@@ -49,103 +49,21 @@ class Tokamak(Module):
 
     core_profiles: CoreProfiles = sp_property()
 
-    core_transport: CoreTransport = sp_property(
-        doc="""Core plasma transport of particles, energy, momentum and poloidal flux.""")
+    core_transport: CoreTransport = sp_property()
 
-    core_sources: CoreSources = sp_property(
-        doc="""
-            Core plasma thermal source terms (for the transport equations of the thermal species).
-            Energy terms correspond to the full kinetic energy equation
-            (i.e. the energy flux takes into account the energy transported by the particle flux)
-        """)
+    core_sources: CoreSources = sp_property()
 
     edge_profiles: EdgeProfiles = sp_property()
 
-    edge_transport: EdgeTransport = sp_property(
-        doc="""
-            Edge plasma transport. Energy terms correspond to the full kinetic energy equation
-            (i.e. the energy flux takes into account the energy transported by the particle flux)
-        """)
-    edge_sources: EdgeSources = sp_property(
-        doc="""Edge plasma sources. Energy terms correspond to the full kinetic energy equation
-         (i.e. the energy flux takes into account the energy transported by the particle flux)
-        """)
+    edge_transport: EdgeTransport = sp_property()
+
+    edge_sources: EdgeSources = sp_property()
 
     core_transport_solver: CoreTransportSolver = sp_property()
 
     edge_transport_solver: EdgeTransportSolver = sp_property()
 
     equilibrium_solver: EquilibriumSolver = sp_property()
-
-    # @sp_property
-    # def wall(self) -> Wall:
-    #     return self.get("wall")
-
-    # @sp_property
-    # def tf(self) -> TF:
-    #     return self.get("tf")
-
-    # @sp_property
-    # def pf_active(self) -> PFActive:
-    #     return self.get("pf_active")
-
-    # @sp_property
-    # def magnetics(self) -> Magnetics:
-    #     return self.get("magnetics")
-    # --------------------------------------------------------------------------
-
-    # @sp_property
-    # def equilibrium(self) -> Equilibrium:
-    #     return self.get("equilibrium", {})
-
-    # @sp_property
-    # def core_profiles(self) -> CoreProfiles:
-    #     return self.get("core_profiles")
-
-    # @sp_property
-    # def core_transport(self) -> CoreTransport:
-    #     """Core plasma transport of particles, energy, momentum and poloidal flux."""
-    #     return self.get("core_transport", {})
-
-    # @sp_property
-    # def core_sources(self) -> CoreSources:
-    #     """
-    #         Core plasma thermal source terms (for the transport equations of the thermal species).
-    #         Energy terms correspond to the full kinetic energy equation
-    #         (i.e. the energy flux takes into account the energy transported by the particle flux)
-    #     """
-    #     return self.get("core_sources")
-
-    # @sp_property
-    # def edge_profiles(self) -> EdgeProfiles:
-    #     return self.get("edge_profiles", {})
-
-    # @sp_property
-    # def edge_transport(self) -> EdgeTransport:
-    #     """
-    #         Edge plasma transport. Energy terms correspond to the full kinetic energy equation
-    #         (i.e. the energy flux takes into account the energy transported by the particle flux)
-    #     """
-    #     return self.get("edge_transport", {})
-
-    # @sp_property
-    # def edge_sources(self) -> EdgeSources:
-    #     """Edge plasma sources. Energy terms correspond to the full kinetic energy equation
-    #      (i.e. the energy flux takes into account the energy transported by the particle flux)
-    #     """
-    #     return self.get("edge_sources", {})
-
-    # @sp_property
-    # def core_transport_solver(self) -> CoreTransportSolver:
-    #     return self.get("core_transport_solver", {})
-
-    # @sp_property
-    # def edge_transport_solver(self) -> EdgeTransportSolver:
-    #     return self.get("edge_transport_solver", {})
-
-    # @sp_property
-    # def equilibrium_solver(self) -> EquilibriumSolver:
-    #     return self.get("equilibrium_solver", {})
 
     def check_converge(self, /, **kwargs):
         return 0.0

@@ -52,17 +52,11 @@ class Module(Dict[Node]):
     def job_id(self):
         return self._job_id
 
-    @sp_property
-    def code(self):
-        return self.get("code", {})
+    code: Dict = sp_property()
 
-    @sp_property
-    def identifier(self) -> Identifier:
-        return self.get("identifier", {})
+    identifier: Identifier = sp_property()
 
-    @sp_property
-    def comment(self) -> str:
-        return self.get("comment", "")
+    comment: str = sp_property()
 
     def refresh(self,  *args, time=_undefined_, ** kwargs) -> float:
         """

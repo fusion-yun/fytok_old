@@ -43,10 +43,6 @@ class Radiation(IDS):
     def __init__(self, d=None, **kwargs):
         super().__init__(d if d is not None else {"process": Radiation.default_process_list}, **kwargs)
 
-    @sp_property
-    def grid_ggd(self) -> GGD:
-        return self.get("grid_ggd", {})
+    grid_ggd: GGD = sp_property()
 
-    @sp_property
-    def process(self) -> List[Process]:
-        return List[Radiation.Process](self.get("process", []), parent=self)
+    process: List[Process] = sp_property

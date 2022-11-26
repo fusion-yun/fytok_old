@@ -45,45 +45,26 @@ from ..transport.MagneticCoordSystem import RadialGrid
 
 class CoreSourcesElectrons(SpeciesElectron):
 
-    @sp_property
-    def particles(self) -> Function:
-        return self.get("particles", None)
+    particles: Function = sp_property()
 
-    @sp_property
-    def particles_decomposed(self) -> Decomposition[Function]:
-        return self.get("particles_decomposed", None)
+    particles_decomposed: Decomposition[Function] = sp_property()
 
-    @sp_property
-    def energy(self) -> Function:
-        return self.get("energy", None)
+    energy: Function = sp_property()
 
-    @sp_property
-    def energy_decomposed(self) -> Decomposition[Function]:
-        return self.get("energy_decomposed", None)
+    energy_decomposed: Decomposition[Function] = sp_property()
 
 
 class CoreSourcesIon(SpeciesIon):
 
-    @sp_property
-    def particles(self) -> Function:
-        return self.get("particles")
+    particles: Function = sp_property()
 
-    @sp_property
-    def particles_fast(self) -> Function:
-        """ NOT IN IMAS """
-        return self.get("particles_fast")
+    particles_fast: Function = sp_property()
 
-    @sp_property
-    def particles_decomposed(self) -> Decomposition[Function]:
-        return self.get("particles_decomposed", {})
+    particles_decomposed: Decomposition[Function] = sp_property()
 
-    @sp_property
-    def energy(self) -> Function:
-        return self.get("energy")
+    energy: Function = sp_property()
 
-    @sp_property
-    def energy_decomposed(self) -> Decomposition[Function]:
-        return self.get("energy_decomposed", {})
+    energy_decomposed: Decomposition[Function] = sp_property()
 
 
 class CoreSourcesNeutral(Species):
@@ -95,9 +76,7 @@ class CoreSourcesProfiles1D(Dict):
     Electrons = CoreSourcesElectrons
     Neutral = CoreSourcesNeutral
 
-    @sp_property
-    def grid(self) -> RadialGrid:
-        return self.get("grid")
+    grid: RadialGrid = sp_property()
 
     electrons: Electrons = sp_property()
 
@@ -106,7 +85,7 @@ class CoreSourcesProfiles1D(Dict):
     neutral: List[Neutral] = sp_property()
 
     @sp_property
-    def total_ion_energy(self):
+    def total_ion_energy(self) -> Function:
         return Function(self.grid.rho_tor_norm, np.sum([ion.energy for ion in self.ion]))
 
     @sp_property
@@ -143,11 +122,9 @@ class CoreSourcesGlobalQuantities(Dict):
 
 
 class CoreSourcesSpecies(Dict):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
-    def type(self) -> Identifier:
-        r"""
+    type: Identifier = sp_property()
+    """
             Species type. index=1 for electron; index=2 for ion species in a single/average state (refer to ion structure); 
             index=3 for ion species in a particular state (refer to ion/state structure); 
             index=4 for neutral species in a single/average state (refer to neutral structure);
@@ -174,9 +151,8 @@ class CoreSourcesSpecies(Dict):
            |photon         | 7	        |  Photon                                                                 |
            +---------------+------------+-------------------------------------------------------------------------+
 
-           
+
         """
-        return self.get("type", {})
 
 
 class CoreSourcesSource(Module):
@@ -310,7 +286,10 @@ class CoreSourcesSource(Module):
 
 
 class CoreSources(IDS):
-    """CoreSources
+    """
+            Core plasma thermal source terms (for the transport equations of the thermal species).
+            Energy terms correspond to the full kinetic energy equation
+            (i.e. the energy flux takes into account the energy transported by the particle flux)
     """
     _IDS = "core_sources"
     Source = CoreSourcesSource
