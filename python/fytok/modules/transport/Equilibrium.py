@@ -164,16 +164,17 @@ class EquilibriumGlobalQuantities(Dict):
     def _coord(self) -> MagneticCoordSystem:
         return self._parent.coordinate_system
 
-    beta_pol: float = sp_property(doc="""Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip ^ 2][-]""")
+    beta_pol: float = sp_property()
+    """Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip ^ 2][-]"""
 
-    beta_tor: float = sp_property(
-        doc="""Toroidal beta, defined as the volume-averaged total perpendicular pressure divided by(B0 ^ 2/(2*mu0)), i.e. beta_toroidal = 2 mu0 int(p dV) / V / B0 ^ 2  [-]""")
+    beta_tor: float = sp_property()
+    """Toroidal beta, defined as the volume-averaged total perpendicular pressure divided by(B0 ^ 2/(2*mu0)), i.e. beta_toroidal = 2 mu0 int(p dV) / V / B0 ^ 2  [-]"""
 
-    beta_normal: float = sp_property(
-        doc="Normalised toroidal beta, defined as 100 * beta_tor * a[m] * B0[T] / ip[MA][-]")
+    beta_normal: float = sp_property()
+    """Normalised toroidal beta, defined as 100 * beta_tor * a[m] * B0[T] / ip[MA][-]"""
 
-    ip: float = sp_property(
-        doc="Plasma current(toroidal component). Positive sign means anti-clockwise when viewed from above.  [A].")
+    ip: float = sp_property()
+    """Plasma current(toroidal component). Positive sign means anti-clockwise when viewed from above.  [A]."""
 
     # @sp_property
     # def beta_pol(self):
@@ -443,8 +444,8 @@ class EquilibriumProfiles1D(Dict):
     # def elongation(self) -> Function:
     #     """Elongation. {dynamic}[-]"""
     #     return self.shape_property.elongation
-    elongation: Function = sp_property(lambda self: function_like(
-        self._axis, self.shape_property.elongation), doc="Elongation. {dynamic}[-]")
+    elongation: Function = sp_property(lambda self: function_like(self._axis, self.shape_property.elongation))
+    """Elongation. {dynamic}[-]"""
 
     @sp_property
     def triangularity(self) -> Function	:
@@ -866,8 +867,8 @@ class Equilibrium(IDS):
                           mesh="rectilinear")
 
         psi_1d = self.profiles_1d._entry.get("psi")
-        fpol_1d = self.profiles_1d._entry.get("f",_not_found_)
-        if not isinstance(psi_1d,np.ndarray) or len(psi_1d) != len(fpol_1d):
+        fpol_1d = self.profiles_1d._entry.get("f", _not_found_)
+        if not isinstance(psi_1d, np.ndarray) or len(psi_1d) != len(fpol_1d):
             psi_1d = np.linspace(0, 1.0, len(fpol_1d))
 
         if isinstance(psi_1d, np.ndarray):

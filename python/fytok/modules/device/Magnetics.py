@@ -1,31 +1,26 @@
-import matplotlib.pyplot as plt
-import numpy as np
 import collections
 from dataclasses import dataclass
 
-from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
-                       sp_property)
+import matplotlib.pyplot as plt
+import numpy as np
+from spdm.data import Dict, Function, Link, List, Node, Signal, sp_property
+from spdm.logger import logger
+from spdm.tags import _not_found_
 
 from ...IDS import IDS
-from ..common.Misc import Identifier
-from ..common.Signal import Signal
-from ..common.Misc import RZTuple, VacuumToroidalField
+from ..common.Misc import Identifier, RZTuple
 
 
 class MagneticsFluxLoop(Dict):
-    def __init__(self,  *args, **kwargs):
-        super().__init__(*args, ** kwargs)
 
-    @sp_property
-    def name(self) -> str:
-        """Name of the probe {static}  """
-        return self["name"]
+    name: str = sp_property()
+    """Name of the probe {static}  """
 
-    identifier: str = sp_property(doc="""ID of the probe {static}  """)
+    identifier: str = sp_property()
+    """ID of the probe {static}  """
 
-    @sp_property
-    def type(self) -> Identifier:
-        """Probe type. Available options (refer to the children of this identifier structure) :
+    type: Identifier = sp_property()
+    """Probe type. Available options (refer to the children of this identifier structure) :
 
             ==========================  ==========  ================================
             Name                        Index       Description
@@ -38,49 +33,38 @@ class MagneticsFluxLoop(Dict):
             diamagnetic_differential    6           Diamagnetic differential loop
             ==========================  ==========  ================================
         """
-        return Identifier(**self.get("type", _not_found_)._as_dict())
 
-    position: RZTuple = sp_property(doc="""List of (R,Z,phi) points defining the position of the loop (see data structure documentation FLUXLOOPposition.pdf) {static}   """
-                                    )
+    position: RZTuple = sp_property()
+    """List of (R,Z,phi) points defining the position of the loop (see data structure documentation FLUXLOOPposition.pdf) {static}   """
 
-    @sp_property
-    def indices_differential(self):
-        """Indices (from the flux_loop array of structure) of the two flux loops used to build the flux difference flux(second index) - flux(first index).
+    indices_differential: float = sp_property()
+    """Indices (from the flux_loop array of structure) of the two flux loops used to build the flux difference flux(second index) - flux(first index).
          Use only if ../type/index = 6, leave empty otherwise {static}  """
-        return NotImplemented
 
-    @sp_property
-    def area(self):
-        """Effective area (ratio between flux and average magnetic field over the loop) {static} [m^2]    """
-        return NotImplemented
+    area: float = sp_property()
+    """Effective area (ratio between flux and average magnetic field over the loop) {static} [m^2]    """
 
-    @sp_property
-    def gm9(self):
-        """Integral of 1/R over the loop area (ratio between flux and magnetic rigidity R0.B0). Use only if ../type/index = 3 to 6,
+    gm9: float = sp_property()
+    """Integral of 1/R over the loop area (ratio between flux and magnetic rigidity R0.B0). Use only if ../type/index = 3 to 6,
           leave empty otherwise. {static} [m]         """
-        return NotImplemented
 
-    @sp_property
-    def flux(self):
-        """Measured magnetic flux over loop in which Z component of normal to loop is directed downwards (negative grad Z direction) [Wb].
-         """
-        return NotImplemented
+    flux: Signal = sp_property()
+    """Measured magnetic flux over loop in which Z component of normal to loop is directed downwards (negative grad Z direction) [Wb]."""
 
-    @sp_property
-    def voltage(self):
-        """Measured voltage between the loop terminals [V]"""
-        return NotImplemented
+    voltage: Signal = sp_property()
+    """Measured voltage between the loop terminals [V]"""
 
 
 class MagneticsMagneticProbe(Dict):
 
-    name: str = sp_property(doc="Name of the probe {static}  ")
+    name: str = sp_property()
+    """Name of the probe {static}  """
 
-    identifier: str = sp_property(doc="ID of the probe {static}")
+    identifier: str = sp_property()
+    """ID of the probe {static}"""
 
-    @sp_property
-    def type(self):
-        """Probe type. Available options (refer to the children of this identifier structure) :
+    type: Identifier = sp_property()
+    """Probe type. Available options (refer to the children of this identifier structure) :
 
            =============== =========== ==============================
            Name            Index       Description
@@ -93,116 +77,94 @@ class MagneticsMagneticProbe(Dict):
            differential    6           Differential probe
            =============== =========== ==============================
         """
-        return Identifier(self["type"])
 
-    @sp_property
-    def position(self) -> RZTuple:
-        """R, Z, Phi position of the coil centre    structure    """
+    position: RZTuple = sp_property()
+    """R, Z, Phi position of the coil centre    structure    """
 
-        return RZTuple(self.get("position.r"), self.get("position.z"))
-
-    poloidal_angle: float = sp_property(doc="""Angle of the sensor normal vector (n) with respect to horizontal plane (clockwise as in cocos=11 theta-like angle).
+    poloidal_angle: float = sp_property()
+    """Angle of the sensor normal vector (n) with respect to horizontal plane (clockwise as in cocos=11 theta-like angle).
         Zero if sensor normal vector fully in the horizontal plane and oriented towards increasing major radius. Values in [0 , 2Pi]
-        """)
+        """
 
-    toroidal_angle: float = sp_property(doc="""Angle of the projection of the sensor normal vector (n) in the horizontal plane with the increasing R direction (i.e. grad(R))
+    toroidal_angle: float = sp_property()
+    """Angle of the projection of the sensor normal vector (n) in the horizontal plane with the increasing R direction (i.e. grad(R))
         (angle is counter-clockwise from above as in cocos=11 phi-like angle). Values should be taken modulo pi with values within (-pi/2,pi/2].
         Zero if projected sensor normal is parallel to grad(R), pi/2 if it is parallel to grad(phi). """
-                                        )
 
-    @sp_property
-    def indices_differential(self):
-        """Indices (from the bpol_probe array of structure) of the two probes used to build the field difference field(second index) - field(first index).
+    indices_differential: Dict = sp_property()
+    """Indices (from the bpol_probe array of structure) of the two probes used to build the field difference field(second index) - field(first index).
         Use only if ../type/index = 6, leave empty otherwise {static}    INT_1D    1- 1...2"""
-        return Dict(self["toroidal_angle"])
 
-    @sp_property
-    def bandwidth_3db(self):
-        """3dB bandwith (first index : lower frequency bound, second index : upper frequency bound) {static} [Hz]    """
-        return Dict(self._cache.bandwidth_3db)
+    bandwidth_3db: Dict = sp_property()
+    """3dB bandwith (first index : lower frequency bound, second index : upper frequency bound) {static} [Hz]    """
 
-    @sp_property
-    def area(self):
-        """Area of each turn of the sensor; becomes effective area when multiplied by the turns {static} [m^2]  """
-        return self._cache.area
+    area: float = sp_property()
+    """Area of each turn of the sensor; becomes effective area when multiplied by the turns {static} [m^2]  """
 
-    @sp_property
-    def length(self):
-        """Length of the sensor along it's normal vector (n) {static} [m]  """
-        return self._cache.length
+    length: float = sp_property()
+    """Length of the sensor along it's normal vector (n) {static} [m]  """
 
-    @sp_property
-    def turns(self):
-        """Turns in the coil, including sign {static}    INT_0D    """
-        return self._cache.turns
+    turns: float = sp_property()
+    """Turns in the coil, including sign {static}    INT_0D    """
 
-    field: Signal = sp_property(doc="""Magnetic field component in direction of sensor normal axis (n) averaged over sensor volume defined by area and length,
-        where n = cos(poloidal_angle)*cos(toroidal_angle)*grad(R) - sin(poloidal_angle)*grad(Z) + cos(poloidal_angle)*sin(toroidal_angle)*grad(Phi)/norm(grad(Phi)) [T].
-        This quantity is COCOS-dependent, with the following transformation :""")
+    field: Signal = sp_property()
+    """Magnetic field component in direction of sensor normal axis(n) averaged over sensor volume defined by area and length,
+        where n = cos(poloidal_angle)*cos(toroidal_angle)*grad(R) - sin(poloidal_angle)*grad(Z) + cos(poloidal_angle)*sin(toroidal_angle)*grad(Phi)/norm(grad(Phi))[T].
+        This quantity is COCOS-dependent, with the following transformation: """
 
-    voltage: Signal = sp_property(doc="""Voltage on the coil terminals [V]
+    voltage: Signal = sp_property()
+    """Voltage on the coil terminals[V]
 
-           .data            : Data {dynamic} [as_parent]
-           .validity_timed : Indicator of the validity of the data for each time slice.
+           .data: Data {dynamic}[as_parent]
+           .validity_timed: Indicator of the validity of the data for each time slice.
                               * 0: valid from automated processing,
                               * 1: valid and certified by the diagnostic RO;
-                              * -1: means problem identified in the data processing (request verification by the diagnostic RO),
-                              * -2: invalid data, should not be used (values lower than -2 have a code-specific meaning detailing the origin of their invalidity) {dynamic}    INT_1D    1- b_field_pol_probe(i1)/voltage/time
-           .validity        : Indicator of the validity of the data for the whole acquisition period. 0: valid from automated processing,
+                              * -1: means problem identified in the data processing(request verification by the diagnostic RO),
+                              * -2: invalid data, should not be used(values lower than - 2 have a code-specific meaning detailing the origin of their invalidity) {dynamic}    INT_1D    1 - b_field_pol_probe(i1)/voltage/time
+           .validity: Indicator of the validity of the data for the whole acquisition period. 0: valid from automated processing,
                               * 1: valid and certified by the diagnostic RO;
-                              * -1: means problem identified in the data processing (request verification by the diagnostic RO),
-                              * -2: invalid data, should not be used (values lower than -2 have a code-specific meaning detailing the origin of their invalidity) {constant}
-           .time           : time(:)    Time {dynamic} [s]
-        """)
+                              * -1: means problem identified in the data processing(request verification by the diagnostic RO),
+                              * -2: invalid data, should not be used(values lower than - 2 have a code-specific meaning detailing the origin of their invalidity) {constant}
+           .time: time(:)    Time {dynamic} [s]
+        """
 
     @sp_property
     def non_linear_response(self):
-        """Non-linear response of the probe (typically in case of a Hall probe)"""
+        """Non-linear response of the probe(typically in case of a Hall probe)"""
         return Dict(b_field_linear=self._cache.b_field_linear,
                     b_field_non_linear=Dict(b_field_linear=self._cache.b_field_non_linear))
 
 
-class MagneticsRogowskiCoil(Dict):
-    def __init__(self,  *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
 class Magnetics(IDS):
     """Magnetic diagnostics for equilibrium identification and plasma shape control.
-
     """
+
     FluxLoop = MagneticsFluxLoop
     MagneticProbe = MagneticsMagneticProbe
-    RogowskiCoil = MagneticsRogowskiCoil
 
-    def __init__(self,  *args, ** kwargs):
-        super().__init__(*args, ** kwargs)
+    flux_loop: List[FluxLoop] = sp_property()
+    """Flux loops; partial flux loops can be described   """
 
-    @sp_property
-    def flux_loop(self) -> List[FluxLoop]:
-        """Flux loops; partial flux loops can be described   """
-        return self.get("flux_loop")
-
-    b_field_pol_probe: List[MagneticProbe] = sp_property(doc="""Poloidal field probes   struct_array [max_size=200] """)
-
-    b_field_tor_probe: List[MagneticProbe] = sp_property(doc="""Toroidal field probes    struct_array [max_size=20] """)
-
-    @sp_property
-    def rogowski_coil(self) -> List[RogowskiCoil]:
-        """Set of Rogowski coils"""
-        return self.get("rogowski_coil")
+    bpol_probe: List[MagneticProbe] = sp_property()
+    """Poloidal field probes struct_array [max_size= 200] """
 
     def plot(self, axis=None, *args, with_circuit=False, **kwargs):
 
         if axis is None:
             axis = plt.gca()
-        for p_probe in self.b_field_tor_probe:
+        for idx, p_probe in enumerate(self.bpol_probe):
             pos = p_probe.position
 
             axis.add_patch(plt.Circle((pos.r, pos.z), 0.01))
-            axis.text(pos.r, pos.z, p_probe.name,
+            axis.text(pos.r, pos.z, idx,
                       horizontalalignment='center',
                       verticalalignment='center',
                       fontsize='xx-small')
 
+        for p in self.flux_loop:
+            axis.add_patch(plt.Rectangle((p.position.r,  p.position.z), 0.01, 0.01))
+            # axis.text(p.position.r, p.position.z, p.name,
+            #           horizontalalignment='center',
+            #           verticalalignment='center',
+            #           fontsize='xx-small')
         return axis

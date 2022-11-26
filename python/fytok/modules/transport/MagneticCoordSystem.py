@@ -83,34 +83,42 @@ class RadialGrid(Dict):
     r0: float = sp_property()
     b0: float = sp_property()
 
-    psi_axis: float = sp_property(doc="""Poloidal flux at the magnetic axis  [Wb].""")
+    psi_axis: float = sp_property()
+    """Poloidal flux at the magnetic axis  [Wb]."""
+
     psi_magnetic_axis: float = sp_property()
-    psi_boundary: float = sp_property(doc="""Poloidal flux at the selected plasma boundary  [Wb].""")
+
+    psi_boundary: float = sp_property()
+    """Poloidal flux at the selected plasma boundary  [Wb]."""
+
     rho_tor_boundary: float = sp_property()
+
     psi_norm:  np.ndarray = sp_property()
 
-    psi: np.ndarray = sp_property(lambda self: self.psi_norm * (self.psi_boundary-self.psi_axis)+self.psi_axis,
-                                  doc="""Poloidal magnetic flux {dynamic} [Wb]. This quantity is COCOS-dependent, with the following transformation""")
+    psi: np.ndarray = sp_property(lambda self: self.psi_norm * (self.psi_boundary-self.psi_axis)+self.psi_axis)
+    """Poloidal magnetic flux {dynamic} [Wb]. This quantity is COCOS-dependent, with the following transformation"""
 
-    rho_tor_norm: np.ndarray = sp_property(
-        doc="""Normalized toroidal flux coordinate. The normalizing value for rho_tor_norm, is the toroidal flux coordinate
+    rho_tor_norm: np.ndarray = sp_property(force=True)
+    """Normalized toroidal flux coordinate. The normalizing value for rho_tor_norm, is the toroidal flux coordinate
             at the equilibrium boundary (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibrium calculation,
             see time_slice/boundary/b_flux_pol_norm in the equilibrium IDS) {dynamic} [-]
-        """,
-        force=True)
+    """
 
-    rho_tor: np.ndarray = sp_property(lambda self: self.rho_tor_norm*self.rho_tor_boundary,
-                                      doc="""Toroidal flux coordinate. rho_tor = sqrt(b_flux_tor/(pi*b0)) ~ sqrt(pi*r^2*b0/(pi*b0)) ~ r [m].
-            The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0 {dynamic} [m]""")
+    rho_tor: np.ndarray = sp_property(lambda self: self.rho_tor_norm*self.rho_tor_boundary)
+    """Toroidal flux coordinate. rho_tor = sqrt(b_flux_tor/(pi*b0)) ~ sqrt(pi*r^2*b0/(pi*b0)) ~ r [m].
+            The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0 {dynamic} [m]"""
 
-    rho_pol_norm:  np.ndarray = sp_property(
-        doc="""Normalized poloidal flux coordinate = sqrt((psi(rho)-psi(magnetic_axis)) / (psi(LCFS)-psi(magnetic_axis))) {dynamic} [-]""")
+    rho_pol_norm:  np.ndarray = sp_property()
+    """Normalized poloidal flux coordinate = sqrt((psi(rho)-psi(magnetic_axis)) / (psi(LCFS)-psi(magnetic_axis))) {dynamic} [-]"""
 
-    area:  np.ndarray = sp_property(doc="""Cross-sectional area of the flux surface {dynamic} [m^2]""")
+    area:  np.ndarray = sp_property()
+    """Cross-sectional area of the flux surface {dynamic} [m^2]"""
 
-    surface:  np.ndarray = sp_property(doc="""Surface area of the toroidal flux surface {dynamic} [m^2]""")
+    surface:  np.ndarray = sp_property()
+    """Surface area of the toroidal flux surface {dynamic} [m^2]"""
 
-    volume:  np.ndarray = sp_property(doc="""Volume enclosed inside the magnetic surface {dynamic} [m^3]""")
+    volume:  np.ndarray = sp_property()
+    """Volume enclosed inside the magnetic surface {dynamic} [m^3]"""
 
     dvolume_drho_tor: np.ndarray = sp_property()
 

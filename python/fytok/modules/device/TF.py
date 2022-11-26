@@ -4,9 +4,8 @@ from copy import copy
 
 import numpy as np
 from ...IDS import IDS
-from ..common.Signal import Signal
 from spdm.logger import logger
-from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
+from spdm.data import (Dict, Signal, Function, Link, List, Node, Path, Query,
                        sp_property)
 
 

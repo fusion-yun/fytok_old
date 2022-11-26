@@ -1,9 +1,7 @@
 import numpy as np
-from spdm.data import Dict, List
-from spdm.data  import sp_property
+from spdm.data import Dict, List, Signal, sp_property
 
 from ...IDS import IDS
-from ..common.Misc import Signal
 
 
 class PulseScheduleReference(Dict):

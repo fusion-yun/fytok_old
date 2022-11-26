@@ -4,12 +4,12 @@ from dataclasses import dataclass
 
 import matplotlib.pyplot as plt
 import numpy as np
-from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
+from spdm.data import (Dict, Function, Link, List, Node, Path, Query, Signal,
                        sp_property)
 from spdm.logger import logger
 
 from ...IDS import IDS
-from ..common.Misc import RZTuple, Signal
+from ..common.Misc import RZTuple
 
 
 class PFActiveCoil(Dict):
@@ -104,7 +104,7 @@ class PFActive(IDS):
 
         if axis is None:
             axis = plt.gca()
-            
+
         for coil in self.coil:
             rect = coil.element[0].geometry.rectangle
 
@@ -113,6 +113,7 @@ class PFActive(IDS):
                                          **collections.ChainMap(kwargs,  {"fill": False})))
             axis.text(rect.r, rect.z, coil.name,
                       horizontalalignment='center',
-                      verticalalignment='center')
+                      verticalalignment='center',
+                      fontsize='xx-small')
 
         return axis
