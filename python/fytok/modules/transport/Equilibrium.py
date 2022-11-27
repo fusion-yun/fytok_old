@@ -947,7 +947,7 @@ class Equilibrium(IDS):
              vector_field=[],
              boundary=True,
              separatrix=True,
-             contour=True,
+             contours=True,
              oxpoints=True,
              **kwargs):
         """
@@ -1008,10 +1008,10 @@ class Equilibrium(IDS):
                                        linewidth=0.5, fill=False, closed=False))
             axis.plot([], [], 'r--', label="Separatrix")
 
-        if contour is not False:
-            if contour is True:
-                contour = 16
-            self.coordinate_system.plot_contour(axis, contour)
+        if contours is not False:
+            if contours is True:
+                contours = 16
+            self.coordinate_system.plot_contour(axis, contours)
             # if isinstance(contour, int):
             #     c_list = range(0, self.coordinate_system.mesh.shape[0], int(
             #         self.coordinate_system.mesh.shape[0]/contour+0.5))
