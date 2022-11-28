@@ -335,11 +335,14 @@ class CoreProfiles1D(Dict[Node]):
     def grid(self) -> RadialGrid:
         return self.get("grid")
 
-    electrons: Electrons = sp_property(doc="""Quantities related to the electrons""")
+    electrons: Electrons = sp_property()
+    """Quantities related to the electrons"""
 
-    ion: List[Ion] = sp_property(doc="""Quantities related to the different ion species""")
+    ion: List[Ion] = sp_property()
+    """Quantities related to the different ion species"""
 
-    neutral: List[Ion] = sp_property(doc="""Quantities related to the different neutral species""")
+    neutral: List[Ion] = sp_property()
+    """Quantities related to the different neutral species"""
 
     @sp_property
     def t_i_average(self) -> Function:

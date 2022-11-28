@@ -674,8 +674,8 @@ class EquilibriumBoundary(Dict):
 
     @sp_property
     def psi_norm(self) -> float:
-        """Value of the normalised poloidal flux at which the boundary is taken (typically 99.x %),
-            the flux being normalised to its value at the separatrix """
+        """Value of the normalized poloidal flux at which the boundary is taken (typically 99.x %),
+            the flux being normalized to its value at the separatrix """
         return self.get("psi_norm", 0.999)
 
     @property
@@ -765,8 +765,8 @@ class EquilibriumBoundarySeparatrix(Dict[Node]):
 
     @sp_property
     def psi_norm(self) -> float:
-        """Value of the normalised poloidal flux at which the boundary is taken (typically 99.x %),
-            the flux being normalised to its value at the separatrix """
+        """Value of the normalized poloidal flux at which the boundary is taken (typically 99.x %),
+            the flux being normalized to its value at the separatrix """
         return self.get("psi_norm", 1.0)
 
 

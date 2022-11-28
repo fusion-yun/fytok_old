@@ -29,16 +29,17 @@ class TransportCoeff(Dict):
     flux: Function = sp_property(
         lambda self: function_like(self._parent._parent.grid_flux.rho_tor_norm, self.get("flux", 0)))
 
-    d_fast_factor: Function = sp_property(
-        lambda self: function_like(self._parent._parent.grid.rho_tor_norm, self.get("d_fast_factor", 1)), doc=""" NOT IN IMAS """)
+    d_fast_factor: Function = sp_property(lambda self: function_like(
+        self._parent._parent.grid.rho_tor_norm, self.get("d_fast_factor", 1)))
+    """ NOT IN IMAS """
 
-    v_fast_factor: Function = sp_property(
-        lambda self: function_like(self._parent._parent.grid.rho_tor_norm, self.get("v_fast_factor", 1)),
-        doc=""" NOT IN IMAS """)
+    v_fast_factor: Function = sp_property(lambda self: function_like(
+        self._parent._parent.grid.rho_tor_norm, self.get("v_fast_factor", 1)))
+    """ NOT IN IMAS """
 
-    flux_fast_factor: Function = sp_property(
-        lambda self:  function_like(self._parent._parent.grid_flux.rho_tor_norm, self.get("flux_fast", 1)),
-        doc=""" NOT IN IMAS """)
+    flux_fast_factor: Function = sp_property(lambda self:  function_like(
+        self._parent._parent.grid_flux.rho_tor_norm, self.get("flux_fast", 1)))
+    """ NOT IN IMAS """
 
 
 class CoreTransportElectrons(SpeciesElectron):
@@ -50,14 +51,14 @@ class CoreTransportElectrons(SpeciesElectron):
 
 class CoreTransportIonState(SpeciesIonState):
 
-    particles: TransportCoeff = sp_property(
-        doc="""Transport quantities related to density equation of the charge state considered (thermal+non-thermal)	structure	""")
+    particles: TransportCoeff = sp_property()
+    """Transport quantities related to density equation of the charge state considered (thermal+non-thermal)	structure	"""
 
-    energy: TransportCoeff = sp_property(
-        doc="""Transport quantities related to the energy equation of the charge state considered	structure	""")
+    energy: TransportCoeff = sp_property()
+    """Transport quantities related to the energy equation of the charge state considered	structure	"""
 
-    momentum: TransportCoeff = sp_property(
-        doc="""Transport coefficients related to the state momentum equations for various components (directions)""")
+    momentum: TransportCoeff = sp_property()
+    """Transport coefficients related to the state momentum equations for various components (directions)"""
 
 
 class CoreTransportMomentum(Dict):
@@ -86,8 +87,8 @@ class CoreTransportIon(SpeciesIon):
 
 class CoreTransportNeutral(Species):
 
-    ion_index: int = sp_property(default_value=0,
-                                 doc="""Index of the corresponding neutral species in the ../../neutral array {dynamic}    """)
+    ion_index: int = sp_property(default_value=0)
+    """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
 
     particles: TransportCoeff = sp_property()
 
@@ -106,39 +107,39 @@ class CoreTransportProfiles1D(Dict[Node]):
     #     lambda self: self.grid.remesh("rho_tor_norm", 0.5*(self.grid.rho_tor_norm[:-1]+self.grid.rho_tor_norm[1:])),
     #     doc="""Grid for effective diffusivity and parallel conductivity""")
 
-    @ sp_property
+    @sp_property
     def grid_d(self) -> RadialGrid:
-        logger.debug(self.grid.rho_tor_norm)
         return self.grid.remesh("rho_tor_norm", 0.5*(self.grid.rho_tor_norm[:-1]+self.grid.rho_tor_norm[1:]))
 
-    grid_v: RadialGrid = sp_property(
-        lambda self: self.grid.remesh("rho_tor_norm", self.grid.rho_tor_norm),
-        doc=""" Grid for effective convections  """)
+    grid_v: RadialGrid = sp_property(lambda self: self.grid.remesh("rho_tor_norm", self.grid.rho_tor_norm))
+    """ Grid for effective convections  """
 
-    grid_flux: RadialGrid = sp_property(
-        lambda self: self.grid.remesh("rho_tor_norm", 0.5*(self.grid.rho_tor_norm[:-1]+self.grid.rho_tor_norm[1:])),
-        doc=""" Grid for fluxes  """)
+    grid_flux: RadialGrid = sp_property(lambda self: self.grid.remesh("rho_tor_norm", 0.5*(self.grid.rho_tor_norm[:-1]+self.grid.rho_tor_norm[1:])),
+    """ Grid for fluxes  """
 
-    electrons: Electrons = sp_property(doc=""" Transport quantities related to the electrons """)
+    electrons: Electrons=sp_property()
+    """ Transport quantities related to the electrons """
 
-    ion: List[Ion] = sp_property(doc=""" Transport coefficients related to the various ion species """)
+    ion: List[Ion]=sp_property()
+    """ Transport coefficients related to the various ion species """
 
-    neutral: List[Neutral] = sp_property(doc=""" Transport coefficients related to the various neutral species """)
+    neutral: List[Neutral]=sp_property()
+    """ Transport coefficients related to the various neutral species """
 
-    momentum: Momentum = sp_property()
+    momentum: Momentum=sp_property()
 
-    total_ion_energy: TransportCoeff = sp_property(
-        doc=""" Transport coefficients for the total (summed over ion species) energy equation """)
+    total_ion_energy: TransportCoeff=sp_property()
+    """ Transport coefficients for the total (summed over ion species) energy equation """
 
-    momentum_tor: TransportCoeff = sp_property(
-        doc=""" Transport coefficients for total toroidal momentum equation  """)
+    momentum_tor: TransportCoeff=sp_property()
+    """ Transport coefficients for total toroidal momentum equation  """
 
-    conductivity_parallel: Function = sp_property(
-        lambda self: function_like(self.grid_d.rho_tor_norm, self.get("conductivity_parallel")))
+    conductivity_parallel: Function=sp_property(lambda self: function_like(
+        self.grid_d.rho_tor_norm, self.get("conductivity_parallel")))
 
-    e_field_radial: Function = sp_property(
-        lambda self:  function_like(self.grid_flux.rho_tor_norm, self.get("e_field_radial")),
-        doc=""" Radial component of the electric field (calculated e.g. by a neoclassical model) {dynamic} [V.m^-1]""")
+    e_field_radial: Function=sp_property(lambda self:  function_like(
+        self.grid_flux.rho_tor_norm, self.get("e_field_radial")))
+    """ Radial component of the electric field (calculated e.g. by a neoclassical model) {dynamic} [V.m^-1]"""
 
 
 class CoreTransportModel(Module):
@@ -163,19 +164,19 @@ class CoreTransportModel(Module):
             not_provided	    | 25        | No data provided
         """
 
-    _fy_module_prefix = "fymodules.transport.core_transport."
+    _fy_module_prefix="fymodules.transport.core_transport."
 
-    Profiles1D = CoreTransportProfiles1D
+    Profiles1D=CoreTransportProfiles1D
 
-    grid: RadialGrid = sp_property()
+    grid: RadialGrid=sp_property()
 
-    flux_multiplier: float = sp_property(default_value=1.0)
+    flux_multiplier: float=sp_property(default_value=1.0)
 
-    profiles_1d: Profiles1D = sp_property()
+    profiles_1d: Profiles1D=sp_property()
 
     def refresh(self, *args, core_profiles: CoreProfiles, **kwargs) -> None:
         super().refresh(*args, core_profiles=core_profiles, **kwargs)
-        self.profiles_1d["grid"] = core_profiles.profiles_1d.grid
+        self.profiles_1d["grid"]=core_profiles.profiles_1d.grid
 
 
 class CoreTransport(IDS):
@@ -191,16 +192,16 @@ class CoreTransport(IDS):
         flux described above divided by the flux surface area $V^{\prime}\left\langle \left|\nabla\rho_{tor,norm}\right|\right\rangle$ .
         Note that the energy flux includes the energy transported by the particle flux.
     """
-    _IDS = "core_transport"
-    Model = CoreTransportModel
+    _IDS="core_transport"
+    Model=CoreTransportModel
 
-    vacuum_toroidal_field: VacuumToroidalField = sp_property()
+    vacuum_toroidal_field: VacuumToroidalField=sp_property()
 
-    grid: RadialGrid = sp_property()
+    grid: RadialGrid=sp_property()
 
-    model: List[Model] = sp_property()
+    model: List[Model]=sp_property()
 
-    @cached_property
+    @ cached_property
     def model_combiner(self) -> Model:
         return self.model.combine({
             "identifier": {"name": "combined", "index": 1,

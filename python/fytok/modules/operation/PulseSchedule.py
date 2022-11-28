@@ -44,8 +44,8 @@ class PulseScheduleFluxControl(Dict):
 
     @sp_property
     def beta_normal(self) -> PulseScheduleReference:
-        """Normalised toroidal beta, defined as 100 * beta_tor * a[m] * B0 [T] / ip [MA] [-] """
-        return PulseScheduleReference(name='li_3', time=self._time, data=self._cache.beta_normal)
+        """Normalized toroidal beta, defined as 100 * beta_tor * a[m] * B0 [T] / ip [MA] [-] """
+        return PulseScheduleReference(name='beta_normal', time=self._time, data=self._cache.beta_normal)
 
     @sp_property
     def mode(self) -> Signal:
