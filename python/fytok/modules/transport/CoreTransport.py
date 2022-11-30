@@ -3,9 +3,8 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import ChainMap, Optional
 
-from importlib_metadata import metadata
-
 import numpy as np
+from importlib_metadata import metadata
 from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
                        function_like, sp_property)
 from spdm.logger import logger
@@ -114,30 +113,31 @@ class CoreTransportProfiles1D(Dict[Node]):
     grid_v: RadialGrid = sp_property(lambda self: self.grid.remesh("rho_tor_norm", self.grid.rho_tor_norm))
     """ Grid for effective convections  """
 
-    grid_flux: RadialGrid = sp_property(lambda self: self.grid.remesh("rho_tor_norm", 0.5*(self.grid.rho_tor_norm[:-1]+self.grid.rho_tor_norm[1:])),
+    grid_flux: RadialGrid = sp_property(lambda self:
+                                        self.grid.remesh("rho_tor_norm", 0.5*(self.grid.rho_tor_norm[:-1]+self.grid.rho_tor_norm[1:])))
     """ Grid for fluxes  """
 
-    electrons: Electrons=sp_property()
+    electrons: Electrons = sp_property()
     """ Transport quantities related to the electrons """
 
-    ion: List[Ion]=sp_property()
+    ion: List[Ion] = sp_property()
     """ Transport coefficients related to the various ion species """
 
-    neutral: List[Neutral]=sp_property()
+    neutral: List[Neutral] = sp_property()
     """ Transport coefficients related to the various neutral species """
 
-    momentum: Momentum=sp_property()
+    momentum: Momentum = sp_property()
 
-    total_ion_energy: TransportCoeff=sp_property()
+    total_ion_energy: TransportCoeff = sp_property()
     """ Transport coefficients for the total (summed over ion species) energy equation """
 
-    momentum_tor: TransportCoeff=sp_property()
+    momentum_tor: TransportCoeff = sp_property()
     """ Transport coefficients for total toroidal momentum equation  """
 
-    conductivity_parallel: Function=sp_property(lambda self: function_like(
+    conductivity_parallel: Function = sp_property(lambda self: function_like(
         self.grid_d.rho_tor_norm, self.get("conductivity_parallel")))
 
-    e_field_radial: Function=sp_property(lambda self:  function_like(
+    e_field_radial: Function = sp_property(lambda self:  function_like(
         self.grid_flux.rho_tor_norm, self.get("e_field_radial")))
     """ Radial component of the electric field (calculated e.g. by a neoclassical model) {dynamic} [V.m^-1]"""
 
@@ -164,19 +164,19 @@ class CoreTransportModel(Module):
             not_provided	    | 25        | No data provided
         """
 
-    _fy_module_prefix="fymodules.transport.core_transport."
+    _fy_module_prefix = "fymodules.transport.core_transport."
 
-    Profiles1D=CoreTransportProfiles1D
+    Profiles1D = CoreTransportProfiles1D
 
-    grid: RadialGrid=sp_property()
+    grid: RadialGrid = sp_property()
 
-    flux_multiplier: float=sp_property(default_value=1.0)
+    flux_multiplier: float = sp_property(default_value=1.0)
 
-    profiles_1d: Profiles1D=sp_property()
+    profiles_1d: Profiles1D = sp_property()
 
     def refresh(self, *args, core_profiles: CoreProfiles, **kwargs) -> None:
         super().refresh(*args, core_profiles=core_profiles, **kwargs)
-        self.profiles_1d["grid"]=core_profiles.profiles_1d.grid
+        self.profiles_1d["grid"] = core_profiles.profiles_1d.grid
 
 
 class CoreTransport(IDS):
@@ -192,16 +192,16 @@ class CoreTransport(IDS):
         flux described above divided by the flux surface area $V^{\prime}\left\langle \left|\nabla\rho_{tor,norm}\right|\right\rangle$ .
         Note that the energy flux includes the energy transported by the particle flux.
     """
-    _IDS="core_transport"
-    Model=CoreTransportModel
+    _IDS = "core_transport"
+    Model = CoreTransportModel
 
-    vacuum_toroidal_field: VacuumToroidalField=sp_property()
+    vacuum_toroidal_field: VacuumToroidalField = sp_property()
 
-    grid: RadialGrid=sp_property()
+    grid: RadialGrid = sp_property()
 
-    model: List[Model]=sp_property()
+    model: List[Model] = sp_property()
 
-    @ cached_property
+    @cached_property
     def model_combiner(self) -> Model:
         return self.model.combine({
             "identifier": {"name": "combined", "index": 1,

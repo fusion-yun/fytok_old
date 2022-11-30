@@ -71,7 +71,7 @@ class RectilinearMesh(StructuredMesh):
         if self.ndims == 1:
             interp = interpolate.InterpolatedUnivariateSpline(self._dims[0], value,  **kwargs)
         elif self.ndims == 2:
-            interp = interpolate.RectBivariateSpline(self._dims[0], self._dims[1], value, ** kwargs)
+            interp = interpolate.RectBivariateSpline(self._dims[0], self._dims[1], value,  **kwargs)
         else:
             raise NotImplementedError(f"NDIMS {self.ndims}>2")
 

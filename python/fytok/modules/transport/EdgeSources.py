@@ -20,12 +20,7 @@ class EdgeSources(IDS):
     _IDS = "edge_sources"
     Source = EdgeSourcesSource
 
-    def __init__(self,   *args,   ** kwargs):
-        super().__init__(*args, ** kwargs)
-
-    @sp_property
-    def source(self) -> List[Source]:
-        return self.get("source") 
+    source: List[Source] = sp_property()
 
     @cached_property
     def source_combiner(self) -> Source:

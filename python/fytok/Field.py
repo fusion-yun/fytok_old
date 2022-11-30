@@ -62,19 +62,21 @@ class Field(object):
     def interpolator(self):
         return self._mesh.interpolator(self.__array__())
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, grid=False, **kwargs):
         if len(args) == 0:
             args = self._mesh.points
 
-        if all([(isinstance(a, np.ndarray) and len(a.shape) == 1 and a.shape[0] == self.shape[idx]) for idx, a in enumerate(args)]):
-            kwargs.setdefault("grid", True)
-        else:
-            kwargs.setdefault("grid", False)
+        # if all([(isinstance(a, np.ndarray) and len(a.shape) == 1 and a.shape[0] == self.shape[idx]) for idx, a in enumerate(args)]):
+        #     logger.debug(f"{kwargs},{self.shape}")
+        #     kwargs.setdefault("grid", True)
+        # else:
+        #     kwargs.setdefault("grid", False)
 
-        res = self.interpolator(*args, **kwargs)
+        res = self.interpolator(*args, grid=grid, **kwargs)
 
         if isinstance(res, np.ndarray) and len(res.shape) == 0:
             res = res.item()
+
         return res
 
     def derivative(self, *args, dx=None, dy=None, **kwargs):
