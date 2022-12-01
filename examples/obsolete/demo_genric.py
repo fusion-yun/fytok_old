@@ -1,7 +1,7 @@
 from typing import TypeVar,  Sequence
 import collections
 from spdm.data import Dict
-from spdm.logger import logger
+from spdm.util.logger import logger
 if __name__ == "__main__":
 
     cache = {}

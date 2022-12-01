@@ -3,15 +3,15 @@ import pathlib
 
 import numpy as np
 import pandas as pd
-from fytok.modules.constants.Atoms import atoms
+from fytok.constants.Atoms import atoms
 from fytok.load_profiles import (load_core_profiles, load_core_source,
                                         load_core_transport, load_equilibrium)
-from fytok.numlib.smooth import rms_residual, smooth_1d
-from fytok.modules.Tokamak import Tokamak
+from spdm.numlib.smooth import rms_residual, smooth_1d
+from fytok.Tokamak import Tokamak
 from scipy import constants
 from spdm.data.File import File
 from spdm.data.Function import Function, PiecewiseFunction
-from spdm.logger import logger
+from spdm.util.logger import logger
 from spdm.view.plot_profiles import plot_profiles, sp_figure
 
 if __name__ == "__main__":

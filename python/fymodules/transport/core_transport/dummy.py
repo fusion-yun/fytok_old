@@ -2,12 +2,12 @@
 import collections
 
 import numpy as np
-from fytok.modules.transport.CoreProfiles import CoreProfiles
-from fytok.modules.transport.CoreTransport import CoreTransport
-from fytok.modules.transport.Equilibrium import Equilibrium
+from fytok.transport.CoreProfiles import CoreProfiles
+from fytok.transport.CoreTransport import CoreTransport
+from fytok.transport.Equilibrium import Equilibrium
 from spdm.data import Function
 from spdm.data import Dict, List, Node
-from spdm.logger import logger
+from spdm.util.logger import logger
 
 
 class TransportModelDummy(CoreTransport.Model):

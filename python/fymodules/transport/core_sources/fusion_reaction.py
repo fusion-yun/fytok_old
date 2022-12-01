@@ -2,11 +2,11 @@
 import collections
 
 import numpy as np
-from fytok.modules.constants.Atoms import nuclear_reaction
-from fytok.modules.transport.CoreProfiles import CoreProfiles
-from fytok.modules.transport.CoreSources import CoreSources
-from fytok.modules.transport.Equilibrium import Equilibrium
-from fytok.numlib.misc import array_like
+from fytok.constants.Atoms import nuclear_reaction
+from fytok.transport.CoreProfiles import CoreProfiles
+from fytok.transport.CoreSources import CoreSources
+from fytok.transport.Equilibrium import Equilibrium
+from spdm.numlib.misc import array_like
 from scipy import constants
 from spdm.data import Function, Query, function_like
 

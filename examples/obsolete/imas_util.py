@@ -152,7 +152,7 @@ def sp_write_geqdsk(p, file):
 
 
 def sp_imas_equilibrium_to_geqdsk(eq, nw=125, nh=125):
-    from fytok.numlib import interpolate 
+    from spdm.numlib import interpolate 
 
     coord_r = eq.coordinate_system.r
     coord_z = eq.coordinate_system.z

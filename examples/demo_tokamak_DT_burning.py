@@ -8,11 +8,11 @@ sys.path.append("/home/salmon/workspace/fymodule-restricted/python")
 ###################
 
 from spdm.view.plot_profiles import plot_profiles, sp_figure
-from spdm.logger import logger
+from spdm.util.logger import logger
 from spdm.data import File, Function, Query
 from scipy import constants
-from fytok.numlib.smooth import rms_residual
-from fytok.modules.Tokamak import Tokamak
+from spdm.numlib.smooth import rms_residual
+from fytok.Tokamak import Tokamak
 from fytok.load_profiles import (load_core_profiles, load_core_source,
                                  load_core_transport, load_equilibrium)
 import pandas as pd

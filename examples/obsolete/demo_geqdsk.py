@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from fytok.Tokamak import Tokamak
-from spdm.logger import logger
+from spdm.util.logger import logger
 from spdm.data import Dict, Function, Collection
 from spdm.data.File import File
 from spdm.util.plot_profiles import plot_profiles

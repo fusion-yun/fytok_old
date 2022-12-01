@@ -9,17 +9,17 @@ from typing import Mapping, Optional, Sequence, Type, Union
 
 from fytok.common.Misc import Identifier
 from fytok.IDS import IDS
-from fytok.modules.transport.CoreProfiles import CoreProfiles
-from fytok.modules.transport.CoreSources import CoreSources
-from fytok.modules.transport.CoreTransport import CoreTransport
-from fytok.modules.transport.CoreTransportSolver import CoreTransportSolver
-from fytok.modules.transport.Equilibrium import Equilibrium
-from fytok.modules.transport.MagneticCoordSystem import RadialGrid
-from fytok.numlib.bvp import solve_bvp
+from fytok.transport.CoreProfiles import CoreProfiles
+from fytok.transport.CoreSources import CoreSources
+from fytok.transport.CoreTransport import CoreTransport
+from fytok.transport.CoreTransportSolver import CoreTransportSolver
+from fytok.transport.Equilibrium import Equilibrium
+from fytok.transport.MagneticCoordSystem import RadialGrid
+from spdm.numlib.bvp import solve_bvp
 from scipy import constants
 from spdm.data import Dict, Function, List, sp_property
-from spdm.logger import logger
-from spdm.tags import _not_found_
+from spdm.util.logger import logger
+from spdm.common.tags import _not_found_
 from spdm.util.utilities import convert_to_named_tuple
 
 EPSILON = 1.0e-15

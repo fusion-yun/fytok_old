@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy import constants
-from spdm.logger import logger
+from spdm.util.logger import logger
 from spdm.util.plot_profiles import plot_profiles
-from fytok.numlib.smooth import rms_residual, smooth_1d
+from spdm.numlib.smooth import rms_residual, smooth_1d
 
 if __name__ == "__main__":
     # profile = pd.read_csv('/home/salmon/workspace/data/15MA inductive - burn/profile.txt', sep='\t')

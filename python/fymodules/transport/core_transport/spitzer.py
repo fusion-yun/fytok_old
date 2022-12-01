@@ -2,13 +2,13 @@
 import collections
 import collections.abc
 import numpy as np
-from fytok.modules.transport.CoreProfiles import CoreProfiles
-from fytok.modules.transport.CoreTransport import CoreTransport
-from fytok.modules.transport.Equilibrium import Equilibrium
-from fytok.numlib.misc import array_like
+from fytok.transport.CoreProfiles import CoreProfiles
+from fytok.transport.CoreTransport import CoreTransport
+from fytok.transport.Equilibrium import Equilibrium
+from spdm.numlib.misc import array_like
 from scipy import constants
 from spdm.data import Function
-from spdm.logger import logger
+from spdm.util.logger import logger
 
 
 class Spitzer(CoreTransport.Model):

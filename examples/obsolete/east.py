@@ -19,7 +19,7 @@ from freegs.coil import Coil
 from freegs.machine import Machine, Wall
 from scipy import special
 from spdm.data.Collection import Collection
-from spdm.logger import logger
+from spdm.util.logger import logger
 
 if __name__ == "__main__":
 

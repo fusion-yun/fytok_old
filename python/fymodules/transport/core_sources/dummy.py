@@ -2,10 +2,10 @@
 import collections
 
 import numpy as np
-from fytok.modules.transport.CoreProfiles import CoreProfiles
-from fytok.modules.transport.CoreSources import CoreSources
-from fytok.modules.transport.Equilibrium import Equilibrium
-from spdm.logger import logger
+from fytok.transport.CoreProfiles import CoreProfiles
+from fytok.transport.CoreSources import CoreSources
+from fytok.transport.Equilibrium import Equilibrium
+from spdm.util.logger import logger
 from spdm.data import Dict, List, Node
 from spdm.data import Function
 

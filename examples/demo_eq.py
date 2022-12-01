@@ -3,7 +3,7 @@ import numpy as np
 import pathlib
 from scipy import constants
 from pprint import pprint
-from fytok.modules.device.Wall import Wall
+from fytok.device.Wall import Wall
 
 if True:
     import sys
@@ -12,10 +12,10 @@ if True:
 
     from fytok.load_profiles import (load_core_profiles, load_core_source,
                                      load_core_transport, load_equilibrium)
-    from fytok.modules.transport.Equilibrium import Equilibrium
-    from fytok.numlib.smooth import rms_residual
+    from fytok.transport.Equilibrium import Equilibrium
+    from spdm.numlib.smooth import rms_residual
     from spdm.data import File, Function, Query
-    from spdm.logger import logger
+    from spdm.util.logger import logger
 
 
 eqdsk_file = File("/home/salmon/workspace/atec/ATEC_craft/g070754.003740", format="geqdsk").read()

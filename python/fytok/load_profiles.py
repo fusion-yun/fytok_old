@@ -9,10 +9,10 @@ from scipy import constants
 from spdm.data import (Dict, Entry, File, Function, Link, List, Node, Path,
                        Query, function_like, sp_property)
 from spdm.data.Function import PiecewiseFunction, function_like
-from spdm.logger import logger
+from spdm.util.logger import logger
 
-from .modules.transport.MagneticCoordSystem import RadialGrid
-from .numlib.smooth import rms_residual, smooth_1d
+from .transport.MagneticCoordSystem import RadialGrid
+from spdm.numlib.smooth import rms_residual, smooth_1d
 
 
 def load_core_profiles(profiles, grid: RadialGrid):
