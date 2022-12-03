@@ -7,20 +7,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 from spdm.util.logger import logger
 from spdm.data.File import File
-from spdm.data.Mapping import Mapping
 from fytok.transport.Equilibrium import Equilibrium
 from fytok.device.PFActive import PFActive
 from fytok.device.Wall import Wall
 from fytok.device.Magnetics import Magnetics
-from spdm import open_entry
+from spdm import open_entry, open_db
+
+os.environ["SP_DATA_MAPPING_PATH"] = "/home/salmon/workspace/fytok_data/mapping"
 
 if __name__ == '__main__':
 
-    # entry = Mapping("/home/salmon/workspace/fytok_data/mapping")\
-    #     .map(File("/home/salmon/workspace/data/~t/?tree_name=efit_east,shot=38300",
-    #               format="mdsplus").read(), source_schema="EAST")
-    entry = open_entry("file+mdsplus[EAST]:///home/salmon/workspace/data/~t/?tree_name=efit_east#38300",
-                       mapping_path="/home/salmon/workspace/fytok_data/mapping")
+    db = open_db("mdsplus[EAST]://202.127.204.12?tree_name=efit_east")
+
+    entry = db.find_one(117422)
+    # entry = open_entry("file+mdsplus[EAST]:///home/salmon/workspace/data/~t/?tree_name=efit_east#38300")
 
     magnetics = Magnetics(entry.get(["magnetics"]))
     pf_active = PFActive(entry.get(["pf_active"]))
@@ -46,7 +46,6 @@ if __name__ == '__main__':
     logger.debug(eq.time)
     logger.debug(eq.global_quantities.ip)
     logger.debug(eq.profiles_1d.dvolume_dpsi(psi_norm))
-
 
     eq.plot(axis, contour=np.linspace(0, 5, 50))
 
