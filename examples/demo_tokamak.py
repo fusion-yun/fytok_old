@@ -5,13 +5,14 @@ import numpy as np
 import pandas as pd
 from fytok.constants.Atoms import atoms
 from fytok.load_profiles import (load_core_profiles, load_core_source,
-                                        load_core_transport, load_equilibrium)
+                                 load_core_transport, load_equilibrium)
 from spdm.numlib.smooth import rms_residual, smooth_1d
 from fytok.Tokamak import Tokamak
 from scipy import constants
 from spdm.data.File import File
 from spdm.data.Function import Function, PiecewiseFunction
 from spdm.util.logger import logger
+from spdm.util.misc import get_many_value
 from spdm.view.plot_profiles import plot_profiles, sp_figure
 
 if __name__ == "__main__":
@@ -20,8 +21,7 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # baseline
-    device_desc = File(
-        "/home/salmon/workspace/fytokdata/mapping/ITER/imas/3/static/config.xml", format="XML").read()
+    device_desc = File("/home/salmon/workspace/fytokdata/mapping/ITER/imas/3/static/config.xml", format="XML").read()
 
     eqdsk_file = File(
         "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="geqdsk").read()
@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # Initialize Tokamak
-    d = device_desc.get_many(["wall", "pf_active", "tf", "magnetics"])
+    d = get_many_value(device_desc, ["wall", "pf_active", "tf", "magnetics"])
 
     tok = Tokamak(**d)
 

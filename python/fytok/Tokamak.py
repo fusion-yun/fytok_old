@@ -2,8 +2,7 @@
 
 import matplotlib.pyplot as plt
 from spdm.util.logger import logger
-from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
-                       sp_property)
+from spdm.data.sp_property import sp_property
 
 from .common.Module import Module
 # ---------------------------------
@@ -24,7 +23,6 @@ from .transport.EdgeTransportSolver import EdgeTransportSolver
 # ---------------------------------
 from .transport.Equilibrium import Equilibrium
 from .transport.EquilibriumSolver import EquilibriumSolver
-from .transport.MagneticCoordSystem import RadialGrid
 
 
 class Tokamak(Module):

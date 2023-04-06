@@ -11,7 +11,7 @@ from spdm.util.logger import logger
 from spdm.common.tags import _not_found_, _undefined_
 from spdm.data import Dict, Function, List, Node, function_like, sp_property
 from spdm.data.Field import Field
-from spdm.util.utilities import try_get
+from spdm.util.misc import try_get
 
 from ..common.GGD import GGD
 from ..common.IDS import IDS

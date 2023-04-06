@@ -7,7 +7,7 @@ import numpy as np
 from scipy import interpolate
 from scipy.ndimage.interpolation import geometric_transform
 from spdm.util.logger import logger
-from spdm.util.utilities import convert_to_named_tuple
+from spdm.util.misc import convert_to_named_tuple
 
 from ..geometry.BSplineSurface import BSplineSurface
 from ..geometry.CubicSplineCurve import CubicSplineCurve

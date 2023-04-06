@@ -27,7 +27,7 @@ from spdm.data import (Dict, Function, List, Path, Query, function_like,
                        sp_property)
 from spdm.util.logger import logger
 from spdm.common.tags import _not_found_
-from spdm.util.utilities import convert_to_named_tuple
+from spdm.util.misc import convert_to_named_tuple
 
 EPSILON = 1.0e-15
 TOLERANCE = 1.0e-6

@@ -1,12 +1,10 @@
 
-import collections
-from copy import copy
 
-import numpy as np
 from ..common.IDS import IDS
-from spdm.util.logger import logger
-from spdm.data import (Dict, Signal, Function, Link, List, Node, Path, Query,
-                       sp_property)
+from spdm.data.Dict import Dict
+from spdm.data.List import List
+from spdm.data.Signal import Signal
+from spdm.data.sp_property import sp_property
 
 
 class TFCoil(Dict):

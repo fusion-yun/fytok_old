@@ -13,7 +13,6 @@ if True:
     from fytok.load_profiles import (load_core_profiles, load_core_source,
                                      load_core_transport, load_equilibrium)
     from fytok.transport.Equilibrium import Equilibrium
-    from spdm.numlib.smooth import rms_residual
     from spdm.data import File, Function, Query
     from spdm.util.logger import logger
 

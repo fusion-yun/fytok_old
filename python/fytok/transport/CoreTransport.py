@@ -1,20 +1,15 @@
-import collections
-from dataclasses import dataclass
 from functools import cached_property
-from typing import ChainMap, Optional
 
-import numpy as np
-from importlib_metadata import metadata
-from spdm.common.tags import _not_found_, _undefined_
-from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
-                       function_like, sp_property)
-from spdm.util.logger import logger
+from spdm.data.Dict import Dict
+from spdm.data.Function import Function, function_like
+from spdm.data.List import List
+from spdm.data.Node import Node
+from spdm.data.sp_property import sp_property
 
-from ..common.IDS import IDS, IDSCode
-from ..common.Misc import Identifier, VacuumToroidalField
+from ..common.IDS import IDS
+from ..common.Misc import VacuumToroidalField
 from ..common.Module import Module
 from .CoreProfiles import CoreProfiles
-from .Equilibrium import Equilibrium
 from .MagneticCoordSystem import RadialGrid
 from .Species import Species, SpeciesElectron, SpeciesIon, SpeciesIonState
 

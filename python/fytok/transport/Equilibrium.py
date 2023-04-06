@@ -1,25 +1,23 @@
 import collections
 import collections.abc
-from collections import ChainMap
 from dataclasses import dataclass
 from functools import cached_property
-from pprint import pprint
-from typing import Sequence, TypeVar, Union
 
 import numpy as np
 from scipy import constants
 from spdm.common.tags import _not_found_, _undefined_
-from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
-                       function_like, sp_property)
+from spdm.data.Dict import Dict
 from spdm.data.Field import Field
+from spdm.data.Function import Function, function_like
+from spdm.data.List import List
+from spdm.data.Node import Node
+from spdm.data.sp_property import sp_property
 from spdm.util.logger import logger
-from spdm.util.utilities import convert_to_named_tuple, try_get
+from spdm.util.misc import convert_to_named_tuple, try_get
 
 from ..common.GGD import GGD
 from ..common.IDS import IDS
 from ..common.Misc import RZTuple, VacuumToroidalField
-from ..common.Module import Module
-from ..device.Magnetics import Magnetics
 from ..device.PFActive import PFActive
 from ..device.Wall import Wall
 from .MagneticCoordSystem import MagneticCoordSystem, RadialGrid
@@ -314,7 +312,7 @@ class EquilibriumProfiles1D(Dict):
 
     @sp_property
     def plasma_current(self) -> Function:
-        """Toroidal current driven inside the flux surface.
+        r"""Toroidal current driven inside the flux surface.
           .. math:: I_{pl}\equiv\int_{S_{\zeta}}\mathbf{j}\cdot dS_{\zeta}=\frac{\text{gm2}}{4\pi^{2}\mu_{0}}\frac{\partial V}{\partial\psi}\left(\frac{\partial\psi}{\partial\rho}\right)^{2}
          {dynamic}[A]"""
         return self.gm2 * self.dvolume_drho_tor / self.dpsi_drho_tor/constants.mu_0
@@ -427,39 +425,41 @@ class EquilibriumProfiles1D(Dict):
     @sp_property
     def minor_radius(self) -> Function:
         """Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary) [m]	"""
-        return self.shape_property.minor_radius
+        return function_like(self._coord.psi_norm, self.shape_property.minor_radius)
 
     @sp_property
     def r_inboard(self) -> Function:
         """Radial coordinate(major radius) on the inboard side of the magnetic axis[m]"""
-        return self.shape_property.r_inboard
+        return function_like(self._coord.psi_norm, self.shape_property.r_inboard)
 
     @sp_property
     def r_outboard(self) -> Function:
         """Radial coordinate(major radius) on the outboard side of the magnetic axis[m]"""
-        return self.shape_property.r_outboard
+        return function_like(self._coord.psi_norm, self.shape_property.r_outboard)
 
     # @sp_property
     # def elongation(self) -> Function:
     #     """Elongation. {dynamic}[-]"""
     #     return self.shape_property.elongation
-    elongation: Function = sp_property(lambda self: function_like(self._axis, self.shape_property.elongation))
-    """Elongation. {dynamic}[-]"""
+    @sp_property
+    def elongation(self) -> Function:
+        """Radial coordinate(major radius) on the outboard side of the magnetic axis[m]"""
+        return function_like(self._coord.psi_norm, self.shape_property.elongation)
 
     @sp_property
     def triangularity(self) -> Function	:
         """Upper triangularity w.r.t. magnetic axis. {dynamic}[-]"""
-        return self.shape_property.triangularity
+        return function_like(self._coord.psi_norm, self.shape_property.triangularity)
 
     @sp_property
     def triangularity_upper(self) -> Function	:
         """Upper triangularity w.r.t. magnetic axis. {dynamic}[-]"""
-        return self.shape_property.triangularity_upper
+        return function_like(self._coord.psi_norm, self.shape_property.triangularity_upper)
 
     @sp_property
     def triangularity_lower(self) -> Function:
         """Lower triangularity w.r.t. magnetic axis. {dynamic}[-]"""
-        return self.shape_property.triangularity_lower
+        return function_like(self._coord.psi_norm, self.shape_property.triangularity_lower)
 
     @sp_property
     def gm1(self) -> Function:

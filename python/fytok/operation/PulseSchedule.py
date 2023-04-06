@@ -1,5 +1,8 @@
 import numpy as np
-from spdm.data import Dict, List, Signal, sp_property
+from spdm.data.Dict import Dict
+from spdm.data.List import List
+from spdm.data.Signal import Signal
+from spdm.data.sp_property import sp_property
 
 from ..common.IDS import IDS
 from ..common.Misc import RZTuple

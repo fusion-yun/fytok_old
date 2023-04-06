@@ -2,24 +2,19 @@
 
 """
 
-from dataclasses import dataclass, field
-from math import log
-from typing import Mapping, Optional, Tuple
 
 import numpy as np
 from scipy import constants
-from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
-                       sp_property)
-from spdm.util.logger import logger
+from spdm.data.Dict import Dict
+from spdm.data.List import List
+from spdm.data.sp_property import sp_property
 
 from ..common.IDS import IDS
 from ..common.Misc import Identifier
-from ..constants.Atoms import atoms
 from ..transport.CoreProfiles import CoreProfiles
 from ..transport.CoreSources import CoreSources
 from ..transport.CoreTransport import CoreTransport
 from ..transport.Equilibrium import Equilibrium
-from ..transport.MagneticCoordSystem import RadialGrid
 from .Species import SpeciesElectron, SpeciesIon
 
 # from .EdgeProfiles import EdgeProfiles

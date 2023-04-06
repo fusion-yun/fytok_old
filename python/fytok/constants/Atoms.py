@@ -1,6 +1,11 @@
-from scipy import constants
-from spdm.data import Function
 import numpy as np
+from scipy import constants
+from spdm.data.Dict import Dict
+from spdm.data.Entry import Entry
+from spdm.data.Function import Function
+from spdm.data.Node import Node
+from spdm.data.sp_property import sp_property
+
 atoms = {
     "e": {
         "label": "e",

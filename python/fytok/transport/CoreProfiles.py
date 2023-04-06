@@ -1,16 +1,15 @@
-import collections
-from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 from scipy import constants
 from spdm.common.tags import _not_found_
-from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
-                       function_like, sp_property)
+from spdm.data.Dict import Dict
+from spdm.data.Function import Function, function_like
+from spdm.data.List import List
+from spdm.data.Node import Node
+from spdm.data.sp_property import sp_property
 from spdm.util.logger import logger
 
 from ..common.IDS import IDS
-from ..transport.Equilibrium import Equilibrium
 from ..transport.MagneticCoordSystem import TWOPI, RadialGrid
 from .Species import Species, SpeciesElectron, SpeciesIon
 

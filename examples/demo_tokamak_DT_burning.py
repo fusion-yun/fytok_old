@@ -1,23 +1,20 @@
 
-import sys
-sys.path.append("/home/salmon/workspace/fytok/python")
-sys.path.append("/home/salmon/workspace/SpDB/python")
-sys.path.append("/home/salmon/workspace/SpView/python")
-sys.path.append("/home/salmon/workspace/fymodule-restricted/python")
-
-###################
-
 from spdm.view.plot_profiles import plot_profiles, sp_figure
 from spdm.util.logger import logger
+# from spdm.numlib.smooth import rms_residual
 from spdm.data import File, Function, Query
 from scipy import constants
-from spdm.numlib.smooth import rms_residual
 from fytok.Tokamak import Tokamak
 from fytok.load_profiles import (load_core_profiles, load_core_source,
                                  load_core_transport, load_equilibrium)
 import pandas as pd
 import numpy as np
 import pathlib
+import sys
+
+
+###################
+
 
 if __name__ == "__main__":
     logger.info("====== START ========")
@@ -160,7 +157,7 @@ if __name__ == "__main__":
             # x_axis=(magnetic_surface.rho_tor_norm,      r"$\bar{\rho}_{tor}$"),
             x_axis=(magnetic_surface.psi_norm,      r"$\bar{\psi}$"),
             title="Equilibrium",
-            grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium_coord.svg", transparent=True)
+            grid=True, fontsize=16) .savefig(output_path/"equilibrium_coord.svg", transparent=True)
 
         eq_profile = tok.equilibrium.profiles_1d
 
@@ -232,13 +229,11 @@ if __name__ == "__main__":
             # x_axis=([0, 1.0],                                                r"$\psi/\psi_{bdry}$"),
 
             title="Equilibrium",
-            grid=True, fontsize=16) .savefig("/home/salmon/workspace/output/equilibrium.svg", transparent=True)
-
-    exit()
+            grid=True, fontsize=16) .savefig(output_path/"equilibrium.svg", transparent=True)
 
     if True:  # CoreProfile initialize value
 
-        tok["core_profiles.profiles_1d"] = load_core_profiles(profiles, grid=tok.equilibrium.radial_grid)
+        tok.core_profiles["profiles_1d"] = load_core_profiles(profiles, grid=tok.equilibrium.radial_grid)
 
         core_profile_1d = tok.core_profiles.profiles_1d
         core_profile_1d.ion[Query({"label": "He"}), "has_fast_particle"] = True
@@ -274,7 +269,7 @@ if __name__ == "__main__":
             grid=True, fontsize=10) .savefig(output_path/"core_profiles_initialize.svg", transparent=True)
 
     if True:  # CoreTransport
-        tok["core_transport.model"] = [
+        tok.core_transport["model"] = [
             {
                 "code": {"name": "dummy"},
                 "profiles_1d": load_core_transport(profiles, tok.core_profiles.profiles_1d.grid)
@@ -286,6 +281,8 @@ if __name__ == "__main__":
             # {"code": {"name": "nclass"}},
 
         ]
+
+        logger.debug(tok.core_transport["model"].dump())
 
         tok.core_transport.refresh(equilibrium=tok.equilibrium, core_profiles=tok.core_profiles)
 
@@ -335,16 +332,17 @@ if __name__ == "__main__":
                 # [(ion.particles.d,  f"{ion.label}", r"Neoclassical $D_{NC}$")
                 #  for ion in nc_profiles_1d.ion if not ion.is_impurity],
 
-
-
             ],
             x_axis=([0, 1.0],   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             title="combine",
             grid=True, fontsize=10) .savefig(output_path/"core_transport.svg", transparent=True)
 
+    exit()
+
     if True:  # CoreSources
         tok["core_sources.source"] = [
-            {"code": {"name": "dummy"}, "profiles_1d": load_core_source(profiles, tok.core_profiles.profiles_1d.grid)},
+            {"code": {"name": "dummy"},
+             "profiles_1d": load_core_source(profiles, tok.core_profiles.profiles_1d.grid)},
             # {"code": {"name": "bootstrap_current"}},
             # {"code": {"name": "fusion_reaction"}},
         ]

@@ -6,14 +6,13 @@ from math import isclose
 from typing import Callable, Iterator, Mapping, Sequence, Tuple, TypeVar, Union
 
 import numpy as np
-
-
 from scipy import constants
-from spdm.data import (Dict, Function, sp_property)
-from spdm.data.Function import function_like
-from spdm.util.logger import logger
-
-from spdm.data.Field import Field 
+from spdm.data.Dict import Dict
+from spdm.data.Entry import Entry
+from spdm.data.Field import Field
+from spdm.data.Function import Function, function_like
+from spdm.data.Node import Node
+from spdm.data.sp_property import sp_property
 from spdm.geometry.CubicSplineCurve import CubicSplineCurve
 from spdm.geometry.GeoObject import GeoObject, _TCoord
 from spdm.geometry.Point import Point
@@ -21,6 +20,8 @@ from spdm.mesh.CurvilinearMesh import CurvilinearMesh
 from spdm.mesh.Mesh import Mesh
 from spdm.numlib.contours import find_countours
 from spdm.numlib.optimize import find_critical_points
+from spdm.util.logger import logger
+
 from ..common.Misc import RZTuple, VacuumToroidalField
 
 TOLERANCE = 1.0e-6

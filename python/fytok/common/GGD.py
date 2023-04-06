@@ -1,5 +1,6 @@
-from spdm.util.logger import logger
-from spdm.data import Dict, File, Link, List, Node, Path, Query, sp_property,Function
+from spdm.data.Dict import Dict
+from spdm.data.List import List
+from spdm.data.sp_property import sp_property
 
 from ..common.Misc import Identifier
 

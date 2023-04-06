@@ -2,18 +2,19 @@
 import collections
 import collections.abc
 
-from spdm.data import (Dict, Entry, File, Function, Link, List, Node, Path,
-                       Query, sp_property)
-from spdm.util.logger import logger
-from spdm.data.SpObject import SpObject
 from spdm.common.tags import _undefined_
+from spdm.data.Dict import Dict
+from spdm.data.Entry import Entry
+from spdm.data.Node import Node
+from spdm.data.sp_property import sp_property
 
 from ..common.Identifier import Identifier
 
 
 class Module(Dict[Node]):
 
-    def __new__(cls, desc=None, *args, metadata=None, **kwargs):
+    @classmethod
+    def create(cls, desc=None, *args, metadata=None, **kwargs):
 
         prefix = getattr(cls, "_fy_module_prefix", None)
 
@@ -32,12 +33,12 @@ class Module(Dict[Node]):
             cls_name = f"{prefix}{cls_name}"
 
         if isinstance(cls_name, str):
-            return SpObject.new_object(cls_name)
+            return super().create(cls_name)
         else:
             return object.__new__(cls)
 
     def __init__(self, d=None,  /, time=None,  **kwargs):
-        Dict.__init__(self, d,  **kwargs)
+        super().__init__(d,  **kwargs)
         self._job_id = 0  # Session.current().job_id(self.__class__.__name__)
         self._time = time if time is not None else 0.0
 

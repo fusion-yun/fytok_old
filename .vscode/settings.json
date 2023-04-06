@@ -20,5 +20,8 @@
     "fytok",
     "spdm"
   ],
+  "python.analysis.extraPaths": [
+    "./python"
+  ],
 
 }

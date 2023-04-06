@@ -1,11 +1,9 @@
-import collections
-from dataclasses import dataclass
 
 import matplotlib.pyplot as plt
-import numpy as np
-from spdm.common.tags import _not_found_
-from spdm.data import Dict, Function, Link, List, Node, Signal, sp_property
-from spdm.util.logger import logger
+from spdm.data.Dict import Dict
+from spdm.data.List import List
+from spdm.data.Signal import Signal
+from spdm.data.sp_property import sp_property
 
 from ..common.IDS import IDS
 from ..common.Misc import Identifier, RZTuple
@@ -145,7 +143,7 @@ class Magnetics(IDS):
     flux_loop: List[FluxLoop] = sp_property()
     """Flux loops; partial flux loops can be described   """
 
-    bpol_probe: List[MagneticProbe] = sp_property()
+    b_field_pol_probe: List[MagneticProbe] = sp_property()
     """Poloidal field probes struct_array [max_size= 200] """
 
     def plot(self, axis=None, *args, with_circuit=False, **kwargs):

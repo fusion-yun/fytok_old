@@ -1,44 +1,40 @@
 import os
-import pathlib
-import pprint
-import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
-from spdm.util.logger import logger
-from spdm.data.File import File
-from fytok.transport.Equilibrium import Equilibrium
+from fytok.device.Magnetics import Magnetics
 from fytok.device.PFActive import PFActive
 from fytok.device.Wall import Wall
-from fytok.device.Magnetics import Magnetics
-from spdm import open_entry, open_db
+from fytok.transport.Equilibrium import Equilibrium
+from spdm import open_db, open_entry
+from spdm.util.logger import logger
 
 os.environ["SP_DATA_MAPPING_PATH"] = "/home/salmon/workspace/fytok_data/mapping"
 
 if __name__ == '__main__':
 
-    db = open_db("mdsplus[EAST]://202.127.204.12?tree_name=efit_east")
+    # db = open_db("mdsplus[EAST]://202.127.204.12?tree_name=efit_east")
+    # entry = db.find_one(117422)
 
-    entry = db.find_one(117422)
-    # entry = open_entry("file+mdsplus[EAST]:///home/salmon/workspace/data/~t/?tree_name=efit_east#38300")
+    entry = open_entry("file+mdsplus[EAST]:///home/salmon/workspace/data/~t/?tree_name=efit_east#38300")
 
-    magnetics = Magnetics(entry.get(["magnetics"]))
-    pf_active = PFActive(entry.get(["pf_active"]))
+    magnetics = Magnetics(entry["magnetics"])
 
-    print(magnetics.bpol_probe[2].field(1.2))
+    pf_active = PFActive(entry["pf_active"])
 
     fig = plt.figure()
+
     axis = fig.gca()
 
     time_slice = 50
 
-    desc = entry.get(["equilibrium", "time_slice", time_slice]).dump()
+    desc = entry.get("equilibrium", "time_slice", time_slice)  # type: dict
 
-    desc["time"] = 1.2345
+    # desc["time"] = 1.2345
 
     desc["vacuum_toroidal_field"] = {
-        "b0": entry.get(["equilibrium", "vacuum_toroidal_field", "b0"])[time_slice],
-        "r0": entry.get(["equilibrium", "vacuum_toroidal_field", "r0"])[time_slice],
+        "b0": entry.get("equilibrium/vacuum_toroidal_field/b0", time_slice),
+        "r0": entry.get("equilibrium/vacuum_toroidal_field/r0", time_slice),
     }
 
     eq = Equilibrium(desc)
@@ -49,7 +45,7 @@ if __name__ == '__main__':
 
     eq.plot(axis, contour=np.linspace(0, 5, 50))
 
-    pf_active = PFActive(entry.get(["pf_active"]))
+    pf_active = PFActive(entry.get("pf_active"))
 
     for coil in pf_active.coil:
         logger.debug(coil.element[0].geometry.rectangle)
@@ -57,7 +53,7 @@ if __name__ == '__main__':
 
     pf_active.plot(axis)
 
-    wall = Wall(entry.get(["wall"]))
+    wall = Wall(entry["wall"])
 
     wall.plot(axis)
 

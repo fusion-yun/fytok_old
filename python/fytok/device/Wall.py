@@ -2,8 +2,9 @@ import collections
 
 import matplotlib.pyplot as plt
 import numpy as np
-from spdm.data import Dict, Function, Link, List, Node, Signal, sp_property
-from spdm.util.logger import logger
+from spdm.data.Dict import Dict
+from spdm.data.List import List
+from spdm.data.sp_property import sp_property
 from sympy import Point, Polygon
 
 from ..common.IDS import IDS
