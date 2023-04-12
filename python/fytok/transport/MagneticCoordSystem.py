@@ -51,11 +51,10 @@ class RadialGrid(Dict):
     """
 
     def remesh(self, label: str = "psi_norm", new_axis: np.ndarray = None, ):
-        axis = self.get(f"{label}", None)
+        
+        axis = self.get(label)
 
-        if axis is None:
-            raise RuntimeError(f"Can not find axis {label}!")
-        elif isinstance(axis, np.ndarray) and isinstance(new_axis, np.ndarray) \
+        if isinstance(axis, np.ndarray) and isinstance(new_axis, np.ndarray) \
                 and axis.shape == new_axis.shape and np.allclose(axis, new_axis):
             return self
 

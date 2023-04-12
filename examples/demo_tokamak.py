@@ -6,7 +6,6 @@ import pandas as pd
 from fytok.constants.Atoms import atoms
 from fytok.load_profiles import (load_core_profiles, load_core_source,
                                  load_core_transport, load_equilibrium)
-from spdm.numlib.smooth import rms_residual, smooth_1d
 from fytok.Tokamak import Tokamak
 from scipy import constants
 from spdm.data.File import File

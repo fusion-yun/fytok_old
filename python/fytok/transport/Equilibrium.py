@@ -7,6 +7,7 @@ import numpy as np
 from scipy import constants
 from spdm.common.tags import _not_found_, _undefined_
 from spdm.data.Dict import Dict
+from spdm.data.Entry import as_entry
 from spdm.data.Field import Field
 from spdm.data.Function import Function, function_like
 from spdm.data.List import List
@@ -856,42 +857,9 @@ class Equilibrium(IDS):
         # }
         return
 
-    def create_coordinate_system(self, **kwargs) -> MagneticCoordSystem:
-        psirz = self.profiles_2d._entry.get("psi", None)
-
-        if not isinstance(psirz, Field):
-            psirz = Field(psirz,
-                          self.profiles_2d._entry.get("grid.dim1", None),
-                          self.profiles_2d._entry.get("grid.dim2", None),
-                          mesh="rectilinear")
-
-        psi_1d = self.profiles_1d._entry.get("psi")
-        fpol_1d = self.profiles_1d._entry.get("f", _not_found_)
-        if not isinstance(psi_1d, np.ndarray) or len(psi_1d) != len(fpol_1d):
-            psi_1d = np.linspace(0, 1.0, len(fpol_1d))
-
-        if isinstance(psi_1d, np.ndarray):
-            psi_1d = (psi_1d-psi_1d[0])/(psi_1d[-1]-psi_1d[0])
-
-        # pprime_1d = self.profiles_1d._entry.get("dpressure_dpsi", None)
-
-        return MagneticCoordSystem(
-            **collections.ChainMap(kwargs, self._entry.get("coordinate_system", {})),
-            psirz=psirz,
-            B0=self.vacuum_toroidal_field.b0,
-            R0=self.vacuum_toroidal_field.r0,
-            Ip=self.global_quantities._entry.get("ip"),
-            fpol=function_like(psi_1d, fpol_1d),
-            # pprime=self.profiles_1d._entry.get("dpressure_dpsi", None),
-            # fpol=function_like(psi_norm, self.profiles_1d._entry.get("f", None)),
-            # pprime=function_like(psi_norm, self.profiles_1d._entry.get("dpressure_dpsi", None)),
-        )
-
     time: float = sp_property()
 
     vacuum_toroidal_field: VacuumToroidalField = sp_property()
-
-    coordinate_system: MagneticCoordSystem = sp_property(create_coordinate_system)
 
     grid_ggd: GGD = sp_property()
 
@@ -907,7 +875,41 @@ class Equilibrium(IDS):
 
     boundary_separatrix: BoundarySeparatrix = sp_property()
 
-    @ property
+    # coordinate_system: MagneticCoordSystem = sp_property(create_coordinate_system)
+    @sp_property
+    def coordinate_system(self) -> MagneticCoordSystem:
+        psirz = self.profiles_2d._entry.get("psi", None)
+
+        if not isinstance(psirz, Field):
+            psirz = Field(psirz,
+                          self.profiles_2d.grid.dim1,
+                          self.profiles_2d.grid.dim2,
+                          mesh="rectilinear")
+
+        psi_1d = self.profiles_1d._entry.get("psi")
+        fpol_1d = self.profiles_1d._entry.get("f", _not_found_)
+        if not isinstance(psi_1d, np.ndarray) or len(psi_1d) != len(fpol_1d):
+            psi_1d = np.linspace(0, 1.0, len(fpol_1d))
+
+        if isinstance(psi_1d, np.ndarray):
+            psi_1d = (psi_1d-psi_1d[0])/(psi_1d[-1]-psi_1d[0])
+
+        # pprime_1d = self.profiles_1d._entry.get("dpressure_dpsi", None)
+        desc = self["coordinate_system"].__value__
+
+        return MagneticCoordSystem(
+            psirz=psirz,
+            B0=self.vacuum_toroidal_field.b0,
+            R0=self.vacuum_toroidal_field.r0,
+            Ip=self.global_quantities._entry.get("ip"),
+            fpol=function_like(psi_1d, fpol_1d),
+            # pprime=self.profiles_1d._entry.get("dpressure_dpsi", None),
+            # fpol=function_like(psi_norm, self.profiles_1d._entry.get("f", None)),
+            # pprime=function_like(psi_norm, self.profiles_1d._entry.get("dpressure_dpsi", None)),
+            **desc
+        )
+
+    @property
     def radial_grid(self) -> RadialGrid:
         return self.coordinate_system.radial_grid
 

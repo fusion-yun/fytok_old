@@ -1,12 +1,12 @@
 import datetime
 import getpass
 import os
+import typing
 from dataclasses import dataclass
-from typing import Mapping, Optional, Sequence
+
 from spdm.data.Dict import Dict
 from spdm.data.List import List
 from spdm.data.sp_property import sp_property
-
 
 from .Module import Module
 
@@ -92,13 +92,13 @@ class IDS(Module):
     """
     _IDS = "NOT_DEFINED"
 
-    def __serialize__(self, properties: Optional[Sequence] = None):
+    def __serialize__(self, properties: typing.Optional[typing.Sequence] = None):
         res = super().__serialize__(properties=properties)
         res["@ids"] = self._IDS
         return res
 
     @classmethod
-    def __deserialize__(cls, desc: Mapping):
+    def __deserialize__(cls, desc: typing.Mapping):
         ids = desc.get("@ids", None)
         if ids is None:
             raise ValueError(desc)

@@ -2,7 +2,7 @@
 import collections
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Generic, TypeVar, Union
+import typing
 
 import numpy as np
 # VacuumToroidalField = collections.namedtuple("VacuumToroidalField", "r0 b0", defaults=(0.0, 0.0))
@@ -16,11 +16,11 @@ class Identifier:
     description: str = ""
 
 
-_TData = TypeVar("_TData")
+_TData = typing.TypeVar("_TData")
 
 
 @dataclass
-class Decomposition(Generic[_TData]):
+class Decomposition(typing.Generic[_TData]):
     implicit_part: _TData  # Implicit part
     explicit_part: _TData  # Explicit part
 
@@ -33,11 +33,5 @@ class VacuumToroidalField:
 
 @dataclass
 class RZTuple:
-    r: Any
-    z: Any
-
-
-@dataclass
-class Signal:
-    data: np.ndarray
-    time: np.ndarray
+    r:   np.ndarray
+    z:   np.ndarray

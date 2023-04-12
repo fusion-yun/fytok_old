@@ -3,8 +3,7 @@ from math import log
 from typing import Mapping, Optional, Tuple
 
 from scipy import constants
-from spdm.data import (Dict, File, Function, Link, List, Node, Path, Query,
-                       sp_property)
+from spdm.data.sp_property import sp_property
 from spdm.util.logger import logger
 
 from ..common.IDS import IDS

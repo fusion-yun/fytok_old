@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from spdm.data.Dict import Dict
 from spdm.data.List import List
-from spdm.data.Signal import Signal
+from spdm.data.TimeSeries import TimeSeries
 from spdm.data.sp_property import sp_property
 
 from ..common.IDS import IDS
@@ -78,9 +78,9 @@ class PFActiveCoil(Dict):
 
     element: List[Element] = sp_property()
 
-    current: Signal = sp_property()
+    current: TimeSeries = sp_property()
 
-    voltage: Signal = sp_property()
+    voltage: TimeSeries = sp_property()
 
 
 class PFActiveCircuit(Dict):

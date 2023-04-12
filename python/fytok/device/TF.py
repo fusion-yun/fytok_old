@@ -3,7 +3,7 @@
 from ..common.IDS import IDS
 from spdm.data.Dict import Dict
 from spdm.data.List import List
-from spdm.data.Signal import Signal
+from spdm.data.TimeSeries import TimeSeries
 from spdm.data.sp_property import sp_property
 
 
@@ -39,9 +39,9 @@ class TF(IDS):
     """Map of the vacuum field at various time slices, represented using the generic grid description {dynamic}
                 struct_array [max_size=unbounded]	 """
 
-    b_field_tor_vacuum_r: Signal = sp_property()
+    b_field_tor_vacuum_r: TimeSeries = sp_property()
     """Vacuum field times major radius in the toroidal field magnet. Positive sign means anti-clockwise when viewed 
             from above [T.m].  """
 
-    delta_b_field_tor_vacuum_r: Signal = sp_property()
+    delta_b_field_tor_vacuum_r: TimeSeries = sp_property()
     """Variation of (vacuum field times major radius in the toroidal field magnet) from the start of the plasma. [T.m]"""

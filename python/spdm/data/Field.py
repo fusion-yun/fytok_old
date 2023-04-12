@@ -25,8 +25,8 @@ class Field(object):
     def __array__(self):
         return np.asarray(self._array)
 
-    def __repr__(self):
-        return f"<{self.__class__.__name__} unit='{ self._unit}' coordinates='{self._coordinates.__name__}'>"
+    # def __repr__(self):
+    #     return f"<{self.__class__.__name__} unit='{ self._unit}' coordinates='{self._coordinates.__name__}'>"
 
     def serialize(self):
         return {

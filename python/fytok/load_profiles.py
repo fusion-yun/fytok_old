@@ -1,18 +1,12 @@
-import collections
-import pathlib
-import sys
-from typing import Union
 
 import numpy as np
-import pandas as pd
 from scipy import constants
-from spdm.data import (Dict, Entry, File, Function, Link, List, Node, Path,
-                       Query, function_like, sp_property)
-from spdm.data.Function import PiecewiseFunction, function_like
-from spdm.util.logger import logger
-
+from spdm.data.Function import Function
+from spdm.data.Function import PiecewiseFunction
+from spdm.data.Entry import Entry
+from spdm.data.File import File
 from .transport.MagneticCoordSystem import RadialGrid
-from spdm.numlib.smooth import rms_residual, smooth_1d
+from spdm.numlib.smooth import smooth_1d
 
 
 def load_core_profiles(profiles, grid: RadialGrid):
@@ -188,21 +182,21 @@ def load_equilibrium(eqdsk,  **kwargs):
     if not isinstance(eqdsk, Entry):
         eqdsk = File(eqdsk, format="geqdsk").entry
 
-    R0 = eqdsk.get("vacuum_toroidal_field.r0")
-    B0 = eqdsk.get("vacuum_toroidal_field.b0")
+    R0 = eqdsk.get("vacuum_toroidal_field/r0")
+    B0 = eqdsk.get("vacuum_toroidal_field/b0")
 
     return {
         "vacuum_toroidal_field": {"b0": B0, "r0": R0, },
         "global_quantities": eqdsk.get("global_quantities"),
         "profiles_1d": eqdsk.get("profiles_1d"),
         "profiles_2d": {
-            "psi": eqdsk.get("profiles_2d.psi"),
+            "psi": eqdsk.get("profiles_2d/psi"),
             "grid_type": {
                 "name": "rectangular",
                 "index": 1},
             "grid": {
-                "dim1": eqdsk.get("profiles_2d.grid.dim1"),
-                "dim2": eqdsk.get("profiles_2d.grid.dim2"),
+                "dim1": eqdsk.get("profiles_2d/grid/dim1"),
+                "dim2": eqdsk.get("profiles_2d/grid/dim2"),
             }
         },
         "boundary_separatrix": eqdsk.get("boundary"),

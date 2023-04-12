@@ -5,6 +5,7 @@ import numpy as np
 from spdm.data.Dict import Dict
 from spdm.data.List import List
 from spdm.data.sp_property import sp_property
+from spdm.util.logger import logger
 from sympy import Point, Polygon
 
 from ..common.IDS import IDS
@@ -26,10 +27,8 @@ class WallLimiter(Dict):
 class WallVessel(Dict):
 
     class Annular(Dict):
-
-        outline_outer: RZTuple = sp_property(default={})
-
-        outline_inner: RZTuple = sp_property(default={})
+        outline_outer: RZTuple = sp_property(default_value={})
+        outline_inner: RZTuple = sp_property(default_value={})
 
     annular: Annular = sp_property()
 

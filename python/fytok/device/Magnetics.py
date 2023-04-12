@@ -2,7 +2,7 @@
 import matplotlib.pyplot as plt
 from spdm.data.Dict import Dict
 from spdm.data.List import List
-from spdm.data.Signal import Signal
+from spdm.data.TimeSeries import TimeSeries
 from spdm.data.sp_property import sp_property
 
 from ..common.IDS import IDS
@@ -46,10 +46,10 @@ class MagneticsFluxLoop(Dict):
     """Integral of 1/R over the loop area (ratio between flux and magnetic rigidity R0.B0). Use only if ../type/index = 3 to 6,
           leave empty otherwise. {static} [m]         """
 
-    flux: Signal = sp_property()
+    flux: TimeSeries = sp_property()
     """Measured magnetic flux over loop in which Z component of normal to loop is directed downwards (negative grad Z direction) [Wb]."""
 
-    voltage: Signal = sp_property()
+    voltage: TimeSeries = sp_property()
     """Measured voltage between the loop terminals [V]"""
 
 
@@ -105,12 +105,12 @@ class MagneticsMagneticProbe(Dict):
     turns: float = sp_property()
     """Turns in the coil, including sign {static}    INT_0D    """
 
-    field: Signal = sp_property()
+    field: TimeSeries = sp_property()
     """Magnetic field component in direction of sensor normal axis(n) averaged over sensor volume defined by area and length,
         where n = cos(poloidal_angle)*cos(toroidal_angle)*grad(R) - sin(poloidal_angle)*grad(Z) + cos(poloidal_angle)*sin(toroidal_angle)*grad(Phi)/norm(grad(Phi))[T].
         This quantity is COCOS-dependent, with the following transformation: """
 
-    voltage: Signal = sp_property()
+    voltage: TimeSeries = sp_property()
     """Voltage on the coil terminals[V]
 
            .data: Data {dynamic}[as_parent]

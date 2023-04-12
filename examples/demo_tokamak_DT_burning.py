@@ -2,7 +2,8 @@
 from spdm.view.plot_profiles import plot_profiles, sp_figure
 from spdm.util.logger import logger
 # from spdm.numlib.smooth import rms_residual
-from spdm.data import File, Function, Query
+from spdm.data.File import File
+from spdm.data.Function import Function
 from scipy import constants
 from fytok.Tokamak import Tokamak
 from fytok.load_profiles import (load_core_profiles, load_core_source,
@@ -25,18 +26,18 @@ if __name__ == "__main__":
     device_desc = File("/home/salmon/workspace/fytok_data/mapping/ITER/imas/3/static/config.xml", format="XML").read()
 
     eqdsk_file = File(
-        "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="geqdsk").read()
+        "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="GEQdsk").read()
     # "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
     # "/home/salmon/workspace/data/Limiter plasmas-7.5MA li=1.1/Limiter plasmas 7.5MA-EQDSK/Limiter_7.5MA_outbord.EQDSK",
     # profiles = pd.read_csv('/home/salmon/workspace/data/15MA inductive - burn/profile.txt', sep='\t')
 
-    R0 = eqdsk_file.get("vacuum_toroidal_field.r0")
-    B0 = eqdsk_file.get("vacuum_toroidal_field.b0")
-    psi_axis = eqdsk_file.get("global_quantities.psi_axis")
-    psi_boundary = eqdsk_file.get("global_quantities.psi_boundary")
-    bs_eq_psi = eqdsk_file.get("profiles_1d.psi")
+    R0 = eqdsk_file.get("vacuum_toroidal_field/r0")
+    B0 = eqdsk_file.get("vacuum_toroidal_field/b0")
+    psi_axis = eqdsk_file.get("global_quantities/psi_axis")
+    psi_boundary = eqdsk_file.get("global_quantities/psi_boundary")
+    bs_eq_psi = eqdsk_file.get("profiles_1d/psi")
     bs_eq_psi_norm = (bs_eq_psi-psi_axis)/(psi_boundary-psi_axis)
-    bs_eq_fpol = Function(bs_eq_psi_norm, eqdsk_file.get("profiles_1d.f"))
+    bs_eq_fpol = Function(bs_eq_psi_norm, eqdsk_file.get("profiles_1d/f"))
 
     profiles = pd.read_excel('/home/salmon/workspace/data/15MA inductive - burn/15MA Inductive at burn-ASTRA.xls',
                              sheet_name='15MA plasma', header=10, usecols="B:BN")
@@ -63,7 +64,9 @@ if __name__ == "__main__":
     ###################################################################################################
     # Initialize Tokamak
 
-    tok = Tokamak(device_desc.get({"wall", "pf_active", "tf", "magnetics"}).dump())
+    tok = Tokamak(device_desc[{"wall", "pf_active", "tf", "magnetics"}])
+
+    # logger.debug(tok.wall.description_2d[0].vessel.annular.outline_inner.r)
 
     # Equilibrium
 
@@ -236,7 +239,7 @@ if __name__ == "__main__":
         tok.core_profiles["profiles_1d"] = load_core_profiles(profiles, grid=tok.equilibrium.radial_grid)
 
         core_profile_1d = tok.core_profiles.profiles_1d
-        core_profile_1d.ion[Query({"label": "He"}), "has_fast_particle"] = True
+        core_profile_1d.ion[{"label": "He"}]["has_fast_particle"] = True
 
         plot_profiles(
             [

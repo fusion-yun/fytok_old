@@ -1,7 +1,7 @@
 import numpy as np
 from spdm.data.Dict import Dict
 from spdm.data.List import List
-from spdm.data.Signal import Signal
+from spdm.data.TimeSeries import TimeSeries
 from spdm.data.sp_property import sp_property
 
 from ..common.IDS import IDS
@@ -13,7 +13,7 @@ class PulseScheduleReference(Dict):
     reference_name: str = sp_property()
     """Reference name (e.g. in the native pulse schedule system of the device) {constant}"""
 
-    reference: Signal = sp_property()
+    reference: TimeSeries = sp_property()
     """Reference waveform [mixed]"""
 
     reference_type: int = sp_property()
@@ -51,17 +51,17 @@ class PulseScheduleFluxControl(Dict):
         return PulseScheduleReference(name='beta_normal', time=self._time, data=self._cache.beta_normal)
 
     @sp_property
-    def mode(self) -> Signal:
+    def mode(self) -> TimeSeries:
         """Control mode (operation mode and/or settings used by the controller) """
-        return Signal(time=self._time, data=np.arange(self._time.shape[0]))
+        return TimeSeries(time=self._time, data=np.arange(self._time.shape[0]))
 
 
 class PulseSchedulePositionControl(Dict):
 
     @sp_property
-    def mode(self) -> Signal:
+    def mode(self) -> TimeSeries:
         """Control mode (operation mode and/or settings used by the controller) """
-        return Signal(time=self._time, data=np.arange(self._time.shape[0]))
+        return TimeSeries(time=self._time, data=np.arange(self._time.shape[0]))
 
     @sp_property
     def magnetic_axis(self) -> RZTuple:
@@ -175,7 +175,7 @@ class PulseScheduleTF(Dict):
 
     b_field_tor_vacuum_r: PulseScheduleReference = sp_property()
 
-    mode: Signal = sp_property()
+    mode: TimeSeries = sp_property()
     """Control mode (operation mode and/or settings used by the controller) """
 
 
