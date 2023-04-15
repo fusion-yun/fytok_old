@@ -22,7 +22,7 @@ class CoreProfilesElectrons(SpeciesElectron):
     def grid(self) -> RadialGrid:
         return self._parent.grid
 
-    temperature: np.ndarray = sp_property(default_value=0.0)
+    temperature: Function = sp_property(default_value=0.0)
     """Temperature {dynamic} [eV]"""
 
     # @property

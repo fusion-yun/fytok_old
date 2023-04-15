@@ -65,8 +65,7 @@ if __name__ == "__main__":
     # Initialize Tokamak
 
     tok = Tokamak(device_desc[{"wall", "pf_active", "tf", "magnetics"}])
-
-    # logger.debug(tok.wall.description_2d[0].vessel.annular.outline_inner.r)
+    annular = tok.wall.description_2d[0].vessel.annular
 
     # Equilibrium
 
@@ -242,6 +241,8 @@ if __name__ == "__main__":
 
         core_profile_1d.ion[{"label": "He"}]["has_fast_particle"] = True
 
+        logger.debug(core_profile_1d.electrons.temperature)
+
         plot_profiles(
             [
                 [
@@ -355,7 +356,7 @@ if __name__ == "__main__":
 
         electron = core_source_profiles_1d.electrons
 
-        logger.debug(electron.particles.__array__())
+        logger.debug(electron.particles)
 
         # core_source_fusion = tok.core_sources.source[{"code.name": "fusion_reaction"}].profiles_1d
         plot_profiles(

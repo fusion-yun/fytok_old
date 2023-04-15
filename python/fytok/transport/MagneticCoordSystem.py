@@ -58,7 +58,7 @@ class RadialGrid(Dict):
 
     def remesh(self, label: str = "psi_norm", new_axis: np.ndarray = None, ):
 
-        axis = self.get(label, None, as_property=True)
+        axis = self._as_child(label)
 
         if isinstance(axis, np.ndarray) and isinstance(new_axis, np.ndarray) \
                 and axis.shape == new_axis.shape and np.allclose(axis, new_axis):
