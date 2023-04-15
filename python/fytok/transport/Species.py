@@ -7,7 +7,7 @@ from spdm.data.List import List
 from spdm.data.Node import Node
 from spdm.data.Function import Function
 from spdm.data.sp_property import sp_property
-
+from .MagneticCoordSystem import RadialGrid
 from ..constants.Atoms import atoms
 
 
@@ -27,10 +27,14 @@ class Species(Dict[Node]):
     label: str = sp_property()
     """String identifying ion (e.g. H+, D+, T+, He+2, C+, ...) {dynamic}    """
 
+    @property
+    def grid(self) -> RadialGrid:
+        return self._parent.grid
+
     def _as_child(self, *args, **kwargs):
         value = super()._as_child(*args, **kwargs)
         if isinstance(value, Function):
-            value.setdefault_x(self._parent.grid.rho_tor_norm)
+            value.setdefault_x(self.grid.rho_tor_norm)
         return value
 
     multiple_states_flag: int = sp_property(default=0)

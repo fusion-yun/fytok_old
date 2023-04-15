@@ -72,9 +72,9 @@ class CoreSourcesProfiles1D(Dict[Node]):
     Electrons = CoreSourcesElectrons
     Neutral = CoreSourcesNeutral
 
-    @sp_property
-    def grid(self, value) -> RadialGrid:
-        return value if value is not None else self._parent.grid
+    @property
+    def grid(self) -> RadialGrid:
+        return self._parent.grid
 
     electrons: Electrons = sp_property()
 
@@ -99,14 +99,14 @@ class CoreSourcesProfiles1D(Dict[Node]):
     conductivity_parallel: Function = sp_property()
 
 
-class CoreSourcesGlobalQuantities(Dict):
+class CoreSourcesGlobalQuantities(Dict[Node]):
     r"""
         Total source quantities integrated over the plasma volume or surface {dynamic}
     """
     pass
 
 
-class CoreSourcesSpecies(Dict):
+class CoreSourcesSpecies(Species):
 
     type: Identifier = sp_property()
     """
@@ -270,7 +270,7 @@ class CoreSourcesSource(Module):
 
     profiles_1d: Profiles1D = sp_property()
 
-    def refresh(self, *args, core_profiles: CoreProfiles,  **kwargs) -> float:
+    def refresh(self, *args, **kwargs) -> float:
         residual = super().refresh(*args,  **kwargs)
         return residual
 
@@ -282,6 +282,7 @@ class CoreSources(IDS):
             (i.e. the energy flux takes into account the energy transported by the particle flux)
     """
     _IDS = "core_sources"
+    
     Source = CoreSourcesSource
 
     vacuum_toroidal_field: VacuumToroidalField = sp_property()
@@ -297,7 +298,6 @@ class CoreSources(IDS):
                 "identifier": {"name": "total", "index": 1,
                                "description": "Total source; combines all sources"},
                 "code": {"name": None},
-                "profiles_1d": {"grid": self.grid}
             })
 
     def refresh(self,  core_profiles: CoreProfiles, *args, **kwargs) -> float:

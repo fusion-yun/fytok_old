@@ -514,12 +514,14 @@ class CoreProfiles(IDS):
     """CoreProfiles
     """
     _IDS = "core_profiles"
-    Profiles1D = CoreProfiles1D
-    GlobalQuantities = CoreProfilesGlobalQuantities
 
-    def refresh(self, *args,  **kwargs) -> None:
-        super().refresh(*args, **kwargs)
+    Profiles1D = CoreProfiles1D
+
+    GlobalQuantities = CoreProfilesGlobalQuantities
 
     profiles_1d: Profiles1D = sp_property()
 
     global_quantities: GlobalQuantities = sp_property()
+
+    def refresh(self, *args,  **kwargs) -> None:
+        super().refresh(*args, **kwargs)

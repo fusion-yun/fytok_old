@@ -273,7 +273,7 @@ if __name__ == "__main__":
             x_axis=([0, 1.0], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             grid=True, fontsize=10) .savefig(output_path/"core_profiles_initialize.svg", transparent=True)
 
-    if False:  # CoreTransport
+    if True:  # CoreTransport
         tok.core_transport["model"] = [
             {
                 "code": {"name": "dummy"},
@@ -341,6 +341,8 @@ if __name__ == "__main__":
             x_axis=([0, 1.0],   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             title="combine",
             grid=True, fontsize=10) .savefig(output_path/"core_transport.svg", transparent=True)
+
+        logger.debug("Initialize CoreTransport done")
 
     if True:  # CoreSources
         tok.core_sources["source"] = [
@@ -410,13 +412,14 @@ if __name__ == "__main__":
                 ],
             ],
             x_axis=([0, 1.0], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-            grid=True, fontsize=10) .savefig(output_path/"core_sources.svg", transparent=True)
+            grid=True, fontsize=10) \
+            .savefig(output_path/"core_sources.svg", transparent=True)
 
-        logger.debug("Source done")
+        logger.debug("Initialize CoreSource done")
 
     ###################################################################################################
     # TransportSolver
-    if False:
+    if True:
 
         tok["core_transport_solver"] = {
             "code": {
@@ -453,7 +456,11 @@ if __name__ == "__main__":
 
         particle_solver = tok.core_transport_solver.get('code.parameters.particle_solver', 'ion')
 
+        logger.info("Transport solver Start")
+
         tok.refresh()
+
+        logger.info("Transport solver End")
 
         core_profile_1d = tok.core_profiles.profiles_1d
 
@@ -594,6 +601,7 @@ if __name__ == "__main__":
             ],
             x_axis=([0, 1.0],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             title=f" Particle solver '{particle_solver}'",
-            grid=True, fontsize=10).savefig(output_path/f"core_profiles_result_{particle_solver}_alpha.svg", transparent=True)
+            grid=True, fontsize=10)\
+            .savefig(output_path/f"core_profiles_result_{particle_solver}_alpha.svg", transparent=True)
 
     logger.info("====== DONE ========")
