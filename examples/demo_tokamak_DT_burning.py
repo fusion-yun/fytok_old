@@ -347,7 +347,7 @@ if __name__ == "__main__":
 
         logger.debug("Initialize CoreTransport done")
 
-    if False:  # CoreSources
+    if True:  # CoreSources
         tok.core_sources["source"] = [
             {"code": {"name": "dummy"},
              "profiles_1d": load_core_source(profiles, tok.core_profiles.profiles_1d.grid)},
@@ -422,7 +422,7 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # TransportSolver
-    if False:
+    if True:
 
         tok["core_transport_solver"] = {
             "code": {
@@ -457,7 +457,7 @@ if __name__ == "__main__":
                 ]
             }}
 
-        particle_solver = tok.core_transport_solver.get('code.parameters.particle_solver', 'ion')
+        particle_solver = tok.core_transport_solver.get('code/parameters/particle_solver', 'ion')
 
         logger.info("Transport solver Start")
 

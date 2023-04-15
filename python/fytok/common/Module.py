@@ -14,7 +14,6 @@ from ..common.Identifier import Identifier
 class Module(Dict[Node], Factory):
 
     _registry = {}
-    _plugin_prefix = "fymodules/transport/"
 
     def __new__(cls, *args, **kwargs):
         if not issubclass(cls, Module) or getattr(cls, "_IDS", None) is None:
