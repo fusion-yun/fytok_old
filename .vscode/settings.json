@@ -21,6 +21,7 @@
     "spdm"
   ],
   "python.analysis.extraPaths": [
+    "./python",
     "./python"
   ],
 

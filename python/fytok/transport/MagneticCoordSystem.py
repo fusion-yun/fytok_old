@@ -10,7 +10,7 @@ from scipy import constants
 from spdm.data.Dict import Dict
 from spdm.data.Entry import Entry
 from spdm.data.Field import Field
-from spdm.data.Function import function_like, Function
+from spdm.data.Function import Function, function_like
 from spdm.data.Node import Node
 from spdm.data.sp_property import sp_property
 from spdm.geometry.CubicSplineCurve import CubicSplineCurve

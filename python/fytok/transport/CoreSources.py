@@ -4,6 +4,7 @@ import numpy as np
 from spdm.data.Dict import Dict
 from spdm.data.List import List
 from spdm.data.Node import Node
+from spdm.data.Function import Function
 from spdm.data.sp_property import sp_property
 
 from ..common.IDS import IDS
@@ -40,26 +41,26 @@ from .Species import Species, SpeciesElectron, SpeciesIon
 
 class CoreSourcesElectrons(SpeciesElectron):
 
-    particles: np.ndarray = sp_property()
+    particles: Function = sp_property()
 
-    particles_decomposed: Decomposition[np.ndarray] = sp_property()
+    particles_decomposed: Decomposition[Function] = sp_property()
 
-    energy: np.ndarray = sp_property()
+    energy: Function = sp_property()
 
-    energy_decomposed: Decomposition[np.ndarray] = sp_property()
+    energy_decomposed: Decomposition[Function] = sp_property()
 
 
 class CoreSourcesIon(SpeciesIon):
 
-    particles: np.ndarray = sp_property()
+    particles: Function = sp_property()
 
-    particles_fast: np.ndarray = sp_property()
+    particles_fast: Function = sp_property()
 
-    particles_decomposed: Decomposition[np.ndarray] = sp_property()
+    particles_decomposed: Decomposition[Function] = sp_property()
 
-    energy: np.ndarray = sp_property()
+    energy: Function = sp_property()
 
-    energy_decomposed: Decomposition[np.ndarray] = sp_property()
+    energy_decomposed: Decomposition[Function] = sp_property()
 
 
 class CoreSourcesNeutral(Species):
@@ -80,20 +81,20 @@ class CoreSourcesProfiles1D(Dict[Node]):
     neutral: List[Neutral] = sp_property()
 
     @sp_property
-    def total_ion_energy(self) -> np.ndarray:
+    def total_ion_energy(self) -> Function:
         return np.sum([ion.energy for ion in self.ion])
 
-    total_ion_power_inside: np.ndarray = sp_property()
+    total_ion_power_inside: Function = sp_property()
 
-    momentum_tor: np.ndarray = sp_property()
+    momentum_tor: Function = sp_property()
 
-    torque_tor_inside: np.ndarray = sp_property()
+    torque_tor_inside: Function = sp_property()
 
-    j_parallel: np.ndarray = sp_property()
+    j_parallel: Function = sp_property()
 
-    current_parallel_inside: np.ndarray = sp_property()
+    current_parallel_inside: Function = sp_property()
 
-    conductivity_parallel: np.ndarray = sp_property()
+    conductivity_parallel: Function = sp_property()
 
 
 class CoreSourcesGlobalQuantities(Dict):

@@ -5,9 +5,11 @@ from spdm.common.tags import _not_found_
 from spdm.data.Dict import Dict
 from spdm.data.List import List
 from spdm.data.Node import Node
+from spdm.data.Function import Function
 from spdm.data.sp_property import sp_property
 
 from ..constants.Atoms import atoms
+
 
 class SpeciesElement(Dict[Node]):
     a: float = sp_property()
@@ -24,6 +26,12 @@ class Species(Dict[Node]):
 
     label: str = sp_property()
     """String identifying ion (e.g. H+, D+, T+, He+2, C+, ...) {dynamic}    """
+
+    def _as_child(self, *args, **kwargs):
+        value = super()._as_child(*args, **kwargs)
+        if isinstance(value, Function):
+            value.setdefault_x(self._parent.grid.rho_tor_norm)
+        return value
 
     multiple_states_flag: int = sp_property(default=0)
 

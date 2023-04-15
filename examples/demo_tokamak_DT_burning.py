@@ -241,7 +241,7 @@ if __name__ == "__main__":
 
         core_profile_1d.ion[{"label": "He"}]["has_fast_particle"] = True
 
-        logger.debug(core_profile_1d.electrons.temperature)
+        electrons = core_profile_1d.electrons
 
         plot_profiles(
             [
@@ -342,7 +342,7 @@ if __name__ == "__main__":
             title="combine",
             grid=True, fontsize=10) .savefig(output_path/"core_transport.svg", transparent=True)
 
-    if True:  # CoreSources
+    if False:  # CoreSources
         tok["core_sources.source"] = [
             {"code": {"name": "dummy"},
              "profiles_1d": load_core_source(profiles, tok.core_profiles.profiles_1d.grid)},
@@ -413,7 +413,7 @@ if __name__ == "__main__":
             x_axis=([0, 1.0], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             grid=True, fontsize=10) .savefig(output_path/"core_sources.svg", transparent=True)
 
-    logger.debug("Source done")
+        logger.debug("Source done")
 
     ###################################################################################################
     # TransportSolver

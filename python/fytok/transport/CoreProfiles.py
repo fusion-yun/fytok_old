@@ -15,8 +15,6 @@ from .Species import Species, SpeciesElectron, SpeciesIon
 
 
 class CoreProfilesElectrons(SpeciesElectron):
-    def __init__(self,   *args,   **kwargs):
-        super().__init__(*args, **kwargs)
 
     @property
     def grid(self) -> RadialGrid:
@@ -276,13 +274,6 @@ class CoreProfiles1D(Dict[Node]):
     Electrons = CoreProfilesElectrons
     Ion = CoreProfilesIon
     Neutral = CoreProfilesNeutral
-
-    def __init__(self,   *args,  **kwargs):
-        super().__init__(*args,  **kwargs)
-
-    def __new_child__(self, value):
-        _axis = self._parent.grid.rho_tor_norm
-        return Function(_axis, value) if isinstance(value, np.ndarray) and value.shape == _axis.shape else value
 
     grid: RadialGrid = sp_property()
 
