@@ -7,6 +7,8 @@ import typing
 import numpy as np
 # VacuumToroidalField = collections.namedtuple("VacuumToroidalField", "r0 b0", defaults=(0.0, 0.0))
 # Identifier = collections.namedtuple("Identifier", " ", defaults=("unamed", 0, ""))
+from spdm.data.Dict import Dict
+from spdm.data.Node import Node
 
 
 @dataclass
@@ -35,3 +37,8 @@ class VacuumToroidalField:
 class RZTuple:
     r:   np.ndarray
     z:   np.ndarray
+
+
+class Profiles1D(Dict[Node]):
+    def _as_child(self, *args, **kwargs):
+        super()._as_child(*args, **kwargs)

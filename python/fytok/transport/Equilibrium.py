@@ -634,7 +634,7 @@ class EquilibriumProfiles2D(Dict):
         return Field(self._coord.Btor, self._coord.r, self._coord.z, mesh_type="curvilinear")
 
 
-class EquilibriumBoundary(Dict):
+class EquilibriumBoundary(Dict[Node]):
     """
         Description of the plasma boundary used by fixed-boundary codes and typically chosen at psi_norm = 99.x%
         of the separatrix
@@ -672,11 +672,9 @@ class EquilibriumBoundary(Dict):
         """Value of the poloidal flux at which the boundary is taken  [Wb]"""
         return self.psi_norm*(self._coord.psi_boundary-self._coord.psi_axis)+self._coord.psi_axis
 
-    @sp_property
-    def psi_norm(self) -> float:
-        """Value of the normalized poloidal flux at which the boundary is taken (typically 99.x %),
+    psi_norm: float = sp_property(default_value=0.999)
+    """Value of the normalized poloidal flux at which the boundary is taken (typically 99.x %),
             the flux being normalized to its value at the separatrix """
-        return self.get("psi_norm", 0.999)
 
     @property
     def shape_property(self) -> MagneticCoordSystem.ShapeProperty:
@@ -763,11 +761,9 @@ class EquilibriumBoundarySeparatrix(Dict[Node]):
         """Value of the poloidal flux at which the boundary is taken  [Wb]"""
         return self._coord.psi_norm*(self._coord.psi_boundary-self._coord.psi_axis)+self._coord.psi_axis
 
-    @sp_property
-    def psi_norm(self) -> float:
-        """Value of the normalized poloidal flux at which the boundary is taken (typically 99.x %),
+    psi_norm: float = sp_property(default_value=1.0)
+    """Value of the normalized poloidal flux at which the boundary is taken (typically 99.x %),
             the flux being normalized to its value at the separatrix """
-        return self.get("psi_norm", 1.0)
 
 
 class Equilibrium(IDS):
@@ -877,7 +873,7 @@ class Equilibrium(IDS):
 
     # coordinate_system: MagneticCoordSystem = sp_property(create_coordinate_system)
     @sp_property
-    def coordinate_system(self) -> MagneticCoordSystem:
+    def coordinate_system(self, desc) -> MagneticCoordSystem:
         psirz = self.profiles_2d._entry.get("psi", None)
 
         if not isinstance(psirz, Field):
@@ -895,7 +891,6 @@ class Equilibrium(IDS):
             psi_1d = (psi_1d-psi_1d[0])/(psi_1d[-1]-psi_1d[0])
 
         # pprime_1d = self.profiles_1d._entry.get("dpressure_dpsi", None)
-        desc = self["coordinate_system"].__value__
 
         return MagneticCoordSystem(
             psirz=psirz,

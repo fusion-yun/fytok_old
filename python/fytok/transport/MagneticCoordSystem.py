@@ -10,7 +10,7 @@ from scipy import constants
 from spdm.data.Dict import Dict
 from spdm.data.Entry import Entry
 from spdm.data.Field import Field
-from spdm.data.Function import Function, function_like
+from spdm.data.Function import function_like, Function
 from spdm.data.Node import Node
 from spdm.data.sp_property import sp_property
 from spdm.geometry.CubicSplineCurve import CubicSplineCurve
@@ -50,9 +50,15 @@ class RadialGrid(Dict):
         Radial grid
     """
 
+    def __init__(self, *args, **kwargs):
+        if len(args) == 0:
+            super().__init__(kwargs)
+        else:
+            super().__init__(*args, **kwargs)
+
     def remesh(self, label: str = "psi_norm", new_axis: np.ndarray = None, ):
-        
-        axis = self.get(label)
+
+        axis = self.get(label, None, as_property=True)
 
         if isinstance(axis, np.ndarray) and isinstance(new_axis, np.ndarray) \
                 and axis.shape == new_axis.shape and np.allclose(axis, new_axis):
@@ -98,7 +104,7 @@ class RadialGrid(Dict):
     psi: np.ndarray = sp_property(lambda self: self.psi_norm * (self.psi_boundary-self.psi_axis)+self.psi_axis)
     """Poloidal magnetic flux {dynamic} [Wb]. This quantity is COCOS-dependent, with the following transformation"""
 
-    rho_tor_norm: np.ndarray = sp_property(force=True)
+    rho_tor_norm: np.ndarray = sp_property()
     """Normalized toroidal flux coordinate. The normalizing value for rho_tor_norm, is the toroidal flux coordinate
             at the equilibrium boundary (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibrium calculation,
             see time_slice/boundary/b_flux_pol_norm in the equilibrium IDS) {dynamic} [-]
@@ -169,7 +175,7 @@ class MagneticCoordSystem(Dict):
                  B0: float,
                  R0: float,
                  Ip: float,
-                 fpol:     Union[Function, np.ndarray],
+                 fpol:     np.ndarray,
                  psi_norm: Union[int, np.ndarray] = 128,
                  theta:    Union[int, np.ndarray] = 32,
                  grid_type_index=13,
@@ -216,7 +222,8 @@ class MagneticCoordSystem(Dict):
                 self._fpol = function_like(self._psi_norm, fpol)
             else:
                 self._fpol = function_like(np.linspace(0, 1.0, len(fpol)), fpol)
-
+        else:
+            raise RuntimeError(f"fpol is not defined!")
         # logger.debug(f"Create MagneticCoordSystem: type index={self._grid_type_index} primary='psi'  ")
 
     @property
@@ -682,7 +689,7 @@ class MagneticCoordSystem(Dict):
     @cached_property
     def magnetic_shear(self) -> np.ndarray:
         """Magnetic shear, defined as rho_tor/q . dq/drho_tor[-]	 """
-        return self.rho_tor/self.q * Function(self.rho_tor, self.q).derivative(self.rho_tor)
+        return self.rho_tor/self.q * function_like(self.rho_tor, self.q).derivative(self.rho_tor)
 
     @cached_property
     def phi(self) -> np.ndarray:
@@ -690,7 +697,7 @@ class MagneticCoordSystem(Dict):
             Note:
             $\Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi$
         """
-        return Function(self.psi_norm, self.dphi_dpsi).antiderivative(self.psi_norm)*(self.psi_boundary-self.psi_axis)
+        return function_like(self.psi_norm, self.dphi_dpsi).antiderivative(self.psi_norm)*(self.psi_boundary-self.psi_axis)
 
     @cached_property
     def phi_boundary(self) -> float:
@@ -715,7 +722,7 @@ class MagneticCoordSystem(Dict):
     @cached_property
     def volume(self) -> np.ndarray:
         """Volume enclosed in the flux surface[m ^ 3]"""
-        return Function(self.psi_norm, self.dvolume_dpsi).antiderivative(self.psi_norm)*(self.psi_boundary-self.psi_axis)
+        return function_like(self.psi_norm, self.dvolume_dpsi).antiderivative(self.psi_norm)*(self.psi_boundary-self.psi_axis)
 
     @cached_property
     def surface(self) -> np.ndarray:

@@ -22,10 +22,8 @@ class CoreProfilesElectrons(SpeciesElectron):
     def grid(self) -> RadialGrid:
         return self._parent.grid
 
-    @sp_property
-    def temperature(self) -> Function:
-        """Temperature {dynamic} [eV]"""
-        return function_like(self.grid.rho_tor_norm, self.get("temperature", 0))
+    temperature: np.ndarray = sp_property(default_value=0.0)
+    """Temperature {dynamic} [eV]"""
 
     # @property
     # def temperature_validity(self):
@@ -40,11 +38,10 @@ class CoreProfilesElectrons(SpeciesElectron):
     #     """Information on the fit used to obtain the temperature profile [eV]  """
     #     return NotImplemented
     @sp_property
-    def density(self) -> Function:
+    def density(self, value) -> Function:
         """Density (thermal+non-thermal) {dynamic} [m^-3]"""
-        d = self.get("density", None)
-        if d is not None:
-            return function_like(self.grid.rho_tor_norm, d)
+        if value is not None:
+            return function_like(self._parent.grid.rho_tor_norm, value)
         else:
             return self.density_thermal+self.density_fast
     # @property
@@ -60,48 +57,36 @@ class CoreProfilesElectrons(SpeciesElectron):
     #     """Information on the fit used to obtain the density profile [m^-3]"""
     #     return NotImplemented
 
-    @sp_property
-    def density_thermal(self):
-        """Density of thermal particles {dynamic} [m^-3]"""
-        return function_like(self.grid.rho_tor_norm, self.get("density_thermal", 0))
+    density_thermal: Function = sp_property(default_value=0.0)
+    """Density of thermal particles {dynamic} [m^-3]"""
+
+    density_fast: Function = sp_property(default_value=0.0)
+    """Density of fast (non-thermal) particles {dynamic} [m^-3]"""
 
     @sp_property
-    def density_fast(self):
-        """Density of fast (non-thermal) particles {dynamic} [m^-3]"""
-        return function_like(self.grid.rho_tor_norm, self.get("density_fast", 0))
-
-    @sp_property
-    def pressure(self) -> Function:
+    def pressure(self, value) -> Function:
         """Pressure(thermal+non-thermal) {dynamic}[Pa]"""
-        d = self.get("pressure", None)
-        if d is not None:
-            return function_like(self.grid.rho_tor_norm, d)
+        if value is not None:
+            return function_like(self._parent.grid.rho_tor_norm, value)
         else:
             return self.pressure_thermal+self.pressure_fast_parallel+self.pressure_fast_perpendicular
 
     @sp_property
-    def pressure_thermal(self) -> Function:
+    def pressure_thermal(self, value) -> Function:
         """Pressure(thermal) associated with random motion ~average((v-average(v)) ^ 2) {dynamic}[Pa]"""
-        d = self.get("pressure_thermal", None)
-        if d is not None:
-            return function_like(self.grid.rho_tor_norm, d)
+        if value is not None:
+            return function_like(self._parent.grid.rho_tor_norm, value)
         else:
             return self.density*self.temperature*constants.electron_volt
 
-    @sp_property
-    def pressure_fast_perpendicular(self) -> Function:
-        """Fast(non-thermal) perpendicular pressure {dynamic}[Pa]"""
-        return function_like(self.grid.rho_tor_norm, self.get("pressure_fast_perpendicular", 0))
+    pressure_fast_perpendicular: Function = sp_property(default_value=0.0)
+    """Fast(non-thermal) perpendicular pressure {dynamic}[Pa]"""
 
-    @sp_property
-    def pressure_fast_parallel(self) -> Function:
-        """Fast(non-thermal) parallel pressure {dynamic}[Pa]"""
-        return function_like(self.grid.rho_tor_norm, self.get("pressure_fast_parallel", 0))
+    pressure_fast_parallel: Function = sp_property(default_value=0.0)
+    """Fast(non-thermal) parallel pressure {dynamic}[Pa]"""
 
-    @sp_property
-    def collisionality_norm(self) -> Function:
-        """Collisionality normalised to the bounce frequency {dynamic}[-]"""
-        return function_like(self.grid.rho_tor_norm, self.get("collisionality_norm", 0))
+    collisionality_norm: Function = sp_property(default_value=0.0)
+    """Collisionality normalised to the bounce frequency {dynamic}[-]"""
 
     @sp_property
     def tau(self) -> Function:
@@ -115,30 +100,22 @@ class CoreProfilesElectrons(SpeciesElectron):
 
 class CoreProfilesIon(SpeciesIon):
 
-    @property
-    def grid(self) -> RadialGrid:
-        return self._parent.grid
-
     @sp_property
-    def z_ion_1d(self) -> Function:
-        d = self.get("z_ion_id", None)
-        if d is not None:
-            return function_like(self.grid.rho_tor_norm, d)
+    def z_ion_1d(self, value) -> Function:
+        if value is not None:
+            return function_like(self._parent.grid.rho_tor_norm, value)
         else:
-            return function_like(self.grid.rho_tor_norm, self.z)
+            return function_like(self._parent.grid.rho_tor_norm, self.z)
 
     @sp_property
-    def z_ion_square_1d(self) -> Function:
-        d = self.get("z_ion_square_1d", None)
-        if d is not None:
-            return function_like(self.grid.rho_tor_norm, d)
+    def z_ion_square_1d(self, value) -> Function:
+        if value is not None:
+            return function_like(self._parent.grid.rho_tor_norm, value)
         else:
-            return function_like(self.grid.rho_tor_norm, self.z_ion*self.z_ion)
+            return function_like(self._parent.grid.rho_tor_norm, self.z_ion*self.z_ion)
 
-    @sp_property
-    def temperature(self) -> Function:
-        """Temperature (average over charge states when multiple charge states are considered) {dynamic} [eV]  """
-        return function_like(self.grid.rho_tor_norm, self.get("temperature", 0))
+    temperature: Function = sp_property(default_value=0.0)
+    """Temperature (average over charge states when multiple charge states are considered) {dynamic} [eV]  """
 
     # @property
     # def temperature_validity(self):
@@ -155,22 +132,21 @@ class CoreProfilesIon(SpeciesIon):
     #     return NotImplemented
 
     @sp_property
-    def density(self) -> Function:
+    def density(self, value) -> Function:
         """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
         if self.has_fast_particle:
             return self.density_fast+self.density_thermal
         else:
-            return function_like(self.grid.rho_tor_norm, self.get("density", None))
+            return function_like(self._parent.grid.rho_tor_norm, value)
 
     @sp_property
-    def density_flux(self) -> Function:
+    def density_flux(self, value) -> Function:
         """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
         if self.has_fast_particle:
-
-            return function_like(self.grid.rho_tor_norm, self.get("density_fast_flux", 0)) + \
-                function_like(self.grid.rho_tor_norm, self.get("density_thermal_flux", 0))
+            return function_like(self._parent.grid.rho_tor_norm, self.get("density_fast_flux", 0)) + \
+                function_like(self._parent.grid.rho_tor_norm, self.get("density_thermal_flux", 0))
         else:
-            return function_like(self.grid.rho_tor_norm, self.get("density_flux", None))
+            return function_like(self._parent.grid.rho_tor_norm, value)
 
     # @property
     # def density_validity(self):
@@ -186,56 +162,43 @@ class CoreProfilesIon(SpeciesIon):
     #     """Information on the fit used to obtain the density profile [m^-3]    """
     #     return NotImplemented
 
-    @sp_property
-    def density_thermal(self) -> Function:
-        """Density (thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        return function_like(self.grid.rho_tor_norm, self.get("density_thermal", None))
+    density_thermal: Function = sp_property(default_value=0.0)
+    """Density (thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
+
+    density_fast: Function = sp_property(default_value=0.0)
+    """Density of fast (non-thermal) particles (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
 
     @sp_property
-    def density_fast(self) -> Function:
-        """Density of fast (non-thermal) particles (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        return function_like(self.grid.rho_tor_norm, self.get("density_fast", None))
-
-    @sp_property
-    def pressure(self) -> Function:
+    def pressure(self, value) -> Function:
         """Pressure (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-        d = self.get("pressure_thermal", None)
-        if d is not None:
-            return function_like(self.grid.rho_tor_norm, d)
+        if value is not None:
+            return function_like(self._parent.grid.rho_tor_norm, value)
         else:
             return self.pressure_thermal+self.pressure_fast_parallel+self.pressure_fast_perpendicular
 
     @sp_property
-    def pressure_thermal(self) -> Function:
+    def pressure_thermal(self, value) -> Function:
         """Pressure (thermal) associated with random motion ~average((v-average(v))^2)
         (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-        d = self.get("pressure_thermal", None)
-        if d is not None:
-            return function_like(self.grid.rho_tor_norm, d)
+
+        if value is not None:
+            return function_like(self._parent.grid.rho_tor_norm, value)
         else:
             return self.density_thermal*self.temperature*constants.electron_volt
 
-    @sp_property
-    def pressure_fast_perpendicular(self) -> Function:
-        """Fast (non-thermal) perpendicular pressure (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-        return function_like(self.grid.rho_tor_norm, self.get("pressure_fast_perpendicular", 0))
+    pressure_fast_perpendicular: Function = sp_property(default_value=0.0)
+    """Fast (non-thermal) perpendicular pressure (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
 
-    @sp_property
-    def pressure_fast_parallel(self) -> Function:
-        """Fast (non-thermal) parallel pressure (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
-        return function_like(self.grid.rho_tor_norm, self.get("pressure_fast_parallel", 0))
+    pressure_fast_parallel: Function = sp_property(default_value=0.0)
+    """Fast (non-thermal) parallel pressure (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
 
-    @sp_property
-    def rotation_frequency_tor(self) -> Function:
-        """Toroidal rotation frequency (i.e. toroidal velocity divided by the major radius at which the toroidal velocity is taken)
+    rotation_frequency_tor: Function = sp_property(default_value=0.0)
+    """Toroidal rotation frequency (i.e. toroidal velocity divided by the major radius at which the toroidal velocity is taken)
         (average over charge states when multiple charge states are considered) {dynamic} [rad.s^-1]  """
-        return function_like(self.grid.rho_tor_norm, self.get("rotation_frequency_tor", 0))
 
-    @sp_property
-    def velocity(self) -> Function:
-        """Velocity (average over charge states when multiple charge states are considered) at the position of maximum major
+    velocity: Function = sp_property(default_value=0.0)
+    """Velocity (average over charge states when multiple charge states are considered) at the position of maximum major
         radius on every flux surface [m.s^-1]    """
-        return function_like(self.grid.rho_tor_norm, self.get("velocity", 0))
 
 
 class CoreProfilesNeutral(Species):
@@ -246,30 +209,20 @@ class CoreProfilesNeutral(Species):
     def grid(self) -> RadialGrid:
         return self._parent.grid
 
-    @property
-    def ion_index(self) -> int:
-        """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
-        return self.get("ion_index", 0)
+    ion_index: int = sp_property(default_value=0)
+    """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
 
-    @property
-    def element(self):
-        """List of elements forming the atom or molecule  structure_array [max_size=unbounded]  1- 1...N"""
-        return NotImplemented
+    element: List[Species] = sp_property()
+    """List of elements forming the atom or molecule  structure_array [max_size=unbounded]  1- 1...N"""
 
-    @property
-    def label(self):
-        """String identifying the species (e.g. H, D, T, He, C, D2, DT, CD4, ...) {dynamic}  STR_0D  """
-        return NotImplemented
+    label: str = sp_property()
+    """String identifying the species (e.g. H, D, T, He, C, D2, DT, CD4, ...) {dynamic}  STR_0D  """
 
-    @property
-    def ion_index(self):
-        """Index of the corresponding ion species in the ../../ion array {dynamic}  INT_0D  """
-        return NotImplemented
+    ion_index: int = sp_property()
+    """Index of the corresponding ion species in the ../../ion array {dynamic}  INT_0D  """
 
-    @property
-    def temperature(self):
-        """Temperature (average over charge states when multiple charge states are considered) {dynamic} [eV]  """
-        return NotImplemented
+    temperature: float = sp_property()
+    """Temperature (average over charge states when multiple charge states are considered) {dynamic} [eV]  """
 
     @property
     def density(self):
@@ -328,12 +281,10 @@ class CoreProfiles1D(Dict[Node]):
         super().__init__(*args,  **kwargs)
 
     def __new_child__(self, value):
-        _axis = self.grid.rho_tor_norm
+        _axis = self._parent.grid.rho_tor_norm
         return Function(_axis, value) if isinstance(value, np.ndarray) and value.shape == _axis.shape else value
 
-    @sp_property
-    def grid(self) -> RadialGrid:
-        return self.get("grid")
+    grid: RadialGrid = sp_property()
 
     electrons: Electrons = sp_property()
     """Quantities related to the electrons"""
@@ -370,11 +321,10 @@ class CoreProfiles1D(Dict[Node]):
         return sum([ion.z*ion.density_thermal for ion in self.ion])
 
     @sp_property
-    def zeff(self) -> Function:
+    def zeff(self, value) -> Function:
         """Effective charge {dynamic}[-]"""
-        zeff = self.get("zeff", _not_found_)
-        if zeff is not _not_found_:
-            return zeff
+        if value is not None:
+            return value
         else:
             return sum([((ion.z_ion_1d**2)*ion.density) for ion in self.ion]) / self.n_i_total
 
@@ -410,28 +360,23 @@ class CoreProfiles1D(Dict[Node]):
         return NotImplemented
 
     @sp_property
-    def j_total(self) -> Function:
+    def j_total(self, value) -> Function:
         """Total parallel current density = average(jtot.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
-        jtol = self.get("j_total", _not_found_)
-        if jtol is _not_found_:
-            jtol = self.current_parallel_inside.derivative * \
-                self.grid.r0*TWOPI/self.grid.dvolume_drho_tor
-        return Function(self.grid.rho_tor_norm, jtol)
+        if value is None:
+            value = self.current_parallel_inside.derivative * \
+                self._parent.grid.r0*TWOPI/self._parent.grid.dvolume_drho_tor
+        return Function(self._parent.grid.rho_tor_norm, value)
 
     @sp_property
-    def current_parallel_inside(self) -> Function:
+    def current_parallel_inside(self, value) -> Function:
         """Parallel current driven inside the flux surface. Cumulative surface integral of j_total {dynamic}[A]"""
-        return Function(self.grid.rho_tor_norm, self.get("current_parallel_inside"))
+        return function_like(self._parent.grid.rho_tor_norm, value)
 
-    @sp_property
-    def j_tor(self) -> Function:
-        """Total toroidal current density = average(J_Tor/R) / average(1/R) {dynamic}[A/m ^ 2]"""
-        return self.get("j_tor", _not_found_)
+    j_tor: Function = sp_property()
+    """Total toroidal current density = average(J_Tor/R) / average(1/R) {dynamic}[A/m ^ 2]"""
 
-    @sp_property
-    def j_ohmic(self) -> Function:
-        """Ohmic parallel current density = average(J_Ohmic.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
-        return self.get("j_ohmic", _not_found_)
+    j_ohmic: Function = sp_property()
+    """Ohmic parallel current density = average(J_Ohmic.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
 
     @sp_property
     def j_non_inductive(self) -> Function:
@@ -440,68 +385,65 @@ class CoreProfiles1D(Dict[Node]):
         return self.j_total - self.j_ohmic
 
     @sp_property
-    def j_bootstrap(self) -> Function:
+    def j_bootstrap(self, value) -> Function:
         """Bootstrap current density = average(J_Bootstrap.B) / B0,
             where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
-        return Function(self.grid.rho_tor_norm, self.get("j_bootstrap"))
+        return Function(self._parent.grid.rho_tor_norm, value)
 
     @sp_property
-    def conductivity_parallel(self) -> Function:
+    def conductivity_parallel(self, value) -> Function:
         """Parallel conductivity {dynamic}[ohm ^ -1.m ^ -1]"""
-        sigma = self.get("conductivity_parallel", _not_found_)
-        if sigma is _not_found_:
-            sigma = self.j_ohmic/self.e_field.parallel
-        return Function(self.grid.rho_tor_norm, sigma)
+        if value is _not_found_:
+            value = self.j_ohmic/self.e_field.parallel
+        return Function(self._parent.grid.rho_tor_norm, value)
 
-    @sp_property
-    def beta_pol(self) -> Function:
-        """Poloidal beta profile. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip ^ 2][-]"""
-        return NotImplemented
+    beta_pol: Function = sp_property()
+    """Poloidal beta profile. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip ^ 2][-]"""
 
-        # if isinstance(d, np.ndarray) or (hasattr(d.__class__, 'empty') and not d.empty):
-        #     return d
+    # if isinstance(d, np.ndarray) or (hasattr(d.__class__, 'empty') and not d.empty):
+    #     return d
 
-        # else:
-        #     Te = self.electrons.temperature
-        #     ne = self.electrons.density
+    # else:
+    #     Te = self.electrons.temperature
+    #     ne = self.electrons.density
 
-        #     # Electron collisions: Coulomb logarithm
-        #     # clog = np.asarray([
-        #     #     (24.0 - 1.15*np.log10(ne[idx]*1.0e-6) + 2.30*np.log10(Te[idx]))
-        #     #     if Te[idx] >= 10 else (23.0 - 1.15*np.log10(ne[idx]*1.0e-6) + 3.45*np.log10(Te[idx]))
-        #     #     for idx in range(len(ne))
-        #     # ])
-        #     clog = self.coulomb_logarithm
-        #     # electron collision time:
-        #     # tau_e = (np.sqrt(2.*constants.electron_mass)*(Te**1.5)) / 1.8e-19 / (ne * 1.0e-6) / clog
+    #     # Electron collisions: Coulomb logarithm
+    #     # clog = np.asarray([
+    #     #     (24.0 - 1.15*np.log10(ne[idx]*1.0e-6) + 2.30*np.log10(Te[idx]))
+    #     #     if Te[idx] >= 10 else (23.0 - 1.15*np.log10(ne[idx]*1.0e-6) + 3.45*np.log10(Te[idx]))
+    #     #     for idx in range(len(ne))
+    #     # ])
+    #     clog = self.coulomb_logarithm
+    #     # electron collision time:
+    #     # tau_e = (np.sqrt(2.*constants.electron_mass)*(Te**1.5)) / 1.8e-19 / (ne * 1.0e-6) / clog
 
-        #     # Plasma electrical conductivity:
-        #     return 1.96e0 * constants.elementary_charge**2   \
-        #         * ((np.sqrt(2.*constants.electron_mass)*(Te**1.5)) / 1.8e-19 / clog) \
-        #         / constants.m_e
+    #     # Plasma electrical conductivity:
+    #     return 1.96e0 * constants.elementary_charge**2   \
+    #         * ((np.sqrt(2.*constants.electron_mass)*(Te**1.5)) / 1.8e-19 / clog) \
+    #         / constants.m_e
 
     @sp_property
     def coulomb_logarithm(self) -> Function:
         """ Coulomb logarithm,
             @ref: Tokamaks 2003  Ch.14.5 p727 ,2003
         """
-        Te = self.electrons.temperature(self.grid.rho_tor_norm)
-        Ne = self.electrons.density(self.grid.rho_tor_norm)
+        Te = self.electrons.temperature(self._parent.grid.rho_tor_norm)
+        Ne = self.electrons.density(self._parent.grid.rho_tor_norm)
 
         # Coulomb logarithm
         #  Ch.14.5 p727 Tokamaks 2003
 
-        return Function(self.grid.rho_tor_norm, ((14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +
-                                                 (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te >= 10)))
+        return Function(self._parent.grid.rho_tor_norm, ((14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +
+                                                         (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te >= 10)))
 
     @sp_property
     def electron_collision_time(self) -> Function:
         """ electron collision time ,
             @ref: Tokamak 2003, eq 14.6.1
         """
-        Te = self.electrons.temperature(self.grid.rho_tor_norm)
-        Ne = self.electrons.density(self.grid.rho_tor_norm)
-        lnCoul = self.coulomb_logarithm(self.grid.rho_tor_norm)
+        Te = self.electrons.temperature(self._parent.grid.rho_tor_norm)
+        Ne = self.electrons.density(self._parent.grid.rho_tor_norm)
+        lnCoul = self.coulomb_logarithm(self._parent.grid.rho_tor_norm)
         return 1.09e16*((Te/1000.0)**(3/2))/Ne/lnCoul
 
     class EField(Dict[Node]):
@@ -545,7 +487,7 @@ class CoreProfiles1D(Dict[Node]):
     @sp_property
     def phi_potential(self) -> Function:
         """Electrostatic potential, averaged on the magnetic flux surface {dynamic}[V]"""
-        return Function(self.grid.rho_tor_norm, self.get("phi_potential"))
+        return Function(self._parent.grid.rho_tor_norm, self.get("phi_potential"))
 
     @sp_property
     def rotation_frequency_tor_sonic(self) -> Function:
@@ -553,19 +495,19 @@ class CoreProfiles1D(Dict[Node]):
         This quantity is the toroidal angular rotation frequency due to the ExB drift, introduced in formula(43) of Hinton and Wong,
         Physics of Fluids 3082 (1985), also referred to as sonic flow in regimes in which the toroidal velocity is dominant over the
         poloidal velocity Click here for further documentation. {dynamic}[s ^ -1]"""
-        return Function(self.grid.rho_tor_norm, self.get("rotation_frequency_tor_sonic", 0))
+        return Function(self._parent.grid.rho_tor_norm, self.get("rotation_frequency_tor_sonic", 0))
 
     @sp_property
     def q(self) -> Function:
         """Safety factor(IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic}[-].
         This quantity is COCOS-dependent, with the following transformation: """
-        return Function(self.grid.rho_tor_norm, self.get("q"))
+        return Function(self._parent.grid.rho_tor_norm, self.get("q"))
 
     @sp_property
     def magnetic_shear(self) -> Function:
         """Magnetic shear, defined as rho_tor/q . dq/drho_tor {dynamic}[-]"""
-        return Function(self.grid.rho_tor_norm, self.q.derivative(self.grid.rho_tor_norm)/self.q(self.grid.rho_tor_norm)*self.grid.rho_tor_norm)
-        # return Function(self.grid.rho_tor_norm, self.get("magnetic_shear"))
+        return Function(self._parent.grid.rho_tor_norm, self.q.derivative(self._parent.grid.rho_tor_norm)/self.q(self._parent.grid.rho_tor_norm)*self._parent.grid.rho_tor_norm)
+        # return Function(self._parent.grid.rho_tor_norm, self.get("magnetic_shear"))
 
 
 class CoreProfilesGlobalQuantities(Dict):

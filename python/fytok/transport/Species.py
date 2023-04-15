@@ -9,8 +9,7 @@ from spdm.data.sp_property import sp_property
 
 from ..constants.Atoms import atoms
 
-
-class SpeciesElement(Dict):
+class SpeciesElement(Dict[Node]):
     a: float = sp_property()
     """Mass of atom {dynamic} [Atomic Mass Unit] """
 
@@ -22,20 +21,6 @@ class SpeciesElement(Dict):
 
 class Species(Dict[Node]):
     Element = SpeciesElement
-
-    def __init__(self,  *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        label = self.get("label", _not_found_)
-
-        if label is _not_found_:
-            raise RuntimeError(f"The label of species is not defined!")
-
-        d_atom = atoms.get(label, _not_found_)
-        if d_atom is _not_found_:
-            raise RuntimeError(f"The data of species [{label}] is not defined!")
-        else:
-            self.update(d_atom)
 
     label: str = sp_property()
     """String identifying ion (e.g. H+, D+, T+, He+2, C+, ...) {dynamic}    """
@@ -98,9 +83,9 @@ class SpeciesIonState(Dict):
 
 class SpeciesIon(Species):
 
-    is_impurity: bool = sp_property(default=False)
+    is_impurity: bool = sp_property(default_value=False)
 
-    has_fast_particle: bool = sp_property(default=False)
+    has_fast_particle: bool = sp_property(default_value=False)
 
     z_ion: float = sp_property()
     """Ion charge (of the dominant ionisation state; lumped ions are allowed),

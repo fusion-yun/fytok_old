@@ -1,5 +1,5 @@
 from functools import cached_property
-
+import numpy as np
 from spdm.data.Dict import Dict
 from spdm.data.Function import Function, function_like
 from spdm.data.List import List
@@ -15,23 +15,28 @@ from .Species import Species, SpeciesElectron, SpeciesIon, SpeciesIonState
 
 
 class TransportCoeff(Dict):
-    d: Function = sp_property(lambda self: function_like(self._parent._parent.grid_d.rho_tor_norm, self.get("d", 0)))
+    # d: Function = sp_property(lambda self: function_like(self._parent._parent.grid_d.rho_tor_norm, self.get("d", 0)))
 
-    v: Function = sp_property(lambda self: function_like(self._parent._parent.grid_v.rho_tor_norm, self.get("v", 0)))
+    @sp_property
+    def d(self, value) -> Function:
+        rho_tor_norm = self._parent._parent.grid_d.rho_tor_norm
+        return function_like(rho_tor_norm, value)
+
+    v: Function = sp_property(lambda self, value: function_like(self._parent._parent.grid_v.rho_tor_norm, value))
 
     flux: Function = sp_property(
-        lambda self: function_like(self._parent._parent.grid_flux.rho_tor_norm, self.get("flux", 0)))
+        lambda self, value: function_like(self._parent._parent.grid_flux.rho_tor_norm, value))
 
-    d_fast_factor: Function = sp_property(lambda self: function_like(
-        self._parent._parent.grid.rho_tor_norm, self.get("d_fast_factor", 1)))
+    d_fast_factor: Function = sp_property(lambda self, value: function_like(
+        self._parent.grid.rho_tor_norm, value), default_value=1)
     """ NOT IN IMAS """
 
-    v_fast_factor: Function = sp_property(lambda self: function_like(
-        self._parent._parent.grid.rho_tor_norm, self.get("v_fast_factor", 1)))
+    v_fast_factor: Function = sp_property(lambda self, value: function_like(
+        self._parent._parent.grid.rho_tor_norm, value), default_value=1)
     """ NOT IN IMAS """
 
-    flux_fast_factor: Function = sp_property(lambda self:  function_like(
-        self._parent._parent.grid_flux.rho_tor_norm, self.get("flux_fast", 1)))
+    flux_fast_factor: Function = sp_property(lambda self, value:  function_like(
+        self._parent._parent.grid_flux.rho_tor_norm, value), default_value=1)
     """ NOT IN IMAS """
 
 
@@ -94,7 +99,9 @@ class CoreTransportProfiles1D(Dict[Node]):
     Electrons = CoreTransportElectrons
     Momentum = CoreTransportMomentum
 
-    grid: RadialGrid = sp_property()
+    @property
+    def grid(self) -> RadialGrid:
+        return self._parent.grid
 
     # grid_d: RadialGrid = sp_property(
     #     lambda self: self.grid.remesh("rho_tor_norm", 0.5*(self.grid.rho_tor_norm[:-1]+self.grid.rho_tor_norm[1:])),
@@ -102,7 +109,8 @@ class CoreTransportProfiles1D(Dict[Node]):
 
     @sp_property
     def grid_d(self) -> RadialGrid:
-        return self.grid.remesh("rho_tor_norm", 0.5*(self.grid.rho_tor_norm[:-1]+self.grid.rho_tor_norm[1:]))
+        rho_tor_norm = self.grid.rho_tor_norm
+        return self.grid.remesh("rho_tor_norm", 0.5*(rho_tor_norm[:-1]+rho_tor_norm[1:]))
 
     grid_v: RadialGrid = sp_property(lambda self: self.grid.remesh("rho_tor_norm", self.grid.rho_tor_norm))
     """ Grid for effective convections  """
@@ -128,11 +136,14 @@ class CoreTransportProfiles1D(Dict[Node]):
     momentum_tor: TransportCoeff = sp_property()
     """ Transport coefficients for total toroidal momentum equation  """
 
-    conductivity_parallel: Function = sp_property(lambda self: function_like(
-        self.grid_d.rho_tor_norm, self.get("conductivity_parallel")))
+    # conductivity_parallel: Function = sp_property(lambda self: function_like(
+    #     self.grid_d.rho_tor_norm, self.get("conductivity_parallel", 0)))
+    @sp_property
+    def conductivity_parallel(self, value) -> Function:
+        return function_like(self.grid_d.rho_tor_norm, value)
 
-    e_field_radial: Function = sp_property(lambda self:  function_like(
-        self.grid_flux.rho_tor_norm, self.get("e_field_radial")))
+    e_field_radial: Function = sp_property(lambda self, value:  function_like(
+        self.grid_flux.rho_tor_norm, value), default_value=0)
     """ Radial component of the electric field (calculated e.g. by a neoclassical model) {dynamic} [V.m^-1]"""
 
 
@@ -162,7 +173,9 @@ class CoreTransportModel(Module):
 
     Profiles1D = CoreTransportProfiles1D
 
-    grid: RadialGrid = sp_property()
+    @property
+    def grid(self) -> RadialGrid:
+        return self._parent.grid
 
     flux_multiplier: float = sp_property(default_value=1.0)
 
@@ -170,7 +183,7 @@ class CoreTransportModel(Module):
 
     def refresh(self, *args, core_profiles: CoreProfiles, **kwargs) -> None:
         super().refresh(*args, core_profiles=core_profiles, **kwargs)
-        self.profiles_1d["grid"] = core_profiles.profiles_1d.grid
+        # self.profiles_1d["grid"] = core_profiles.profiles_1d.grid
 
 
 class CoreTransport(IDS):
@@ -197,16 +210,21 @@ class CoreTransport(IDS):
 
     @cached_property
     def model_combiner(self) -> Model:
-        return self.model.combine({
-            "identifier": {"name": "combined", "index": 1,
-                           "description": """Combination of data from available transport models.
+        return self.model.combine(
+            common_data={
+                "identifier": {"name": "combined", "index": 1,
+                               "description": """Combination of data from available transport models.
                                 Representation of the total transport in the system"""},
-            "code": {"name": None},
-            # "profiles_1d": {"grid": self.grid}
-        })
+                "code": {"name": None},
+                "profiles_1d": {"grid": self.grid}
+            })
 
-    def refresh(self, *args,   **kwargs) -> None:
+    def refresh(self, *args, core_profiles=None, **kwargs) -> None:
         if "model_combiner" in self.__dict__:
             del self.__dict__["model_combiner"]
+
+        if core_profiles is not None:
+            self["grid"] = core_profiles.profiles_1d.grid
+
         for model in self.model:
-            model.refresh(*args, **kwargs)
+            model.refresh(*args, core_profiles=core_profiles, **kwargs)

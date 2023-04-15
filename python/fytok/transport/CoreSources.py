@@ -2,8 +2,8 @@ from functools import cached_property
 
 import numpy as np
 from spdm.data.Dict import Dict
-from spdm.data.Function import Function
 from spdm.data.List import List
+from spdm.data.Node import Node
 from spdm.data.sp_property import sp_property
 
 from ..common.IDS import IDS
@@ -40,33 +40,33 @@ from .Species import Species, SpeciesElectron, SpeciesIon
 
 class CoreSourcesElectrons(SpeciesElectron):
 
-    particles: Function = sp_property()
+    particles: np.ndarray = sp_property()
 
-    particles_decomposed: Decomposition[Function] = sp_property()
+    particles_decomposed: Decomposition[np.ndarray] = sp_property()
 
-    energy: Function = sp_property()
+    energy: np.ndarray = sp_property()
 
-    energy_decomposed: Decomposition[Function] = sp_property()
+    energy_decomposed: Decomposition[np.ndarray] = sp_property()
 
 
 class CoreSourcesIon(SpeciesIon):
 
-    particles: Function = sp_property()
+    particles: np.ndarray = sp_property()
 
-    particles_fast: Function = sp_property()
+    particles_fast: np.ndarray = sp_property()
 
-    particles_decomposed: Decomposition[Function] = sp_property()
+    particles_decomposed: Decomposition[np.ndarray] = sp_property()
 
-    energy: Function = sp_property()
+    energy: np.ndarray = sp_property()
 
-    energy_decomposed: Decomposition[Function] = sp_property()
+    energy_decomposed: Decomposition[np.ndarray] = sp_property()
 
 
 class CoreSourcesNeutral(Species):
     pass
 
 
-class CoreSourcesProfiles1D(Dict):
+class CoreSourcesProfiles1D(Dict[Node]):
     Ion = CoreSourcesIon
     Electrons = CoreSourcesElectrons
     Neutral = CoreSourcesNeutral
@@ -80,39 +80,26 @@ class CoreSourcesProfiles1D(Dict):
     neutral: List[Neutral] = sp_property()
 
     @sp_property
-    def total_ion_energy(self) -> Function:
-        return Function(self.grid.rho_tor_norm, np.sum([ion.energy for ion in self.ion]))
+    def total_ion_energy(self) -> np.ndarray:
+        return np.sum([ion.energy for ion in self.ion])
 
-    @sp_property
-    def total_ion_power_inside(self) -> Function:
-        return Function(self.grid.rho_tor_norm, self.get("total_ion_power_inside"))
+    total_ion_power_inside: np.ndarray = sp_property()
 
-    @sp_property
-    def momentum_tor(self) -> Function:
-        return Function(self.grid.rho_tor_norm, self.get("momentum_tor"))
+    momentum_tor: np.ndarray = sp_property()
 
-    @sp_property
-    def torque_tor_inside(self) -> Function:
-        return Function(self.grid.rho_tor_norm, self.get("torque_tor_inside"))
+    torque_tor_inside: np.ndarray = sp_property()
 
-    @sp_property
-    def j_parallel(self) -> Function:
-        return Function(self.grid.rho_tor_norm, self.get("j_parallel"))
+    j_parallel: np.ndarray = sp_property()
 
-    @sp_property
-    def current_parallel_inside(self) -> Function:
-        return Function(self.grid.rho_tor_norm, self.get("current_parallel_inside"))
+    current_parallel_inside: np.ndarray = sp_property()
 
-    @sp_property
-    def conductivity_parallel(self) -> Function:
-        return Function(self.grid.rho_tor_norm, self.get("conductivity_parallel"))
+    conductivity_parallel: np.ndarray = sp_property()
 
 
 class CoreSourcesGlobalQuantities(Dict):
     r"""
         Total source quantities integrated over the plasma volume or surface {dynamic}
     """
-
     pass
 
 
@@ -120,29 +107,29 @@ class CoreSourcesSpecies(Dict):
 
     type: Identifier = sp_property()
     """
-            Species type. index=1 for electron; index=2 for ion species in a single/average state (refer to ion structure); 
-            index=3 for ion species in a particular state (refer to ion/state structure); 
+            Species type. index=1 for electron; index=2 for ion species in a single/average state (refer to ion structure);
+            index=3 for ion species in a particular state (refer to ion/state structure);
             index=4 for neutral species in a single/average state (refer to neutral structure);
-            index=5 for neutral species in a particular state (refer to neutral/state structure); 
+            index=5 for neutral species in a particular state (refer to neutral/state structure);
             index=6 for neutron; index=7 for photon. Available options (refer to the children of this identifier structure) :
 
            +---------------+------------+-------------------------------------------------------------------------+
-           |Name           | Index      |  Description                                                            |                                                                         
-           +===============+============+=========================================================================+ 
-           |unspecified	   | 0	        |  unspecified                                                            |           
-           +---------------+------------+-------------------------------------------------------------------------+                                                                         
-           |electron	   | 1	        |  Electron                                                               |        
-           +---------------+------------+-------------------------------------------------------------------------+                                                                         
-           |ion	           | 2	        |  Ion species in a single/average state; refer to ion-structure          |                                                             
-           +---------------+------------+-------------------------------------------------------------------------+                                                                         
-           |ion_state	   | 3          |  Ion species in a particular state; refer to ion/state-structure        |                                                               
-           +---------------+------------+-------------------------------------------------------------------------+                                                                         
-           |neutral        | 4	        |  Neutral species in a single/average state; refer to neutral-structure  |                                                                     
-           +---------------+------------+-------------------------------------------------------------------------+                                                                         
-           |neutral_state  | 5	        |  Neutral species in a particular state; refer to neutral/state-structure|                                                                       
-           +---------------+------------+-------------------------------------------------------------------------+                                                                         
-           |neutron        | 6	        |  Neutron                                                                |       
-           +---------------+------------+-------------------------------------------------------------------------+                                                                         
+           |Name           | Index      |  Description                                                            |
+           +===============+============+=========================================================================+
+           |unspecified	   | 0	        |  unspecified                                                            |
+           +---------------+------------+-------------------------------------------------------------------------+
+           |electron	   | 1	        |  Electron                                                               |
+           +---------------+------------+-------------------------------------------------------------------------+
+           |ion	           | 2	        |  Ion species in a single/average state; refer to ion-structure          |
+           +---------------+------------+-------------------------------------------------------------------------+
+           |ion_state	   | 3          |  Ion species in a particular state; refer to ion/state-structure        |
+           +---------------+------------+-------------------------------------------------------------------------+
+           |neutral        | 4	        |  Neutral species in a single/average state; refer to neutral-structure  |
+           +---------------+------------+-------------------------------------------------------------------------+
+           |neutral_state  | 5	        |  Neutral species in a particular state; refer to neutral/state-structure|
+           +---------------+------------+-------------------------------------------------------------------------+
+           |neutron        | 6	        |  Neutron                                                                |
+           +---------------+------------+-------------------------------------------------------------------------+
            |photon         | 7	        |  Photon                                                                 |
            +---------------+------------+-------------------------------------------------------------------------+
 
@@ -265,7 +252,9 @@ class CoreSourcesSource(Module):
     _fy_module_prefix = "fymodules.transport.core_sources."
 
     Species = CoreSourcesSpecies
+
     Profiles1D = CoreSourcesProfiles1D
+
     GlobalQuantities = CoreSourcesGlobalQuantities
 
     species: Species = sp_property()
@@ -293,17 +282,15 @@ class CoreSources(IDS):
 
     source: List[Source] = sp_property()
 
-    @cached_property
+    @property
     def source_combiner(self) -> Source:
-        return self.source.combine({
-            "identifier": {"name": "total", "index": 1,
-                           "description": "Total source; combines all sources"},
-            "code": {"name": None}
-        })
+        return self.source.combine(
+            common_data={
+                "identifier": {"name": "total", "index": 1,
+                               "description": "Total source; combines all sources"},
+                "code": {"name": None}
+            })
 
     def refresh(self, *args,   **kwargs) -> float:
-        if "source_combiner" in self.__dict__:
-            del self.__dict__["source_combiner"]
-
         for src in self.source:
             src.refresh(*args, **kwargs)
