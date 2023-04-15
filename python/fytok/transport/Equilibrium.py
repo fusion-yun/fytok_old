@@ -812,7 +812,6 @@ class Equilibrium(IDS):
         ```
     """
     _IDS = "equilibrium"
-    _fy_module_prefix = "fymodules.transport.equilibrium."
 
     Constraints = EquilibriumConstraints
 

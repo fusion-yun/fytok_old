@@ -129,7 +129,7 @@ class RadialGrid(Dict):
     dvolume_drho_tor: np.ndarray = sp_property()
 
 
-class MagneticCoordSystem(Dict):
+class MagneticCoordSystem(Dict[Node]):
     r"""
         Flux surface coordinate system on a square grid of flux and poloidal angle
 

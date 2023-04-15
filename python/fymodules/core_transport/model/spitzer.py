@@ -1,13 +1,14 @@
 
 import collections
 import collections.abc
+
 import numpy as np
 from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreTransport import CoreTransport
 from fytok.transport.Equilibrium import Equilibrium
-from spdm.numlib.misc import array_like
 from scipy import constants
-from spdm.data import Function
+from spdm.data.Function import function_like
+from spdm.numlib.misc import array_like
 from spdm.util.logger import logger
 
 
@@ -51,7 +52,7 @@ class Spitzer(CoreTransport.Model):
 
         Te = core_profile.electrons.temperature(rho_tor_norm)
         Ne = core_profile.electrons.density(rho_tor_norm)
-        Pe = core_profile.electrons.pressure(rho_tor_norm)
+        # Pe = core_profile.electrons.pressure(rho_tor_norm)
 
         # Coulomb logarithm
         #  Ch.14.5 p727 Tokamaks 2003
@@ -91,7 +92,7 @@ class Spitzer(CoreTransport.Model):
 
         eta = eta_s*Zeff/(1-phi)/(1.0-C*phi)*(1.0+0.27*(Zeff-1.0))/(1.0+0.47*(Zeff-1.0))
 
-        self.profiles_1d["conductivity_parallel"] = Function(rho_tor_norm, array_like(rho_tor_norm, 1.0/eta))
+        self.profiles_1d["conductivity_parallel"] = function_like(rho_tor_norm, array_like(rho_tor_norm, 1.0/eta))
 
         return residual
 

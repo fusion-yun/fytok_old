@@ -418,13 +418,13 @@ class CoreProfiles1D(Dict[Node]):
         """ Coulomb logarithm,
             @ref: Tokamaks 2003  Ch.14.5 p727 ,2003
         """
-        Te = self.electrons.temperature(self._parent.grid.rho_tor_norm)
-        Ne = self.electrons.density(self._parent.grid.rho_tor_norm)
+        Te = self.electrons.temperature(self.grid.rho_tor_norm)
+        Ne = self.electrons.density(self.grid.rho_tor_norm)
 
         # Coulomb logarithm
         #  Ch.14.5 p727 Tokamaks 2003
 
-        return Function(self._parent.grid.rho_tor_norm, ((14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +
+        return Function(self.grid.rho_tor_norm, ((14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +
                                                          (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te >= 10)))
 
     @sp_property
@@ -432,9 +432,9 @@ class CoreProfiles1D(Dict[Node]):
         """ electron collision time ,
             @ref: Tokamak 2003, eq 14.6.1
         """
-        Te = self.electrons.temperature(self._parent.grid.rho_tor_norm)
-        Ne = self.electrons.density(self._parent.grid.rho_tor_norm)
-        lnCoul = self.coulomb_logarithm(self._parent.grid.rho_tor_norm)
+        Te = self.electrons.temperature(self.grid.rho_tor_norm)
+        Ne = self.electrons.density(self.grid.rho_tor_norm)
+        lnCoul = self.coulomb_logarithm(self.grid.rho_tor_norm)
         return 1.09e16*((Te/1000.0)**(3/2))/Ne/lnCoul
 
     class EField(Dict[Node]):

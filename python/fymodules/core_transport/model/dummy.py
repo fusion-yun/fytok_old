@@ -1,13 +1,7 @@
 
 import collections
 
-import numpy as np
-from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreTransport import CoreTransport
-from fytok.transport.Equilibrium import Equilibrium
-from spdm.data import Function
-from spdm.data import Dict, List, Node
-from spdm.util.logger import logger
 
 
 class TransportModelDummy(CoreTransport.Model):
@@ -21,7 +15,7 @@ class TransportModelDummy(CoreTransport.Model):
         super().__init__(collections.ChainMap({
             "identifier": {"name": "dummy", "index": 5,
                            "description": f"{self.__class__.__name__} Dummy CoreTransport.Model "},
-            "code": {"name": "spitzer"}}, d or {}),
+            "code": {"name": "dummy"}}, d or {}),
             *args, **kwargs)
 
     def refresh(self, *args, **kwargs) -> float:

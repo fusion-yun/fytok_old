@@ -3,7 +3,7 @@ from spdm.view.plot_profiles import plot_profiles, sp_figure
 from spdm.util.logger import logger
 # from spdm.numlib.smooth import rms_residual
 from spdm.data.File import File
-from spdm.data.Function import Function, function_like
+from spdm.data.Function import function_like
 from scipy import constants
 from fytok.Tokamak import Tokamak
 from fytok.load_profiles import (load_core_profiles, load_core_source,
@@ -275,12 +275,10 @@ if __name__ == "__main__":
 
     if True:  # CoreTransport
         tok.core_transport["model"] = [
-            {
-                "code": {"name": "dummy"},
-                "profiles_1d": load_core_transport(profiles, tok.core_profiles.profiles_1d.grid)
-            },
-            # {"code": {"name": "fast_alpha"}},
-            # {"code": {"name": "spitzer"}},
+            {"code": {"name": "dummy"},
+             "profiles_1d": load_core_transport(profiles, tok.core_profiles.profiles_1d.grid)},
+            {"code": {"name": "fast_alpha"}},
+            {"code": {"name": "spitzer"}},
             # {"code": {"name": "neoclassical"}},
             # {"code": {"name": "glf23"}},
             # {"code": {"name": "nclass"}},
@@ -295,6 +293,11 @@ if __name__ == "__main__":
 
         core_transport_profiles_1d = core_transport_model.profiles_1d
 
+        # logger.debug([[sp.energy.d for sp in model.profiles_1d.ion] for model in tok.core_transport.model])
+
+        energy = core_transport_profiles_1d.ion[{"label": "H"}].energy
+
+        # logger.debug(energy.d)
         # logger.debug(core_transport_profiles_1d.electrons.energy.d(np.linspace(0, 1.0, 128)))
         # nc_profiles_1d = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
         # fast_alpha_profiles_1d = tok.core_transport.model[{"code.name": "fast_alpha"}].profiles_1d
@@ -303,8 +306,8 @@ if __name__ == "__main__":
             [
                 [
                     (function_like(bs_r_norm, profiles["Xi"].values), r"astra", r"$\chi_{i}$", bs_line_style),
-                    *[(ion.energy.d, f"{ion.label}", r"$\chi_{i}$")
-                      for ion in core_transport_profiles_1d.ion if not ion.is_impurity],
+                    *[(core_transport_profiles_1d.ion[{"label": label}].energy.d, f"{label}", r"$\chi_{i}$")
+                      for label in ['D', 'T', 'He']],
                 ],
                 [
                     (function_like(bs_r_norm, profiles["He"].values), "astra", r"$\chi_{e}$", bs_line_style),
@@ -344,7 +347,7 @@ if __name__ == "__main__":
 
         logger.debug("Initialize CoreTransport done")
 
-    if True:  # CoreSources
+    if False:  # CoreSources
         tok.core_sources["source"] = [
             {"code": {"name": "dummy"},
              "profiles_1d": load_core_source(profiles, tok.core_profiles.profiles_1d.grid)},
@@ -419,7 +422,7 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # TransportSolver
-    if True:
+    if False:
 
         tok["core_transport_solver"] = {
             "code": {

@@ -5,7 +5,7 @@ from spdm.data.Function import Function, function_like
 from spdm.data.List import List
 from spdm.data.Node import Node
 from spdm.data.sp_property import sp_property
-
+from spdm.common.tags import _not_found_
 from ..common.IDS import IDS
 from ..common.Misc import VacuumToroidalField
 from ..common.Module import Module
@@ -14,13 +14,11 @@ from .MagneticCoordSystem import RadialGrid
 from .Species import Species, SpeciesElectron, SpeciesIon, SpeciesIonState
 
 
-class TransportCoeff(Dict):
-    # d: Function = sp_property(lambda self: function_like(self._parent._parent.grid_d.rho_tor_norm, self.get("d", 0)))
+class TransportCoeff(Dict[Node]):
 
     @sp_property
     def d(self, value) -> Function:
-        rho_tor_norm = self._parent._parent.grid_d.rho_tor_norm
-        return function_like(rho_tor_norm, value)
+        return function_like(self._parent._parent.grid_d.rho_tor_norm, value)
 
     v: Function = sp_property(lambda self, value: function_like(self._parent._parent.grid_v.rho_tor_norm, value))
 
@@ -107,17 +105,20 @@ class CoreTransportProfiles1D(Dict[Node]):
     #     lambda self: self.grid.remesh("rho_tor_norm", 0.5*(self.grid.rho_tor_norm[:-1]+self.grid.rho_tor_norm[1:])),
     #     doc="""Grid for effective diffusivity and parallel conductivity""")
 
-    @sp_property
+    @cached_property
     def grid_d(self) -> RadialGrid:
         rho_tor_norm = self.grid.rho_tor_norm
         return self.grid.remesh("rho_tor_norm", 0.5*(rho_tor_norm[:-1]+rho_tor_norm[1:]))
 
-    grid_v: RadialGrid = sp_property(lambda self: self.grid.remesh("rho_tor_norm", self.grid.rho_tor_norm))
-    """ Grid for effective convections  """
+    @cached_property
+    def grid_v(self) -> RadialGrid:
+        """ Grid for effective convections  """
+        return self.grid.remesh("rho_tor_norm", self.grid.rho_tor_norm)
 
-    grid_flux: RadialGrid = sp_property(lambda self:
-                                        self.grid.remesh("rho_tor_norm", 0.5*(self.grid.rho_tor_norm[:-1]+self.grid.rho_tor_norm[1:])))
-    """ Grid for fluxes  """
+    @cached_property
+    def grid_flux(self) -> RadialGrid:
+        """ Grid for fluxes  """
+        return self.grid.remesh("rho_tor_norm", 0.5*(self.grid.rho_tor_norm[:-1]+self.grid.rho_tor_norm[1:]))
 
     electrons: Electrons = sp_property()
     """ Transport quantities related to the electrons """
@@ -138,7 +139,7 @@ class CoreTransportProfiles1D(Dict[Node]):
 
     # conductivity_parallel: Function = sp_property(lambda self: function_like(
     #     self.grid_d.rho_tor_norm, self.get("conductivity_parallel", 0)))
-    @sp_property
+    @ sp_property
     def conductivity_parallel(self, value) -> Function:
         return function_like(self.grid_d.rho_tor_norm, value)
 
@@ -169,11 +170,11 @@ class CoreTransportModel(Module):
             not_provided	    | 25        | No data provided
         """
 
-    _fy_module_prefix = "fymodules.transport.core_transport."
+    _IDS = "core_transport/model"
 
     Profiles1D = CoreTransportProfiles1D
 
-    @property
+    @ property
     def grid(self) -> RadialGrid:
         return self._parent.grid
 
@@ -200,6 +201,7 @@ class CoreTransport(IDS):
         Note that the energy flux includes the energy transported by the particle flux.
     """
     _IDS = "core_transport"
+
     Model = CoreTransportModel
 
     vacuum_toroidal_field: VacuumToroidalField = sp_property()
@@ -208,7 +210,7 @@ class CoreTransport(IDS):
 
     model: List[Model] = sp_property()
 
-    @cached_property
+    @ property
     def model_combiner(self) -> Model:
         return self.model.combine(
             common_data={

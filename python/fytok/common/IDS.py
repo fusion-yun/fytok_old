@@ -90,7 +90,7 @@ class IDS(Module):
         %%%DESCRIPTION%%%.
         .. todo:: '___NAME___' IS NOT IMPLEMENTED
     """
-    _IDS = "NOT_DEFINED"
+    _IDS = None
 
     def __serialize__(self, properties: typing.Optional[typing.Sequence] = None):
         res = super().__serialize__(properties=properties)

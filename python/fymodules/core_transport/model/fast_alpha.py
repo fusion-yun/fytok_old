@@ -4,11 +4,11 @@ import numpy as np
 from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreTransport import CoreTransport
 from fytok.transport.Equilibrium import Equilibrium
-from spdm.numlib.misc import array_like
 from scipy import constants
-from spdm.data import Function, function_like
-from spdm.util.logger import logger
 from spdm.common.tags import _next_, _not_found_
+from spdm.data.Function import function_like
+from spdm.numlib.misc import array_like
+from spdm.util.logger import logger
 
 
 class FastAlpha(CoreTransport.Model):

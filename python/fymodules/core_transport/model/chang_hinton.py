@@ -4,7 +4,7 @@ from functools import cached_property
 import numpy as np
 from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreTransport import (CoreTransport,
-                                                   CoreTransportProfiles1D)
+                                           CoreTransportProfiles1D)
 from fytok.transport.Equilibrium import Equilibrium
 from fytok.transport.MagneticCoordSystem import RadialGrid
 from scipy import constants
@@ -22,9 +22,6 @@ class ChangHiton(CoreTransport.Model):
         =============
         - Tokamaks, Third Edition, Chapter 14.11  ,p737,  J.A.Wesson 2003
     """
-
-    def __init__(self,   *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     def refresh(self, *args,
                 core_profiles: CoreProfiles = None,

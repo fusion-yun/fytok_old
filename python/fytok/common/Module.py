@@ -1,44 +1,58 @@
 
 import collections
 import collections.abc
-
+from spdm.util.logger import logger
 from spdm.common.tags import _undefined_
 from spdm.data.Dict import Dict
 from spdm.data.Entry import Entry
 from spdm.data.Node import Node
 from spdm.data.sp_property import sp_property
-
+from spdm.common.Factory import Factory
 from ..common.Identifier import Identifier
 
 
-class Module(Dict[Node]):
+class Module(Dict[Node], Factory):
+
+    _registry = {}
+    _plugin_prefix = "fymodules/transport/"
+
+    def __new__(cls, *args, **kwargs):
+        if not issubclass(cls, Module) or getattr(cls, "_IDS", None) is None:
+            return object.__new__(cls)
+        else:
+            return Factory.__new__(cls, *args, **kwargs)
 
     @classmethod
-    def create(cls, desc=None, *args, metadata=None, **kwargs):
+    def _guess_class_name(cls,  *args, **kwargs):
+        # pkg_prefix = getattr(cls, "_fy_module_prefix", None)
 
-        prefix = getattr(cls, "_fy_module_prefix", None)
+        # if cls is not Module or pkg_prefix is None:
+        #     return super().__new__(cls)
 
-        cls_name = None
-        if metadata is None:
-            metadata = desc
+        if len(args) == 0:
+            return []
+            # raise TypeError("Module() missing 1 required positional argument: 'desc'")
 
-        if cls is not Module and prefix is None:
-            pass
-        elif isinstance(metadata, collections.abc.Mapping):
-            cls_name = metadata.get("code", {}).get("name", None)
-        elif isinstance(metadata, Entry):
-            cls_name = metadata.get("code.name", None)
+        module_name = None
 
-        if isinstance(cls_name, str):
-            cls_name = f"{prefix}{cls_name}"
+        if isinstance(args[0], collections.abc.Mapping):
+            module_name = args[0].get("code", {}).get("name", None)
+        elif isinstance(args[0], Entry):
+            module_name = args[0].get("code/name", None)
 
-        if isinstance(cls_name, str):
-            return super().create(cls_name)
+        if module_name is None:
+            return []
         else:
-            return object.__new__(cls)
+            ids_name = getattr(cls, "_IDS", cls.__class__.__name__.lower())
+            return ["/".join(["fymodules", ids_name, module_name])]
 
-    def __init__(self, d=None,  /, time=None,  **kwargs):
-        super().__init__(d,  **kwargs)
+        # if isinstance(cls_name, str):
+        #     return super().create(cls_name)
+        # else:
+        #     return object.__new__(cls)
+
+    def __init__(self, *args, time=None, **kwargs):
+        super().__init__(*args, **kwargs)
         self._job_id = 0  # Session.current().job_id(self.__class__.__name__)
         self._time = time if time is not None else 0.0
 
@@ -46,7 +60,7 @@ class Module(Dict[Node]):
         # logger.debug(f"Delete Module {guess_class_name(self.__class__)}")
         pass
 
-    @property
+    @ property
     def time(self):
         return self._time
 

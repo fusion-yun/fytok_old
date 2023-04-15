@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from spdm.data.Dict import Dict
 from spdm.data.List import List
+from spdm.data.Node import Node
 from spdm.data.sp_property import sp_property
 from spdm.util.logger import logger
 from sympy import Point, Polygon
@@ -12,28 +13,28 @@ from ..common.IDS import IDS
 from ..common.Misc import RZTuple
 
 
-class WallGlobalQuantities(Dict):
+class WallGlobalQuantities(Dict[Node]):
     pass
 
 
-class WallLimiter(Dict):
+class WallLimiter(Dict[Node]):
 
-    class Unit(Dict):
+    class Unit(Dict[Node]):
         outline: RZTuple = sp_property()
 
     unit:  List[Unit] = sp_property()
 
 
-class WallVessel(Dict):
+class WallVessel(Dict[Node]):
 
-    class Annular(Dict):
+    class Annular(Dict[Node]):
         outline_outer: RZTuple = sp_property(default_value={})
         outline_inner: RZTuple = sp_property(default_value={})
 
     annular: Annular = sp_property()
 
 
-class WallDescription2D(Dict):
+class WallDescription2D(Dict[Node]):
 
     Limiter = WallLimiter
     Vessel = WallVessel
@@ -105,7 +106,7 @@ class WallDescription2D(Dict):
         #     raise TypeError(f"Unknown type {type(vessel)}")
 
 
-class WallDescriptionGGD(Dict):
+class WallDescriptionGGD(Dict[Node]):
     pass
 
 
