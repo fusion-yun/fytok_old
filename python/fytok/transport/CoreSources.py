@@ -72,7 +72,9 @@ class CoreSourcesProfiles1D(Dict[Node]):
     Electrons = CoreSourcesElectrons
     Neutral = CoreSourcesNeutral
 
-    grid: RadialGrid = sp_property()
+    @sp_property
+    def grid(self, value) -> RadialGrid:
+        return value if value is not None else self._parent.grid
 
     electrons: Electrons = sp_property()
 
@@ -252,6 +254,10 @@ class CoreSourcesSource(Module):
 
     _fy_module_prefix = "fymodules.transport.core_sources."
 
+    @property
+    def grid(self):
+        return self._parent.grid
+
     Species = CoreSourcesSpecies
 
     Profiles1D = CoreSourcesProfiles1D
@@ -266,7 +272,6 @@ class CoreSourcesSource(Module):
 
     def refresh(self, *args, core_profiles: CoreProfiles,  **kwargs) -> float:
         residual = super().refresh(*args,  **kwargs)
-        self.profiles_1d["grid"] = core_profiles.profiles_1d.grid
         return residual
 
 
@@ -281,6 +286,8 @@ class CoreSources(IDS):
 
     vacuum_toroidal_field: VacuumToroidalField = sp_property()
 
+    grid: RadialGrid = sp_property()
+
     source: List[Source] = sp_property()
 
     @property
@@ -289,9 +296,11 @@ class CoreSources(IDS):
             common_data={
                 "identifier": {"name": "total", "index": 1,
                                "description": "Total source; combines all sources"},
-                "code": {"name": None}
+                "code": {"name": None},
+                "profiles_1d": {"grid": self.grid}
             })
 
-    def refresh(self, *args,   **kwargs) -> float:
+    def refresh(self,  core_profiles: CoreProfiles, *args, **kwargs) -> float:
+        self["grid"] = core_profiles.profiles_1d.grid
         for src in self.source:
-            src.refresh(*args, **kwargs)
+            src.refresh(*args, core_profiles=core_profiles, **kwargs)

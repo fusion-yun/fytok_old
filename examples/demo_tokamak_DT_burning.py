@@ -273,7 +273,7 @@ if __name__ == "__main__":
             x_axis=([0, 1.0], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             grid=True, fontsize=10) .savefig(output_path/"core_profiles_initialize.svg", transparent=True)
 
-    if True:  # CoreTransport
+    if False:  # CoreTransport
         tok.core_transport["model"] = [
             {
                 "code": {"name": "dummy"},
@@ -342,21 +342,20 @@ if __name__ == "__main__":
             title="combine",
             grid=True, fontsize=10) .savefig(output_path/"core_transport.svg", transparent=True)
 
-    if False:  # CoreSources
-        tok["core_sources.source"] = [
+    if True:  # CoreSources
+        tok.core_sources["source"] = [
             {"code": {"name": "dummy"},
              "profiles_1d": load_core_source(profiles, tok.core_profiles.profiles_1d.grid)},
             # {"code": {"name": "bootstrap_current"}},
             # {"code": {"name": "fusion_reaction"}},
         ]
 
-        tok.core_sources.refresh(equilibrium=tok.equilibrium, core_profiles=tok.core_profiles)
+        tok.core_sources.refresh(equilibrium=tok.equilibrium,
+                                 core_profiles=tok.core_profiles)
 
         core_source_profiles_1d = tok.core_sources.source_combiner.profiles_1d
 
         electron = core_source_profiles_1d.electrons
-
-        logger.debug(electron.particles)
 
         # core_source_fusion = tok.core_sources.source[{"code.name": "fusion_reaction"}].profiles_1d
         plot_profiles(
