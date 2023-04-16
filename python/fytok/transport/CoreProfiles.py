@@ -98,6 +98,7 @@ class CoreProfilesElectrons(SpeciesElectron):
 
 class CoreProfilesIon(SpeciesIon):
 
+    
     @sp_property
     def z_ion_1d(self, value) -> Function:
         if value is not None:
@@ -170,7 +171,7 @@ class CoreProfilesIon(SpeciesIon):
     def pressure(self, value) -> Function:
         """Pressure (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [Pa]  """
         if value is not None:
-            return function_like(self._parent.grid.rho_tor_norm, value)
+            return function_like(self.grid.rho_tor_norm, value)
         else:
             return self.pressure_thermal+self.pressure_fast_parallel+self.pressure_fast_perpendicular
 

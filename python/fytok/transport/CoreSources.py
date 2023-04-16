@@ -252,7 +252,7 @@ class CoreSourcesSource(Module):
 
         """
 
-    _fy_module_prefix = "fymodules.transport.core_sources."
+    _IDS = "core_sources/source"
 
     @property
     def grid(self):
@@ -282,7 +282,7 @@ class CoreSources(IDS):
             (i.e. the energy flux takes into account the energy transported by the particle flux)
     """
     _IDS = "core_sources"
-    
+
     Source = CoreSourcesSource
 
     vacuum_toroidal_field: VacuumToroidalField = sp_property()

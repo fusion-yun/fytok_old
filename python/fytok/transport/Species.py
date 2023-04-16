@@ -12,6 +12,7 @@ from ..constants.Atoms import atoms
 
 
 class SpeciesElement(Dict[Node]):
+
     a: float = sp_property()
     """Mass of atom {dynamic} [Atomic Mass Unit] """
 
@@ -22,6 +23,12 @@ class SpeciesElement(Dict[Node]):
 
 
 class Species(Dict[Node]):
+
+    def __init__(self, *args, cache=None, **kwargs):
+        super().__init__(*args, cache=cache, **kwargs)
+        desc = atoms.get(self.label, None)
+        self.update(desc)
+
     Element = SpeciesElement
 
     label: str = sp_property()
@@ -42,35 +49,29 @@ class Species(Dict[Node]):
     element: List[Element] = sp_property()
 
     @sp_property
-    def a(self) -> float:
+    def a(self, value) -> float:
         """Mass of ion {dynamic} [Atomic Mass Unit]"""
-        res = self.get("a", None)
-        if res is None:
-            res = sum([a.a*a.atoms_n for a in self.element])
-        return res
+        if value is None:
+            value = sum([a.a * a.atoms_n for a in self.element])
+        return value
 
     @sp_property
-    def z(self) -> float:
-        res = self.get("z", None)
-        if res is None:
-            res = self.get("z_ion", NotImplemented)
-        return res
+    def z(self, value) -> float:
+        if value is None:
+            value = self.get("z_ion", NotImplemented)
+        return value
 
 
 class SpeciesElectron(Species):
 
-    @property
-    def label(self) -> str:
-        return "electron"
+    label: str = sp_property(default_value="electron")
 
     @sp_property
     def a(self) -> float:
         """Mass of electron {dynamic} [Atomic Mass Unit]"""
         return constants.m_e/constants.m_u
 
-    @sp_property
-    def z(self) -> float:
-        return -1
+    z: float = sp_property(default_value=-1)
 
 
 class SpeciesIonState(Dict):
@@ -114,7 +115,7 @@ class SpeciesIon(Species):
     """Average square charge of the ion species (sum of states square charge weighted by
       state density and divided by ion density) {dynamic} [-]  """
 
-    multiple_states_flag: int = sp_property(default=0)
+    multiple_states_flag: int = sp_property(default_value=0)
     """Multiple states calculation flag : 0-Only one state is considered; 1-Multiple states are considered and are described in the state  {dynamic}    """
 
     state: List[SpeciesIonState] = sp_property()

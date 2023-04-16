@@ -542,25 +542,20 @@ class EquilibriumProfiles1D(Dict):
         return function_like(self._coord.psi_norm, self._coord.magnetic_shear)
 
     @sp_property
-    def trapped_fraction(self) -> Function:
+    def trapped_fraction(self, value) -> Function:
         """Trapped particle fraction[-]
             Tokamak 3ed, 14.10
         """
-        d = self.get("trapped_fraction", _not_found_)
-        if d is _not_found_:
+        if value is _not_found_:
             epsilon = self.rho_tor/self._coord.r0
-            d = np.asarray(1.0 - (1-epsilon)**2/np.sqrt(1.0-epsilon**2)/(1+1.46*np.sqrt(epsilon)))
-        return function_like(self._coord.psi_norm, d)
+            value = np.asarray(1.0 - (1-epsilon)**2/np.sqrt(1.0-epsilon**2)/(1+1.46*np.sqrt(epsilon)))
+        return function_like(self._coord.psi_norm, value)
 
-    @sp_property
-    def b_field_max(self) -> Function:
-        """Maximum(modulus(B)) on the flux surface(always positive, irrespective of the sign convention for the B-field direction)[T]"""
-        return NotImplemented
+    b_field_max: Function = sp_property()
+    """Maximum(modulus(B)) on the flux surface(always positive, irrespective of the sign convention for the B-field direction)[T]"""
 
-    @sp_property
-    def beta_pol(self) -> Function:
-        """Poloidal beta profile. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip ^ 2][-]"""
-        return NotImplemented
+    beta_pol: Function = sp_property()
+    """Poloidal beta profile. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip ^ 2][-]"""
 
 
 class EquilibriumProfiles2D(Dict):
@@ -573,11 +568,11 @@ class EquilibriumProfiles2D(Dict):
 
     @cached_property
     def grid(self):
-        return convert_to_named_tuple(self._entry.get("grid", {}))
+        return convert_to_named_tuple(self.get("grid", {}))
 
     @cached_property
     def grid_type(self):
-        return convert_to_named_tuple(self._entry.get("grid_type", {}))
+        return convert_to_named_tuple(self.get("grid_type", {}))
 
     @cached_property
     def psi(self) -> Field:
