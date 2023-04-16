@@ -38,6 +38,9 @@ class OXPoint:
 
 
 def extrapolate_left(x, d):
+    if hasattr(d, "__array__"):
+        d = d.__array__()
+
     d[0] = d[1]+(d[1]-d[2])/(x[1]-x[2])*(x[0]-x[1])
     return d
     # return Function(x[1:], d[1:])(x)
@@ -224,7 +227,7 @@ class MagneticCoordSystem(Dict[Node]):
                 self._fpol = function_like(np.linspace(0, 1.0, len(fpol)), fpol)
         else:
             raise RuntimeError(f"fpol is not defined!")
-        
+
         logger.debug(f"Create MagneticCoordSystem: type index={self._grid_type_index} primary='psi'  ")
 
     @property

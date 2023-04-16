@@ -132,7 +132,7 @@ class CoreProfilesIon(SpeciesIon):
     @sp_property
     def density(self, value) -> Function:
         """Density (thermal+non-thermal) (sum over charge states when multiple charge states are considered) {dynamic} [m^-3]  """
-        if self.has_fast_particle:
+        if value is None:
             return self.density_fast+self.density_thermal
         else:
             return function_like(self._parent.grid.rho_tor_norm, value)

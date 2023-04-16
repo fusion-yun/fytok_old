@@ -104,7 +104,7 @@ class SpeciesIon(Species):
     """Ion charge (of the dominant ionisation state; lumped ions are allowed),
     volume averaged over plasma radius {dynamic} [Elementary Charge Unit]  FLT_0D  """
 
-    neutral_index: int = sp_property(default=0)
+    neutral_index: int = sp_property(default_value=0)
     """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
 
     z_ion_1d: np.ndarray = sp_property()

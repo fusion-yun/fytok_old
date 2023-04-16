@@ -242,10 +242,6 @@ if __name__ == "__main__":
 
         core_profile_1d = tok.core_profiles.profiles_1d
 
-        core_profile_1d.ion[{"label": "He"}]["has_fast_particle"] = True
-
-        electrons = core_profile_1d.electrons
-
         plot_profiles(
             [
                 [
@@ -354,7 +350,7 @@ if __name__ == "__main__":
         tok.core_sources["source"] = [
             {"code": {"name": "dummy"},
              "profiles_1d": load_core_source(profiles, tok.core_profiles.profiles_1d.grid)},
-            # {"code": {"name": "bootstrap_current"}},
+            {"code": {"name": "bootstrap_current"}},
             # {"code": {"name": "fusion_reaction"}},
         ]
 
@@ -374,7 +370,7 @@ if __name__ == "__main__":
                 [
                     (function_like(bs_r_norm, profiles["Joh"].values), "astra",
                      r"$j_{ohmic} [MA\cdot m^{-2}]$", bs_line_style),
-                    (core_profile_1d.j_ohmic*1e-6, " ",    r"$j_{\Omega} [MA\cdot m^{-2}]$"),
+                    (core_profile_1d.j_ohmic*1e-6, "fytok", r"$j_{\Omega} [MA\cdot m^{-2}]$"),
                 ],
                 [
                     (core_source_profiles_1d.electrons.particles,       "electron",  r"$S[m ^ {-3} s ^ {-1}]$"),
@@ -385,8 +381,8 @@ if __name__ == "__main__":
                 [
                     (function_like(bs_r_norm, profiles["Jbs"].values),
                      r"astra", "bootstrap current \n $[MA\\cdot m^{-2}]$", bs_line_style),
-                    # (tok.core_sources.source[{"code.name": "bootstrap_current"}].profiles_1d.j_parallel*1e-6,
-                    #  r"fytok",),
+                    # (tok.core_sources.source[{"code/name": "bootstrap_current"}].profiles_1d.j_parallel*1e-6,
+                    #  r"fytok",                     ),
                 ],
                 # [
                 #     (rms_residual(function_like(bs_r_norm, profiles["Jbs"].values*1e6),
