@@ -6,6 +6,7 @@ from spdm.data.Dict import Dict
 from spdm.data.List import List
 from spdm.data.Node import Node
 from spdm.data.Function import Function
+from spdm.data.Entry import as_entry
 from spdm.data.sp_property import sp_property
 from .MagneticCoordSystem import RadialGrid
 from ..constants.Atoms import atoms
@@ -24,11 +25,6 @@ class SpeciesElement(Dict[Node]):
 
 class Species(Dict[Node]):
 
-    def __init__(self, *args,   **kwargs):
-        super().__init__(*args,   **kwargs)
-        # desc = atoms.get(self.label, None)
-        # self.update(desc)
-
     Element = SpeciesElement
 
     label: str = sp_property()
@@ -46,7 +42,11 @@ class Species(Dict[Node]):
 
     multiple_states_flag: int = sp_property(default=0)
 
-    element: List[Element] = sp_property()
+    @sp_property
+    def element(self, value) -> List[Element]:
+        if value is None:
+            value = as_entry(atoms).get(f"{self.label}/element")
+        return value
 
     @sp_property
     def a(self, value) -> float:
@@ -58,7 +58,7 @@ class Species(Dict[Node]):
     @sp_property
     def z(self, value) -> float:
         if value is None:
-            value = self.get("z_ion", NotImplemented)
+            value = as_entry(atoms).get(f"{self.label}/z")
         return value
 
 

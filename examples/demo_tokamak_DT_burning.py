@@ -86,7 +86,7 @@ if __name__ == "__main__":
                   }
                   ) .savefig(output_path/"tokamak.svg", transparent=True)
 
-    if False:  # plot tokamak
+    if True:  # plot tokamak
 
         magnetic_surface = tok.equilibrium.coordinate_system
 
@@ -233,6 +233,8 @@ if __name__ == "__main__":
 
             title="Equilibrium",
             grid=True, fontsize=16) .savefig(output_path/"equilibrium_profiles.svg", transparent=True)
+        
+        logger.info("Initialize Equilibrium ")
 
     if True:  # CoreProfile initialize value
 
@@ -251,14 +253,15 @@ if __name__ == "__main__":
                     (b_ni, "D astra", r"density $n [m \cdot s^{-3}]$", bs_line_style),
                     (b_nHe, "He astra", r"density $n [m \cdot s^{-3}]$", bs_line_style),
                     (core_profile_1d.electrons.density,    r"$electron$", ),
-                    # *[(ion.density,  f"${ion.label}$") for ion in core_profile_1d.ion],
+                    *[(core_profile_1d.ion[{"label": label}].density,  f"${label}$") for label in ['H', 'D', 'He']],
 
                 ],
                 [
                     (b_Te,    r"astra $T_e$",       r"$T [eV]$", bs_line_style),
                     (b_Ti,    r"astra $T_i$",       r"$T [eV]$", bs_line_style),
                     (core_profile_1d.electrons.temperature,  r"$e$", r"T $[eV]$"),
-                    # *[(ion.temperature,      f"${ion.label}$") for ion in core_profile_1d.ion],
+                    *[(core_profile_1d.ion[{"label": label}].temperature,   f"${label}$")
+                      for label in ['H', 'D', 'He']],
                 ],
 
                 # [
@@ -273,6 +276,8 @@ if __name__ == "__main__":
             ],
             x_axis=([0, 1.0], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             grid=True, fontsize=10) .savefig(output_path/"core_profiles_initialize.svg", transparent=True)
+        
+        logger.info("Initialize Core Profiles ")
 
     if True:  # CoreTransport
         tok.core_transport["model"] = [
@@ -343,7 +348,7 @@ if __name__ == "__main__":
             title="combine",
             grid=True, fontsize=10) .savefig(output_path/"core_transport.svg", transparent=True)
 
-        logger.debug("Initialize CoreTransport done")
+        logger.info("Initialize Core Transport ")
 
     if True:  # CoreSources
         tok.core_sources["source"] = [
@@ -358,9 +363,6 @@ if __name__ == "__main__":
 
         core_source_profiles_1d = tok.core_sources.source_combiner.profiles_1d
 
-        electron = core_source_profiles_1d.electrons
-
-        # core_source_fusion = tok.core_sources.source[{"code.name": "fusion_reaction"}].profiles_1d
         plot_profiles(
             [
                 [
@@ -369,16 +371,16 @@ if __name__ == "__main__":
                     (core_source_profiles_1d.j_parallel*1e-6,     "fytok", ""),
                 ],
 
-                # [
-                #     # (function_like(bs_r_norm, profiles["Joh"].values), "astra",
-                #     #  r"$j_{ohmic} [MA\cdot m^{-2}]$", bs_line_style),
-                #     (core_profile_1d.j_ohmic*1e-6, " ",    r"$j_{\Omega} [MA\cdot m^{-2}]$"),
-                # ],
+                [
+                    # (function_like(bs_r_norm, profiles["Joh"].values), "astra",
+                    #  r"$j_{ohmic} [MA\cdot m^{-2}]$", bs_line_style),
+                    (core_profile_1d.j_ohmic*1e-6, " ",    r"$j_{\Omega} [MA\cdot m^{-2}]$"),
+                ],
                 [
                     (core_source_profiles_1d.electrons.particles,       "electron",  r"$S[m ^ {-3} s ^ {-1}]$"),
                     (core_source_profiles_1d.ion[{"label": "D"}].particles,   "D",  r"$S[m ^ {-3} s ^ {-1}]$"),
                     (core_source_profiles_1d.ion[{"label": "T"}].particles,   "T",  r"$S[m ^ {-3} s ^ {-1}]$"),
-                    #     (core_source.ion[{"label": "He"}].particles,  "He",  r"$S[m ^ {-3} s ^ {-1}]$"),
+                    (core_source_profiles_1d.ion[{"label": "He"}].particles,  "He",  r"$S[m ^ {-3} s ^ {-1}]$"),
                 ],
                 [
                     (function_like(bs_r_norm, profiles["Jbs"].values),
@@ -413,11 +415,11 @@ if __name__ == "__main__":
             x_axis=([0, 1.0], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             grid=True, fontsize=10) .savefig(output_path/"core_sources.svg", transparent=True)
 
-        logger.debug("Initialize CoreSource done")
+        logger.info("Initialize Core Source  ")
 
     ###################################################################################################
     # TransportSolver
-    if True:
+    if False:
 
         tok["core_transport_solver"] = {
             "code": {

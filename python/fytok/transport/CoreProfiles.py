@@ -98,7 +98,6 @@ class CoreProfilesElectrons(SpeciesElectron):
 
 class CoreProfilesIon(SpeciesIon):
 
-    
     @sp_property
     def z_ion_1d(self, value) -> Function:
         if value is not None:
@@ -426,7 +425,7 @@ class CoreProfiles1D(Dict[Node]):
         #  Ch.14.5 p727 Tokamaks 2003
 
         return Function(self.grid.rho_tor_norm, ((14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +
-                                                         (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te >= 10)))
+                                                 (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te >= 10)))
 
     @sp_property
     def electron_collision_time(self) -> Function:
