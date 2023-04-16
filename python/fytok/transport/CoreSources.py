@@ -52,9 +52,9 @@ class CoreSourcesElectrons(SpeciesElectron):
 
 class CoreSourcesIon(SpeciesIon):
 
-    particles: Function = sp_property()
+    particles: Function = sp_property(default_value=0.0)
 
-    particles_fast: Function = sp_property()
+    particles_fast: Function = sp_property(default_value=0.0)
 
     particles_decomposed: Decomposition[Function] = sp_property()
 

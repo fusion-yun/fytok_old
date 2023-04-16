@@ -420,8 +420,10 @@ class EquilibriumProfiles1D(Dict):
         return self._coord.shape_property()
 
     @sp_property
-    def geometric_axis(self) -> RZTuple:
-        return self.shape_property.geometric_axis
+    def geometric_axis(self) -> RZTuple[Function]:
+        gaxis = self.shape_property.geometric_axis
+        return RZTuple[Function](function_like(self._coord.psi_norm, gaxis.r),
+                                 function_like(self._coord.psi_norm, gaxis.z))
 
     @sp_property
     def minor_radius(self) -> Function:

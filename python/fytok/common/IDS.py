@@ -3,6 +3,7 @@ import getpass
 import os
 import typing
 from dataclasses import dataclass
+from spdm.data.Node import Node
 
 from spdm.data.Dict import Dict
 from spdm.data.List import List
@@ -11,7 +12,7 @@ from spdm.data.sp_property import sp_property
 from .Module import Module
 
 
-class IDSProperties(Dict):
+class IDSProperties(Dict[Node]):
 
     comment: str = sp_property()
     """ Any comment describing the content of this IDS {constant}	STR_0D"""
@@ -50,41 +51,6 @@ class IDSProperties(Dict):
     """Version of the access layer package used to PUT this IDS"""
 
 
-class IDSCode(Dict):
-
-    @sp_property
-    def name(self) -> str:
-        """Name of software generating IDS {constant}	STR_0D"""
-        return self.get("name", None) or f"{self._parent.__class__.__module__}.{self._parent.__class__.__name__}"
-
-    commit: str = sp_property()
-    """	Unique commit reference of software {constant}	STR_0D"""
-
-    version: str = sp_property()
-    """Unique version (tag) of software {constant}	STR_0D"""
-
-    repository: str = sp_property()
-    """URL of software repository {constant}	STR_0D"""
-
-    parameters: Dict = sp_property()
-    """List of the code specific parameters  {constant}	dict"""
-
-    output_flag: List[int] = sp_property()
-    """Output flag : 0 means the run is successful, other values mean some difficulty has been encountered, 
-           the exact meaning is then code specific. Negative values mean the result shall not be used. {dynamic}	INT_1D	1- time"""
-
-    @dataclass
-    class LibraryDesc:
-        name: str = ""          # Name of software {constant}	STR_0D
-        commit: str = ""        # Unique commit reference of software {constant}	STR_0D
-        version: str = ""       # Unique version (tag) of software {constant}	STR_0D
-        repository: str = ""    # URL of software repository {constant}	STR_0D
-        parameters: list = None   # List of the code specific parameters in XML format {constant}
-
-    library: List[LibraryDesc] = sp_property()
-    "List of external libraries used by the code that has produced this IDS	struct_array [max_size=10]	1- 1...N"
-
-
 class IDS(Module):
     """
         %%%DESCRIPTION%%%.
@@ -106,5 +72,3 @@ class IDS(Module):
             raise NotImplementedError(ids)
 
     ids_properties: IDSProperties = sp_property(default={})
-
-    code: IDSCode = sp_property(default={})

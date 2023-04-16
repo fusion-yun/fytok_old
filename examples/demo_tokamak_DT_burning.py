@@ -415,7 +415,7 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # TransportSolver
-    if False:
+    if True:
 
         tok["core_transport_solver"] = {
             "code": {
@@ -517,20 +517,20 @@ if __name__ == "__main__":
 
                 # (core_profile_1d["rms_residuals"] * 100, r"bvp", r"residual $[\%]$"),
 
-                [
-                    # (rms_residual(function_like(bs_r_norm, bs_psi),
-                    #  core_profile_1d["psi"]), r"$\psi$", " rms residual [%]"),
+                # [
+                #     # (rms_residual(function_like(bs_r_norm, bs_psi),
+                #     #  core_profile_1d["psi"]), r"$\psi$", " rms residual [%]"),
 
-                    # (rms_residual(b_ne, core_profile_1d.electrons.density), r"$n_e$"),
+                #     # (rms_residual(b_ne, core_profile_1d.electrons.density), r"$n_e$"),
 
-                    (rms_residual(b_Te, core_profile_1d.electrons.temperature), r"$T_e$", " rms residual [%]"),
+                #     (rms_residual(b_Te, core_profile_1d.electrons.temperature), r"$T_e$", " rms residual [%]"),
 
-                    *[(rms_residual(b_ni, ion.density), f"$n_{ion.label}$")
-                      for ion in core_profile_1d.ion if not ion.is_impurity],
-                    # *[(rms_residual(b_Ti, ion.temperature), f"$T_{ion.label}$")
-                    #   for ion in core_profile_1d.ion if not ion.is_impurity],
+                #     *[(rms_residual(b_ni, ion.density), f"$n_{ion.label}$")
+                #       for ion in core_profile_1d.ion if not ion.is_impurity],
+                #     # *[(rms_residual(b_Ti, ion.temperature), f"$T_{ion.label}$")
+                #     #   for ion in core_profile_1d.ion if not ion.is_impurity],
 
-                ],
+                # ],
             ],
             x_axis=([0, 1.0],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             title=f" Particle solver '{particle_solver}'",

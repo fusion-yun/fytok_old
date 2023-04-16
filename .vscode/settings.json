@@ -22,7 +22,6 @@
   ],
   "python.analysis.extraPaths": [
     "./python",
-    "./python"
   ],
 
 }

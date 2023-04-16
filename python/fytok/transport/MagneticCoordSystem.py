@@ -446,7 +446,7 @@ class MagneticCoordSystem(Dict[Node]):
     @dataclass
     class ShapeProperty:
         # RZ position of the geometric axis of the magnetic surfaces (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the surface)
-        geometric_axis: RZTuple
+        geometric_axis: RZTuple[np.ndarray]
         # Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary)[m]
         minor_radius: np.ndarray  # (rmax - rmin)*0.5,
         # Elongation of the plasma boundary. [-]

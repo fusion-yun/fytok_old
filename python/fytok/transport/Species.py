@@ -107,11 +107,11 @@ class SpeciesIon(Species):
     neutral_index: int = sp_property(default_value=0)
     """Index of the corresponding neutral species in the ../../neutral array {dynamic}    """
 
-    z_ion_1d: np.ndarray = sp_property()
+    z_ion_1d: Function = sp_property()
     """Average charge of the ion species (sum of states charge weighted by state density and
     divided by ion density) {dynamic} [-]  """
 
-    z_ion_square_1d: np.ndarray = sp_property()
+    z_ion_square_1d: Function = sp_property()
     """Average square charge of the ion species (sum of states square charge weighted by
       state density and divided by ion density) {dynamic} [-]  """
 

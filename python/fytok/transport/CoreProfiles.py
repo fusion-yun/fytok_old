@@ -271,6 +271,13 @@ class CoreProfilesNeutral(Species):
 
 
 class CoreProfiles1D(Dict[Node]):
+
+    def _as_child(self, *args, **kwargs):
+        value = super()._as_child(*args, **kwargs)
+        if isinstance(value, Function):
+            value.setdefault_x(self.grid.rho_tor_norm)
+        return value
+
     Electrons = CoreProfilesElectrons
     Ion = CoreProfilesIon
     Neutral = CoreProfilesNeutral
@@ -355,13 +362,13 @@ class CoreProfiles1D(Dict[Node]):
         """Total parallel current density = average(jtot.B) / B0, where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
         if value is None:
             value = self.current_parallel_inside.derivative * \
-                self._parent.grid.r0*TWOPI/self._parent.grid.dvolume_drho_tor
-        return Function(self._parent.grid.rho_tor_norm, value)
+                self.grid.r0*TWOPI/self.grid.dvolume_drho_tor
+        return function_like(self.grid.rho_tor_norm, value)
 
     @sp_property
     def current_parallel_inside(self, value) -> Function:
         """Parallel current driven inside the flux surface. Cumulative surface integral of j_total {dynamic}[A]"""
-        return function_like(self._parent.grid.rho_tor_norm, value)
+        return function_like(self.grid.rho_tor_norm, value)
 
     j_tor: Function = sp_property()
     """Total toroidal current density = average(J_Tor/R) / average(1/R) {dynamic}[A/m ^ 2]"""
@@ -379,17 +386,21 @@ class CoreProfiles1D(Dict[Node]):
     def j_bootstrap(self, value) -> Function:
         """Bootstrap current density = average(J_Bootstrap.B) / B0,
             where B0 = Core_Profiles/Vacuum_Toroidal_Field / B0 {dynamic}[A/m ^ 2]"""
-        return Function(self._parent.grid.rho_tor_norm, value)
+        return function_like(self.grid.rho_tor_norm, value)
 
     @sp_property
     def conductivity_parallel(self, value) -> Function:
         """Parallel conductivity {dynamic}[ohm ^ -1.m ^ -1]"""
         if value is _not_found_:
             value = self.j_ohmic/self.e_field.parallel
-        return Function(self._parent.grid.rho_tor_norm, value)
+        return function_like(self.grid.rho_tor_norm, value)
 
-    beta_pol: Function = sp_property()
-    """Poloidal beta profile. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip ^ 2][-]"""
+    @sp_property
+    def beta_pol(self, value) -> Function:
+        """Poloidal beta profile. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip ^ 2][-]"""
+        if value is _not_found_:
+            value = 4*self.pressure.antiderivative()/(self.grid.r0*constants.mu_0 * (self.j_total**2))
+        return function_like(self.grid.rho_tor_norm, value)
 
     # if isinstance(d, np.ndarray) or (hasattr(d.__class__, 'empty') and not d.empty):
     #     return d
@@ -424,8 +435,8 @@ class CoreProfiles1D(Dict[Node]):
         # Coulomb logarithm
         #  Ch.14.5 p727 Tokamaks 2003
 
-        return Function(self.grid.rho_tor_norm, ((14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +
-                                                 (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te >= 10)))
+        return function_like(self.grid.rho_tor_norm, ((14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +
+                                                      (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te >= 10)))
 
     @sp_property
     def electron_collision_time(self) -> Function:
@@ -438,8 +449,6 @@ class CoreProfiles1D(Dict[Node]):
         return 1.09e16*((Te/1000.0)**(3/2))/Ne/lnCoul
 
     class EField(Dict[Node]):
-        def __init__(self,   *args,     **kwargs):
-            super().__init__(*args, **kwargs)
 
         @sp_property
         def parallel(self) -> Function:
@@ -450,24 +459,24 @@ class CoreProfiles1D(Dict[Node]):
                     logger.error(f"Can not calculate E_parallel from vloop!")
                     e_par = 0.0
                 else:
-                    e_par = vloop/(TWOPI*self._parent.grid.r0)
-            return Function(self._parent.grid.rho_tor_norm, e_par)
+                    e_par = vloop/(TWOPI*self.grid.r0)
+            return function_like(self.grid.rho_tor_norm, e_par)
 
         @sp_property
-        def radial(self) -> Function:
-            return Function(self._parent.grid.rho_tor_norm, self.get("radial", 0))
+        def radial(self, value) -> Function:
+            return function_like(self.grid.rho_tor_norm, value)
 
         @sp_property
-        def diamagnetic(self) -> Function:
-            return Function(self._parent.grid.rho_tor_norm, self.get("diamagnetic", 0))
+        def diamagnetic(self, value) -> Function:
+            return function_like(self.grid.rho_tor_norm, value)
 
         @sp_property
-        def poloidal(self) -> Function:
-            return Function(self._parent.grid.rho_tor_norm, self.get("poloidal", 0))
+        def poloidal(self, value) -> Function:
+            return function_like(self.grid.rho_tor_norm, value)
 
         @sp_property
-        def toroidal(self) -> Function:
-            return Function(self._parent.grid.rho_tor_norm, self.get("toroidal", 0))
+        def toroidal(self, value) -> Function:
+            return function_like(self.grid.rho_tor_norm, value)
 
     @sp_property
     def e_field(self) -> EField:
@@ -476,35 +485,35 @@ class CoreProfiles1D(Dict[Node]):
         return self.get("e_field", {})
 
     @sp_property
-    def phi_potential(self) -> Function:
+    def phi_potential(self, value) -> Function:
         """Electrostatic potential, averaged on the magnetic flux surface {dynamic}[V]"""
-        return Function(self._parent.grid.rho_tor_norm, self.get("phi_potential"))
+        return function_like(self.grid.rho_tor_norm, value)
 
     @sp_property
-    def rotation_frequency_tor_sonic(self) -> Function:
+    def rotation_frequency_tor_sonic(self, value) -> Function:
         """Derivative of the flux surface averaged electrostatic potential with respect to the poloidal flux, multiplied by - 1.
         This quantity is the toroidal angular rotation frequency due to the ExB drift, introduced in formula(43) of Hinton and Wong,
         Physics of Fluids 3082 (1985), also referred to as sonic flow in regimes in which the toroidal velocity is dominant over the
         poloidal velocity Click here for further documentation. {dynamic}[s ^ -1]"""
-        return Function(self._parent.grid.rho_tor_norm, self.get("rotation_frequency_tor_sonic", 0))
+        return function_like(self.grid.rho_tor_norm, value)
 
     @sp_property
-    def q(self) -> Function:
+    def q(self, value) -> Function:
         """Safety factor(IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction) {dynamic}[-].
         This quantity is COCOS-dependent, with the following transformation: """
-        return Function(self._parent.grid.rho_tor_norm, self.get("q"))
+        return function_like(self.grid.rho_tor_norm, value)
 
     @sp_property
-    def magnetic_shear(self) -> Function:
+    def magnetic_shear(self, value) -> Function:
         """Magnetic shear, defined as rho_tor/q . dq/drho_tor {dynamic}[-]"""
-        return Function(self._parent.grid.rho_tor_norm, self.q.derivative(self._parent.grid.rho_tor_norm)/self.q(self._parent.grid.rho_tor_norm)*self._parent.grid.rho_tor_norm)
-        # return Function(self._parent.grid.rho_tor_norm, self.get("magnetic_shear"))
+
+        if value is None:
+            return function_like(self.grid.rho_tor_norm, self.q.derivative(self.grid.rho_tor_norm)/self.q(self.grid.rho_tor_norm)*self.grid.rho_tor_norm)
+        else:
+            return function_like(self.grid.rho_tor_norm, value)
 
 
 class CoreProfilesGlobalQuantities(Dict):
-    def __init__(self,   *args,   **kwargs):
-        super().__init__(*args,  **kwargs)
-
     @property
     def grid(self) -> RadialGrid:
         return self._parent.grid

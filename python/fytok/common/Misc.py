@@ -34,9 +34,9 @@ class VacuumToroidalField:
 
 
 @dataclass
-class RZTuple:
-    r:   np.ndarray
-    z:   np.ndarray
+class RZTuple(typing.Generic[_TData]):
+    r:   _TData
+    z:   _TData
 
 
 class Profiles1D(Dict[Node]):
