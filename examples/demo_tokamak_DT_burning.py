@@ -233,7 +233,7 @@ if __name__ == "__main__":
 
             title="Equilibrium",
             grid=True, fontsize=16) .savefig(output_path/"equilibrium_profiles.svg", transparent=True)
-        
+
         logger.info("Initialize Equilibrium ")
 
     if True:  # CoreProfile initialize value
@@ -276,7 +276,7 @@ if __name__ == "__main__":
             ],
             x_axis=([0, 1.0], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             grid=True, fontsize=10) .savefig(output_path/"core_profiles_initialize.svg", transparent=True)
-        
+
         logger.info("Initialize Core Profiles ")
 
     if True:  # CoreTransport
@@ -372,8 +372,8 @@ if __name__ == "__main__":
                 ],
 
                 [
-                    # (function_like(bs_r_norm, profiles["Joh"].values), "astra",
-                    #  r"$j_{ohmic} [MA\cdot m^{-2}]$", bs_line_style),
+                    (function_like(bs_r_norm, profiles["Joh"].values), "astra",
+                     r"$j_{ohmic} [MA\cdot m^{-2}]$", bs_line_style),
                     (core_profile_1d.j_ohmic*1e-6, " ",    r"$j_{\Omega} [MA\cdot m^{-2}]$"),
                 ],
                 [
