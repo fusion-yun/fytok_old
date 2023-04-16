@@ -73,6 +73,7 @@ if __name__ == "__main__":
                           "code": {"name": "dummy"},
                           "boundary": {"psi_norm": 0.995},
                           "coordinate_system": {"psi_norm": np.linspace(0.001, 0.995, 64), "theta": 64}}
+
     if True:
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},
@@ -348,7 +349,7 @@ if __name__ == "__main__":
         tok.core_sources["source"] = [
             {"code": {"name": "dummy"},
              "profiles_1d": load_core_source(profiles, tok.core_profiles.profiles_1d.grid)},
-            {"code": {"name": "bootstrap_current"}},
+            # {"code": {"name": "bootstrap_current"}},
             # {"code": {"name": "fusion_reaction"}},
         ]
 
@@ -382,8 +383,8 @@ if __name__ == "__main__":
                 [
                     (function_like(bs_r_norm, profiles["Jbs"].values),
                      r"astra", "bootstrap current \n $[MA\\cdot m^{-2}]$", bs_line_style),
-                    (tok.core_sources.source[{"code.name": "bootstrap_current"}].profiles_1d.j_parallel*1e-6,
-                     r"fytok",),
+                    # (tok.core_sources.source[{"code.name": "bootstrap_current"}].profiles_1d.j_parallel*1e-6,
+                    #  r"fytok",),
                 ],
                 # [
                 #     (rms_residual(function_like(bs_r_norm, profiles["Jbs"].values*1e6),
@@ -392,25 +393,22 @@ if __name__ == "__main__":
                 #     (rms_residual(function_like(bs_r_norm, profiles["Jtot"].values), core_source.j_parallel*1e-6),
                 #      r"total current", r"  rms residual $[\%]$"),
                 # ],
-                [
-                    (core_source_profiles_1d.ion[{"label": "D"}].particles,    r"D",  r"$S_{DT} [m^3 s^{-1}]$",),
-                    (core_source_profiles_1d.ion[{"label": "T"}].particles,    r"T",  r"$S_{DT} [m^3 s^{-1}]$",),
-                    (core_source_profiles_1d.ion[{"label": "He"}].particles_fast,
-                     r"fast", r"$S_{\alpha} [m^3 s^{-1}]$",),
-                ],
-                [
-                    (core_source_profiles_1d.ion[{"label": "He"}].particles,
-                     r"thermal", r"$S_{\alpha} [m^3 s^{-1}]$",),
-                ],
-                (core_source_profiles_1d.ion[{"label": "D"}].particles,           r"$D_{total}$", r"$S_{DT} [m^3 s^{-1}]$",),
-
-
-
-                [
-                    (core_source_profiles_1d.electrons.energy,  "electron",      r"$Q [eV\cdot m^{-3} s^{-1}]$"),
-                    # *[(ion.energy*1e-6,             f"{ion.label}",  r"$Q [eV\cdot m^{-3} s^{-1}]$")
-                    #   for ion in core_source_profiles_1d.ion if not ion.is_impurity],
-                ],
+                # [
+                #     (core_source_profiles_1d.ion[{"label": "D"}].particles,    r"D",  r"$S_{DT} [m^3 s^{-1}]$",),
+                #     (core_source_profiles_1d.ion[{"label": "T"}].particles,    r"T",  r"$S_{DT} [m^3 s^{-1}]$",),
+                #     (core_source_profiles_1d.ion[{"label": "He"}].particles_fast,
+                #      r"fast", r"$S_{\alpha} [m^3 s^{-1}]$",),
+                # ],
+                # [
+                #     (core_source_profiles_1d.ion[{"label": "He"}].particles,
+                #      r"thermal", r"$S_{\alpha} [m^3 s^{-1}]$",),
+                # ],
+                # (core_source_profiles_1d.ion[{"label": "D"}].particles,           r"$D_{total}$", r"$S_{DT} [m^3 s^{-1}]$",),
+                # [
+                #     (core_source_profiles_1d.electrons.energy,  "electron",      r"$Q [eV\cdot m^{-3} s^{-1}]$"),
+                #     # *[(ion.energy*1e-6,             f"{ion.label}",  r"$Q [eV\cdot m^{-3} s^{-1}]$")
+                #     #   for ion in core_source_profiles_1d.ion if not ion.is_impurity],
+                # ],
             ],
             x_axis=([0, 1.0], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             grid=True, fontsize=10) .savefig(output_path/"core_sources.svg", transparent=True)
@@ -421,7 +419,7 @@ if __name__ == "__main__":
     # TransportSolver
     if True:
 
-        tok["core_transport_solver"]= {
+        tok["core_transport_solver"] = {
             "code": {
                 "name": "bvp_solver_nonlinear",
                 "parameters": {
@@ -454,7 +452,7 @@ if __name__ == "__main__":
                 ]
             }}
 
-        particle_solver= tok.core_transport_solver.get('code/parameters/particle_solver', 'ion')
+        particle_solver = tok.core_transport_solver.get('code/parameters/particle_solver', 'ion')
 
         logger.info("Transport solver Start")
 
@@ -462,12 +460,12 @@ if __name__ == "__main__":
 
         logger.info("Transport solver End")
 
-        core_profile_1d= tok.core_profiles.profiles_1d
+        core_profile_1d = tok.core_profiles.profiles_1d
 
-        b_nHe_fast= function_like(bs_r_norm,  profiles["Naff"].values * 1.0e19)
-        b_nHe_thermal= function_like(bs_r_norm,  profiles["Nath"].values * 1.0e19)
+        b_nHe_fast = function_like(bs_r_norm,  profiles["Naff"].values * 1.0e19)
+        b_nHe_thermal = function_like(bs_r_norm,  profiles["Nath"].values * 1.0e19)
 
-        ionHe= core_profile_1d.ion[{"label": "He"}]
+        ionHe = core_profile_1d.ion[{"label": "He"}]
 
         plot_profiles(
             [

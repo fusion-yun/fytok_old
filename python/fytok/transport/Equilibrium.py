@@ -868,7 +868,7 @@ class Equilibrium(IDS):
     # coordinate_system: MagneticCoordSystem = sp_property(create_coordinate_system)
     @sp_property
     def coordinate_system(self, desc) -> MagneticCoordSystem:
-        psirz = self.profiles_2d._entry.get("psi", None)
+        psirz = self.profiles_2d.get("psi", None)
 
         if not isinstance(psirz, Field):
             psirz = Field(psirz,
@@ -886,17 +886,18 @@ class Equilibrium(IDS):
 
         # pprime_1d = self.profiles_1d._entry.get("dpressure_dpsi", None)
 
-        return MagneticCoordSystem(
+        res = MagneticCoordSystem(
             psirz=psirz,
             B0=self.vacuum_toroidal_field.b0,
             R0=self.vacuum_toroidal_field.r0,
-            Ip=self.global_quantities._entry.get("ip"),
+            Ip=self.global_quantities.ip,
             fpol=function_like(psi_1d, fpol_1d),
             # pprime=self.profiles_1d._entry.get("dpressure_dpsi", None),
             # fpol=function_like(psi_norm, self.profiles_1d._entry.get("f", None)),
             # pprime=function_like(psi_norm, self.profiles_1d._entry.get("dpressure_dpsi", None)),
             **desc
         )
+        return res
 
     @property
     def radial_grid(self) -> RadialGrid:

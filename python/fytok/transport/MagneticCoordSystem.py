@@ -224,7 +224,8 @@ class MagneticCoordSystem(Dict[Node]):
                 self._fpol = function_like(np.linspace(0, 1.0, len(fpol)), fpol)
         else:
             raise RuntimeError(f"fpol is not defined!")
-        # logger.debug(f"Create MagneticCoordSystem: type index={self._grid_type_index} primary='psi'  ")
+        
+        logger.debug(f"Create MagneticCoordSystem: type index={self._grid_type_index} primary='psi'  ")
 
     @property
     def r0(self) -> float:

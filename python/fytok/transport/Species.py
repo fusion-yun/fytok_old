@@ -24,10 +24,10 @@ class SpeciesElement(Dict[Node]):
 
 class Species(Dict[Node]):
 
-    def __init__(self, *args, cache=None, **kwargs):
-        super().__init__(*args, cache=cache, **kwargs)
-        desc = atoms.get(self.label, None)
-        self.update(desc)
+    def __init__(self, *args,   **kwargs):
+        super().__init__(*args,   **kwargs)
+        # desc = atoms.get(self.label, None)
+        # self.update(desc)
 
     Element = SpeciesElement
 
