@@ -6,7 +6,7 @@ import os
 
 import subprocess
 
-FYTOK_REV = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).strip().decode('ascii')
+FYTOK_REV = subprocess.check_output(['git', 'describe', '--always', '--dirty']).strip().decode('ascii')
 
 IDS_LIST = "(pulse_schedule,distributions,equilibrium)"
 
