@@ -12,51 +12,8 @@ from spdm.data.Node import Node
 from spdm.data.sp_property import sp_property
 from spdm.util.logger import logger
 
-from ..common.Misc import Identifier
-
-
-class LibraryDesc(Dict[Node]):
-    name: str = sp_property(default_value="")
-    """ Name of software {constant}	STR_0D"""
-    commit: str = sp_property(default_value="")      #
-    """Unique commit reference of software {constant}	STR_0D"""
-    version: str = sp_property(default_value="")      #
-    """Unique version (tag) of software {constant}	STR_0D"""
-    repository: str = sp_property(default_value="")      #
-    """URL of software repository {constant}	STR_0D"""
-    parameters: list = sp_property(default_value=None)     #
-    """List of the code specific parameters in XML format {constant}"""
-
-
-class ModuleCode(Dict[Node]):
-
-    @sp_property
-    def name(self) -> str:
-        """Name of software generating IDS {constant}	STR_0D"""
-        return self.get("name", None) or f"{self._parent.__class__.__module__}.{self._parent.__class__.__name__}"
-
-    commit: str = sp_property()
-    """	Unique commit reference of software {constant}	STR_0D"""
-
-    version: str = sp_property()
-    """Unique version (tag) of software {constant}	STR_0D"""
-
-    repository: str = sp_property()
-    """URL of software repository {constant}	STR_0D"""
-
-    parameters: Dict[str] = sp_property()
-    """List of the code specific parameters  {constant}	dict"""
-
-    output_flag: List[int] = sp_property()
-    """Output flag : 0 means the run is successful, other values mean some difficulty has been encountered, 
-           the exact meaning is then code specific. Negative values mean the result shall not be used. {dynamic}	INT_1D	1- time"""
-
-    library: List[LibraryDesc] = sp_property()
-    "List of external libraries used by the code that has produced this IDS	struct_array [max_size=10]	1- 1...N"
-
 
 class Module(Dict[Node], Factory):
-    Code = ModuleCode
 
     _registry = {}
 
@@ -104,18 +61,8 @@ class Module(Dict[Node], Factory):
         # logger.debug(f"Delete Module {guess_class_name(self.__class__)}")
         pass
 
-    @property
-    def time(self):
-        return self._time
-
     def job_id(self):
         return self._job_id
-
-    code: Code = sp_property()
-
-    identifier: Identifier = sp_property()
-
-    comment: str = sp_property()
 
     def refresh(self,  *args, time=_undefined_, ** kwargs) -> float:
         """
