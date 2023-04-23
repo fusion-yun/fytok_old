@@ -13,7 +13,7 @@ from fytok.transport.CoreTransport import CoreTransport, TransportCoeff
 from fytok.transport.CoreTransportSolver import CoreTransportSolver
 from fytok.transport.Equilibrium import Equilibrium
 from scipy import constants
-from spdm.data.Function import Function
+from spdm.data.Function import function_like
 from spdm.data.Path import Path
 
 from spdm.numlib.bvp import solve_bvp
@@ -103,7 +103,7 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
 
         flux = array_like(x, core_profiles_1d.get("psi_flux", 0))
 
-        yp = Function(x, y).derivative(x)
+        yp = function_like(x, y).derivative(x)
 
         hyper_diff = self._hyper_diff
 
@@ -148,7 +148,7 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
                 (conductivity_parallel * (x*rho_tor_boundary)**2/fpol2)
             dg = dg - (a * y - b * ym) * inv_tau
             dg = dg + conductivity_parallel*Qimp_k_ns*y
-            dg = dg + Function(x, C).derivative(x)*y + C*dy
+            dg = dg + function_like(x, C).derivative(x)*y + C*dy
 
         dg = dg*c
 
@@ -333,7 +333,7 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
 
         hyper_diff = self._hyper_diff
 
-        yp = Function(x, y).derivative(x)
+        yp = function_like(x, y).derivative(x)
 
         inv_tau = self._inv_tau
 
@@ -367,7 +367,7 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
 
         if not isclose(inv_tau, 0.0):
             dg = dg - (a * y - b * ym)*inv_tau + vpr * k_rho_bdry
-            dg = dg + Function(x, vpr * x * k_phi).derivative(x)*y
+            dg = dg + function_like(x, vpr * x * k_phi).derivative(x)*y
             dg = dg + vpr * x * k_phi * dy
 
         dg = dg*c
@@ -424,7 +424,7 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
 
         gm3 = self._gm3(x)
 
-        yp = Function(x, y).derivative(x)
+        yp = function_like(x, y).derivative(x)
 
         a = (3/2) * vpr5_3 * y
 
@@ -445,7 +445,7 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
         if not isclose(inv_tau, 0.0):
             dg = dg - (a * y - b * ym)*inv_tau
             dg = dg + vpr5_3 * Qimp_k_ns * y
-            dg = dg + Function(x,  vpr * (3/4)*k_phi * x * density).derivative(x) * y
+            dg = dg + function_like(x,  vpr * (3/4)*k_phi * x * density).derivative(x) * y
             dg = dg + vpr * (3/4)*k_phi * x * density*dy
 
         dg = dg*c
@@ -524,8 +524,8 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
         #     rho_tor_norm, core_transport_1d.j_parallel(rho_tor_norm))
 
         # for idx, var_id in enumerate(var_list):
-        #     profiles_1d_next[var_id] = Function(rho_tor_norm, sol.y[idx*2])
-        #     profiles_1d_next[var_id[:-1]+[f"{var_id[-1]}_flux"]] = Function(rho_tor_norm, sol.y[idx*2+1])
+        #     profiles_1d_next[var_id] = function_like(rho_tor_norm, sol.y[idx*2])
+        #     profiles_1d_next[var_id[:-1]+[f"{var_id[-1]}_flux"]] = function_like(rho_tor_norm, sol.y[idx*2+1])
 
     def _gather(self, x: np.ndarray, core_profiles_1d: CoreProfiles.Profiles1D) -> np.ndarray:
         assert(len(self._var_list) > 0)
@@ -562,8 +562,8 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
         core_profiles_1d = core_profiles.profiles_1d
 
         for idx, (var, *_) in enumerate(self._var_list):
-            core_profiles_1d[var] = Function(x, y[idx*2])
-            core_profiles_1d[var[:-1]+[var[-1]+"_flux"]] = Function(x, y[idx*2+1])
+            core_profiles_1d[var] = function_like(x, y[idx*2])
+            core_profiles_1d[var[:-1]+[var[-1]+"_flux"]] = function_like(x, y[idx*2+1])
 
         self.quasi_neutrality_condition(core_profiles.profiles_1d)
 
@@ -660,29 +660,30 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
         self._k_phi = self._k_B + self._k_rho_bdry
 
         # diamagnetic function,$F=R B_\phi$                 [T*m]
-        self._fpol = Function(rho_tor_norm,  self._eq_next.profiles_1d.fpol(psi_norm))
+        self._fpol = function_like(rho_tor_norm,  self._eq_next.profiles_1d.fpol(psi_norm))
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
 
-        self._vpr = Function(rho_tor_norm, self._eq_next.profiles_1d.dvolume_drho_tor(psi_norm))
+        self._vpr = function_like(rho_tor_norm, self._eq_next.profiles_1d.dvolume_drho_tor(psi_norm))
 
-        self._vprm = Function(rho_tor_norm,  self._eq_prev.profiles_1d.dvolume_drho_tor(psi_norm))
+        self._vprm = function_like(rho_tor_norm,  self._eq_prev.profiles_1d.dvolume_drho_tor(psi_norm))
 
         self._vpr5_3 = np.abs(self._vpr)**(5/3)
 
         self._vpr5_3m = np.abs(self._vprm)**(5/3)
 
         if np.isclose(self._eq_next.profiles_1d.dvolume_drho_tor(psi_norm[0]), 0.0):
-            self._inv_vpr23 = Function(
+            self._inv_vpr23 = function_like(
                 rho_tor_norm[1:], self._eq_next.profiles_1d.dvolume_drho_tor(psi_norm[1:])**(-2/3))
         else:
-            self._inv_vpr23 = Function(rho_tor_norm,   self._eq_next.profiles_1d.dvolume_drho_tor(psi_norm)**(-2/3))
+            self._inv_vpr23 = function_like(
+                rho_tor_norm,   self._eq_next.profiles_1d.dvolume_drho_tor(psi_norm)**(-2/3))
 
         # $q$ safety factor                                 [-]
-        self._qsf = Function(rho_tor_norm,   self._eq_next.profiles_1d.q(psi_norm))
-        self._gm1 = Function(rho_tor_norm,   self._eq_next.profiles_1d.gm1(psi_norm))
-        self._gm2 = Function(rho_tor_norm,   self._eq_next.profiles_1d.gm2(psi_norm))
-        self._gm3 = Function(rho_tor_norm,   self._eq_next.profiles_1d.gm3(psi_norm))
+        self._qsf = function_like(rho_tor_norm,   self._eq_next.profiles_1d.q(psi_norm))
+        self._gm1 = function_like(rho_tor_norm,   self._eq_next.profiles_1d.gm1(psi_norm))
+        self._gm2 = function_like(rho_tor_norm,   self._eq_next.profiles_1d.gm2(psi_norm))
+        self._gm3 = function_like(rho_tor_norm,   self._eq_next.profiles_1d.gm3(psi_norm))
 
         self._Qimp_k_ns = (3*self._k_rho_bdry - self._k_phi * self._vpr.derivative())
 
@@ -693,9 +694,8 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
         self._hyper_diff: float = self._parameters.get("hyper_diff", 1.0e-4)
         self._fusion_reaction = self._parameters.get("fusion_reaction", [])
         self._enable_impurity: bool = self._parameters.get("enable_impurity", False)
-        self._enable_ion: bool = self._parameters.get("enable_ion", False) \
-            or self._enable_impurity \
-            or len(self._fusion_reaction) > 0
+        self._enable_ion: bool = self._parameters.get("enable_ion", True) \
+            or self._enable_impurity or len(self._fusion_reaction) > 0
 
         ###############################################################################
         self._core_profiles_prev = core_profiles_prev
@@ -738,13 +738,13 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
                                            self.transp_ion_particle_fast, self.bc_ion_particle_fast))
                     self._var_list.append((["ion", {"label": ion.label}, "density_thermal"],
                                            self.transp_ion_particle_thermal, self.bc_ion_particle))
-                    # self._var_list.append((["ion", {"label": ion.label}, "temperature"],
-                    #                        self.transp_ion_energy, self.bc_ion_energy))
+                    self._var_list.append((["ion", {"label": ion.label}, "temperature"],
+                                           self.transp_ion_energy, self.bc_ion_energy))
                 else:
                     self._var_list.append((["ion", {"label": ion.label}, "density"],
                                            self.transp_ion_particle, self.bc_ion_particle))
-                    # self._var_list.append((["ion", {"label": ion.label}, "temperature"],
-                    #                        self.transp_ion_energy, self.bc_ion_energy))
+                    self._var_list.append((["ion", {"label": ion.label}, "temperature"],
+                                           self.transp_ion_energy, self.bc_ion_energy))
 
     def solve(self, /,
               core_profiles_prev: CoreProfiles,
@@ -813,8 +813,8 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
         # core_profiles_1d = core_profiles_next.profiles_1d
 
         # for idx, (var, *_) in enumerate(self._var_list):
-        #     core_profiles_1d[var] = Function(sol.x, sol.y[idx*2])
-        #     core_profiles_1d[var[:-1]+[var[-1]+"_flux"]] = Function(sol.x, sol.y[idx*2+1])
+        #     core_profiles_1d[var] = function_like(sol.x, sol.y[idx*2])
+        #     core_profiles_1d[var[:-1]+[var[-1]+"_flux"]] = function_like(sol.x, sol.y[idx*2+1])
 
         if sol.success:
             core_profiles_next = self._dispatch(sol.x, sol.y)
@@ -825,7 +825,7 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
 
         # self.quasi_neutrality_condition(core_profiles_1d)
 
-        core_profiles_1d["rms_residuals"] = Function((sol.x[:-1] + sol.x[1:])*0.5, sol.rms_residuals)
+        core_profiles_1d["rms_residuals"] = function_like((sol.x[:-1] + sol.x[1:])*0.5, sol.rms_residuals)
 
         logger.info(
             f"""Solve transport equations [{'Success' if sol.success else 'Failed'}] :

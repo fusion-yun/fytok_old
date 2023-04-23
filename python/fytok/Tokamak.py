@@ -132,7 +132,6 @@ class Tokamak(Module):
             logger.debug(f"time={self.time}  iterator step {step_num}/{max_iteration} residual={residual}")
 
             if residual < tolerance:
-
                 equilibrium_next = equilibrium_iter
                 core_profiles_next = core_profiles_iter
                 edge_profiles_next = edge_profiles_iter

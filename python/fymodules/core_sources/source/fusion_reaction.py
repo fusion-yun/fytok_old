@@ -1,14 +1,11 @@
 
 import collections
 
-import numpy as np
 from fytok.constants.Atoms import nuclear_reaction
 from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreSources import CoreSources
 from fytok.transport.Equilibrium import Equilibrium
-from spdm.numlib.misc import array_like
-from scipy import constants
-from spdm.data import Function, Query, function_like
+from spdm.data.Function import function_like
 
 
 class FusionReaction(CoreSources.Source):
@@ -71,11 +68,11 @@ class FusionReaction(CoreSources.Source):
 
         rho_tor_norm = core_profiles_1d.grid.rho_tor_norm
 
-        ionT: CoreProfiles.Profiles1D.Ion = core_profiles_1d.ion[Query({"label": "T"})]
+        ionT: CoreProfiles.Profiles1D.Ion = core_profiles_1d.ion[{"label": "T"}]
 
-        ionD: CoreProfiles.Profiles1D.Ion = core_profiles_1d.ion[Query({"label": "D"})]
+        ionD: CoreProfiles.Profiles1D.Ion = core_profiles_1d.ion[{"label": "D"}]
 
-        ionHe: CoreProfiles.Profiles1D.Ion = core_profiles_1d.ion[Query({"label": "He"})]
+        ionHe: CoreProfiles.Profiles1D.Ion = core_profiles_1d.ion[{"label": "He"}]
 
         nD = ionD.density(rho_tor_norm)
         nT = ionT.density(rho_tor_norm)
@@ -88,7 +85,7 @@ class FusionReaction(CoreSources.Source):
 
         Ti = (nD*TD + nT*TT)/(nD+nT)
 
-        sDT = Function(rho_tor_norm, nD*nT*self._reactivities(Ti))
+        sDT = function_like(rho_tor_norm, nD*nT*self._reactivities(Ti))
 
         if not ionHe.has_fast_particle:
             self.profiles_1d["ion"] = [
@@ -101,7 +98,7 @@ class FusionReaction(CoreSources.Source):
 
             tau_slowing_down = 1.99 * ((Te/1000)**(3/2))/(Ne*1.0e-19*lnGamma)
 
-            S_slowing_down = Function(rho_tor_norm, nAlpha / tau_slowing_down)
+            S_slowing_down = function_like(rho_tor_norm, nAlpha / tau_slowing_down)
 
             self.profiles_1d["ion"] = [
                 {"label": "D", "particles": -sDT},
@@ -111,6 +108,7 @@ class FusionReaction(CoreSources.Source):
                  "particles": S_slowing_down
                  },
             ]
+            self.profiles_1d.electrons.energy = S_slowing_down*Te
 
 
 __SP_EXPORT__ = FusionReaction

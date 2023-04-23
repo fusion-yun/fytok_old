@@ -18,6 +18,13 @@ class Identifier:
     description: str = ""
 
 
+@dataclass
+class IdentifierDynamicAoS3:
+    name: str = "unnamed"
+    index: int = 0
+    description: str = ""
+
+
 _TData = typing.TypeVar("_TData")
 
 
@@ -42,3 +49,6 @@ class RZTuple(typing.Generic[_TData]):
 class Profiles1D(Dict[Node]):
     def _as_child(self, *args, **kwargs):
         super()._as_child(*args, **kwargs)
+
+
+FloatArrya1D = np.ndarray
