@@ -1,12 +1,12 @@
 import numpy as np
+from spdm.common.tags import _next_
 from spdm.data.Dict import Dict
 from spdm.data.List import List
-from spdm.data.TimeSeries import TimeSeries
 from spdm.data.sp_property import sp_property
 
 from ..common.IDS import IDS
 from ..common.Misc import RZTuple
-from spdm.common.tags import _next_
+from ..common.TimeSeries import TimeSeries
 
 
 class PulseScheduleReference(Dict):

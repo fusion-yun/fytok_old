@@ -6,11 +6,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from spdm.data.Dict import Dict
 from spdm.data.List import List
-from spdm.data.TimeSeries import TimeSeries
 from spdm.data.sp_property import sp_property
 
 from ..common.IDS import IDS
 from ..common.Misc import RZTuple
+from ..common.TimeSeries import TimeSeries
 
 
 class PFActiveCoil(Dict):

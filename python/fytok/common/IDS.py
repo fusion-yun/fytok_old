@@ -2,7 +2,7 @@ import typing
 
 from spdm.data.sp_property import sp_property
 
-from ... import _imas
+# from _imas.utilities import _T_code, _T_ids_properties
 from .Module import Module
 
 
@@ -10,9 +10,9 @@ class IDS(Module):
     """ Base class of all IDS classes.  """
     _IDS = None
 
-    code: _imas._T_code = sp_property()
+    # code:  _T_code = sp_property()
 
-    ids_properties: _imas._T_ids_properties = sp_property(default_value={})
+    # ids_properties: _T_ids_properties = sp_property(default_value={})
 
     def __serialize__(self, properties: typing.Optional[typing.Sequence] = None):
         res = super().__serialize__(properties=properties)

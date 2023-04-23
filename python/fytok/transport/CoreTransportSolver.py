@@ -11,11 +11,11 @@ from spdm.data.sp_property import sp_property
 
 from ..common.IDS import IDS
 from ..common.Misc import Identifier
+from ..common.Species import SpeciesElectron, SpeciesIon
 from ..transport.CoreProfiles import CoreProfiles
 from ..transport.CoreSources import CoreSources
 from ..transport.CoreTransport import CoreTransport
 from ..transport.Equilibrium import Equilibrium
-from .Species import SpeciesElectron, SpeciesIon
 
 # from .EdgeProfiles import EdgeProfiles
 # from .EdgeSources import EdgeSources

@@ -8,6 +8,7 @@ from spdm.util.logger import logger
 
 from ..common.IDS import IDS
 from ..common.Misc import Identifier
+from ..common.Species import SpeciesElectron, SpeciesIon
 from .CoreProfiles import CoreProfiles
 from .CoreSources import CoreSources
 from .CoreTransport import CoreTransport
@@ -16,7 +17,6 @@ from .EdgeSources import EdgeSources
 from .EdgeTransport import EdgeTransport
 from .Equilibrium import Equilibrium
 from .MagneticCoordSystem import RadialGrid
-from .Species import SpeciesElectron, SpeciesIon
 
 
 class EdgeTransportSolver(IDS):

@@ -3,13 +3,14 @@ import numpy as np
 from scipy import constants
 from spdm.common.tags import _not_found_
 from spdm.data.Dict import Dict
+from spdm.data.Entry import as_entry
+from spdm.data.Function import Function
 from spdm.data.List import List
 from spdm.data.Node import Node
-from spdm.data.Function import Function
-from spdm.data.Entry import as_entry
 from spdm.data.sp_property import sp_property
-from .MagneticCoordSystem import RadialGrid
+
 from ..constants.Atoms import atoms
+from ..transport.MagneticCoordSystem import RadialGrid
 
 
 class SpeciesElement(Dict[Node]):

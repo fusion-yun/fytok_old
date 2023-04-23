@@ -2,17 +2,17 @@ from functools import cached_property
 
 import numpy as np
 from spdm.data.Dict import Dict
+from spdm.data.Function import Function
 from spdm.data.List import List
 from spdm.data.Node import Node
-from spdm.data.Function import Function
 from spdm.data.sp_property import sp_property
 
 from ..common.IDS import IDS
 from ..common.Misc import Decomposition, Identifier, VacuumToroidalField
 from ..common.Module import Module
+from ..common.Species import Species, SpeciesElectron, SpeciesIon
 from .CoreProfiles import CoreProfiles
 from .MagneticCoordSystem import RadialGrid
-from .Species import Species, SpeciesElectron, SpeciesIon
 
 # class CoreSourcesParticle(Dict):
 #     def __init__(self, *args,  **kwargs):

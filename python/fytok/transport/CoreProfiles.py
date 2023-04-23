@@ -10,8 +10,8 @@ from spdm.data.sp_property import sp_property
 from spdm.util.logger import logger
 
 from ..common.IDS import IDS
+from ..common.Species import Species, SpeciesElectron, SpeciesIon
 from ..transport.MagneticCoordSystem import TWOPI, RadialGrid
-from .Species import Species, SpeciesElectron, SpeciesIon
 
 
 class CoreProfilesElectrons(SpeciesElectron):

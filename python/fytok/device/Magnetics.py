@@ -2,11 +2,11 @@
 import matplotlib.pyplot as plt
 from spdm.data.Dict import Dict
 from spdm.data.List import List
-from spdm.data.TimeSeries import TimeSeries
 from spdm.data.sp_property import sp_property
 
 from ..common.IDS import IDS
 from ..common.Misc import Identifier, RZTuple
+from ..common.TimeSeries import TimeSeries
 
 
 class MagneticsFluxLoop(Dict):

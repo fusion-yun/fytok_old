@@ -8,26 +8,26 @@ import sys
 from .__version__ import __version__
 
 
-external_path = (pathlib.Path(__path__[0])/"../../external").resolve()
+# external_path = (pathlib.Path(__path__[0])/"../../external").resolve()
 
-external_pkg_path = []
+# external_pkg_path = []
 
-if external_path.exists():
-    for d in external_path.iterdir():
-        if not d.is_dir():
-            continue
-        elif (d/"python").is_dir():
-            external_pkg_path.append(d/"python")
-        else:
-            external_pkg_path.append(d)
+# if external_path.exists():
+#     for d in external_path.iterdir():
+#         if not d.is_dir():
+#             continue
+#         elif (d/"python").is_dir():
+#             external_pkg_path.append(d/"python")
+#         else:
+#             external_pkg_path.append(d)
 
-external_pkg_path = [p.as_posix() for p in external_pkg_path]
+# external_pkg_path = [p.as_posix() for p in external_pkg_path]
 
-sys.path.extend(external_pkg_path)
+# sys.path.extend(external_pkg_path)
 
-phys_modules_path = [(pathlib.Path(__path__[0])/"../../fymodules").resolve().as_posix()]
+# phys_modules_path = [(pathlib.Path(__path__[0])/"../../fymodules").resolve().as_posix()]
 
-sys.path.extend(phys_modules_path)
+# sys.path.extend(phys_modules_path)
 
 from .Scenario import Scenario
 from .Tokamak import Tokamak
