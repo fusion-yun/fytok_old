@@ -18,7 +18,7 @@ import os
 
 import subprocess
 
-FYTOK_REV = subprocess.check_output(['git', 'describe', '--always', '--dirty']).strip().decode('ascii')
+FYTOK_REV = subprocess.check_output(['git', 'describe', '--always', '--dirty']).strip().decode('utf-8')
 
 IDS_LIST = []
 

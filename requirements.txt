@@ -1,3 +1,4 @@
+spdm
 opencv-python
 numpy
 scipy
