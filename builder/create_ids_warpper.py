@@ -1,3 +1,15 @@
+"""
+Generate IMAS wrapper for FyTok from data dictionary
+
+Create by :
+    Zhi YU, yuzhi@ipp.ac.cn
+
+Changes:
+    2023-04-22: 0.0.1,  ZY, initial version
+    2023-04-23:         ZY, add dd_3.38.1.patch DD/include/IDSdef.xml 目录下少量constants定义未生成，已根据源文件补充
+
+"""
+
 import saxonche as saxonc
 import pathlib
 import pprint
