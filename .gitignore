@@ -125,3 +125,6 @@ dmypy.json
 
 # SVG
 *Zone.Identifier
+
+# Generated files
+python/_imas
