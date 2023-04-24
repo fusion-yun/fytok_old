@@ -81,6 +81,17 @@
   </xsl:choose>  
 </xsl:function>
 
+<xsl:function name="my:py_word">
+  <xsl:param name="word"/>
+  <xsl:variable name="keywords" select="'and,as,assert,break,class,continue,def,del,elif,else,except,False,finally,for,from,global,if,import,in,is,Lambda,None,nonlocal,not,or,pass,Raise,True,Try,while,yield'"/>
+  <xsl:variable name="is-keyword" select="contains(concat(',', $keywords, ','), concat(',', $word, ','))"/>
+  <xsl:variable name="word-with-underscores" select="translate($word, ' /', '__')"/>
+  <xsl:value-of select="$word-with-underscores"/>
+  <xsl:if test="$is-keyword">
+    <xsl:text>_</xsl:text>
+  </xsl:if>
+</xsl:function>
+
 <xsl:variable name="FILE_HEADER" >
 
 Generate at <xsl:value-of  select="current-dateTime()" />
@@ -102,13 +113,13 @@ Generate at <xsl:value-of  select="current-dateTime()" />
 <!-- <xsl:choose>
 <xsl:when test="not(empty($IDS_LIST))">
 <xsl:for-each select="IDS[not(empty(index-of($IDS_LIST,@name)))]">
-  <xsl:value-of select="@name"/><xsl:text>&#xA;</xsl:text> 
+  <xsl:value-of select="my:py_word(@name)"/><xsl:text>&#xA;</xsl:text> 
   <xsl:apply-templates select="." mode="FILE"/>
 </xsl:for-each>
 </xsl:when>
 <xsl:otherwise> -->
 <xsl:for-each select="IDS">
-  <xsl:value-of select="@name"/><xsl:text>&#xA;</xsl:text> 
+  <xsl:value-of select="my:py_word(@name)"/><xsl:text>&#xA;</xsl:text> 
   <xsl:apply-templates select="." mode="FILE"/>
 </xsl:for-each>
 <!-- </xsl:otherwise>
@@ -129,18 +140,18 @@ __cocos__="<xsl:value-of select="/IDSs/cocos"/>"
 
 from .utilities import _T_ids_properties, _T_code
 
-<xsl:choose>
+<!-- <xsl:choose>
 <xsl:when test="not(empty($IDS_LIST))">
 <xsl:for-each select="IDS[not(empty(index-of($IDS_LIST,@name)))]">
-from .<xsl:value-of select="@name"/>  import _T_<xsl:value-of select="@name"/>
+from .<xsl:value-of select="my:py_word(@name)"/>  import _T_<xsl:value-of select="my:py_word(@name)"/>
 </xsl:for-each>
 </xsl:when>
-<xsl:otherwise>
+<xsl:otherwise> -->
 <xsl:for-each select="IDS">
-from .<xsl:value-of select="@name"/>  import _T_<xsl:value-of select="@name"/>
+from .<xsl:value-of select="my:py_word(@name)"/>  import _T_<xsl:value-of select="my:py_word(@name)"/>
 </xsl:for-each>
-</xsl:otherwise>
-</xsl:choose>
+<!-- </xsl:otherwise>
+</xsl:choose> -->
 
 </xsl:result-document>
 </xsl:template>
@@ -218,7 +229,7 @@ from enum import IntFlag
 
 <xsl:template match = "IDSs/IDS" mode="FILE">   
 <xsl:result-document method="text" href="{@name}.py">"""
-This module contains the _FyTok_ wrapper of IMAS/dd/<xsl:value-of select="@name"/>
+This module contains the _FyTok_ wrapper of IMAS/dd/<xsl:value-of select="my:py_word(@name)"/>
 <xsl:copy-of select="$FILE_HEADER" />
 """
 <xsl:variable name="cls_list" select="for $sub_field in field[(@name != 'code' and @name!='ids_properties')] return my:match_util($sub_field)"/>
@@ -232,15 +243,17 @@ from spdm.data.sp_property import sp_property
 from enum import IntFlag
 
 from .ids import _T_ids
-from .utilities import <xsl:value-of select="string-join(for $item in $util_defined return concat('_T_', $item), ',')"/>
-
+<xsl:choose>
+<xsl:when test="(empty($util_defined))"/>
+<xsl:otherwise>from .utilities import <xsl:value-of select="string-join(for $item in $util_defined return concat('_T_', $item), ',')"/></xsl:otherwise>
+</xsl:choose>
 
 <xsl:apply-templates select="field[(@data_type='structure' or @data_type='struct_array')]" mode = "DEFINE"/>  
 
-class _T_<xsl:value-of select="@name"/>(_T_ids):
+class _T_<xsl:value-of select="my:py_word(@name)"/>(_T_ids):
     """<xsl:value-of select="my:line-wrap(@documentation, $line-width, 7)"/>"""   
 
-    _IDS = "<xsl:value-of select="@name"/>" 
+    _IDS = "<xsl:value-of select="my:py_word(@name)"/>" 
 
     <xsl:for-each select="field[@name!='ids_properties' and @name!='code' and @name!='time']" >
 <xsl:text>&#xA;    </xsl:text><xsl:apply-templates select="." mode = "DECLARE"/>
@@ -250,56 +263,56 @@ class _T_<xsl:value-of select="@name"/>(_T_ids):
 </xsl:template>
 
 <!-- Declare field -->
-<xsl:template match="field[@data_type='STR_0D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:str        = sp_property(type="<xsl:value-of select="@type"/>")   </xsl:template>
-<xsl:template match="field[@data_type='STR_1D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:List[str]  = sp_property(type="<xsl:value-of select="@type"/>")   </xsl:template>
-<xsl:template match="field[@data_type='str_type']"      mode = "DECLARE">  <xsl:value-of select="@name"/>:str        = sp_property(type="<xsl:value-of select="@type"/>")   </xsl:template>
-<xsl:template match="field[@data_type='str_1d_type']"   mode = "DECLARE">  <xsl:value-of select="@name"/>:List[str]  = sp_property(type="<xsl:value-of select="@type"/>")   </xsl:template> 
+<xsl:template match="field[@data_type='STR_0D']"        mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:str        = sp_property(type="<xsl:value-of select="@type"/>")   </xsl:template>
+<xsl:template match="field[@data_type='STR_1D']"        mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:List[str]  = sp_property(type="<xsl:value-of select="@type"/>")   </xsl:template>
+<xsl:template match="field[@data_type='str_type']"      mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:str        = sp_property(type="<xsl:value-of select="@type"/>")   </xsl:template>
+<xsl:template match="field[@data_type='str_1d_type']"   mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:List[str]  = sp_property(type="<xsl:value-of select="@type"/>")   </xsl:template> 
 
-<xsl:template match="field[@data_type='int_type']"      mode = "DECLARE">  <xsl:value-of select="@name"/>:int        = sp_property(type="<xsl:value-of select="@type"/>")   </xsl:template>    
-<xsl:template match="field[@data_type='INT_0D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:int        = sp_property(type="<xsl:value-of select="@type"/>") </xsl:template>    
+<xsl:template match="field[@data_type='int_type']"      mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:int        = sp_property(type="<xsl:value-of select="@type"/>")   </xsl:template>    
+<xsl:template match="field[@data_type='INT_0D']"        mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:int        = sp_property(type="<xsl:value-of select="@type"/>") </xsl:template>    
 
 <xsl:template match="field[@data_type='INT_1D' or @data_type='int_1d_type']" mode = "DECLARE">  
 <xsl:choose>
-<xsl:when test="@type='constant' or @type='static'"><xsl:value-of select="@name"/>:List[int]  = sp_property(type="<xsl:value-of select="@type"/>") </xsl:when>   
-<xsl:otherwise>  <xsl:value-of select="@name"/>:ndFunction  = sp_property(type="<xsl:value-of select="@type"/>", coordinate1="<xsl:value-of select="@coordinate1" />") </xsl:otherwise>   
+<xsl:when test="@type='constant' or @type='static'"><xsl:value-of select="my:py_word(@name)"/>:List[int]  = sp_property(type="<xsl:value-of select="@type"/>") </xsl:when>   
+<xsl:otherwise>  <xsl:value-of select="my:py_word(@name)"/>:ndFunction  = sp_property(type="<xsl:value-of select="@type"/>", coordinate1="<xsl:value-of select="@coordinate1" />") </xsl:otherwise>   
 </xsl:choose>
 </xsl:template>   
 
-<xsl:template match="field[@data_type='INT_2D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", ndims=2, data_type=int ) </xsl:template>   
-<xsl:template match="field[@data_type='INT_3D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", ndims=3, data_type=int ) </xsl:template>   
+<xsl:template match="field[@data_type='INT_2D']"        mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", ndims=2, data_type=int ) </xsl:template>   
+<xsl:template match="field[@data_type='INT_3D']"        mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", ndims=3, data_type=int ) </xsl:template>   
 
-<xsl:template match="field[@data_type='flt_type']"      mode = "DECLARE">  <xsl:value-of select="@name"/>:float      = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>") </xsl:template> 
-<xsl:template match="field[@data_type='FLT_0D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:float      = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>") </xsl:template> 
+<xsl:template match="field[@data_type='flt_type']"      mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:float      = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>") </xsl:template> 
+<xsl:template match="field[@data_type='FLT_0D']"        mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:float      = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>") </xsl:template> 
 
 
 <xsl:template match="field[@data_type='FLT_1D' or @data_type='flt_1d_type']" mode = "DECLARE">  
 <xsl:choose>
-<xsl:when test="@coordinate1='1...N'"><xsl:value-of select="@name"/>:np.ndarray = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=1, data_type=float)</xsl:when>
-<xsl:otherwise><xsl:value-of select="@name"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=1, data_type=float, coordinate1="<xsl:value-of select="@coordinate1" />")</xsl:otherwise>
+<xsl:when test="@coordinate1='1...N'"><xsl:value-of select="my:py_word(@name)"/>:np.ndarray = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=1, data_type=float)</xsl:when>
+<xsl:otherwise><xsl:value-of select="my:py_word(@name)"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=1, data_type=float, coordinate1="<xsl:value-of select="@coordinate1" />")</xsl:otherwise>
 </xsl:choose>
 </xsl:template>   
 
-<xsl:template match="field[@data_type='FLT_2D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=2, data_type=float, coordinate1="<xsl:value-of select="@coordinate1" />", coordinate2="<xsl:value-of select="@coordinate2" />") </xsl:template>   
-<xsl:template match="field[@data_type='FLT_3D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=3, data_type=float, coordinate1="<xsl:value-of select="@coordinate1" />", coordinate2="<xsl:value-of select="@coordinate2" />", coordinate3="<xsl:value-of select="@coordinate3" />") </xsl:template>   
-<xsl:template match="field[@data_type='FLT_4D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=4, data_type=float, coordinate1="<xsl:value-of select="@coordinate1" />", coordinate2="<xsl:value-of select="@coordinate2" />", coordinate3="<xsl:value-of select="@coordinate3" />", coordinate4="<xsl:value-of select="@coordinate4" />") </xsl:template>   
-<xsl:template match="field[@data_type='FLT_5D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=5, data_type=float, coordinate1="<xsl:value-of select="@coordinate1" />", coordinate2="<xsl:value-of select="@coordinate2" />", coordinate3="<xsl:value-of select="@coordinate3" />", coordinate4="<xsl:value-of select="@coordinate4" />", coordinate5="<xsl:value-of select="@coordinate5" />") </xsl:template>   
-<xsl:template match="field[@data_type='FLT_6D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=6, data_type=float, coordinate1="<xsl:value-of select="@coordinate1" />", coordinate2="<xsl:value-of select="@coordinate2" />", coordinate3="<xsl:value-of select="@coordinate3" />", coordinate4="<xsl:value-of select="@coordinate4" />", coordinate5="<xsl:value-of select="@coordinate5" />", coordinate6="<xsl:value-of select="@coordinate6" />") </xsl:template>   
-<xsl:template match="field[@data_type='cpx_type']"      mode = "DECLARE">  <xsl:value-of select="@name"/>:complex    = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>") </xsl:template>   
-<xsl:template match="field[@data_type='cplx_1d_type']"  mode = "DECLARE">  <xsl:value-of select="@name"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=1, data_type=complex, coordinate1="<xsl:value-of select="@coordinate1" />") </xsl:template>   
-<xsl:template match="field[@data_type='CPX_0D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:complex    = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>") </xsl:template>   
-<xsl:template match="field[@data_type='CPX_1D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=1, data_type=complex, coordinate1="<xsl:value-of select="@coordinate1" />") </xsl:template>   
-<xsl:template match="field[@data_type='CPX_2D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=2, data_type=complex) </xsl:template>   
-<xsl:template match="field[@data_type='CPX_3D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=3, data_type=complex) </xsl:template>   
-<xsl:template match="field[@data_type='CPX_4D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=4, data_type=complex) </xsl:template>   
-<xsl:template match="field[@data_type='CPX_5D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=5, data_type=complex) </xsl:template>   
-<xsl:template match="field[@data_type='CPX_6D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=6, data_type=complex) </xsl:template>   
+<xsl:template match="field[@data_type='FLT_2D']"        mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=2, data_type=float, coordinate1="<xsl:value-of select="@coordinate1" />", coordinate2="<xsl:value-of select="@coordinate2" />") </xsl:template>   
+<xsl:template match="field[@data_type='FLT_3D']"        mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=3, data_type=float, coordinate1="<xsl:value-of select="@coordinate1" />", coordinate2="<xsl:value-of select="@coordinate2" />", coordinate3="<xsl:value-of select="@coordinate3" />") </xsl:template>   
+<xsl:template match="field[@data_type='FLT_4D']"        mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=4, data_type=float, coordinate1="<xsl:value-of select="@coordinate1" />", coordinate2="<xsl:value-of select="@coordinate2" />", coordinate3="<xsl:value-of select="@coordinate3" />", coordinate4="<xsl:value-of select="@coordinate4" />") </xsl:template>   
+<xsl:template match="field[@data_type='FLT_5D']"        mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=5, data_type=float, coordinate1="<xsl:value-of select="@coordinate1" />", coordinate2="<xsl:value-of select="@coordinate2" />", coordinate3="<xsl:value-of select="@coordinate3" />", coordinate4="<xsl:value-of select="@coordinate4" />", coordinate5="<xsl:value-of select="@coordinate5" />") </xsl:template>   
+<xsl:template match="field[@data_type='FLT_6D']"        mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=6, data_type=float, coordinate1="<xsl:value-of select="@coordinate1" />", coordinate2="<xsl:value-of select="@coordinate2" />", coordinate3="<xsl:value-of select="@coordinate3" />", coordinate4="<xsl:value-of select="@coordinate4" />", coordinate5="<xsl:value-of select="@coordinate5" />", coordinate6="<xsl:value-of select="@coordinate6" />") </xsl:template>   
+<xsl:template match="field[@data_type='cpx_type']"      mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:complex    = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>") </xsl:template>   
+<xsl:template match="field[@data_type='cplx_1d_type']"  mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=1, data_type=complex, coordinate1="<xsl:value-of select="@coordinate1" />") </xsl:template>   
+<xsl:template match="field[@data_type='CPX_0D']"        mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:complex    = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>") </xsl:template>   
+<xsl:template match="field[@data_type='CPX_1D']"        mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=1, data_type=complex, coordinate1="<xsl:value-of select="@coordinate1" />") </xsl:template>   
+<xsl:template match="field[@data_type='CPX_2D']"        mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=2, data_type=complex) </xsl:template>   
+<xsl:template match="field[@data_type='CPX_3D']"        mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=3, data_type=complex) </xsl:template>   
+<xsl:template match="field[@data_type='CPX_4D']"        mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=4, data_type=complex) </xsl:template>   
+<xsl:template match="field[@data_type='CPX_5D']"        mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=5, data_type=complex) </xsl:template>   
+<xsl:template match="field[@data_type='CPX_6D']"        mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", units="<xsl:value-of select="@units"/>", ndims=6, data_type=complex) </xsl:template>   
 
-<xsl:template match="field[@data_type='structure'     and not(@doc_identifier)]" mode = "DECLARE">  <xsl:value-of select="@name"/>:_T_<xsl:value-of select="@structure_reference"/>         = sp_property() </xsl:template>    
+<xsl:template match="field[@data_type='structure'     and not(@doc_identifier)]" mode = "DECLARE">  <xsl:value-of select="my:py_word(@name)"/>:_T_<xsl:value-of select="@structure_reference"/>         = sp_property() </xsl:template>    
 
 <xsl:template match="field[@data_type='struct_array'  and not(@doc_identifier)]" mode = "DECLARE">  
 <xsl:choose>
-<xsl:when test="@coordinate1='1...N'"><xsl:value-of select="@name"/>:List[_T_<xsl:value-of select="@structure_reference"/>]   = sp_property() </xsl:when>
-<xsl:otherwise><xsl:value-of select="@name"/>:List[_T_<xsl:value-of select="@structure_reference"/>]   = sp_property(coordinate1="<xsl:value-of select="@coordinate1"/>") </xsl:otherwise>
+<xsl:when test="@coordinate1='1...N'"><xsl:value-of select="my:py_word(@name)"/>:List[_T_<xsl:value-of select="@structure_reference"/>]   = sp_property() </xsl:when>
+<xsl:otherwise><xsl:value-of select="my:py_word(@name)"/>:List[_T_<xsl:value-of select="@structure_reference"/>]   = sp_property(coordinate1="<xsl:value-of select="@coordinate1"/>") </xsl:otherwise>
 </xsl:choose>
 </xsl:template>
 
@@ -309,10 +322,10 @@ class _T_<xsl:value-of select="@name"/>(_T_ids):
 <xsl:variable name="ext_doc" select="document(concat($IMAS_DD_PATH,@doc_identifier))/constants" />
 <xsl:text>&#xA;    </xsl:text>
   <xsl:choose>
-    <xsl:when test="@data_type='structure'"><xsl:value-of select="@name"/>:_E_<xsl:value-of select="$ext_doc/[@name]"/>  = sp_property() </xsl:when>
-    <xsl:when test="@data_type='struct_array' and @coordinate1='1...N'"><xsl:value-of select="@name"/>:List[_E_<xsl:value-of select="$ext_doc/[@name]"/>]   = sp_property() </xsl:when>
-    <xsl:when test="@data_type='struct_array' and @coordinate1!='1...N'"><xsl:value-of select="@name"/>:List[_E_<xsl:value-of select="$ext_doc/[@name]"/>]   = sp_property(coordinate1="<xsl:value-of select="@coordinate1"/>") </xsl:when>
-    <xsl:otherwise> # unknown data type <xsl:value-of select="@name"/>:_E_<xsl:value-of select="@name"/>  </xsl:otherwise>
+    <xsl:when test="@data_type='structure'"><xsl:value-of select="my:py_word(@name)"/>:_E_<xsl:value-of select="$ext_doc/[@name]"/>  = sp_property() </xsl:when>
+    <xsl:when test="@data_type='struct_array' and @coordinate1='1...N'"><xsl:value-of select="my:py_word(@name)"/>:List[_E_<xsl:value-of select="$ext_doc/[@name]"/>]   = sp_property() </xsl:when>
+    <xsl:when test="@data_type='struct_array' and @coordinate1!='1...N'"><xsl:value-of select="my:py_word(@name)"/>:List[_E_<xsl:value-of select="$ext_doc/[@name]"/>]   = sp_property(coordinate1="<xsl:value-of select="@coordinate1"/>") </xsl:when>
+    <xsl:otherwise> # unknown data type <xsl:value-of select="my:py_word(@name)"/>:_E_<xsl:value-of select="my:py_word(@name)"/>  </xsl:otherwise>
   </xsl:choose>
 </xsl:template>
  
@@ -324,7 +337,7 @@ class _T_<xsl:value-of select="@name"/>(_T_ids):
 class _E_<xsl:value-of select="$ext_doc/[@name]"/>(IntFlag):
     """<xsl:value-of select="my:line-wrap($ext_doc/header, $line-width, 7)"/>"""
   <xsl:for-each select="$ext_doc/int">
-<xsl:text>&#xA;    </xsl:text><xsl:value-of select="@name"/>:   <xsl:value-of select="."/>
+<xsl:text>&#xA;    </xsl:text><xsl:value-of select="my:py_word(@name)"/>:   <xsl:value-of select="."/>
 <xsl:text>&#xA;    </xsl:text>"""<xsl:value-of select="my:line-wrap(@description, $line-width, 7)"/>"""
   </xsl:for-each>
 </xsl:template>
@@ -360,7 +373,7 @@ class _T_<xsl:value-of select="$cls_name"/>(Dict[Node]):
 class _E_<xsl:value-of select="$ext_doc/[@name]"/>(IntFlag):
     """<xsl:value-of select="my:line-wrap($ext_doc/header, $line-width, 7)"/>"""
   <xsl:for-each select="$ext_doc/int">
-<xsl:text>&#xA;    </xsl:text><xsl:value-of select="@name"/>:   <xsl:value-of select="."/>
+<xsl:text>&#xA;    </xsl:text><xsl:value-of select="my:py_word(@name)"/>:   <xsl:value-of select="."/>
 <xsl:text>&#xA;    </xsl:text>"""<xsl:value-of select="my:line-wrap(@description, $line-width, 7)"/>"""
   </xsl:for-each>
     
@@ -370,7 +383,7 @@ class _E_<xsl:value-of select="$ext_doc/[@name]"/>(IntFlag):
 <xsl:template match = "field[not(@doc_identifier)]" mode = "DEFINE_UTIL">     
 <xsl:apply-templates select="field[(@data_type='structure' or @data_type='struct_array')]" mode = "DEFINE_UTIL"/>  
 
-class _T_<xsl:value-of select="@name"/>(Dict[Node]):
+class _T_<xsl:value-of select="my:py_word(@name)"/>(Dict[Node]):
     """<xsl:value-of select="my:line-wrap(@documentation, $line-width, 7)"/>"""
 
   <xsl:for-each select="field[substring(@name,string-length(@name)-string-length('_error_upper')+1)!='_error_upper'

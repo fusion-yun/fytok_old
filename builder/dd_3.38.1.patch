@@ -1,3 +1,15 @@
+diff -ruN 3.38.1-orig/dd_3.38.1/include/IDSDef.xml 3.38.1/dd_3.38.1/include/IDSDef.xml
+--- 3.38.1-orig/dd_3.38.1/include/IDSDef.xml	2023-04-24 09:09:40.260729623 +0800
++++ 3.38.1/dd_3.38.1/include/IDSDef.xml	2023-04-24 10:57:09.473030247 +0800
+@@ -201966,7 +201966,7 @@
+                 data_type="struct_array"
+                 maxoccur="10"
+                 path_doc="channel(i1)/bandwidth(i2)"
+-                coordinate1="1...N&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;">
++                coordinate1="1...N">
+             <field name="frequency_main"
+                    path="channel/bandwidth/frequency_main"
+                    path_doc="channel(i1)/bandwidth(i2)/frequency_main"
 diff -ruN 3.38.1-orig/dd_3.38.1/include/equilibrium/equilibrium_gs_deviation.xml 3.38.1/dd_3.38.1/include/equilibrium/equilibrium_gs_deviation.xml
 --- 3.38.1-orig/dd_3.38.1/include/equilibrium/equilibrium_gs_deviation.xml	1970-01-01 08:00:00.000000000 +0800
 +++ 3.38.1/dd_3.38.1/include/equilibrium/equilibrium_gs_deviation.xml	2023-04-24 08:28:28.261505746 +0800
