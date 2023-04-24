@@ -25,7 +25,7 @@
 
 <xsl:param name="FYTOK_REV" select="'0.0.1'" />
 
-<xsl:param name="IDS_LIST" select="('distributions')" />
+<xsl:param name="IDS_LIST" select="()" />
 
 <xsl:param name="IMAS_DD_PATH" select="'/fuyun/software/data-dictionary/3.38.1/dd_3.38.1/include/'"/>
 
@@ -45,7 +45,7 @@
   <xsl:param name="line-length" as="xs:integer" />
   <xsl:param name="indent" as="xs:integer" />
   <xsl:variable name="spaces" select="string-join((for $i in 1 to $indent return ' '), '')" />
-  <xsl:variable name="wrapped-text" select="replace(concat(normalize-space($text),' '), concat('(.{0,', $line-length, '}) '), concat('$1&#10;', $spaces))" />
+  <xsl:variable name="wrapped-text" select="replace(concat(normalize-space(translate($text, '&quot;', '_')),' '), concat('(.{0,', $line-length, '}) '), concat('$1&#10;', $spaces))" />
   <xsl:sequence select="substring($wrapped-text, 1, string-length($wrapped-text) - $indent - 1)" />
 </xsl:function>
 
@@ -96,20 +96,23 @@ Generate at <xsl:value-of  select="current-dateTime()" />
 
 <!-- Directory:  _imas -->
 <xsl:template match="/IDSs">
-
 <xsl:apply-templates select="." mode="INIT_FILE"/>   
 <xsl:apply-templates select="." mode="IDS_FILE"/>   
-
-<xsl:for-each select="IDS[contains($IDS_LIST,@name)]">
-
-<xsl:value-of select="@name"/><xsl:text>&#xA;</xsl:text> 
-
-<xsl:apply-templates select="." mode="FILE"/>   
-
-</xsl:for-each>
-
 <xsl:apply-templates select="utilities" mode="FILE"/>   
-
+<!-- <xsl:choose>
+<xsl:when test="not(empty($IDS_LIST))">
+<xsl:for-each select="IDS[not(empty(index-of($IDS_LIST,@name)))]">
+  <xsl:value-of select="@name"/><xsl:text>&#xA;</xsl:text> 
+  <xsl:apply-templates select="." mode="FILE"/>
+</xsl:for-each>
+</xsl:when>
+<xsl:otherwise> -->
+<xsl:for-each select="IDS">
+  <xsl:value-of select="@name"/><xsl:text>&#xA;</xsl:text> 
+  <xsl:apply-templates select="." mode="FILE"/>
+</xsl:for-each>
+<!-- </xsl:otherwise>
+</xsl:choose> -->
 </xsl:template>
 
 <!-- FILE:  __init__.py -->
@@ -126,9 +129,19 @@ __cocos__="<xsl:value-of select="/IDSs/cocos"/>"
 
 from .utilities import _T_ids_properties, _T_code
 
-<xsl:for-each select="IDS[contains($IDS_LIST,@name)]">
+<xsl:choose>
+<xsl:when test="not(empty($IDS_LIST))">
+<xsl:for-each select="IDS[not(empty(index-of($IDS_LIST,@name)))]">
 from .<xsl:value-of select="@name"/>  import _T_<xsl:value-of select="@name"/>
 </xsl:for-each>
+</xsl:when>
+<xsl:otherwise>
+<xsl:for-each select="IDS">
+from .<xsl:value-of select="@name"/>  import _T_<xsl:value-of select="@name"/>
+</xsl:for-each>
+</xsl:otherwise>
+</xsl:choose>
+
 </xsl:result-document>
 </xsl:template>
  
@@ -238,15 +251,20 @@ class _T_<xsl:value-of select="@name"/>(_T_ids):
 
 <!-- Declare field -->
 <xsl:template match="field[@data_type='STR_0D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:str        = sp_property(type="<xsl:value-of select="@type"/>")   </xsl:template>
-<xsl:template match="field[@data_type='STR_1D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:List[str]  = sp_property(type="<xsl:value-of select="@type"/>" )  </xsl:template>
+<xsl:template match="field[@data_type='STR_1D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:List[str]  = sp_property(type="<xsl:value-of select="@type"/>")   </xsl:template>
 <xsl:template match="field[@data_type='str_type']"      mode = "DECLARE">  <xsl:value-of select="@name"/>:str        = sp_property(type="<xsl:value-of select="@type"/>")   </xsl:template>
-<xsl:template match="field[@data_type='str_1d_type']"   mode = "DECLARE">  <xsl:value-of select="@name"/>:List[str]  = sp_property(type="<xsl:value-of select="@type"/>" )  </xsl:template> 
+<xsl:template match="field[@data_type='str_1d_type']"   mode = "DECLARE">  <xsl:value-of select="@name"/>:List[str]  = sp_property(type="<xsl:value-of select="@type"/>")   </xsl:template> 
 
 <xsl:template match="field[@data_type='int_type']"      mode = "DECLARE">  <xsl:value-of select="@name"/>:int        = sp_property(type="<xsl:value-of select="@type"/>")   </xsl:template>    
-<xsl:template match="field[@data_type='int_1d_type']"   mode = "DECLARE">  <xsl:value-of select="@name"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", ndims=1, data_type=int ) </xsl:template>   
-
 <xsl:template match="field[@data_type='INT_0D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:int        = sp_property(type="<xsl:value-of select="@type"/>") </xsl:template>    
-<xsl:template match="field[@data_type='INT_1D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", ndims=1, data_type=int ) </xsl:template>   
+
+<xsl:template match="field[@data_type='INT_1D' or @data_type='int_1d_type']" mode = "DECLARE">  
+<xsl:choose>
+<xsl:when test="@type='constant' or @type='static'"><xsl:value-of select="@name"/>:List[int]  = sp_property(type="<xsl:value-of select="@type"/>") </xsl:when>   
+<xsl:otherwise>  <xsl:value-of select="@name"/>:ndFunction  = sp_property(type="<xsl:value-of select="@type"/>", coordinate1="<xsl:value-of select="@coordinate1" />") </xsl:otherwise>   
+</xsl:choose>
+</xsl:template>   
+
 <xsl:template match="field[@data_type='INT_2D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", ndims=2, data_type=int ) </xsl:template>   
 <xsl:template match="field[@data_type='INT_3D']"        mode = "DECLARE">  <xsl:value-of select="@name"/>:ndFunction = sp_property(type="<xsl:value-of select="@type"/>", ndims=3, data_type=int ) </xsl:template>   
 

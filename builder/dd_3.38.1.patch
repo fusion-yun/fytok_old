@@ -1,0 +1,60 @@
+diff -ruN 3.38.1-orig/dd_3.38.1/include/equilibrium/equilibrium_gs_deviation.xml 3.38.1/dd_3.38.1/include/equilibrium/equilibrium_gs_deviation.xml
+--- 3.38.1-orig/dd_3.38.1/include/equilibrium/equilibrium_gs_deviation.xml	1970-01-01 08:00:00.000000000 +0800
++++ 3.38.1/dd_3.38.1/include/equilibrium/equilibrium_gs_deviation.xml	2023-04-24 08:28:28.261505746 +0800
+@@ -0,0 +1,12 @@
++<?xml version="1.0"?>
++<constants name="equilibrium_gs_deviation" identifier="yes" create_mapping_function="yes">
++<header>Expression for calculating the residual deviation between the left and right hand side of the Grad Shafranov equation</header>
++<ddInstance xpath="/equilibrium/time_slice(itime)/convergence/grad_shafranov_deviation_expression"/>
++
++<int name="absolute_gs_difference"                  description="Average absolute difference of the Grad-Shafranov equation, &lt;|Del* psi - j_tor*R|&gt;, averaged over the plasma poloidal cross-section" unique="yes">1</int>
++<int name="root_mean_square_gs_difference"          description="Root mean square difference of the Grad-Shafranov equation, sqrt(&lt;(Del* psi - j_tor*R)^2 &gt;), averaged over the plasma poloidal cross-section" unique="yes">2</int>
++<int name="max_absolute_psi_residual"               description="Maximum absolute difference over the plasma poloidal cross-section of the poloidal flux between the current and preceding iteration, on fixed grid points" unique="yes">3</int>
++<int name="max_absolute_gs_difference_norm"         description="Maximum absolute difference of the Grad-Shafranov equation, normalised, max(|Del* psi - j_tor*R|) / max(|Del* psi|), over the plasma poloidal cross-section" unique="yes">4</int>
++<int name="max_root_mean_square_gs_difference_norm" description="Root maximum square difference of the Grad-Shafranov equation, normalised, sqrt(max((Del* psi - j_tor*R)^2) / max((Del* psi)^2)), over the plasma poloidal cross-section" unique="yes">5</int>
++
++</constants>
+diff -ruN 3.38.1-orig/dd_3.38.1/include/transport_solver_numerics/transport_solver_numerics_bc_type.xml 3.38.1/dd_3.38.1/include/transport_solver_numerics/transport_solver_numerics_bc_type.xml
+--- 3.38.1-orig/dd_3.38.1/include/transport_solver_numerics/transport_solver_numerics_bc_type.xml	1970-01-01 08:00:00.000000000 +0800
++++ 3.38.1/dd_3.38.1/include/transport_solver_numerics/transport_solver_numerics_bc_type.xml	2023-04-24 08:33:15.091415282 +0800
+@@ -0,0 +1,13 @@
++<?xml version="1.0"?>
++<constants name="transport_solver_numerics_bc_type" identifier="yes" create_mapping_function="yes">
++<header>Computation mode for this equation</header>
++<ddInstance xpath="/transport_solver_numerics/solver_1d/equation/boundary_condition/type"/>
++
++
++<int name="not_solved"                  description="Equation is not solved"  unique="yes">0</int>
++<int name="value"                       description="Boundary condition is the value of the equations primary quantity"  unique="yes">1</int>
++<int name="derivative_or_ip"            description="Boundary condition is the radial derivative of the equations primary quantity, or the plasma current for the current diffusion equation"  unique="yes">2</int>
++<int name="e_folding_length_or_vloop"   description="Boundary condition is the e-folding length of the equations primary quantity, or the loop voltage for the current diffusion equation"  unique="yes">3</int>
++<int name="flux"                        description="Boundary condition is the flux of the equations primary quantity"  unique="yes">4</int>
++<int name="combination"                 description="Boundary condition is a linear combination of radial derivative and value of the flux of the equations primary quantity, in the form a1.y-prime + a2.y = a3"  unique="yes">5</int>
++</constants>
+diff -ruN 3.38.1-orig/dd_3.38.1/include/transport_solver_numerics/transport_solver_numerics_computation_mode.xml 3.38.1/dd_3.38.1/include/transport_solver_numerics/transport_solver_numerics_computation_mode.xml
+--- 3.38.1-orig/dd_3.38.1/include/transport_solver_numerics/transport_solver_numerics_computation_mode.xml	1970-01-01 08:00:00.000000000 +0800
++++ 3.38.1/dd_3.38.1/include/transport_solver_numerics/transport_solver_numerics_computation_mode.xml	2023-04-24 08:32:41.961425190 +0800
+@@ -0,0 +1,10 @@
++<?xml version="1.0"?>
++<constants name="transport_solver_numerics_computation_mode" identifier="yes" create_mapping_function="yes">
++<header>Computation mode for this equation</header>
++<ddInstance xpath="/transport_solver_numerics/solver_1d/equation/computation_mode"/>
++
++<int name="static"           description="Equation is not solved, no profile evolution" unique="yes">0</int>
++<int name="interpretative"   description="Equation is not solved, profile is evolved by interpolating from input objects" unique="yes">1</int>
++<int name="predictive"       description="Equation is solved, profile evolves" unique="yes">2</int>
++ 
++</constants>
+diff -ruN 3.38.1-orig/dd_3.38.1/include/utilities/emission_grid_identifier.xml 3.38.1/dd_3.38.1/include/utilities/emission_grid_identifier.xml
+--- 3.38.1-orig/dd_3.38.1/include/utilities/emission_grid_identifier.xml	2023-04-24 09:09:40.300729616 +0800
++++ 3.38.1/dd_3.38.1/include/utilities/emission_grid_identifier.xml	2023-04-23 15:18:44.989937837 +0800
+@@ -1,5 +1,5 @@
+ <?xml version="1.0"?>
+-<constants name="spectrometer_visible_emissivity_grid_identifier.xml" identifier="yes" create_mapping_function="yes">
++<constants name="spectrometer_visible_emissivity_grid_identifier" identifier="yes" create_mapping_function="yes">
+ <header>List of coordinate systems for describing the poloidal plane</header>
+ <ddInstance xpath="/spectrometer_visible/channel/geometry_matrix/emission_grid/grid_type"/>
+ <ddInstance xpath="/camera_visible/channel/detector/geometry_matrix/emission_grid/grid_type"/>
+Binary files 3.38.1-orig/lib/python3.8/site-packages/data_dictionary/__pycache__/__init__.cpython-38.pyc and 3.38.1/lib/python3.8/site-packages/data_dictionary/__pycache__/__init__.cpython-38.pyc differ
+Binary files 3.38.1-orig/lib/python3.8/site-packages/data_dictionary/__pycache__/_version.cpython-38.pyc and 3.38.1/lib/python3.8/site-packages/data_dictionary/__pycache__/_version.cpython-38.pyc differ
+Binary files 3.38.1-orig/lib/python3.8/site-packages/data_dictionary/__pycache__/idsdef.cpython-38.pyc and 3.38.1/lib/python3.8/site-packages/data_dictionary/__pycache__/idsdef.cpython-38.pyc differ
