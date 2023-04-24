@@ -22,7 +22,7 @@ from spdm.numlib.contours import find_countours
 from spdm.numlib.optimize import find_critical_points
 from spdm.util.logger import logger
 
-from ..common.Misc import RZTuple, VacuumToroidalField
+from ..utilities.Misc import RZTuple, VacuumToroidalField
 
 TOLERANCE = 1.0e-6
 EPS = np.finfo(float).eps

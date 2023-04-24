@@ -2,46 +2,13 @@ import collections
 
 import matplotlib.pyplot as plt
 import numpy as np
-from spdm.data.Dict import Dict
+from _imas.wall import _T_wall, _T_wall_2d
 from spdm.data.List import List
-from spdm.data.Node import Node
 from spdm.data.sp_property import sp_property
-from spdm.util.logger import logger
 from sympy import Point, Polygon
 
-from ..common.IDS import IDS
-from ..common.Misc import RZTuple
 
-
-class WallGlobalQuantities(Dict[Node]):
-    pass
-
-
-class WallLimiter(Dict[Node]):
-
-    class Unit(Dict[Node]):
-        outline: RZTuple = sp_property()
-
-    unit:  List[Unit] = sp_property()
-
-
-class WallVessel(Dict[Node]):
-
-    class Annular(Dict[Node]):
-        outline_outer: RZTuple = sp_property(default_value={})
-        outline_inner: RZTuple = sp_property(default_value={})
-
-    annular: Annular = sp_property()
-
-
-class WallDescription2D(Dict[Node]):
-
-    Limiter = WallLimiter
-    Vessel = WallVessel
-
-    limiter: WallLimiter = sp_property()
-
-    vessel: WallVessel = sp_property()
+class Wall2D(_T_wall_2d):
 
     def limiter_polygon(self):
         limiter_points = np.array([self.limiter.unit[0].outline.r,
@@ -50,80 +17,18 @@ class WallDescription2D(Dict[Node]):
         return Polygon(*map(Point, limiter_points))
 
     def vessel_polygon(self):
-        vessel_inner_points = np.array([self.vessel.annular.outline_inner.r,
-                                        self.vessel.annular.outline_inner.z]).transpose([1, 0])
+        vessel_inner_points = np.array([self.vessel.unit[0].annular.outline_inner.r,
+                                        self.vessel.unit[0].annular.outline_inner.z]).transpose([1, 0])
 
-        vessel_outer_points = np.array([self.vessel.annular.outline_outer.r,
-                                        self.vessel.annular.outline_outer.z]).transpose([1, 0])
+        vessel_outer_points = np.array([self.vessel.unit[0].annular.outline_outer.r,
+                                        self.vessel.unit[0].annular.outline_outer.z]).transpose([1, 0])
 
         return Polygon(*map(Point, vessel_inner_points)), Polygon(*map(Point, vessel_outer_points))
 
-    # def in_limiter(self, *x):
-    #     return self.limiter_polygon().encloses(Point(*x))
 
-    # def in_vessel(self, *x):
-    #     return self.vessel_polygon().encloses(Point(*x))
+class Wall(_T_wall):
 
-        # if isinstance(data, LazyProxy):
-        #     limiter = data.description_2d.limiter.unit.outline()
-        #     vessel = data.description_2d.vessel.annular()
-        # else:
-        #     limiter = None
-        #     vessel = None
-
-        # if limiter is None:
-        #     pass
-        # elif isinstance(limiter, list):
-        #     self.limiter.outline.r = limiter[0]
-        #     self.limiter.outline.z = limiter[1]
-        # elif isinstance(limiter, collections.abc.Mapping):
-        #     self.limiter.outline.r = limiter["r"]
-        #     self.limiter.outline.z = limiter["z"]
-        # elif isinstance(limiter, LazyProxy):
-        #     self.limiter.outline.r = limiter.r
-        #     self.limiter.outline.z = limiter.z
-        # else:
-        #     raise TypeError(f"Unknown type {type(limiter)}")
-
-        # if vessel is None:
-        #     pass
-        # elif isinstance(vessel, list):
-        #     self.vessel.annular.outline_inner.r = vessel[0][0]
-        #     self.vessel.annular.outline_inner.z = vessel[0][1]
-        #     self.vessel.annular.outline_outer.r = vessel[1][0]
-        #     self.vessel.annular.outline_outer.z = vessel[1][1]
-        # elif isinstance(limiter, collections.abc.Mapping):
-        #     self.vessel.annular.outline_inner.r = vessel["outline_inner"]["r"]
-        #     self.vessel.annular.outline_inner.z = vessel["outline_inner"]["z"]
-        #     self.vessel.annular.outline_outer.r = vessel["outline_outer"]["r"]
-        #     self.vessel.annular.outline_outer.z = vessel["outline_outer"]["z"]
-        # elif isinstance(limiter, LazyProxy):
-        #     self.vessel.annular.outline_inner.r = vessel.outline_inner.r
-        #     self.vessel.annular.outline_inner.z = vessel.outline_inner.z
-        #     self.vessel.annular.outline_outer.r = vessel.outline_outer.r
-        #     self.vessel.annular.outline_outer.z = vessel.outline_outer.z
-        # else:
-        #     raise TypeError(f"Unknown type {type(vessel)}")
-
-
-class WallDescriptionGGD(Dict[Node]):
-    pass
-
-
-class Wall(IDS):
-    """Wall
-
-    """
-    _IDS = "wall"
-    Description2D = WallDescription2D
-    DescriptionGGD = WallDescriptionGGD
-    GlobalQuantities = WallGlobalQuantities
-
-    global_quantities: GlobalQuantities = sp_property()
-
-    description_2d: List[Description2D] = sp_property()
-
-    description_ggd: List[DescriptionGGD] = sp_property()
+    description_2d: List[Wall2D] = sp_property()
 
     def plot(self, axis=None, *args, **kwargs):
 
@@ -132,11 +37,11 @@ class Wall(IDS):
 
         desc2d = self.description_2d[0]
 
-        vessel_inner_points = np.array([desc2d.vessel.annular.outline_inner.r,
-                                        desc2d.vessel.annular.outline_inner.z]).transpose([1, 0])
+        vessel_inner_points = np.array([desc2d.vessel.unit[0].annular.outline_inner.r,
+                                        desc2d.vessel.unit[0].annular.outline_inner.z]).transpose([1, 0])
 
-        vessel_outer_points = np.array([desc2d.vessel.annular.outline_outer.r,
-                                        desc2d.vessel.annular.outline_outer.z]).transpose([1, 0])
+        vessel_outer_points = np.array([desc2d.vessel.unit[0].annular.outline_outer.r,
+                                        desc2d.vessel.unit[0].annular.outline_outer.z]).transpose([1, 0])
 
         limiter_points = np.array([desc2d.limiter.unit[0].outline.r,
                                    desc2d.limiter.unit[0].outline.z]).transpose([1, 0])

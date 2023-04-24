@@ -6,9 +6,9 @@ from scipy import constants
 from spdm.data.sp_property import sp_property
 from spdm.util.logger import logger
 
-from ..common.IDS import IDS
-from ..common.Misc import Identifier
-from ..common.Species import SpeciesElectron, SpeciesIon
+from _imas import _T_ids
+from ..utilities.Misc import Identifier
+from ..utilities.Species import SpeciesElectron, SpeciesIon
 from .CoreProfiles import CoreProfiles
 from .CoreSources import CoreSources
 from .CoreTransport import CoreTransport

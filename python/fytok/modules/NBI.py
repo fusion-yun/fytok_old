@@ -1,10 +1,4 @@
+from _imas.nbi import _T_nbi
 
-from ..common.IDS import IDS
-
-class NBI(IDS):
-    r"""Description of NBI
-        
-    """
-    _IDS="pellets"
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class NBI(_T_nbi):
+    pass
