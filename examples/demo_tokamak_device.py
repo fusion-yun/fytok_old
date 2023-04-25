@@ -24,16 +24,14 @@ if __name__ == "__main__":
     ###################################################################################################
     # baseline
     device_desc = File("/home/salmon/workspace/fytok_data/mapping/ITER/imas/3/static/config.xml", format="XML").read()
+    # Equilibrium
+    eqdsk_file = File(
+        "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="GEQdsk").read()
 
     ###################################################################################################
     # Initialize Tokamak
 
     tok = Tokamak(device_desc[{"wall", "pf_active", "tf", "magnetics"}])
-
-    # Equilibrium
-    eqdsk_file = File(
-        "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="GEQdsk").read()
-
     tok["equilibrium"] = {**eqdsk_file.dump(),
                           "code": {"name": "fy_equilibrium",
                                    "parameters": {

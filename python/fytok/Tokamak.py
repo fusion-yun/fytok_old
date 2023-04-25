@@ -155,9 +155,11 @@ class Tokamak(Dict[Node]):
         if kwargs.get("pf_active", True) is not False:
             self.pf_active.plot(axis, **kwargs.get("pf_active", {}))
 
+        if kwargs.get("magnetics", True) is not False:
+            self.magnetics.plot(axis,  **kwargs.get("magnetics", {}))
+
         if kwargs.get("equilibrium", True) is not False:
             self.equilibrium.plot(axis,  **kwargs.get("equilibrium", {}))
-
         axis.set_aspect('equal')
         axis.axis('scaled')
         axis.set_xlabel(r"Major radius $R$ [m]")
