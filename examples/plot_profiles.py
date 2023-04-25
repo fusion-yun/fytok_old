@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy import constants
-from spdm.util.logger import logger
-from spdm.util.plot_profiles import plot_profiles
+from spdm.utils.logger import logger
+from spdm.utils.plot_profiles import plot_profiles
 from spdm.numlib.smooth import rms_residual, smooth_1d
 
 if __name__ == "__main__":

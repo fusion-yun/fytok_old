@@ -1,7 +1,7 @@
 
 
 from fytok.transport.Species import Species
-from spdm.util.logger import logger
+from spdm.utils.logger import logger
 
 
 if __name__ == "__main__":

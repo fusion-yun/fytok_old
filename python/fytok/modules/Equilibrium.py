@@ -3,17 +3,20 @@ from functools import cached_property
 import numpy as np
 from _imas.equilibrium import (_T_equilibrium, _T_equilibrium_boundary,
                                _T_equilibrium_global_quantities,
+                               _T_equilibrium_boundary_separatrix,
                                _T_equilibrium_profiles_1d,
                                _T_equilibrium_profiles_2d)
 from scipy import constants
-from spdm.common.tags import _not_found_, _undefined_
+from spdm.utils.tags import _not_found_, _undefined_
 from spdm.data.Dict import Dict
 from spdm.data.Field import Field
 from spdm.data.Function import Function, function_like
 from spdm.data.Node import Node
+from spdm.data.List import List
+
 from spdm.data.sp_property import sp_property
-from spdm.util.logger import logger
-from spdm.util.misc import convert_to_named_tuple, try_get
+from spdm.utils.logger import logger
+from spdm.utils.misc import convert_to_named_tuple, try_get
 
 from .MagneticCoordSystem import MagneticCoordSystem, RadialGrid
 from .PFActive import PFActive
@@ -283,14 +286,6 @@ class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
         return self._parent.coordinate_system
 
     @cached_property
-    def grid(self):
-        return convert_to_named_tuple(self.get("grid", {}))
-
-    @cached_property
-    def grid_type(self):
-        return convert_to_named_tuple(self.get("grid_type", {}))
-
-    @cached_property
     def psi(self) -> Field:
         return self._coord._psirz  # (self._coord.r,self._coord.z)
 
@@ -341,11 +336,6 @@ class EquilibriumBoundary(_T_equilibrium_boundary):
         return self._parent.coordinate_system
 
     @sp_property
-    def type(self):
-        """0 (limiter) or 1 (diverted)  """
-        return 1
-
-    @sp_property
     def outline(self) -> RZTuple:
         """RZ outline of the plasma boundary  """
         _, surf = next(self._coord.find_surface(self.psi, o_point=True))
@@ -355,6 +345,10 @@ class EquilibriumBoundary(_T_equilibrium_boundary):
     def x_point(self):
         _, xpt = self._parent.critical_points
         return xpt
+
+    psi_norm: float = sp_property(default_value=0.999)
+    """Value of the normalized poloidal flux at which the boundary is taken (typically 99.x %),
+            the flux being normalized to its value at the separatrix """
 
     @sp_property
     def psi_axis(self) -> float:
@@ -368,10 +362,6 @@ class EquilibriumBoundary(_T_equilibrium_boundary):
     def psi(self) -> float:
         """Value of the poloidal flux at which the boundary is taken  [Wb]"""
         return self.psi_norm*(self._coord.psi_boundary-self._coord.psi_axis)+self._coord.psi_axis
-
-    psi_norm: float = sp_property(default_value=0.999)
-    """Value of the normalized poloidal flux at which the boundary is taken (typically 99.x %),
-            the flux being normalized to its value at the separatrix """
 
     @property
     def shape_property(self) -> MagneticCoordSystem.ShapeProperty:
@@ -428,16 +418,11 @@ class EquilibriumBoundary(_T_equilibrium_boundary):
         return NotImplemented
 
 
-class EquilibriumBoundarySeparatrix(Dict[Node]):
+class EquilibriumBoundarySeparatrix(_T_equilibrium_boundary_separatrix):
 
     @property
     def _coord(self) -> MagneticCoordSystem:
         return self._parent.coordinate_system
-
-    @sp_property
-    def type(self):
-        """0 (limiter) or 1 (diverted)  """
-        return 1
 
     @sp_property
     def outline(self) -> RZTuple:
@@ -456,8 +441,6 @@ class EquilibriumBoundarySeparatrix(Dict[Node]):
     @sp_property
     def psi(self) -> float:
         return self._coord.psi_norm*(self._coord.psi_boundary-self._coord.psi_axis)+self._coord.psi_axis
-
-    psi_norm: float = sp_property(default_value=1.0)
 
 
 class Equilibrium(_T_equilibrium):
@@ -506,12 +489,12 @@ class Equilibrium(_T_equilibrium):
         ```
     """
 
-    def refresh(self,  *args,
-                wall: Wall = _undefined_,
-                pf_active: PFActive = _undefined_,
-                core_profiles=_undefined_,
-                **kwargs):
-        super().refresh(*args, **kwargs)
+    def update(self,  *args,
+               wall: Wall = _undefined_,
+               pf_active: PFActive = _undefined_,
+               core_profiles=_undefined_,
+               **kwargs):
+        super().update(*args, **kwargs)
 
         # self.profiles_1d.pressure = core_profiles.profiles_1d.pressure
         # self.profiles_1d.pressure = core_profiles.profiles_1d.fpol
@@ -535,7 +518,7 @@ class Equilibrium(_T_equilibrium):
 
     profiles_1d: EquilibriumProfiles1D = sp_property()
 
-    profiles_2d: EquilibriumProfiles2D = sp_property()
+    profiles_2d: List[EquilibriumProfiles2D] = sp_property()
 
     global_quantities: EquilibriumGlobalQuantities = sp_property()
 
@@ -545,12 +528,12 @@ class Equilibrium(_T_equilibrium):
 
     @sp_property
     def coordinate_system(self, desc) -> MagneticCoordSystem:
-        psirz = self.profiles_2d.get("psi", None)
+        psirz = self.profiles_2d[0].psi
 
         if not isinstance(psirz, Field):
-            psirz = Field(psirz,
-                          self.profiles_2d.grid.dim1,
-                          self.profiles_2d.grid.dim2,
+            psirz = Field(self.profiles_2d[0].psi,
+                          self.profiles_2d[0].grid.dim1,
+                          self.profiles_2d[0].grid.dim2,
                           mesh="rectilinear")
 
         psi_1d = self.profiles_1d._entry.get("psi")
@@ -674,15 +657,15 @@ class Equilibrium(_T_equilibrium):
                 if isinstance(sf, Field):
                     sf.plot(axis, **opts)
                 elif isinstance(sf, np.ndarray):
-                    axis.contour(self.profiles_2d.r, self.profiles_2d.z, sf, **opts)
+                    axis.contour(self.profiles_2d[0].r, self.profiles_2d[0].z, sf, **opts)
                 else:
                     logger.error(f"Can not find field {sf} {type(sf)}!")
 
         for u, v, opts in vector_field:
             uf = self.profiles_2d[u]
             vf = self.profiles_2d[v]
-            axis.streamplot(self.profiles_2d.grid.dim1,
-                            self.profiles_2d.grid.dim2,
+            axis.streamplot(self.profiles_2d[0].grid.dim1,
+                            self.profiles_2d[0].grid.dim2,
                             vf, uf, **opts)
 
         return axis

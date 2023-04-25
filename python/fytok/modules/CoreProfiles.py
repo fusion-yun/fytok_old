@@ -4,7 +4,7 @@ from scipy import constants
 from spdm.data.Function import Function, function_like
 from spdm.data.List import List
 from spdm.data.sp_property import sp_property
-from spdm.util.logger import logger
+from spdm.utils.logger import logger
 
 from .MagneticCoordSystem import TWOPI, RadialGrid
 from _imas.core_profiles import _T_core_profiles, _T_core_profiles_profiles_1d
@@ -236,5 +236,5 @@ class CoreProfiles1D(_T_core_profiles_profiles_1d):
 class CoreProfiles(_T_core_profiles):
     profiles_1d: CoreProfiles1D = sp_property()
 
-    def refresh(self, *args,  **kwargs) -> None:
-        super().refresh(*args, **kwargs)
+    def update(self, *args,  **kwargs) -> None:
+        super().update(*args, **kwargs)

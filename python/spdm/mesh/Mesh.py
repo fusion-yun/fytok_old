@@ -1,17 +1,15 @@
 import collections
 from functools import cached_property
-from typing import Callable, Iterator, Sequence, Tuple, Type, Union
+from typing import Iterator, Sequence
 
 import numpy as np
-from spdm.data.SpObject import SpObject
-from spdm.util.logger import logger
 
 from ..geometry.GeoObject import GeoObject
 
 
-class Mesh(SpObject):
+class Mesh(object):
 
-    @staticmethod
+    
     def __new__(cls,  mesh=None, *args,   **kwargs):
         if cls is not Mesh:
             return object.__new__(cls)

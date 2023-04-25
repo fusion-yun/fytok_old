@@ -1,6 +1,6 @@
 from _imas import _T_equilibrium
 
-from spdm.util.logger import logger
+from spdm.utils.logger import logger
 from spdm.data.sp_property import sp_property
 
 

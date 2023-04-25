@@ -1,7 +1,7 @@
 import pathlib
 
 from fytok.transport.Equilibrium import Equilibrium
-from spdm.util.logger import logger
+from spdm.utils.logger import logger
 
 
 if __name__ == "__main__":

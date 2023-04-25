@@ -18,7 +18,7 @@ class TransportSolverNumerics(_T_transport_solver_numerics):
         :math:`\rho=\sqrt{ \Phi/\pi B_{0}}`
     """
 
-    def refresh(self, *args,  boundary_conditions_1d=None,  **kwargs):
+    def update(self, *args,  boundary_conditions_1d=None,  **kwargs):
         if boundary_conditions_1d is not None:
             self.boundary_conditions_1d.update(boundary_conditions_1d)
         return 0.0

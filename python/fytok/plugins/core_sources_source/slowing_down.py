@@ -8,7 +8,7 @@ from fytok.transport.Equilibrium import Equilibrium
 from spdm.numlib.misc import array_like
 from scipy import constants
 from spdm.data import Function
-from spdm.util.logger import logger
+from spdm.utils.logger import logger
 
 
 class SlowingDown(CoreSources.Source):
@@ -62,7 +62,7 @@ class SlowingDown(CoreSources.Source):
                              "description": f"  $\alpha -> He$ burning and slowing down "
                          },   **kwargs)
 
-    def refresh(self, *args,   equilibrium: Equilibrium,  core_profiles: CoreProfiles,     **kwargs) -> float:
+    def update(self, *args,   equilibrium: Equilibrium,  core_profiles: CoreProfiles,     **kwargs) -> float:
 
         ionHe: CoreProfiles.Profiles1D.Ion = \
             core_profiles.profiles_1d.ion.get({"label": "He"})

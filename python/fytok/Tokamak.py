@@ -1,7 +1,7 @@
 
 
 import matplotlib.pyplot as plt
-from spdm.util.logger import logger
+from spdm.utils.logger import logger
 from spdm.data.sp_property import sp_property
 from spdm.data.Dict import Dict
 from spdm.data.Node import Node
@@ -63,7 +63,7 @@ class Tokamak(Dict[Node]):
     def check_converge(self, /, **kwargs):
         return 0.0
 
-    def refresh(self, *args, time=None, tolerance=1.0e-4,   max_iteration=1, **kwargs) -> float:
+    def update(self, *args, time=None, tolerance=1.0e-4,   max_iteration=1, **kwargs) -> float:
 
         time_prev = self.time
         time_next = time if time is not None else time_prev

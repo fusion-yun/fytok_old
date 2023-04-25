@@ -7,7 +7,7 @@ from fytok.device.PFActive import PFActive
 from fytok.device.Wall import Wall
 from fytok.transport.Equilibrium import Equilibrium
 from spdm import open_db, open_entry
-from spdm.util.logger import logger
+from spdm.utils.logger import logger
 
 os.environ["SP_DATA_MAPPING_PATH"] = "/home/salmon/workspace/fytok_data/mapping"
 

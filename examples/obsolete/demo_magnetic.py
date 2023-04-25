@@ -5,13 +5,13 @@ import sys
 import freegs
 import matplotlib.pyplot as plt
 import numpy as np
-from spdm.util.plot_profiles import plot_profiles
+from spdm.utils.plot_profiles import plot_profiles
 from fytok.Tokamak import Tokamak
 from scipy import special
 from spdm.data.Collection import Collection
 from spdm.data.Entry import open_entry
 from spdm.data  import _next_
-from spdm.util.logger import logger
+from spdm.utils.logger import logger
 
 sys.path.append("/home/salmon/workspace/freegs/")
 sys.path.append("/home/salmon/workspace/fytok/python")

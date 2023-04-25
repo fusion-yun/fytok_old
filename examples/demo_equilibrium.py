@@ -1,5 +1,5 @@
-from fytok.transport.Equilibrium import Equilibrium
-from spdm.util.logger import logger
+from fytok.modules.Equilibrium import Equilibrium
+from spdm.utils.logger import logger
 
 from spdm.data.File import File
 
@@ -9,5 +9,4 @@ if __name__ == '__main__':
 
     # eq = Equilibrium({"time_slice": [{"global_quantities": {"beta_pol": 1.23450}, }]})
     eq = Equilibrium({"time_slice": [eqdsk_file]})
-
     logger.debug(eq.time_slice[0].profiles_1d.psi)

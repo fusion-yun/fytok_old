@@ -2,7 +2,7 @@ from functools import cached_property
 
 from spdm.data.Dict import Dict
 from spdm.data.Node import Node
-from spdm.util.logger import logger
+from spdm.utils.logger import logger
 
 from .modules.PulseSchedule import PulseSchedule
 from .modules.TransportSolverNumerics import TransportSolverNumerics

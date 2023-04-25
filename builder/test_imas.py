@@ -1,6 +1,6 @@
 from _imas import _T_core_transport
 
-from spdm.util.logger import logger
+from spdm.utils.logger import logger
 
 if __name__ == "__main__":
 

@@ -15,7 +15,7 @@ if True:
                                      load_core_transport, load_equilibrium)
     from fytok.transport.Equilibrium import Equilibrium
     from spdm.data.File import File
-    from spdm.util.logger import logger
+    from spdm.utils.logger import logger
 
 eqdsk_file = File("/home/salmon/workspace/fytok/examples/data/g063982.04800", format="geqdsk").read()
 # # "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="geqdsk").read()

@@ -8,7 +8,7 @@ from scipy import optimize
 from scipy.ndimage.filters import maximum_filter, minimum_filter
 from scipy.ndimage.morphology import binary_erosion, generate_binary_structure
 from scipy.optimize import fsolve, minimize, root_scalar
-from spdm.util.logger import logger
+from spdm.utils.logger import logger
 
 SP_EXPERIMENTAL = os.environ.get("SP_EXPERIMENTAL", False)
 

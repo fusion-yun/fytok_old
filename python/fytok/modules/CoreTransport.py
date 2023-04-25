@@ -44,8 +44,8 @@ class CoreTransportModel(_T_core_transport_model):
 
     profiles_1d: CoreTransportProfiles1D = sp_property()
 
-    def refresh(self, *args, core_profiles: CoreProfiles, **kwargs) -> None:
-        super().refresh(*args, core_profiles=core_profiles, **kwargs)
+    def update(self, *args, core_profiles: CoreProfiles, **kwargs) -> None:
+        super().update(*args, core_profiles=core_profiles, **kwargs)
         # self.profiles_1d["grid"] = core_profiles.profiles_1d.grid
 
 
@@ -68,7 +68,7 @@ class CoreTransport(_T_core_transport):
                 "profiles_1d": {"grid": self.grid}
             })
 
-    def refresh(self, *args, core_profiles=None, **kwargs) -> None:
+    def update(self, *args, core_profiles=None, **kwargs) -> None:
         if "model_combiner" in self.__dict__:
             del self.__dict__["model_combiner"]
 

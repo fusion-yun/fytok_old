@@ -1,6 +1,6 @@
 from functools import cached_property
 
-from spdm.common.tags import _undefined_
+from spdm.utils.tags import _undefined_
 from _imas.edge_transport import _T_edge_transport, _T_edge_transport_model
 
 
@@ -16,7 +16,7 @@ class EdgeTransport(_T_edge_transport):
             "code": {"name": _undefined_}
         })
 
-    def refresh(self, *args, **kwargs) -> float:
+    def update(self, *args, **kwargs) -> float:
         if "model_combiner" in self.__dict__:
             del self.__dict__["model_combiner"]
         return sum([model.refresh(*args,   **kwargs) for model in self.model])

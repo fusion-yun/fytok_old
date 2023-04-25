@@ -14,8 +14,8 @@ from spdm.data.File import File
 from spdm.data import Function, PiecewiseFunction
 from scipy import constants
 from spdm.numlib.smooth import rms_residual, smooth_1d
-from spdm.util.logger import logger
-from spdm.util.plot_profiles import plot_profiles, sp_figure
+from spdm.utils.logger import logger
+from spdm.utils.plot_profiles import plot_profiles, sp_figure
 
 if __name__ == "__main__":
     device = File("/home/salmon/workspace/fytok/data/mapping/ITER/imas/3/static/config.xml")

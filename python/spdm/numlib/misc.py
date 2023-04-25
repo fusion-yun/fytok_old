@@ -1,6 +1,7 @@
 from typing import Type
+
 import numpy as np
-from spdm.util.logger import logger
+from spdm.utils.logger import logger
 
 
 def float_unique(d: np.ndarray, x_min=-np.inf, x_max=np.inf) -> np.ndarray:

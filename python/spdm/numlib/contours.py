@@ -3,7 +3,7 @@ import typing
 import scipy.interpolate as interpolate
 from skimage import measure
 
-from spdm.util.logger import deprecated, logger
+from spdm.utils.logger import deprecated, logger
 import numpy as  np
 
 # d: np.ndarray, x: typing.Optional[np.ndarray] = None, y: typing.Optional[np.ndarray] = None

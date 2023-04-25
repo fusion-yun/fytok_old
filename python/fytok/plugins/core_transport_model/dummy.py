@@ -18,7 +18,7 @@ class TransportModelDummy(CoreTransport.Model):
             "code": {"name": "dummy"}}, d or {}),
             *args, **kwargs)
 
-    def refresh(self, *args, **kwargs) -> float:
+    def update(self, *args, **kwargs) -> float:
         return super().refresh(*args, **kwargs)
 
 

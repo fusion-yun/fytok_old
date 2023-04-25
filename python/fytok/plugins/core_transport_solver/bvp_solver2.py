@@ -22,11 +22,11 @@ from fytok.transport.CoreTransportSolver import CoreTransportSolver
 from fytok.transport.Equilibrium import Equilibrium
 from fytok.transport.MagneticCoordSystem import RadialGrid
 from scipy import constants
-from spdm.util.logger import logger
-from spdm.common.tags import _not_found_
+from spdm.utils.logger import logger
+from spdm.utils.tags import _not_found_
 from spdm.data import Dict, Function, List, sp_property
 from spdm.data.Function import function_like
-from spdm.util.misc import convert_to_named_tuple
+from spdm.utils.misc import convert_to_named_tuple
 
 EPSILON = 1.0e-15
 TOLERANCE = 1.0e-6

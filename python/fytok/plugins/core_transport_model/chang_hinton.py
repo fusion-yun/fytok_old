@@ -9,8 +9,8 @@ from fytok.transport.Equilibrium import Equilibrium
 from fytok.transport.MagneticCoordSystem import RadialGrid
 from scipy import constants
 from spdm.data import Function
-from spdm.util.logger import logger
-from spdm.common.tags import _next_
+from spdm.utils.logger import logger
+from spdm.utils.tags import _next_
 
 
 class ChangHiton(CoreTransport.Model):
@@ -23,7 +23,7 @@ class ChangHiton(CoreTransport.Model):
         - Tokamaks, Third Edition, Chapter 14.11  ,p737,  J.A.Wesson 2003
     """
 
-    def refresh(self, *args,
+    def update(self, *args,
                 core_profiles: CoreProfiles = None,
                 equilibrium: Equilibrium = None,
                 **kwargs) -> float:

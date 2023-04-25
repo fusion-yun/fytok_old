@@ -1,7 +1,7 @@
 from typing import Callable, Iterator, Sequence, Type, Union
 
 from ..geometry.GeoObject import GeoObject
-from spdm.util.logger import logger
+from spdm.utils.logger import logger
 from .Mesh import Mesh
 
 

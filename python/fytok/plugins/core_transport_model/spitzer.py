@@ -9,7 +9,7 @@ from fytok.transport.Equilibrium import Equilibrium
 from scipy import constants
 from spdm.data.Function import function_like
 from spdm.numlib.misc import array_like
-from spdm.util.logger import logger
+from spdm.utils.logger import logger
 
 
 class Spitzer(CoreTransport.Model):
@@ -28,7 +28,7 @@ class Spitzer(CoreTransport.Model):
             d or {}),
             *args, **kwargs)
 
-    def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles,  **kwargs) -> float:
+    def update(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles,  **kwargs) -> float:
         residual = super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
         eV = constants.electron_volt

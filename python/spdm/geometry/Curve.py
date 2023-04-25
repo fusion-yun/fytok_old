@@ -3,7 +3,7 @@ from typing import Callable, Tuple, TypeVar
 
 import numpy as np
 from spdm.data.Function import Function
-from spdm.util.logger import logger
+from spdm.utils.logger import logger
 
 from ..geometry.GeoObject import GeoObject, _TCoord
 from .GeoObject import GeoObject

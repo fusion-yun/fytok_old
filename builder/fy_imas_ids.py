@@ -1,7 +1,7 @@
 import collections.abc
 
 import numpy as np
-from spdm.common.Plugin import Pluggable
+from spdm.utils.Plugin import Pluggable
 from spdm.data.Dict import Dict
 from spdm.data.Node import Node
 from spdm.data.sp_property import sp_property

@@ -28,7 +28,7 @@ from .Scenario import Scenario
 from .Tokamak import Tokamak
 
 # try:
-#     from spdm.util.logger import logger
+#     from spdm.utils.logger import logger
 # except ModuleNotFoundError as error:
 #     raise error
 # else:

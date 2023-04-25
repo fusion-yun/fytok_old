@@ -9,7 +9,7 @@ from scipy import constants
 from spdm.data import (Dict, Entry, File, Function, Link, List, Node, Path,
                        Query, function_like, sp_property)
 from spdm.data.Function import PiecewiseFunction, function_like
-from spdm.util.logger import logger
+from spdm.utils.logger import logger
 from .device.Wall import Wall
 from .device.PFActive import PFActive
 from .device.TF import TF

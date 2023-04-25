@@ -18,8 +18,8 @@ from fytok.transport.MagneticCoordSystem import RadialGrid
 from spdm.numlib.misc import array_like
 from scipy import constants
 from spdm.data import Dict, Function, List, function_like
-from spdm.util.logger import logger
-from spdm.common.tags import _not_found_
+from spdm.utils.logger import logger
+from spdm.utils.tags import _not_found_
 
 EPSILON = 1.0e-15
 TOLERANCE = 1.0e-6

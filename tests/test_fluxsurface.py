@@ -3,7 +3,7 @@ import unittest
 import matplotlib.pyplot as plt
 import numpy as np
 from spdm.data.Field import Field
-from spdm.util.logger import logger
+from spdm.utils.logger import logger
 
 
 class TestFluxSurface(unittest.TestCase):

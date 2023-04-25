@@ -9,7 +9,7 @@ import math
 
 import matplotlib.pyplot as plt
 from spdm.data.Collection import Collection
-from spdm.util.logger import logger
+from spdm.utils.logger import logger
 from spdm.numlib import scipy,np
 
 db = Collection("east+mdsplus:///home/salmon/public_data/~t/",default_tree_name="efit_east")

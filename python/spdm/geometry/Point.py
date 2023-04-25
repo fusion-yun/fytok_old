@@ -5,7 +5,7 @@ from functools import cached_property
 from typing import Callable, Collection, TypeVar
 
 import numpy as np
-from spdm.util.logger import logger
+from spdm.utils.logger import logger
 
 from ..geometry.GeoObject import GeoObject, _TCoord
 from .GeoObject import GeoObject

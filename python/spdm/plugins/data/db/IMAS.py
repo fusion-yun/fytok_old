@@ -6,10 +6,10 @@ from functools import lru_cache
 
 import imas
 import numpy as np
-from spdm.util.LazyProxy import LazyProxy
-from spdm.util.logger import logger
-from spdm.util.PathTraverser import PathTraverser
-from spdm.util.urilib import urisplit
+from spdm.utils.LazyProxy import LazyProxy
+from spdm.utils.logger import logger
+from spdm.utils.PathTraverser import PathTraverser
+from spdm.utils.urilib import urisplit
 
 from spdm.data.Collection import Collection
 from spdm.data.Document import Document

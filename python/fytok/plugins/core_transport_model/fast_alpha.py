@@ -5,10 +5,10 @@ from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreTransport import CoreTransport
 from fytok.transport.Equilibrium import Equilibrium
 from scipy import constants
-from spdm.common.tags import _next_, _not_found_
+from spdm.utils.tags import _next_, _not_found_
 from spdm.data.Function import function_like
 from spdm.numlib.misc import array_like
-from spdm.util.logger import logger
+from spdm.utils.logger import logger
 
 
 class FastAlpha(CoreTransport.Model):
@@ -33,7 +33,7 @@ class FastAlpha(CoreTransport.Model):
                          code={"name": "FastAlpha"},
                          ** kwargs)
 
-    def refresh(self, *args,  equilibrium: Equilibrium,  core_profiles: CoreProfiles, **kwargs) -> None:
+    def update(self, *args,  equilibrium: Equilibrium,  core_profiles: CoreProfiles, **kwargs) -> None:
 
         super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 

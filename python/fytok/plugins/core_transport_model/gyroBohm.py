@@ -8,8 +8,8 @@ from fytok.transport.CoreTransport import (CoreTransport,
 from fytok.transport.Equilibrium import Equilibrium
 from fytok.transport.MagneticCoordSystem import RadialGrid
 from scipy import constants
-from spdm.util.logger import logger
-from spdm.common.tags import _next_
+from spdm.utils.logger import logger
+from spdm.utils.tags import _next_
 from spdm.data import Function
 
 
@@ -26,7 +26,7 @@ class GyroBohm(CoreTransport.Model):
     def __init__(self,   *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def refresh(self, *args,
+    def update(self, *args,
                 core_profiles: CoreProfiles = None,
                 equilibrium: Equilibrium = None,
                 **kwargs) -> float:

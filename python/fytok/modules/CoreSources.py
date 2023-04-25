@@ -15,8 +15,8 @@ class CoreSourcesSource(_T_core_sources_source):
     def grid(self):
         return self._parent.grid
 
-    def refresh(self, *args, **kwargs) -> float:
-        residual = super().refresh(*args,  **kwargs)
+    def update(self, *args, **kwargs) -> float:
+        residual = super().update(*args,  **kwargs)
         return residual
 
 
@@ -35,7 +35,7 @@ class CoreSources(_T_core_sources):
                 "code": {"name": None},
             })
 
-    def refresh(self,  core_profiles: CoreProfiles, *args, **kwargs) -> float:
+    def update(self,  core_profiles: CoreProfiles, *args, **kwargs) -> float:
         self["grid"] = core_profiles.profiles_1d.grid
         for src in self.source:
             src.refresh(*args, core_profiles=core_profiles, **kwargs)

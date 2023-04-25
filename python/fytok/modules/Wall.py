@@ -5,6 +5,7 @@ import numpy as np
 from _imas.wall import _T_wall, _T_wall_2d
 from spdm.data.List import List
 from spdm.data.sp_property import sp_property
+from spdm.utils.logger import logger
 from sympy import Point, Polygon
 
 

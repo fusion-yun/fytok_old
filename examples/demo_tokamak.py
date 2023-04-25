@@ -10,8 +10,8 @@ from fytok.Tokamak import Tokamak
 from scipy import constants
 from spdm.data.File import File
 from spdm.data.Function import Function, PiecewiseFunction
-from spdm.util.logger import logger
-from spdm.util.misc import get_many_value
+from spdm.utils.logger import logger
+from spdm.utils.misc import get_many_value
 from spdm.view.plot_profiles import plot_profiles, sp_figure
 
 if __name__ == "__main__":

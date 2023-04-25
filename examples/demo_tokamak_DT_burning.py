@@ -1,18 +1,19 @@
 
-from spdm.view.plot_profiles import plot_profiles, sp_figure
-from spdm.util.logger import logger
-# from spdm.numlib.smooth import rms_residual
-from spdm.data.File import File
-from spdm.data.Function import function_like
-from scipy import constants
-from fytok.Tokamak import Tokamak
-from fytok.load_profiles import (load_core_profiles, load_core_source,
-                                 load_core_transport, load_equilibrium)
-import pandas as pd
-import numpy as np
 import pathlib
 import sys
 
+import numpy as np
+import pandas as pd
+from scipy import constants
+# from spdm.numlib.smooth import rms_residual
+from spdm.data.File import File
+from spdm.data.Function import function_like
+from spdm.utils.logger import logger
+from spdm.view.plot_profiles import plot_profiles, sp_figure
+
+from fytok.load_profiles import (load_core_profiles, load_core_source,
+                                 load_core_transport, load_equilibrium)
+from fytok.Tokamak import Tokamak
 
 ###################
 
@@ -65,7 +66,6 @@ if __name__ == "__main__":
     # Initialize Tokamak
 
     tok = Tokamak(device_desc[{"wall", "pf_active", "tf", "magnetics"}])
-    annular = tok.wall.description_2d[0].vessel.annular
 
     # Equilibrium
 

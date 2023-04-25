@@ -8,7 +8,7 @@ from fytok.transport.CoreTransport import CoreTransport
 from fytok.transport.CoreTransportSolver import CoreTransportSolver
 from fytok.transport.Equilibrium import Equilibrium
 from scipy import constants
-from spdm.util.logger import logger
+from spdm.utils.logger import logger
 
 EPSILON = 1.0e-15
 TOLERANCE = 1.0e-6

@@ -60,7 +60,7 @@ class FusionReaction(CoreSources.Source):
 
         self._reactivities = nuclear_reaction[r"D(t,n)\alpha"]["reactivities"]
 
-    def refresh(self, *args,   equilibrium: Equilibrium,  core_profiles: CoreProfiles,     **kwargs) -> None:
+    def update(self, *args,   equilibrium: Equilibrium,  core_profiles: CoreProfiles,     **kwargs) -> None:
 
         super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 

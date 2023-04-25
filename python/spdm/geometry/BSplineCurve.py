@@ -5,7 +5,7 @@ from operator import is_
 from spdm.numlib import interpolate, np
 
 from ..data.Function import Function
-from spdm.util.logger import logger
+from spdm.utils.logger import logger
 from .Curve import Curve
 
 

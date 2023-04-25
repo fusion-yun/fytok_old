@@ -7,8 +7,8 @@ from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreSources import CoreSources
 from fytok.transport.Equilibrium import Equilibrium
 from scipy import constants
-from spdm.util.logger import logger
-from spdm.common.tags import _next_
+from spdm.utils.logger import logger
+from spdm.utils.tags import _next_
 from spdm.data import Dict, Function, List, Node
 
 
@@ -21,7 +21,7 @@ class CollisionalEquipartition(CoreSources.Source):
                              "description": f"{self.__class__.__name__} Collisional Energy Tansport "
                          },   **kwargs)
 
-    def refresh(self, *args,   equilibrium: Equilibrium,  core_profiles: CoreProfiles,     **kwargs) -> float:
+    def update(self, *args,   equilibrium: Equilibrium,  core_profiles: CoreProfiles,     **kwargs) -> float:
 
         residual = super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 

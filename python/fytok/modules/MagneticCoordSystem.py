@@ -20,7 +20,7 @@ from spdm.mesh.CurvilinearMesh import CurvilinearMesh
 from spdm.mesh.Mesh import Mesh
 from spdm.numlib.contours import find_countours
 from spdm.numlib.optimize import find_critical_points
-from spdm.util.logger import logger
+from spdm.utils.logger import logger
 
 from .Utilities import RZTuple
 

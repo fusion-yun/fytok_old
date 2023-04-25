@@ -6,8 +6,8 @@ from typing import Iterator, Sequence, Type, Union
 import numpy as np
 from scipy import interpolate
 from scipy.ndimage.interpolation import geometric_transform
-from spdm.util.logger import logger
-from spdm.util.misc import convert_to_named_tuple
+from spdm.utils.logger import logger
+from spdm.utils.misc import convert_to_named_tuple
 
 from ..geometry.BSplineSurface import BSplineSurface
 from ..geometry.CubicSplineCurve import CubicSplineCurve

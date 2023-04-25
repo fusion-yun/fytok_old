@@ -5,7 +5,7 @@ from spdm.data.Function import Function
 from spdm.data.Function import PiecewiseFunction
 from spdm.data.Entry import Entry
 from spdm.data.File import File
-from .transport.MagneticCoordSystem import RadialGrid
+from .modules.MagneticCoordSystem import RadialGrid
 from spdm.numlib.smooth import smooth_1d
 
 
@@ -187,18 +187,20 @@ def load_equilibrium(eqdsk,  **kwargs):
 
     return {
         "vacuum_toroidal_field": {"b0": B0, "r0": R0, },
-        "global_quantities": eqdsk.get("global_quantities"),
-        "profiles_1d": eqdsk.get("profiles_1d"),
-        "profiles_2d": {
-            "psi": eqdsk.get("profiles_2d/psi"),
-            "grid_type": {
-                "name": "rectangular",
-                "index": 1},
-            "grid": {
-                "dim1": eqdsk.get("profiles_2d/grid/dim1"),
-                "dim2": eqdsk.get("profiles_2d/grid/dim2"),
-            }
-        },
-        "boundary_separatrix": eqdsk.get("boundary"),
-        ** kwargs
+        "time_slice": [{
+            "global_quantities": eqdsk.get("global_quantities"),
+            "profiles_1d": eqdsk.get("profiles_1d"),
+            "profiles_2d": {
+                "psi": eqdsk.get("profiles_2d/psi"),
+                "grid_type": {
+                    "name": "rectangular",
+                    "index": 1},
+                "grid": {
+                    "dim1": eqdsk.get("profiles_2d/grid/dim1"),
+                    "dim2": eqdsk.get("profiles_2d/grid/dim2"),
+                }
+            },
+            "boundary_separatrix": eqdsk.get("boundary"),
+            ** kwargs
+        }]
     }

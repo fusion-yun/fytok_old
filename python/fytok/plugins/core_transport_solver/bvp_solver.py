@@ -18,9 +18,9 @@ from fytok.transport.MagneticCoordSystem import RadialGrid
 from spdm.numlib.bvp import solve_bvp
 from scipy import constants
 from spdm.data import Dict, Function, List, sp_property
-from spdm.util.logger import logger
-from spdm.common.tags import _not_found_
-from spdm.util.misc import convert_to_named_tuple
+from spdm.utils.logger import logger
+from spdm.utils.tags import _not_found_
+from spdm.utils.misc import convert_to_named_tuple
 
 EPSILON = 1.0e-15
 TOLERANCE = 1.0e-6
@@ -37,7 +37,7 @@ class TransportSolverBVP(CoreTransportSolver):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def refresh(self, *args, **kwargs):
+    def update(self, *args, **kwargs):
         super().refresh(*args, **kwargs)
 
         self._tau = self._core_profiles.time - self._core_profiles.previous_state.time
