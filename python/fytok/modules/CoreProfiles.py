@@ -6,17 +6,13 @@ from spdm.data.List import List
 from spdm.data.sp_property import sp_property
 from spdm.utils.logger import logger
 
-from .MagneticCoordSystem import TWOPI, RadialGrid
 from _imas.core_profiles import _T_core_profiles, _T_core_profiles_profiles_1d
 from _imas.utilities import _T_core_profile_ions, _T_core_profiles_profiles_1d_electrons, _T_core_profiles_vector_components_1
 
 
 class CoreProfilesElectrons(_T_core_profiles_profiles_1d_electrons):
 
-    @property
-    def grid(self) -> RadialGrid:
-        return self._parent.grid
-
+    
     @sp_property
     def density(self, value) -> Function:
         if value is None:

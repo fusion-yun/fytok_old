@@ -15,13 +15,15 @@ class _T_module(Dict[Node], Pluggable):
         return Pluggable.__new__(cls, *args, **kwargs)
 
     @classmethod
-    def _guess_plugin_name(cls,  *args, **kwargs):
-        if len(args) == 0:
+    def _guess_plugin_name(cls,  *args, code=None, **kwargs):
+        if len(args) == 0 and code is None:
             return []
 
         module_name = None
+        if isinstance(code, collections.abc.Mapping):
+            module_name = code.get("name", None)
 
-        if isinstance(args[0], collections.abc.Mapping):
+        if module_name is None and isinstance(args[0], collections.abc.Mapping):
             module_name = args[0].get("code", {}).get("name", None)
         elif hasattr(args[0], "__as_entry__"):
             module_name = args[0].__as_entry__().get("code/name", None)

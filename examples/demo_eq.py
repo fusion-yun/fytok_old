@@ -3,7 +3,7 @@ from pprint import pprint
 
 import numpy as np
 import pandas as pd
-from fytok.device.Wall import Wall
+from fytok.modules.Wall import Wall
 from scipy import constants
 import spdm.plugins.data
 if True:
@@ -13,7 +13,7 @@ if True:
 
     from fytok.load_profiles import (load_core_profiles, load_core_source,
                                      load_core_transport, load_equilibrium)
-    from fytok.transport.Equilibrium import Equilibrium
+    from fytok.modules.Equilibrium import Equilibrium
     from spdm.data.File import File
     from spdm.utils.logger import logger
 

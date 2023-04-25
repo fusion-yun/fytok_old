@@ -170,7 +170,7 @@ from spdm.data.Function import Function
 from spdm.data.List import List
 from spdm.data.Dict import Dict
 from spdm.data.sp_property import sp_property
-from enum import IntFlag
+from enum import Enum
 
 <xsl:for-each select="field[my:dep_level(.)=0]">
 <xsl:apply-templates select="." mode="DEFINE_UTIL"/>
@@ -212,7 +212,7 @@ from spdm.data.Function import Function
 from spdm.data.List import List
 from spdm.data.Dict import Dict
 from spdm.data.sp_property import sp_property
-from enum import IntFlag
+from enum import Enum
 
 from ._ids import _T_ids, _T_module
 <xsl:choose>
@@ -306,10 +306,10 @@ class _T_<xsl:value-of select="my:py_word(@name)"/>(_T_ids):
  <!-- Define field: enum -->
 <xsl:template match = "field[@doc_identifier]" mode = "DEFINE"> 
   <xsl:variable name="ext_doc" select="document(concat($IMAS_DD_PATH,@doc_identifier))/constants" />
-class _E_<xsl:value-of select="$ext_doc/[@name]"/>(IntFlag):
+class _E_<xsl:value-of select="$ext_doc/[@name]"/>(Enum):
     """<xsl:value-of select="my:line-wrap($ext_doc/header, $line-width, 7)"/>"""
   <xsl:for-each select="$ext_doc/int">
-<xsl:text>&#xA;    </xsl:text><xsl:value-of select="my:py_word(@name)"/>:   <xsl:value-of select="."/>
+<xsl:text>&#xA;    </xsl:text><xsl:value-of select="my:py_word(@name)"/>=   <xsl:value-of select="."/>
 <xsl:text>&#xA;    </xsl:text>"""<xsl:value-of select="my:line-wrap(@description, $line-width, 7)"/>"""
   </xsl:for-each>
 </xsl:template>
@@ -345,7 +345,7 @@ class _T_<xsl:value-of select="$structure_reference"/>(<xsl:choose><xsl:when tes
 <xsl:template match = "field[@doc_identifier]" mode = "DEFINE_UTIL">     
 
 <xsl:variable name="ext_doc" select="document(concat($IMAS_DD_PATH,@doc_identifier))/constants" />
-class _E_<xsl:value-of select="$ext_doc/[@name]"/>(IntFlag):
+class _E_<xsl:value-of select="$ext_doc/[@name]"/>(Enum):
     """<xsl:value-of select="my:line-wrap($ext_doc/header, $line-width, 7)"/>"""
   <xsl:for-each select="$ext_doc/int">
 <xsl:text>&#xA;    </xsl:text><xsl:value-of select="my:py_word(@name)"/>:   <xsl:value-of select="."/>

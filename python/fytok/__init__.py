@@ -24,8 +24,8 @@ from .__version__ import __version__
 
 # sys.path.extend(phys_modules_path)
 
-from .Scenario import Scenario
-from .Tokamak import Tokamak
+# from .Scenario import Scenario
+# from .Tokamak import Tokamak
 
 # try:
 #     from spdm.utils.logger import logger

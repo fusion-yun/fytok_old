@@ -3,6 +3,7 @@
 from fytok.modules.Equilibrium import Equilibrium
 
 
+@Equilibrium.register(["dummy"])
 class EquilibriumDummy(Equilibrium):
 
     def update(self, *args, time=None,  **kwargs) -> float:
