@@ -8,13 +8,16 @@ from typing import Callable, Iterator, Sequence, Tuple, Union
 import numpy as np
 from _imas.equilibrium import (_T_equilibrium_boundary,
                                _T_equilibrium_boundary_separatrix,
+                               _T_equilibrium_boundary_second_separatrix,
                                _T_equilibrium_global_quantities,
                                _T_equilibrium_profiles_1d,
-                               _T_equilibrium_profiles_2d)
+                               _T_equilibrium_profiles_2d,
+                               _T_equilibrium_time_slice)
 from scipy import constants
 from spdm.data.Dict import Dict
 from spdm.data.Field import Field
 from spdm.data.Function import Function, function_like
+from spdm.data.List import List
 from spdm.data.Node import Node
 from spdm.data.sp_property import sp_property
 from spdm.geometry.CubicSplineCurve import CubicSplineCurve
@@ -30,7 +33,6 @@ from spdm.utils.tags import _not_found_
 
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.modules.Utilities import RZTuple
-
 
 TOLERANCE = 1.0e-6
 EPS = np.finfo(float).eps
@@ -56,16 +58,8 @@ def extrapolate_left(x, d):
 # OXPoint = collections.namedtuple('OXPoint', "r z psi")
 
 
-class RadialGrid(Dict):
-    r"""
-        Radial grid
-    """
-
-    def __init__(self, *args, **kwargs):
-        if len(args) == 0:
-            super().__init__(kwargs)
-        else:
-            super().__init__(*args, **kwargs)
+class RadialGrid(Dict[Node]):
+    """ Radial grid """
 
     def remesh(self, label: str = "psi_norm", new_axis: np.ndarray = None, ):
 
@@ -97,47 +91,35 @@ class RadialGrid(Dict):
             dvolume_drho_tor=function_like(axis,  self.dvolume_drho_tor)(new_axis),
         )
 
-    r0: float = sp_property()
-    b0: float = sp_property()
+    # r0: float = sp_property()
 
-    psi_axis: float = sp_property()
-    """Poloidal flux at the magnetic axis  [Wb]."""
+    # b0: float = sp_property()
 
-    psi_magnetic_axis: float = sp_property()
+    # psi_axis: float = sp_property()
 
-    psi_boundary: float = sp_property()
-    """Poloidal flux at the selected plasma boundary  [Wb]."""
+    # psi_magnetic_axis: float = sp_property()
 
-    rho_tor_boundary: float = sp_property()
+    # psi_boundary: float = sp_property()
 
-    psi_norm:  np.ndarray = sp_property()
+    # rho_tor_boundary: float = sp_property()
 
-    psi: np.ndarray = sp_property(lambda self: self.psi_norm * (self.psi_boundary-self.psi_axis)+self.psi_axis)
-    """Poloidal magnetic flux {dynamic} [Wb]. This quantity is COCOS-dependent, with the following transformation"""
+    # psi_norm:  np.ndarray = sp_property()
 
-    rho_tor_norm: np.ndarray = sp_property()
-    """Normalized toroidal flux coordinate. The normalizing value for rho_tor_norm, is the toroidal flux coordinate
-            at the equilibrium boundary (LCFS or 99.x % of the LCFS in case of a fixed boundary equilibrium calculation,
-            see time_slice/boundary/b_flux_pol_norm in the equilibrium IDS) {dynamic} [-]
-    """
+    # psi: np.ndarray = sp_property(lambda self: self.psi_norm * (self.psi_boundary-self.psi_axis)+self.psi_axis)
 
-    rho_tor: np.ndarray = sp_property(lambda self: self.rho_tor_norm*self.rho_tor_boundary)
-    """Toroidal flux coordinate. rho_tor = sqrt(b_flux_tor/(pi*b0)) ~ sqrt(pi*r^2*b0/(pi*b0)) ~ r [m].
-            The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0 {dynamic} [m]"""
+    # rho_tor_norm: np.ndarray = sp_property()
 
-    rho_pol_norm:  np.ndarray = sp_property()
-    """Normalized poloidal flux coordinate = sqrt((psi(rho)-psi(magnetic_axis)) / (psi(LCFS)-psi(magnetic_axis))) {dynamic} [-]"""
+    # rho_tor: np.ndarray = sp_property(lambda self: self.rho_tor_norm*self.rho_tor_boundary)
 
-    area:  np.ndarray = sp_property()
-    """Cross-sectional area of the flux surface {dynamic} [m^2]"""
+    # rho_pol_norm:  np.ndarray = sp_property()
 
-    surface:  np.ndarray = sp_property()
-    """Surface area of the toroidal flux surface {dynamic} [m^2]"""
+    # area:  np.ndarray = sp_property()
 
-    volume:  np.ndarray = sp_property()
-    """Volume enclosed inside the magnetic surface {dynamic} [m^3]"""
+    # surface:  np.ndarray = sp_property()
 
-    dvolume_drho_tor: np.ndarray = sp_property()
+    # volume:  np.ndarray = sp_property()
+
+    # dvolume_drho_tor: np.ndarray = sp_property()
 
 
 class MagneticCoordSystem(Dict[Node]):
@@ -238,21 +220,7 @@ class MagneticCoordSystem(Dict[Node]):
 
         logger.debug(f"Create MagneticCoordSystem: type index={self._grid_type_index} primary='psi'  ")
 
-    @property
-    def r0(self) -> float:
-        return self._R0
-
-    @property
-    def b0(self) -> float:
-        return self._B0
-
-    @property
-    def vacuum_toroidal_field(self):
-        return {"r0": self.r0, "b0": self.b0}
-
-    @cached_property
-    def radial_grid(self) -> RadialGrid:
-        return RadialGrid(
+        self.radial_grid = RadialGrid(
             r0=self.r0,
             b0=self.b0,
             psi_axis=self.psi_axis,
@@ -266,6 +234,14 @@ class MagneticCoordSystem(Dict[Node]):
             dvolume_drho_tor=self.dvolume_drho_tor,
             # volume=self.volume,
         )
+
+    @property
+    def r0(self) -> float:
+        return self._R0
+
+    @property
+    def b0(self) -> float:
+        return self._B0
 
     @property
     def grid_type_index(self) -> int:
@@ -508,9 +484,8 @@ class MagneticCoordSystem(Dict[Node]):
         if isinstance(rmax, np.ndarray) and np.isclose(rmax[0], rmin[0]):
             return MagneticCoordSystem.ShapeProperty(
                 # RZ position of the geometric axis of the magnetic surfaces (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the surface)
-                RZTuple(
-                    function_like(psi_norm, (rmin+rmax)*0.5),
-                    function_like(psi_norm, (zmin+zmax)*0.5)),
+                RZTuple({"r": function_like(psi_norm, (rmin+rmax)*0.5),
+                         "z": function_like(psi_norm, (zmin+zmax)*0.5)}),
                 # Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary)[m]
                 function_like(psi_norm, (rmax - rmin)*0.5),  # "minor_radius":
                 # Elongation of the plasma boundary. [-]
@@ -540,7 +515,7 @@ class MagneticCoordSystem(Dict[Node]):
         else:
             return MagneticCoordSystem.ShapeProperty(
                 # RZ position of the geometric axis of the magnetic surfaces (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the surface)
-                RZTuple((rmin+rmax)*0.5, (zmin+zmax)*0.5),
+                RZTuple({"r": (rmin+rmax)*0.5, "z": (zmin+zmax)*0.5}),
                 # Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary)[m]
                 (rmax - rmin)*0.5,  # "minor_radius":
                 # Elongation of the plasma boundary. [-]
@@ -882,6 +857,7 @@ class MagneticCoordSystem(Dict[Node]):
 
 
 TOLERANCE = 1.0e-6
+
 EPS = np.finfo(float).eps
 
 TWOPI = 2.0*constants.pi
@@ -891,35 +867,34 @@ class EquilibriumGlobalQuantities(_T_equilibrium_global_quantities):
 
     @property
     def _coord(self) -> MagneticCoordSystem:
-        return self._parent.coordinate_system
+        return self._parent._coord
 
     @cached_property
     def magnetic_axis(self):
         """Magnetic axis position and toroidal field	structure"""
         return convert_to_named_tuple(self._coord.magnetic_axis)
 
-    @sp_property
-    def x_points(self):
-        _, x = self._coord.critical_points
-        return x
+    # @sp_property
+    # def x_points(self) -> List[OXPoint]:
+    #     _, x = self._coord.critical_points
+    #     return x
 
-    @sp_property
-    def psi_axis(self) -> float:
-        """Poloidal flux at the magnetic axis[Wb]."""
-        o, _ = self._coord.critical_points
-        return o[0].psi
+    psi_axis = sp_property(type_hint=float, getter=lambda s: s._coord.critical_points[0].psi)
+    """Poloidal flux at the magnetic axis[Wb]."""
 
-    @sp_property
-    def psi_boundary(self) -> float:
-        """Poloidal flux at the selected plasma boundary[Wb]."""
-        _, x = self._coord.critical_points
-        if len(x) > 0:
-            return x[0].psi
-        else:
-            raise ValueError(f"No x-point")
+    psi_boundary: float = sp_property()
+    # """Poloidal flux at the selected plasma boundary[Wb]."""
+    #   _, x = self._coord.critical_points
+    #    if len(x) > 0:
+    #         return x[0].psi
+    #     else:
+    #         raise ValueError(f"No x-point")
 
 
 class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
+    @property
+    def _coord(self) -> MagneticCoordSystem:
+        return self._parent._coord
 
     @cached_property
     def _predefined_psi_norm(self):
@@ -937,10 +912,6 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
     @property
     def pprime(self) -> Function:
         return self.dpressure_dpsi
-
-    @property
-    def _coord(self) -> MagneticCoordSystem:
-        return self._parent.coordinate_system
 
     @sp_property
     def ffprime(self) -> Function:
@@ -1050,10 +1021,10 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
         return self._coord.shape_property()
 
     @sp_property
-    def geometric_axis(self) -> RZTuple[Function]:
+    def geometric_axis(self) -> RZTuple:
         gaxis = self.shape_property.geometric_axis
-        return RZTuple[Function](function_like(self._coord.psi_norm, gaxis.r),
-                                 function_like(self._coord.psi_norm, gaxis.z))
+        return RZTuple({"r": function_like(self._coord.psi_norm, gaxis.r),
+                        "z": function_like(self._coord.psi_norm, gaxis.z)})
 
     @sp_property
     def minor_radius(self) -> Function:
@@ -1141,11 +1112,11 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
 class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
     @property
     def _coord(self) -> MagneticCoordSystem:
-        return self._parent.coordinate_system
+        return self._parent._coord
 
-    @cached_property
-    def psi(self) -> Field:
-        return self._coord._psirz  # (self._coord.r,self._coord.z)
+    # @cached_property
+    # def psi(self) -> Field:
+    #     return self._coord._psirz  # (self._coord.r,self._coord.z)
 
     @sp_property
     def r(self) -> np.ndarray:
@@ -1156,11 +1127,6 @@ class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
     def z(self) -> np.ndarray:
         """Values of the Height on the grid  [m] """
         return self._coord.z
-
-    # @sp_property
-    # def psi(self):
-    #     """Values of the poloidal flux at the grid in the poloidal plane  [Wb]. """
-    #     return self.apply_psifunc(lambda p: p, unit="Wb")
 
     @sp_property
     def phi(self):
@@ -1191,17 +1157,18 @@ class EquilibriumBoundary(_T_equilibrium_boundary):
 
     @property
     def _coord(self) -> MagneticCoordSystem:
-        return self._parent.coordinate_system
+        return self._parent._coord
 
     @sp_property
     def outline(self) -> RZTuple:
         """RZ outline of the plasma boundary  """
         _, surf = next(self._coord.find_surface(self.psi, o_point=True))
-        return RZTuple(surf.xyz[0], surf.xyz[1])
+        return RZTuple({"r": surf.xyz[0], "z": surf.xyz[1]})
+        
 
     @sp_property
     def x_point(self):
-        _, xpt = self._parent.critical_points
+        _, xpt = self._coord.critical_points
         return xpt
 
     psi_norm: float = sp_property(default_value=0.999)
@@ -1280,13 +1247,22 @@ class EquilibriumBoundarySeparatrix(_T_equilibrium_boundary_separatrix):
 
     @property
     def _coord(self) -> MagneticCoordSystem:
-        return self._parent.coordinate_system
+        return self._parent._coord
 
     @sp_property
     def outline(self) -> RZTuple:
         """RZ outline of the plasma boundary  """
         _, surf = next(self._coord.find_surface_by_psi_norm(1.0, o_point=None))
-        return RZTuple(*surf.xyz)
+        return RZTuple({"r": surf.xyz[0], "z": surf.xyz[1]})
+
+    @sp_property
+    def x_point(self) -> List[RZTuple]:
+        _, x = self._coord.critical_points
+        return List[RZTuple]([{"r": v.r, "z": v.z} for v in x])
+
+    @sp_property
+    def strike_point(self) -> List[RZTuple]:
+        raise NotImplementedError("TODO:")
 
     @sp_property
     def psi_axis(self) -> float:
@@ -1301,15 +1277,74 @@ class EquilibriumBoundarySeparatrix(_T_equilibrium_boundary_separatrix):
         return self._coord.psi_norm*(self._coord.psi_boundary-self._coord.psi_axis)+self._coord.psi_axis
 
 
-@Equilibrium.register(["fy_eq"])
-class FyEquilibrium(Equilibrium):
-    pass
+class EquilibriumTimeSlice(_T_equilibrium_time_slice):
 
-    # def update(self,  *args,
-    #            wall: Wall = _undefined_,
-    #            pf_active: PFActive = _undefined_,
-    #            core_profiles=_undefined_,
-    #            **kwargs):
+    @cached_property
+    def _coord(self) -> MagneticCoordSystem:
+        psirz = self.__entry__().get("profiles_2d/0/psi", None)
+
+        if psirz is None:
+            raise ValueError("No psi found in the equilibrium")
+        elif isinstance(psirz, np.ndarray):
+            psirz = Field(psirz,
+                          self.__entry__().get("profiles_2d/0/grid/dim1"),
+                          self.__entry__().get("profiles_2d/0/grid/dim2"),
+                          mesh="rectilinear")
+
+        elif not isinstance(psirz, Field):
+            raise ValueError("psi must be a Field or a numpy array")
+
+        psi_1d = self.__entry__().get("profiles_1d/psi", _not_found_)
+        fpol_1d = self.__entry__().get("profiles_1d/f", _not_found_)
+        if not isinstance(psi_1d, np.ndarray) or len(psi_1d) != len(fpol_1d):
+            psi_1d = np.linspace(0, 1.0, len(fpol_1d))
+
+        if isinstance(psi_1d, np.ndarray):
+            psi_1d = (psi_1d-psi_1d[0])/(psi_1d[-1]-psi_1d[0])
+
+        # pprime_1d = self.profiles_1d._entry.get("dpressure_dpsi", None)
+        return MagneticCoordSystem(
+            psirz=psirz,
+            B0=self._parent.vacuum_toroidal_field.b0,
+            R0=self._parent.vacuum_toroidal_field.r0,
+            Ip=self.global_quantities.ip,
+            fpol=function_like(psi_1d, fpol_1d),
+            # pprime=self.profiles_1d._entry.get("dpressure_dpsi", None),
+            # fpol=function_like(psi_norm, self.profiles_1d._entry.get("f", None)),
+            # pprime=function_like(psi_norm, self.profiles_1d._entry.get("dpressure_dpsi", None)),
+
+        )
+
+    profiles_1d: EquilibriumProfiles1D = sp_property()
+
+    profiles_2d: List[EquilibriumProfiles2D] = sp_property()
+
+    global_quantities: EquilibriumGlobalQuantities = sp_property()
+
+    boundary: EquilibriumBoundary = sp_property()
+
+    boundary_separatrix: EquilibriumBoundarySeparatrix = sp_property()
+
+    @property
+    def radial_grid(self) -> RadialGrid:
+        return self._magnetic_coord.radial_grid
+
+
+@Equilibrium.register(["fy_equilibrium"])
+class FyEquilibrium(Equilibrium):
+
+    time_slice: List[EquilibriumTimeSlice] = sp_property()
+
+    def __init__(self, *args, **kwargs):
+        code = {**kwargs.get("code", {}), "name": "fy_equilibrium", "version": "0.0.1", "commit": "-dirty"}
+        super().__init__(*args, **{**kwargs, "code": code})
+
+    def update(self,  *args,
+               #    wall: Wall = _undefined_,
+               #    pf_active: PFActive = _undefined_,
+               #    core_profiles=_undefined_,
+               **kwargs):
+        logger.debug(self.code.parameters)
     #     super().update(*args, **kwargs)
 
     #     # self.profiles_1d.pressure = core_profiles.profiles_1d.pressure
@@ -1331,53 +1366,6 @@ class FyEquilibrium(Equilibrium):
     #     #     "pprime": pprime,
     #     # }
     #     return
-
-    # profiles_1d: EquilibriumProfiles1D = sp_property()
-
-    # profiles_2d: List[EquilibriumProfiles2D] = sp_property()
-
-    # global_quantities: EquilibriumGlobalQuantities = sp_property()
-
-    # boundary: EquilibriumBoundary = sp_property()
-
-    # boundary_separatrix: EquilibriumBoundarySeparatrix = sp_property()
-
-    # @sp_property
-    # def coordinate_system(self, desc) -> MagneticCoordSystem:
-    #     psirz = self.profiles_2d[0].psi
-
-    #     if not isinstance(psirz, Field):
-    #         psirz = Field(self.profiles_2d[0].psi,
-    #                       self.profiles_2d[0].grid.dim1,
-    #                       self.profiles_2d[0].grid.dim2,
-    #                       mesh="rectilinear")
-
-    #     psi_1d = self.profiles_1d._entry.get("psi")
-    #     fpol_1d = self.profiles_1d._entry.get("f", _not_found_)
-    #     if not isinstance(psi_1d, np.ndarray) or len(psi_1d) != len(fpol_1d):
-    #         psi_1d = np.linspace(0, 1.0, len(fpol_1d))
-
-    #     if isinstance(psi_1d, np.ndarray):
-    #         psi_1d = (psi_1d-psi_1d[0])/(psi_1d[-1]-psi_1d[0])
-
-    #     # pprime_1d = self.profiles_1d._entry.get("dpressure_dpsi", None)
-
-    #     res = MagneticCoordSystem(
-    #         psirz=psirz,
-    #         B0=self.vacuum_toroidal_field.b0,
-    #         R0=self.vacuum_toroidal_field.r0,
-    #         Ip=self.global_quantities.ip,
-    #         fpol=function_like(psi_1d, fpol_1d),
-    #         # pprime=self.profiles_1d._entry.get("dpressure_dpsi", None),
-    #         # fpol=function_like(psi_norm, self.profiles_1d._entry.get("f", None)),
-    #         # pprime=function_like(psi_norm, self.profiles_1d._entry.get("dpressure_dpsi", None)),
-    #         **desc
-    #     )
-    #     return res
-
-    # @property
-    # def radial_grid(self) -> RadialGrid:
-    #     return self.coordinate_system.radial_grid
 
 
 __SP_EXPORT__ = FyEquilibrium

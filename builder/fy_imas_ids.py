@@ -3,10 +3,26 @@ import collections.abc
 import numpy as np
 from spdm.utils.Plugin import Pluggable
 from spdm.data.Dict import Dict
+from spdm.data.List import List
+
 from spdm.data.Node import Node
 from spdm.data.sp_property import sp_property
 
-from .utilities import _T_code, _T_ids_properties
+from .utilities import _T_code, _T_library, _T_ids_properties
+
+
+class Library(_T_library):
+
+    parameters: Dict[Node] = sp_property(type="constant")
+    """List of the code specific parameters in XML format"""
+
+
+class Code(_T_code):
+    parameters: Dict[Node] = sp_property(type="constant")
+    """List of the code specific parameters in XML format"""
+
+    library: List[Library] = sp_property()
+    """List of external libraries used by the code that has produced this IDS"""
 
 
 class _T_module(Dict[Node], Pluggable):
@@ -36,6 +52,9 @@ class _T_module(Dict[Node], Pluggable):
         else:
             return []
 
+    code: Code = sp_property()
+    """Generic decription of the code-specific parameters for the code that has produced this IDS"""
+
     def update(self,  *args,  ** kwargs):
         """Refresh the data from the source"""
         pass
@@ -46,9 +65,6 @@ class _T_ids(_T_module):
 
     ids_properties: _T_ids_properties = sp_property()
     """Interface Data Structure properties. This element identifies the node above as an IDS"""
-
-    code: _T_code = sp_property()
-    """Generic decription of the code-specific parameters for the code that has produced this IDS"""
 
     time: np.ndarray = sp_property(type="dynamic", units="s", ndims=1, data_type=float)
     """Generic time"""

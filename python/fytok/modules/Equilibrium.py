@@ -96,13 +96,6 @@ class Equilibrium(_T_equilibrium):
                       #   markersize=2,
                       label="Magnetic axis")
 
-            # if len(x_point) > 0:
-            #     for idx, p in enumerate(x_point):
-            #         axis.plot(p.r, p.z, 'rx')
-            #         axis.text(p.r, p.z, idx,
-            #                   horizontalalignment='center',
-            #                   verticalalignment='center')
-
         if eq.boundary_separatrix.type == 1:
             p = eq.boundary_separatrix.geometric_axis
             axis.plot(p.r, p.z, 'rx')
@@ -147,14 +140,20 @@ class Equilibrium(_T_equilibrium):
                                        linewidth=0.5, fill=False, closed=False))
             axis.plot([], [], 'r--', label="Separatrix")
 
+            for idx, p in enumerate(eq.boundary_separatrix.x_point):
+                axis.plot(p.r, p.z, 'rx')
+                axis.text(p.r, p.z, idx,
+                          horizontalalignment='center',
+                          verticalalignment='center')
+
         if contours and eq.profiles_2d[-1].grid_type is not _not_found_:
             if contours is True:
                 contours = 16
-            
+
             if eq.profiles_2d[-1].grid_type.name == "rectangular":
                 dim1 = eq.profiles_2d[-1].grid.dim1
                 dim2 = eq.profiles_2d[-1].grid.dim2
-                axis.contour(dim1, dim2, eq.profiles_2d[-1].psi, levels=contours)
+                axis.contour(dim1, dim2, eq.profiles_2d[-1].psi.T, levels=contours)
             elif eq.profiles_2d[-1].r is not _not_found_:
                 axis.contour(eq.profiles_2d[-1].r, eq.profiles_2d[-1].z, eq.profiles_2d[-1].psi, levels=contours)
 

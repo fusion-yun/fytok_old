@@ -18,11 +18,13 @@ if __name__ == "__main__":
     eqdsk_file = File(
         "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="GEQdsk").read()
 
-    eq = Equilibrium(eqdsk_file, code={"name": "fy_eq",
-                                       "parameters": {
-                                           "boundary": {"psi_norm": 0.995},
-                                           "coordinate_system": {"psi_norm": np.linspace(0.001, 0.995, 64), "theta": 64}}
-                                       })
+    eq = Equilibrium(eqdsk_file,
+                     code={"name": "fy_equilibrium",
+                           "parameters": {
+                               "boundary": {"psi_norm": 0.995},
+                               "coordinate_system": {"psi_norm": np.linspace(0.001, 0.995, 64), "theta": 64}}
+                           }
+                     )
 
     sp_figure(eq,
               contours=20,
