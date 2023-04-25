@@ -6,7 +6,8 @@ from spdm.data.List import List
 from spdm.data.sp_property import sp_property
 
 from .CoreProfiles import CoreProfiles
-from .MagneticCoordSystem import RadialGrid
+from .Utilities import RadialGrid
+
 
 class CoreTransportProfiles1D(_T_core_transport_model_profiles_1d):
 
@@ -52,7 +53,7 @@ class CoreTransportModel(_T_core_transport_model):
 class CoreTransport(_T_core_transport):
 
     Model = CoreTransportModel
-    
+
     grid: RadialGrid = sp_property()
 
     model: List[Model] = sp_property()

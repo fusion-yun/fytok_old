@@ -1,12 +1,12 @@
 
 import numpy as np
 from scipy import constants
-from spdm.data.Function import Function
-from spdm.data.Function import PiecewiseFunction
 from spdm.data.Entry import Entry
 from spdm.data.File import File
-from .modules.MagneticCoordSystem import RadialGrid
+from spdm.data.Function import Function, PiecewiseFunction
 from spdm.numlib.smooth import smooth_1d
+
+from .modules.Utilities import RadialGrid
 
 
 def load_core_profiles(profiles, grid: RadialGrid):
@@ -180,27 +180,26 @@ def load_core_source(profiles, grid: RadialGrid):
 
 def load_equilibrium(eqdsk,  **kwargs):
     if not isinstance(eqdsk, Entry):
-        eqdsk = File(eqdsk, format="geqdsk").entry
+        eqdsk = File(eqdsk, format="GEQdsk").read()
 
-    R0 = eqdsk.get("vacuum_toroidal_field/r0")
-    B0 = eqdsk.get("vacuum_toroidal_field/b0")
+    # R0 = eqdsk.get("vacuum_toroidal_field/r0")
+    # B0 = eqdsk.get("vacuum_toroidal_field/b0")
 
-    return {
-        "vacuum_toroidal_field": {"b0": B0, "r0": R0, },
-        "time_slice": [{
-            "global_quantities": eqdsk.get("global_quantities"),
-            "profiles_1d": eqdsk.get("profiles_1d"),
-            "profiles_2d": {
-                "psi": eqdsk.get("profiles_2d/psi"),
-                "grid_type": {
-                    "name": "rectangular",
-                    "index": 1},
-                "grid": {
-                    "dim1": eqdsk.get("profiles_2d/grid/dim1"),
-                    "dim2": eqdsk.get("profiles_2d/grid/dim2"),
-                }
-            },
-            "boundary_separatrix": eqdsk.get("boundary"),
-            ** kwargs
-        }]
-    }
+    return {**eqdsk.dump(), ** kwargs
+            # "vacuum_toroidal_field": {"b0": B0, "r0": R0, },
+            # "time_slice": [{
+            #     "global_quantities": eqdsk.get("global_quantities"),
+            #     "profiles_1d": eqdsk.get("profiles_1d"),
+            #     "profiles_2d": {
+            #         "psi": eqdsk.get("profiles_2d/psi"),
+            #         "grid_type": {
+            #             "name": "rectangular",
+            #             "index": 1},
+            #         "grid": {
+            #             "dim1": eqdsk.get("profiles_2d/grid/dim1"),
+            #             "dim2": eqdsk.get("profiles_2d/grid/dim2"),
+            #         }
+            #     },
+            #     "boundary_separatrix": eqdsk.get("boundary"),
+
+            }

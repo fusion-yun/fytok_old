@@ -13,7 +13,7 @@ from spdm.view.plot_profiles import plot_profiles, sp_figure
 from fytok.load_profiles import (load_core_profiles, load_core_source,
                                  load_core_transport, load_equilibrium)
 from fytok.Tokamak import Tokamak
-
+from fytok.modules.Equilibrium import Equilibrium
 ###################
 
 
@@ -34,13 +34,13 @@ if __name__ == "__main__":
     eqdsk_file = File(
         "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="GEQdsk").read()
 
-    tok["equilibrium"] = eqdsk_file
-
-    tok["equilibrium"]["code"] = {"name": "dummy",
-                                  "parameters": {
-                                      "boundary": {"psi_norm": 0.995},
-                                      "coordinate_system": {"psi_norm": np.linspace(0.001, 0.995, 64), "theta": 64}}
-                                  }
+    tok["equilibrium"] = {**eqdsk_file.dump(),
+                          "code": {"name": "fy_equilibrium",
+                                   "parameters": {
+                                       "boundary": {"psi_norm": 0.995},
+                                       "coordinate_system": {"psi_norm": np.linspace(0.001, 0.995, 64), "theta": 64}}
+                                   }
+                          }
 
     if True:
         sp_figure(tok,
@@ -48,7 +48,7 @@ if __name__ == "__main__":
                         "vessel": {"edgecolor": "blue"}},
                   pf_active={"facecolor": 'red'},
                   equilibrium={
-                      "contour": [0, 2],
+                      #   "contours": [0, 2],
                       "boundary": True,
                       "separatrix": True,
                   }
