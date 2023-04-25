@@ -3,29 +3,28 @@
 import matplotlib.pyplot as plt
 from spdm.util.logger import logger
 from spdm.data.sp_property import sp_property
+from spdm.data.Dict import Dict
+from spdm.data.Node import Node
+# ---------------------------------
+from .modules.Magnetics import Magnetics
+from .modules.PFActive import PFActive
+from .modules.TF import TF
+from .modules.Wall import Wall
+# ---------------------------------
+from .modules.CoreProfiles import CoreProfiles
+from .modules.CoreSources import CoreSources
+from .modules.CoreTransport import CoreTransport
+from .modules.TransportSolverNumerics import TransportSolverNumerics
+# ---------------------------------
+# from .modules.EdgeProfiles import EdgeProfiles
+# from .modules.EdgeSources import EdgeSources
+# from .modules.EdgeTransport import EdgeTransport
+# from .modules.EdgeTransportSolver import EdgeTransportSolver
+# ---------------------------------
+from .modules.Equilibrium import Equilibrium
 
-from .common.Module import Module
-# ---------------------------------
-from .device.Magnetics import Magnetics
-from .device.PFActive import PFActive
-from .device.TF import TF
-from .device.Wall import Wall
-# ---------------------------------
-from .transport.CoreProfiles import CoreProfiles
-from .transport.CoreSources import CoreSources
-from .transport.CoreTransport import CoreTransport
-from .transport.CoreTransportSolver import CoreTransportSolver
-# ---------------------------------
-from .transport.EdgeProfiles import EdgeProfiles
-from .transport.EdgeSources import EdgeSources
-from .transport.EdgeTransport import EdgeTransport
-from .transport.EdgeTransportSolver import EdgeTransportSolver
-# ---------------------------------
-from .transport.Equilibrium import Equilibrium
-from .transport.EquilibriumSolver import EquilibriumSolver
 
-
-class Tokamak(Module):
+class Tokamak(Dict[Node]):
     """Tokamak
         功能：
             - 描述装置在单一时刻的状态，
@@ -51,17 +50,15 @@ class Tokamak(Module):
 
     core_sources: CoreSources = sp_property()
 
-    edge_profiles: EdgeProfiles = sp_property()
+    # edge_profiles: EdgeProfiles = sp_property()
 
-    edge_transport: EdgeTransport = sp_property()
+    # edge_transport: EdgeTransport = sp_property()
 
-    edge_sources: EdgeSources = sp_property()
+    # edge_sources: EdgeSources = sp_property()
 
-    core_transport_solver: CoreTransportSolver = sp_property()
+    # edge_transport_solver: EdgeTransportSolver = sp_property()
 
-    edge_transport_solver: EdgeTransportSolver = sp_property()
-
-    equilibrium_solver: EquilibriumSolver = sp_property()
+    transport_solver: TransportSolverNumerics = sp_property()
 
     def check_converge(self, /, **kwargs):
         return 0.0
@@ -82,51 +79,49 @@ class Tokamak(Module):
         self.magnetics.refresh(time=time_next)
 
         core_profiles_prev = self.core_profiles
-        core_profiles_iter = core_profiles_prev
-        edge_profiles_prev = self.edge_profiles
-        edge_profiles_iter = edge_profiles_prev
 
-        equilibrium_prev = self.equilibrium
+        core_profiles_iter = core_profiles_prev
+
+        # edge_profiles_prev = self.edge_profiles
+        # edge_profiles_iter = edge_profiles_prev
 
         var_list = []
 
         for step_num in range(max_iteration):
 
-            equilibrium_iter = self.equilibrium_solver.solve(
-                equilibrium_prev=equilibrium_prev,
+            self.equilibrium.update(
                 time=time,
                 core_profiles=core_profiles_iter,
-                edge_profiles=edge_profiles_iter,
+                # edge_profiles=edge_profiles_iter,
                 wall=self.wall,
                 pf_active=self.pf_active,
                 magnetics=self.magnetics)
 
-            core_profiles_iter = self.core_transport_solver.solve(
-                equilibrium_prev=equilibrium_prev,
-                equilibrium_next=equilibrium_iter,
-                core_profiles_prev=core_profiles_prev,
+            core_profiles_iter = self.transport_solver.solve(
+                equilibrium=self.equilibrium,
+                core_profiles=self.core_profiles,
                 core_sources=self.core_sources,
                 core_transport=self.core_transport,
                 dt=dt,
                 var_list=var_list
             )
 
-            edge_profiles_iter = self.edge_transport_solver.solve(
-                equilibrium_prev=equilibrium_prev,
-                equilibrium_next=equilibrium_iter,
-                edge_profiles_prev=edge_profiles_prev,
-                edge_sources=self.edge_sources,
-                edge_transport=self.edge_transport,
-                dt=dt
-            )
+            # edge_profiles_iter = self.edge_transport_solver.solve(
+            #     equilibrium_prev=equilibrium_prev,
+            #     equilibrium_next=equilibrium_iter,
+            #     edge_profiles_prev=edge_profiles_prev,
+            #     edge_sources=self.edge_sources,
+            #     edge_transport=self.edge_transport,
+            #     dt=dt
+            # )
 
             residual = self.check_converge(
                 equilibrium_iter=equilibrium_iter,
                 equilibrium_next=equilibrium_iter,
                 core_profiles_iter=core_profiles_iter,
                 core_profiles_prev=core_profiles_prev,
-                edge_profiles_iter=edge_profiles_iter,
-                edge_profiles_prev=edge_profiles_prev,
+                # edge_profiles_iter=edge_profiles_iter,
+                # edge_profiles_prev=edge_profiles_prev,
             )
 
             logger.debug(f"time={self.time}  iterator step {step_num}/{max_iteration} residual={residual}")
@@ -134,14 +129,14 @@ class Tokamak(Module):
             if residual < tolerance:
                 equilibrium_next = equilibrium_iter
                 core_profiles_next = core_profiles_iter
-                edge_profiles_next = edge_profiles_iter
+                # edge_profiles_next = edge_profiles_iter
                 break
 
         self["equilibrium"] = equilibrium_next
 
         self["core_profiles"] = core_profiles_next
 
-        self["edge_profiles"] = edge_profiles_next
+        # self["edge_profiles"] = edge_profiles_next
 
         if residual > 1.0e-4:
             logger.warning(

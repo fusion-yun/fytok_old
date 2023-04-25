@@ -96,7 +96,7 @@
 
 Generate at <xsl:value-of  select="current-dateTime()" />
 
-  by FyTok (rev: <xsl:value-of select="$FYTOK_REV"/>): builder/fy_ids.xsl
+  by FyTok (rev: <xsl:value-of select="$FYTOK_REV"/>): builder/fy_imas.xsl
 
   from ITER Physics Data Model/IMAS DD, version = <xsl:value-of select="/IDSs/version" />, cocos   = <xsl:value-of select="/IDSs/cocos" /> 
   
@@ -137,34 +137,22 @@ __fy_rev__="<xsl:value-of select="$FYTOK_REV"/>"
 __version__="<xsl:value-of select="/IDSs/version"/>"
 
 __cocos__="<xsl:value-of select="/IDSs/cocos"/>"
-
-from .utilities import _T_ids_properties, _T_code
-
-<!-- <xsl:choose>
-<xsl:when test="not(empty($IDS_LIST))">
-<xsl:for-each select="IDS[not(empty(index-of($IDS_LIST,@name)))]">
-from .<xsl:value-of select="my:py_word(@name)"/>  import _T_<xsl:value-of select="my:py_word(@name)"/>
-</xsl:for-each>
-</xsl:when>
-<xsl:otherwise> -->
+ 
 <xsl:for-each select="IDS">
 from .<xsl:value-of select="my:py_word(@name)"/>  import _T_<xsl:value-of select="my:py_word(@name)"/>
 </xsl:for-each>
-<!-- </xsl:otherwise>
-</xsl:choose> -->
 
 </xsl:result-document>
 </xsl:template>
  
-<!-- FILE:  ids.py -->
+<!-- FILE:  _ids.py -->
 <xsl:template match = "IDSs" mode="IDS_FILE">
-<xsl:result-document method="text" href="ids.py">"""
+<xsl:result-document method="text" href="_ids.py">"""
 This package containes the base classes for  _FyTok_ _imas_wrapper
 <xsl:copy-of select="$FILE_HEADER" />
 """
-<xsl:value-of select="unparsed-text('ids.py')"/>
+<xsl:value-of select="unparsed-text('fy_imas_ids.py')"/>
  
-
 </xsl:result-document>
 </xsl:template>
  
@@ -226,7 +214,7 @@ from spdm.data.Dict import Dict
 from spdm.data.sp_property import sp_property
 from enum import IntFlag
 
-from .ids import _T_ids, _T_module
+from ._ids import _T_ids, _T_module
 <xsl:choose>
 <xsl:when test="(empty($util_defined))"/>
 <xsl:otherwise>from .utilities import <xsl:value-of select="string-join(for $item in $util_defined return concat('_T_', $item), ',')"/></xsl:otherwise>
@@ -334,11 +322,11 @@ class _E_<xsl:value-of select="$ext_doc/[@name]"/>(IntFlag):
 
 <xsl:apply-templates select="field[(@data_type='structure' or @data_type='struct_array')]" mode = "DEFINE"/>  
 
-class _T_<xsl:value-of select="$structure_reference"/>(Dict[Node]<xsl:if test="field[@name='code']">, _T_module</xsl:if>):
+class _T_<xsl:value-of select="$structure_reference"/>(<xsl:choose><xsl:when test="field[@name='code']">_T_module</xsl:when><xsl:otherwise>Dict[Node]</xsl:otherwise></xsl:choose>):
     """<xsl:value-of select="my:line-wrap(@documentation, $line-width, 7)"/>"""
     <xsl:if test="field[@name='code']">
     _registry = {}
-    _plugin_prefix="fytok/plugins/<xsl:value-of select="$structure_reference"/>"
+    _plugin_prefix="<xsl:value-of select="$structure_reference"/>"
     </xsl:if>    
 
     <xsl:for-each select="field[substring(@name,string-length(@name)-string-length('_error_upper')+1)!='_error_upper'

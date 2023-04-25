@@ -6,15 +6,13 @@ from .CoreSources import CoreSources
 from .CoreTransport import CoreTransport
 from .Equilibrium import Equilibrium
 
-from .Module import Module
-
 EPSILON = 1.0e-15
 TOLERANCE = 1.0e-6
 
 TWOPI = 2.0 * constants.pi
 
 
-class TransportSolverNumerics(_T_transport_solver_numerics, Module):
+class TransportSolverNumerics(_T_transport_solver_numerics):
     r"""
         Solve transport equations
         :math:`\rho=\sqrt{ \Phi/\pi B_{0}}`

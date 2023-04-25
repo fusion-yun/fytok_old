@@ -15,11 +15,10 @@ from spdm.data.sp_property import sp_property
 from spdm.util.logger import logger
 from spdm.util.misc import convert_to_named_tuple, try_get
 
-from ..utilities.Misc import RZTuple, VacuumToroidalField
-from .Module import Module
 from .MagneticCoordSystem import MagneticCoordSystem, RadialGrid
 from .PFActive import PFActive
 from .Wall import Wall
+from .Utilities import RZTuple
 
 TOLERANCE = 1.0e-6
 EPS = np.finfo(float).eps
@@ -461,7 +460,7 @@ class EquilibriumBoundarySeparatrix(Dict[Node]):
     psi_norm: float = sp_property(default_value=1.0)
 
 
-class Equilibrium(_T_equilibrium, Module):
+class Equilibrium(_T_equilibrium):
     r"""
         Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
 

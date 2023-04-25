@@ -22,7 +22,7 @@ from spdm.numlib.contours import find_countours
 from spdm.numlib.optimize import find_critical_points
 from spdm.util.logger import logger
 
-from ..utilities.Misc import RZTuple, VacuumToroidalField
+from .Utilities import RZTuple
 
 TOLERANCE = 1.0e-6
 EPS = np.finfo(float).eps
@@ -239,7 +239,7 @@ class MagneticCoordSystem(Dict[Node]):
         return self._B0
 
     @property
-    def vacuum_toroidal_field(self) -> VacuumToroidalField:
+    def vacuum_toroidal_field(self):
         return {"r0": self.r0, "b0": self.b0}
 
     @cached_property
@@ -446,7 +446,7 @@ class MagneticCoordSystem(Dict[Node]):
     @dataclass
     class ShapeProperty:
         # RZ position of the geometric axis of the magnetic surfaces (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the surface)
-        geometric_axis: RZTuple[np.ndarray]
+        geometric_axis_rz: np.ndarray
         # Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary)[m]
         minor_radius: np.ndarray  # (rmax - rmin)*0.5,
         # Elongation of the plasma boundary. [-]

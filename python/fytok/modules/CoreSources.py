@@ -4,12 +4,11 @@ from _imas.core_sources import _T_core_sources_source
 from spdm.data.List import List
 from spdm.data.sp_property import sp_property
 
-from .Module import Module
 from .CoreProfiles import CoreProfiles
 from .MagneticCoordSystem import RadialGrid
 
 
-class CoreSourcesSource(_T_core_sources_source, Module):
+class CoreSourcesSource(_T_core_sources_source):
     _IDS = "core_sources/source"
 
     @property

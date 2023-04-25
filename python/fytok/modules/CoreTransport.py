@@ -5,10 +5,8 @@ from _imas.core_transport import (_T_core_transport, _T_core_transport_model,
 from spdm.data.List import List
 from spdm.data.sp_property import sp_property
 
-from .Module import Module
 from .CoreProfiles import CoreProfiles
 from .MagneticCoordSystem import RadialGrid
-
 
 class CoreTransportProfiles1D(_T_core_transport_model_profiles_1d):
 
@@ -36,7 +34,7 @@ class CoreTransportProfiles1D(_T_core_transport_model_profiles_1d):
         return self.grid.remesh("rho_tor_norm", 0.5*(self.grid.rho_tor_norm[:-1]+self.grid.rho_tor_norm[1:]))
 
 
-class CoreTransportModel(_T_core_transport_model, Module):
+class CoreTransportModel(_T_core_transport_model):
 
     _IDS = "core_transport/model"
 
@@ -53,12 +51,14 @@ class CoreTransportModel(_T_core_transport_model, Module):
 
 class CoreTransport(_T_core_transport):
 
+    Model = CoreTransportModel
+    
     grid: RadialGrid = sp_property()
 
-    model: List[CoreTransportModel] = sp_property()
+    model: List[Model] = sp_property()
 
-    @ property
-    def model_combiner(self) -> CoreTransportModel:
+    @property
+    def model_combiner(self) -> Model:
         return self.model.combine(
             common_data={
                 "identifier": {"name": "combined", "index": 1,

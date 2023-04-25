@@ -1,14 +1,15 @@
 from functools import cached_property
 
 from spdm.data.Dict import Dict
+from spdm.data.Node import Node
 from spdm.util.logger import logger
 
-from .operation.PulseSchedule import PulseSchedule
+from .modules.PulseSchedule import PulseSchedule
+from .modules.TransportSolverNumerics import TransportSolverNumerics
 from .Tokamak import Tokamak
-from .transport.CoreTransportSolver import CoreTransportSolver
 
 
-class Scenario(Dict):
+class Scenario(Dict[Node]):
     """
         Scenario
 
@@ -27,7 +28,7 @@ class Scenario(Dict):
 
     @cached_property
     def transport_solver(self):
-        return CoreTransportSolver(self["core_transport_solver"], parent=self)
+        return TransportSolverNumerics(self["transport_solver"], parent=self)
 
     # --------------------------------------------------------------------------
 

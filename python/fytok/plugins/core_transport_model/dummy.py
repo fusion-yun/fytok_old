@@ -1,7 +1,7 @@
 
 import collections
 
-from fytok.transport.CoreTransport import CoreTransport
+from fytok.modules.CoreTransport import CoreTransport
 
 
 class TransportModelDummy(CoreTransport.Model):
