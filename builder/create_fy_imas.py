@@ -61,6 +61,10 @@ def apply_xslt(source_file=None, stylesheet_file=None, target_path="./", **kwarg
 
 if __name__ == "__main__":
 
-    apply_xslt(source_file=(DD_PATH/"include/IDSDef.xml").as_posix(),
-               target_path=(FY_PATH/"python/_imas").as_posix(),
+    # apply_xslt(source_file=(DD_PATH/"include/IDSDef.xml").as_posix(),
+    #            target_path=(FY_PATH/"python/_imas").as_posix(),
+    #            FYTOK_REV=FYTOK_REV)
+    apply_xslt(source_file="/home/salmon/workspace/data-dictionary/dd_physics_data_dictionary.xsd",
+               stylesheet_file="/home/salmon/workspace/fytok/builder/fy_imas_xsd.xsl",
+               target_path="/home/salmon/workspace/fytok/python/_imas_test",
                FYTOK_REV=FYTOK_REV)
