@@ -12,7 +12,7 @@ class Magnetics(_T_magnetics):
 
         if axis is None:
             axis = plt.gca()
-        for idx, p_probe in enumerate(self.bpol_probe):
+        for idx, p_probe in enumerate(self.b_field_tor_probe):
             pos = p_probe.position
 
             axis.add_patch(plt.Circle((pos.r, pos.z), 0.01))
@@ -22,9 +22,9 @@ class Magnetics(_T_magnetics):
                       fontsize='xx-small')
 
         for p in self.flux_loop:
-            axis.add_patch(plt.Rectangle((p.position.r,  p.position.z), 0.01, 0.01))
-            # axis.text(p.position.r, p.position.z, p.name,
-            #           horizontalalignment='center',
-            #           verticalalignment='center',
-            #           fontsize='xx-small')
+            axis.add_patch(plt.Rectangle((p.position[0].r,  p.position[0].z), 0.01, 0.01))
+            axis.text(p.position[0].r, p.position[0].z, p.name,
+                      horizontalalignment='center',
+                      verticalalignment='center',
+                      fontsize='xx-small')
         return axis

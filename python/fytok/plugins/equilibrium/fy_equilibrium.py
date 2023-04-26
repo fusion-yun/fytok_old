@@ -274,7 +274,7 @@ class MagneticCoordSystem(Dict[Node]):
                     else:  # boundary separatrix
                         if x_point is None:
                             raise RuntimeError(f"No X-point ")
-                        logger.warning(f"The magnetic surface average is not well defined on the separatrix!")
+                        # logger.warning(f"The magnetic surface average is not well defined on the separatrix!")
                         xpt = np.asarray([x_point.r, x_point.z], dtype=float)
                         b = points[1:]
                         a = points[:-1]
