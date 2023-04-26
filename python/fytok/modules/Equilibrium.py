@@ -1,6 +1,6 @@
 
 import numpy as np
-from _imas.equilibrium import _T_equilibrium
+from _imas.equilibrium import _T_equilibrium, _T_equilibrium_time_slice
 
 from spdm.data.Field import Field
 from spdm.data.Function import Function
@@ -56,6 +56,8 @@ class Equilibrium(_T_equilibrium):
             Poloidal plane coordinate   : $(\rho,\theta,\phi)$
         ```
     """
+
+    TimeSlice = _T_equilibrium_time_slice
 
     def update(self,  *args,
                #    wall: Wall = _undefined_,
@@ -153,9 +155,10 @@ class Equilibrium(_T_equilibrium):
             if eq.profiles_2d[-1].grid_type.name == "rectangular":
                 dim1 = eq.profiles_2d[-1].grid.dim1
                 dim2 = eq.profiles_2d[-1].grid.dim2
-                axis.contour(dim1, dim2, eq.profiles_2d[-1].psi.T, linewidths=0.2,levels=contours)
+                axis.contour(dim1, dim2, eq.profiles_2d[-1].psi.T, linewidths=0.2, levels=contours)
             elif eq.profiles_2d[-1].r is not _not_found_:
-                axis.contour(eq.profiles_2d[-1].r, eq.profiles_2d[-1].z, eq.profiles_2d[-1].psi, linewidths=0.2, levels=contours)
+                axis.contour(eq.profiles_2d[-1].r, eq.profiles_2d[-1].z,
+                             eq.profiles_2d[-1].psi, linewidths=0.2, levels=contours)
 
             # if isinstance(contour, int):
             #     c_list = range(0, self.coordinate_system.mesh.shape[0], int(
@@ -180,7 +183,7 @@ class Equilibrium(_T_equilibrium):
                     sf = sf(eq.profiles_2d[0].r, eq.profiles_2d[0].z)
 
                 if isinstance(sf, np.ndarray):
-                    axis.contour(eq.profiles_2d[0].r, eq.profiles_2d[0].z, sf,linewidths=0.2, **opts)
+                    axis.contour(eq.profiles_2d[0].r, eq.profiles_2d[0].z, sf, linewidths=0.2, **opts)
                 else:
                     logger.error(f"Can not find field {sf} {type(sf)}!")
 

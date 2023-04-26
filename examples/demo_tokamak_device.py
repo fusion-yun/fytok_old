@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     tok = Tokamak(device_desc[{"wall", "pf_active", "tf", "magnetics"}])
     tok["equilibrium"] = {**eqdsk_file.dump(),
-                          "code": {"name": "fy_equilibrium",
+                          "code": {"name": "dummy",
                                    "parameters": {
                                        "boundary": {"psi_norm": 0.995},
                                        "coordinate_system": {"psi_norm": np.linspace(0.001, 0.995, 64), "theta": 64}}

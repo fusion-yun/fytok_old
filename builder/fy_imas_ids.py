@@ -25,7 +25,13 @@ class Code(_T_code):
     """List of external libraries used by the code that has produced this IDS"""
 
 
-class _T_module(Dict[Node], Pluggable):
+class TimeSlice(Dict[Node]):
+    
+    time: float = sp_property(type="dynamic", units="s")
+    """Time"""
+
+
+class Module(Dict[Node], Pluggable):
 
     def __new__(cls, *args, **kwargs):
         return Pluggable.__new__(cls, *args, **kwargs)
@@ -56,11 +62,10 @@ class _T_module(Dict[Node], Pluggable):
     """Generic decription of the code-specific parameters for the code that has produced this IDS"""
 
     def update(self,  *args,  ** kwargs):
-        """Refresh the data from the source"""
-        pass
+        self._cache.clear()
 
 
-class _T_ids(_T_module):
+class IDS(Module):
     """ Base class of IDS """
 
     ids_properties: _T_ids_properties = sp_property()

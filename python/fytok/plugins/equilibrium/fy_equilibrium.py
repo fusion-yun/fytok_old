@@ -32,7 +32,7 @@ from spdm.utils.misc import convert_to_named_tuple
 from spdm.utils.tags import _not_found_
 
 from fytok.modules.Equilibrium import Equilibrium
-from fytok.modules.Utilities import RZTuple,RadialGrid
+from fytok.modules.Utilities import RZTuple, RadialGrid
 
 TOLERANCE = 1.0e-6
 EPS = np.finfo(float).eps
@@ -57,7 +57,8 @@ def extrapolate_left(x, d):
 
 # OXPoint = collections.namedtuple('OXPoint', "r z psi")
 
-class MagneticCoordSystem(Dict[Node]):
+
+class MagneticSurfaceAnalyze(Dict[Node]):
     r"""
         Flux surface coordinate system on a square grid of flux and poloidal angle
 
@@ -365,7 +366,7 @@ class MagneticCoordSystem(Dict[Node]):
     @dataclass
     class ShapeProperty:
         # RZ position of the geometric axis of the magnetic surfaces (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the surface)
-        geometric_axis_rz: np.ndarray
+        geometric_axis: RZTuple
         # Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary)[m]
         minor_radius: np.ndarray  # (rmax - rmin)*0.5,
         # Elongation of the plasma boundary. [-]
@@ -417,7 +418,7 @@ class MagneticCoordSystem(Dict[Node]):
         else:
             rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard = sbox.T
         if isinstance(rmax, np.ndarray) and np.isclose(rmax[0], rmin[0]):
-            return MagneticCoordSystem.ShapeProperty(
+            return MagneticSurfaceAnalyze.ShapeProperty(
                 # RZ position of the geometric axis of the magnetic surfaces (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the surface)
                 RZTuple({"r": function_like(psi_norm, (rmin+rmax)*0.5),
                          "z": function_like(psi_norm, (zmin+zmax)*0.5)}),
@@ -448,7 +449,7 @@ class MagneticCoordSystem(Dict[Node]):
                 function_like(psi_norm, r_outboard),  # "r_outboard":
             )
         else:
-            return MagneticCoordSystem.ShapeProperty(
+            return MagneticSurfaceAnalyze.ShapeProperty(
                 # RZ position of the geometric axis of the magnetic surfaces (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the surface)
                 RZTuple({"r": (rmin+rmax)*0.5, "z": (zmin+zmax)*0.5}),
                 # Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary)[m]
@@ -801,7 +802,7 @@ TWOPI = 2.0*constants.pi
 class EquilibriumGlobalQuantities(_T_equilibrium_global_quantities):
 
     @property
-    def _coord(self) -> MagneticCoordSystem:
+    def _coord(self) -> MagneticSurfaceAnalyze:
         return self._parent._coord
 
     @cached_property
@@ -828,7 +829,7 @@ class EquilibriumGlobalQuantities(_T_equilibrium_global_quantities):
 
 class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
     @property
-    def _coord(self) -> MagneticCoordSystem:
+    def _coord(self) -> MagneticSurfaceAnalyze:
         return self._parent._coord
 
     @cached_property
@@ -952,7 +953,7 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
         return function_like(self._coord.psi_norm, self._coord.dvolume_drho_tor)
 
     @cached_property
-    def shape_property(self) -> MagneticCoordSystem.ShapeProperty:
+    def shape_property(self) -> MagneticSurfaceAnalyze.ShapeProperty:
         return self._coord.shape_property()
 
     @sp_property
@@ -1046,7 +1047,7 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
 
 class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
     @property
-    def _coord(self) -> MagneticCoordSystem:
+    def _coord(self) -> MagneticSurfaceAnalyze:
         return self._parent._coord
 
     # @cached_property
@@ -1091,7 +1092,7 @@ class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
 class EquilibriumBoundary(_T_equilibrium_boundary):
 
     @property
-    def _coord(self) -> MagneticCoordSystem:
+    def _coord(self) -> MagneticSurfaceAnalyze:
         return self._parent._coord
 
     @sp_property
@@ -1099,7 +1100,6 @@ class EquilibriumBoundary(_T_equilibrium_boundary):
         """RZ outline of the plasma boundary  """
         _, surf = next(self._coord.find_surface(self.psi, o_point=True))
         return RZTuple({"r": surf.xyz[0], "z": surf.xyz[1]})
-        
 
     @sp_property
     def x_point(self):
@@ -1124,7 +1124,7 @@ class EquilibriumBoundary(_T_equilibrium_boundary):
         return self.psi_norm*(self._coord.psi_boundary-self._coord.psi_axis)+self._coord.psi_axis
 
     @property
-    def shape_property(self) -> MagneticCoordSystem.ShapeProperty:
+    def shape_property(self) -> MagneticSurfaceAnalyze.ShapeProperty:
         return self._coord.shape_property(self.psi_norm)
 
     @sp_property
@@ -1181,7 +1181,7 @@ class EquilibriumBoundary(_T_equilibrium_boundary):
 class EquilibriumBoundarySeparatrix(_T_equilibrium_boundary_separatrix):
 
     @property
-    def _coord(self) -> MagneticCoordSystem:
+    def _coord(self) -> MagneticSurfaceAnalyze:
         return self._parent._coord
 
     @sp_property
@@ -1214,8 +1214,26 @@ class EquilibriumBoundarySeparatrix(_T_equilibrium_boundary_separatrix):
 
 class EquilibriumTimeSlice(_T_equilibrium_time_slice):
 
-    @cached_property
-    def _coord(self) -> MagneticCoordSystem:
+    profiles_1d: EquilibriumProfiles1D = sp_property()
+
+    profiles_2d: List[EquilibriumProfiles2D] = sp_property()
+
+    global_quantities: EquilibriumGlobalQuantities = sp_property()
+
+    boundary: EquilibriumBoundary = sp_property()
+
+    boundary_separatrix: EquilibriumBoundarySeparatrix = sp_property()
+
+    @property
+    def _coord(self) -> MagneticSurfaceAnalyze:
+        if self._coord is None:
+            self.update()
+        return self._coord
+
+    def update(self, *args, time=None, **kwargs):
+        super().update(time=time)
+        self._cache.clear()
+
         psirz = self.__entry__().get("profiles_2d/0/psi", None)
 
         if psirz is None:
@@ -1238,7 +1256,7 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
             psi_1d = (psi_1d-psi_1d[0])/(psi_1d[-1]-psi_1d[0])
 
         # pprime_1d = self.profiles_1d._entry.get("dpressure_dpsi", None)
-        return MagneticCoordSystem(
+        return MagneticSurfaceAnalyze(
             psirz=psirz,
             B0=self._parent.vacuum_toroidal_field.b0,
             R0=self._parent.vacuum_toroidal_field.r0,
@@ -1250,25 +1268,12 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
 
         )
 
-    profiles_1d: EquilibriumProfiles1D = sp_property()
-
-    profiles_2d: List[EquilibriumProfiles2D] = sp_property()
-
-    global_quantities: EquilibriumGlobalQuantities = sp_property()
-
-    boundary: EquilibriumBoundary = sp_property()
-
-    boundary_separatrix: EquilibriumBoundarySeparatrix = sp_property()
-
-    @property
-    def radial_grid(self) -> RadialGrid:
-        return self._magnetic_coord.radial_grid
-
 
 @Equilibrium.register(["fy_equilibrium"])
 class FyEquilibrium(Equilibrium):
+    TimeSlice = EquilibriumTimeSlice
 
-    time_slice: List[EquilibriumTimeSlice] = sp_property()
+    time_slice: List[TimeSlice] = sp_property()
 
     def __init__(self, *args, **kwargs):
         code = {**kwargs.get("code", {}), "name": "fy_equilibrium", "version": "0.0.1", "commit": "-dirty"}
@@ -1279,7 +1284,12 @@ class FyEquilibrium(Equilibrium):
                #    pf_active: PFActive = _undefined_,
                #    core_profiles=_undefined_,
                **kwargs):
+        """
+            update the last time slice, base on profiles_2d[-1].psi
+        """
+
         logger.debug(self.code.parameters)
+
     #     super().update(*args, **kwargs)
 
     #     # self.profiles_1d.pressure = core_profiles.profiles_1d.pressure

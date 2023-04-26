@@ -1,15 +1,14 @@
-
 import collections
 
-from fytok.constants.Atoms import nuclear_reaction
-from fytok.transport.CoreProfiles import CoreProfiles
-from fytok.transport.CoreSources import CoreSources
-from fytok.transport.Equilibrium import Equilibrium
+from fytok.modules.Atoms import nuclear_reaction
+from fytok.modules.CoreProfiles import CoreProfiles
+from fytok.modules.CoreSources import CoreSources
+from fytok.modules.Equilibrium import Equilibrium
+
 from spdm.data.Function import function_like
 
 
 class FusionReaction(CoreSources.Source):
-
     """ [summary]
 
         Args:

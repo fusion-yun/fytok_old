@@ -7,6 +7,7 @@ from spdm.data.sp_property import sp_property
 from .CoreProfiles import CoreProfiles
 from .Utilities import RadialGrid
 
+
 class CoreSourcesSource(_T_core_sources_source):
     _IDS = "core_sources/source"
 
@@ -21,12 +22,14 @@ class CoreSourcesSource(_T_core_sources_source):
 
 class CoreSources(_T_core_sources):
 
+    Source = CoreSourcesSource
+
     grid: RadialGrid = sp_property()
 
-    source: List[CoreSourcesSource] = sp_property()
+    source: List[Source] = sp_property()
 
     @property
-    def source_combiner(self) -> CoreSourcesSource:
+    def source_combiner(self) -> Source:
         return self.source.combine(
             common_data={
                 "identifier": {"name": "total", "index": 1,

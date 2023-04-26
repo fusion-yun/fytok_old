@@ -14,7 +14,7 @@ TODO:
 
 import saxonche as saxonc
 import pathlib
-
+import collections.abc
 import subprocess
 
 FYTOK_REV = subprocess.check_output(['git', 'describe', '--always', '--dirty']).strip().decode('utf-8')
@@ -25,16 +25,42 @@ DD_VERSION = "3.38.1"
 
 DD_PATH = pathlib.Path(f"/fuyun/software/data-dictionary/{DD_VERSION}/dd_{DD_VERSION}")
 
-stylesheet_file = "/home/salmon/workspace/fytok/builder/fy_imas.xsl"
+FY_PATH = pathlib.Path(__file__).parent.parent
 
-output_path = pathlib.Path("/home/salmon/workspace/fytok/python/_imas")
 
-with saxonc.PySaxonProcessor(license=False) as proc:
-    xslt_processor = proc.new_xslt30_processor()
-    xslt_processor.set_parameter("FYTOK_REV", proc.make_string_value(FYTOK_REV))
-    xslt_processor.set_parameter("IDS_LIST", proc.make_array([*map(proc.make_string_value, IDS_LIST)]))
+def convert_value(proc: saxonc.PySaxonProcessor, v):
+    if isinstance(v, str):
+        return proc.make_string_value(v)
+    elif isinstance(v, int):
+        return proc.make_integer_value(v)
+    elif isinstance(v, bool):
+        return proc.make_boolean_value(v)
+    elif isinstance(v, collections.abc.Sequence):
+        return proc.make_array([convert_value(proc, d) for d in v])
+    elif isinstance(v, collections.abc.Mapping):
+        return proc.make_map({k: convert_value(proc, d) for k, d in v.items()})
+    else:
+        raise TypeError(f"Unsupported type {type(v)}")
 
-    executable = xslt_processor.compile_stylesheet(stylesheet_file=stylesheet_file)
 
-    result = executable.transform_to_file(source_file=(DD_PATH/"include/IDSDef.xml").as_posix(),
-                                          output_file=(output_path/"ids_list").as_posix())
+def apply_xslt(source_file=None, stylesheet_file=None, target_path="./", **kwargs):
+
+    if stylesheet_file is None:
+        stylesheet_file = (FY_PATH/"builder/fy_imas.xsl").as_posix()
+
+    with saxonc.PySaxonProcessor(license=False) as proc:
+        xslt_processor = proc.new_xslt30_processor()
+
+        for k, v in kwargs.items():
+            xslt_processor.set_parameter(k, convert_value(proc, v))
+
+        executable = xslt_processor.compile_stylesheet(stylesheet_file=stylesheet_file)
+
+        executable.transform_to_file(source_file=source_file, output_file=f"{target_path}/ids_list")
+
+
+if __name__ == "__main__":
+
+    apply_xslt(source_file=(DD_PATH/"include/IDSDef.xml").as_posix(),
+               target_path=(FY_PATH/"python/_imas").as_posix(),
+               FYTOK_REV=FYTOK_REV)

@@ -214,7 +214,7 @@ from spdm.data.Dict import Dict
 from spdm.data.sp_property import sp_property
 from enum import Enum
 
-from ._ids import _T_ids, _T_module
+from ._ids import IDS, Module, TimeSlice
 <xsl:choose>
 <xsl:when test="(empty($util_defined))"/>
 <xsl:otherwise>from .utilities import <xsl:value-of select="string-join(for $item in $util_defined return concat('_T_', $item), ',')"/></xsl:otherwise>
@@ -222,12 +222,12 @@ from ._ids import _T_ids, _T_module
 
 <xsl:apply-templates select="field[(@data_type='structure' or @data_type='struct_array')]" mode = "DEFINE"/>  
 
-class _T_<xsl:value-of select="my:py_word(@name)"/>(_T_ids):
+class _T_<xsl:value-of select="my:py_word(@name)"/>(IDS):
     """<xsl:value-of select="my:line-wrap(@documentation, $line-width, 7)"/>"""   
     
     _IDS = "<xsl:value-of select="my:py_word(@name)"/>" 
 
-    <xsl:for-each select="field[@name!='ids_properties' and @name!='code' and @name!='time']" >
+    <xsl:for-each select="field[@name!='ids_properties' and @name!='code' ]" >
 <xsl:text>&#xA;    </xsl:text><xsl:apply-templates select="." mode = "DECLARE"/>
 <xsl:text>&#xA;    </xsl:text>"""<xsl:value-of select="my:line-wrap(@documentation, $line-width, 7)"/>"""   
     </xsl:for-each>
@@ -322,7 +322,12 @@ class _E_<xsl:value-of select="$ext_doc/[@name]"/>(Enum):
 
 <xsl:apply-templates select="field[(@data_type='structure' or @data_type='struct_array')]" mode = "DEFINE"/>  
 
-class _T_<xsl:value-of select="$structure_reference"/>(<xsl:choose><xsl:when test="field[@name='code']">_T_module</xsl:when><xsl:otherwise>Dict[Node]</xsl:otherwise></xsl:choose>):
+<xsl:text>&#xA;</xsl:text>
+<xsl:choose>
+<xsl:when test="field[@name='code']"           >class _T_<xsl:value-of select="$structure_reference"/>(Module):</xsl:when>
+<xsl:when test="field[@name='time']"           >class _T_<xsl:value-of select="$structure_reference"/>(TimeSlice):</xsl:when>
+<xsl:otherwise                                 >class _T_<xsl:value-of select="$structure_reference"/>(Dict[Node]):</xsl:otherwise>
+</xsl:choose>
     """<xsl:value-of select="my:line-wrap(@documentation, $line-width, 7)"/>"""
     <xsl:if test="field[@name='code']">
     _registry = {}
@@ -332,7 +337,7 @@ class _T_<xsl:value-of select="$structure_reference"/>(<xsl:choose><xsl:when tes
     <xsl:for-each select="field[substring(@name,string-length(@name)-string-length('_error_upper')+1)!='_error_upper'
       and substring(@name,string-length(@name)-string-length('_error_lower')+1)!='_error_lower'
       and substring(@name,string-length(@name)-string-length('_error_index')+1)!='_error_index'
-      ]" >
+      and @name!='code'  and @name!='time']" >
 <xsl:text>&#xA;    </xsl:text><xsl:apply-templates select="." mode = "DECLARE"/>
 <xsl:text>&#xA;    </xsl:text>"""<xsl:value-of select="my:line-wrap(@documentation, $line-width, 7)"/>"""   
     </xsl:for-each>
