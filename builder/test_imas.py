@@ -1,4 +1,4 @@
-from _imas_test import _T_equilibrium
+from _imas import _T_equilibrium
 
 from spdm.utils.logger import logger
 

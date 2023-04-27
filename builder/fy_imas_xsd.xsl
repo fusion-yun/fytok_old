@@ -97,6 +97,15 @@
   </xsl:choose>
 </xsl:function>
 
+  <xsl:function name="my:quote">
+    <xsl:param name="str" />
+    <xsl:choose>
+      <xsl:when test="starts-with($str,'&quot;') and ends-with($str,'&quot;')"><xsl:value-of select="$str" /></xsl:when>
+      <xsl:when test="starts-with($str,'&apos;') and ends-with($str,'&apos;')"><xsl:value-of select="$str" /></xsl:when>
+      <xsl:otherwise><xsl:value-of select="concat('&quot;', $str, '&quot;')" /></xsl:otherwise>
+    </xsl:choose>    
+  </xsl:function>
+
 <xsl:variable name="type_map">
     <entry key='STR_0D'       >str</entry>
     <entry key='STR_1D'       >List[str]</entry>
@@ -302,9 +311,66 @@ from .utilities import _E_<xsl:value-of select = "document(concat($BASE_DIR, .))
   </xsl:result-document>     
 </xsl:template>
 
+<!-- as_python_value 将 节点内容转换为 python dict/list/string
+  - 如果节点是一个简单类型，则它将其转换为一个字符串。
+  - 如果节点是一个复杂类型，则它将其转换为一个字典，其中包含所有子节点的值。
+  - 如果有多个同名兄弟节点，则它将它们存储在一个列表中；否则，它将它们存储为单个值。   
+-->
+
+<xsl:template match="*" mode="as_python_kw">
+  <xsl:if test="not(preceding-sibling::*[name() = name(current())])">
+    <xsl:value-of select="my:quote(name())" /><xsl:text>: </xsl:text>
+    <xsl:variable name="siblings" select="../child::*[name() = name(current())]" />
+    <xsl:choose>
+      <xsl:when test="count($siblings) > 1">
+        <xsl:text>[</xsl:text>
+        <xsl:apply-templates select="$siblings" mode="as_python_value"/>
+        <xsl:text>]</xsl:text>
+      </xsl:when>
+      <xsl:otherwise><xsl:value-of select="my:quote($siblings)" /></xsl:otherwise>
+    </xsl:choose>
+    <xsl:if test="position() != last()">,</xsl:if>
+  </xsl:if>
+</xsl:template>
+
+<xsl:template match="*" mode="as_python_value">
+  <xsl:choose>
+    <xsl:when test="./*">
+      <xsl:text>{</xsl:text><xsl:apply-templates select="*" mode="as_python_kw" /><xsl:text>}</xsl:text>
+    </xsl:when>
+    <xsl:otherwise><xsl:value-of select="my:quote(.)" /></xsl:otherwise>
+  </xsl:choose>
+  <xsl:if test="position() != last()">,</xsl:if>
+</xsl:template>
+
+<!-- as_python_kwargs 将子节点转换为 key=value 形式，可用作 python 函数 kwargs 参数  
+  - 如果有多个同名兄弟节点，则它将它们存储在一个列表中；否则，它将它们存储为单个值。
+-->
+
+<xsl:template match="*" mode="as_python_kwargs_one">  
+  <xsl:if test="not(preceding-sibling::*[name() = name(current())])">
+    <xsl:value-of select="my:py_keyword(name())" /><xsl:text>=</xsl:text>
+    <xsl:variable name="siblings" select="../child::*[name() = name(current())]" />
+    <xsl:choose>
+      <xsl:when test="count($siblings) > 1"><xsl:text>[</xsl:text><xsl:apply-templates select="$siblings" mode="as_python_value"/><xsl:text>]</xsl:text></xsl:when>
+      <xsl:otherwise><xsl:apply-templates select="$siblings"  mode="as_python_value" /> </xsl:otherwise>
+    </xsl:choose>
+    <xsl:if test="position() != last()">,</xsl:if>
+  </xsl:if>  
+</xsl:template>
+
+<xsl:template match="*" mode="as_python_kwargs">
+  <xsl:choose>
+    <xsl:when test="./*">
+      <xsl:apply-templates select="*" mode="as_python_kwargs_one" />
+    </xsl:when>
+    <xsl:otherwise></xsl:otherwise>
+  </xsl:choose>
+  
+</xsl:template>
+
 <!-- Declare element ######################################################################################### -->
 
-<xsl:template match = "xs:appinfo" mode="sp_property">appinfo=[<xsl:for-each select="./*">("<xsl:value-of select="name(.)"/>","<xsl:value-of select="."/>"),</xsl:for-each>]</xsl:template>
 
 <xsl:template match = "xs:documentation"><xsl:value-of select="my:line-wrap(., $line-width, 7)"/></xsl:template>
 
@@ -317,10 +383,10 @@ from .utilities import _E_<xsl:value-of select = "document(concat($BASE_DIR, .))
   <xsl:for-each select="xs:element[@name!='code' and @name!='time' and @name!='ids_properties' ]">
     <xsl:choose>
       <xsl:when test = "@ref" >
-<xsl:text>&#xA;    </xsl:text><xsl:value-of select="my:py_keyword(@ref)"/>   : <xsl:value-of select="my:type_hint(.)" /> =  sp_property(<xsl:apply-templates select="xs:annotation/xs:appinfo"  mode="sp_property"/>)
+<xsl:text>&#xA;    </xsl:text><xsl:value-of select="my:py_keyword(@ref)"/>   : <xsl:value-of select="my:type_hint(.)" /> =  sp_property(<xsl:apply-templates select="xs:annotation/xs:appinfo"  mode="as_python_kwargs"/>)
       </xsl:when>
       <xsl:when test= "not(@ref) and not(xs:annotation/xs:appinfo/doc_identifier)">
-<xsl:text>&#xA;    </xsl:text><xsl:value-of select="my:py_keyword(@name)"/>  : <xsl:value-of select="my:type_hint(.)" /> =  sp_property(<xsl:apply-templates select="xs:annotation/xs:appinfo"  mode="sp_property"/>)
+<xsl:text>&#xA;    </xsl:text><xsl:value-of select="my:py_keyword(@name)"/>  : <xsl:value-of select="my:type_hint(.)" /> =  sp_property(<xsl:apply-templates select="xs:annotation/xs:appinfo"  mode="as_python_kwargs"/>)
 <xsl:text>    </xsl:text>"""<xsl:value-of select="my:line-wrap(xs:annotation/xs:documentation, $line-width, 7)"/>"""
       </xsl:when>
       <xsl:when test = "not(@ref) and (xs:annotation/xs:appinfo/doc_identifier)">
