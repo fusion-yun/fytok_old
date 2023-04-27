@@ -66,5 +66,6 @@ if __name__ == "__main__":
     #            FYTOK_REV=FYTOK_REV)
     apply_xslt(source_file="/home/salmon/workspace/data-dictionary/dd_physics_data_dictionary.xsd",
                stylesheet_file="/home/salmon/workspace/fytok/builder/fy_imas_xsd.xsl",
-               target_path="/home/salmon/workspace/fytok/python/_imas_test",
-               FYTOK_REV=FYTOK_REV)
+               target_path="/home/salmon/workspace/fytok/python/_imas",
+               FYTOK_REV=FYTOK_REV,
+               BASE_DIR="/home/salmon/workspace/data-dictionary/")
