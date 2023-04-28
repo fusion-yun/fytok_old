@@ -39,6 +39,8 @@ if __name__ == "__main__":
                                        "coordinate_system": {"psi_norm": np.linspace(0.001, 0.995, 64), "theta": 64}}
                                    }
                           }
+    
+
     if True:
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},

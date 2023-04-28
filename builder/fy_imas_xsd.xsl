@@ -97,70 +97,15 @@
   </xsl:choose>
 </xsl:function>
 
-  <xsl:function name="my:quote">
-    <xsl:param name="str" />
-    <xsl:choose>
-      <xsl:when test="starts-with($str,'&quot;') and ends-with($str,'&quot;')"><xsl:value-of select="$str" /></xsl:when>
-      <xsl:when test="starts-with($str,'&apos;') and ends-with($str,'&apos;')"><xsl:value-of select="$str" /></xsl:when>
-      <xsl:otherwise><xsl:value-of select="concat('&quot;', $str, '&quot;')" /></xsl:otherwise>
-    </xsl:choose>    
-  </xsl:function>
-
-<xsl:variable name="type_map">
-    <entry key='STR_0D'       >str</entry>
-    <entry key='STR_1D'       >List[str]</entry>
-    <entry key='str_type'     >str</entry> 
-    <entry key='str_1d_type'  >List[str]</entry>
-    <entry key='INT_0D'       >int</entry>
-    <entry key='INT_1D'       >List[int]</entry>
-    <entry key='int_type'     >int</entry>
-    <entry key='int_1d_type'  >List[int]</entry>
-    <entry key='INT_2D'       >np.ndarray</entry>
-    <entry key='INT_3D'       >np.ndarray</entry>
-    <entry key='INT_4D'       >np.ndarray</entry>
-    <entry key='INT_5D'       >np.ndarray</entry>
-    <entry key='INT_6D'       >np.ndarray</entry>
-    <entry key='FLT_0D'       >float</entry>
-    <entry key='flt_type'     >float</entry>
-    <entry key='FLT_1D'       >np.ndarray</entry>
-    <entry key='flt_1d_type'  >np.ndarray</entry>
-    <entry key='FLT_2D'       >np.ndarray</entry>
-    <entry key='FLT_3D'       >np.ndarray</entry>
-    <entry key='FLT_4D'       >np.ndarray</entry>
-    <entry key='FLT_5D'       >np.ndarray</entry>
-    <entry key='FLT_6D'       >np.ndarray</entry>
-    <entry key='cpx_type'     >complex   </entry>
-    <entry key='cplx_1d_type' >np.ndarray</entry>
-    <entry key='CPX_0D'       >complex   </entry>
-    <entry key='CPX_1D'       >np.ndarray</entry>
-    <entry key='CPX_2D'       >np.ndarray</entry>
-    <entry key='CPX_3D'       >np.ndarray</entry>
-    <entry key='CPX_4D'       >np.ndarray</entry>
-    <entry key='CPX_5D'       >np.ndarray</entry>
-    <entry key='CPX_6D'       >np.ndarray</entry>
-</xsl:variable>
-
-<xsl:function name="my:type_hint">
-  <xsl:param name="d" as="element()*"/>
-  <xsl:variable name="t1">
-    <xsl:choose>
-      <xsl:when test="$d[@type]"><xsl:value-of select="$d/@type" /></xsl:when>
-      <xsl:when test="$d[@ref]" ><xsl:value-of select="$d/@ref" /></xsl:when>
-      <xsl:otherwise><xsl:value-of  select="$d/xs:complexType/xs:group/@ref" /> </xsl:otherwise>
-    </xsl:choose>
-  </xsl:variable>
-  <xsl:variable name="t2">
-    <xsl:choose>
-      <xsl:when test="$type_map/entry[@key=$t1]"><xsl:value-of select="$type_map/entry[@key=$t1]" /> </xsl:when>
-      <xsl:otherwise>_T_<xsl:value-of select="$t1"/></xsl:otherwise>
-    </xsl:choose>
-  </xsl:variable>  
+<xsl:function name="my:quote">
+  <xsl:param name="str" />
   <xsl:choose>
-    <xsl:when test="not($d[@maxOccurs])"><xsl:value-of select="$t2" /></xsl:when>
-    <xsl:when test="$d/@maxOccurs='unbounded' and $d/xs:annotation/xs:appinfo/coordinate1='time'">TimeSeriesAoS[<xsl:value-of select="$t2" />]</xsl:when>    
-    <xsl:otherwise>List[<xsl:value-of select="$t2" />]</xsl:otherwise>
-  </xsl:choose> 
+    <xsl:when test="starts-with($str,'&quot;') and ends-with($str,'&quot;')"><xsl:value-of select="$str" /></xsl:when>
+    <xsl:when test="starts-with($str,'&apos;') and ends-with($str,'&apos;')"><xsl:value-of select="$str" /></xsl:when>
+    <xsl:otherwise><xsl:value-of select="concat('&quot;', $str, '&quot;')" /></xsl:otherwise>
+  </xsl:choose>    
 </xsl:function>
+
 
 <xsl:variable name="FILE_HEADER_ANNOTATION" >
   Generate at <xsl:value-of  select="current-dateTime()" />
@@ -169,15 +114,15 @@
 
 
 <xsl:variable name="FILE_HEADER_COMMON_IMPORT" >
-import numpy as np
 from enum import Enum
-
-from spdm.data.Node import Node
-from spdm.data.List import List
-from spdm.data.Dict import Dict
-from spdm.data.TimeSeries import TimeSeriesAoS,TimeSeries
-from spdm.data.Function import Function 
-from spdm.data.sp_property import sp_property
+import numpy as np
+from spdm.data.Node         import Node
+from spdm.data.List         import List
+from spdm.data.Dict         import Dict
+from spdm.data.TimeSeries   import TimeSeriesAoS
+from spdm.data.Signal       import Signal 
+from spdm.data.Profile      import Profile 
+from spdm.data.sp_property  import sp_property
 
 </xsl:variable>
 
@@ -262,7 +207,7 @@ from .<xsl:value-of select="@ref"/>  import _T_<xsl:value-of select="@ref"/>
 """
 <xsl:copy-of select="$FILE_HEADER_COMMON_IMPORT" />
 
-from .utilities import IDS, Module
+from .utilities import _T_IDS, _T_Module
 
     <xsl:variable name="cls_list" select="for $k in //@type return if (not(xs:complexType[@name=$k]) and $k!='flt_type'  and $k!='flt_1d_type') then concat('_T_', $k) else ()"/>
     <xsl:variable name="cls_list" select="distinct-values($cls_list)"/>
@@ -356,17 +301,113 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
   
 </xsl:template>
 
-<!-- Declare element ######################################################################################### -->
+<!--  ######################################################################################### -->
 
 
-<xsl:template match = "xs:documentation"><xsl:value-of select="my:line-wrap(., $line-width, 7)"/></xsl:template>
+<xsl:template match = "xs:documentation">"""<xsl:value-of select="my:line-wrap(., $line-width, 7)"/>"""</xsl:template>
 
-<xsl:template match = "xs:annotation">
-  <xsl:apply-templates select="xs:documentation" />  
-  <xsl:apply-templates select="xs:appinfo/*" />  
+<xsl:template match = "xs:annotation">"""
+    <xsl:value-of select="my:line-wrap(xs:documentation, $line-width, 7)"/>  
+
+    <xsl:apply-templates select="xs:appinfo/*" />
+    """    
 </xsl:template>
 
-<xsl:template match="xs:sequence" mode="property_list">
+<!-- Declare element ######################################################################################### -->
+
+<xsl:variable name="type_map">
+    <entry key='STR_0D'       >str</entry>
+    <entry key='str_type'     >str</entry> 
+    <entry key='STR_1D'       >List[str]</entry>
+    <entry key='str_1d_type'  >List[str]</entry>
+    <entry key='INT_0D'       >int</entry>
+    <entry key='int_type'     >int</entry>
+    <entry key='INT_1D'       >Profile[int]</entry>
+    <entry key='int_1d_type'  >Profile[int]</entry>
+    <entry key='INT_2D'       >Profile[int]</entry>
+    <entry key='INT_3D'       >Profile[int]</entry>
+    <entry key='INT_4D'       >Profile[int]</entry>
+    <entry key='INT_5D'       >Profile[int]</entry>
+    <entry key='INT_6D'       >Profile[int]</entry>
+    <entry key='FLT_0D'       >float</entry>
+    <entry key='flt_type'     >Profile[float]</entry>
+    <entry key='FLT_1D'       >Profile[float]</entry>
+    <entry key='flt_1d_type'  >Profile[float]</entry>
+    <entry key='FLT_2D'       >Profile[float]</entry>
+    <entry key='FLT_3D'       >Profile[float]</entry>
+    <entry key='FLT_4D'       >Profile[float]</entry>
+    <entry key='FLT_5D'       >Profile[float]</entry>
+    <entry key='FLT_6D'       >Profile[float]</entry>
+    <entry key='cpx_type'     >complex</entry>
+    <entry key='cplx_1d_type' >Profile[complex]</entry>
+    <entry key='CPX_0D'       >Profile[complex]</entry>
+    <entry key='CPX_1D'       >Profile[complex]</entry>
+    <entry key='CPX_2D'       >Profile[complex]</entry>
+    <entry key='CPX_3D'       >Profile[complex]</entry>
+    <entry key='CPX_4D'       >Profile[complex]</entry>
+    <entry key='CPX_5D'       >Profile[complex]</entry>
+    <entry key='CPX_6D'       >Profile[complex]</entry>
+    
+    <entry key='signal_flt_1d'>Signal[float]</entry>
+    <entry key='signal_flt_2d'>Signal[float]</entry>
+    <entry key='signal_flt_3d'>Signal[float]</entry>
+    <entry key='signal_flt_4d'>Signal[float]</entry>
+    <entry key='signal_flt_5d'>Signal[float]</entry>
+    <entry key='signal_flt_6d'>Signal[float]</entry>
+
+    <entry key='signal_int_1d'>Signal[int]</entry>
+    <entry key='signal_int_2d'>Signal[int]</entry>
+    <entry key='signal_int_3d'>Signal[int]</entry>
+    <entry key='signal_int_4d'>Signal[int]</entry>
+    <entry key='signal_int_5d'>Signal[int]</entry>
+    <entry key='signal_int_6d'>Signal[int]</entry>
+
+
+</xsl:variable>
+
+<xsl:template match="xs:element[@name  or  @ref]" mode="DECLARE">
+<xsl:variable name="prop_name">
+  <xsl:choose>
+    <xsl:when test="@ref"><xsl:value-of select="my:py_keyword(@ref)"/></xsl:when>
+    <xsl:otherwise><xsl:value-of select="my:py_keyword(@name)"/></xsl:otherwise>
+  </xsl:choose>
+</xsl:variable>
+<xsl:variable name="type_hint">
+  <xsl:choose>
+    <xsl:when test="@ref"><xsl:value-of select="@ref"/></xsl:when>
+    <xsl:when test="@type"><xsl:value-of select="@type"/></xsl:when>
+    <xsl:otherwise><xsl:value-of select="xs:complexType/xs:group/@ref"/></xsl:otherwise>
+  </xsl:choose>
+</xsl:variable>
+<xsl:variable name="type_hint">
+  <xsl:choose>
+    <xsl:when test="($type_hint='INT_1D' or $type_hint='int_1d_type') and normalize-space(xs:annotation/xs:appinfo/coordinate1)='1...N' ">List[int]</xsl:when>          
+    <xsl:when test="($type_hint='FLT_1D' or $type_hint='flt_1d_type') and normalize-space(xs:annotation/xs:appinfo/coordinate1)='1...N' ">np.ndarray</xsl:when>          
+    <xsl:when test="$type_map/entry[@key=$type_hint]"><xsl:value-of select="$type_map/entry[@key=$type_hint]"/></xsl:when>          
+    <xsl:when test="xs:annotation/xs:appinfo/doc_identifier">_E_<xsl:value-of select = "document(concat($DD_BASE_DIR, xs:annotation/xs:appinfo/doc_identifier))/constants/@name"/></xsl:when>
+    <xsl:otherwise>_T_<xsl:value-of select="$type_hint"/> </xsl:otherwise>   
+  </xsl:choose>
+</xsl:variable>
+
+<xsl:variable name="type_hint">
+  <xsl:choose>
+    <xsl:when test="@maxOccurs">
+      <xsl:choose>
+        <xsl:when test="ends-with(xs:annotation/xs:appinfo/coordinate1,'time')">TimeSeriesAoS[<xsl:value-of select="$type_hint" />]</xsl:when>      
+        <xsl:otherwise>List[<xsl:value-of select="$type_hint" />]</xsl:otherwise>               
+      </xsl:choose>
+    </xsl:when>   
+    <xsl:otherwise><xsl:value-of select="$type_hint"/> </xsl:otherwise>   
+  </xsl:choose>
+</xsl:variable>
+<xsl:if test="not(xs:annotation/xs:appinfo/lifecycle_status)  or  xs:annotation/xs:appinfo/lifecycle_status!='obsolescent'" >
+<xsl:text>&#xA;&#xA;    </xsl:text><xsl:value-of select="$prop_name"/>  :<xsl:value-of select="$type_hint" /> =  sp_property(<xsl:apply-templates select="xs:annotation/xs:appinfo"  mode="as_python_kwargs"/>)
+<xsl:text>    </xsl:text><xsl:apply-templates select="xs:annotation/xs:documentation"/>
+</xsl:if>
+</xsl:template>
+ 
+
+<!-- <xsl:template match="xs:sequence" mode="property_list">
   <xsl:for-each select="xs:element[@name!='code' and @name!='time' and @name!='ids_properties' ]">
     <xsl:choose>
       <xsl:when test = "@ref" >
@@ -382,26 +423,26 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
       </xsl:when>      
     </xsl:choose>
   </xsl:for-each>  
-</xsl:template>
+</xsl:template> -->
 
 
 <xsl:template match = "xs:complexType" mode = "DEFINE"> 
   <xsl:variable name="base_class">
       <xsl:choose>      
-        <xsl:when test="xs:sequence/xs:element[@name='code']" >Module</xsl:when>
+        <xsl:when test="xs:sequence/xs:element[@name='code']" >_T_Module</xsl:when>
         <xsl:otherwise>Dict[Node]</xsl:otherwise>
     </xsl:choose>
   </xsl:variable>
 
-class _T_<xsl:value-of select="@name" />(<xsl:value-of select="$base_class" />):
-<xsl:text>    </xsl:text>"""<xsl:apply-templates select="xs:annotation" />"""
-<xsl:apply-templates select="xs:sequence" mode="property_list" />
-  
+<xsl:text>&#xA;&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(<xsl:value-of select="$base_class" />):
+<xsl:text>    </xsl:text><xsl:apply-templates select="xs:annotation" />
+<xsl:apply-templates select="xs:sequence/xs:element" mode="DECLARE" />
+
 </xsl:template>
 
-<xsl:template match = "constants" mode = "CONSTANTS_IDENTIFY"> 
-class _E_<xsl:value-of select="@name"/>(Enum):
-<xsl:text>    </xsl:text>"""<xsl:value-of select="my:line-wrap(header, $line-width, 7)"/>
+<xsl:template match = "constants[@identifier='yes']" mode = "CONSTANTS_IDENTIFY"> 
+<xsl:text>&#xA;&#xA;</xsl:text>class _E_<xsl:value-of select="@name"/>(Enum):
+<xsl:text>&#xA;    </xsl:text>"""<xsl:value-of select="my:line-wrap(header, $line-width, 7)"/>
      xpath: <xsl:value-of select="dd_instance/@xpath"/>
     """
   <xsl:for-each select="int">
@@ -411,16 +452,19 @@ class _E_<xsl:value-of select="@name"/>(Enum):
 </xsl:template>
 
 <xsl:template match = "xs:element" mode = "DEFINE"> 
-class _T_<xsl:value-of select="@name" />(Dict[Node]):
-<xsl:text>    </xsl:text>"""<xsl:apply-templates select="xs:annotation" />"""
+<xsl:text>&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(Dict[Node]):
+<xsl:text>&#xA;    </xsl:text><xsl:apply-templates select="xs:annotation" />
   
-  <xsl:apply-templates select="xs:complexType/xs:sequence" mode="property_list" />
+<xsl:apply-templates select="xs:complexType/xs:sequence/xs:element" mode="DECLARE" />
 </xsl:template>
 
 <xsl:template match = "xs:element" mode = "DEFINE_ELEMENT_AS_IDS"> 
-class _T_<xsl:value-of select="@name" />(IDS):
-<xsl:text>    </xsl:text>"""<xsl:apply-templates select="xs:annotation" />"""
-  <xsl:apply-templates select="xs:complexType/xs:sequence" mode="property_list" />
+from .utilities import  _T_ids_properties,_T_code,_T_time
+
+<xsl:text>&#xA;&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(_T_IDS):
+<xsl:text>&#xA;    </xsl:text><xsl:apply-templates select="xs:annotation" />
+
+<xsl:apply-templates select="xs:complexType/xs:sequence/xs:element" mode="DECLARE" />
 </xsl:template>
 
 </xsl:stylesheet>

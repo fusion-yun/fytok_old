@@ -56,6 +56,8 @@ class Equilibrium(_T_equilibrium):
             Poloidal plane coordinate   : $(\rho,\theta,\phi)$
         ```
     """
+    
+    _plugin_registry={}
 
     TimeSlice = _T_equilibrium_time_slice
 
@@ -132,8 +134,8 @@ class Equilibrium(_T_equilibrium):
 
         if boundary and eq.boundary is not _not_found_:
 
-            boundary_points = np.vstack([eq.boundary.outline.r,
-                                         eq.boundary.outline.z]).T
+            boundary_points = np.vstack([eq.boundary.outline.r.__array__(),
+                                         eq.boundary.outline.z.__array__()]).T
 
             axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='solid',
                                        linewidth=0.5, fill=False, closed=True))
@@ -147,10 +149,10 @@ class Equilibrium(_T_equilibrium):
             #     axis.add_patch(plt.Polygon(np.vstack([r0, z0]).T, color='b', linestyle=':',
             #                                linewidth=1.0, fill=False, closed=True))
 
-            boundary_points = np.vstack([eq.boundary_separatrix.outline.r,
-                                         eq.boundary_separatrix.outline.z]).T
+            separatrix_outline = np.vstack([eq.boundary_separatrix.outline.r.__array__(),
+                                            eq.boundary_separatrix.outline.z.__array__()]).T
 
-            axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='dashed',
+            axis.add_patch(plt.Polygon(separatrix_outline, color='r', linestyle='dashed',
                                        linewidth=0.5, fill=False, closed=False))
             axis.plot([], [], 'r--', label="Separatrix")
 
@@ -167,10 +169,10 @@ class Equilibrium(_T_equilibrium):
             if eq.profiles_2d[-1].grid_type.name == "rectangular":
                 dim1 = eq.profiles_2d[-1].grid.dim1
                 dim2 = eq.profiles_2d[-1].grid.dim2
-                axis.contour(dim1, dim2, eq.profiles_2d[-1].psi.T, linewidths=0.2, levels=contours)
+                axis.contour(dim1, dim2, eq.profiles_2d[-1].psi.__array__().T, linewidths=0.2, levels=contours)
             elif eq.profiles_2d[-1].r is not _not_found_:
-                axis.contour(eq.profiles_2d[-1].r, eq.profiles_2d[-1].z,
-                             eq.profiles_2d[-1].psi, linewidths=0.2, levels=contours)
+                axis.contour(eq.profiles_2d[-1].r.__array__(), eq.profiles_2d[-1].z.__array__(),
+                             eq.profiles_2d[-1].psi.__array__(), linewidths=0.2, levels=contours)
 
             # if isinstance(contour, int):
             #     c_list = range(0, self.coordinate_system.mesh.shape[0], int(
