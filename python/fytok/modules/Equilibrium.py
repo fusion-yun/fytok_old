@@ -59,12 +59,17 @@ class Equilibrium(_T_equilibrium):
 
     TimeSlice = _T_equilibrium_time_slice
 
-    def update(self,  *args,
-               #    wall: Wall = _undefined_,
-               #    pf_active: PFActive = _undefined_,
-               #    core_profiles=_undefined_,
-               **kwargs):
-        super().update(*args, **kwargs)
+    def update(self,  *args, dt=None, **kwargs):
+        """
+            update the last time slice, base on profiles_2d[-1].psi
+        """
+
+        if dt is None:  # 更新最后一个时间点
+            self.time_slice[-1].update(*args, **kwargs)
+        else:  # 新建一个时间点
+            self.time_slice.append(self.TimeSlice(*args, **kwargs))
+
+        super().update(*args, dt=dt, **kwargs)
 
     def plot(self, axis=None, *args,
              scalar_field={},
@@ -73,6 +78,7 @@ class Equilibrium(_T_equilibrium):
              separatrix=True,
              contours=16,
              oxpoints=True,
+             time_slice=None,
              **kwargs):
         """
             plot o-point,x-point,lcfs,separatrix and contour of psi
@@ -83,11 +89,17 @@ class Equilibrium(_T_equilibrium):
         if axis is None:
             axis = plt.gca()
 
+        if time_slice is None:
+            time_slice = -1
+
+        if isinstance(time_slice, int):
+            eq = self.time_slice[time_slice]
+        else:
+            raise NotImplementedError(f"TODO: 时间插值 time_slice={time_slice} ")
+
         # R = self.profiles_2d.r
         # Z = self.profiles_2d.z
         # psi = self.profiles_2d.psi(R, Z)
-        eq = self.time_slice[-1]
-
         # axis.contour(R[1:-1, 1:-1], Z[1:-1, 1:-1], psi[1:-1, 1:-1], levels=levels, linewidths=0.2)
         if oxpoints is not False:
 

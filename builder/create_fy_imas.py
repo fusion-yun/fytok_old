@@ -17,15 +17,7 @@ import pathlib
 import collections.abc
 import subprocess
 
-FYTOK_REV = subprocess.check_output(['git', 'describe', '--always', '--dirty']).strip().decode('utf-8')
 
-IDS_LIST = []
-
-DD_VERSION = "3.38.1"
-
-DD_PATH = pathlib.Path(f"/fuyun/software/data-dictionary/{DD_VERSION}/dd_{DD_VERSION}")
-
-FY_PATH = pathlib.Path(__file__).parent.parent
 
 
 def convert_value(proc: saxonc.PySaxonProcessor, v):
@@ -60,12 +52,24 @@ def apply_xslt(source_file=None, stylesheet_file=None, target_path="./", **kwarg
 
 
 if __name__ == "__main__":
+    
+    DD_VERSION = "3.38.1"
+    
+    DD_BASE_DIR = pathlib.Path(f"/home/salmon/workspace/data-dictionary")   
+        
+    DD_GIT_DESCRIBE = subprocess.check_output(['git', 'describe', '--always', '--dirty'], cwd=DD_BASE_DIR).strip().decode('utf-8')
 
+    FY_BASE_DIR = pathlib.Path(__file__).parent.parent
+
+    FY_GIT_DESCRIBE = subprocess.check_output(['git', 'describe', '--always', '--dirty'], cwd=FY_BASE_DIR).strip().decode('utf-8')
+    
     # apply_xslt(source_file=(DD_PATH/"include/IDSDef.xml").as_posix(),
     #            target_path=(FY_PATH/"python/_imas").as_posix(),
     #            FYTOK_REV=FYTOK_REV)
-    apply_xslt(source_file="/home/salmon/workspace/data-dictionary/dd_physics_data_dictionary.xsd",
-               stylesheet_file="/home/salmon/workspace/fytok/builder/fy_imas_xsd.xsl",
-               target_path="/home/salmon/workspace/fytok/python/_imas",
-               FYTOK_REV=FYTOK_REV,
-               BASE_DIR="/home/salmon/workspace/data-dictionary/")
+    
+    apply_xslt(stylesheet_file  =(FY_BASE_DIR/"builder/fy_imas_xsd.xsl").as_posix(),
+               target_path      =(FY_BASE_DIR/"python/_imas").as_posix(),
+               source_file      =(DD_BASE_DIR/"dd_physics_data_dictionary.xsd").as_posix(),
+               FY_GIT_DESCRIBE  =FY_GIT_DESCRIBE,
+               DD_GIT_DESCRIBE  =DD_GIT_DESCRIBE,
+               DD_BASE_DIR      =DD_BASE_DIR.as_posix()+"/")

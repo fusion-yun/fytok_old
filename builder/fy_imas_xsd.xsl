@@ -24,13 +24,13 @@
 <xsl:output method="text" version="1.0" encoding="UTF-8" indent="no"/>
 <!-- <xsl:strip-space elements="*"/> -->
 
-<xsl:param name="FYTOK_REV" select="'0.0.1'" />
+<xsl:param name="FY_GIT_DESCRIBE" as="xs:string" />
 
 <xsl:param name="DD_GIT_DESCRIBE" as="xs:string" />
 
-<xsl:param name="BASE_DIR" as="xs:string" required='true' />
+<xsl:param name="DD_BASE_DIR" as="xs:string" required='true' />
 
-<!-- <xsl:param name="FILE_HEADER" select=" N/A " /> -->
+<!-- <xsl:param name="FILE_HEADER_ANNOTATION" select=" N/A " /> -->
 
 <xsl:param name="line-width" select="80" />
    
@@ -156,31 +156,38 @@
     </xsl:choose>
   </xsl:variable>  
   <xsl:choose>
-    <xsl:when test="$d[@maxOccurs]">List[<xsl:value-of select="$t2" />]</xsl:when>    
-    <xsl:otherwise><xsl:value-of select="$t2" /></xsl:otherwise>
+    <xsl:when test="not($d[@maxOccurs])"><xsl:value-of select="$t2" /></xsl:when>
+    <xsl:when test="$d/@maxOccurs='unbounded' and $d/xs:annotation/xs:appinfo/coordinate1='time'">TimeSeriesAoS[<xsl:value-of select="$t2" />]</xsl:when>    
+    <xsl:otherwise>List[<xsl:value-of select="$t2" />]</xsl:otherwise>
   </xsl:choose> 
 </xsl:function>
 
-<xsl:variable name="FILE_HEADER" >
-
+<xsl:variable name="FILE_HEADER_ANNOTATION" >
   Generate at <xsl:value-of  select="current-dateTime()" />
+  by FyTok (rev: <xsl:value-of select="$FY_GIT_DESCRIBE"/>): builder/fy_imas_xsd.xsl
+</xsl:variable>
 
-  by FyTok (rev: <xsl:value-of select="$FYTOK_REV"/>): builder/fy_imas.xsl
 
-  from ITER Physics Data Model/IMAS DD, 
-    version = <xsl:value-of select="/IDSs/version" />
-    cocos   = <xsl:value-of select="/IDSs/cocos" />  
+<xsl:variable name="FILE_HEADER_COMMON_IMPORT" >
+import numpy as np
+from enum import Enum
+
+from spdm.data.Node import Node
+from spdm.data.List import List
+from spdm.data.Dict import Dict
+from spdm.data.TimeSeries import TimeSeriesAoS,TimeSeries
+from spdm.data.Function import Function 
+from spdm.data.sp_property import sp_property
+
 </xsl:variable>
 
 <!-- Directory:  _imas  -->
 <xsl:template match="/*">  
-  
-  <xsl:call-template name="file_ids_py"/>
 
-  <xsl:call-template name="file_init_py" />
+  <xsl:apply-templates select="xs:element[@name='physics_data_dictionary']" mode="file_init_py" />
 
   <!-- Scan for all constant identify ENUM -->
-  <xsl:variable name="constants_list"   select="for $f in xs:include  return (document(concat($BASE_DIR,$f/@schemaLocation))//doc_identifier ) " />
+  <xsl:variable name="constants_list"   select="for $f in xs:include  return (document(concat($DD_BASE_DIR,$f/@schemaLocation))//doc_identifier ) " />
   <xsl:variable name="constants_list"   select="for $f in $constants_list  return  if (starts-with($f,'utilities/')) then $f else () " />
   
   <xsl:call-template name="file_utilities_py">    
@@ -188,62 +195,45 @@
   </xsl:call-template>
 
   <xsl:for-each select="xs:include[@schemaLocation!='utilities/dd_support.xsd']">
-      <xsl:apply-templates select="document(concat($BASE_DIR,./@schemaLocation))/*" mode="file_idsname_py" />   
+      <xsl:apply-templates select="document(concat($DD_BASE_DIR,./@schemaLocation))/*" mode="file_idsname_py" />   
   </xsl:for-each>
    
 </xsl:template>
 
 
 <!-- FILE:  __init__.py -->
-<xsl:template name="file_init_py">
-  <xsl:result-document method="text" href="__init__.py">"""
-  This package containes the _FyTok_ wrapper of IMAS/dd/ids
+<xsl:template match="xs:element[@name='physics_data_dictionary']" mode="file_init_py">
+<xsl:result-document method="text" href="__init__.py">"""
+  <xsl:value-of select="xs:annotation/xs:documentation"/>
 
-  <xsl:copy-of select="$FILE_HEADER" />
+  From IMAS/dd (<xsl:value-of select="$DD_GIT_DESCRIBE"/>)
+  <xsl:copy-of select="$FILE_HEADER_ANNOTATION" />
 """
-__fy_rev__  ="<xsl:value-of select="$FYTOK_REV"/>"
-__version__ ="<xsl:value-of select="/IDSs/version"/>"
-__cocos__   ="<xsl:value-of select="/IDSs/cocos"/>"
+__fy_rev__  ="<xsl:value-of select="$FY_GIT_DESCRIBE"/>"
+__version__ ="<xsl:value-of select="$DD_GIT_DESCRIBE"/>"
+__cocos__   ="<xsl:value-of select="xs:annotation/xs:appinfo/cocos"/>"
         
-    <xsl:for-each select="xs:include[@schemaLocation!='utilities/dd_support.xsd']">
-          <xsl:variable name="ids_name" select="document(concat($BASE_DIR,@schemaLocation))/*/xs:element/@name" />    
-from .<xsl:value-of select="$ids_name"/>  import _T_<xsl:value-of select="$ids_name"/> 
-    </xsl:for-each>
+<xsl:for-each select="xs:complexType/xs:sequence/xs:element">
+from .<xsl:value-of select="@ref"/>  import _T_<xsl:value-of select="@ref"/> 
+</xsl:for-each>
 
-  </xsl:result-document>
-</xsl:template>
-
-<!-- FILE:  _ids.py -->
-<xsl:template name="file_ids_py">
-  <xsl:result-document method="text" href="_ids.py">""" 
-    This package containes the base classes for  _FyTok_ _imas_wrapper <xsl:copy-of select="$FILE_HEADER" />
-"""
-<xsl:text>&#xA;</xsl:text>
-<xsl:value-of select="unparsed-text('fy_imas_ids.py')"/>    
-  </xsl:result-document>
+</xsl:result-document>
 </xsl:template>
 
 <!-- FILE:  utilities.py -->
 <xsl:template name="file_utilities_py">
   <xsl:param name="constants_list"/>
-  
-  <xsl:variable name="root" select="document(concat($BASE_DIR,'utilities/dd_support.xsd'))/*"/>
+  <xsl:variable name="root" select="document(concat($DD_BASE_DIR,'utilities/dd_support.xsd'))/*"/>
+<xsl:result-document method="text" href='utilities.py'>""" 
+    This module containes the _FyTok_ wrapper of IMAS/dd/utilities.py 
 
-  <xsl:result-document method="text" href='utilities.py'>""" 
-  This module containes the _FyTok_ wrapper of IMAS/dd/utilities.py 
-  <xsl:copy-of select="$FILE_HEADER" />
+  <xsl:copy-of select="$FILE_HEADER_ANNOTATION" />
 """
-import numpy as np
-from spdm.data.Node import Node
-from spdm.data.Function import Function 
-from spdm.data.List import List
-from spdm.data.Dict import Dict
-from spdm.data.sp_property import sp_property
-from enum import Enum
+    <xsl:copy-of select="$FILE_HEADER_COMMON_IMPORT" />
 
 
     <xsl:for-each select="$constants_list"> 
-      <xsl:apply-templates  select = "document(concat($BASE_DIR, .))/constants" mode = "CONSTANTS_IDENTIFY" /> 
+      <xsl:apply-templates  select = "document(concat($DD_BASE_DIR, .))/constants" mode = "CONSTANTS_IDENTIFY" /> 
     </xsl:for-each>
 
     <xsl:apply-templates select="$root/xs:complexType[my:dep_level(.,$root)=0]" mode="DEFINE"/>
@@ -255,6 +245,8 @@ from enum import Enum
     <xsl:apply-templates select="$root/xs:complexType[my:dep_level(.,$root)=6]" mode="DEFINE"/>
 
     <xsl:apply-templates select="$root/xs:element" mode="DEFINE"/>
+    <xsl:value-of select="unparsed-text('fy_imas.py')"/>
+
 
   </xsl:result-document>   
 </xsl:template>
@@ -265,17 +257,12 @@ from enum import Enum
   <!-- <xsl:message> DEBUG: create <xsl:value-of select="$filename"/>.py </xsl:message> -->
   <xsl:result-document method="text" href="{$filename}.py"  >"""
   This module containes the _FyTok_ wrapper of IMAS/dd/<xsl:value-of select="xs:element/@name" />  
-  <xsl:copy-of select="$FILE_HEADER" /> 
-"""
-import numpy as np
-from spdm.data.Node import Node
-from spdm.data.Function import Function 
-from spdm.data.List import List
-from spdm.data.Dict import Dict
-from spdm.data.sp_property import sp_property
-from enum import Enum
 
-from ._ids import IDS, Module, TimeSlice
+  <xsl:copy-of select="$FILE_HEADER_ANNOTATION" /> 
+"""
+<xsl:copy-of select="$FILE_HEADER_COMMON_IMPORT" />
+
+from .utilities import IDS, Module
 
     <xsl:variable name="cls_list" select="for $k in //@type return if (not(xs:complexType[@name=$k]) and $k!='flt_type'  and $k!='flt_1d_type') then concat('_T_', $k) else ()"/>
     <xsl:variable name="cls_list" select="distinct-values($cls_list)"/>
@@ -286,14 +273,14 @@ from .utilities import <xsl:value-of select="string-join(distinct-values($cls_li
 
     <xsl:variable name="cls_list1" select="for $k in //doc_identifier return if (starts-with($k,'utilities/')) then   $k  else ()"/>
     <xsl:for-each select="distinct-values($cls_list1)">
-from .utilities import _E_<xsl:value-of select = "document(concat($BASE_DIR, .))/constants/@name"  /> 
+from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, .))/constants/@name"  /> 
     </xsl:for-each>
 
     <xsl:text>&#xA;    </xsl:text>
 
     <xsl:variable name="cls_list" select="for $k in //doc_identifier return if (not(starts-with($k,'utilities/'))) then   $k  else ()"/>
     <xsl:for-each select="distinct-values($cls_list)">
-      <xsl:apply-templates  select = "document(concat($BASE_DIR, .))/constants" mode = "CONSTANTS_IDENTIFY" /> 
+      <xsl:apply-templates  select = "document(concat($DD_BASE_DIR, .))/constants" mode = "CONSTANTS_IDENTIFY" /> 
     </xsl:for-each>
 
     <xsl:variable name="root" select="." />
@@ -390,7 +377,7 @@ from .utilities import _E_<xsl:value-of select = "document(concat($BASE_DIR, .))
 <xsl:text>    </xsl:text>"""<xsl:value-of select="my:line-wrap(xs:annotation/xs:documentation, $line-width, 7)"/>"""
       </xsl:when>
       <xsl:when test = "not(@ref) and (xs:annotation/xs:appinfo/doc_identifier)">
-<xsl:text>&#xA;    </xsl:text><xsl:value-of select="my:py_keyword(@name)"/> : _E_<xsl:value-of select = "document(concat($BASE_DIR, xs:annotation/xs:appinfo/doc_identifier))/constants/@name"  />  =  sp_property()
+<xsl:text>&#xA;    </xsl:text><xsl:value-of select="my:py_keyword(@name)"/> : _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, xs:annotation/xs:appinfo/doc_identifier))/constants/@name"  />  =  sp_property()
 <xsl:text>    </xsl:text>"""<xsl:value-of select="my:line-wrap(xs:annotation/xs:documentation, $line-width, 7)"/>"""
       </xsl:when>      
     </xsl:choose>
@@ -401,7 +388,6 @@ from .utilities import _E_<xsl:value-of select = "document(concat($BASE_DIR, .))
 <xsl:template match = "xs:complexType" mode = "DEFINE"> 
   <xsl:variable name="base_class">
       <xsl:choose>      
-        <!-- <xsl:when test="xs:sequence/xs:element[@name='time' and @type='flt_type']">TimeSlice</xsl:when> -->
         <xsl:when test="xs:sequence/xs:element[@name='code']" >Module</xsl:when>
         <xsl:otherwise>Dict[Node]</xsl:otherwise>
     </xsl:choose>
