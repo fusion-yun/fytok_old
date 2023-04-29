@@ -1,19 +1,11 @@
 import pathlib
-import sys
 
 import numpy as np
-import pandas as pd
-from scipy import constants
-# from spdm.numlib.smooth import rms_residual
 from spdm.data.File import File
-from spdm.data.Function import function_like
 from spdm.utils.logger import logger
-from spdm.view.plot_profiles import plot_profiles, sp_figure
+from spdm.view.plot_profiles import sp_figure
 
-from fytok.load_profiles import (load_core_profiles, load_core_source,
-                                 load_core_transport, load_equilibrium)
 from fytok.Tokamak import Tokamak
-from fytok.modules.Equilibrium import Equilibrium
 ###################
 
 
@@ -39,7 +31,10 @@ if __name__ == "__main__":
                                        "coordinate_system": {"psi_norm": np.linspace(0.001, 0.995, 64), "theta": 64}}
                                    }
                           }
-    if True:
+
+    logger.debug(tok.equilibrium.time_slice[0].profiles_1d.rho_tor.__array__())
+
+    if False:
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},
                         "vessel": {"edgecolor": "blue"}},
