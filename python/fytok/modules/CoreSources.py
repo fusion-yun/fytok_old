@@ -5,7 +5,7 @@ from spdm.data.List import List
 from spdm.data.sp_property import sp_property
 
 from .CoreProfiles import CoreProfiles
-from .Utilities import RadialGrid
+from .Utilities import CoreRadialGrid
 
 
 class CoreSourcesSource(_T_core_sources_source):
@@ -24,7 +24,7 @@ class CoreSources(_T_core_sources):
 
     Source = CoreSourcesSource
 
-    grid: RadialGrid = sp_property()
+    grid: CoreRadialGrid = sp_property()
 
     source: List[Source] = sp_property()
 

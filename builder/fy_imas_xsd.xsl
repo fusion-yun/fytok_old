@@ -119,7 +119,7 @@ import numpy as np
 from spdm.data.Node         import Node
 from spdm.data.List         import List
 from spdm.data.Dict         import Dict
-from spdm.data.TimeSeries   import TimeSeriesAoS
+from spdm.data.TimeSeries   import TimeSeriesAoS,TimeSlice
 from spdm.data.Signal       import Signal 
 from spdm.data.Profile      import Profile 
 from spdm.data.sp_property  import sp_property
@@ -330,7 +330,7 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
     <entry key='INT_5D'       >Profile[int]</entry>
     <entry key='INT_6D'       >Profile[int]</entry>
     <entry key='FLT_0D'       >float</entry>
-    <entry key='flt_type'     >Profile[float]</entry>
+    <entry key='flt_type'     >float</entry>
     <entry key='FLT_1D'       >Profile[float]</entry>
     <entry key='flt_1d_type'  >Profile[float]</entry>
     <entry key='FLT_2D'       >Profile[float]</entry>
@@ -427,17 +427,23 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
 
 
 <xsl:template match = "xs:complexType" mode = "DEFINE"> 
-  <xsl:variable name="base_class">
-      <xsl:choose>      
-        <xsl:when test="xs:sequence/xs:element[@name='code']" >_T_Module</xsl:when>
-        <xsl:otherwise>Dict[Node]</xsl:otherwise>
-    </xsl:choose>
-  </xsl:variable>
-
-<xsl:text>&#xA;&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(<xsl:value-of select="$base_class" />):
+<xsl:choose>      
+<xsl:when test="xs:sequence/xs:element[@name='code']" >
+<xsl:text>&#xA;&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(_T_Module):
+<xsl:text>    </xsl:text><xsl:apply-templates select="xs:annotation" />
+<xsl:apply-templates select="xs:sequence/xs:element[@name!='code']" mode="DECLARE" />
+</xsl:when>
+<xsl:when test="xs:sequence/xs:element[@name='time'] and xs:sequence/xs:element[@name='time'][@type='flt_type'] " >
+<xsl:text>&#xA;&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(TimeSlice):
+<xsl:text>    </xsl:text><xsl:apply-templates select="xs:annotation" />
+<xsl:apply-templates select="xs:sequence/xs:element[@name!='time']" mode="DECLARE" />
+</xsl:when>
+<xsl:otherwise>
+<xsl:text>&#xA;&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(Dict[Node]):
 <xsl:text>    </xsl:text><xsl:apply-templates select="xs:annotation" />
 <xsl:apply-templates select="xs:sequence/xs:element" mode="DECLARE" />
-
+</xsl:otherwise>
+</xsl:choose>
 </xsl:template>
 
 <xsl:template match = "constants[@identifier='yes']" mode = "CONSTANTS_IDENTIFY"> 
@@ -459,9 +465,9 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
 </xsl:template>
 
 <xsl:template match = "xs:element" mode = "DEFINE_ELEMENT_AS_IDS"> 
-from .utilities import  _T_ids_properties,_T_code,_T_time
 
-<xsl:text>&#xA;&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(_T_IDS):
+from .utilities import  _T_ids_properties,_T_code,_T_time
+<xsl:text>&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(_T_IDS):
 <xsl:text>&#xA;    </xsl:text><xsl:apply-templates select="xs:annotation" />
 
 <xsl:apply-templates select="xs:complexType/xs:sequence/xs:element" mode="DECLARE" />

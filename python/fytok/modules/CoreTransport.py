@@ -6,13 +6,13 @@ from spdm.data.List import List
 from spdm.data.sp_property import sp_property
 
 from .CoreProfiles import CoreProfiles
-from .Utilities import RadialGrid
+from .Utilities import CoreRadialGrid
 
 
 class CoreTransportProfiles1D(_T_core_transport_model_profiles_1d):
 
     @property
-    def grid(self) -> RadialGrid:
+    def grid(self) -> CoreRadialGrid:
         return self._parent.grid
 
     # grid_d: RadialGrid = sp_property(
@@ -20,17 +20,17 @@ class CoreTransportProfiles1D(_T_core_transport_model_profiles_1d):
     #     doc="""Grid for effective diffusivity and parallel conductivity""")
 
     @cached_property
-    def grid_d(self) -> RadialGrid:
+    def grid_d(self) -> CoreRadialGrid:
         rho_tor_norm = self.grid.rho_tor_norm
         return self.grid.remesh("rho_tor_norm", 0.5*(rho_tor_norm[:-1]+rho_tor_norm[1:]))
 
     @cached_property
-    def grid_v(self) -> RadialGrid:
+    def grid_v(self) -> CoreRadialGrid:
         """ Grid for effective convections  """
         return self.grid.remesh("rho_tor_norm", self.grid.rho_tor_norm)
 
     @cached_property
-    def grid_flux(self) -> RadialGrid:
+    def grid_flux(self) -> CoreRadialGrid:
         """ Grid for fluxes  """
         return self.grid.remesh("rho_tor_norm", 0.5*(self.grid.rho_tor_norm[:-1]+self.grid.rho_tor_norm[1:]))
 
@@ -40,7 +40,7 @@ class CoreTransportModel(_T_core_transport_model):
     _IDS = "core_transport/model"
 
     @ property
-    def grid(self) -> RadialGrid:
+    def grid(self) -> CoreRadialGrid:
         return self._parent.grid
 
     profiles_1d: CoreTransportProfiles1D = sp_property()
@@ -54,7 +54,7 @@ class CoreTransport(_T_core_transport):
 
     Model = CoreTransportModel
 
-    grid: RadialGrid = sp_property()
+    grid: CoreRadialGrid = sp_property()
 
     model: List[Model] = sp_property()
 

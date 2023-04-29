@@ -2,8 +2,7 @@
 
 import collections.abc
 
-from spdm.data.TimeSeries import TimeSeries
-from spdm.utils.Pluggable import Pluggable,try_init_plugin
+from spdm.utils.Pluggable import Pluggable, try_init_plugin
 import numpy as np
 
 
@@ -21,7 +20,7 @@ class _T_Code(_T_code):
 
 
 class _T_Module(Dict[Node], Pluggable):
-    _plugin_registry={}
+    _plugin_registry = {}
 
     @classmethod
     def _plugin_guess_name(cls,  *args, code=None, **kwargs):
@@ -57,8 +56,8 @@ class _T_Module(Dict[Node], Pluggable):
 class _T_IDS(_T_Module):
     """ Base class of IDS """
 
-    _plugin_registry={}
-    
+    _plugin_registry = {}
+
     ids_properties: _T_ids_properties = sp_property()
     """Interface Data Structure properties. This element identifies the node above as an IDS"""
 

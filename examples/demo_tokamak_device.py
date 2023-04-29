@@ -39,16 +39,15 @@ if __name__ == "__main__":
                                        "coordinate_system": {"psi_norm": np.linspace(0.001, 0.995, 64), "theta": 64}}
                                    }
                           }
-    
-
     if True:
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},
                         "vessel": {"edgecolor": "blue"}},
                   pf_active={"facecolor": 'red'},
-                  equilibrium={
-                      #   "contours": [0, 2],
-                      "boundary": True,
-                      "separatrix": True,
-                  }
+                  equilibrium=False,
+                  #   {
+                  #       #   "contours": [0, 2],
+                  #       "boundary": True,
+                  #       "separatrix": True,
+                  #   }
                   ) .savefig(output_path/"tokamak.svg", transparent=True)
