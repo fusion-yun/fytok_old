@@ -238,7 +238,7 @@ class MagneticSurfaceAnalyze(Dict[Node]):
 
         F = np.asarray(self._psirz)
 
-        if not isinstance(psi, (collections.abc.typing.Sequence, np.ndarray)):
+        if not isinstance(psi, (collections.abc.Sequence, np.ndarray)):
             psi = [psi]
 
         psi = np.asarray(psi, dtype=float)
@@ -477,8 +477,8 @@ class MagneticSurfaceAnalyze(Dict[Node]):
         return self.grid.xy[:, :, 1]
 
     def rz(self, dim1=None, dim2=None, grid_type=None):
-        if (grid_type == self._grid_type_index and dim1 == self._psi_norm and dim2 == self._theta) \
-                or (dim1 == None and dim2 == None and grid_type == None):
+        if (grid_type == self._grid_type_index and all(dim1 == self._psi_norm) and all(dim2 == self._theta)) \
+                or (dim1 is None and dim2 is None and grid_type is None):
             return self.grid.xy[:, :, 0], self.grid.xy[:, :, 1]
         else:
             raise NotImplementedError()
@@ -882,47 +882,44 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
 
 
 class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
+    
     def _coord(self) -> MagneticSurfaceAnalyze:
         return self._parent._coord()
+    
+    def _rz(self)->typing.Tuple[np.ndarray,np.ndarray]:
+        if getattr(self,"_t_rz",None) is None:
+            self._t_rz=self._coord().rz(self.grid.dim1, self.grid.dim2, grid_type=self.grid_type)
+        return  self._t_rz
 
     @sp_property
-    def r(self) -> Profile[float]: return self._coord().r(self.grid.dim1, self.grid.dim2, type=self.grid_type)
+    def r(self) -> Profile[float]:  return self._rz()[0]
 
     @sp_property
-    def z(self) -> Profile[float]: return self._coord().z(self.grid.dim1, self.grid.dim2, type=self.grid_type)
+    def z(self) -> Profile[float]:  return self._rz()[1]
+    
+    @sp_property
+    def psi(self):        return self._coord().psi(self.r,self.z)
 
     @sp_property
-    def psi(self):
-        return self._coord().psirz(self.grid.dim1, self.grid.dim2, type=self.grid_type)
+    def phi(self):        return self._coord().apply_psifunc(self._parent.profiles_1d.phi, self.r,self.z)
 
     @sp_property
-    def phi(self):
-        return self._coord().apply_psifunc(self._parent.profiles_1d.phi, self.grid.dim1, self.grid.dim2, type=self.grid_type)
+    def theta(self):      return self._coord().apply_psifunc(self._parent.profiles_1d.phi,  self.r,self.z)
 
     @sp_property
-    def theta(self):
-        return self._coord().apply_psifunc(self._parent.profiles_1d.phi, self.grid.dim1, self.grid.dim2, type=self.grid_type)
+    def j_tor(self):      return self._coord().apply_psifunc(self._parent.profiles_1d.j_tor,self.r,self.z)
 
     @sp_property
-    def j_tor(self):
-        return self._coord().apply_psifunc(self._parent.profiles_1d.j_tor, self.grid.dim1, self.grid.dim2, type=self.grid_type)
+    def j_parallel(self): return self._coord().apply_psifunc(self._parent.profiles_1d.j_parallel, self.r,self.z)
 
     @sp_property
-    def j_parallel(self):
-        return self._coord().apply_psifunc(self._parent.profiles_1d.j_parallel, self.grid.dim1, self.grid.dim2, type=self.grid_type)
+    def b_field_r(self) -> Profile[float]:   return self._coord().Br(self.r,self.z)
 
     @sp_property
-    def b_field_r(self) -> Profile[float]:
-
-        return self._coord().Br(*self._coord().rz(self.grid.dim1, self.grid.dim2, type=self.grid_type))
+    def b_field_z(self) -> Profile[float]:   return self._coord().Bz(self.r,self.z)
 
     @sp_property
-    def b_field_z(self) -> Profile[float]:
-        return self._coord().Bz(*self._coord().rz(self.grid.dim1, self.grid.dim2, type=self.grid_type))
-
-    @sp_property
-    def b_field_tor(self) -> Profile[float]:
-        return self._coord().Btor(*self._coord().rz(self.grid.dim1, self.grid.dim2, type=self.grid_type))
+    def b_field_tor(self) -> Profile[float]: return self._coord().Btor(self.r,self.z)
 
 
 class EquilibriumBoundary(_T_equilibrium_boundary):
