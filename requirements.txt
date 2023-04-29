@@ -3,4 +3,6 @@ opencv-python
 numpy
 scipy
 sympy
-skimage
+scikit-image
+networkx
+matplotlib

@@ -4,6 +4,7 @@ from _imas.equilibrium import _T_equilibrium, _T_equilibrium_time_slice
 
 from spdm.data.Field import Field
 from spdm.data.Function import Function
+from spdm.data.sp_property import sp_property
 from spdm.utils.logger import logger
 from spdm.utils.tags import _not_found_
 
@@ -60,6 +61,10 @@ class Equilibrium(_T_equilibrium):
     _plugin_registry={}
 
     TimeSlice = _T_equilibrium_time_slice
+
+    @sp_property[float]
+    def time(self):
+        return 1.0
 
     def update(self,  *args, dt=None, **kwargs):
         """

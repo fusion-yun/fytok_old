@@ -13,7 +13,7 @@
       "justMyCode": false,
       "cwd": "${workspaceFolder}/../output",
       "env": {
-        "PYTHONPATH": "${workspaceFolder}/python:${workspaceFolder}/../SpDB/python:${workspaceFolder}/../SpView/python:../fymodule-restricted/python"
+        "PYTHONPATH": "${workspaceFolder}/python:${workspaceFolder}/../SpDB/python:${workspaceFolder}/../fymodule-restricted/python"
       }
     }
   ]

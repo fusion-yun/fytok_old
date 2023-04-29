@@ -3,13 +3,16 @@ import pathlib
 import numpy as np
 from spdm.data.File import File
 from spdm.utils.logger import logger
-from spdm.view.plot_profiles import sp_figure
+from fytok.utils.plot_profiles import sp_figure
 
 from fytok.Tokamak import Tokamak
+from spdm.data.Container import typing_get_origin
+from spdm.data.Profile import Profile
 ###################
 
 
 if __name__ == "__main__":
+    logger.debug(typing_get_origin(Profile[float]))
     logger.info("====== START ========")
     output_path = pathlib.Path('/home/salmon/workspace/output')
 
@@ -25,16 +28,13 @@ if __name__ == "__main__":
 
     tok = Tokamak(device_desc[{"wall", "pf_active", "tf", "magnetics"}])
     tok["equilibrium"] = {**eqdsk_file.dump(),
-                          "code": {"name": "eq_analyze",
+                          "code": {"name": "dummy",
                                    "parameters": {
                                        "boundary": {"psi_norm": 0.995},
                                        "coordinate_system": {"psi_norm": np.linspace(0.001, 0.995, 64), "theta": 64}}
                                    }
                           }
-
-    logger.debug(tok.equilibrium.time_slice[0].profiles_1d.rho_tor.__array__())
-
-    if False:
+    if True:
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},
                         "vessel": {"edgecolor": "blue"}},

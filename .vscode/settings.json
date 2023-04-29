@@ -21,8 +21,8 @@
     "spdm"
   ],
   "python.analysis.extraPaths": [
-    "./python",
-    "./python"
+    "./python", 
+    "/home/salmon/workspace/SpDB/python"
   ],
 
 }
