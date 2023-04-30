@@ -2,7 +2,7 @@ import unittest
 
 import matplotlib.pyplot as plt
 import numpy as np
-from spdm.data.Field import Field
+
 from spdm.utils.logger import logger
 
 

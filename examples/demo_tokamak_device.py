@@ -6,13 +6,14 @@ from spdm.utils.logger import logger
 from fytok.utils.plot_profiles import sp_figure
 
 from fytok.Tokamak import Tokamak
+from fytok.modules.Equilibrium import Equilibrium
 from spdm.data.Container import typing_get_origin
 from spdm.data.Profile import Profile
 ###################
 
 
 if __name__ == "__main__":
-    logger.debug(typing_get_origin(Profile[float]))
+     
     logger.info("====== START ========")
     output_path = pathlib.Path('/home/salmon/workspace/output')
 
@@ -27,13 +28,13 @@ if __name__ == "__main__":
     # Initialize Tokamak
 
     tok = Tokamak(device_desc[{"wall", "pf_active", "tf", "magnetics"}])
-    tok["equilibrium"] = {**eqdsk_file.dump(),
-                          "code": {"name": "eq_analyze",
-                                   "parameters": {
-                                       "boundary": {"psi_norm": 0.995},
-                                       "coordinate_system": {"psi_norm": np.linspace(0.001, 0.995, 64), "theta": 64}}
-                                   }
-                          }
+    tok["equilibrium"]={**eqdsk_file.dump(),
+                     "code": {"name": "eq_analyze",
+                              "parameters": {
+                                  "boundary": {"psi_norm": 0.995},
+                                  "coordinate_system": {"psi_norm": np.linspace(0.001, 0.995, 64), "theta": 64}}
+                              }
+                      }
     if True:
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},

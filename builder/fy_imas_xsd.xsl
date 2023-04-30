@@ -114,7 +114,7 @@
 
 
 <xsl:variable name="FILE_HEADER_COMMON_IMPORT" >
-from enum import Enum
+from enum import IntFlag
 import numpy as np
 from spdm.data.Node         import Node
 from spdm.data.List         import List
@@ -447,7 +447,7 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
 </xsl:template>
 
 <xsl:template match = "constants[@identifier='yes']" mode = "CONSTANTS_IDENTIFY"> 
-<xsl:text>&#xA;&#xA;</xsl:text>class _E_<xsl:value-of select="@name"/>(Enum):
+<xsl:text>&#xA;&#xA;</xsl:text>class _E_<xsl:value-of select="@name"/>(IntFlag):
 <xsl:text>&#xA;    </xsl:text>"""<xsl:value-of select="my:line-wrap(header, $line-width, 7)"/>
      xpath: <xsl:value-of select="dd_instance/@xpath"/>
     """

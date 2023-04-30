@@ -2,7 +2,7 @@
 import numpy as np
 from _imas.equilibrium import _T_equilibrium, _T_equilibrium_time_slice
 
-from spdm.data.Field import Field
+
 from spdm.data.Function import Function
 from spdm.data.sp_property import sp_property
 from spdm.utils.logger import logger

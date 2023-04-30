@@ -2,7 +2,7 @@
 
 import collections.abc
 
-from spdm.utils.Pluggable import Pluggable, try_init_plugin
+from spdm.utils.Pluggable import Pluggable
 import numpy as np
 
 
@@ -23,29 +23,28 @@ class _T_Module(Dict[Node], Pluggable):
     _plugin_registry = {}
 
     @classmethod
-    def _plugin_guess_name(cls,  *args, code=None, **kwargs):
-        if len(args) == 0 and code is None:
-            return []
+    def __dispatch__init__(cls, name_list, self, code, *args, **kwargs) -> None:
+        if name_list is None:
+            module_name = None
+            if isinstance(code, collections.abc.Mapping):
+                module_name = code.get("name", None)
 
-        module_name = None
-        if isinstance(code, collections.abc.Mapping):
-            module_name = code.get("name", None)
+            if module_name is None and isinstance(args[0], collections.abc.Mapping):
+                module_name = args[0].get("code", {}).get("name", None)
+            elif hasattr(args[0], "__as_entry__"):
+                module_name = args[0].__as_entry__().get("code/name", None)
 
-        if module_name is None and isinstance(args[0], collections.abc.Mapping):
-            module_name = args[0].get("code", {}).get("name", None)
-        elif hasattr(args[0], "__as_entry__"):
-            module_name = args[0].__as_entry__().get("code/name", None)
+            if module_name is not None:
+                prefix: str = getattr(cls, "_plugin_prefix", cls.__name__.lower())
+                if prefix.startswith('_t_'):
+                    prefix = prefix[3:]
+                name_list = [f"fytok/plugins/{prefix}/{module_name}"]
 
-        if module_name is not None:
-            prefix: str = getattr(cls, "_plugin_prefix", cls.__name__.lower())
-            if prefix.startswith('_t_'):
-                prefix = prefix[3:]
-            return [f"fytok/plugins/{prefix}/{module_name}"]
-        else:
-            return []
+        super().__dispatch__init__(name_list, self, code, *args, **kwargs)
 
     def __init__(self, *args, **kwargs):
-        if self.__class__ is _T_Module or "_plugin_registry" in vars(self.__class__) and try_init_plugin(self, *args, **kwargs):
+        if self.__class__ is _T_Module or "_plugin_registry" in vars(self.__class__):
+            _T_Module.__dispatch__init__(None, self, *args, **kwargs)
             return
         super().__init__(*args, **kwargs)
 

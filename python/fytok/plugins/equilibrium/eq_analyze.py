@@ -2,6 +2,7 @@ import collections
 import collections.abc
 import typing
 from dataclasses import dataclass
+from enum import Enum
 from functools import cached_property
 from math import isclose
 
@@ -15,7 +16,7 @@ from _imas.equilibrium import (_T_equilibrium_boundary,
                                _T_equilibrium_time_slice)
 from scipy import constants
 from spdm.data.Dict import Dict
-from spdm.data.Field import Field
+
 from spdm.data.Function import Function, function_like
 from spdm.data.List import List
 from spdm.data.Node import Node
@@ -25,8 +26,9 @@ from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.geometry.CubicSplineCurve import CubicSplineCurve
 from spdm.geometry.GeoObject import GeoObject, _TCoord
 from spdm.geometry.Point import Point
-from spdm.mesh.CurvilinearMesh import CurvilinearMesh
-from spdm.mesh.Mesh import Mesh
+from spdm.grid.CurvilinearMesh import CurvilinearMesh
+from spdm.grid.RectilinearMesh import RectilinearMesh
+from spdm.grid.Grid import Grid
 from spdm.numlib.contours import find_countours
 from spdm.numlib.optimize import find_critical_points
 from spdm.utils.logger import logger
@@ -100,7 +102,7 @@ class MagneticSurfaceAnalyze(Dict[Node]):
     ]
 
     def __init__(self,  *args,
-                 psirz: Field,
+                 psirz: Function,
                  B0: float,
                  R0: float,
                  Ip: float,
@@ -183,7 +185,7 @@ class MagneticSurfaceAnalyze(Dict[Node]):
         opoints = []
         xpoints = []
 
-        for r, z, psi, D in find_critical_points(self._psirz, *self._psirz.mesh.bbox, tolerance=self._psirz.mesh.dx):
+        for r, z, psi, D in find_critical_points(self._psirz, *self._psirz.grid.bbox, tolerance=self._psirz.grid.dx):
             p = OXPoint(r, z, psi)
 
             if D < 0.0:  # saddle/X-point
@@ -199,7 +201,7 @@ class MagneticSurfaceAnalyze(Dict[Node]):
             raise RuntimeError(f"Can not find o-point!")
         else:
 
-            bbox = self._psirz.mesh.bbox
+            bbox = self._psirz.grid.bbox
             Rmid = (bbox[0] + bbox[2])/2.0
             Zmid = (bbox[1] + bbox[3])/2.0
 
@@ -234,7 +236,7 @@ class MagneticSurfaceAnalyze(Dict[Node]):
             if len(xpts) > 0:
                 x_point = xpts[0]
 
-        R, Z = self._psirz.mesh.xy
+        R, Z = self._psirz.grid.xy
 
         F = np.asarray(self._psirz)
 
@@ -301,7 +303,7 @@ class MagneticSurfaceAnalyze(Dict[Node]):
                         theta = (theta-theta.min())/(theta.max()-theta.min())
                         points = np.vstack([points, points[:1]])
 
-                        self._mesh = [theta]
+                        self._grid = [theta]
                         self._points = points
                     surf = CubicSplineCurve(points, [theta])
 
@@ -459,10 +461,10 @@ class MagneticSurfaceAnalyze(Dict[Node]):
             )
 
     ###############################
-    # mesh
+    # grid
 
     @cached_property
-    def grid(self) -> Mesh:
+    def grid(self) -> Grid:
 
         if self._grid_type_index != 13:
             raise NotImplementedError(self._grid_type_index)
@@ -477,11 +479,18 @@ class MagneticSurfaceAnalyze(Dict[Node]):
         return self.grid.xy[:, :, 1]
 
     def rz(self, dim1=None, dim2=None, grid_type=None):
+        """生成二维grid。用于将磁面坐标grid（默认）转换为目标grid
+        """
+        logger.debug((int(grid_type), str(grid_type.name)))
+
         if (grid_type == self._grid_type_index and all(dim1 == self._psi_norm) and all(dim2 == self._theta)) \
                 or (dim1 is None and dim2 is None and grid_type is None):
             return self.grid.xy[:, :, 0], self.grid.xy[:, :, 1]
+        elif int(grid_type) == 1 or getattr(grid_type, 'name', 'unnamed') == 'rectangle':
+            rect_grid = RectilinearMesh(dim1, dim2)
+            return rect_grid.xy[:, :, 0], rect_grid.xy[:, :, 1]
         else:
-            raise NotImplementedError()
+            raise NotImplementedError(f"grid_type.index={int(grid_type)} name='{getattr(grid_type,'name','unnamed')}'")
 
     def psi(self, r: _TCoord, z: _TCoord, *args, **kwargs) -> _TCoord:
         return self._psirz(r, z, *args, **kwargs)
@@ -583,7 +592,7 @@ class MagneticSurfaceAnalyze(Dict[Node]):
 
         field = self._psirz
 
-        R, Z = field.mesh.xy
+        R, Z = field.grid.xy
 
         F = np.asarray(field(R, Z), dtype=float)
 
@@ -862,10 +871,10 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
     def elongation(self) -> Profile[float]: return self._shape_property().elongation(self.psi_norm)
 
     @sp_property
-    def triangularity(self) -> Profile[float]	: return self._shape_property().triangularity(self.psi_norm)
+    def triangularity(self) -> Profile[float]: return self._shape_property().triangularity(self.psi_norm)
 
     @sp_property
-    def triangularity_upper(self) -> Profile[float]	: return self._shape_property().triangularity_upper(self.psi_norm)
+    def triangularity_upper(self) -> Profile[float]: return self._shape_property().triangularity_upper(self.psi_norm)
 
     @sp_property
     def triangularity_lower(self) -> Profile[float]: return self._shape_property().triangularity_lower(self.psi_norm)
@@ -882,44 +891,44 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
 
 
 class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
-    
+
     def _coord(self) -> MagneticSurfaceAnalyze:
         return self._parent._coord()
-    
-    def _rz(self)->typing.Tuple[np.ndarray,np.ndarray]:
-        if getattr(self,"_t_rz",None) is None:
-            self._t_rz=self._coord().rz(self.grid.dim1, self.grid.dim2, grid_type=self.grid_type)
-        return  self._t_rz
+
+    def _rz(self) -> typing.Tuple[np.ndarray, np.ndarray]:
+        if getattr(self, "_t_rz", None) is None:
+            self._t_rz = self._coord().rz(self.grid.dim1, self.grid.dim2, grid_type=self.grid_type)
+        return self._t_rz
 
     @sp_property
-    def r(self) -> Profile[float]:  return self._rz()[0]
+    def r(self) -> Profile[float]: return self._rz()[0]
 
     @sp_property
-    def z(self) -> Profile[float]:  return self._rz()[1]
-    
-    @sp_property
-    def psi(self):        return self._coord().psi(self.r,self.z)
+    def z(self) -> Profile[float]: return self._rz()[1]
 
     @sp_property
-    def phi(self):        return self._coord().apply_psifunc(self._parent.profiles_1d.phi, self.r,self.z)
+    def psi(self): return self._coord().psi(self.r, self.z)
 
     @sp_property
-    def theta(self):      return self._coord().apply_psifunc(self._parent.profiles_1d.phi,  self.r,self.z)
+    def phi(self): return self._coord().apply_psifunc(self._parent.profiles_1d.phi, self.r, self.z)
 
     @sp_property
-    def j_tor(self):      return self._coord().apply_psifunc(self._parent.profiles_1d.j_tor,self.r,self.z)
+    def theta(self): return self._coord().apply_psifunc(self._parent.profiles_1d.phi,  self.r, self.z)
 
     @sp_property
-    def j_parallel(self): return self._coord().apply_psifunc(self._parent.profiles_1d.j_parallel, self.r,self.z)
+    def j_tor(self): return self._coord().apply_psifunc(self._parent.profiles_1d.j_tor, self.r, self.z)
 
     @sp_property
-    def b_field_r(self) -> Profile[float]:   return self._coord().Br(self.r,self.z)
+    def j_parallel(self): return self._coord().apply_psifunc(self._parent.profiles_1d.j_parallel, self.r, self.z)
 
     @sp_property
-    def b_field_z(self) -> Profile[float]:   return self._coord().Bz(self.r,self.z)
+    def b_field_r(self) -> Profile[float]: return self._coord().Br(self.r, self.z)
 
     @sp_property
-    def b_field_tor(self) -> Profile[float]: return self._coord().Btor(self.r,self.z)
+    def b_field_z(self) -> Profile[float]: return self._coord().Bz(self.r, self.z)
+
+    @sp_property
+    def b_field_tor(self) -> Profile[float]: return self._coord().Btor(self.r, self.z)
 
 
 class EquilibriumBoundary(_T_equilibrium_boundary):
@@ -983,7 +992,7 @@ class EquilibriumBoundary(_T_equilibrium_boundary):
         return xpt
 
     @sp_property
-    def strike_point(self) -> List[RZTuple]	:
+    def strike_point(self) -> List[RZTuple]:
         return NotImplemented
 
     @sp_property
@@ -1053,10 +1062,10 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
         if psirz is None:
             raise ValueError("No psi found in the equilibrium")
         elif isinstance(psirz, np.ndarray):
-            psirz = Field(psirz,
-                          self.__entry__().get("profiles_2d/0/grid/dim1"),
-                          self.__entry__().get("profiles_2d/0/grid/dim2"),
-                          mesh="rectilinear")
+            psirz = Function(self.__entry__().get("profiles_2d/0/grid/dim1"),
+                             self.__entry__().get("profiles_2d/0/grid/dim2"),
+                             psirz,
+                             grid_type="rectilinear")
 
         elif not isinstance(psirz, Field):
             raise ValueError("psi must be a Field or a numpy array")
