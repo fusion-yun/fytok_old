@@ -23,24 +23,27 @@ class _T_Module(Dict[Node], Pluggable):
     _plugin_registry = {}
 
     @classmethod
-    def __dispatch__init__(cls, name_list, self, code, *args, **kwargs) -> None:
+    def __dispatch__init__(cls, name_list, self,  *args, **kwargs) -> None:
         if name_list is None:
             module_name = None
+            code = kwargs.get("code", None)
             if isinstance(code, collections.abc.Mapping):
                 module_name = code.get("name", None)
 
-            if module_name is None and isinstance(args[0], collections.abc.Mapping):
+            if len(args) == 0:
+                pass
+            elif module_name is None and isinstance(args[0], collections.abc.Mapping):
                 module_name = args[0].get("code", {}).get("name", None)
             elif hasattr(args[0], "__as_entry__"):
                 module_name = args[0].__as_entry__().get("code/name", None)
 
             if module_name is not None:
-                prefix: str = getattr(cls, "_plugin_prefix", cls.__name__.lower())
+                prefix: str = getattr(self.__class__, "_IDS", self.__class__.__name__.lower())
                 if prefix.startswith('_t_'):
                     prefix = prefix[3:]
                 name_list = [f"fytok/plugins/{prefix}/{module_name}"]
 
-        super().__dispatch__init__(name_list, self, code, *args, **kwargs)
+        super().__dispatch__init__(name_list, self, *args, **kwargs)
 
     def __init__(self, *args, **kwargs):
         if self.__class__ is _T_Module or "_plugin_registry" in vars(self.__class__):
