@@ -6,9 +6,6 @@ from spdm.utils.logger import logger
 from fytok.utils.plot_profiles import sp_figure
 
 from fytok.Tokamak import Tokamak
-from fytok.modules.Equilibrium import Equilibrium
-from spdm.data.Container import typing_get_origin
-from spdm.data.Profile import Profile
 ###################
 
 

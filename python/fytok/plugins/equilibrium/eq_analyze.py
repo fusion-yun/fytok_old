@@ -16,7 +16,6 @@ from _imas.equilibrium import (_T_equilibrium_boundary,
                                _T_equilibrium_time_slice)
 from scipy import constants
 from spdm.data.Dict import Dict
-
 from spdm.data.Function import Function, function_like
 from spdm.data.List import List
 from spdm.data.Node import Node
@@ -109,13 +108,13 @@ class MagneticSurfaceAnalyze(Dict[Node]):
                  fpol:     np.ndarray,
                  psi_norm: typing.Union[int, np.ndarray] = 128,
                  theta:    typing.Union[int, np.ndarray] = 32,
-                 grid_type_index=13,
+                 grid_type=13,
                  **kwargs):
         """
             Initialize FluxSurface
         """
         super().__init__(*args, **kwargs)
-        self._grid_type_index = grid_type_index
+        self._grid_type = grid_type
 
         self._psirz = psirz
 
@@ -153,7 +152,7 @@ class MagneticSurfaceAnalyze(Dict[Node]):
         else:
             raise RuntimeError(f"fpol is not defined!")
 
-        logger.debug(f"Create MagneticCoordSystem: type index={self._grid_type_index} primary='psi'  ")
+        logger.debug(f"Create MagneticCoordSystem: type index={self._grid_type} primary='psi'  ")
 
     @property
     def r0(self) -> float:
@@ -165,7 +164,7 @@ class MagneticSurfaceAnalyze(Dict[Node]):
 
     @property
     def grid_type_index(self) -> int:
-        return self._grid_type_index
+        return self._grid_type
 
     @property
     def cocos(self) -> int:
@@ -466,8 +465,8 @@ class MagneticSurfaceAnalyze(Dict[Node]):
     @cached_property
     def grid(self) -> Grid:
 
-        if self._grid_type_index != 13:
-            raise NotImplementedError(self._grid_type_index)
+        if self._grid_type != 13:
+            raise NotImplementedError(self._grid_type)
 
         return CurvilinearMesh([surf for _, surf in self.find_surface_by_psi_norm(self._psi_norm, o_point=True)],
                                [self._psi_norm, self._theta/TWOPI], cycle=[False, True])
@@ -483,7 +482,7 @@ class MagneticSurfaceAnalyze(Dict[Node]):
         """
         logger.debug((int(grid_type), str(grid_type.name)))
 
-        if (grid_type == self._grid_type_index and all(dim1 == self._psi_norm) and all(dim2 == self._theta)) \
+        if (grid_type == self._grid_type and all(dim1 == self._psi_norm) and all(dim2 == self._theta)) \
                 or (dim1 is None and dim2 is None and grid_type is None):
             return self.grid.xy[:, :, 0], self.grid.xy[:, :, 1]
         elif int(grid_type) == 1 or getattr(grid_type, 'name', 'unnamed') == 'rectangle':
@@ -1062,13 +1061,13 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
         if psirz is None:
             raise ValueError("No psi found in the equilibrium")
         elif isinstance(psirz, np.ndarray):
-            psirz = Function(self.__entry__().get("profiles_2d/0/grid/dim1"),
-                             self.__entry__().get("profiles_2d/0/grid/dim2"),
+            psirz = Function(self.get("profiles_2d/0/grid/dim1"),
+                             self.get("profiles_2d/0/grid/dim2"),
                              psirz,
                              grid_type="rectilinear")
 
-        elif not isinstance(psirz, Field):
-            raise ValueError("psi must be a Field or a numpy array")
+        elif not isinstance(psirz, Function):
+            raise ValueError("psi must be a Function or a numpy array")
 
         psi_1d = self.__entry__().get("profiles_1d/psi", _not_found_)
         fpol_1d = self.__entry__().get("profiles_1d/f", _not_found_)
@@ -1088,6 +1087,7 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
             # pprime=self.profiles_1d._entry.get("dpressure_dpsi", None),
             # fpol=function_like(psi_norm, self.profiles_1d._entry.get("f", None)),
             # pprime=function_like(psi_norm, self.profiles_1d._entry.get("dpressure_dpsi", None)),
+            grid_type=self.profiles_2d[0].grid_type,
         )
 
 

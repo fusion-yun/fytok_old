@@ -50,11 +50,11 @@ class EquilibriumATEC(Equilibrium):
 
         # self.time_slice(Equilibrium.TimeSlice(atec.run()), time)
 
-        res = atec_run(ffprime=core_profiles.profiles_1d.ffprime,
-                       ffprime=core_profiles.profiles_1d.pressure_thermal,
-                       coil=pf_active.coil)
+        # res = atec_run(ffprime=core_profiles.profiles_1d.ffprime,
+        #                ffprime=core_profiles.profiles_1d.pressure_thermal,
+        #                coil=pf_active.coil)
 
-        self.time_slice[-1] = Equilibrium.TimeSlice(res)
-
+        # self.time_slice[-1] = Equilibrium.TimeSlice(res)
+        pass
 
 __SP_EXPORT__ = EquilibriumATEC
