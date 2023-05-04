@@ -12,6 +12,7 @@ import collections.abc
 
 from setuptools import find_namespace_packages, setup
 from distutils.command.build_py import build_py
+from distutils.command.build import build
 
 git_describe = subprocess.check_output(['git', 'describe', '--always', '--dirty']).strip().decode('utf-8')
 source_dir = pathlib.Path(__file__).parent
@@ -52,9 +53,19 @@ def create_imas_warpper(dd_path: str,
                         target_path=None,
                         stylesheet_file=None,
                         git_describe=None):
+    if dd_path is None:
+        dd_path = os.environ.get("IMAS_PREFIX", None) or os.environ.get("IMAS_DD_PATH", None)
+
+    if dd_path is None:
+        dd_path = "/home/salmon/workspace/data-dictionary"
+
+    if target_path is None:
+        raise ValueError("target_path is not specified!")
+
+    if stylesheet_file is None:
+        stylesheet_file = (pathlib.Path(__file__).parent/"_build_helper/fy_imas_xsd.xsl")
 
     stylesheet_file = pathlib.Path(stylesheet_file)
-
     if not stylesheet_file.exists():
         raise FileExistsError(f"Can not find stylesheet file! {stylesheet_file}")
 
@@ -63,7 +74,6 @@ def create_imas_warpper(dd_path: str,
     if not dd_file.exists():
         raise FileExistsError(f"Can not find IMAS data dictionary schema files! {dd_file}")
     else:
-
         dd_git_describe = subprocess.check_output(
             ['git', 'describe', '--always', '--dirty'], cwd=dd_path).strip().decode('utf-8')
 
@@ -83,6 +93,35 @@ def create_imas_warpper(dd_path: str,
         executable.transform_to_file(source_file=dd_file.as_posix(), output_file=(target_path/"ids_list").as_posix())
 
 
+class BuildIMASWrapperCommand(build):
+    description = 'Build IMAS Wrapper'
+    user_options = [
+        ('dd-path=', None, 'Path of IMAS data dictionary'),
+        ('target-path=', None, 'Path of IMAS wrapper'),
+        ('stylesheet-file=', None, 'Stylesheet file for generating IMAS wrapper'),
+    ]
+
+    def initialize_options(self):
+        super().initialize_options()
+        self.dd_path = None
+        self.target_path = None
+        self.stylesheet_file = None
+
+    def finalize_options(self):
+        super().finalize_options()
+        pass
+
+    def run(self):
+
+        if self.target_path is None:
+            self.target_path = pathlib.Path(self.build_lib)/f"{self.distribution.get_name()}/_imas"
+
+        create_imas_warpper(dd_path=self.dd_path,
+                            target_path=self.target_path,
+                            stylesheet_file=self.stylesheet_file,
+                            git_describe=git_describe)
+
+
 class BuildPyCommand(build_py):
     description = 'Build __doc__,__version, and IMAS Wrapper'
     user_options = [
@@ -99,6 +138,7 @@ class BuildPyCommand(build_py):
 
     def finalize_options(self):
         super().finalize_options()
+        pass
 
     def run(self):
 
@@ -115,12 +155,6 @@ class BuildPyCommand(build_py):
 
         if self.target_path is None:
             self.target_path = pathlib.Path(self.build_lib)/f"{self.distribution.get_name()}/_imas"
-
-        if self.dd_path is None:
-            self.dd_path = "/home/salmon/workspace/data-dictionary"
-
-        if self.stylesheet_file is None:
-            self.stylesheet_file = (pathlib.Path(__file__).parent/"_build_helper/fy_imas_xsd.xsl")
 
         create_imas_warpper(dd_path=self.dd_path,
                             target_path=self.target_path,
@@ -139,7 +173,10 @@ setup(
     author_email='yuzhi@ipp.ac.cn',
     license='MIT',
 
-    cmdclass={'build_py': BuildPyCommand, },
+    cmdclass={
+        'build_py': BuildPyCommand,
+        'build_imas_wrapper': BuildIMASWrapperCommand,
+    },
 
     packages=find_namespace_packages(include=["fytok", "fytok.*", "_imas", "_imas.*"]),  # 指定需要安装的包
 
