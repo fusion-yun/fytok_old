@@ -58,7 +58,8 @@ def create_imas_warpper(dd_path: str,
     if not stylesheet_file.exists():
         raise FileExistsError(f"Can not find stylesheet file! {stylesheet_file}")
 
-    dd_file = pathlib.Path(dd_path)/"dd_physics_data_dictionary.xsd"
+    dd_path = pathlib.Path(dd_path)
+    dd_file = dd_path/"dd_physics_data_dictionary.xsd"
     if not dd_file.exists():
         raise FileExistsError(f"Can not find IMAS data dictionary schema files! {dd_file}")
     else:
@@ -112,19 +113,19 @@ class BuildPyCommand(build_py):
             with open(build_path/'fytok/__doc__.py', 'w') as f:
                 f.write(f'"""\n{self.distribution.get_long_description()}\n"""')
 
-        # if self.target_path is None:
-        #     self.target_path = pathlib.Path(self.build_lib)/f"{self.distribution.get_name()}/_imas"
+        if self.target_path is None:
+            self.target_path = pathlib.Path(self.build_lib)/f"{self.distribution.get_name()}/_imas"
 
-        # if self.dd_path is None:
-        #     self.dd_path = "/home/salmon/workspace/data-dictionary"
+        if self.dd_path is None:
+            self.dd_path = "/home/salmon/workspace/data-dictionary"
 
-        # if self.stylesheet_file is None:
-        #     self.stylesheet_file = (pathlib.Path(__file__).parent/"_build_helper/fy_dd_wrapper.xsl")
+        if self.stylesheet_file is None:
+            self.stylesheet_file = (pathlib.Path(__file__).parent/"_build_helper/fy_imas_xsd.xsl")
 
-        # create_imas_warpper(dd_path=self.dd_path,
-        #                     target_path=self.target_path,
-        #                     stylesheet_file=self.stylesheet_file,
-        #                     git_describe=git_describe)
+        create_imas_warpper(dd_path=self.dd_path,
+                            target_path=self.target_path,
+                            stylesheet_file=self.stylesheet_file,
+                            git_describe=git_describe)
 
 
 # Setup the package
