@@ -1,4 +1,4 @@
-from _imas.hard_x_rays import _T_hard_x_rays
+from  fytok._imas.hard_x_rays import _T_hard_x_rays
 
 
 class HardXRays(_T_hard_x_rays):

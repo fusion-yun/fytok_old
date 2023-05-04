@@ -1,6 +1,6 @@
 
 
-from _imas import _T_ids
+from  fytok._imas import _T_ids
 
 class GasInjection(IDS):
     r"""Gas injection by a system of pipes and valves

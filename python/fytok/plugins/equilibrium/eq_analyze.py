@@ -7,7 +7,7 @@ from functools import cached_property
 from math import isclose
 
 import numpy as np
-from _imas.equilibrium import (_T_equilibrium_boundary,
+from  fytok._imas.equilibrium import (_T_equilibrium_boundary,
                                _T_equilibrium_boundary_separatrix,
                                _T_equilibrium_global_quantities,
                                _T_equilibrium_global_quantities_magnetic_axis,
@@ -23,7 +23,7 @@ from spdm.data.Profile import Profile
 from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.geometry.CubicSplineCurve import CubicSplineCurve
-from spdm.geometry.GeoObject import GeoObject, _TCoord
+from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Point import Point
 from spdm.grid.CurvilinearMesh import CurvilinearMesh
 from spdm.grid.RectilinearMesh import RectilinearMesh
@@ -42,6 +42,7 @@ EPS = np.finfo(float).eps
 
 TWOPI = 2.0*constants.pi
 
+_T=typing.TypeVar("_T")
 
 @dataclass
 class OXPoint:
@@ -491,34 +492,34 @@ class MagneticSurfaceAnalyze(Dict[Node]):
         else:
             raise NotImplementedError(f"grid_type.index={int(grid_type)} name='{getattr(grid_type,'name','unnamed')}'")
 
-    def psi(self, r: _TCoord, z: _TCoord, *args, **kwargs) -> _TCoord:
+    def psi(self, r: _T, z: _T, *args, **kwargs) -> _T:
         return self._psirz(r, z, *args, **kwargs)
 
-    def psi_norm(self, r: _TCoord, z: _TCoord, *args, **kwargs) -> _TCoord:
+    def psi_norm(self, r: _T, z: _T, *args, **kwargs) -> _T:
         return (self.psi(r, z, *args, **kwargs)-self.psi_magnetic_axis)/(self.psi_boundary-self.psi_magnetic_axis)
 
-    def Br(self, r: _TCoord, z: _TCoord) -> _TCoord:
+    def Br(self, r: _T, z: _T) -> _T:
         return self.psi(r, z, dy=1) / r/TWOPI
 
-    def Bz(self, r: _TCoord, z: _TCoord) -> _TCoord:
+    def Bz(self, r: _T, z: _T) -> _T:
         return -self.psi(r,  z, dx=1) / r/TWOPI
 
-    def Btor(self, r: _TCoord, z: _TCoord) -> _TCoord:
+    def Btor(self, r: _T, z: _T) -> _T:
         return self._fpol(self.psi_norm(r, z)) / r
 
-    def Bpol(self, r: _TCoord, z: _TCoord) -> _TCoord:
+    def Bpol(self, r: _T, z: _T) -> _T:
         r"""
             $B_{pol}= \left|\nabla \psi \right|/2 \pi R $
         """
         return self.grad_psi(r, z) / r / (TWOPI)
 
-    def B2(self, r: _TCoord, z: _TCoord) -> _TCoord:
+    def B2(self, r: _T, z: _T) -> _T:
         return (self.Br(r, z)**2+self.Bz(r, z)**2 + self.Btor(r, z)**2)
 
-    def grad_psi2(self,  r: _TCoord, z: _TCoord) -> _TCoord:
+    def grad_psi2(self,  r: _T, z: _T) -> _T:
         return self.psi(r, z, dx=1)**2+self.psi(r, z, dy=1)**2
 
-    def grad_psi(self,  r: _TCoord, z: _TCoord) -> _TCoord:
+    def grad_psi(self,  r: _T, z: _T) -> _T:
         return np.sqrt(self.grad_psi2(r, z))
 
     ###############################

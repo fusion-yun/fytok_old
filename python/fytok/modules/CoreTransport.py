@@ -1,6 +1,6 @@
 from functools import cached_property
 
-from _imas.core_transport import (_T_core_transport, _T_core_transport_model,
+from  fytok._imas.core_transport import (_T_core_transport, _T_core_transport_model,
                                   _T_core_transport_model_profiles_1d)
 from spdm.data.List import List
 from spdm.data.sp_property import sp_property

@@ -1,5 +1,5 @@
 
-from _imas.radiation import _T_radiation
+from  fytok._imas.radiation import _T_radiation
 
 
 class Radiation(_T_radiation):

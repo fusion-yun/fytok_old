@@ -1,4 +1,4 @@
-from _imas.bremsstrahlung_visible import _T_bremsstrahlung_visible
+from  fytok._imas.bremsstrahlung_visible import _T_bremsstrahlung_visible
 
 
 class BremsstrahlungVisible(_T_bremsstrahlung_visible):

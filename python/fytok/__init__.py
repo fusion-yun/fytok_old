@@ -1,6 +1,6 @@
 __path__ = __import__('pkgutil').extend_path(__path__, __name__)
 
-from .__version__ import __version__
+# from .__version__ import __version__
 
 
 # external_path = (pathlib.Path(__path__[0])/"../../external").resolve()

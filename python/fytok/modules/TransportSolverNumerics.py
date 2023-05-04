@@ -1,4 +1,4 @@
-from _imas.transport_solver_numerics import _T_transport_solver_numerics
+from  fytok._imas.transport_solver_numerics import _T_transport_solver_numerics
 from scipy import constants
 
 from .CoreProfiles import CoreProfiles

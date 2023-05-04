@@ -1,4 +1,4 @@
-from _imas import _T_equilibrium
+from  fytok._imas import _T_equilibrium
 
 from spdm.utils.logger import logger
 from spdm.data.sp_property import sp_property

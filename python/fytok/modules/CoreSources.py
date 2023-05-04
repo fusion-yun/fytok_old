@@ -1,6 +1,6 @@
 
-from _imas import _T_core_sources
-from _imas.core_sources import _T_core_sources_source
+from  fytok._imas import _T_core_sources
+from  fytok._imas.core_sources import _T_core_sources_source
 from spdm.data.List import List
 from spdm.data.sp_property import sp_property
 

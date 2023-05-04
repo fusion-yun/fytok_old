@@ -1,4 +1,4 @@
-from _imas.waves import _T_waves
+from  fytok._imas.waves import _T_waves
 
 
 class Waves(_T_waves):

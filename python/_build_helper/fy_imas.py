@@ -42,8 +42,10 @@ class _T_Module(Dict[Node], Pluggable):
                 if prefix.startswith('_t_'):
                     prefix = prefix[3:]
                 name_list = [f"fytok/plugins/{prefix}/{module_name}"]
-
-        super().__dispatch__init__(name_list, self, *args, **kwargs)
+        if name_list is None or len(name_list) == 0:
+            return super().__init__(self, *args, **kwargs)
+        else:
+            return super().__dispatch__init__(name_list, self, *args, **kwargs)
 
     def __init__(self, *args, **kwargs):
         if self.__class__ is _T_Module or "_plugin_registry" in vars(self.__class__):
