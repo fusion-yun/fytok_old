@@ -7,13 +7,13 @@ from functools import cached_property
 from math import isclose
 
 import numpy as np
-from  fytok._imas.equilibrium import (_T_equilibrium_boundary,
-                               _T_equilibrium_boundary_separatrix,
-                               _T_equilibrium_global_quantities,
-                               _T_equilibrium_global_quantities_magnetic_axis,
-                               _T_equilibrium_profiles_1d,
-                               _T_equilibrium_profiles_2d,
-                               _T_equilibrium_time_slice)
+from fytok._imas.equilibrium import (_T_equilibrium_boundary,
+                                     _T_equilibrium_boundary_separatrix,
+                                     _T_equilibrium_global_quantities,
+                                     _T_equilibrium_global_quantities_magnetic_axis,
+                                     _T_equilibrium_profiles_1d,
+                                     _T_equilibrium_profiles_2d,
+                                     _T_equilibrium_time_slice)
 from scipy import constants
 from spdm.data.Dict import Dict
 from spdm.data.Function import Function, function_like
@@ -42,7 +42,8 @@ EPS = np.finfo(float).eps
 
 TWOPI = 2.0*constants.pi
 
-_T=typing.TypeVar("_T")
+_T = typing.TypeVar("_T")
+
 
 @dataclass
 class OXPoint:
@@ -149,7 +150,7 @@ class MagneticSurfaceAnalyze(Dict[Node]):
         if isinstance(fpol, Function):
             self._fpol = fpol
         elif isinstance(fpol, np.ndarray) and len(fpol) == len(self._psi_norm):
-            self._fpol = function_like(self._psi_norm, fpol)
+            self._fpol = function_like(fpol, self._psi_norm)
         else:
             raise RuntimeError(f"fpol is not defined!")
 
@@ -184,7 +185,6 @@ class MagneticSurfaceAnalyze(Dict[Node]):
     def critical_points(self) -> typing.Tuple[typing.Sequence[OXPoint], typing.Sequence[OXPoint]]:
         opoints = []
         xpoints = []
-
         for r, z, psi, D in find_critical_points(self._psirz, *self._psirz.grid.bbox, tolerance=self._psirz.grid.dx):
             p = OXPoint(r, z, psi)
 
@@ -407,34 +407,28 @@ class MagneticSurfaceAnalyze(Dict[Node]):
             rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard = sbox.T
         if isinstance(rmax, np.ndarray) and np.isclose(rmax[0], rmin[0]):
             return MagneticSurfaceAnalyze.ShapeProperty(
-                # RZ position of the geometric axis of the magnetic surfaces (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the surface)
-                RZTuple1D({"r": function_like(psi_norm, (rmin+rmax)*0.5),
-                           "z": function_like(psi_norm, (zmin+zmax)*0.5)}),
-                # Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary)[m]
-                function_like(psi_norm, (rmax - rmin)*0.5),  # "minor_radius":
-                # Elongation of the plasma boundary. [-]
-                # "elongation":
-                function_like(psi_norm, np.hstack(
-                    [(zmax[1]-zmin[1])/(rmax[1]-rmin[1]), (zmax[1:]-zmin[1:])/(rmax[1:]-rmin[1:])])),
-                # Elongation(upper half w.r.t. geometric axis) of the plasma boundary. [-]
-                # "elongation_upper":
-                function_like(psi_norm, np.hstack([0, (zmax[1:]-(zmax[1:]+zmin[1:])*0.5)/(rmax[1:]-rmin[1:])])),
-                # longation(lower half w.r.t. geometric axis) of the plasma boundary. [-]
-                # elongation_lower":
-                function_like(psi_norm, np.hstack([0, ((zmax[1:]+zmin[1:])*0.5-zmin[1:])/(rmax[1:]-rmin[1:])])),
-                # Triangularity of the plasma boundary. [-]
-                # "triangularity":
-                function_like(psi_norm, np.hstack([0, (rzmax[1:]-rzmin[1:])/(rmax[1:] - rmin[1:])*2])),
-                # Upper triangularity of the plasma boundary. [-]
-                # "triangularity_upper":
-                function_like(psi_norm, np.hstack([0, ((rmax[1:]+rmin[1:])*0.5 - rzmax[1:])/(rmax[1:] - rmin[1:])*2])),
-                # Lower triangularity of the plasma boundary. [-]
-                # "triangularity_lower":
-                function_like(psi_norm, np.hstack([0, ((rmax[1:]+rmin[1:])*0.5 - rzmin[1:])/(rmax[1:] - rmin[1:])*2])),
-                # Radial coordinate(major radius) on the inboard side of the magnetic axis[m]
-                function_like(psi_norm, r_inboard),  # "r_inboard":
-                # Radial coordinate(major radius) on the outboard side of the magnetic axis[m]
-                function_like(psi_norm, r_outboard),  # "r_outboard":
+                {
+                    # RZ position of the geometric axis of the magnetic surfaces (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the surface)
+                    "rz": RZTuple1D({"r": (rmin+rmax)*0.5, "z": (zmin+zmax)*0.5, }),
+                    # Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary)[m]
+                    "minor_radius": (rmax - rmin)*0.5,  #
+                    # Elongation of the plasma boundary. [-]
+                    "elongation":  np.hstack([(zmax[1]-zmin[1])/(rmax[1]-rmin[1]), (zmax[1:]-zmin[1:])/(rmax[1:]-rmin[1:])]),
+                    # Elongation(upper half w.r.t. geometric axis) of the plasma boundary. [-]
+                    "elongation_upper":  np.hstack([0, (zmax[1:]-(zmax[1:]+zmin[1:])*0.5)/(rmax[1:]-rmin[1:])]),
+                    # longation(lower half w.r.t. geometric axis) of the plasma boundary. [-]
+                    "elongation_lower": np.hstack([0, ((zmax[1:]+zmin[1:])*0.5-zmin[1:])/(rmax[1:]-rmin[1:])]),
+                    # Triangularity of the plasma boundary. [-]
+                    "triangularity": np.hstack([0, (rzmax[1:]-rzmin[1:])/(rmax[1:] - rmin[1:])*2]),
+                    # Upper triangularity of the plasma boundary. [-]
+                    "triangularity_upper": np.hstack([0, ((rmax[1:]+rmin[1:])*0.5 - rzmax[1:])/(rmax[1:] - rmin[1:])*2]),
+                    # Lower triangularity of the plasma boundary. [-]
+                    "triangularity_lower": np.hstack([0, ((rmax[1:]+rmin[1:])*0.5 - rzmin[1:])/(rmax[1:] - rmin[1:])*2]),
+                    # Radial coordinate(major radius) on the inboard side of the magnetic axis[m]
+                    "r_inboard": r_inboard,  #
+                    # Radial coordinate(major radius) on the outboard side of the magnetic axis[m]
+                    "r_outboard": r_outboard,  #
+                }
             )
         else:
             return MagneticSurfaceAnalyze.ShapeProperty(
@@ -723,7 +717,7 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
     @sp_property
     def magnetic_shear(self) -> Profile[float]:
         """Magnetic shear, defined as rho_tor/q . dq/drho_tor[-]	 """
-        return self.rho_tor/self.q * function_like(self.rho_tor, self.q).derivative(self.rho_tor)
+        return self.rho_tor/self.q * function_like(self.q, self.rho_tor).derivative(self.rho_tor)
 
     @sp_property
     def phi(self) -> Profile[float]:
@@ -731,11 +725,10 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
             Note:
             $\Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi$
         """
-        return function_like(self.psi_norm, self.dphi_dpsi).antiderivative(self.psi_norm)*(self._coord().psi_boundary-self._coord().psi_magnetic_axis)
+        return function_like(self.dphi_dpsi, self.psi_norm).antiderivative(self.psi_norm)*(self._coord().psi_boundary-self._coord().psi_magnetic_axis)
 
     @sp_property
     def rho_tor(self) -> Profile[float]:
-        """Toroidal flux coordinate. The toroidal field used in its definition is indicated under vacuum_toroidal_field/b0[m]"""
         return np.sqrt(self.phi/(constants.pi * self._coord()._B0))
 
     @sp_property
@@ -745,16 +738,14 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
     @sp_property
     def volume(self) -> Profile[float]:
         """Volume enclosed in the flux surface[m ^ 3]"""
-        return function_like(self.psi, self.dvolume_dpsi).antiderivative(self.psi)
+        return function_like(self.dvolume_dpsi, self.psi).antiderivative(self.psi)
 
     @sp_property
     def surface(self) -> Profile[float]:
-        """Surface area of the toroidal flux surface {dynamic} [m^2]"""
         return self.dvolume_drho_tor*self.gm7
 
     @sp_property
     def dvolume_drho_tor(self) -> Profile[float]:
-        """Radial derivative of the volume enclosed in the flux surface with respect to Rho_Tor[m ^ 2]"""
         return extrapolate_left(self.psi_norm, (TWOPI**2) * self.rho_tor/(self.gm1)/(self._coord()._fvac/self.fpol)/self._coord()._R0)
 
     # @sp_property
@@ -767,7 +758,7 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
     #         x = self.rho_tor
     #         dvdx = self.dvolume_drho_tor
 
-    #     return Function(x, dvdx).antiderivative(self.rho_tor)
+    #     return Function(dvdx,x).antiderivative(self.rho_tor)
 
     @sp_property
     def drho_tor_dpsi(self) -> Profile[float]:
@@ -1055,16 +1046,16 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
         return self._m_coord
 
     def update(self, *args, B0=None, R0=None,  **kwargs):
-        self._cache.clear()
+        self.clear()
 
         psirz = self.__entry__().get("profiles_2d/0/psi", None)
 
         if psirz is None:
             raise ValueError("No psi found in the equilibrium")
         elif isinstance(psirz, np.ndarray):
-            psirz = Function(self.get("profiles_2d/0/grid/dim1"),
+            psirz = Function(psirz,
+                             self.get("profiles_2d/0/grid/dim1"),
                              self.get("profiles_2d/0/grid/dim2"),
-                             psirz,
                              grid_type="rectilinear")
 
         elif not isinstance(psirz, Function):
@@ -1084,10 +1075,10 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
             B0=self._parent.vacuum_toroidal_field.b0[-1] if B0 is None else B0,
             R0=self._parent.vacuum_toroidal_field.r0 if R0 is None else R0,
             Ip=self.global_quantities.ip,
-            fpol=function_like(psi_1d, fpol_1d),
+            fpol=function_like(fpol_1d, psi_1d),
             # pprime=self.profiles_1d._entry.get("dpressure_dpsi", None),
-            # fpol=function_like(psi_norm, self.profiles_1d._entry.get("f", None)),
-            # pprime=function_like(psi_norm, self.profiles_1d._entry.get("dpressure_dpsi", None)),
+            # fpol=function_like(self.profiles_1d._entry.get("f", None),psi_norm),
+            # pprime=function_like( self.profiles_1d._entry.get("dpressure_dpsi", None),psi_norm),
             grid_type=self.profiles_2d[0].grid_type,
         )
 

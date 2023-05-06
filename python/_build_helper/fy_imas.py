@@ -7,19 +7,19 @@ import numpy as np
 
 
 class _T_Library(_T_library):
-    parameters: Dict[Node] = sp_property(type="constant")
+    parameters: SpPropertyClass = sp_property(type="constant")
     """List of the code specific parameters in XML format"""
 
 
 class _T_Code(_T_code):
-    parameters: Dict[Node] = sp_property(type="constant")
+    parameters: SpPropertyClass = sp_property(type="constant")
     """List of the code specific parameters in XML format"""
 
     library: List[_T_Library] = sp_property()
     """List of external libraries used by the code that has produced this IDS"""
 
 
-class _T_Module(Dict[Node], Pluggable):
+class _T_Module(SpPropertyClass, Pluggable):
     _plugin_registry = {}
 
     @classmethod

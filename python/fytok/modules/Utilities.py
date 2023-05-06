@@ -2,12 +2,12 @@ import typing
 from dataclasses import dataclass
 
 import numpy as np
-from  fytok._imas.utilities import _T_rz1d_dynamic_aos, _T_core_radial_grid, _T_rz0d_dynamic_aos
+from fytok._imas.utilities import _T_rz1d_dynamic_aos, _T_core_radial_grid, _T_rz0d_dynamic_aos
 from spdm.data.Dict import Dict
 from spdm.data.Entry import Entry
 from spdm.data.Function import Function, function_like
 from spdm.data.Node import Node
-from spdm.data.sp_property import sp_property
+from spdm.data.sp_property import sp_property, SpPropertyClass
 from spdm.utils.logger import logger
 _T = typing.TypeVar("_T")
 
@@ -43,13 +43,13 @@ class _CoreRadialGrid(_T_core_radial_grid):
             {
                 "psi_magnetic_axis": self.psi_magnetic_axis,
                 "psi_boundary":     self.psi_boundary,
-                "psi":              function_like(axis,  self.psi)(new_axis) if label != "psi_norm" else new_axis,
+                "psi":              function_like(self.psi, axis)(new_axis) if label != "psi_norm" else new_axis,
                 "rho_tor_norm":     new_axis,
-                # rho_pol_norm=Function(axis,  self.rho_pol_norm)(new_axis) if label != "rho_pol_norm" else new_axis,
-                # area=Function(axis,  self.area)(new_axis) if label != "area" else new_axis,
-                # surface=Function(axis,  self.surface)(new_axis) if label != "surface" else new_axis,
-                # volume=Function(axis,  self.volume)(new_axis) if label != "volume" else new_axis,
-                "dvolume_drho_tor": function_like(axis,  self.dvolume_drho_tor)(new_axis),
+                # rho_pol_norm=Function(  self.rho_pol_norm,axis)(new_axis) if label != "rho_pol_norm" else new_axis,
+                # area=     Function(self.area,axis)(new_axis) if label != "area" else new_axis,
+                # surface=  Function(self.surface,axis)(new_axis) if label != "surface" else new_axis,
+                # volume=   Function(self.volume,axis)(new_axis) if label != "volume" else new_axis,
+                "dvolume_drho_tor": function_like(self.dvolume_drho_tor, axis)(new_axis),
             },
             parent=self._parent
         )

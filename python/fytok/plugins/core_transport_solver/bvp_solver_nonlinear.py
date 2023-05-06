@@ -7,11 +7,11 @@ from math import isclose
 from typing import (Tuple)
 
 import numpy as np
-from fytok.transport.CoreProfiles import CoreProfiles
-from fytok.transport.CoreSources import CoreSources
-from fytok.transport.CoreTransport import CoreTransport, TransportCoeff
-from fytok.transport.CoreTransportSolver import CoreTransportSolver
-from fytok.transport.Equilibrium import Equilibrium
+from fytok.modules.CoreProfiles import CoreProfiles
+from fytok.modules.CoreSources import CoreSources
+from fytok.modules.CoreTransport import CoreTransport, TransportCoeff
+from fytok.modules.TransportSolverNumerics import TransportSolverNumerics
+from fytok.modules.Equilibrium import Equilibrium
 from scipy import constants
 from spdm.data.Function import function_like
 from spdm.data.Path import Path
@@ -26,7 +26,7 @@ TOLERANCE = 1.0e-6
 TWO_PI = 2.0 * constants.pi
 
 
-class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
+class CoreTransportSolverBVPNonlinear(TransportSolverNumerics):
     r"""
         Solve transport equations :math:`\rho=\sqrt{ \Phi/\pi B_{0}}`
         See  :cite:`hinton_theory_1976,coster_european_2010,pereverzev_astraautomated_1991`
@@ -103,7 +103,7 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
 
         flux = array_like(x, core_profiles_1d.get("psi_flux", 0))
 
-        yp = function_like(x, y).derivative(x)
+        yp = function_like(y, x).derivative(x)
 
         hyper_diff = self._hyper_diff
 
@@ -148,7 +148,7 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
                 (conductivity_parallel * (x*rho_tor_boundary)**2/fpol2)
             dg = dg - (a * y - b * ym) * inv_tau
             dg = dg + conductivity_parallel*Qimp_k_ns*y
-            dg = dg + function_like(x, C).derivative(x)*y + C*dy
+            dg = dg + function_like(C, x).derivative(x)*y + C*dy
 
         dg = dg*c
 
@@ -333,7 +333,7 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
 
         hyper_diff = self._hyper_diff
 
-        yp = function_like(x, y).derivative(x)
+        yp = function_like(y, x).derivative(x)
 
         inv_tau = self._inv_tau
 
@@ -367,7 +367,7 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
 
         if not isclose(inv_tau, 0.0):
             dg = dg - (a * y - b * ym)*inv_tau + vpr * k_rho_bdry
-            dg = dg + function_like(x, vpr * x * k_phi).derivative(x)*y
+            dg = dg + function_like(vpr * x * k_phi, x).derivative(x)*y
             dg = dg + vpr * x * k_phi * dy
 
         dg = dg*c
@@ -424,7 +424,7 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
 
         gm3 = self._gm3(x)
 
-        yp = function_like(x, y).derivative(x)
+        yp = function_like(y, x).derivative(x)
 
         a = (3/2) * vpr5_3 * y
 
@@ -445,7 +445,7 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
         if not isclose(inv_tau, 0.0):
             dg = dg - (a * y - b * ym)*inv_tau
             dg = dg + vpr5_3 * Qimp_k_ns * y
-            dg = dg + function_like(x,  vpr * (3/4)*k_phi * x * density).derivative(x) * y
+            dg = dg + function_like(vpr * (3/4)*k_phi * x * density, x).derivative(x) * y
             dg = dg + vpr * (3/4)*k_phi * x * density*dy
 
         dg = dg*c
@@ -517,18 +517,16 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
 
         # core_profiles_next. profiles_1d.grid.rho_tor_norm
 
-        # profiles_1d_next["conductivity_parallel"] = function_like(
-        #     rho_tor_norm, core_transport_1d.conductivity_parallel(rho_tor_norm))
+        # profiles_1d_next["conductivity_parallel"] = core_transport_1d.conductivity_parallel(rho_tor_norm)
 
-        # profiles_1d_next["j_total"] = function_like(
-        #     rho_tor_norm, core_transport_1d.j_parallel(rho_tor_norm))
+        # profiles_1d_next["j_total"] = rho_tor_norm, core_transport_1d.j_parallel(rho_tor_norm)
 
         # for idx, var_id in enumerate(var_list):
-        #     profiles_1d_next[var_id] = function_like(rho_tor_norm, sol.y[idx*2])
-        #     profiles_1d_next[var_id[:-1]+[f"{var_id[-1]}_flux"]] = function_like(rho_tor_norm, sol.y[idx*2+1])
+        #     profiles_1d_next[var_id] =  sol.y[idx*2]
+        #     profiles_1d_next[var_id[:-1]+[f"{var_id[-1]}_flux"]] =   sol.y[idx*2+1]
 
     def _gather(self, x: np.ndarray, core_profiles_1d: CoreProfiles.Profiles1D) -> np.ndarray:
-        assert(len(self._var_list) > 0)
+        assert (len(self._var_list) > 0)
         y_list = [
             [array_like(x, core_profiles_1d.get(var, 0)),
              array_like(x, core_profiles_1d.get(var[:-1]+[var[-1]+"_flux"], 0))]
@@ -536,7 +534,7 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
         ]
         return np.vstack(sum(y_list, []))
 
-    def _dispatch(self, x: np.ndarray, y: np.ndarray):
+    def _dispatch(self, y: np.ndarray, x: np.ndarray):
 
         core_profiles = CoreProfiles({
             "profiles_1d": {
@@ -562,8 +560,8 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
         core_profiles_1d = core_profiles.profiles_1d
 
         for idx, (var, *_) in enumerate(self._var_list):
-            core_profiles_1d[var] = function_like(x, y[idx*2])
-            core_profiles_1d[var[:-1]+[var[-1]+"_flux"]] = function_like(x, y[idx*2+1])
+            core_profiles_1d[var] = function_like(y[idx*2], x)
+            core_profiles_1d[var[:-1]+[var[-1]+"_flux"]] = function_like(y[idx*2+1], x)
 
         self.quasi_neutrality_condition(core_profiles.profiles_1d)
 
@@ -660,30 +658,29 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
         self._k_phi = self._k_B + self._k_rho_bdry
 
         # diamagnetic function,$F=R B_\phi$                 [T*m]
-        self._fpol = function_like(rho_tor_norm,  self._eq_next.profiles_1d.fpol(psi_norm))
+        self._fpol = function_like(self._eq_next.profiles_1d.fpol(psi_norm), rho_tor_norm)
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
 
-        self._vpr = function_like(rho_tor_norm, self._eq_next.profiles_1d.dvolume_drho_tor(psi_norm))
+        self._vpr = function_like(self._eq_next.profiles_1d.dvolume_drho_tor(psi_norm), rho_tor_norm)
 
-        self._vprm = function_like(rho_tor_norm,  self._eq_prev.profiles_1d.dvolume_drho_tor(psi_norm))
+        self._vprm = function_like(self._eq_prev.profiles_1d.dvolume_drho_tor(psi_norm), rho_tor_norm)
 
         self._vpr5_3 = np.abs(self._vpr)**(5/3)
 
         self._vpr5_3m = np.abs(self._vprm)**(5/3)
 
         if np.isclose(self._eq_next.profiles_1d.dvolume_drho_tor(psi_norm[0]), 0.0):
-            self._inv_vpr23 = function_like(
-                rho_tor_norm[1:], self._eq_next.profiles_1d.dvolume_drho_tor(psi_norm[1:])**(-2/3))
+            self._inv_vpr23 = function_like(self._eq_next.profiles_1d.dvolume_drho_tor(
+                psi_norm[1:])**(-2/3), rho_tor_norm[1:])
         else:
-            self._inv_vpr23 = function_like(
-                rho_tor_norm,   self._eq_next.profiles_1d.dvolume_drho_tor(psi_norm)**(-2/3))
+            self._inv_vpr23 = function_like(self._eq_next.profiles_1d.dvolume_drho_tor(psi_norm)**(-2/3), rho_tor_norm)
 
         # $q$ safety factor                                 [-]
-        self._qsf = function_like(rho_tor_norm,   self._eq_next.profiles_1d.q(psi_norm))
-        self._gm1 = function_like(rho_tor_norm,   self._eq_next.profiles_1d.gm1(psi_norm))
-        self._gm2 = function_like(rho_tor_norm,   self._eq_next.profiles_1d.gm2(psi_norm))
-        self._gm3 = function_like(rho_tor_norm,   self._eq_next.profiles_1d.gm3(psi_norm))
+        self._qsf = function_like(self._eq_next.profiles_1d.q(psi_norm), rho_tor_norm)
+        self._gm1 = function_like(self._eq_next.profiles_1d.gm1(psi_norm), rho_tor_norm)
+        self._gm2 = function_like(self._eq_next.profiles_1d.gm2(psi_norm), rho_tor_norm)
+        self._gm3 = function_like(self._eq_next.profiles_1d.gm3(psi_norm), rho_tor_norm)
 
         self._Qimp_k_ns = (3*self._k_rho_bdry - self._k_phi * self._vpr.derivative())
 
@@ -813,11 +810,11 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
         # core_profiles_1d = core_profiles_next.profiles_1d
 
         # for idx, (var, *_) in enumerate(self._var_list):
-        #     core_profiles_1d[var] = function_like(sol.x, sol.y[idx*2])
-        #     core_profiles_1d[var[:-1]+[var[-1]+"_flux"]] = function_like(sol.x, sol.y[idx*2+1])
+        #     core_profiles_1d[var] = function_like( sol.y[idx*2],sol.x)
+        #     core_profiles_1d[var[:-1]+[var[-1]+"_flux"]] = function_like(sol.y[idx*2+1],sol.x )
 
         if sol.success:
-            core_profiles_next = self._dispatch(sol.x, sol.y)
+            core_profiles_next = self._dispatch(sol.y, sol.x)
         else:
             core_profiles_next = self._core_profiles_iter
 
@@ -825,7 +822,7 @@ class CoreTransportSolverBVPNonlinear(CoreTransportSolver):
 
         # self.quasi_neutrality_condition(core_profiles_1d)
 
-        core_profiles_1d["rms_residuals"] = function_like((sol.x[:-1] + sol.x[1:])*0.5, sol.rms_residuals)
+        core_profiles_1d["rms_residuals"] = function_like(sol.rms_residuals, (sol.x[:-1] + sol.x[1:])*0.5, )
 
         logger.info(
             f"""Solve transport equations [{'Success' if sol.success else 'Failed'}] :

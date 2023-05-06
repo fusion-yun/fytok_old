@@ -118,11 +118,10 @@ from enum import IntFlag
 import numpy as np
 from spdm.data.Node         import Node
 from spdm.data.List         import List
-from spdm.data.Dict         import Dict
 from spdm.data.TimeSeries   import TimeSeriesAoS,TimeSlice
 from spdm.data.Signal       import Signal 
 from spdm.data.Profile      import Profile 
-from spdm.data.sp_property  import sp_property
+from spdm.data.sp_property  import sp_property,SpPropertyClass
 
 </xsl:variable>
 
@@ -439,7 +438,7 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
 <xsl:apply-templates select="xs:sequence/xs:element[@name!='time']" mode="DECLARE" />
 </xsl:when>
 <xsl:otherwise>
-<xsl:text>&#xA;&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(Dict[Node]):
+<xsl:text>&#xA;&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(SpPropertyClass):
 <xsl:text>    </xsl:text><xsl:apply-templates select="xs:annotation" />
 <xsl:apply-templates select="xs:sequence/xs:element" mode="DECLARE" />
 </xsl:otherwise>
@@ -458,7 +457,7 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
 </xsl:template>
 
 <xsl:template match = "xs:element" mode = "DEFINE"> 
-<xsl:text>&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(Dict[Node]):
+<xsl:text>&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(SpPropertyClass):
 <xsl:text>&#xA;    </xsl:text><xsl:apply-templates select="xs:annotation" />
   
 <xsl:apply-templates select="xs:complexType/xs:sequence/xs:element" mode="DECLARE" />

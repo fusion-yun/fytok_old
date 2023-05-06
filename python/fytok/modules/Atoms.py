@@ -4,7 +4,7 @@ from spdm.data.Dict import Dict
 from spdm.data.Entry import Entry
 from spdm.data.Function import Function
 from spdm.data.Node import Node
-from spdm.data.sp_property import sp_property
+from spdm.data.sp_property import sp_property, SpPropertyClass
 
 atoms = {
     "e": {
@@ -72,14 +72,14 @@ nuclear_reaction = {
         "products": ["He", "n"],
         "energy": 13.5e6,  # eV
         "reactivities":
-        Function(
-            # eV
-            np.array([0.20e3, 0.30e3, 0.40e3, 0.50e3, 0.60e3, 0.70e3, 0.80e3, 1.00e3, 1.25e3, 1.30e3, 1.50e3, 1.75e3, 1.80e3,
-                      2.00e3, 2.50e3, 3.00e3, 4.00e3, 5.00e3, 6.00e3, 8.00e3, 10.0e3, 12.0e3, 15.0e3, 20.0e3, 30.0e3, 40.0e3, 50.0e3, ]),
-            # m^3/s
+        Function(  # m^3/s
             np.array([1.254e-32, 7.292e-31, 9.344e-30, 5.697e-29, 2.253e-28, 6.740e-28, 1.662e-27, 6.857e-27, 2.546e-26, 3.174e-26, 6.923e-26,
-                     1.539e-25, 1.773e-25, 2.977e-25, 8.425e-25, 1.867e-24, 5.974e-24, 1.366e-23, 2.554e-23, 6.222e-23, 1.136e-22, 1.747e-22,
-                     2.740e-22, 4.330e-22, 6.681e-22, 7.998e-22, 8.649e-22, ])
+                      1.539e-25, 1.773e-25, 2.977e-25, 8.425e-25, 1.867e-24, 5.974e-24, 1.366e-23, 2.554e-23, 6.222e-23, 1.136e-22, 1.747e-22,
+                      2.740e-22, 4.330e-22, 6.681e-22, 7.998e-22, 8.649e-22, ],
+                     # eV
+                     np.array([0.20e3, 0.30e3, 0.40e3, 0.50e3, 0.60e3, 0.70e3, 0.80e3, 1.00e3, 1.25e3, 1.30e3, 1.50e3, 1.75e3, 1.80e3,
+                               2.00e3, 2.50e3, 3.00e3, 4.00e3, 5.00e3, 6.00e3, 8.00e3, 10.0e3, 12.0e3, 15.0e3, 20.0e3, 30.0e3, 40.0e3, 50.0e3, ]),
+                     )
         )
     }
 }

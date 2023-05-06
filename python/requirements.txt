@@ -1,8 +1,6 @@
-spdm
-opencv-python
-numpy
-scipy
-sympy
-scikit-image
-networkx
-matplotlib
+numpy>=1.24.0
+scipy>=1.10.0
+sympy>=1.11.0
+scikit-image==0.20.0
+networkx>=3.0
+matplotlib>=3.7.0

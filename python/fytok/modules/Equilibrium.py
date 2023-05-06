@@ -4,9 +4,8 @@ from fytok._imas.equilibrium import _T_equilibrium, _T_equilibrium_time_slice
 
 
 from spdm.data.Function import Function
-from spdm.data.sp_property import sp_property
+from spdm.data.sp_property import sp_property, SpPropertyClass
 from spdm.utils.logger import logger
-from spdm.utils.tags import _not_found_
 
 # from .PFActive import PFActive
 # from .Wall import Wall
@@ -57,8 +56,8 @@ class Equilibrium(_T_equilibrium):
             Poloidal plane coordinate   : $(\rho,\theta,\phi)$
         ```
     """
-    
-    _plugin_registry={}
+
+    _plugin_registry = {}
 
     TimeSlice = _T_equilibrium_time_slice
 
@@ -137,7 +136,7 @@ class Equilibrium(_T_equilibrium):
                           horizontalalignment='center',
                           verticalalignment='center')
 
-        if boundary and eq.boundary is not _not_found_:
+        if boundary and eq.boundary is not None:
 
             boundary_points = np.vstack([eq.boundary.outline.r.__array__(),
                                          eq.boundary.outline.z.__array__()]).T
@@ -147,7 +146,7 @@ class Equilibrium(_T_equilibrium):
 
             axis.plot([], [], 'g-', label="Boundary")
 
-        if separatrix and eq.boundary_separatrix.outline.r is not _not_found_:
+        if separatrix and eq.boundary_separatrix.outline.r is not None:
             # r0 = self._entry.get("boundary_separatrix.outline.r", None)
             # z0 = self._entry.get("boundary_separatrix.outline.z", None)
             # if r0 is not None and z0 is not None:
@@ -167,7 +166,7 @@ class Equilibrium(_T_equilibrium):
                           horizontalalignment='center',
                           verticalalignment='center')
 
-        if contours and eq.profiles_2d[-1].grid_type is not _not_found_:
+        if contours and eq.profiles_2d[-1].grid_type is not None:
             if contours is True:
                 contours = 16
 
@@ -175,7 +174,7 @@ class Equilibrium(_T_equilibrium):
                 dim1 = eq.profiles_2d[-1].grid.dim1
                 dim2 = eq.profiles_2d[-1].grid.dim2
                 axis.contour(dim1, dim2, eq.profiles_2d[-1].psi.__array__().T, linewidths=0.2, levels=contours)
-            elif eq.profiles_2d[-1].r is not _not_found_:
+            elif eq.profiles_2d[-1].r is not None:
                 axis.contour(eq.profiles_2d[-1].r.__array__(), eq.profiles_2d[-1].z.__array__(),
                              eq.profiles_2d[-1].psi.__array__(), linewidths=0.2, levels=contours)
 

@@ -1,18 +1,19 @@
 import sys
 from math import log
 from operator import contains, eq
-from fytok.transport.CoreProfiles import CoreProfiles
-from fytok.transport.CoreTransport import CoreTransport
 
 import numpy as np
 import pandas as pd
 import scipy.constants
-from fytok.constants.Atoms import atoms
+from fytok.modules.Atoms import atoms
+from fytok.modules.CoreProfiles import CoreProfiles
+from fytok.modules.CoreTransport import CoreTransport
+from fytok.modules.Equilibrium import Equilibrium
 from fytok.Tokamak import TWOPI, Tokamak
-from fytok.transport.Equilibrium import Equilibrium
-from spdm.data.File import File
-from spdm.data import Function, PiecewiseFunction
 from scipy import constants
+from spdm.data import Function, PiecewiseFunction
+from spdm.data.File import File
+from spdm.data.Function import function_like
 from spdm.numlib.smooth import rms_residual, smooth_1d
 from spdm.utils.logger import logger
 from spdm.utils.plot_profiles import plot_profiles, sp_figure
@@ -67,11 +68,11 @@ if __name__ == "__main__":
     r_ped = 0.96  # np.sqrt(0.88)
     i_ped = np.argmin(np.abs(bs_r_norm-r_ped))
 
-    b_Te = Function(bs_r_norm, smooth_1d(bs_r_norm, baseline["TE"].values, i_end=i_ped-10, window_len=21)*1000)
-    b_Ti = Function(bs_r_norm, smooth_1d(bs_r_norm, baseline["TI"].values, i_end=i_ped-10, window_len=21)*1000)
-    b_ne = Function(bs_r_norm, smooth_1d(bs_r_norm, baseline["NE"].values, i_end=i_ped-10, window_len=21)*1.0e19)
-    b_nDT = Function(bs_r_norm, smooth_1d(bs_r_norm, baseline["Nd+t"].values, i_end=i_ped-10, window_len=21)*1.0e19)
-    b_nHe = Function(bs_r_norm, smooth_1d(bs_r_norm, baseline["Nalf"].values, i_end=i_ped-10, window_len=21)*1.0e19)
+    b_Te =  function_like( smooth_1d(bs_r_norm, baseline["TE"].values, i_end=i_ped-10, window_len=21)*1000,bs_r_norm,)
+    b_Ti =  function_like( smooth_1d(bs_r_norm, baseline["TI"].values, i_end=i_ped-10, window_len=21)*1000,bs_r_norm,)
+    b_ne =  function_like( smooth_1d(bs_r_norm, baseline["NE"].values, i_end=i_ped-10, window_len=21)*1.0e19,bs_r_norm,)
+    b_nDT = function_like( smooth_1d(bs_r_norm, baseline["Nd+t"].values, i_end=i_ped-10, window_len=21)*1.0e19,bs_r_norm,)
+    b_nHe = function_like( smooth_1d(bs_r_norm, baseline["Nalf"].values, i_end=i_ped-10, window_len=21)*1.0e19,bs_r_norm,)
 
     # b_nDT = b_ne * (1.0 - 0.02*4 - 0.0012*18) - b_nHe*2.0
 

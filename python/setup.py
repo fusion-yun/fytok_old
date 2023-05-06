@@ -4,15 +4,15 @@
 # Created Time: 2015-12-28 21:58:47
 #
 
+import collections.abc
 import os
 import pathlib
 import pprint
 import subprocess
-import collections.abc
+from setuptools.command.build_py import build_py
+from setuptools import Command
 
 from setuptools import find_namespace_packages, setup
-from distutils.command.build_py import build_py
-from distutils.command.build import build
 
 git_describe = subprocess.check_output(['git', 'describe', '--always', '--dirty']).strip().decode('utf-8')
 source_dir = pathlib.Path(__file__).parent
@@ -93,7 +93,7 @@ def create_imas_warpper(dd_path: str,
         executable.transform_to_file(source_file=dd_file.as_posix(), output_file=(target_path/"ids_list").as_posix())
 
 
-class BuildIMASWrapperCommand(build):
+class BuildIMASWrapperCommand(Command):
     description = 'Build IMAS Wrapper'
     user_options = [
         ('dd-path=', None, 'Path of IMAS data dictionary'),
@@ -102,19 +102,17 @@ class BuildIMASWrapperCommand(build):
     ]
 
     def initialize_options(self):
-        super().initialize_options()
         self.dd_path = None
         self.target_path = None
         self.stylesheet_file = None
 
     def finalize_options(self):
-        super().finalize_options()
         pass
 
     def run(self):
 
         if self.target_path is None:
-            self.target_path = pathlib.Path(self.build_lib)/f"{self.distribution.get_name()}/_imas"
+            self.target_path = pathlib.Path(__file__).parent/f"{self.distribution.get_name()}/_imas"
 
         create_imas_warpper(dd_path=self.dd_path,
                             target_path=self.target_path,
@@ -180,7 +178,7 @@ setup(
 
     packages=find_namespace_packages(include=["fytok", "fytok.*", "_imas", "_imas.*"]),  # 指定需要安装的包
 
-    # requires=list(requirements),              # 项目运行依赖的第三方包
+    # requires=requirements,              # 项目运行依赖的第三方包
 
     setup_requires=['saxonche'],        # 项目构建依赖的第三方包
 

@@ -28,9 +28,9 @@ class NeoClassical(CoreTransport.Model):
                          ** kwargs)
 
     def update(self, *args,
-                equilibrium: Equilibrium,
-                core_profiles: CoreProfiles,
-                **kwargs) -> float:
+               equilibrium: Equilibrium,
+               core_profiles: CoreProfiles,
+               **kwargs) -> float:
         residual = super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
         eV = constants.electron_volt
@@ -83,8 +83,8 @@ class NeoClassical(CoreTransport.Model):
         ###########################################################################################
         # Sec 14.11 Chang-Hinton formula for \Chi_i
         # Shafranov shift
-        delta_ = Function(rho_tor_norm,
-                          equilibrium_1d.geometric_axis.r(psi_norm)-R0).derivative(rho_tor_norm)/rho_tor_lcfs
+        delta_ = function_like(equilibrium_1d.geometric_axis.r(psi_norm)-R0,
+                          rho_tor_norm).derivative(rho_tor_norm)/rho_tor_lcfs
 
         # impurity ions
         nZ2_imp = np.sum([(imp.z_ion_1d(rho_tor_norm)**2)*imp.density(rho_tor_norm)
@@ -160,8 +160,8 @@ class NeoClassical(CoreTransport.Model):
                                              "a": ion.a,
                                              "z": ion.z,
                                              "is_impurity":  ion.is_impurity,
-                                             "energy": {"d": function_like(rho_tor_norm, chi_i)},
-                                             "particles": {"d": function_like(rho_tor_norm, chi_i/3.0)}
+                                             "energy": {"d": function_like(chi_i, rho_tor_norm)},
+                                             "particles": {"d": function_like(chi_i/3.0, rho_tor_norm)}
                                          })
 
                 #########################################################################
@@ -195,7 +195,7 @@ class NeoClassical(CoreTransport.Model):
 
         eta = eta_s*zeff/(1-phi)/(1.0-C*phi)*(1.0+0.27*(zeff-1.0))/(1.0+0.47*(zeff-1.0))
 
-        self.profiles_1d["conductivity_parallel"] = function_like(rho_tor_norm,  1.0/eta)
+        self.profiles_1d["conductivity_parallel"] = function_like(1.0/eta, rho_tor_norm)
 
         #########################################################################
         #  Sec 14.12 Bootstrap current
@@ -205,8 +205,8 @@ class NeoClassical(CoreTransport.Model):
                                  - j_bootstrap * ft_e/(2.4+5.4*ft_e+2.6*ft_e**2) * Pe
                                  * fpol * q / rho_tor_norm / rho_tor_lcfs**2 / (2.0*constants.pi*B0))
 
-        self.profiles_1d["j_bootstrap"] = function_like(rho_tor_norm, j_bootstrap)
-        self.profiles_1d["j_ohmic"] = function_like(rho_tor_norm, core_profiles_1d.e_field.parallel(rho_tor_norm)/eta)
+        self.profiles_1d["j_bootstrap"] = function_like(j_bootstrap, rho_tor_norm)
+        self.profiles_1d["j_ohmic"] = function_like(core_profiles_1d.e_field.parallel(rho_tor_norm)/eta, rho_tor_norm)
 
         return residual
 

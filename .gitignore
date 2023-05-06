@@ -128,3 +128,4 @@ dmypy.json
 
 # Generated files
 python/fytok/_imas*
+**/obsolete/
