@@ -4,25 +4,11 @@
   "python.testing.pytestEnabled": false,
   "python.testing.nosetestsEnabled": false,
   "python.testing.promptToConfigure": false,
-  // "python.autoComplete.extraPaths": [
-  //   "${workspaceFolder}/../SpDB/python",
-  //   "${workspaceFolder}/../SpFlow/python",
-  //   "${workspaceFolder}/../SpView/python",
-  //   "${workspaceFolder}/python"
-  // ],
-  // "python.analysis.extraPaths": [
-  //   "${workspaceFolder}/../SpDB/python",
-  //   "${workspaceFolder}/../SpFlow/python",
-  //   "${workspaceFolder}/../SpView/python",
-  //   "${workspaceFolder}/python"
-  // ],
+ 
   "cSpell.words": [
     "fytok",
     "spdm"
   ],
-  "python.analysis.extraPaths": [
-    "./python", 
-    "/home/salmon/workspace/SpDB/python"
-  ],
+ 
 
 }

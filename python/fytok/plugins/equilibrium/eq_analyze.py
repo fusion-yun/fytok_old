@@ -7,15 +7,16 @@ from functools import cached_property
 from math import isclose
 
 import numpy as np
-from fytok._imas.equilibrium import (_T_equilibrium_boundary,
-                                     _T_equilibrium_boundary_separatrix,
-                                     _T_equilibrium_global_quantities,
-                                     _T_equilibrium_global_quantities_magnetic_axis,
-                                     _T_equilibrium_profiles_1d,
-                                     _T_equilibrium_profiles_2d,
-                                     _T_equilibrium_time_slice)
+from fytok._imas.equilibrium import (
+    _T_equilibrium_boundary, _T_equilibrium_boundary_separatrix,
+    _T_equilibrium_global_quantities,
+    _T_equilibrium_global_quantities_magnetic_axis, _T_equilibrium_profiles_1d,
+    _T_equilibrium_profiles_2d, _T_equilibrium_time_slice)
+from fytok.modules.Equilibrium import Equilibrium
+from fytok.modules.Utilities import RZTuple, RZTuple1D
 from scipy import constants
 from spdm.data.Dict import Dict
+from spdm.data.Field import Field
 from spdm.data.Function import Function, function_like
 from spdm.data.List import List
 from spdm.data.Node import Node
@@ -26,16 +27,14 @@ from spdm.geometry.CubicSplineCurve import CubicSplineCurve
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Point import Point
 from spdm.grid.CurvilinearMesh import CurvilinearMesh
-from spdm.grid.RectilinearMesh import RectilinearMesh
 from spdm.grid.Grid import Grid
+from spdm.grid.RectilinearMesh import RectilinearMesh
 from spdm.numlib.contours import find_countours
 from spdm.numlib.optimize import find_critical_points
 from spdm.utils.logger import logger
 from spdm.utils.misc import convert_to_named_tuple
 from spdm.utils.tags import _not_found_
-
-from fytok.modules.Equilibrium import Equilibrium
-from fytok.modules.Utilities import RZTuple, RZTuple1D
+from spdm.utils.typing import ArrayType
 
 TOLERANCE = 1.0e-6
 EPS = np.finfo(float).eps
@@ -103,7 +102,7 @@ class MagneticSurfaceAnalyze(Dict[Node]):
     ]
 
     def __init__(self,  *args,
-                 psirz: Function,
+                 psirz: Field,
                  B0: float,
                  R0: float,
                  Ip: float,
@@ -216,7 +215,7 @@ class MagneticSurfaceAnalyze(Dict[Node]):
 
         return opoints, xpoints
 
-    def find_surface(self, psi: typing.Union[float, typing.Sequence] = None, o_point: OXPoint = True) -> typing.Iterator[typing.Tuple[float, GeoObject]]:
+    def find_surface(self, psi:  float | ArrayType | typing.Sequence[float] = None, o_point: OXPoint = True) -> typing.Iterator[typing.Tuple[float, GeoObject]]:
         """
             if o_point is not None:
                 only return  closed surface  enclosed o-point
@@ -246,13 +245,13 @@ class MagneticSurfaceAnalyze(Dict[Node]):
         psi = np.asarray(psi, dtype=float)
 
         if o_point is None or o_point is False:
-            for level, col in find_countours(F, R, Z, levels=psi):
-                for points in col:
+            for level, countour in find_countours(F, R, Z, levels=psi):
+                for points in countour:
                     yield level, CubicSplineCurve(points)
         else:
-            for level, col in find_countours(F, R, Z, levels=psi):
+            for level, countour in find_countours(F, R, Z, levels=psi):
                 surf = None
-                for points in col:
+                for points in countour:
                     theta = np.arctan2(points[:, 0]-o_point.r, points[:, 1]-o_point.z)
 
                     if 1.0 - (max(theta)-min(theta))/TWOPI > 2.0/len(theta):  # open or do not contain o-point
@@ -303,9 +302,7 @@ class MagneticSurfaceAnalyze(Dict[Node]):
                         theta = (theta-theta.min())/(theta.max()-theta.min())
                         points = np.vstack([points, points[:1]])
 
-                        self._grid = [theta]
-                        self._points = points
-                    surf = CubicSplineCurve(points, [theta])
+                    surf = CubicSplineCurve(points, theta)
 
                     yield level, surf
                     break
@@ -459,10 +456,6 @@ class MagneticSurfaceAnalyze(Dict[Node]):
 
     @cached_property
     def grid(self) -> Grid:
-
-        if self._grid_type != 13:
-            raise NotImplementedError(self._grid_type)
-
         return CurvilinearMesh([surf for _, surf in self.find_surface_by_psi_norm(self._psi_norm, o_point=True)],
                                [self._psi_norm, self._theta/TWOPI], cycle=[False, True])
 
@@ -472,19 +465,13 @@ class MagneticSurfaceAnalyze(Dict[Node]):
     def z(self) -> np.ndarray:
         return self.grid.xy[:, :, 1]
 
-    def rz(self, dim1=None, dim2=None, grid_type=None):
-        """生成二维grid。用于将磁面坐标grid（默认）转换为目标grid
-        """
-        logger.debug((int(grid_type), str(grid_type.name)))
-
-        if (grid_type == self._grid_type and all(dim1 == self._psi_norm) and all(dim2 == self._theta)) \
-                or (dim1 is None and dim2 is None and grid_type is None):
+    def rz(self, *args,  **kwargs):
+        if len(args) == 0 and len(kwargs) == 0:
             return self.grid.xy[:, :, 0], self.grid.xy[:, :, 1]
-        elif int(grid_type) == 1 or getattr(grid_type, 'name', 'unnamed') == 'rectangle':
-            rect_grid = RectilinearMesh(dim1, dim2)
-            return rect_grid.xy[:, :, 0], rect_grid.xy[:, :, 1]
         else:
-            raise NotImplementedError(f"grid_type.index={int(grid_type)} name='{getattr(grid_type,'name','unnamed')}'")
+            uv = Grid(*args, **kwargs).points()
+            xy = self.grid.points(*uv)
+            return xy
 
     def psi(self, r: _T, z: _T, *args, **kwargs) -> _T:
         return self._psirz(r, z, *args, **kwargs)
@@ -886,16 +873,15 @@ class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
     def _coord(self) -> MagneticSurfaceAnalyze:
         return self._parent._coord()
 
+    @cached_property
     def _rz(self) -> typing.Tuple[np.ndarray, np.ndarray]:
-        if getattr(self, "_t_rz", None) is None:
-            self._t_rz = self._coord().rz(self.grid.dim1, self.grid.dim2, grid_type=self.grid_type)
-        return self._t_rz
+        return self._coord().rz(self.grid.dim1, self.grid.dim2, grid_type=self.grid_type)
 
     @sp_property
-    def r(self) -> Profile[float]: return self._rz()[0]
+    def r(self) -> Profile[float]: return self._rz[0]
 
     @sp_property
-    def z(self) -> Profile[float]: return self._rz()[1]
+    def z(self) -> Profile[float]: return self._rz[1]
 
     @sp_property
     def psi(self): return self._coord().psi(self.r, self.z)
@@ -1053,13 +1039,13 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
         if psirz is None:
             raise ValueError("No psi found in the equilibrium")
         elif isinstance(psirz, np.ndarray):
-            psirz = Function(psirz,
-                             self.get("profiles_2d/0/grid/dim1"),
-                             self.get("profiles_2d/0/grid/dim2"),
-                             grid_type="rectilinear")
+            psirz = Field(psirz,
+                          self.get("profiles_2d/0/grid/dim1"),
+                          self.get("profiles_2d/0/grid/dim2"),
+                          grid_type="rectilinear")
 
-        elif not isinstance(psirz, Function):
-            raise ValueError("psi must be a Function or a numpy array")
+        elif not isinstance(psirz, Field):
+            raise ValueError("psi must be a Field or a numpy array")
 
         psi_1d = self.__entry__().get("profiles_1d/psi", _not_found_)
         fpol_1d = self.__entry__().get("profiles_1d/f", _not_found_)
