@@ -9,6 +9,7 @@ from scipy import constants
 from spdm.data.List import List
 from spdm.data.Profile import Profile
 from spdm.data.sp_property import sp_property, SpPropertyClass
+from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.utils.logger import logger
 
 from .Utilities import CoreRadialGrid
@@ -200,7 +201,7 @@ class CoreProfiles(_T_core_profiles):
 
     Profiles1D = CoreProfiles1D
 
-    profiles_1d: Profiles1D = sp_property()
+    profiles_1d: TimeSeriesAoS[Profiles1D] = sp_property()
 
     def update(self, *args,  **kwargs) -> None:
         super().update(*args, **kwargs)

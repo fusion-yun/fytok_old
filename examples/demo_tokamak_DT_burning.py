@@ -9,10 +9,10 @@ from scipy import constants
 from spdm.data.File import File
 from spdm.data.Function import function_like
 from spdm.utils.logger import logger
-from spdm.view.plot_profiles import plot_profiles, sp_figure
+from fytok.utils.plot_profiles import plot_profiles, sp_figure
 
-from fytok.load_profiles import (load_core_profiles, load_core_source,
-                                 load_core_transport, load_equilibrium)
+from fytok.utils.load_profiles import (load_core_profiles, load_core_source,
+                                       load_core_transport, load_equilibrium)
 from fytok.Tokamak import Tokamak
 
 ###################
@@ -64,6 +64,7 @@ if __name__ == "__main__":
     r_ped = 0.96  # np.sqrt(0.88)
     i_ped = np.argmin(np.abs(bs_r_norm-r_ped))
 
+    time_slice = -1
     ###################################################################################################
     # Initialize Tokamak
 
@@ -72,7 +73,7 @@ if __name__ == "__main__":
     # Equilibrium
 
     tok["equilibrium"] = {**load_equilibrium(eqdsk_file),
-                          "code": {"name": "fy_equilibrium",
+                          "code": {"name": "eq_analyze",
                                    "parameters": {
                                        "boundary": {"psi_norm": 0.995},
                                        "coordinate_system": {"psi_norm": np.linspace(0.001, 0.995, 64), "theta": 64}}
@@ -92,7 +93,7 @@ if __name__ == "__main__":
                   ) .savefig(output_path/"tokamak.svg", transparent=True)
 
     if True:  # plot tokamak
-        eq_profiles_1d = tok.equilibrium.time_slice[-1].profiles_1d
+        eq_profiles_1d = tok.equilibrium.time_slice[time_slice].profiles_1d
 
         plot_profiles(
             [
@@ -242,7 +243,7 @@ if __name__ == "__main__":
 
         tok.core_profiles["profiles_1d"] = load_core_profiles(profiles, grid=tok.equilibrium.radial_grid)
 
-        core_profile_1d = tok.core_profiles.profiles_1d
+        core_profile_1d = tok.core_profiles.profiles_1d[time_slice]
 
         plot_profiles(
             [
@@ -295,7 +296,7 @@ if __name__ == "__main__":
 
         core_transport_model = tok.core_transport.model_combiner
 
-        core_transport_profiles_1d = core_transport_model.profiles_1d
+        core_transport_profiles_1d = core_transport_model.profiles_1d[time_slice]
 
         # logger.debug([[sp.energy.d for sp in model.profiles_1d.ion] for model in tok.core_transport.model])
         # logger.debug(energy.d)
@@ -361,7 +362,7 @@ if __name__ == "__main__":
         tok.core_sources.refresh(equilibrium=tok.equilibrium,
                                  core_profiles=tok.core_profiles)
 
-        core_source_profiles_1d = tok.core_sources.source_combiner.profiles_1d
+        core_source_profiles_1d = tok.core_sources.source_combiner.profiles_1d[time_slice]
 
         plot_profiles(
             [

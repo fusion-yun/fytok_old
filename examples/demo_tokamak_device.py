@@ -34,9 +34,8 @@ if __name__ == "__main__":
                   wall={"limiter": {"edgecolor": "green"},
                         "vessel": {"edgecolor": "blue"}},
                   pf_active={"facecolor": 'red'},
-                  #   equilibrium={
-                  #       #   "contours": [0, 2],
-                  #       "boundary": True,
-                  #       "separatrix": True,
-                  #   }
+                  equilibrium={  # "contours": [0, 2],
+                      "boundary": True,
+                      "separatrix": True,
+                  }
                   ) .savefig(output_path/"tokamak.svg", transparent=True)

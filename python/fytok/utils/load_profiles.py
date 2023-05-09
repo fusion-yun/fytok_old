@@ -6,7 +6,7 @@ from spdm.data.File import File
 from spdm.data.Function import Function, PiecewiseFunction
 from spdm.numlib.smooth import smooth_1d
 
-from .modules.Utilities import CoreRadialGrid
+from ..modules.Utilities import CoreRadialGrid
 
 
 def load_core_profiles(profiles, grid: CoreRadialGrid):
