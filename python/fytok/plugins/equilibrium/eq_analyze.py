@@ -53,14 +53,6 @@ class OXPoint:
     psi: float
 
 
-def do_extrapolate_left(x, d):
-    if hasattr(d, "__array__"):
-        d = d.__array__()
-
-    d[0] = d[1]+(d[1]-d[2])/(x[1]-x[2])*(x[0]-x[1])
-    return d
-
-
 class MagneticSurfaceAnalyze(Dict[Node]):
     r"""
         Flux surface coordinate system on a square grid of flux and poloidal angle
@@ -494,7 +486,7 @@ class MagneticSurfaceAnalyze(Dict[Node]):
     def grad_psi(self) -> Field: return np.sqrt(self.grad_psi2)
 
     @cached_property
-    def sqrt_grad_psi22(self) -> Field: return np.sqrt(self.psirz.pd(2, 0) * self.psirz(0, 2) + self.psirz.pd(1, 1)**2)
+    def ddpsi(self) -> Field: return np.sqrt(self.psirz.pd(2, 0) * self.psirz.pd(0, 2) + self.psirz.pd(1, 1)**2)
 
     ###############################
     # surface integral
@@ -505,13 +497,13 @@ class MagneticSurfaceAnalyze(Dict[Node]):
     def ddpsi(self):
         r0 = self.o_point.r
         z0 = self.o_point.z
-        return self.sqrt_grad_psi22(r0, z0)
+        return self.ddpsi(r0, z0)
 
-    def _surface_integral(self, func: typing.Callable[[float, float], float] = None, surface_list=None) -> np.ndarray:
+    def _surface_integral(self, func: Function = None, surface_list=None) -> np.ndarray:
         r0 = self.o_point.r
         z0 = self.o_point.z
 
-        ddpsi = self.sqrt_grad_psi22(r0, z0)
+        ddpsi = self.ddpsi(r0, z0)
 
         c0 = TWOPI*r0**2/ddpsi
 
@@ -520,25 +512,27 @@ class MagneticSurfaceAnalyze(Dict[Node]):
         else:
             surface_list = self.find_surface_by_psi_norm(surface_list, o_point=True)
 
-        if func is not None:
-            return np.asarray([(axis.integral(lambda r, z, _func=func, _bpol=self.Bpol:_func(r, z)/_bpol(r, z)) if not np.isclose(p, 0) else func(r0, z0) * c0) for p, axis in surface_list], dtype=float)
-        else:
-            return np.asarray([(axis.integral(lambda r, z, _func=func, _bpol=self.Bpol:1.0/_bpol(r, z)) if not np.isclose(p, 0) else c0) for p, axis in surface_list], dtype=float)
+        if func is None:
+            func = 1.0
+
+        return np.asarray([(axis.integral(func/self.Bpol) if not np.isclose(p, 0) else func(r0, z0) * c0) for p, axis in surface_list], dtype=float)
 
     @cached_property
     def dvolume_dpsi(self) -> np.ndarray: return self._surface_integral()
-    """
+    r"""
         $ V^{\prime} =  2 \pi  \int{ R / \left|\nabla \psi \right| * dl }$
         $ V^{\prime}(psi)= 2 \pi  \int{ dl * R / \left|\nabla \psi \right|}$
     """
 
-    def surface_average(self,  func,   /, value_axis: typing.Union[float, typing.Callable[[float, float], float]] = None, extrapolate_left=False, ** kwargs) -> np.ndarray:
-        """
+    def surface_average(self,  func,   /, psi: float | typing.Sequence[float] = None, extrapolate_left=False, ** kwargs) -> np.ndarray:
+        r"""
             $\left\langle \alpha\right\rangle \equiv\frac{2\pi}{V^{\prime}}\oint\alpha\frac{Rdl}{\left|\nabla\psi\right|}$
         """
-        res = self._surface_integral(func, value_axis)/self.dvolume_dpsi
-        if isinstance(value_axis, np.ndarray) and extrapolate_left:
-            res = do_extrapolate_left(value_axis, res)
+        res = self._surface_integral(func, psi)/self.dvolume_dpsi
+
+        if isinstance(psi, np.ndarray) and extrapolate_left:
+            res[0] = res[1]+(res[1]-resd[2])/(psi[1]-psi[2])*(psi[0]-psi[1])
+
         return res
 
     @cached_property
@@ -665,14 +659,10 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
         return self.psi_norm * (self._coord.psi_boundary-self._coord.psi_magnetic_axis) + self._coord.psi_magnetic_axis
 
     @sp_property
-    def fpol(self) -> Profile[float]:
-        """Diamagnetic function (F=R B_Phi)  [T.m]."""
-        return self._coord._fpol(self.psi_norm)
+    def fpol(self) -> Profile[float]: return self._coord._fpol(self.psi_norm)
 
     @sp_property
-    def ffprime(self) -> Profile[float]:
-        """Diamagnetic function (F=R B_Phi)  [T.m]."""
-        return self._coord._fpol(self.psi_norm)*self._coord._fpol.derivative(self.psi_norm)
+    def ffprime(self) -> Profile[float]: return self._coord._fpol(self.psi_norm)*self._coord._fpol.pd()(self.psi_norm)
 
     # @sp_property
     # def pprime(self) -> Profile[float]:
@@ -680,22 +670,20 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
     #     return self._pprime(self.psi_norm)
 
     @sp_property
-    def dphi_dpsi(self) -> Profile[float]:
-        return self.fpol * self.gm1 * self.dvolume_dpsi / TWOPI
+    def dphi_dpsi(self) -> Profile[float]: return self.fpol * self.gm1 * self.dvolume_dpsi / TWOPI
 
     @sp_property
-    def q(self) -> Profile[float]:
-        r"""
-            Safety factor
-            (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)[-].
-            $ q(\psi) =\frac{d\Phi}{2\pi d\psi} =\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{2\pi}$
-        """
-        return self.dphi_dpsi * self._coord._s_Bp * self._coord._s_2PI
+    def q(self) -> Profile[float]: return self.dphi_dpsi * self._coord._s_Bp * self._coord._s_2PI
+    r"""
+        Safety factor
+        (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)[-].
+        $ q(\psi) =\frac{d\Phi}{2\pi d\psi} =\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{2\pi}$
+    """
 
     @sp_property
-    def magnetic_shear(self) -> Profile[float]:
-        """Magnetic shear, defined as rho_tor/q . dq/drho_tor[-]	 """
-        return self.rho_tor/self.q * function_like(self.q, self.rho_tor).derivative(self.rho_tor)
+    def magnetic_shear(self) -> Profile[float]: return self.rho_tor/self.q * \
+        function_like(self.q, self.rho_tor).pd()(self.rho_tor)
+    """Magnetic shear, defined as rho_tor/q . dq/drho_tor[-]	 """
 
     @sp_property
     def phi(self) -> Profile[float]:
@@ -706,65 +694,43 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
         return function_like(self.dphi_dpsi, self.psi_norm).antiderivative(self.psi_norm)*(self._coord.psi_boundary-self._coord.psi_magnetic_axis)
 
     @sp_property
-    def rho_tor(self) -> Profile[float]:
-        return np.sqrt(self.phi/(constants.pi * self._coord._B0))
+    def rho_tor(self) -> Profile[float]: return np.sqrt(self.phi/(constants.pi * self._coord._B0))
 
     @sp_property
-    def rho_tor_norm(self) -> Profile[float]:
-        return np.sqrt(self.phi/self.phi_boundary)
+    def rho_tor_norm(self) -> Profile[float]: return np.sqrt(self.phi/self._parent.boundary.phi)
 
     @sp_property
-    def volume(self) -> Profile[float]:
-        """Volume enclosed in the flux surface[m ^ 3]"""
-        return function_like(self.dvolume_dpsi, self.psi).antiderivative(self.psi)
+    def volume(self) -> Profile[float]: return function_like(self.dvolume_dpsi, self.psi).antiderivative(self.psi)
+    """Volume enclosed in the flux surface[m ^ 3]"""
 
     @sp_property
-    def surface(self) -> Profile[float]:
-        return self.dvolume_drho_tor*self.gm7
+    def surface(self) -> Profile[float]: return self.dvolume_drho_tor*self.gm7
 
     @sp_property
-    def dvolume_drho_tor(self) -> Profile[float]:
-        return extrapolate_left(self.psi_norm, (TWOPI**2) * self.rho_tor/(self.gm1)/(self._coord._fvac/self.fpol)/self._coord._R0)
-
-    # @sp_property
-    # def volume1(self) -> Profile[float]:
-    #     """Volume enclosed in the flux surface[m ^ 3]"""
-    #     if self.rho_tor[0] > 1.0e-4:
-    #         x = np.hstack([[0.0], self.rho_tor])
-    #         dvdx = np.hstack([[self.dvolume_drho_tor[0]], self.dvolume_drho_tor])
-    #     else:
-    #         x = self.rho_tor
-    #         dvdx = self.dvolume_drho_tor
-
-    #     return Function(dvdx,x).antiderivative(self.rho_tor)
+    def dvolume_drho_tor(self) -> Profile[float]: return (TWOPI**2) * self.rho_tor / \
+        (self.gm1)/(self._coord._fvac/self.fpol)/self._coord._R0
 
     @sp_property
-    def drho_tor_dpsi(self) -> Profile[float]:
-        r"""
-            $\frac{d\rho_{tor}}{d\psi} =\frac{d}{d\psi}\sqrt{\frac{\Phi_{tor}}{\pi B_{0}}} \
-                                        =\frac{1}{2\sqrt{\pi B_{0}\Phi_{tor}}}\frac{d\Phi_{tor}}{d\psi} \
-                                        =\frac{q}{2\pi B_{0}\rho_{tor}}
-            $
-        """
-        return 1.0/self.dpsi_drho_tor
+    def drho_tor_dpsi(self) -> Profile[float]: return 1.0/self.dpsi_drho_tor
+    r"""
+        $\frac{d\rho_{tor}}{d\psi} =\frac{d}{d\psi}\sqrt{\frac{\Phi_{tor}}{\pi B_{0}}} \
+                                    =\frac{1}{2\sqrt{\pi B_{0}\Phi_{tor}}}\frac{d\Phi_{tor}}{d\psi} \
+                                    =\frac{q}{2\pi B_{0}\rho_{tor}}
+        $
+    """
 
     @sp_property
-    def dpsi_drho_tor(self) -> Profile[float]:
-        """
-            Derivative of Psi with respect to Rho_Tor[Wb/m].
-        """
-        return extrapolate_left(self.psi_norm, (self._coord._s_Bp)*self._coord._B0*self.rho_tor/self.q)
+    def dpsi_drho_tor(self) -> Profile[float]: return (self._coord._s_Bp)*self._coord._B0*self.rho_tor/self.q
+    """  Derivative of Psi with respect to Rho_Tor[Wb/m]."""
 
     @sp_property
-    def dphi_dvolume(self) -> Profile[float]:
-        return self.fpol * self.gm1
+    def dphi_dvolume(self) -> Profile[float]: return self.fpol * self.gm1
 
     @sp_property
     def gm1(self) -> Profile[float]: return self._coord.surface_average(1.0/(_R**2), self.psi_norm)
 
     @sp_property
-    def gm2_(
-        self) -> Profile[float]: return self._coord.surface_average(self._coord.grad_psi2/(_R**2), self.psi_norm)
+    def gm2_(self) -> Profile[float]: return self._coord.surface_average(self._coord.grad_psi2/(_R**2), self.psi_norm)
 
     @sp_property
     def gm2(self) -> Profile[float]:
@@ -789,16 +755,14 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
         return self._coord.surface_average(np.sqrt(self._coord.grad_psi2), self.psi_norm, extrapolate_left=True) / self.dpsi_drho_tor
 
     @sp_property
-    def gm8(self) -> Profile[float]:
-        return self._coord.surface_average(_R, self.psi_norm)
+    def gm8(self) -> Profile[float]: return self._coord.surface_average(_R, self.psi_norm)
 
     @sp_property
-    def gm9(self) -> Profile[float]:
-        return self._coord.surface_average(1.0 / _R, self.psi_norm)
+    def gm9(self) -> Profile[float]: return self._coord.surface_average(1.0 / _R, self.psi_norm)
 
     @sp_property
-    def plasma_current(self) -> Profile[float]:
-        return self.gm2 * self.dvolume_drho_tor / self.dpsi_drho_tor/constants.mu_0
+    def plasma_current(self) -> Profile[float]: return self.gm2 * \
+        self.dvolume_drho_tor / self.dpsi_drho_tor/constants.mu_0
 
     @sp_property
     def j_tor(self) -> Profile[float]:
@@ -818,8 +782,8 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
 
     @sp_property
     def geometric_axis(self) -> RZTuple:
-        return RZTuple({"r": self._shape_property().geometric_axis.r,
-                        "z": self._shape_property().geometric_axis.z}, parent=self)
+        return {"r": self._shape_property().geometric_axis.r,
+                "z": self._shape_property().geometric_axis.z}
 
     @sp_property
     def minor_radius(self) -> Profile[float]: return self._shape_property().minor_radius(self.psi_norm)
