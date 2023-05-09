@@ -6,9 +6,6 @@ from fytok.utils.plot_profiles import sp_figure
 from spdm.data.File import File
 from spdm.utils.logger import logger
 
-###################
-
-
 if __name__ == "__main__":
 
     logger.info("====== START ========")

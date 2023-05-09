@@ -166,17 +166,22 @@ class Equilibrium(_T_equilibrium):
                           horizontalalignment='center',
                           verticalalignment='center')
 
-        if contours and eq.profiles_2d[-1].grid_type is not None:
+        if contours:
             if contours is True:
                 contours = 16
+            profiles_2d = eq.profiles_2d[-1]
 
-            if eq.profiles_2d[-1].grid_type.name == "rectangular":
-                dim1 = eq.profiles_2d[-1].grid.dim1
-                dim2 = eq.profiles_2d[-1].grid.dim2
-                axis.contour(dim1, dim2, eq.profiles_2d[-1].psi.__array__().T, linewidths=0.2, levels=contours)
-            elif eq.profiles_2d[-1].r is not None:
-                axis.contour(eq.profiles_2d[-1].r.__array__(), eq.profiles_2d[-1].z.__array__(),
-                             eq.profiles_2d[-1].psi.__array__(), linewidths=0.2, levels=contours)
+            axis.contour(profiles_2d.r.__array__(),
+                         profiles_2d.z.__array__(),
+                         profiles_2d.psi.__array__(), linewidths=0.2, levels=contours)
+
+            # if profiles_2d.grid_type.name == "rectangular":
+            #     dim1 = profiles_2d.grid.dim1
+            #     dim2 = profiles_2d.grid.dim2
+            #     r, z = np.meshgrid(dim1, dim2)
+            #     logger.debug(type(profiles_2d.psi))
+            #     axis.contour(dim1, dim2, profiles_2d.psi(r, z), linewidths=0.2, levels=contours)
+            # el
 
             # if isinstance(contour, int):
             #     c_list = range(0, self.coordinate_system.mesh.shape[0], int(

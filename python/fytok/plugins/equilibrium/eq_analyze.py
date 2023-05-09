@@ -24,7 +24,7 @@ from spdm.data.Profile import Profile
 from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.geometry.CubicSplineCurve import CubicSplineCurve
-from spdm.geometry.GeoObject import GeoObject
+from spdm.geometry.GeoObject import GeoObject, GeoObjectSet
 from spdm.geometry.Point import Point
 from spdm.grid.CurvilinearMesh import CurvilinearMesh
 from spdm.grid.Grid import Grid
@@ -34,7 +34,7 @@ from spdm.numlib.optimize import find_critical_points
 from spdm.utils.logger import logger
 from spdm.utils.misc import convert_to_named_tuple
 from spdm.utils.tags import _not_found_
-from spdm.utils.typing import ArrayType
+from spdm.utils.typing import ArrayType, NumericType
 
 TOLERANCE = 1.0e-6
 EPS = np.finfo(float).eps
@@ -156,29 +156,22 @@ class MagneticSurfaceAnalyze(Dict[Node]):
         logger.debug(f"Create MagneticCoordSystem: type index={self._grid_type} primary='psi'  ")
 
     @property
-    def r0(self) -> float:
-        return self._R0
+    def r0(self) -> float: return self._R0
 
     @property
-    def b0(self) -> float:
-        return self._B0
+    def b0(self) -> float: return self._B0
 
     @property
-    def grid_type_index(self) -> int:
-        return self._grid_type
+    def grid_type_index(self) -> int: return self._grid_type
 
     @property
-    def cocos(self) -> int:
-        logger.warning("NOT IMPLEMENTED!")
-        return self._cocos
+    def cocos(self) -> int: return self._cocos
 
     @cached_property
-    def cocos_flag(self) -> int:
-        return 1 if self.psi_boundary > self.psi_magnetic_axis else -1
+    def cocos_flag(self) -> int: return 1 if self.psi_boundary > self.psi_magnetic_axis else -1
 
     @property
-    def psi_norm(self) -> np.ndarray:
-        return self._psi_norm
+    def psi_norm(self) -> np.ndarray: return self._psi_norm
 
     @cached_property
     def critical_points(self) -> typing.Tuple[typing.Sequence[OXPoint], typing.Sequence[OXPoint]]:
@@ -235,7 +228,7 @@ class MagneticSurfaceAnalyze(Dict[Node]):
             if len(xpts) > 0:
                 x_point = xpts[0]
 
-        R, Z = self._psirz.grid.xy
+        R, Z = self._psirz.grid.points
 
         F = np.asarray(self._psirz)
 
@@ -456,59 +449,43 @@ class MagneticSurfaceAnalyze(Dict[Node]):
 
     @cached_property
     def grid(self) -> Grid:
-        return CurvilinearMesh([surf for _, surf in self.find_surface_by_psi_norm(self._psi_norm, o_point=True)],
-                               [self._psi_norm, self._theta/TWOPI], cycle=[False, True])
+        return CurvilinearMesh(self._psi_norm, self._theta/TWOPI,
+                               geometry=GeoObjectSet(
+                                   [surf for _, surf in self.find_surface_by_psi_norm(self._psi_norm, o_point=True)]),
+                               cycle=[False, True])
 
-    def r(self) -> np.ndarray:
-        return self.grid.xy[:, :, 0]
+    def r(self) -> np.ndarray: return self.rz[0]
 
-    def z(self) -> np.ndarray:
-        return self.grid.xy[:, :, 1]
+    def z(self) -> np.ndarray: return self.rz[1]
 
-    def rz(self, *args,  **kwargs):
-        if len(args) == 0 and len(kwargs) == 0:
-            return self.grid.xy[:, :, 0], self.grid.xy[:, :, 1]
-        else:
-            uv = Grid(*args, **kwargs).points()
-            xy = self.grid.points(*uv)
-            return xy
+    def rz(self) -> typing.Tuple[ArrayType, ArrayType]: return self.grid.points
 
-    def psi(self, r: _T, z: _T, *args, **kwargs) -> _T:
-        return self._psirz(r, z, *args, **kwargs)
+    def psi(self, r: NumericType, z: NumericType) -> NumericType: return self._psirz(r, z, grid=False)
 
-    def psi_norm(self, r: _T, z: _T, *args, **kwargs) -> _T:
+    def psi_norm(self, r: NumericType, z: NumericType, *args, **kwargs) -> NumericType:
         return (self.psi(r, z, *args, **kwargs)-self.psi_magnetic_axis)/(self.psi_boundary-self.psi_magnetic_axis)
 
-    def Br(self, r: _T, z: _T) -> _T:
-        return self.psi(r, z, dy=1) / r/TWOPI
+    def Br(self, r: NumericType, z: NumericType) -> NumericType: return self.psi(r, z, dy=1) / r/TWOPI
 
-    def Bz(self, r: _T, z: _T) -> _T:
-        return -self.psi(r,  z, dx=1) / r/TWOPI
+    def Bz(self, r: NumericType, z: NumericType) -> NumericType: return -self.psi(r,  z, dx=1) / r/TWOPI
 
-    def Btor(self, r: _T, z: _T) -> _T:
-        return self._fpol(self.psi_norm(r, z)) / r
+    def Btor(self, r: NumericType, z: NumericType) -> NumericType: return self._fpol(self.psi_norm(r, z)) / r
 
-    def Bpol(self, r: _T, z: _T) -> _T:
-        r"""
-            $B_{pol}= \left|\nabla \psi \right|/2 \pi R $
-        """
-        return self.grad_psi(r, z) / r / (TWOPI)
+    def Bpol(self, r: NumericType, z: NumericType) -> NumericType: return self.grad_psi(r, z) / r / (TWOPI)
+    """ $B_{pol}= \left|\nabla \psi \right|/2 \pi R $ """
 
-    def B2(self, r: _T, z: _T) -> _T:
-        return (self.Br(r, z)**2+self.Bz(r, z)**2 + self.Btor(r, z)**2)
+    def B2(self, r: NumericType, z: NumericType) -> NumericType: return (self.Br(r, z)
+                                                                         ** 2+self.Bz(r, z)**2 + self.Btor(r, z)**2)
 
-    def grad_psi2(self,  r: _T, z: _T) -> _T:
-        return self.psi(r, z, dx=1)**2+self.psi(r, z, dy=1)**2
+    def grad_psi2(self,  r: NumericType, z: NumericType) -> NumericType: return self.psi(r,
+                                                                                         z, dx=1)**2+self.psi(r, z, dy=1)**2
 
-    def grad_psi(self,  r: _T, z: _T) -> _T:
-        return np.sqrt(self.grad_psi2(r, z))
+    def grad_psi(self,  r: NumericType, z: NumericType) -> NumericType: return np.sqrt(self.grad_psi2(r, z))
 
     ###############################
     # surface integral
     @cached_property
-    def o_point(self) -> OXPoint:
-        opts, _ = self.critical_points
-        return opts[0]
+    def o_point(self) -> OXPoint: self.critical_points[0][0]
 
     @cached_property
     def ddpsi(self):
@@ -535,16 +512,14 @@ class MagneticSurfaceAnalyze(Dict[Node]):
             return np.asarray([(axis.integral(lambda r, z, _func=func, _bpol=self.Bpol:1.0/_bpol(r, z)) if not np.isclose(p, 0) else c0) for p, axis in surface_list], dtype=float)
 
     @cached_property
-    def dvolume_dpsi(self) -> np.ndarray:
-        r"""
-            $ V^{\prime} =  2 \pi  \int{ R / \left|\nabla \psi \right| * dl }$
-
-            $ V^{\prime}(psi)= 2 \pi  \int{ dl * R / \left|\nabla \psi \right|}$
-        """
-        return self._surface_integral()
+    def dvolume_dpsi(self) -> np.ndarray: return self._surface_integral()
+    """
+        $ V^{\prime} =  2 \pi  \int{ R / \left|\nabla \psi \right| * dl }$
+        $ V^{\prime}(psi)= 2 \pi  \int{ dl * R / \left|\nabla \psi \right|}$
+    """
 
     def surface_average(self,  func,   /, value_axis: typing.Union[float, typing.Callable[[float, float], float]] = None, **kwargs) -> np.ndarray:
-        r"""
+        """
             $\left\langle \alpha\right\rangle \equiv\frac{2\pi}{V^{\prime}}\oint\alpha\frac{Rdl}{\left|\nabla\psi\right|}$
         """
         return self._surface_integral(func, value_axis)/self.dvolume_dpsi
@@ -553,12 +528,10 @@ class MagneticSurfaceAnalyze(Dict[Node]):
     def phi_boundary(self) -> float:
         if not np.isclose(self._psi_norm[-1], 1.0):
             logger.warning(f"FIXME: psi_norm boudnary is {self._psi_norm[-1]} != 1.0 ")
-
         return self.phi[-1]
 
     @cached_property
-    def rho_boundary(self) -> float:
-        return np.sqrt(self.phi_boundary/(constants.pi * self._B0))
+    def rho_boundary(self) -> float: return np.sqrt(self.phi_boundary/(constants.pi * self._B0))
 
     def plot_contour(self, axis, levels=16):
         import matplotlib.pyplot as plt
@@ -873,9 +846,11 @@ class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
     def _coord(self) -> MagneticSurfaceAnalyze:
         return self._parent._coord()
 
+    @property
+    def _profiles_1d(self) -> _T_equilibrium_profiles_1d: return self._parent.profiles_1d
+
     @cached_property
-    def _rz(self) -> typing.Tuple[np.ndarray, np.ndarray]:
-        return self._coord().rz(self.grid.dim1, self.grid.dim2, grid_type=self.grid_type)
+    def _rz(self) -> typing.Tuple[ArrayType, ArrayType]: return self._coord().grid.points
 
     @sp_property
     def r(self) -> Profile[float]: return self._rz[0]
@@ -887,16 +862,16 @@ class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
     def psi(self): return self._coord().psi(self.r, self.z)
 
     @sp_property
-    def phi(self): return self._coord().apply_psifunc(self._parent.profiles_1d.phi, self.r, self.z)
+    def phi(self): return self._coord().apply_psifunc(self._profiles_1d.phi, self.r, self.z)
 
     @sp_property
-    def theta(self): return self._coord().apply_psifunc(self._parent.profiles_1d.phi,  self.r, self.z)
+    def theta(self): return self._coord().apply_psifunc(self._profiles_1d.phi,  self.r, self.z)
 
     @sp_property
-    def j_tor(self): return self._coord().apply_psifunc(self._parent.profiles_1d.j_tor, self.r, self.z)
+    def j_tor(self): return self._coord().apply_psifunc(self._profiles_1d.j_tor, self.r, self.z)
 
     @sp_property
-    def j_parallel(self): return self._coord().apply_psifunc(self._parent.profiles_1d.j_parallel, self.r, self.z)
+    def j_parallel(self): return self._coord().apply_psifunc(self._profiles_1d.j_parallel, self.r, self.z)
 
     @sp_property
     def b_field_r(self) -> Profile[float]: return self._coord().Br(self.r, self.z)
