@@ -7,7 +7,7 @@ from functools import cached_property
 from math import isclose
 
 import numpy as np
-from fytok._imas.equilibrium import (
+from  fytok._imas.lastest.equilibrium import (
     _T_equilibrium_boundary, _T_equilibrium_boundary_separatrix,
     _T_equilibrium_global_quantities,
     _T_equilibrium_global_quantities_magnetic_axis, _T_equilibrium_profiles_1d,

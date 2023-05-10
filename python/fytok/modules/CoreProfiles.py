@@ -1,8 +1,8 @@
 
 import numpy as np
-from fytok._imas.core_profiles import (_T_core_profiles,
+from  fytok._imas.lastest.core_profiles import (_T_core_profiles,
                                        _T_core_profiles_profiles_1d)
-from fytok._imas.utilities import (_T_core_profile_ions,
+from  fytok._imas.lastest.utilities import (_T_core_profile_ions,
                                    _T_core_profiles_profiles_1d_electrons,
                                    _T_core_profiles_vector_components_1)
 from scipy import constants

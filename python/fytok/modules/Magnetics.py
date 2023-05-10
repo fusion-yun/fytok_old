@@ -1,6 +1,6 @@
 
 import matplotlib.pyplot as plt
-from  fytok._imas.magnetics import _T_magnetics
+from  fytok._imas.lastest.magnetics import _T_magnetics
 
 
 

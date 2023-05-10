@@ -1,6 +1,6 @@
 from functools import cached_property
 
-from  fytok._imas.edge_sources import _T_edge_sources, _T_edge_sources_source
+from  fytok._imas.lastest.edge_sources import _T_edge_sources, _T_edge_sources_source
 from spdm.utils.tags import _undefined_
 from spdm.data.Dict import Dict
 from spdm.data.List import List

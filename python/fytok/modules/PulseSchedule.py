@@ -1,4 +1,4 @@
-from  fytok._imas.pulse_schedule import _T_pulse_schedule
+from  fytok._imas.lastest.pulse_schedule import _T_pulse_schedule
 
   
 

@@ -1,7 +1,7 @@
 from functools import cached_property
 
 from spdm.utils.tags import _undefined_
-from  fytok._imas.edge_transport import _T_edge_transport, _T_edge_transport_model
+from  fytok._imas.lastest.edge_transport import _T_edge_transport, _T_edge_transport_model
 
 
 class EdgeTransport(_T_edge_transport):

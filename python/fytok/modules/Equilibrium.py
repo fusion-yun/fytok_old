@@ -1,6 +1,6 @@
 
 import numpy as np
-from fytok._imas.equilibrium import _T_equilibrium, _T_equilibrium_time_slice
+from  fytok._imas.lastest.equilibrium import _T_equilibrium, _T_equilibrium_time_slice
 
 
 from spdm.data.Function import Function

@@ -1,4 +1,4 @@
-from  fytok._imas.interferometer import _T_interferometer
+from  fytok._imas.lastest.interferometer import _T_interferometer
 
 
 class Interferometer(_T_interferometer):
