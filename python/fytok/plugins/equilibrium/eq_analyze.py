@@ -147,7 +147,8 @@ class MagneticSurfaceAnalyze(Dict[Node]):
         else:
             raise RuntimeError(f"fpol is not defined!")
 
-        logger.debug(f"Create MagneticCoordSystem: type index={self._grid_type} primary='psi'  ")
+        logger.debug(
+            f"Create MagneticCoordSystem: type index={self._grid_type} {self._psirz._data.shape }primary='psi'  ")
 
     @property
     def r0(self) -> float: return self._R0
@@ -461,7 +462,8 @@ class MagneticSurfaceAnalyze(Dict[Node]):
     def psirz(self) -> Field: return self._psirz
 
     @cached_property
-    def psi_norm(self) -> Field: return (self.psirz-self.psi_magnetic_axis)/(self.psi_boundary-self.psi_magnetic_axis)
+    def psi_norm(self) -> Field: return (self.psirz-self.psi_magnetic_axis) / \
+        (self.psi_boundary-self.psi_magnetic_axis)
 
     @cached_property
     def Br(self) -> Field: return self.psirz.pd(0, 1) / _R / TWOPI
@@ -493,11 +495,11 @@ class MagneticSurfaceAnalyze(Dict[Node]):
     @cached_property
     def o_point(self) -> OXPoint: return self.critical_points[0][0]
 
-    @cached_property
-    def ddpsi(self):
-        r0 = self.o_point.r
-        z0 = self.o_point.z
-        return self.ddpsi(r0, z0)
+    # @cached_property
+    # def ddpsi(self):
+    #     r0 = self.o_point.r
+    #     z0 = self.o_point.z
+    #     return self._ddpsi(r0, z0)
 
     def _surface_integral(self, func: Function = None, surface_list=None) -> np.ndarray:
         r0 = self.o_point.r
@@ -531,7 +533,7 @@ class MagneticSurfaceAnalyze(Dict[Node]):
         res = self._surface_integral(func, psi)/self.dvolume_dpsi
 
         if isinstance(psi, np.ndarray) and extrapolate_left:
-            res[0] = res[1]+(res[1]-resd[2])/(psi[1]-psi[2])*(psi[0]-psi[1])
+            res[0] = res[1]+(res[1]-res[2])/(psi[1]-psi[2])*(psi[0]-psi[1])
 
         return res
 
@@ -830,10 +832,14 @@ class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
     def _rz(self) -> typing.Tuple[ArrayType, ArrayType]: return self._coord.grid.points
 
     @sp_property
-    def r(self) -> Profile[float]: return self._rz[0]
+    def grid(self) -> Grid:
+        return Grid(super().grid.dim1, super().grid.dim2, volume_element=super().grid.volume_element, type=super().grid_type)
 
     @sp_property
-    def z(self) -> Profile[float]: return self._rz[1]
+    def r(self) -> Field[float]: return self.grid.points[0]
+
+    @sp_property
+    def z(self) -> Field[float]: return self.grid.points[1]
 
     @sp_property
     def psi(self): return self._coord.psi(self.r, self.z)
@@ -970,7 +976,8 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
 
     profiles_1d: EquilibriumProfiles1D = sp_property()
 
-    profiles_2d: List[EquilibriumProfiles2D] = sp_property()
+    profiles_2d: List[EquilibriumProfiles2D] = sp_property() 
+    """ FIXME: 定义多个 profiles_2d，与profiles_1d, global_quantities如何保持一致？ 这里会有歧义    """
 
     global_quantities: EquilibriumGlobalQuantities = sp_property()
 
@@ -986,31 +993,30 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
     def update(self, *args, B0=None, R0=None,  **kwargs):
         self.clear()
 
-        psirz = self.__entry__().get("profiles_2d/0/psi", None)
+        psirz = self.profiles_2d[0].psi
 
-        if psirz is None:
-            raise ValueError("No psi found in the equilibrium")
-        elif isinstance(psirz, np.ndarray):
-            psirz = Field(psirz,
-                          self.get("profiles_2d/0/grid/dim1"),
-                          self.get("profiles_2d/0/grid/dim2"),
-                          grid_type="rectilinear")
+        # psirz = self.__entry__().get("profiles_2d/0/psi", None)
+        # if isinstance(psirz, np.ndarray):
+        #     psirz = Function(psirz,
+        #                      self.get("profiles_2d/0/grid/dim1"),
+        #                      self.get("profiles_2d/0/grid/dim2"),
+        #                      grid_type="rectilinear")
+        # elif not isinstance(psirz, Function):
+        #     raise ValueError(f"Invalid psirz type {type(psirz)}")
 
-        elif not isinstance(psirz, Field):
-            raise ValueError("psi must be a Field or a numpy array")
+        psi_1d = super().profiles_1d.psi  # get("profiles_1d/psi", _not_found_)
+        fpol_1d = super().profiles_1d.f  # self.__entry__().get("profiles_1d/f", _not_found_)
 
-        psi_1d = self.__entry__().get("profiles_1d/psi", _not_found_)
-        fpol_1d = self.__entry__().get("profiles_1d/f", _not_found_)
-        if not isinstance(psi_1d, np.ndarray) or len(psi_1d) != len(fpol_1d):
+        if not isinstance(psi_1d, Function) or len(psi_1d) != len(fpol_1d):
             psi_1d = np.linspace(0, 1.0, len(fpol_1d))
 
-        if isinstance(psi_1d, np.ndarray):
+        if isinstance(psi_1d, Function):
             psi_1d = (psi_1d-psi_1d[0])/(psi_1d[-1]-psi_1d[0])
 
         # pprime_1d = self.profiles_1d._entry.get("dpressure_dpsi", None)
         self._m_coord = MagneticSurfaceAnalyze(
             psirz=psirz,
-            B0=self._parent.vacuum_toroidal_field.b0[-1] if B0 is None else B0,
+            B0=self._parent.vacuum_toroidal_field.b0(self.time) if B0 is None else B0,
             R0=self._parent.vacuum_toroidal_field.r0 if R0 is None else R0,
             Ip=self.global_quantities.ip,
             fpol=function_like(fpol_1d, psi_1d),
@@ -1023,7 +1029,7 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
 
 @Equilibrium.register(["eq_analyze"])
 class FyEqAnalyze(Equilibrium):
-    """ 
+    """
     FyEqAnalyze 标准磁面分析工具
     =============================
     input:

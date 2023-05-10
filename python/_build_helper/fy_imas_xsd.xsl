@@ -28,12 +28,13 @@
 
 <xsl:param name="DD_GIT_DESCRIBE" as="xs:string" />
 
-<xsl:param name="DD_BASE_DIR" as="xs:string" required='true' />
+<xsl:param name="DD_WRAPPER_DIR"  as="xs:string"  select="translate($DD_GIT_DESCRIBE,'.-','__')" />
 
 <!-- <xsl:param name="FILE_HEADER_ANNOTATION" select=" N/A " /> -->
 
 <xsl:param name="line-width" select="80" />
    
+<xsl:param name="DD_BASE_DIR" as="xs:string" required='true' />
 
 <xsl:function name="my:to-camel-case" as="xs:string">
   <xsl:param name="string" as="xs:string"/>
@@ -119,8 +120,9 @@ import numpy as np
 from spdm.data.Node         import Node
 from spdm.data.List         import List
 from spdm.data.TimeSeries   import TimeSeriesAoS,TimeSlice
-from spdm.data.Signal       import Signal 
+from spdm.data.Signal       import Signal,SignalND
 from spdm.data.Profile      import Profile 
+from spdm.data.Field        import Field
 from spdm.data.sp_property  import sp_property,SpPropertyClass
 
 </xsl:variable>
@@ -141,7 +143,7 @@ from spdm.data.sp_property  import sp_property,SpPropertyClass
   <xsl:for-each select="xs:include[@schemaLocation!='utilities/dd_support.xsd']">
       <xsl:apply-templates select="document(concat($DD_BASE_DIR,./@schemaLocation))/*" mode="file_idsname_py" />   
   </xsl:for-each>
-   
+  <xsl:value-of select="$DD_GIT_DESCRIBE"/>
 </xsl:template>
 
 
@@ -153,10 +155,12 @@ from spdm.data.sp_property  import sp_property,SpPropertyClass
   From IMAS/dd (<xsl:value-of select="$DD_GIT_DESCRIBE"/>)
   <xsl:copy-of select="$FILE_HEADER_ANNOTATION" />
 """
+__path__ = __import__('pkgutil').extend_path(__path__, __name__)
+
 __fy_rev__  ="<xsl:value-of select="$FY_GIT_DESCRIBE"/>"
 __version__ ="<xsl:value-of select="$DD_GIT_DESCRIBE"/>"
 __cocos__   ="<xsl:value-of select="xs:annotation/xs:appinfo/cocos"/>"
-        
+
 <xsl:for-each select="xs:complexType/xs:sequence/xs:element">
 from .<xsl:value-of select="@ref"/>  import _T_<xsl:value-of select="@ref"/> 
 </xsl:for-each>
@@ -323,43 +327,43 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
     <entry key='int_type'     >int</entry>
     <entry key='INT_1D'       >Profile[int]</entry>
     <entry key='int_1d_type'  >Profile[int]</entry>
-    <entry key='INT_2D'       >Profile[int]</entry>
-    <entry key='INT_3D'       >Profile[int]</entry>
-    <entry key='INT_4D'       >Profile[int]</entry>
-    <entry key='INT_5D'       >Profile[int]</entry>
-    <entry key='INT_6D'       >Profile[int]</entry>
+    <entry key='INT_2D'       >Field[int]</entry>
+    <entry key='INT_3D'       >Field[int]</entry>
+    <entry key='INT_4D'       >Field[int]</entry>
+    <entry key='INT_5D'       >Field[int]</entry>
+    <entry key='INT_6D'       >Field[int]</entry>
     <entry key='FLT_0D'       >float</entry>
     <entry key='flt_type'     >float</entry>
     <entry key='FLT_1D'       >Profile[float]</entry>
     <entry key='flt_1d_type'  >Profile[float]</entry>
-    <entry key='FLT_2D'       >Profile[float]</entry>
-    <entry key='FLT_3D'       >Profile[float]</entry>
-    <entry key='FLT_4D'       >Profile[float]</entry>
-    <entry key='FLT_5D'       >Profile[float]</entry>
-    <entry key='FLT_6D'       >Profile[float]</entry>
+    <entry key='FLT_2D'       >Field[float]</entry>
+    <entry key='FLT_3D'       >Field[float]</entry>
+    <entry key='FLT_4D'       >Field[float]</entry>
+    <entry key='FLT_5D'       >Field[float]</entry>
+    <entry key='FLT_6D'       >Field[float]</entry>
     <entry key='cpx_type'     >complex</entry>
     <entry key='cplx_1d_type' >Profile[complex]</entry>
     <entry key='CPX_0D'       >Profile[complex]</entry>
     <entry key='CPX_1D'       >Profile[complex]</entry>
-    <entry key='CPX_2D'       >Profile[complex]</entry>
-    <entry key='CPX_3D'       >Profile[complex]</entry>
-    <entry key='CPX_4D'       >Profile[complex]</entry>
-    <entry key='CPX_5D'       >Profile[complex]</entry>
-    <entry key='CPX_6D'       >Profile[complex]</entry>
+    <entry key='CPX_2D'       >Field[complex]</entry>
+    <entry key='CPX_3D'       >Field[complex]</entry>
+    <entry key='CPX_4D'       >Field[complex]</entry>
+    <entry key='CPX_5D'       >Field[complex]</entry>
+    <entry key='CPX_6D'       >Field[complex]</entry>
     
     <entry key='signal_flt_1d'>Signal[float]</entry>
-    <entry key='signal_flt_2d'>Signal[float]</entry>
-    <entry key='signal_flt_3d'>Signal[float]</entry>
-    <entry key='signal_flt_4d'>Signal[float]</entry>
-    <entry key='signal_flt_5d'>Signal[float]</entry>
-    <entry key='signal_flt_6d'>Signal[float]</entry>
+    <entry key='signal_flt_2d'>SignalND[float]</entry>
+    <entry key='signal_flt_3d'>SignalND[float]</entry>
+    <entry key='signal_flt_4d'>SignalND[float]</entry>
+    <entry key='signal_flt_5d'>SignalND[float]</entry>
+    <entry key='signal_flt_6d'>SignalND[float]</entry>
 
     <entry key='signal_int_1d'>Signal[int]</entry>
-    <entry key='signal_int_2d'>Signal[int]</entry>
-    <entry key='signal_int_3d'>Signal[int]</entry>
-    <entry key='signal_int_4d'>Signal[int]</entry>
-    <entry key='signal_int_5d'>Signal[int]</entry>
-    <entry key='signal_int_6d'>Signal[int]</entry>
+    <entry key='signal_int_2d'>SignalND[int]</entry>
+    <entry key='signal_int_3d'>SignalND[int]</entry>
+    <entry key='signal_int_4d'>SignalND[int]</entry>
+    <entry key='signal_int_5d'>SignalND[int]</entry>
+    <entry key='signal_int_6d'>SignalND[int]</entry>
 
 
 </xsl:variable>
