@@ -3,16 +3,17 @@
 import collections.abc
 
 from spdm.utils.Pluggable import Pluggable
+from spdm.data.NamedDict import NamedDict
 import numpy as np
 
 
 class _T_Library(_T_library):
-    parameters: SpPropertyClass = sp_property(type="constant")
+    parameters: NamedDict = sp_property(type="constant")
     """List of the code specific parameters in XML format"""
 
 
 class _T_Code(_T_code):
-    parameters: SpPropertyClass = sp_property(type="constant")
+    parameters: NamedDict = sp_property(type="constant")
     """List of the code specific parameters in XML format"""
 
     library: List[_T_Library] = sp_property()

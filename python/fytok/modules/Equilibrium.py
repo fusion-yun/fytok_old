@@ -1,6 +1,6 @@
 
 import numpy as np
-from  fytok._imas.lastest.equilibrium import _T_equilibrium, _T_equilibrium_time_slice
+from fytok._imas.lastest.equilibrium import _T_equilibrium, _T_equilibrium_time_slice
 
 
 from spdm.data.Function import Function
@@ -61,9 +61,7 @@ class Equilibrium(_T_equilibrium):
 
     TimeSlice = _T_equilibrium_time_slice
 
-    @sp_property[float]
-    def time(self):
-        return 1.0
+  
 
     def update(self,  *args, dt=None, **kwargs):
         """

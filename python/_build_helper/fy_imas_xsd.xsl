@@ -365,6 +365,8 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
     <entry key='signal_int_5d'>SignalND[int]</entry>
     <entry key='signal_int_6d'>SignalND[int]</entry>
 
+    <entry key='code'>_T_Code</entry>
+    <entry key='time'>np.ndarray</entry>
 
 </xsl:variable>
 
@@ -469,7 +471,7 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
 
 <xsl:template match = "xs:element" mode = "DEFINE_ELEMENT_AS_IDS"> 
 
-from .utilities import  _T_ids_properties,_T_code,_T_time
+from .utilities import  _T_ids_properties,_T_Code 
 <xsl:text>&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(_T_IDS):
 <xsl:text>&#xA;    </xsl:text><xsl:apply-templates select="xs:annotation" />
 

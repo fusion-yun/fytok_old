@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
         time_slice = -1
         eq_profiles_1d = tok.equilibrium.time_slice[time_slice].profiles_1d
-
+        
         bs_line_style = {"marker": '.', "linestyle": ''}
 
         plot_profiles(
@@ -97,7 +97,7 @@ if __name__ == "__main__":
                 ],
 
                 [
-                    (function_like(4*(constants.pi**2) * R0 * profiles["rho"].values, bs_psi_norm),
+                    (function_like(4*(np.constants.pi**2) * R0 * profiles["rho"].values, bs_psi_norm),
                      r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho$",  bs_line_style),
                     (eq_profiles_1d.dvolume_drho_tor,
                      r"$dV/d\rho_{tor}$", r"$[m^2]$"),
