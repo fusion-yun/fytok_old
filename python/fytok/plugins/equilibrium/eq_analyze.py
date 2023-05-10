@@ -837,8 +837,9 @@ class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
     @property
     def _profiles_1d(self) -> _T_equilibrium_profiles_1d: return self._parent.profiles_1d
 
-    @sp_property[Grid]
+    @sp_property
     def grid(self) -> Grid:
+        logger.debug(super().grid.dim1)
         return Grid(super().grid.dim1, super().grid.dim2, volume_element=super().grid.volume_element, type=super().grid_type)
 
     @sp_property

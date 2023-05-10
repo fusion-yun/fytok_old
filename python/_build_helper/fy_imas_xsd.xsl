@@ -368,6 +368,8 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
     <entry key='code'>_T_Code</entry>
     <entry key='time'>np.ndarray</entry>
 
+
+
 </xsl:variable>
 
 <xsl:template match="xs:element[@name  or  @ref]" mode="DECLARE">
@@ -387,7 +389,7 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
 <xsl:variable name="type_hint">
   <xsl:choose>
     <xsl:when test="($type_hint='INT_1D' or $type_hint='int_1d_type') and normalize-space(xs:annotation/xs:appinfo/coordinate1)='1...N' ">List[int]</xsl:when>          
-    <xsl:when test="($type_hint='FLT_1D' or $type_hint='flt_1d_type') and normalize-space(xs:annotation/xs:appinfo/coordinate1)='1...N' ">np.ndarray</xsl:when>          
+    <xsl:when test="($type_hint='FLT_1D' or $type_hint='flt_1d_type') and normalize-space(xs:annotation/xs:appinfo/coordinate1)=('1...N','../r','../x1') ">np.ndarray</xsl:when>          
     <xsl:when test="$type_map/entry[@key=$type_hint]"><xsl:value-of select="$type_map/entry[@key=$type_hint]"/></xsl:when>          
     <xsl:when test="xs:annotation/xs:appinfo/doc_identifier">_E_<xsl:value-of select = "document(concat($DD_BASE_DIR, xs:annotation/xs:appinfo/doc_identifier))/constants/@name"/></xsl:when>
     <xsl:otherwise>_T_<xsl:value-of select="$type_hint"/> </xsl:otherwise>   

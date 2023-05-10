@@ -66,12 +66,12 @@ if __name__ == "__main__":
                       "separatrix": True,
                   }
                   ) .savefig(output_path/"tokamak.svg", transparent=True)
-
+    if False:
         time_slice = -1
         eq_profiles_1d = tok.equilibrium.time_slice[time_slice].profiles_1d
         
         bs_line_style = {"marker": '.', "linestyle": ''}
-
+    
         plot_profiles(
             [
                 [

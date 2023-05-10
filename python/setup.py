@@ -9,10 +9,9 @@ import os
 import pathlib
 import pprint
 import subprocess
-from setuptools.command.install import install
-from setuptools import Command
 
-from setuptools import find_namespace_packages, setup
+from setuptools import Command, find_namespace_packages, setup
+from setuptools.command.build_py import build_py
 
 # Get version from git
 version = subprocess.check_output(['git', 'describe', '--abbrev=0']).strip().decode('utf-8')
@@ -50,6 +49,10 @@ def convert_value(proc, v):
 
 
 def create_imas_warpper(target_path, dd_path: str, stylesheet_file: str = None,  symlink_as_lastest=True):
+    """Create IMAS warpper for python"""
+
+    # 用logger输出log信息
+    print(f"Create IMAS warpper for python: {target_path}")
 
     dd_path = pathlib.Path(dd_path)
 
@@ -88,6 +91,7 @@ def create_imas_warpper(target_path, dd_path: str, stylesheet_file: str = None, 
         executable.transform_to_file(source_file=dd_path.as_posix(),
                                      output_file=(target_path/dd_dir/"ids_list").as_posix())
 
+    cwd = os.getcwd()
     os.chdir(target_path)
 
     if not symlink_as_lastest:
@@ -97,9 +101,11 @@ def create_imas_warpper(target_path, dd_path: str, stylesheet_file: str = None, 
             os.unlink("lastest")
         elif os.path.exists("lastest"):
             raise FileExistsError("lastest is not a symlink! Please remove it manually!")
+        print(f"Create symlink lastest -> {dd_dir}")
         os.symlink(dd_dir, "lastest")
     else:
         raise FileExistsError(f"Can not find IMAS wrapper! {target_path/dd_dir}")
+    os.chdir(cwd)
 
 
 class InstallIMASWrapper(Command):
@@ -131,9 +137,9 @@ class InstallIMASWrapper(Command):
                             symlink_as_lastest=self.as_lastest)
 
 
-class InstallCommand(install):
+class BuildPyCommand(build_py):
     description = 'Install __doc__,__version, and IMAS Wrapper'
-    user_options = install.user_options + [
+    user_options = build_py.user_options + [
         ('dd=', None, 'Path of IMAS data dictionary'),
     ]
 
@@ -146,19 +152,20 @@ class InstallCommand(install):
         super().finalize_options()
 
     def run(self):
+        build_dir = pathlib.Path(self.build_lib)/f"{self.distribution.get_name()}"
+
+        build_dir.mkdir(parents=True, exist_ok=True)
 
         super().run()
 
-        install_dir = pathlib.Path(self.install_lib)/f"{self.distribution.get_name()}"
-
-        with open(install_dir/'__version__.py', 'w') as f:
+        with open(build_dir/'__version__.py', 'w') as f:
             f.write(f"__version__ = \"{self.distribution.get_version()}\"")
 
         if not (source_dir/f"{self.distribution.get_version()}/__doc__.py").exists():
-            with open(install_dir/'__doc__.py', 'w') as f:
+            with open(build_dir/'__doc__.py', 'w') as f:
                 f.write(f'"""\n{self.distribution.get_long_description()}\n"""')
 
-        create_imas_warpper(target_path=(install_dir/"_imas").as_posix(),
+        create_imas_warpper(target_path=(build_dir/"_imas").as_posix(),
                             dd_path=self.dd,
                             symlink_as_lastest=True)
 
@@ -175,7 +182,7 @@ setup(
     license='MIT',
 
     cmdclass={
-        'install': InstallCommand,
+        'build_py': BuildPyCommand,
         'install_imas_wrapper': InstallIMASWrapper,
     },
 
