@@ -7,17 +7,57 @@ from spdm.data.NamedDict import NamedDict
 import numpy as np
 
 
-class _T_Library(_T_library):
+class _T_Library(SpPropertyClass):
+    """
+    Library used by the code that has produced this IDS
+    """
+
+    name: str = sp_property(type="constant")
+    """Name of software"""
+
+    commit: str = sp_property(type="constant")
+    """Unique commit reference of software"""
+
+    version: str = sp_property(type="constant")
+    """Unique version (tag) of software"""
+
+    repository: str = sp_property(type="constant")
+    """URL of software repository"""
+
     parameters: NamedDict = sp_property(type="constant")
     """List of the code specific parameters in XML format"""
 
 
-class _T_Code(_T_code):
-    parameters: NamedDict = sp_property(type="constant")
+class _T_Code(SpPropertyClass):
+    """
+    Generic decription of the code-specific parameters for the code that has
+       produced this IDS
+    """
+
+
+    name  :str =  sp_property(type="constant")
+    """Name of software generating IDS"""
+
+    commit  :str =  sp_property(type="constant")
+    """Unique commit reference of software"""
+
+    version  :str =  sp_property(type="constant")
+    """Unique version (tag) of software"""
+
+    repository  :str =  sp_property(type="constant")
+    """URL of software repository"""
+
+    parameters  :NamedDict =  sp_property(type="constant")
     """List of the code specific parameters in XML format"""
 
-    library: List[_T_Library] = sp_property()
+    output_flag  :np.ndarray =  sp_property(coordinate1="/time",type="dynamic")
+    """Output flag : 0 means the run is successful, other values mean some difficulty
+       has been encountered, the exact meaning is then code specific. Negative values
+       mean the result shall not be used."""
+
+    library  :List[_T_Library] =  sp_property(coordinate1="1...N")
     """List of external libraries used by the code that has produced this IDS"""
+  
 
 
 class _T_Module(SpPropertyClass, Pluggable):

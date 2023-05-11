@@ -45,7 +45,7 @@
   <xsl:param name="text" as="xs:string" />
   <xsl:param name="line-length" as="xs:integer" />
   <xsl:param name="indent" as="xs:integer" />
-  <xsl:variable name="spaces" select="string-join((for $i in 1 to $indent return ' '), '')" />
+  <xsl:variable name="spaces" select="string-join((for $i in 1 to $indent return '&#x9;'), '')" />
   <xsl:variable name="wrapped-text" select="replace(concat(normalize-space(translate($text, '&quot;', '_')),' '), concat('(.{0,', $line-length, '}) '), concat('$1&#10;', $spaces))" />
   <xsl:sequence select="substring($wrapped-text, 1, string-length($wrapped-text) - $indent - 1)" />
 </xsl:function>
@@ -179,23 +179,20 @@ from .<xsl:value-of select="@ref"/>  import _T_<xsl:value-of select="@ref"/>
 """
     <xsl:copy-of select="$FILE_HEADER_COMMON_IMPORT" />
 
-
     <xsl:for-each select="$constants_list"> 
       <xsl:apply-templates  select = "document(concat($DD_BASE_DIR, .))/constants" mode = "CONSTANTS_IDENTIFY" /> 
     </xsl:for-each>
 
-    <xsl:apply-templates select="$root/xs:complexType[my:dep_level(.,$root)=0]" mode="DEFINE"/>
-    <xsl:apply-templates select="$root/xs:complexType[my:dep_level(.,$root)=1]" mode="DEFINE"/>
-    <xsl:apply-templates select="$root/xs:complexType[my:dep_level(.,$root)=2]" mode="DEFINE"/>
-    <xsl:apply-templates select="$root/xs:complexType[my:dep_level(.,$root)=3]" mode="DEFINE"/>
-    <xsl:apply-templates select="$root/xs:complexType[my:dep_level(.,$root)=4]" mode="DEFINE"/>
-    <xsl:apply-templates select="$root/xs:complexType[my:dep_level(.,$root)=5]" mode="DEFINE"/>
-    <xsl:apply-templates select="$root/xs:complexType[my:dep_level(.,$root)=6]" mode="DEFINE"/>
+    <xsl:apply-templates select="$root/xs:complexType[my:dep_level(.,$root)=0] " mode="DEFINE"/>
+    <xsl:apply-templates select="$root/xs:complexType[my:dep_level(.,$root)=1] " mode="DEFINE"/>
+    <xsl:apply-templates select="$root/xs:complexType[my:dep_level(.,$root)=2] " mode="DEFINE"/>
+    <xsl:apply-templates select="$root/xs:complexType[my:dep_level(.,$root)=3] " mode="DEFINE"/>
+    <xsl:apply-templates select="$root/xs:complexType[my:dep_level(.,$root)=4] " mode="DEFINE"/>
+    <xsl:apply-templates select="$root/xs:complexType[my:dep_level(.,$root)=5] " mode="DEFINE"/>
+    <xsl:apply-templates select="$root/xs:complexType[my:dep_level(.,$root)=6] " mode="DEFINE"/>
 
     <xsl:apply-templates select="$root/xs:element" mode="DEFINE"/>
     <xsl:value-of select="unparsed-text('fy_imas.py')"/>
-
-
   </xsl:result-document>   
 </xsl:template>
 
@@ -223,8 +220,6 @@ from .utilities import <xsl:value-of select="string-join(distinct-values($cls_li
     <xsl:for-each select="distinct-values($cls_list1)">
 from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, .))/constants/@name"  /> 
     </xsl:for-each>
-
-    <xsl:text>&#xA;    </xsl:text>
 
     <xsl:variable name="cls_list" select="for $k in //doc_identifier return if (not(starts-with($k,'utilities/'))) then   $k  else ()"/>
     <xsl:for-each select="distinct-values($cls_list)">
@@ -254,7 +249,7 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
 
 <xsl:template match="*" mode="as_python_kw">
   <xsl:if test="not(preceding-sibling::*[name() = name(current())])">
-    <xsl:value-of select="my:quote(name())" /><xsl:text>: </xsl:text>
+    <xsl:value-of select="my:quote(name())" />>: 
     <xsl:variable name="siblings" select="../child::*[name() = name(current())]" />
     <xsl:choose>
       <xsl:when test="count($siblings) > 1">
@@ -307,13 +302,15 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
 <!--  ######################################################################################### -->
 
 
-<xsl:template match = "xs:documentation">"""<xsl:value-of select="my:line-wrap(., $line-width, 7)"/>"""</xsl:template>
+<xsl:template match = "xs:documentation"><xsl:value-of select="my:line-wrap(., $line-width, 2)"/></xsl:template>
+<xsl:template match = "xs:appinfo">
+  <xsl:for-each select="./*">
+<xsl:text>&#xA;&#x9;</xsl:text><xsl:value-of select="name()" />: <xsl:value-of select="." />
+  </xsl:for-each>
+</xsl:template>
 
-<xsl:template match = "xs:annotation">"""
-    <xsl:value-of select="my:line-wrap(xs:documentation, $line-width, 7)"/>  
-
-    <xsl:apply-templates select="xs:appinfo/*" />
-    """    
+<xsl:template match = "xs:annotation"><xsl:value-of select="my:line-wrap(xs:documentation, $line-width, 2)"/>  
+<xsl:apply-templates select="xs:appinfo" />
 </xsl:template>
 
 <!-- Declare element ######################################################################################### -->
@@ -325,31 +322,31 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
     <entry key='str_1d_type'  >List[str]</entry>
     <entry key='INT_0D'       >int</entry>
     <entry key='int_type'     >int</entry>
-    <entry key='INT_1D'       >Profile[int]</entry>
-    <entry key='int_1d_type'  >Profile[int]</entry>
-    <entry key='INT_2D'       >Field[int]</entry>
-    <entry key='INT_3D'       >Field[int]</entry>
-    <entry key='INT_4D'       >Field[int]</entry>
-    <entry key='INT_5D'       >Field[int]</entry>
-    <entry key='INT_6D'       >Field[int]</entry>
+    <entry key='INT_1D'       >np.ndarray</entry>
+    <entry key='int_1d_type'  >np.ndarray</entry>
+    <entry key='INT_2D'       >np.ndarray</entry>
+    <entry key='INT_3D'       >np.ndarray</entry>
+    <entry key='INT_4D'       >np.ndarray</entry>
+    <entry key='INT_5D'       >np.ndarray</entry>
+    <entry key='INT_6D'       >np.ndarray</entry>
     <entry key='FLT_0D'       >float</entry>
     <entry key='flt_type'     >float</entry>
-    <entry key='FLT_1D'       >Profile[float]</entry>
-    <entry key='flt_1d_type'  >Profile[float]</entry>
-    <entry key='FLT_2D'       >Field[float]</entry>
-    <entry key='FLT_3D'       >Field[float]</entry>
-    <entry key='FLT_4D'       >Field[float]</entry>
-    <entry key='FLT_5D'       >Field[float]</entry>
-    <entry key='FLT_6D'       >Field[float]</entry>
+    <entry key='FLT_1D'       >np.ndarray</entry>
+    <entry key='flt_1d_type'  >np.ndarray</entry>
+    <entry key='FLT_2D'       >np.ndarray</entry>
+    <entry key='FLT_3D'       >np.ndarray</entry>
+    <entry key='FLT_4D'       >np.ndarray</entry>
+    <entry key='FLT_5D'       >np.ndarray</entry>
+    <entry key='FLT_6D'       >np.ndarray</entry>
     <entry key='cpx_type'     >complex</entry>
-    <entry key='cplx_1d_type' >Profile[complex]</entry>
-    <entry key='CPX_0D'       >Profile[complex]</entry>
-    <entry key='CPX_1D'       >Profile[complex]</entry>
-    <entry key='CPX_2D'       >Field[complex]</entry>
-    <entry key='CPX_3D'       >Field[complex]</entry>
-    <entry key='CPX_4D'       >Field[complex]</entry>
-    <entry key='CPX_5D'       >Field[complex]</entry>
-    <entry key='CPX_6D'       >Field[complex]</entry>
+    <entry key='cplx_1d_type' >np.ndarray</entry>
+    <entry key='CPX_0D'       >np.ndarray</entry>
+    <entry key='CPX_1D'       >np.ndarray</entry>
+    <entry key='CPX_2D'       >np.ndarray</entry>
+    <entry key='CPX_3D'       >np.ndarray</entry>
+    <entry key='CPX_4D'       >np.ndarray</entry>
+    <entry key='CPX_5D'       >np.ndarray</entry>
+    <entry key='CPX_6D'       >np.ndarray</entry>
     
     <entry key='signal_flt_1d'>Signal[float]</entry>
     <entry key='signal_flt_2d'>SignalND[float]</entry>
@@ -372,7 +369,7 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
 
 </xsl:variable>
 
-<xsl:template match="xs:element[@name  or  @ref]" mode="DECLARE">
+<xsl:template match="xs:element[@name  and not(xs:annotation/xs:appinfo/lifecycle_status='obsolescent')]" mode="DECLARE">
 <xsl:variable name="prop_name">
   <xsl:choose>
     <xsl:when test="@ref"><xsl:value-of select="my:py_keyword(@ref)"/></xsl:when>
@@ -389,13 +386,13 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
 <xsl:variable name="type_hint">
   <xsl:choose>
     <xsl:when test="($type_hint='INT_1D' or $type_hint='int_1d_type') and normalize-space(xs:annotation/xs:appinfo/coordinate1)='1...N' ">List[int]</xsl:when>          
-    <xsl:when test="($type_hint='FLT_1D' or $type_hint='flt_1d_type') and normalize-space(xs:annotation/xs:appinfo/coordinate1)=('1...N','../r','../x1') ">np.ndarray</xsl:when>          
+    <xsl:when test="($type_hint='FLT_1D' or $type_hint='flt_1d_type') and ends-with(xs:annotation/xs:appinfo/coordinate1,'time') ">Profile[float]</xsl:when>          
+    <xsl:when test="($type_hint='FLT_2D' or $type_hint='flt_2d_type') and normalize-space(xs:annotation/xs:appinfo/coordinate1)=('1...N','../dim1') ">np.ndarray</xsl:when>          
     <xsl:when test="$type_map/entry[@key=$type_hint]"><xsl:value-of select="$type_map/entry[@key=$type_hint]"/></xsl:when>          
     <xsl:when test="xs:annotation/xs:appinfo/doc_identifier">_E_<xsl:value-of select = "document(concat($DD_BASE_DIR, xs:annotation/xs:appinfo/doc_identifier))/constants/@name"/></xsl:when>
     <xsl:otherwise>_T_<xsl:value-of select="$type_hint"/> </xsl:otherwise>   
   </xsl:choose>
 </xsl:variable>
-
 <xsl:variable name="type_hint">
   <xsl:choose>
     <xsl:when test="@maxOccurs">
@@ -407,13 +404,11 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
     <xsl:otherwise><xsl:value-of select="$type_hint"/> </xsl:otherwise>   
   </xsl:choose>
 </xsl:variable>
-<xsl:if test="not(xs:annotation/xs:appinfo/lifecycle_status)  or  xs:annotation/xs:appinfo/lifecycle_status!='obsolescent'" >
-<xsl:text>&#xA;&#xA;    </xsl:text><xsl:value-of select="$prop_name"/>  :<xsl:value-of select="$type_hint" /> =  sp_property(<xsl:apply-templates select="xs:annotation/xs:appinfo"  mode="as_python_kwargs"/>)
-<xsl:text>    </xsl:text><xsl:apply-templates select="xs:annotation/xs:documentation"/>
-</xsl:if>
+<xsl:text>&#xA;&#x9;</xsl:text><xsl:value-of select="$prop_name"/>  :<xsl:value-of select="$type_hint" /> =  sp_property(<xsl:apply-templates select="xs:annotation/xs:appinfo"  mode="as_python_kwargs"/>)
+<xsl:text>&#x9;</xsl:text>""" <xsl:apply-templates select="xs:annotation/xs:documentation"/>"""
 </xsl:template>
  
-
+<xsl:template match="xs:element[xs:annotation/xs:appinfo/lifecycle_status='obsolescent']" mode="DECLARE" />
 <!-- <xsl:template match="xs:sequence" mode="property_list">
   <xsl:for-each select="xs:element[@name!='code' and @name!='time' and @name!='ids_properties' ]">
     <xsl:choose>
@@ -433,21 +428,21 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
 </xsl:template> -->
 
 
-<xsl:template match = "xs:complexType" mode = "DEFINE"> 
+<xsl:template match = "xs:complexType[not($type_map/entry[@key=@name])]" mode = "DEFINE"> 
 <xsl:choose>      
 <xsl:when test="xs:sequence/xs:element[@name='code']" >
 <xsl:text>&#xA;&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(_T_Module):
-<xsl:text>    </xsl:text><xsl:apply-templates select="xs:annotation" />
+<xsl:text>&#x9;</xsl:text>"""<xsl:apply-templates select="xs:annotation" />"""
 <xsl:apply-templates select="xs:sequence/xs:element[@name!='code']" mode="DECLARE" />
 </xsl:when>
 <xsl:when test="xs:sequence/xs:element[@name='time'] and xs:sequence/xs:element[@name='time'][@type='flt_type'] " >
 <xsl:text>&#xA;&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(TimeSlice):
-<xsl:text>    </xsl:text><xsl:apply-templates select="xs:annotation" />
+<xsl:text>&#x9;</xsl:text>"""<xsl:apply-templates select="xs:annotation" />"""
 <xsl:apply-templates select="xs:sequence/xs:element[@name!='time']" mode="DECLARE" />
 </xsl:when>
 <xsl:otherwise>
 <xsl:text>&#xA;&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(SpPropertyClass):
-<xsl:text>    </xsl:text><xsl:apply-templates select="xs:annotation" />
+<xsl:text>&#x9;</xsl:text>"""<xsl:apply-templates select="xs:annotation" />"""
 <xsl:apply-templates select="xs:sequence/xs:element" mode="DECLARE" />
 </xsl:otherwise>
 </xsl:choose>
@@ -455,18 +450,18 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
 
 <xsl:template match = "constants[@identifier='yes']" mode = "CONSTANTS_IDENTIFY"> 
 <xsl:text>&#xA;&#xA;</xsl:text>class _E_<xsl:value-of select="@name"/>(IntFlag):
-<xsl:text>&#xA;    </xsl:text>"""<xsl:value-of select="my:line-wrap(header, $line-width, 7)"/>
-     xpath: <xsl:value-of select="dd_instance/@xpath"/>
-    """
+<xsl:text>&#x9;</xsl:text>"""<xsl:value-of select="my:line-wrap(header, $line-width, 2)"/>
+<xsl:text>&#x9;</xsl:text>xpath: <xsl:value-of select="dd_instance/@xpath"/>
+<xsl:text>&#x9;</xsl:text>"""
   <xsl:for-each select="int">
-<xsl:text>&#xA;    </xsl:text><xsl:value-of select="my:py_keyword(@name)"/> = <xsl:value-of select="."/> 
-<xsl:text>&#xA;    </xsl:text>"""<xsl:value-of select="my:line-wrap(@description, $line-width, 7)"/>"""
+<xsl:text>&#xA;&#x9;</xsl:text><xsl:value-of select="my:py_keyword(@name)"/> = <xsl:value-of select="."/> 
+<xsl:text>&#xA;&#x9;</xsl:text>"""<xsl:value-of select="my:line-wrap(@description, $line-width, 2)"/>"""
   </xsl:for-each>
 </xsl:template>
 
-<xsl:template match = "xs:element" mode = "DEFINE"> 
-<xsl:text>&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(SpPropertyClass):
-<xsl:text>&#xA;    </xsl:text><xsl:apply-templates select="xs:annotation" />
+<xsl:template match = "xs:element[not($type_map/entry[@key=@name])]" mode = "DEFINE"> 
+<xsl:text>&#xA;&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(SpPropertyClass):
+<xsl:text>&#x9;</xsl:text>"""<xsl:apply-templates select="xs:annotation" />"""
   
 <xsl:apply-templates select="xs:complexType/xs:sequence/xs:element" mode="DECLARE" />
 </xsl:template>
@@ -474,8 +469,8 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
 <xsl:template match = "xs:element" mode = "DEFINE_ELEMENT_AS_IDS"> 
 
 from .utilities import  _T_ids_properties,_T_Code 
-<xsl:text>&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(_T_IDS):
-<xsl:text>&#xA;    </xsl:text><xsl:apply-templates select="xs:annotation" />
+<xsl:text>&#xA;&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(_T_IDS):
+<xsl:text>&#x9;</xsl:text>"""<xsl:apply-templates select="xs:annotation" />"""
 
 <xsl:apply-templates select="xs:complexType/xs:sequence/xs:element" mode="DECLARE" />
 </xsl:template>
