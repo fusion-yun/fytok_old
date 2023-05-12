@@ -19,7 +19,7 @@ if __name__ == "__main__":
     eqdsk_file = File(
         "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="GEQdsk").read()
 
-    R0 = eqdsk_file.get("vacuum_toroidal_field/r    0")
+    R0 = eqdsk_file.get("vacuum_toroidal_field/r0")
     B0 = eqdsk_file.get("vacuum_toroidal_field/b0")
 
     psi_axis = eqdsk_file.get("time_slice/0/global_quantities/psi_axis")
@@ -49,10 +49,8 @@ if __name__ == "__main__":
     # Initialize Tokamak
 
     tok = Tokamak(device_desc[{"wall", "pf_active", "tf", "magnetics"}])
-    tok["equilibrium"] = {**eqdsk_file.dump(),
-                          "coordinate_system": {"grid": {"dim1": np.linspace(0.001, 0.995, 64), "dim2": 64}},
-                          "code": {"name":  "eq_analyze"}
-                          }
+    tok["equilibrium"] = {**eqdsk_file.dump(), "code": {"name":  "eq_analyze"}}
+    tok.equilibrium._default_value = {"time_slice": {"coordinate_system": {"grid": {"dim1": 128, "dim2": 64}}}, }
     if True:
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},
@@ -63,7 +61,7 @@ if __name__ == "__main__":
                       "separatrix": True,
                   }
                   ) .savefig(output_path/"tokamak.svg", transparent=True)
-    if False:
+    if True:
         time_slice = -1
         eq_profiles_1d = tok.equilibrium.time_slice[time_slice].profiles_1d
 
@@ -140,3 +138,5 @@ if __name__ == "__main__":
             x_axis=(eq_profiles_1d.psi_norm,      r"$\bar{\psi}$"),
             title="Equilibrium",
             grid=True, fontsize=16) .savefig(output_path/"equilibrium_coord.svg", transparent=True)
+
+    logger.info("Equilibrium is done")

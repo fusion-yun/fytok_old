@@ -145,29 +145,6 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
         return psirz
 
     @cached_property
-    def magnetic_axis(self) -> typing.Tuple[float, float]:
-        o_points = self.critical_points[0]
-        return o_points[0].r, o_points[0].z
-
-    @cached_property
-    def psi_bc(self) -> float:
-        o, x = self.critical_points
-        psi_magnetic_axis = o[0].psi
-        if len(x) == 0:
-            raise RuntimeError(f"Can not find x-point")
-        psi_boundary = x[0].psi
-        return psi_magnetic_axis, psi_boundary
-
-    @cached_property
-    def psi_delta(self) -> float: return self.psi_bc[1]-self.psi_bc[0]
-
-    @property
-    def psi_magnetic_axis(self) -> float: return self.psi_bc[0]
-
-    @property
-    def psi_boundary(self) -> float: return self.psi_bc[1]
-
-    @cached_property
     def critical_points(self) -> typing.Tuple[typing.Sequence[OXPoint], typing.Sequence[OXPoint]]:
         opoints = []
         xpoints = []
@@ -209,6 +186,32 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
     @cached_property
     def psi(self) -> ArrayType: return self.psi_norm * self.psi_delta + self.psi_magnetic_axis
 
+    def psirz(self, r: NumericType, z: NumericType, grid=False, **kwargs) -> NumericType:
+        return self._psirz(r, z, grid=grid, **kwargs)
+
+    @cached_property
+    def magnetic_axis(self) -> typing.Tuple[float, float]:
+        o_points = self.critical_points[0]
+        return o_points[0].r, o_points[0].z
+
+    @cached_property
+    def psi_bc(self) -> typing.Tuple[float, float]:
+        o, x = self.critical_points
+        psi_magnetic_axis = o[0].psi
+        if len(x) == 0:
+            raise RuntimeError(f"Can not find x-point")
+        psi_boundary = x[0].psi
+        return psi_magnetic_axis, psi_boundary
+
+    @cached_property
+    def psi_delta(self) -> float: return self.psi_bc[1]-self.psi_bc[0]
+
+    @property
+    def psi_magnetic_axis(self) -> float: return self.psi_bc[0]
+
+    @property
+    def psi_boundary(self) -> float: return self.psi_bc[1]
+
     @sp_property
     def grid_type(self) -> _T_identifier_dynamic_aos3:
         desc = super().grid_type
@@ -219,9 +222,9 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
     @sp_property
     def grid(self) -> Grid:
         psi_norm = super().grid.dim1
-        if isinstance(psi_norm, np.ndarray) and len(psi_norm.shape) == 1:
+        if isinstance(psi_norm, np.ndarray) and psi_norm.ndim == 1:
             pass
-        elif isinstance(psi_norm, np.ndarray) and len(psi_norm.shape) == 0:
+        elif isinstance(psi_norm, np.ndarray) and psi_norm.ndim == 0:
             psi_norm_boundary = self._parent.boundary.psi_norm
             psi_norm = np.linspace(0, psi_norm_boundary, int(psi_norm), endpoint=True)
         elif isinstance(psi_norm, collections.abc.Sequence) and len(psi_norm) == 3:
@@ -230,9 +233,9 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
             raise ValueError(f"Can not create grid! psi_norm={psi_norm}")
 
         theta = super().grid.dim2
-        if isinstance(theta, np.ndarray) and len(theta.shape) == 1:
+        if isinstance(theta, np.ndarray) and theta.ndim == 1:
             pass
-        elif isinstance(theta, np.ndarray) and len(theta.shape) == 0:
+        elif isinstance(theta, np.ndarray) and theta.ndim == 0:
             theta = np.linspace(0, TWOPI, int(theta), endpoint=False)
         elif isinstance(theta, collections.abc.Sequence) and len(theta) == 3:
             theta = np.linspace(theta[0], theta[1], int(theta[2]), endpoint=False)
@@ -261,10 +264,7 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
     def tensor_contravariant(self) -> Field[float]:
         raise NotImplementedError(f"")
 
-    def psi(self, r: NumericType, z: NumericType, grid=False, **kwargs) -> NumericType:
-        return self._psirz(r, z, grid=grid, **kwargs)
-
-    def find_surface(self, psi:  float | ArrayType | typing.Sequence[float] = None, o_point: OXPoint = True) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
+    def find_surface(self, psi:  float | ArrayType | typing.Sequence[float], o_point: OXPoint = True) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
         """
             if o_point is not None:
                 only return  closed surface  enclosed o-point
@@ -274,28 +274,25 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
                 do not guarantee the number of surface == len(psi)
                 return all surface ,
         """
-
-        x_point = None
-        if o_point is True:
-            opts, xpts = self.critical_points
-            if len(opts) == 0:
-                raise RuntimeError(f"O-point is not defined!")
-            o_point = opts[0]
-            if len(xpts) > 0:
-                x_point = xpts[0]
-
         # R, Z = self._psirz.grid.points
         # F = np.asarray(self._psirz)
-
-        if not isinstance(psi, (collections.abc.Sequence, np.ndarray)):
-            psi = [psi]
-
-        psi = np.asarray(psi, dtype=float)
+        # if not isinstance(psi, (collections.abc.Sequence, np.ndarray)):
+        #     psi = [psi]
+        # psi = np.asarray(psi, dtype=float)
 
         if o_point is None or o_point is False:
             for level, points in find_countours(self._psirz, levels=psi):
                 yield level, CubicSplineCurve(points)
         else:
+            # x_point = None
+            if o_point is True:
+                opts, xpts = self.critical_points
+                if len(opts) == 0:
+                    raise RuntimeError(f"O-point is not defined!")
+                o_point = opts[0]
+                if len(xpts) > 0:
+                    x_point = xpts[0]
+
             for level, points in find_countours(self._psirz, levels=psi):
 
                 theta = np.arctan2(points[:, 0]-o_point.r, points[:, 1]-o_point.z)
@@ -494,7 +491,8 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
     def grad_psi(self) -> Field[float]: return np.sqrt(self.grad_psi2)
 
     @property
-    def ddpsi(self) -> Field[float]: return np.sqrt(self.psi.pd(2, 0) * self.psi.pd(0, 2) + self.psi.pd(1, 1)**2)
+    def ddpsi(self) -> Field[float]: return np.sqrt(self._psirz.pd(2, 0)
+                                                    * self._psirz.pd(0, 2) + self._psirz.pd(1, 1)**2)
 
     @cached_property
     def dvolume_dpsi(self) -> np.ndarray: return self._surface_integral()
@@ -522,10 +520,12 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
 
         return np.asarray([(axis.integral(func/self.Bpol) if not np.isclose(p, 0) else func(r0, z0) * c0) for p, axis in surfs_list], dtype=float)
 
-    def surface_average(self,  func,   /, psi: float | typing.Sequence[float] = None, extrapolate_left=False, ** kwargs) -> np.ndarray:
+    def surface_average(self,  func,  psi: float | typing.Sequence[float] = None, extrapolate_left=False, ** kwargs) -> np.ndarray:
         r"""
             $\left\langle \alpha\right\rangle \equiv\frac{2\pi}{V^{\prime}}\oint\alpha\frac{Rdl}{\left|\nabla\psi\right|}$
         """
+        if psi is None:
+            psi = self.psi
         res = self._surface_integral(func, psi)/self.dvolume_dpsi
 
         if isinstance(psi, np.ndarray) and extrapolate_left:
@@ -767,8 +767,8 @@ class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
     @property
     def _profiles_1d(self) -> _T_equilibrium_profiles_1d: return self._parent.profiles_1d
 
-    @sp_property[Grid]
-    def grid(self):
+    @sp_property
+    def grid(self) -> Grid:
         return Grid(super().grid.dim1, super().grid.dim2, volume_element=super().grid.volume_element, type=super().grid_type)
 
     @sp_property
@@ -870,26 +870,21 @@ class EquilibriumBoundary(_T_equilibrium_boundary):
 
 
 class EquilibriumBoundarySeparatrix(_T_equilibrium_boundary_separatrix):
+
     @property
     def _coord(self) -> EquilibriumCoordinateSystem: return self._parent.coordinate_system
 
     @sp_property
     def outline(self) -> RZTuple1D:
         """RZ outline of the plasma boundary  """
-        _, surf = next(self._coord.find_surface_by_psi_norm(1.0, o_point=None))
+        _, surf = next(self._coord.find_surface(self.psi, o_point=None))
         return {"r": surf.xyz[0], "z": surf.xyz[1]}
 
     @sp_property
-    def psi_magnetic_axis(self) -> float:
-        return self._coord.psi_magnetic_axis
+    def magnetic_axis(self) -> float: return self._coord.psi_magnetic_axis
 
     @sp_property
-    def psi_boundary(self) -> float:
-        return self._coord.psi_boundary
-
-    @sp_property
-    def psi(self) -> float:
-        return self._coord.psi_norm*(self._coord.psi_boundary-self._coord.psi_magnetic_axis)+self._coord.psi_magnetic_axis
+    def psi(self) -> float: return self._coord.psi_boundary
 
     @sp_property
     def x_point(self) -> List[RZTuple]:
