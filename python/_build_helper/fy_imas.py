@@ -97,7 +97,7 @@ class _T_Module(SpPropertyClass, Pluggable):
     code: _T_Code = sp_property()
     """Generic decription of the code-specific parameters for the code that has produced this IDS"""
 
-
+ 
 class _T_IDS(_T_Module):
     """ Base class of IDS """
 

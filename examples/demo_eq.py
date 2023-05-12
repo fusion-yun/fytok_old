@@ -1,49 +1,27 @@
 import pathlib
-from pprint import pprint
-
-import numpy as np
 import pandas as pd
-from fytok.modules.Wall import Wall
-from scipy import constants
-import spdm.plugins.data
-if True:
-    import sys
-    sys.path.append("/home/salmon/workspace/fytok/python")
-    sys.path.append("/home/salmon/workspace/SpDB/python")
+import numpy as np
+from fytok.modules.Equilibrium import Equilibrium
+from fytok.utils.plot_profiles import sp_figure, plot_profiles
+from spdm.data.Function import function_like
+from spdm.data.File import File
+from spdm.utils.logger import logger
 
-    from fytok.load_profiles import (load_core_profiles, load_core_source,
-                                     load_core_transport, load_equilibrium)
-    from fytok.modules.Equilibrium import Equilibrium
-    from spdm.data.File import File
-    from spdm.utils.logger import logger
+if __name__ == "__main__":
 
-eqdsk_file = File("/home/salmon/workspace/fytok/examples/data/g063982.04800", format="geqdsk").read()
-# # "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="geqdsk").read()
-# desc = load_equilibrium(eqdsk_file,
-#                         coordinate_system={
-#                             "psi_norm": np.linspace(0, 0.995, 32),
-#                             "theta": 64},
-#                         code={"name": "dummy"},
-#                         boundary={"psi_norm": 0.995}
-#                         )
-# device_desc = File("/home/salmon/workspace/fytok_data/mapping/EAST/imas/3/static/config.xml", format="XML").read()
+    logger.info("====== START ========")
+    output_path = pathlib.Path('/home/salmon/workspace/output')
 
-eq = Equilibrium(eqdsk_file)
+    ###################################################################################################
+    # baseline
+    device_desc = File("/home/salmon/workspace/fytok_data/mapping/ITER/imas/3/static/config.xml", format="XML").read()
+    # Equilibrium
+    eqdsk_file = File(
+        "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="GEQdsk").read()
 
-logger.debug(eq.profiles_2d.psi)
-
-# wall = Wall(device_desc.get("wall"))
-
-# wall.description_2d[0].limiter.unit[0].outline.r
-
-# psi_norm = np.linspace(0.0, 0.995, 32)
-
-
-# eqdsk_file = File("test.geqdsk", mode="w", format="geqdsk").write({
-#     "equilibrium": eq, "wall": wall
-# })
-
-
-# pprint(p()[:10])
-# pprint(p(psi_norm)[:10])
-# pprint(eq.profiles_1d.q())
+    eq = Equilibrium({**eqdsk_file.dump(),
+                      "coordinate_system": {
+                          "grid": {"dim1": np.linspace(0.001, 0.995, 64), "dim2": 64}},
+                      "code": {"name":  "eq_analyze"}
+                      })
+    logger.debug(eq.time_slice[-1].coordinate_system.grid_type)

@@ -19,7 +19,7 @@ if __name__ == "__main__":
     eqdsk_file = File(
         "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="GEQdsk").read()
 
-    R0 = eqdsk_file.get("vacuum_toroidal_field/r0")
+    R0 = eqdsk_file.get("vacuum_toroidal_field/r    0")
     B0 = eqdsk_file.get("vacuum_toroidal_field/b0")
 
     psi_axis = eqdsk_file.get("time_slice/0/global_quantities/psi_axis")
@@ -50,11 +50,8 @@ if __name__ == "__main__":
 
     tok = Tokamak(device_desc[{"wall", "pf_active", "tf", "magnetics"}])
     tok["equilibrium"] = {**eqdsk_file.dump(),
-                          "code": {"name":  "eq_analyze",
-                                   "parameters": {
-                                       "boundary": {"psi_norm": 0.995},
-                                       "coordinate_system": {"psi_norm": np.linspace(0.001, 0.995, 64), "theta": 64}}
-                                   }
+                          "coordinate_system": {"grid": {"dim1": np.linspace(0.001, 0.995, 64), "dim2": 64}},
+                          "code": {"name":  "eq_analyze"}
                           }
     if True:
         sp_figure(tok,
@@ -69,9 +66,9 @@ if __name__ == "__main__":
     if False:
         time_slice = -1
         eq_profiles_1d = tok.equilibrium.time_slice[time_slice].profiles_1d
-        
+
         bs_line_style = {"marker": '.', "linestyle": ''}
-    
+
         plot_profiles(
             [
                 [

@@ -13,8 +13,8 @@ import subprocess
 from setuptools import Command, find_namespace_packages, setup
 from setuptools.command.build_py import build_py
 
-# Get version from git
-version = subprocess.check_output(['git', 'describe', '--abbrev=0']).strip().decode('utf-8')
+# Get version from git, '--abbrev=0'
+version = subprocess.check_output(['git', 'describe', '--always', '--dirty']).strip().decode('utf-8')
 
 fy_git_describe = subprocess.check_output(['git', 'describe', '--always', '--dirty']).strip().decode('utf-8')
 
@@ -161,7 +161,7 @@ class BuildPyCommand(build_py):
         with open(build_dir/'__version__.py', 'w') as f:
             f.write(f"__version__ = \"{self.distribution.get_version()}\"")
 
-        if not (source_dir/f"{self.distribution.get_version()}/__doc__.py").exists():
+        if not (build_dir/"__doc__.py").exists():
             with open(build_dir/'__doc__.py', 'w') as f:
                 f.write(f'"""\n{self.distribution.get_long_description()}\n"""')
 

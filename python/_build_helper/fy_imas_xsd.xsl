@@ -369,7 +369,10 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
 
 </xsl:variable>
 
-<xsl:template match="xs:element[@name  and not(xs:annotation/xs:appinfo/lifecycle_status='obsolescent')]" mode="DECLARE">
+
+ 
+
+<xsl:template match="xs:element[@name  and  not(xs:annotation/xs:appinfo/lifecycle_status='obsolescent')]" mode="DECLARE">
 <xsl:variable name="prop_name">
   <xsl:choose>
     <xsl:when test="@ref"><xsl:value-of select="my:py_keyword(@ref)"/></xsl:when>
@@ -386,8 +389,10 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
 <xsl:variable name="type_hint">
   <xsl:choose>
     <xsl:when test="($type_hint='INT_1D' or $type_hint='int_1d_type') and normalize-space(xs:annotation/xs:appinfo/coordinate1)='1...N' ">List[int]</xsl:when>          
-    <xsl:when test="($type_hint='FLT_1D' or $type_hint='flt_1d_type') and ends-with(xs:annotation/xs:appinfo/coordinate1,'time') ">Profile[float]</xsl:when>          
-    <xsl:when test="($type_hint='FLT_2D' or $type_hint='flt_2d_type') and normalize-space(xs:annotation/xs:appinfo/coordinate1)=('1...N','../dim1') ">np.ndarray</xsl:when>          
+    <xsl:when test="($type_hint='FLT_1D' or $type_hint='flt_1d_type') and ends-with(xs:annotation/xs:appinfo/coordinate1,'time')">Profile[float]</xsl:when>
+    <xsl:when test="($type_hint='FLT_1D' or $type_hint='flt_1d_type') and ends-with(xs:annotation/xs:appinfo/coordinate1,'rho_tor_norm')">Profile[float]</xsl:when>                  
+    <xsl:when test="($type_hint='FLT_1D' or $type_hint='flt_1d_type') and ends-with(xs:annotation/xs:appinfo/coordinate1,'psi')">Profile[float]</xsl:when>                     
+    <xsl:when test="($type_hint='FLT_2D' or $type_hint='flt_2d_type') and normalize-space(xs:annotation/xs:appinfo/coordinate1)=('../grid/dim1')  and normalize-space(xs:annotation/xs:appinfo/coordinate2)=('../grid/dim2')">Field[float]</xsl:when>          
     <xsl:when test="$type_map/entry[@key=$type_hint]"><xsl:value-of select="$type_map/entry[@key=$type_hint]"/></xsl:when>          
     <xsl:when test="xs:annotation/xs:appinfo/doc_identifier">_E_<xsl:value-of select = "document(concat($DD_BASE_DIR, xs:annotation/xs:appinfo/doc_identifier))/constants/@name"/></xsl:when>
     <xsl:otherwise>_T_<xsl:value-of select="$type_hint"/> </xsl:otherwise>   
@@ -468,10 +473,11 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
 
 <xsl:template match = "xs:element" mode = "DEFINE_ELEMENT_AS_IDS"> 
 
-from .utilities import  _T_ids_properties,_T_Code 
 <xsl:text>&#xA;&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(_T_IDS):
 <xsl:text>&#x9;</xsl:text>"""<xsl:apply-templates select="xs:annotation" />"""
-
+<xsl:text>&#xA;</xsl:text>
+<xsl:text>&#x9;</xsl:text>dd_version="<xsl:value-of select="$DD_GIT_DESCRIBE" />"
+<xsl:text>&#x9;</xsl:text>ids_name="<xsl:value-of select="@name" />"
 <xsl:apply-templates select="xs:complexType/xs:sequence/xs:element" mode="DECLARE" />
 </xsl:template>
 
