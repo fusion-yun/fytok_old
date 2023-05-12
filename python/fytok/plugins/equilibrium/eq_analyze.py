@@ -13,7 +13,6 @@ from fytok._imas.lastest.equilibrium import (
     _T_equilibrium_global_quantities_magnetic_axis, _T_equilibrium_profiles_1d,
     _T_equilibrium_profiles_2d, _T_equilibrium_time_slice)
 from fytok._imas.lastest.utilities import _T_identifier_dynamic_aos3
-
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.modules.Utilities import RZTuple, RZTuple1D
 from scipy import constants
@@ -109,6 +108,19 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
         super().__init__(*args, **kwargs)
         logger.debug(f"Create MagneticCoordSystem.")
 
+        self._B0 = super().get("b0", self._parent._B0)   # magnetic field on magnetic axis
+
+        self._R0 = super().get("r0", self._parent._R0)   # major radius of magnetic axis
+
+        self._s_Bp = np.sign(self._B0)
+        self._s_2PI = TWOPI
+
+    # @property
+    # def cocos(self) -> int: return self._cocos
+
+    # @cached_property
+    # def cocos_flag(self) -> int: return 1 if self.psi_boundary > self.psi_magnetic_axis else -1
+
     @cached_property
     def _psirz(self) -> Field[float]:
         psirz = super().get("psirz", _not_found_)
@@ -132,66 +144,28 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
 
         return psirz
 
-    @sp_property
-    def grid_type(self) -> _T_identifier_dynamic_aos3:
-        desc = super().grid_type
-        if desc.name is None or desc.name is _not_found_:
-            desc = {"name": "rectangular", "index": 1, "description": "default"}
-        return desc
+    @cached_property
+    def magnetic_axis(self) -> typing.Tuple[float, float]:
+        o_points = self.critical_points[0]
+        return o_points[0].r, o_points[0].z
 
-    @sp_property
-    def grid(self) -> Grid:
-        psi_norm = super().grid.dim1
-        if isinstance(psi_norm, np.ndarray) and len(psi_norm.shape) == 1:
-            pass
-        elif len(psi_norm.shape) == 0:
-            psi_norm_boundary = self._parent.boundary.psi_norm
-            psi_norm = np.linspace(0, psi_norm_boundary, int(psi_norm), endpoint=True)
-        elif isinstance(psi_norm, collections.abc.Sequence) and len(psi_norm) == 3:
-            psi_norm = np.linspace(psi_norm[0], psi_norm[1], psi_norm[2], endpoint=True)
-        else:
-            raise ValueError(f"Can not create grid! psi_norm={psi_norm}")
+    @cached_property
+    def psi_bc(self) -> float:
+        o, x = self.critical_points
+        psi_magnetic_axis = o[0].psi
+        if len(x) == 0:
+            raise RuntimeError(f"Can not find x-point")
+        psi_boundary = x[0].psi
+        return psi_magnetic_axis, psi_boundary
 
-        theta = super().grid.dim2
-        if isinstance(theta, np.ndarray) and len(theta.shape) == 1:
-            pass
-        elif len(theta.shape) == 0:
-            theta = np.linspace(0, TWOPI, int(theta), endpoint=False)
-        elif isinstance(theta, collections.abc.Sequence) and len(theta) == 3:
-            theta = np.linspace(theta[0], theta[1], int(theta[2]), endpoint=True)
-        else:
-            raise ValueError(f"Can not create grid! theta={theta}")
+    @cached_property
+    def psi_delta(self) -> float: return self.psi_bc[1]-self.psi_bc[0]
 
-        surfs = GeoObjectSet([surf for _, surf in self.find_surface_by_psi_norm(psi_norm, o_point=True)])
+    @property
+    def psi_magnetic_axis(self) -> float: return self.psi_bc[0]
 
-        return CurvilinearMesh(psi_norm, theta, geometry=surfs, cycle=[False, TWOPI])
-
-    @sp_property
-    def r(self) -> Field[float]: return Field(self.grid.points[0], grid=self.grid)
-
-    @sp_property
-    def z(self) -> Field[float]: return Field(self.grid.points[1], grid=self.grid)
-
-    @sp_property
-    def jacobian(self) -> Field[float]:
-        raise NotImplementedError(f"")
-
-    @sp_property
-    def tensor_covariant(self) -> Field[float]:
-        raise NotImplementedError(f"")
-
-    @sp_property
-    def tensor_contravariant(self) -> Field[float]:
-        raise NotImplementedError(f"")
-
-    def psi(self, r: NumericType, z: NumericType, grid=False, **kwargs) -> NumericType:
-        return self._psirz(r, z, grid=grid, **kwargs)
-
-    # @property
-    # def cocos(self) -> int: return self._cocos
-
-    # @cached_property
-    # def cocos_flag(self) -> int: return 1 if self.psi_boundary > self.psi_magnetic_axis else -1
+    @property
+    def psi_boundary(self) -> float: return self.psi_bc[1]
 
     @cached_property
     def critical_points(self) -> typing.Tuple[typing.Sequence[OXPoint], typing.Sequence[OXPoint]]:
@@ -229,10 +203,68 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
 
         return opoints, xpoints
 
-    @cached_property
-    def o_point(self) -> OXPoint: return self.critical_points[0][0]
+    @property
+    def psi_norm(self) -> ArrayType: return self.grid.dim1
 
-    def find_surface(self, psi:  float | ArrayType | typing.Sequence[float] = None, o_point: OXPoint = True) -> typing.Iterator[typing.Tuple[float, GeoObject]]:
+    @cached_property
+    def psi(self) -> ArrayType: return self.psi_norm * self.psi_delta + self.psi_magnetic_axis
+
+    @sp_property
+    def grid_type(self) -> _T_identifier_dynamic_aos3:
+        desc = super().grid_type
+        if desc.name is None or desc.name is _not_found_:
+            desc = {"name": "rectangular", "index": 1, "description": "default"}
+        return desc
+
+    @sp_property
+    def grid(self) -> Grid:
+        psi_norm = super().grid.dim1
+        if isinstance(psi_norm, np.ndarray) and len(psi_norm.shape) == 1:
+            pass
+        elif isinstance(psi_norm, np.ndarray) and len(psi_norm.shape) == 0:
+            psi_norm_boundary = self._parent.boundary.psi_norm
+            psi_norm = np.linspace(0, psi_norm_boundary, int(psi_norm), endpoint=True)
+        elif isinstance(psi_norm, collections.abc.Sequence) and len(psi_norm) == 3:
+            psi_norm = np.linspace(psi_norm[0], psi_norm[1], psi_norm[2], endpoint=True)
+        else:
+            raise ValueError(f"Can not create grid! psi_norm={psi_norm}")
+
+        theta = super().grid.dim2
+        if isinstance(theta, np.ndarray) and len(theta.shape) == 1:
+            pass
+        elif isinstance(theta, np.ndarray) and len(theta.shape) == 0:
+            theta = np.linspace(0, TWOPI, int(theta), endpoint=False)
+        elif isinstance(theta, collections.abc.Sequence) and len(theta) == 3:
+            theta = np.linspace(theta[0], theta[1], int(theta[2]), endpoint=False)
+        else:
+            raise ValueError(f"Can not create grid! theta={theta}")
+
+        surfs = GeoObjectSet([surf for _, surf in self.find_surface_by_psi_norm(psi_norm, o_point=True)])
+
+        return CurvilinearMesh(psi_norm, theta, geometry=surfs, cycle=[False, TWOPI])
+
+    @sp_property
+    def r(self) -> Field[float]: return Field(self.grid.points[0], grid=self.grid)
+
+    @sp_property
+    def z(self) -> Field[float]: return Field(self.grid.points[1], grid=self.grid)
+
+    @sp_property
+    def jacobian(self) -> Field[float]:
+        raise NotImplementedError(f"")
+
+    @sp_property
+    def tensor_covariant(self) -> Field[float]:
+        raise NotImplementedError(f"")
+
+    @sp_property
+    def tensor_contravariant(self) -> Field[float]:
+        raise NotImplementedError(f"")
+
+    def psi(self, r: NumericType, z: NumericType, grid=False, **kwargs) -> NumericType:
+        return self._psirz(r, z, grid=grid, **kwargs)
+
+    def find_surface(self, psi:  float | ArrayType | typing.Sequence[float] = None, o_point: OXPoint = True) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
         """
             if o_point is not None:
                 only return  closed surface  enclosed o-point
@@ -330,13 +362,15 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
                 #     else:
                 #         raise RuntimeError(f"{level},{o_point.psi},{(max(theta),min(theta))}")
 
-    def find_surface_by_psi_norm(self, psi_norm: float | ArrayType | typing.Sequence[float], *args,   **kwargs) -> typing.Iterator[typing.Tuple[float, GeoObject]]:
-        o, x = self.critical_points
-        psi_magnetic_axis = o[0].psi
-        if len(x) == 0:
-            raise RuntimeError(f"Can not find x-point")
-        psi_boundary = x[0].psi
-        yield from self.find_surface(np.asarray(psi_norm, dtype=float)*(psi_boundary-psi_magnetic_axis)+psi_magnetic_axis, *args,  **kwargs)
+    def find_surface_by_psi_norm(self, psi_norm: float | ArrayType | typing.Sequence[float], *args,   **kwargs) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
+
+        psi_magnetic_axis, psi_boundary = self.psi_bc
+
+        if isinstance(psi_norm, (collections.abc.Sequence, np.ndarray)):
+            yield from self.find_surface(np.asarray(psi_norm, dtype=float)*(psi_boundary-psi_magnetic_axis)+psi_magnetic_axis, *args,  **kwargs)
+        elif isinstance(psi_norm, collections.abc.Generator):
+            for psi in psi_norm:
+                yield from self.find_surface_by_psi_norm(psi*(psi_boundary-psi_magnetic_axis)+psi_magnetic_axis, *args,  **kwargs)
 
     ###############################
 
@@ -443,33 +477,50 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
                 r_outboard,  # "r_outboard":
             )
 
+    #################################
+    # fields
+
+    @property
+    def Bpol(self) -> Field[float]: return self.grad_psi / _R / (TWOPI)
+    r""" $B_{pol}= \left|\nabla \psi \right|/2 \pi R $ """
+
+    @property
+    def B2(self) -> Field[float]: return (self.b_field_r ** 2+self.b_field_z ** 2 + self.b_field_tor ** 2)
+
+    @property
+    def grad_psi2(self) -> Field[float]: return self._psirz.pd(1, 0)**2+self._psirz.pd(0, 1)**2
+
+    @property
+    def grad_psi(self) -> Field[float]: return np.sqrt(self.grad_psi2)
+
+    @property
+    def ddpsi(self) -> Field[float]: return np.sqrt(self.psi.pd(2, 0) * self.psi.pd(0, 2) + self.psi.pd(1, 1)**2)
+
+    @cached_property
+    def dvolume_dpsi(self) -> np.ndarray: return self._surface_integral()
     ###############################
     # surface integral
 
-    def _surface_integral(self, func: Function = None, surface_list=None) -> np.ndarray:
-        r0 = self.o_point.r
-        z0 = self.o_point.z
+    def _surface_integral(self, func: Function = None, psi_norm=None) -> np.ndarray:
+        r"""
+            $ V^{\prime} =  2 \pi  \int{ R / \left|\nabla \psi \right| * dl }$
+            $ V^{\prime}(psi)= 2 \pi  \int{ dl * R / \left|\nabla \psi \right|}$
+        """
+        r0, z0 = self.magnetic_axis
 
         ddpsi = self.ddpsi(r0, z0)
 
         c0 = TWOPI*r0**2/ddpsi
 
-        if surface_list is None:
-            surface_list = self.grid.axis_iter()
+        if psi_norm is None:
+            surfs_list = self.grid.axis_iter()
         else:
-            surface_list = self.find_surface_by_psi_norm(surface_list, o_point=True)
+            surfs_list = [*self.find_surface_by_psi_norm(psi_norm, o_point=True)]
 
         if func is None:
             func = 1.0
 
-        return np.asarray([(axis.integral(func/self.Bpol) if not np.isclose(p, 0) else func(r0, z0) * c0) for p, axis in surface_list], dtype=float)
-
-    @cached_property
-    def dvolume_dpsi(self) -> np.ndarray: return self._surface_integral()
-    r"""
-        $ V^{\prime} =  2 \pi  \int{ R / \left|\nabla \psi \right| * dl }$
-        $ V^{\prime}(psi)= 2 \pi  \int{ dl * R / \left|\nabla \psi \right|}$
-    """
+        return np.asarray([(axis.integral(func/self.Bpol) if not np.isclose(p, 0) else func(r0, z0) * c0) for p, axis in surfs_list], dtype=float)
 
     def surface_average(self,  func,   /, psi: float | typing.Sequence[float] = None, extrapolate_left=False, ** kwargs) -> np.ndarray:
         r"""
@@ -487,77 +538,58 @@ class EquilibriumGlobalQuantities(_T_equilibrium_global_quantities):
     @property
     def _coord(self) -> EquilibriumCoordinateSystem: return self._parent.coordinate_system
 
+    # beta_pol  :float =  sp_property(type="dynamic",units="-")
+
+    # beta_tor  :float =  sp_property(type="dynamic",units="-")
+
+    # beta_normal  :float =  sp_property(type="dynamic",units="-")
+
+    # ip  :float =  sp_property(type="dynamic",units="A",cocos_label_transformation="ip_like",cocos_transformation_expression=".sigma_ip_eff",cocos_leaf_name_aos_indices="equilibrium.time_slice{i}.global_quantities.ip")
+
+    # li_3  :float =  sp_property(type="dynamic",units="-")
+
+    # volume  :float =  sp_property(type="dynamic",units="m^3")
+
+    # area  :float =  sp_property(type="dynamic",units="m^2")
+
+    # surface  :float =  sp_property(type="dynamic",units="m^2")
+
+    # length_pol  :float =  sp_property(type="dynamic",units="m")
+
+    @sp_property
+    def psi_magnetic_axis(self) -> float: return self._coord.psi_magnetic_axis  # sp_property(type="dynamic",units="Wb")
+
+    @sp_property
+    def psi_boundary(self) -> float: return self._coord.psi_boundary  # sp_property(type="dynamic",units="Wb")
+
     @sp_property
     def magnetic_axis(self) -> _T_equilibrium_global_quantities_magnetic_axis:
         """Magnetic axis position and toroidal field	structure"""
-        o, _ = self._coord.critical_points
-        if not o:
-            raise RuntimeError(f"Can not find magnetic axis")
-
         return {
-            "r": o[0].r,
-            "z": o[0].z,
-            "b_field_tor": NotImplemented
+            "r":  self._coord.magnetic_axis[0],
+            "z":  self._coord.magnetic_axis[1],
+            "b_field_tor": NotImplemented  # FIXME: b_field_tor
         }
 
-    @sp_property
-    def psi_magnetic_axis(self) -> float: return self._coord.critical_points[0].psi
+        # magnetic_axis  :_T_equilibrium_global_quantities_magnetic_axis =  sp_property()
 
-    @sp_property
-    def psi_boundary(self) -> float:
-        _, x = self._coord.critical_points
-        if len(x) == 0:
-            raise ValueError(f"No x-point")
-        return x[0].psi
+        # current_centre  :_T_equilibrium_global_quantities_current_centre =  sp_property()
 
-    beta_pol: float = sp_property(type="dynamic", units="-")
+        # q_axis  :float =  sp_property(type="dynamic",units="-",cocos_label_transformation="q_like",cocos_transformation_expression=".fact_q",cocos_leaf_name_aos_indices="equilibrium.time_slice{i}.global_quantities.q_axis")
 
-    beta_tor: float = sp_property(type="dynamic", units="-")
+        # q_95  :float =  sp_property(type="dynamic",units="-",cocos_label_transformation="q_like",cocos_transformation_expression=".fact_q",cocos_leaf_name_aos_indices="equilibrium.time_slice{i}.global_quantities.q_95")
 
-    beta_normal: float = sp_property(type="dynamic", units="-")
+        # q_min  :_T_equilibrium_global_quantities_qmin =  sp_property()
 
-    # ip: float = sp_property(type="dynamic", units="A", cocos_label_transformation="ip_like",
-    #                         cocos_transformation_expression=".sigma_ip_eff", cocos_leaf_name_aos_indices="equilibrium.time_slice{i}.global_quantities.ip")
+        # energy_mhd  :float =  sp_property(type="dynamic",units="J")
 
-    # li_3: float = sp_property(type="dynamic", units="-")
+        # psi_external_average  :float =  sp_property(type="dynamic",units="Wb",cocos_label_transformation="psi_like",cocos_transformation_expression=".fact_psi",cocos_leaf_name_aos_indices="equilibrium.time_slice{i}.global_quantities.psi_external_average")
 
-    # volume: float = sp_property(type="dynamic", units="m^3")
+        # v_external  :float =  sp_property(type="dynamic",units="V",cocos_label_transformation="ip_like",cocos_transformation_expression=".sigma_ip_eff",cocos_leaf_name_aos_indices=["core_profiles.global_quantities.v_loop","equilibrium.time_slice{i}.global_quantities.v_external"],introduced_after_version="3.37.2")
 
-    # area: float = sp_property(type="dynamic", units="m^2")
+        # plasma_inductance  :float =  sp_property(type="dynamic",units="H")
 
-    # surface: float = sp_property(type="dynamic", units="m^2")
-
-    # length_pol: float = sp_property(type="dynamic", units="m")
-
-    # psi_axis: float = sp_property(type="dynamic", units="Wb", cocos_label_transformation="psi_like",
-    #                               cocos_transformation_expression=".fact_psi", cocos_leaf_name_aos_indices="equilibrium.time_slice{i}.global_quantities.psi_axis")
-
-    # psi_boundary: float = sp_property(type="dynamic", units="Wb", cocos_label_transformation="psi_like",
-    #                                   cocos_transformation_expression=".fact_psi", cocos_leaf_name_aos_indices="equilibrium.time_slice{i}.global_quantities.psi_boundary")
-
-    # magnetic_axis: _T_equilibrium_global_quantities_magnetic_axis = sp_property()
-
-    # current_centre: _T_equilibrium_global_quantities_current_centre = sp_property()
-
-    # q_axis: float = sp_property(type="dynamic", units="-", cocos_label_transformation="q_like",
-    #                             cocos_transformation_expression=".fact_q", cocos_leaf_name_aos_indices="equilibrium.time_slice{i}.global_quantities.q_axis")
-
-    # q_95: float = sp_property(type="dynamic", units="-", cocos_label_transformation="q_like",
-    #                           cocos_transformation_expression=".fact_q", cocos_leaf_name_aos_indices="equilibrium.time_slice{i}.global_quantities.q_95")
-
-    # q_min: _T_equilibrium_global_quantities_qmin = sp_property()
-
-    # energy_mhd: float = sp_property(type="dynamic", units="J")
-
-    # psi_external_average: float = sp_property(type="dynamic", units="Wb", cocos_label_transformation="psi_like", cocos_transformation_expression=".fact_psi",
-    #                                           cocos_leaf_name_aos_indices="equilibrium.time_slice{i}.global_quantities.psi_external_average")
-
-    # v_external: float = sp_property(type="dynamic", units="V", cocos_label_transformation="ip_like", cocos_transformation_expression=".sigma_ip_eff", cocos_leaf_name_aos_indices=[
-    #                                 "core_profiles.global_quantities.v_loop", "equilibrium.time_slice{i}.global_quantities.v_external"], introduced_after_version="3.37.2")
-
-    # plasma_inductance: float = sp_property(type="dynamic", units="H")
-
-    # plasma_resistance: float = sp_property(type="dynamic", units="ohm", introduced_after_version="3.37.2")
+        # plasma_resistance  :float =  sp_property(type="dynamic",units="ohm",introduced_after_version="3.37.2")
 
 
 class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
@@ -569,18 +601,16 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
     # 1-D
 
     @property
-    def psi_norm(self) -> ArrayType:
-        return self._coord._psi_norm
+    def psi_norm(self) -> ArrayType: return self._coord.psi_norm
 
     @sp_property
-    def psi(self) -> ArrayType:
-        return self.psi_norm * (self._coord.psi_boundary-self._coord.psi_magnetic_axis) + self._coord.psi_magnetic_axis
+    def psi(self) -> ArrayType: return self._coord.psi
 
     @sp_property
-    def fpol(self) -> Profile[float]: return self._coord._fpol(self.psi_norm)
+    def fpol(self) -> Profile[float]: return super().f
 
     @sp_property
-    def ffprime(self) -> Profile[float]: return self._coord._fpol(self.psi_norm)*self._coord._fpol.pd()(self.psi_norm)
+    def f_df_dpsi(self) -> Profile[float]: return self.f * self.f.pd()
 
     # @sp_property
     # def pprime(self) -> Profile[float]:
@@ -588,28 +618,19 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
     #     return self._pprime(self.psi_norm)
 
     @sp_property
-    def dphi_dpsi(self) -> Profile[float]: return self.fpol * self.gm1 * self.dvolume_dpsi / TWOPI
+    def dphi_dpsi(self) -> Profile[float]: return self.f * self.gm1 * self.dvolume_dpsi / TWOPI
 
     @sp_property
     def q(self) -> Profile[float]: return self.dphi_dpsi * self._coord._s_Bp * self._coord._s_2PI
-    r"""
-        Safety factor
-        (IMAS uses COCOS=11: only positive when toroidal current and magnetic field are in same direction)[-].
-        $ q(\psi) =\frac{d\Phi}{2\pi d\psi} =\frac{FV^{\prime}\left\langle R^{-2}\right\rangle }{2\pi}$
-    """
 
     @sp_property
     def magnetic_shear(self) -> Profile[float]: return self.rho_tor/self.q * \
         function_like(self.q, self.rho_tor).pd()(self.rho_tor)
-    """Magnetic shear, defined as rho_tor/q . dq/drho_tor[-]	 """
 
     @sp_property
     def phi(self) -> Profile[float]:
-        r"""
-            Note:
-            $\Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi$
-        """
-        return function_like(self.dphi_dpsi, self.psi_norm).antiderivative(self.psi_norm)*(self._coord.psi_boundary-self._coord.psi_magnetic_axis)
+        r"""  $\Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi$    """
+        return function_like(self.dphi_dpsi, self.psi).antiderivative(self.psi)
 
     @sp_property
     def rho_tor(self) -> Profile[float]: return np.sqrt(self.phi/(constants.pi * self._parent._B0))
@@ -619,14 +640,13 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
 
     @sp_property
     def volume(self) -> Profile[float]: return function_like(self.dvolume_dpsi, self.psi).antiderivative(self.psi)
-    """Volume enclosed in the flux surface[m ^ 3]"""
 
     @sp_property
     def surface(self) -> Profile[float]: return self.dvolume_drho_tor*self.gm7
 
     @sp_property
     def dvolume_drho_tor(self) -> Profile[float]: return (TWOPI**2) * self.rho_tor / \
-        (self.gm1)/(self._parent._R0*self._parent._B0/self.fpol)/self._parent._R0
+        (self.gm1)/(self._coord._R0*self._coord._B0/self.fpol)/self._coord._R0
 
     @sp_property
     def drho_tor_dpsi(self) -> Profile[float]: return 1.0/self.dpsi_drho_tor
@@ -638,8 +658,7 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
     """
 
     @sp_property
-    def dpsi_drho_tor(self) -> Profile[float]: return (self._coord._s_Bp)*self._parent._B0*self.rho_tor/self.q
-    """  Derivative of Psi with respect to Rho_Tor[Wb/m]."""
+    def dpsi_drho_tor(self) -> Profile[float]: return (self._coord._s_Bp)*self._coord._B0*self.rho_tor/self.q
 
     @sp_property
     def dphi_dvolume(self) -> Profile[float]: return self.fpol * self.gm1
@@ -696,33 +715,35 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
     @sp_property
     def dpsi_drho_tor_norm(self) -> Profile[float]: return self.dpsi_drho_tor*self.rho_tor[-1]
 
-    def _shape_property(self) -> EquilibriumCoordinateSystem.ShapeProperty: return self._coord.shape_property()
+    @cached_property
+    def _shape_property(self) -> EquilibriumCoordinateSystem.ShapeProperty:
+        return self._coord.shape_property(self.psi_norm)
 
     @sp_property
     def geometric_axis(self) -> RZTuple:
-        return {"r": self._shape_property().geometric_axis.r,
-                "z": self._shape_property().geometric_axis.z}
+        return {"r": self._shape_property.geometric_axis.r,
+                "z": self._shape_property.geometric_axis.z}
 
     @sp_property
-    def minor_radius(self) -> Profile[float]: return self._shape_property().minor_radius(self.psi_norm)
+    def minor_radius(self) -> Profile[float]: return self._shape_property.minor_radius
 
     @sp_property
-    def r_inboard(self) -> Profile[float]: return self._shape_property().r_inboard(self.psi_norm)
+    def r_inboard(self) -> Profile[float]: return self._shape_property.r_inboard
 
     @sp_property
-    def r_outboard(self) -> Profile[float]: return self._shape_property().r_outboard(self.psi_norm)
+    def r_outboard(self) -> Profile[float]: return self._shape_property.r_outboard
 
     @sp_property
-    def elongation(self) -> Profile[float]: return self._shape_property().elongation(self.psi_norm)
+    def elongation(self) -> Profile[float]: return self._shape_property.elongation
 
     @sp_property
-    def triangularity(self) -> Profile[float]: return self._shape_property().triangularity(self.psi_norm)
+    def triangularity(self) -> Profile[float]: return self._shape_property.triangularity
 
     @sp_property
-    def triangularity_upper(self) -> Profile[float]: return self._shape_property().triangularity_upper(self.psi_norm)
+    def triangularity_upper(self) -> Profile[float]: return self._shape_property.triangularity_upper
 
     @sp_property
-    def triangularity_lower(self) -> Profile[float]: return self._shape_property().triangularity_lower(self.psi_norm)
+    def triangularity_lower(self) -> Profile[float]: return self._shape_property.triangularity_lower
 
     @sp_property
     def trapped_fraction(self, value) -> Profile[float]:
@@ -746,8 +767,8 @@ class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
     @property
     def _profiles_1d(self) -> _T_equilibrium_profiles_1d: return self._parent.profiles_1d
 
-    @sp_property
-    def grid(self) -> Grid:
+    @sp_property[Grid]
+    def grid(self):
         return Grid(super().grid.dim1, super().grid.dim2, volume_element=super().grid.volume_element, type=super().grid_type)
 
     @sp_property
@@ -758,6 +779,11 @@ class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
 
     @sp_property
     def psi(self) -> Field[float]: return super().psi
+
+    @property
+    def psi_norm(self) -> Field[float]:
+        psi_magetic_axis, psi_boundary = self._coord.psi_bc
+        return (super().psi-psi_magetic_axis)/(psi_boundary - psi_magetic_axis)
 
     @sp_property
     def phi(self) -> Field[float]: return self._coord.apply_psifunc(self._profiles_1d.phi)
@@ -771,35 +797,14 @@ class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
     @sp_property
     def j_parallel(self) -> Field[float]: return self._coord.apply_psifunc(self._profiles_1d.j_parallel)
 
-    ###############################
-    # imas
-
     @sp_property
     def b_field_r(self) -> Field[float]: return self.psi.pd(0, 1) / _R / TWOPI
 
     @sp_property
-    def b_field_z(self) -> Field[float]: return -self.psi.pd(1, 0) / _R/TWOPI
+    def b_field_z(self) -> Field[float]: return -self.psi.pd(1, 0) / _R / TWOPI
 
     @sp_property
-    def b_field_tor(self) -> Field[float]: return self._profiles_1d.f(self.grid.psi_norm) / _R
-
-    #################################
-    # extra
-    @sp_property
-    def Bpol(self) -> Field[float]: return self.grad_psi / _R / (TWOPI)
-    r""" $B_{pol}= \left|\nabla \psi \right|/2 \pi R $ """
-
-    @sp_property
-    def B2(self) -> Field[float]: return (self.b_field_r ** 2+self.b_field_z ** 2 + self.b_field_tor ** 2)
-
-    @sp_property
-    def grad_psi2(self) -> Field[float]: return self.psi.pd(1, 0)**2+self.psi.pd(0, 1)**2
-
-    @sp_property
-    def grad_psi(self) -> Field[float]: return np.sqrt(self.grad_psi2)
-
-    @sp_property
-    def ddpsi(self) -> Field[float]: return np.sqrt(self.psi.pd(2, 0) * self.psi.pd(0, 2) + self.psi.pd(1, 1)**2)
+    def b_field_tor(self) -> Field[float]: return self._profiles_1d.f(self.psi_norm) / _R
 
 
 class EquilibriumBoundary(_T_equilibrium_boundary):
@@ -808,56 +813,47 @@ class EquilibriumBoundary(_T_equilibrium_boundary):
 
     @sp_property
     def outline(self) -> RZTuple1D:
-        """RZ outline of the plasma boundary  """
-        _, surf = next(self._coord.find_surface(self.psi, o_point=True))
+        _, surf = next(self._coord.find_surface(self._coord.psi_bc[1], o_point=True))
         return {"r": surf.xyz[0], "z": surf.xyz[1]}
 
     psi_norm: float = sp_property(default_value=0.999)
-    """Value of the normalized poloidal flux at which the boundary is taken (typically 99.x %),
-            the flux being normalized to its value at the separatrix """
 
     @sp_property
-    def psi(self) -> float:
-        """Value of the poloidal flux at which the boundary is taken  [Wb]"""
-        return self.psi_norm*(self._parent.global_quantities.psi_boundary -
-                              self._parent.global_quantities.psi_magnetic_axis) + \
-            self._parent.global_quantities.psi_magnetic_axis
+    def psi(self) -> float: return self.psi_norm*self._coord.psi_delta + self._coord.psi_magnetic_axis
 
     @sp_property
-    def phi_boundary(self) -> float:
-        if not np.isclose(self._coord.psi_norm[-1], 1.0):
-            logger.warning(f"FIXME: psi_norm boudnary is {self._coord._psi_norm[-1]} != 1.0 ")
-        return self._coord.phi[-1]
+    def phi(self) -> float: raise NotImplementedError(f"{self.__class__.__name__}.phi")
 
     @sp_property
-    def rho_boundary(self) -> float: return np.sqrt(self.phi_boundary/(constants.pi * self._coord._B0))
+    def rho(self) -> float: return np.sqrt(self.phi_boundary/(constants.pi * self._coord._B0))
 
+    @cached_property
     def _shape_property(self) -> EquilibriumCoordinateSystem.ShapeProperty:
-        return self._coord.shape_property(self.psi_norm)
+        return self._coord.shape_property(self.psi)
 
     @sp_property
-    def geometric_axis(self) -> RZTuple: return self._shape_property().geometric_axis
+    def geometric_axis(self) -> RZTuple: return self._shape_property.geometric_axis
 
     @sp_property
-    def minor_radius(self) -> float: return self._shape_property().minor_radius
+    def minor_radius(self) -> float: return self._shape_property.minor_radius
 
     @sp_property
-    def elongation(self) -> float: return self._shape_property().elongation
+    def elongation(self) -> float: return self._shape_property.elongation
 
     @sp_property
-    def elongation_upper(self) -> float: return self._shape_property().elongation_upper
+    def elongation_upper(self) -> float: return self._shape_property.elongation_upper
 
     @sp_property
-    def elongation_lower(self) -> float: return self._shape_property().elongation_lower
+    def elongation_lower(self) -> float: return self._shape_property.elongation_lower
 
     @sp_property
-    def triangularity(self) -> float: return self._shape_property().triangularity
+    def triangularity(self) -> float: return self._shape_property.triangularity
 
     @sp_property
-    def triangularity_upper(self) -> float: return self._shape_property().triangularity_upper
+    def triangularity_upper(self) -> float: return self._shape_property.triangularity_upper
 
     @sp_property
-    def triangularity_lower(self) -> float: return self._shape_property().triangularity_lower
+    def triangularity_lower(self) -> float: return self._shape_property.triangularity_lower
 
     @sp_property
     def x_point(self) -> List[RZTuple]:
@@ -911,7 +907,7 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
     def _R0(self) -> float: return self._parent.vacuum_toroidal_field.r0
 
     @cached_property
-    def _B0(self) -> float: return self._parent.vacuum_toroidal_field.b0(self.time)
+    def _B0(self) -> float: return 1.0  # self._parent.vacuum_toroidal_field.b0(self.time)
 
     profiles_1d: EquilibriumProfiles1D = sp_property()
 
@@ -930,7 +926,7 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
 @Equilibrium.register(["eq_analyze"])
 class FyEqAnalyze(Equilibrium):
     """
-    FyEqAnalyze 标准磁面分析工具
+    Magnetic surface analyze 磁面分析工具
     =============================
     input:
         - vacuum_toroidal_field.b0, vacuum_toroidal_field.r0

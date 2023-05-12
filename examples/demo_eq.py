@@ -22,4 +22,4 @@ if __name__ == "__main__":
     eq = Equilibrium({**eqdsk_file.dump(), "code": {"name":  "eq_analyze"}},
                      default_value={"time_slice": {"coordinate_system": {"grid": {"dim1": 128, "dim2": 64}}}})
 
-    logger.debug(eq.time_slice[-1].coordinate_system.grid.dim1)
+    logger.debug(eq.time_slice[-1].global_quantities.magnetic_axis.r)
