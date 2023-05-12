@@ -107,18 +107,6 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
 
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # self._Ip = Ip
-        # self._B0 = self._parent._parent.vacuum_toroidal_field.b0
-        # self._R0 = self._parent._parent.vacuum_toroidal_field.r0
-        # self._fvac = self._B0*self._R0
-
-        # # @TODO: COCOS transformation ?
-        # self._cocos = self.get("cocos", 11)
-        # self._s_Bp = np.sign(self._B0)
-        # # self._s_Ip = np.sign(self._Ip)
-        # self._s_2PI = 1.0/(constants.pi*2.0)  # 1.0/(TWOPI ** (1-e_Bp))
-
         logger.debug(f"Create MagneticCoordSystem.")
 
     @cached_property
@@ -154,8 +142,28 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
     @sp_property
     def grid(self) -> Grid:
         psi_norm = super().grid.dim1
+        if isinstance(psi_norm, np.ndarray) and len(psi_norm.shape) == 1:
+            pass
+        elif len(psi_norm.shape) == 0:
+            psi_norm_boundary = self._parent.boundary.psi_norm
+            psi_norm = np.linspace(0, psi_norm_boundary, int(psi_norm), endpoint=True)
+        elif isinstance(psi_norm, collections.abc.Sequence) and len(psi_norm) == 3:
+            psi_norm = np.linspace(psi_norm[0], psi_norm[1], psi_norm[2], endpoint=True)
+        else:
+            raise ValueError(f"Can not create grid! psi_norm={psi_norm}")
+
         theta = super().grid.dim2
+        if isinstance(theta, np.ndarray) and len(theta.shape) == 1:
+            pass
+        elif len(theta.shape) == 0:
+            theta = np.linspace(0, TWOPI, int(theta), endpoint=False)
+        elif isinstance(theta, collections.abc.Sequence) and len(theta) == 3:
+            theta = np.linspace(theta[0], theta[1], int(theta[2]), endpoint=True)
+        else:
+            raise ValueError(f"Can not create grid! theta={theta}")
+
         surfs = GeoObjectSet([surf for _, surf in self.find_surface_by_psi_norm(psi_norm, o_point=True)])
+
         return CurvilinearMesh(psi_norm, theta, geometry=surfs, cycle=[False, TWOPI])
 
     @sp_property
@@ -189,7 +197,8 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
     def critical_points(self) -> typing.Tuple[typing.Sequence[OXPoint], typing.Sequence[OXPoint]]:
         opoints = []
         xpoints = []
-        for r, z, psi, D in find_critical_points(self._psirz, *self.grid.bbox, tolerance=self._psirz.dx):
+
+        for r, z, psi, D in find_critical_points(self._psirz, self._psirz.grid.geometry.bbox, tolerance=self._psirz.grid.dx):
             p = OXPoint(r, z, psi)
 
             if D < 0.0:  # saddle/X-point
@@ -323,7 +332,7 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
 
     def find_surface_by_psi_norm(self, psi_norm: float | ArrayType | typing.Sequence[float], *args,   **kwargs) -> typing.Iterator[typing.Tuple[float, GeoObject]]:
         o, x = self.critical_points
-        psi_magnetic_axis = o.psi
+        psi_magnetic_axis = o[0].psi
         if len(x) == 0:
             raise RuntimeError(f"Can not find x-point")
         psi_boundary = x[0].psi
@@ -739,10 +748,7 @@ class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
 
     @sp_property
     def grid(self) -> Grid:
-        old_g = super().grid
-        grid_type = super().grid_type
-        new_g = Grid(old_g.dim1, old_g.dim2, volume_element=old_g.volume_element, type=grid_type)
-        return new_g
+        return Grid(super().grid.dim1, super().grid.dim2, volume_element=super().grid.volume_element, type=super().grid_type)
 
     @sp_property
     def r(self) -> Field[float]: return Field(self.grid.points[0], grid=self.grid)

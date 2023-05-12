@@ -19,9 +19,7 @@ if __name__ == "__main__":
     eqdsk_file = File(
         "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="GEQdsk").read()
 
-    eq = Equilibrium({**eqdsk_file.dump(),
-                      "coordinate_system": {
-                          "grid": {"dim1": np.linspace(0.001, 0.995, 64), "dim2": 64}},
-                      "code": {"name":  "eq_analyze"}
-                      })
-    logger.debug(eq.time_slice[-1].coordinate_system.grid_type)
+    eq = Equilibrium({**eqdsk_file.dump(), "code": {"name":  "eq_analyze"}},
+                     default_value={"time_slice": {"coordinate_system": {"grid": {"dim1": 128, "dim2": 64}}}})
+
+    logger.debug(eq.time_slice[-1].coordinate_system.grid.dim1)
