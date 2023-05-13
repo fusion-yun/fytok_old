@@ -14,7 +14,7 @@ from fytok.transport.CoreSources import CoreSources
 from fytok.transport.CoreTransport import CoreTransport, TransportCoeff
 from fytok.transport.CoreTransportSolver import CoreTransportSolver
 from fytok.transport.Equilibrium import Equilibrium
-from fytok.transport.MagneticCoordSystem import RadialGrid
+from fytok.transport.MagneticCoordSystem import RadialMesh
 from spdm.numlib.misc import array_like
 from scipy import constants
 from spdm.data import Dict, Function, List, function_like

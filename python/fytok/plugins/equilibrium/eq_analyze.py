@@ -27,9 +27,9 @@ from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.geometry.CubicSplineCurve import CubicSplineCurve
 from spdm.geometry.GeoObject import GeoObject, GeoObjectSet
 from spdm.geometry.Point import Point
-from spdm.grid.CurvilinearMesh import CurvilinearMesh
-from spdm.grid.Grid import Grid
-from spdm.grid.RectilinearMesh import RectilinearMesh
+from spdm.mesh.CurvilinearMesh import CurvilinearMesh
+from spdm.mesh.Mesh import Mesh
+from spdm.mesh.RectilinearMesh import RectilinearMesh
 from spdm.numlib.contours import find_countours
 from spdm.numlib.optimize import find_critical_points
 from spdm.utils.logger import logger
@@ -133,7 +133,7 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
             if not isinstance(dim1, np.ndarray) or not isinstance(dim2, np.ndarray):
                 raise RuntimeError(f"Can not create grid!")
 
-            psirz = Field(psirz, grid=Grid(dim1, dim2, type=grid_type))
+            psirz = Field(psirz, grid=Mesh(dim1, dim2, type=grid_type))
         elif psirz is _not_found_:
             psirz = self._parent.profiles_2d[0].psi
         else:
@@ -149,7 +149,7 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
         opoints = []
         xpoints = []
 
-        for r, z, psi, D in find_critical_points(self._psirz, self._psirz.grid.geometry.bbox, tolerance=self._psirz.grid.dx):
+        for r, z, psi, D in find_critical_points(self._psirz, self._psirz.mesh.geometry.bbox, tolerance=self._psirz.mesh.dx):
             p = OXPoint(r, z, psi)
 
             if D < 0.0:  # saddle/X-point
@@ -165,7 +165,7 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
             raise RuntimeError(f"Can not find o-point!")
         else:
 
-            bbox = self._psirz.grid.bbox
+            bbox = self._psirz.mesh.bbox
             Rmid = (bbox[0] + bbox[2])/2.0
             Zmid = (bbox[1] + bbox[3])/2.0
 
@@ -181,7 +181,7 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
         return opoints, xpoints
 
     @property
-    def psi_norm(self) -> ArrayType: return self.grid.dim1
+    def psi_norm(self) -> ArrayType: return self.mesh.dim1
 
     @cached_property
     def psi(self) -> ArrayType: return self.psi_norm * self.psi_delta + self.psi_magnetic_axis
@@ -220,8 +220,8 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
         return desc
 
     @sp_property
-    def grid(self) -> Grid:
-        psi_norm = super().grid.dim1
+    def grid(self) -> Mesh:
+        psi_norm = super().mesh.dim1
         if isinstance(psi_norm, np.ndarray) and psi_norm.ndim == 1:
             pass
         elif isinstance(psi_norm, np.ndarray) and psi_norm.ndim == 0:
@@ -232,7 +232,7 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
         else:
             raise ValueError(f"Can not create grid! psi_norm={psi_norm}")
 
-        theta = super().grid.dim2
+        theta = super().mesh.dim2
         if isinstance(theta, np.ndarray) and theta.ndim == 1:
             pass
         elif isinstance(theta, np.ndarray) and theta.ndim == 0:
@@ -247,10 +247,10 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
         return CurvilinearMesh(psi_norm, theta, geometry=surfs, cycle=[False, TWOPI])
 
     @sp_property
-    def r(self) -> Field[float]: return Field(self.grid.points[0], grid=self.grid)
+    def r(self) -> Field[float]: return Field(self.mesh.points[0], grid=self.grid)
 
     @sp_property
-    def z(self) -> Field[float]: return Field(self.grid.points[1], grid=self.grid)
+    def z(self) -> Field[float]: return Field(self.mesh.points[1], grid=self.grid)
 
     @sp_property
     def jacobian(self) -> Field[float]:
@@ -274,7 +274,7 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
                 do not guarantee the number of surface == len(psi)
                 return all surface ,
         """
-        # R, Z = self._psirz.grid.points
+        # R, Z = self._psirz.mesh.points
         # F = np.asarray(self._psirz)
         # if not isinstance(psi, (collections.abc.Sequence, np.ndarray)):
         #     psi = [psi]
@@ -511,7 +511,7 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
         c0 = TWOPI*r0**2/ddpsi
 
         if psi_norm is None:
-            surfs_list = self.grid.axis_iter()
+            surfs_list = self.mesh.axis_iter()
         else:
             surfs_list = [*self.find_surface_by_psi_norm(psi_norm, o_point=True)]
 
@@ -768,14 +768,14 @@ class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
     def _profiles_1d(self) -> _T_equilibrium_profiles_1d: return self._parent.profiles_1d
 
     @sp_property
-    def grid(self) -> Grid:
-        return Grid(super().grid.dim1, super().grid.dim2, volume_element=super().grid.volume_element, type=super().grid_type)
+    def grid(self) -> Mesh:
+        return Mesh(super().mesh.dim1, super().mesh.dim2, volume_element=super().mesh.volume_element, type=super().grid_type)
 
     @sp_property
-    def r(self) -> Field[float]: return Field(self.grid.points[0], grid=self.grid)
+    def r(self) -> Field[float]: return Field(self.mesh.points[0], grid=self.grid)
 
     @sp_property
-    def z(self) -> Field[float]: return Field(self.grid.points[1], grid=self.grid)
+    def z(self) -> Field[float]: return Field(self.mesh.points[1], grid=self.grid)
 
     @sp_property
     def psi(self) -> Field[float]: return super().psi

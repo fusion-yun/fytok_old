@@ -645,7 +645,7 @@ class CoreTransportSolverBVPNonlinear(TransportSolverNumerics):
 
         self._B0m = self._eq_prev.vacuum_toroidal_field.b0
 
-        # Grid
+        # Mesh
         self._rho_tor_boundary = self._eq_next.profiles_1d.rho_tor[-1]
 
         self._rho_tor_boundary_m = self._eq_prev.profiles_1d.rho_tor[-1]

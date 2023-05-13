@@ -6,10 +6,10 @@ from spdm.data.File import File
 from spdm.data.Function import Function, PiecewiseFunction
 from spdm.numlib.smooth import smooth_1d
 
-from ..modules.Utilities import CoreRadialGrid
+from ..modules.Utilities import CoreRadialMesh
 
 
-def load_core_profiles(profiles, grid: CoreRadialGrid):
+def load_core_profiles(profiles, grid: CoreRadialMesh):
 
     bs_psi_norm = profiles["Fp"].values
     bs_r_norm = profiles["x"].values
@@ -65,7 +65,7 @@ def load_core_profiles(profiles, grid: CoreRadialGrid):
     }
 
 
-def load_core_transport(profiles, grid: CoreRadialGrid):
+def load_core_transport(profiles, grid: CoreRadialMesh):
 
     bs_psi_norm = profiles["Fp"].values
 
@@ -122,7 +122,7 @@ def load_core_transport(profiles, grid: CoreRadialGrid):
         ]}
 
 
-def load_core_source(profiles, grid: CoreRadialGrid):
+def load_core_source(profiles, grid: CoreRadialMesh):
 
     bs_r_norm = profiles["x"].values
 

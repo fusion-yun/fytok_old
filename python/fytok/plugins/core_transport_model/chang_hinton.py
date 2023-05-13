@@ -6,7 +6,7 @@ from fytok.transport.CoreProfiles import CoreProfiles
 from fytok.transport.CoreTransport import (CoreTransport,
                                            CoreTransportProfiles1D)
 from fytok.transport.Equilibrium import Equilibrium
-from fytok.transport.MagneticCoordSystem import RadialGrid
+from fytok.transport.MagneticCoordSystem import RadialMesh
 from scipy import constants
 from spdm.data import Function
 from spdm.utils.logger import logger
