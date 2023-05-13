@@ -149,7 +149,7 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
         opoints = []
         xpoints = []
 
-        for r, z, psi, D in find_critical_points(self._psirz, self._psirz.mesh.geometry.bbox, tolerance=self._psirz.mesh.dx):
+        for r, z, psi, D in find_critical_points(self._psirz, self._psirz.mesh.bbox, tolerance=self._psirz.mesh.dx):
             p = OXPoint(r, z, psi)
 
             if D < 0.0:  # saddle/X-point
