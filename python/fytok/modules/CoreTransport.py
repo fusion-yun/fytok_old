@@ -6,32 +6,32 @@ from spdm.data.List import List
 from spdm.data.sp_property import sp_property, SpPropertyClass
 
 from .CoreProfiles import CoreProfiles
-from .Utilities import CoreRadialMesh
+from .Utilities import CoreRadialGrid
 
 
 class CoreTransportProfiles1D(_T_core_transport_model_profiles_1d):
 
     @property
-    def grid(self) -> CoreRadialMesh:
+    def grid(self) -> CoreRadialGrid:
         return self._parent.grid
 
-    # grid_d: RadialMesh = sp_property(
+    # grid_d: RadialGrid = sp_property(
     #     lambda self: self.grid.remesh("rho_tor_norm", 0.5*(self.grid.rho_tor_norm[:-1]+self.grid.rho_tor_norm[1:])),
-    #     doc="""Mesh for effective diffusivity and parallel conductivity""")
+    #     doc="""Grid for effective diffusivity and parallel conductivity""")
 
     @cached_property
-    def grid_d(self) -> CoreRadialMesh:
+    def grid_d(self) -> CoreRadialGrid:
         rho_tor_norm = self.grid.rho_tor_norm
         return self.grid.remesh("rho_tor_norm", 0.5*(rho_tor_norm[:-1]+rho_tor_norm[1:]))
 
     @cached_property
-    def grid_v(self) -> CoreRadialMesh:
-        """ Mesh for effective convections  """
+    def grid_v(self) -> CoreRadialGrid:
+        """ Grid for effective convections  """
         return self.grid.remesh("rho_tor_norm", self.grid.rho_tor_norm)
 
     @cached_property
-    def grid_flux(self) -> CoreRadialMesh:
-        """ Mesh for fluxes  """
+    def grid_flux(self) -> CoreRadialGrid:
+        """ Grid for fluxes  """
         return self.grid.remesh("rho_tor_norm", 0.5*(self.grid.rho_tor_norm[:-1]+self.grid.rho_tor_norm[1:]))
 
 
@@ -40,7 +40,7 @@ class CoreTransportModel(_T_core_transport_model):
     _IDS = "core_transport/model"
 
     @ property
-    def grid(self) -> CoreRadialMesh:
+    def grid(self) -> CoreRadialGrid:
         return self._parent.grid
 
     profiles_1d: CoreTransportProfiles1D = sp_property()
@@ -54,7 +54,7 @@ class CoreTransport(_T_core_transport):
 
     Model = CoreTransportModel
 
-    grid: CoreRadialMesh = sp_property()
+    grid: CoreRadialGrid = sp_property()
 
     model: List[Model] = sp_property()
 

@@ -10,7 +10,7 @@ from spdm.data.Node import Node
 from spdm.data.sp_property import sp_property, SpPropertyClass
 
 from .Atoms import atoms
-from .MagneticCoordSystem import RadialMesh
+from .MagneticCoordSystem import RadialGrid
 
 
 class Species(Dict[Node]):
@@ -21,7 +21,7 @@ class Species(Dict[Node]):
     """String identifying ion (e.g. H+, D+, T+, He+2, C+, ...) {dynamic}    """
 
     @property
-    def grid(self) -> RadialMesh:
+    def grid(self) -> RadialGrid:
         return self._parent.grid
 
      

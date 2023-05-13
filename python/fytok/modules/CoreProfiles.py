@@ -12,7 +12,7 @@ from spdm.data.sp_property import sp_property, SpPropertyClass
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.utils.logger import logger
 
-from .Utilities import CoreRadialMesh
+from .Utilities import CoreRadialGrid
 
 
 class CoreProfilesElectrons(_T_core_profiles_profiles_1d_electrons):
@@ -69,7 +69,7 @@ class CoreProfilesIon(_T_core_profile_ions):
 
 class CoreProfiles1D(_T_core_profiles_profiles_1d):
 
-    grid: CoreRadialMesh = sp_property()
+    grid: CoreRadialGrid = sp_property()
 
     electrons: CoreProfilesElectrons = sp_property()
 

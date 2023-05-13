@@ -16,10 +16,10 @@ RZTuple = _T_rz0d_dynamic_aos
 # class RZTuple(_T_rz1d_dynamic_aos):
 #     r = sp_property(type="dynamic", units="m", ndims=1, data_type=float)
 #     z = sp_property(type="dynamic", units="m", ndims=1, data_type=float)
-CoreRadialMesh = _T_core_radial_grid
+CoreRadialGrid = _T_core_radial_grid
 
 
-class _CoreRadialMesh(_T_core_radial_grid):
+class _CoreRadialGrid(_T_core_radial_grid):
     """ Radial grid """
 
     def remesh(self, label: str = "psi_norm", new_axis: np.ndarray = None, ):
@@ -39,7 +39,7 @@ class _CoreRadialMesh(_T_core_radial_grid):
         elif not isinstance(new_axis, np.ndarray):
             raise TypeError(new_axis)
 
-        return CoreRadialMesh(
+        return CoreRadialGrid(
             {
                 "psi_magnetic_axis": self.psi_magnetic_axis,
                 "psi_boundary":     self.psi_boundary,
