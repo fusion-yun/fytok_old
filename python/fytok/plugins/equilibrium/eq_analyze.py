@@ -133,7 +133,7 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
             if not isinstance(dim1, np.ndarray) or not isinstance(dim2, np.ndarray):
                 raise RuntimeError(f"Can not create grid!")
 
-            psirz = Field(psirz, grid=Mesh(dim1, dim2, type=grid_type))
+            psirz = Field(psirz, dim1, dim2)
         elif psirz is _not_found_:
             psirz = self._parent.profiles_2d[0].psi
         else:
@@ -146,10 +146,11 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
 
     @cached_property
     def critical_points(self) -> typing.Tuple[typing.Sequence[OXPoint], typing.Sequence[OXPoint]]:
+
         opoints = []
         xpoints = []
 
-        for r, z, psi, D in find_critical_points(self._psirz, self._psirz.mesh.bbox, tolerance=self._psirz.mesh.dx):
+        for r, z, psi, D in find_critical_points(self._psirz):
             p = OXPoint(r, z, psi)
 
             if D < 0.0:  # saddle/X-point
@@ -165,9 +166,9 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
             raise RuntimeError(f"Can not find o-point!")
         else:
 
-            bbox = self._psirz.mesh.bbox
-            Rmid = (bbox[0] + bbox[2])/2.0
-            Zmid = (bbox[1] + bbox[3])/2.0
+            bbox = self._psirz.bbox
+            Rmid = (bbox[0][0] + bbox[1][0])/2.0
+            Zmid = (bbox[0][1] + bbox[1][1])/2.0
 
             opoints.sort(key=lambda x: (x.r - Rmid)**2 + (x.z - Zmid)**2)
 
@@ -769,7 +770,7 @@ class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
 
     @sp_property
     def grid(self) -> Mesh:
-        return Mesh(super().mesh.dim1, super().mesh.dim2, volume_element=super().mesh.volume_element, type=super().grid_type)
+        return Mesh(super().grid.dim1, super().grid.dim2, volume_element=super().grid.volume_element, type=super().grid_type)
 
     @sp_property
     def r(self) -> Field[float]: return Field(self.mesh.points[0], grid=self.grid)
