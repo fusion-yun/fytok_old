@@ -773,13 +773,14 @@ class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
         return Mesh(super().grid.dim1, super().grid.dim2, volume_element=super().grid.volume_element, type=super().grid_type)
 
     @sp_property
-    def r(self) -> Field[float]: return Field(self.mesh.points[0], grid=self.grid)
+    def r(self) -> Field[float]: return Field(self.grid.points[0], grid=self.grid)
 
     @sp_property
-    def z(self) -> Field[float]: return Field(self.mesh.points[1], grid=self.grid)
+    def z(self) -> Field[float]: return Field(self.grid.points[1], grid=self.grid)
 
     @sp_property
-    def psi(self) -> Field[float]: return super().psi
+    def psi(self) -> Field[float]:
+        return super().psi
 
     @property
     def psi_norm(self) -> Field[float]:
@@ -814,8 +815,9 @@ class EquilibriumBoundary(_T_equilibrium_boundary):
 
     @sp_property
     def outline(self) -> RZTuple1D:
-        _, surf = next(self._coord.find_surface(self._coord.psi_bc[1], o_point=True))
-        return {"r": surf.xyz[0], "z": surf.xyz[1]}
+        _, surf = next(self._coord.find_surface(self.psi, o_point=True))
+        points=surf.xyz()
+        return {"r": points[...,0], "z": points[...,1]}
 
     psi_norm: float = sp_property(default_value=0.999)
 
@@ -879,7 +881,9 @@ class EquilibriumBoundarySeparatrix(_T_equilibrium_boundary_separatrix):
     def outline(self) -> RZTuple1D:
         """RZ outline of the plasma boundary  """
         _, surf = next(self._coord.find_surface(self.psi, o_point=None))
-        return {"r": surf.xyz[0], "z": surf.xyz[1]}
+        points = surf.xyz()
+        logger.debug(points.shape)
+        return {"r": points[...,0], "z": points[...,1]}
 
     @sp_property
     def magnetic_axis(self) -> float: return self._coord.psi_magnetic_axis

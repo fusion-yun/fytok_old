@@ -50,7 +50,9 @@ if __name__ == "__main__":
 
     tok = Tokamak(device_desc[{"wall", "pf_active", "tf", "magnetics"}])
     tok["equilibrium"] = {**eqdsk_file.dump(), "code": {"name":  "eq_analyze"}}
-    tok.equilibrium._default_value = {"time_slice": {"coordinate_system": {"grid": {"dim1": 128, "dim2": 64}}}, }
+    tok.equilibrium._default_value = {"time_slice": {
+        "boundary": {"psi_norm": 0.995},
+        "coordinate_system": {"grid": {"dim1": 128, "dim2": 64}}}, }
     if True:
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},
@@ -61,7 +63,7 @@ if __name__ == "__main__":
                       "separatrix": True,
                   }
                   ) .savefig(output_path/"tokamak.svg", transparent=True)
-    if True:
+    if False:
         time_slice = -1
         eq_profiles_1d = tok.equilibrium.time_slice[time_slice].profiles_1d
 
