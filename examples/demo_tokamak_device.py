@@ -55,9 +55,6 @@ if __name__ == "__main__":
         "boundary": {"psi_norm": 0.995},
         "coordinate_system": {"grid": {"dim1": 128, "dim2": 64}}}, }
 
-    profile_2d = tok.equilibrium.time_slice[-1].profiles_2d[-1]
-    logger.debug(profile_2d.grid)
-
     if True:
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},
@@ -79,7 +76,7 @@ if __name__ == "__main__":
     bs_line_style = {"marker": '.', "linestyle": ''}
 
     q = eq_profiles_1d.q
-    logger.debug(q.__value__())
+    logger.debug(q.__array__())
 
     if False:
         plot_profiles(

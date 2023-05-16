@@ -533,9 +533,9 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
             $\left\langle \alpha\right\rangle \equiv\frac{2\pi}{V^{\prime}}\oint\alpha\frac{Rdl}{\left|\nabla\psi\right|}$
         """
         if isinstance(func, Expression) and psi is None:
-            return Expression((func, _0), ufunc=self, method='surface_average')
+            return Expression(func, _0, op=self, method='surface_average')
 
-        res = self._surface_integral(func, psi_norm=psi)
+        res = self._surface_integral(func, psi=psi)
         res /= self.dvolume_dpsi
 
         # if isinstance(psi, np.ndarray) and extrapolate_left:
