@@ -1,6 +1,7 @@
 import pathlib
 import pandas as pd
 import numpy as np
+from scipy import constants
 from fytok.Tokamak import Tokamak
 from fytok.utils.plot_profiles import sp_figure, plot_profiles
 from spdm.data.Function import function_like
@@ -26,7 +27,7 @@ if __name__ == "__main__":
     psi_boundary = eqdsk_file.get("time_slice/0/global_quantities/psi_boundary")
     bs_eq_psi = eqdsk_file.get("time_slice/0/profiles_1d/psi")
     bs_eq_psi_norm = (bs_eq_psi-psi_axis)/(psi_boundary-psi_axis)
-    bs_eq_fpol = function_like(bs_eq_psi_norm, eqdsk_file.get("time_slice/0/profiles_1d/f"))
+    bs_eq_fpol = function_like(eqdsk_file.get("time_slice/0/profiles_1d/f"), bs_eq_psi_norm)
 
     profiles = pd.read_excel('/home/salmon/workspace/data/15MA inductive - burn/15MA Inductive at burn-ASTRA.xls',
                              sheet_name='15MA plasma', header=10, usecols="B:BN")
@@ -53,6 +54,10 @@ if __name__ == "__main__":
     tok.equilibrium._default_value = {"time_slice": {
         "boundary": {"psi_norm": 0.995},
         "coordinate_system": {"grid": {"dim1": 128, "dim2": 64}}}, }
+
+    profile_2d = tok.equilibrium.time_slice[-1].profiles_2d[-1]
+    logger.debug(profile_2d.grid)
+
     if True:
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},
@@ -63,12 +68,20 @@ if __name__ == "__main__":
                       "separatrix": True,
                   }
                   ) .savefig(output_path/"tokamak.svg", transparent=True)
+
+    coord = tok.equilibrium.time_slice[-1].coordinate_system
+
+    from spdm.data.Expression import _0 as _R
+
+    time_slice = -1
+    eq_profiles_1d = tok.equilibrium.time_slice[time_slice].profiles_1d
+
+    bs_line_style = {"marker": '.', "linestyle": ''}
+
+    q = eq_profiles_1d.q
+    logger.debug(q.__value__())
+
     if False:
-        time_slice = -1
-        eq_profiles_1d = tok.equilibrium.time_slice[time_slice].profiles_1d
-
-        bs_line_style = {"marker": '.', "linestyle": ''}
-
         plot_profiles(
             [
                 [
@@ -89,15 +102,13 @@ if __name__ == "__main__":
                 [
                     (function_like(profiles["x"].values, bs_psi_norm),           r"astra",
                      r"$\frac{\rho_{tor}}{\rho_{tor,bdry}}$", bs_line_style),
-                    (eq_profiles_1d.rho_tor_norm,
-                     r"$\bar{\rho}$", r"$[-]$"),
+                    # (eq_profiles_1d.rho_tor_norm,  r"$\bar{\rho}$", r"$[-]$"),
                 ],
 
                 [
-                    (function_like(4*(np.constants.pi**2) * R0 * profiles["rho"].values, bs_psi_norm),
+                    (function_like(4*(constants.pi**2) * R0 * profiles["rho"].values, bs_psi_norm),
                      r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho$",  bs_line_style),
-                    (eq_profiles_1d.dvolume_drho_tor,
-                     r"$dV/d\rho_{tor}$", r"$[m^2]$"),
+                    (eq_profiles_1d.dvolume_drho_tor,   r"$dV/d\rho_{tor}$", r"$[m^2]$"),
                 ],
 
                 # (magnetic_surface.dvolume_dpsi, r"$\frac{dV}{d\psi}$"),

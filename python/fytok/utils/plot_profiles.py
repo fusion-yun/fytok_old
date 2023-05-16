@@ -119,31 +119,22 @@ def plot_profiles(profile_list, *args,   x_axis=None, default_num_of_points=128,
 
             y = None
 
-            try:
-                if isinstance(profile, Function):
-                    profile = profile.resample(x_min, x_max)
-                    if profile.x_axis is None:
-                        x = x_axis
-                        y = np.asarray(profile(x_axis))
-                    else:
-                        x = profile.x_axis
-                        y = np.asarray(profile())
-                elif isinstance(profile, np.ndarray):
-                    if len(profile) != len(x_axis):
-                        x = np.linspace(x_min, x_max, len(profile))
-                    else:
-                        x = x_axis
-                    y = profile
-                elif isinstance(profile, (int, float)):
-                    x = x_axis
-                    y = np.full(x.shape, profile)
-                elif callable(profile):
-                    x = x_axis
-                    y = profile(x)
-            except Exception as error:
-                y = None
+            if isinstance(profile, Function):
                 x = x_axis
-                logger.error(error)
+                y = profile(x)
+            
+            elif isinstance(profile, np.ndarray):
+                if len(profile) != len(x_axis):
+                    x = np.linspace(x_min, x_max, len(profile))
+                else:
+                    x = x_axis
+                y = profile
+            elif isinstance(profile, (int, float)):
+                x = x_axis
+                y = np.full(x.shape, profile)
+            elif callable(profile):
+                x = x_axis
+                y = profile(x)
 
             if not isinstance(y, np.ndarray) or not isinstance(x, np.ndarray):
                 logger.warning(f"Illegal profile! {(type(x) ,type(y), label, o_args)} ")
