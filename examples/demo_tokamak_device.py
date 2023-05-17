@@ -71,14 +71,12 @@ if __name__ == "__main__":
     from spdm.data.Expression import _0 as _R
 
     time_slice = -1
+
     eq_profiles_1d = tok.equilibrium.time_slice[time_slice].profiles_1d
 
     bs_line_style = {"marker": '.', "linestyle": ''}
 
-    q = eq_profiles_1d.q
-    logger.debug(q.__array__())
-
-    if False:
+    if True:
         plot_profiles(
             [
                 [
