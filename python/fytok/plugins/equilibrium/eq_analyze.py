@@ -19,7 +19,7 @@ from scipy import constants
 from spdm.data.Dict import Dict
 from spdm.data.Field import Field
 from spdm.data.Function import Function, function_like
-from spdm.data.Expression import Expression,  _0, _1, _2
+from spdm.data.Expression import Expression,  Variable
 from spdm.data.List import List
 from spdm.data.Node import Node
 from spdm.data.Profile import Profile
@@ -38,8 +38,8 @@ from spdm.utils.misc import convert_to_named_tuple
 from spdm.utils.tags import _not_found_
 from spdm.utils.typing import ArrayType, NumericType
 
-_R = _0
-_Z = _1
+_R = Variable(0, "R")
+_Z = Variable(1, "Z")
 
 TOLERANCE = 1.0e-6
 EPS = np.finfo(float).eps
@@ -128,7 +128,7 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
             if not isinstance(dim1, np.ndarray) or not isinstance(dim2, np.ndarray):
                 raise RuntimeError(f"Can not create grid!")
 
-            psirz = Field(psirz, dim1, dim2)
+            psirz = Field(psirz, dim1, dim2, name="psirz")
         elif psirz is _not_found_:
             psirz = self._parent.profiles_2d[0].psi
         else:
@@ -197,7 +197,6 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
         if len(x) == 0:
             raise RuntimeError(f"Can not find x-point")
         psi_boundary = x[0].psi
-
         return psi_magnetic_axis, psi_boundary
 
     @cached_property
@@ -241,7 +240,7 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
 
         surfs = GeoObjectSet([surf for _, surf in self.find_surface_by_psi_norm(psi_norm, o_point=True)])
 
-        return CurvilinearMesh(psi_norm, theta, geometry=surfs, cycle=[False, TWOPI])
+        return CurvilinearMesh(psi_norm, theta, geometry=surfs, cycles=[False, TWOPI])
 
     @sp_property
     def r(self) -> Field[float]: return Field(self.grid.points[..., 0], grid=self.grid)
@@ -493,12 +492,12 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
         return np.sqrt(self._psirz.pd(2, 0) * self._psirz.pd(0, 2) + self._psirz.pd(1, 1)**2)
 
     @cached_property
-    def dvolume_dpsi(self) -> Function: return Function(self._surface_integral(), self.psi[:-1])
+    def dvolume_dpsi(self) -> Function[float]: return Function(*self._surface_integral())
 
     ###############################
     # surface integral
 
-    def _surface_integral(self, func: Function = None, psi=None) -> ArrayType:
+    def _surface_integral(self, func: Function = None, psi=None) -> Function:
         r"""
             $ V^{\prime} =  2 \pi  \int{ R / \left|\nabla \psi \right| * dl }$
             $ V^{\prime}(psi)= 2 \pi  \int{ dl * R / \left|\nabla \psi \right|}$
@@ -512,12 +511,14 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
         if psi is None:
             surfs_list = zip(self.psi, self.grid.geometry)
         else:
-            surfs_list = [*self.find_surface(psi, o_point=True)]
+            surfs_list = self.find_surface(psi, o_point=True)
 
         if func is None:
             func = 1.0
 
-        f_Bpol = (func/self.Bpol).compile()
+        f_Bpol = (func/self.Bpol).compile(grid=False)
+
+        psi = []
         res = []
         for p, axis in surfs_list:
             if not np.isclose(p, 0):
@@ -527,23 +528,33 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
             else:
                 v = func * c0
             res.append(v)
-        return np.asarray(res, dtype=float)
+            psi.append(p)
+
+        if len(psi) > 1:
+            res = np.asarray(res, dtype=float)
+            psi = np.asarray(psi, dtype=float)
+            return res, psi
+        else:
+            return res[0], psi[0]
+
         # return np.asarray([(axis.integral(func/self.Bpol) if not np.isclose(p, 0) else func(r0, z0) * c0) for p, axis in surfs_list], dtype=float)
 
-    def surface_average(self,  func,  psi: float | typing.Sequence[float] = None, extrapolate_left=False, ** kwargs) -> ArrayType | Function:
+    def surface_average(self,  func,  psi: float | typing.Sequence[float] = None, extrapolate_left=True) -> float | Function:
         r"""
             $\left\langle \alpha\right\rangle \equiv\frac{2\pi}{V^{\prime}}\oint\alpha\frac{Rdl}{\left|\nabla\psi\right|}$
         """
-        if isinstance(func, Expression) and psi is None:
-            return Expression(func, _0, op=self, method='surface_average')
+        if psi is None:
+            psi_ = ()
+        else:
+            psi_ = (psi,)
 
-        res = self._surface_integral(func, psi=psi)
-        res /= self.dvolume_dpsi
+        v, psi = self._surface_integral(func, *psi_)
+        v /= self.dvolume_dpsi(psi)
 
-        # if isinstance(psi, np.ndarray) and extrapolate_left:
-        #     res[0] = res[1]+(res[1]-res[2])/(psi[1]-psi[2])*(psi[0]-psi[1])
-
-        return res
+        if isinstance(psi, np.ndarray):
+            return Function(v, psi, name=f"surface_average({str(func)}, <{psi.shape}>)")
+        else:
+            return v
 
 
 class EquilibriumGlobalQuantities(_T_equilibrium_global_quantities):
@@ -618,8 +629,8 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
     @sp_property
     def psi(self) -> ArrayType: return self._coord.psi
 
-    @cached_property
-    def dvolume_dpsi(self) -> Function[float]: return self._coord.dvolume_dpsi
+    @sp_property
+    def dvolume_dpsi(self) -> Profile[float]: return self._coord.dvolume_dpsi
 
     @sp_property
     def fpol(self) -> Profile[float]: return super().f
@@ -637,7 +648,7 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
 
     @sp_property
     def magnetic_shear(self) -> Profile[float]: return self.rho_tor/self.q * \
-        function_like(self.q, self.rho_tor).pd()
+        function_like(self.q(self.psi), self.rho_tor(self.psi)).pd()
 
     @sp_property(coordinate1="../psi")
     def dphi_dpsi(self) -> Profile[float]: return self.f * self.gm1 * self.dvolume_dpsi / TWOPI
@@ -647,7 +658,8 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
     r"""  $\Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi$    """
 
     @sp_property
-    def rho_tor(self) -> Profile[float]: return np.sqrt(self.phi/(constants.pi * self._parent._B0))
+    def rho_tor(self) -> Profile[float]: 
+        return np.sqrt(self.phi/(constants.pi * self._parent._B0))
 
     @sp_property
     def rho_tor_norm(self) -> Profile[float]: return np.sqrt(self.phi/self._parent.boundary.phi)
@@ -786,12 +798,12 @@ class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
         return Mesh(super().grid.dim1, super().grid.dim2, volume_element=super().grid.volume_element, type=super().grid_type)
 
     @sp_property
-    def r(self) -> Field[float]: return Field(self.grid.points[0], domain=self.grid)
+    def r(self) -> Field[float]: return Field(self.grid.points[0], mesh=self.grid)
 
     @sp_property
-    def z(self) -> Field[float]: return Field(self.grid.points[1], domain=self.grid)
+    def z(self) -> Field[float]: return Field(self.grid.points[1], mesh=self.grid)
 
-    @sp_property
+    @sp_property(op_grid=False)
     def psi(self) -> Field[float]: return super().psi.compile()
 
     @property

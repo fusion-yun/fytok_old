@@ -1,11 +1,13 @@
 import pathlib
-import pandas as pd
+
 import numpy as np
-from scipy import constants
+import pandas as pd
 from fytok.Tokamak import Tokamak
-from fytok.utils.plot_profiles import sp_figure, plot_profiles
-from spdm.data.Function import function_like
+from fytok.utils.plot_profiles import plot_profiles, sp_figure
+from scipy import constants
+from spdm.data.Expression import Variable
 from spdm.data.File import File
+from spdm.data.Function import function_like
 from spdm.utils.logger import logger
 
 if __name__ == "__main__":
@@ -66,17 +68,21 @@ if __name__ == "__main__":
                   }
                   ) .savefig(output_path/"tokamak.svg", transparent=True)
 
-    coord = tok.equilibrium.time_slice[-1].coordinate_system
+    _R = Variable(0, name="R")
 
-    from spdm.data.Expression import _0 as _R
-
-    time_slice = -1
+    time_slice = 0
 
     eq_profiles_1d = tok.equilibrium.time_slice[time_slice].profiles_1d
+    eq_profiles_2d = tok.equilibrium.time_slice[time_slice].profiles_2d[0]
+    eq_coord = tok.equilibrium.time_slice[time_slice].coordinate_system
 
-    bs_line_style = {"marker": '.', "linestyle": ''}
+    # logger.debug(eq_profiles_1d.dvolume_dpsi.__array__())
+    # logger.debug(eq_profiles_1d.gm1.__array__())
+    # dvolume_dpsi = eq_profiles_1d.dvolume_dpsi
+    # logger.debug(eq_profiles_1d.dphi_dpsi.antiderivative().__array__())
 
     if True:
+        bs_line_style = {"marker": '.', "linestyle": ''}
         plot_profiles(
             [
                 [
