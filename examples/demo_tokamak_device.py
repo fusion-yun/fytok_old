@@ -29,7 +29,7 @@ if __name__ == "__main__":
     psi_boundary = eqdsk_file.get("time_slice/0/global_quantities/psi_boundary")
     bs_eq_psi = eqdsk_file.get("time_slice/0/profiles_1d/psi")
     bs_eq_psi_norm = (bs_eq_psi-psi_axis)/(psi_boundary-psi_axis)
-    bs_eq_fpol = function_like(eqdsk_file.get("time_slice/0/profiles_1d/f"), bs_eq_psi_norm)
+    bs_eq_fpol = function_like(eqdsk_file.get("time_slice/0/profiles_1d/f"), bs_eq_psi)
 
     profiles = pd.read_excel('/home/salmon/workspace/data/15MA inductive - burn/15MA Inductive at burn-ASTRA.xls',
                              sheet_name='15MA plasma', header=10, usecols="B:BN")
@@ -68,6 +68,8 @@ if __name__ == "__main__":
                   }
                   ) .savefig(output_path/"tokamak.svg", transparent=True)
 
+    logger.debug(tok.equilibrium.time_slice[0]._B0)
+    logger.debug(tok.equilibrium.time_slice[0].global_quantities.ip) 
     _R = Variable(0, name="R")
 
     time_slice = 0
@@ -75,9 +77,8 @@ if __name__ == "__main__":
     eq_profiles_1d = tok.equilibrium.time_slice[time_slice].profiles_1d
     eq_profiles_2d = tok.equilibrium.time_slice[time_slice].profiles_2d[0]
     eq_coord = tok.equilibrium.time_slice[time_slice].coordinate_system
-
-    # logger.debug(eq_profiles_1d.dvolume_dpsi.__array__())
-    # logger.debug(eq_profiles_1d.gm1.__array__())
+    # logger.debug(eq_profiles_1d.dphi_dpsi(eq_profiles_1d.psi))
+    # logger.debug(eq_profiles_1d.rho_tor.__array__())
     # dvolume_dpsi = eq_profiles_1d.dvolume_dpsi
     # logger.debug(eq_profiles_1d.dphi_dpsi.antiderivative().__array__())
 
@@ -89,25 +90,25 @@ if __name__ == "__main__":
                     (bs_eq_fpol, "astra", r"$F_{pol} [Wb\cdot m]$", bs_line_style),
                     (eq_profiles_1d.f,  r"fytok", r"$[Wb]$"),
                 ],
-
                 [
-                    (function_like(profiles["q"].values, bs_psi_norm), r"astra", r"$q [-]$", bs_line_style),
+                    (function_like(profiles["q"].values, bs_psi), r"astra", r"$q [-]$", bs_line_style),
                     # (function_like(eqdsk.get('profiles_1d.psi_norm'), eqdsk.get('profiles_1d.q')), "eqdsk"),
                     (eq_profiles_1d.q,  r"$fytok$", r"$[Wb]$"),
+                    # (-eq_profiles_1d.dphi_dpsi,  r"$fytok$", r"$[Wb]$"),
                     # (magnetic_surface.dphi_dpsi,  r"$\frac{d\phi}{d\psi}$", r"$[Wb]$"),
                 ],
                 [
-                    (function_like(profiles["rho"].values, bs_psi_norm), r"astra", r"$\rho_{tor}[m]$",  bs_line_style),
+                    (function_like(profiles["rho"].values, bs_psi), r"astra", r"$\rho_{tor}[m]$",  bs_line_style),
                     (eq_profiles_1d.rho_tor,  r"$\rho$", r"$[m]$"),
                 ],
                 [
-                    (function_like(profiles["x"].values, bs_psi_norm),           r"astra",
+                    (function_like(profiles["x"].values, bs_psi),           r"astra",
                      r"$\frac{\rho_{tor}}{\rho_{tor,bdry}}$", bs_line_style),
-                    # (eq_profiles_1d.rho_tor_norm,  r"$\bar{\rho}$", r"$[-]$"),
+                    (eq_profiles_1d.rho_tor_norm,  r"$\bar{\rho}$", r"$[-]$"),
                 ],
 
                 [
-                    (function_like(4*(constants.pi**2) * R0 * profiles["rho"].values, bs_psi_norm),
+                    (function_like(4*(constants.pi**2) * R0 * profiles["rho"].values, bs_psi),
                      r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho$",  bs_line_style),
                     (eq_profiles_1d.dvolume_drho_tor,   r"$dV/d\rho_{tor}$", r"$[m^2]$"),
                 ],
@@ -142,6 +143,9 @@ if __name__ == "__main__":
                 (eq_profiles_1d.gm1, r"$gm1=\left<\frac{1}{R^2}\right>$"),
                 (eq_profiles_1d.gm2, r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
                 (eq_profiles_1d.gm3, r"$gm3=\left<\left|\nabla \rho\right|^2\right>$"),
+                (eq_profiles_1d.gm4, r"$gm4=\left<1/B^2\right>$"),
+                (eq_profiles_1d.gm5, r"$gm5=\left<B^2\right>$"),
+                (eq_profiles_1d.gm6, r"$gm6=\left<\nabla \rho_{tor}^2/ B^2 \right>$"),
                 (eq_profiles_1d.gm7, r"$gm7=\left<\left|\nabla \rho\right|\right>$"),
                 (eq_profiles_1d.gm8, r"$gm8=\left<R\right>$"),
 
@@ -149,7 +153,7 @@ if __name__ == "__main__":
                 # (magnetic_surface.dpsi_drho_tor,                                        r"$\frac{d\psi}{d\rho_{tor}}$"),
             ],
             # x_axis=(magnetic_surface.rho_tor_norm,      r"$\bar{\rho}_{tor}$"),
-            x_axis=(eq_profiles_1d.psi_norm,      r"$\bar{\psi}$"),
+            x_axis=(eq_profiles_1d.psi,      r"$\bar{\psi}$"),
             title="Equilibrium",
             grid=True, fontsize=16) .savefig(output_path/"equilibrium_coord.svg", transparent=True)
 
