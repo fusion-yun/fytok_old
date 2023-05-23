@@ -11,7 +11,8 @@ from fytok._imas.lastest.equilibrium import (
     _T_equilibrium_boundary, _T_equilibrium_boundary_separatrix,
     _T_equilibrium_coordinate_system, _T_equilibrium_global_quantities,
     _T_equilibrium_global_quantities_magnetic_axis, _T_equilibrium_profiles_1d,
-    _T_equilibrium_profiles_2d, _T_equilibrium_time_slice)
+    _T_equilibrium_profiles_2d, _T_equilibrium_time_slice,
+    _T_equilibrium_profiles_1d_rz1d_dynamic_aos)
 from fytok._imas.lastest.utilities import _T_identifier_dynamic_aos3
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.modules.Utilities import RZTuple, RZTuple1D
@@ -60,7 +61,7 @@ EPS = np.finfo(float).eps
 PI = constants.pi
 TWOPI = 2.0*PI
 
-COCOS_INDEX = 11
+
 
 # fmt:off
 COCOS_TABLE = [
@@ -107,6 +108,8 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
         phi         : 0 <= phi     < 2*pi ,  toroidal angle
     """
 
+    cocos = 11
+
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
         logger.debug(f"Create MagneticCoordSystem.")
@@ -119,8 +122,8 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
 
         self._s_Bp = np.sign(self._B0)
         self._s_Ip = np.sign(self._Ip)
-
         self._s_eBp_2PI = 1.0  # TWOPI
+
         self._s_RpZ = 1.0  # R phi Z
         self._s_rtp = 1.0  # rho,theta,phi
 
@@ -281,11 +284,6 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
                 do not guarantee the number of surface == len(psi)
                 return all surface ,
         """
-        # R, Z = self._psirz.mesh.points
-        # F = np.asarray(self._psirz)
-        # if not isinstance(psi, (collections.abc.Sequence, np.ndarray)):
-        #     psi = [psi]
-        # psi = np.asarray(psi, dtype=float)
 
         if o_point is None or o_point is False:
             for level, points in find_countours(self._psirz, levels=psi):
@@ -300,11 +298,40 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
                 if len(xpts) > 0:
                     x_point = xpts[0]
 
+            if isinstance(psi, float):
+                psi = [psi]
+
+            current_psi = np.nan
+            current_count = 0
             for level, points in find_countours(self._psirz, levels=psi):
+                # 累计相同 level 的 surface个数
+                # 如果累计的 surface 个数大于1，说明存在磁岛
+                # 如果累计的 surface 个数等于0，说明该 level 对应的 surface 不存在
+                # 如果累计的 surface 个数等于1，说明该 level 对应的 surface 存在且唯一
+                if points is None:
+                    if np.isclose(level, o_point.psi):
+                        yield level, Point(o_point.r, o_point.z)
+                    else:
+                        raise RuntimeError(f"Can not find surface psi={level}")
+                    continue
+
+                if current_psi is np.nan:
+                    current_psi = level
+                    current_count = 1
+                elif np.isclose(level, current_psi):
+                    current_count += 1
+                else:
+                    if current_count < 1:
+                        yield current_psi, None
+                    elif current_count > 1:
+                        raise RuntimeError(f"find magnetic island! get {current_count} surface for psi={current_psi}")
+                    current_count = 0
+                    current_psi = np.nan
 
                 theta = np.arctan2(points[:, 0]-o_point.r, points[:, 1]-o_point.z)
 
                 if 1.0 - (max(theta)-min(theta))/TWOPI > 2.0/len(theta):  # open or do not contain o-point
+                    current_count -= 1
                     continue
 
                 if np.isclose((theta[0]-theta[-1]) % TWOPI, 0.0):
@@ -360,12 +387,6 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
                 else:
                     yield level, CubicSplineCurve(points, theta)
 
-                # if surf is None:
-                #     if np.isclose(level, o_point.psi):
-                #         yield level, Point(o_point.r, o_point.z)
-                #     else:
-                #         raise RuntimeError(f"{level},{o_point.psi},{(max(theta),min(theta))}")
-
     def find_surface_by_psi_norm(self, psi_norm: float | ArrayType | typing.Sequence[float], *args,   **kwargs) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
 
         psi_magnetic_axis, psi_boundary = self.psi_bc
@@ -374,37 +395,26 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
             psi = np.asarray(psi_norm, dtype=float)*(psi_boundary-psi_magnetic_axis)+psi_magnetic_axis
             yield from self.find_surface(psi, *args,  **kwargs)
         elif isinstance(psi_norm, collections.abc.Generator):
-            for psi in psi_norm:
-                yield from self.find_surface_by_psi_norm(psi*(psi_boundary-psi_magnetic_axis)+psi_magnetic_axis, *args,  **kwargs)
-
-    ###############################
+            for psi_n in psi_norm:
+                yield from self.find_surface(psi_n*(psi_boundary-psi_magnetic_axis)+psi_magnetic_axis, *args,  **kwargs)
 
     @dataclass
     class ShapeProperty:
-        # RZ position of the geometric axis of the magnetic surfaces (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the surface)
-        geometric_axis: RZTuple
-        # Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary)[m]
-        minor_radius: np.ndarray  # (rmax - rmin)*0.5,
-        # Elongation of the plasma boundary. [-]
-        elongation: np.ndarray  # (zmax-zmin)/(rmax-rmin),
-        # Elongation(upper half w.r.t. geometric axis) of the plasma boundary. [-]
-        elongation_upper: np.ndarray  # (zmax-(zmax+zmin)*0.5)/(rmax-rmin),
-        # longation(lower half w.r.t. geometric axis) of the plasma boundary. [-]
-        elongation_lower: np.ndarray  # ((zmax+zmin)*0.5-zmin)/(rmax-rmin),
-        # Triangularity of the plasma boundary. [-]
-        triangularity: np.ndarray  # (rzmax-rzmin)/(rmax - rmin)*2,
-        # Upper triangularity of the plasma boundary. [-]
-        triangularity_upper: np.ndarray  # ((rmax+rmin)*0.5 - rzmax)/(rmax - rmin)*2,
-        # Lower triangularity of the plasma boundary. [-]
-        triangularity_lower: np.ndarray  # ((rmax+rmin)*0.5 - rzmin)/(rmax - rmin)*2,
-        # Radial coordinate(major radius) on the inboard side of the magnetic axis[m]
-        r_inboard: np.ndarray  # r_inboard,
-        # Radial coordinate(major radius) on the outboard side of the magnetic axis[m]
-        r_outboard: np.ndarray  # r_outboard,
+        psi: float | np.ndarray
+        Rmin: float | np.ndarray
+        Zmin: float | np.ndarray
+        Rmax: float | np.ndarray
+        Zmax: float | np.ndarray
+        Rzmin: float | np.ndarray
+        Rzmax: float | np.ndarray
+        Rinboard: float | np.ndarray
+        Routboard: float | np.ndarray
 
-    def shape_property(self, psi_norm: typing.Union[float, typing.Sequence[float]] = None) -> ShapeProperty:
+    def shape_property(self, psi: typing.Union[float, typing.Sequence[float]] = None) -> ShapeProperty:
         def shape_box(s: GeoObject):
-            r, z = s.xyz
+            rz = s.coordinates()
+            r = rz[..., 0]
+            z = rz[..., 1]
             if isinstance(s, Point):
                 rmin = r
                 rmax = r
@@ -415,72 +425,26 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
                 rzmin = r
                 rzmax = r
             else:
-                (rmin, rmax), (zmin, zmax) = s.bbox
+                (rmin, zmin), (rmax, zmax) = s.bbox
                 rzmin = r[np.argmin(z)]
                 rzmax = r[np.argmax(z)]
-                r_inboard = s.points(0.5)[0]
-                r_outboard = s.points(0)[0]
+                r_inboard = s.coordinates(0.5)[0]
+                r_outboard = s.coordinates(0)[0]
             return rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard
 
-        if psi_norm is None:
-            psi_norm = self.psi_norm
-        elif not isinstance(psi_norm, (np.ndarray, collections.abc.MutableSequence)):
-            psi_norm = [psi_norm]
+        if psi is None:
+            psi = self.psi
+        elif not isinstance(psi, (np.ndarray, collections.abc.MutableSequence)):
+            psi = [psi]
 
-        sbox = np.asarray([[*shape_box(s)] for _, s in self.find_surface_by_psi_norm(psi_norm)], dtype=float)
+        sbox = np.asarray([[p, *shape_box(s)] for p, s in self.find_surface(psi)], dtype=float)
 
         if sbox.shape[0] == 1:
-            rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard = sbox[0]
+            psi, rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard = sbox[0]
         else:
-            rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard = sbox.T
-        if isinstance(rmax, np.ndarray) and np.isclose(rmax[0], rmin[0]):
-            return EquilibriumCoordinateSystem.ShapeProperty(
-                {
-                    # RZ position of the geometric axis of the magnetic surfaces (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the surface)
-                    "rz": RZTuple1D({"r": (rmin+rmax)*0.5, "z": (zmin+zmax)*0.5, }),
-                    # Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary)[m]
-                    "minor_radius": (rmax - rmin)*0.5,  #
-                    # Elongation of the plasma boundary. [-]
-                    "elongation":  np.hstack([(zmax[1]-zmin[1])/(rmax[1]-rmin[1]), (zmax[1:]-zmin[1:])/(rmax[1:]-rmin[1:])]),
-                    # Elongation(upper half w.r.t. geometric axis) of the plasma boundary. [-]
-                    "elongation_upper":  np.hstack([0, (zmax[1:]-(zmax[1:]+zmin[1:])*0.5)/(rmax[1:]-rmin[1:])]),
-                    # longation(lower half w.r.t. geometric axis) of the plasma boundary. [-]
-                    "elongation_lower": np.hstack([0, ((zmax[1:]+zmin[1:])*0.5-zmin[1:])/(rmax[1:]-rmin[1:])]),
-                    # Triangularity of the plasma boundary. [-]
-                    "triangularity": np.hstack([0, (rzmax[1:]-rzmin[1:])/(rmax[1:] - rmin[1:])*2]),
-                    # Upper triangularity of the plasma boundary. [-]
-                    "triangularity_upper": np.hstack([0, ((rmax[1:]+rmin[1:])*0.5 - rzmax[1:])/(rmax[1:] - rmin[1:])*2]),
-                    # Lower triangularity of the plasma boundary. [-]
-                    "triangularity_lower": np.hstack([0, ((rmax[1:]+rmin[1:])*0.5 - rzmin[1:])/(rmax[1:] - rmin[1:])*2]),
-                    # Radial coordinate(major radius) on the inboard side of the magnetic axis[m]
-                    "r_inboard": r_inboard,  #
-                    # Radial coordinate(major radius) on the outboard side of the magnetic axis[m]
-                    "r_outboard": r_outboard,  #
-                }
-            )
-        else:
-            return EquilibriumCoordinateSystem.ShapeProperty(
-                # RZ position of the geometric axis of the magnetic surfaces (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) / 2 of the surface)
-                RZTuple({"r": (rmin+rmax)*0.5, "z": (zmin+zmax)*0.5}),
-                # Minor radius of the plasma boundary(defined as (Rmax-Rmin) / 2 of the boundary)[m]
-                (rmax - rmin)*0.5,  # "minor_radius":
-                # Elongation of the plasma boundary. [-]
-                (zmax-zmin)/(rmax-rmin),  # "elongation":
-                # Elongation(upper half w.r.t. geometric axis) of the plasma boundary. [-]
-                (zmax-(zmax+zmin)*0.5)/(rmax-rmin),  # "elongation_upper":
-                # longation(lower half w.r.t. geometric axis) of the plasma boundary. [-]
-                ((zmax+zmin)*0.5-zmin)/(rmax-rmin),  # elongation_lower":
-                # Triangularity of the plasma boundary. [-]
-                (rzmax-rzmin)/(rmax - rmin)*2,  # "triangularity":
-                # Upper triangularity of the plasma boundary. [-]
-                ((rmax+rmin)*0.5 - rzmax)/(rmax - rmin)*2,  # "triangularity_upper":
-                # Lower triangularity of the plasma boundary. [-]
-                ((rmax+rmin)*0.5 - rzmin)/(rmax - rmin)*2,  # "triangularity_lower":
-                # Radial coordinate(major radius) on the inboard side of the magnetic axis[m]
-                r_inboard,  # "r_inboard":
-                # Radial coordinate(major radius) on the outboard side of the magnetic axis[m]
-                r_outboard,  # "r_outboard":
-            )
+            psi, rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard = sbox.T
+
+        return EquilibriumCoordinateSystem.ShapeProperty(psi, rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard)
 
     #################################
     # fields
@@ -526,6 +490,7 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
             $ V^{\prime}(psi)= 2 \pi  \int{ dl * R / \left|\nabla \psi \right|}$
         """
         r0, z0 = self.magnetic_axis
+        psi_axis, psi_boundary = self.psi_bc
 
         ddpsi = self.ddpsi(r0, z0)
 
@@ -543,9 +508,11 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
 
         psi = []
         res = []
-        for p, axis in surfs_list:
-            if not np.isclose(p, 0):
-                v = axis.integral(f_Bpol)
+        for p, surf in surfs_list:
+            if not isinstance(surf, Point):
+                v = surf.integral(f_Bpol)
+            elif not np.isclose(p, psi_axis):
+                raise RuntimeError(f"Found an island at psi={p} pos={surf}")
             elif callable(func):
                 v = func(r0, z0) * c0
             else:
@@ -562,14 +529,14 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
 
         # return np.asarray([(axis.integral(func/self.Bpol) if not np.isclose(p, 0) else func(r0, z0) * c0) for p, axis in surfs_list], dtype=float)
 
-    def surface_integral(self,  func,  psi: float | typing.Sequence[float] = None, extrapolate_left=True) -> float | Function:
+    def surface_integral(self,  func,  psi: float | typing.Sequence[float] = None) -> float | Function:
         v, psi = self._surface_integral(func, psi)
         if isinstance(psi, np.ndarray):
             return Function(v, psi, name=f"surface_integral({str(func)}, <{psi.shape}>)")
         else:
             return v
 
-    def surface_average(self,  func,  psi: float | typing.Sequence[float] = None, extrapolate_left=True) -> float | Function:
+    def surface_average(self,  func,  psi: float | typing.Sequence[float] = None) -> float | Function:
         r"""
             $\left\langle \alpha\right\rangle \equiv\frac{2\pi}{V^{\prime}}\oint\alpha\frac{Rdl}{\left|\nabla\psi\right|}$
         """
@@ -674,7 +641,6 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
 
     @property
     def pprime(self) -> Profile[float]: return self.dpressure_dpsi
-    """Diamagnetic function (F=R B_Phi)  [T.m]."""
 
     @sp_property
     def j_tor(self) -> Profile[float]:
@@ -685,11 +651,10 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
         fvac = self._coord._fvac
         d = np.asarray(function_like(np.asarray(self.volume),
                                      np.asarray(fvac*self.plasma_current/self.fpol)).pd())
-        return self._coord.r0*(self.fpol / fvac)**2 * d
+        return self._coord._R0*(self.fpol / fvac)**2 * d
 
     @sp_property(coordinate1="../psi")
-    def dphi_dpsi(self) -> Profile[float]:
-        return self.f * self._coord.surface_integral(1.0/(_R**2))/TWOPI
+    def dphi_dpsi(self) -> Profile[float]: return self.f * self._coord.surface_integral(1.0/(_R**2))/TWOPI
     # return self.f * self.gm1 * self.dvolume_dpsi / TWOPI
 
     @sp_property
@@ -703,10 +668,10 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
     @sp_property
     def rho_tor(self) -> Profile[float]: return np.sqrt(self.phi*(self._coord._s_Bp / (PI*np.abs(self._coord._B0))))
 
-    @ sp_property
+    @sp_property
     def rho_tor_norm(self) -> Profile[float]: return np.sqrt(self.phi/self.phi[-1])
 
-    @ sp_property
+    @sp_property
     def drho_tor_dpsi(self) -> Profile[float]: return 1.0/self.dpsi_drho_tor
     r"""
         $\frac{d\rho_{tor}}{d\psi} =\frac{d}{d\psi}\sqrt{\frac{\Phi_{tor}}{\pi B_{0}}} \
@@ -715,177 +680,194 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
         $
     """
 
-    @ sp_property
+    @sp_property
     def dpsi_drho_tor(self) -> Profile[float]: return (self._coord._s_Bp)*self._coord._B0*self.rho_tor/self.q
 
-    @ sp_property
-    def volume(self) -> Profile[float]: return function_like(self.dvolume_dpsi, self.psi).antiderivative()
+    @sp_property
+    def volume(self) -> Profile[float]: return self.dvolume_dpsi.antiderivative()
 
-    @ sp_property
+    @sp_property
     def dvolume_dpsi(self) -> Profile[float]: return self._coord.dvolume_dpsi
 
-    @ sp_property
+    @sp_property
     def dvolume_drho_tor(self) -> Profile[float]: return self.dvolume_dpsi*self.dpsi_drho_tor
     # return self._coord._s_Ip * TWOPI * self.rho_tor / \
     #     (self.gm1)/(self._coord._R0*self._coord._B0/self.fpol)/self._coord._R0
 
-    @ sp_property
-    def area(self) -> Profile[float]: raise RuntimeError(f"Can not calculate area")
+    @sp_property
+    def area(self) -> Profile[float]: return self.darea_dpsi.antiderivative()
 
-    @ sp_property
-    def darea_dpsi(self) -> Profile[float]: return self.area.derivative()
+    @sp_property
+    def darea_dpsi(self) -> Profile[float]:
+        logger.warning(f"FIXME: just a simple approximation! ")
+        return self.dvolume_dpsi/(TWOPI*self._coord._R0)
 
-    @ sp_property
+    @sp_property
     def darea_drho_tor(self) -> Profile[float]: return self.darea_dpsi*self.dpsi_drho_tor
 
-    @ sp_property
+    @sp_property
     def surface(self) -> Profile[float]: return self.dvolume_drho_tor*self.gm7
 
-    @ sp_property
+    @sp_property
     def dphi_dvolume(self) -> Profile[float]: return self.fpol * self.gm1
 
-    @ sp_property
+    @sp_property
     def gm1(self) -> Profile[float]: return self._coord.surface_average(1.0/(_R**2))
 
-    @ sp_property
+    @sp_property
     def gm2_(self) -> Profile[float]: return self._coord.surface_average(self._coord.grad_psi2/(_R**2))
 
-    @ sp_property
+    @sp_property
     def gm2(self) -> Profile[float]:
-        return self._coord.surface_average(self._coord.grad_psi2/(_R**2), extrapolate_left=True) / (self.dpsi_drho_tor ** 2)
+        return self._coord.surface_average(self._coord.grad_psi2/(_R**2)) / (self.dpsi_drho_tor ** 2)
 
-    @ sp_property
+    @sp_property
     def gm3(self) -> Profile[float]:
-        return self._coord.surface_average(self._coord.grad_psi2, extrapolate_left=True) / (self.dpsi_drho_tor ** 2)
+        return self._coord.surface_average(self._coord.grad_psi2) / (self.dpsi_drho_tor ** 2)
 
-    @ sp_property
+    @sp_property
     def gm4(self) -> Profile[float]: return self._coord.surface_average(1.0/self._coord.B2)
 
-    @ sp_property
+    @sp_property
     def gm5(self) -> Profile[float]: return self._coord.surface_average(self._coord.B2)
 
-    @ sp_property
+    @sp_property
     def gm6(self) -> Profile[float]:
-        return self._coord.surface_average(self._coord.grad_psi2 / self._coord.B2, extrapolate_left=True) / (self.dpsi_drho_tor ** 2)
+        return self._coord.surface_average(self._coord.grad_psi2 / self._coord.B2) / (self.dpsi_drho_tor ** 2)
 
-    @ sp_property
+    @sp_property
     def gm7(self) -> Profile[float]:
-        return self._coord.surface_average(np.sqrt(self._coord.grad_psi2), extrapolate_left=True) / self.dpsi_drho_tor
+        return self._coord.surface_average(np.sqrt(self._coord.grad_psi2)) / self.dpsi_drho_tor
 
-    @ sp_property
+    @sp_property
     def gm8(self) -> Profile[float]: return self._coord.surface_average(_R)
 
-    @ sp_property
+    @sp_property
     def gm9(self) -> Profile[float]: return self._coord.surface_average(1.0 / _R)
 
-    @ sp_property
+    @sp_property
     def plasma_current(self) -> Profile[float]:
         return self.gm2 * self.dvolume_drho_tor / self.dpsi_drho_tor/constants.mu_0
 
-    @ sp_property
+    @sp_property
     def dpsi_drho_tor_norm(self) -> Profile[float]: return self.dpsi_drho_tor*self.rho_tor[-1]
 
-    @ cached_property
+    @cached_property
     def _shape_property(self) -> EquilibriumCoordinateSystem.ShapeProperty:
-        return self._coord.shape_property(self.psi_norm)
+        return self._coord.shape_property(self.psi)
 
-    @ sp_property
-    def geometric_axis(self) -> RZTuple:
-        return {"r": self._shape_property.geometric_axis.r,
-                "z": self._shape_property.geometric_axis.z}
+    @sp_property
+    def geometric_axis(self) -> RZTuple1D:
+        return {"r": (self._shape_property.Rmin+self._shape_property.Rmax)*0.5,
+                "z": (self._shape_property.Zmin+self._shape_property.Zmax)*0.5}
 
-    @ sp_property
-    def minor_radius(self) -> Profile[float]: return self._shape_property.minor_radius
+    @sp_property
+    def minor_radius(self) -> Profile[float]:
+        return (self._shape_property.Rmax - self._shape_property.Rmin)*0.5,
 
-    @ sp_property
-    def r_inboard(self) -> Profile[float]: return self._shape_property.r_inboard
+    @sp_property
+    def r_inboard(self) -> Profile[float]:
+        return self._shape_property.Rinboard
 
-    @ sp_property
-    def r_outboard(self) -> Profile[float]: return self._shape_property.r_outboard
+    @sp_property
+    def r_outboard(self) -> Profile[float]:
+        return self._shape_property.Routboard
 
-    @ sp_property
-    def elongation(self) -> Profile[float]: return self._shape_property.elongation
+    @sp_property
+    def elongation(self) -> Profile[float]:
+        return (self._shape_property.Zmax - self._shape_property.Zmin)/(self._shape_property.Rmax - self._shape_property.Rmin)
 
-    @ sp_property
-    def triangularity(self) -> Profile[float]: return self._shape_property.triangularity
+    @sp_property
+    def elongation_upper(self) -> Profile[float]:
+        return (self._shape_property.Zmax-(self._shape_property.Zmax+self._shape_property.Zmin)*0.5)/(self._shape_property.Rmax-self._shape_property.Rmin),
 
-    @ sp_property
-    def triangularity_upper(self) -> Profile[float]: return self._shape_property.triangularity_upper
+    @sp_property
+    def elongation_lower(self) -> Profile[float]:
+        return ((self._shape_property.Zmax+self._shape_property.Zmin)*0.5-self._shape_property.Zmin)/(self._shape_property.Rmax-self._shape_property.Rmin),
 
-    @ sp_property
-    def triangularity_lower(self) -> Profile[float]: return self._shape_property.triangularity_lower
+    @sp_property(coordinate1="../psi")
+    def triangularity(self) -> Profile[float]:
+        return (self._shape_property.Rzmax-self._shape_property.Rzmin)/(self._shape_property.Rmax - self._shape_property.Rmin)*2
 
-    @ sp_property
+    @sp_property
+    def triangularity_upper(self) -> Profile[float]:
+        return ((self._shape_property.Rmax+self._shape_property.Rmin)*0.5 - self._shape_property.Rzmax)/(self._shape_property.Rmax - self._shape_property.Rmin)*2
+
+    @sp_property
+    def triangularity_lower(self) -> Profile[float]:
+        return ((self._shape_property.Rmax+self._shape_property.Rmin)*0.5 - self._shape_property.Rzmin)/(self._shape_property.Rmax - self._shape_property.Rmin)*2
+
+    @sp_property
     def trapped_fraction(self, value) -> Profile[float]:
         """Trapped particle fraction[-]
             Tokamak 3ed, 14.10
         """
         if value is _not_found_:
-            epsilon = self.rho_tor/self._coord.r0
+            epsilon = self.rho_tor/self._coord._R0
             value = np.asarray(1.0 - (1-epsilon)**2/np.sqrt(1.0-epsilon**2)/(1+1.46*np.sqrt(epsilon)))
         return value
 
 
 class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
 
-    @ property
+    @property
     def _coord(self) -> EquilibriumCoordinateSystem: return self._parent.coordinate_system
 
-    @ property
+    @property
     def _global_quantities(self) -> _T_equilibrium_global_quantities: return self._parent.global_quantities
 
-    @ property
+    @property
     def _profiles_1d(self) -> _T_equilibrium_profiles_1d: return self._parent.profiles_1d
 
-    @ sp_property
+    @sp_property
     def grid(self) -> Mesh:
         return Mesh(super().grid.dim1, super().grid.dim2, volume_element=super().grid.volume_element, type=super().grid_type)
 
-    @ sp_property
+    @sp_property
     def r(self) -> Field[float]: return Field(self.grid.points[0], mesh=self.grid)
 
-    @ sp_property
+    @sp_property
     def z(self) -> Field[float]: return Field(self.grid.points[1], mesh=self.grid)
 
-    @ sp_property(op_grid=False)
+    @sp_property(op_grid=False)
     def psi(self) -> Field[float]: return super().psi
 
-    @ property
+    @property
     def psi_norm(self) -> Field[float]:
         psi_magetic_axis, psi_boundary = self._coord.psi_bc
         return (super().psi-psi_magetic_axis)/(psi_boundary - psi_magetic_axis)
 
-    @ sp_property
+    @sp_property
     def phi(self) -> Field[float]: return super().phi
 
-    @ sp_property
+    @sp_property
     def theta(self) -> Field[float]: return super().theta
 
-    @ sp_property
+    @sp_property
     def j_tor(self) -> Field[float]: return super().j_tor  # return self._profiles_1d.j_tor(self.psi)
 
-    @ sp_property
+    @sp_property
     def j_parallel(self) -> Field[float]: return super().j_parallel  # return self._profiles_1d.j_parallel(self.psi)
 
-    @ sp_property
+    @sp_property
     def b_field_r(self) -> Field[float]:
         """ COCOS Eq.19 [O. Sauter and S.Yu. Medvedev, Computer Physics Communications 184 (2013) 293] """
         return self.psi.pd(0, 1) / _R * (self._coord._s_RpZ * self._coord._s_Bp / self._coord._s_eBp_2PI)
 
-    @ sp_property
+    @sp_property
     def b_field_z(self) -> Field[float]:
         return -self.psi.pd(1, 0) / _R * (self._coord._s_RpZ * self._coord._s_Bp / self._coord._s_eBp_2PI)
 
-    @ sp_property
+    @sp_property
     def b_field_tor(self) -> Field[float]:
         return self._coord.fpol(self.psi) / _R
 
 
 class EquilibriumBoundary(_T_equilibrium_boundary):
-    @ property
+    @property
     def _coord(self) -> EquilibriumCoordinateSystem: return self._parent.coordinate_system
 
-    @ sp_property
+    @sp_property
     def outline(self) -> RZTuple1D:
         _, surf = next(self._coord.find_surface(self.psi, o_point=True))
         points = surf.xyz()
@@ -893,91 +875,91 @@ class EquilibriumBoundary(_T_equilibrium_boundary):
 
     psi_norm: float = sp_property(default_value=0.999)
 
-    @ sp_property
+    @sp_property
     def psi(self) -> float: return self.psi_norm*self._coord.psi_delta + self._coord.psi_magnetic_axis
 
-    @ sp_property
+    @sp_property
     def phi(self) -> float: raise NotImplementedError(f"{self.__class__.__name__}.phi")
 
-    @ sp_property
+    @sp_property
     def rho(self) -> float: return np.sqrt(self.phi/(constants.pi * self._coord._B0))
 
-    @ cached_property
+    @cached_property
     def _shape_property(self) -> EquilibriumCoordinateSystem.ShapeProperty:
         return self._coord.shape_property(self.psi)
 
-    @ sp_property
+    @sp_property
     def geometric_axis(self) -> RZTuple: return self._shape_property.geometric_axis
 
-    @ sp_property
+    @sp_property
     def minor_radius(self) -> float: return self._shape_property.minor_radius
 
-    @ sp_property
+    @sp_property
     def elongation(self) -> float: return self._shape_property.elongation
 
-    @ sp_property
+    @sp_property
     def elongation_upper(self) -> float: return self._shape_property.elongation_upper
 
-    @ sp_property
+    @sp_property
     def elongation_lower(self) -> float: return self._shape_property.elongation_lower
 
-    @ sp_property
+    @sp_property
     def triangularity(self) -> float: return self._shape_property.triangularity
 
-    @ sp_property
+    @sp_property
     def triangularity_upper(self) -> float: return self._shape_property.triangularity_upper
 
-    @ sp_property
+    @sp_property
     def triangularity_lower(self) -> float: return self._shape_property.triangularity_lower
 
-    @ sp_property
+    @sp_property
     def x_point(self) -> List[RZTuple]:
         _, xpt = self._coord.critical_points
         return xpt
 
-    @ sp_property
+    @sp_property
     def strike_point(self) -> List[RZTuple]:
         return NotImplemented
 
-    @ sp_property
+    @sp_property
     def active_limiter_point(self) -> List[RZTuple]:
         return NotImplemented
 
 
 class EquilibriumBoundarySeparatrix(_T_equilibrium_boundary_separatrix):
 
-    @ property
+    @property
     def _coord(self) -> EquilibriumCoordinateSystem: return self._parent.coordinate_system
 
-    @ sp_property
+    @sp_property
     def outline(self) -> RZTuple1D:
         """RZ outline of the plasma boundary  """
         _, surf = next(self._coord.find_surface(self.psi, o_point=None))
         points = surf.xyz()
         return {"r": points[..., 0], "z": points[..., 1]}
 
-    @ sp_property
+    @sp_property
     def magnetic_axis(self) -> float: return self._coord.psi_magnetic_axis
 
-    @ sp_property
+    @sp_property
     def psi(self) -> float: return self._coord.psi_boundary
 
-    @ sp_property
+    @sp_property
     def x_point(self) -> List[RZTuple]:
         _, x = self._coord.critical_points
         return List[RZTuple]([{"r": v.r, "z": v.z} for v in x[:]])
 
-    @ sp_property
+    @sp_property
     def strike_point(self) -> List[RZTuple]:
         raise NotImplementedError("TODO:")
 
 
 class EquilibriumTimeSlice(_T_equilibrium_time_slice):
 
-    @ property
+    @property
     def _R0(self) -> float: return self._parent.vacuum_toroidal_field.r0
 
-    @ cached_property
+    @cached_property
     def _B0(self) -> float: return self._parent.vacuum_toroidal_field.b0(self.time)[0]
 
     profiles_1d: EquilibriumProfiles1D = sp_property()
@@ -994,7 +976,7 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
     coordinate_system: EquilibriumCoordinateSystem = sp_property()
 
 
-@ Equilibrium.register(["eq_analyze"])
+@Equilibrium.register(["eq_analyze"])
 class FyEqAnalyze(Equilibrium):
     """
     Magnetic surface analyze 磁面分析工具

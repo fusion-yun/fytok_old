@@ -122,7 +122,7 @@ def plot_profiles(profile_list, *args,   x_axis=None, default_num_of_points=128,
             if isinstance(profile, Function):
                 x = x_axis
                 y = profile(x)
-            
+
             elif isinstance(profile, np.ndarray):
                 if len(profile) != len(x_axis):
                     x = np.linspace(x_min, x_max, len(profile))
@@ -143,7 +143,11 @@ def plot_profiles(profile_list, *args,   x_axis=None, default_num_of_points=128,
                 logger.warning(f"Illegal profile! {x.shape} !={y.shape} ")
                 continue
             else:
-                sub_plot[idx].plot(x, y, label=label, **opts)
+                # 删除 y 中的 nan
+                mark = np.isnan(y)
+                if np.any(mark):
+                    logger.debug(y)
+                sub_plot[idx].plot(x[~mark], y[~mark], label=label, **opts)
 
         sub_plot[idx].legend(fontsize=fontsize)
 

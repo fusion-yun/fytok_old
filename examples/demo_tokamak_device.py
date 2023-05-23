@@ -68,8 +68,6 @@ if __name__ == "__main__":
                   }
                   ) .savefig(output_path/"tokamak.svg", transparent=True)
 
-    logger.debug(tok.equilibrium.time_slice[0]._B0)
-    logger.debug(tok.equilibrium.time_slice[0].global_quantities.ip) 
     _R = Variable(0, name="R")
 
     time_slice = 0
