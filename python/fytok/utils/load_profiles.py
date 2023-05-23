@@ -19,14 +19,18 @@ def load_core_profiles(d):
     # Core profile
     r_ped = 0.96  # np.sqrt(0.88)
     i_ped = np.argmin(np.abs(bs_r_norm-r_ped))
+    # fmt:off
+    bs_psi_norm = d["Fp"].values
+    # bs_psi = bs_psi_norm*(psi_boundary-psi_axis)+psi_axis
 
-    b_Te = smooth_1d(d["TE"].values,  bs_r_norm, i_end=i_ped-10, window_len=21)*1000
-    b_Ti = smooth_1d(d["TI"].values,  bs_r_norm, i_end=i_ped-10, window_len=21)*1000
-    b_ne = smooth_1d(d["NE"].values,  bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19
-    b_nDT = smooth_1d(d["Nd+t"].values, bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19*0.5
-    b_nHe = smooth_1d(d["Nath"].values, bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19
-    b_nImp = smooth_1d(d["Nz"].values,  bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19
+    b_Te =    smooth_1d(   d["TE"].values,     bs_r_norm, i_end=i_ped-10, window_len=21)*1000
+    b_Ti =    smooth_1d(   d["TI"].values,     bs_r_norm, i_end=i_ped-10, window_len=21)*1000
+    b_ne =    smooth_1d(   d["NE"].values,     bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19
+    b_nDT =   smooth_1d(   d["Nd+t"].values,   bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19*0.5
+    b_nHe =   smooth_1d(   d["Nath"].values,   bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19
+    b_nImp =  smooth_1d(   d["Nz"].values,     bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19
     b_zeff = d["Zeff"].values
+    # fmt:on
 
     z_eff_star = b_zeff-(b_nDT*2.0+4*b_nHe)/b_ne
     z_imp = 1-(b_nDT*2.0+2*b_nHe)/b_ne
@@ -41,11 +45,19 @@ def load_core_profiles(d):
     # e_parallel = baseline["U"].values / (TWOPI * R0)
 
     return {
-        "gird": {"rho_tor_norm":     bs_r_norm, },
+        "grid": {
+            "psi_magnetic_axis": None,
+            "psi_boundary": None,
+            "rho_tor_norm":  bs_r_norm,
+            "rho_tor":  None,
+            "psi_norm": bs_psi_norm,
+            "psi": None,
+
+        },
         "electrons": {"label": "e", "density":  b_ne,   "temperature": b_Te, },
         "ion": [
-            {"label": "D",  "density":      b_nDT,      "temperature": b_Ti},
-            {"label": "T",  "density":      b_nDT,      "temperature": b_Ti},
+            {"label": "D",  "density":      b_nDT,      "temperature": b_Ti },
+            {"label": "T",  "density":      b_nDT,      "temperature": b_Ti },
             {"label": "He", "density_thermal": b_nHe,   "temperature": b_Ti, "has_fast_particle": True},
             {"label": "Be", "density":  0.02*b_ne,      "temperature": b_Ti, "z_ion_1d": z_Be,  "is_impurity": True},
             {"label": "Ar", "density": 0.0012*b_ne,     "temperature": b_Ti, "z_ion_1d": z_Ar,  "is_impurity": True},

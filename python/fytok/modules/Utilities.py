@@ -2,13 +2,18 @@ import typing
 from dataclasses import dataclass
 
 import numpy as np
-from  fytok._imas.lastest.utilities import _T_rz1d_dynamic_aos, _T_core_radial_grid, _T_rz0d_dynamic_aos
+from fytok._imas.lastest.utilities import (_T_core_radial_grid,
+                                           _T_rz0d_dynamic_aos,
+                                           _T_rz1d_dynamic_aos)
 from spdm.data.Dict import Dict
 from spdm.data.Entry import Entry
 from spdm.data.Function import Function, function_like
 from spdm.data.Node import Node
-from spdm.data.sp_property import sp_property, SpPropertyClass
+from spdm.data.Profile import Profile
+from spdm.data.sp_property import SpPropertyClass, sp_property
 from spdm.utils.logger import logger
+from spdm.utils.tags import _not_found_
+
 _T = typing.TypeVar("_T")
 
 RZTuple1D = _T_rz1d_dynamic_aos
@@ -16,11 +21,11 @@ RZTuple = _T_rz0d_dynamic_aos
 # class RZTuple(_T_rz1d_dynamic_aos):
 #     r = sp_property(type="dynamic", units="m", ndims=1, data_type=float)
 #     z = sp_property(type="dynamic", units="m", ndims=1, data_type=float)
-CoreRadialGrid = _T_core_radial_grid
+# CoreRadialGrid = _T_core_radial_grid
 
 
-class _CoreRadialGrid(_T_core_radial_grid):
-    """ Radial grid """
+class CoreRadialGrid(_T_core_radial_grid):
+    """1D radial grid for core profiles"""
 
     def remesh(self, label: str = "psi_norm", new_axis: np.ndarray = None, ):
 
@@ -53,3 +58,31 @@ class _CoreRadialGrid(_T_core_radial_grid):
             },
             parent=self._parent
         )
+
+    rho_tor_norm: np.ndarray = sp_property(type="dynamic", coordinate1="1...N", units="-")
+
+    rho_tor: Profile[float] = sp_property(type="dynamic", coordinate1="../rho_tor_norm", units="m")
+    """ Toroidal flux coordinate"""
+
+    @sp_property
+    def rho_pol_norm(self) -> Profile[float]: return np.sqrt(self.psi_norm)
+
+    @sp_property(coordinate1="../rho_tor_norm")
+    def psi_norm(self) -> Profile[float]:
+        v = super().get("psi_norm", _not_found_, raw=True)
+        if v is not _not_found_:
+            return v
+        else:
+            return (self.psi - self.psi_magnetic_axis) / (self.psi_boundary - self.psi_magnetic_axis)
+
+    psi: Profile[float] = sp_property()
+
+    volume: Profile[float] = sp_property()
+
+    area: Profile[float] = sp_property()
+
+    surface: Profile[float] = sp_property()
+
+    psi_magnetic_axis: float = sp_property()
+
+    psi_boundary: float = sp_property()
