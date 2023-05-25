@@ -37,7 +37,7 @@ from spdm.numlib.optimize import find_critical_points
 from spdm.utils.logger import logger
 from spdm.utils.misc import convert_to_named_tuple
 from spdm.utils.tags import _not_found_
-from spdm.utils.typing import ArrayType, NumericType
+from spdm.utils.typing import ArrayType, NumericType, scalar_type
 
 _R = Variable(0, "R")
 _Z = Variable(1, "Z")
@@ -479,16 +479,17 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
         return np.sqrt(self._psirz.pd(2, 0) * self._psirz.pd(0, 2) + self._psirz.pd(1, 1)**2)
 
     @cached_property
-    def dvolume_dpsi(self) -> Function[float]: return Function(*self._surface_integral())
+    def dvolume_dpsi(self) -> Function[float]: return Function(*self._surface_integral(1.0), name="dV_dpsi")
 
     ###############################
     # surface integral
 
-    def _surface_integral(self, func: Function = None, psi=None) -> Function:
+    def _surface_integral(self, func: Expression, psi: NumericType = None) -> typing.Tuple[NumericType, NumericType]:
         r"""
             $ V^{\prime} =  2 \pi  \int{ R / \left|\nabla \psi \right| * dl }$
             $ V^{\prime}(psi)= 2 \pi  \int{ dl * R / \left|\nabla \psi \right|}$
         """
+
         r0, z0 = self.magnetic_axis
         psi_axis, psi_boundary = self.psi_bc
 
@@ -499,10 +500,9 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
         if psi is None:
             surfs_list = zip(self.psi, self.grid.geometry)
         else:
+            if isinstance(psi, scalar_type):
+                psi = [psi]
             surfs_list = self.find_surface(psi, o_point=True)
-
-        if func is None:
-            func = 1.0
 
         f_Bpol = (func/self.Bpol).compile(grid=False)
 
@@ -529,29 +529,20 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
 
         # return np.asarray([(axis.integral(func/self.Bpol) if not np.isclose(p, 0) else func(r0, z0) * c0) for p, axis in surfs_list], dtype=float)
 
-    def surface_integral(self,  func,  psi: float | typing.Sequence[float] = None) -> float | Function:
-        v, psi = self._surface_integral(func, psi)
-        if isinstance(psi, np.ndarray):
-            return Function(v, psi, name=f"surface_integral({str(func)}, <{psi.shape}>)")
-        else:
-            return v
+    def surface_integral(self, func: Expression,  psi: NumericType = None) -> Function:
 
-    def surface_average(self,  func,  psi: float | typing.Sequence[float] = None) -> float | Function:
+        if psi is None:
+
+            return Function(None, op=lambda psi, coord_=self, func_=func: coord_.surface_integral(func, psi),
+                            name=f"surface_integral({str(func)})")
+        else:
+            return Function(*self._surface_integral(func, psi), name=f"surface_integral({str(func)})")
+
+    def surface_average(self, func: Expression, psi: NumericType = None) -> Function:
         r"""
             $\left\langle \alpha\right\rangle \equiv\frac{2\pi}{V^{\prime}}\oint\alpha\frac{Rdl}{\left|\nabla\psi\right|}$
         """
-        if psi is None:
-            psi_ = ()
-        else:
-            psi_ = (psi,)
-
-        v, psi = self._surface_integral(func, *psi_)
-        v /= self.dvolume_dpsi(psi)
-
-        if isinstance(psi, np.ndarray):
-            return Function(v, psi, name=f"surface_average({str(func)}, <{psi.shape}>)")
-        else:
-            return v
+        return self.surface_integral(func, psi)/self.dvolume_dpsi(psi)
 
 
 class EquilibriumGlobalQuantities(_T_equilibrium_global_quantities):
@@ -654,7 +645,8 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
         return self._coord._R0*(self.fpol / fvac)**2 * d
 
     @sp_property(coordinate1="../psi")
-    def dphi_dpsi(self) -> Profile[float]: return self.f * self._coord.surface_integral(1.0/(_R**2))/TWOPI
+    def dphi_dpsi(self) -> Profile[float]:
+        return self.f * self._coord.surface_integral(1.0/(_R**2))/TWOPI
     # return self.f * self.gm1 * self.dvolume_dpsi / TWOPI
 
     @sp_property
@@ -918,12 +910,10 @@ class EquilibriumBoundary(_T_equilibrium_boundary):
         return xpt
 
     @sp_property
-    def strike_point(self) -> List[RZTuple]:
-        return NotImplemented
+    def strike_point(self) -> List[RZTuple]: return NotImplemented
 
     @sp_property
-    def active_limiter_point(self) -> List[RZTuple]:
-        return NotImplemented
+    def active_limiter_point(self) -> List[RZTuple]: return NotImplemented
 
 
 class EquilibriumBoundarySeparatrix(_T_equilibrium_boundary_separatrix):
@@ -960,7 +950,7 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
     def _R0(self) -> float: return self._parent.vacuum_toroidal_field.r0
 
     @cached_property
-    def _B0(self) -> float: return self._parent.vacuum_toroidal_field.b0(self.time)[0]
+    def _B0(self) -> float: return self._parent.vacuum_toroidal_field.b0(self.time)
 
     profiles_1d: EquilibriumProfiles1D = sp_property()
 

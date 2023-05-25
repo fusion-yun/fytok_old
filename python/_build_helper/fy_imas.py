@@ -7,7 +7,7 @@ from spdm.data.NamedDict import NamedDict
 import numpy as np
 
 
-class _T_Library(SpPropertyClass):
+class _T_Library(SpDict):
     """
     Library used by the code that has produced this IDS
     """
@@ -28,7 +28,7 @@ class _T_Library(SpPropertyClass):
     """List of the code specific parameters in XML format"""
 
 
-class _T_Code(SpPropertyClass):
+class _T_Code(SpDict):
     """
     Generic decription of the code-specific parameters for the code that has
        produced this IDS
@@ -60,7 +60,7 @@ class _T_Code(SpPropertyClass):
   
 
 
-class _T_Module(SpPropertyClass, Pluggable):
+class _T_Module(SpDict, Pluggable):
     _plugin_registry = {}
 
     @classmethod

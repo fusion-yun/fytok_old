@@ -1,9 +1,11 @@
 from functools import cached_property
 
-from  fytok._imas.lastest.core_transport import (_T_core_transport, _T_core_transport_model,
-                                  _T_core_transport_model_profiles_1d)
+from fytok._imas.lastest.core_transport import (
+    _T_core_transport, _T_core_transport_model,
+    _T_core_transport_model_profiles_1d)
 from spdm.data.List import List
-from spdm.data.sp_property import sp_property, SpPropertyClass
+from spdm.data.sp_property import SpPropertyClass, sp_property
+from spdm.data.TimeSeries import TimeSeriesAoS
 
 from .CoreProfiles import CoreProfiles
 from .Utilities import CoreRadialGrid
@@ -11,39 +13,22 @@ from .Utilities import CoreRadialGrid
 
 class CoreTransportProfiles1D(_T_core_transport_model_profiles_1d):
 
-    @property
-    def grid(self) -> CoreRadialGrid:
-        return self._parent.grid
+    grid_d: CoreRadialGrid = sp_property()
 
-    # grid_d: RadialGrid = sp_property(
-    #     lambda self: self.grid.remesh("rho_tor_norm", 0.5*(self.grid.rho_tor_norm[:-1]+self.grid.rho_tor_norm[1:])),
-    #     doc="""Grid for effective diffusivity and parallel conductivity""")
-
-    @cached_property
-    def grid_d(self) -> CoreRadialGrid:
-        rho_tor_norm = self.grid.rho_tor_norm
-        return self.grid.remesh("rho_tor_norm", 0.5*(rho_tor_norm[:-1]+rho_tor_norm[1:]))
-
-    @cached_property
+    @sp_property
     def grid_v(self) -> CoreRadialGrid:
-        """ Grid for effective convections  """
-        return self.grid.remesh("rho_tor_norm", self.grid.rho_tor_norm)
+        return self.grid_d.remesh("rho_tor_norm", self.grid_d.rho_tor_norm)
 
-    @cached_property
+    @sp_property
     def grid_flux(self) -> CoreRadialGrid:
-        """ Grid for fluxes  """
-        return self.grid.remesh("rho_tor_norm", 0.5*(self.grid.rho_tor_norm[:-1]+self.grid.rho_tor_norm[1:]))
+        return self.grid_d.remesh("rho_tor_norm", 0.5*(self.grid_d.rho_tor_norm[:-1]+self.grid_d.rho_tor_norm[1:]))
 
 
 class CoreTransportModel(_T_core_transport_model):
 
     _IDS = "core_transport/model"
 
-    @ property
-    def grid(self) -> CoreRadialGrid:
-        return self._parent.grid
-
-    profiles_1d: CoreTransportProfiles1D = sp_property()
+    profiles_1d: TimeSeriesAoS[CoreTransportProfiles1D] = sp_property()
 
     def update(self, *args, core_profiles: CoreProfiles, **kwargs) -> None:
         super().update(*args, core_profiles=core_profiles, **kwargs)
@@ -54,19 +39,16 @@ class CoreTransport(_T_core_transport):
 
     Model = CoreTransportModel
 
-    grid: CoreRadialGrid = sp_property()
-
     model: List[Model] = sp_property()
 
     @property
     def model_combiner(self) -> Model:
         return self.model.combine(
-            common_data={
+            default_value={
                 "identifier": {"name": "combined", "index": 1,
                                "description": """Combination of data from available transport models.
                                 Representation of the total transport in the system"""},
                 "code": {"name": None},
-                "profiles_1d": {"grid": self.grid}
             })
 
     def update(self, *args, core_profiles=None, **kwargs) -> None:

@@ -91,10 +91,12 @@ if __name__ == "__main__":
                   }
                   ) .savefig(output_path/"tokamak.svg", transparent=True)
 
-    if False:  # plot tokamak geometric profile
+    if True:  # plot tokamak geometric profile
         eq_profiles_1d = tok.equilibrium.time_slice[time_slice].profiles_1d
 
         eq_global_quantities = tok.equilibrium.time_slice[time_slice].global_quantities
+
+        logger.debug(eq_profiles_1d.gm1.__str__())
 
         plot_profiles(
             [
@@ -253,8 +255,6 @@ if __name__ == "__main__":
 
         core_profile_1d = tok.core_profiles.profiles_1d[time_slice]
 
-        logger.debug(np.asarray(core_profile_1d.ion[2].density_fast))
-
         plot_profiles(
             [
                 [
@@ -292,9 +292,9 @@ if __name__ == "__main__":
 
         logger.info("Initialize Core Profiles ")
 
-    if False:  # CoreTransport
+    if False:  # CoreTransport  initialize value
         tok.core_transport["model"] = [
-            {"code": {"name": "dummy"}, "profiles_1d": load_core_transport(profiles, R0)},
+            {"code": {"name": "dummy"}, "profiles_1d": [load_core_transport(profiles, R0)]},
             {"code": {"name": "fast_alpha"}},
             {"code": {"name": "spitzer"}},
             # {"code": {"name": "neoclassical"}},
@@ -304,12 +304,11 @@ if __name__ == "__main__":
         ]
 
         # logger.debug(tok.core_transport["model"].dump())
-
-        tok.core_transport.refresh(equilibrium=tok.equilibrium, core_profiles=tok.core_profiles)
-
         core_transport_model = tok.core_transport.model_combiner
 
         core_transport_profiles_1d = core_transport_model.profiles_1d[time_slice]
+
+        logger.debug(tok.core_transport.model[0].profiles_1d[0].electrons.energy.d.__array__())
 
         # logger.debug([[sp.energy.d for sp in model.profiles_1d.ion] for model in tok.core_transport.model])
         # logger.debug(energy.d)
@@ -320,14 +319,14 @@ if __name__ == "__main__":
         plot_profiles(
             [
                 [
-                    (function_like(profiles["Xi"].values, bs_r_norm),
-                     r"astra", r"$\chi_{i}$", bs_line_style),
-                    *[(core_transport_profiles_1d.ion[{"label": label}].energy.d, f"{label}", r"$\chi_{i}$")
-                      for label in ['D', 'T', 'He']],
+                    (function_like(profiles["Xi"].values, bs_r_norm), r"astra", r"$\chi_{i}$", bs_line_style),
+
+                    *[(ion.energy.d, f"{ion.label}", r"$\chi_{i}$")
+                      for ion in core_transport_profiles_1d.ion if not ion.is_impurity],
                 ],
                 [
-                    (function_like(profiles["He"].values, bs_r_norm),
-                     "astra", r"$\chi_{e}$", bs_line_style),
+                    (function_like(profiles["He"].values, bs_r_norm),  "astra", r"$\chi_{e}$", bs_line_style),
+
                     (core_transport_profiles_1d.electrons.energy.d,   "fytok", r"$\chi_{e}$"),
                 ],
                 [
@@ -359,8 +358,7 @@ if __name__ == "__main__":
 
             ],
             x_axis=([0, 1.0],   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-            title="combine",
-            grid=True, fontsize=10) .savefig(output_path/"core_transport.svg", transparent=True)
+            title="combine") .savefig(output_path/"core_transport.svg", transparent=True)
 
         logger.info("Initialize Core Transport ")
 
