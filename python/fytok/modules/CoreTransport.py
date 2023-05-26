@@ -4,7 +4,7 @@ from fytok._imas.lastest.core_transport import (
     _T_core_transport, _T_core_transport_model,
     _T_core_transport_model_profiles_1d)
 from spdm.data.List import List
-from spdm.data.sp_property import SpPropertyClass, sp_property
+from spdm.data.sp_property import SpDict, sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 
 from .CoreProfiles import CoreProfiles

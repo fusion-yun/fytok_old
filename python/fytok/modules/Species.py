@@ -7,7 +7,7 @@ from spdm.data.Entry import as_entry
 from spdm.data.Function import Function
 from spdm.data.List import List
 from spdm.data.Node import Node
-from spdm.data.sp_property import sp_property, SpPropertyClass
+from spdm.data.sp_property import sp_property, SpDict
 
 from .Atoms import atoms
 from .MagneticCoordSystem import RadialGrid

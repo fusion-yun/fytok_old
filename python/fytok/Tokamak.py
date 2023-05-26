@@ -2,7 +2,7 @@
 
 import matplotlib.pyplot as plt
 from spdm.utils.logger import logger
-from spdm.data.sp_property import sp_property,SpPropertyClass
+from spdm.data.sp_property import sp_property,SpDict
 from spdm.data.Dict import Dict
 from spdm.data.Node import Node
 # ---------------------------------
@@ -24,7 +24,7 @@ from .modules.TransportSolverNumerics import TransportSolverNumerics
 from .modules.Equilibrium import Equilibrium
 
 
-class Tokamak(SpPropertyClass):
+class Tokamak(SpDict):
     """Tokamak
         功能：
             - 描述装置在单一时刻的状态，

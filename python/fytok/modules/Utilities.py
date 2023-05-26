@@ -10,7 +10,7 @@ from spdm.data.Entry import Entry
 from spdm.data.Function import Function, function_like
 from spdm.data.Node import Node
 from spdm.data.Profile import Profile
-from spdm.data.sp_property import SpPropertyClass, sp_property
+from spdm.data.sp_property import SpDict, sp_property
 from spdm.utils.logger import logger
 from spdm.utils.tags import _not_found_
 

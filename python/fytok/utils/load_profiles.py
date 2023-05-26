@@ -4,8 +4,9 @@ import typing
 from scipy import constants
 from spdm.data.Entry import Entry
 from spdm.data.File import File
-from spdm.data.Function import Function, Piecewise
-from spdm.data.Expression import Variable
+from spdm.data.Function import Function
+
+from spdm.data.Expression import Variable, Piecewise
 from spdm.numlib.smooth import smooth_1d
 
 

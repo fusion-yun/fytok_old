@@ -3,7 +3,7 @@ import numpy as np
 from fytok._imas.lastest.equilibrium import (_T_equilibrium,
                                              _T_equilibrium_time_slice)
 from spdm.data.Function import Function
-from spdm.data.sp_property import SpPropertyClass, sp_property
+from spdm.data.sp_property import SpDict, sp_property
 from spdm.utils.logger import logger
 
 # from .PFActive import PFActive

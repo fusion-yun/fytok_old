@@ -4,7 +4,7 @@ from spdm.data.Dict import Dict
 from spdm.data.Entry import Entry
 from spdm.data.Function import Function
 from spdm.data.Node import Node
-from spdm.data.sp_property import sp_property, SpPropertyClass
+from spdm.data.sp_property import sp_property, SpDict
 
 atoms = {
     "e": {

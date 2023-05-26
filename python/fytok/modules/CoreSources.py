@@ -2,7 +2,7 @@
 from fytok._imas.lastest.core_sources import (_T_core_sources,
                                               _T_core_sources_source)
 from spdm.data.List import List
-from spdm.data.sp_property import SpPropertyClass, sp_property
+from spdm.data.sp_property import SpDict, sp_property
 
 from .CoreProfiles import CoreProfiles
 from .Utilities import CoreRadialGrid
