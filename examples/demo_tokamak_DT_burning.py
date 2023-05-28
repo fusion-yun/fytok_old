@@ -79,7 +79,7 @@ if __name__ == "__main__":
         "boundary": {"psi_norm": 0.995},
         "coordinate_system": {"grid": {"dim1": 128, "dim2": 64}}}, }
 
-    if False:
+    if True:
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},
                         "vessel": {"edgecolor": "blue"}},
@@ -95,8 +95,6 @@ if __name__ == "__main__":
         eq_profiles_1d = tok.equilibrium.time_slice[time_slice].profiles_1d
 
         eq_global_quantities = tok.equilibrium.time_slice[time_slice].global_quantities
-
-        logger.debug(eq_profiles_1d.gm1.__str__())
 
         plot_profiles(
             [
@@ -249,7 +247,7 @@ if __name__ == "__main__":
 
         logger.info("Initialize Equilibrium ")
 
-    if True:  # CoreProfile initialize value
+    if False:  # CoreProfile initialize value
 
         tok.core_profiles["profiles_1d"] = [load_core_profiles(profiles)]
 

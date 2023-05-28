@@ -146,7 +146,7 @@ def plot_profiles(profile_list, *args,   x_axis=None, default_num_of_points=128,
                 # 删除 y 中的 nan
                 mark = np.isnan(y)
                 if np.any(mark):
-                    logger.debug(y)
+                    logger.warning(f"Found NaN in array! {label}")
                 sub_plot[idx].plot(x[~mark], y[~mark], label=label, **opts)
 
         sub_plot[idx].legend(fontsize=fontsize)
