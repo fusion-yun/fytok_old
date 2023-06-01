@@ -77,7 +77,7 @@ if __name__ == "__main__":
     tok["equilibrium"] = {**eqdsk_file.dump(), "code": {"name":  "eq_analyze"}}
     tok.equilibrium._default_value = {"time_slice": {
         "boundary": {"psi_norm": 0.99},
-        "coordinate_system": {"grid": {"dim1": 100, "dim2": 64}}}, }
+        "coordinate_system": {"grid": {"dim1": 256, "dim2": 128}}}, }
 
     if False:  # plot  tokamak
         sp_figure(tok,
@@ -98,11 +98,11 @@ if __name__ == "__main__":
 
         # logger.debug(eq_profiles_1d.dvolume_dpsi(eq_profiles_1d.psi))
 
-    if True:  # plot equilibrium_coord
+    if False:  # plot equilibrium_coord
 
         # logger.debug(function_like(profiles["rho"].values, bs_psi)(eq_profiles_1d.psi))
         # logger.debug(bs_psi)
-        # logger.debug(eq_profiles_1d.psi)
+        logger.debug(eq_profiles_1d.dvolume_dpsi)
         plot_profiles(
             [
                 [
@@ -115,7 +115,7 @@ if __name__ == "__main__":
                     (eq_profiles_1d.q,  r"$fytok$", r"$[Wb]$"),
                     # (magnetic_surface.dphi_dpsi,  r"$\frac{d\phi}{d\psi}$", r"$[Wb]$"),
                 ],
-                # (eq_profiles_1d.dphi_dpsi,  r"$\frac{d\phi}{d\psi}$", r"$[Wb]$"),
+                (eq_profiles_1d.dvolume_dpsi,  r"$\frac{dV}{d\psi}$", r"$[Wb]$"),
 
                 [
                     (function_like(profiles["rho"].values, bs_psi), r"astra", r"$\rho_{tor}[m]$",  bs_line_style),
@@ -146,13 +146,13 @@ if __name__ == "__main__":
                 (eq_profiles_1d.gm8,                r"$gm8=\left<R\right>$"),
 
             ],
-            # x_axis=(eq_profiles_1d.rho_tor_norm,      r"$\bar{\rho}_{tor}$"),
-            x_axis=(eq_profiles_1d.psi_norm,      r"$\bar{\psi}$"),
+            x_axis=(eq_profiles_1d.rho_tor_norm,      r"$\bar{\rho}_{tor}$"),
+            # x_axis=(eq_profiles_1d.psi_norm,      r"$\bar{\psi}$"),
             x=eq_profiles_1d.psi,
             title="Equilibrium",
             grid=True, fontsize=16) .savefig(output_path/"equilibrium_coord.svg", transparent=True)
 
-    if False:  # equilibrium_profiles
+    if True:  # equilibrium_profiles
         plot_profiles(
             [
 
@@ -221,7 +221,7 @@ if __name__ == "__main__":
                 #      r"$\left<\frac{1}{R^2}\right>$"),
                 # ]
             ],
-            x=(eq_profiles_1d.psi,      r"$\psi/\psi_{bdry}$"),
+            x_axis=(eq_profiles_1d.psi,      r"$\psi/\psi_{bdry}$"),
             # x_axis=([0, 1.0],                                                r"$\psi/\psi_{bdry}$"),
 
             title="Equilibrium Geometric Shape",

@@ -14,7 +14,7 @@ from fytok._imas.lastest.equilibrium import (
     _T_equilibrium_profiles_1d_rz1d_dynamic_aos)
 from fytok._imas.lastest.utilities import _T_identifier_dynamic_aos3
 from fytok.modules.Equilibrium import Equilibrium
-from fytok.modules.Utilities import RZTuple, RZTuple1D
+from fytok.modules.Utilities import RZTuple, RZTuple1D, RZTuple_
 from scipy import constants
 from spdm.data.Dict import Dict
 from spdm.data.Field import Field
@@ -394,6 +394,7 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
 
                 if points.shape[0] == 0:
                     logger.warning(f"{level},{o_point.psi},{(max(theta),min(theta))}")
+
                 elif points.shape[0] == 1:
                     yield level, Point(points[0][0], points[0][1])
                 else:
@@ -419,14 +420,14 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
         Zmax: float | np.ndarray
         Rzmin: float | np.ndarray
         Rzmax: float | np.ndarray
-        Rinboard: float | np.ndarray
-        Routboard: float | np.ndarray
+        r_inboard: float | np.ndarray
+        r_outboard: float | np.ndarray
 
     def shape_property(self, psi: typing.Union[float, typing.Sequence[float]] = None) -> ShapeProperty:
         def shape_box(s: GeoObject):
-            rz = s.coordinates()
-            r = rz[..., 0]
-            z = rz[..., 1]
+            r, z = s.points
+            # r = rz[..., 0]
+            # z = rz[..., 1]
             if isinstance(s, Point):
                 rmin = r
                 rmax = r
@@ -450,13 +451,26 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
             psi = [psi]
 
         sbox = np.asarray([[p, *shape_box(s)] for p, s in self.find_surface(psi)], dtype=float)
-
+        logger.debug(sbox.shape)
         if sbox.shape[0] == 1:
             psi, rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard = sbox[0]
         else:
             psi, rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard = sbox.T
-
-        return EquilibriumCoordinateSystem.ShapeProperty(psi, rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard)
+        if np.isscalar(psi):
+            return EquilibriumCoordinateSystem.ShapeProperty(
+                psi, rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard)
+        else:
+            return EquilibriumCoordinateSystem.ShapeProperty(
+                psi,
+                Function(rmin,      psi,   name="rmin"),
+                Function(zmin,      psi,   name="zmin"),
+                Function(rmax,      psi,   name="rmax"),
+                Function(zmax,      psi,   name="zmax"),
+                Function(rzmin,     psi,   name="rzmin"),
+                Function(rzmax,     psi,   name="rzmax"),
+                Function(r_inboard, psi,   name="r_inboard"),
+                Function(r_outboard, psi,   name="r_outboard"),
+            )
 
     #################################
     # fields
@@ -528,7 +542,7 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
                 # v = (func(R, Z) if callable(func) else func) * self.ddpsi(R, Z)
                 # logger.debug((R, Z, v))
                 # # v *= r**2/self.ddpsi(r, z)
-                logger.warning(f"Found point pos={surf.points}  psi={p}")
+                # logger.warning(f"Found point pos={surf.points}  psi={p}")
                 v = np.nan
             else:
                 logger.warning(f"Found an island at psi={p} pos={surf}")
@@ -547,14 +561,13 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
 
     def surface_integral(self, func: Expression, * psi: NumericType) -> Expression | ArrayLike:
 
-        if psi is None or len(psi) == 0:
-            return Expression(functools.partial(self.surface_integral, func),
-                              name=f"surface_integral({str(func)})")
+        if not np.isscalar(psi):
+            return Function(*self._surface_integral(func, *psi), name=f"surface_integral({str(func)})")
         else:
             value, psi = self._surface_integral(func, *psi)
-            if isinstance(value, np.ndarray) and np.any(np.isnan(value)):
-                # 若存在nan，则通过Function（插值）消除
-                value = Function(value, psi)(psi)
+            # if isinstance(value, np.ndarray) and np.any(np.isnan(value)):
+            #     # 若存在nan，则通过Function（插值）消除
+            #     value = Function(value, psi)(psi)
             return value
 
     def surface_average(self, func: Expression, *psi: NumericType) -> Expression | ArrayLike:
@@ -692,7 +705,7 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
     """
 
     @sp_property
-    def dpsi_drho_tor(self) -> Profile[float]: return (self._coord._s_Bp)*self._coord._B0*self.rho_tor/self.q
+    def dpsi_drho_tor(self) -> Profile[float]: return (self._coord._s_B0)*self._coord._B0*self.rho_tor/self.q
 
     @sp_property
     def volume(self) -> Function[float]: return self.dvolume_dpsi.antiderivative()
@@ -702,7 +715,7 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
 
     @sp_property
     def dvolume_drho_tor(self) -> Profile[float]:
-        return (self._coord._s_Bp*self._coord._s_eBp_2PI*self._coord._B0) * self.dvolume_dpsi*self.dpsi_drho_tor
+        return (self._coord._s_B0*self._coord._s_eBp_2PI*self._coord._B0) * self.dvolume_dpsi*self.dpsi_drho_tor
     # return self._coord._s_Ip * TWOPI * self.rho_tor / \
     #     (self.gm1)/(self._coord._R0*self._coord._B0/self.fpol)/self._coord._R0
 
@@ -769,7 +782,7 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
         return self._coord.shape_property(self.psi)
 
     @sp_property
-    def geometric_axis(self) -> RZTuple1D:
+    def geometric_axis(self) -> RZTuple_:
         return {"r": (self._shape_property.Rmin+self._shape_property.Rmax)*0.5,
                 "z": (self._shape_property.Zmin+self._shape_property.Zmax)*0.5}
 
@@ -778,12 +791,10 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
         return (self._shape_property.Rmax - self._shape_property.Rmin)*0.5,
 
     @sp_property
-    def r_inboard(self) -> Profile[float]:
-        return self._shape_property.Rinboard
+    def r_inboard(self) -> Function[float]: return self._shape_property.r_inboard
 
     @sp_property
-    def r_outboard(self) -> Profile[float]:
-        return self._shape_property.Routboard
+    def r_outboard(self) -> Function[float]: return self._shape_property.r_outboard
 
     @sp_property
     def elongation(self) -> Profile[float]:
@@ -888,7 +899,6 @@ class EquilibriumBoundary(_T_equilibrium_boundary):
 
     @sp_property
     def psi(self) -> float:
-        logger.debug(self.psi_norm)
         return self.psi_norm*(self._coord.psi_boundary-self._coord.psi_magnetic_axis) + self._coord.psi_magnetic_axis
 
     @sp_property

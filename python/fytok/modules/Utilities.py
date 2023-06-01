@@ -8,6 +8,8 @@ from fytok._imas.lastest.utilities import (_T_core_radial_grid,
 from spdm.data.Dict import Dict
 from spdm.data.Entry import Entry
 from spdm.data.Function import Function, function_like
+from spdm.data.Expression import Expression
+
 from spdm.data.Node import Node
 from spdm.data.Profile import Profile
 from spdm.data.sp_property import SpDict, sp_property
@@ -22,6 +24,12 @@ RZTuple = _T_rz0d_dynamic_aos
 #     r = sp_property(type="dynamic", units="m", ndims=1, data_type=float)
 #     z = sp_property(type="dynamic", units="m", ndims=1, data_type=float)
 # CoreRadialGrid = _T_core_radial_grid
+
+
+@dataclass
+class RZTuple_:
+    r: np.ndarray | Expression[float]
+    z: np.ndarray | Expression[float]
 
 
 class CoreRadialGrid(_T_core_radial_grid):

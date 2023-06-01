@@ -135,11 +135,10 @@ def plot_profiles(profile_list, *args, x_axis=None, x=None, default_num_of_point
                     raise RuntimeError(
                         f"Can not get profile [idx={idx} jdx={jdx}]! name={getattr(profile,'_name',profile)}\n {error} ") from error
 
-            elif isinstance(profile, np.ndarray) and len(profile) != len(x):
+            elif isinstance(profile, np.ndarray) and len(profile) == len(x):
                 y = profile
             elif np.isscalar(profile):
                 y = np.full_like(x, profile, dtype=float)
-
             else:
                 raise RuntimeError(f"Illegal profile! {profile}  idx={idx} jdx={jdx}")
 
@@ -152,8 +151,8 @@ def plot_profiles(profile_list, *args, x_axis=None, x=None, default_num_of_point
             else:
                 # 删除 y 中的 nan
                 mark = np.isnan(y)
-                if np.any(mark):
-                    logger.warning(f"Found NaN in array  {np.argwhere(mark)}! {profile}  idx={idx} jdx={jdx}  ")
+                # if np.any(mark):
+                #     logger.warning(f"Found NaN in array  {np.argwhere(mark)}! {profile}  idx={idx} jdx={jdx}  ")
                 sub_plot[idx].plot(x_axis[~mark], y[~mark], label=label, **opts)
 
         sub_plot[idx].legend(fontsize=fontsize)
