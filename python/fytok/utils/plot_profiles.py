@@ -25,7 +25,7 @@ def sp_figure_signature(fig: plt.Figure, signature=None):
     if signature is False:
         return fig
     elif not isinstance(signature, str):
-        signature = f"Create by SpDM at {datetime.datetime.now().isoformat()}. [user: '{getpass.getuser().capitalize()}']"
+        signature = f"Author: '{getpass.getuser().capitalize()}'. Create by SpDM at {datetime.datetime.now().isoformat()}."
 
     fig.text(1.0, 0.1, signature, va='bottom', ha='right', fontsize='small', alpha=0.5, rotation='vertical')
     return fig
@@ -73,7 +73,7 @@ def parse_profile(desc, holder=None, **kwargs):
     return data, opts
 
 
-def plot_profiles(profile_list, *args,   x_axis=None, default_num_of_points=128, fontsize=10,  grid=True, signature=None, title=None, **kwargs):
+def plot_profiles(profile_list, *args, x_axis=None, x=None, default_num_of_points=128, fontsize=10,  grid=True, signature=None, title=None, **kwargs):
     if not isinstance(profile_list, collections.abc.Sequence):
         profile_list = [profile_list]
 
@@ -85,8 +85,11 @@ def plot_profiles(profile_list, *args,   x_axis=None, default_num_of_points=128,
         x_label = ""
         x_opts = {}
 
-    if isinstance(x_axis, Function):
-        x_axis = np.asarray(x_axis)
+    if isinstance(x_axis, Function) and x is not None:
+        x_axis = x_axis(x)
+    elif x is None and isinstance(x_axis, np.ndarray):
+        x = x_axis
+   
 
     if isinstance(x_axis, np.ndarray):
         x_min = x_axis[0]
@@ -96,6 +99,12 @@ def plot_profiles(profile_list, *args,   x_axis=None, default_num_of_points=128,
         x_axis = np.linspace(x_min, x_max, default_num_of_points)
     else:
         raise TypeError(x_axis)
+
+    if x is None and isinstance(x_axis, np.ndarray):
+        x = x_axis
+    elif callable(x_axis) or isinstance(x_axis, Function):
+        x_axis = x_axis(x)
+
 
     nprofiles = len(profile_list)
 
@@ -109,7 +118,7 @@ def plot_profiles(profile_list, *args,   x_axis=None, default_num_of_points=128,
         if not isinstance(profile_grp, list):
             profile_grp = [profile_grp]
         ylabel = None
-        for p_desc in profile_grp:
+        for jdx, p_desc in enumerate(profile_grp):
             profile, label, *o_args = p_desc
             opts = {}
             if len(o_args) > 0 and ylabel is None:
@@ -119,35 +128,33 @@ def plot_profiles(profile_list, *args,   x_axis=None, default_num_of_points=128,
 
             y = None
 
-            if isinstance(profile, Function):
-                x = x_axis
-                y = profile(x)
+            if isinstance(profile, Function) or callable(profile):
+                try:
+                    y = profile(x)
+                except Exception as error:
+                    raise RuntimeError(
+                        f"Can not get profile [idx={idx} jdx={jdx}]! name={getattr(profile,'_name',profile)}\n {error} ") from error
 
-            elif isinstance(profile, np.ndarray):
-                if len(profile) != len(x_axis):
-                    x = np.linspace(x_min, x_max, len(profile))
-                else:
-                    x = x_axis
+            elif isinstance(profile, np.ndarray) and len(profile) != len(x):
                 y = profile
-            elif isinstance(profile, (int, float)):
-                x = x_axis
-                y = np.full(x.shape, profile)
-            elif callable(profile):
-                x = x_axis
-                y = profile(x)
+            elif np.isscalar(profile):
+                y = np.full_like(x, profile, dtype=float)
+
+            else:
+                raise RuntimeError(f"Illegal profile! {profile}  idx={idx} jdx={jdx}")
 
             if not isinstance(y, np.ndarray) or not isinstance(x, np.ndarray):
-                logger.warning(f"Illegal profile! {(type(x) ,type(y), label, o_args)} ")
+                logger.warning(f"Illegal profile! {(type(x) ,type(y), label, o_args)}  idx={idx} jdx={jdx}")
                 continue
             elif x.shape != y.shape:
-                logger.warning(f"Illegal profile! {x.shape} !={y.shape} ")
+                logger.warning(f"Illegal profile! {x.shape} !={y.shape}  idx={idx} jdx={jdx}")
                 continue
             else:
                 # 删除 y 中的 nan
                 mark = np.isnan(y)
                 if np.any(mark):
-                    logger.warning(f"Found NaN in array! {label}")
-                sub_plot[idx].plot(x[~mark], y[~mark], label=label, **opts)
+                    logger.warning(f"Found NaN in array  {np.argwhere(mark)}! {profile}  idx={idx} jdx={jdx}  ")
+                sub_plot[idx].plot(x_axis[~mark], y[~mark], label=label, **opts)
 
         sub_plot[idx].legend(fontsize=fontsize)
 

@@ -76,10 +76,10 @@ if __name__ == "__main__":
     # Equilibrium
     tok["equilibrium"] = {**eqdsk_file.dump(), "code": {"name":  "eq_analyze"}}
     tok.equilibrium._default_value = {"time_slice": {
-        "boundary": {"psi_norm": 0.995},
-        "coordinate_system": {"grid": {"dim1": 128, "dim2": 64}}}, }
+        "boundary": {"psi_norm": 0.99},
+        "coordinate_system": {"grid": {"dim1": 100, "dim2": 64}}}, }
 
-    if True:
+    if False:  # plot  tokamak
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},
                         "vessel": {"edgecolor": "blue"}},
@@ -96,19 +96,27 @@ if __name__ == "__main__":
 
         eq_global_quantities = tok.equilibrium.time_slice[time_slice].global_quantities
 
+        # logger.debug(eq_profiles_1d.dvolume_dpsi(eq_profiles_1d.psi))
+
+    if True:  # plot equilibrium_coord
+
+        # logger.debug(function_like(profiles["rho"].values, bs_psi)(eq_profiles_1d.psi))
+        # logger.debug(bs_psi)
+        # logger.debug(eq_profiles_1d.psi)
         plot_profiles(
             [
                 [
                     (bs_eq_fpol, "astra", r"$F_{pol} [Wb\cdot m]$", bs_line_style),
                     (eq_profiles_1d.f,  r"fytok", r"$[Wb]$"),
                 ],
-
                 [
                     (function_like(profiles["q"].values, bs_psi), r"astra", r"$q [-]$", bs_line_style),
                     # (function_like(eqdsk.get('profiles_1d.psi_norm'), eqdsk.get('profiles_1d.q')), "eqdsk"),
                     (eq_profiles_1d.q,  r"$fytok$", r"$[Wb]$"),
                     # (magnetic_surface.dphi_dpsi,  r"$\frac{d\phi}{d\psi}$", r"$[Wb]$"),
                 ],
+                # (eq_profiles_1d.dphi_dpsi,  r"$\frac{d\phi}{d\psi}$", r"$[Wb]$"),
+
                 [
                     (function_like(profiles["rho"].values, bs_psi), r"astra", r"$\rho_{tor}[m]$",  bs_line_style),
                     (eq_profiles_1d.rho_tor,  r"$\rho$", r"$[m]$"),
@@ -116,61 +124,35 @@ if __name__ == "__main__":
                 [
                     (function_like(profiles["x"].values, bs_psi),           r"astra",
                      r"$\frac{\rho_{tor}}{\rho_{tor,bdry}}$", bs_line_style),
-                    (eq_profiles_1d.rho_tor_norm,
-                     r"$\bar{\rho}$", r"$[-]$"),
+                    (eq_profiles_1d.rho_tor_norm,                      r"$\bar{\rho}$", r"$[-]$"),
                 ],
+                (eq_profiles_1d.dvolume_dpsi,                     r"$dV/d\psi$", r"$dV/d\psi$"),
+                (eq_profiles_1d.dpsi_drho_tor,
+                 r"$\frac{d\psi}{d\rho_{tor}}$", r"$d\psi/d\rho_{tor}$"),
 
                 [
                     (function_like(4*(constants.pi**2) * R0 * profiles["rho"].values, bs_psi),
                      r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho$",  bs_line_style),
-                    (eq_profiles_1d.dvolume_drho_tor,
-                     r"$dV/d\rho_{tor}$", r"$[m^2]$"),
+                    (eq_profiles_1d.dvolume_drho_tor,                     r"$dV/d\rho_{tor}$", r"$[m^2]$"),
                 ],
 
-                # (magnetic_surface.dvolume_dpsi, r"$\frac{dV}{d\psi}$"),
+                (eq_profiles_1d.gm1,                r"$gm1=\left<\frac{1}{R^2}\right>$"),
+                (eq_profiles_1d.gm2,                r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
+                (eq_profiles_1d.gm3,                r"$gm3=\left<\left|\nabla \rho\right|^2\right>$"),
+                (eq_profiles_1d.gm4,                r"$gm4=\left<1/B^2\right>$"),
+                (eq_profiles_1d.gm5,                r"$gm5=\left<B^2\right>$"),
+                (eq_profiles_1d.gm6,                r"$gm6=\left<\nabla \rho_{tor}^2/ B^2 \right>$"),
+                (eq_profiles_1d.gm7,                r"$gm7=\left<\left|\nabla \rho\right|\right>$"),
+                (eq_profiles_1d.gm8,                r"$gm8=\left<R\right>$"),
 
-                # [
-                #     (magnetic_surface.volume, r"$V$  from $\psi$"),
-                #     # (magnetic_surface.volume1, r"$V$ from $\rho_{tor}$"),
-                # ],
-
-
-
-                # (magnetic_surface.psi,  r"$\psi$", r"$[Wb]$"),
-                # (magnetic_surface.phi,  r"$\phi$", r"$[Wb]$"),
-                # (magnetic_surface.psi_norm,  r"$\bar{\psi}$", r"$[-]$"),
-
-
-                # [
-                #     (magnetic_surface.dpsi_drho_tor,
-                #      r"$\frac{d\psi}{d\rho_{tor}}$", "", {"marker": '.'}),
-                #     (magnetic_surface.dvolume_drho_tor/magnetic_surface.dvolume_dpsi,
-                #      r"$\frac{dV}{d\rho_{tor}} / \frac{dV}{d\psi}$")
-                # ],
-                # (magnetic_surface.drho_tor_dpsi*magnetic_surface.dpsi_drho_tor,
-                #  r"$\frac{d\rho_{tor}}{d\psi} \cdot \frac{d\psi}{d\rho_{tor}}$"),
-                # (magnetic_surface.gm2_,
-                #  r"$gm2_=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
-                # (magnetic_surface.dpsi_drho_tor, r"$\frac{d\rho_{tor}}{d\psi}$", "", {"marker": "."}),
-
-
-                (eq_profiles_1d.gm1, r"$gm1=\left<\frac{1}{R^2}\right>$"),
-                (eq_profiles_1d.gm2, r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
-                (eq_profiles_1d.gm3, r"$gm3=\left<\left|\nabla \rho\right|^2\right>$"),
-                (eq_profiles_1d.gm4, r"$gm4=\left<1/B^2\right>$"),
-                (eq_profiles_1d.gm5, r"$gm5=\left<B^2\right>$"),
-                (eq_profiles_1d.gm6, r"$gm6=\left<\nabla \rho_{tor}^2/ B^2 \right>$"),
-                (eq_profiles_1d.gm7, r"$gm7=\left<\left|\nabla \rho\right|\right>$"),
-                (eq_profiles_1d.gm8, r"$gm8=\left<R\right>$"),
-
-                # (magnetic_surface.dphi_dpsi,                                                  r"$\frac{d\phi}{d\psi}$"),
-                # (magnetic_surface.dpsi_drho_tor,                                        r"$\frac{d\psi}{d\rho_{tor}}$"),
             ],
-            # x_axis=(magnetic_surface.rho_tor_norm,      r"$\bar{\rho}_{tor}$"),
-            x_axis=(eq_profiles_1d.psi,      r"$\bar{\psi}$"),
+            # x_axis=(eq_profiles_1d.rho_tor_norm,      r"$\bar{\rho}_{tor}$"),
+            x_axis=(eq_profiles_1d.psi_norm,      r"$\bar{\psi}$"),
+            x=eq_profiles_1d.psi,
             title="Equilibrium",
             grid=True, fontsize=16) .savefig(output_path/"equilibrium_coord.svg", transparent=True)
 
+    if False:  # equilibrium_profiles
         plot_profiles(
             [
 
@@ -239,7 +221,7 @@ if __name__ == "__main__":
                 #      r"$\left<\frac{1}{R^2}\right>$"),
                 # ]
             ],
-            x_axis=(eq_profiles_1d.psi,      r"$\psi/\psi_{bdry}$"),
+            x=(eq_profiles_1d.psi,      r"$\psi/\psi_{bdry}$"),
             # x_axis=([0, 1.0],                                                r"$\psi/\psi_{bdry}$"),
 
             title="Equilibrium Geometric Shape",
@@ -285,7 +267,7 @@ if __name__ == "__main__":
                 # ],
 
             ],
-            x_axis=([0, 1.0], r"$\rho=\sqrt{\Phi/\Phi_{bdry}}$"),
+            x=([0, 1.0], r"$\rho=\sqrt{\Phi/\Phi_{bdry}}$"),
             grid=True, fontsize=10) .savefig(output_path/"core_profiles_initialize.svg", transparent=True)
 
         logger.info("Initialize Core Profiles ")
@@ -355,7 +337,7 @@ if __name__ == "__main__":
                 #  for ion in nc_profiles_1d.ion if not ion.is_impurity],
 
             ],
-            x_axis=([0, 1.0],   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            x=([0, 1.0],   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             title="combine") .savefig(output_path/"core_transport.svg", transparent=True)
 
         logger.info("Initialize Core Transport ")
@@ -428,14 +410,12 @@ if __name__ == "__main__":
                 #     #   for ion in core_source_profiles_1d.ion if not ion.is_impurity],
                 # ],
             ],
-            x_axis=([0, 1.0], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            x=([0, 1.0], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             grid=True, fontsize=10) .savefig(output_path/"core_sources.svg", transparent=True)
 
         logger.info("Initialize Core Source  ")
 
-    ###################################################################################################
-    # TransportSolver
-    if False:
+    if False:  # TransportSolver
 
         tok["core_transport_solver"] = {
             "code": {
@@ -548,7 +528,7 @@ if __name__ == "__main__":
 
                 # ],
             ],
-            x_axis=([0, 1.0],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            x=([0, 1.0],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             title=f" Particle solver '{particle_solver}'",
             grid=True, fontsize=10).savefig(output_path/f"core_profiles_result_{particle_solver}.svg", transparent=True)
 
@@ -610,7 +590,7 @@ if __name__ == "__main__":
 
 
             ],
-            x_axis=([0, 1.0],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            x=([0, 1.0],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             title=f" Particle solver '{particle_solver}'",
             grid=True, fontsize=10)\
             .savefig(output_path/f"core_profiles_result_{particle_solver}_alpha.svg", transparent=True)

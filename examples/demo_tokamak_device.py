@@ -151,7 +151,7 @@ if __name__ == "__main__":
                 # (magnetic_surface.dpsi_drho_tor,                                        r"$\frac{d\psi}{d\rho_{tor}}$"),
             ],
             # x_axis=(magnetic_surface.rho_tor_norm,      r"$\bar{\rho}_{tor}$"),
-            x_axis=(eq_profiles_1d.psi,      r"$\bar{\psi}$"),
+            x=(eq_profiles_1d.psi,      r"$\bar{\psi}$"),
             title="Equilibrium",
             grid=True, fontsize=16) .savefig(output_path/"equilibrium_coord.svg", transparent=True)
 
