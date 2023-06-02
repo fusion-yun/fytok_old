@@ -140,7 +140,7 @@ def plot_profiles(profile_list, *args, x_axis=None, x=None, default_num_of_point
             elif np.isscalar(profile):
                 y = np.full_like(x, profile, dtype=float)
             else:
-                raise RuntimeError(f"Illegal profile! {profile}  idx={idx} jdx={jdx}")
+                raise RuntimeError(f"Illegal profile! {profile}!={x}  idx={idx} jdx={jdx}")
 
             if not isinstance(y, np.ndarray) or not isinstance(x, np.ndarray):
                 logger.warning(f"Illegal profile! {(type(x) ,type(y), label, o_args)}  idx={idx} jdx={jdx}")

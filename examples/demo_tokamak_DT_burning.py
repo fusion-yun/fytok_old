@@ -91,14 +91,12 @@ if __name__ == "__main__":
                   }
                   ) .savefig(output_path/"tokamak.svg", transparent=True)
 
-    if True:  # plot tokamak geometric profile
+    if False:  # plot tokamak geometric profile
         eq_profiles_1d = tok.equilibrium.time_slice[time_slice].profiles_1d
 
         eq_global_quantities = tok.equilibrium.time_slice[time_slice].global_quantities
 
         # logger.debug(eq_profiles_1d.dvolume_dpsi(eq_profiles_1d.psi))
-
-    if False:  # plot equilibrium_coord
 
         # logger.debug(function_like(profiles["rho"].values, bs_psi)(eq_profiles_1d.psi))
         # logger.debug(bs_psi)
@@ -152,7 +150,6 @@ if __name__ == "__main__":
             title="Equilibrium",
             grid=True, fontsize=16) .savefig(output_path/"equilibrium_coord.svg", transparent=True)
 
-    if False:  # equilibrium_profiles
         plot_profiles(
             [
 
@@ -229,7 +226,7 @@ if __name__ == "__main__":
 
         logger.info("Initialize Equilibrium ")
 
-    if False:  # CoreProfile initialize value
+    if True:  # CoreProfile initialize value
 
         tok.core_profiles["profiles_1d"] = [load_core_profiles(profiles)]
 
@@ -267,12 +264,12 @@ if __name__ == "__main__":
                 # ],
 
             ],
-            x=([0, 1.0], r"$\rho=\sqrt{\Phi/\Phi_{bdry}}$"),
+            x_axis=(np.linspace(0, 1.0, bs_psi_norm.size), r"$\rho=\sqrt{\Phi/\Phi_{bdry}}$"),
             grid=True, fontsize=10) .savefig(output_path/"core_profiles_initialize.svg", transparent=True)
 
         logger.info("Initialize Core Profiles ")
 
-    if False:  # CoreTransport  initialize value
+    if True:  # CoreTransport  initialize value
         tok.core_transport["model"] = [
             {"code": {"name": "dummy"}, "profiles_1d": [load_core_transport(profiles, R0)]},
             {"code": {"name": "fast_alpha"}},
@@ -287,15 +284,15 @@ if __name__ == "__main__":
         core_transport_model = tok.core_transport.model_combiner
 
         core_transport_profiles_1d = core_transport_model.profiles_1d[time_slice]
-
-        logger.debug(tok.core_transport.model[0].profiles_1d[0].electrons.energy.d.__array__())
+        ele_energy = tok.core_transport.model[0].profiles_1d[0].electrons.energy
+        # logger.debug(ele_energy.d.__array__())
 
         # logger.debug([[sp.energy.d for sp in model.profiles_1d.ion] for model in tok.core_transport.model])
         # logger.debug(energy.d)
         # logger.debug(core_transport_profiles_1d.electrons.energy.d(np.linspace(0, 1.0, 128)))
         # nc_profiles_1d = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
         # fast_alpha_profiles_1d = tok.core_transport.model[{"code.name": "fast_alpha"}].profiles_1d
-
+    
         plot_profiles(
             [
                 [
@@ -337,7 +334,7 @@ if __name__ == "__main__":
                 #  for ion in nc_profiles_1d.ion if not ion.is_impurity],
 
             ],
-            x=([0, 1.0],   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            x_axis=(np.linspace(0, 1.0, bs_psi_norm.size),   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             title="combine") .savefig(output_path/"core_transport.svg", transparent=True)
 
         logger.info("Initialize Core Transport ")

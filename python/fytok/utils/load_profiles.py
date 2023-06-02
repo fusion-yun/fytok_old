@@ -24,12 +24,12 @@ def load_core_profiles(d):
     bs_psi_norm = d["Fp"].values
     # bs_psi = bs_psi_norm*(psi_boundary-psi_axis)+psi_axis
 
-    b_Te =    smooth_1d(   d["TE"].values,     bs_r_norm, i_end=i_ped-10, window_len=21)*1000
-    b_Ti =    smooth_1d(   d["TI"].values,     bs_r_norm, i_end=i_ped-10, window_len=21)*1000
-    b_ne =    smooth_1d(   d["NE"].values,     bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19
-    b_nDT =   smooth_1d(   d["Nd+t"].values,   bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19*0.5
-    b_nHe =   smooth_1d(   d["Nath"].values,   bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19
-    b_nImp =  smooth_1d(   d["Nz"].values,     bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19
+    b_Te =    smooth_1d(d["TE"].values,     bs_r_norm, i_end=i_ped-10, window_len=21)*1000
+    b_Ti =    smooth_1d(d["TI"].values,     bs_r_norm, i_end=i_ped-10, window_len=21)*1000
+    b_ne =    smooth_1d(d["NE"].values,     bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19
+    b_nDT =   smooth_1d(d["Nd+t"].values,   bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19*0.5
+    b_nHe =   smooth_1d(d["Nath"].values,   bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19
+    b_nImp =  smooth_1d(d["Nz"].values,     bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19
     b_zeff = d["Zeff"].values
     # fmt:on
 
@@ -92,8 +92,8 @@ def load_core_transport(profiles, R0: float):
     Cped = 0.17
     Ccore = 0.4
     # Function( profiles["Xi"].values,bs_r_norm)  Cped = 0.2
-    chi = Piecewise([Ccore*(1.0 + 3*(_x**2)),   Cped],        [_x > 0 and _x < r_ped, _x >= r_ped and _x < 1.0])
-    chi_e = Piecewise([0.5 * Ccore*(1.0 + 3*(_x**2)),   Cped],  [_x > 0 and _x < r_ped, _x >= r_ped and _x < 1.0])
+    chi = Piecewise([Ccore*(1.0 + 3*(_x**2)),   Cped],        [(_x < r_ped), (_x >= r_ped) ])
+    chi_e = Piecewise([0.5 * Ccore*(1.0 + 3*(_x**2)),   Cped],  [ (_x < r_ped), (_x >= r_ped) ])
 
     D = 0.1*(chi+chi_e)
 
