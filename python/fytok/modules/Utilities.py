@@ -11,7 +11,7 @@ from spdm.data.Function import Function, function_like
 from spdm.data.Expression import Expression
 
 from spdm.data.Node import Node
-from spdm.data.Profile import Profile
+from spdm.data.Function import Function
 from spdm.data.sp_property import SpDict, sp_property
 from spdm.utils.logger import logger
 from spdm.utils.tags import _not_found_
@@ -69,27 +69,27 @@ class CoreRadialGrid(_T_core_radial_grid):
 
     rho_tor_norm: np.ndarray = sp_property(type="dynamic", coordinate1="1...N", units="-")
 
-    rho_tor: Profile[float] = sp_property(type="dynamic", coordinate1="../rho_tor_norm", units="m")
+    rho_tor: Function[float] = sp_property(type="dynamic", coordinate1="../rho_tor_norm", units="m")
     """ Toroidal flux coordinate"""
 
     @sp_property
-    def rho_pol_norm(self) -> Profile[float]: return np.sqrt(self.psi_norm)
+    def rho_pol_norm(self) -> Function[float]: return np.sqrt(self.psi_norm)
 
     @sp_property(coordinate1="../rho_tor_norm")
-    def psi_norm(self) -> Profile[float]:
+    def psi_norm(self) -> Function[float]:
         v = super().get("psi_norm", _not_found_, raw=True)
         if v is not _not_found_:
             return v
         else:
             return (self.psi - self.psi_magnetic_axis) / (self.psi_boundary - self.psi_magnetic_axis)
 
-    psi: Profile[float] = sp_property()
+    psi: Function[float] = sp_property()
 
-    volume: Profile[float] = sp_property()
+    volume: Function[float] = sp_property()
 
-    area: Profile[float] = sp_property()
+    area: Function[float] = sp_property()
 
-    surface: Profile[float] = sp_property()
+    surface: Function[float] = sp_property()
 
     psi_magnetic_axis: float = sp_property()
 

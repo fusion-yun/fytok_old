@@ -22,7 +22,7 @@ from spdm.data.Function import Function, function_like
 from spdm.data.Expression import Expression,  Variable
 from spdm.data.List import List
 from spdm.data.Node import Node
-from spdm.data.Profile import Profile
+from spdm.data.Function import Function
 from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.geometry.CubicSplineCurve import CubicSplineCurve
@@ -635,7 +635,7 @@ class EquilibriumGlobalQuantities(_T_equilibrium_global_quantities):
         # plasma_resistance  :float =  sp_property(type="dynamic",units="ohm",introduced_after_version="3.37.2")
 
 
-class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
+class EquilibriumFunctions1D(_T_equilibrium_profiles_1d):
 
     @property
     def _coord(self) -> EquilibriumCoordinateSystem: return self._parent.coordinate_system
@@ -649,54 +649,54 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
     def psi(self) -> ArrayType: return self._coord.psi
 
     @sp_property
-    def phi(self) -> Profile[float]: return self.dphi_dpsi.antiderivative()
+    def phi(self) -> Function[float]: return self.dphi_dpsi.antiderivative()
     r"""  $\Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi$    """
 
     @sp_property(coordinate1="../psi")
-    def dphi_dpsi(self) -> Profile[float]:
+    def dphi_dpsi(self) -> Function[float]:
         return self.f * self._coord.surface_integral(1.0/(_R**2))
         # return self.f * self.gm1 * self.dvolume_dpsi / TWOPI
 
     @property
-    def fpol(self) -> Profile[float]: return super().f
+    def fpol(self) -> Function[float]: return super().f
 
     @sp_property
-    def dpressure_dpsi(self) -> Profile[float]: return self.pressure.derivative()
+    def dpressure_dpsi(self) -> Function[float]: return self.pressure.derivative()
 
     @sp_property
-    def f_df_dpsi(self) -> Profile[float]: return self.f * self.f.pd()
+    def f_df_dpsi(self) -> Function[float]: return self.f * self.f.pd()
 
     @property
-    def pprime(self) -> Profile[float]: return self.dpressure_dpsi
+    def pprime(self) -> Function[float]: return self.dpressure_dpsi
 
     @sp_property
-    def j_tor(self) -> Profile[float]:
+    def j_tor(self) -> Function[float]:
         return self.plasma_current.pd() / (self._coord.psi_boundary - self._coord.psi_magnetic_axis)/self.dvolume_dpsi * self._coord.r0
 
     @sp_property
-    def j_parallel(self) -> Profile[float]:
+    def j_parallel(self) -> Function[float]:
         fvac = self._coord._fvac
         d = np.asarray(function_like(np.asarray(self.volume),
                                      np.asarray(fvac*self.plasma_current/self.fpol)).pd())
         return self._coord._R0*(self.fpol / fvac)**2 * d
 
     @sp_property
-    def q(self) -> Profile[float]:
+    def q(self) -> Function[float]:
         return self.dphi_dpsi * (self._coord._s_Bp * self._coord._s_rtp * self._coord._s_eBp_2PI/TWOPI)
 
     @sp_property
-    def magnetic_shear(self) -> Profile[float]:
+    def magnetic_shear(self) -> Function[float]:
         # return self.rho_tor/self.q * function_like(self.q(self.psi), self.rho_tor(self.psi)).pd()
         return self.rho_tor * self.q.pd()/self.q*self.dpsi_drho_tor
 
     @sp_property
-    def rho_tor(self) -> Profile[float]: return np.sqrt(self.phi / (PI*self._coord._B0))
+    def rho_tor(self) -> Function[float]: return np.sqrt(self.phi / (PI*self._coord._B0))
 
     @sp_property
-    def rho_tor_norm(self) -> Profile[float]: return np.sqrt(self.phi/self.phi(self._parent.boundary.psi))
+    def rho_tor_norm(self) -> Function[float]: return np.sqrt(self.phi/self.phi(self._parent.boundary.psi))
 
     @sp_property
-    def drho_tor_dpsi(self) -> Profile[float]: return 1.0/self.dpsi_drho_tor
+    def drho_tor_dpsi(self) -> Function[float]: return 1.0/self.dpsi_drho_tor
     r"""
         $\frac{d\rho_{tor}}{d\psi} =\frac{d}{d\psi}\sqrt{\frac{\Phi_{tor}}{\pi B_{0}}} \
                                     =\frac{1}{2\sqrt{\pi B_{0}\Phi_{tor}}}\frac{d\Phi_{tor}}{d\psi} \
@@ -705,7 +705,7 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
     """
 
     @sp_property
-    def dpsi_drho_tor(self) -> Profile[float]: return (self._coord._s_B0)*self._coord._B0*self.rho_tor/self.q
+    def dpsi_drho_tor(self) -> Function[float]: return (self._coord._s_B0)*self._coord._B0*self.rho_tor/self.q
 
     @sp_property
     def volume(self) -> Function[float]: return self.dvolume_dpsi.antiderivative()
@@ -714,68 +714,68 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
     def dvolume_dpsi(self) -> Function[float]: return self._coord.dvolume_dpsi
 
     @sp_property
-    def dvolume_drho_tor(self) -> Profile[float]:
+    def dvolume_drho_tor(self) -> Function[float]:
         return (self._coord._s_B0*self._coord._s_eBp_2PI*self._coord._B0) * self.dvolume_dpsi*self.dpsi_drho_tor
     # return self._coord._s_Ip * TWOPI * self.rho_tor / \
     #     (self.gm1)/(self._coord._R0*self._coord._B0/self.fpol)/self._coord._R0
 
     @sp_property
-    def area(self) -> Profile[float]: return self.darea_dpsi.antiderivative()
+    def area(self) -> Function[float]: return self.darea_dpsi.antiderivative()
 
     @sp_property
-    def darea_dpsi(self) -> Profile[float]:
+    def darea_dpsi(self) -> Function[float]:
         logger.warning(f"FIXME: just a simple approximation! ")
         return self.dvolume_dpsi/(TWOPI*self._coord._R0)
 
     @sp_property
-    def darea_drho_tor(self) -> Profile[float]: return self.darea_dpsi*self.dpsi_drho_tor
+    def darea_drho_tor(self) -> Function[float]: return self.darea_dpsi*self.dpsi_drho_tor
 
     @sp_property
-    def surface(self) -> Profile[float]: return self.dvolume_drho_tor*self.gm7
+    def surface(self) -> Function[float]: return self.dvolume_drho_tor*self.gm7
 
     @sp_property
-    def dphi_dvolume(self) -> Profile[float]: return self.fpol * self.gm1
+    def dphi_dvolume(self) -> Function[float]: return self.fpol * self.gm1
 
     @sp_property
-    def gm1(self) -> Profile[float]: return self._coord.surface_average(1.0/(_R**2))
+    def gm1(self) -> Function[float]: return self._coord.surface_average(1.0/(_R**2))
 
     @sp_property
-    def gm2_(self) -> Profile[float]: return self._coord.surface_average(self._coord.grad_psi2/(_R**2))
+    def gm2_(self) -> Function[float]: return self._coord.surface_average(self._coord.grad_psi2/(_R**2))
 
     @sp_property
-    def gm2(self) -> Profile[float]:
+    def gm2(self) -> Function[float]:
         return self._coord.surface_average(self._coord.grad_psi2/(_R**2)) / (self.dpsi_drho_tor ** 2)
 
     @sp_property
-    def gm3(self) -> Profile[float]:
+    def gm3(self) -> Function[float]:
         return self._coord.surface_average(self._coord.grad_psi2) / (self.dpsi_drho_tor ** 2)
 
     @sp_property
-    def gm4(self) -> Profile[float]: return self._coord.surface_average(1.0/self._coord.B2)
+    def gm4(self) -> Function[float]: return self._coord.surface_average(1.0/self._coord.B2)
 
     @sp_property
-    def gm5(self) -> Profile[float]: return self._coord.surface_average(self._coord.B2)
+    def gm5(self) -> Function[float]: return self._coord.surface_average(self._coord.B2)
 
     @sp_property
-    def gm6(self) -> Profile[float]:
+    def gm6(self) -> Function[float]:
         return self._coord.surface_average(self._coord.grad_psi2 / self._coord.B2) / (self.dpsi_drho_tor ** 2)
 
     @sp_property
-    def gm7(self) -> Profile[float]:
+    def gm7(self) -> Function[float]:
         return self._coord.surface_average(np.sqrt(self._coord.grad_psi2)) / self.dpsi_drho_tor
 
     @sp_property
-    def gm8(self) -> Profile[float]: return self._coord.surface_average(_R)
+    def gm8(self) -> Function[float]: return self._coord.surface_average(_R)
 
     @sp_property
-    def gm9(self) -> Profile[float]: return self._coord.surface_average(1.0 / _R)
+    def gm9(self) -> Function[float]: return self._coord.surface_average(1.0 / _R)
 
     @sp_property
-    def plasma_current(self) -> Profile[float]:
+    def plasma_current(self) -> Function[float]:
         return self.gm2 * self.dvolume_drho_tor / self.dpsi_drho_tor/constants.mu_0
 
     @sp_property
-    def dpsi_drho_tor_norm(self) -> Profile[float]: return self.dpsi_drho_tor*self.rho_tor[-1]
+    def dpsi_drho_tor_norm(self) -> Function[float]: return self.dpsi_drho_tor*self.rho_tor[-1]
 
     @functools.cached_property
     def _shape_property(self) -> EquilibriumCoordinateSystem.ShapeProperty:
@@ -787,7 +787,7 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
                 "z": (self._shape_property.Zmin+self._shape_property.Zmax)*0.5}
 
     @sp_property
-    def minor_radius(self) -> Profile[float]:
+    def minor_radius(self) -> Function[float]:
         return (self._shape_property.Rmax - self._shape_property.Rmin)*0.5,
 
     @sp_property
@@ -797,31 +797,31 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
     def r_outboard(self) -> Function[float]: return self._shape_property.r_outboard
 
     @sp_property
-    def elongation(self) -> Profile[float]:
+    def elongation(self) -> Function[float]:
         return (self._shape_property.Zmax - self._shape_property.Zmin)/(self._shape_property.Rmax - self._shape_property.Rmin)
 
     @sp_property
-    def elongation_upper(self) -> Profile[float]:
+    def elongation_upper(self) -> Function[float]:
         return (self._shape_property.Zmax-(self._shape_property.Zmax+self._shape_property.Zmin)*0.5)/(self._shape_property.Rmax-self._shape_property.Rmin),
 
     @sp_property
-    def elongation_lower(self) -> Profile[float]:
+    def elongation_lower(self) -> Function[float]:
         return ((self._shape_property.Zmax+self._shape_property.Zmin)*0.5-self._shape_property.Zmin)/(self._shape_property.Rmax-self._shape_property.Rmin),
 
     @sp_property(coordinate1="../psi")
-    def triangularity(self) -> Profile[float]:
+    def triangularity(self) -> Function[float]:
         return (self._shape_property.Rzmax-self._shape_property.Rzmin)/(self._shape_property.Rmax - self._shape_property.Rmin)*2
 
     @sp_property
-    def triangularity_upper(self) -> Profile[float]:
+    def triangularity_upper(self) -> Function[float]:
         return ((self._shape_property.Rmax+self._shape_property.Rmin)*0.5 - self._shape_property.Rzmax)/(self._shape_property.Rmax - self._shape_property.Rmin)*2
 
     @sp_property
-    def triangularity_lower(self) -> Profile[float]:
+    def triangularity_lower(self) -> Function[float]:
         return ((self._shape_property.Rmax+self._shape_property.Rmin)*0.5 - self._shape_property.Rzmin)/(self._shape_property.Rmax - self._shape_property.Rmin)*2
 
     @sp_property
-    def trapped_fraction(self, value) -> Profile[float]:
+    def trapped_fraction(self, value) -> Function[float]:
         """Trapped particle fraction[-]
             Tokamak 3ed, 14.10
         """
@@ -831,7 +831,7 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
         return value
 
 
-class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
+class EquilibriumFunctions2D(_T_equilibrium_profiles_2d):
 
     @property
     def _coord(self) -> EquilibriumCoordinateSystem: return self._parent.coordinate_system
@@ -983,9 +983,9 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
     @property
     def _B0(self) -> float: return self._parent.vacuum_toroidal_field.b0(self.time)
 
-    profiles_1d: EquilibriumProfiles1D = sp_property()
+    profiles_1d: EquilibriumFunctions1D = sp_property()
 
-    profiles_2d: List[EquilibriumProfiles2D] = sp_property()
+    profiles_2d: List[EquilibriumFunctions2D] = sp_property()
     """ FIXME: 定义多个 profiles_2d, type==0 对应  Total fields """
 
     global_quantities: EquilibriumGlobalQuantities = sp_property()

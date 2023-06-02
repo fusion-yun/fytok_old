@@ -152,7 +152,7 @@ if __name__ == "__main__":
             title="Equilibrium",
             grid=True, fontsize=16) .savefig(output_path/"equilibrium_coord.svg", transparent=True)
 
-    if True:  # equilibrium_profiles
+    if False:  # equilibrium_profiles
         plot_profiles(
             [
 
