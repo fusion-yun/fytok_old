@@ -9,6 +9,7 @@
     "fytok",
     "spdm"
   ],
+  "python.analysis.typeCheckingMode": "off",
  
 
 }

@@ -1,9 +1,9 @@
 from functools import cached_property
 
 from fytok._imas.lastest.core_transport import (
-    _T_core_transport, _T_core_transport_model,
+    _T_core_transport, _T_core_transport_model, _T_core_transport_model_ions, _T_core_transport_model_neutral,
     _T_core_transport_model_profiles_1d)
-from spdm.data.List import List
+from spdm.data.List import List, AoS
 from spdm.data.sp_property import SpDict, sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 
@@ -39,10 +39,10 @@ class CoreTransport(_T_core_transport):
 
     Model = CoreTransportModel
 
-    model: List[Model] = sp_property()
+    model: AoS[Model] = sp_property()
 
     @property
-    def model_combiner(self) -> Model:
+    def model_combiner(self) -> CoreTransportModel:
         return self.model.combine(
             default_value={
                 "identifier": {"name": "combined", "index": 1,

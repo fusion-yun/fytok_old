@@ -1,7 +1,7 @@
 
 import pathlib
 import sys
-
+import pprint
 import numpy as np
 import pandas as pd
 from scipy import constants
@@ -79,7 +79,7 @@ if __name__ == "__main__":
         "boundary": {"psi_norm": 0.99},
         "coordinate_system": {"grid": {"dim1": 256, "dim2": 128}}}, }
 
-    if False:  # plot  tokamak
+    if True:  # plot  tokamak
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},
                         "vessel": {"edgecolor": "blue"}},
@@ -91,7 +91,7 @@ if __name__ == "__main__":
                   }
                   ) .savefig(output_path/"tokamak.svg", transparent=True)
 
-    if False:  # plot tokamak geometric profile
+    if True:  # plot tokamak geometric profile
         eq_profiles_1d = tok.equilibrium.time_slice[time_slice].profiles_1d
 
         eq_global_quantities = tok.equilibrium.time_slice[time_slice].global_quantities
@@ -269,7 +269,7 @@ if __name__ == "__main__":
 
         logger.info("Initialize Core Profiles ")
 
-    if True:  # CoreTransport  initialize value
+    if False:  # CoreTransport  initialize value
         tok.core_transport["model"] = [
             {"code": {"name": "dummy"}, "profiles_1d": [load_core_transport(profiles, R0)]},
             {"code": {"name": "fast_alpha"}},
@@ -277,15 +277,15 @@ if __name__ == "__main__":
             # {"code": {"name": "neoclassical"}},
             # {"code": {"name": "glf23"}},
             # {"code": {"name": "nclass"}},
-
         ]
 
-        # logger.debug(tok.core_transport["model"].dump())
         core_transport_model = tok.core_transport.model_combiner
 
         core_transport_profiles_1d = core_transport_model.profiles_1d[time_slice]
-        ele_energy = tok.core_transport.model[0].profiles_1d[0].electrons.energy
-        # logger.debug(ele_energy.d.__array__())
+
+        # ele_energy = tok.core_transport.model[0].profiles_1d[0].electrons.energy
+
+        pprint.pprint(core_transport_model.profiles_1d[time_slice].ion.__entry__().dump())
 
         # logger.debug([[sp.energy.d for sp in model.profiles_1d.ion] for model in tok.core_transport.model])
         # logger.debug(energy.d)
@@ -295,12 +295,7 @@ if __name__ == "__main__":
     
         plot_profiles(
             [
-                [
-                    (function_like(profiles["Xi"].values, bs_r_norm), r"astra", r"$\chi_{i}$", bs_line_style),
 
-                    *[(ion.energy.d, f"{ion.label}", r"$\chi_{i}$")
-                      for ion in core_transport_profiles_1d.ion if not ion.is_impurity],
-                ],
                 [
                     (function_like(profiles["He"].values, bs_r_norm),  "astra", r"$\chi_{e}$", bs_line_style),
 
@@ -313,6 +308,12 @@ if __name__ == "__main__":
                     (core_transport_profiles_1d.conductivity_parallel,  r"fytok", r"$\sigma_{\parallel}$"),
                 ],
 
+                [
+                    (function_like(profiles["Xi"].values, bs_r_norm), r"astra", r"$\chi_{i}$", bs_line_style),
+
+                    *[(ion.energy.d, f"{ion.label}", r"$\chi_{i}$")
+                      for ion in core_transport_profiles_1d.ion if not ion.is_impurity],
+                ],
                 # [(ion.particles.d_fast_factor, f"{ion.label}", r"$D_{\alpha}/D_{He}$")
                 #  for ion in fast_alpha_profiles_1d.ion],
 

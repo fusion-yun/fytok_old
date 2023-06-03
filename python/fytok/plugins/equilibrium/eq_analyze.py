@@ -20,7 +20,7 @@ from spdm.data.Dict import Dict
 from spdm.data.Field import Field
 from spdm.data.Function import Function, function_like
 from spdm.data.Expression import Expression,  Variable
-from spdm.data.List import List
+from spdm.data.List import List,AoS
 from spdm.data.Node import Node
 from spdm.data.Function import Function
 from spdm.data.sp_property import sp_property
@@ -985,7 +985,7 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
 
     profiles_1d: EquilibriumFunctions1D = sp_property()
 
-    profiles_2d: List[EquilibriumFunctions2D] = sp_property()
+    profiles_2d: AoS[EquilibriumFunctions2D] = sp_property()
     """ FIXME: 定义多个 profiles_2d, type==0 对应  Total fields """
 
     global_quantities: EquilibriumGlobalQuantities = sp_property()

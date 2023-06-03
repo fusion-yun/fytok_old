@@ -7,7 +7,7 @@ from fytok._imas.lastest.utilities import (
     _T_core_profiles_vector_components_1)
 from scipy import constants
 from spdm.data.Function import Function
-from spdm.data.List import List
+from spdm.data.List import List,AoS
 from spdm.data.sp_property import SpDict, sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.utils.logger import logger
@@ -88,7 +88,7 @@ class CoreProfiles1D(_T_core_profiles_profiles_1d):
 
     electrons: CoreProfilesElectrons = sp_property()
 
-    ion: List[CoreProfilesIon] = sp_property()
+    ion: AoS[CoreProfilesIon] = sp_property()
 
     @sp_property
     def t_i_average(self) -> Function[float]:

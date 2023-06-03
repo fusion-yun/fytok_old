@@ -118,7 +118,7 @@
 from enum import IntFlag
 import numpy as np
 from spdm.data.Node         import Node
-from spdm.data.List         import List
+from spdm.data.List         import List,AoS
 from spdm.data.TimeSeries   import TimeSeriesAoS,TimeSlice
 from spdm.data.Signal       import Signal,SignalND
 from spdm.data.Function      import Function 
@@ -403,7 +403,7 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
     <xsl:when test="@maxOccurs">
       <xsl:choose>
         <xsl:when test="ends-with(xs:annotation/xs:appinfo/coordinate1,'time')">TimeSeriesAoS[<xsl:value-of select="$type_hint" />]</xsl:when>      
-        <xsl:otherwise>List[<xsl:value-of select="$type_hint" />]</xsl:otherwise>               
+        <xsl:otherwise>AoS[<xsl:value-of select="$type_hint" />]</xsl:otherwise>               
       </xsl:choose>
     </xsl:when>   
     <xsl:otherwise><xsl:value-of select="$type_hint"/> </xsl:otherwise>   
