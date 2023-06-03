@@ -155,7 +155,7 @@ def load_core_source(profiles: typing.Dict[str, typing.Any]):
 
     # Core Source
     return {
-        "grid_d": {"rho_tor_norm": bs_r_norm},
+        "grid": {"rho_tor_norm": bs_r_norm},
         "j_parallel": (
             # profiles["Jtot"].values
             profiles["Joh"].values

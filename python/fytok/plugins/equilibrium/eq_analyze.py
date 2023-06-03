@@ -20,7 +20,7 @@ from spdm.data.Dict import Dict
 from spdm.data.Field import Field
 from spdm.data.Function import Function, function_like
 from spdm.data.Expression import Expression,  Variable
-from spdm.data.List import List,AoS
+from spdm.data.List import List, AoS
 from spdm.data.Node import Node
 from spdm.data.Function import Function
 from spdm.data.sp_property import sp_property
@@ -118,7 +118,7 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
         self._Ip = super().get("ip", self._parent.global_quantities.ip)  # plasma current
 
         self._fpol = self._parent.profiles_1d.f  # poloidal current function
-
+        
         self._s_B0 = np.sign(self._B0)
 
         self._s_Ip = np.sign(self._Ip)
@@ -843,7 +843,8 @@ class EquilibriumFunctions2D(_T_equilibrium_profiles_2d):
     def _profiles_1d(self) -> _T_equilibrium_profiles_1d: return self._parent.profiles_1d
 
     @sp_property
-    def grid(self) -> Mesh: return Mesh(super().grid.dim1, super().grid.dim2,  type=super().grid_type)
+    def grid(self) -> Mesh:
+        return Mesh(super().grid.dim1, super().grid.dim2, mesh_type=super().grid_type)
 
     @sp_property
     def r(self) -> Field[float]: return Field(self.grid.points[0], mesh=self.grid)

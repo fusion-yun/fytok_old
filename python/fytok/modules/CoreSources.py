@@ -1,7 +1,7 @@
 
 from fytok._imas.lastest.core_sources import (_T_core_sources,
                                               _T_core_sources_source)
-from spdm.data.List import List
+from spdm.data.List import List, AoS
 from spdm.data.sp_property import SpDict, sp_property
 
 from .CoreProfiles import CoreProfiles
@@ -26,12 +26,12 @@ class CoreSources(_T_core_sources):
 
     grid: CoreRadialGrid = sp_property()
 
-    source: List[Source] = sp_property()
+    source: AoS[Source] = sp_property()
 
     @property
     def source_combiner(self) -> Source:
         return self.source.combine(
-            common_data={
+            default_value={
                 "identifier": {"name": "total", "index": 1,
                                "description": "Total source; combines all sources"},
                 "code": {"name": None},

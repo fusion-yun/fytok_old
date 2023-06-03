@@ -79,7 +79,10 @@ if __name__ == "__main__":
         "boundary": {"psi_norm": 0.99},
         "coordinate_system": {"grid": {"dim1": 256, "dim2": 128}}}, }
 
-    if True:  # plot  tokamak
+    # logger.debug(tok.equilibrium.time_slice[0].coordinate_system)
+    # logger.debug(tok.equilibrium.time_slice[0].coordinate_system)
+
+    if False:  # plot  tokamak
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},
                         "vessel": {"edgecolor": "blue"}},
@@ -91,7 +94,7 @@ if __name__ == "__main__":
                   }
                   ) .savefig(output_path/"tokamak.svg", transparent=True)
 
-    if True:  # plot tokamak geometric profile
+    if False:  # plot tokamak geometric profile
         eq_profiles_1d = tok.equilibrium.time_slice[time_slice].profiles_1d
 
         eq_global_quantities = tok.equilibrium.time_slice[time_slice].global_quantities
@@ -226,7 +229,7 @@ if __name__ == "__main__":
 
         logger.info("Initialize Equilibrium ")
 
-    if True:  # CoreProfile initialize value
+    if False:  # CoreProfile initialize value
 
         tok.core_profiles["profiles_1d"] = [load_core_profiles(profiles)]
 
@@ -269,7 +272,9 @@ if __name__ == "__main__":
 
         logger.info("Initialize Core Profiles ")
 
-    if False:  # CoreTransport  initialize value
+    if True:  # CoreTransport  initialize value
+        logger.info("Initialize Core Transport ")
+
         tok.core_transport["model"] = [
             {"code": {"name": "dummy"}, "profiles_1d": [load_core_transport(profiles, R0)]},
             {"code": {"name": "fast_alpha"}},
@@ -285,14 +290,12 @@ if __name__ == "__main__":
 
         # ele_energy = tok.core_transport.model[0].profiles_1d[0].electrons.energy
 
-        pprint.pprint(core_transport_model.profiles_1d[time_slice].ion.__entry__().dump())
-
         # logger.debug([[sp.energy.d for sp in model.profiles_1d.ion] for model in tok.core_transport.model])
         # logger.debug(energy.d)
         # logger.debug(core_transport_profiles_1d.electrons.energy.d(np.linspace(0, 1.0, 128)))
         # nc_profiles_1d = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
         # fast_alpha_profiles_1d = tok.core_transport.model[{"code.name": "fast_alpha"}].profiles_1d
-    
+
         plot_profiles(
             [
 
@@ -302,7 +305,7 @@ if __name__ == "__main__":
                     (core_transport_profiles_1d.electrons.energy.d,   "fytok", r"$\chi_{e}$"),
                 ],
                 [
-                    (function_like(profiles["Joh"].values*1.0e6 / profiles["U"].values * (2.0*constants.pi * R0)),
+                    (function_like(profiles["Joh"].values*1.0e6 / profiles["U"].values * (2.0*constants.pi * R0), bs_r_norm),
                      r"astra", r"$\sigma_{\parallel}$", bs_line_style),
 
                     (core_transport_profiles_1d.conductivity_parallel,  r"fytok", r"$\sigma_{\parallel}$"),
@@ -312,7 +315,7 @@ if __name__ == "__main__":
                     (function_like(profiles["Xi"].values, bs_r_norm), r"astra", r"$\chi_{i}$", bs_line_style),
 
                     *[(ion.energy.d, f"{ion.label}", r"$\chi_{i}$")
-                      for ion in core_transport_profiles_1d.ion if not ion.is_impurity],
+                      for ion in core_transport_profiles_1d.ion],
                 ],
                 # [(ion.particles.d_fast_factor, f"{ion.label}", r"$D_{\alpha}/D_{He}$")
                 #  for ion in fast_alpha_profiles_1d.ion],
@@ -338,18 +341,17 @@ if __name__ == "__main__":
             x_axis=(np.linspace(0, 1.0, bs_psi_norm.size),   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             title="combine") .savefig(output_path/"core_transport.svg", transparent=True)
 
-        logger.info("Initialize Core Transport ")
+    if True:  # CoreSources
+        logger.info("Initialize Core Source  ")
 
-    if False:  # CoreSources
         tok.core_sources["source"] = [
-            {"code": {"name": "dummy"},
-             "profiles_1d": load_core_source(profiles)},
+            {"code": {"name": "dummy"}, "profiles_1d": [load_core_source(profiles)]},
             {"code": {"name": "bootstrap_current"}},
             {"code": {"name": "fusion_reaction"}},
         ]
 
-        tok.core_sources.refresh(equilibrium=tok.equilibrium,
-                                 core_profiles=tok.core_profiles)
+        # tok.core_sources.refresh(equilibrium=tok.equilibrium,
+        #                          core_profiles=tok.core_profiles)
 
         core_source_profiles_1d = tok.core_sources.source_combiner.profiles_1d[time_slice]
 
@@ -361,22 +363,25 @@ if __name__ == "__main__":
                     (core_source_profiles_1d.j_parallel*1e-6,     "fytok", ""),
                 ],
 
-                [
-                    (function_like(profiles["Joh"].values, bs_r_norm), "astra",
-                     r"$j_{ohmic} [MA\cdot m^{-2}]$", bs_line_style),
-                    (core_profile_1d.j_ohmic*1e-6, "fytok", r"$j_{\Omega} [MA\cdot m^{-2}]$"),
-                ],
+                # [
+                #     (function_like(profiles["Joh"].values, bs_r_norm), "astra",
+                #      r"$j_{ohmic} [MA\cdot m^{-2}]$", bs_line_style),
+                #     (core_source_profiles_1d.j_ohmic*1e-6, "fytok", r"$j_{\Omega} [MA\cdot m^{-2}]$"),
+                # ],
                 [
                     (core_source_profiles_1d.electrons.particles,             "e",   r"$S[m ^ {-3} s ^ {-1}]$"),
-                    (core_source_profiles_1d.ion[{"label": "D"}].particles,   "D",   r"$S[m ^ {-3} s ^ {-1}]$"),
-                    (core_source_profiles_1d.ion[{"label": "T"}].particles,   "T",   r"$S[m ^ {-3} s ^ {-1}]$"),
-                    (core_source_profiles_1d.ion[{"label": "He"}].particles,  "He",  r"$S[m ^ {-3} s ^ {-1}]$"),
+                    *[(ion.particles,   f"{ion.label}",   r"$S[m ^ {-3} s ^ {-1}]$")
+                      for ion in core_source_profiles_1d.ion],
+                    # (core_source_profiles_1d.ion[{"label": "D"}].particles,   "D",   r"$S[m ^ {-3} s ^ {-1}]$"),
+                    # (core_source_profiles_1d.ion[{"label": "T"}].particles,   "T",   r"$S[m ^ {-3} s ^ {-1}]$"),
+                    # (core_source_profiles_1d.ion[{"label": "He"}].particles,  "He",  r"$S[m ^ {-3} s ^ {-1}]$"),
                 ],
                 [
                     (core_source_profiles_1d.electrons.energy,             "e",   r"$Q$"),
-                    (core_source_profiles_1d.ion[{"label": "D"}].energy,   "D",   r"$Q$"),
-                    (core_source_profiles_1d.ion[{"label": "T"}].energy,   "T",   r"$Q$"),
-                    (core_source_profiles_1d.ion[{"label": "He"}].energy,  "He",  r"$Q$"),
+                    *[(ion.energy,   f"{ion.label}",   r"$Q$") for ion in core_source_profiles_1d.ion],
+                    # (core_source_profiles_1d.ion[{"label": "D"}].energy,   "D",   r"$Q$"),
+                    # (core_source_profiles_1d.ion[{"label": "T"}].energy,   "T",   r"$Q$"),
+                    # (core_source_profiles_1d.ion[{"label": "He"}].energy,  "He",  r"$Q$"),
                 ],
                 # [
                 # (function_like(profiles["Jbs"].values, bs_r_norm),
@@ -408,10 +413,8 @@ if __name__ == "__main__":
                 #     #   for ion in core_source_profiles_1d.ion if not ion.is_impurity],
                 # ],
             ],
-            x=([0, 1.0], r"$\sqrt{\Phi/\Phi_{bdry}}$"),
+            x_axis=(np.linspace(0, 1.0, bs_psi_norm.size), r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             grid=True, fontsize=10) .savefig(output_path/"core_sources.svg", transparent=True)
-
-        logger.info("Initialize Core Source  ")
 
     if False:  # TransportSolver
 
@@ -590,7 +593,6 @@ if __name__ == "__main__":
             ],
             x=([0, 1.0],  r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             title=f" Particle solver '{particle_solver}'",
-            grid=True, fontsize=10)\
-            .savefig(output_path/f"core_profiles_result_{particle_solver}_alpha.svg", transparent=True)
+            grid=True, fontsize=10).savefig(output_path/f"core_profiles_result_{particle_solver}_alpha.svg", transparent=True)
 
     logger.info("====== DONE ========")
