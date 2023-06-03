@@ -7,7 +7,7 @@ from fytok._imas.lastest.utilities import (
     _T_core_profiles_vector_components_1)
 from scipy import constants
 from spdm.data.Function import Function
-from spdm.data.List import List,AoS
+from spdm.data.List import List, AoS
 from spdm.data.sp_property import SpDict, sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.utils.logger import logger
@@ -214,9 +214,12 @@ class CoreProfiles1D(_T_core_profiles_profiles_1d):
 
 class CoreProfiles(_T_core_profiles):
 
-    Functions1D = CoreProfiles1D
+    Profiles1D = CoreProfiles1D
 
-    profiles_1d: TimeSeriesAoS[Functions1D] = sp_property()
+    profiles_1d: TimeSeriesAoS[Profiles1D] = sp_property()
 
-    def update(self, *args,  **kwargs) -> None:
-        super().update(*args, **kwargs)
+    def update(self, *args,  **kwargs) -> CoreProfiles1D:
+        return self.profiles_1d.update(*args, **kwargs)
+
+    def advance(self, *args,  **kwargs) -> CoreProfiles1D:
+        return self.profiles_1d.advance(*args, **kwargs)

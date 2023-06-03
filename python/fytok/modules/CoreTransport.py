@@ -6,6 +6,7 @@ from fytok._imas.lastest.core_transport import (
 from spdm.data.List import List, AoS
 from spdm.data.sp_property import SpDict, sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
+from spdm.data.Entry import deep_reduce
 
 from .CoreProfiles import CoreProfiles
 from .Utilities import CoreRadialGrid
@@ -27,12 +28,12 @@ class CoreTransportProfiles1D(_T_core_transport_model_profiles_1d):
 class CoreTransportModel(_T_core_transport_model):
 
     _IDS = "core_transport/model"
+    CoreProfiles1D = CoreTransportProfiles1D
 
-    profiles_1d: TimeSeriesAoS[CoreTransportProfiles1D] = sp_property()
+    profiles_1d: TimeSeriesAoS[CoreProfiles1D] = sp_property()
 
-    def update(self, *args, core_profiles: CoreProfiles, **kwargs) -> None:
-        super().update(*args, core_profiles=core_profiles, **kwargs)
-        # self.profiles_1d["grid"] = core_profiles.profiles_1d.grid
+    def advance(self, *args, core_profiles: CoreProfiles, time: float = 0.0, **kwargs) -> CoreProfiles1D:
+        return self.profiles_1d.advance(*args, core_profiles=core_profiles, time=time, **kwargs)
 
 
 class CoreTransport(_T_core_transport):
@@ -51,10 +52,5 @@ class CoreTransport(_T_core_transport):
                 "code": {"name": None},
             })
 
-    def update(self, *args, core_profiles, **kwargs) -> None:
-
-        if core_profiles is not None:
-            self["grid"] = core_profiles.profiles_1d.grid
-
-        for model in self.model:
-            model.refresh(*args, core_profiles=core_profiles, **kwargs)
+    def advance(self, *args, **kwargs) -> Model.CoreProfiles1D:
+        return CoreTransportModel.CoreProfiles1D(deep_reduce([model.advance(*args, **kwargs) for model in self.model]), parent=self)

@@ -1,3 +1,4 @@
+from __future__ import annotations
 
 import numpy as np
 from fytok._imas.lastest.equilibrium import (_T_equilibrium,
@@ -5,9 +6,12 @@ from fytok._imas.lastest.equilibrium import (_T_equilibrium,
 from spdm.data.Function import Function
 from spdm.data.sp_property import SpDict, sp_property
 from spdm.utils.logger import logger
+from spdm.data.TimeSeries import TimeSeriesAoS
+from spmd.data.Entry import deep_reduce
+from .CoreProfiles import CoreProfiles
 
-# from .PFActive import PFActive
-# from .Wall import Wall
+from .PFActive import PFActive
+from .Wall import Wall
 
 
 class Equilibrium(_T_equilibrium):
@@ -60,17 +64,17 @@ class Equilibrium(_T_equilibrium):
 
     TimeSlice = _T_equilibrium_time_slice
 
-    def update(self,  *args, dt=None, **kwargs):
+    time_slice: TimeSeriesAoS[TimeSlice] = sp_property(coordinate1="time", type="dynamic")
+
+    def update(self, *args, core_profile_1d: CoreProfiles.Profiles1D, pf_active: PFActive, wall: Wall = None) -> TimeSlice:
         """
             update the last time slice, base on profiles_2d[-1].psi
         """
 
-        if dt is None:  # 更新最后一个时间点
-            self.time_slice[-1].update(*args, **kwargs)
-        else:  # 新建一个时间点
-            self.time_slice.append(self.TimeSlice(*args, **kwargs))
+        return self.time_slice.update(*args, core_profile_1d=core_profile_1d, pf_active=pf_active, wall=wall)
 
-        super().update(*args, dt=dt, **kwargs)
+    def advance(self, *args, time: float = 0.0, core_profile_1d: CoreProfiles.Profiles1D, pf_active: PFActive, wall: Wall = None) -> Equilibrium.TimeSlice:
+        return self.time_slice.advance(*args, time=time, core_profile_1d=core_profile_1d, pf_active=pf_active, wall=wall)
 
     def plot(self, axis=None, *args,
              scalar_field={},

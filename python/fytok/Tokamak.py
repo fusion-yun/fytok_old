@@ -1,8 +1,9 @@
 
-
+import numpy as np
 import matplotlib.pyplot as plt
+from copy import deepcopy, copy
 from spdm.utils.logger import logger
-from spdm.data.sp_property import sp_property,SpDict
+from spdm.data.sp_property import sp_property, SpDict
 from spdm.data.Dict import Dict
 from spdm.data.Node import Node
 # ---------------------------------
@@ -33,6 +34,10 @@ class Tokamak(SpDict):
 
     def __init__(self, *args,  **kwargs):
         super().__init__(*args,  **kwargs)
+        self._time = 0.0
+
+    @property
+    def time(self) -> float: return self._time
 
     wall: Wall = sp_property()
 
@@ -60,89 +65,85 @@ class Tokamak(SpDict):
 
     transport_solver: TransportSolverNumerics = sp_property()
 
-    def check_converge(self, /, **kwargs):
+    def check_converge(self, *args, **kwargs) -> float:
         return 0.0
 
-    def update(self, *args, time=None, tolerance=1.0e-4,   max_iteration=1, **kwargs) -> float:
+    def advance(self, *args, dt=None, do_update=False, **kwargs) -> CoreProfiles.Profiles1D:
+        self._time += dt
 
-        time_prev = self.time
-        time_next = time if time is not None else time_prev
+        core_profiles_1d_prev = self.core_profiles.profile_1d.current
+        
+        equilibrium = self.equilibrium.advance(
+            time=self.time,
+            core_profile_1d=core_profiles_1d_prev,
+            wall=self.wall,
+            pf_active=self.pf_active)
 
-        dt = time_next-time_prev
+        core_transport_profiles_1d = self.core_transport.advance(
+            time=self.time,
+            equilibrium=equilibrium,
+            core_profile_1d=core_profiles_1d_prev)
 
-        super().refresh(time=time_next)
+        core_source_profiles_1d = self.core_sources.advance(
+            time=self.time,
+            equilibrium=equilibrium,
+            core_profile_1d=core_profiles_1d_prev)
 
-        self.wall.refresh(time=time_next)
+        core_profiles_1d_next = self.transport_solver.solve(
+            equilibrium=equilibrium,
+            core_profile_1d=core_profiles_1d_prev,
+            core_transport_profiles_1d=core_transport_profiles_1d,
+            core_source_profiles_1d=core_source_profiles_1d)
 
-        self.pf_active.refresh(time=time_next)
+        self.core_profiles.advance(core_profiles_1d_next)
 
-        self.magnetics.refresh(time=time_next)
+        if do_update:
+            return self.update()
+        else:
+            return core_profiles_1d_next
 
-        core_profiles_prev = self.core_profiles
+    def update(self, tolerance=1.0e-4, max_iteration=1) -> CoreProfiles.Profiles1D:
 
-        core_profiles_iter = core_profiles_prev
+        residual = tolerance
 
-        # edge_profiles_prev = self.edge_profiles
-        # edge_profiles_iter = edge_profiles_prev
-
-        var_list = []
+        core_profiles_1d_iter = deepcopy(self.core_profiles.profiles_1d.current)
 
         for step_num in range(max_iteration):
-
-            self.equilibrium.update(
-                time=time,
-                core_profiles=core_profiles_iter,
-                # edge_profiles=edge_profiles_iter,
+            equilibrium = self.equilibrium.update(
+                core_profile_1d=core_profiles_1d_iter,
                 wall=self.wall,
-                pf_active=self.pf_active,
-                magnetics=self.magnetics)
+                pf_active=self.pf_active)
 
-            core_profiles_iter = self.transport_solver.solve(
-                equilibrium=self.equilibrium,
-                core_profiles=self.core_profiles,
-                core_sources=self.core_sources,
-                core_transport=self.core_transport,
-                dt=dt,
-                var_list=var_list
-            )
+            core_transport_profiles_1d = self.core_transport.update(
+                equilibrium=equilibrium,
+                core_profile_1d=core_profiles_1d_iter)
 
-            # edge_profiles_iter = self.edge_transport_solver.solve(
-            #     equilibrium_prev=equilibrium_prev,
-            #     equilibrium_next=equilibrium_iter,
-            #     edge_profiles_prev=edge_profiles_prev,
-            #     edge_sources=self.edge_sources,
-            #     edge_transport=self.edge_transport,
-            #     dt=dt
-            # )
+            core_source_profiles_1d, *_ = self.core_sources.advance(
+                equilibrium=equilibrium,
+                core_profile_1d=core_profiles_1d_iter)
 
-            residual = self.check_converge(
-                equilibrium_iter=equilibrium_iter,
-                equilibrium_next=equilibrium_iter,
-                core_profiles_iter=core_profiles_iter,
-                core_profiles_prev=core_profiles_prev,
-                # edge_profiles_iter=edge_profiles_iter,
-                # edge_profiles_prev=edge_profiles_prev,
-            )
+            core_profiles_1d_next = self.transport_solver.solve(
+                equilibrium=equilibrium,
+                core_profiles_prev=core_profiles_1d_iter,
+                core_transport_profiles_1d=core_transport_profiles_1d,
+                core_source_profiles_1d=core_source_profiles_1d)
 
+            residual = self.check_converge(core_profiles_1d_iter,  core_profiles_1d_next)
+
+            if residual <= tolerance:
+                break
+            else:
+                core_profiles_1d_iter = core_profiles_1d_next
+        else:
             logger.debug(f"time={self.time}  iterator step {step_num}/{max_iteration} residual={residual}")
 
-            if residual < tolerance:
-                equilibrium_next = equilibrium_iter
-                core_profiles_next = core_profiles_iter
-                # edge_profiles_next = edge_profiles_iter
-                break
+        self.core_profiles.update(core_profiles_1d_iter)
 
-        self["equilibrium"] = equilibrium_next
-
-        self["core_profiles"] = core_profiles_next
-
-        # self["edge_profiles"] = edge_profiles_next
-
-        if residual > 1.0e-4:
+        if residual >= tolerance:
             logger.warning(
                 f"The solution does not converge, and the number of iterations exceeds the maximum {max_iteration}")
 
-        return self.time
+        return core_profiles_1d_iter
 
     def plot(self, axis=None, /,  **kwargs):
 
