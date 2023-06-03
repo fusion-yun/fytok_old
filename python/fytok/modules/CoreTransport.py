@@ -51,9 +51,7 @@ class CoreTransport(_T_core_transport):
                 "code": {"name": None},
             })
 
-    def update(self, *args, core_profiles=None, **kwargs) -> None:
-        if "model_combiner" in self.__dict__:
-            del self.__dict__["model_combiner"]
+    def update(self, *args, core_profiles, **kwargs) -> None:
 
         if core_profiles is not None:
             self["grid"] = core_profiles.profiles_1d.grid

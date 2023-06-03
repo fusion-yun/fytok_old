@@ -229,7 +229,7 @@ if __name__ == "__main__":
 
         logger.info("Initialize Equilibrium ")
 
-    if False:  # CoreProfile initialize value
+    if True:  # CoreProfile initialize value
 
         tok.core_profiles["profiles_1d"] = [load_core_profiles(profiles)]
 
@@ -341,7 +341,7 @@ if __name__ == "__main__":
             x_axis=(np.linspace(0, 1.0, bs_psi_norm.size),   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
             title="combine") .savefig(output_path/"core_transport.svg", transparent=True)
 
-    if True:  # CoreSources
+    if False:  # CoreSources
         logger.info("Initialize Core Source  ")
 
         tok.core_sources["source"] = [
