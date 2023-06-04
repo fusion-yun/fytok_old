@@ -15,6 +15,7 @@ from spdm.data.Function import Function
 from spdm.data.sp_property import SpDict, sp_property
 from spdm.utils.logger import logger
 from spdm.utils.tags import _not_found_
+from spdm.utils.typing import array_type
 
 _T = typing.TypeVar("_T")
 

@@ -90,7 +90,7 @@ COCOS_TABLE = [
 # fmt:on
 
 
-class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
+class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     r"""
         Flux surface coordinate system on a square grid of flux and poloidal angle
         默认采用磁面坐标
@@ -118,7 +118,7 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
         self._Ip = super().get("ip", self._parent.global_quantities.ip)  # plasma current
 
         self._fpol = self._parent.profiles_1d.f  # poloidal current function
-        
+
         self._s_B0 = np.sign(self._B0)
 
         self._s_Ip = np.sign(self._Ip)
@@ -577,7 +577,7 @@ class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
         return self.surface_integral(func,  *psi)/self.dvolume_dpsi(*psi)
 
 
-class EquilibriumGlobalQuantities(_T_equilibrium_global_quantities):
+class EquilibriumGlobalQuantities(Equilibrium.TimeSlice.GlobalQuantities):
     @property
     def _coord(self) -> EquilibriumCoordinateSystem: return self._parent.coordinate_system
 
@@ -635,10 +635,10 @@ class EquilibriumGlobalQuantities(_T_equilibrium_global_quantities):
         # plasma_resistance  :float =  sp_property(type="dynamic",units="ohm",introduced_after_version="3.37.2")
 
 
-class EquilibriumFunctions1D(_T_equilibrium_profiles_1d):
+class EquilibriumProfiles1d(Equilibrium.TimeSlice.Profiles1d):
 
     @property
-    def _coord(self) -> EquilibriumCoordinateSystem: return self._parent.coordinate_system
+    def _coord(self) -> Equilibrium.TimeSlice.CoordinateSystem: return self._parent.coordinate_system
 
     ###############################
     # 1-D
@@ -831,7 +831,7 @@ class EquilibriumFunctions1D(_T_equilibrium_profiles_1d):
         return value
 
 
-class EquilibriumFunctions2D(_T_equilibrium_profiles_2d):
+class EquilibriumProfiles2d(Equilibrium.TimeSlice.Profiles2d):
 
     @property
     def _coord(self) -> EquilibriumCoordinateSystem: return self._parent.coordinate_system
@@ -886,7 +886,7 @@ class EquilibriumFunctions2D(_T_equilibrium_profiles_2d):
         return self._coord.fpol(self.psi) / _R
 
 
-class EquilibriumBoundary(_T_equilibrium_boundary):
+class EquilibriumBoundary(Equilibrium.TimeSlice.Boundary):
     @property
     def _coord(self) -> EquilibriumCoordinateSystem: return self._parent.coordinate_system
 
@@ -948,10 +948,10 @@ class EquilibriumBoundary(_T_equilibrium_boundary):
     def active_limiter_point(self) -> List[RZTuple]: return NotImplemented
 
 
-class EquilibriumBoundarySeparatrix(_T_equilibrium_boundary_separatrix):
+class EquilibriumBoundarySeparatrix(Equilibrium.TimeSlice.BoundarySeparatrix):
 
     @property
-    def _coord(self) -> EquilibriumCoordinateSystem: return self._parent.coordinate_system
+    def _coord(self) -> Equilibrium.TimeSlice.CoordinateSystem: return self._parent.coordinate_system
 
     @sp_property
     def outline(self) -> RZTuple1D:
@@ -976,7 +976,7 @@ class EquilibriumBoundarySeparatrix(_T_equilibrium_boundary_separatrix):
         raise NotImplementedError("TODO:")
 
 
-class EquilibriumTimeSlice(_T_equilibrium_time_slice):
+class EquilibriumTimeSlice(Equilibrium.TimeSlice):
 
     @property
     def _R0(self) -> float: return self._parent.vacuum_toroidal_field.r0
@@ -984,9 +984,9 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
     @property
     def _B0(self) -> float: return self._parent.vacuum_toroidal_field.b0(self.time)
 
-    profiles_1d: EquilibriumFunctions1D = sp_property()
+    profiles_1d: EquilibriumProfiles1d = sp_property()
 
-    profiles_2d: AoS[EquilibriumFunctions2D] = sp_property()
+    profiles_2d: AoS[EquilibriumProfiles2d] = sp_property()
     """ FIXME: 定义多个 profiles_2d, type==0 对应  Total fields """
 
     global_quantities: EquilibriumGlobalQuantities = sp_property()

@@ -192,7 +192,7 @@ from .<xsl:value-of select="@ref"/>  import _T_<xsl:value-of select="@ref"/>
     <xsl:apply-templates select="$root/xs:complexType[my:dep_level(.,$root)=6] " mode="DEFINE"/>
 
     <xsl:apply-templates select="$root/xs:element" mode="DEFINE"/>
-    <xsl:value-of select="unparsed-text('fy_imas.py')"/>
+    <xsl:value-of select="unparsed-text('fy_imas_utilities.py')"/>
   </xsl:result-document>   
 </xsl:template>
 

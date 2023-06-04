@@ -68,7 +68,7 @@ class Tokamak(SpDict):
     def check_converge(self, *args, **kwargs) -> float:
         return 0.0
 
-    def advance(self, *args, dt=None, do_update=False, **kwargs) -> CoreProfiles.Profiles1D:
+    def advance(self, *args, dt=None, do_update=False, **kwargs) -> CoreProfiles.Profiles1d:
         self._time += dt
 
         core_profiles_1d_prev = self.core_profiles.profile_1d.current
@@ -102,7 +102,7 @@ class Tokamak(SpDict):
         else:
             return core_profiles_1d_next
 
-    def update(self, tolerance=1.0e-4, max_iteration=1) -> CoreProfiles.Profiles1D:
+    def update(self, tolerance=1.0e-4, max_iteration=1) -> CoreProfiles.Profiles1d:
 
         residual = tolerance
 

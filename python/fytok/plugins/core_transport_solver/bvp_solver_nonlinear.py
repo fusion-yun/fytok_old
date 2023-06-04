@@ -26,7 +26,7 @@ TOLERANCE = 1.0e-6
 TWO_PI = 2.0 * constants.pi
 
 
-class CoreTransportSolverBVPNonlinear(TransportSolverNumerics):
+class TransportSolverNumericsBVPNonlinear(TransportSolverNumerics):
     r"""
         Solve transport equations :math:`\rho=\sqrt{ \Phi/\pi B_{0}}`
         See  :cite:`hinton_theory_1976,coster_european_2010,pereverzev_astraautomated_1991`
@@ -164,7 +164,7 @@ class CoreTransportSolverBVPNonlinear(TransportSolverNumerics):
         bc = self.boundary_conditions_1d.current
         # -----------------------------------------------------------
         # boundary condition, value
-        # bc: CoreTransportSolver.BoundaryConditions1D.BoundaryConditions = self.boundary_conditions_1d.current
+        # bc: TransportSolverNumerics.BoundaryConditions1D.BoundaryConditions = self.boundary_conditions_1d.current
         # axis
         ua, va, wa = 0, 1, 0
 
@@ -375,7 +375,7 @@ class CoreTransportSolverBVPNonlinear(TransportSolverNumerics):
         dg = array_like(x, dg)
         return dy, dg
 
-    def bc_particle(self, ya: float, ga: float, yb: float, gb: float, bc: CoreTransportSolver.BoundaryConditions1D.BoundaryConditions):
+    def bc_particle(self, ya: float, ga: float, yb: float, gb: float, bc: TransportSolverNumerics.BoundaryConditions1D.BoundaryConditions):
 
         # axis
         u0, v0, w0 = 0, 1, 0
@@ -455,11 +455,11 @@ class CoreTransportSolverBVPNonlinear(TransportSolverNumerics):
         dy[0] = 0
         return dy, dg
 
-    def bc_energy(self, ya: float, ga: float, yb: float, gb: float, bc: CoreTransportSolver.BoundaryConditions1D.BoundaryConditions,):
+    def bc_energy(self, ya: float, ga: float, yb: float, gb: float, bc: TransportSolverNumerics.BoundaryConditions1D.BoundaryConditions,):
 
         # ----------------------------------------------
         # Boundary Condition
-        # bc: CoreTransportSolver.BoundaryConditions1D.BoundaryConditions = \
+        # bc: TransportSolverNumerics.BoundaryConditions1D.BoundaryConditions = \
         #     self.boundary_conditions_1d.fetch(var_id).energy
 
         # axis
@@ -744,11 +744,11 @@ class CoreTransportSolverBVPNonlinear(TransportSolverNumerics):
                                            self.transp_ion_energy, self.bc_ion_energy))
 
     def solve(self, /,
-              core_profiles_prev: CoreProfiles,
-              core_sources: CoreSources,
-              core_transport: CoreTransport,
-              equilibrium_prev: Equilibrium,
-              equilibrium_next: Equilibrium = None,
+              core_profiles_prev: CoreProfiles.Profiles1D,
+              core_sources: CoreSources.Source.Profiles1D,
+              core_transport: CoreTransport.Model.Profiles1D,
+              equilibrium_prev: Equilibrium.TimeSlice,
+              equilibrium_next: Equilibrium.TimeSlice = None,
               var_list=None,
               **kwargs) -> CoreProfiles:
 
@@ -837,4 +837,4 @@ class CoreTransportSolverBVPNonlinear(TransportSolverNumerics):
         return core_profiles_next
 
 
-__SP_EXPORT__ = CoreTransportSolverBVPNonlinear
+__SP_EXPORT__ = TransportSolverNumericsBVPNonlinear

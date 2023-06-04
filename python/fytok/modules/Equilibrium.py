@@ -2,16 +2,33 @@ from __future__ import annotations
 
 import numpy as np
 from fytok._imas.lastest.equilibrium import (_T_equilibrium,
-                                             _T_equilibrium_time_slice)
+                                             _T_equilibrium_time_slice,
+                                             _T_equilibrium_profiles_1d,
+                                             _T_equilibrium_profiles_2d,
+                                             _T_equilibrium_coordinate_system,
+                                             _T_equilibrium_global_quantities,
+                                             _T_equilibrium_constraints,
+                                             _T_equilibrium_boundary,
+                                             _T_equilibrium_boundary_separatrix)
 from spdm.data.Function import Function
 from spdm.data.sp_property import SpDict, sp_property
 from spdm.utils.logger import logger
 from spdm.data.TimeSeries import TimeSeriesAoS
-from spmd.data.Entry import deep_reduce
+from spdm.data.Entry import deep_reduce
 from .CoreProfiles import CoreProfiles
 
 from .PFActive import PFActive
 from .Wall import Wall
+
+
+class EquilibriumTimeSlice(_T_equilibrium_time_slice):
+    CoordinateSystem = _T_equilibrium_coordinate_system
+    Profiles1d = _T_equilibrium_profiles_1d
+    Profiles2d = _T_equilibrium_profiles_2d
+    GlobalQuantities = _T_equilibrium_global_quantities
+    Boundary = _T_equilibrium_boundary
+    BoundarySeparatrix = _T_equilibrium_boundary_separatrix
+    Constraints = _T_equilibrium_constraints
 
 
 class Equilibrium(_T_equilibrium):
@@ -60,21 +77,20 @@ class Equilibrium(_T_equilibrium):
         ```
     """
 
-    _plugin_registry = {}
-
-    TimeSlice = _T_equilibrium_time_slice
-
+    TimeSlice = EquilibriumTimeSlice
     time_slice: TimeSeriesAoS[TimeSlice] = sp_property(coordinate1="time", type="dynamic")
 
-    def update(self, *args, core_profile_1d: CoreProfiles.Profiles1D, pf_active: PFActive, wall: Wall = None) -> TimeSlice:
+    _plugin_registry = {}
+
+    def update(self, *args, core_profile_1d: CoreProfiles.Profiles1d, pf_active: PFActive, wall: Wall = None, **kwargs) -> TimeSlice:
         """
             update the last time slice, base on profiles_2d[-1].psi
         """
 
-        return self.time_slice.update(*args, core_profile_1d=core_profile_1d, pf_active=pf_active, wall=wall)
+        return self.time_slice.update(*args, core_profile_1d=core_profile_1d, pf_active=pf_active, wall=wall, **kwargs)
 
-    def advance(self, *args, time: float = 0.0, core_profile_1d: CoreProfiles.Profiles1D, pf_active: PFActive, wall: Wall = None) -> Equilibrium.TimeSlice:
-        return self.time_slice.advance(*args, time=time, core_profile_1d=core_profile_1d, pf_active=pf_active, wall=wall)
+    def advance(self, *args, time: float = 0.0, core_profile_1d: CoreProfiles.Profiles1d, pf_active: PFActive, wall: Wall = None, **kwargs) -> Equilibrium.TimeSlice:
+        return self.time_slice.advance(*args, time=time, core_profile_1d=core_profile_1d, pf_active=pf_active, wall=wall, **kwargs)
 
     def plot(self, axis=None, *args,
              scalar_field={},

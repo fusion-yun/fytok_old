@@ -28,11 +28,11 @@ class CoreTransportProfiles1D(_T_core_transport_model_profiles_1d):
 class CoreTransportModel(_T_core_transport_model):
 
     _IDS = "core_transport/model"
-    CoreProfiles1D = CoreTransportProfiles1D
+    Profiles1D = CoreTransportProfiles1D
 
-    profiles_1d: TimeSeriesAoS[CoreProfiles1D] = sp_property()
+    profiles_1d: TimeSeriesAoS[Profiles1D] = sp_property()
 
-    def advance(self, *args, core_profiles: CoreProfiles, time: float = 0.0, **kwargs) -> CoreProfiles1D:
+    def advance(self, *args, core_profiles: CoreProfiles, time: float = 0.0, **kwargs) -> Profiles1D:
         return self.profiles_1d.advance(*args, core_profiles=core_profiles, time=time, **kwargs)
 
 
@@ -52,5 +52,5 @@ class CoreTransport(_T_core_transport):
                 "code": {"name": None},
             })
 
-    def advance(self, *args, **kwargs) -> Model.CoreProfiles1D:
+    def advance(self, *args, **kwargs) -> Model.Profiles1D:
         return CoreTransportModel.CoreProfiles1D(deep_reduce([model.advance(*args, **kwargs) for model in self.model]), parent=self)

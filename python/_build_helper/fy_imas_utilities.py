@@ -34,30 +34,28 @@ class _T_Code(SpDict):
        produced this IDS
     """
 
-
-    name  :str =  sp_property(type="constant")
+    name: str = sp_property(type="constant")
     """Name of software generating IDS"""
 
-    commit  :str =  sp_property(type="constant")
+    commit: str = sp_property(type="constant")
     """Unique commit reference of software"""
 
-    version  :str =  sp_property(type="constant")
+    version: str = sp_property(type="constant")
     """Unique version (tag) of software"""
 
-    repository  :str =  sp_property(type="constant")
+    repository: str = sp_property(type="constant")
     """URL of software repository"""
 
-    parameters  :NamedDict =  sp_property(type="constant")
+    parameters: NamedDict = sp_property(type="constant")
     """List of the code specific parameters in XML format"""
 
-    output_flag  :np.ndarray =  sp_property(coordinate1="/time",type="dynamic")
+    output_flag: np.ndarray = sp_property(coordinate1="/time", type="dynamic")
     """Output flag : 0 means the run is successful, other values mean some difficulty
        has been encountered, the exact meaning is then code specific. Negative values
        mean the result shall not be used."""
 
-    library  :List[_T_Library] =  sp_property(coordinate1="1...N")
+    library: List[_T_Library] = sp_property(coordinate1="1...N")
     """List of external libraries used by the code that has produced this IDS"""
-  
 
 
 class _T_Module(SpDict, Pluggable):
@@ -97,7 +95,7 @@ class _T_Module(SpDict, Pluggable):
     code: _T_Code = sp_property()
     """Generic decription of the code-specific parameters for the code that has produced this IDS"""
 
- 
+
 class _T_IDS(_T_Module):
     """ Base class of IDS """
 
@@ -112,3 +110,21 @@ class _T_IDS(_T_Module):
     def update(self,  *args, time=None, ** kwargs):
         if time is not None:
             self.time.append(time)
+
+
+# from spdm.geometry.Point import Point
+# from spdm.geometry.CubicSplineCurve import CubicSplineCurve
+
+# class PointRZ(Point):
+#     @property
+#     def r(self) -> float: return self.points[0]
+#     @property
+#     def z(self) -> float: return self.points[1]
+
+
+# class CurveRZ(CubicSplineCurve):
+#     @property
+#     def r(self) -> np.ndarray: return self.points[0]
+
+#     @property
+#     def z(self) -> np.ndarray: return self.points[1]

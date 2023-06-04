@@ -14,7 +14,7 @@ from fytok.utils.plot_profiles import plot_profiles, sp_figure
 from fytok.utils.load_profiles import (load_core_profiles, load_core_source,
                                        load_core_transport)
 from fytok.Tokamak import Tokamak
-
+from fytok.modules.Equilibrium import Equilibrium
 ###################
 
 
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     # logger.debug(tok.equilibrium.time_slice[0].coordinate_system)
     # logger.debug(tok.equilibrium.time_slice[0].coordinate_system)
 
-    if False:  # plot  tokamak
+    if True:  # plot equilibrium
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},
                         "vessel": {"edgecolor": "blue"}},
@@ -94,16 +94,66 @@ if __name__ == "__main__":
                   }
                   ) .savefig(output_path/"tokamak.svg", transparent=True)
 
-    if False:  # plot tokamak geometric profile
-        eq_profiles_1d = tok.equilibrium.time_slice[time_slice].profiles_1d
+    if True:  # CoreProfile initialize value
 
-        eq_global_quantities = tok.equilibrium.time_slice[time_slice].global_quantities
+        tok.core_profiles["profiles_1d"] = [load_core_profiles(profiles)]
+
+        core_profile_1d = tok.core_profiles.profiles_1d[time_slice]
+
+        plot_profiles(
+            [
+                [
+                    (bs_psi_norm, "astra",      r"$\psi_{nrom}$", bs_line_style),
+                    (core_profile_1d.grid.psi_norm,              r"fytok"),
+                ],
+                [
+                    (function_like(bs_q, bs_xq), "astra",      r"$q[-]$", bs_line_style),
+                ],
+                [
+                    (b_ne, "electron astra", r"density $n [m \cdot s^{-3}]$", bs_line_style),
+                    (b_ni, "D astra", r"density $n [m \cdot s^{-3}]$", bs_line_style),
+                    (b_nHe, "He astra", r"density $n [m \cdot s^{-3}]$", bs_line_style),
+                    (core_profile_1d.electrons.density,    r"$electron$", ),
+                    *[(ion.density,  f"${ion.label}$") for ion in core_profile_1d.ion if not ion.is_impurity],
+                    # *[(core_profile_1d.ion[{"label": label}].density,  f"${label}$") for label in ['D', 'T', 'He']],
+
+                ],
+                [
+                    (b_Te,    r"astra $T_e$",       r"$T [eV]$", bs_line_style),
+                    (b_Ti,    r"astra $T_i$",       r"$T [eV]$", bs_line_style),
+                    (core_profile_1d.electrons.temperature,  r"$e$", r"T $[eV]$"),
+                    # *[(core_profile_1d.ion[{"label": label}].temperature,   f"${label}$") for label in ['H', 'D', 'He']],
+                ],
+
+                # [
+                #     (function_like( profiles["Zeff"].values, bs_r_norm),       r"astra",
+                #      r"$Z_{eff}  [-]$", bs_line_style),
+                #     (core_profile_1d.zeff, r"$fytok$"),
+                # ],
+
+            ],
+            x_axis=(np.linspace(0, 1.0, bs_psi_norm.size), r"$\rho=\sqrt{\Phi/\Phi_{bdry}}$"),
+            grid=True, fontsize=10) .savefig(output_path/"core_profiles_initialize.svg", transparent=True)
+
+        logger.info("Initialize Core Profiles ")
+
+    if False:
+        tok.equilibrium.update(
+            core_profile_1d=tok.core_profiles.profiles_1d.current,
+            pf_active=tok.pf_active,
+            wall=tok.wall,
+        )
+
+      
+    if True:  # plot tokamak geometric profile
+        eq_profiles_1d: Equilibrium.TimeSlice.Profiles1d = tok.equilibrium.time_slice.current.profiles_1d
+
+        eq_global_quantities = tok.equilibrium.time_slice.current.global_quantities
 
         # logger.debug(eq_profiles_1d.dvolume_dpsi(eq_profiles_1d.psi))
 
         # logger.debug(function_like(profiles["rho"].values, bs_psi)(eq_profiles_1d.psi))
         # logger.debug(bs_psi)
-        logger.debug(eq_profiles_1d.dvolume_dpsi)
         plot_profiles(
             [
                 [
@@ -227,52 +277,9 @@ if __name__ == "__main__":
             title="Equilibrium Geometric Shape",
             grid=True, fontsize=16) .savefig(output_path/"equilibrium_profiles.svg", transparent=True)
 
-        logger.info("Initialize Equilibrium ")
+        logger.info("Solve Equilibrium ")
 
-    if True:  # CoreProfile initialize value
-
-        tok.core_profiles["profiles_1d"] = [load_core_profiles(profiles)]
-
-        core_profile_1d = tok.core_profiles.profiles_1d[time_slice]
-
-        plot_profiles(
-            [
-                [
-                    (bs_psi_norm, "astra",      r"$\psi_{nrom}$", bs_line_style),
-                    (core_profile_1d.grid.psi_norm,              r"fytok"),
-                ],
-                [
-                    (function_like(bs_q, bs_xq), "astra",      r"$q[-]$", bs_line_style),
-                ],
-                [
-                    (b_ne, "electron astra", r"density $n [m \cdot s^{-3}]$", bs_line_style),
-                    (b_ni, "D astra", r"density $n [m \cdot s^{-3}]$", bs_line_style),
-                    (b_nHe, "He astra", r"density $n [m \cdot s^{-3}]$", bs_line_style),
-                    (core_profile_1d.electrons.density,    r"$electron$", ),
-                    *[(ion.density,  f"${ion.label}$") for ion in core_profile_1d.ion if not ion.is_impurity],
-                    # *[(core_profile_1d.ion[{"label": label}].density,  f"${label}$") for label in ['D', 'T', 'He']],
-
-                ],
-                [
-                    (b_Te,    r"astra $T_e$",       r"$T [eV]$", bs_line_style),
-                    (b_Ti,    r"astra $T_i$",       r"$T [eV]$", bs_line_style),
-                    (core_profile_1d.electrons.temperature,  r"$e$", r"T $[eV]$"),
-                    # *[(core_profile_1d.ion[{"label": label}].temperature,   f"${label}$") for label in ['H', 'D', 'He']],
-                ],
-
-                # [
-                #     (function_like( profiles["Zeff"].values, bs_r_norm),       r"astra",
-                #      r"$Z_{eff}  [-]$", bs_line_style),
-                #     (core_profile_1d.zeff, r"$fytok$"),
-                # ],
-
-            ],
-            x_axis=(np.linspace(0, 1.0, bs_psi_norm.size), r"$\rho=\sqrt{\Phi/\Phi_{bdry}}$"),
-            grid=True, fontsize=10) .savefig(output_path/"core_profiles_initialize.svg", transparent=True)
-
-        logger.info("Initialize Core Profiles ")
-
-    if True:  # CoreTransport  initialize value
+    if False:  # CoreTransport  initialize value
         logger.info("Initialize Core Transport ")
 
         tok.core_transport["model"] = [
@@ -451,17 +458,16 @@ if __name__ == "__main__":
                 ]
             }}
 
-        particle_solver = tok.core_transport_solver.code.parameters.get('particle_solver', 'ion')
+        particle_solver = tok.transport_solver.code.parameters.get('particle_solver', 'ion')
 
         logger.info("Transport solver Start")
 
-        tok.refresh()
+        core_profile_1d = tok.update()
 
         logger.info("Transport solver End")
 
-        core_profile_1d = tok.core_profiles.profiles_1d
-
         b_nHe_fast = function_like(profiles["Naff"].values * 1.0e19, bs_r_norm)
+
         b_nHe_thermal = function_like(profiles["Nath"].values * 1.0e19, bs_r_norm)
 
         ionHe = core_profile_1d.ion[{"label": "He"}]

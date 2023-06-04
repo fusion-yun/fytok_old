@@ -127,5 +127,5 @@ dmypy.json
 *Zone.Identifier
 
 # Generated files
-python/fytok/_imas*
+python/fytok/_imas/*
 **/obsolete/

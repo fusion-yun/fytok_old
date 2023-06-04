@@ -82,7 +82,7 @@ class CoreProfilesIon(_T_core_profile_ions):
         return self.density_thermal*self.temperature*constants.electron_volt
 
 
-class CoreProfiles1D(_T_core_profiles_profiles_1d):
+class CoreProfiles1d(_T_core_profiles_profiles_1d):
 
     grid: CoreRadialGrid = sp_property()
 
@@ -214,12 +214,12 @@ class CoreProfiles1D(_T_core_profiles_profiles_1d):
 
 class CoreProfiles(_T_core_profiles):
 
-    Profiles1D = CoreProfiles1D
+    Profiles1d = CoreProfiles1d
 
-    profiles_1d: TimeSeriesAoS[Profiles1D] = sp_property()
+    profiles_1d: TimeSeriesAoS[Profiles1d] = sp_property()
 
-    def update(self, *args,  **kwargs) -> CoreProfiles1D:
+    def update(self, *args,  **kwargs) -> Profiles1d:
         return self.profiles_1d.update(*args, **kwargs)
 
-    def advance(self, *args,  **kwargs) -> CoreProfiles1D:
+    def advance(self, *args,  **kwargs) -> Profiles1d:
         return self.profiles_1d.advance(*args, **kwargs)
