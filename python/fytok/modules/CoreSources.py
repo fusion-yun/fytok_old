@@ -1,13 +1,16 @@
 
 from __future__ import annotations
+
 import typing
-from fytok._imas.lastest.core_sources import (_T_core_sources,
-                                              _T_core_sources_source,
-                                              _T_core_sources_source_profiles_1d,
-                                              _T_core_sources_source_global)
-from spdm.data.List import List, AoS
-from spdm.data.sp_property import SpDict, sp_property
+
 from spdm.data.Entry import deep_reduce
+from spdm.data.List import AoS, List
+from spdm.data.sp_property import SpDict, sp_property
+
+from .._imas.lastest.core_sources import (_T_core_sources,
+                                          _T_core_sources_source,
+                                          _T_core_sources_source_global,
+                                          _T_core_sources_source_profiles_1d)
 from .CoreProfiles import CoreProfiles
 from .Utilities import CoreRadialGrid
 
@@ -15,16 +18,16 @@ from .Utilities import CoreRadialGrid
 class CoreSourcesSource(_T_core_sources_source):
     _IDS = "core_sources/source"
 
-    Profiles1D = _T_core_sources_source_profiles_1d
+    Profiles1d = _T_core_sources_source_profiles_1d
 
     GlobalQuantities = _T_core_sources_source_global
 
-    def update(self, *args, **kwargs) -> Profiles1D:
+    def update(self, *args, **kwargs) -> Profiles1d:
         profiles_1d = self.profiles_1d.update(*args,  **kwargs)
         self.global_quantities.update()
         return profiles_1d
 
-    def advance(self, *args, **kwargs) -> Profiles1D:
+    def advance(self, *args, **kwargs) -> Profiles1d:
         profiles_1d = self.profiles_1d.advance(*args, **kwargs)
         self.global_quantities.advance()
         return profiles_1d

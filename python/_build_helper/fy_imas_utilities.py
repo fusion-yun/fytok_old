@@ -107,10 +107,12 @@ class _T_IDS(_T_Module):
     time: np.ndarray = sp_property(type="dynamic", units="s", ndims=1, data_type=float)
     """Generic time"""
 
-    def update(self,  *args, time=None, ** kwargs):
+    def advance(self,  *args, time=None, ** kwargs):
         if time is not None:
             self.time.append(time)
 
+    def update(self,  *args,  ** kwargs):
+        super().update(*args, **kwargs)
 
 # from spdm.geometry.Point import Point
 # from spdm.geometry.CubicSplineCurve import CubicSplineCurve

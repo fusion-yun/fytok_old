@@ -653,9 +653,8 @@ class EquilibriumProfiles1d(Equilibrium.TimeSlice.Profiles1d):
     r"""  $\Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi$    """
 
     @sp_property(coordinate1="../psi")
-    def dphi_dpsi(self) -> Function[float]:
-        return self.f * self._coord.surface_integral(1.0/(_R**2))
-        # return self.f * self.gm1 * self.dvolume_dpsi / TWOPI
+    def dphi_dpsi(self) -> Function[float]: return cocos * self.f * self._coord.surface_integral(1.0/(_R**2))
+    # return self.f * self.gm1 * self.dvolume_dpsi / TWOPI
 
     @property
     def fpol(self) -> Function[float]: return super().f
@@ -842,7 +841,7 @@ class EquilibriumProfiles2d(Equilibrium.TimeSlice.Profiles2d):
     @property
     def _profiles_1d(self) -> _T_equilibrium_profiles_1d: return self._parent.profiles_1d
 
-    @sp_property
+    @sp_property[Mesh]
     def grid(self) -> Mesh:
         return Mesh(super().grid.dim1, super().grid.dim2, mesh_type=super().grid_type)
 
@@ -852,7 +851,7 @@ class EquilibriumProfiles2d(Equilibrium.TimeSlice.Profiles2d):
     @sp_property
     def z(self) -> Field[float]: return Field(self.grid.points[1], mesh=self.grid)
 
-    @sp_property
+    @sp_property[Field[float]]
     def psi(self) -> Field[float]: return super().psi
 
     @property
@@ -978,11 +977,8 @@ class EquilibriumBoundarySeparatrix(Equilibrium.TimeSlice.BoundarySeparatrix):
 
 class EquilibriumTimeSlice(Equilibrium.TimeSlice):
 
-    @property
-    def _R0(self) -> float: return self._parent.vacuum_toroidal_field.r0
-
-    @property
-    def _B0(self) -> float: return self._parent.vacuum_toroidal_field.b0(self.time)
+    def __init__(self, *args,   **kwargs) -> None:
+        super().__init__(*args,   **kwargs)
 
     profiles_1d: EquilibriumProfiles1d = sp_property()
 

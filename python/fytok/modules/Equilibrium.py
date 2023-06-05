@@ -11,10 +11,12 @@ from fytok._imas.lastest.equilibrium import (_T_equilibrium,
                                              _T_equilibrium_boundary,
                                              _T_equilibrium_boundary_separatrix)
 from spdm.data.Function import Function
+from spdm.data.Node import Node
 from spdm.data.sp_property import SpDict, sp_property
 from spdm.utils.logger import logger
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.data.Entry import deep_reduce
+from spdm.utils.tags import _not_found_
 from .CoreProfiles import CoreProfiles
 
 from .PFActive import PFActive
@@ -22,6 +24,16 @@ from .Wall import Wall
 
 
 class EquilibriumTimeSlice(_T_equilibrium_time_slice):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        parent = self._parent
+        if not hasattr(parent, "vacuum_toroidal_field"):
+            parent = parent._parent
+        logger.debug(self.time)
+        self._R0 = parent.vacuum_toroidal_field.r0
+        self._B0 = parent.vacuum_toroidal_field.b0(self.time)
+
     CoordinateSystem = _T_equilibrium_coordinate_system
     Profiles1d = _T_equilibrium_profiles_1d
     Profiles2d = _T_equilibrium_profiles_2d
@@ -77,20 +89,33 @@ class Equilibrium(_T_equilibrium):
         ```
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     TimeSlice = EquilibriumTimeSlice
     time_slice: TimeSeriesAoS[TimeSlice] = sp_property(coordinate1="time", type="dynamic")
 
     _plugin_registry = {}
 
-    def update(self, *args, core_profile_1d: CoreProfiles.Profiles1d, pf_active: PFActive, wall: Wall = None, **kwargs) -> TimeSlice:
+    def update(self, *args,
+               core_profile_1d: CoreProfiles.Profiles1d = None,
+               pf_active: PFActive = None,
+               wall: Wall = None, **kwargs) -> TimeSlice:
         """
             update the last time slice, base on profiles_2d[-1].psi
         """
+        logger.debug(f"Update Equlibrium at time={self.time_slice.current.time}")
+        super().update()
+        #  core_profile_1d=core_profile_1d, pf_active=pf_active, wall=wall,
+        return self.time_slice.update(*args, **kwargs)
 
-        return self.time_slice.update(*args, core_profile_1d=core_profile_1d, pf_active=pf_active, wall=wall, **kwargs)
-
-    def advance(self, *args, time: float = 0.0, core_profile_1d: CoreProfiles.Profiles1d, pf_active: PFActive, wall: Wall = None, **kwargs) -> Equilibrium.TimeSlice:
-        return self.time_slice.advance(*args, time=time, core_profile_1d=core_profile_1d, pf_active=pf_active, wall=wall, **kwargs)
+    def advance(self, *args, time: float = 0.0,
+                core_profile_1d: CoreProfiles.Profiles1d = None,
+                pf_active: PFActive = None,
+                wall: Wall = None, **kwargs) -> Equilibrium.TimeSlice:
+        # core_profile_1d=core_profile_1d, pf_active=pf_active, wall=wall,
+        super().advance(time=time)
+        return self.time_slice.advance(*args, time=time, **kwargs)
 
     def plot(self, axis=None, *args,
              scalar_field={},
@@ -109,6 +134,10 @@ class Equilibrium(_T_equilibrium):
 
         if axis is None:
             axis = plt.gca()
+
+        if len(self.time_slice) == 0 or time_slice >= len(self.time_slice):
+            logger.error(f"Time slice {time_slice} is out range {len(self.time_slice)} !")
+            return axis
 
         eq = self.time_slice[time_slice]
 

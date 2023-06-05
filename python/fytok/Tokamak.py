@@ -1,21 +1,22 @@
 
+import collections.abc
+import typing
+from copy import copy, deepcopy
+
 import numpy as np
-import matplotlib.pyplot as plt
-from copy import deepcopy, copy
-from spdm.utils.logger import logger
-from spdm.data.sp_property import sp_property, SpDict
 from spdm.data.Dict import Dict
+from spdm.data.File import File
 from spdm.data.Node import Node
-# ---------------------------------
-from .modules.Magnetics import Magnetics
-from .modules.PFActive import PFActive
-from .modules.TF import TF
-from .modules.Wall import Wall
+from spdm.data.open_entry import open_entry
+from spdm.data.sp_property import SpDict, sp_property
+from spdm.utils.logger import logger
+from spdm.utils.misc import group_dict_by_prefix
+
+from ._imas.lastest import __version__ as imas_version
 # ---------------------------------
 from .modules.CoreProfiles import CoreProfiles
 from .modules.CoreSources import CoreSources
 from .modules.CoreTransport import CoreTransport
-from .modules.TransportSolverNumerics import TransportSolverNumerics
 # ---------------------------------
 # from .modules.EdgeProfiles import EdgeProfiles
 # from .modules.EdgeSources import EdgeSources
@@ -23,6 +24,12 @@ from .modules.TransportSolverNumerics import TransportSolverNumerics
 # from .modules.EdgeTransportSolver import EdgeTransportSolver
 # ---------------------------------
 from .modules.Equilibrium import Equilibrium
+# ---------------------------------
+from .modules.Magnetics import Magnetics
+from .modules.PFActive import PFActive
+from .modules.TF import TF
+from .modules.TransportSolverNumerics import TransportSolverNumerics
+from .modules.Wall import Wall
 
 
 class Tokamak(SpDict):
@@ -32,12 +39,35 @@ class Tokamak(SpDict):
             - 在时间推进时，确定各个子系统之间的依赖和演化关系，
     """
 
-    def __init__(self, *args,  **kwargs):
-        super().__init__(*args,  **kwargs)
-        self._time = 0.0
+    def __init__(self, desc: str | typing.Dict = None, **kwargs):
 
-    @property
-    def time(self) -> float: return self._time
+        if not isinstance(desc, str):
+            pass
+        elif '/' in desc:
+            desc = open_entry(desc)
+        else:
+            if "name" not in kwargs:
+                kwargs["name"] = desc
+            imas_version_major, imas_version_minor, imas_version_patch, *_ = imas_version.split(".")
+            desc = open_entry(None, source_schema=desc, target_schema=f"imas/{imas_version_major}")
+        cache = {}
+        default_value = {}
+        for k, v in kwargs.items():
+            if isinstance(v, collections.abc.Mapping):
+                d_value, c_value = group_dict_by_prefix(v,  "$default_value")
+            else:
+                c_value = v
+                d_value = None
+            if d_value is not None:
+                default_value[k] = d_value
+
+            cache[k] = c_value
+
+        super().__init__(desc, cache=cache, default_value=default_value)
+
+    name: str = sp_property(default_value="unknown")
+
+    description: str = sp_property(default_value="empty tokamak")
 
     wall: Wall = sp_property()
 
@@ -72,7 +102,7 @@ class Tokamak(SpDict):
         self._time += dt
 
         core_profiles_1d_prev = self.core_profiles.profile_1d.current
-        
+
         equilibrium = self.equilibrium.advance(
             time=self.time,
             core_profile_1d=core_profiles_1d_prev,
@@ -159,12 +189,14 @@ class Tokamak(SpDict):
         if kwargs.get("magnetics", True) is not False:
             self.magnetics.plot(axis,  **kwargs.get("magnetics", {}))
 
-        if kwargs.get("equilibrium", True) is not False:
+        if kwargs.get("equilibrium", False) is not False:
             self.equilibrium.plot(axis,  **kwargs.get("equilibrium", {}))
+
         axis.set_aspect('equal')
         axis.axis('scaled')
         axis.set_xlabel(r"Major radius $R$ [m]")
         axis.set_ylabel(r"Height $Z$ [m]")
+
         # axis.legend()
 
         return axis

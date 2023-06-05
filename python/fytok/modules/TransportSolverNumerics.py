@@ -26,8 +26,8 @@ class TransportSolverNumerics(_T_transport_solver_numerics):
     def solve(self, /,
               core_profiles_prev: CoreProfiles,
               core_transport: CoreTransport,
-              core_sources: CoreSources,
-              equilibrium_next: Equilibrium,
+              core_sources: CoreSources.Source.Profiles1d,
+              equilibrium_next: Equilibrium.TimeSlice.Profiles1d,
               equilibrium_prev: Equilibrium = None,
               dt: float = None,
               **kwargs) -> CoreProfiles:

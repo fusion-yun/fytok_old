@@ -21,13 +21,13 @@ from spdm.utils.misc import try_get
 #     fig.subplots_adjust(bottom=fig.subplotpars.bottom+height)
 
 
-def sp_figure_signature(fig: plt.Figure, signature=None):
+def sp_figure_signature(fig: plt.Figure, signature=None, x=1.0, y=0.1):
     if signature is False:
         return fig
     elif not isinstance(signature, str):
         signature = f"Author: '{getpass.getuser().capitalize()}'. Create by SpDM at {datetime.datetime.now().isoformat()}."
 
-    fig.text(1.0, 0.1, signature, va='bottom', ha='right', fontsize='small', alpha=0.5, rotation='vertical')
+    fig.text(x, y, signature, va='bottom', ha='left', fontsize='small', alpha=0.5, rotation='vertical')
     return fig
 
 
@@ -89,7 +89,6 @@ def plot_profiles(profile_list, *args, x_axis=None, x=None, default_num_of_point
         x_axis = x_axis(x)
     elif x is None and isinstance(x_axis, np.ndarray):
         x = x_axis
-   
 
     if isinstance(x_axis, np.ndarray):
         x_min = x_axis[0]
@@ -104,7 +103,6 @@ def plot_profiles(profile_list, *args, x_axis=None, x=None, default_num_of_point
         x = x_axis
     elif callable(x_axis) or isinstance(x_axis, Function):
         x_axis = x_axis(x)
-
 
     nprofiles = len(profile_list)
 
@@ -177,16 +175,25 @@ def plot_profiles(profile_list, *args, x_axis=None, x=None, default_num_of_point
     return fig
 
 
-def sp_figure(obj, *args, signature=None, **kwargs):
+def sp_figure(obj, *args, signature=None, title=None, fontsize=10, **kwargs):
     fig = plt.figure()
+
     if not hasattr(obj, 'plot'):
         raise NotImplementedError(type(obj))
-    else:
-        obj.plot(fig.gca(), *args, **kwargs)
 
-    fig = sp_figure_signature(fig, signature=signature)
+    axis = obj.plot(fig.gca(), *args, **kwargs)
+
+    if title is None:
+        title = getattr(obj, "name", None)
+
+    if title is not None:
+        fig.suptitle(title, fontsize=fontsize)
+
+    fig.align_ylabels()
+
+    fig.tight_layout()
+
+    fig = sp_figure_signature(fig, signature=signature, x=axis.get_position().xmax+0.01)
     # fig.tight_layout()
     # fig.gca().axis('scaled')
-    fig.align_ylabels()
-    fig.tight_layout()
     return fig
