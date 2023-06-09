@@ -26,8 +26,8 @@ if __name__ == "__main__":
                   name="ITER 15MA 9T",
                   description="ITER 15MA 9T",
                   equilibrium={
-                    #   **eqdsk_file.dump(),
-                    #   "time": [0.0],
+                      **eqdsk_file.dump(),
+                      "time": [0.0],
                       "vacuum_toroidal_field": {"r0": 6.2, "b0": [-5.3]},
                       "code": {"name":  "eq_analyze", },
                       "$default_value": {
@@ -37,7 +37,9 @@ if __name__ == "__main__":
                               "coordinate_system": {"grid": {"dim1": 256, "dim2": 128}}
                           }}}
                   )
-
+    # logger.debug(tok.wall)
+    # .description_2d[0].vessel.unit[0].annular.outline_inner
+    # logger.debug(outline.r)
     # tok.equilibrium.advance(time=0.0)
 
     sp_figure(tok,

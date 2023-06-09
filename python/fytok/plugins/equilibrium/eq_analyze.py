@@ -638,7 +638,8 @@ class EquilibriumGlobalQuantities(Equilibrium.TimeSlice.GlobalQuantities):
 class EquilibriumProfiles1d(Equilibrium.TimeSlice.Profiles1d):
 
     @property
-    def _coord(self) -> Equilibrium.TimeSlice.CoordinateSystem: return self._parent.coordinate_system
+    def _coord(self) -> Equilibrium.TimeSlice.CoordinateSystem: 
+        return self._parent.coordinate_system
 
     ###############################
     # 1-D
@@ -653,7 +654,7 @@ class EquilibriumProfiles1d(Equilibrium.TimeSlice.Profiles1d):
     r"""  $\Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi$    """
 
     @sp_property(coordinate1="../psi")
-    def dphi_dpsi(self) -> Function[float]: return cocos * self.f * self._coord.surface_integral(1.0/(_R**2))
+    def dphi_dpsi(self) -> Function[float]: return   self.f * self._coord.surface_integral(1.0/(_R**2))
     # return self.f * self.gm1 * self.dvolume_dpsi / TWOPI
 
     @property
@@ -1016,8 +1017,8 @@ class FyEqAnalyze(Equilibrium):
     time_slice: TimeSeriesAoS[EquilibriumTimeSlice] = sp_property()
 
     def __init__(self, *args, **kwargs):
-        code = {**kwargs.get("code", {}), "name": "fy_equilibrium", "version": "0.0.1", "commit": "-dirty"}
-        super().__init__(*args, **{**kwargs, "code": code})
+        # kwargs.setdefault("code", {"name": "eq_analyze", "version": "0.0.1", "commit": "-dirty"})
+        super().__init__(*args, ** kwargs)
 
 
 __SP_EXPORT__ = FyEqAnalyze

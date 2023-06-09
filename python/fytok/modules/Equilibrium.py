@@ -30,7 +30,7 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
         parent = self._parent
         if not hasattr(parent, "vacuum_toroidal_field"):
             parent = parent._parent
-        logger.debug(self.time)
+
         self._R0 = parent.vacuum_toroidal_field.r0
         self._B0 = parent.vacuum_toroidal_field.b0(self.time)
 

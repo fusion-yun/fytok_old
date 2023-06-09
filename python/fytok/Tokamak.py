@@ -41,15 +41,13 @@ class Tokamak(SpDict):
 
     def __init__(self, desc: str | typing.Dict = None, **kwargs):
 
-        if not isinstance(desc, str):
-            pass
-        elif '/' in desc:
-            desc = open_entry(desc)
+        if not isinstance(desc, str) or '/' in desc:
+            entry = open_entry(desc)
         else:
             if "name" not in kwargs:
                 kwargs["name"] = desc
             imas_version_major, imas_version_minor, imas_version_patch, *_ = imas_version.split(".")
-            desc = open_entry(None, source_schema=desc, target_schema=f"imas/{imas_version_major}")
+            entry = open_entry(None, source_schema=desc, target_schema=f"imas/{imas_version_major}")
         cache = {}
         default_value = {}
         for k, v in kwargs.items():
@@ -63,7 +61,7 @@ class Tokamak(SpDict):
 
             cache[k] = c_value
 
-        super().__init__(desc, cache=cache, default_value=default_value)
+        super().__init__(entry, cache=cache, default_value=default_value)
 
     name: str = sp_property(default_value="unknown")
 

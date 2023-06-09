@@ -20,6 +20,7 @@ from spdm.utils.logger import logger
 pprint.pprint(os.environ["PYTHONPATH"])
 ###################
 
+os.environ["SP_DATA_MAPPING_PATH"] = "/home/salmon/workspace/fytok_data/mapping"
 
 if __name__ == "__main__":
     logger.info("====== START ========")
@@ -74,22 +75,22 @@ if __name__ == "__main__":
     ###################################################################################################
     # Initialize Tokamak
 
-    tok = Tokamak(device_desc[{"wall", "pf_active", "tf", "magnetics"}])
-
-    # Equilibrium
-    tok["equilibrium"] = {"code": {"name":  "freegs"}
-                          # **eqdsk_file.dump(),
-                          }
-
-    tok.equilibrium._default_value = {"time_slice": {
-        "boundary": {"psi_norm": 0.99},
-        "profiles_2d": [{"grid": {"dim1": 257, "dim2": 129}}],
-        "coordinate_system": {"grid": {"dim1": 256, "dim2": 128}}}, }
+    tok = Tokamak("ITER",
+                  name="15MA inductive - burn",
+                  description="ITER 15MA 9T",
+                  # Equilibrium
+                  equilibrium={"code": {"name":  "eq_analyze"}, **eqdsk_file.dump(),
+                               "$default_valye": {"time_slice": {
+                                   "boundary": {"psi_norm": 0.99},
+                                   "profiles_2d": [{"grid": {"dim1": 257, "dim2": 129}}],
+                                   "coordinate_system": {"grid": {"dim1": 256, "dim2": 128}}}, }
+                               }
+                  )
 
     # logger.debug(tok.equilibrium.time_slice[0].coordinate_system)
     # logger.debug(tok.equilibrium.time_slice[0].coordinate_system)
 
-    if True:  # CoreProfile initialize value
+    if False:  # CoreProfile initialize value
 
         tok.core_profiles["profiles_1d"] = [load_core_profiles(profiles)]
 
@@ -132,7 +133,7 @@ if __name__ == "__main__":
 
         logger.info("Initialize Core Profiles ")
 
-    if True:
+    if False:
         tok.equilibrium.update(
             core_profiles_1d=core_profiles_1d,
             pf_active=tok.pf_active,
@@ -156,7 +157,7 @@ if __name__ == "__main__":
 
         eq_global_quantities = tok.equilibrium.time_slice.current.global_quantities
 
-        # logger.debug(eq_profiles_1d.dvolume_dpsi(eq_profiles_1d.psi))
+        logger.debug(eq_profiles_1d.psi_norm)
 
         # logger.debug(function_like(profiles["rho"].values, bs_psi)(eq_profiles_1d.psi))
         # logger.debug(bs_psi)

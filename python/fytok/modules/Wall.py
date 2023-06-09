@@ -2,8 +2,8 @@ import collections
 
 import matplotlib.pyplot as plt
 import numpy as np
-from  fytok._imas.lastest.wall import _T_wall, _T_wall_2d
-from spdm.data.List import List
+from fytok._imas.lastest.wall import _T_wall, _T_wall_2d
+from spdm.data.List import List, AoS
 from spdm.data.sp_property import sp_property, SpDict
 from spdm.utils.logger import logger
 from sympy import Point, Polygon
@@ -29,7 +29,7 @@ class Wall2D(_T_wall_2d):
 
 class Wall(_T_wall):
 
-    description_2d: List[Wall2D] = sp_property()
+    description_2d: AoS[Wall2D] = sp_property()
 
     def plot(self, axis=None, *args, **kwargs):
 
@@ -38,14 +38,16 @@ class Wall(_T_wall):
 
         desc2d = self.description_2d[0]
 
-        vessel_inner_points = np.array([desc2d.vessel.unit[0].annular.outline_inner.r.__array__(),
-                                        desc2d.vessel.unit[0].annular.outline_inner.z.__array__()]).transpose([1, 0])
+        outline = desc2d.vessel.unit[0].annular.outline_inner
 
-        vessel_outer_points = np.array([desc2d.vessel.unit[0].annular.outline_outer.r.__array__(),
-                                        desc2d.vessel.unit[0].annular.outline_outer.z.__array__()]).transpose([1, 0])
+        vessel_inner_points = np.array([desc2d.vessel.unit[0].annular.outline_inner.r,
+                                        desc2d.vessel.unit[0].annular.outline_inner.z]).transpose([1, 0])
 
-        limiter_points = np.array([desc2d.limiter.unit[0].outline.r.__array__(),
-                                   desc2d.limiter.unit[0].outline.z.__array__()]).transpose([1, 0])
+        vessel_outer_points = np.array([desc2d.vessel.unit[0].annular.outline_outer.r,
+                                        desc2d.vessel.unit[0].annular.outline_outer.z]).transpose([1, 0])
+
+        limiter_points = np.array([desc2d.limiter.unit[0].outline.r,
+                                   desc2d.limiter.unit[0].outline.z]).transpose([1, 0])
 
         axis.add_patch(plt.Polygon(limiter_points, **
                                    collections.ChainMap(kwargs.get("limiter", {}), {"fill": False, "closed": True})))
