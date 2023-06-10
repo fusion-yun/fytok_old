@@ -1,26 +1,23 @@
 
+import os
 import pathlib
 import pprint
 import sys
-import os
 
 import numpy as np
 import pandas as pd
-from fytok.modules.Equilibrium import Equilibrium
 from fytok.Tokamak import Tokamak
 from fytok.utils.load_profiles import (load_core_profiles, load_core_source,
                                        load_core_transport)
 from fytok.utils.plot_profiles import plot_profiles, sp_figure
 from scipy import constants
-# from spdm.numlib.smooth import rms_residual
 from spdm.data.File import File
 from spdm.data.Function import function_like
 from spdm.utils.logger import logger
 
-pprint.pprint(os.environ["PYTHONPATH"])
 ###################
 
-os.environ["SP_DATA_MAPPING_PATH"] = "/home/salmon/workspace/fytok_data/mapping"
+# os.environ["SP_DATA_MAPPING_PATH"] = "/home/salmon/workspace/fytok_data/mapping"
 
 if __name__ == "__main__":
     logger.info("====== START ========")
@@ -28,7 +25,6 @@ if __name__ == "__main__":
 
     ###################################################################################################
     # baseline
-    device_desc = File("/home/salmon/workspace/fytok_data/mapping/ITER/imas/3/static/config.xml", format="XML").read()
 
     eqdsk_file = File(
         "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="GEQdsk").read()

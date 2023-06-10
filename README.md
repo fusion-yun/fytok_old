@@ -1,19 +1,26 @@
-Summary 概述
---------------------------
+# FyTok
 
-___FyTok___  托卡马克数值模拟器
+#### Description
+  
+  Tokamak integrated modeling and analysis toolkit.
+
+#### Software Architecture
+Software architecture description
 
 ![Image](docs/figures/fytok.svg "FuYun")
 
-软件架构
---------------------------
-
-
-
-参与贡献
---------------------------
+#### Installation
 
  
-特性
---------------------------
+
+#### Instructions
+
+ 
+#### Contribution
+
+
+
+
+####  Feature
+ 
  

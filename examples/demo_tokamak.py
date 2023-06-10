@@ -1,5 +1,6 @@
-import pathlib
 import os
+import pathlib
+
 import numpy as np
 import pandas as pd
 from fytok.Tokamak import Tokamak
@@ -7,14 +8,12 @@ from fytok.utils.plot_profiles import plot_profiles, sp_figure
 from scipy import constants
 from spdm.data.Expression import Variable
 from spdm.data.File import File
-from spdm.data.Function import function_like
 from spdm.utils.logger import logger
-
-os.environ["SP_DATA_MAPPING_PATH"] = "/home/salmon/workspace/fytok_data/mapping"
 
 if __name__ == "__main__":
 
     logger.info("====== START ========")
+
 
     output_path = pathlib.Path('/home/salmon/workspace/output')
 

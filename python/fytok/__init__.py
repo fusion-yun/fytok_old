@@ -9,6 +9,24 @@ except:
     # except:
     __version__ = "0.0.0"
 
+import os
+
+from pathlib import Path
+from spdm.utils.logger import logger
+
+
+mapping_path = Path(__file__).parent / "_mapping"
+
+if mapping_path.exists():
+
+    SP_DATA_MAPPING_PATH = (":".join([mapping_path.as_posix(),
+                                    os.environ.get("SP_DATA_MAPPING_PATH", '')])).strip(':')
+
+    os.environ["SP_DATA_MAPPING_PATH"] = SP_DATA_MAPPING_PATH
+
+    logger.info(f"Set mapping path: {SP_DATA_MAPPING_PATH}")
+
+
 # external_path = (pathlib.Path(__path__[0])/"../../external").resolve()
 
 # external_pkg_path = []

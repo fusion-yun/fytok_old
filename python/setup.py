@@ -9,6 +9,7 @@ import os
 import pathlib
 import pprint
 import subprocess
+import shutil
 
 from setuptools import Command, find_namespace_packages, setup
 from setuptools.command.build_py import build_py
@@ -46,6 +47,28 @@ def convert_value(proc, v):
         return proc.make_map({k: convert_value(proc, d) for k, d in v.items()})
     else:
         raise TypeError(f"Unsupported type {type(v)}")
+
+
+def fetch_url(url, tmp_dir=None):
+    import urllib.request
+    import urllib.parse
+    import json
+
+    url = urllib.parse.urlparse(url)
+
+    if url.scheme == "https":
+        opener = urllib.request.build_opener(urllib.request.HTTPSHandler())
+    elif url.scheme == "http":
+        opener = urllib.request.build_opener(urllib.request.HTTPHandler())
+    else:
+        raise ValueError(f"Unsupported scheme {url.scheme}!")
+
+    req = urllib.request.Request(url.geturl(), headers={
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101 Firefox/91.0'
+    })
+
+    with opener.open(req) as f:
+        return json.load(f)
 
 
 def create_imas_warpper(target_path, dd_path: str, stylesheet_file: str = None,  symlink_as_lastest=True):
@@ -108,20 +131,37 @@ def create_imas_warpper(target_path, dd_path: str, stylesheet_file: str = None, 
     os.chdir(cwd)
 
 
+def copy_data_mapping(target_path, mapping_path: str):
+    """Copy data mapping for IMAS warpper"""
+
+    # 用logger输出log信息
+    print(f"Device data mapping for IMAS warpper to {target_path}")
+
+    mapping_path = pathlib.Path(mapping_path)/"mapping"
+
+    if mapping_path.exists():
+        shutil.copytree(mapping_path, target_path,   dirs_exist_ok=True)
+    else:
+        print(f"Can not find data mapping! {mapping_path}")
+
+
 class InstallIMASWrapper(Command):
     description = 'Install IMAS Wrapper'
     user_options = [
         ('prefix=', None, "Prefix for IMAS wrapper"),
         ('as-lastest=', None, 'Symlink as lastest IMAS wrapper'),
-        ('dd=', None, 'Path of IMAS data dictionary'),
+        ('dd-path=', None, 'Path of IMAS data dictionary'),
+        ('mapping-path=', None, 'Path of IMAS data dictionary'),
+
         ('stylesheet-file=', None, 'Stylesheet file for generating IMAS wrapper'),
     ]
 
     def initialize_options(self):
         self.prefix = pathlib.Path(__file__).parent
         self.as_lastest = False
-        self.dd = os.environ.get("IMAS_PREFIX", None) or\
+        self.dd_path = os.environ.get("IMAS_PREFIX", None) or\
             os.environ.get("IMAS_DD_PATH", "/home/salmon/workspace/data-dictionary")
+        self.mapping_path = os.environ.get("FYTOK_MAPPING_PATH", "/home/salmon/workspace/fytok_data")
         self.stylesheet_file = None
 
     def finalize_options(self):
@@ -129,24 +169,30 @@ class InstallIMASWrapper(Command):
 
     def run(self):
 
-        target_path = pathlib.Path(self.prefix) / "fytok/_imas"
+        target_path = pathlib.Path(self.prefix) / "fytok"
 
-        create_imas_warpper(target_path=target_path.as_posix(),
-                            dd_path=self.dd,
+        create_imas_warpper(target_path=(target_path/"_imas").as_posix(),
+                            dd_path=self.dd_path,
                             stylesheet_file=self.stylesheet_file,
                             symlink_as_lastest=self.as_lastest)
+
+        copy_data_mapping(target_path=(target_path/"_mapping").as_posix(),
+                          mapping_path=self.mapping_path)
 
 
 class BuildPyCommand(build_py):
     description = 'Install __doc__,__version, and IMAS Wrapper'
     user_options = build_py.user_options + [
-        ('dd=', None, 'Path of IMAS data dictionary'),
+        ('dd-path=', None, 'Path of IMAS data dictionary'),
+        ('mapping-path=', None, 'Path of IMAS mapping files'),
     ]
 
     def initialize_options(self):
         super().initialize_options()
-        self.dd = os.environ.get("IMAS_PREFIX", None) or\
+        self.dd_path = os.environ.get("IMAS_PREFIX", None) or \
             os.environ.get("IMAS_DD_PATH", "/home/salmon/workspace/data-dictionary")
+
+        self.mapping_path = os.environ.get("FYTOK_MAPPING_PATH", "/home/salmon/workspace/fytok_data")
 
     def finalize_options(self):
         super().finalize_options()
@@ -166,8 +212,11 @@ class BuildPyCommand(build_py):
                 f.write(f'"""\n{self.distribution.get_long_description()}\n"""')
 
         create_imas_warpper(target_path=(build_dir/"_imas").as_posix(),
-                            dd_path=self.dd,
+                            dd_path=self.dd_path,
                             symlink_as_lastest=True)
+
+        copy_data_mapping(target_path=(build_dir/"_mapping").as_posix(),
+                          mapping_path=self.mapping_path)
 
 
 # Setup the package
@@ -186,7 +235,8 @@ setup(
         'install_imas_wrapper': InstallIMASWrapper,
     },
 
-    packages=find_namespace_packages(include=["fytok", "fytok.*", "_imas", "_imas.*"]),  # 指定需要安装的包
+    packages=find_namespace_packages(include=["fytok", "fytok.*", "_imas",
+                                     "_imas.*", "_mapping", "_mapping.*"]),  # 指定需要安装的包
 
     # requires=requirements,              # 项目运行依赖的第三方包
 
