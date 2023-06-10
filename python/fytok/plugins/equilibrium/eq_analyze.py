@@ -156,7 +156,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
             logger.warning(f"Ignore {type(psirz)}. Using ../profiles_2d[0].psi ")
 
         if not isinstance(psirz, Field):
-            raise RuntimeError(f"Can not get psirz!")
+            raise RuntimeError(f"Can not get psirz! {type(psirz)}")
 
         return psirz
 
@@ -638,7 +638,7 @@ class EquilibriumGlobalQuantities(Equilibrium.TimeSlice.GlobalQuantities):
 class EquilibriumProfiles1d(Equilibrium.TimeSlice.Profiles1d):
 
     @property
-    def _coord(self) -> Equilibrium.TimeSlice.CoordinateSystem: 
+    def _coord(self) -> Equilibrium.TimeSlice.CoordinateSystem:
         return self._parent.coordinate_system
 
     ###############################
@@ -654,7 +654,7 @@ class EquilibriumProfiles1d(Equilibrium.TimeSlice.Profiles1d):
     r"""  $\Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi$    """
 
     @sp_property(coordinate1="../psi")
-    def dphi_dpsi(self) -> Function[float]: return   self.f * self._coord.surface_integral(1.0/(_R**2))
+    def dphi_dpsi(self) -> Function[float]: return self.f * self._coord.surface_integral(1.0/(_R**2))
     # return self.f * self.gm1 * self.dvolume_dpsi / TWOPI
 
     @property
@@ -977,9 +977,6 @@ class EquilibriumBoundarySeparatrix(Equilibrium.TimeSlice.BoundarySeparatrix):
 
 
 class EquilibriumTimeSlice(Equilibrium.TimeSlice):
-
-    def __init__(self, *args,   **kwargs) -> None:
-        super().__init__(*args,   **kwargs)
 
     profiles_1d: EquilibriumProfiles1d = sp_property()
 

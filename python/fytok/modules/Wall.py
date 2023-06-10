@@ -38,7 +38,8 @@ class Wall(_T_wall):
 
         desc2d = self.description_2d[0]
 
-        outline = desc2d.vessel.unit[0].annular.outline_inner
+        # outline = desc2d.vessel.unit[0].annular.outline_inner
+
 
         vessel_inner_points = np.array([desc2d.vessel.unit[0].annular.outline_inner.r,
                                         desc2d.vessel.unit[0].annular.outline_inner.z]).transpose([1, 0])
