@@ -80,9 +80,9 @@ if __name__ == "__main__":
                   description="ITER 15MA 9T",
                   # Equilibrium
                   equilibrium={"code": {"name":  "eq_analyze"}, **eqdsk_file.dump(),
-                               "$default_valye": {"time_slice": {
+                               "$default_value": {"time_slice": {
                                    "boundary": {"psi_norm": 0.99},
-                                   "profiles_2d": [{"grid": {"dim1": 257, "dim2": 129}}],
+                                   "profiles_2d": {"grid": {"dim1": 257, "dim2": 129}},
                                    "coordinate_system": {"grid": {"dim1": 256, "dim2": 128}}}, }
                                }
                   )

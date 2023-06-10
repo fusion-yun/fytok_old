@@ -32,7 +32,6 @@ if __name__ == "__main__":
                       "code": {"name":  "eq_analyze", },
                       "$default_value": {
                           "time_slice": {
-                              "profiles_2d": {"grid": {"dim1": 129, "dim2": 257}},
                               "boundary": {"psi_norm": 0.99},
                               "coordinate_system": {"grid": {"dim1": 256, "dim2": 128}}
                           }}}

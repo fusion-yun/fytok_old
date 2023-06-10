@@ -127,7 +127,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         self._s_eBp_2PI = 1.0 if self._e_Bp == 0 else TWOPI
 
-        logger.debug(f"COCOS={self.cocos}")
+        logger.debug( f"COCOS={self.cocos}")
 
     @sp_property
     def cocos(self) -> int:
@@ -197,42 +197,6 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         return opoints, xpoints
 
-    @property
-    def psi_norm(self) -> ArrayType: return self.grid.dim1
-
-    @property
-    def psi(self) -> ArrayType:
-        return self.psi_norm * (self.psi_boundary-self.psi_magnetic_axis) + self.psi_magnetic_axis
-
-    def psirz(self, r: NumericType, z: NumericType) -> NumericType:
-        return self._psirz(r, z)
-
-    @functools.cached_property
-    def magnetic_axis(self) -> typing.Tuple[float, float]:
-        o_points = self.critical_points[0]
-        return o_points[0].r, o_points[0].z
-
-    @functools.cached_property
-    def psi_bc(self) -> typing.Tuple[float, float]:
-
-        o, x = self.critical_points
-
-        if len(o) == 0:
-            raise RuntimeError(f"Can not find o-point")
-        psi_magnetic_axis = o[0].psi
-
-        if len(x) == 0:
-            raise RuntimeError(f"Can not find x-point")
-        psi_boundary = x[0].psi
-
-        return psi_magnetic_axis, psi_boundary
-
-    @property
-    def psi_magnetic_axis(self) -> float: return self.psi_bc[0]
-
-    @property
-    def psi_boundary(self) -> float: return self.psi_bc[1]
-
     @sp_property
     def grid_type(self) -> _T_identifier_dynamic_aos3:
         desc = super().grid_type
@@ -267,6 +231,43 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         surfs = GeoObjectSet([surf for _, surf in self.find_surface_by_psi_norm(psi_norm, o_point=True)])
 
         return CurvilinearMesh(psi_norm, theta, geometry=surfs, cycles=[False, TWOPI])
+
+    @property
+    def psi_norm(self) -> ArrayType:
+        return self.grid.dim1
+
+    @property
+    def psi(self) -> ArrayType:
+        return self.psi_norm * (self.psi_boundary-self.psi_magnetic_axis) + self.psi_magnetic_axis
+
+    def psirz(self, r: NumericType, z: NumericType) -> NumericType:
+        return self._psirz(r, z)
+
+    @functools.cached_property
+    def magnetic_axis(self) -> typing.Tuple[float, float]:
+        o_points = self.critical_points[0]
+        return o_points[0].r, o_points[0].z
+
+    @functools.cached_property
+    def psi_bc(self) -> typing.Tuple[float, float]:
+
+        o, x = self.critical_points
+
+        if len(o) == 0:
+            raise RuntimeError(f"Can not find o-point")
+        psi_magnetic_axis = o[0].psi
+
+        if len(x) == 0:
+            raise RuntimeError(f"Can not find x-point")
+        psi_boundary = x[0].psi
+
+        return psi_magnetic_axis, psi_boundary
+
+    @property
+    def psi_magnetic_axis(self) -> float: return self.psi_bc[0]
+
+    @property
+    def psi_boundary(self) -> float: return self.psi_bc[1]
 
     @sp_property
     def r(self) -> Field[float]: return Field(self.grid.points[..., 0], grid=self.grid)
