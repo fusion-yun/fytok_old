@@ -157,8 +157,6 @@ if __name__ == "__main__":
 
         eq_global_quantities = tok.equilibrium.time_slice.current.global_quantities
 
-        logger.debug(eq_profiles_1d.psi_norm)
-
         # logger.debug(function_like(profiles["rho"].values, bs_psi)(eq_profiles_1d.psi))
         # logger.debug(bs_psi)
         plot_profiles(
