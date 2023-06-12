@@ -43,11 +43,6 @@ from spdm.utils.typing import ArrayType, NumericType, scalar_type, ArrayLike
 _R = Variable(0, "R")
 _Z = Variable(1, "Z")
 
-TOLERANCE = 1.0e-6
-EPS = np.finfo(float).eps
-
-TWOPI = 2.0*constants.pi
-
 
 @dataclass
 class OXPoint:
@@ -127,7 +122,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         self._s_eBp_2PI = 1.0 if self._e_Bp == 0 else TWOPI
 
-        logger.debug( f"COCOS={self.cocos}")
+        logger.debug(f"COCOS={self.cocos}")
 
     @sp_property
     def cocos(self) -> int:
@@ -953,6 +948,7 @@ class EquilibriumBoundarySeparatrix(Equilibrium.TimeSlice.BoundarySeparatrix):
 
     @property
     def _coord(self) -> Equilibrium.TimeSlice.CoordinateSystem: return self._parent.coordinate_system
+
 
     @sp_property
     def outline(self) -> RZTuple1D:

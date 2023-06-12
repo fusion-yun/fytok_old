@@ -134,34 +134,34 @@ class Tokamak(SpDict):
 
         residual = tolerance
 
-        core_profiles_1d_iter = deepcopy(self.core_profiles.profiles_1d.current)
+        core_profiles_1d_iter = copy(self.core_profiles.profiles_1d.current)
 
         for step_num in range(max_iteration):
             equilibrium = self.equilibrium.update(
-                core_profile_1d=core_profiles_1d_iter,
+                core_profiles_1d=core_profiles_1d_iter,
                 wall=self.wall,
                 pf_active=self.pf_active)
 
-            core_transport_profiles_1d = self.core_transport.update(
-                equilibrium=equilibrium,
-                core_profile_1d=core_profiles_1d_iter)
+            # core_transport_profiles_1d = self.core_transport.update(
+            #     equilibrium=equilibrium,
+            #     core_profile_1d=core_profiles_1d_iter)
 
-            core_source_profiles_1d, *_ = self.core_sources.advance(
-                equilibrium=equilibrium,
-                core_profile_1d=core_profiles_1d_iter)
+            # core_source_profiles_1d, *_ = self.core_sources.advance(
+            #     equilibrium=equilibrium,
+            #     core_profile_1d=core_profiles_1d_iter)
 
-            core_profiles_1d_next = self.transport_solver.solve(
-                equilibrium=equilibrium,
-                core_profiles_prev=core_profiles_1d_iter,
-                core_transport_profiles_1d=core_transport_profiles_1d,
-                core_source_profiles_1d=core_source_profiles_1d)
+            # core_profiles_1d_next = self.transport_solver.solve(
+            #     equilibrium=equilibrium,
+            #     core_profiles_prev=core_profiles_1d_iter,
+            #     core_transport_profiles_1d=core_transport_profiles_1d,
+            #     core_source_profiles_1d=core_source_profiles_1d)
 
-            residual = self.check_converge(core_profiles_1d_iter,  core_profiles_1d_next)
+            # residual = self.check_converge(core_profiles_1d_iter,  core_profiles_1d_next)
 
-            if residual <= tolerance:
-                break
-            else:
-                core_profiles_1d_iter = core_profiles_1d_next
+            # if residual <= tolerance:
+            #     break
+            # else:
+            #     core_profiles_1d_iter = core_profiles_1d_next
         else:
             logger.debug(f"time={self.time}  iterator step {step_num}/{max_iteration} residual={residual}")
 
@@ -174,6 +174,8 @@ class Tokamak(SpDict):
         return core_profiles_1d_iter
 
     def plot(self, axis=None, /,  **kwargs):
+
+        import matplotlib.pylab as plt
 
         if axis is None:
             axis = plt.gca()

@@ -1,5 +1,6 @@
 
 import numpy as np
+import scipy.constants
 from fytok._imas.lastest.core_profiles import (_T_core_profiles,
                                                _T_core_profiles_profiles_1d)
 from fytok._imas.lastest.utilities import (
@@ -7,12 +8,15 @@ from fytok._imas.lastest.utilities import (
     _T_core_profiles_vector_components_1)
 from scipy import constants
 from spdm.data.Function import Function
-from spdm.data.List import List, AoS
+from spdm.data.List import AoS, List
 from spdm.data.sp_property import SpDict, sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.utils.logger import logger
 
 from .Utilities import CoreRadialGrid
+
+PI = scipy.constants.pi
+TWOPI = 2.0*PI
 
 
 class CoreProfilesElectrons(_T_core_profiles_profiles_1d_electrons):
@@ -99,23 +103,22 @@ class CoreProfiles1d(_T_core_profiles_profiles_1d):
         return sum([(ion.z_ion_1d * ion.density) for ion in self.ion])
 
     @sp_property
-    def n_i_total_over_n_e(self) -> Function[float]:
-        return self.n_i_total/self.electrons.density
+    def n_i_total_over_n_e(self) -> Function[float]: return self.n_i_total/self.electrons.density
 
     @sp_property
-    def n_i_thermal_total(self) -> Function[float]:
-        return sum([ion.z*ion.density_thermal for ion in self.ion])
+    def n_i_thermal_total(self) -> Function[float]: return sum([ion.z*ion.density_thermal for ion in self.ion])
 
     @sp_property
-    def zeff(self, value) -> Function[float]:
-        if value is not None:
-            return value
-        else:
-            return sum([((ion.z_ion_1d**2)*ion.density) for ion in self.ion]) / self.n_i_total
+    def zeff(self) -> Function[float]:
+        return sum([((ion.z_ion_1d**2)*ion.density) for ion in self.ion]) / self.n_i_total
 
     @sp_property
     def pressure(self) -> Function[float]:
-        return np.sum([ion.pressure for ion in self.ion])
+        p = [ion.pressure for ion in self.ion]
+        if len(p) == 1:
+            return p[0]
+        else:
+            return np.sum(p, axis=0)
 
     @sp_property
     def pressure_thermal(self) -> Function[float]:
@@ -126,24 +129,29 @@ class CoreProfiles1d(_T_core_profiles_profiles_1d):
         return self.current_parallel_inside.derivative * \
             self.grid.r0*TWOPI/self.grid.dvolume_drho_tor
 
-    @sp_property
-    def current_parallel_inside(self, value) -> Function[float]:
-        return value
+    current_parallel_inside: Function[float] = sp_property()
+
+    @sp_property(coordinate1="../grid/rho_tor_norm")
+    def f(self) -> Function[float]:
+        """ASTRA 2002 Eq.(22)"""
+        return self.grid.r0*self.grid.b0 - (scipy.constants.mu_0/TWOPI) * self.current_parallel_inside
+
+    @sp_property(coordinate1="../grid/rho_tor_norm")
+    def ffprime(self) -> Function[float]: return self.f*self.f.derivative()
 
     @sp_property
     def j_non_inductive(self) -> Function[float]:
         return self.j_total - self.j_ohmic
 
     @sp_property
-    def conductivity_parallel(self) -> Function[float]:
-        return self.j_ohmic/self.e_field.parallel
+    def conductivity_parallel(self) -> Function[float]: return self.j_ohmic/self.e_field.parallel
 
     @sp_property
     def beta_pol(self) -> Function[float]:
         return 4*self.pressure.antiderivative()/(self.grid.r0*constants.mu_0 * (self.j_total**2))
 
     # if isinstance(d, np.ndarray) or (hasattr(d.__class__, 'empty') and not d.empty):
-    #     return d
+        #     return d
 
     # else:
     #     Te = self.electrons.temperature
@@ -207,9 +215,9 @@ class CoreProfiles1d(_T_core_profiles_profiles_1d):
         return self.get("e_field", {})
 
     @sp_property
-    def magnetic_shear(self, value) -> Function[float]:
+    def magnetic_shear(self) -> Function[float]:
         """Magnetic shear, defined as rho_tor/q . dq/drho_tor {dynamic}[-]"""
-        return self.q.derivative(self.grid.rho_tor_norm)/self.q(self.grid.rho_tor_norm)*self.grid.rho_tor_norm
+        return self.grid.rho_tor_norm*(self.q.derivative()/self.q())
 
 
 class CoreProfiles(_T_core_profiles):

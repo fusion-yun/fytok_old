@@ -98,7 +98,7 @@ class Equilibrium(_T_equilibrium):
     _plugin_registry = {}
 
     def update(self, *args,
-               core_profile_1d: CoreProfiles.Profiles1d = None,
+               core_profiles_1d: CoreProfiles.Profiles1d = None,
                pf_active: PFActive = None,
                wall: Wall = None, **kwargs) -> TimeSlice:
         """
