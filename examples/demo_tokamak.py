@@ -28,8 +28,8 @@ if __name__ == "__main__":
                       "time": [0.0],
                       "profiles_1d": [{"time": 0.0,
                                        "current_parallel_inside": np.random.random(100),
+                                       "electron": {"pressure": np.random.random(100), },
                                        "ion": [{"pressure": np.random.random(100), }]
-
                                        }],
                       "$default_value": {
                           "profiles_1d": {"grid": {
@@ -44,7 +44,10 @@ if __name__ == "__main__":
                       **eqdsk_file.dump(),
                       "time": [0.0],
                       "vacuum_toroidal_field": {"r0": 6.2, "b0": [-5.3]},
-                      "code": {"name":  "freegs", },
+                      "code": {
+                          "name":  "freegs",
+                          "parameters": {"boundary": "fixed"}
+                      },
                       "$default_value": {
                           "time_slice": {
                               "boundary": {"psi_norm": 0.99},

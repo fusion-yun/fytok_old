@@ -120,6 +120,9 @@ class CoreProfiles1d(_T_core_profiles_profiles_1d):
         else:
             return np.sum(p, axis=0)
 
+    @sp_property(coorindate1="../grid/rho_tor_norm")
+    def pprime(self) -> Function[float]: return self.pressure.d()
+
     @sp_property
     def pressure_thermal(self) -> Function[float]:
         return sum([ion.pressure_thermal for ion in self.ion])+self.electrons.pressure_thermal
