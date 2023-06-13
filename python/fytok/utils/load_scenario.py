@@ -1,14 +1,17 @@
 
-import numpy as np
+import pathlib
+import re
 import typing
+
+import numpy as np
+import pandas as pd
 from scipy import constants
 from spdm.data.Entry import Entry
+from spdm.data.Expression import Piecewise, Variable
 from spdm.data.File import File
 from spdm.data.Function import Function
-
-from spdm.data.Expression import Variable, Piecewise
 from spdm.numlib.smooth import smooth_1d
-
+from spdm.utils.logger import logger
 
 TWOPI = 2.0*constants.pi
 
@@ -46,11 +49,12 @@ def load_core_profiles(d):
     # e_parallel = baseline["U"].values / (TWOPI * R0)
 
     return {
+        "time": 0.0,
         "grid": {
             "psi_magnetic_axis": None,
             "psi_boundary": None,
             "rho_tor_norm":  bs_r_norm,
-            "rho_tor":  None,
+            "rho_tor":  d["rho"].values,
             "psi_norm": bs_psi_norm,
             "psi": None,
 
@@ -66,7 +70,7 @@ def load_core_profiles(d):
         # "e_field": {"parallel":  Function(e_parallel,bs_r_norm)},
         # "conductivity_parallel": Function(baseline["Joh"].values*1.0e6 / baseline["U"].values * (TWOPI * grid.r0),bs_r_norm),
 
-        "rho_tor": d["rho"].values,
+        "rho_tor":          d["rho"].values,
         "zeff":             d["Zeff"].values,
         "vloop":            d["U"].values,
         "j_ohmic":          d["Joh"].values*1.0e6,
@@ -74,6 +78,9 @@ def load_core_profiles(d):
         "j_bootstrap":      d["Jbs"].values*1.0e6,
         "j_total":          d["Jtot"].values*1.0e6,
         "XiNC":             d["XiNC"].values,
+
+        "ffprime":          d["EQFF"].values,
+        "pprime":           d["EQPF"].values,
     }
 
 
@@ -92,8 +99,8 @@ def load_core_transport(profiles, R0: float):
     Cped = 0.17
     Ccore = 0.4
     # Function( profiles["Xi"].values,bs_r_norm)  Cped = 0.2
-    chi = Piecewise([Ccore*(1.0 + 3*(_x**2)),   Cped],        [(_x < r_ped), (_x >= r_ped) ])
-    chi_e = Piecewise([0.5 * Ccore*(1.0 + 3*(_x**2)),   Cped],  [ (_x < r_ped), (_x >= r_ped) ])
+    chi = Piecewise([Ccore*(1.0 + 3*(_x**2)),   Cped],        [(_x < r_ped), (_x >= r_ped)])
+    chi_e = Piecewise([0.5 * Ccore*(1.0 + 3*(_x**2)),   Cped],  [(_x < r_ped), (_x >= r_ped)])
 
     D = 0.1*(chi+chi_e)
 
@@ -129,7 +136,7 @@ def load_core_transport(profiles, R0: float):
         ]}
 
 
-def load_core_source(profiles: typing.Dict[str, typing.Any]):
+def load_core_source(profiles):
     bs_r_norm = profiles["x"].values
 
     _x = Variable(0, name="rho_tor_norm")
@@ -169,3 +176,64 @@ def load_core_source(profiles: typing.Dict[str, typing.Any]):
             {"label": "T",          "particles": S*0.5,      "energy": Q_DT*0.5},
             {"label": "He",         "particles": S*0.01,      "energy": Q_He}
         ]}
+
+
+def load_scenario_ITER(path):
+    path = pathlib.Path(path)
+    scenario = {
+        "name": "15MA Inductive at burn-ASTRA",
+        "description": "15MA Inductive at burn-ASTRA"
+    }
+
+    eq_file = path/"Standard domain R-Z/Medium resolution - 129x257/g900003.00230_ITER_15MA_eqdsk16MR.txt"
+
+    logger.info(f"Load scenario/equilibrium from {eq_file}")
+
+    scenario["equilibrium"] = File(eq_file, format="GEQdsk").read().dump()
+
+    profiles_file = path/'15MA Inductive at burn-ASTRA.xls'
+
+    logger.info(f"Load scenario/profiles from {profiles_file}")
+
+    excel_file = pd.read_excel(profiles_file, sheet_name=1)
+
+    desc = {}
+    for s in excel_file.iloc[0, 3:7]:
+        res = re.match(r'(\w+)=(\d+\.?\d*)(\D+)', s)
+        desc[res.group(1)] = (float(res.group(2)), str(res.group(3)))
+
+    time = [0.0]
+
+    vacuum_toroidal_field = {"r0": desc["R"][0], "b0": [desc["B"][0]]}
+
+    d_core_profiles = pd.read_excel(profiles_file, sheet_name=1, header=10, usecols="B:BN")
+
+    scenario["core_profiles"] = {
+        'vacuum_toroidal_field': vacuum_toroidal_field,
+        "time": time,
+        "profiles_1d": [load_core_profiles(d_core_profiles)]
+    }
+
+    scenario["core_transport"] = {
+        "time": time,
+        'vacuum_toroidal_field': vacuum_toroidal_field,
+        "model": [
+            {"code": {"name": "dummy"},
+             "profiles_1d": [load_core_transport(d_core_profiles, vacuum_toroidal_field["r0"])]}
+        ]
+    }
+
+    scenario["core_sources"] = {
+        "time": time,
+        'vacuum_toroidal_field': vacuum_toroidal_field,
+
+        "source": [
+            {"code": {"name": "dummy"},
+             "profiles_1d": [load_core_transport(d_core_profiles, vacuum_toroidal_field["r0"])]
+             }]
+    }
+    return scenario
+
+
+def load_scenario(path):
+    return load_scenario_ITER(path)

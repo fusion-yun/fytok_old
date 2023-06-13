@@ -26,13 +26,8 @@ from .Wall import Wall
 class EquilibriumTimeSlice(_T_equilibrium_time_slice):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-
-        parent = self._parent
-        if not hasattr(parent, "vacuum_toroidal_field"):
-            parent = parent._parent
-
-        self._R0 = parent.vacuum_toroidal_field.r0
-        self._B0 = parent.vacuum_toroidal_field.b0(self.time)
+        self._R0 = self.get("../vacuum_toroidal_field/r0")
+        self._B0 = self.get("../vacuum_toroidal_field/b0")(self.time)
 
     CoordinateSystem = _T_equilibrium_coordinate_system
     Profiles1d = _T_equilibrium_profiles_1d

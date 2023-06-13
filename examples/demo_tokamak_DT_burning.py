@@ -7,7 +7,7 @@ import sys
 import numpy as np
 import pandas as pd
 from fytok.Tokamak import Tokamak
-from fytok.utils.load_profiles import (load_core_profiles, load_core_source,
+from fytok.utils.load_scenario_ITER import (load_core_profiles, load_core_source,
                                        load_core_transport)
 from fytok.utils.plot_profiles import plot_profiles, sp_figure
 from scipy import constants

@@ -2,8 +2,8 @@ import os
 import pathlib
 
 import numpy as np
-import pandas as pd
 from fytok.Tokamak import Tokamak
+from fytok.utils.load_scenario import load_scenario
 from fytok.utils.plot_profiles import plot_profiles, sp_figure
 from scipy import constants
 from spdm.data.Expression import Variable
@@ -16,43 +16,26 @@ if __name__ == "__main__":
 
     output_path = pathlib.Path('/home/salmon/workspace/output')
 
-    # f_path = "file+MDSplus[EAST]:///home/salmon/workspace/data/~t/?tree_name=efit_east#38300"
-    eqdsk_file = File(
-        "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/Medium resolution - 129x257/g900003.00230_ITER_15MA_eqdsk16MR.txt", format="GEQdsk").read()
+    scenario = load_scenario("/home/salmon/workspace/data/15MA inductive - burn")
 
     tok = Tokamak("ITER",
-                  name="ITER 15MA 9T",
-                  description="ITER 15MA 9T",
-                  core_profiles={
-                      "vacuum_toroidal_field": {"r0": 6.2, "b0": [-5.3]},
-                      "time": [0.0],
-                      "profiles_1d": [{"time": 0.0,
-                                       "current_parallel_inside": np.random.random(100),
-                                       "electron": {"pressure": np.random.random(100), },
-                                       "ion": [{"pressure": np.random.random(100), }]
-                                       }],
-                      "$default_value": {
-                          "profiles_1d": {"grid": {
-                              "rho_tor_norm": np.linspace(0, 1.0, 100),
-                              "psi": np.linspace(0, 1.0, 100),
-                              "psi_magnetic_axis": 0.0,
-                              "psi_boundary": 1.0,
-                          }}
-                      }
-                  },
-                  equilibrium={
-                      **eqdsk_file.dump(),
-                      "time": [0.0],
-                      "vacuum_toroidal_field": {"r0": 6.2, "b0": [-5.3]},
-                      "code": {
-                          "name":  "freegs",
-                          "parameters": {"boundary": "fixed"}
-                      },
-                      "$default_value": {
-                          "time_slice": {
-                              "boundary": {"psi_norm": 0.99},
-                              "coordinate_system": {"grid": {"dim1": 256, "dim2": 128}}
-                          }}}
+                  name=scenario["name"],
+                  description=scenario["description"],
+                  core_profiles={**scenario["core_profiles"],
+                                #  "$default_value": {
+                                #      "profiles_1d": {"grid": {
+                                #          "rho_tor_norm": np.linspace(0, 1.0, 100),
+                                #          "psi": np.linspace(0, 1.0, 100),
+                                #          "psi_magnetic_axis": 0.0,
+                                #          "psi_boundary": 1.0,
+                                #      }}}
+                                 },
+                  equilibrium={**scenario["equilibrium"],
+                               "code": {"name":  "freegs", "parameters": {"boundary": "fixed"}},
+                               "$default_value": {"time_slice": {
+                                   "boundary": {"psi_norm": 0.99},
+                                   "coordinate_system": {"grid": {"dim1": 256, "dim2": 128}}
+                               }}}
                   )
 
     if True:
@@ -65,10 +48,16 @@ if __name__ == "__main__":
                       "separatrix": True,
                   }
                   ) .savefig(output_path/"tokamak.svg", transparent=True)
+    if True:
+        core_profile_1d = tok.core_profiles.profiles_1d.current
+        plot_profiles(
+            [
+                (core_profile_1d .ffprime, "$ff'$", "$ff'$"),
+                (core_profile_1d .pprime, "$p'$", "$p'$"),
+            ],
+            x_axis=(core_profile_1d.grid.rho_tor_norm, r"$\rho=\sqrt{\Phi/\Phi_{bdry}}$"),
+            grid=True, fontsize=10) .savefig(output_path/"core_profiles_initialize.svg", transparent=True)
 
-    # logger.debug(tok.wall)
-    # .description_2d[0].vessel.unit[0].annular.outline_inner
-    # logger.debug(outline.r)
     tok.update()
 
     logger.info("DONE")

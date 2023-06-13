@@ -228,8 +228,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         return CurvilinearMesh(psi_norm, theta, geometry=surfs, cycles=[False, TWOPI])
 
     @property
-    def psi_norm(self) -> ArrayType:
-        return self.grid.dim1
+    def psi_norm(self) -> ArrayType:  return self.grid.dim1
 
     @property
     def psi(self) -> ArrayType:

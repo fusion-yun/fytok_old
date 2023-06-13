@@ -28,6 +28,7 @@ class CoreTransportProfiles1D(_T_core_transport_model_profiles_1d):
 class CoreTransportModel(_T_core_transport_model):
 
     _IDS = "core_transport/model"
+    
     Profiles1D = CoreTransportProfiles1D
 
     profiles_1d: TimeSeriesAoS[Profiles1D] = sp_property()

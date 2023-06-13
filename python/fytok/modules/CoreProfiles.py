@@ -75,11 +75,7 @@ class CoreProfilesIon(_T_core_profile_ions):
 
     @sp_property
     def pressure(self) -> Function[float]:
-        v = super().pressure
-        if isinstance(v, Function):
-            return v
-        else:
-            return self.pressure_thermal+self.pressure_fast_parallel+self.pressure_fast_perpendicular
+        return self.pressure_thermal  # + self.pressure_fast_parallel+self.pressure_fast_perpendicular
 
     @sp_property
     def pressure_thermal(self) -> Function[float]:
@@ -112,7 +108,7 @@ class CoreProfiles1d(_T_core_profiles_profiles_1d):
     def zeff(self) -> Function[float]:
         return sum([((ion.z_ion_1d**2)*ion.density) for ion in self.ion]) / self.n_i_total
 
-    @sp_property
+    @sp_property(coordinate1="../grid/rho_tor_norm", units="Pa", type="dynamic")
     def pressure(self) -> Function[float]:
         p = [ion.pressure for ion in self.ion]
         if len(p) == 1:
@@ -127,20 +123,16 @@ class CoreProfiles1d(_T_core_profiles_profiles_1d):
     def pressure_thermal(self) -> Function[float]:
         return sum([ion.pressure_thermal for ion in self.ion])+self.electrons.pressure_thermal
 
+    # @sp_property
+    # def j_total(self) -> Function[float]:
+    #     return self.current_parallel_inside.derivative * \
+    #         self.grid.r0*TWOPI/self.grid.dvolume_drho_tor
+
+    j_total: Function[float] = sp_property()
+
     @sp_property
-    def j_total(self) -> Function[float]:
-        return self.current_parallel_inside.derivative * \
-            self.grid.r0*TWOPI/self.grid.dvolume_drho_tor
-
-    current_parallel_inside: Function[float] = sp_property()
-
-    @sp_property(coordinate1="../grid/rho_tor_norm")
-    def f(self) -> Function[float]:
-        """ASTRA 2002 Eq.(22)"""
-        return self.grid.r0*self.grid.b0 - (scipy.constants.mu_0/TWOPI) * self.current_parallel_inside
-
-    @sp_property(coordinate1="../grid/rho_tor_norm")
-    def ffprime(self) -> Function[float]: return self.f*self.f.derivative()
+    def current_parallel_inside(self) -> Function[float]: return self.j_total.antiderivative()
+    # current_parallel_inside: Function[float] = sp_property()
 
     @sp_property
     def j_non_inductive(self) -> Function[float]:
@@ -221,6 +213,9 @@ class CoreProfiles1d(_T_core_profiles_profiles_1d):
     def magnetic_shear(self) -> Function[float]:
         """Magnetic shear, defined as rho_tor/q . dq/drho_tor {dynamic}[-]"""
         return self.grid.rho_tor_norm*(self.q.derivative()/self.q())
+
+    ffprime: Function[float] = sp_property(coordinate1="../grid/rho_tor_norm")
+    pprime: Function[float] = sp_property(coordinate1="../grid/rho_tor_norm")
 
 
 class CoreProfiles(_T_core_profiles):

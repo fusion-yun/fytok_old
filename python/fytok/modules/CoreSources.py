@@ -6,6 +6,7 @@ import typing
 from spdm.data.Entry import deep_reduce
 from spdm.data.List import AoS, List
 from spdm.data.sp_property import SpDict, sp_property
+from spdm.data.TimeSeries import TimeSeriesAoS
 
 from .._imas.lastest.core_sources import (_T_core_sources,
                                           _T_core_sources_source,
@@ -21,6 +22,10 @@ class CoreSourcesSource(_T_core_sources_source):
     Profiles1d = _T_core_sources_source_profiles_1d
 
     GlobalQuantities = _T_core_sources_source_global
+
+    profiles_1d: TimeSeriesAoS[Profiles1d] = sp_property()
+    
+    global_quantities: TimeSeriesAoS[GlobalQuantities] = sp_property()
 
     def update(self, *args, **kwargs) -> Profiles1d:
         profiles_1d = self.profiles_1d.update(*args,  **kwargs)
