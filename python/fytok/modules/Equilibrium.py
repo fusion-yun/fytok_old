@@ -29,8 +29,9 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
         self._R0 = self.get("../vacuum_toroidal_field/r0")
         self._B0 = self.get("../vacuum_toroidal_field/b0")(self.time)
 
-    def update(self, *args,   **kwrags) -> EquilibriumTimeSlice:
+    def update(self, *args,   **kwargs) -> EquilibriumTimeSlice:
         logger.debug(f"Update Equlibrium at time={self.time}")
+        super().update(*args, **kwargs)
         return self
 
     CoordinateSystem = _T_equilibrium_coordinate_system
@@ -101,22 +102,14 @@ class Equilibrium(_T_equilibrium):
                pf_active: PFActive = None,
                wall: Wall = None,  **kwargs) -> TimeSlice:
         """ update the last time slice """
-        return self.time_slice.current.update(*args,
-                                              core_profile_1d=core_profile_1d,
-                                              pf_active=pf_active,
-                                              wall=wall,
-                                              **kwargs)
+        return super().update(*args, **kwargs)
 
     def advance(self, *args, time: float = 0.0,
                 core_profile_1d: CoreProfiles.Profiles1d = None,
                 pf_active: PFActive = None,
                 wall: Wall = None, **kwargs) -> Equilibrium.TimeSlice:
         super().advance(time=time)
-        return self.time_slice.advance(*args, time=time,
-                                       core_profile_1d=core_profile_1d,
-                                       pf_active=pf_active,
-                                       wall=wall,
-                                       **kwargs)
+        return super().update(*args, **kwargs)
 
     def plot(self, axis=None, *args,
              scalar_field={},

@@ -31,17 +31,38 @@ if __name__ == "__main__":
                                  #      }}}
                                  },
                   equilibrium={**scenario["equilibrium"],
-                               "code": {"name":  "freegs", "parameters": {"boundary": "fixed"}},
+                               "code": {"name":  "freegs",
+                                        "parameters": {
+                                            "boundary": "fixed",
+                                            "psi_norm": np.linspace(0, 1.0, 128)
+                                        }
+                                        },
                                "$default_value": {"time_slice": {
                                    "boundary": {"psi_norm": 0.99},
+                                   "profiles_2d": {"grid": {"dim1": 256, "dim2": 128}},
                                    "coordinate_system": {"grid": {"dim1": 256, "dim2": 128}}
                                }}}
                   )
+    if False:
+        sp_figure(tok,
+                  wall={"limiter": {"edgecolor": "green"},
+                        "vessel": {"edgecolor": "blue"}},
+                  pf_active={"color": 'red'},
+                  equilibrium={  # "contours": [0, 2],
+                      "boundary": True,
+                      "separatrix": True,
+                  }
+                  ) .savefig(output_path/"tokamak_prev.svg", transparent=True)
+
+    psi_bndry = None # tok.equilibrium.time_slice.current.boundary.psi
+
+    logger.debug(psi_bndry)
 
     tok.equilibrium.update(
         wall=tok.wall,
         pf_active=tok.pf_active,
         Ip=1.5e6, beta_p=0.6056,
+        psi_bndry=psi_bndry,
         tolerance=1.0e-2,)
 
     if True:
@@ -53,7 +74,7 @@ if __name__ == "__main__":
                       "boundary": False,
                       "separatrix": False,
                   }
-                  ) .savefig(output_path/"tokamak.svg", transparent=True)
+                  ) .savefig(output_path/"tokamak_post.svg", transparent=True)
     if False:
         core_profile_1d = tok.core_profiles.profiles_1d.current
         plot_profiles(

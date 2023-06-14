@@ -185,13 +185,7 @@ def load_scenario_ITER(path):
         "description": "15MA Inductive at burn-ASTRA"
     }
 
-    eq_file=path/"Increased domain R-Z/Medium resolution - 129x257/g900003.00230_ITER_15MA_eqdsk16VVMR.txt"
-
     # eq_file = path/"Standard domain R-Z/Medium resolution - 129x257/g900003.00230_ITER_15MA_eqdsk16MR.txt"
-
-    logger.info(f"Load scenario/equilibrium from {eq_file}")
-
-    scenario["equilibrium"] = File(eq_file, format="GEQdsk").read().dump()
 
     profiles_file = path/'15MA Inductive at burn-ASTRA.xls'
 
@@ -234,6 +228,18 @@ def load_scenario_ITER(path):
              "profiles_1d": [load_core_transport(d_core_profiles, vacuum_toroidal_field["r0"])]
              }]
     }
+
+    eq_file = path/"Increased domain R-Z/Medium resolution - 129x257/g900003.00230_ITER_15MA_eqdsk16VVMR.txt"
+
+    scenario["equilibrium"] = {
+        "time": time,
+        'vacuum_toroidal_field': vacuum_toroidal_field,
+    }
+
+    scenario["equilibrium"].update(File(eq_file, format="GEQdsk").read().dump())
+
+    logger.info(f"Load scenario/equilibrium from {eq_file}")
+
     return scenario
 
 
