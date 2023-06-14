@@ -25,7 +25,7 @@ def sp_figure_signature(fig: plt.Figure, signature=None, x=1.0, y=0.1):
     if signature is False:
         return fig
     elif not isinstance(signature, str):
-        signature = f"Author: '{getpass.getuser().capitalize()}'. Create by SpDM at {datetime.datetime.now().isoformat()}."
+        signature = f"author: {getpass.getuser().capitalize()}. Create by SpDM at {datetime.datetime.now().isoformat()}."
 
     fig.text(x, y, signature, va='bottom', ha='left', fontsize='small', alpha=0.5, rotation='vertical')
     return fig

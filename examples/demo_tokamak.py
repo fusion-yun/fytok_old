@@ -22,13 +22,13 @@ if __name__ == "__main__":
                   name=scenario["name"],
                   description=scenario["description"],
                   core_profiles={**scenario["core_profiles"],
-                                #  "$default_value": {
-                                #      "profiles_1d": {"grid": {
-                                #          "rho_tor_norm": np.linspace(0, 1.0, 100),
-                                #          "psi": np.linspace(0, 1.0, 100),
-                                #          "psi_magnetic_axis": 0.0,
-                                #          "psi_boundary": 1.0,
-                                #      }}}
+                                 #  "$default_value": {
+                                 #      "profiles_1d": {"grid": {
+                                 #          "rho_tor_norm": np.linspace(0, 1.0, 100),
+                                 #          "psi": np.linspace(0, 1.0, 100),
+                                 #          "psi_magnetic_axis": 0.0,
+                                 #          "psi_boundary": 1.0,
+                                 #      }}}
                                  },
                   equilibrium={**scenario["equilibrium"],
                                "code": {"name":  "freegs", "parameters": {"boundary": "fixed"}},
@@ -38,17 +38,23 @@ if __name__ == "__main__":
                                }}}
                   )
 
+    tok.equilibrium.update(
+        wall=tok.wall,
+        pf_active=tok.pf_active,
+        Ip=1.5e6, beta_p=0.6056,
+        tolerance=1.0e-2,)
+
     if True:
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},
                         "vessel": {"edgecolor": "blue"}},
                   pf_active={"color": 'red'},
                   equilibrium={  # "contours": [0, 2],
-                      "boundary": True,
-                      "separatrix": True,
+                      "boundary": False,
+                      "separatrix": False,
                   }
                   ) .savefig(output_path/"tokamak.svg", transparent=True)
-    if True:
+    if False:
         core_profile_1d = tok.core_profiles.profiles_1d.current
         plot_profiles(
             [
@@ -57,7 +63,5 @@ if __name__ == "__main__":
             ],
             x_axis=(core_profile_1d.grid.rho_tor_norm, r"$\rho=\sqrt{\Phi/\Phi_{bdry}}$"),
             grid=True, fontsize=10) .savefig(output_path/"core_profiles_initialize.svg", transparent=True)
-
-    tok.update()
 
     logger.info("DONE")

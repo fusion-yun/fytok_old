@@ -63,6 +63,11 @@ class Tokamak(SpDict):
 
         super().__init__(entry, cache=cache, default_value=default_value)
 
+        self._time = kwargs.get('time', 0.0)
+
+    @property
+    def time(self) -> float: return self._time
+
     name: str = sp_property(default_value="unknown")
 
     description: str = sp_property(default_value="empty tokamak")
@@ -93,8 +98,7 @@ class Tokamak(SpDict):
 
     transport_solver: TransportSolverNumerics = sp_property()
 
-    def check_converge(self, *args, **kwargs) -> float:
-        return 0.0
+    def check_converge(self, *args, **kwargs) -> float: return 0.0
 
     def advance(self, *args, dt=None, do_update=False, **kwargs) -> CoreProfiles.Profiles1d:
         self._time += dt
@@ -130,7 +134,9 @@ class Tokamak(SpDict):
         else:
             return core_profiles_1d_next
 
-    def update(self, tolerance=1.0e-4, max_iteration=1) -> CoreProfiles.Profiles1d:
+    def update(self, *args, tolerance=1.0e-4, max_iteration=1, **kwargs) -> CoreProfiles.Profiles1d:
+
+        super().update(*args, **kwargs)
 
         residual = tolerance
 
@@ -140,7 +146,8 @@ class Tokamak(SpDict):
             equilibrium = self.equilibrium.update(
                 core_profiles_1d=core_profiles_1d_iter,
                 wall=self.wall,
-                pf_active=self.pf_active)
+                pf_active=self.pf_active,
+                tolerance=tolerance,)
 
             # core_transport_profiles_1d = self.core_transport.update(
             #     equilibrium=equilibrium,

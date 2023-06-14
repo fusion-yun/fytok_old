@@ -185,7 +185,9 @@ def load_scenario_ITER(path):
         "description": "15MA Inductive at burn-ASTRA"
     }
 
-    eq_file = path/"Standard domain R-Z/Medium resolution - 129x257/g900003.00230_ITER_15MA_eqdsk16MR.txt"
+    eq_file=path/"Increased domain R-Z/Medium resolution - 129x257/g900003.00230_ITER_15MA_eqdsk16VVMR.txt"
+
+    # eq_file = path/"Standard domain R-Z/Medium resolution - 129x257/g900003.00230_ITER_15MA_eqdsk16MR.txt"
 
     logger.info(f"Load scenario/equilibrium from {eq_file}")
 

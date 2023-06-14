@@ -977,7 +977,7 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
     profiles_1d: EquilibriumProfiles1d = sp_property()
 
     profiles_2d: AoS[EquilibriumProfiles2d] = sp_property()
-    """ FIXME: 定义多个 profiles_2d, type==0 对应  Total fields """
+    """ 定义多个 profiles_2d, type==0 对应  Total fields """
 
     global_quantities: EquilibriumGlobalQuantities = sp_property()
 

@@ -29,6 +29,10 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
         self._R0 = self.get("../vacuum_toroidal_field/r0")
         self._B0 = self.get("../vacuum_toroidal_field/b0")(self.time)
 
+    def update(self, *args,   **kwrags) -> EquilibriumTimeSlice:
+        logger.debug(f"Update Equlibrium at time={self.time}")
+        return self
+
     CoordinateSystem = _T_equilibrium_coordinate_system
     Profiles1d = _T_equilibrium_profiles_1d
     Profiles2d = _T_equilibrium_profiles_2d
@@ -93,24 +97,26 @@ class Equilibrium(_T_equilibrium):
     _plugin_registry = {}
 
     def update(self, *args,
-               core_profiles_1d: CoreProfiles.Profiles1d = None,
+               core_profile_1d: CoreProfiles.Profiles1d = None,
                pf_active: PFActive = None,
-               wall: Wall = None, **kwargs) -> TimeSlice:
-        """
-            update the last time slice, base on profiles_2d[-1].psi
-        """
-        logger.debug(f"Update Equlibrium at time={self.time_slice.current.time}")
-        super().update()
-        #  core_profile_1d=core_profile_1d, pf_active=pf_active, wall=wall,
-        return self.time_slice.update(*args, **kwargs)
+               wall: Wall = None,  **kwargs) -> TimeSlice:
+        """ update the last time slice """
+        return self.time_slice.current.update(*args,
+                                              core_profile_1d=core_profile_1d,
+                                              pf_active=pf_active,
+                                              wall=wall,
+                                              **kwargs)
 
     def advance(self, *args, time: float = 0.0,
                 core_profile_1d: CoreProfiles.Profiles1d = None,
                 pf_active: PFActive = None,
                 wall: Wall = None, **kwargs) -> Equilibrium.TimeSlice:
-        # core_profile_1d=core_profile_1d, pf_active=pf_active, wall=wall,
         super().advance(time=time)
-        return self.time_slice.advance(*args, time=time, **kwargs)
+        return self.time_slice.advance(*args, time=time,
+                                       core_profile_1d=core_profile_1d,
+                                       pf_active=pf_active,
+                                       wall=wall,
+                                       **kwargs)
 
     def plot(self, axis=None, *args,
              scalar_field={},
