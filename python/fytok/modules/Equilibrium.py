@@ -151,26 +151,6 @@ class Equilibrium(_T_equilibrium):
                       #   markersize=2,
                       label="Magnetic axis")
 
-        if eq.boundary_separatrix.type == 1:
-            p = eq.boundary_separatrix.geometric_axis
-            axis.plot(p.r, p.z, 'rx')
-            axis.text(p.r, p.z, 'x',
-                      horizontalalignment='center',
-                      verticalalignment='center')
-            axis.plot([], [], 'rx', label="X-Point")
-
-            for idx, p in eq.boundary_secondary_separatrix.x_point:
-                axis.plot(p.r, p.z, 'rx')
-                axis.text(p.r, p.z, f'x{idx}',
-                          horizontalalignment='center',
-                          verticalalignment='center')
-
-            for idx, p in eq.boundary_secondary_separatrix.strike_point:
-                axis.plot(p.r, p.z, 'rx')
-                axis.text(p.r, p.z, f's{idx}',
-                          horizontalalignment='center',
-                          verticalalignment='center')
-
         if boundary and eq.boundary is not None:
 
             boundary_points = np.vstack([eq.boundary.outline.r.__array__(),
@@ -195,6 +175,25 @@ class Equilibrium(_T_equilibrium):
                 axis.text(p.r, p.z, idx,
                           horizontalalignment='center',
                           verticalalignment='center')
+
+            # p = eq.boundary_separatrix.geometric_axis
+            # axis.plot(p.r, p.z, 'rx')
+            # axis.text(p.r, p.z, 'x',
+            #           horizontalalignment='center',
+            #           verticalalignment='center')
+            # axis.plot([], [], 'rx', label="X-Point")
+
+            # for idx, p in eq.boundary_secondary_separatrix.x_point:
+            #     axis.plot(p.r, p.z, 'rx')
+            #     axis.text(p.r, p.z, f'x{idx}',
+            #               horizontalalignment='center',
+            #               verticalalignment='center')
+
+            # for idx, p in eq.boundary_secondary_separatrix.strike_point:
+            #     axis.plot(p.r, p.z, 'rx')
+            #     axis.text(p.r, p.z, f's{idx}',
+            #               horizontalalignment='center',
+            #               verticalalignment='center')
 
         if contours:
             if contours is True:
