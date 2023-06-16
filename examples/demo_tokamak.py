@@ -47,6 +47,7 @@ if __name__ == "__main__":
                               "coordinate_system": {"grid": {"dim1": 256, "dim2": 128}}
                           }}}
                   )
+    
     if True:
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},
@@ -80,14 +81,14 @@ if __name__ == "__main__":
 
             tolerance=1.0e-2,)
 
-    if False:
+    if True:
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},
                         "vessel": {"edgecolor": "blue"}},
                   pf_active={"color": 'red'},
                   equilibrium={  # "contours": [0, 2],
                       "boundary": True,
-                      "separatrix": True,
+                      "separatrix": False,
                   }
                   ) .savefig(output_path/"tokamak_post.svg", transparent=True)
 

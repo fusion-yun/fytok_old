@@ -654,11 +654,11 @@ class EquilibriumProfiles1d(Equilibrium.TimeSlice.Profiles1d):
     # return self.f * self.gm1 * self.dvolume_dpsi / TWOPI
 
     @property
-    def fpol(self) -> Function[float]: return np.sqrt(self.f_df_dpsi.antiderivative()+(self._R0*self._B0)**2)
+    def fpol(self) -> Function[float]: return np.sqrt(2.0*self.f_df_dpsi.antiderivative()+(self._R0*self._B0)**2)
 
-    dpressure_dpsi: Function[float] = sp_property(extrapolate='const')
+    dpressure_dpsi: Function[float] = sp_property(extrapolate='zeros')
 
-    f_df_dpsi: Function[float] = sp_property(extrapolate='const')
+    f_df_dpsi: Function[float] = sp_property(extrapolate='zeros')
 
     @property
     def ffprime(self) -> Function[float]: return self.f_df_dpsi

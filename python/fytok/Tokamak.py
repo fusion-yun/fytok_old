@@ -196,7 +196,7 @@ class Tokamak(SpDict):
         if kwargs.get("magnetics", True) is not False:
             self.magnetics.plot(axis,  **kwargs.get("magnetics", {}))
 
-        if kwargs.get("equilibrium", False) is not False:
+        if kwargs.get("equilibrium", True) is not False:
             self.equilibrium.plot(axis,  **kwargs.get("equilibrium", {}))
 
         axis.set_aspect('equal')

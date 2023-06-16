@@ -175,25 +175,27 @@ def plot_profiles(profile_list, *args, x_axis=None, x=None, default_num_of_point
     return fig
 
 
-def sp_figure(obj, *args, signature=None, title=None, fontsize=10, **kwargs):
-    fig = plt.figure()
+def sp_figure(obj, *args, figure=None, signature=None, title=None, fontsize=10, **kwargs):
+
+    if figure is None:
+        figure = plt.figure()
 
     if not hasattr(obj, 'plot'):
         raise NotImplementedError(type(obj))
 
-    axis = obj.plot(fig.gca(), *args, **kwargs)
+    axis = obj.plot(figure.gca(), *args, **kwargs)
 
     if title is None:
         title = getattr(obj, "name", None)
 
     if title is not None:
-        fig.suptitle(title, fontsize=fontsize)
+        figure.suptitle(title, fontsize=fontsize)
 
-    fig.align_ylabels()
+    figure.align_ylabels()
 
-    fig.tight_layout()
+    figure.tight_layout()
 
-    fig = sp_figure_signature(fig, signature=signature, x=axis.get_position().xmax+0.01)
+    figure = sp_figure_signature(figure, signature=signature, x=axis.get_position().xmax+0.01)
     # fig.tight_layout()
     # fig.gca().axis('scaled')
-    return fig
+    return figure
