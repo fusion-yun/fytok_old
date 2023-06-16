@@ -51,12 +51,13 @@ def load_core_profiles(d):
     return {
         "time": 0.0,
         "grid": {
-            "psi_magnetic_axis": None,
-            "psi_boundary": None,
             "rho_tor_norm":  bs_r_norm,
             "rho_tor":  d["rho"].values,
+
             "psi_norm": bs_psi_norm,
             "psi": None,
+            "psi_magnetic_axis": None,
+            "psi_boundary": None,
 
         },
         "electrons": {"label": "e", "density":  b_ne,   "temperature": b_Te, },
@@ -79,8 +80,8 @@ def load_core_profiles(d):
         "j_total":          d["Jtot"].values*1.0e6,
         "XiNC":             d["XiNC"].values,
 
-        "ffprime":          d["EQFF"].values,
-        "pprime":           d["EQPF"].values,
+        "ffprime":          d["EQFF"].values*1.0e6,
+        "pprime":           d["EQPF"].values*1.0e6,
     }
 
 

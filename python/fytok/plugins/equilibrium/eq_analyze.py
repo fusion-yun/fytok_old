@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from enum import Enum
 from math import isclose
 import functools
+import scipy.constants
 import numpy as np
 from fytok._imas.lastest.equilibrium import (
     _T_equilibrium_boundary, _T_equilibrium_boundary_separatrix,
@@ -228,7 +229,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         return CurvilinearMesh(psi_norm, theta, geometry=surfs, cycles=[False, TWOPI])
 
     @property
-    def psi_norm(self) -> ArrayType:  return self.grid.dim1
+    def psi_norm(self) -> ArrayType: return self.grid.dim1
 
     @property
     def psi(self) -> ArrayType:
@@ -264,10 +265,10 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     def psi_boundary(self) -> float: return self.psi_bc[1]
 
     @sp_property
-    def r(self) -> Field[float]: return Field(self.grid.points[..., 0], grid=self.grid)
+    def r(self) -> Field[float]: return Field(self.grid.points[0], grid=self.grid)
 
     @sp_property
-    def z(self) -> Field[float]: return Field(self.grid.points[..., 1], grid=self.grid)
+    def z(self) -> Field[float]: return Field(self.grid.points[1], grid=self.grid)
 
     @sp_property
     def jacobian(self) -> Field[float]:
@@ -653,13 +654,14 @@ class EquilibriumProfiles1d(Equilibrium.TimeSlice.Profiles1d):
     # return self.f * self.gm1 * self.dvolume_dpsi / TWOPI
 
     @property
-    def fpol(self) -> Function[float]: return super().f
+    def fpol(self) -> Function[float]: return np.sqrt(self.f_df_dpsi.antiderivative()+(self._R0*self._B0)**2)
 
-    @sp_property
-    def dpressure_dpsi(self) -> Function[float]: return self.pressure.derivative()
+    dpressure_dpsi: Function[float] = sp_property(extrapolate='const')
 
-    @sp_property
-    def f_df_dpsi(self) -> Function[float]: return self.f * self.f.pd()
+    f_df_dpsi: Function[float] = sp_property(extrapolate='const')
+
+    @property
+    def ffprime(self) -> Function[float]: return self.f_df_dpsi
 
     @property
     def pprime(self) -> Function[float]: return self.dpressure_dpsi
@@ -832,10 +834,10 @@ class EquilibriumProfiles2d(Equilibrium.TimeSlice.Profiles2d):
     def _coord(self) -> EquilibriumCoordinateSystem: return self._parent.coordinate_system
 
     @property
-    def _global_quantities(self) -> _T_equilibrium_global_quantities: return self._parent.global_quantities
+    def _global_quantities(self) -> EquilibriumGlobalQuantities: return self._parent.global_quantities
 
     @property
-    def _profiles_1d(self) -> _T_equilibrium_profiles_1d: return self._parent.profiles_1d
+    def _profiles_1d(self) -> EquilibriumProfiles1d: return self._parent.profiles_1d
 
     @sp_property[Mesh]
     def grid(self) -> Mesh:
@@ -862,7 +864,10 @@ class EquilibriumProfiles2d(Equilibrium.TimeSlice.Profiles2d):
     def theta(self) -> Field[float]: return super().theta
 
     @sp_property
-    def j_tor(self) -> Field[float]: return super().j_tor  # return self._profiles_1d.j_tor(self.psi)
+    def j_tor(self) -> Field[float]:
+        _R = Variable(0, "R")
+        return _R*self._profiles_1d.pprime(self.psi) + self._profiles_1d.ffprime(self.psi)/(_R*scipy.constants.mu_0)
+        # return super().j_tor  # return self._profiles_1d.j_tor(self.psi)
 
     @sp_property
     def j_parallel(self) -> Field[float]: return super().j_parallel  # return self._profiles_1d.j_parallel(self.psi)
@@ -932,7 +937,7 @@ class EquilibriumBoundary(Equilibrium.TimeSlice.Boundary):
     def triangularity_lower(self) -> float: return self._shape_property.triangularity_lower
 
     @sp_property
-    def x_point(self) -> List[RZTuple]:
+    def x_point(self) -> List[OXPoint]:
         _, xpt = self._coord.critical_points
         return xpt
 
@@ -947,7 +952,6 @@ class EquilibriumBoundarySeparatrix(Equilibrium.TimeSlice.BoundarySeparatrix):
 
     @property
     def _coord(self) -> Equilibrium.TimeSlice.CoordinateSystem: return self._parent.coordinate_system
-
 
     @sp_property
     def outline(self) -> RZTuple1D:
