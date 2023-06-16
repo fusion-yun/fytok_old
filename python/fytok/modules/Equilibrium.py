@@ -49,7 +49,6 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
              separatrix=True,
              contours=16,
              oxpoints=True,
-             time_slice=-1,
              **kwargs):
         """
             plot o-point,x-point,lcfs,separatrix and contour of psi
@@ -60,28 +59,40 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
         if axis is None:
             axis = plt.gca()
 
-        if oxpoints is not False:
-
-            axis.plot(self.global_quantities.magnetic_axis.r,
-                      self.global_quantities.magnetic_axis.z,
-                      'g+',
-                      linewidth=0.5,
-                      #   markersize=2,
-                      label="Magnetic axis")
-
-        if boundary and self.boundary is not None:
+        if oxpoints:
             try:
+                o_points, x_points = self.coordinate_system.critical_points
+                for idx, o in enumerate(o_points):
+                    if idx == 0:
+                        axis.plot(o.r, o.z, 'g+', linewidth=0.5, label="Magnetic axis")
+                    else:
+                        axis.plot(o.r, o.z, 'g+',)
+                        axis.text(o.r, o.z, idx,
+                                  horizontalalignment='center',
+                                  verticalalignment='center')
+                for idx, x in enumerate(x_points):
+                    axis.plot(x.r, x.z, 'rx')
+                    axis.text(x.r, x.z, idx,
+                              horizontalalignment='center',
+                              verticalalignment='center')
+            except Exception as error:
+                logger.error(f"Can not find o-point/x-point! {error}")
+
+        if boundary:
+            try:
+
                 boundary_points = np.vstack([self.boundary.outline.r.__array__(),
                                             self.boundary.outline.z.__array__()]).T
 
                 axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='solid',
                                            linewidth=0.5, fill=False, closed=True))
 
-                axis.plot([], [], 'g-', label="Boundary")
+                # axis.plot([], [], 'g-', label="Boundary")
             except Exception as error:
                 logger.error(f"Plot boundary failed! {error}")
+                # raise RuntimeError(f"Plot boundary failed!") from error
 
-        if separatrix and self.boundary_separatrix.outline.r is not None:
+        if separatrix:
             try:
                 separatrix_outline = np.vstack([self.boundary_separatrix.outline.r.__array__(),
                                                 self.boundary_separatrix.outline.z.__array__()]).T
@@ -90,11 +101,6 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
                                            linewidth=0.5, fill=False, closed=False))
                 axis.plot([], [], 'r--', label="Separatrix")
 
-                for idx, p in enumerate(self.boundary_separatrix.x_point):
-                    axis.plot(p.r, p.z, 'rx')
-                    axis.text(p.r, p.z, idx,
-                              horizontalalignment='center',
-                              verticalalignment='center')
             except Exception as error:
                 logger.error(f"Plot separatrix failed! {error}")
 
@@ -125,7 +131,7 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
             try:
                 axis.contour(profiles_2d.r.__array__(),
                              profiles_2d.z.__array__(),
-                             profiles_2d.psi.__array__(), linewidths=0.2, levels=contours)
+                             profiles_2d.psi.__array__(), linewidths=0.5, levels=contours)
             except Exception as error:
                 logger.error(f"Plot contour of psi failed! {error}")
 

@@ -54,18 +54,18 @@ if __name__ == "__main__":
                         "vessel": {"edgecolor": "blue"}},
                   pf_active={"color": 'red'},
                   equilibrium={  # "contours": [0, 2],
-                      "boundary": True,
-                      "separatrix": True,
+                    #   "boundary": True,
+                    #   "separatrix": True,
                   }
                   ) .savefig(output_path/"tokamak_prev.svg", transparent=True)
 
-    psirz = tok.equilibrium.time_slice.current.profiles_2d[0].psi.__array__()
+    # psirz = tok.equilibrium.time_slice.current.profiles_2d[0].psi.__array__()
 
-    psi2 = np.linspace(np.min(psirz), np.max(psirz), 100)
+    # psi2 = np.linspace(np.min(psirz), np.max(psirz), 100)
 
-    pprime = tok.equilibrium.time_slice.current.profiles_1d.pprime(psi2)
+    # pprime = tok.equilibrium.time_slice.current.profiles_1d.pprime(psi2)
 
-    logger.debug(pprime)
+    # logger.debug(pprime)
 
     if True:
         tok.equilibrium.update(
@@ -87,8 +87,9 @@ if __name__ == "__main__":
                         "vessel": {"edgecolor": "blue"}},
                   pf_active={"color": 'red'},
                   equilibrium={  # "contours": [0, 2],
+                    #   "oxpoints":False,
                       "boundary": True,
-                      "separatrix": False,
+                      "separatrix": True,
                   }
                   ) .savefig(output_path/"tokamak_post.svg", transparent=True)
 

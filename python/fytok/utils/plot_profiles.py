@@ -27,7 +27,13 @@ def sp_figure_signature(fig: plt.Figure, signature=None, x=1.0, y=0.1):
     elif not isinstance(signature, str):
         signature = f"author: {getpass.getuser().capitalize()}. Create by SpDM at {datetime.datetime.now().isoformat()}."
 
-    fig.text(x, y, signature, va='bottom', ha='left', fontsize='small', alpha=0.5, rotation='vertical')
+    pos = fig.gca().get_position()
+
+    fig.text(pos.xmax+0.01, 0.5*(pos.ymin+pos.ymax), signature,
+             verticalalignment='center', horizontalalignment='left',
+             fontsize='small', alpha=0.2, rotation='vertical')
+
+    # fig.text(x, y, signature, va='bottom', ha='left', fontsize='small', alpha=0.5, rotation='vertical')
     return fig
 
 

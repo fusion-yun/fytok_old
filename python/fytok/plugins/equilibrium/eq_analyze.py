@@ -34,7 +34,7 @@ from spdm.mesh.CurvilinearMesh import CurvilinearMesh
 from spdm.mesh.Mesh import Mesh
 from spdm.mesh.RectilinearMesh import RectilinearMesh
 from spdm.numlib.contours import find_countours
-from spdm.numlib.optimize import find_critical_points
+from spdm.numlib.optimize import minimize_filter
 from spdm.numlib.interpolate import interpolate
 from spdm.utils.logger import logger
 from spdm.utils.misc import convert_to_named_tuple
@@ -160,12 +160,22 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     def critical_points(self) -> typing.Tuple[typing.Sequence[OXPoint], typing.Sequence[OXPoint]]:
 
         opoints = []
+
         xpoints = []
 
-        for r, z, psi, D in find_critical_points(self._psirz):
-            p = OXPoint(r, z, psi)
+        psi = self._psirz
 
-            if D < 0.0:  # saddle/X-point
+        R, Z = psi.mesh.points
+
+        Bp2 = (psi.pd(0, 1)**2 + psi.pd(1, 0)**2)/(_R**2)
+
+        D = psi.pd(2, 0) * psi.pd(0, 2) - psi.pd(1, 1)**2
+
+        for r, z in minimize_filter(Bp2, R, Z, tolerance=0.001):
+
+            p = OXPoint(r, z, psi(r, z))
+
+            if D(r, z) < 0.0:  # saddle/X-point
                 xpoints.append(p)
             else:  # extremum/ O-point
                 opoints.append(p)
@@ -184,12 +194,13 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
             opoints.sort(key=lambda x: (x.r - Rmid)**2 + (x.z - Zmid)**2)
 
-            o_r = opoints[0].r
-            o_z = opoints[0].z
+            # o_r = opoints[0].r
+            # o_z = opoints[0].z
             # TOOD: NEED　IMPROVMENT!!
-            xpoints.sort(key=lambda x: (x.r - o_r)**2 + (x.z - o_z)**2)
+            # xpoints.sort(key=lambda x: (x.r - o_r)**2 + (x.z - o_z)**2)
             # psi_magnetic_axis = opoints[0].psi
-            # xpoints.sort(key=lambda x: (x.psi - psi_magnetic_axis)**2)
+            o_psi = opoints[0].psi
+            xpoints.sort(key=lambda x: (x.psi - o_psi)**2)
 
         return opoints, xpoints
 
@@ -282,7 +293,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     def tensor_contravariant(self) -> Field[float]:
         raise NotImplementedError(f"")
 
-    def find_surface(self, psi:  float | ArrayType | typing.Sequence[float], o_point: OXPoint = True) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
+    def find_surface(self, psi:  float | ArrayType | typing.Sequence[float], o_point: OXPoint = False) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
         """
             if o_point is not None:
                 only return  closed surface  enclosed o-point
@@ -295,7 +306,12 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         if o_point is None or o_point is False:
             for level, points in find_countours(self._psirz, levels=psi):
-                yield level, CubicSplineCurve(points)
+                if points is None:
+                    continue
+                elif len(points) == 1:
+                    yield level, Point(*points[0])
+                else:
+                    yield level, CubicSplineCurve(points)
         else:
             # x_point = None
             if o_point is True:
@@ -342,9 +358,13 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
                     current_count -= 1
                     continue
 
+                is_closed = False
+
                 if np.isclose((theta[0]-theta[-1]) % TWOPI, 0.0):
+                    # 封闭曲线
                     theta = theta[:-1]
                     points = points[:-1]
+                    # is_closed = True
                 else:  # boundary separatrix
                     if x_point is None:
                         raise RuntimeError(f"No X-point ")
@@ -360,16 +380,17 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
                     s = (p[:, 0]*d[:, 1]-p[:, 1]*d[:, 0])/d2
                     idx = np.flatnonzero(np.logical_and(c >= 0, c**2+s**2 < 1))
 
-                    if len(idx) != 2:
-                        raise NotImplementedError()
+                    if len(idx) == 2:
 
-                    idx0 = idx[0]
-                    idx1 = idx[1]
+                        idx0 = idx[0]
+                        idx1 = idx[1]
 
-                    theta_x = np.arctan2(xpt[0]-o_point.r, xpt[1]-o_point.z)
+                        theta_x = np.arctan2(xpt[0]-o_point.r, xpt[1]-o_point.z)
 
-                    points = np.vstack([[xpt], points[idx0:idx1]])
-                    theta = np.hstack([theta_x, theta[idx0:idx1]])
+                        points = np.vstack([[xpt], points[idx0:idx1]])
+                        theta = np.hstack([theta_x, theta[idx0:idx1]])
+                    else:
+                        raise RuntimeError(f"Can not get closed boundary {o_point}, {x_point} {idx} !")
 
                 # theta must be strictly increased
                 p_min = np.argmin(theta)
@@ -394,7 +415,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
                 elif points.shape[0] == 1:
                     yield level, Point(points[0][0], points[0][1])
                 else:
-                    yield level, CubicSplineCurve(points, theta)
+                    yield level, CubicSplineCurve(points, theta, is_closed=is_closed)
 
     def find_surface_by_psi_norm(self, psi_norm: float | ArrayType | typing.Sequence[float], *args,   **kwargs) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
 
@@ -470,6 +491,9 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
     #################################
     # fields
+    @property
+    def Bpol2(self) -> Expression[float]: return self.b_field_r**2+self.b_field_z**2
+    r""" $B_{pol}= \left|\nabla \psi \right|/2 \pi R $ """
 
     @property
     def Bpol(self) -> Expression[float]: return np.sqrt(self.b_field_r**2+self.b_field_z**2)
@@ -865,7 +889,6 @@ class EquilibriumProfiles2d(Equilibrium.TimeSlice.Profiles2d):
 
     @sp_property
     def j_tor(self) -> Field[float]:
-        _R = Variable(0, "R")
         return _R*self._profiles_1d.pprime(self.psi) + self._profiles_1d.ffprime(self.psi)/(_R*scipy.constants.mu_0)
         # return super().j_tor  # return self._profiles_1d.j_tor(self.psi)
 
@@ -990,6 +1013,65 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
     boundary_separatrix: EquilibriumBoundarySeparatrix = sp_property()
 
     coordinate_system: EquilibriumCoordinateSystem = sp_property()
+
+    def plot(self, axis=None, *args,  **kwargs):
+        """
+            plot o-point,x-point,lcfs,separatrix and contour of psi
+        """
+
+        import matplotlib.pyplot as plt
+
+        if axis is None:
+            axis = plt.gca()
+
+        if kwargs.get("boundary", True):
+            try:
+               
+                for psi, surf in self.coordinate_system.find_surface(self.boundary.psi, o_point=True):
+
+                    if isinstance(surf, Curve):
+                        axis.add_patch(plt.Polygon(surf.coordinates(), color='r', linestyle='solid',
+                                                   linewidth=0.5, fill=False, closed=surf.is_closed))
+                    elif isinstance(surf, Point):
+                        axis.plot(surf.coordinates(), 'r.', markersize=1)
+                    else:
+                        logger.warning(f"Found an island at psi={psi} pos={surf}")
+
+            except Exception as error:
+                logger.error(f"Plot boundary failed! {error}")
+            else:
+                kwargs["boundary"] = False
+
+        if kwargs.get("separatrix", True):
+            try:
+                
+                for psi, surf in self.coordinate_system.find_surface(self.boundary_separatrix.psi, o_point=False):
+
+                    if isinstance(surf, Curve):
+                        axis.add_patch(plt.Polygon(surf.coordinates(), color='r', linestyle='dashed',
+                                                   linewidth=0.5, fill=False, closed=surf.is_closed))
+                    elif isinstance(surf, Point):
+                        axis.plot(surf.coordinates(), 'r.', markersize=1)
+                    else:
+                        logger.warning(f"Found an island at psi={psi} pos={surf}")
+
+            except Exception as error:
+                logger.error(f"Plot separatrix failed! {error}")
+            else:
+                kwargs["separatrix"] = False
+
+        # if kwargs.pop("contours", True):
+        #     if contours is True:
+        #         contours = 16
+        #     profiles_2d = self.profiles_2d[0]
+
+        #     try:
+        #         axis.contour(profiles_2d.r.__array__(),
+        #                      profiles_2d.z.__array__(),
+        #                      profiles_2d.psi.__array__(), linewidths=0.5, levels=contours)
+        #     except Exception as error:
+        #         logger.error(f"Plot contour of psi failed! {error}")
+        return super().plot(axis, *args, **kwargs)
 
 
 @Equilibrium.register(["eq_analyze"])
