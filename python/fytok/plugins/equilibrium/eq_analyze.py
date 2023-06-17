@@ -921,7 +921,7 @@ class EquilibriumBoundary(Equilibrium.TimeSlice.Boundary):
     @property
     def _coord(self) -> EquilibriumCoordinateSystem: return self._parent.coordinate_system
 
-    @sp_property
+    @sp_property[RZTuple1D]
     def outline(self) -> RZTuple1D:
         _, surf = next(self._coord.find_surface(self.psi, o_point=True))
         R, Z = surf.points
@@ -967,7 +967,7 @@ class EquilibriumBoundary(Equilibrium.TimeSlice.Boundary):
     @sp_property
     def triangularity_lower(self) -> float: return self._shape_property.triangularity_lower
 
-    @sp_property
+    @sp_property[List[OXPoint]]
     def x_point(self) -> List[OXPoint]:
         _, xpt = self._coord.critical_points
         return xpt
@@ -1045,7 +1045,7 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
                         logger.warning(f"Found an island at psi={psi} pos={surf}")
 
             except Exception as error:
-                raise RuntimeError(f"Plot boundary failed! ") from error
+                logger.error(f"Plot boundary failed! ") 
             else:
                 kwargs["boundary"] = False
 

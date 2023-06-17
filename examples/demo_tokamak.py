@@ -47,15 +47,15 @@ if __name__ == "__main__":
                               "coordinate_system": {"grid": {"dim1": 256, "dim2": 128}}
                           }}}
                   )
-    
+
     if True:
         sp_figure(tok,
                   wall={"limiter": {"edgecolor": "green"},
                         "vessel": {"edgecolor": "blue"}},
                   pf_active={"color": 'red'},
                   equilibrium={  # "contours": [0, 2],
-                    #   "boundary": True,
-                    #   "separatrix": True,
+                      #   "boundary": True,
+                      #   "separatrix": True,
                   }
                   ) .savefig(output_path/"tokamak_prev.svg", transparent=True)
 
@@ -70,15 +70,10 @@ if __name__ == "__main__":
     if True:
         tok.equilibrium.update(
             wall=tok.wall, pf_active=tok.pf_active,
-
             core_profiles_1d=tok.core_profiles.profiles_1d.current,
-
-            Ip=1.5e6, beta_p=0.6056,
-
+            # Ip=1.5e6, beta_p=0.6056,
             # xpoints=True,
-
             lcfs=True,
-
             tolerance=1.0e-2,)
 
     if True:
@@ -87,7 +82,7 @@ if __name__ == "__main__":
                         "vessel": {"edgecolor": "blue"}},
                   pf_active={"color": 'red'},
                   equilibrium={  # "contours": [0, 2],
-                    #   "oxpoints":False,
+                      #   "oxpoints":False,
                       "boundary": True,
                       "separatrix": True,
                   }
