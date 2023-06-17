@@ -28,8 +28,8 @@ RZTuple = _T_rz0d_dynamic_aos
 
 @dataclass
 class RZTuple_:
-    r: np.ndarray | Expression[float]
-    z: np.ndarray | Expression[float]
+    r: np.ndarray | Expression
+    z: np.ndarray | Expression
 
 
 class CoreRadialGrid(_T_core_radial_grid):

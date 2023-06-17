@@ -188,9 +188,9 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
             raise RuntimeError(f"Can not find o-point!")
         else:
 
-            bbox = self._psirz.mesh.geometry.bbox
-            Rmid = (bbox[0][0] + bbox[1][0])/2.0
-            Zmid = (bbox[0][1] + bbox[1][1])/2.0
+            xmin, xmax = self._psirz.mesh.geometry.bbox
+            Rmid = (xmin[0] + xmax[0])/2.0
+            Zmid = (xmin[1] + xmax[1])/2.0
 
             opoints.sort(key=lambda x: (x.r - Rmid)**2 + (x.z - Zmid)**2)
 
@@ -305,13 +305,12 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         """
 
         if o_point is None or o_point is False:
-            for level, points in find_countours(self._psirz, levels=psi):
-                if points is None:
+            for level, surf in find_countours(self._psirz, levels=psi):
+                if surf is None:
                     continue
-                elif len(points) == 1:
-                    yield level, Point(*points[0])
                 else:
-                    yield level, CubicSplineCurve(points)
+                    yield level, surf
+
         else:
             # x_point = None
             if o_point is True:
@@ -327,12 +326,12 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
             current_psi = np.nan
             current_count = 0
-            for level, points in find_countours(self._psirz, levels=psi):
+            for level, surf in find_countours(self._psirz, levels=psi):
                 # 累计相同 level 的 surface个数
                 # 如果累计的 surface 个数大于1，说明存在磁岛
                 # 如果累计的 surface 个数等于0，说明该 level 对应的 surface 不存在
                 # 如果累计的 surface 个数等于1，说明该 level 对应的 surface 存在且唯一
-                if points is None:
+                if surf is None:
                     if np.isclose(level, o_point.psi):
                         yield level, Point(o_point.r, o_point.z)
                     else:
@@ -352,70 +351,79 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
                     current_count = 0
                     current_psi = np.nan
 
-                theta = np.arctan2(points[:, 0]-o_point.r, points[:, 1]-o_point.z)
-
-                if 1.0 - (max(theta)-min(theta))/TWOPI > 2.0/len(theta):  # open or do not contain o-point
-                    current_count -= 1
+                if isinstance(surf, Curve):
+                    if surf.is_closed and surf.enclose(o_point.r, o_point.z):
+                        theta_0 = np.arctan2(x_point.r-o_point.r, x_point.z-o_point.z)
+                        theta = ((np.arctan2(_R-o_point.r, _Z-o_point.z)-theta_0)+TWOPI) % TWOPI
+                        surf = surf.remesh(theta)
+                    yield level, surf
+                else:
                     continue
 
-                is_closed = False
+                # theta = np.arctan2(surf[:, 0]-o_point.r, surf[:, 1]-o_point.z)
+                # logger.debug((max(theta)-min(theta))/TWOPI)
+                # if 1.0 - (max(theta)-min(theta))/TWOPI > 2.0/len(theta):  # open or do not contain o-point
+                #     current_count -= 1
+                #     continue
 
-                if np.isclose((theta[0]-theta[-1]) % TWOPI, 0.0):
-                    # 封闭曲线
-                    theta = theta[:-1]
-                    points = points[:-1]
-                    # is_closed = True
-                else:  # boundary separatrix
-                    if x_point is None:
-                        raise RuntimeError(f"No X-point ")
-                    # logger.warning(f"The magnetic surface average is not well defined on the separatrix!")
-                    xpt = np.asarray([x_point.r, x_point.z], dtype=float)
-                    b = points[1:]
-                    a = points[:-1]
-                    d = b-a
-                    d2 = d[:, 0]**2+d[:, 1]**2
-                    p = xpt-a
+                # is_closed = False
 
-                    c = (p[:, 0]*d[:, 0]+p[:, 1]*d[:, 1])/d2
-                    s = (p[:, 0]*d[:, 1]-p[:, 1]*d[:, 0])/d2
-                    idx = np.flatnonzero(np.logical_and(c >= 0, c**2+s**2 < 1))
+                # if np.isclose((theta[0]-theta[-1]) % TWOPI, 0.0):
+                #     # 封闭曲线
+                #     theta = theta[:-1]
+                #     surf = surf[:-1]
+                #     # is_closed = True
+                # else:  # boundary separatrix
+                #     if x_point is None:
+                #         raise RuntimeError(f"No X-point ")
+                #     # logger.warning(f"The magnetic surface average is not well defined on the separatrix!")
+                #     xpt = np.asarray([x_point.r, x_point.z], dtype=float)
+                #     b = surf[1:]
+                #     a = surf[:-1]
+                #     d = b-a
+                #     d2 = d[:, 0]**2+d[:, 1]**2
+                #     p = xpt-a
 
-                    if len(idx) == 2:
+                #     c = (p[:, 0]*d[:, 0]+p[:, 1]*d[:, 1])/d2
+                #     s = (p[:, 0]*d[:, 1]-p[:, 1]*d[:, 0])/d2
+                #     idx = np.flatnonzero(np.logical_and(c >= 0, c**2+s**2 < 1))
 
-                        idx0 = idx[0]
-                        idx1 = idx[1]
+                #     if len(idx) == 2:
 
-                        theta_x = np.arctan2(xpt[0]-o_point.r, xpt[1]-o_point.z)
+                #         idx0 = idx[0]
+                #         idx1 = idx[1]
 
-                        points = np.vstack([[xpt], points[idx0:idx1]])
-                        theta = np.hstack([theta_x, theta[idx0:idx1]])
-                    else:
-                        raise RuntimeError(f"Can not get closed boundary {o_point}, {x_point} {idx} !")
+                #         theta_x = np.arctan2(xpt[0]-o_point.r, xpt[1]-o_point.z)
 
-                # theta must be strictly increased
-                p_min = np.argmin(theta)
-                p_max = np.argmax(theta)
+                #         surf = np.vstack([[xpt], surf[idx0:idx1]])
+                #         theta = np.hstack([theta_x, theta[idx0:idx1]])
+                #     else:
+                #         raise RuntimeError(f"Can not get closed boundary {o_point}, {x_point} {idx} !")
 
-                if p_min > 0:
-                    if p_min == p_max+1:
-                        theta = np.roll(theta, -p_min)
-                        points = np.roll(points, -p_min, axis=0)
-                    elif p_min == p_max-1:
-                        theta = np.flip(np.roll(theta, -p_min-1))
-                        points = np.flip(np.roll(points, -p_min-1, axis=0), axis=0)
-                    else:
-                        raise ValueError(f"Can not convert 'u' to be strictly increased!")
-                    theta = np.hstack([theta, [theta[0]+TWOPI]])
-                    theta = (theta-theta.min())/(theta.max()-theta.min())
-                    points = np.vstack([points, points[:1]])
+                # # theta must be strictly increased
+                # p_min = np.argmin(theta)
+                # p_max = np.argmax(theta)
 
-                if points.shape[0] == 0:
-                    logger.warning(f"{level},{o_point.psi},{(max(theta),min(theta))}")
+                # if p_min > 0:
+                #     if p_min == p_max+1:
+                #         theta = np.roll(theta, -p_min)
+                #         surf = np.roll(surf, -p_min, axis=0)
+                #     elif p_min == p_max-1:
+                #         theta = np.flip(np.roll(theta, -p_min-1))
+                #         surf = np.flip(np.roll(surf, -p_min-1, axis=0), axis=0)
+                #     else:
+                #         raise ValueError(f"Can not convert 'u' to be strictly increased!")
+                #     theta = np.hstack([theta, [theta[0]+TWOPI]])
+                #     theta = (theta-theta.min())/(theta.max()-theta.min())
+                #     surf = np.vstack([surf, surf[:1]])
 
-                elif points.shape[0] == 1:
-                    yield level, Point(points[0][0], points[0][1])
-                else:
-                    yield level, CubicSplineCurve(points, theta, is_closed=is_closed)
+                # if surf.shape[0] == 0:
+                #     logger.warning(f"{level},{o_point.psi},{(max(theta),min(theta))}")
+
+                # elif surf.shape[0] == 1:
+                #     yield level, Point(surf[0][0], surf[0][1])
+                # else:
+                #     yield level, CubicSplineCurve(surf, theta, is_closed=is_closed)
 
     def find_surface_by_psi_norm(self, psi_norm: float | ArrayType | typing.Sequence[float], *args,   **kwargs) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
 
@@ -492,36 +500,36 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     #################################
     # fields
     @property
-    def Bpol2(self) -> Expression[float]: return self.b_field_r**2+self.b_field_z**2
+    def Bpol2(self) -> Expression: return self.b_field_r**2+self.b_field_z**2
     r""" $B_{pol}= \left|\nabla \psi \right|/2 \pi R $ """
 
     @property
-    def Bpol(self) -> Expression[float]: return np.sqrt(self.b_field_r**2+self.b_field_z**2)
+    def Bpol(self) -> Expression: return np.sqrt(self.b_field_r**2+self.b_field_z**2)
     r""" $B_{pol}= \left|\nabla \psi \right|/2 \pi R $ """
 
     @property
-    def b_field_r(self) -> Expression[float]:
+    def b_field_r(self) -> Expression:
         """ COCOS Eq.19 [O. Sauter and S.Yu. Medvedev, Computer Physics Communications 184 (2013) 293] """
         return self._psirz.pd(0, 1) / _R * (self._s_RpZ * self._s_Bp / self._s_eBp_2PI)
 
     @property
-    def b_field_z(self) -> Expression[float]:
+    def b_field_z(self) -> Expression:
         return -self._psirz.pd(1, 0) / _R * (self._s_RpZ * self._s_Bp / self._s_eBp_2PI)
 
     @property
-    def b_field_tor(self) -> Expression[float]: return self._fpol(self._psirz) / _R
+    def b_field_tor(self) -> Expression: return self._fpol(self._psirz) / _R
 
     @property
-    def B2(self) -> Expression[float]: return (self.b_field_r**2 + self.b_field_z**2 + self.b_field_tor ** 2)
+    def B2(self) -> Expression: return (self.b_field_r**2 + self.b_field_z**2 + self.b_field_tor ** 2)
 
     @property
-    def grad_psi2(self) -> Expression[float]: return self._psirz.pd(1, 0)**2+self._psirz.pd(0, 1)**2
+    def grad_psi2(self) -> Expression: return self._psirz.pd(1, 0)**2+self._psirz.pd(0, 1)**2
 
     @property
-    def grad_psi(self) -> Expression[float]: return np.sqrt(self.grad_psi2)
+    def grad_psi(self) -> Expression: return np.sqrt(self.grad_psi2)
 
     @property
-    def ddpsi(self) -> Expression[float]:
+    def ddpsi(self) -> Expression:
         return np.sqrt(self._psirz.pd(2, 0) * self._psirz.pd(0, 2) + self._psirz.pd(1, 1)**2)
 
     @functools.cached_property
@@ -916,8 +924,8 @@ class EquilibriumBoundary(Equilibrium.TimeSlice.Boundary):
     @sp_property
     def outline(self) -> RZTuple1D:
         _, surf = next(self._coord.find_surface(self.psi, o_point=True))
-        points = surf.xyz()
-        return {"r": points[..., 0], "z": points[..., 1]}
+        R, Z = surf.points
+        return {"r": R, "z": Z}
 
     psi_norm: float = sp_property(default_value=0.999)
 
@@ -1026,7 +1034,6 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
 
         if kwargs.get("boundary", True):
             try:
-               
                 for psi, surf in self.coordinate_system.find_surface(self.boundary.psi, o_point=True):
 
                     if isinstance(surf, Curve):
@@ -1038,13 +1045,13 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
                         logger.warning(f"Found an island at psi={psi} pos={surf}")
 
             except Exception as error:
-                logger.error(f"Plot boundary failed! {error}")
+                raise RuntimeError(f"Plot boundary failed! ") from error
             else:
                 kwargs["boundary"] = False
 
         if kwargs.get("separatrix", True):
             try:
-                
+
                 for psi, surf in self.coordinate_system.find_surface(self.boundary_separatrix.psi, o_point=False):
 
                     if isinstance(surf, Curve):
