@@ -15,7 +15,7 @@ from fytok._imas.lastest.equilibrium import (
     _T_equilibrium_profiles_1d_rz1d_dynamic_aos)
 from fytok._imas.lastest.utilities import _T_identifier_dynamic_aos3
 from fytok.modules.Equilibrium import Equilibrium
-from fytok.modules.Utilities import RZTuple, RZTuple1D, RZTuple_
+from fytok.modules.Utilities import RZTuple, CurveRZ, RZTuple_
 from scipy import constants
 from spdm.data.Dict import Dict
 from spdm.data.Field import Field
@@ -921,8 +921,8 @@ class EquilibriumBoundary(Equilibrium.TimeSlice.Boundary):
     @property
     def _coord(self) -> EquilibriumCoordinateSystem: return self._parent.coordinate_system
 
-    @sp_property[RZTuple1D]
-    def outline(self) -> RZTuple1D:
+    @sp_property[CurveRZ]
+    def outline(self) -> CurveRZ:
         _, surf = next(self._coord.find_surface(self.psi, o_point=True))
         R, Z = surf.points
         return {"r": R, "z": Z}
@@ -985,7 +985,7 @@ class EquilibriumBoundarySeparatrix(Equilibrium.TimeSlice.BoundarySeparatrix):
     def _coord(self) -> Equilibrium.TimeSlice.CoordinateSystem: return self._parent.coordinate_system
 
     @sp_property
-    def outline(self) -> RZTuple1D:
+    def outline(self) -> CurveRZ:
         """RZ outline of the plasma boundary  """
         _, surf = next(self._coord.find_surface(self.psi, o_point=None))
         points = surf.xyz()
@@ -1045,7 +1045,7 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
                         logger.warning(f"Found an island at psi={psi} pos={surf}")
 
             except Exception as error:
-                logger.error(f"Plot boundary failed! ") 
+                logger.error(f"Plot boundary failed! ")
             else:
                 kwargs["boundary"] = False
 

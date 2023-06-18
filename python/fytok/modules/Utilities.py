@@ -15,6 +15,7 @@ from spdm.data.sp_property import SpDict, sp_property
 from spdm.utils.logger import logger
 from spdm.utils.tags import _not_found_
 from spdm.utils.typing import array_type
+from spdm.geometry.CubicSplineCurve import CubicSplineCurve
 
 _T = typing.TypeVar("_T")
 
@@ -24,6 +25,29 @@ RZTuple = _T_rz0d_dynamic_aos
 #     r = sp_property(type="dynamic", units="m", ndims=1, data_type=float)
 #     z = sp_property(type="dynamic", units="m", ndims=1, data_type=float)
 # CoreRadialGrid = _T_core_radial_grid
+
+
+class CurveRZ(SpDict, CubicSplineCurve):
+
+    def __init__(self, *args, **kwargs) -> None:
+        if len(args) == 1 and not isinstance(args[0], array_type):
+            d = args[0]
+            args = ()
+        else:
+            d = None
+
+        super().__init__(d, **kwargs)
+
+        if len(args) == 0:
+            args = [np.vstack([super().get("r"), super().get("z")])]
+
+        CubicSplineCurve.__init__(self, *args)
+
+    @sp_property
+    def r(self) -> array_type: return self.points[0]
+
+    @sp_property
+    def z(self) -> array_type: return self.points[1]
 
 
 @dataclass

@@ -11,6 +11,7 @@ from spdm.data.open_entry import open_entry
 from spdm.data.sp_property import SpDict, sp_property
 from spdm.utils.logger import logger
 from spdm.utils.misc import group_dict_by_prefix
+from spdm.views.View import display
 
 from ._imas.lastest import __version__ as imas_version
 # ---------------------------------
@@ -207,6 +208,17 @@ class Tokamak(SpDict):
         # axis.legend()
 
         return axis
+
+    def display(self, *args, **kwargs):
+        return display([(self.wall, kwargs.pop("wall", {})),
+                        (self.pf_active, kwargs.pop("pf_active", {})),
+                        (self.magnetics, kwargs.pop("magnetics", {})),
+                        (self.equilibrium, kwargs.pop("equilibrium", {})),
+                        ], *args,
+                       xlabel=kwargs.pop("xlabel", r"Major radius $R$ [m]"),
+                       ylabel=kwargs.pop("ylabel", r"Height $Z$ [m]"),
+                       title=kwargs.pop("title", f"{self.name} time={self.time}s"),
+                       **kwargs)
 
     # def initialize(self):
     #     r"""
