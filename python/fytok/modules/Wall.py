@@ -1,30 +1,28 @@
 import collections
+import typing
 
 import matplotlib.pyplot as plt
 import numpy as np
 from fytok._imas.lastest.wall import _T_wall, _T_wall_2d
-from spdm.data.List import List, AoS
-from spdm.data.sp_property import sp_property, SpDict
+from spdm.data.List import AoS, List
+from spdm.data.sp_property import SpDict, sp_property
+from spdm.geometry.GeoObject import GeoObject
+from spdm.geometry.Polygon import Polygon
 from spdm.utils.logger import logger
-from sympy import Point, Polygon
 
 
 class Wall2D(_T_wall_2d):
 
-    def limiter_polygon(self):
-        limiter_points = np.array([self.limiter.unit[0].outline.r,
-                                   self.limiter.unit[0].outline.z]).transpose([1, 0])
+    def __geometry__(self) -> GeoObject | typing.List[GeoObject]:
 
-        return Polygon(*map(Point, limiter_points))
+        return {"limiter": Polygon(self.limiter.unit[0].outline.r,
+                                   self.limiter.unit[0].outline.z),
 
-    def vessel_polygon(self):
-        vessel_inner_points = np.array([self.vessel.unit[0].annular.outline_inner.r,
-                                        self.vessel.unit[0].annular.outline_inner.z]).transpose([1, 0])
+                "vessel_inner": Polygon(self.vessel.unit[0].annular.outline_inner.r,
+                                        self.vessel.unit[0].annular.outline_inner.z),
 
-        vessel_outer_points = np.array([self.vessel.unit[0].annular.outline_outer.r,
-                                        self.vessel.unit[0].annular.outline_outer.z]).transpose([1, 0])
-
-        return Polygon(*map(Point, vessel_inner_points)), Polygon(*map(Point, vessel_outer_points))
+                "vessel_outer": Polygon(self.vessel.unit[0].annular.outline_outer.r,
+                                        self.vessel.unit[0].annular.outline_outer.z)}
 
 
 class Wall(_T_wall):
@@ -39,7 +37,6 @@ class Wall(_T_wall):
         desc2d = self.description_2d[0]
 
         # outline = desc2d.vessel.unit[0].annular.outline_inner
-
 
         vessel_inner_points = np.array([desc2d.vessel.unit[0].annular.outline_inner.r,
                                         desc2d.vessel.unit[0].annular.outline_inner.z]).transpose([1, 0])
@@ -62,3 +59,7 @@ class Wall(_T_wall):
                                                                                {"fill": False, "closed": True})))
 
         return axis
+
+    def __geometry__(self) -> GeoObject | typing.List[GeoObject]:
+
+        return {"description_2d": self.description_2d[0].__geometry__()}

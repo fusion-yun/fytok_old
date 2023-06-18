@@ -26,7 +26,7 @@ from spdm.data.Node import Node
 from spdm.data.Function import Function
 from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
-from spdm.geometry.CubicSplineCurve import CubicSplineCurve
+from spdm.geometry.Curve import Curve
 from spdm.geometry.GeoObject import GeoObject, GeoObjectSet
 from spdm.geometry.Point import Point
 from spdm.geometry.Curve import Curve
@@ -423,7 +423,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
                 # elif surf.shape[0] == 1:
                 #     yield level, Point(surf[0][0], surf[0][1])
                 # else:
-                #     yield level, CubicSplineCurve(surf, theta, is_closed=is_closed)
+                #     yield level, Curve(surf, theta, is_closed=is_closed)
 
     def find_surface_by_psi_norm(self, psi_norm: float | ArrayType | typing.Sequence[float], *args,   **kwargs) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
 
