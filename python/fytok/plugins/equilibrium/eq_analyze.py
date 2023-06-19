@@ -188,7 +188,8 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
             raise RuntimeError(f"Can not find o-point!")
         else:
 
-            xmin, xmax = self._psirz.mesh.geometry.bbox
+            xmin = self._psirz.mesh.geometry.bbox.origin
+            xmax = xmin+self._psirz.mesh.geometry.bbox.dimensions
             Rmid = (xmin[0] + xmax[0])/2.0
             Zmid = (xmin[1] + xmax[1])/2.0
 
@@ -1022,63 +1023,40 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
 
     coordinate_system: EquilibriumCoordinateSystem = sp_property()
 
-    def plot(self, axis=None, *args,  **kwargs):
+    @property
+    def __geometry__(self) -> GeoObject:
         """
             plot o-point,x-point,lcfs,separatrix and contour of psi
         """
+        geo = {}
 
-        import matplotlib.pyplot as plt
+        try:
+            o_points, x_points = self.coordinate_system.critical_points
 
-        if axis is None:
-            axis = plt.gca()
+            geo["o_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(o_points)]
+            geo["x_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(x_points)]
 
-        if kwargs.get("boundary", True):
-            try:
-                for psi, surf in self.coordinate_system.find_surface(self.boundary.psi, o_point=True):
+        except Exception as error:
+            logger.error(f"Can not get o-point/x-point! {error}")
+        
+        try:
+            boundary = [surf for _, surf in
+                        self.coordinate_system.find_surface(self.boundary.psi, o_point=True)]
+        except Exception as error:
+            raise RuntimeError(f"Plot boundary failed!") from error
+        else:
+            geo["boundary"] = boundary
 
-                    if isinstance(surf, Curve):
-                        axis.add_patch(plt.Polygon(surf.coordinates(), color='r', linestyle='solid',
-                                                   linewidth=0.5, fill=False, closed=surf.is_closed))
-                    elif isinstance(surf, Point):
-                        axis.plot(surf.coordinates(), 'r.', markersize=1)
-                    else:
-                        logger.warning(f"Found an island at psi={psi} pos={surf}")
+        try:
+            separatrix = [surf for _, surf in
+                          self.coordinate_system.find_surface(self.boundary_separatrix.psi, o_point=False)]
+        except Exception as error:
+            raise RuntimeError(f"Plot separatrix failed!") from error
+        else:
+            geo["boundary_separatrix"] = separatrix
 
-            except Exception as error:
-                logger.error(f"Plot boundary failed! ")
-            else:
-                kwargs["boundary"] = False
-
-        if kwargs.get("separatrix", True):
-            try:
-
-                for psi, surf in self.coordinate_system.find_surface(self.boundary_separatrix.psi, o_point=False):
-
-                    if isinstance(surf, Curve):
-                        axis.add_patch(plt.Polygon(surf.coordinates(), color='r', linestyle='dashed',
-                                                   linewidth=0.5, fill=False, closed=surf.is_closed))
-                    elif isinstance(surf, Point):
-                        axis.plot(surf.coordinates(), 'r.', markersize=1)
-                    else:
-                        logger.warning(f"Found an island at psi={psi} pos={surf}")
-
-            except Exception as error:
-                logger.error(f"Plot separatrix failed! {error}")
-            else:
-                kwargs["separatrix"] = False
-
-        # if kwargs.pop("contours", True):
-        #     if contours is True:
-        #         contours = 16
-        #     profiles_2d = self.profiles_2d[0]
-
-        #     try:
-        #         axis.contour(profiles_2d.r.__array__(),
-        #                      profiles_2d.z.__array__(),
-        #                      profiles_2d.psi.__array__(), linewidths=0.5, levels=contours)
-        #     except Exception as error:
-        #         logger.error(f"Plot contour of psi failed! {error}")
-        return super().plot(axis, *args, **kwargs)
+        geo["psi"] = self.profiles_2d[0].psi
+        return geo
 
 
 @Equilibrium.register(["eq_analyze"])

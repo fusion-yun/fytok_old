@@ -7,7 +7,7 @@ from spdm.utils.logger import logger
 
 
 class PFActive(_T_pf_active):
-
+    @property
     def __geometry__(self) -> GeoObject | typing.Container[GeoObject]:
         geo_coils = []
         for coil in self.coil:
@@ -16,4 +16,4 @@ class PFActive(_T_pf_active):
                              rect.height / 2.0,   rect.width,  rect.height,
                              name=coil.name))
 
-        return {"coils": geo_coils}
+        return {"coil": geo_coils}

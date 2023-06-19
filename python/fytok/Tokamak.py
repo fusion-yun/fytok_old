@@ -4,7 +4,6 @@ import typing
 from copy import copy, deepcopy
 
 import numpy as np
-from spdm.data.Container import Container
 from spdm.data.open_entry import open_entry
 from spdm.data.sp_property import SpDict, sp_property
 from spdm.geometry.GeoObject import GeoObject
@@ -180,18 +179,30 @@ class Tokamak(SpDict):
 
         return core_profiles_1d_iter
 
-    def __geometry__(self) -> GeoObject | Container[GeoObject]:
-        return {
-            "wall": self.wall.__geometry__(),
-            "pf_active": self.pf_active.__geometry__(),
-            "magnetics": self.magnetics.__geometry__(),
-            "equilibrium": self.equilibrium.__geometry__(),
-            "$metadata": {
-                "xlabel":   r"Major radius $R$ [m]",
-                "ylabel":   r"Height $Z$ [m]",
-                "title":    f"{self.name} time={self.time}s",
-            }
+    @property
+    def __geometry__(self) -> GeoObject:
+        geo = {
+            "wall": self.wall.__geometry__,
+            # "pf_active": self.pf_active.__geometry__,
+            # "magnetics": self.magnetics.__geometry__,
+            "equilibrium": self.equilibrium.__geometry__,
         }
+
+        styles = {"$matplotlib": {
+            "wall": {
+                "limiter": {"edgecolor": "green"},
+                "vessel": {"edgecolor": "blue"}
+            },
+            "pf_active": {"coil": {"color": 'black'}},
+            "equilibrium": {
+                "o_points": {"c": 'red', 'marker': '.'},
+                "x_points": {"c": 'blue', 'marker': 'x'},
+
+                "boundary": {"color": 'red', 'linewidth': 0.5},
+                "boundary_separatrix":  {"color": 'red', "linestyle": 'dashed', },
+            }
+        }}
+        return geo, styles
 
     # def plot(self, axis=None, /,  **kwargs):
 

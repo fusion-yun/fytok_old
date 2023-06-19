@@ -9,7 +9,7 @@ import typing
 class Magnetics(_T_magnetics):
     """Magnetic diagnostics for equilibrium identification and plasma shape control.
     """
-
+    @property
     def __geometry__(self) -> GeoObject | typing.Container[GeoObject]:
         return {
             "b_field_tor_probe": [Point(p.position[0].r,  p.position[0].z, name=p.name) for p in self.b_field_tor_probe],

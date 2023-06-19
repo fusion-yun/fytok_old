@@ -43,6 +43,7 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
     BoundarySeparatrix = _T_equilibrium_boundary_separatrix
     Constraints = _T_equilibrium_constraints
 
+    @property
     def __geometry__(self) -> GeoObject | typing.Container[GeoObject]:
 
         geo = {}
@@ -255,8 +256,9 @@ class Equilibrium(_T_equilibrium):
         super().advance(time=time)
         return super().update(*args, **kwargs)
 
+    @property
     def __geometry__(self) -> GeoObject | typing.Container[GeoObject]:
-        return self.time_slice.current.__geometry__()
+        return self.time_slice.current.__geometry__
     
     # def plot(self, axis,  *args, time_slice=-1,  **kwargs):
     #     if len(self.time_slice) == 0 or time_slice >= len(self.time_slice):

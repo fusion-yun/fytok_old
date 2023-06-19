@@ -8,7 +8,7 @@ from spdm.utils.logger import logger
 
 
 class Wall(_T_wall):
-
+    @property
     def __geometry__(self) -> GeoObject | typing.List[GeoObject]:
         desc = self.description_2d[0]  # 0 for equilibrium codes
         return {

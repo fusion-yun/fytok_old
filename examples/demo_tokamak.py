@@ -2,13 +2,13 @@ import os
 import pathlib
 
 import numpy as np
+import scipy.constants
 from fytok.Tokamak import Tokamak
 from fytok.utils.load_scenario import load_scenario
-from fytok.utils.plot_profiles import plot_profiles, sp_figure
-from scipy import constants
 from spdm.data.Expression import Variable
 from spdm.data.File import File
 from spdm.utils.logger import logger
+from spdm.views.View import display
 
 if __name__ == "__main__":
 
@@ -49,15 +49,27 @@ if __name__ == "__main__":
                   )
 
     if True:
-        sp_figure(tok,
-                  wall={"limiter": {"edgecolor": "green"},
-                        "vessel": {"edgecolor": "blue"}},
-                  pf_active={"color": 'red'},
-                  equilibrium={  # "contours": [0, 2],
-                      #   "boundary": True,
-                      #   "separatrix": True,
-                  }
-                  ) .savefig(output_path/"tokamak_prev.svg", transparent=True)
+        display(tok,
+                # styles={
+                #     "wall": {
+                #         "limiter": {"edgecolor": "green"},
+                #         "vessel": {"edgecolor": "blue"}
+                #     },
+                #     "pf_active": {"coil": {"color": 'black'}},
+                #     "equilibrium": {
+                #         "o_points": {"c": 'red', 'marker': '.'},
+                #         "x_points": {"c": 'blue', 'marker': 'x'},
+
+                #         "boundary": {"color": 'red', 'linewidth': 0.5},
+                #         "boundary_separatrix": False  # {"color": 'red',"linestyle": 'dashed', },
+                #     }
+                # },
+                xlabel=r"Major radius $R$ [m]",
+                ylabel=r"Height $Z$ [m]",
+                title=f"{tok.name} time={tok.time}s",
+                output=output_path/"tokamak_prev.svg",
+
+                )
 
     # psirz = tok.equilibrium.time_slice.current.profiles_2d[0].psi.__array__()
 
@@ -67,7 +79,7 @@ if __name__ == "__main__":
 
     # logger.debug(pprime)
 
-    if True:
+    if False:
         tok.equilibrium.update(
             wall=tok.wall, pf_active=tok.pf_active,
             core_profiles_1d=tok.core_profiles.profiles_1d.current,
@@ -76,17 +88,13 @@ if __name__ == "__main__":
             lcfs=True,
             tolerance=1.0e-2,)
 
-    if True:
-        sp_figure(tok,
-                  wall={"limiter": {"edgecolor": "green"},
-                        "vessel": {"edgecolor": "blue"}},
-                  pf_active={"color": 'red'},
-                  equilibrium={  # "contours": [0, 2],
-                      #   "oxpoints":False,
-                      "boundary": True,
-                      "separatrix": True,
-                  }
-                  ) .savefig(output_path/"tokamak_post.svg", transparent=True)
+    if False:
+        display(tok,
+                styles={"wall": {"limiter": {"edgecolor": "green"}, "vessel": {"edgecolor": "blue"}},
+                        "pf_active": {"color": 'red'},
+                        "equilibrium": {"boundary": True, "separatrix": True, }},
+                output=output_path/"tokamak_post.svg",
+                transparent=True)
 
     if False:
         core_profile_1d = tok.core_profiles.profiles_1d.current
