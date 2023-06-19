@@ -183,8 +183,8 @@ class Tokamak(SpDict):
     def __geometry__(self) -> GeoObject:
         geo = {
             "wall": self.wall.__geometry__,
-            # "pf_active": self.pf_active.__geometry__,
-            # "magnetics": self.magnetics.__geometry__,
+            "pf_active": self.pf_active.__geometry__,
+            "magnetics": self.magnetics.__geometry__,
             "equilibrium": self.equilibrium.__geometry__,
         }
 
@@ -199,7 +199,7 @@ class Tokamak(SpDict):
                 "x_points": {"c": 'blue', 'marker': 'x'},
 
                 "boundary": {"color": 'red', 'linewidth': 0.5},
-                "boundary_separatrix":  {"color": 'red', "linestyle": 'dashed', },
+                "boundary_separatrix": {"color": 'red', "linestyle": 'dashed', 'linewidth': 0.25},
             }
         }}
         return geo, styles

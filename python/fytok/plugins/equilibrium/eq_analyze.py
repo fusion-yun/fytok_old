@@ -188,10 +188,13 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
             raise RuntimeError(f"Can not find o-point!")
         else:
 
-            xmin = self._psirz.mesh.geometry.bbox.origin
-            xmax = xmin+self._psirz.mesh.geometry.bbox.dimensions
-            Rmid = (xmin[0] + xmax[0])/2.0
-            Zmid = (xmin[1] + xmax[1])/2.0
+            # xmin = self._psirz.mesh.geometry.bbox.origin
+            # xmax = xmin+self._psirz.mesh.geometry.bbox.dimensions
+
+            Rmid, Zmid = self._psirz.mesh.geometry.bbox.origin + \
+                self._psirz.mesh.geometry.bbox.dimensions*0.5
+            # Rmid = (xmin[0] + xmax[0])/2.0
+            # Zmid = (xmin[1] + xmax[1])/2.0
 
             opoints.sort(key=lambda x: (x.r - Rmid)**2 + (x.z - Zmid)**2)
 
@@ -310,6 +313,8 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
                 if surf is None:
                     continue
                 else:
+                    if isinstance(surf, GeoObject):
+                        surf.set_coordinates("r", "z")
                     yield level, surf
 
         else:
@@ -357,7 +362,8 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
                         theta_0 = np.arctan2(x_point.r-o_point.r, x_point.z-o_point.z)
                         theta = ((np.arctan2(_R-o_point.r, _Z-o_point.z)-theta_0)+TWOPI) % TWOPI
                         surf = surf.remesh(theta)
-                    yield level, surf
+                        surf.set_coordinates("r", "z")
+                        yield level, surf
                 else:
                     continue
 
@@ -922,11 +928,11 @@ class EquilibriumBoundary(Equilibrium.TimeSlice.Boundary):
     @property
     def _coord(self) -> EquilibriumCoordinateSystem: return self._parent.coordinate_system
 
-    @sp_property[CurveRZ]
-    def outline(self) -> CurveRZ:
+    @sp_property[Curve](coordinates="r z")
+    def outline(self) -> Curve:
         _, surf = next(self._coord.find_surface(self.psi, o_point=True))
-        R, Z = surf.points
-        return {"r": R, "z": Z}
+        
+        return surf
 
     psi_norm: float = sp_property(default_value=0.999)
 
@@ -1038,7 +1044,7 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
 
         except Exception as error:
             logger.error(f"Can not get o-point/x-point! {error}")
-        
+
         try:
             boundary = [surf for _, surf in
                         self.coordinate_system.find_surface(self.boundary.psi, o_point=True)]

@@ -48,6 +48,8 @@ if __name__ == "__main__":
                           }}}
                   )
 
+    # logger.debug(tok.equilibrium.time_slice.current.boundary.outline.r)
+
     if True:
         display(tok,
                 # styles={
