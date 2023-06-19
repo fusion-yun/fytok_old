@@ -1,30 +1,17 @@
 
-import matplotlib.pyplot as plt
-from  fytok._imas.lastest.magnetics import _T_magnetics
-
+from fytok._imas.lastest.magnetics import _T_magnetics
+from spdm.geometry.GeoObject import GeoObject
+from spdm.geometry.Point import Point
+from spdm.utils.logger import logger
+import typing
 
 
 class Magnetics(_T_magnetics):
     """Magnetic diagnostics for equilibrium identification and plasma shape control.
     """
 
-    def plot(self, axis=None, *args, with_circuit=False, **kwargs):
-
-        if axis is None:
-            axis = plt.gca()
-        for idx, p_probe in enumerate(self.b_field_tor_probe):
-            pos = p_probe.position
-
-            axis.add_patch(plt.Circle((pos.r, pos.z), 0.01))
-            axis.text(pos.r, pos.z, idx,
-                      horizontalalignment='center',
-                      verticalalignment='center',
-                      fontsize='xx-small')
-
-        for p in self.flux_loop:
-            axis.add_patch(plt.Rectangle((p.position[0].r,  p.position[0].z), 0.01, 0.01))
-            axis.text(p.position[0].r, p.position[0].z, p.name,
-                      horizontalalignment='center',
-                      verticalalignment='center',
-                      fontsize='xx-small')
-        return axis
+    def __geometry__(self) -> GeoObject | typing.Container[GeoObject]:
+        return {
+            "b_field_tor_probe": [Point(p.position[0].r,  p.position[0].z, name=p.name) for p in self.b_field_tor_probe],
+            "flux_loop": [Point(p.position[0].r,  p.position[0].z, name=p.name) for p in self.flux_loop]
+        }

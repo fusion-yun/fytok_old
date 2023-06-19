@@ -1,27 +1,19 @@
+import typing
+from fytok._imas.lastest.pf_active import _T_pf_active
 
-import collections
-
-import matplotlib.pyplot as plt
-from  fytok._imas.lastest.pf_active import _T_pf_active
-
+from spdm.geometry.GeoObject import GeoObject
+from spdm.geometry.Polygon import Rectangle
+from spdm.utils.logger import logger
 
 
 class PFActive(_T_pf_active):
 
-    def plot(self, axis=None, *args, with_circuit=False, **kwargs):
-
-        if axis is None:
-            axis = plt.gca()
-
+    def __geometry__(self) -> GeoObject | typing.Container[GeoObject]:
+        geo_coils = []
         for coil in self.coil:
             rect = coil.element[0].geometry.rectangle
+            geo_coils.append(Rectangle(rect.r - rect.width / 2.0,  rect.z -
+                             rect.height / 2.0,   rect.width,  rect.height,
+                             name=coil.name))
 
-            axis.add_patch(plt.Rectangle((rect.r - rect.width / 2.0,  rect.z - rect.height / 2.0),
-                                         rect.width,  rect.height,
-                                         **collections.ChainMap(kwargs,  {"fill": False})))
-            axis.text(rect.r, rect.z, coil.name,
-                      horizontalalignment='center',
-                      verticalalignment='center',
-                      fontsize='xx-small')
-
-        return axis
+        return {"coils": geo_coils}

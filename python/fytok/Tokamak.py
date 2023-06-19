@@ -4,11 +4,10 @@ import typing
 from copy import copy, deepcopy
 
 import numpy as np
-from spdm.data.Dict import Dict
-from spdm.data.File import File
-from spdm.data.Node import Node
+from spdm.data.Container import Container
 from spdm.data.open_entry import open_entry
 from spdm.data.sp_property import SpDict, sp_property
+from spdm.geometry.GeoObject import GeoObject
 from spdm.utils.logger import logger
 from spdm.utils.misc import group_dict_by_prefix
 from spdm.views.View import display
@@ -181,44 +180,57 @@ class Tokamak(SpDict):
 
         return core_profiles_1d_iter
 
-    def plot(self, axis=None, /,  **kwargs):
+    def __geometry__(self) -> GeoObject | Container[GeoObject]:
+        return {
+            "wall": self.wall.__geometry__(),
+            "pf_active": self.pf_active.__geometry__(),
+            "magnetics": self.magnetics.__geometry__(),
+            "equilibrium": self.equilibrium.__geometry__(),
+            "$metadata": {
+                "xlabel":   r"Major radius $R$ [m]",
+                "ylabel":   r"Height $Z$ [m]",
+                "title":    f"{self.name} time={self.time}s",
+            }
+        }
 
-        import matplotlib.pylab as plt
+    # def plot(self, axis=None, /,  **kwargs):
 
-        if axis is None:
-            axis = plt.gca()
+    #     import matplotlib.pylab as plt
 
-        if kwargs.get("wall", True) is not False:
-            self.wall.plot(axis, **kwargs.get("wall", {}))
+    #     if axis is None:
+    #         axis = plt.gca()
 
-        if kwargs.get("pf_active", True) is not False:
-            self.pf_active.plot(axis, **kwargs.get("pf_active", {}))
+    #     if kwargs.get("wall", True) is not False:
+    #         self.wall.plot(axis, **kwargs.get("wall", {}))
 
-        if kwargs.get("magnetics", True) is not False:
-            self.magnetics.plot(axis,  **kwargs.get("magnetics", {}))
+    #     if kwargs.get("pf_active", True) is not False:
+    #         self.pf_active.plot(axis, **kwargs.get("pf_active", {}))
 
-        if kwargs.get("equilibrium", True) is not False:
-            self.equilibrium.plot(axis,  **kwargs.get("equilibrium", {}))
+    #     if kwargs.get("magnetics", True) is not False:
+    #         self.magnetics.plot(axis,  **kwargs.get("magnetics", {}))
 
-        axis.set_aspect('equal')
-        axis.axis('scaled')
-        axis.set_xlabel(r"Major radius $R$ [m]")
-        axis.set_ylabel(r"Height $Z$ [m]")
+    #     if kwargs.get("equilibrium", True) is not False:
+    #         self.equilibrium.plot(axis,  **kwargs.get("equilibrium", {}))
 
-        # axis.legend()
+    #     axis.set_aspect('equal')
+    #     axis.axis('scaled')
+    #     axis.set_xlabel(r"Major radius $R$ [m]")
+    #     axis.set_ylabel(r"Height $Z$ [m]")
 
-        return axis
+    #     # axis.legend()
 
-    def display(self, *args, **kwargs):
-        return display([(self.wall, kwargs.pop("wall", {})),
-                        (self.pf_active, kwargs.pop("pf_active", {})),
-                        (self.magnetics, kwargs.pop("magnetics", {})),
-                        (self.equilibrium, kwargs.pop("equilibrium", {})),
-                        ], *args,
-                       xlabel=kwargs.pop("xlabel", r"Major radius $R$ [m]"),
-                       ylabel=kwargs.pop("ylabel", r"Height $Z$ [m]"),
-                       title=kwargs.pop("title", f"{self.name} time={self.time}s"),
-                       **kwargs)
+    #     return axis
+
+    # def display(self, *args, **kwargs):
+    #     return display([(self.wall, kwargs.pop("wall", {})),
+    #                     (self.pf_active, kwargs.pop("pf_active", {})),
+    #                     (self.magnetics, kwargs.pop("magnetics", {})),
+    #                     (self.equilibrium, kwargs.pop("equilibrium", {})),
+    #                     ], *args,
+    #                    xlabel=kwargs.pop("xlabel", r"Major radius $R$ [m]"),
+    #                    ylabel=kwargs.pop("ylabel", r"Height $Z$ [m]"),
+    #                    title=kwargs.pop("title", f"{self.name} time={self.time}s"),
+    #                    **kwargs)
 
     # def initialize(self):
     #     r"""
