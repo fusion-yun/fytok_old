@@ -37,7 +37,7 @@ if __name__ == "__main__":
                       "code": {
                           "name":  "freegs",
                           "parameters": {
-                              "boundary": "free",
+                              "boundary": "fixed",
                               "psi_norm": np.linspace(0, 1.0, 128)
                           }},
                       "$default_value": {
@@ -48,63 +48,39 @@ if __name__ == "__main__":
                           }}}
                   )
 
-    input_entry = open_entry("tokamak_prev.h5")  # tokamak
-
-    wall: Entry = input_entry.child("wall").child("limiter").child(
-        "unit").child(0).child("outline").child("r").put(np.linsapce(0, 1., 100))
-    wall: Entry = input_entry.child("wall/limiter/unit/0/outline/r").put(np.linsapce(0, 1., 100))
-
-    wall_: dict = input_entry.get("wall")
-    {
-        "limiter": {
-            "outline": {},
-        },
-        "vesel": {}
-    }
-    time_slice = 10
-    eq = entry.child(f"equilibrium/time_slice/{time_slice}")
-
-    plt.contour(eq.get("profiles_2d/0/psi"))
+    # logger.debug(tok.equilibrium.time_slice.current.profiles_1d.j_tor._repr_latex_())
 
     if True:
-        display(tok,
-                # styles={
-                #     "wall": {
-                #         "limiter": {"edgecolor": "green"},
-                #         "vessel": {"edgecolor": "blue"}
-                #     },
-                #     "pf_active": {"coil": {"color": 'black'}},
-                #     "equilibrium": {
-                #         "o_points": {"c": 'red', 'marker': '.'},
-                #         "x_points": {"c": 'blue', 'marker': 'x'},
-
-                #         "boundary": {"color": 'red', 'linewidth': 0.5},
-                #         "boundary_separatrix": False  # {"color": 'red',"linestyle": 'dashed', },
-                #     }
-                # },
-                title=f"{tok.name} time={tok.time}s",
-                output=output_path/"tokamak_prev.svg",
-
-                )
-
-    # psirz = tok.equilibrium.time_slice.current.profiles_2d[0].psi.__array__()
-
-    # psi2 = np.linspace(np.min(psirz), np.max(psirz), 100)
-
-    # pprime = tok.equilibrium.time_slice.current.profiles_1d.pprime(psi2)
-
-    # logger.debug(pprime)
+        display(tok, title=f"{tok.name} time={tok.time}s", output=output_path/"tokamak_prev.svg")
 
     if True:
+        # psirz = tok.equilibrium.time_slice.current.profiles_2d[0].psi.__array__()
+        # psi2 = np.linspace(np.min(psirz), np.max(psirz), 100)
+        # pprime = tok.equilibrium.time_slice.current.profiles_1d.pprime(psi2)
+        # logger.debug(pprime)
+
+        boundary_outline_r = tok.equilibrium.time_slice.current.boundary.outline.r
+        boundary_outline_z = tok.equilibrium.time_slice.current.boundary.outline.z
+        boundary_psi = np.full_like(boundary_outline_r, tok.equilibrium.time_slice.current.boundary.psi)
+        psivals = np.vstack([boundary_outline_r, boundary_outline_z, boundary_psi]).T
+
+        xpoints = [(x.r, x.z) for x in tok.equilibrium.time_slice.current.boundary.x_point]
+
         tok.equilibrium.update(
-            wall=tok.wall, pf_active=tok.pf_active,
+            # machine
+            wall=tok.wall, pf_active=tok.pf_active, magnetic=tok.magnetics,
+
+            # profiles
             core_profiles_1d=tok.core_profiles.profiles_1d.current,
-            # Ip=1.5e6, beta_p=0.6056,
-            # xpoints=True,
-            lcfs=True,
+            Ip=1.5e6, beta_p=0.6056,
+
+            # constrain
+            xpoints=xpoints,
+            psivals=psivals,
+
+            # options
             tolerance=1.0e-1,)
 
-    if True:
         display(tok,
                 styles={"wall": {"limiter": {"edgecolor": "green"}, "vessel": {"edgecolor": "blue"}},
                         "pf_active": {"color": 'red'},

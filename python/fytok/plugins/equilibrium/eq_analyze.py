@@ -1,45 +1,44 @@
 import collections
 import collections.abc
+import functools
 import typing
 from dataclasses import dataclass
 from enum import Enum
 from math import isclose
-import functools
-import scipy.constants
+
 import numpy as np
+import scipy.constants
 from fytok._imas.lastest.equilibrium import (
     _T_equilibrium_boundary, _T_equilibrium_boundary_separatrix,
     _T_equilibrium_coordinate_system, _T_equilibrium_global_quantities,
     _T_equilibrium_global_quantities_magnetic_axis, _T_equilibrium_profiles_1d,
-    _T_equilibrium_profiles_2d, _T_equilibrium_time_slice,
-    _T_equilibrium_profiles_1d_rz1d_dynamic_aos)
+    _T_equilibrium_profiles_1d_rz1d_dynamic_aos, _T_equilibrium_profiles_2d,
+    _T_equilibrium_time_slice)
 from fytok._imas.lastest.utilities import _T_identifier_dynamic_aos3
 from fytok.modules.Equilibrium import Equilibrium
-from fytok.modules.Utilities import RZTuple, CurveRZ, RZTuple_
-from scipy import constants
+from fytok.modules.Utilities import CurveRZ, RZTuple, RZTuple_
 from spdm.data.Dict import Dict
+from spdm.data.Expression import Expression, Variable
 from spdm.data.Field import Field
 from spdm.data.Function import Function, function_like
-from spdm.data.Expression import Expression,  Variable
-from spdm.data.List import List, AoS
+from spdm.data.List import AoS, List
 from spdm.data.Node import Node
-from spdm.data.Function import Function
 from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.geometry.Curve import Curve
 from spdm.geometry.GeoObject import GeoObject, GeoObjectSet
 from spdm.geometry.Point import Point
-from spdm.geometry.Curve import Curve
 from spdm.mesh.CurvilinearMesh import CurvilinearMesh
 from spdm.mesh.Mesh import Mesh
 from spdm.mesh.RectilinearMesh import RectilinearMesh
 from spdm.numlib.contours import find_countours
-from spdm.numlib.optimize import minimize_filter
 from spdm.numlib.interpolate import interpolate
+from spdm.numlib.optimize import minimize_filter
+from spdm.utils.constants import *
 from spdm.utils.logger import logger
 from spdm.utils.misc import convert_to_named_tuple
 from spdm.utils.tags import _not_found_
-from spdm.utils.typing import ArrayType, NumericType, scalar_type, ArrayLike
+from spdm.utils.typing import ArrayLike, ArrayType, NumericType, scalar_type
 
 _R = Variable(0, "R")
 _Z = Variable(1, "Z")
@@ -54,9 +53,6 @@ class OXPoint:
 
 TOLERANCE = 1.0e-6
 
-EPS = np.finfo(float).eps
-PI = constants.pi
-TWOPI = 2.0*PI
 
 
 
@@ -857,14 +853,12 @@ class EquilibriumProfiles1d(Equilibrium.TimeSlice.Profiles1d):
         return ((self._shape_property.Rmax+self._shape_property.Rmin)*0.5 - self._shape_property.Rzmin)/(self._shape_property.Rmax - self._shape_property.Rmin)*2
 
     @sp_property
-    def trapped_fraction(self, value) -> Function[float]:
+    def trapped_fraction(self) -> Function[float]:
         """Trapped particle fraction[-]
             Tokamak 3ed, 14.10
         """
-        if value is _not_found_:
-            epsilon = self.rho_tor/self._coord._R0
-            value = np.asarray(1.0 - (1-epsilon)**2/np.sqrt(1.0-epsilon**2)/(1+1.46*np.sqrt(epsilon)))
-        return value
+        epsilon = self.rho_tor/self._coord._R0
+        return 1.0 - (1-epsilon)**2/np.sqrt(1.0-epsilon**2)/(1+1.46*np.sqrt(epsilon))
 
 
 class EquilibriumProfiles2d(Equilibrium.TimeSlice.Profiles2d):
@@ -973,7 +967,7 @@ class EquilibriumBoundary(Equilibrium.TimeSlice.Boundary):
     @sp_property
     def triangularity_lower(self) -> float: return self._shape_property.triangularity_lower
 
-    @sp_property[List[OXPoint]]
+    @sp_property
     def x_point(self) -> List[OXPoint]:
         _, xpt = self._coord.critical_points
         return xpt
@@ -1093,7 +1087,6 @@ class FyEqAnalyze(Equilibrium):
     time_slice: TimeSeriesAoS[EquilibriumTimeSlice] = sp_property()
 
     def __init__(self, *args, **kwargs):
-        # kwargs.setdefault("code", {"name": "eq_analyze", "version": "0.0.1", "commit": "-dirty"})
         super().__init__(*args, ** kwargs)
 
 
