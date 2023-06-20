@@ -71,7 +71,13 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
 
         geo["psi"] = self.profiles_2d[0].psi
 
-        return geo
+        styles = {
+            "o_points":  {"$matplotlib": {"c": 'red', 'marker': '.'}},
+            "x_points":  {"$matplotlib": {"c": 'blue', 'marker': 'x'}},
+            "boundary":  {"$matplotlib": {"color": 'red', 'linewidth': 0.5}},
+            "boundary_separatrix":  {"$matplotlib": {"color": 'red', "linestyle": 'dashed', 'linewidth': 0.25}},
+        }
+        return geo, styles
 
 # def plot(self, axis=None, *args,
     #          scalar_field={},
@@ -256,10 +262,10 @@ class Equilibrium(_T_equilibrium):
         super().advance(time=time)
         return super().update(*args, **kwargs)
 
-    @property
+    @ property
     def __geometry__(self) -> GeoObject | typing.Container[GeoObject]:
         return self.time_slice.current.__geometry__
-    
+
     # def plot(self, axis,  *args, time_slice=-1,  **kwargs):
     #     if len(self.time_slice) == 0 or time_slice >= len(self.time_slice):
     #         logger.error(f"Time slice {time_slice} is out range {len(self.time_slice)} !")

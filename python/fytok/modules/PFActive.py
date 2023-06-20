@@ -16,4 +16,4 @@ class PFActive(_T_pf_active):
                              rect.height / 2.0,   rect.width,  rect.height,
                              name=coil.name))
 
-        return {"coil": geo_coils}
+        return {"coil": geo_coils}, {"coil": {"$matplotlib": {"color": 'black'}, "title": True}},

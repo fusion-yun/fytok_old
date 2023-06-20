@@ -188,21 +188,13 @@ class Tokamak(SpDict):
             "equilibrium": self.equilibrium.__geometry__,
         }
 
-        styles = {"$matplotlib": {
-            "wall": {
-                "limiter": {"edgecolor": "green"},
-                "vessel": {"edgecolor": "blue"}
-            },
-            "pf_active": {"coil": {"color": 'black'}},
-            "equilibrium": {
-                "o_points": {"c": 'red', 'marker': '.'},
-                "x_points": {"c": 'blue', 'marker': 'x'},
-
-                "boundary": {"color": 'red', 'linewidth': 0.5},
-                "boundary_separatrix": {"color": 'red', "linestyle": 'dashed', 'linewidth': 0.25},
-            }
-        }}
-        return geo, styles
+        # styles = {"$matplotlib": {
+        #     "pf_active": {"coil": {"color": 'black'}},
+        # }}
+        return geo, {
+            "xlabel": r"Major radius $R$ [m]",
+            "ylabel": r"Height $Z$ [m]",
+        }
 
     # def plot(self, axis=None, /,  **kwargs):
 

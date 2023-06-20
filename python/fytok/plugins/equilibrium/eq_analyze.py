@@ -931,7 +931,6 @@ class EquilibriumBoundary(Equilibrium.TimeSlice.Boundary):
     @sp_property[Curve](coordinates="r z")
     def outline(self) -> Curve:
         _, surf = next(self._coord.find_surface(self.psi, o_point=True))
-        
         return surf
 
     psi_norm: float = sp_property(default_value=0.999)
@@ -1062,7 +1061,14 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
             geo["boundary_separatrix"] = separatrix
 
         geo["psi"] = self.profiles_2d[0].psi
-        return geo
+
+        return geo, {
+            "o_points":  {"$matplotlib": {"c": 'red', 'marker': '.'}},
+            "x_points":  {"$matplotlib": {"c": 'blue', 'marker': 'x'}},
+            "boundary":  {"$matplotlib": {"color": 'red', 'linewidth': 0.5}},
+            "boundary_separatrix":  {"$matplotlib": {"color": 'red', "linestyle": 'dashed', 'linewidth': 0.25}},
+            "psi":  {"$matplotlib": {"levels": 20, "cmap": "jet"}},
+        }
 
 
 @Equilibrium.register(["eq_analyze"])

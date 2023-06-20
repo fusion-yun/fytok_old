@@ -48,7 +48,23 @@ if __name__ == "__main__":
                           }}}
                   )
 
-    # logger.debug(tok.equilibrium.time_slice.current.boundary.outline.r)
+    input_entry = open_entry("tokamak_prev.h5")  # tokamak
+
+    wall: Entry = input_entry.child("wall").child("limiter").child(
+        "unit").child(0).child("outline").child("r").put(np.linsapce(0, 1., 100))
+    wall: Entry = input_entry.child("wall/limiter/unit/0/outline/r").put(np.linsapce(0, 1., 100))
+
+    wall_: dict = input_entry.get("wall")
+    {
+        "limiter": {
+            "outline": {},
+        },
+        "vesel": {}
+    }
+    time_slice = 10
+    eq = entry.child(f"equilibrium/time_slice/{time_slice}")
+
+    plt.contour(eq.get("profiles_2d/0/psi"))
 
     if True:
         display(tok,
@@ -66,8 +82,6 @@ if __name__ == "__main__":
                 #         "boundary_separatrix": False  # {"color": 'red',"linestyle": 'dashed', },
                 #     }
                 # },
-                xlabel=r"Major radius $R$ [m]",
-                ylabel=r"Height $Z$ [m]",
                 title=f"{tok.name} time={tok.time}s",
                 output=output_path/"tokamak_prev.svg",
 
@@ -81,16 +95,16 @@ if __name__ == "__main__":
 
     # logger.debug(pprime)
 
-    if False:
+    if True:
         tok.equilibrium.update(
             wall=tok.wall, pf_active=tok.pf_active,
             core_profiles_1d=tok.core_profiles.profiles_1d.current,
             # Ip=1.5e6, beta_p=0.6056,
             # xpoints=True,
             lcfs=True,
-            tolerance=1.0e-2,)
+            tolerance=1.0e-1,)
 
-    if False:
+    if True:
         display(tok,
                 styles={"wall": {"limiter": {"edgecolor": "green"}, "vessel": {"edgecolor": "blue"}},
                         "pf_active": {"color": 'red'},
