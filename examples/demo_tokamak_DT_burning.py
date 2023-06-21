@@ -104,14 +104,12 @@ if __name__ == "__main__":
                           }}}
                   )
 
-    # logger.debug(tok.equilibrium.time_slice[0].coordinate_system)
-    # logger.debug(tok.equilibrium.time_slice[0].coordinate_system)
-
     if True:  # plot equilibrium
         display(tok, title=f"{tok.name} time={tok.time}s", output=output_path/"tokamak_prev.svg")
 
-    if True:  # plot tokamak geometric profile
-        eq_profiles_1d = tok.equilibrium.time_slice.current.profiles_1d
+    eq_profiles_1d = tok.equilibrium.time_slice.current.profiles_1d
+
+    if False:  # plot tokamak geometric profile
 
         eq_global_quantities = tok.equilibrium.time_slice.current.global_quantities
 
@@ -170,80 +168,73 @@ if __name__ == "__main__":
             output=output_path/"equilibrium_coord.svg",
             grid=True, fontsize=16)
 
-    if False:  # plot tokamak geometric profile
-        plot_profiles(
+    if True:  # plot tokamak geometric profile
+        display(
             [
 
-                [
-                    (function_like(profiles["q"].values, bs_psi), r"astra",  r"$q [-]$", bs_line_style),
-                    (eq_profiles_1d.q, r"fytok",  r"$q [-]$"),
+                ([
+                    (function_like(profiles["q"].values, bs_psi),   {"label": r"astra", **bs_line_style}),
+                    (eq_profiles_1d.q,                              {"label": r"fytok", }),
                     (eq_profiles_1d.dphi_dpsi*np.sign(B0)/constants.pi/2.0,
-                     r"$\frac{\sigma_{B_{p}}}{\left(2\pi\right)^{1-e_{B_{p}}}}\frac{d\Phi_{tor}}{d\psi_{ref}}$"),
-                ],
-                [
-                    (function_like(profiles["rho"].values, bs_psi), r"astra",  r"$\rho_{tor}[m]$",  bs_line_style),
-                    (eq_profiles_1d.rho_tor,  r"fytok",    r"$\rho_{tor}[m]$"),
-                ],
-                [
-                    (function_like(profiles["x"].values, bs_psi),           r"astra",
-                     r"$\frac{\rho_{tor}}{\rho_{tor,bdry}}$", bs_line_style),
-                    (eq_profiles_1d.rho_tor_norm,                        r"fytok"),
-                ],
+                     {"label": r"$\frac{\sigma_{B_{p}}}{\left(2\pi\right)^{1-e_{B_{p}}}}\frac{d\Phi_{tor}}{d\psi_{ref}}$"}),
+                ], {"y_label": r"$q [-]$"}),
+                ([
+                    (function_like(profiles["rho"].values, bs_psi), {"label": r"astra", **bs_line_style}),
+                    (eq_profiles_1d.rho_tor,                        {"label": r"fytok"}),
+                ], {"y_label": r"$\rho_{tor}[m]$", }),
+                ([
+                    (function_like(profiles["x"].values, bs_psi),   {"label": r"astra", **bs_line_style}),
+                    (eq_profiles_1d.rho_tor_norm,                   {"label": r"fytok"}),
+                ], {"y_label": r"$\frac{\rho_{tor}}{\rho_{tor,bdry}}$"}),
+
+                ([
+                    (function_like(profiles["shif"].values, bs_psi),    {"label": r"astra", ** bs_line_style}),
+                    (eq_profiles_1d.geometric_axis.r - R0,              {"label": r"fytok", }),
+                ], {"y_label": "$\Delta$ shafranov \n shift $[m]$ "}),
+
+                ([
+                    (function_like(profiles["k"].values, bs_psi),       {"label": r"astra", **bs_line_style}),
+                    (eq_profiles_1d.elongation,                         {"label": r"fytok", }),
+                ], {"y_label": r"$elongation[-]$", }),
+
+                ([
+                    (function_like(profiles["del"].values, bs_psi),     {"label": r"astra", **bs_line_style}),
+                    (eq_profiles_1d.triangularity,                      {"label": r"$\Delta[-]$          fytok"}),
+                    (eq_profiles_1d.triangularity_upper,                {"label": r"$\Delta_{upper}[-]$  fytok"}),
+                    (eq_profiles_1d.triangularity_lower,                {"label": r"$\Delta_{lower}[-]$  fytok"}),
+                ], {"y_label": r"$triangularity[-]$", }),
+                ([
+                    (4*(constants.pi**2) * R0*eq_profiles_1d.rho_tor,   {"label": r"$4\pi^2 R_0 \rho$", }),
+                    (eq_profiles_1d.dvolume_drho_tor,                   {"label": r"$V^{\prime}$", }),
+                ], {"y_label": r"$4\pi^2 R_0 \rho , dV/d\rho$"}),
 
                 [
-                    (function_like(profiles["shif"].values, bs_psi),
-                     r"astra", "$\Delta$ shafranov \n shift $[m]$ ", bs_line_style),
-                    (eq_profiles_1d.geometric_axis.r - R0,
-                     r"fytok", "shafranov \n shift $\Delta [m]$ "),
-                ],
-                [
-                    (function_like(profiles["k"].values, bs_psi), r"astra", r"$elongation[-]$", bs_line_style),
-                    (eq_profiles_1d.elongation,  r"fytok", r"$elongation[-]$"),
+                    (eq_profiles_1d.geometric_axis.r,                   {"label":   r"$geometric_{axis.r}$"}),
+                    (eq_profiles_1d.r_inboard,                          {"label":          r"$r_{inboard}$"}),
+                    (eq_profiles_1d.r_outboard,                         {"label":         r"$r_{outboard}$"}),
                 ],
 
-                [
-                    (function_like(profiles["del"].values, bs_psi), r"astra", r"$triangularity[-]$", bs_line_style),
-                    (eq_profiles_1d.triangularity, r"$\Delta[-]$",          r"fytok"),
-                    (eq_profiles_1d.triangularity_upper, r"$\Delta_{upper}[-]$",  r"fytok"),
-                    (eq_profiles_1d.triangularity_lower, r"$\Delta_{lower}[-]$",  r"fytok"),
+                ([
+                    (eq_profiles_1d.volume,                          {"label":   r"$V$",  **bs_line_style}),
+                    (eq_profiles_1d.dvolume_dpsi.antiderivative(),   {"label":   r"$\int \frac{dV}{d\psi}  d\psi$"}),
+                ], {"y_label": r"volume", }),
 
-
-                ],
-                [
-                    (4*(constants.pi**2) * R0*eq_profiles_1d.rho_tor,
-                     r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho , dV/d\rho$"),
-                    (eq_profiles_1d.dvolume_drho_tor, r"$V^{\prime}$", r"$dV/d\rho$"),
-                ],
-
-                [
-                    (eq_profiles_1d.geometric_axis.r,                                     r"$geometric_{axis.r}$"),
-                    (eq_profiles_1d.r_inboard,                                                   r"$r_{inboard}$"),
-                    (eq_profiles_1d.r_outboard,                                                 r"$r_{outboard}$"),
-                ],
-
-                [
-                    (eq_profiles_1d.volume,                r"$V$", r"volume", bs_line_style),
-                    (eq_profiles_1d.dvolume_dpsi.antiderivative(),                 r"$\int \frac{dV}{d\psi}  d\psi$"),
-                ],
-
-                # [
-                #     (function_like(profiles["Jtot"].values*1e6),   r"astra",
-                #      r"$j_{\parallel} [A\cdot m^{-2}]$", bs_line_style),
-                #     (eq_profile.j_parallel,                                 r"fytok",     r"$j_{\parallel}$"),
-                # ],
+                # ([
+                #     (function_like(profiles["Jtot"].values*1e6),   {"label": r"astra", ** bs_line_style}),
+                #     (eq_profiles_1d.j_parallel,                       {"label": r"fytok", }),
+                # ], {"y_label": r"$j_{\parallel} [A\cdot m^{-2}]$", })
 
                 # [
-                #     (eq.coordinate_system.surface_integrate2(lambda r, z:1.0/r**2), \
+                #     (eq.coordinate_system.surface_integrate2(lambda r, z:1.0/r**2),
                 #      r"$\left<\frac{1}{R^2}\right>$"),
-                #     (eq.coordinate_system.surface_integrate(1/eq.coordinate_system.r**2), \
+                #     (eq.coordinate_system.surface_integrate(1/eq.coordinate_system.r**2),
                 #      r"$\left<\frac{1}{R^2}\right>$"),
                 # ]
             ],
-            x_axis=(eq_profiles_1d.psi,      r"$\psi/\psi_{bdry}$"),
-            # x_axis=([0, 1.0],                                                r"$\psi/\psi_{bdry}$"),
-
+            x_axis=(eq_profiles_1d.psi,  {"x_label": r"$\psi/\psi_{bdry}$"}),
             title="Equilibrium Geometric Shape",
-            grid=True, fontsize=16) .savefig(output_path/"equilibrium_profiles.svg", transparent=True)
+            grid=True, fontsize=16, transparent=True,
+            output=output_path/"equilibrium_profiles.svg")
 
         logger.info("Solve Equilibrium ")
 

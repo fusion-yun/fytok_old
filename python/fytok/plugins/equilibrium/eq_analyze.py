@@ -434,7 +434,8 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
                 rzmin = r
                 rzmax = r
             else:
-                (rmin, zmin), (rmax, zmax) = s.bbox
+                (rmin, zmin) = s.bbox.origin
+                (rmax, zmax) = s.bbox.origin + s.bbox.dimensions
                 rzmin = r[np.argmin(z)]
                 rzmax = r[np.argmax(z)]
                 r_inboard = s.coordinates(0.5)[0]
@@ -447,7 +448,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
             psi = [psi]
 
         sbox = np.asarray([[p, *shape_box(s)] for p, s in self.find_surface(psi)], dtype=float)
-        logger.debug(sbox.shape)
+         
         if sbox.shape[0] == 1:
             psi, rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard = sbox[0]
         else:
@@ -465,7 +466,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
                 Function(rzmin,     psi,   name="rzmin"),
                 Function(rzmax,     psi,   name="rzmax"),
                 Function(r_inboard, psi,   name="r_inboard"),
-                Function(r_outboard, psi,   name="r_outboard"),
+                Function(r_outboard, psi,  name="r_outboard"),
             )
 
     #################################
