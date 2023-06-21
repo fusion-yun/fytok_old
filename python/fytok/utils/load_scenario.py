@@ -85,7 +85,7 @@ def load_core_profiles(d):
     }
 
 
-def load_core_transport(profiles, R0: float):
+def load_core_transport(profiles, R0: float, B0: float = None):
 
     bs_r_norm = profiles["x"].values
 
@@ -137,7 +137,7 @@ def load_core_transport(profiles, R0: float):
         ]}
 
 
-def load_core_source(profiles):
+def load_core_source(profiles, R0: float, B0: float = None):
     bs_r_norm = profiles["x"].values
 
     _x = Variable(0, name="rho_tor_norm")
@@ -226,7 +226,7 @@ def load_scenario_ITER(path):
 
         "source": [
             {"code": {"name": "dummy"},
-             "profiles_1d": [load_core_transport(d_core_profiles, vacuum_toroidal_field["r0"])]
+             "profiles_1d": [load_core_source(d_core_profiles, vacuum_toroidal_field["r0"])]
              }]
     }
 

@@ -7,6 +7,7 @@ from spdm.data.Entry import deep_reduce
 from spdm.data.List import AoS, List
 from spdm.data.sp_property import SpDict, sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
+from spdm.utils.typing import array_type
 
 from .._imas.lastest.core_sources import (_T_core_sources,
                                           _T_core_sources_source,
@@ -23,8 +24,11 @@ class CoreSourcesSource(_T_core_sources_source):
 
     GlobalQuantities = _T_core_sources_source_global
 
+    @property
+    def time(self) -> array_type: return self._parent.time
+
     profiles_1d: TimeSeriesAoS[Profiles1d] = sp_property()
-    
+
     global_quantities: TimeSeriesAoS[GlobalQuantities] = sp_property()
 
     def update(self, *args, **kwargs) -> Profiles1d:

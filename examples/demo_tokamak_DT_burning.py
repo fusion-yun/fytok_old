@@ -101,22 +101,24 @@ if __name__ == "__main__":
                               "boundary": {"psi_norm": 0.99},
                               "profiles_2d": {"grid": {"dim1": 256, "dim2": 128}},
                               "coordinate_system": {"grid": {"dim1": 128, "dim2": 128}}
-                          }}}
+                          }}},
+                  core_transport={
+                      **scenario["core_transport"], },
+                  core_sources={
+                      **scenario["core_sources"],
+                  }
                   )
 
-    if True:  # plot equilibrium
-        display(tok, title=f"{tok.name} time={tok.time}s", output=output_path/"tokamak_prev.svg")
-
     eq_profiles_1d = tok.equilibrium.time_slice.current.profiles_1d
+    eq_global_quantities = tok.equilibrium.time_slice.current.global_quantities
 
-    if False:  # plot tokamak geometric profile
+    if False:
+        display(  # plot equilibrium
+            tok,
+            title=f"{tok.name} time={tok.time}s",
+            output=output_path/"tokamak_prev.svg")
 
-        eq_global_quantities = tok.equilibrium.time_slice.current.global_quantities
-
-        # logger.debug(function_like(profiles["rho"].values, bs_psi)(eq_profiles_1d.psi))
-        # logger.debug(bs_psi)
-
-        display(
+        display(  # plot tokamak geometric profile
             [
                 ([
                     (bs_eq_fpol,  {"label": "astra", **bs_line_style}),
@@ -168,8 +170,7 @@ if __name__ == "__main__":
             output=output_path/"equilibrium_coord.svg",
             grid=True, fontsize=16)
 
-    if True:  # plot tokamak geometric profile
-        display(
+        display(  # plot tokamak geometric profile
             [
 
                 ([
@@ -238,36 +239,35 @@ if __name__ == "__main__":
 
         logger.info("Solve Equilibrium ")
 
-    if False:  # CoreProfile initialize value
+    core_profiles_1d = tok.core_profiles.profiles_1d.current
 
-        tok.core_profiles["profiles_1d"] = [load_core_profiles(profiles)]
+    if True:
+        logger.info("Initialize Core Profiles ")
 
-        core_profiles_1d = tok.core_profiles.profiles_1d.current
-
-        plot_profiles(
+        display(  # CoreProfile initialize value
             [
-                [
-                    (bs_psi_norm, "astra",      r"$\psi_{nrom}$", bs_line_style),
-                    (core_profiles_1d.grid.psi_norm,              r"fytok"),
-                ],
-                [
-                    (function_like(bs_q, bs_xq), "astra",      r"$q[-]$", bs_line_style),
-                ],
-                [
-                    (b_ne, "electron astra", r"density $n [m \cdot s^{-3}]$", bs_line_style),
-                    (b_ni, "D astra", r"density $n [m \cdot s^{-3}]$", bs_line_style),
-                    (b_nHe, "He astra", r"density $n [m \cdot s^{-3}]$", bs_line_style),
-                    (core_profiles_1d.electrons.density,    r"$electron$", ),
-                    *[(ion.density,  f"${ion.label}$") for ion in core_profiles_1d.ion if not ion.is_impurity],
-                    # *[(core_profiles_1d.ion[{"label": label}].density,  f"${label}$") for label in ['D', 'T', 'He']],
+                ([
+                    (bs_psi_norm,                       {"label": "astra",   **bs_line_style}),
+                    (core_profiles_1d.grid.psi_norm,    {"label":  r"fytok"}),
+                ], {"y_label": r"$\psi_{nrom}$"}),
+                ([
+                    (function_like(bs_q, bs_xq),        {"label":  "astra", **bs_line_style}),
+                ], {"y_label": r"$q[-]$"}),
+                ([
+                    (b_ne,                              {"label": "electron astra", **bs_line_style}),
+                    (b_ni,                              {"label": "D astra",  **bs_line_style}),
+                    (b_nHe,                             {"label": "He astra", **bs_line_style}),
+                    (core_profiles_1d.electrons.density, {"label": r"$electron$", }),
+                    *[(ion.density, {"label": f"${ion.label}$"})
+                      for ion in core_profiles_1d.ion if not ion.is_impurity],
+                ], {"y_label": r"Density $n [m \cdot s^{-3}]$"}),
 
-                ],
-                [
-                    (b_Te,    r"astra $T_e$",       r"$T [eV]$", bs_line_style),
-                    (b_Ti,    r"astra $T_i$",       r"$T [eV]$", bs_line_style),
-                    (core_profiles_1d.electrons.temperature,  r"$e$", r"T $[eV]$"),
+                ([
+                    (b_Te,    {"label":  r"astra $T_e$",      **bs_line_style}),
+                    (b_Ti,    {"label":  r"astra $T_i$",      **bs_line_style}),
+                    (core_profiles_1d.electrons.temperature, {"label":   r"$e$", }),
                     # *[(core_profiles_1d.ion[{"label": label}].temperature,   f"${label}$") for label in ['H', 'D', 'He']],
-                ],
+                ], {"y_label":  r"$T [eV]$", }),
 
                 # [
                 #     (function_like( profiles["Zeff"].values, bs_r_norm),       r"astra",
@@ -276,67 +276,53 @@ if __name__ == "__main__":
                 # ],
 
             ],
-            x_axis=(np.linspace(0, 1.0, bs_psi_norm.size), r"$\rho=\sqrt{\Phi/\Phi_{bdry}}$"),
-            grid=True, fontsize=10) .savefig(output_path/"core_profiles_initialize.svg", transparent=True)
+            x_axis=(np.linspace(0, 1.0, bs_psi_norm.size), {"label":  r"$\rho=\sqrt{\Phi/\Phi_{bdry}}$"}),
+            grid=True, fontsize=10,
+            output=output_path/"core_profiles_initialize.svg", transparent=True)
 
-        logger.info("Initialize Core Profiles ")
-
-    if False:
-        tok.equilibrium.update(
-            core_profiles_1d=core_profiles_1d,
-            pf_active=tok.pf_active,
-            wall=tok.wall,
-        )
-
-    if False:  # CoreTransport  initialize value
+    if True:
         logger.info("Initialize Core Transport ")
 
-        tok.core_transport["model"] = [
-            {"code": {"name": "dummy"}, "profiles_1d": [load_core_transport(profiles, R0)]},
-            {"code": {"name": "fast_alpha"}},
-            {"code": {"name": "spitzer"}},
-            # {"code": {"name": "neoclassical"}},
-            # {"code": {"name": "glf23"}},
-            # {"code": {"name": "nclass"}},
-        ]
+        # tok.core_transport.model.extend([
+        #     {"code": {"name": "fast_alpha"}},
+        #     {"code": {"name": "spitzer"}},
+        #     # {"code": {"name": "neoclassical"}},
+        #     # {"code": {"name": "glf23"}},
+        #     # {"code": {"name": "nclass"}},
+        # ])
 
         core_transport_model = tok.core_transport.model_combiner
 
-        core_transport_profiles_1d = core_transport_model.profiles_1d[time_slice]
+        core_transport_profiles_1d = tok.core_transport.model[0].profiles_1d.current
 
         # ele_energy = tok.core_transport.model[0].profiles_1d[0].electrons.energy
-
         # logger.debug([[sp.energy.d for sp in model.profiles_1d.ion] for model in tok.core_transport.model])
         # logger.debug(energy.d)
         # logger.debug(core_transport_profiles_1d.electrons.energy.d(np.linspace(0, 1.0, 128)))
         # nc_profiles_1d = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
         # fast_alpha_profiles_1d = tok.core_transport.model[{"code.name": "fast_alpha"}].profiles_1d
 
-        plot_profiles(
+        display(  # CoreTransport  initialize value
             [
 
-                [
-                    (function_like(profiles["He"].values, bs_r_norm),  "astra", r"$\chi_{e}$", bs_line_style),
+                ([
+                    (function_like(profiles["He"].values, bs_r_norm), {"label": "astra", **bs_line_style}),
+                    (core_transport_profiles_1d.electrons.energy.d,   {"label":  "fytok", }),
+                ], {"y_label": r"$\chi_{e}$", }),
 
-                    (core_transport_profiles_1d.electrons.energy.d,   "fytok", r"$\chi_{e}$"),
-                ],
-                [
+                ([
                     (function_like(profiles["Joh"].values*1.0e6 / profiles["U"].values * (2.0*constants.pi * R0), bs_r_norm),
-                     r"astra", r"$\sigma_{\parallel}$", bs_line_style),
+                     {"label": r"astra", **bs_line_style}),
+                    (core_transport_profiles_1d.conductivity_parallel,  {"label": r"fytok", }),
+                ], {"y_label": r"$\sigma_{\parallel}$", }),
 
-                    (core_transport_profiles_1d.conductivity_parallel,  r"fytok", r"$\sigma_{\parallel}$"),
-                ],
+                ([
+                    (function_like(profiles["Xi"].values, bs_r_norm), {"label": r"astra", **bs_line_style}),
+                    *[(ion.energy.d, {"label": f"{ion.label}", }) for ion in core_transport_profiles_1d.ion],
+                ], {"y_label": r"$\chi_{i}$", }),
 
-                [
-                    (function_like(profiles["Xi"].values, bs_r_norm), r"astra", r"$\chi_{i}$", bs_line_style),
-
-                    *[(ion.energy.d, f"{ion.label}", r"$\chi_{i}$")
-                      for ion in core_transport_profiles_1d.ion],
-                ],
                 # [(ion.particles.d_fast_factor, f"{ion.label}", r"$D_{\alpha}/D_{He}$")
                 #  for ion in fast_alpha_profiles_1d.ion],
-
-
                 # [
                 #     (function_like( np.log(profiles["XiNC"].values, bs_r_norm)),
                 #      "astra", r"$ln \chi_{i,nc}$", bs_line_style),
@@ -346,7 +332,6 @@ if __name__ == "__main__":
                 # [
                 #     (function_like(profiles["XiNC"].values, bs_r_norm), "astra",
                 #      "neoclassical  $\\chi_{NC}$ \n ion heat conductivity", bs_line_style),
-
                 #     # *[(ion.energy.d,  f"{ion.label}", r"Neoclassical $\chi_{NC}$")
                 #     #   for ion in nc_profiles_1d.ion if not ion.is_impurity],
                 # ],
@@ -354,51 +339,48 @@ if __name__ == "__main__":
                 #  for ion in nc_profiles_1d.ion if not ion.is_impurity],
 
             ],
-            x_axis=(np.linspace(0, 1.0, bs_psi_norm.size),   r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-            title="combine") .savefig(output_path/"core_transport.svg", transparent=True)
+            x_axis=(np.linspace(0, 1.0, bs_psi_norm.size),  {"x_label":   r"$\sqrt{\Phi/\Phi_{bdry}}$"}),
+            title="Transport", transparent=True,
+            output=output_path/"core_transport.svg")
 
-    if False:  # CoreSources
+    if True:  # CoreSources
         logger.info("Initialize Core Source  ")
 
-        tok.core_sources["source"] = [
-            {"code": {"name": "dummy"}, "profiles_1d": [load_core_source(profiles)]},
-            {"code": {"name": "bootstrap_current"}},
-            {"code": {"name": "fusion_reaction"}},
-        ]
+        # tok.core_sources.source.extend([
+        #     {"code": {"name": "bootstrap_current"}},
+        #     {"code": {"name": "fusion_reaction"}},
+        # ])
 
         # tok.core_sources.refresh(equilibrium=tok.equilibrium,
         #                          core_profiles=tok.core_profiles)
 
-        core_source_profiles_1d = tok.core_sources.source_combiner.profiles_1d[time_slice]
+        core_source_profiles_1d = tok.core_sources.source[0].profiles_1d[time_slice]
 
-        plot_profiles(
+        display(
             [
-                [
-                    (function_like(profiles["Jtot"].values, bs_r_norm),  "astra",
-                     "$J_{total}=j_{bootstrap}+j_{\\Omega}$ \n $[MA\\cdot m^{-2}]$", bs_line_style),
-                    (core_source_profiles_1d.j_parallel*1e-6,     "fytok", ""),
-                ],
+                ([
+                    (function_like(profiles["Jtot"].values, bs_r_norm), {"label": "astra", **bs_line_style}),
+                    (core_source_profiles_1d.j_parallel*1e-6,           {"label": "fytok"}),
+                ], {"y_label": "$J_{total}=j_{bootstrap}+j_{\\Omega}$ \n $[MA\\cdot m^{-2}]$", }),
 
                 # [
                 #     (function_like(profiles["Joh"].values, bs_r_norm), "astra",
                 #      r"$j_{ohmic} [MA\cdot m^{-2}]$", bs_line_style),
                 #     (core_source_profiles_1d.j_ohmic*1e-6, "fytok", r"$j_{\Omega} [MA\cdot m^{-2}]$"),
                 # ],
-                [
-                    (core_source_profiles_1d.electrons.particles,             "e",   r"$S[m ^ {-3} s ^ {-1}]$"),
-                    *[(ion.particles,   f"{ion.label}",   r"$S[m ^ {-3} s ^ {-1}]$")
-                      for ion in core_source_profiles_1d.ion],
-                    # (core_source_profiles_1d.ion[{"label": "D"}].particles,   "D",   r"$S[m ^ {-3} s ^ {-1}]$"),
-                    # (core_source_profiles_1d.ion[{"label": "T"}].particles,   "T",   r"$S[m ^ {-3} s ^ {-1}]$"),
-                    # (core_source_profiles_1d.ion[{"label": "He"}].particles,  "He",  r"$S[m ^ {-3} s ^ {-1}]$"),
-                ],
-                [
-                    (core_source_profiles_1d.electrons.energy,             "e",   r"$Q$"),
-                    *[(ion.energy,   f"{ion.label}",   r"$Q$") for ion in core_source_profiles_1d.ion],
+                ([
+                    (core_source_profiles_1d.electrons.particles,  {"label": "e"},),
+                    *[(ion.particles,  {"label": f"{ion.label}"}) for ion in core_source_profiles_1d.ion],
+                ], {"y_label":  r"$S[m ^ {-3} s ^ {-1}]$"}),
+
+                ([
+                    (core_source_profiles_1d.electrons.energy,  {"label":  "e", }),
+                    *[(ion.energy,  {"label":  f"{ion.label}", }) for ion in core_source_profiles_1d.ion],
                     # (core_source_profiles_1d.ion[{"label": "D"}].energy,   "D",   r"$Q$"),
                     # (core_source_profiles_1d.ion[{"label": "T"}].energy,   "T",   r"$Q$"),
                     # (core_source_profiles_1d.ion[{"label": "He"}].energy,  "He",  r"$Q$"),
-                ],
+                ], {"y_label":   r"$Q$"}),
+
                 # [
                 # (function_like(profiles["Jbs"].values, bs_r_norm),
                 #  r"astra", "bootstrap current \n $[MA\\cdot m^{-2}]$", bs_line_style),
@@ -429,8 +411,9 @@ if __name__ == "__main__":
                 #     #   for ion in core_source_profiles_1d.ion if not ion.is_impurity],
                 # ],
             ],
-            x_axis=(np.linspace(0, 1.0, bs_psi_norm.size), r"$\sqrt{\Phi/\Phi_{bdry}}$"),
-            grid=True, fontsize=10) .savefig(output_path/"core_sources.svg", transparent=True)
+            x_axis=(np.linspace(0, 1.0, bs_psi_norm.size), {"x_label": r"$\sqrt{\Phi/\Phi_{bdry}}$"}),
+            grid=True, fontsize=10, transparent=True,
+            output=output_path/"core_sources.svg")
 
     if False:  # TransportSolver
 
