@@ -270,7 +270,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     def tensor_contravariant(self) -> Field[float]:
         raise NotImplementedError(f"")
 
-    def find_surface(self, psi:  float | ArrayType | typing.Sequence[float], o_point: OXPoint = False) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
+    def find_surface(self, psi:  float | ArrayType | typing.Sequence[float], o_point: OXPoint = True) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
         """
             if o_point is not None:
                 only return  closed surface  enclosed o-point
@@ -447,8 +447,8 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         elif not isinstance(psi, (np.ndarray, collections.abc.MutableSequence)):
             psi = [psi]
 
-        sbox = np.asarray([[p, *shape_box(s)] for p, s in self.find_surface(psi)], dtype=float)
-         
+        sbox = np.asarray([[p, *shape_box(s)] for p, s in self.find_surface(psi, o_point=True)], dtype=float)
+
         if sbox.shape[0] == 1:
             psi, rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard = sbox[0]
         else:
