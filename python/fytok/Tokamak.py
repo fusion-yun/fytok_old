@@ -187,10 +187,7 @@ class Tokamak(SpDict):
             "magnetics": self.magnetics.__geometry__,
             "equilibrium": self.equilibrium.__geometry__,
         }
-
-        # styles = {"$matplotlib": {
-        #     "pf_active": {"coil": {"color": 'black'}},
-        # }}
+               
         return geo, {
             "xlabel": r"Major radius $R$ [m]",
             "ylabel": r"Height $Z$ [m]",

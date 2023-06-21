@@ -1057,11 +1057,11 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
         geo["psi"] = self.profiles_2d[0].psi
 
         return geo, {
-            "o_points":  {"$matplotlib": {"c": 'red', 'marker': '.'}},
-            "x_points":  {"$matplotlib": {"c": 'blue', 'marker': 'x'}},
-            "boundary":  {"$matplotlib": {"color": 'red', 'linewidth': 0.5}},
-            "boundary_separatrix":  {"$matplotlib": {"color": 'red', "linestyle": 'dashed', 'linewidth': 0.25}},
-            "psi":  {"$matplotlib": {"levels": 20, "cmap": "jet"}},
+            "o_points":  {"$matplotlib": {"color": 'red',   'marker': '.', "linewidths": 0.5}},
+            "x_points":  {"$matplotlib": {"color": 'blue',  'marker': 'x', "linewidths": 0.5}},
+            "boundary":  {"$matplotlib": {"color": 'blue', 'linewidth': 0.5}},
+            "boundary_separatrix": {"$matplotlib": {"color": 'red', "linestyle": 'dashed', 'linewidth': 0.25}},
+            "psi": {"$matplotlib": {"levels": 20, "cmap": "jet"}},
         }
 
 

@@ -2,7 +2,7 @@
 
 import collections.abc
 
-from spdm.utils.Pluggable import Pluggable
+from spdm.utils.plugin import Pluggable
 from spdm.data.NamedDict import NamedDict
 import numpy as np
 

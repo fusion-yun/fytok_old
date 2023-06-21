@@ -21,6 +21,8 @@ class Wall(_T_wall):
             "vessel_outer": Polyline(desc.vessel.unit[0].annular.outline_outer.r,
                                      desc.vessel.unit[0].annular.outline_outer.z)
         }, {  # styles
-            "limiter": {"edgecolor": "green"},
-            "vessel": {"edgecolor": "blue"}
+            "limiter": {"$matplotlib": {"edgecolor": "green"}},
+            "vessel_inner": {"$matplotlib": {"edgecolor": "blue"}},
+            "vessel_outer": {"$matplotlib": {"edgecolor": "blue"}}
+
         },

@@ -53,11 +53,19 @@ if __name__ == "__main__":
     if True:
         display(tok, title=f"{tok.name} time={tok.time}s", output=output_path/"tokamak_prev.svg")
 
-    if True:
-        # psirz = tok.equilibrium.time_slice.current.profiles_2d[0].psi.__array__()
-        # psi2 = np.linspace(np.min(psirz), np.max(psirz), 100)
-        # pprime = tok.equilibrium.time_slice.current.profiles_1d.pprime(psi2)
-        # logger.debug(pprime)
+    if False:
+        core_profile_1d = tok.core_profiles.profiles_1d.current
+
+        display(
+            [
+                (core_profile_1d .ffprime, "$ff'$", "$ff'$"),
+                (core_profile_1d .pprime, "$p'$", "$p'$"),
+            ],
+            x_axis=(core_profile_1d.grid.rho_tor_norm, r"$\rho=\sqrt{\Phi/\Phi_{bdry}}$"),
+            grid=True,
+            output=output_path/"core_profiles_initialize.svg", transparent=True
+        )
+    if False:
 
         boundary_outline_r = tok.equilibrium.time_slice.current.boundary.outline.r
         boundary_outline_z = tok.equilibrium.time_slice.current.boundary.outline.z
@@ -67,35 +75,22 @@ if __name__ == "__main__":
         xpoints = [(x.r, x.z) for x in tok.equilibrium.time_slice.current.boundary.x_point]
 
         tok.equilibrium.update(
-            # machine
-            wall=tok.wall, pf_active=tok.pf_active, magnetic=tok.magnetics,
-
             # profiles
             core_profiles_1d=tok.core_profiles.profiles_1d.current,
             Ip=1.5e6, beta_p=0.6056,
 
             # constrain
-            xpoints=xpoints,
+            # xpoints=xpoints,
             psivals=psivals,
 
             # options
             tolerance=1.0e-1,)
 
         display(tok,
-                styles={"wall": {"limiter": {"edgecolor": "green"}, "vessel": {"edgecolor": "blue"}},
-                        "pf_active": {"color": 'red'},
-                        "equilibrium": {"boundary": True, "separatrix": True, }},
+                # styles={"equilibrium": {"boundary": False, "boundary_separatrix": False, }},
+                xlabel=r"$R$ [m]",
+                ylabel=r"$Z$ [m]",
                 output=output_path/"tokamak_post.svg",
                 transparent=True)
-
-    if False:
-        core_profile_1d = tok.core_profiles.profiles_1d.current
-        plot_profiles(
-            [
-                (core_profile_1d .ffprime, "$ff'$", "$ff'$"),
-                (core_profile_1d .pprime, "$p'$", "$p'$"),
-            ],
-            x_axis=(core_profile_1d.grid.rho_tor_norm, r"$\rho=\sqrt{\Phi/\Phi_{bdry}}$"),
-            grid=True, fontsize=10) .savefig(output_path/"core_profiles_initialize.svg", transparent=True)
 
     logger.info("DONE")
