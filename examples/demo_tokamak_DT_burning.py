@@ -7,13 +7,16 @@ import sys
 import numpy as np
 import pandas as pd
 from fytok.Tokamak import Tokamak
-from fytok.utils.load_scenario_ITER import (load_core_profiles, load_core_source,
-                                       load_core_transport)
+from fytok.utils.load_scenario import load_scenario
+# from fytok.utils.load_scenario_ITER import (load_core_profiles,
+#                                             load_core_source,
+#                                             load_core_transport)
 from fytok.utils.plot_profiles import plot_profiles, sp_figure
 from scipy import constants
 from spdm.data.File import File
 from spdm.data.Function import function_like
 from spdm.utils.logger import logger
+from spdm.views.View import display
 
 ###################
 
@@ -23,14 +26,13 @@ if __name__ == "__main__":
     logger.info("====== START ========")
     output_path = pathlib.Path('/home/salmon/workspace/output')
 
+    data_path = pathlib.Path("/home/salmon/workspace/data/15MA inductive - burn")
+
     ###################################################################################################
     # baseline
 
     eqdsk_file = File(
-        "/home/salmon/workspace/data/15MA inductive - burn/Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="GEQdsk").read()
-    # "/home/salmon/workspace/fytok/examples/data/NF-076026/geqdsk_550s_partbench_case1",
-    # "/home/salmon/workspace/data/Limiter plasmas-7.5MA li=1.1/Limiter plasmas 7.5MA-EQDSK/Limiter_7.5MA_outbord.EQDSK",
-    # profiles = pd.read_csv('/home/salmon/workspace/data/15MA inductive - burn/profile.txt', sep='\t')
+        data_path/"Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="GEQdsk").read()
 
     R0 = eqdsk_file.get("vacuum_toroidal_field/r0")
     B0 = eqdsk_file.get("vacuum_toroidal_field/b0")
@@ -42,7 +44,7 @@ if __name__ == "__main__":
     bs_eq_psi_norm = (bs_eq_psi-psi_axis)/(psi_boundary-psi_axis)
     bs_eq_fpol = function_like(eqdsk_file.get("time_slice/0/profiles_1d/f"), bs_eq_psi)
 
-    profiles = pd.read_excel('/home/salmon/workspace/data/15MA inductive - burn/15MA Inductive at burn-ASTRA.xls',
+    profiles = pd.read_excel(data_path/'15MA Inductive at burn-ASTRA.xls',
                              sheet_name='15MA plasma', header=10, usecols="B:BN")
 
     bs_r_norm = profiles["x"].values
@@ -70,83 +72,43 @@ if __name__ == "__main__":
     time_slice = -1
     ###################################################################################################
     # Initialize Tokamak
+    scenario = load_scenario(data_path)
 
     tok = Tokamak("ITER",
-                  name="15MA inductive - burn",
-                  description="ITER 15MA 9T",
-                  # Equilibrium
-                  equilibrium={"code": {"name":  "eq_analyze"}, **eqdsk_file.dump(),
-                               "$default_value": {"time_slice": {
-                                   "boundary": {"psi_norm": 0.99},
-                                   "profiles_2d": {"grid": {"dim1": 257, "dim2": 129}},
-                                   "coordinate_system": {"grid": {"dim1": 256, "dim2": 128}}}, }
-                               }
+                  name=scenario["name"],
+                  description=scenario["description"],
+                  core_profiles={
+                      **scenario["core_profiles"],
+                      "$default_value": {
+                          "profiles_1d": {
+                              "grid": {
+                                  "rho_tor_norm": np.linspace(0, 1.0, 100),
+                                  "psi": np.linspace(0, 1.0, 100),
+                                  "psi_magnetic_axis": 0.0,
+                                  "psi_boundary": 1.0,
+                              }}}
+                  },
+                  equilibrium={
+                      **scenario["equilibrium"],
+                      "code": {
+                          "name":  "freegs",
+                          "parameters": {
+                              "boundary": "fixed",
+                              "psi_norm": np.linspace(0, 1.0, 128)
+                          }},
+                      "$default_value": {
+                          "time_slice": {
+                              "boundary": {"psi_norm": 0.99},
+                              "profiles_2d": {"grid": {"dim1": 256, "dim2": 128}},
+                              "coordinate_system": {"grid": {"dim1": 128, "dim2": 128}}
+                          }}}
                   )
 
     # logger.debug(tok.equilibrium.time_slice[0].coordinate_system)
     # logger.debug(tok.equilibrium.time_slice[0].coordinate_system)
 
-    if False:  # CoreProfile initialize value
-
-        tok.core_profiles["profiles_1d"] = [load_core_profiles(profiles)]
-
-        core_profiles_1d = tok.core_profiles.profiles_1d.current
-
-        plot_profiles(
-            [
-                [
-                    (bs_psi_norm, "astra",      r"$\psi_{nrom}$", bs_line_style),
-                    (core_profiles_1d.grid.psi_norm,              r"fytok"),
-                ],
-                [
-                    (function_like(bs_q, bs_xq), "astra",      r"$q[-]$", bs_line_style),
-                ],
-                [
-                    (b_ne, "electron astra", r"density $n [m \cdot s^{-3}]$", bs_line_style),
-                    (b_ni, "D astra", r"density $n [m \cdot s^{-3}]$", bs_line_style),
-                    (b_nHe, "He astra", r"density $n [m \cdot s^{-3}]$", bs_line_style),
-                    (core_profiles_1d.electrons.density,    r"$electron$", ),
-                    *[(ion.density,  f"${ion.label}$") for ion in core_profiles_1d.ion if not ion.is_impurity],
-                    # *[(core_profiles_1d.ion[{"label": label}].density,  f"${label}$") for label in ['D', 'T', 'He']],
-
-                ],
-                [
-                    (b_Te,    r"astra $T_e$",       r"$T [eV]$", bs_line_style),
-                    (b_Ti,    r"astra $T_i$",       r"$T [eV]$", bs_line_style),
-                    (core_profiles_1d.electrons.temperature,  r"$e$", r"T $[eV]$"),
-                    # *[(core_profiles_1d.ion[{"label": label}].temperature,   f"${label}$") for label in ['H', 'D', 'He']],
-                ],
-
-                # [
-                #     (function_like( profiles["Zeff"].values, bs_r_norm),       r"astra",
-                #      r"$Z_{eff}  [-]$", bs_line_style),
-                #     (core_profiles_1d.zeff, r"$fytok$"),
-                # ],
-
-            ],
-            x_axis=(np.linspace(0, 1.0, bs_psi_norm.size), r"$\rho=\sqrt{\Phi/\Phi_{bdry}}$"),
-            grid=True, fontsize=10) .savefig(output_path/"core_profiles_initialize.svg", transparent=True)
-
-        logger.info("Initialize Core Profiles ")
-
-    if False:
-        tok.equilibrium.update(
-            core_profiles_1d=core_profiles_1d,
-            pf_active=tok.pf_active,
-            wall=tok.wall,
-        )
-
     if True:  # plot equilibrium
-        sp_figure(tok,
-                  wall={"limiter": {"edgecolor": "green"},
-                        "vessel": {"edgecolor": "blue"}},
-                  pf_active={"facecolor": 'red'},
-                  equilibrium={
-                      "contours": 16,
-                      "boundary": True,
-                      "separatrix": True,
-                  }
-                  ) .savefig(output_path/"tokamak.svg", transparent=True)
+        display(tok, title=f"{tok.name} time={tok.time}s", output=output_path/"tokamak_prev.svg")
 
     if True:  # plot tokamak geometric profile
         eq_profiles_1d = tok.equilibrium.time_slice.current.profiles_1d
@@ -155,55 +117,60 @@ if __name__ == "__main__":
 
         # logger.debug(function_like(profiles["rho"].values, bs_psi)(eq_profiles_1d.psi))
         # logger.debug(bs_psi)
-        plot_profiles(
+
+        display(
             [
-                [
-                    (bs_eq_fpol, "astra", r"$F_{pol} [Wb\cdot m]$", bs_line_style),
-                    (eq_profiles_1d.f,  r"fytok", r"$[Wb]$"),
-                ],
-                [
-                    (function_like(profiles["q"].values, bs_psi), r"astra", r"$q [-]$", bs_line_style),
+                ([
+                    (bs_eq_fpol,  {"label": "astra", **bs_line_style}),
+                    (eq_profiles_1d.f,  {"label": r"fytok"}),
+                ], {"y_label": r"$F_{pol} [Wb\cdot m]$"}),
+                ([
+                    (function_like(profiles["q"].values, bs_psi), {"label": r"astra", **bs_line_style}),
                     # (function_like(eqdsk.get('profiles_1d.psi_norm'), eqdsk.get('profiles_1d.q')), "eqdsk"),
-                    (eq_profiles_1d.q,  r"$fytok$", r"$[Wb]$"),
+                    (eq_profiles_1d.q,  {"label": r"$fytok$"}),
                     # (magnetic_surface.dphi_dpsi,  r"$\frac{d\phi}{d\psi}$", r"$[Wb]$"),
-                ],
-                (eq_profiles_1d.dvolume_dpsi,  r"$\frac{dV}{d\psi}$", r"$[Wb]$"),
+                ], {"y_label": r"$q [-]$"}),
 
-                [
-                    (function_like(profiles["rho"].values, bs_psi), r"astra", r"$\rho_{tor}[m]$",  bs_line_style),
-                    (eq_profiles_1d.rho_tor,  r"$\rho$", r"$[m]$"),
-                ],
-                [
-                    (function_like(profiles["x"].values, bs_psi),           r"astra",
-                     r"$\frac{\rho_{tor}}{\rho_{tor,bdry}}$", bs_line_style),
-                    (eq_profiles_1d.rho_tor_norm,                      r"$\bar{\rho}$", r"$[-]$"),
-                ],
-                (eq_profiles_1d.dvolume_dpsi,                     r"$dV/d\psi$", r"$dV/d\psi$"),
-                (eq_profiles_1d.dpsi_drho_tor,
-                 r"$\frac{d\psi}{d\rho_{tor}}$", r"$d\psi/d\rho_{tor}$"),
+                ((eq_profiles_1d.dvolume_dpsi, {"label": r"$\frac{dV}{d\psi}$"}), {"y_label": r"$[Wb]$"}),
 
-                [
+                ([
+                    (function_like(profiles["rho"].values, bs_psi), {"label": r"astra", **bs_line_style}),
+                    (eq_profiles_1d.rho_tor,   {"label": r"$\rho$"}),
+                ], {"y_label":  r"$\rho_{tor}[m]$", }),
+
+                ([
+                    (function_like(profiles["x"].values, bs_psi), {
+                     "label": r"$\frac{\rho_{tor}}{\rho_{tor,bdry}}$ astra", **bs_line_style}),
+                    (eq_profiles_1d.rho_tor_norm,   {"label": r"$\bar{\rho}$"}),
+                ], {"y_label":  r"[-]", }),
+
+                (eq_profiles_1d.dvolume_dpsi, {"label": r"$dV/d\psi$"}),
+
+                (eq_profiles_1d.dpsi_drho_tor, {"label": r"$\frac{d\psi}{d\rho_{tor}}$"}),
+
+                ([
                     (function_like(4*(constants.pi**2) * R0 * profiles["rho"].values, bs_psi),
-                     r"$4\pi^2 R_0 \rho$", r"$4\pi^2 R_0 \rho$",  bs_line_style),
-                    (eq_profiles_1d.dvolume_drho_tor,                     r"$dV/d\rho_{tor}$", r"$[m^2]$"),
-                ],
+                     {"label": r"$4\pi^2 R_0 \rho$", **bs_line_style}),
+                    (eq_profiles_1d.dvolume_drho_tor,  {"label": r"$dV/d\rho_{tor}$", }),
+                ], {"y_label":  r"$4\pi ^ 2 R_0 \rho[m ^ 2]$"}),
 
-                (eq_profiles_1d.gm1,                r"$gm1=\left<\frac{1}{R^2}\right>$"),
-                (eq_profiles_1d.gm2,                r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"),
-                (eq_profiles_1d.gm3,                r"$gm3=\left<\left|\nabla \rho\right|^2\right>$"),
-                (eq_profiles_1d.gm4,                r"$gm4=\left<1/B^2\right>$"),
-                (eq_profiles_1d.gm5,                r"$gm5=\left<B^2\right>$"),
-                (eq_profiles_1d.gm6,                r"$gm6=\left<\nabla \rho_{tor}^2/ B^2 \right>$"),
-                (eq_profiles_1d.gm7,                r"$gm7=\left<\left|\nabla \rho\right|\right>$"),
-                (eq_profiles_1d.gm8,                r"$gm8=\left<R\right>$"),
+                (eq_profiles_1d.gm1,   {"label": r"$gm1=\left<\frac{1}{R^2}\right>$"}),
+                (eq_profiles_1d.gm2,   {"label": r"$gm2=\left<\frac{\left|\nabla \rho\right|^2}{R^2}\right>$"}),
+                (eq_profiles_1d.gm3,   {"label": r"$gm3=\left<\left|\nabla \rho\right|^2\right>$"}),
+                (eq_profiles_1d.gm4,   {"label": r"$gm4=\left<1/B^2\right>$"}),
+                (eq_profiles_1d.gm5,   {"label": r"$gm5=\left<B^2\right>$"}),
+                (eq_profiles_1d.gm6,   {"label": r"$gm6=\left<\nabla \rho_{tor}^2/ B^2 \right>$"}),
+                (eq_profiles_1d.gm7,   {"label": r"$gm7=\left<\left|\nabla \rho\right|\right>$"}),
+                (eq_profiles_1d.gm8,   {"label": r"$gm8=\left<R\right>$"}),
 
             ],
-            x_axis=(eq_profiles_1d.rho_tor_norm,      r"$\bar{\rho}_{tor}$"),
-            # x_axis=(eq_profiles_1d.psi_norm,      r"$\bar{\psi}$"),
-            x=eq_profiles_1d.psi,
+            x_axis=(eq_profiles_1d.rho_tor_norm,
+                    {"x_value": eq_profiles_1d.psi, "x_label":  r"$\bar{\rho}_{tor}$"}),
             title="Equilibrium",
-            grid=True, fontsize=16) .savefig(output_path/"equilibrium_coord.svg", transparent=True)
+            output=output_path/"equilibrium_coord.svg",
+            grid=True, fontsize=16)
 
+    if False:  # plot tokamak geometric profile
         plot_profiles(
             [
 
@@ -279,6 +246,56 @@ if __name__ == "__main__":
             grid=True, fontsize=16) .savefig(output_path/"equilibrium_profiles.svg", transparent=True)
 
         logger.info("Solve Equilibrium ")
+
+    if False:  # CoreProfile initialize value
+
+        tok.core_profiles["profiles_1d"] = [load_core_profiles(profiles)]
+
+        core_profiles_1d = tok.core_profiles.profiles_1d.current
+
+        plot_profiles(
+            [
+                [
+                    (bs_psi_norm, "astra",      r"$\psi_{nrom}$", bs_line_style),
+                    (core_profiles_1d.grid.psi_norm,              r"fytok"),
+                ],
+                [
+                    (function_like(bs_q, bs_xq), "astra",      r"$q[-]$", bs_line_style),
+                ],
+                [
+                    (b_ne, "electron astra", r"density $n [m \cdot s^{-3}]$", bs_line_style),
+                    (b_ni, "D astra", r"density $n [m \cdot s^{-3}]$", bs_line_style),
+                    (b_nHe, "He astra", r"density $n [m \cdot s^{-3}]$", bs_line_style),
+                    (core_profiles_1d.electrons.density,    r"$electron$", ),
+                    *[(ion.density,  f"${ion.label}$") for ion in core_profiles_1d.ion if not ion.is_impurity],
+                    # *[(core_profiles_1d.ion[{"label": label}].density,  f"${label}$") for label in ['D', 'T', 'He']],
+
+                ],
+                [
+                    (b_Te,    r"astra $T_e$",       r"$T [eV]$", bs_line_style),
+                    (b_Ti,    r"astra $T_i$",       r"$T [eV]$", bs_line_style),
+                    (core_profiles_1d.electrons.temperature,  r"$e$", r"T $[eV]$"),
+                    # *[(core_profiles_1d.ion[{"label": label}].temperature,   f"${label}$") for label in ['H', 'D', 'He']],
+                ],
+
+                # [
+                #     (function_like( profiles["Zeff"].values, bs_r_norm),       r"astra",
+                #      r"$Z_{eff}  [-]$", bs_line_style),
+                #     (core_profiles_1d.zeff, r"$fytok$"),
+                # ],
+
+            ],
+            x_axis=(np.linspace(0, 1.0, bs_psi_norm.size), r"$\rho=\sqrt{\Phi/\Phi_{bdry}}$"),
+            grid=True, fontsize=10) .savefig(output_path/"core_profiles_initialize.svg", transparent=True)
+
+        logger.info("Initialize Core Profiles ")
+
+    if False:
+        tok.equilibrium.update(
+            core_profiles_1d=core_profiles_1d,
+            pf_active=tok.pf_active,
+            wall=tok.wall,
+        )
 
     if False:  # CoreTransport  initialize value
         logger.info("Initialize Core Transport ")

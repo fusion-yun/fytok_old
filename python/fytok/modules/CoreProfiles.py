@@ -214,8 +214,9 @@ class CoreProfiles1d(_T_core_profiles_profiles_1d):
         """Magnetic shear, defined as rho_tor/q . dq/drho_tor {dynamic}[-]"""
         return self.grid.rho_tor_norm*(self.q.derivative()/self.q())
 
-    ffprime: Function[float] = sp_property(coordinate1="../grid/rho_tor_norm")
-    pprime: Function[float] = sp_property(coordinate1="../grid/rho_tor_norm")
+    ffprime: Function[float] = sp_property(coordinate1="../grid/rho_tor_norm", label="$ff^{\prime}$")
+    
+    pprime: Function[float] = sp_property(coordinate1="../grid/rho_tor_norm", label="$p^{\prime}$")
 
 
 class CoreProfiles(_T_core_profiles):

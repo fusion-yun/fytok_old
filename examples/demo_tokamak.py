@@ -53,17 +53,21 @@ if __name__ == "__main__":
     if True:
         display(tok, title=f"{tok.name} time={tok.time}s", output=output_path/"tokamak_prev.svg")
 
-    if False:
-        core_profile_1d = tok.core_profiles.profiles_1d.current
+    if True:
+        core_profiles_1d = tok.core_profiles.profiles_1d.current
 
         display(
             [
-                (core_profile_1d .ffprime, "$ff'$", "$ff'$"),
-                (core_profile_1d .pprime, "$p'$", "$p'$"),
+                core_profiles_1d.ffprime,
+                core_profiles_1d.pprime,
+                ([
+                    (core_profiles_1d.electrons.density, {"label": "n_e"}),
+                    *[(ion.density, {"label": ion.label}) for ion in core_profiles_1d.ion if not ion.is_impurity],
+                ], {"y_label": "Density [$m^{-3}$]"}),
             ],
-            x_axis=(core_profile_1d.grid.rho_tor_norm, r"$\rho=\sqrt{\Phi/\Phi_{bdry}}$"),
-            grid=True,
-            output=output_path/"core_profiles_initialize.svg", transparent=True
+            x_axis=(core_profiles_1d.grid.rho_tor_norm, {"x_label": r"$\rho=\sqrt{\Phi/\Phi_{bdry}}$"}),
+            title=" CoreProfile initialize value",
+            output=output_path/"core_profiles_initialize.svg",
         )
     if False:
 
