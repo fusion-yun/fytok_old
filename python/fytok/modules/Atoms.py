@@ -1,5 +1,5 @@
 import numpy as np
-from scipy import constants
+import scipy.constants
 from spdm.data.Dict import Dict
 from spdm.data.Entry import Entry
 from spdm.data.Function import Function
@@ -10,17 +10,17 @@ atoms = {
     "e": {
         "label": "e",
         "z": -1,
-        "element": [{"a": constants.m_e/constants.m_p, "z_n": 1, "atoms_n": 1}],
+        "element": [{"a": scipy.constants.m_e/scipy.constants.m_p, "z_n": 1, "atoms_n": 1}],
     },
     "electron": {
         "label": "e",
         "z": -1,
-        "element": [{"a": constants.m_e/constants.m_p, "z_n": 1, "atoms_n": 1}],
+        "element": [{"a": scipy.constants.m_e/scipy.constants.m_p, "z_n": 1, "atoms_n": 1}],
     },
     "n": {
         "label": "n",
         "z": 0,
-        "element": [{"a": constants.m_n/constants.m_p, "z_n": 0, "atoms_n": 1}],
+        "element": [{"a": scipy.constants.m_n/scipy.constants.m_p, "z_n": 0, "atoms_n": 1}],
     },
     "p": {
         "label": "p",
@@ -31,36 +31,42 @@ atoms = {
     "H": {
         "label": "H",
         "z": 1,
+        "z_ion": 1,
         "element": [{"a": 1, "z_n": 1, "atoms_n": 1}],
 
     },
     "D": {
         "label": "D",
         "z": 1,
+        "z_ion": 1,
         "element": [{"a": 2, "z_n": 1, "atoms_n": 1}],
 
     },
     "T": {
         "label": "T",
         "z": 1,
+        "z_ion": 1,
         "element": [{"a": 3, "z_n": 1, "atoms_n": 1}],
 
     },
     "He": {
         "label": "He",
         "z": 2,
+        "z_ion": 2,
         "element": [{"a": 4, "z_n": 1, "atoms_n": 1}],
 
     },
     "Be": {
         "label": "Be",
         "z": 4,
+        "z_ion": 4,
         "element": [{"a": 9, "z_n": 1, "atoms_n":   1}],
 
     },
     "Ar": {
         "label": "Ar",
         "z": 18,
+        "z_ion": 18,
         "element": [{"a": 40, "z_n": 1, "atoms_n":   1}],
 
     }
@@ -72,14 +78,14 @@ nuclear_reaction = {
         "products": ["He", "n"],
         "energy": 13.5e6,  # eV
         "reactivities":
-        Function(  # m^3/s
+        (  # m^3/s
             np.array([1.254e-32, 7.292e-31, 9.344e-30, 5.697e-29, 2.253e-28, 6.740e-28, 1.662e-27, 6.857e-27, 2.546e-26, 3.174e-26, 6.923e-26,
                       1.539e-25, 1.773e-25, 2.977e-25, 8.425e-25, 1.867e-24, 5.974e-24, 1.366e-23, 2.554e-23, 6.222e-23, 1.136e-22, 1.747e-22,
-                      2.740e-22, 4.330e-22, 6.681e-22, 7.998e-22, 8.649e-22, ],
-                     # eV
-                     np.array([0.20e3, 0.30e3, 0.40e3, 0.50e3, 0.60e3, 0.70e3, 0.80e3, 1.00e3, 1.25e3, 1.30e3, 1.50e3, 1.75e3, 1.80e3,
-                               2.00e3, 2.50e3, 3.00e3, 4.00e3, 5.00e3, 6.00e3, 8.00e3, 10.0e3, 12.0e3, 15.0e3, 20.0e3, 30.0e3, 40.0e3, 50.0e3, ]),
-                     )
+                      2.740e-22, 4.330e-22, 6.681e-22, 7.998e-22, 8.649e-22, ]),
+            # eV
+            np.array([0.20e3, 0.30e3, 0.40e3, 0.50e3, 0.60e3, 0.70e3, 0.80e3, 1.00e3, 1.25e3, 1.30e3, 1.50e3, 1.75e3, 1.80e3,
+                      2.00e3, 2.50e3, 3.00e3, 4.00e3, 5.00e3, 6.00e3, 8.00e3, 10.0e3, 12.0e3, 15.0e3, 20.0e3, 30.0e3, 40.0e3, 50.0e3, ]),
+
         )
     }
 }

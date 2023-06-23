@@ -110,9 +110,10 @@ if __name__ == "__main__":
                   )
 
     eq_profiles_1d = tok.equilibrium.time_slice.current.profiles_1d
+
     eq_global_quantities = tok.equilibrium.time_slice.current.global_quantities
 
-    if False:
+    if True:  # plot equilibrium
         display(  # plot equilibrium
             tok,
             title=f"{tok.name} time={tok.time}s",
@@ -165,7 +166,7 @@ if __name__ == "__main__":
 
             ],
             x_axis=(eq_profiles_1d.rho_tor_norm,
-                    {"x_value": eq_profiles_1d.psi, "x_label":  r"$\bar{\rho}_{tor}$"}),
+                    {"value": eq_profiles_1d.psi, "label":  r"$\bar{\rho}_{tor}$"}),
             title="Equilibrium",
             output=output_path/"equilibrium_coord.svg",
             grid=True, fontsize=16)
@@ -232,7 +233,7 @@ if __name__ == "__main__":
                 #      r"$\left<\frac{1}{R^2}\right>$"),
                 # ]
             ],
-            x_axis=(eq_profiles_1d.psi,  {"x_label": r"$\psi/\psi_{bdry}$"}),
+            x_axis=(eq_profiles_1d.psi,  {"label": r"$\psi/\psi_{bdry}$"}),
             title="Equilibrium Geometric Shape",
             grid=True, fontsize=16, transparent=True,
             output=output_path/"equilibrium_profiles.svg")
@@ -241,7 +242,7 @@ if __name__ == "__main__":
 
     core_profiles_1d = tok.core_profiles.profiles_1d.current
 
-    if True:
+    if True:  # initialize CoreProfile  value
         logger.info("Initialize Core Profiles ")
 
         display(  # CoreProfile initialize value
@@ -277,23 +278,25 @@ if __name__ == "__main__":
 
             ],
             x_axis=(np.linspace(0, 1.0, bs_psi_norm.size), {"label":  r"$\rho=\sqrt{\Phi/\Phi_{bdry}}$"}),
-            grid=True, fontsize=10,
-            output=output_path/"core_profiles_initialize.svg", transparent=True)
 
-    if True:
+            output=output_path/"core_profiles_initialize.svg")
+
+    if True:  # initialize CoreTransport value
+
         logger.info("Initialize Core Transport ")
 
-        # tok.core_transport.model.extend([
-        #     {"code": {"name": "fast_alpha"}},
-        #     {"code": {"name": "spitzer"}},
-        #     # {"code": {"name": "neoclassical"}},
-        #     # {"code": {"name": "glf23"}},
-        #     # {"code": {"name": "nclass"}},
-        # ])
-
-        core_transport_model = tok.core_transport.model_combiner
-
-        core_transport_profiles_1d = tok.core_transport.model[0].profiles_1d.current
+        tok.core_transport.model.extend([
+            {"code": {"name": "fast_alpha"}},
+            {"code": {"name": "spitzer"}},
+            # {"code": {"name": "neoclassical"}},
+            # {"code": {"name": "glf23"}},
+            # {"code": {"name": "nclass"}},
+        ])
+        core_transport_profiles_1d = tok.core_transport.model[:].profiles_1d.current
+        # logger.debug(core_transport_profiles_1d.grid_d.rho_tor_norm.__reduce__())
+        # logger.debug(core_transport_profiles_1d.ion[{"$reduce": {"$id": "label"}}].z_ion)
+        # logger.debug(core_transport_profiles_1d.ion[:].particles.d())
+        # core_transport_profiles_1d = tok.core_transport.model[:].profiles_1d[0].electrons.particles.d.__reduce__()
 
         # ele_energy = tok.core_transport.model[0].profiles_1d[0].electrons.energy
         # logger.debug([[sp.energy.d for sp in model.profiles_1d.ion] for model in tok.core_transport.model])
@@ -302,6 +305,7 @@ if __name__ == "__main__":
         # nc_profiles_1d = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
         # fast_alpha_profiles_1d = tok.core_transport.model[{"code.name": "fast_alpha"}].profiles_1d
 
+    if False:
         display(  # CoreTransport  initialize value
             [
 
@@ -339,11 +343,11 @@ if __name__ == "__main__":
                 #  for ion in nc_profiles_1d.ion if not ion.is_impurity],
 
             ],
-            x_axis=(np.linspace(0, 1.0, bs_psi_norm.size),  {"x_label":   r"$\sqrt{\Phi/\Phi_{bdry}}$"}),
+            x_axis=(np.linspace(0, 1.0, bs_psi_norm.size),  {"label":   r"$\sqrt{\Phi/\Phi_{bdry}}$"}),
             title="Transport", transparent=True,
             output=output_path/"core_transport.svg")
 
-    if True:  # CoreSources
+    if False:  # CoreSources
         logger.info("Initialize Core Source  ")
 
         # tok.core_sources.source.extend([
@@ -411,7 +415,7 @@ if __name__ == "__main__":
                 #     #   for ion in core_source_profiles_1d.ion if not ion.is_impurity],
                 # ],
             ],
-            x_axis=(np.linspace(0, 1.0, bs_psi_norm.size), {"x_label": r"$\sqrt{\Phi/\Phi_{bdry}}$"}),
+            x_axis=(np.linspace(0, 1.0, bs_psi_norm.size), {"label": r"$\sqrt{\Phi/\Phi_{bdry}}$"}),
             grid=True, fontsize=10, transparent=True,
             output=output_path/"core_sources.svg")
 
