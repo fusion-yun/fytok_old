@@ -71,11 +71,28 @@ def fetch_url(url, tmp_dir=None):
         return json.load(f)
 
 
-def create_imas_warpper(target_path, dd_path: str, stylesheet_file: str = None,  symlink_as_lastest=True):
+def cerate_link(prefix, dd_version):
+    cwd = os.getcwd()
+
+    os.chdir(prefix)
+
+    if os.path.exists(dd_version):
+        if os.path.islink("lastest"):
+            os.unlink("lastest")
+        elif os.path.exists("lastest"):
+            raise FileExistsError("lastest is not a symlink! Please remove it manually!")
+        print(f"Create symlink lastest -> {dd_version}")
+        os.symlink(dd_version, "lastest")
+    else:
+        raise FileExistsError(f"Can not find IMAS wrapper! {prefix/dd_version}")
+
+    os.chdir(cwd)
+
+
+def create_imas_warpper(target_path, dd_path: str, xsl_file: str = None, xsl_schema_file: str = None,  symlink_as_lastest=True):
     """Create IMAS warpper for python"""
 
     # 用logger输出log信息
-    print(f"Create IMAS warpper for python: {target_path}")
 
     dd_path = pathlib.Path(dd_path)
 
@@ -88,15 +105,20 @@ def create_imas_warpper(target_path, dd_path: str, stylesheet_file: str = None, 
     dd_git_describe = subprocess.check_output(
         ['git', 'describe', '--always', '--dirty'], cwd=dd_path.parent).strip().decode('utf-8')
 
-    if stylesheet_file is None:
-        stylesheet_file = pathlib.Path(__file__).parent/"_build_helper/fy_imas_xsd.xsl"
+    if xsl_file is None:
+        xsl_file = pathlib.Path(__file__).parent/"_build_helper/fy_imas_python.xsl"
     else:
-        stylesheet_file = pathlib.Path(stylesheet_file)
+        xsl_file = pathlib.Path(xsl_file)
 
-    if stylesheet_file is None or not pathlib.Path(stylesheet_file).exists():
-        raise FileExistsError(f"Can not find stylesheet file! {stylesheet_file}")
+    if xsl_schema_file is None:
+        xsl_schema_file = pathlib.Path(__file__).parent/"_build_helper/fy_imas_schema.xsl"
+    else:
+        xsl_schema_file = pathlib.Path(xsl_schema_file)
 
-    dd_dir = "v"+dd_git_describe.replace('.', '_').replace('-', '_')
+    if xsl_file is None or not pathlib.Path(xsl_file).exists():
+        raise FileExistsError(f"Can not find stylesheet file! {xsl_file}")
+
+    dd_version = "v"+dd_git_describe.replace('.', '_').replace('-', '_')
 
     target_path = pathlib.Path(target_path)
 
@@ -109,26 +131,21 @@ def create_imas_warpper(target_path, dd_path: str, stylesheet_file: str = None, 
         xslt_processor.set_parameter("DD_GIT_DESCRIBE", convert_value(proc, dd_git_describe))
         xslt_processor.set_parameter("DD_BASE_DIR",     convert_value(proc, dd_path.parent.as_posix()+"/"))
 
-        executable = xslt_processor.compile_stylesheet(stylesheet_file=stylesheet_file.as_posix())
+        print(f"Create IMAS Python warpper: {target_path}/_imas/{dd_version}")
+        xslt_processor\
+            .compile_stylesheet(stylesheet_file=xsl_file.as_posix())\
+            .transform_to_file(source_file=dd_path.as_posix(),
+                               output_file=(target_path/"_imas"/dd_version/"._physics_data_dictionary.txt").as_posix())
 
-        executable.transform_to_file(source_file=dd_path.as_posix(),
-                                     output_file=(target_path/dd_dir/"ids_list").as_posix())
+        print(f"Create IMAS Schema: {target_path}/_schema/{dd_version}")
+        xslt_processor\
+            .compile_stylesheet(stylesheet_file=xsl_schema_file.as_posix())\
+            .transform_to_file(source_file=dd_path.as_posix(),
+                               output_file=(target_path/"_schema"/dd_version/"imas_physics_data_dictionary.yaml").as_posix())
 
-    cwd = os.getcwd()
-    os.chdir(target_path)
-
-    if not symlink_as_lastest:
-        pass
-    elif os.path.exists(dd_dir):
-        if os.path.islink("lastest"):
-            os.unlink("lastest")
-        elif os.path.exists("lastest"):
-            raise FileExistsError("lastest is not a symlink! Please remove it manually!")
-        print(f"Create symlink lastest -> {dd_dir}")
-        os.symlink(dd_dir, "lastest")
-    else:
-        raise FileExistsError(f"Can not find IMAS wrapper! {target_path/dd_dir}")
-    os.chdir(cwd)
+    if symlink_as_lastest:
+        cerate_link(target_path/"_imas", dd_version)
+        cerate_link(target_path/"_schema", dd_version)
 
 
 def copy_data_mapping(target_path, mapping_path: str):
@@ -137,10 +154,12 @@ def copy_data_mapping(target_path, mapping_path: str):
     # 用logger输出log信息
     print(f"Device data mapping for IMAS warpper to {target_path}")
 
+    target_path = pathlib.Path(target_path)
+
     mapping_path = pathlib.Path(mapping_path)/"mapping"
 
     if mapping_path.exists():
-        shutil.copytree(mapping_path, target_path,   dirs_exist_ok=True)
+        shutil.copytree(mapping_path, target_path/"_mapping",   dirs_exist_ok=True)
     else:
         print(f"Can not find data mapping! {mapping_path}")
 
@@ -171,12 +190,12 @@ class InstallIMASWrapper(Command):
 
         target_path = pathlib.Path(self.prefix) / "fytok"
 
-        create_imas_warpper(target_path=(target_path/"_imas").as_posix(),
+        create_imas_warpper(target_path=(target_path).as_posix(),
                             dd_path=self.dd_path,
-                            stylesheet_file=self.stylesheet_file,
+                            xsl_file=self.stylesheet_file,
                             symlink_as_lastest=self.as_lastest)
 
-        copy_data_mapping(target_path=(target_path/"_mapping").as_posix(),
+        copy_data_mapping(target_path=(target_path).as_posix(),
                           mapping_path=self.mapping_path)
 
 

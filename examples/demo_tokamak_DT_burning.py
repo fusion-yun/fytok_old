@@ -240,10 +240,10 @@ if __name__ == "__main__":
 
         logger.info("Solve Equilibrium ")
 
-    core_profiles_1d = tok.core_profiles.profiles_1d.current
-
-    if True:  # initialize CoreProfile  value
+    if False:  # initialize CoreProfile  value
         logger.info("Initialize Core Profiles ")
+
+        core_profiles_1d = tok.core_profiles.profiles_1d.current
 
         display(  # CoreProfile initialize value
             [
@@ -294,7 +294,16 @@ if __name__ == "__main__":
         ])
         core_transport_profiles_1d = tok.core_transport.model[:].profiles_1d.current
         # logger.debug(core_transport_profiles_1d.grid_d.rho_tor_norm.__reduce__())
-        # logger.debug(core_transport_profiles_1d.ion[{"$reduce": {"$id": "label"}}].z_ion)
+
+        # logger.debug(core_transport_profiles_1d.ion[
+        #     {"$reduce": {
+        #         "*": "$and",
+        #         "*.array": "$add",
+
+        #     },
+        #         "$id": "label"
+        #     }].z_ion)
+
         # logger.debug(core_transport_profiles_1d.ion[:].particles.d())
         # core_transport_profiles_1d = tok.core_transport.model[:].profiles_1d[0].electrons.particles.d.__reduce__()
 
