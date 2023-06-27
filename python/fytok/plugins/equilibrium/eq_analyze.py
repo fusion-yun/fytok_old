@@ -17,12 +17,10 @@ from fytok._imas.lastest.equilibrium import (
 from fytok._imas.lastest.utilities import _T_identifier_dynamic_aos3
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.modules.Utilities import CurveRZ, RZTuple, RZTuple_
-from spdm.data.Dict import Dict
 from spdm.data.Expression import Expression, Variable
 from spdm.data.Field import Field
 from spdm.data.Function import Function, function_like
-from spdm.data.List import AoS, List
-from spdm.data.Node import Node
+from spdm.data.HTree import AoS, Dict, List, Node
 from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.geometry.Curve import Curve

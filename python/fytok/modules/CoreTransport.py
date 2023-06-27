@@ -6,7 +6,7 @@ from fytok._imas.lastest.core_transport import (
     _T_core_transport_model_neutral, _T_core_transport_model_profiles_1d)
 from spdm.data.Entry import as_entry, deep_reduce
 from spdm.data.Function import Function
-from spdm.data.List import AoS, List
+from spdm.data.HTree import AoS, List
 from spdm.data.sp_property import SpDict, sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.utils.logger import logger

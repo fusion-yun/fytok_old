@@ -6,16 +6,15 @@ import numpy as np
 from fytok._imas.lastest.utilities import (_T_core_radial_grid,
                                            _T_rz0d_dynamic_aos,
                                            _T_rz1d_dynamic_aos)
-from spdm.data.Dict import Dict
 from spdm.data.Entry import Entry
 from spdm.data.Expression import Expression
 from spdm.data.Function import Function, function_like
-from spdm.data.Node import Node
+from spdm.data.HTree import Dict, Node
 from spdm.data.sp_property import SpDict, sp_property
+from spdm.geometry.Curve import Curve
 from spdm.utils.logger import logger
 from spdm.utils.tags import _not_found_
 from spdm.utils.typing import array_type
-from spdm.geometry.Curve import Curve
 
 _T = typing.TypeVar("_T")
 

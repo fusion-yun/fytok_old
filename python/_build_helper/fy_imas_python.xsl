@@ -117,13 +117,12 @@
 <xsl:variable name="FILE_HEADER_COMMON_IMPORT" >
 from enum import IntFlag
 import numpy as np
-from spdm.data.Node         import Node
-from spdm.data.List         import List,AoS
-from spdm.data.TimeSeries   import TimeSeriesAoS,TimeSlice
-from spdm.data.Signal       import Signal,SignalND
+from spdm.data.HTree         import List,AoS
+from spdm.data.TimeSeries    import TimeSeriesAoS,TimeSlice
+from spdm.data.Signal        import Signal,SignalND
 from spdm.data.Function      import Function 
-from spdm.data.Field        import Field
-from spdm.data.sp_property  import sp_property,SpDict
+from spdm.data.Field         import Field
+from spdm.data.sp_property   import sp_property,SpDict
 
 </xsl:variable>
 

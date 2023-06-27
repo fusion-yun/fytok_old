@@ -8,7 +8,7 @@ from fytok._imas.lastest.utilities import (
     _T_core_profiles_vector_components_1)
 from scipy import constants
 from spdm.data.Function import Function
-from spdm.data.List import AoS, List
+from spdm.data.HTree import AoS, List
 from spdm.data.sp_property import SpDict, sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.utils.logger import logger

@@ -1,10 +1,9 @@
 import numpy as np
 import scipy.constants
-from spdm.data.Dict import Dict
 from spdm.data.Entry import Entry
 from spdm.data.Function import Function
-from spdm.data.Node import Node
-from spdm.data.sp_property import sp_property, SpDict
+from spdm.data.HTree import Dict, Node
+from spdm.data.sp_property import SpDict, sp_property
 
 atoms = {
     "e": {

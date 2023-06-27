@@ -282,6 +282,7 @@ if __name__ == "__main__":
 
         logger.info("Initialize Core Transport ")
 
+        
         tok.core_transport.model.extend([
             {"code": {"name": "fast_alpha"}},
             {"code": {"name": "spitzer"}},
@@ -289,16 +290,19 @@ if __name__ == "__main__":
             # {"code": {"name": "glf23"}},
             # {"code": {"name": "nclass"}},
         ])
-        core_transport_profiles_1d = tok.core_transport.model[:].profiles_1d.current
+        logger.debug(tok.core_transport.model[0].profiles_1d.current.ion.identifier)
+
+        # core_transport_profiles_1d = tok.core_transport.model[:].profiles_1d.current
         # logger.debug(core_transport_profiles_1d.grid_d.rho_tor_norm.__reduce__())
 
-        logger.debug(core_transport_profiles_1d.ion[
-            {"$reduce": {
-                "*": "$and",
-                "*.array": "$add",
-            },
-                "$id": "label"
-            }].z_ion)
+
+        # logger.debug(core_transport_profiles_1d.ion[
+        #     {"$reduce": {
+        #         "*": "$and",
+        #         "*.array": "$add",
+        #     },
+        #         "$id": "label"
+        #     }].z_ion)
 
         # logger.debug(core_transport_profiles_1d.ion[:].particles.d())
         # core_transport_profiles_1d = tok.core_transport.model[:].profiles_1d[0].electrons.particles.d.__reduce__()

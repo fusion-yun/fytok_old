@@ -5,8 +5,8 @@ import getpass
 
 import matplotlib.pyplot as plt
 import numpy as np
-from spdm.data.Dict import Dict
 from spdm.data.Function import Function
+from spdm.data.HTree import Dict
 from spdm.utils.logger import logger
 from spdm.utils.misc import try_get
 

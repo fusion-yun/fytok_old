@@ -5,7 +5,7 @@ from spdm.utils.tags import _not_found_
 from spdm.data.Dict import Dict
 from spdm.data.Entry import as_entry
 from spdm.data.Function import Function
-from spdm.data.List import List
+from spdm.data.HTree import List
 from spdm.data.Node import Node
 from spdm.data.sp_property import sp_property, SpDict
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 import typing
 
 from spdm.data.Entry import deep_reduce
-from spdm.data.List import AoS, List
+from spdm.data.HTree import AoS, List
 from spdm.data.sp_property import SpDict, sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.utils.typing import array_type

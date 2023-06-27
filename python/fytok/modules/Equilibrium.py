@@ -2,22 +2,18 @@ from __future__ import annotations
 
 import typing
 
-import numpy as np
 from fytok._imas.lastest.equilibrium import (
     _T_equilibrium, _T_equilibrium_boundary,
     _T_equilibrium_boundary_separatrix, _T_equilibrium_constraints,
     _T_equilibrium_coordinate_system, _T_equilibrium_global_quantities,
     _T_equilibrium_profiles_1d, _T_equilibrium_profiles_2d,
     _T_equilibrium_time_slice)
-from spdm.data.Function import Function
-from spdm.data.Node import Node
-from spdm.data.sp_property import SpDict, sp_property
+from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.geometry.Curve import Curve
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Point import Point
 from spdm.utils.logger import logger
-from spdm.utils.tags import _not_found_
 
 from .CoreProfiles import CoreProfiles
 from .PFActive import PFActive
