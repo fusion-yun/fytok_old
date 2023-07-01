@@ -25,6 +25,7 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
         super().__init__(*args, **kwargs)
         self._R0 = self.get("../vacuum_toroidal_field/r0")
         self._B0 = self.get("../vacuum_toroidal_field/b0")(self.time)
+       
 
     def update(self, *args,   **kwargs) -> EquilibriumTimeSlice:
         logger.debug(f"Update Equlibrium at time={self.time}")

@@ -88,7 +88,7 @@ if __name__ == "__main__":
                   equilibrium={
                       **scenario["equilibrium"],
                       "code": {
-                          "name":  "freegs",
+                          "name": "eq_analyze", # "freegs",
                           "parameters": {
                               "boundary": "fixed",
                               "psi_norm": np.linspace(0, 1.0, 128)
@@ -106,16 +106,16 @@ if __name__ == "__main__":
                   }
                   )
 
-    eq_profiles_1d = tok.equilibrium.time_slice.current.profiles_1d
+    eq_profiles_1d = tok.equilibrium.time_slice[0].profiles_1d
 
-    eq_global_quantities = tok.equilibrium.time_slice.current.global_quantities
+    eq_global_quantities = tok.equilibrium.time_slice[0].global_quantities
 
     if True:  # plot equilibrium
         display(  # plot equilibrium
             tok,
             title=f"{tok.name} time={tok.time}s",
             output=output_path/"tokamak_prev.svg")
-
+    if False:
         display(  # plot tokamak geometric profile
             [
                 ([
