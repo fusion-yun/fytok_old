@@ -13,6 +13,7 @@ from fytok.utils.plot_profiles import plot_profiles, sp_figure
 from spdm.data.File import File
 from spdm.data.Function import function_like
 from spdm.utils.logger import logger
+from spdm.utils.typing import as_array
 from spdm.views.View import display
 
 ###################
@@ -88,7 +89,7 @@ if __name__ == "__main__":
                   equilibrium={
                       **scenario["equilibrium"],
                       "code": {
-                          "name": "eq_analyze", # "freegs",
+                          "name": "eq_analyze",  # "freegs",
                           "parameters": {
                               "boundary": "fixed",
                               "psi_norm": np.linspace(0, 1.0, 128)
@@ -110,14 +111,17 @@ if __name__ == "__main__":
 
     eq_global_quantities = tok.equilibrium.time_slice[0].global_quantities
 
-    if True:  # plot equilibrium
+    if False:  # plot equilibrium
         display(  # plot equilibrium
             tok,
             title=f"{tok.name} time={tok.time}s",
             output=output_path/"tokamak_prev.svg")
-    if False:
+
         display(  # plot tokamak geometric profile
             [
+                ((eq_profiles_1d.dvolume_dpsi, {"label": r"$\frac{dV}{d\psi}$"}), {"y_label": r"$[Wb]$"}),
+
+                (eq_profiles_1d.dpsi_drho_tor, {"label": r"$\frac{d\psi}{d\rho_{tor}}$"}),
                 ([
                     (bs_eq_fpol,  {"label": "astra", **bs_line_style}),
                     (eq_profiles_1d.f,  {"label": r"fytok"}),
@@ -128,9 +132,6 @@ if __name__ == "__main__":
                     (eq_profiles_1d.q,  {"label": r"$fytok$"}),
                     # (magnetic_surface.dphi_dpsi,  r"$\frac{d\phi}{d\psi}$", r"$[Wb]$"),
                 ], {"y_label": r"$q [-]$"}),
-
-                ((eq_profiles_1d.dvolume_dpsi, {"label": r"$\frac{dV}{d\psi}$"}), {"y_label": r"$[Wb]$"}),
-
                 ([
                     (function_like(profiles["rho"].values, bs_psi), {"label": r"astra", **bs_line_style}),
                     (eq_profiles_1d.rho_tor,   {"label": r"$\rho$"}),
@@ -142,9 +143,7 @@ if __name__ == "__main__":
                     (eq_profiles_1d.rho_tor_norm,   {"label": r"$\bar{\rho}$"}),
                 ], {"y_label":  r"[-]", }),
 
-                (eq_profiles_1d.dvolume_dpsi, {"label": r"$dV/d\psi$"}),
 
-                (eq_profiles_1d.dpsi_drho_tor, {"label": r"$\frac{d\psi}{d\rho_{tor}}$"}),
 
                 ([
                     (function_like(4*(scipy.constants.pi**2) * R0 * profiles["rho"].values, bs_psi),
@@ -237,10 +236,15 @@ if __name__ == "__main__":
 
         logger.info("Solve Equilibrium ")
 
-    if False:  # initialize CoreProfile  value
+    if True:  # initialize CoreProfile  value
         logger.info("Initialize Core Profiles ")
 
         core_profiles_1d = tok.core_profiles.profiles_1d.current
+
+        # psi_norm = np.linspace(0, 1.0, bs_psi_norm.size)
+        # for ion in core_profiles_1d.ion:
+        #     logger.debug(ion.label)
+        #     logger.debug(ion.density(psi_norm))
 
         display(  # CoreProfile initialize value
             [
@@ -278,23 +282,21 @@ if __name__ == "__main__":
 
             output=output_path/"core_profiles_initialize.svg")
 
-    if False:  # initialize CoreTransport value
+    if True:  # initialize CoreTransport value
 
         logger.info("Initialize Core Transport ")
 
-        
-        tok.core_transport.model.extend([
+        tok.core_transport.model.insert([
             {"code": {"name": "fast_alpha"}},
             {"code": {"name": "spitzer"}},
             # {"code": {"name": "neoclassical"}},
             # {"code": {"name": "glf23"}},
             # {"code": {"name": "nclass"}},
         ])
-        logger.debug(tok.core_transport.model[0].profiles_1d.current.ion.identifier)
+        # logger.debug(tok.core_transport.model[0].profiles_1d.current.ion[0].label)
 
         # core_transport_profiles_1d = tok.core_transport.model[:].profiles_1d.current
         # logger.debug(core_transport_profiles_1d.grid_d.rho_tor_norm.__reduce__())
-
 
         # logger.debug(core_transport_profiles_1d.ion[
         #     {"$reduce": {
@@ -303,9 +305,9 @@ if __name__ == "__main__":
         #     },
         #         "$id": "label"
         #     }].z_ion)
-
+    if True:
         # logger.debug(core_transport_profiles_1d.ion[:].particles.d())
-        # core_transport_profiles_1d = tok.core_transport.model[:].profiles_1d[0].electrons.particles.d.__reduce__()
+        core_transport_profiles_1d = tok.core_transport.model[:].profiles_1d[0].electrons.particles.d.__reduce__()
 
         # ele_energy = tok.core_transport.model[0].profiles_1d[0].electrons.energy
         # logger.debug([[sp.energy.d for sp in model.profiles_1d.ion] for model in tok.core_transport.model])
@@ -314,7 +316,7 @@ if __name__ == "__main__":
         # nc_profiles_1d = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
         # fast_alpha_profiles_1d = tok.core_transport.model[{"code.name": "fast_alpha"}].profiles_1d
 
-    if False:
+    
         display(  # CoreTransport  initialize value
             [
 

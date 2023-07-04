@@ -64,7 +64,12 @@ def load_core_profiles(d):
         "ion": [
             {"label": "D",  "density":      b_nDT,      "temperature": b_Ti},
             {"label": "T",  "density":      b_nDT,      "temperature": b_Ti},
-            {"label": "He", "density_thermal": b_nHe,   "temperature": b_Ti, "has_fast_particle": True},
+            {"label": "He",
+             "density_thermal": b_nHe,
+             "density_fast": 0.0,
+             "temperature": b_Ti,
+             "has_fast_particle": True
+             },
             {"label": "Be", "density":  0.02*b_ne,      "temperature": b_Ti, "z_ion_1d": z_Be,  "is_impurity": True},
             {"label": "Ar", "density": 0.0012*b_ne,     "temperature": b_Ti, "z_ion_1d": z_Ar,  "is_impurity": True},
         ],

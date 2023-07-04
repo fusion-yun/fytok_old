@@ -8,8 +8,8 @@ from fytok._imas.lastest.utilities import (
     _T_core_profiles_vector_components_1)
 from scipy import constants
 from spdm.data.Function import Function
-from spdm.data.HTree import AoS, List
-from spdm.data.sp_property import SpDict, sp_property
+from spdm.data.HTree import AoS
+from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.utils.logger import logger
 
@@ -22,23 +22,14 @@ TWOPI = 2.0*PI
 class CoreProfilesElectrons(_T_core_profiles_profiles_1d_electrons):
 
     @sp_property
-    def density(self) -> Function[float]:
-        v = super().density
-        if isinstance(v, Function):
-            return v
-        else:
-            return self.density_thermal+self.density_fast
+    def density(self) -> Function[float]: return self.density_thermal+self.density_fast
 
     @sp_property
     def pressure(self) -> Function[float]:
-        v = super().pressure
-        if isinstance(v, Function):
-            return v
-        else:
-            return self.pressure_thermal+self.pressure_fast_parallel+self.pressure_fast_perpendicular
+        return self.pressure_thermal+self.pressure_fast_parallel+self.pressure_fast_perpendicular
 
     @sp_property
-    def pressure_thermal(self) -> Function[float]: return self.density*self.temperature*constants.electron_volt
+    def pressure_thermal(self) -> Function[float]: return self.density*self.temperature*scipy.constants.electron_volt
 
     @sp_property
     def tau(self) -> Function[float]:
@@ -46,7 +37,7 @@ class CoreProfilesElectrons(_T_core_profiles_profiles_1d_electrons):
 
     @sp_property
     def vT(self) -> Function[float]:
-        return np.sqrt(self.temperature*constants.electron_volt/constants.electron_mass)
+        return np.sqrt(self.temperature*scipy.constants.electron_volt/scipy.constants.electron_mass)
 
 
 class CoreProfilesIon(_T_core_profile_ions):
@@ -56,16 +47,14 @@ class CoreProfilesIon(_T_core_profile_ions):
     has_fast_particle: bool = sp_property(default_value=False)
 
     @sp_property
-    def z_ion_1d(self) -> Function[float]:
-        return super().z_ion_1d
+    def z_ion_1d(self) -> Function[float]: return super().z_ion_1d
 
     @sp_property
-    def z_ion_square_1d(self) -> Function[float]:
-        return self.z_ion*self.z_ion
+    def z_ion_square_1d(self) -> Function[float]: return self.z_ion*self.z_ion
 
     @sp_property
     def density(self) -> Function[float]:
-        return self.density_thermal + self.density_fast if self.has_fast_particle else super().density
+        return self.density_thermal + self.density_fast if self.has_fast_particle else self.density_thermal
 
     density_thermal: Function[float] = sp_property(
         coordinate1="../../grid/rho_tor_norm", units="m^-3", type="dynamic", default_value=0.0)
@@ -75,11 +64,11 @@ class CoreProfilesIon(_T_core_profile_ions):
 
     @sp_property
     def pressure(self) -> Function[float]:
-        return self.pressure_thermal  # + self.pressure_fast_parallel+self.pressure_fast_perpendicular
+        return self.pressure_thermal + self.pressure_fast_parallel+self.pressure_fast_perpendicular
 
     @sp_property
     def pressure_thermal(self) -> Function[float]:
-        return self.density_thermal*self.temperature*constants.electron_volt
+        return self.density_thermal*self.temperature*scipy.constants.electron_volt
 
 
 class CoreProfiles1d(_T_core_profiles_profiles_1d):
@@ -215,7 +204,7 @@ class CoreProfiles1d(_T_core_profiles_profiles_1d):
         return self.grid.rho_tor_norm*(self.q.derivative()/self.q())
 
     ffprime: Function[float] = sp_property(coordinate1="../grid/rho_tor_norm", label="$ff^{\prime}$")
-    
+
     pprime: Function[float] = sp_property(coordinate1="../grid/rho_tor_norm", label="$p^{\prime}$")
 
 

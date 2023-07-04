@@ -203,7 +203,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
             psi_norm = np.linspace(1.0-psi_norm_boundary, psi_norm_boundary, int(psi_norm), endpoint=True)
             logger.debug(f"Set psi_norm ({psi_norm[0]},{psi_norm[-1]}) {len(psi_norm)}")
 
-        if not isinstance(psi_norm, np.ndarray) and psi_norm.ndim == 1:
+        if not isinstance(psi_norm, np.ndarray):
             raise ValueError(f"Can not create grid! psi_norm={psi_norm}")
         elif np.isclose(psi_norm[0], 0.0) and np.isclose(psi_norm[-1], 1.0):
             logger.warning(
@@ -495,7 +495,8 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         return np.sqrt(self._psirz.pd(2, 0) * self._psirz.pd(0, 2) + self._psirz.pd(1, 1)**2)
 
     @functools.cached_property
-    def dvolume_dpsi(self) -> Function[float]: return Function(*self._surface_integral(1.0), name="dvolume_dpsi")
+    def dvolume_dpsi(self) -> Function[float]: 
+        return Function[float](*self._surface_integral(1.0), name="dvolume_dpsi")
 
     ###############################
     # surface integral
@@ -686,7 +687,8 @@ class EquilibriumProfiles1d(Equilibrium.TimeSlice.Profiles1d):
     def rho_tor(self) -> Function[float]: return np.sqrt(self.phi / (PI*self._coord._B0))
 
     @sp_property
-    def rho_tor_norm(self) -> Function[float]: return np.sqrt(self.phi/self.phi(self._parent.boundary.psi))
+    def rho_tor_norm(self) -> Function[float]: 
+        return np.sqrt(self.phi/self.phi(self._parent.boundary.psi))
 
     @sp_property
     def drho_tor_dpsi(self) -> Function[float]: return 1.0/self.dpsi_drho_tor
@@ -784,7 +786,8 @@ class EquilibriumProfiles1d(Equilibrium.TimeSlice.Profiles1d):
         return (self._shape_property.Rmax - self._shape_property.Rmin)*0.5,
 
     @sp_property
-    def r_inboard(self) -> Function[float]: return self._shape_property.r_inboard
+    def r_inboard(self) -> Function[float]: 
+        return self._shape_property.r_inboard
 
     @sp_property
     def r_outboard(self) -> Function[float]: return self._shape_property.r_outboard
@@ -838,7 +841,7 @@ class EquilibriumProfiles2d(Equilibrium.TimeSlice.Profiles2d):
         dim1 = super().grid.dim1
         dim2 = super().grid.dim2
         mesh_type = super().grid_type
-        return Mesh(dim1,dim2,mesth_type=mesh_type)
+        return Mesh(dim1, dim2, mesth_type=mesh_type)
 
     @sp_property
     def r(self) -> Field[float]: return Field(self.grid.points[0], mesh=self.grid)
@@ -971,6 +974,9 @@ class EquilibriumBoundarySeparatrix(Equilibrium.TimeSlice.BoundarySeparatrix):
 
 
 class EquilibriumTimeSlice(Equilibrium.TimeSlice):
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
     profiles_1d: EquilibriumProfiles1d = sp_property()
 
