@@ -183,9 +183,9 @@ class Tokamak(SpDict):
     def __geometry__(self) -> GeoObject:
         geo = {
             "wall": self.wall.__geometry__,
-            # "pf_active": self.pf_active.__geometry__,
-            # "magnetics": self.magnetics.__geometry__,
-            # "equilibrium": self.equilibrium.__geometry__,
+            "pf_active": self.pf_active.__geometry__,
+            "magnetics": self.magnetics.__geometry__,
+            "equilibrium": self.equilibrium.__geometry__,
         }
 
         return geo, {

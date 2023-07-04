@@ -3,24 +3,18 @@ import collections.abc
 import functools
 import typing
 from dataclasses import dataclass
-from enum import Enum
-from math import isclose
 
 import numpy as np
 import scipy.constants
 from fytok._imas.lastest.equilibrium import (
-    _T_equilibrium_boundary, _T_equilibrium_boundary_separatrix,
-    _T_equilibrium_coordinate_system, _T_equilibrium_global_quantities,
-    _T_equilibrium_global_quantities_magnetic_axis, _T_equilibrium_profiles_1d,
-    _T_equilibrium_profiles_1d_rz1d_dynamic_aos, _T_equilibrium_profiles_2d,
-    _T_equilibrium_time_slice)
+    _T_equilibrium_global_quantities_magnetic_axis)
 from fytok._imas.lastest.utilities import _T_identifier_dynamic_aos3
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.modules.Utilities import CurveRZ, RZTuple, RZTuple_
 from spdm.data.Expression import Expression, Variable
 from spdm.data.Field import Field
 from spdm.data.Function import Function, function_like
-from spdm.data.HTree import AoS, Dict, List, Node
+from spdm.data.HTree import AoS, List
 from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.geometry.Curve import Curve
@@ -28,9 +22,7 @@ from spdm.geometry.GeoObject import GeoObject, GeoObjectSet
 from spdm.geometry.Point import Point
 from spdm.mesh.CurvilinearMesh import CurvilinearMesh
 from spdm.mesh.Mesh import Mesh
-from spdm.mesh.RectilinearMesh import RectilinearMesh
 from spdm.numlib.contours import find_countours
-from spdm.numlib.interpolate import interpolate
 from spdm.numlib.optimize import minimize_filter
 from spdm.utils.constants import *
 from spdm.utils.logger import logger
