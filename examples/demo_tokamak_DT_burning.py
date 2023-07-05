@@ -311,9 +311,12 @@ if __name__ == "__main__":
         #     }].z_ion)
 
         # logger.debug(core_transport_profiles_1d.ion[:].particles.d())
-        core_transport_profiles_1d = tok.core_transport.model[:].profiles_1d.current
-        coeff_d = core_transport_profiles_1d.electrons.particles.d
-        x = np.linspace(0, 1.0, bs_psi_norm.size)
+        core_transport_profiles_1d = tok.core_transport.model[:].profiles_1d[0]
+        # coeff_d = core_transport_profiles_1d.electrons.particles.d
+        # x = np.linspace(0, 1.0, bs_psi_norm.size)
+        # logger.debug(coeff_d(x))
+        for ion in core_transport_profiles_1d.ion:
+            logger.debug(ion.label)
 
         # ele_energy = tok.core_transport.model[0].profiles_1d[0].electrons.energy
         # logger.debug([[sp.energy.d for sp in model.profiles_1d.ion] for model in tok.core_transport.model])
@@ -338,7 +341,7 @@ if __name__ == "__main__":
 
                 ([
                     (function_like(profiles["Xi"].values, bs_r_norm), {"label": r"astra", **bs_line_style}),
-                    # *[(ion.energy.d, {"label": f"{ion.label}", }) for ion in core_transport_profiles_1d.ion],
+                    *[(ion.energy.d, {"label": f"{ion.label}", }) for ion in core_transport_profiles_1d.ion],
                 ], {"y_label": r"$\chi_{i}$", }),
 
                 # [(ion.particles.d_fast_factor, f"{ion.label}", r"$D_{\alpha}/D_{He}$")

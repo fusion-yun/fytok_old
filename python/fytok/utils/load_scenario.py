@@ -222,7 +222,15 @@ def load_scenario_ITER(path):
         "model": [
             {"code": {"name": "dummy"},
              "profiles_1d": [load_core_transport(d_core_profiles, vacuum_toroidal_field["r0"])]}
-        ]
+        ],
+        "$default_value": {
+            "model": {"profiles_1d":
+                      {"ion": [
+                          {"label": "D", },
+                          {"label": "T", },
+                          {"label": "He", }
+                      ]}}}
+
     }
 
     scenario["core_sources"] = {
