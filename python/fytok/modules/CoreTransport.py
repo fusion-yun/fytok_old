@@ -13,29 +13,17 @@ from spdm.utils.logger import logger
 from spdm.utils.tags import _not_found_
 from spdm.utils.tree_utils import merge_tree_recursive
 
-from .Atoms import atoms
 from .CoreProfiles import CoreProfiles
 from .Utilities import CoreRadialGrid
 
 
 class CoreTransportNeutral(_T_core_transport_model_neutral):
-
-    def __init__(self, d: typing.Any, *args,  **kwargs) -> None:
-        d = as_entry(d)
-        default_value = merge_tree_recursive(kwargs.pop("default_value", None),
-                                             atoms.get(d.get("label", None), {}))
-        super().__init__(d, *args, default_value=default_value, **kwargs)
+    pass
 
 
 class CoreTransportIon(_T_core_transport_model_ions):
     """Transport coefficients for density equations. Coordinates two levels above."""
-
-    def __init__(self, d: typing.Any, *args,  **kwargs) -> None:
-        d = as_entry(d)
-
-        default_value = merge_tree_recursive(kwargs.pop("default_value", None),
-                                             atoms.get(d.get("label", None), {}))
-        super().__init__(d, *args, default_value=default_value,  **kwargs)
+    pass
 
 
 class CoreTransportProfiles1D(_T_core_transport_model_profiles_1d):
@@ -54,7 +42,7 @@ class CoreTransportProfiles1D(_T_core_transport_model_profiles_1d):
     def grid_flux(self) -> CoreRadialGrid:
         return self.grid_d.remesh("rho_tor_norm", 0.5*(self.grid_d.rho_tor_norm[:-1]+self.grid_d.rho_tor_norm[1:]))
 
-    ion: AoS[Ion] = sp_property(coordinate1="1...N")
+    ion: AoS[Ion] = sp_property(coordinate1="1...N", identifier="label")
 
     neutral: AoS[Neutral] = sp_property(coordinate1="1...N")
 

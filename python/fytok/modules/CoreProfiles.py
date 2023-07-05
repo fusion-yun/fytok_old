@@ -12,7 +12,7 @@ from spdm.data.HTree import AoS
 from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.utils.logger import logger
-
+from spdm.utils.tags import _not_found_
 from .Utilities import CoreRadialGrid
 
 PI = scipy.constants.pi
@@ -21,12 +21,15 @@ TWOPI = 2.0*PI
 
 class CoreProfilesElectrons(_T_core_profiles_profiles_1d_electrons):
 
-    @sp_property
-    def density(self) -> Function[float]: return self.density_thermal+self.density_fast
+    # @sp_property
+    # def density(self) -> Function[float]: 
+    #     value = super().get("density", _not_found_)
+    #     return self.density_thermal+self.density_fast if value is _not_found_ else value
 
     @sp_property
     def pressure(self) -> Function[float]:
-        return self.pressure_thermal+self.pressure_fast_parallel+self.pressure_fast_perpendicular
+        value = super().get("pressure", _not_found_)
+        return self.pressure_thermal+self.pressure_fast_parallel+self.pressure_fast_perpendicular  if value is _not_found_ else value
 
     @sp_property
     def pressure_thermal(self) -> Function[float]: return self.density*self.temperature*scipy.constants.electron_volt
@@ -52,9 +55,10 @@ class CoreProfilesIon(_T_core_profile_ions):
     @sp_property
     def z_ion_square_1d(self) -> Function[float]: return self.z_ion*self.z_ion
 
-    @sp_property
-    def density(self) -> Function[float]:
-        return self.density_thermal + self.density_fast if self.has_fast_particle else self.density_thermal
+    # @sp_property
+    # def density(self) -> Function[float]:
+    #     value = super().get("density", _not_found_)
+    #     return self.density_thermal + self.density_fast if value is not _not_found_ else value
 
     density_thermal: Function[float] = sp_property(
         coordinate1="../../grid/rho_tor_norm", units="m^-3", type="dynamic", default_value=0.0)
@@ -77,7 +81,7 @@ class CoreProfiles1d(_T_core_profiles_profiles_1d):
 
     electrons: CoreProfilesElectrons = sp_property()
 
-    ion: AoS[CoreProfilesIon] = sp_property()
+    ion: AoS[CoreProfilesIon] = sp_property(identifier="label")
 
     @sp_property
     def t_i_average(self) -> Function[float]:

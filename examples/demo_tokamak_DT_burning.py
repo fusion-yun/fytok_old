@@ -111,7 +111,7 @@ if __name__ == "__main__":
 
     eq_global_quantities = tok.equilibrium.time_slice[0].global_quantities
 
-    if False:  # plot equilibrium
+    if True:  # plot equilibrium
         display(  # plot equilibrium
             tok,
             title=f"{tok.name} time={tok.time}s",
@@ -236,10 +236,14 @@ if __name__ == "__main__":
 
         logger.info("Solve Equilibrium ")
 
-    if False:  # initialize CoreProfile  value
+    if True:  # initialize CoreProfile  value
         logger.info("Initialize Core Profiles ")
 
         core_profiles_1d = tok.core_profiles.profiles_1d.current
+
+        logger.debug([ion.label for ion in core_profiles_1d.ion])
+
+        logger.debug(core_profiles_1d.ion["D"].label)
 
         # psi_norm = np.linspace(0, 1.0, bs_psi_norm.size)
         # for ion in core_profiles_1d.ion:
@@ -315,8 +319,8 @@ if __name__ == "__main__":
         # coeff_d = core_transport_profiles_1d.electrons.particles.d
         # x = np.linspace(0, 1.0, bs_psi_norm.size)
         # logger.debug(coeff_d(x))
-        for ion in core_transport_profiles_1d.ion:
-            logger.debug(ion.label)
+        # for ion in core_transport_profiles_1d.ion:
+        #     logger.debug(ion.label)
 
         # ele_energy = tok.core_transport.model[0].profiles_1d[0].electrons.energy
         # logger.debug([[sp.energy.d for sp in model.profiles_1d.ion] for model in tok.core_transport.model])

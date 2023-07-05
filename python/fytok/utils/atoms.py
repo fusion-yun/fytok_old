@@ -1,10 +1,12 @@
+import collections.abc
+
 import numpy as np
 import scipy.constants
 from spdm.data.Entry import Entry
 from spdm.data.Function import Function
 from spdm.data.HTree import Dict, Node
 from spdm.data.sp_property import SpDict, sp_property
-
+from spdm.utils.tree_utils import merge_tree_recursive
 atoms = {
     "e": {
         "label": "e",
@@ -70,6 +72,25 @@ atoms = {
 
     }
 }
+
+
+def get_species(species):
+    
+    if isinstance(species, str):
+        return atoms.get(species, {"label": species})
+    
+    elif isinstance(species, collections.abc.Sequence):
+        return [atoms.get(s, {"label": s}) for s in species]
+    
+    elif isinstance(species, collections.abc.Mapping):
+        label = species.get("label", None)
+        if label is None:
+            raise ValueError(f"Species {species} must have a label")
+        else:
+            return merge_tree_recursive(species, atoms.get(label, {"label": label}))
+    else:
+        raise TypeError(f"Unknown species type: {type(species)}")
+
 
 nuclear_reaction = {
     r"D(t,n)\alpha": {

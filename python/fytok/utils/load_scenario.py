@@ -1,17 +1,16 @@
 
 import pathlib
 import re
-import typing
 
 import numpy as np
 import pandas as pd
 from scipy import constants
-from spdm.data.Entry import Entry
 from spdm.data.Expression import Piecewise, Variable
 from spdm.data.File import File
-from spdm.data.Function import Function
 from spdm.numlib.smooth import smooth_1d
 from spdm.utils.logger import logger
+
+from .atoms import get_species
 
 TWOPI = 2.0*constants.pi
 
@@ -139,7 +138,8 @@ def load_core_transport(profiles, R0: float, B0: float = None):
                 "particles": {"d": D, "v": v_pinch_ni},
                 "energy": {"d": chi, "v": v_pinch_Ti},
             }
-        ]}
+        ]
+    }
 
 
 def load_core_source(profiles, R0: float, B0: float = None):
@@ -213,7 +213,13 @@ def load_scenario_ITER(path):
     scenario["core_profiles"] = {
         'vacuum_toroidal_field': vacuum_toroidal_field,
         "time": time,
-        "profiles_1d": [load_core_profiles(d_core_profiles)]
+        "profiles_1d": [load_core_profiles(d_core_profiles)],
+        "$default_value": {
+            "profiles_1d": {
+                "electrons": get_species("e"),
+                "ion": get_species(["D", "T", "He", "Be", "Ar"])
+            }
+        }
     }
 
     scenario["core_transport"] = {
@@ -224,12 +230,11 @@ def load_scenario_ITER(path):
              "profiles_1d": [load_core_transport(d_core_profiles, vacuum_toroidal_field["r0"])]}
         ],
         "$default_value": {
-            "model": {"profiles_1d":
-                      {"ion": [
-                          {"label": "D", },
-                          {"label": "T", },
-                          {"label": "He", }
-                      ]}}}
+            "model": {"profiles_1d": {
+                "electrons": get_species("e"),
+                "ion": get_species(["D", "T", "He"])
+            }}
+        }
 
     }
 
@@ -240,7 +245,14 @@ def load_scenario_ITER(path):
         "source": [
             {"code": {"name": "dummy"},
              "profiles_1d": [load_core_source(d_core_profiles, vacuum_toroidal_field["r0"])]
-             }]
+             }],
+
+        "$default_value": {
+            "source": {"profiles_1d": {
+                "electrons": get_species("e"),
+                "ion": get_species(["D", "T", "He"])
+            }}
+        }
     }
 
     eq_file = path/"Increased domain R-Z/Medium resolution - 129x257/g900003.00230_ITER_15MA_eqdsk16VVMR.txt"
