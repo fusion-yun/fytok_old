@@ -3,6 +3,11 @@
 # Author: Zhi YU
 # Created Time: 2015-12-28 21:58:47
 #
+# NOTE:
+#  -  this file is used to install the fytok package
+# Usage:
+#  生成 IMAS wrapper 
+#  -  python3 setup.py install_imas_wrapper --prefix=.
 
 import collections.abc
 import os
@@ -152,7 +157,7 @@ def copy_data_mapping(target_path, mapping_path: str):
     """Copy data mapping for IMAS warpper"""
 
     # 用logger输出log信息
-    print(f"Device data mapping for IMAS warpper to {target_path}")
+    print(f"Copy device data mapping for IMAS warpper to {target_path}")
 
     target_path = pathlib.Path(target_path)
 
