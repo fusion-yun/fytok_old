@@ -236,7 +236,7 @@ if __name__ == "__main__":
 
         logger.info("Solve Equilibrium ")
 
-    if True:  # initialize CoreProfile  value
+    if False:  # initialize CoreProfile  value
         logger.info("Initialize Core Profiles ")
 
         core_profiles_1d = tok.core_profiles.profiles_1d.current
@@ -293,7 +293,11 @@ if __name__ == "__main__":
             # {"code": {"name": "glf23"}},
             # {"code": {"name": "nclass"}},
         ])
-        # logger.debug(tok.core_transport.model[0].profiles_1d.current.ion[0].label)
+
+        # for m in tok.core_transport.model:
+        #     logger.debug(m.code.name)
+        #     logger.debug(as_array(m.profiles_1d.current.electrons.energy.d))
+        # # logger.debug(tok.core_transport.model[0].profiles_1d.current.ion[0].label)
 
         # core_transport_profiles_1d = tok.core_transport.model[:].profiles_1d.current
         # logger.debug(core_transport_profiles_1d.grid_d.rho_tor_norm.__reduce__())
@@ -305,9 +309,11 @@ if __name__ == "__main__":
         #     },
         #         "$id": "label"
         #     }].z_ion)
-    if True:
+
         # logger.debug(core_transport_profiles_1d.ion[:].particles.d())
-        core_transport_profiles_1d = tok.core_transport.model[:].profiles_1d[0].electrons.particles.d.__reduce__()
+        core_transport_profiles_1d = tok.core_transport.model[:].profiles_1d.current
+        coeff_d = core_transport_profiles_1d.electrons.particles.d
+        x = np.linspace(0, 1.0, bs_psi_norm.size)
 
         # ele_energy = tok.core_transport.model[0].profiles_1d[0].electrons.energy
         # logger.debug([[sp.energy.d for sp in model.profiles_1d.ion] for model in tok.core_transport.model])
@@ -316,7 +322,6 @@ if __name__ == "__main__":
         # nc_profiles_1d = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
         # fast_alpha_profiles_1d = tok.core_transport.model[{"code.name": "fast_alpha"}].profiles_1d
 
-    
         display(  # CoreTransport  initialize value
             [
 
@@ -333,13 +338,13 @@ if __name__ == "__main__":
 
                 ([
                     (function_like(profiles["Xi"].values, bs_r_norm), {"label": r"astra", **bs_line_style}),
-                    *[(ion.energy.d, {"label": f"{ion.label}", }) for ion in core_transport_profiles_1d.ion],
+                    # *[(ion.energy.d, {"label": f"{ion.label}", }) for ion in core_transport_profiles_1d.ion],
                 ], {"y_label": r"$\chi_{i}$", }),
 
                 # [(ion.particles.d_fast_factor, f"{ion.label}", r"$D_{\alpha}/D_{He}$")
                 #  for ion in fast_alpha_profiles_1d.ion],
                 # [
-                #     (function_like( np.log(profiles["XiNC"].values, bs_r_norm)),
+                #     (function_like(np.log(profiles["XiNC"].values, bs_r_norm)),
                 #      "astra", r"$ln \chi_{i,nc}$", bs_line_style),
                 #     # * [(np.log(core_transport1d_nc.ion[{"label": label}].energy.d),   f"${label}$", r"$ln \chi_{i,nc}$")
                 #     #     for label in ("H", "D", "He")],
