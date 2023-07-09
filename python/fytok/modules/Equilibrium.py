@@ -52,7 +52,7 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
             geo["x_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(x_points)]
 
         except Exception as error:
-            logger.error(f"Can not get o-point/x-point! {error}")
+            raise RuntimeError(f"Can not get o-point/x-point! {error}") from error
 
         try:
             geo["boundary"] = Curve(self.boundary.outline.r.__array__(),
@@ -245,19 +245,19 @@ class Equilibrium(_T_equilibrium):
 
     _plugin_registry = {}
 
-    def update(self, *args,
+    def refresh(self, *args,
                core_profile_1d: CoreProfiles.Profiles1d = None,
                pf_active: PFActive = None,
                wall: Wall = None,  **kwargs) -> TimeSlice:
         """ update the last time slice """
-        return super().update(*args, **kwargs)
+        return super().refresh(*args, **kwargs)
 
     def advance(self, *args, time: float = 0.0,
                 core_profile_1d: CoreProfiles.Profiles1d = None,
                 pf_active: PFActive = None,
                 wall: Wall = None, **kwargs) -> Equilibrium.TimeSlice:
         super().advance(time=time)
-        return super().update(*args, **kwargs)
+        return super().refresh(*args, **kwargs)
 
     @ property
     def __geometry__(self) -> GeoObject | typing.Container[GeoObject]:

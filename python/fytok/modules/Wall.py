@@ -8,6 +8,9 @@ from spdm.utils.logger import logger
 
 
 class Wall(_T_wall):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     @property
     def __geometry__(self) -> GeoObject | typing.List[GeoObject]:
         desc = self.description_2d[0]  # 0 for equilibrium codes

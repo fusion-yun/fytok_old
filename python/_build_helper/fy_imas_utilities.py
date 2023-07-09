@@ -1,10 +1,18 @@
 
 
 import collections.abc
+from enum import IntFlag
 
-from spdm.utils.plugin import Pluggable
-from spdm.data.NamedDict import NamedDict
 import numpy as np
+from spdm.data.Actor import Actor
+from spdm.data.Field import Field
+from spdm.data.Function import Function
+from spdm.data.HTree import AoS, List
+from spdm.data.NamedDict import NamedDict
+from spdm.data.Signal import Signal, SignalND
+from spdm.data.sp_property import SpDict, sp_property
+from spdm.data.TimeSeries import TimeSeriesAoS, TimeSlice
+from spdm.utils.plugin import Pluggable
 
 
 class _T_Library(SpDict):
@@ -58,7 +66,7 @@ class _T_Code(SpDict):
     """List of external libraries used by the code that has produced this IDS"""
 
 
-class _T_Module(SpDict, Pluggable):
+class _T_Module(Actor):
     _plugin_registry = {}
 
     @classmethod
@@ -110,9 +118,10 @@ class _T_IDS(_T_Module):
     def advance(self,  *args, time=None, ** kwargs):
         if time is not None:
             self.time.append(time)
+        super().advance(*args, time=time, **kwargs)
 
-    def update(self,  *args,  ** kwargs):
-        super().update(*args, **kwargs)
+    def refresh(self,  *args,  ** kwargs):
+        super().refresh(*args, **kwargs)
 
 # from spdm.geometry.Point import Point
 # from spdm.geometry.CubicSplineCurve import CubicSplineCurve

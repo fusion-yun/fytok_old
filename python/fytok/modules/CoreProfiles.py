@@ -218,8 +218,8 @@ class CoreProfiles(_T_core_profiles):
 
     profiles_1d: TimeSeriesAoS[Profiles1d] = sp_property()
 
-    def update(self, *args,  **kwargs) -> Profiles1d:
-        return self.profiles_1d.update(*args, **kwargs)
+    def refresh(self, *args,  **kwargs) -> Profiles1d:
+        return self.profiles_1d.refresh(*args, **kwargs)
 
     def advance(self, *args,  **kwargs) -> Profiles1d:
         return self.profiles_1d.advance(*args, **kwargs)

@@ -31,9 +31,9 @@ class CoreSourcesSource(_T_core_sources_source):
 
     global_quantities: TimeSeriesAoS[GlobalQuantities] = sp_property()
 
-    def update(self, *args, **kwargs) -> Profiles1d:
-        profiles_1d = self.profiles_1d.update(*args,  **kwargs)
-        self.global_quantities.update()
+    def refresh(self, *args, **kwargs) -> Profiles1d:
+        profiles_1d = self.profiles_1d.refresh(*args,  **kwargs)
+        self.global_quantities.refresh()
         return profiles_1d
 
     def advance(self, *args, **kwargs) -> Profiles1d:
@@ -62,5 +62,5 @@ class CoreSources(_T_core_sources):
     def advance(self, *args, **kwargs) -> Source.Profiles1D:
         return CoreSources.Source.Profiles1D(deep_reduce([source.advance(*args, **kwargs) for source in self.source]), parent=self)
 
-    def update(self, *args, **kwargs) -> Source.Profiles1D:
-        return CoreSources.Source.Profiles1D(deep_reduce([source.update(*args, **kwargs) for source in self.source]), parent=self)
+    def refresh(self, *args, **kwargs) -> Source.Profiles1D:
+        return CoreSources.Source.Profiles1D(deep_reduce([source.refresh(*args, **kwargs) for source in self.source]), parent=self)

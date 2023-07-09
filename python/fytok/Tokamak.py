@@ -47,25 +47,10 @@ class Tokamak(SpDict):
                 kwargs["name"] = desc
             imas_version_major, imas_version_minor, imas_version_patch, *_ = imas_version.split(".")
             entry = open_entry(None, source_schema=desc, target_schema=f"imas/{imas_version_major}")
-        cache = {}
-        default_value = {}
-        for k, v in kwargs.items():
-            if isinstance(v, collections.abc.Mapping):
-                d_value, c_value = group_dict_by_prefix(v,  "$default_value")
-            else:
-                c_value = v
-                d_value = None
-            if d_value is not None:
-                default_value[k] = d_value
 
-            cache[k] = c_value
+        super().__init__(kwargs, entry=entry)
 
-        super().__init__(entry, cache=cache, default_value=default_value)
-
-        self._time = kwargs.get('time', 0.0)
-
-    @property
-    def time(self) -> float: return self._time
+    time: float = sp_property(default_value=0.0)
 
     name: str = sp_property(default_value="unknown")
 
@@ -99,7 +84,7 @@ class Tokamak(SpDict):
 
     def check_converge(self, *args, **kwargs) -> float: return 0.0
 
-    def advance(self, *args, dt=None, do_update=False, **kwargs) -> CoreProfiles.Profiles1d:
+    def advance(self, *args, dt=None, do_refresh=False, **kwargs) -> CoreProfiles.Profiles1d:
         self._time += dt
 
         core_profiles_1d_prev = self.core_profiles.profile_1d.current
@@ -128,27 +113,27 @@ class Tokamak(SpDict):
 
         self.core_profiles.advance(core_profiles_1d_next)
 
-        if do_update:
-            return self.update()
+        if do_refresh:
+            return self.refresh()
         else:
             return core_profiles_1d_next
 
-    def update(self, *args, tolerance=1.0e-4, max_iteration=1, **kwargs) -> CoreProfiles.Profiles1d:
+    def refresh(self, *args, tolerance=1.0e-4, max_iteration=1, **kwargs) -> CoreProfiles.Profiles1d:
 
-        super().update(*args, **kwargs)
+        # super().refresh(*args, **kwargs)
 
         residual = tolerance
 
         core_profiles_1d_iter = copy(self.core_profiles.profiles_1d.current)
 
         for step_num in range(max_iteration):
-            equilibrium = self.equilibrium.update(
+            equilibrium = self.equilibrium.refresh(
                 core_profiles_1d=core_profiles_1d_iter,
                 wall=self.wall,
                 pf_active=self.pf_active,
                 tolerance=tolerance,)
 
-            # core_transport_profiles_1d = self.core_transport.update(
+            # core_transport_profiles_1d = self.core_transport.refresh(
             #     equilibrium=equilibrium,
             #     core_profile_1d=core_profiles_1d_iter)
 
@@ -171,7 +156,7 @@ class Tokamak(SpDict):
         else:
             logger.debug(f"time={self.time}  iterator step {step_num}/{max_iteration} residual={residual}")
 
-        self.core_profiles.update(core_profiles_1d_iter)
+        self.core_profiles.refresh(core_profiles_1d_iter)
 
         if residual >= tolerance:
             logger.warning(

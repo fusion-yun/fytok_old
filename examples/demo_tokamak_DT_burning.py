@@ -73,6 +73,7 @@ if __name__ == "__main__":
     scenario = load_scenario(data_path)
 
     tok = Tokamak("ITER",
+                  time=0.0,
                   name=scenario["name"],
                   description=scenario["description"],
                   core_profiles={
@@ -110,6 +111,8 @@ if __name__ == "__main__":
     eq_profiles_1d = tok.equilibrium.time_slice[0].profiles_1d
 
     eq_global_quantities = tok.equilibrium.time_slice[0].global_quantities
+
+    logger.debug(tok.time)
 
     if True:  # plot equilibrium
         display(  # plot equilibrium
@@ -236,14 +239,14 @@ if __name__ == "__main__":
 
         logger.info("Solve Equilibrium ")
 
-    if True:  # initialize CoreProfile  value
+    if False:  # initialize CoreProfile  value
         logger.info("Initialize Core Profiles ")
 
         core_profiles_1d = tok.core_profiles.profiles_1d.current
 
-        logger.debug([ion.label for ion in core_profiles_1d.ion])
+        # logger.debug([ion.label for ion in core_profiles_1d.ion])
 
-        logger.debug(core_profiles_1d.ion["D"].label)
+        # logger.debug(core_profiles_1d.ion["D"].label)
 
         # psi_norm = np.linspace(0, 1.0, bs_psi_norm.size)
         # for ion in core_profiles_1d.ion:
@@ -315,7 +318,7 @@ if __name__ == "__main__":
         #     }].z_ion)
 
         # logger.debug(core_transport_profiles_1d.ion[:].particles.d())
-        core_transport_profiles_1d = tok.core_transport.model[:].profiles_1d[0]
+        core_transport_profiles_1d = tok.core_transport.model[0].profiles_1d[0]
         # coeff_d = core_transport_profiles_1d.electrons.particles.d
         # x = np.linspace(0, 1.0, bs_psi_norm.size)
         # logger.debug(coeff_d(x))
@@ -328,6 +331,8 @@ if __name__ == "__main__":
         # logger.debug(core_transport_profiles_1d.electrons.energy.d(np.linspace(0, 1.0, 128)))
         # nc_profiles_1d = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
         # fast_alpha_profiles_1d = tok.core_transport.model[{"code.name": "fast_alpha"}].profiles_1d
+
+        logger.debug(core_transport_profiles_1d.electrons.energy.d.__value__)
 
         display(  # CoreTransport  initialize value
             [
@@ -444,7 +449,7 @@ if __name__ == "__main__":
 
     if False:  # TransportSolver
 
-        tok["core_transport_solver"] = {
+        tok.transport_solver.update({
             "code": {
                 "name": "bvp_solver_nonlinear",
                 "parameters": {
@@ -476,12 +481,18 @@ if __name__ == "__main__":
                      }
                 ]
             }}
+        )
+        logger.debug(tok.transport_solver.boundary_conditions_1d.current.current.value)
+
+        logger.debug([ion.label for ion in tok.transport_solver.boundary_conditions_1d.current.ion])
+
+        # logger.debug(core_profiles_1d.ion["D"].label)
 
         particle_solver = tok.transport_solver.code.parameters.get('particle_solver', 'ion')
 
         logger.info("Transport solver Start")
 
-        core_profile_1d = tok.update()
+        core_profile_1d = tok.refresh()
 
         logger.info("Transport solver End")
 

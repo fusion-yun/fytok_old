@@ -264,6 +264,14 @@ def load_scenario_ITER(path):
 
     scenario["equilibrium"].update(File(eq_file, format="GEQdsk").read().dump())
 
+    scenario["transport_solver"] = {
+        "$default_value": {
+            "boundary_conditions_1d": {
+                "electrons": get_species("e"),
+                "ion": get_species(["D", "T", "He"])
+            }
+        }
+    }
     logger.info(f"Load scenario/equilibrium from {eq_file}")
 
     return scenario

@@ -28,7 +28,7 @@ from spdm.utils.constants import *
 from spdm.utils.logger import logger
 # from spdm.utils.misc import convert_to_named_tuple
 from spdm.utils.tags import _not_found_
-from spdm.utils.typing import ArrayLike, ArrayType, NumericType, scalar_type
+from spdm.utils.typing import ArrayLike, ArrayType, NumericType, scalar_type, array_type
 
 _R = Variable(0, "R")
 _Z = Variable(1, "Z")
@@ -98,7 +98,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         self._B0 = super().get("b0", self._parent._B0)   # magnetic field on magnetic axis
         self._R0 = super().get("r0", self._parent._R0)   # major radius of magnetic axis
         self._Ip = super().get("ip", self._parent.global_quantities.ip)  # plasma current
-
+        
         self._fpol = self._parent.profiles_1d.f  # poloidal current function
 
         self._s_B0 = np.sign(self._B0)
@@ -121,7 +121,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
     @functools.cached_property
     def _psirz(self) -> Field[float]:
-        psirz = super().get("psirz", _not_found_, force=True)
+        psirz = super().get("psirz", _not_found_, force=True, type_hint=np.ndarray)
 
         if isinstance(psirz, np.ndarray):
             dim1 = super().get("grid/dim1", _not_found_)
@@ -495,7 +495,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         return np.sqrt(self._psirz.pd(2, 0) * self._psirz.pd(0, 2) + self._psirz.pd(1, 1)**2)
 
     @functools.cached_property
-    def dvolume_dpsi(self) -> Function[float]: 
+    def dvolume_dpsi(self) -> Function[float]:
         return Function[float](*self._surface_integral(1.0), name="dvolume_dpsi")
 
     ###############################
@@ -687,7 +687,7 @@ class EquilibriumProfiles1d(Equilibrium.TimeSlice.Profiles1d):
     def rho_tor(self) -> Function[float]: return np.sqrt(self.phi / (PI*self._coord._B0))
 
     @sp_property
-    def rho_tor_norm(self) -> Function[float]: 
+    def rho_tor_norm(self) -> Function[float]:
         return np.sqrt(self.phi/self.phi(self._parent.boundary.psi))
 
     @sp_property
@@ -786,7 +786,7 @@ class EquilibriumProfiles1d(Equilibrium.TimeSlice.Profiles1d):
         return (self._shape_property.Rmax - self._shape_property.Rmin)*0.5,
 
     @sp_property
-    def r_inboard(self) -> Function[float]: 
+    def r_inboard(self) -> Function[float]:
         return self._shape_property.r_inboard
 
     @sp_property
@@ -1005,7 +1005,7 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
             geo["x_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(x_points)]
 
         except Exception as error:
-            logger.error(f"Can not get o-point/x-point! {error}")
+           raise RuntimeError(f"Can not get o-point/x-point!") from error
 
         try:
             boundary = [surf for _, surf in
