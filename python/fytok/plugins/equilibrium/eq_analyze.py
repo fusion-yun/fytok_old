@@ -98,7 +98,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         self._B0 = super().get("b0", self._parent._B0)   # magnetic field on magnetic axis
         self._R0 = super().get("r0", self._parent._R0)   # major radius of magnetic axis
         self._Ip = super().get("ip", self._parent.global_quantities.ip)  # plasma current
-        
+
         self._fpol = self._parent.profiles_1d.f  # poloidal current function
 
         self._s_B0 = np.sign(self._B0)
@@ -131,7 +131,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
             if not isinstance(dim1, np.ndarray) or not isinstance(dim2, np.ndarray):
                 raise RuntimeError(f"Can not create grid!")
 
-            psirz = Field(psirz, dim1, dim2, name="psirz")
+            psirz = Field(psirz, dim1, dim2, mesh_type=grid_type, name="psirz")
         elif psirz is _not_found_:
             psirz = self._parent.profiles_2d[0].psi
         else:
@@ -217,7 +217,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         if not (isinstance(theta, np.ndarray) and theta.ndim == 1):
             raise ValueError(f"Can not create grid! theta={theta}")
 
-        surfs = GeoObjectSet([surf for _, surf in self.find_surface_by_psi_norm(psi_norm, o_point=True)])
+        surfs = GeoObjectSet([surf for _, surf in self.find_surfaces_by_psi_norm(psi_norm, o_point=True)])
 
         return CurvilinearMesh(psi_norm, theta, geometry=surfs, cycles=[False, TWOPI])
 
@@ -260,7 +260,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     def tensor_contravariant(self) -> Field[float]:
         raise NotImplementedError(f"")
 
-    def find_surface(self, psi:  float | ArrayType | typing.Sequence[float], o_point: OXPoint = True) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
+    def find_surfaces(self, psi:  float | ArrayType | typing.Sequence[float], o_point: OXPoint = True) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
         """
             if o_point is not None:
                 only return  closed surface  enclosed o-point
@@ -384,7 +384,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
                 # else:
                 #     yield level, Curve(surf, theta, is_closed=is_closed)
 
-    def find_surface_by_psi_norm(self, psi_norm: float | ArrayType | typing.Sequence[float], *args,   **kwargs) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
+    def find_surfaces_by_psi_norm(self, psi_norm: float | ArrayType | typing.Sequence[float], *args,   **kwargs) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
 
         psi_magnetic_axis = self.psi_magnetic_axis
 
@@ -392,10 +392,10 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         if isinstance(psi_norm, (collections.abc.Sequence, np.ndarray)):
             psi = np.asarray(psi_norm, dtype=float)*(psi_boundary-psi_magnetic_axis)+psi_magnetic_axis
-            yield from self.find_surface(psi, *args,  **kwargs)
+            yield from self.find_surfaces(psi, *args,  **kwargs)
         elif isinstance(psi_norm, collections.abc.Generator):
             for psi_n in psi_norm:
-                yield from self.find_surface(psi_n*(psi_boundary-psi_magnetic_axis)+psi_magnetic_axis, *args,  **kwargs)
+                yield from self.find_surfaces(psi_n*(psi_boundary-psi_magnetic_axis)+psi_magnetic_axis, *args,  **kwargs)
 
     @dataclass
     class ShapeProperty:
@@ -437,7 +437,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         elif not isinstance(psi, (np.ndarray, collections.abc.MutableSequence)):
             psi = [psi]
 
-        sbox = np.asarray([[p, *shape_box(s)] for p, s in self.find_surface(psi, o_point=True)], dtype=float)
+        sbox = np.asarray([[p, *shape_box(s)] for p, s in self.find_surfaces(psi, o_point=True)], dtype=float)
 
         if sbox.shape[0] == 1:
             psi, rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard = sbox[0]
@@ -521,7 +521,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         else:
             if isinstance(psi, scalar_type):
                 psi = [psi]
-            surfs_list = self.find_surface(psi, o_point=True)
+            surfs_list = self.find_surfaces(psi, o_point=True)
 
         # f_Bpol = Field(func/self.Bpol, mesh=self.grid, name="f_Bpol").compile()
 
@@ -841,7 +841,7 @@ class EquilibriumProfiles2d(Equilibrium.TimeSlice.Profiles2d):
         dim1 = super().grid.dim1
         dim2 = super().grid.dim2
         mesh_type = super().grid_type
-        return Mesh(dim1, dim2, mesth_type=mesh_type)
+        return Mesh(dim1, dim2, mesh_type=mesh_type)
 
     @sp_property
     def r(self) -> Field[float]: return Field(self.grid.points[0], mesh=self.grid)
@@ -890,7 +890,7 @@ class EquilibriumBoundary(Equilibrium.TimeSlice.Boundary):
 
     @sp_property[Curve](coordinates="r z")
     def outline(self) -> Curve:
-        _, surf = next(self._coord.find_surface(self.psi, o_point=True))
+        _, surf = next(self._coord.find_surfaces(self.psi, o_point=True))
         return surf
 
     psi_norm: float = sp_property(default_value=0.999)
@@ -1005,11 +1005,11 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
             geo["x_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(x_points)]
 
         except Exception as error:
-           raise RuntimeError(f"Can not get o-point/x-point!") from error
+            raise RuntimeError(f"Can not get o-point/x-point!") from error
 
         try:
             boundary = [surf for _, surf in
-                        self.coordinate_system.find_surface(self.boundary.psi, o_point=True)]
+                        self.coordinate_system.find_surfaces(self.boundary.psi, o_point=True)]
         except Exception as error:
             raise RuntimeError(f"Plot boundary failed!") from error
         else:
@@ -1017,7 +1017,7 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
 
         try:
             separatrix = [surf for _, surf in
-                          self.coordinate_system.find_surface(self.boundary_separatrix.psi, o_point=False)]
+                          self.coordinate_system.find_surfaces(self.boundary_separatrix.psi, o_point=False)]
         except Exception as error:
             raise RuntimeError(f"Plot separatrix failed!") from error
         else:

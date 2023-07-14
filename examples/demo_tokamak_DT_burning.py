@@ -108,18 +108,18 @@ if __name__ == "__main__":
                   }
                   )
 
-    eq_profiles_1d = tok.equilibrium.time_slice[0].profiles_1d
+    eq_time_slice = tok.equilibrium.time_slice[0]
 
-    eq_global_quantities = tok.equilibrium.time_slice[0].global_quantities
+    eq_profiles_1d = eq_time_slice.profiles_1d
 
-    logger.debug(tok.time)
+    eq_global_quantities = eq_time_slice.global_quantities
 
     if True:  # plot equilibrium
         display(  # plot equilibrium
             tok,
             title=f"{tok.name} time={tok.time}s",
             output=output_path/"tokamak_prev.svg")
-
+    if True:
         display(  # plot tokamak geometric profile
             [
                 ((eq_profiles_1d.dvolume_dpsi, {"label": r"$\frac{dV}{d\psi}$"}), {"y_label": r"$[Wb]$"}),
@@ -289,7 +289,7 @@ if __name__ == "__main__":
 
             output=output_path/"core_profiles_initialize.svg")
 
-    if True:  # initialize CoreTransport value
+    if False:  # initialize CoreTransport value
 
         logger.info("Initialize Core Transport ")
 
