@@ -108,18 +108,18 @@ if __name__ == "__main__":
                   }
                   )
 
-    eq_time_slice = tok.equilibrium.time_slice[0]
+    eq_time_slice = tok.equilibrium.time_slice.current
 
     eq_profiles_1d = eq_time_slice.profiles_1d
 
     eq_global_quantities = eq_time_slice.global_quantities
 
-    if True:  # plot equilibrium
+    if False:  # plot equilibrium
         display(  # plot equilibrium
             tok,
             title=f"{tok.name} time={tok.time}s",
             output=output_path/"tokamak_prev.svg")
-    if True:
+
         display(  # plot tokamak geometric profile
             [
                 ((eq_profiles_1d.dvolume_dpsi, {"label": r"$\frac{dV}{d\psi}$"}), {"y_label": r"$[Wb]$"}),
@@ -244,15 +244,6 @@ if __name__ == "__main__":
 
         core_profiles_1d = tok.core_profiles.profiles_1d.current
 
-        # logger.debug([ion.label for ion in core_profiles_1d.ion])
-
-        # logger.debug(core_profiles_1d.ion["D"].label)
-
-        # psi_norm = np.linspace(0, 1.0, bs_psi_norm.size)
-        # for ion in core_profiles_1d.ion:
-        #     logger.debug(ion.label)
-        #     logger.debug(ion.density(psi_norm))
-
         display(  # CoreProfile initialize value
             [
                 ([
@@ -275,7 +266,8 @@ if __name__ == "__main__":
                     (b_Te,    {"label":  r"astra $T_e$",      **bs_line_style}),
                     (b_Ti,    {"label":  r"astra $T_i$",      **bs_line_style}),
                     (core_profiles_1d.electrons.temperature, {"label":   r"$e$", }),
-                    # *[(core_profiles_1d.ion[{"label": label}].temperature,   f"${label}$") for label in ['H', 'D', 'He']],
+                    *[(ion.temperature, {"label": f"${ion.label}$"})
+                      for ion in core_profiles_1d.ion if not ion.is_impurity],
                 ], {"y_label":  r"$T [eV]$", }),
 
                 # [
@@ -289,7 +281,7 @@ if __name__ == "__main__":
 
             output=output_path/"core_profiles_initialize.svg")
 
-    if False:  # initialize CoreTransport value
+    if True:  # initialize CoreTransport value
 
         logger.info("Initialize Core Transport ")
 
@@ -301,38 +293,10 @@ if __name__ == "__main__":
             # {"code": {"name": "nclass"}},
         ])
 
-        # for m in tok.core_transport.model:
-        #     logger.debug(m.code.name)
-        #     logger.debug(as_array(m.profiles_1d.current.electrons.energy.d))
-        # # logger.debug(tok.core_transport.model[0].profiles_1d.current.ion[0].label)
+        core_transport_profiles_1d = tok.core_transport.model[:].profiles_1d.current
 
-        # core_transport_profiles_1d = tok.core_transport.model[:].profiles_1d.current
-        # logger.debug(core_transport_profiles_1d.grid_d.rho_tor_norm.__reduce__())
-
-        # logger.debug(core_transport_profiles_1d.ion[
-        #     {"$reduce": {
-        #         "*": "$and",
-        #         "*.array": "$add",
-        #     },
-        #         "$id": "label"
-        #     }].z_ion)
-
-        # logger.debug(core_transport_profiles_1d.ion[:].particles.d())
-        core_transport_profiles_1d = tok.core_transport.model[0].profiles_1d[0]
-        # coeff_d = core_transport_profiles_1d.electrons.particles.d
-        # x = np.linspace(0, 1.0, bs_psi_norm.size)
-        # logger.debug(coeff_d(x))
-        # for ion in core_transport_profiles_1d.ion:
-        #     logger.debug(ion.label)
-
-        # ele_energy = tok.core_transport.model[0].profiles_1d[0].electrons.energy
-        # logger.debug([[sp.energy.d for sp in model.profiles_1d.ion] for model in tok.core_transport.model])
-        # logger.debug(energy.d)
-        # logger.debug(core_transport_profiles_1d.electrons.energy.d(np.linspace(0, 1.0, 128)))
-        # nc_profiles_1d = tok.core_transport.model[{"code.name": "neoclassical"}].profiles_1d
-        # fast_alpha_profiles_1d = tok.core_transport.model[{"code.name": "fast_alpha"}].profiles_1d
-
-        logger.debug(core_transport_profiles_1d.electrons.energy.d.__value__)
+        for ion in core_transport_profiles_1d.ion:
+            logger.debug(ion.label)
 
         display(  # CoreTransport  initialize value
             [
@@ -375,18 +339,18 @@ if __name__ == "__main__":
             title="Transport", transparent=True,
             output=output_path/"core_transport.svg")
 
-    if False:  # CoreSources
+    if False:  # initialize CoreSources
         logger.info("Initialize Core Source  ")
 
-        # tok.core_sources.source.extend([
-        #     {"code": {"name": "bootstrap_current"}},
-        #     {"code": {"name": "fusion_reaction"}},
-        # ])
+        tok.core_sources.source.insert([
+            {"code": {"name": "bootstrap_current"}},
+            {"code": {"name": "fusion_reaction"}},
+        ])
 
         # tok.core_sources.refresh(equilibrium=tok.equilibrium,
         #                          core_profiles=tok.core_profiles)
 
-        core_source_profiles_1d = tok.core_sources.source[0].profiles_1d[time_slice]
+        core_source_profiles_1d = tok.core_sources.source[:].profiles_1d.current
 
         display(
             [

@@ -95,9 +95,9 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         super().__init__(*args, **kwargs)
         logger.debug(f"Create MagneticCoordSystem.")
 
-        self._B0 = super().get("b0", self._parent._B0)   # magnetic field on magnetic axis
-        self._R0 = super().get("r0", self._parent._R0)   # major radius of magnetic axis
-        self._Ip = super().get("ip", self._parent.global_quantities.ip)  # plasma current
+        self._B0 = super().get("b0", self._parent._B0, type_hint=float)   # magnetic field on magnetic axis
+        self._R0 = super().get("r0", self._parent._R0, type_hint=float)   # major radius of magnetic axis
+        self._Ip = super().get("ip", self._parent.global_quantities.ip, type_hint=float)  # plasma current
 
         self._fpol = self._parent.profiles_1d.f  # poloidal current function
 

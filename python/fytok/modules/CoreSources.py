@@ -48,16 +48,11 @@ class CoreSources(_T_core_sources):
 
     grid: CoreRadialGrid = sp_property()
 
-    source: AoS[Source] = sp_property()
-
-    @property
-    def source_combiner(self) -> Source:
-        return self.source.combine(
-            default_value={
-                "identifier": {"name": "total", "index": 1,
+    source: AoS[Source] = sp_property(default_value={
+        "identifier": {"name": "total", "index": 1,
                                "description": "Total source; combines all sources"},
-                "code": {"name": None},
-            })
+        "code": {"name": None},
+    })
 
     def advance(self, *args, **kwargs) -> Source.Profiles1D:
         return CoreSources.Source.Profiles1D(deep_reduce([source.advance(*args, **kwargs) for source in self.source]), parent=self)
