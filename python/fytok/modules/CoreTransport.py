@@ -66,13 +66,7 @@ class CoreTransport(_T_core_transport):
 
     Model = CoreTransportModel
 
-    model: AoS[Model] = sp_property(default_value={
-        "identifier": {"name": "combined", "index": 1,
-                               "description": """Combination of data from available transport models.
-                                Representation of the total transport in the system"""},
-        "code": {"name": None},
-        "model": {"profiles_1d": {"ion": {"$id": "label"}}}
-    })
+    model: AoS[Model] = sp_property()
 
     def advance(self, *args, **kwargs) -> Model.Profiles1D:
         return CoreTransportModel.Model.Profiles1D(deep_reduce([model.advance(*args, **kwargs) for model in self.model]), parent=self)

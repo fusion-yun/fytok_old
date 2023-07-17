@@ -102,7 +102,12 @@ if __name__ == "__main__":
                               "coordinate_system": {"grid": {"dim1": 128, "dim2": 128}}
                           }}},
                   core_transport={
-                      **scenario["core_transport"], },
+                      **scenario["core_transport"],
+                      "$default_value": {
+                          "profiles_1d": {"ion": [{"label": "D"},
+                                                  {"label": "T"},
+                                                  {"label": "He"}]}
+                      }},
                   core_sources={
                       **scenario["core_sources"],
                   }
@@ -114,7 +119,7 @@ if __name__ == "__main__":
 
     eq_global_quantities = eq_time_slice.global_quantities
 
-    if False:  # plot equilibrium
+    if True:  # plot equilibrium
         display(  # plot equilibrium
             tok,
             title=f"{tok.name} time={tok.time}s",
@@ -285,6 +290,10 @@ if __name__ == "__main__":
 
         logger.info("Initialize Core Transport ")
 
+        core_transport = tok.core_transport
+
+        model = core_transport.model
+
         tok.core_transport.model.insert([
             {"code": {"name": "fast_alpha"}},
             {"code": {"name": "spitzer"}},
@@ -298,6 +307,7 @@ if __name__ == "__main__":
         for ion in core_transport_profiles_1d.ion:
             logger.debug(ion.label)
 
+    if False:
         display(  # CoreTransport  initialize value
             [
 
