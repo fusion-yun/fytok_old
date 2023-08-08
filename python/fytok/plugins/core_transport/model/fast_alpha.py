@@ -6,7 +6,7 @@ from spdm.data.Function import function_like
 from spdm.numlib.misc import array_like
 from spdm.utils.logger import logger
 from spdm.utils.tags import _next_, _not_found_
-
+from spdm.utils.tree_utils import merge_tree_recursive
 from fytok.modules.CoreProfiles import CoreProfiles
 from fytok.modules.CoreTransport import CoreTransport
 from fytok.modules.Equilibrium import Equilibrium
@@ -28,13 +28,13 @@ class FastAlpha(CoreTransport.Model):
     """
 
     def __init__(self, d=None,  *args, **kwargs):
-        super().__init__(d, *args,
-                         identifier={"name": "fusion", "index": 5,
-                                     "description": f"Fast alpha"},
-                         code={"name": "FastAlpha"},
-                         ** kwargs)
+        super().__init__(merge_tree_recursive({
+                         "identifier": "neoclassical",
+                         "code": {"name": "FastAlpha",
+                                  "description": f"{self.__class__.__name__}  Fast alpha"}, }, d),
+                         *args, ** kwargs)
 
-    def update(self, *args,  equilibrium: Equilibrium,  core_profiles: CoreProfiles, **kwargs) -> None:
+    def refresh(self, *args,  equilibrium: Equilibrium,  core_profiles: CoreProfiles, **kwargs) -> None:
 
         super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 

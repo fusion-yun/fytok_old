@@ -48,6 +48,7 @@ class CoreTransportProfiles1D(_T_core_transport_model_profiles_1d):
 
 
 class CoreTransportModel(_T_core_transport_model):
+    _plugin_registry = {}
 
     _IDS = "core_transport/model"
 

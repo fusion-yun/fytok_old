@@ -145,7 +145,7 @@ def load_core_transport(profiles, R0: float, B0: float = None):
 def load_core_source(profiles, R0: float, B0: float = None):
     bs_r_norm = profiles["x"].values
 
-    _x = Variable(0,"rho_tor_norm")
+    _x = Variable(0, "rho_tor_norm")
 
     S = 9e20 * np.exp(15.0*(_x**2-1.0))
 
@@ -210,6 +210,8 @@ def load_scenario_ITER(path):
 
     d_core_profiles = pd.read_excel(profiles_file, sheet_name=1, header=10, usecols="B:BN")
 
+    rho_tor_norm = np.linspace(0.0, 0.9, 128)
+    
     scenario["core_profiles"] = {
         'vacuum_toroidal_field': vacuum_toroidal_field,
         "time": time,
@@ -230,12 +232,14 @@ def load_scenario_ITER(path):
              "profiles_1d": [load_core_transport(d_core_profiles, vacuum_toroidal_field["r0"])]}
         ],
         "$default_value": {
-            "model": {"profiles_1d": {
-                "electrons": get_species("e"),
-                "ion": get_species(["D", "T", "He"])
-            }}
-        }
 
+            "model": {
+                "profiles_1d": {
+                    "grid_d": {"rho_tor_norm": rho_tor_norm},
+                    "electrons": get_species("e"),
+                    "ion": get_species(["D", "T", "He"])
+                }}
+        }
     }
 
     scenario["core_sources"] = {

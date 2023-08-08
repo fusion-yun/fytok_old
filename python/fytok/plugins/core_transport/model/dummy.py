@@ -1,7 +1,6 @@
 
-import collections
-
 from fytok.modules.CoreTransport import CoreTransport
+from spdm.utils.tree_utils import merge_tree_recursive
 
 
 class TransportModelDummy(CoreTransport.Model):
@@ -12,13 +11,13 @@ class TransportModelDummy(CoreTransport.Model):
     """
 
     def __init__(self, d, *args,   **kwargs):
-        super().__init__(collections.ChainMap({
-            "identifier": {"name": "dummy", "index": 5,
-                           "description": f"{self.__class__.__name__} Dummy CoreTransport.Model "},
-            "code": {"name": "dummy"}}, d or {}),
+        super().__init__(merge_tree_recursive({
+            "identifier": "unspecified",
+            "code": {"name": "dummy",
+                     "description": f"{self.__class__.__name__} Dummy CoreTransport.Model "}}, d),
             *args, **kwargs)
 
-    def update(self, *args, **kwargs) -> float:
+    def refresh(self, *args, **kwargs) -> float:
         return super().refresh(*args, **kwargs)
 
 

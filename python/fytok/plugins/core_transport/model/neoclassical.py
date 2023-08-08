@@ -1,13 +1,14 @@
 import numpy as np
-from fytok.transport.CoreProfiles import CoreProfiles
-from fytok.transport.CoreTransport import CoreTransport
-from fytok.transport.Equilibrium import Equilibrium
+from fytok.modules.CoreProfiles import CoreProfiles
+from fytok.modules.CoreTransport import CoreTransport
+from fytok.modules.Equilibrium import Equilibrium
 from spdm.numlib.misc import array_like
 from scipy import constants
 from spdm.data import Function, function_like
 from spdm.data.Entry import _next_
 from spdm.utils.logger import logger
 from spdm.utils.tags import _not_found_
+from spdm.utils.tree_utils import merge_tree_recursive
 
 
 class NeoClassical(CoreTransport.Model):
@@ -21,16 +22,16 @@ class NeoClassical(CoreTransport.Model):
     """
 
     def __init__(self, d=None,  *args, **kwargs):
-        super().__init__(d, *args,
-                         identifier={"name": "neoclassical", "index": 5,
-                                     "description": f"{self.__class__.__name__}  Neoclassical model, based on  Tokamaks, 3ed, J.A.Wesson 2003"},
-                         code={"name": "neoclassical"},
-                         ** kwargs)
+        super().__init__(merge_tree_recursive(
+                         {"identifier": "neoclassical",
+                          "code": {"name": "neoclassical",
+                                   "description": f"{self.__class__.__name__}  Neoclassical model, based on  Tokamaks, 3ed, J.A.Wesson 2003"}}, d),
+                         *args, ** kwargs)
 
-    def update(self, *args,
-               equilibrium: Equilibrium,
-               core_profiles: CoreProfiles,
-               **kwargs) -> float:
+    def refresh(self, *args,
+                equilibrium: Equilibrium,
+                core_profiles: CoreProfiles,
+                **kwargs) -> float:
         residual = super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
         eV = constants.electron_volt
@@ -84,7 +85,7 @@ class NeoClassical(CoreTransport.Model):
         # Sec 14.11 Chang-Hinton formula for \Chi_i
         # Shafranov shift
         delta_ = function_like(equilibrium_1d.geometric_axis.r(psi_norm)-R0,
-                          rho_tor_norm).derivative(rho_tor_norm)/rho_tor_lcfs
+                               rho_tor_norm).derivative(rho_tor_norm)/rho_tor_lcfs
 
         # impurity ions
         nZ2_imp = np.sum([(imp.z_ion_1d(rho_tor_norm)**2)*imp.density(rho_tor_norm)

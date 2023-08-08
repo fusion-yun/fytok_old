@@ -3,13 +3,14 @@ import collections
 import collections.abc
 
 import numpy as np
-from fytok.transport.CoreProfiles import CoreProfiles
-from fytok.transport.CoreTransport import CoreTransport
-from fytok.transport.Equilibrium import Equilibrium
+from fytok.modules.CoreProfiles import CoreProfiles
+from fytok.modules.CoreTransport import CoreTransport
+from fytok.modules.Equilibrium import Equilibrium
 from scipy import constants
 from spdm.data.Function import function_like
 from spdm.numlib.misc import array_like
 from spdm.utils.logger import logger
+from spdm.utils.tree_utils import merge_tree_recursive
 
 
 class Spitzer(CoreTransport.Model):
@@ -20,15 +21,19 @@ class Spitzer(CoreTransport.Model):
         - Tokamaks, Third Edition, Chapter 14  ,p727,  J.A.Wesson 2003
     """
 
-    def __init__(self, d: collections.abc.Mapping = None, *args,  **kwargs):
-        super().__init__(collections.ChainMap(
-            {"identifier": {"name": f"neoclassical", "index": 5,
-                            "description": f"{self.__class__.__name__} Spitzer Resistivity"},
-             "code": {"name": "spitzer"}},
-            d or {}),
-            *args, **kwargs)
+    def __init__(self, cache: collections.abc.Mapping = None, *args,  **kwargs):
+        cache = merge_tree_recursive(
+            {
+                "identifier": "neoclassical",
+                "code": {
+                    "name": "spitzer",
+                    "description":  f"{self.__class__.__name__} Spitzer Resistivity",
+                }
+            },
+            cache)
+        super().__init__(cache,  *args, **kwargs)
 
-    def update(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles,  **kwargs) -> float:
+    def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles,  **kwargs) -> float:
         residual = super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
         eV = constants.electron_volt
