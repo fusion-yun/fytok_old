@@ -203,7 +203,9 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
             psi_norm = np.linspace(1.0-psi_norm_boundary, psi_norm_boundary, int(psi_norm), endpoint=True)
             logger.debug(f"Set psi_norm ({psi_norm[0]},{psi_norm[-1]}) {len(psi_norm)}")
 
-        if not isinstance(psi_norm, np.ndarray):
+        if isinstance(psi_norm, int):
+            psi_norm = np.linspace(0.0, 0.995, psi_norm)  # 0.995 lcfs
+        elif not isinstance(psi_norm, np.ndarray):
             raise ValueError(f"Can not create grid! psi_norm={psi_norm}")
         elif np.isclose(psi_norm[0], 0.0) and np.isclose(psi_norm[-1], 1.0):
             logger.warning(
@@ -211,7 +213,9 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         theta = super().grid.dim2
 
-        if isinstance(theta, np.ndarray) and theta.ndim == 0:
+        if isinstance(theta, int):
+            theta = np.linspace(0, TWOPI, theta, endpoint=False)
+        elif isinstance(theta, np.ndarray) and theta.ndim == 0:
             theta = np.linspace(0, TWOPI, int(theta), endpoint=False)
 
         if not (isinstance(theta, np.ndarray) and theta.ndim == 1):

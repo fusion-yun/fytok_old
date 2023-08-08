@@ -34,17 +34,13 @@ class FastAlpha(CoreTransport.Model):
                                   "description": f"{self.__class__.__name__}  Fast alpha"}, }, d),
                          *args, ** kwargs)
 
-    def refresh(self, *args,  equilibrium: Equilibrium,  core_profiles: CoreProfiles, **kwargs) -> None:
-
-        super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
-
-        core_profiles_1d = core_profiles.profiles_1d
+    def refresh(self, *args,  equilibrium: Equilibrium.TimeSlice, core_profiles_1d: CoreProfiles.Profiles1d,  **kwargs) -> None:
 
         rho_tor_norm = core_profiles_1d.grid.rho_tor_norm
 
         Te = core_profiles_1d.electrons.temperature(rho_tor_norm)
 
-        L_Te = Te / core_profiles_1d.electrons.temperature.derivative(rho_tor_norm)
+        L_Te = Te / core_profiles_1d.electrons.temperature.derivative()
 
         Te_Ea = Te/3.5e6
         Ec_Ea = 33.05 * Te_Ea

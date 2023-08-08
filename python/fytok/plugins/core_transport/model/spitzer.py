@@ -33,12 +33,12 @@ class Spitzer(CoreTransport.Model):
             cache)
         super().__init__(cache,  *args, **kwargs)
 
-    def refresh(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles,  **kwargs) -> float:
-        residual = super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
+    def refresh(self, *args, equilibrium: Equilibrium.TimeSlice, core_profiles_1d: CoreProfiles.Profiles1d,  **kwargs) -> float:
+        # residual = super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
         eV = constants.electron_volt
 
-        radial_grid = core_profiles.profiles_1d.grid
+        radial_grid = core_profiles_1d.grid
 
         B0 = radial_grid.b0
         R0 = radial_grid.r0
@@ -46,17 +46,14 @@ class Spitzer(CoreTransport.Model):
         rho_tor_norm = radial_grid.rho_tor_norm
         rho_tor = radial_grid.rho_tor
         psi_norm = radial_grid.psi_norm
-        psi = radial_grid.psi
 
         q = equilibrium.profiles_1d.q(psi_norm)
-
-        core_profile = core_profiles.profiles_1d
 
         # Tavg = np.sum([ion.density*ion.temperature for ion in core_profile.ion]) / \
         #     np.sum([ion.density for ion in core_profile.ion])
 
-        Te = core_profile.electrons.temperature(rho_tor_norm)
-        Ne = core_profile.electrons.density(rho_tor_norm)
+        Te = core_profiles_1d.electrons.temperature(rho_tor_norm)
+        Ne = core_profiles_1d.electrons.density(rho_tor_norm)
         # Pe = core_profile.electrons.pressure(rho_tor_norm)
 
         # Coulomb logarithm
@@ -66,7 +63,7 @@ class Spitzer(CoreTransport.Model):
         # (17.3 - 0.5*np.log(Ne/1e20) + 1.5*np.log(Te/1000))*(Te >= 10)
 
         # lnCoul = 14
-        lnCoul = core_profile.coulomb_logarithm(rho_tor_norm)
+        lnCoul = core_profiles_1d.coulomb_logarithm(rho_tor_norm)
 
         # electron collision time , eq 14.6.1
         tau_e = 1.09e16*((Te/1000)**(3/2))/Ne/lnCoul
@@ -85,7 +82,7 @@ class Spitzer(CoreTransport.Model):
         #  Sec 14.10 Resistivity
         #
         eta_s = 1.65e-9*lnCoul*(Te/1000)**(-3/2)
-        Zeff = core_profile.zeff(rho_tor_norm)
+        Zeff = core_profiles_1d.zeff(rho_tor_norm)
         fT = 1.0 - (1-epsilon)**2/np.sqrt(1.0-epsilon**2)/(1+1.46*np.sqrt(epsilon))
 
         phi = np.zeros_like(rho_tor_norm)

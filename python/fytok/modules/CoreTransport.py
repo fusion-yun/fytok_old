@@ -14,6 +14,7 @@ from spdm.utils.tags import _not_found_
 from spdm.utils.tree_utils import merge_tree_recursive
 
 from .CoreProfiles import CoreProfiles
+from .Equilibrium import Equilibrium
 from .Utilities import CoreRadialGrid
 
 
@@ -69,8 +70,10 @@ class CoreTransport(_T_core_transport):
 
     model: AoS[Model] = sp_property()
 
-    def advance(self, *args, **kwargs) -> Model.Profiles1D:
-        return CoreTransportModel.Model.Profiles1D(deep_reduce([model.advance(*args, **kwargs) for model in self.model]), parent=self)
+    def advance(self, *args, equilibrium: Equilibrium.TimeSlice, core_profiles_1d: CoreProfiles.Profiles1d, **kwargs):
+        for model in self.model:
+            model.advance(*args, equilibrium=equilibrium, core_profiles_1d=core_profiles_1d, **kwargs)
 
-    def refresh(self, *args, **kwargs) -> Model.Profiles1D:
-        return CoreTransportModel.Model.Profiles1D(deep_reduce([model.refresh(*args, **kwargs) for model in self.model]), parent=self)
+    def refresh(self, *args,  equilibrium: Equilibrium.TimeSlice, core_profiles_1d: CoreProfiles.Profiles1d, **kwargs):
+        for model in self.model:
+            model.refresh(*args, equilibrium=equilibrium, core_profiles_1d=core_profiles_1d, **kwargs)

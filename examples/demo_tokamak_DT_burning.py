@@ -1,24 +1,18 @@
 
-import os
 import pathlib
-import pprint
-import sys
 
 import numpy as np
 import pandas as pd
 import scipy.constants
 from fytok.Tokamak import Tokamak
 from fytok.utils.load_scenario import load_scenario
-from fytok.utils.plot_profiles import plot_profiles, sp_figure
+from fytok.utils.plot_profiles import plot_profiles
 from spdm.data.File import File
 from spdm.data.Function import function_like
 from spdm.utils.logger import logger
-from spdm.utils.typing import as_array
 from spdm.views.View import display
 
 ###################
-
-# os.environ["SP_DATA_MAPPING_PATH"] = "/home/salmon/workspace/fytok_data/mapping"
 
 if __name__ == "__main__":
     logger.info("====== START ========")
@@ -103,15 +97,12 @@ if __name__ == "__main__":
                           }}},
                   core_transport={
                       **scenario["core_transport"],
-                      "$default_value": {
-                          "profiles_1d": {"ion": [{"label": "D"},
-                                                  {"label": "T"},
-                                                  {"label": "He"}]}
-                      }},
+                  },
                   core_sources={
                       **scenario["core_sources"],
                   }
                   )
+    eq = tok.equilibrium
 
     eq_time_slice = tok.equilibrium.time_slice.current
 
@@ -119,7 +110,7 @@ if __name__ == "__main__":
 
     eq_global_quantities = eq_time_slice.global_quantities
 
-    if True:  # plot equilibrium
+    if False:  # plot equilibrium
         display(  # plot equilibrium
             tok,
             title=f"{tok.name} time={tok.time}s",
@@ -244,10 +235,11 @@ if __name__ == "__main__":
 
         logger.info("Solve Equilibrium ")
 
-    if False:  # initialize CoreProfile  value
+    if True:  # initialize CoreProfile  value
         logger.info("Initialize Core Profiles ")
 
         core_profiles_1d = tok.core_profiles.profiles_1d.current
+        x_axis = np.linspace(0, 1.0, bs_psi_norm.size)
 
         display(  # CoreProfile initialize value
             [
@@ -271,8 +263,8 @@ if __name__ == "__main__":
                     (b_Te,    {"label":  r"astra $T_e$",      **bs_line_style}),
                     (b_Ti,    {"label":  r"astra $T_i$",      **bs_line_style}),
                     (core_profiles_1d.electrons.temperature, {"label":   r"$e$", }),
-                    *[(ion.temperature, {"label": f"${ion.label}$"})
-                      for ion in core_profiles_1d.ion if not ion.is_impurity],
+                    # *[(ion.temperature, {"label": f"${ion.label}$"})
+                    #   for ion in core_profiles_1d.ion if not ion.is_impurity],
                 ], {"y_label":  r"$T [eV]$", }),
 
                 # [
@@ -290,10 +282,6 @@ if __name__ == "__main__":
 
         logger.info("Initialize Core Transport ")
 
-        core_transport = tok.core_transport
-
-        model = core_transport.model
-
         tok.core_transport.model.insert([
             {"code": {"name": "fast_alpha"}},
             {"code": {"name": "spitzer"}},
@@ -302,15 +290,22 @@ if __name__ == "__main__":
             # {"code": {"name": "nclass"}},
         ])
 
-        core_transport_profiles_1d = tok.core_transport.model[:].profiles_1d.current
+        core_transport_profiles_1d = tok.core_transport.model[0].profiles_1d.current
+
+        tok.core_transport.refresh(equilibrium=tok.equilibrium.time_slice.current,
+                                   core_profiles_1d=tok.core_profiles.profiles_1d.current)
+        
+        # x_axis = np.linspace(0, 1.0, bs_psi_norm.size)
+        for model in tok.core_transport.model:
+            logger.debug((model.code.name, model.identifier))
 
         for ion in core_transport_profiles_1d.ion:
             logger.debug(ion.label)
+        #     d = ion.energy.d
+        #     logger.debug(d(x_axis))
 
-    if False:
         display(  # CoreTransport  initialize value
             [
-
                 ([
                     (function_like(profiles["He"].values, bs_r_norm), {"label": "astra", **bs_line_style}),
                     (core_transport_profiles_1d.electrons.energy.d,   {"label":  "fytok", }),
@@ -456,7 +451,6 @@ if __name__ == "__main__":
                 ]
             }}
         )
-        logger.debug(tok.transport_solver.boundary_conditions_1d.current.current.value)
 
         logger.debug([ion.label for ion in tok.transport_solver.boundary_conditions_1d.current.ion])
 
@@ -474,7 +468,7 @@ if __name__ == "__main__":
 
         b_nHe_thermal = function_like(profiles["Nath"].values * 1.0e19, bs_r_norm)
 
-        ionHe = core_profile_1d.ion[{"label": "He"}]
+        ionHe = core_profile_1d.ion["He"]
 
         plot_profiles(
             [
