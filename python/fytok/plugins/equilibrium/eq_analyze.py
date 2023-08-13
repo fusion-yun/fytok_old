@@ -319,7 +319,11 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
                     else:
                         count -= 1
                 if count <= 0:
-                    yield psi_val, None
+                    if np.isclose(psi_val, o_point.psi):
+                        yield psi_val, Point(o_point.r, o_point.z)
+                    else:
+                        logger.warning(f"{psi_val} {o_point.psi}")
+                        yield psi_val, None
                 elif current_count > 1:
                     raise RuntimeError(f"Something wrong! Get {current_count} closed surfaces for psi={current_psi}")
 
@@ -415,10 +419,8 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
     def shape_property(self, psi: typing.Union[float, typing.Sequence[float]] = None) -> ShapeProperty:
         def shape_box(s: GeoObject):
-            r, z = s.points
-            # r = rz[..., 0]
-            # z = rz[..., 1]
             if isinstance(s, Point):
+                r, z = s.points
                 rmin = r
                 rmax = r
                 zmin = z
@@ -427,13 +429,16 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
                 r_outboard = r
                 rzmin = r
                 rzmax = r
-            else:
+            elif isinstance(s, GeoObject):
+                r, z = s.points
                 (rmin, zmin) = s.bbox.origin
                 (rmax, zmax) = s.bbox.origin + s.bbox.dimensions
                 rzmin = r[np.argmin(z)]
                 rzmax = r[np.argmax(z)]
                 r_inboard = s.coordinates(0.5)[0]
                 r_outboard = s.coordinates(0)[0]
+            else:
+                raise TypeError(f"Invalid type {type(s)}")
             return rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard
 
         if psi is None:
@@ -542,6 +547,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
                 # logger.warning(f"Found point pos={surf.points}  psi={p}")
                 v = np.nan
             else:
+                continue
                 logger.warning(f"Found an island at psi={p} pos={surf}")
                 v = np.nan
             res.append(v)

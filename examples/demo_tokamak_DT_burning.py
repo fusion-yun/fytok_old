@@ -110,7 +110,7 @@ if __name__ == "__main__":
 
     eq_global_quantities = eq_time_slice.global_quantities
 
-    if False:  # plot equilibrium
+    if True:  # plot equilibrium
         display(  # plot equilibrium
             tok,
             title=f"{tok.name} time={tok.time}s",
@@ -235,7 +235,7 @@ if __name__ == "__main__":
 
         logger.info("Solve Equilibrium ")
 
-    if True:  # initialize CoreProfile  value
+    if False:  # initialize CoreProfile  value
         logger.info("Initialize Core Profiles ")
 
         core_profiles_1d = tok.core_profiles.profiles_1d.current
@@ -278,7 +278,7 @@ if __name__ == "__main__":
 
             output=output_path/"core_profiles_initialize.svg")
 
-    if True:  # initialize CoreTransport value
+    if False:  # initialize CoreTransport value
 
         logger.info("Initialize Core Transport ")
 
