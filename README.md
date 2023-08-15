@@ -11,16 +11,25 @@ Software architecture description
 
 ## Installation
 
-### Develop Build(inplace) 
-  Create IMAS wrapper
-  ```{bash}
-  cd <fytok dir>/python
-  export IMAS_DD_PATH=<IMAS DD Path>
-  python3 setup.py install_imas_wrapper --prefix=.
-  ```
- 
-### Build dist
+### Requirements:
+  - dd : 3.38.1
 
+### Develop Build (inplace) 
+
+Create IMAS wrapper
+
+```{bash}
+export IMAS_DD_PATH=<IMAS DD Path>
+cd $IMAS_DD_PATH
+patch -s -p0 < <fytok dir>/python/dd_<dd version>.patch
+
+cd <fytok dir>/python
+python3 setup.py install_imas_wrapper --prefix=.
+```
+ 
+### Release Build
+
+TODO:...
 
 ## Instructions
 

@@ -518,21 +518,17 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         # r0, z0 = self.magnetic_axis
 
-        psi_axis = self.psi_magnetic_axis
-        psi_boundary = self.psi_boundary
-
-        # ddpsi = self.ddpsi(r0, z0)
-
-        # c0 = r0**2/ddpsi
-
         if psi is None or psi is self.psi:
-            surfs_list = zip(self.psi, self.grid.geometry)
+            if np.isclose(self.psi[0], self.psi_magnetic_axis):
+                surfs_list = zip(self.psi[1:], self.grid.geometry[1:])
+            else:
+                surfs_list = zip(self.psi, self.grid.geometry)
         else:
             if isinstance(psi, scalar_type):
                 psi = [psi]
+            elif np.isclose(psi[0], self.psi_magnetic_axis):
+                psi = psi[1:]
             surfs_list = self.find_surfaces(psi, o_point=True)
-
-        # f_Bpol = Field(func/self.Bpol, mesh=self.grid, name="f_Bpol").compile()
 
         psi = []
         res = []
@@ -562,22 +558,20 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         # return np.asarray([(axis.integral(func/self.Bpol) if not np.isclose(p, 0) else func(r0, z0) * c0) for p, axis in surfs_list], dtype=float)
 
-    def surface_integral(self, func: Expression, * psi: NumericType) -> Expression | ArrayLike:
+    def surface_integral(self, func: Expression, psi: NumericType = None) -> Function[float] | float:
 
-        if not np.isscalar(psi):
-            return Function(*self._surface_integral(func, *psi), name=f"surface_integral({str(func)})")
-        else:
-            value, psi = self._surface_integral(func, *psi)
-            # if isinstance(value, np.ndarray) and np.any(np.isnan(value)):
-            #     # 若存在nan，则通过Function（插值）消除
-            #     value = Function(value, psi)(psi)
+        value, psi = self._surface_integral(func, psi)
+
+        if np.isscalar(psi):
             return value
+        else:
+            return Function[float](value, psi, name=f"surface_integral({str(func)})")
 
-    def surface_average(self, func: Expression, *psi: NumericType) -> Expression | ArrayLike:
+    def surface_average(self, func: Expression, *xargs) -> Expression | ArrayLike:
         r"""
             $\left\langle \alpha\right\rangle \equiv\frac{2\pi}{V^{\prime}}\oint\alpha\frac{Rdl}{\left|\nabla\psi\right|}$
         """
-        return self.surface_integral(func,  *psi)/self.dvolume_dpsi(*psi)
+        return self.surface_integral(func, *xargs)/self.dvolume_dpsi(*xargs)
 
 
 class EquilibriumGlobalQuantities(Equilibrium.TimeSlice.GlobalQuantities):
@@ -690,15 +684,10 @@ class EquilibriumProfiles1d(Equilibrium.TimeSlice.Profiles1d):
 
     @sp_property
     def magnetic_shear(self) -> Function[float]:
-        # return self.rho_tor/self.q * function_like(self.q(self.psi), self.rho_tor(self.psi)).pd()
         return self.rho_tor * self.q.pd()/self.q*self.dpsi_drho_tor
 
     @sp_property
-    def rho_tor(self) -> Function[float]: return self.phi/ (PI*self._coord._B0)
-        # r2 = self.phi(self.psi) / (PI*self._coord._B0)
-        # if np.isnan(r2[0]) or r2[0] < 0.0:
-        #     r2[0] = 0.0
-        # return Function(np.sqrt(r2), self.psi, parent=self)
+    def rho_tor(self) -> Function[float]: return np.sqrt(self.phi / (PI*self._coord._B0))
 
     @sp_property
     def rho_tor_norm(self) -> Function[float]:
@@ -749,9 +738,6 @@ class EquilibriumProfiles1d(Equilibrium.TimeSlice.Profiles1d):
     def gm1(self) -> Function[float]: return self._coord.surface_average(1.0/(_R**2))
 
     @sp_property
-    def gm2_(self) -> Function[float]: return self._coord.surface_average(self._coord.grad_psi2/(_R**2))
-
-    @sp_property
     def gm2(self) -> Function[float]:
         return self._coord.surface_average(self._coord.grad_psi2/(_R**2)) / (self.dpsi_drho_tor ** 2)
 
@@ -781,7 +767,7 @@ class EquilibriumProfiles1d(Equilibrium.TimeSlice.Profiles1d):
 
     @sp_property
     def plasma_current(self) -> Function[float]:
-        return self.gm2 * self.dvolume_drho_tor / self.dpsi_drho_tor/constants.mu_0
+        return self.gm2 * self.dvolume_drho_tor / self.dpsi_drho_tor/scipy.constants.mu_0
 
     @sp_property
     def dpsi_drho_tor_norm(self) -> Function[float]: return self.dpsi_drho_tor*self.rho_tor[-1]

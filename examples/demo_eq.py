@@ -4,14 +4,12 @@ import pathlib
 import numpy as np
 import pandas as pd
 import scipy.constants
-from fytok.modules.Equilibrium import Equilibrium
+from fytok.Tokamak import Tokamak
 from fytok.utils.load_scenario import load_scenario
-from fytok.utils.plot_profiles import plot_profiles
 from spdm.data.File import File
 from spdm.data.Function import function_like
 from spdm.utils.logger import logger
 from spdm.views.View import display
-
 
 if __name__ == "__main__":
 
@@ -59,35 +57,47 @@ if __name__ == "__main__":
     # Core profile
     r_ped = 0.96  # np.sqrt(0.88)
     i_ped = np.argmin(np.abs(bs_r_norm-r_ped))
+
+    scenario = load_scenario(data_path)
+
     ###################################################################################################
 
-    eq = Equilibrium(
-        {**eqdsk_file.dump(),
-         "code": {
-            "name": "eq_analyze",  # "freegs",
-            "parameters": {
-                "boundary": "fixed",
-                "psi_norm": np.linspace(0, 1.0, 128)
-            }},
-         "$default_value": {
-            "time_slice": {
-                "boundary": {"psi_norm": 0.99},
-                "profiles_2d": {"grid": {"dim1": 256, "dim2": 128}},
-                "coordinate_system": {"grid": {"dim1": 128, "dim2": 128}}
-            }}
-         })
+    tok = Tokamak("ITER",  # 导入 ITER 装置描述（mapping）
+                  time=0.0,
+                  name=scenario["name"],
+                  description=scenario["description"],
+                  core_profiles={
+                      **scenario["core_profiles"],
+                      "$default_value": {
+                          "profiles_1d": {  # 默认参数，profiles_1d  是 TimeSeriesAoS
+                              "grid": {     # 设定 grid
+                                  "rho_tor_norm": np.linspace(0, 1.0, 100),
+                                  "psi_norm": np.linspace(0, 1.0, 100),
+                              }}}
+                  },
+                  equilibrium={
+                      **scenario["equilibrium"],
+                      "code": {
+                          "name": "freegs",  # 指定 equlibrium 模块 "eq_analyze",
+                          "parameters": {"boundary": "fixed", }},
+                      "$default_value": {
+                          "time_slice": {   # 默认参数， time_slice 是 TimeSeriesAoS
+                              "boundary": {"psi_norm": 0.99},
+                              "profiles_2d": {"grid": {"dim1": 256, "dim2": 128}},
+                              "coordinate_system": {"grid": {"dim1": 128, "dim2": 128}}
+                          }}},
 
-    eq_time_slice = eq.time_slice.current
+                  )
+
+    eq_time_slice = tok.equilibrium.time_slice.current
 
     display(  # plot equilibrium
-        eq,
-        title=f"Equilibrium time={eq.time}s",
-        output=output_path/"Equilibrium.svg")
+        tok,
+        title=f"{tok.name} time={tok.time}s",
+        output=output_path/"tokamak_prev.svg")
 
-    if True:
-        eq_profiles_1d = eq_time_slice.profiles_1d
-
-        logger.debug(eq_profiles_1d.phi(eq_profiles_1d.psi))
+    if False:
+        eq_profiles_1d = eq_time_slice.profiles_1d   
 
         display(  # plot tokamak geometric profile
             [
@@ -133,11 +143,12 @@ if __name__ == "__main__":
                 (eq_profiles_1d.gm8,   {"label": r"$gm8=\left<R\right>$"}),
 
             ],
-            x_axis=(eq_profiles_1d.rho_tor_norm,
-                    {"value": eq_profiles_1d.psi, "label":  r"$\bar{\rho}_{tor}$"}),
+            x_axis=(eq_profiles_1d.psi[1:], {"label":  r"$\psi$"}),
             title="Equilibrium",
             output=output_path/"Equilibrium_coord.svg",
             grid=True, fontsize=16)
+
+    tok.equilibrium.refresh(Ip=1.0e6, beta_p=1.0)
 
     if False:
         display(  # plot tokamak geometric profile

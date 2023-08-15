@@ -67,7 +67,7 @@ class CoreRadialGrid(_T_core_radial_grid):
     @sp_property
     def rho_pol_norm(self) -> np.ndarray: return np.sqrt(self.psi_norm)
 
-    psi_norm: np.ndarray = sp_property(coordinate1="../rho_tor_norm", units="-")
+    psi_norm: Function[float] = sp_property(coordinate1="../rho_tor_norm", units="-")
 
     @sp_property()
     def psi(self) -> np.ndarray:

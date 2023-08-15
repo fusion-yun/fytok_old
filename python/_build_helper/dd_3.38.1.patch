@@ -1,65 +1,412 @@
-diff -ruN 3.38.1-orig/dd_3.38.1/include/IDSDef.xml 3.38.1/dd_3.38.1/include/IDSDef.xml
---- 3.38.1-orig/dd_3.38.1/include/IDSDef.xml	2023-04-24 09:09:40.260729623 +0800
-+++ 3.38.1/dd_3.38.1/include/IDSDef.xml	2023-04-24 10:57:09.473030247 +0800
-@@ -201966,7 +201966,7 @@
-                 data_type="struct_array"
-                 maxoccur="10"
-                 path_doc="channel(i1)/bandwidth(i2)"
--                coordinate1="1...N&#xA;&#x9;&#x9;&#x9;&#x9;&#x9;">
-+                coordinate1="1...N">
-             <field name="frequency_main"
-                    path="channel/bandwidth/frequency_main"
-                    path_doc="channel(i1)/bandwidth(i2)/frequency_main"
-diff -ruN 3.38.1-orig/dd_3.38.1/include/equilibrium/equilibrium_gs_deviation.xml 3.38.1/dd_3.38.1/include/equilibrium/equilibrium_gs_deviation.xml
---- 3.38.1-orig/dd_3.38.1/include/equilibrium/equilibrium_gs_deviation.xml	1970-01-01 08:00:00.000000000 +0800
-+++ 3.38.1/dd_3.38.1/include/equilibrium/equilibrium_gs_deviation.xml	2023-04-24 08:28:28.261505746 +0800
-@@ -0,0 +1,12 @@
-+<?xml version="1.0"?>
-+<constants name="equilibrium_gs_deviation" identifier="yes" create_mapping_function="yes">
-+<header>Expression for calculating the residual deviation between the left and right hand side of the Grad Shafranov equation</header>
-+<ddInstance xpath="/equilibrium/time_slice(itime)/convergence/grad_shafranov_deviation_expression"/>
-+
-+<int name="absolute_gs_difference"                  description="Average absolute difference of the Grad-Shafranov equation, &lt;|Del* psi - j_tor*R|&gt;, averaged over the plasma poloidal cross-section" unique="yes">1</int>
-+<int name="root_mean_square_gs_difference"          description="Root mean square difference of the Grad-Shafranov equation, sqrt(&lt;(Del* psi - j_tor*R)^2 &gt;), averaged over the plasma poloidal cross-section" unique="yes">2</int>
-+<int name="max_absolute_psi_residual"               description="Maximum absolute difference over the plasma poloidal cross-section of the poloidal flux between the current and preceding iteration, on fixed grid points" unique="yes">3</int>
-+<int name="max_absolute_gs_difference_norm"         description="Maximum absolute difference of the Grad-Shafranov equation, normalised, max(|Del* psi - j_tor*R|) / max(|Del* psi|), over the plasma poloidal cross-section" unique="yes">4</int>
-+<int name="max_root_mean_square_gs_difference_norm" description="Root maximum square difference of the Grad-Shafranov equation, normalised, sqrt(max((Del* psi - j_tor*R)^2) / max((Del* psi)^2)), over the plasma poloidal cross-section" unique="yes">5</int>
-+
-+</constants>
-diff -ruN 3.38.1-orig/dd_3.38.1/include/transport_solver_numerics/transport_solver_numerics_bc_type.xml 3.38.1/dd_3.38.1/include/transport_solver_numerics/transport_solver_numerics_bc_type.xml
---- 3.38.1-orig/dd_3.38.1/include/transport_solver_numerics/transport_solver_numerics_bc_type.xml	1970-01-01 08:00:00.000000000 +0800
-+++ 3.38.1/dd_3.38.1/include/transport_solver_numerics/transport_solver_numerics_bc_type.xml	2023-04-24 08:33:15.091415282 +0800
-@@ -0,0 +1,13 @@
-+<?xml version="1.0"?>
-+<constants name="transport_solver_numerics_bc_type" identifier="yes" create_mapping_function="yes">
-+<header>Computation mode for this equation</header>
-+<ddInstance xpath="/transport_solver_numerics/solver_1d/equation/boundary_condition/type"/>
-+
-+
-+<int name="not_solved"                  description="Equation is not solved"  unique="yes">0</int>
-+<int name="value"                       description="Boundary condition is the value of the equations primary quantity"  unique="yes">1</int>
-+<int name="derivative_or_ip"            description="Boundary condition is the radial derivative of the equations primary quantity, or the plasma current for the current diffusion equation"  unique="yes">2</int>
-+<int name="e_folding_length_or_vloop"   description="Boundary condition is the e-folding length of the equations primary quantity, or the loop voltage for the current diffusion equation"  unique="yes">3</int>
-+<int name="flux"                        description="Boundary condition is the flux of the equations primary quantity"  unique="yes">4</int>
-+<int name="combination"                 description="Boundary condition is a linear combination of radial derivative and value of the flux of the equations primary quantity, in the form a1.y-prime + a2.y = a3"  unique="yes">5</int>
-+</constants>
-diff -ruN 3.38.1-orig/dd_3.38.1/include/transport_solver_numerics/transport_solver_numerics_computation_mode.xml 3.38.1/dd_3.38.1/include/transport_solver_numerics/transport_solver_numerics_computation_mode.xml
---- 3.38.1-orig/dd_3.38.1/include/transport_solver_numerics/transport_solver_numerics_computation_mode.xml	1970-01-01 08:00:00.000000000 +0800
-+++ 3.38.1/dd_3.38.1/include/transport_solver_numerics/transport_solver_numerics_computation_mode.xml	2023-04-24 08:32:41.961425190 +0800
-@@ -0,0 +1,10 @@
-+<?xml version="1.0"?>
-+<constants name="transport_solver_numerics_computation_mode" identifier="yes" create_mapping_function="yes">
-+<header>Computation mode for this equation</header>
-+<ddInstance xpath="/transport_solver_numerics/solver_1d/equation/computation_mode"/>
-+
-+<int name="static"           description="Equation is not solved, no profile evolution" unique="yes">0</int>
-+<int name="interpretative"   description="Equation is not solved, profile is evolved by interpolating from input objects" unique="yes">1</int>
-+<int name="predictive"       description="Equation is solved, profile evolves" unique="yes">2</int>
-+ 
-+</constants>
-diff -ruN 3.38.1-orig/dd_3.38.1/include/utilities/emission_grid_identifier.xml 3.38.1/dd_3.38.1/include/utilities/emission_grid_identifier.xml
---- 3.38.1-orig/dd_3.38.1/include/utilities/emission_grid_identifier.xml	2023-04-24 09:09:40.300729616 +0800
-+++ 3.38.1/dd_3.38.1/include/utilities/emission_grid_identifier.xml	2023-04-23 15:18:44.989937837 +0800
+diff --git a/core_profiles/dd_core_profiles.xsd b/core_profiles/dd_core_profiles.xsd
+index 4d23973..b5f67fd 100644
+--- a/core_profiles/dd_core_profiles.xsd
++++ b/core_profiles/dd_core_profiles.xsd
+@@ -19,26 +19,26 @@
+ 				<xs:annotation>
+ 					<xs:documentation>Volume averaged temperature of this ion species (averaged over the plasma volume up to the LCFS)</xs:documentation>
+ 					<xs:appinfo>
+-						<coordinate1>/time</coordinate1>
++						
+ 						<units>eV</units>
+ 						<type>dynamic</type>
+ 					</xs:appinfo>
+ 				</xs:annotation>
+ 				<xs:complexType>
+-					<xs:group ref="FLT_1D"/>
++					<xs:group ref="FLT_0D"/>
+ 				</xs:complexType>
+ 			</xs:element>
+ 			<xs:element name="n_i_volume_average">
+ 				<xs:annotation>
+ 					<xs:documentation>Volume averaged density of this ion species (averaged over the plasma volume up to the LCFS)</xs:documentation>
+ 					<xs:appinfo>
+-						<coordinate1>/time</coordinate1>
++						
+ 						<units>m^-3</units>
+ 						<type>dynamic</type>
+ 					</xs:appinfo>
+ 				</xs:annotation>
+ 				<xs:complexType>
+-					<xs:group ref="FLT_1D"/>
++					<xs:group ref="FLT_0D"/>
+ 				</xs:complexType>
+ 			</xs:element>
+ 		</xs:sequence>
+@@ -52,7 +52,7 @@
+ 				<xs:annotation>
+ 					<xs:documentation>Total plasma current (toroidal component). Positive sign means anti-clockwise when viewed from above.</xs:documentation>
+ 					<xs:appinfo>
+-						<coordinate1>../../time</coordinate1>
++						
+ 						<units>A</units>
+ 						<type>dynamic</type>
+ 						<cocos_label_transformation>ip_like</cocos_label_transformation>
+@@ -61,14 +61,14 @@
+ 					</xs:appinfo>
+ 				</xs:annotation>
+ 				<xs:complexType>
+-					<xs:group ref="FLT_1D"/>
++					<xs:group ref="FLT_0D"/>
+ 				</xs:complexType>
+ 			</xs:element>
+ 			<xs:element name="current_non_inductive">
+ 				<xs:annotation>
+ 					<xs:documentation>Total non-inductive current (toroidal component). Positive sign means anti-clockwise when viewed from above.</xs:documentation>
+ 					<xs:appinfo>
+-						<coordinate1>../../time</coordinate1>
++						
+ 						<units>A</units>
+ 						<type>dynamic</type>
+ 						<cocos_label_transformation>ip_like</cocos_label_transformation>
+@@ -77,14 +77,14 @@
+ 					</xs:appinfo>
+ 				</xs:annotation>
+ 				<xs:complexType>
+-					<xs:group ref="FLT_1D"/>
++					<xs:group ref="FLT_0D"/>
+ 				</xs:complexType>
+ 			</xs:element>
+ 			<xs:element name="current_bootstrap">
+ 				<xs:annotation>
+ 					<xs:documentation>Bootstrap current (toroidal component). Positive sign means anti-clockwise when viewed from above.</xs:documentation>
+ 					<xs:appinfo>
+-						<coordinate1>../../time</coordinate1>
++						
+ 						<units>A</units>
+ 						<type>dynamic</type>
+ 						<cocos_label_transformation>ip_like</cocos_label_transformation>
+@@ -93,14 +93,14 @@
+ 					</xs:appinfo>
+ 				</xs:annotation>
+ 				<xs:complexType>
+-					<xs:group ref="FLT_1D"/>
++					<xs:group ref="FLT_0D"/>
+ 				</xs:complexType>
+ 			</xs:element>
+ 			<xs:element name="v_loop">
+ 				<xs:annotation>
+ 					<xs:documentation>LCFS loop voltage (positive value drives positive ohmic current that flows anti-clockwise when viewed from above)</xs:documentation>
+ 					<xs:appinfo>
+-						<coordinate1>../../time</coordinate1>
++						
+ 						<units>V</units>
+ 						<type>dynamic</type>
+ 						<cocos_label_transformation>ip_like</cocos_label_transformation>
+@@ -109,7 +109,7 @@
+ 					</xs:appinfo>
+ 				</xs:annotation>
+ 				<xs:complexType>
+-					<xs:group ref="FLT_1D"/>
++					<xs:group ref="FLT_0D"/>
+ 				</xs:complexType>
+ 			</xs:element>
+ 			<xs:element name="li">
+@@ -118,171 +118,171 @@
+ 					<xs:appinfo>
+ 						<lifecycle_status>obsolescent</lifecycle_status>
+ 						<lifecycle_version>3.7.0</lifecycle_version>
+-						<coordinate1>../../time</coordinate1>
++						
+ 						<type>dynamic</type>
+ 						<units>-</units>
+ 					</xs:appinfo>
+ 				</xs:annotation>
+ 				<xs:complexType>
+-					<xs:group ref="FLT_1D"/>
++					<xs:group ref="FLT_0D"/>
+ 				</xs:complexType>
+ 			</xs:element>
+ 			<xs:element name="li_3">
+ 				<xs:annotation>
+ 					<xs:documentation>Internal inductance. The li_3 definition is used, i.e. li_3 = 2/R0/mu0^2/Ip^2 * int(Bp^2 dV).</xs:documentation>
+ 					<xs:appinfo>
+-						<coordinate1>../../time</coordinate1>
++						
+ 						<type>dynamic</type>
+ 						<units>-</units>
+ 					</xs:appinfo>
+ 				</xs:annotation>
+ 				<xs:complexType>
+-					<xs:group ref="FLT_1D"/>
++					<xs:group ref="FLT_0D"/>
+ 				</xs:complexType>
+ 			</xs:element>
+ 			<xs:element name="beta_tor">
+ 				<xs:annotation>
+ 					<xs:documentation>Toroidal beta, defined as the volume-averaged total perpendicular pressure divided by (B0^2/(2*mu0)), i.e. beta_toroidal = 2 mu0 int(p dV) / V / B0^2</xs:documentation>
+ 					<xs:appinfo>
+-						<coordinate1>../../time</coordinate1>
++						
+ 						<type>dynamic</type>
+ 						<units>-</units>
+ 					</xs:appinfo>
+ 				</xs:annotation>
+ 				<xs:complexType>
+-					<xs:group ref="FLT_1D"/>
++					<xs:group ref="FLT_0D"/>
+ 				</xs:complexType>
+ 			</xs:element>
+ 			<xs:element name="beta_tor_norm">
+ 				<xs:annotation>
+ 					<xs:documentation>Normalised toroidal beta, defined as 100 * beta_tor * a[m] * B0 [T] / ip [MA] </xs:documentation>
+ 					<xs:appinfo>
+-						<coordinate1>../../time</coordinate1>
++						
+ 						<type>dynamic</type>
+ 						<units>-</units>
+ 					</xs:appinfo>
+ 				</xs:annotation>
+ 				<xs:complexType>
+-					<xs:group ref="FLT_1D"/>
++					<xs:group ref="FLT_0D"/>
+ 				</xs:complexType>
+ 			</xs:element>
+ 			<xs:element name="beta_pol">
+ 				<xs:annotation>
+ 					<xs:documentation>Poloidal beta. Defined as betap = 4 int(p dV) / [R_0 * mu_0 * Ip^2]</xs:documentation>
+ 					<xs:appinfo>
+-						<coordinate1>../../time</coordinate1>
++						
+ 						<type>dynamic</type>
+ 						<units>-</units>
+ 					</xs:appinfo>
+ 				</xs:annotation>
+ 				<xs:complexType>
+-					<xs:group ref="FLT_1D"/>
++					<xs:group ref="FLT_0D"/>
+ 				</xs:complexType>
+ 			</xs:element>
+ 			<xs:element name="energy_diamagnetic">
+ 				<xs:annotation>
+ 					<xs:documentation>Plasma energy content = 3/2 * integral over the plasma volume of the total perpendicular pressure </xs:documentation>
+ 					<xs:appinfo>
+-						<coordinate1>../../time</coordinate1>
++						
+ 						<units>J</units>
+ 						<type>dynamic</type>
+ 					</xs:appinfo>
+ 				</xs:annotation>
+ 				<xs:complexType>
+-					<xs:group ref="FLT_1D"/>
++					<xs:group ref="FLT_0D"/>
+ 				</xs:complexType>
+ 			</xs:element>
+ 			<xs:element name="z_eff_resistive">
+ 				<xs:annotation>
+ 					<xs:documentation>Volume average plasma effective charge, estimated from the flux consumption in the ohmic phase</xs:documentation>
+ 					<xs:appinfo>
+-						<coordinate1>../../time</coordinate1>
++						
+ 						<units>-</units>
+ 						<type>dynamic</type>
+ 					</xs:appinfo>
+ 				</xs:annotation>
+ 				<xs:complexType>
+-					<xs:group ref="FLT_1D"/>
++					<xs:group ref="FLT_0D"/>
+ 				</xs:complexType>
+ 			</xs:element>
+ 			<xs:element name="t_e_peaking">
+ 				<xs:annotation>
+ 					<xs:documentation>Electron temperature peaking factor, defined as the Te value at the magnetic axis divided by the volume averaged Te (average over the plasma volume up to the LCFS)</xs:documentation>
+ 					<xs:appinfo>
+-						<coordinate1>../../time</coordinate1>
++						
+ 						<units>-</units>
+ 						<type>dynamic</type>
+ 					</xs:appinfo>
+ 				</xs:annotation>
+ 				<xs:complexType>
+-					<xs:group ref="FLT_1D"/>
++					<xs:group ref="FLT_0D"/>
+ 				</xs:complexType>
+ 			</xs:element>
+ 			<xs:element name="t_i_average_peaking">
+ 				<xs:annotation>
+ 					<xs:documentation>Ion temperature (averaged over ion species and states) peaking factor, defined as the Ti value at the magnetic axis divided by the volume averaged Ti (average over the plasma volume up to the LCFS)</xs:documentation>
+ 					<xs:appinfo>
+-						<coordinate1>../../time</coordinate1>
++						
+ 						<units>-</units>
+ 						<type>dynamic</type>
+ 					</xs:appinfo>
+ 				</xs:annotation>
+ 				<xs:complexType>
+-					<xs:group ref="FLT_1D"/>
++					<xs:group ref="FLT_0D"/>
+ 				</xs:complexType>
+ 			</xs:element>
+ 			<xs:element name="resistive_psi_losses">
+ 				<xs:annotation>
+ 					<xs:documentation>Resistive part of the poloidal flux losses, defined as the volume-averaged scalar product of the electric field and the ohmic current density, normalized by the plasma current and integrated in time from the beginning of the plasma discharge: int ( (int(E_field_tor.j_ohm_tor) dV) / Ip ) dt)</xs:documentation>
+ 					<xs:appinfo>
+-						<coordinate1>../../time</coordinate1>
++						
+ 						<type>dynamic</type>
+ 						<units>Wb</units>
+ 					</xs:appinfo>
+ 				</xs:annotation>
+ 				<xs:complexType>
+-					<xs:group ref="FLT_1D"/>
++					<xs:group ref="FLT_0D"/>
+ 				</xs:complexType>
+ 			</xs:element>
+ 			<xs:element name="ejima">
+ 				<xs:annotation>
+ 					<xs:documentation>Ejima coefficient : resistive psi losses divided by (mu0*R*Ip). See S. Ejima et al, Nuclear Fusion, Vol.22, No.10 (1982), 1313</xs:documentation>
+ 					<xs:appinfo>
+-						<coordinate1>../../time</coordinate1>
++						
+ 						<type>dynamic</type>
+ 						<units>-</units>
+ 					</xs:appinfo>
+ 				</xs:annotation>
+ 				<xs:complexType>
+-					<xs:group ref="FLT_1D"/>
++					<xs:group ref="FLT_0D"/>
+ 				</xs:complexType>
+ 			</xs:element>
+ 			<xs:element name="t_e_volume_average">
+ 				<xs:annotation>
+ 					<xs:documentation>Volume averaged electron temperature (average over the plasma volume up to the LCFS)</xs:documentation>
+ 					<xs:appinfo>
+-						<coordinate1>../../time</coordinate1>
++						
+ 						<units>eV</units>
+ 						<type>dynamic</type>
+ 						<introduced_after_version>3.33.0</introduced_after_version>
+ 					</xs:appinfo>
+ 				</xs:annotation>
+ 				<xs:complexType>
+-					<xs:group ref="FLT_1D"/>
++					<xs:group ref="FLT_0D"/>
+ 				</xs:complexType>
+ 			</xs:element>
+ 			<xs:element name="n_e_volume_average">
+ 				<xs:annotation>
+ 					<xs:documentation>Volume averaged electron density (average over the plasma volume up to the LCFS)</xs:documentation>
+ 					<xs:appinfo>
+-						<coordinate1>../../time</coordinate1>
++						
+ 						<units>m^-3</units>
+ 						<type>dynamic</type>
+ 						<introduced_after_version>3.33.0</introduced_after_version>
+ 					</xs:appinfo>
+ 				</xs:annotation>
+ 				<xs:complexType>
+-					<xs:group ref="FLT_1D"/>
++					<xs:group ref="FLT_0D"/>
+ 				</xs:complexType>
+ 			</xs:element>
+ 			<xs:element name="ion" type="core_profiles_global_quantities_ion" maxOccurs="20">
+@@ -333,8 +333,14 @@
+ 						</xs:appinfo>
+ 					</xs:annotation>
+ 				</xs:element>
+-				<xs:element name="global_quantities" type="core_profiles_global_quantities">
++				<xs:element name="global_quantities" type="core_profiles_global_quantities" maxOccurs="unbounded">
+ 					<xs:annotation>
++						<xs:appinfo>
++							<coordinate1>time</coordinate1>
++							<type>dynamic</type>
++							<cocos_alias>IDSPATH</cocos_alias>
++							<cocos_replace>core_profiles.global_quantities{i}</cocos_replace>
++						</xs:appinfo>
+ 						<xs:documentation>Various global quantities derived from the profiles</xs:documentation>
+ 					</xs:annotation>
+ 				</xs:element>
+diff --git a/core_sources/dd_core_sources.xsd b/core_sources/dd_core_sources.xsd
+index bae135c..c8e3fb4 100644
+--- a/core_sources/dd_core_sources.xsd
++++ b/core_sources/dd_core_sources.xsd
+@@ -1066,6 +1066,11 @@
+ 					</xs:appinfo>
+ 				</xs:annotation>
+ 			</xs:element>
++			<xs:element name="code" type="code_with_timebase">
++				<xs:annotation>
++					<xs:documentation>Code-specific parameters used for this model</xs:documentation>
++				</xs:annotation>
++			</xs:element>
+ 		</xs:sequence>
+ 	</xs:complexType>
+ 	<xs:element name="core_sources">
+diff --git a/equilibrium/dd_equilibrium.xsd b/equilibrium/dd_equilibrium.xsd
+index 13a3956..027edb9 100644
+--- a/equilibrium/dd_equilibrium.xsd
++++ b/equilibrium/dd_equilibrium.xsd
+@@ -865,7 +865,7 @@
+ 			</xs:element>
+ 		</xs:sequence>
+ 	</xs:complexType>
+-	<xs:complexType name="equlibrium_global_quantities">
++	<xs:complexType name="equilibrium_global_quantities">
+ 		<xs:annotation>
+ 			<xs:documentation>0D parameters of the equilibrium</xs:documentation>
+ 		</xs:annotation>
+@@ -3054,7 +3054,7 @@
+ 					<xs:documentation>In case of equilibrium reconstruction under constraints, measurements used to constrain the equilibrium, reconstructed values and accuracy of the fit. The names of the child nodes correspond to the following definition: the solver aims at minimizing a cost function defined as : J=1/2*sum_i [ weight_i^2 (reconstructed_i - measured_i)^2 / sigma_i^2 ]. in which sigma_i is the standard deviation of the measurement error (to be found in the IDS of the measurement)</xs:documentation>
+ 				</xs:annotation>
+ 			</xs:element>
+-			<xs:element name="global_quantities" type="equlibrium_global_quantities">
++			<xs:element name="global_quantities" type="equilibrium_global_quantities">
+ 				<xs:annotation>
+ 					<xs:documentation>0D parameters of the equilibrium</xs:documentation>
+ 				</xs:annotation>
+@@ -3088,7 +3088,7 @@
+ 					<xs:appinfo>
+ 						<cocos_alias>IDSPATH</cocos_alias>
+ 						<cocos_replace>equilibrium.time_slice{i}.coordinate_system</cocos_replace>
+-					</xs:appinfo>
++					</xs:appinfo>										
+ 				</xs:annotation>
+ 			</xs:element>
+ 			<xs:element name="convergence" type="equilibrium_convergence">
+diff --git a/refractometer/dd_refractometer.xsd b/refractometer/dd_refractometer.xsd
+index 5a97472..fa26b06 100644
+--- a/refractometer/dd_refractometer.xsd
++++ b/refractometer/dd_refractometer.xsd
+@@ -196,8 +196,7 @@
+ 				<xs:annotation>
+ 					<xs:documentation>Set of frequency bandwidths</xs:documentation>
+ 					<xs:appinfo>
+-						<coordinate1>1...N
+-					</coordinate1>
++						<coordinate1>1...N</coordinate1>
+ 					</xs:appinfo>
+ 				</xs:annotation>
+ 			</xs:element>
+diff --git a/utilities/dd_support.xsd b/utilities/dd_support.xsd
+index c13f6a6..07d7246 100644
+--- a/utilities/dd_support.xsd
++++ b/utilities/dd_support.xsd
+@@ -4988,18 +4988,16 @@
+ 					<xs:documentation>Type of space geometry (0: standard, 1:Fourier, >1: Fourier with periodicity)</xs:documentation>
+ 				</xs:annotation>
+ 			</xs:element>
+-			<xs:element name="coordinates_type">
++			<xs:element name="coordinates_type" type="identifier_dynamic_aos3" maxOccurs="unbounded">
+ 				<xs:annotation>
+ 					<xs:documentation>Type of coordinates describing the physical space, for every coordinate of the space. The size of this node therefore defines the dimension of the space. The meaning of these predefined integer constants can be found in the Data Dictionary under utilities/coordinate_identifier.xml</xs:documentation>
+ 					<xs:appinfo>
+ 						<coordinate1>1...N</coordinate1>
+ 						<type>dynamic</type>
+-						<url>utilities/coordinate_identifier.xml</url>
++						<doc_identifier>utilities/coordinate_identifier.xml</doc_identifier>
+ 					</xs:appinfo>
+ 				</xs:annotation>
+-				<xs:complexType>
+-					<xs:group ref="INT_1D"/>
+-				</xs:complexType>
++				
+ 			</xs:element>
+ 			<xs:element name="objects_per_dimension" type="generic_grid_dynamic_space_dimension" maxOccurs="unbounded">
+ 				<xs:annotation>
+diff --git a/utilities/emission_grid_identifier.xml b/utilities/emission_grid_identifier.xml
+index ca67c86..8892cee 100644
+--- a/utilities/emission_grid_identifier.xml
++++ b/utilities/emission_grid_identifier.xml
 @@ -1,5 +1,5 @@
  <?xml version="1.0"?>
 -<constants name="spectrometer_visible_emissivity_grid_identifier.xml" identifier="yes" create_mapping_function="yes">
@@ -67,6 +414,3 @@ diff -ruN 3.38.1-orig/dd_3.38.1/include/utilities/emission_grid_identifier.xml 3
  <header>List of coordinate systems for describing the poloidal plane</header>
  <ddInstance xpath="/spectrometer_visible/channel/geometry_matrix/emission_grid/grid_type"/>
  <ddInstance xpath="/camera_visible/channel/detector/geometry_matrix/emission_grid/grid_type"/>
-Binary files 3.38.1-orig/lib/python3.8/site-packages/data_dictionary/__pycache__/__init__.cpython-38.pyc and 3.38.1/lib/python3.8/site-packages/data_dictionary/__pycache__/__init__.cpython-38.pyc differ
-Binary files 3.38.1-orig/lib/python3.8/site-packages/data_dictionary/__pycache__/_version.cpython-38.pyc and 3.38.1/lib/python3.8/site-packages/data_dictionary/__pycache__/_version.cpython-38.pyc differ
-Binary files 3.38.1-orig/lib/python3.8/site-packages/data_dictionary/__pycache__/idsdef.cpython-38.pyc and 3.38.1/lib/python3.8/site-packages/data_dictionary/__pycache__/idsdef.cpython-38.pyc differ
