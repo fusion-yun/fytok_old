@@ -1,12 +1,11 @@
 
 from __future__ import annotations
 
-import typing
 
-from spdm.data.Entry import deep_reduce
-from spdm.data.HTree import AoS, List
-from spdm.data.sp_property import SpDict, sp_property
+from spdm.data.HTree import AoS
+from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
+from spdm.utils.logger import logger
 from spdm.utils.typing import array_type
 
 from .._imas.lastest.core_sources import (_T_core_sources,
@@ -14,6 +13,7 @@ from .._imas.lastest.core_sources import (_T_core_sources,
                                           _T_core_sources_source_global,
                                           _T_core_sources_source_profiles_1d)
 from .CoreProfiles import CoreProfiles
+from .Equilibrium import Equilibrium
 from .Utilities import CoreRadialGrid
 
 
@@ -33,15 +33,11 @@ class CoreSourcesSource(_T_core_sources_source):
 
     global_quantities: TimeSeriesAoS[GlobalQuantities] = sp_property()
 
-    def refresh(self, *args, **kwargs) -> Profiles1d:
-        profiles_1d = self.profiles_1d.refresh(*args,  **kwargs)
-        self.global_quantities.refresh()
-        return profiles_1d
+    def refresh(self, *args, **kwargs):
+        logger.debug(f"{self.__class__.__name__}.refresh")
 
-    def advance(self, *args, **kwargs) -> Profiles1d:
-        profiles_1d = self.profiles_1d.advance(*args, **kwargs)
-        self.global_quantities.advance()
-        return profiles_1d
+    def advance(self, *args, **kwargs):
+        logger.debug(f"{self.__class__.__name__}.advance")
 
 
 class CoreSources(_T_core_sources):
@@ -56,8 +52,10 @@ class CoreSources(_T_core_sources):
         "code": {"name": None},
     })
 
-    def advance(self, *args, **kwargs) -> Source.Profiles1D:
-        return CoreSources.Source.Profiles1D(deep_reduce([source.advance(*args, **kwargs) for source in self.source]), parent=self)
+    def advance(self, *args, equilibrium: Equilibrium.TimeSlice, core_profiles_1d: CoreProfiles.Profiles1d, **kwargs):
+        for source in self.source:
+            source.advance(*args, equilibrium=equilibrium, core_profiles_1d=core_profiles_1d, **kwargs)
 
-    def refresh(self, *args, **kwargs) -> Source.Profiles1D:
-        return CoreSources.Source.Profiles1D(deep_reduce([source.refresh(*args, **kwargs) for source in self.source]), parent=self)
+    def refresh(self, *args, equilibrium: Equilibrium.TimeSlice, core_profiles_1d: CoreProfiles.Profiles1d, **kwargs):
+        for source in self.source:
+            source.refresh(*args, equilibrium=equilibrium, core_profiles_1d=core_profiles_1d, **kwargs)

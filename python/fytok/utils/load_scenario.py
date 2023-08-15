@@ -61,8 +61,8 @@ def load_core_profiles(d):
         },
         "electrons": {"label": "e", "density":  b_ne,   "temperature": b_Te, },
         "ion": [
-            {"label": "D",  "density":      b_nDT,      "temperature": b_Ti},
-            {"label": "T",  "density":      b_nDT,      "temperature": b_Ti},
+            {"label": "D",  "density_thermal":      b_nDT,      "temperature": b_Ti},
+            {"label": "T",  "density_thermal":      b_nDT,      "temperature": b_Ti},
             {"label": "He",
              "density_thermal": b_nHe,
              "density_fast": 0.0,

@@ -20,5 +20,8 @@ class TransportModelDummy(CoreTransport.Model):
     def refresh(self, *args, **kwargs) -> float:
         return super().refresh(*args, **kwargs)
 
+    def advance(self, *args, **kwargs):
+        return super().advance(*args, **kwargs)
+
 
 __SP_EXPORT__ = TransportModelDummy

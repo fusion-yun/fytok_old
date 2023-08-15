@@ -603,7 +603,7 @@ class EquilibriumGlobalQuantities(Equilibrium.TimeSlice.GlobalQuantities):
     # length_pol  :float =  sp_property(type="dynamic",units="m")
 
     @sp_property
-    def psi_magnetic_axis(self) -> float: return self._coord.psi_magnetic_axis  # sp_property(type="dynamic",units="Wb")
+    def psi_axis(self) -> float: return self._coord.psi_magnetic_axis  # sp_property(type="dynamic",units="Wb")
 
     @sp_property
     def psi_boundary(self) -> float: return self._coord.psi_boundary  # sp_property(type="dynamic",units="Wb")
@@ -694,7 +694,11 @@ class EquilibriumProfiles1d(Equilibrium.TimeSlice.Profiles1d):
         return self.rho_tor * self.q.pd()/self.q*self.dpsi_drho_tor
 
     @sp_property
-    def rho_tor(self) -> Function[float]: return np.sqrt(self.phi / (PI*self._coord._B0))
+    def rho_tor(self) -> Function[float]: return self.phi/ (PI*self._coord._B0)
+        # r2 = self.phi(self.psi) / (PI*self._coord._B0)
+        # if np.isnan(r2[0]) or r2[0] < 0.0:
+        #     r2[0] = 0.0
+        # return Function(np.sqrt(r2), self.psi, parent=self)
 
     @sp_property
     def rho_tor_norm(self) -> Function[float]:
@@ -831,7 +835,7 @@ class EquilibriumProfiles1d(Equilibrium.TimeSlice.Profiles1d):
         """Trapped particle fraction[-]
             Tokamak 3ed, 14.10
         """
-        epsilon = self.rho_tor/self._coord._R0
+        epsilon = self.rho_tor(self.psi)/self._coord._R0
         return 1.0 - (1-epsilon)**2/np.sqrt(1.0-epsilon**2)/(1+1.46*np.sqrt(epsilon))
 
 

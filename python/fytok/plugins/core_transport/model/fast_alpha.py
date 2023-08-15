@@ -49,7 +49,7 @@ class FastAlpha(CoreTransport.Model):
 
         fast_factor_v = fast_factor_d*1.5*(1.0/np.log((Ec_Ea**(-1.5)+1)*(Ec_Ea**1.5+1))-1)/L_Te
 
-        self.profiles_1d["ion"] = [
+        self.profiles_1d.current["ion"] = [
             {"label": "He",
              "particles": {"d_fast_factor": fast_factor_d, "v_fast_factor": fast_factor_v},
              #  "energy": {"d_fast": diff, "v_fast": vconv}

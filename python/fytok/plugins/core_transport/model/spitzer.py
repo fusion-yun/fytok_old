@@ -46,8 +46,11 @@ class Spitzer(CoreTransport.Model):
         rho_tor_norm = radial_grid.rho_tor_norm
         rho_tor = radial_grid.rho_tor
         psi_norm = radial_grid.psi_norm
+        psi_axis = equilibrium.global_quantities.psi_axis
+        psi_boundary = equilibrium.global_quantities.psi_boundary
+        psi = psi_norm*(psi_boundary-psi_axis)+psi_axis
 
-        q = equilibrium.profiles_1d.q(psi_norm)
+        q = equilibrium.profiles_1d.q(psi)
 
         # Tavg = np.sum([ion.density*ion.temperature for ion in core_profile.ion]) / \
         #     np.sum([ion.density for ion in core_profile.ion])
@@ -96,7 +99,6 @@ class Spitzer(CoreTransport.Model):
 
         self.profiles_1d["conductivity_parallel"] = function_like(array_like(rho_tor_norm, 1.0/eta), rho_tor_norm)
 
-        return residual
 
 
 __SP_EXPORT__ = Spitzer

@@ -259,7 +259,7 @@ class Equilibrium(_T_equilibrium):
         super().advance(time=time)
         return super().refresh(*args, **kwargs)
 
-    @ property
+    @property
     def __geometry__(self) -> GeoObject | typing.Container[GeoObject]:
         return self.time_slice.current.__geometry__
 

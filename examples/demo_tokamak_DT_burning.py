@@ -25,13 +25,10 @@ if __name__ == "__main__":
 
     eqdsk_file = File(
         data_path/"Standard domain R-Z/High resolution - 257x513/g900003.00230_ITER_15MA_eqdsk16HR.txt", format="GEQdsk").read()
-
     R0 = eqdsk_file.get("vacuum_toroidal_field/r0")
     B0 = eqdsk_file.get("vacuum_toroidal_field/b0")
-
     psi_axis = eqdsk_file.get("time_slice/0/global_quantities/psi_axis")
     psi_boundary = eqdsk_file.get("time_slice/0/global_quantities/psi_boundary")
-
     bs_eq_psi = eqdsk_file.get("time_slice/0/profiles_1d/psi")
     bs_eq_psi_norm = (bs_eq_psi-psi_axis)/(psi_boundary-psi_axis)
     bs_eq_fpol = function_like(eqdsk_file.get("time_slice/0/profiles_1d/f"), bs_eq_psi)
@@ -102,6 +99,7 @@ if __name__ == "__main__":
                       **scenario["core_sources"],
                   }
                   )
+
     eq = tok.equilibrium
 
     eq_time_slice = tok.equilibrium.time_slice.current
@@ -294,13 +292,13 @@ if __name__ == "__main__":
 
         tok.core_transport.refresh(equilibrium=tok.equilibrium.time_slice.current,
                                    core_profiles_1d=tok.core_profiles.profiles_1d.current)
-        
+
         # x_axis = np.linspace(0, 1.0, bs_psi_norm.size)
         for model in tok.core_transport.model:
             logger.debug((model.code.name, model.identifier))
 
-        for ion in core_transport_profiles_1d.ion:
-            logger.debug(ion.label)
+        # for ion in core_transport_profiles_1d.ion:
+        #     logger.debug(ion.label)
         #     d = ion.energy.d
         #     logger.debug(d(x_axis))
 
@@ -351,11 +349,10 @@ if __name__ == "__main__":
             {"code": {"name": "bootstrap_current"}},
             {"code": {"name": "fusion_reaction"}},
         ])
+        tok.core_sources.refresh(equilibrium=tok.equilibrium.time_slice.current,
+                                 core_profiles_1d=tok.core_profiles.profiles_1d.current)
 
-        # tok.core_sources.refresh(equilibrium=tok.equilibrium,
-        #                          core_profiles=tok.core_profiles)
-
-        core_source_profiles_1d = tok.core_sources.source[:].profiles_1d.current
+        core_source_profiles_1d = tok.core_sources.source[0].profiles_1d.current
 
         display(
             [

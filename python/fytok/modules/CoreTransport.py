@@ -60,8 +60,11 @@ class CoreTransportModel(_T_core_transport_model):
 
     profiles_1d: TimeSeriesAoS[Profiles1D] = sp_property()
 
-    def advance(self, *args, core_profiles: CoreProfiles, time: float = 0.0, **kwargs) -> Profiles1D:
-        return self.profiles_1d.advance(*args, core_profiles=core_profiles, time=time, **kwargs)
+    def refresh(self, *args, **kwargs):
+        logger.debug(f"{self.__class__.__name__}.refresh")
+
+    def advance(self, *args, **kwargs):
+        logger.debug(f"{self.__class__.__name__}.advance")
 
 
 class CoreTransport(_T_core_transport):

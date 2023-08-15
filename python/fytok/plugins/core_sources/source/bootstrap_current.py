@@ -2,9 +2,9 @@
 import collections
 
 import numpy as np
-from fytok.transport.CoreProfiles import CoreProfiles
-from fytok.transport.CoreSources import CoreSources
-from fytok.transport.Equilibrium import Equilibrium
+from fytok.modules.CoreProfiles import CoreProfiles
+from fytok.modules.CoreSources import CoreSources
+from fytok.modules.Equilibrium import Equilibrium
 from scipy import constants
 from spdm.data.Function import function_like
 from spdm.numlib.misc import array_like
@@ -19,33 +19,38 @@ class BootstrapCurrent(CoreSources.Source):
              "code": {"name": "bootstrap_current"}}, d or {}),
             *args, **kwargs)
 
-    def update(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles, **kwargs) -> float:
+    def refresh(self, *args, equilibrium: Equilibrium.TimeSlice, core_profiles_1d: CoreProfiles.Profiles1d, **kwargs) -> float:
 
-        residual = super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
+        residual = super().refresh(*args, equilibrium=equilibrium, core_profiles_1d=core_profiles_1d, **kwargs)
 
         equilibrium_1d = equilibrium.profiles_1d
-        core_profiles_1d = core_profiles.profiles_1d
-        profiles_1d = self.profiles_1d
+        profiles_1d = self.profiles_1d.current
+
+        radial_grid = core_profiles_1d.grid
+
         eV = constants.electron_volt
-        B0 = equilibrium.vacuum_toroidal_field.b0
-        R0 = equilibrium.vacuum_toroidal_field.r0
+        B0 = equilibrium._parent.vacuum_toroidal_field.b0(equilibrium.time)
+        R0 = equilibrium._parent.vacuum_toroidal_field.r0
 
         # rho_tor_norm = (core_profile.grid.rho_tor_norm[:-1]+core_profile.grid.rho_tor_norm[1:])*0.5
         # rho_tor = (core_profile.grid.rho_tor[:-1]+core_profile.grid.rho_tor[1:])*0.5
         # psi_norm = (core_profile.grid.psi_norm[:-1]+core_profile.grid.psi_norm[1:])*0.5
-        rho_tor_norm = profiles_1d.grid.rho_tor_norm[1:]
-        rho_tor = profiles_1d.grid.rho_tor[1:]
-        psi_norm = profiles_1d.grid.psi_norm[1:]
+        rho_tor_norm = radial_grid.rho_tor_norm
+        rho_tor = radial_grid.rho_tor
+        psi_norm = radial_grid.psi_norm
+        psi_axis = equilibrium.global_quantities.psi_axis
+        psi_boundary = equilibrium.global_quantities.psi_boundary
+        psi = psi_norm*(psi_boundary-psi_axis)+psi_axis
 
-        q = equilibrium_1d.q(psi_norm)
+        q = equilibrium_1d.q(psi)
 
         # max(np.asarray(1.07e-4*((Te[0]/1000)**(1/2))/B0), rho_tor[0])   # Larmor radius,   eq 14.7.2
 
         Te = core_profiles_1d.electrons.temperature(rho_tor_norm)
         Ne = core_profiles_1d.electrons.density(rho_tor_norm)
         Pe = core_profiles_1d.electrons.pressure(rho_tor_norm)
-        dlnTe = core_profiles_1d.electrons.temperature.derivative(rho_tor_norm)/Te
-        dlnNe = core_profiles_1d.electrons.density.derivative(rho_tor_norm)/Ne
+        dlnTe = core_profiles_1d.electrons.temperature.derivative()(rho_tor_norm)/Te
+        dlnNe = core_profiles_1d.electrons.density.derivative()(rho_tor_norm)/Ne
         dlnPe = dlnNe+dlnTe
 
         # Coulomb logarithm
@@ -68,21 +73,21 @@ class BootstrapCurrent(CoreSources.Source):
         nu_e = R0*q/vTe/tau_e/epsilon32
         # Zeff = core_profile.zeff
 
-        x = equilibrium_1d.trapped_fraction(psi_norm)  # np.sqrt(2*epsilon)  #
+        x = equilibrium_1d.trapped_fraction(psi)  # np.sqrt(2*epsilon)  #
         c1 = np.array((4.0+2.6*x)/(1.0+1.02*np.sqrt(nu_e)+1.07*nu_e)/(1.0 + 1.07 * epsilon32*nu_e))
         c3 = np.array((7.0+6.5*x)/(1.0+0.57*np.sqrt(nu_e)+0.61*nu_e)/(1.0 + 0.61 * epsilon32*nu_e) - c1*5/2)
 
         j_bootstrap = np.asarray(c1 * dlnPe + c3 * dlnTe)
 
         for sp in core_profiles_1d.ion:
-
+            logger.debug(sp.label)
             Ti = sp.temperature(rho_tor_norm)
             Ni = sp.density(rho_tor_norm)
-
-            dlnTi = sp.temperature.derivative(rho_tor_norm)/Ti
-            dlnNi = sp.density.derivative(rho_tor_norm)/Ni
+            logger.debug(Ni)
+            dlnTi = sp.temperature.derivative()(rho_tor_norm)/Ti
+            dlnNi = sp.density.derivative()(rho_tor_norm)/Ni
             dlnPi = dlnNi + dlnTi
-            mi = sp.a
+            mi = sp.element[0].a
 
             # ion collision time Tokamaks 3ed, eq 14.6.2 p730
             tau_i = 6.6e17*np.sqrt(mi)*((Ti/1000)**(3/2))/Ni/(1.1*lnCoul)

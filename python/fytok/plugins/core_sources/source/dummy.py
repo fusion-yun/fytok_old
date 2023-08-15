@@ -2,12 +2,10 @@
 import collections
 
 import numpy as np
-from fytok.transport.CoreProfiles import CoreProfiles
-from fytok.transport.CoreSources import CoreSources
-from fytok.transport.Equilibrium import Equilibrium
+from fytok.modules.CoreProfiles import CoreProfiles
+from fytok.modules.CoreSources import CoreSources
+from fytok.modules.Equilibrium import Equilibrium
 from spdm.utils.logger import logger
-from spdm.data import Dict, List, Node
-from spdm.data import Function
 
 
 class CoreSourceDummy(CoreSources.Source):
@@ -19,7 +17,7 @@ class CoreSourceDummy(CoreSources.Source):
             "code": {"name": "dummy"}}, d or {}),
             *args, **kwargs)
 
-    def update(self, *args,  **kwargs) -> float:
+    def refresh(self, *args,  **kwargs):
         return super().refresh(*args, **kwargs)
 
 

@@ -1,3 +1,4 @@
+import typing
 
 import numpy as np
 import scipy.constants
@@ -7,12 +8,17 @@ from fytok._imas.lastest.utilities import (
     _T_core_profile_ions, _T_core_profiles_profiles_1d_electrons,
     _T_core_profiles_vector_components_1)
 from scipy import constants
+from spdm.data.Entry import Entry
 from spdm.data.Function import Function
-from spdm.data.HTree import AoS
+from spdm.data.HTree import AoS, HTree
 from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.utils.logger import logger
 from spdm.utils.tags import _not_found_
+from spdm.utils.tree_utils import merge_tree_recursive
+from spdm.utils.typing import HTreeLike
+
+from ..utils.atoms import atoms
 from .Utilities import CoreRadialGrid
 
 PI = scipy.constants.pi
@@ -21,18 +27,21 @@ TWOPI = 2.0*PI
 
 class CoreProfilesElectrons(_T_core_profiles_profiles_1d_electrons):
 
-    # @sp_property
-    # def density(self) -> Function[float]: 
-    #     value = super().get("density", _not_found_)
-    #     return self.density_thermal+self.density_fast if value is _not_found_ else value
+    density_fast: Function[float] = sp_property(default_value=0.0)
 
     @sp_property
-    def pressure(self) -> Function[float]:
-        value = super().get("pressure", _not_found_)
-        return self.pressure_thermal+self.pressure_fast_parallel+self.pressure_fast_perpendicular  if value is _not_found_ else value
+    def density(self) -> Function[float]: return self.density_thermal+self.density_fast
 
     @sp_property
     def pressure_thermal(self) -> Function[float]: return self.density*self.temperature*scipy.constants.electron_volt
+
+    pressure_fast_perpendicular: Function[float] = sp_property(default_value=0.0)
+
+    pressure_fast_parallel: Function[float] = sp_property(default_value=0.0)
+
+    @sp_property
+    def pressure(self) -> Function[float]:
+        return self.pressure_thermal + self.pressure_fast_parallel+self.pressure_fast_perpendicular
 
     @sp_property
     def tau(self) -> Function[float]:
@@ -45,6 +54,18 @@ class CoreProfilesElectrons(_T_core_profiles_profiles_1d_electrons):
 
 class CoreProfilesIon(_T_core_profile_ions):
 
+    def __init__(self, cache: typing.Any = None, /, entry: HTreeLike | Entry = None,   **kwargs) -> None:
+        if cache is None or cache is _not_found_:
+            cache = {}
+        label = cache.get("label", None) or entry.get("label", None)
+
+        desc = atoms.get(label, None)
+
+        if desc is None:
+            raise RuntimeError(f"Can not find ion {label}")
+        cache = merge_tree_recursive(cache, desc)
+        super().__init__(cache, entry=entry,  **kwargs)
+
     is_impurity: bool = sp_property(default_value=False)
 
     has_fast_particle: bool = sp_property(default_value=False)
@@ -55,24 +76,25 @@ class CoreProfilesIon(_T_core_profile_ions):
     @sp_property
     def z_ion_square_1d(self) -> Function[float]: return self.z_ion*self.z_ion
 
-    # @sp_property
-    # def density(self) -> Function[float]:
-    #     value = super().get("density", _not_found_)
-    #     return self.density_thermal + self.density_fast if value is not _not_found_ else value
-
-    density_thermal: Function[float] = sp_property(
-        coordinate1="../../grid/rho_tor_norm", units="m^-3", type="dynamic", default_value=0.0)
-
-    density_fast: Function[float] = sp_property(
-        coordinate1="../../grid/rho_tor_norm", units="m^-3", type="dynamic", default_value=0.0)
-
     @sp_property
-    def pressure(self) -> Function[float]:
-        return self.pressure_thermal + self.pressure_fast_parallel+self.pressure_fast_perpendicular
+    def density(self) -> Function[float]:
+        return self.density_thermal + self.density_fast
+
+    density_thermal: Function[float] = sp_property(default_value=0.0)
+
+    density_fast: Function[float] = sp_property(default_value=0.0)
 
     @sp_property
     def pressure_thermal(self) -> Function[float]:
         return self.density_thermal*self.temperature*scipy.constants.electron_volt
+
+    pressure_fast_perpendicular: Function[float] = sp_property(default_value=0.0)
+
+    pressure_fast_parallel: Function[float] = sp_property(default_value=0.0)
+
+    @sp_property
+    def pressure(self) -> Function[float]:
+        return self.pressure_thermal + self.pressure_fast_parallel+self.pressure_fast_perpendicular
 
 
 class CoreProfiles1d(_T_core_profiles_profiles_1d):
@@ -112,7 +134,7 @@ class CoreProfiles1d(_T_core_profiles_profiles_1d):
     @sp_property(coorindate1="../grid/rho_tor_norm")
     def pprime(self) -> Function[float]: return self.pressure.d()
 
-    @sp_property
+    @sp_property(coordinate1="../grid/rho_tor_norm")
     def pressure_thermal(self) -> Function[float]:
         return sum([ion.pressure_thermal for ion in self.ion])+self.electrons.pressure_thermal
 
@@ -121,9 +143,9 @@ class CoreProfiles1d(_T_core_profiles_profiles_1d):
     #     return self.current_parallel_inside.derivative * \
     #         self.grid.r0*TWOPI/self.grid.dvolume_drho_tor
 
-    j_total: Function[float] = sp_property()
+    j_total: Function[float] = sp_property(coordinate1="../grid/rho_tor_norm")
 
-    @sp_property
+    @sp_property(coordinate1="../grid/rho_tor_norm")
     def current_parallel_inside(self) -> Function[float]: return self.j_total.antiderivative()
     # current_parallel_inside: Function[float] = sp_property()
 
@@ -160,7 +182,7 @@ class CoreProfiles1d(_T_core_profiles_profiles_1d):
     #         * ((np.sqrt(2.*constants.electron_mass)*(Te**1.5)) / 1.8e-19 / clog) \
     #         / constants.m_e
 
-    @sp_property
+    @sp_property(coordinate1="../grid/rho_tor_norm")
     def coulomb_logarithm(self) -> Function[float]:
         """ Coulomb logarithm,
             @ref: Tokamaks 2003  Ch.14.5 p727 ,2003
@@ -174,7 +196,7 @@ class CoreProfiles1d(_T_core_profiles_profiles_1d):
         return ((14.9 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te < 10) +
                 (15.2 - 0.5*np.log(Ne/1e20) + np.log(Te/1000)) * (Te >= 10))
 
-    @sp_property
+    @sp_property(coordinate1="../grid/rho_tor_norm")
     def electron_collision_time(self) -> Function[float]:
         """ electron collision time ,
             @ref: Tokamak 2003, eq 14.6.1
