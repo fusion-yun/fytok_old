@@ -157,7 +157,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         D = psi.pd(2, 0) * psi.pd(0, 2) - psi.pd(1, 1)**2
 
-        for r, z in minimize_filter(Bp2, R, Z, tolerance=0.001):
+        for r, z in minimize_filter(Bp2, R, Z, tolerance=0.01):
 
             p = OXPoint(r, z, psi(r, z))
 
@@ -171,7 +171,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         #     xpoints = [p for p in xpoints if wall.in_limiter(p.r, p.z)]
 
         if not opoints:
-            raise RuntimeError(f"Can not find o-point!")
+            logger.warning(f"Can not find o-point!")
         else:
 
             # xmin = self._psirz.mesh.geometry.bbox.origin
@@ -1005,13 +1005,13 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
             geo["x_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(x_points)]
 
         except Exception as error:
-            raise RuntimeError(f"Can not get o-point/x-point!") from error
+            logger.warning(f"Can not get o-point/x-point!")  # from error
 
         try:
             boundary = [surf for _, surf in
                         self.coordinate_system.find_surfaces(self.boundary.psi, o_point=True)]
         except Exception as error:
-            raise RuntimeError(f"Plot boundary failed!") from error
+            logger.warning(f"Plot boundary failed!")  # from error
         else:
             geo["boundary"] = boundary
 
@@ -1019,7 +1019,7 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
             separatrix = [surf for _, surf in
                           self.coordinate_system.find_surfaces(self.boundary_separatrix.psi, o_point=False)]
         except Exception as error:
-            raise RuntimeError(f"Plot separatrix failed!") from error
+            logger.warning(f"Plot separatrix failed!")  # from error
         else:
             geo["boundary_separatrix"] = separatrix
 
@@ -1030,7 +1030,7 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
             "x_points":  {"$matplotlib": {"color": 'blue',  'marker': 'x', "linewidths": 0.5}},
             "boundary":  {"$matplotlib": {"color": 'blue', 'linewidth': 0.5}},
             "boundary_separatrix": {"$matplotlib": {"color": 'red', "linestyle": 'dashed', 'linewidth': 0.25}},
-            "psi": {"$matplotlib": {"levels": 20, "cmap": "jet"}},
+            "psi": {"$matplotlib": {"levels": 40, "cmap": "jet"}},
         }
 
 
