@@ -180,7 +180,8 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         # remove illegal x-points . learn from freegs
         # check psi should be monotonic from o-point to x-point
 
-        xpoints_ = []
+        x_points = []
+        s_points = []
         for xp in xpoints:
             length = 20
 
@@ -188,17 +189,14 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
                           np.linspace(o_z, xp.z, length))
 
             if len(np.unique(psiline[1:] > psiline[:-1])) != 1:
-                continue
+                s_points.append(xp)
+            else:
+                x_points.append(xp)
 
-            xpoints_.append(xp)
-
-        logger.debug(xpoints)
-        logger.debug(xpoints_)
-
-        xpoints = xpoints_
+        xpoints = x_points
 
         xpoints.sort(key=lambda x: (x.psi - o_psi)**2)
-
+ 
         return opoints, xpoints
 
     @sp_property
@@ -949,11 +947,12 @@ class EquilibriumBoundary(Equilibrium.TimeSlice.Boundary):
 
     @sp_property
     def x_point(self) -> List[OXPoint]:
-        _, xpt = self._coord.critical_points
-        return xpt
+        _, x_pt = self._coord.critical_points
+        return x_pt
 
     @sp_property
-    def strike_point(self) -> List[RZTuple]: return NotImplemented
+    def strike_point(self) -> List[OXPoint]:
+        return
 
     @sp_property
     def active_limiter_point(self) -> List[RZTuple]: return NotImplemented
@@ -1025,7 +1024,7 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
             boundary = [surf for _, surf in
                         self.coordinate_system.find_surfaces(self.boundary.psi, o_point=True)]
         except Exception as error:
-            logger.warning(f"Plot boundary failed!")  # from error
+            raise RuntimeError(f"Plot boundary failed!") from error
         else:
             geo["boundary"] = boundary
 
