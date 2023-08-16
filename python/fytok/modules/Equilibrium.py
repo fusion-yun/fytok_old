@@ -15,22 +15,12 @@ from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Point import Point
 from spdm.utils.logger import logger
 
-from .CoreProfiles import CoreProfiles
-from .PFActive import PFActive
-from .Wall import Wall
-
 
 class EquilibriumTimeSlice(_T_equilibrium_time_slice):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._R0 = self.get("../vacuum_toroidal_field/r0")
         self._B0 = self.get("../vacuum_toroidal_field/b0")(self.time)
-       
-
-    def update(self, *args,   **kwargs) -> EquilibriumTimeSlice:
-        logger.debug(f"Update Equlibrium at time={self.time}")
-        super().update(*args, **kwargs)
-        return self
 
     CoordinateSystem = _T_equilibrium_coordinate_system
     Profiles1d = _T_equilibrium_profiles_1d
@@ -75,6 +65,9 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
             "boundary_separatrix":  {"$matplotlib": {"color": 'red', "linestyle": 'dashed', 'linewidth': 0.25}},
         }
         return geo, styles
+
+
+             
 
 # def plot(self, axis=None, *args,
     #          scalar_field={},
@@ -237,27 +230,23 @@ class Equilibrium(_T_equilibrium):
         ```
     """
 
+    _plugin_registry = {}
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     TimeSlice = EquilibriumTimeSlice
+
     time_slice: TimeSeriesAoS[TimeSlice] = sp_property(coordinate1="time", type="dynamic")
 
-    _plugin_registry = {}
-
-    def refresh(self, *args,
-               core_profile_1d: CoreProfiles.Profiles1d = None,
-               pf_active: PFActive = None,
-               wall: Wall = None,  **kwargs) -> TimeSlice:
+    def refresh(self, *args, **kwargs):
         """ update the last time slice """
-        return super().refresh(*args, **kwargs)
+        self.time_slice.refresh(*args, **kwargs)
+        # self.grids_ggd.refresh(*args, **kwargs)
 
-    def advance(self, *args, time: float = 0.0,
-                core_profile_1d: CoreProfiles.Profiles1d = None,
-                pf_active: PFActive = None,
-                wall: Wall = None, **kwargs) -> Equilibrium.TimeSlice:
-        super().advance(time=time)
-        return super().refresh(*args, **kwargs)
+    def advance(self, *args,  **kwargs):
+        self.time_slice.advance(*args, **kwargs)
+        # self.grids_ggd.advance(*args, **kwargs)
 
     @property
     def __geometry__(self) -> GeoObject | typing.Container[GeoObject]:

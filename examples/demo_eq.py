@@ -4,10 +4,16 @@ import pathlib
 import numpy as np
 import pandas as pd
 import scipy.constants
+from fytok.modules.Wall import Wall
+from fytok.modules.PFActive import PFActive
+from fytok.modules.Equilibrium import Equilibrium
+from fytok.modules.CoreProfiles import CoreProfiles
+
 from fytok.Tokamak import Tokamak
 from fytok.utils.load_scenario import load_scenario
 from spdm.data.File import File
 from spdm.data.Function import function_like
+from spdm.data.open_entry import open_entry
 from spdm.utils.logger import logger
 from spdm.views.View import display
 
@@ -62,42 +68,75 @@ if __name__ == "__main__":
 
     ###################################################################################################
 
-    tok = Tokamak("ITER",  # 导入 ITER 装置描述（mapping）
-                  time=0.0,
-                  name=scenario["name"],
-                  description=scenario["description"],
-                  core_profiles={
-                      **scenario["core_profiles"],
-                      "$default_value": {
-                          "profiles_1d": {  # 默认参数，profiles_1d  是 TimeSeriesAoS
-                              "grid": {     # 设定 grid
-                                  "rho_tor_norm": np.linspace(0, 1.0, 100),
-                                  "psi_norm": np.linspace(0, 1.0, 100),
-                              }}}
-                  },
-                  equilibrium={
-                      **scenario["equilibrium"],
-                      "code": {
-                          "name": "freegs",  # 指定 equlibrium 模块 "eq_analyze",
-                          "parameters": {"boundary": "fixed", }},
-                      "$default_value": {
-                          "time_slice": {   # 默认参数， time_slice 是 TimeSeriesAoS
-                              "boundary": {"psi_norm": 0.99},
-                              "profiles_2d": {"grid": {"dim1": 256, "dim2": 128}},
-                              "coordinate_system": {"grid": {"dim1": 128, "dim2": 128}}
-                          }}},
+    entry = open_entry(None, source_schema="ITER", target_schema=f"imas/3")
 
-                  )
+    wall = Wall(entry=entry.child("wall"))
 
-    eq_time_slice = tok.equilibrium.time_slice.current
+    pf_active = PFActive(entry=entry.child("pf_active"))
+
+    equilibrium = Equilibrium(
+        {**scenario["equilibrium"],
+            "code": {
+                "name": "freegs",  # 指定 equlibrium 模块 "eq_analyze",
+                "parameters": {"boundary": "fixed", }},
+            "$default_value": {
+                "time_slice": {   # 默认参数， time_slice 是 TimeSeriesAoS
+                    "boundary": {"psi_norm": 0.99},
+                    "profiles_2d": {"grid": {"dim1": 256, "dim2": 128}},
+                    "coordinate_system": {"grid": {"dim1": 128, "dim2": 128}}
+                }}},
+
+        wall=wall,
+        pf_active=pf_active
+    )
+
+    core_profiles = CoreProfiles({
+        **scenario["core_profiles"],
+        "$default_value": {
+            "profiles_1d": {  # 默认参数，profiles_1d  是 TimeSeriesAoS
+                "grid": {     # 设定 grid
+                    "rho_tor_norm": np.linspace(0, 1.0, 100),
+                    "psi_norm": np.linspace(0, 1.0, 100),
+                }}}
+    })
+
+    # tok = Tokamak(
+    #     "ITER",  # 导入 ITER 装置描述（mapping）
+    #     time=0.0,
+    #     name=scenario["name"],
+    #     description=scenario["description"],
+    #     core_profiles={
+    #         **scenario["core_profiles"],
+    #         "$default_value": {
+    #             "profiles_1d": {  # 默认参数，profiles_1d  是 TimeSeriesAoS
+    #                 "grid": {     # 设定 grid
+    #                               "rho_tor_norm": np.linspace(0, 1.0, 100),
+    #                               "psi_norm": np.linspace(0, 1.0, 100),
+    #                 }}}
+    #     },
+    #     equilibrium={
+    #         **scenario["equilibrium"],
+    #         "code": {
+    #             "name": "freegs",  # 指定 equlibrium 模块 "eq_analyze",
+    #             "parameters": {"boundary": "fixed", }},
+    #         "$default_value": {
+    #             "time_slice": {   # 默认参数， time_slice 是 TimeSeriesAoS
+    #                 "boundary": {"psi_norm": 0.99},
+    #                 "profiles_2d": {"grid": {"dim1": 256, "dim2": 128}},
+    #                 "coordinate_system": {"grid": {"dim1": 128, "dim2": 128}}
+    #             }}},
+
+    # )
+
+    eq_time_slice = equilibrium.time_slice.current
 
     display(  # plot equilibrium
-        tok,
-        title=f"{tok.name} time={tok.time}s",
+        equilibrium,
+        title=f"equilibrium time={equilibrium.time}s",
         output=output_path/"tokamak_prev.svg")
 
     if False:
-        eq_profiles_1d = eq_time_slice.profiles_1d   
+        eq_profiles_1d = eq_time_slice.profiles_1d
 
         display(  # plot tokamak geometric profile
             [
@@ -148,8 +187,12 @@ if __name__ == "__main__":
             output=output_path/"Equilibrium_coord.svg",
             grid=True, fontsize=16)
 
-    tok.equilibrium.refresh(Ip=1.0e6, beta_p=1.0)
+    equilibrium.refresh(Ip=1.0e6, beta_p=1.0, xpoints=[(p.r, p.z) for p in eq_time_slice.boundary.x_point])
 
+    display(  # plot equilibrium
+        equilibrium,
+        title=f" time={equilibrium.time}s",
+        output=output_path/"tokamak_post.svg")
     if False:
         display(  # plot tokamak geometric profile
             [
