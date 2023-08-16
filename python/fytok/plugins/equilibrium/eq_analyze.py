@@ -157,33 +157,47 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         D = psi.pd(2, 0) * psi.pd(0, 2) - psi.pd(1, 1)**2
 
-        for r, z in minimize_filter(Bp2, R, Z, tolerance=0.01):
+        for r, x_z in minimize_filter(Bp2, R, Z):
 
-            p = OXPoint(r, z, psi(r, z))
+            p = OXPoint(r, x_z, psi(r, x_z))
 
-            if D(r, z) < 0.0:  # saddle/X-point
+            if D(r, x_z) < 0.0:  # saddle/X-point
                 xpoints.append(p)
             else:  # extremum/ O-point
                 opoints.append(p)
 
-        # wall = getattr(self._parent._parent, "wall", None)
-        # if wall is not None:
-        #     xpoints = [p for p in xpoints if wall.in_limiter(p.r, p.z)]
+        Rmid, Zmid = self._psirz.mesh.geometry.bbox.origin + \
+            self._psirz.mesh.geometry.bbox.dimensions*0.5
 
-        if not opoints:
-            logger.warning(f"Can not find o-point!")
-        else:
+        opoints.sort(key=lambda x: (x.r - Rmid)**2 + (x.z - Zmid)**2)
 
-            # xmin = self._psirz.mesh.geometry.bbox.origin
-            # xmax = xmin+self._psirz.mesh.geometry.bbox.dimensions
+        # TODO:
 
-            Rmid, Zmid = self._psirz.mesh.geometry.bbox.origin + \
-                self._psirz.mesh.geometry.bbox.dimensions*0.5
+        o_psi = opoints[0].psi
+        o_r = opoints[0].r
+        o_z = opoints[0].z
 
-            opoints.sort(key=lambda x: (x.r - Rmid)**2 + (x.z - Zmid)**2)
+        # remove illegal x-points . learn from freegs
+        # check psi should be monotonic from o-point to x-point
 
-            o_psi = opoints[0].psi
-            xpoints.sort(key=lambda x: (x.psi - o_psi)**2)
+        xpoints_ = []
+        for xp in xpoints:
+            length = 20
+
+            psiline = psi(np.linspace(o_r, xp.r, length),
+                          np.linspace(o_z, xp.z, length))
+
+            if len(np.unique(psiline[1:] > psiline[:-1])) != 1:
+                continue
+
+            xpoints_.append(xp)
+
+        logger.debug(xpoints)
+        logger.debug(xpoints_)
+
+        xpoints = xpoints_
+
+        xpoints.sort(key=lambda x: (x.psi - o_psi)**2)
 
         return opoints, xpoints
 
@@ -903,7 +917,7 @@ class EquilibriumBoundary(Equilibrium.TimeSlice.Boundary):
     def phi(self) -> float: raise NotImplementedError(f"{self.__class__.__name__}.phi")
 
     @sp_property
-    def rho(self) -> float: return np.sqrt(self.phi/(constants.pi * self._coord._B0))
+    def rho(self) -> float: return np.sqrt(self.phi/(scipy.constants.pi * self._coord._B0))
 
     @functools.cached_property
     def _shape_property(self) -> EquilibriumCoordinateSystem.ShapeProperty:
@@ -1028,7 +1042,7 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
         return geo, {
             "o_points":  {"$matplotlib": {"color": 'red',   'marker': '.', "linewidths": 0.5}},
             "x_points":  {"$matplotlib": {"color": 'blue',  'marker': 'x', "linewidths": 0.5}},
-            "boundary":  {"$matplotlib": {"color": 'blue', 'linewidth': 0.5}},
+            "boundary":  {"$matplotlib": {"color": 'blue', 'linestyle': 'dotted', 'linewidth': 0.5}},
             "boundary_separatrix": {"$matplotlib": {"color": 'red', "linestyle": 'dashed', 'linewidth': 0.25}},
             "psi": {"$matplotlib": {"levels": 40, "cmap": "jet"}},
         }

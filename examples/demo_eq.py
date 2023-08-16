@@ -188,7 +188,7 @@ if __name__ == "__main__":
             grid=True, fontsize=16)
 
     equilibrium.refresh(Ip=1.0e6, beta_p=1.0, xpoints=[(p.r, p.z) for p in eq_time_slice.boundary.x_point])
-
+ 
     display(  # plot equilibrium
         equilibrium,
         title=f" time={equilibrium.time}s",
