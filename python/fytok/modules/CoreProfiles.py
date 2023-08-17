@@ -30,7 +30,7 @@ class CoreProfilesElectrons(_T_core_profiles_profiles_1d_electrons):
     density_fast: Function[float] = sp_property(default_value=0.0)
 
     @sp_property
-    def density(self) -> Function[float]: return self.density_thermal+self.density_fast
+    def density(self) -> Function[float]: return self.density_thermal + self.density_fast
 
     @sp_property
     def pressure_thermal(self) -> Function[float]: return self.density*self.temperature*scipy.constants.electron_volt
@@ -187,8 +187,8 @@ class CoreProfiles1d(_T_core_profiles_profiles_1d):
         """ Coulomb logarithm,
             @ref: Tokamaks 2003  Ch.14.5 p727 ,2003
         """
-        Te = self.electrons.temperature(self.grid.rho_tor_norm)
-        Ne = self.electrons.density(self.grid.rho_tor_norm)
+        Te = self.electrons.temperature
+        Ne = self.electrons.density
 
         # Coulomb logarithm
         #  Ch.14.5 p727 Tokamaks 2003

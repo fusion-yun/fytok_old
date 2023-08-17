@@ -182,7 +182,7 @@ class InstallIMASWrapper(Command):
 
     def initialize_options(self):
         self.prefix = pathlib.Path(__file__).parent
-        self.as_lastest = False
+        self.as_lastest = True
         self.dd_path = os.environ.get("IMAS_PREFIX", None) or\
             os.environ.get("IMAS_DD_PATH", "/home/salmon/workspace/data-dictionary")
         self.mapping_path = os.environ.get("FYTOK_MAPPING_PATH", "/home/salmon/workspace/fytok_data")

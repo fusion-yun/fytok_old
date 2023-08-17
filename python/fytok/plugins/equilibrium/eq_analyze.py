@@ -6,8 +6,8 @@ from dataclasses import dataclass
 
 import numpy as np
 import scipy.constants
-from fytok._imas.lastest.equilibrium import (
-    _T_equilibrium_global_quantities_magnetic_axis)
+from fytok._imas.lastest.equilibrium import \
+    _T_equilibrium_global_quantities_magnetic_axis
 from fytok._imas.lastest.utilities import _T_identifier_dynamic_aos3
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.modules.Utilities import CurveRZ, RZTuple, RZTuple_
@@ -28,7 +28,8 @@ from spdm.utils.constants import *
 from spdm.utils.logger import logger
 # from spdm.utils.misc import convert_to_named_tuple
 from spdm.utils.tags import _not_found_
-from spdm.utils.typing import ArrayLike, ArrayType, NumericType, scalar_type, array_type
+from spdm.utils.typing import (ArrayLike, ArrayType, NumericType, array_type,
+                               scalar_type)
 
 _R = Variable(0, "R")
 _Z = Variable(1, "Z")
@@ -42,8 +43,6 @@ class OXPoint:
 
 
 TOLERANCE = 1.0e-6
-
-
 
 
 # fmt:off
@@ -93,7 +92,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
-        logger.debug(f"Create MagneticCoordSystem.")
+        # logger.debug(f"Create MagneticCoordSystem.")
 
         self._B0 = super().get("b0", self._parent._B0, type_hint=float)   # magnetic field on magnetic axis
         self._R0 = super().get("r0", self._parent._R0, type_hint=float)   # major radius of magnetic axis
@@ -109,7 +108,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         self._s_eBp_2PI = 1.0 if self._e_Bp == 0 else TWOPI
 
-        logger.debug(f"COCOS={self.cocos}")
+        # logger.debug(f"COCOS={self.cocos}")
 
     @sp_property
     def cocos(self) -> int:
@@ -196,7 +195,7 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         xpoints = x_points
 
         xpoints.sort(key=lambda x: (x.psi - o_psi)**2)
- 
+
         return opoints, xpoints
 
     @sp_property

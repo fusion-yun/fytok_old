@@ -52,25 +52,15 @@ def load_core_profiles(d):
         "grid": {
             "rho_tor_norm":  bs_r_norm,
             "rho_tor":  d["rho"].values,
-
             "psi_norm": bs_psi_norm,
-            "psi": None,
-            "psi_magnetic_axis": None,
-            "psi_boundary": None,
-
         },
-        "electrons": {"label": "e", "density":  b_ne,   "temperature": b_Te, },
+        "electrons": {"label": "e", "density_thermal":  b_ne,   "temperature": b_Te, },
         "ion": [
             {"label": "D",  "density_thermal":      b_nDT,      "temperature": b_Ti},
             {"label": "T",  "density_thermal":      b_nDT,      "temperature": b_Ti},
-            {"label": "He",
-             "density_thermal": b_nHe,
-             "density_fast": 0.0,
-             "temperature": b_Ti,
-             "has_fast_particle": True
-             },
-            {"label": "Be", "density":  0.02*b_ne,      "temperature": b_Ti, "z_ion_1d": z_Be,  "is_impurity": True},
-            {"label": "Ar", "density": 0.0012*b_ne,     "temperature": b_Ti, "z_ion_1d": z_Ar,  "is_impurity": True},
+            {"label": "He", "density_thermal":      b_nHe,      "temperature": b_Ti,  "has_fast_particle": True},
+            {"label": "Be", "density_thermal":  0.02*b_ne,      "temperature": b_Ti, "z_ion_1d": z_Be,  "is_impurity": True},
+            {"label": "Ar", "density_thermal": 0.0012*b_ne,     "temperature": b_Ti, "z_ion_1d": z_Ar,  "is_impurity": True},
         ],
         # "e_field": {"parallel":  Function(e_parallel,bs_r_norm)},
         # "conductivity_parallel": Function(baseline["Joh"].values*1.0e6 / baseline["U"].values * (TWOPI * grid.r0),bs_r_norm),
@@ -211,7 +201,7 @@ def load_scenario_ITER(path):
     d_core_profiles = pd.read_excel(profiles_file, sheet_name=1, header=10, usecols="B:BN")
 
     rho_tor_norm = np.linspace(0.0, 0.9, 128)
-    
+
     scenario["core_profiles"] = {
         'vacuum_toroidal_field': vacuum_toroidal_field,
         "time": time,

@@ -45,7 +45,7 @@ class Spitzer(CoreTransport.Model):
 
         rho_tor_norm = radial_grid.rho_tor_norm
         rho_tor = radial_grid.rho_tor
-        psi_norm = radial_grid.psi_norm
+        psi_norm = radial_grid.psi_norm(rho_tor)
         psi_axis = equilibrium.global_quantities.psi_axis
         psi_boundary = equilibrium.global_quantities.psi_boundary
         psi = psi_norm*(psi_boundary-psi_axis)+psi_axis
@@ -97,7 +97,7 @@ class Spitzer(CoreTransport.Model):
 
         eta = eta_s*Zeff/(1-phi)/(1.0-C*phi)*(1.0+0.27*(Zeff-1.0))/(1.0+0.47*(Zeff-1.0))
 
-        self.profiles_1d["conductivity_parallel"] = function_like(array_like(rho_tor_norm, 1.0/eta), rho_tor_norm)
+        self.profiles_1d[-1]["conductivity_parallel"] = function_like(array_like(rho_tor_norm, 1.0/eta), rho_tor_norm)
 
 
 
