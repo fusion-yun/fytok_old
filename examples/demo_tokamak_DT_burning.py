@@ -15,7 +15,7 @@ from spdm.views.View import display
 if __name__ == "__main__":
 
     logger.info("====== START ========")
-    
+
     output_path = pathlib.Path('/home/salmon/workspace/output')
 
     data_path = pathlib.Path("/home/salmon/workspace/data/15MA inductive - burn")
@@ -281,12 +281,14 @@ if __name__ == "__main__":
         logger.info("Initialize Core Transport ")
 
         tok.core_transport.model.insert([
-            # {"code": {"name": "fast_alpha"}},
+            {"code": {"name": "fast_alpha"}},
             {"code": {"name": "spitzer"}},
             # {"code": {"name": "neoclassical"}},
             # {"code": {"name": "glf23"}},
             # {"code": {"name": "nclass"}},
         ])
+
+        logger.debug(tok.core_transport.model[:].profiles_1d.current.__value__)
 
         core_transport_profiles_1d = tok.core_transport.model[0].profiles_1d.current
 
