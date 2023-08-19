@@ -112,6 +112,9 @@ if __name__ == "__main__":
             tok,
             title=f"{tok.name} time={tok.time}s",
             output=output_path/"tokamak_prev.svg")
+        
+        logger.debug(eq_profiles_1d.dphi_dpsi.antiderivative()(eq_profiles_1d.psi))
+
     if False:
         display(  # plot tokamak geometric profile
             [

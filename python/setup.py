@@ -142,15 +142,15 @@ def create_imas_warpper(target_path, dd_path: str, xsl_file: str = None, xsl_sch
             .transform_to_file(source_file=dd_path.as_posix(),
                                output_file=(target_path/"_imas"/dd_version/"._physics_data_dictionary.txt").as_posix())
 
-        print(f"Create IMAS Schema: {target_path}/_schema/{dd_version}")
-        xslt_processor\
-            .compile_stylesheet(stylesheet_file=xsl_schema_file.as_posix())\
-            .transform_to_file(source_file=dd_path.as_posix(),
-                               output_file=(target_path/"_schema"/dd_version/"imas_physics_data_dictionary.yaml").as_posix())
+        # print(f"Create IMAS Schema: {target_path}/_schema/{dd_version}")
+        # xslt_processor\
+        #     .compile_stylesheet(stylesheet_file=xsl_schema_file.as_posix())\
+        #     .transform_to_file(source_file=dd_path.as_posix(),
+        #                        output_file=(target_path/"_schema"/dd_version/"imas_physics_data_dictionary.yaml").as_posix())
 
     if symlink_as_lastest:
         cerate_link(target_path/"_imas", dd_version)
-        cerate_link(target_path/"_schema", dd_version)
+        # cerate_link(target_path/"_schema", dd_version)
 
 
 def copy_data_mapping(target_path, mapping_path: str):
