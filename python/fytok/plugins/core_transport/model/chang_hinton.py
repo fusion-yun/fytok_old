@@ -21,14 +21,10 @@ class ChangHiton(CoreTransport.Model):
     """
 
     def refresh(self, *args,
-               core_profiles: CoreProfiles = None,
-               equilibrium: Equilibrium = None,
-               **kwargs) -> float:
-        residual = super().refresh(*args, **kwargs)
-
-        logger.warning(f"Not IMPLEMENTED!")
-
-        return residual
+                core_profiles_1d: CoreProfiles.Profiles1d = None,
+                equilibrium: Equilibrium.TimeSlice = None,
+                **kwargs):
+        return super().refresh(*args, **kwargs)
 
 
 __SP_EXPORT__ = ChangHiton

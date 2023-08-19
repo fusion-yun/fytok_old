@@ -1,4 +1,3 @@
-
 import pathlib
 
 import numpy as np
@@ -281,10 +280,12 @@ if __name__ == "__main__":
         logger.info("Initialize Core Transport ")
 
         tok.core_transport.model.insert([
-            {"code": {"name": "fast_alpha"}},
-            {"code": {"name": "spitzer"}},
+            # {"code": {"name": "alpha_ep"}},
+            {"code": {"name": "tglf"}},
+            # {"code": {"name": "spitzer"}},
+
             # {"code": {"name": "neoclassical"}},
-            # {"code": {"name": "glf23"}},
+
             # {"code": {"name": "nclass"}},
         ])
 
