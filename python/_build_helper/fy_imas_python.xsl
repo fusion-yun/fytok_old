@@ -117,7 +117,8 @@
 <xsl:variable name="FILE_HEADER_COMMON_IMPORT" >
 from enum import IntFlag
 import numpy as np
-from spdm.data.HTree         import List,AoS
+from spdm.data.HTree         import List
+from spdm.data.AoS           import AoS
 from spdm.data.TimeSeries    import TimeSeriesAoS,TimeSlice
 from spdm.data.Signal        import Signal,SignalND
 from spdm.data.Function      import Function 

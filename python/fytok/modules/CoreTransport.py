@@ -1,17 +1,11 @@
-import typing
-from functools import cached_property
 
 from fytok._imas.lastest.core_transport import (
     _T_core_transport, _T_core_transport_model, _T_core_transport_model_ions,
     _T_core_transport_model_neutral, _T_core_transport_model_profiles_1d)
-from spdm.data.Entry import as_entry, deep_reduce
-from spdm.data.Function import Function
-from spdm.data.HTree import AoS, List
-from spdm.data.sp_property import SpDict, sp_property
+from spdm.data.AoS import AoS
+from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.utils.logger import logger
-from spdm.utils.tags import _not_found_
-from spdm.utils.tree_utils import merge_tree_recursive
 
 from .CoreProfiles import CoreProfiles
 from .Equilibrium import Equilibrium

@@ -5,9 +5,10 @@ from enum import IntFlag
 
 import numpy as np
 from spdm.data.Actor import Actor
+from spdm.data.AoS import AoS
 from spdm.data.Field import Field
 from spdm.data.Function import Function
-from spdm.data.HTree import AoS, List
+from spdm.data.HTree import List
 from spdm.data.NamedDict import NamedDict
 from spdm.data.Signal import Signal, SignalND
 from spdm.data.sp_property import SpDict, sp_property

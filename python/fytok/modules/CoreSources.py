@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 
-from spdm.data.HTree import AoS
+from spdm.data.AoS import AoS
 from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.utils.logger import logger

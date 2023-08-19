@@ -8,9 +8,10 @@ from fytok._imas.lastest.utilities import (
     _T_core_profile_ions, _T_core_profiles_profiles_1d_electrons,
     _T_core_profiles_vector_components_1)
 from scipy import constants
+from spdm.data.AoS import AoS
 from spdm.data.Entry import Entry
 from spdm.data.Function import Function
-from spdm.data.HTree import AoS, HTree
+from spdm.data.HTree import HTree
 from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.utils.logger import logger

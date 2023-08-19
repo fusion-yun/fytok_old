@@ -107,12 +107,12 @@ if __name__ == "__main__":
 
     eq_global_quantities = eq_time_slice.global_quantities
 
-    if False:  # plot equilibrium
+    if True:  # plot equilibrium
         display(  # plot equilibrium
             tok,
             title=f"{tok.name} time={tok.time}s",
             output=output_path/"tokamak_prev.svg")
-
+    if False:
         display(  # plot tokamak geometric profile
             [
                 ((eq_profiles_1d.dvolume_dpsi, {"label": r"$\frac{dV}{d\psi}$"}), {"y_label": r"$[Wb]$"}),
@@ -162,7 +162,7 @@ if __name__ == "__main__":
             title="Equilibrium",
             output=output_path/"equilibrium_coord.svg",
             grid=True, fontsize=16)
-
+    if False:
         display(  # plot tokamak geometric profile
             [
 
