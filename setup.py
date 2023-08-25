@@ -6,15 +6,15 @@
 # NOTE:
 #  -  this file is used to install the fytok package
 # Usage:
-#  生成 IMAS wrapper 
+#  生成 IMAS wrapper
 #  -  python3 setup.py install_imas_wrapper --prefix=.
 
 import collections.abc
 import os
 import pathlib
 import pprint
-import subprocess
 import shutil
+import subprocess
 
 from setuptools import Command, find_namespace_packages, setup
 from setuptools.command.build_py import build_py
@@ -24,12 +24,16 @@ version = subprocess.check_output(['git', 'describe', '--always', '--dirty']).st
 
 fy_git_describe = subprocess.check_output(['git', 'describe', '--always', '--dirty']).strip().decode('utf-8')
 
-source_dir = pathlib.Path(__file__).parent
+SRC_ROOT = pathlib.Path(__file__).parent/"python"
+
+SETUP_HELPER_DIR = pathlib.Path(__file__).parent/"setup_helper"
 
 # Get the long description from the README file
-with open('../README.md') as f:
+with open('README.md') as f:
     long_description = f.read()
 
+with open('LICENSE.txt') as f:
+    license = f.read()
 
 # Get the requirements from the requirements.txt file
 with open('requirements.txt') as f:
@@ -55,9 +59,9 @@ def convert_value(proc, v):
 
 
 def fetch_url(url, tmp_dir=None):
-    import urllib.request
-    import urllib.parse
     import json
+    import urllib.parse
+    import urllib.request
 
     url = urllib.parse.urlparse(url)
 
@@ -76,7 +80,7 @@ def fetch_url(url, tmp_dir=None):
         return json.load(f)
 
 
-def cerate_link(prefix, dd_version):
+def cerate_symlink(prefix, dd_version):
     cwd = os.getcwd()
 
     os.chdir(prefix)
@@ -111,12 +115,12 @@ def create_imas_warpper(target_path, dd_path: str, xsl_file: str = None, xsl_sch
         ['git', 'describe', '--always', '--dirty'], cwd=dd_path.parent).strip().decode('utf-8')
 
     if xsl_file is None:
-        xsl_file = pathlib.Path(__file__).parent/"_build_helper/fy_imas_python.xsl"
+        xsl_file = SETUP_HELPER_DIR/"fy_imas_python.xsl"
     else:
         xsl_file = pathlib.Path(xsl_file)
 
     if xsl_schema_file is None:
-        xsl_schema_file = pathlib.Path(__file__).parent/"_build_helper/fy_imas_schema.xsl"
+        xsl_schema_file = SETUP_HELPER_DIR/"fy_imas_schema.xsl"
     else:
         xsl_schema_file = pathlib.Path(xsl_schema_file)
 
@@ -149,7 +153,7 @@ def create_imas_warpper(target_path, dd_path: str, xsl_file: str = None, xsl_sch
         #                        output_file=(target_path/"_schema"/dd_version/"imas_physics_data_dictionary.yaml").as_posix())
 
     if symlink_as_lastest:
-        cerate_link(target_path/"_imas", dd_version)
+        cerate_symlink(target_path/"_imas", dd_version)
         # cerate_link(target_path/"_schema", dd_version)
 
 
@@ -181,7 +185,7 @@ class InstallIMASWrapper(Command):
     ]
 
     def initialize_options(self):
-        self.prefix = pathlib.Path(__file__).parent
+        self.prefix = SRC_ROOT
         self.as_lastest = True
         self.dd_path = os.environ.get("IMAS_PREFIX", None) or\
             os.environ.get("IMAS_DD_PATH", "/home/salmon/workspace/data-dictionary")
@@ -247,20 +251,21 @@ class BuildPyCommand(build_py):
 setup(
     name='fytok',
     version=version,
-    description=f'Fusion Tokamak Simulation Toolkit {version}',
+    description=f'Fusion Tokamak Simulation Toolkit',
     long_description=long_description,
     url='http://fytok.github.io',
     author='Zhi YU',
     author_email='yuzhi@ipp.ac.cn',
-    license='MIT',
+    license=license,
 
     cmdclass={
         'build_py': BuildPyCommand,
         'install_imas_wrapper': InstallIMASWrapper,
     },
 
-    packages=find_namespace_packages(include=["fytok", "fytok.*", "_imas",
-                                     "_imas.*", "_mapping", "_mapping.*"]),  # 指定需要安装的包
+    packages=find_namespace_packages("python",
+                                     include=["fytok", "fytok.*", "_imas",
+                                              "_imas.*", "_mapping", "_mapping.*"]),  # 指定需要安装的包
 
     # requires=requirements,              # 项目运行依赖的第三方包
 
