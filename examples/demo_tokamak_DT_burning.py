@@ -113,9 +113,9 @@ if __name__ == "__main__":
             title=f"{tok.name} time={tok.time}s",
             output=output_path/"tokamak_prev.svg")
         
-        logger.debug(eq_profiles_1d.dphi_dpsi.antiderivative()(eq_profiles_1d.psi))
+        # logger.debug(eq_profiles_1d.dphi_dpsi.antiderivative()(eq_profiles_1d.psi))
 
-    if False:
+    if True:
         display(  # plot tokamak geometric profile
             [
                 ((eq_profiles_1d.dvolume_dpsi, {"label": r"$\frac{dV}{d\psi}$"}), {"y_label": r"$[Wb]$"}),
@@ -165,6 +165,7 @@ if __name__ == "__main__":
             title="Equilibrium",
             output=output_path/"equilibrium_coord.svg",
             grid=True, fontsize=16)
+    
     if False:
         display(  # plot tokamak geometric profile
             [
@@ -278,7 +279,7 @@ if __name__ == "__main__":
 
             output=output_path/"core_profiles_initialize.svg")
 
-    if True:  # initialize CoreTransport value
+    if False:  # initialize CoreTransport value
 
         logger.info("Initialize Core Transport ")
 

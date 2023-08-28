@@ -71,6 +71,11 @@ class CoreProfilesIon(_T_core_profile_ions):
 
     has_fast_particle: bool = sp_property(default_value=False)
 
+    @property
+    def mass(self) -> float: return self.element[0].a
+    @property
+    def charge(self) -> float: return self.element[0].z
+
     @sp_property
     def z_ion_1d(self) -> Function[float]: return super().z_ion_1d
 

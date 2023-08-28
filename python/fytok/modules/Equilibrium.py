@@ -67,123 +67,6 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
         return geo, styles
 
 
-             
-
-# def plot(self, axis=None, *args,
-    #          scalar_field={},
-    #          vector_field={},
-    #          boundary=True,
-    #          separatrix=True,
-    #          contours=16,
-    #          oxpoints=True,
-    #          **kwargs):
-    #     """
-    #         plot o-point,x-point,lcfs,separatrix and contour of psi
-    #     """
-
-    #     import matplotlib.pyplot as plt
-
-    #     if axis is None:
-    #         axis = plt.gca()
-
-    #     if oxpoints:
-    #         try:
-    #             o_points, x_points = self.coordinate_system.critical_points
-    #             for idx, o in enumerate(o_points):
-    #                 if idx == 0:
-    #                     axis.plot(o.r, o.z, 'g+', linewidth=0.5, label="Magnetic axis")
-    #                 else:
-    #                     axis.plot(o.r, o.z, 'g+',)
-    #                     axis.text(o.r, o.z, idx,
-    #                               horizontalalignment='center',
-    #                               verticalalignment='center')
-    #             for idx, x in enumerate(x_points):
-    #                 axis.plot(x.r, x.z, 'rx')
-    #                 axis.text(x.r, x.z, idx,
-    #                           horizontalalignment='center',
-    #                           verticalalignment='center')
-    #         except Exception as error:
-    #             logger.error(f"Can not find o-point/x-point! {error}")
-
-    #     if boundary:
-    #         try:
-
-    #             boundary_points = np.vstack([self.boundary.outline.r.__array__(),
-    #                                         self.boundary.outline.z.__array__()]).T
-
-    #             axis.add_patch(plt.Polygon(boundary_points, color='r', linestyle='solid',
-    #                                        linewidth=0.5, fill=False, closed=True))
-
-    #             # axis.plot([], [], 'g-', label="Boundary")
-    #         except Exception as error:
-    #             logger.error(f"Plot boundary failed! {error}")
-    #             # raise RuntimeError(f"Plot boundary failed!") from error
-
-    #     if separatrix:
-    #         try:
-    #             separatrix_outline = np.vstack([self.boundary_separatrix.outline.r.__array__(),
-    #                                             self.boundary_separatrix.outline.z.__array__()]).T
-
-    #             axis.add_patch(plt.Polygon(separatrix_outline, color='r', linestyle='dashed',
-    #                                        linewidth=0.5, fill=False, closed=False))
-    #             axis.plot([], [], 'r--', label="Separatrix")
-
-    #         except Exception as error:
-    #             logger.error(f"Plot separatrix failed! {error}")
-
-    #         # p = self.boundary_separatrix.geometric_axis
-    #         # axis.plot(p.r, p.z, 'rx')
-    #         # axis.text(p.r, p.z, 'x',
-    #         #           horizontalalignment='center',
-    #         #           verticalalignment='center')
-    #         # axis.plot([], [], 'rx', label="X-Point")
-
-    #         # for idx, p in self.boundary_secondary_separatrix.x_point:
-    #         #     axis.plot(p.r, p.z, 'rx')
-    #         #     axis.text(p.r, p.z, f'x{idx}',
-    #         #               horizontalalignment='center',
-    #         #               verticalalignment='center')
-
-    #         # for idx, p in self.boundary_secondary_separatrix.strike_point:
-    #         #     axis.plot(p.r, p.z, 'rx')
-    #         #     axis.text(p.r, p.z, f's{idx}',
-    #         #               horizontalalignment='center',
-    #         #               verticalalignment='center')
-
-    #     if contours:
-    #         if contours is True:
-    #             contours = 16
-    #         profiles_2d = self.profiles_2d[0]
-
-    #         try:
-    #             axis.contour(profiles_2d.r.__array__(),
-    #                          profiles_2d.z.__array__(),
-    #                          profiles_2d.psi.__array__(), linewidths=0.5, levels=contours)
-    #         except Exception as error:
-    #             logger.error(f"Plot contour of psi failed! {error}")
-
-    #     for s, opts in scalar_field.items():
-    #         if s == "psirz":
-    #             self.coordinate_system._psirz.plot(axis, **opts)
-    #         else:
-    #             sf = getattr(profiles_2d, s, None)
-
-    #             if isinstance(sf,  Function):
-    #                 sf = sf(profiles_2d.r, profiles_2d.z)
-
-    #             if isinstance(sf, np.ndarray):
-    #                 axis.contour(profiles_2d.r, profiles_2d.z, sf, linewidths=0.2, **opts)
-    #             else:
-    #                 logger.error(f"Can not find field {sf} {type(sf)}!")
-
-    #     for u, v, opts in vector_field.items():
-    #         uf = profiles_2d[u]
-    #         vf = profiles_2d[v]
-    #         axis.streamplot(profiles_2d.grid.dim1, profiles_2d.grid.dim2, vf, uf, **opts)
-
-    #     return axis
-
-
 class Equilibrium(_T_equilibrium):
     r"""
         Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
@@ -231,9 +114,11 @@ class Equilibrium(_T_equilibrium):
     """
 
     _plugin_registry = {}
+    
+    _plugin_prefix = "fytok/plugins/equilibrium"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, default_plugin="eq_analyze", **kwargs):
+        super().__init__(*args, default_plugin=default_plugin, **kwargs)
 
     TimeSlice = EquilibriumTimeSlice
 

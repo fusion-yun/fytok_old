@@ -6,11 +6,6 @@ from dataclasses import dataclass
 
 import numpy as np
 import scipy.constants
-from fytok._imas.lastest.equilibrium import \
-    _T_equilibrium_global_quantities_magnetic_axis
-from fytok._imas.lastest.utilities import _T_identifier_dynamic_aos3
-from fytok.modules.Equilibrium import Equilibrium
-from fytok.modules.Utilities import CurveRZ, RZTuple, RZTuple_
 from spdm.data.AoS import AoS
 from spdm.data.Expression import Expression, Variable
 from spdm.data.Field import Field
@@ -31,6 +26,12 @@ from spdm.utils.logger import logger
 from spdm.utils.tags import _not_found_
 from spdm.utils.typing import (ArrayLike, ArrayType, NumericType, array_type,
                                scalar_type)
+
+from fytok._imas.lastest.equilibrium import \
+    _T_equilibrium_global_quantities_magnetic_axis
+from fytok._imas.lastest.utilities import _T_identifier_dynamic_aos3
+from fytok.modules.Equilibrium import Equilibrium
+from fytok.modules.Utilities import CurveRZ, RZTuple, RZTuple_
 
 _R = Variable(0, "R")
 _Z = Variable(1, "Z")
