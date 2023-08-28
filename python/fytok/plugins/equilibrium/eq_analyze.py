@@ -96,9 +96,9 @@ class EquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         super().__init__(*args, **kwargs)
         # logger.debug(f"Create MagneticCoordSystem.")
 
-        self._B0 = super().get("b0", self._parent._B0, type_hint=float)   # magnetic field on magnetic axis
-        self._R0 = super().get("r0", self._parent._R0, type_hint=float)   # major radius of magnetic axis
-        self._Ip = super().get("ip", self._parent.global_quantities.ip, type_hint=float)  # plasma current
+        self._B0 = self._parent._B0  # super().get("b0", )   # magnetic field on magnetic axis
+        self._R0 = self._parent._R0  # super().get("r0", , type_hint=float)   # major radius of magnetic axis
+        self._Ip = self._parent.global_quantities.ip  # super().get("ip", , type_hint=float)  # plasma current
 
         self._fpol = self._parent.profiles_1d.f  # poloidal current function
 
@@ -1019,7 +1019,7 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
             geo["x_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(x_points)]
 
         except Exception as error:
-            logger.warning(f"Can not get o-point/x-point!")  # from error
+            raise RuntimeError(f"Can not get o-point/x-point!")  # from error
 
         try:
             boundary = [surf for _, surf in
@@ -1033,7 +1033,7 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
             separatrix = [surf for _, surf in
                           self.coordinate_system.find_surfaces(self.boundary_separatrix.psi, o_point=False)]
         except Exception as error:
-            logger.warning(f"Plot separatrix failed!")  # from error
+            raise RuntimeError(f"Plot separatrix failed!") from error
         else:
             geo["boundary_separatrix"] = separatrix
 

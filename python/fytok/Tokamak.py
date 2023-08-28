@@ -30,6 +30,8 @@ from .modules.TF import TF
 from .modules.TransportSolverNumerics import TransportSolverNumerics
 from .modules.Wall import Wall
 
+from spdm.utils.tree_utils import merge_tree_recursive
+
 
 class Tokamak(SpDict):
     """Tokamak
@@ -38,17 +40,17 @@ class Tokamak(SpDict):
             - 在时间推进时，确定各个子系统之间的依赖和演化关系，
     """
 
-    def __init__(self, desc: str | typing.Dict = None, **kwargs):
+    def __init__(self, data: str | typing.Dict = None,   **kwargs):
 
-        if not isinstance(desc, str) or '/' in desc:
-            entry = open_entry(desc)
+        imas_version_major,  *_ = imas_version.split(".")  # imas_version_minor, imas_version_patch,
+
+        if not isinstance(data, dict):
+            entry = open_entry(data,  target_schema=f"imas/{imas_version_major}")
+            data = None
         else:
-            if "name" not in kwargs:
-                kwargs["name"] = desc
-            imas_version_major, imas_version_minor, imas_version_patch, *_ = imas_version.split(".")
-            entry = open_entry(None, source_schema=desc, target_schema=f"imas/{imas_version_major}")
+            entry = None
 
-        super().__init__(kwargs, entry=entry)
+        super().__init__(data, entry=entry, **kwargs)
 
     time: float = sp_property(default_value=0.0)
 

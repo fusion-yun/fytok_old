@@ -62,7 +62,7 @@ if __name__ == "__main__":
     # Initialize Tokamak
     scenario = load_scenario(data_path)
 
-    tok = Tokamak("ITER",
+    tok = Tokamak("[ITER]://",
                   time=0.0,
                   name=scenario["name"],
                   description=scenario["description"],
@@ -112,10 +112,10 @@ if __name__ == "__main__":
             tok,
             title=f"{tok.name} time={tok.time}s",
             output=output_path/"tokamak_prev.svg")
-        
+
         # logger.debug(eq_profiles_1d.dphi_dpsi.antiderivative()(eq_profiles_1d.psi))
 
-    if True:
+    if False:
         display(  # plot tokamak geometric profile
             [
                 ((eq_profiles_1d.dvolume_dpsi, {"label": r"$\frac{dV}{d\psi}$"}), {"y_label": r"$[Wb]$"}),
@@ -165,7 +165,7 @@ if __name__ == "__main__":
             title="Equilibrium",
             output=output_path/"equilibrium_coord.svg",
             grid=True, fontsize=16)
-    
+
     if False:
         display(  # plot tokamak geometric profile
             [
