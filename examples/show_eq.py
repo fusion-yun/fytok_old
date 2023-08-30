@@ -2,7 +2,7 @@ import pathlib
 
 import numpy as np
 from spdm.data.File import File
-from spdm.views.View import display
+from spdm.view.View import display
 from spdm.utils.logger import logger
 from fytok.modules.Equilibrium import Equilibrium
 

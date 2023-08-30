@@ -1,15 +1,11 @@
 
-import collections.abc
 import typing
-from copy import copy, deepcopy
+from copy import copy
 
-import numpy as np
 from spdm.data.open_entry import open_entry
 from spdm.data.sp_property import SpDict, sp_property
 from spdm.geometry.GeoObject import GeoObject
 from spdm.utils.logger import logger
-from spdm.utils.misc import group_dict_by_prefix
-from spdm.views.View import display
 
 from ._imas.lastest import __version__ as imas_version
 # ---------------------------------
@@ -29,8 +25,6 @@ from .modules.PFActive import PFActive
 from .modules.TF import TF
 from .modules.TransportSolverNumerics import TransportSolverNumerics
 from .modules.Wall import Wall
-
-from spdm.utils.tree_utils import merge_tree_recursive
 
 
 class Tokamak(SpDict):

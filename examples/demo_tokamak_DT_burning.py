@@ -9,7 +9,7 @@ from fytok.utils.plot_profiles import plot_profiles
 from spdm.data.File import File
 from spdm.data.Function import function_like
 from spdm.utils.logger import logger
-from spdm.views.View import display
+from spdm.view.View import display
 
 if __name__ == "__main__":
 

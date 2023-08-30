@@ -15,7 +15,7 @@ from spdm.data.File import File
 from spdm.data.Function import function_like
 from spdm.data.open_entry import open_entry
 from spdm.utils.logger import logger
-from spdm.views.View import display
+from spdm.view.View import display
 
 if __name__ == "__main__":
 

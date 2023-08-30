@@ -8,7 +8,7 @@ from fytok.utils.load_scenario import load_scenario
 from spdm.data.Expression import Variable
 from spdm.data.File import File
 from spdm.utils.logger import logger
-from spdm.views.View import display
+from spdm.view.View import display
 
 if __name__ == "__main__":
 

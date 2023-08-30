@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import functools
 from dataclasses import dataclass
 
@@ -59,26 +61,34 @@ class CoreRadialGrid(_T_core_radial_grid):
         time = self.get("../time", 0.0)
         return self.get("../../vacuum_toroidal_field/b0")(time)
 
-    rho_tor_norm: np.ndarray = sp_property(type="dynamic", coordinate1="1...N", units="-")
+    def remesh(self, _rho_tor_norm: array_type) -> CoreRadialGrid:
 
-    rho_tor: np.ndarray = sp_property(type="dynamic", coordinate1="../rho_tor_norm", units="m")
-    """ Toroidal flux coordinate"""
-
-    @sp_property
-    def rho_pol_norm(self) -> np.ndarray: return np.sqrt(self.psi_norm)
-
-    psi_norm: Function[float] = sp_property(coordinate1="../rho_tor_norm", units="-")
-
-    @sp_property()
-    def psi(self) -> np.ndarray:
-        return self.psi_norm * (self.psi_boundary - self.psi_magnetic_axis) + self.psi_magnetic_axis
-
-    volume: np.ndarray = sp_property()
-
-    area: np.ndarray = sp_property()
-
-    surface: np.ndarray = sp_property()
+        return CoreRadialGrid({
+            "rho_tor_norm": _rho_tor_norm,
+            "psi_norm": self.psi_norm(_rho_tor_norm),
+            "psi_magnetic_axis": self.psi_magnetic_axis,
+            "psi_boundary": self.psi_boundary,
+            "rho_tor_boundary": self.rho_tor_boundary,
+        },
+            parent=self._parent
+        )
 
     psi_magnetic_axis: float = sp_property()
 
     psi_boundary: float = sp_property()
+
+    rho_tor_boundary: float = sp_property()
+
+    rho_tor_norm: np.ndarray = sp_property(type="dynamic", coordinate1="1...N", units="-")
+
+    psi_norm: Function[float] = sp_property(coordinate1="../rho_tor_norm", units="-")
+
+    @sp_property(type="dynamic", coordinate1="../rho_tor_norm", units="m")
+    def rho_tor(self) -> Function[float]: return self.rho_tor_norm*self.rho_tor_boundary
+
+    @sp_property()
+    def psi(self) -> Function[float]:
+        return self.psi_norm * (self.psi_boundary - self.psi_magnetic_axis) + self.psi_magnetic_axis
+
+    @sp_property
+    def rho_pol_norm(self) -> Function[float]: return np.sqrt(self.psi_norm)

@@ -43,11 +43,11 @@ class CoreTransportProfiles1D(_T_core_transport_model_profiles_1d):
 
     @sp_property[CoreRadialGrid]
     def grid_v(self) -> CoreRadialGrid:
-        return self.grid_d.remesh("rho_tor_norm", self.grid_d.rho_tor_norm)
+        return self.grid_d.remesh(self.grid_d.rho_tor_norm)
 
     @sp_property[CoreRadialGrid]
     def grid_flux(self) -> CoreRadialGrid:
-        return self.grid_d.remesh("rho_tor_norm", 0.5*(self.grid_d.rho_tor_norm[:-1]+self.grid_d.rho_tor_norm[1:]))
+        return self.grid_d.remesh(0.5*(self.grid_d.rho_tor_norm[:-1]+self.grid_d.rho_tor_norm[1:]))
 
     electrons: Electrons = sp_property()
 

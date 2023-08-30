@@ -24,7 +24,7 @@ if mapping_path.exists():
 
     os.environ["SP_DATA_MAPPING_PATH"] = SP_DATA_MAPPING_PATH
 
-    logger.info(f"Set mapping path: {SP_DATA_MAPPING_PATH}")
+    # logger.info(f"Set mapping path: {SP_DATA_MAPPING_PATH}")
 
 
 # external_path = (pathlib.Path(__path__[0])/"../../external").resolve()
