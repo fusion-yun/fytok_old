@@ -82,7 +82,7 @@ class CoreProfilesIon(_T_core_profile_ions):
     @sp_property
     def z_ion_square_1d(self) -> Function[float]: return self.z_ion*self.z_ion
 
-    @sp_property
+    @sp_property[Function[float]]
     def density(self) -> Function[float]: return self.density_thermal + self.density_fast
 
     density_thermal: Function[float] = sp_property(default_value=0.0)

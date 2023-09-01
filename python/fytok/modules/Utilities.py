@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import functools
 from dataclasses import dataclass
+import typing
 
 import numpy as np
 from fytok._imas.lastest.utilities import (_T_core_radial_grid,
                                            _T_rz0d_dynamic_aos,
                                            _T_rz1d_dynamic_aos)
+from spdm.data.Entry import Entry
 from spdm.data.Expression import Expression
 from spdm.data.Function import Function
+from spdm.data.HTree import HTree
 from spdm.data.sp_property import SpDict, sp_property
 from spdm.geometry.Curve import Curve
 from spdm.utils.typing import array_type
@@ -53,6 +56,9 @@ class RZTuple_:
 class CoreRadialGrid(_T_core_radial_grid):
     """1D radial grid for core profiles"""
 
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args,  **kwargs)
+
     @functools.cached_property
     def r0(self) -> float: return self.get("../../vacuum_toroidal_field/r0")
 
@@ -62,7 +68,6 @@ class CoreRadialGrid(_T_core_radial_grid):
         return self.get("../../vacuum_toroidal_field/b0")(time)
 
     def remesh(self, _rho_tor_norm: array_type) -> CoreRadialGrid:
-
         return CoreRadialGrid({
             "rho_tor_norm": _rho_tor_norm,
             "psi_norm": self.psi_norm(_rho_tor_norm),
