@@ -11,15 +11,19 @@ from spdm.data.Function import function_like
 from spdm.utils.logger import logger
 from spdm.view.View import display
 import os
-os.environ["SP_DATA_MAPPING_PATH"] = "/home/salmon/workspace/fytok_data/mapping"
+
+WORKSPACE = "/ssd01/salmon_work/workspace/"
+
+
+os.environ["SP_DATA_MAPPING_PATH"] = f"{WORKSPACE}/fytok_data/mapping"
 
 if __name__ == "__main__":
 
     logger.info("====== START ========")
 
-    output_path = pathlib.Path('/home/salmon/workspace/output')
+    output_path = pathlib.Path(f"{WORKSPACE}/output")
 
-    data_path = pathlib.Path("/home/salmon/workspace/data/15MA inductive - burn")
+    data_path = pathlib.Path(f"{WORKSPACE}/data/15MA inductive - burn")
 
     ###################################################################################################
     # baseline

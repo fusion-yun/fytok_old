@@ -1,4 +1,3 @@
-
 import typing
 from copy import copy
 
@@ -8,10 +7,12 @@ from spdm.geometry.GeoObject import GeoObject
 from spdm.utils.logger import logger
 
 from ._imas.lastest import __version__ as imas_version
+
 # ---------------------------------
 from .modules.CoreProfiles import CoreProfiles
 from .modules.CoreSources import CoreSources
 from .modules.CoreTransport import CoreTransport
+
 # ---------------------------------
 # from .modules.EdgeProfiles import EdgeProfiles
 # from .modules.EdgeSources import EdgeSources
@@ -19,6 +20,7 @@ from .modules.CoreTransport import CoreTransport
 # from .modules.EdgeTransportSolver import EdgeTransportSolver
 # ---------------------------------
 from .modules.Equilibrium import Equilibrium
+
 # ---------------------------------
 from .modules.Magnetics import Magnetics
 from .modules.PFActive import PFActive
@@ -29,17 +31,18 @@ from .modules.Wall import Wall
 
 class Tokamak(SpDict):
     """Tokamak
-        功能：
-            - 描述装置在单一时刻的状态，
-            - 在时间推进时，确定各个子系统之间的依赖和演化关系，
+    功能：
+        - 描述装置在单一时刻的状态，
+        - 在时间推进时，确定各个子系统之间的依赖和演化关系，
     """
 
-    def __init__(self, data: str | typing.Dict = None,   **kwargs):
-
-        imas_version_major,  *_ = imas_version.split(".")  # imas_version_minor, imas_version_patch,
+    def __init__(self, data: str | typing.Dict = None, **kwargs):
+        imas_version_major, *_ = imas_version.split(
+            "."
+        )  # imas_version_minor, imas_version_patch,
 
         if not isinstance(data, dict):
-            entry = open_entry(data,  schema=f"imas/{imas_version_major}")
+            entry = open_entry(data, schema=f"imas/{imas_version_major}")
             data = None
         else:
             entry = None
@@ -78,9 +81,12 @@ class Tokamak(SpDict):
 
     transport_solver: TransportSolverNumerics = sp_property()
 
-    def check_converge(self, *args, **kwargs) -> float: return 0.0
+    def check_converge(self, *args, **kwargs) -> float:
+        return 0.0
 
-    def advance(self, *args, dt=None, do_refresh=False, **kwargs) -> CoreProfiles.Profiles1d:
+    def advance(
+        self, *args, dt=None, do_refresh=False, **kwargs
+    ) -> CoreProfiles.Profiles1d:
         self._time += dt
 
         core_profiles_1d_prev = self.core_profiles.profiles_1d.current
@@ -89,23 +95,27 @@ class Tokamak(SpDict):
             time=self.time,
             core_profile_1d=core_profiles_1d_prev,
             wall=self.wall,
-            pf_active=self.pf_active)
+            pf_active=self.pf_active,
+        )
 
         core_transport_profiles_1d = self.core_transport.advance(
             time=self.time,
             equilibrium=equilibrium,
-            core_profile_1d=core_profiles_1d_prev)
+            core_profile_1d=core_profiles_1d_prev,
+        )
 
         core_source_profiles_1d = self.core_sources.advance(
             time=self.time,
             equilibrium=equilibrium,
-            core_profile_1d=core_profiles_1d_prev)
+            core_profile_1d=core_profiles_1d_prev,
+        )
 
         core_profiles_1d_next = self.transport_solver.solve(
             equilibrium=equilibrium,
             core_profile_1d=core_profiles_1d_prev,
             core_transport_profiles_1d=core_transport_profiles_1d,
-            core_source_profiles_1d=core_source_profiles_1d)
+            core_source_profiles_1d=core_source_profiles_1d,
+        )
 
         self.core_profiles.advance(core_profiles_1d_next)
 
@@ -118,53 +128,63 @@ class Tokamak(SpDict):
         else:
             return core_profiles_1d_next
 
-    def refresh(self, *args, tolerance=1.0e-4, max_iteration=1, **kwargs) -> CoreProfiles.Profiles1d:
-
-        # super().refresh(*args, **kwargs)
+    def refresh(self, *args, tolerance=1.0e-4, max_iteration=1, **kwargs):
+        self.equilibrium.refresh(
+            core_profiles_1d=core_profiles_1d_iter,
+            wall=self.wall,
+            pf_active=self.pf_active,
+            tf=self.tf,
+            tolerance=tolerance,
+            **kwargs,
+        )
 
         residual = tolerance
 
         core_profiles_1d_iter = copy(self.core_profiles.profiles_1d.current)
 
         for step_num in range(max_iteration):
-            self.equilibrium.refresh(
-                core_profiles_1d=core_profiles_1d_iter,
-                wall=self.wall,
-                pf_active=self.pf_active,
-                tolerance=tolerance,)
-
             equilibrium_time_slice = self.equilibrium.time_slice.current
 
             self.core_transport.refresh(
                 equilibrium=equilibrium_time_slice,
-                core_profile_1d=core_profiles_1d_iter)
+                core_profile_1d=core_profiles_1d_iter,
+            )
 
-            core_transport_profiles_1d = self.core_transport.model.combined.profiles_1d.current
+            core_transport_profiles_1d = (
+                self.core_transport.model.combined.profiles_1d.current
+            )
 
             self.core_sources.refresh(
                 equilibrium=equilibrium_time_slice,
-                core_profile_1d=core_profiles_1d_iter)
+                core_profile_1d=core_profiles_1d_iter,
+            )
 
-            core_source_profiles_1d = self.core_sources.source.combined.profiles_1d.current
+            core_source_profiles_1d = (
+                self.core_sources.source.combined.profiles_1d.current
+            )
 
             core_profiles_1d_next = self.transport_solver.solve(
                 equilibrium=equilibrium_time_slice,
                 core_profiles_prev=core_profiles_1d_iter,
                 core_transport_profiles_1d=core_transport_profiles_1d,
-                core_source_profiles_1d=core_source_profiles_1d)
+                core_source_profiles_1d=core_source_profiles_1d,
+            )
 
-            residual = self.check_converge(core_profiles_1d_iter,  core_profiles_1d_next)
+            residual = self.check_converge(core_profiles_1d_iter, core_profiles_1d_next)
 
             if residual <= tolerance:
                 break
             else:
                 core_profiles_1d_iter = core_profiles_1d_next
         else:
-            logger.debug(f"time={self.time}  iterator step {step_num}/{max_iteration} residual={residual}")
+            logger.debug(
+                f"time={self.time}  iterator step {step_num}/{max_iteration} residual={residual}"
+            )
 
         if residual >= tolerance:
             logger.warning(
-                f"The solution does not converge, and the number of iterations exceeds the maximum {max_iteration}")
+                f"The solution does not converge, and the number of iterations exceeds the maximum {max_iteration}"
+            )
 
         return core_profiles_1d_iter
 
