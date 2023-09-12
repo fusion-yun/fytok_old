@@ -41,20 +41,15 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
             geo["o_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(o_points)]
             geo["x_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(x_points)]
 
-        except Exception as error:
-            raise RuntimeError(f"Can not get o-point/x-point! {error}") from error
-
-        try:
             geo["boundary"] = Curve(self.boundary.outline.r.__array__(),
                                     self.boundary.outline.z.__array__())
-        except Exception as error:
-            logger.error(f"Can not get boundary! {error}")
 
-        try:
             geo["boundary_separatrix"] = Curve(self.boundary_separatrix.outline.r.__array__(),
                                                self.boundary_separatrix.outline.z.__array__())
+
         except Exception as error:
-            logger.error(f"Can not get boundary_separatrix! {error}")
+            logger.error(f"Can not parser psi ! {error}")
+            # raise RuntimeError(f"Can not get o-point/x-point! {error}") from error
 
         geo["psi"] = self.profiles_2d[0].psi
 
@@ -113,7 +108,7 @@ class Equilibrium(_T_equilibrium):
         ```
     """
 
-    _plugin_config = {"code": {"name": "eq_analyze"}}  
+    _plugin_config = {"code": {"name": "eq_analyze"}}
 
     TimeSlice = EquilibriumTimeSlice
 

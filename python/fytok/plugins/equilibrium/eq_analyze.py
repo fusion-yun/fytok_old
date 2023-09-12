@@ -16,7 +16,7 @@ from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.geometry.Curve import Curve
 from spdm.geometry.GeoObject import GeoObject, GeoObjectSet
 from spdm.geometry.Point import Point
-from spdm.mesh.CurvilinearMesh import CurvilinearMesh
+from spdm.mesh.mesh_curvilinear import CurvilinearMesh
 from spdm.mesh.Mesh import Mesh
 from spdm.numlib.contours import find_countours
 from spdm.numlib.optimize import minimize_filter
@@ -1018,24 +1018,16 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
             geo["o_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(o_points)]
             geo["x_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(x_points)]
 
-        except Exception as error:
-            raise RuntimeError(f"Can not get o-point/x-point!")  # from error
+            geo["boundary"] = [surf for _, surf in
+                               self.coordinate_system.find_surfaces(self.boundary.psi, o_point=True)]
 
-        try:
-            boundary = [surf for _, surf in
-                        self.coordinate_system.find_surfaces(self.boundary.psi, o_point=True)]
-        except Exception as error:
-            raise RuntimeError(f"Plot boundary failed!") from error
-        else:
-            geo["boundary"] = boundary
+            geo["boundary_separatrix"] = [surf for _, surf in
+                                          self.coordinate_system.find_surfaces(self.boundary_separatrix.psi, o_point=False)]
 
-        try:
-            separatrix = [surf for _, surf in
-                          self.coordinate_system.find_surfaces(self.boundary_separatrix.psi, o_point=False)]
         except Exception as error:
-            raise RuntimeError(f"Plot separatrix failed!") from error
-        else:
-            geo["boundary_separatrix"] = separatrix
+            logger.error(f"Can not parser psi ! {error}")
+            # raise RuntimeError(f"Plot separatrix failed!") from error
+         
 
         geo["psi"] = self.profiles_2d[0].psi
 

@@ -20,6 +20,7 @@ if __name__ == "__main__":
 
     eq = Equilibrium("file+GEQdsk:///home/salmon/workspace/gacode/neo/tools/input/profile_data/g141459.03890")
 
+    logger.debug(eq.time_slice[0].profiles_2d[0].psi.__value__)
 
     display(eq, title=f"EQUILIBRIUM", output=output_path/"EQUILIBRIUM.svg")
 
