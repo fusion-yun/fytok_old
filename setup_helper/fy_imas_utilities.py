@@ -66,16 +66,48 @@ class _T_Code(SpDict):
     library: List[_T_Library] = sp_property(coordinate1="1...N")
     """List of external libraries used by the code that has produced this IDS"""
 
+from spdm.utils.tree_utils import merge_tree_recursive
 
 class _T_Module(Actor):
     _plugin_registry = {}
 
-    _plugin_prefix = "fytok/plugins/"
+    @classmethod
+    def _get_plugin_fullname(cls, name) -> str:
+        prefix = getattr(cls, "_plugin_name_prefix", None)
 
-    _plugin_name_path = "code/name"
+        name = name.replace('/', '.').lower()
+
+        if prefix is None:
+            m_pth = cls.__module__.split('.')
+            prefix = '.'.join(m_pth[0:1]+['plugins']+m_pth[2:]+[""]).lower()
+            cls._plugin_name_prefix = prefix
+
+        if not name.startswith(prefix):
+            name = prefix+name
+
+        return name
+
+    def __init__(self, *args,  **kwargs):
+        if self.__class__ is _T_Module or "_plugin_config" in vars(self.__class__):
+            default_value = merge_tree_recursive(self.__class__._plugin_config, kwargs.pop("default_value", {}))
+
+            plugin_name = None
+
+            if len(args) > 0 and isinstance(args[0], dict):
+                plugin_name = args[0].get("code", {}).get('name', None)
+
+            if plugin_name is None:
+                plugin_name = default_value.get("code", {}).get("name", None)
+
+            self.__class__.__dispatch_init__([plugin_name], self,  *args, default_value=default_value, **kwargs)
+
+            return
+
+        super().__init__(*args, **kwargs)
 
     code: _T_Code = sp_property()
     """Generic decription of the code-specific parameters for the code that has produced this IDS"""
+
 
 
 class _T_IDS(_T_Module):

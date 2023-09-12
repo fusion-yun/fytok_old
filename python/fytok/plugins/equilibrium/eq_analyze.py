@@ -1025,8 +1025,8 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
                                           self.coordinate_system.find_surfaces(self.boundary_separatrix.psi, o_point=False)]
 
         except Exception as error:
-            logger.error(f"Can not parser psi ! {error}")
-            # raise RuntimeError(f"Plot separatrix failed!") from error
+            # logger.error(f"Can not parser psi ! {error}")
+            raise RuntimeError(f"Can not parser psi!") from error
          
 
         geo["psi"] = self.profiles_2d[0].psi

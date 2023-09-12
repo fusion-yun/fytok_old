@@ -112,6 +112,9 @@ class Equilibrium(_T_equilibrium):
 
     TimeSlice = EquilibriumTimeSlice
 
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
     time_slice: TimeSeriesAoS[TimeSlice] = sp_property(coordinate1="time", type="dynamic")
 
     def refresh(self, *args, **kwargs):
@@ -128,8 +131,9 @@ class Equilibrium(_T_equilibrium):
         try:
             geo = self.time_slice.current.__geometry__
         except Exception as error:
-            logger.error(f"Can not get geometry! {error}")
-            geo = None
+            raise RuntimeError(f"Can not get geometry! {error}") from error
+            # logger.error(f"Can not get geometry! {error}")
+            # geo = None
         return geo
     # def plot(self, axis,  *args, time_slice=-1,  **kwargs):
     #     if len(self.time_slice) == 0 or time_slice >= len(self.time_slice):

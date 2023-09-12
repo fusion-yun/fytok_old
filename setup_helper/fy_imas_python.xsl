@@ -362,6 +362,10 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
     <entry key='signal_int_5d'>SignalND[int]</entry>
     <entry key='signal_int_6d'>SignalND[int]</entry>
 
+    <entry key='signal_flt_1d_validity'>Signal[float]</entry>
+    <entry key='magnetics_method_distinct'>Signal[float]</entry>
+
+
     <entry key='code'>_T_Code</entry>
     <entry key='time'>np.ndarray</entry>
 

@@ -18,14 +18,14 @@ if __name__ == "__main__":
 
     output_path = pathlib.Path("/home/salmon/workspace/output/")
 
-    eq = Equilibrium("file+GEQdsk:///home/salmon/workspace/gacode/neo/tools/input/profile_data/g141459.03890")
+    # eq = Equilibrium("file+GEQdsk:///home/salmon/workspace/gacode/neo/tools/input/profile_data/g141459.03890")
 
-    logger.debug(eq.time_slice[0].profiles_2d[0].psi.__value__)
+    # logger.debug(eq.time_slice[0].profiles_2d[0].psi.__value__)
 
-    display(eq, title=f"EQUILIBRIUM", output=output_path/"EQUILIBRIUM.svg")
+    # display(eq, title=f"EQUILIBRIUM", output=output_path/"EQUILIBRIUM.svg")
 
-    tok = Tokamak(f"EAST+MDSplus://{DATA_PATH}/mdsplus/~t/?shot=70745")
+    tok = Tokamak(f"EAST+MDSplus://{DATA_PATH}/mdsplus/~t/?shot=70745",)
 
-    logger.debug(tok.pf_active.coil[1].current(1.2))
+    display(tok, title=f"Tokamak", output=output_path/"tok_east.svg")
 
     logger.info("Done")
