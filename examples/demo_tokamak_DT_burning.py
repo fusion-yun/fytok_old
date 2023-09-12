@@ -10,6 +10,8 @@ from spdm.data.File import File
 from spdm.data.Function import function_like
 from spdm.utils.logger import logger
 from spdm.view.View import display
+import os
+os.environ["SP_DATA_MAPPING_PATH"] = "/home/salmon/workspace/fytok_data/mapping"
 
 if __name__ == "__main__":
 
@@ -62,7 +64,7 @@ if __name__ == "__main__":
     # Initialize Tokamak
     scenario = load_scenario(data_path)
 
-    tok = Tokamak("[ITER]://",
+    tok = Tokamak("ITER",
                   time=0.0,
                   name=scenario["name"],
                   description=scenario["description"],

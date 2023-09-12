@@ -13,7 +13,7 @@ from fytok.Tokamak import Tokamak
 from fytok.utils.load_scenario import load_scenario
 from spdm.data.File import File
 from spdm.data.Function import function_like
-from spdm.data.open_entry import open_entry
+from spdm.data.Entry import open_entry
 from spdm.utils.logger import logger
 from spdm.view.View import display
 

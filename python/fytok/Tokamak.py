@@ -2,7 +2,7 @@
 import typing
 from copy import copy
 
-from spdm.data.open_entry import open_entry
+from spdm.data.Entry import open_entry
 from spdm.data.sp_property import SpDict, sp_property
 from spdm.geometry.GeoObject import GeoObject
 from spdm.utils.logger import logger
@@ -39,7 +39,7 @@ class Tokamak(SpDict):
         imas_version_major,  *_ = imas_version.split(".")  # imas_version_minor, imas_version_patch,
 
         if not isinstance(data, dict):
-            entry = open_entry(data,  target_schema=f"imas/{imas_version_major}")
+            entry = open_entry(data,  schema=f"imas/{imas_version_major}")
             data = None
         else:
             entry = None

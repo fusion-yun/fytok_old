@@ -15,5 +15,5 @@ class PFActive(_T_pf_active):
             geo_coils.append(Rectangle(rect.r - rect.width / 2.0,  rect.z -
                              rect.height / 2.0,   rect.width,  rect.height,
                              name=coil.name))
-
+        
         return {"coil": geo_coils}, {"coil": {"$matplotlib": {"color": 'black'}, "text": True}},

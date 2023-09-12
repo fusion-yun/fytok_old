@@ -113,12 +113,7 @@ class Equilibrium(_T_equilibrium):
         ```
     """
 
-    _plugin_registry = {}
-    
-    _plugin_prefix = "fytok/plugins/equilibrium"
-
-    def __init__(self, *args, default_plugin="eq_analyze", **kwargs):
-        super().__init__(*args, default_plugin=default_plugin, **kwargs)
+    _plugin_config = {"code": {"name": "eq_analyze"}}  
 
     TimeSlice = EquilibriumTimeSlice
 
@@ -135,8 +130,12 @@ class Equilibrium(_T_equilibrium):
 
     @property
     def __geometry__(self) -> GeoObject | typing.Container[GeoObject]:
-        return self.time_slice.current.__geometry__
-
+        try:
+            geo = self.time_slice.current.__geometry__
+        except Exception as error:
+            logger.error(f"Can not get geometry! {error}")
+            geo = None
+        return geo
     # def plot(self, axis,  *args, time_slice=-1,  **kwargs):
     #     if len(self.time_slice) == 0 or time_slice >= len(self.time_slice):
     #         logger.error(f"Time slice {time_slice} is out range {len(self.time_slice)} !")
