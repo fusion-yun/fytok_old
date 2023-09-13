@@ -19,6 +19,7 @@ if __name__ == "__main__":
 
     tok = Tokamak(f"EAST+MDSplus://{WORKSPACE}/fytok_data/mdsplus/~t/?shot=70754")
 
-    display(tok, title=f"Tokamak", output=output_path/"tok.svg")
+    display(tok, title=f"EAST RZ  View", output=output_path/"east_rz.svg")
+    display(tok, title=f"EAST Top View", output=output_path/"east_top.svg", view="TOP")
 
     logger.info("Done")

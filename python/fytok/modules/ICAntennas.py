@@ -8,4 +8,10 @@ from fytok._imas.lastest.ic_antennas import _T_ic_antennas
 class ICAntennas(_T_ic_antennas):
     def __geometry__(self, view="RZ", **kwargs) -> GeoObject:
 
-        return {}
+        geo = {}
+        styles = {}
+        if view != "RZ":
+            geo["antenna"] = [antenna.name for antenna in self.antenna]
+            styles["antenna"] = {"$matplotlib": {"color": 'blue'}, "text": True}
+
+        return geo, styles

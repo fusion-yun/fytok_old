@@ -240,10 +240,18 @@ class Tokamak(SpDict):
             "equilibrium"   : self.equilibrium.__geometry__(view=view, **kwargs),
         }
         # fmt:on
-        return geo, {
-            "xlabel": r"Major radius $R$ [m]",
-            "ylabel": r"Height $Z$ [m]",
-        }
+
+        if view != "RZ":
+            styles = {
+                "xlabel": r" $R$ [m]",
+                "ylabel": r" $R$ [m]",
+            }
+        else:
+            styles = {
+                "xlabel": r"Major radius $R$ [m]",
+                "ylabel": r"Height $Z$ [m]",
+            }
+        return geo, styles
 
     # def plot(self, axis=None, /,  **kwargs):
     #     import matplotlib.pylab as plt
