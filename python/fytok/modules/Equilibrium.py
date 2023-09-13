@@ -38,8 +38,7 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
 
     vacuum_toroidal_field: _T_b_tor_vacuum_aos3 = sp_property()
 
-    @property
-    def __geometry__(self) -> GeoObject | typing.Container[GeoObject]:
+    def __geometry__(self, view="RZ", **kwargs) -> GeoObject:
         geo = {}
 
         try:
@@ -127,7 +126,7 @@ class Equilibrium(_T_equilibrium):
         Poloidal plane coordinate   : $(\rho,\theta,\phi)$
     ```
     """
-
+    _plugin_prefix = 'fytok.plugins.equilibrium.'
     _plugin_config = {"code": {"name": "eq_analyze"}}
 
     TimeSlice = EquilibriumTimeSlice
@@ -150,14 +149,16 @@ class Equilibrium(_T_equilibrium):
         self.time_slice.advance(*args, **kwargs)
         # self.grids_ggd.advance(*args, **kwargs)
 
-    @property
-    def __geometry__(self) -> GeoObject | typing.Container[GeoObject]:
-        try:
-            geo = self.time_slice.current.__geometry__
-        except Exception as error:
-            raise RuntimeError(f"Can not get geometry! {error}") from error
-            # logger.error(f"Can not get geometry! {error}")
-            # geo = None
+    def __geometry__(self, view="RZ", **kwargs) -> GeoObject:
+        geo = None
+
+        if view == "RZ":
+            try:
+                geo = self.time_slice.current.__geometry__(view=view, **kwargs)
+            except Exception as error:
+                # raise RuntimeError(f"Can not get geometry! {error}") from error
+                logger.error(f"Fail to draw equilibrium! {error}")
+
         return geo
 
     # def plot(self, axis,  *args, time_slice=-1,  **kwargs):

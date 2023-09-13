@@ -57,9 +57,8 @@ class CoreTransportProfiles1D(_T_core_transport_model_profiles_1d):
 
 
 class CoreTransportModel(_T_core_transport_model):
-    _plugin_registry = {}
-
-    _plugin_prefix = "fytok/plugins/core_transport/model"
+    _plugin_prefix = 'fytok.plugins.core_transport.model.'
+    _plugin_config = {}
 
     Profiles1D = CoreTransportProfiles1D
 
@@ -81,10 +80,10 @@ class CoreTransport(_T_core_transport):
 
     model: AoS[Model] = sp_property()
 
-    def advance(self, *args, equilibrium: Equilibrium.TimeSlice, core_profiles_1d: CoreProfiles.Profiles1d, **kwargs):
+    def advance(self, *args,   **kwargs):
         for model in self.model:
-            model.advance(*args, equilibrium=equilibrium, core_profiles_1d=core_profiles_1d, **kwargs)
+            model.advance(*args,   **kwargs)
 
-    def refresh(self, *args,  equilibrium: Equilibrium.TimeSlice, core_profiles_1d: CoreProfiles.Profiles1d, **kwargs):
+    def refresh(self, *args,   **kwargs):
         for model in self.model:
-            model.refresh(*args, equilibrium=equilibrium, core_profiles_1d=core_profiles_1d, **kwargs)
+            model.refresh(*args,   **kwargs)

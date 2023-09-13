@@ -1005,11 +1005,13 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
 
     coordinate_system: EquilibriumCoordinateSystem = sp_property()
 
-    @property
-    def __geometry__(self) -> GeoObject:
+    def __geometry__(self, view="RZ", **kwargs) -> GeoObject:
         """
             plot o-point,x-point,lcfs,separatrix and contour of psi
         """
+        if view != "RZ":
+            return None
+
         geo = {}
 
         try:
@@ -1027,7 +1029,6 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
         except Exception as error:
             # logger.error(f"Can not parser psi ! {error}")
             raise RuntimeError(f"Can not parser psi!") from error
-         
 
         geo["psi"] = self.profiles_2d[0].psi
 

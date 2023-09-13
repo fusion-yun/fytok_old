@@ -7,7 +7,7 @@ from spdm.utils.logger import logger
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.Tokamak import Tokamak
 
-WORKSPACE = "/ssd01/salmon_work/workspace/"
+WORKSPACE = "/home/salmon/workspace"  # "/ssd01/salmon_work/workspace/"
 
 os.environ["SP_DATA_MAPPING_PATH"] = f"{WORKSPACE}/fytok_data/mapping"
 
@@ -15,19 +15,19 @@ os.environ["SP_DATA_MAPPING_PATH"] = f"{WORKSPACE}/fytok_data/mapping"
 if __name__ == "__main__":
     output_path = pathlib.Path(f"{WORKSPACE}/output/")
 
-    # eq = Equilibrium(f"file+GEQdsk://{WORKSPACE}/gacode/neo/tools/input/profile_data/g141459.03890")
+    eq = Equilibrium(f"file+GEQdsk://{WORKSPACE}/gacode/neo/tools/input/profile_data/g141459.03890")
 
     # logger.debug(eq.time_slice[0].profiles_2d[0].psi.__value__)
 
-    # display(eq, title=f"EQUILIBRIUM", output=output_path/"EQUILIBRIUM.svg")
+    display(eq, title=f"EQUILIBRIUM", output=output_path/"EQUILIBRIUM.svg")
 
     tok = Tokamak(
         f"EAST+MDSplus://{WORKSPACE}/fytok_data/mdsplus/~t/?shot=70745",
-        equilibrium={"code": {"name": "efit"}},
+        # equilibrium={"code": {"name": "efit"}},
     )
 
-    tok.refresh(time=1.0)
+    tok.refresh(time=5.0)
 
-    display(tok, title=f"Tokamak", output=output_path / "tok_east.svg")
+    display(tok, title=f"EAST", output=output_path / "tok_east.svg")
 
     logger.info("Done")

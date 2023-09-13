@@ -1,5 +1,11 @@
-from  fytok._imas.lastest.ic_antennas import _T_ic_antennas
+from __future__ import annotations
+
+from spdm.geometry.GeoObject import GeoObject
+
+from fytok._imas.lastest.ic_antennas import _T_ic_antennas
 
 
-class IcAntennas(_T_ic_antennas):
-    pass
+class ICAntennas(_T_ic_antennas):
+    def __geometry__(self, view="RZ", **kwargs) -> GeoObject:
+
+        return {}

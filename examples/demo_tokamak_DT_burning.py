@@ -12,7 +12,7 @@ from spdm.utils.logger import logger
 from spdm.view.View import display
 import os
 
-WORKSPACE = "/ssd01/salmon_work/workspace/"
+WORKSPACE =  "/home/salmon/workspace" #"/ssd01/salmon_work/workspace/"
 
 
 os.environ["SP_DATA_MAPPING_PATH"] = f"{WORKSPACE}/fytok_data/mapping"

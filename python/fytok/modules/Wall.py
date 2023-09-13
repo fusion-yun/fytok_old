@@ -11,8 +11,9 @@ class Wall(_T_wall):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    @property
-    def __geometry__(self) -> GeoObject | typing.List[GeoObject]:
+    def __geometry__(self, view="RZ", **kwargs) -> GeoObject | typing.List[GeoObject]:
+        if view != "RZ":
+            return None
         desc = self.description_2d[0]  # 0 for equilibrium codes
         return {  # geo
             "limiter": Polyline(desc.limiter.unit[0].outline.r,

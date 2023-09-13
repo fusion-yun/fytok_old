@@ -18,8 +18,8 @@ from .Utilities import CoreRadialGrid
 
 
 class CoreSourcesSource(_T_core_sources_source):
-
-    _plugin_module_path = "fytok.plugins.core_sources.source.{name}"
+    _plugin_prefix = 'fytok.plugins.core_sources.source.'
+    _plugin_config = {}
 
     Profiles1d = _T_core_sources_source_profiles_1d
 
