@@ -14,7 +14,7 @@ from .._imas.lastest.core_sources import (_T_core_sources,
                                           _T_core_sources_source_profiles_1d)
 from .CoreProfiles import CoreProfiles
 from .Equilibrium import Equilibrium
-from .Utilities import CoreRadialGrid
+from ..utils.utilities import CoreRadialGrid
 
 
 class CoreSourcesSource(_T_core_sources_source):

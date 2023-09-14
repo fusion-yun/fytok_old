@@ -20,7 +20,7 @@ from spdm.utils.tree_utils import merge_tree_recursive
 from spdm.utils.typing import HTreeLike
 
 from ..utils.atoms import atoms
-from .Utilities import CoreRadialGrid
+from ..utils.utilities import CoreRadialGrid
 
 PI = scipy.constants.pi
 TWOPI = 2.0*PI

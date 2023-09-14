@@ -117,7 +117,7 @@ class DetectorAperture(_T_detector_aperture):
         return geo, styles
 
 
-class _T_Code(SpDict):
+class Code(SpDict):
     """
     Generic decription of the code-specific parameters for the code that has
        produced this IDS
@@ -147,11 +147,11 @@ class _T_Code(SpDict):
     """List of external libraries used by the code that has produced this IDS"""
 
 
-class _T_Module(Actor):
+class Module(Actor):
     _plugin_registry = {}
 
     def __init__(self, *args, **kwargs):
-        if self.__class__ is _T_Module or "_plugin_prefix" in vars(self.__class__):
+        if self.__class__ is Module or "_plugin_prefix" in vars(self.__class__):
             default_value = merge_tree_recursive(
                 getattr(self.__class__, "_plugin_config", {}), kwargs.pop("default_value", {})
             )
@@ -172,11 +172,11 @@ class _T_Module(Actor):
 
         super().__init__(*args, **kwargs)
 
-    code: _T_Code = sp_property()
+    code: Code = sp_property()
     """Generic decription of the code-specific parameters for the code that has produced this IDS"""
 
 
-class _T_IDS(_T_Module):
+class IDS(Module):
     """Base class of IDS"""
 
     _plugin_registry = {}
@@ -196,7 +196,7 @@ class _T_IDS(_T_Module):
         super().refresh(*args, **kwargs)
 
 
-__all__ = ["_T_IDS", "_T_Module", "_T_Code", "DetectorAperture", "CoreRadialGrid", "RZTuple", "RZTuple1D", "CurveRZ",
+__all__ = ["IDS", "Module", "Code", "DetectorAperture", "CoreRadialGrid", "RZTuple", "RZTuple1D", "CurveRZ",
            "SpDict", "sp_property", "array_type", "Function", "Field", "AoS", "TimeSeriesAoS", "TimeSlice", "HTree", "List", 
            "Entry", "Signal", "SignalND",
            "IntFlag"]

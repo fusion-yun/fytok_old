@@ -125,7 +125,7 @@ from spdm.data.Function      import Function
 from spdm.data.Field         import Field
 from spdm.data.sp_property   import sp_property,SpDict -->
 
-from ...modules.Utilities import *
+from ...utils.utilities import *
 
 </xsl:variable>
 
@@ -218,7 +218,7 @@ from spdm.utils.typing import array_type
   <xsl:copy-of select="$FILE_HEADER_ANNOTATION" /> 
 """
 <!-- <xsl:copy-of select="$FILE_HEADER_COMMON_IMPORT" /> -->
-from ...modules.Utilities import *
+from ...utils.utilities import *
 
     <xsl:variable name="cls_list" select="for $k in //@type return if (not(xs:complexType[@name=$k]) and $k!='flt_type'  and $k!='flt_1d_type') then concat('_T_', $k) else ()"/>
     <xsl:variable name="cls_list" select="distinct-values($cls_list)"/>
@@ -377,7 +377,7 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
     <entry key='magnetics_method_distinct'>Signal[float]</entry>
     <entry key='detector_aperture'>DetectorAperture</entry>
 
-    <entry key='code'>_T_Code</entry>
+    <entry key='code'>Code</entry>
     <entry key='time'>array_type</entry>
 
 
@@ -451,7 +451,7 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
 <xsl:template match = "xs:complexType[not($type_map/entry[@key=@name])]" mode = "DEFINE"> 
 <xsl:choose>      
 <xsl:when test="xs:sequence/xs:element[@name='code']" >
-<xsl:text>&#xA;&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(_T_Module):
+<xsl:text>&#xA;&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(Module):
 <xsl:text>&#x9;</xsl:text>"""<xsl:apply-templates select="xs:annotation" />"""
 <xsl:apply-templates select="xs:sequence/xs:element[@name!='code']" mode="DECLARE" />
 </xsl:when>
@@ -488,7 +488,7 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
 
 <xsl:template match = "xs:element" mode = "DEFINE_ELEMENT_AS_IDS"> 
 
-<xsl:text>&#xA;&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(_T_IDS):
+<xsl:text>&#xA;&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(IDS):
 <xsl:text>&#x9;</xsl:text>"""<xsl:apply-templates select="xs:annotation" />"""
 <xsl:text>&#xA;</xsl:text>
 <xsl:text>&#x9;</xsl:text>dd_version="<xsl:value-of select="$DD_GIT_DESCRIBE" />"

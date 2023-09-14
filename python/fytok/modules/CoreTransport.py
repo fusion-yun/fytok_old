@@ -12,7 +12,7 @@ from fytok._imas.lastest.core_transport import (
 
 from .CoreProfiles import CoreProfiles
 from .Equilibrium import Equilibrium
-from .Utilities import CoreRadialGrid
+from ..utils.utilities import CoreRadialGrid
 
 
 class CoreTransportElectrons(_T_core_transport_model_electrons):
