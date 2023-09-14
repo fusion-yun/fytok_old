@@ -27,7 +27,7 @@ class TF(_T_tf):
             if self.is_periodic == 0:
                 coils_n = self.coils_n
                 d_phi = TWOPI/self.coils_n
-                logger.debug(d_phi)
+                
                 cross_section = self.coil[0].conductor[0].cross_section
                 r = cross_section.delta_r
                 phi = cross_section.delta_phi

@@ -115,7 +115,7 @@
 
 
 <xsl:variable name="FILE_HEADER_COMMON_IMPORT" >
-from enum import IntFlag
+<!-- from enum import IntFlag
 import numpy as np
 from spdm.data.HTree         import List
 from spdm.data.AoS           import AoS
@@ -123,7 +123,9 @@ from spdm.data.TimeSeries    import TimeSeriesAoS,TimeSlice
 from spdm.data.Signal        import Signal,SignalND
 from spdm.data.Function      import Function 
 from spdm.data.Field         import Field
-from spdm.data.sp_property   import sp_property,SpDict
+from spdm.data.sp_property   import sp_property,SpDict -->
+
+from ...modules.Utilities import *
 
 </xsl:variable>
 
@@ -173,11 +175,21 @@ from .<xsl:value-of select="@ref"/>  import _T_<xsl:value-of select="@ref"/>
   <xsl:param name="constants_list"/>
   <xsl:variable name="root" select="document(concat($DD_BASE_DIR,'utilities/dd_support.xsd'))/*"/>
 <xsl:result-document method="text" href='utilities.py'>""" 
-    This module containes the _FyTok_ wrapper of IMAS/dd/utilities.py 
+    This module containes the _FyTok_ wrapper of IMAS/dd/utilities 
 
   <xsl:copy-of select="$FILE_HEADER_ANNOTATION" />
 """
-    <xsl:copy-of select="$FILE_HEADER_COMMON_IMPORT" />
+    <!-- <xsl:copy-of select="$FILE_HEADER_COMMON_IMPORT" /> -->
+from enum import IntFlag
+import numpy as np
+from spdm.data.HTree         import List
+from spdm.data.AoS           import AoS
+from spdm.data.TimeSeries    import TimeSeriesAoS,TimeSlice
+from spdm.data.Signal        import Signal,SignalND
+from spdm.data.Function      import Function 
+from spdm.data.Field         import Field
+from spdm.data.sp_property   import sp_property,SpDict
+from spdm.utils.typing import array_type
 
     <xsl:for-each select="$constants_list"> 
       <xsl:apply-templates  select = "document(concat($DD_BASE_DIR, .))/constants" mode = "CONSTANTS_IDENTIFY" /> 
@@ -192,7 +204,7 @@ from .<xsl:value-of select="@ref"/>  import _T_<xsl:value-of select="@ref"/>
     <xsl:apply-templates select="$root/xs:complexType[my:dep_level(.,$root)=6] " mode="DEFINE"/>
 
     <xsl:apply-templates select="$root/xs:element" mode="DEFINE"/>
-    <xsl:value-of select="unparsed-text('fy_imas_utilities.py')"/>
+    <!-- <xsl:value-of select="unparsed-text('fy_imas_utilities.py')"/> -->
   </xsl:result-document>   
 </xsl:template>
 
@@ -205,9 +217,8 @@ from .<xsl:value-of select="@ref"/>  import _T_<xsl:value-of select="@ref"/>
 
   <xsl:copy-of select="$FILE_HEADER_ANNOTATION" /> 
 """
-<xsl:copy-of select="$FILE_HEADER_COMMON_IMPORT" />
-
-from .utilities import _T_IDS, _T_Module
+<!-- <xsl:copy-of select="$FILE_HEADER_COMMON_IMPORT" /> -->
+from ...modules.Utilities import *
 
     <xsl:variable name="cls_list" select="for $k in //@type return if (not(xs:complexType[@name=$k]) and $k!='flt_type'  and $k!='flt_1d_type') then concat('_T_', $k) else ()"/>
     <xsl:variable name="cls_list" select="distinct-values($cls_list)"/>
@@ -322,31 +333,31 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
     <entry key='str_1d_type'  >List[str]</entry>
     <entry key='INT_0D'       >int</entry>
     <entry key='int_type'     >int</entry>
-    <entry key='INT_1D'       >np.ndarray</entry>
-    <entry key='int_1d_type'  >np.ndarray</entry>
-    <entry key='INT_2D'       >np.ndarray</entry>
-    <entry key='INT_3D'       >np.ndarray</entry>
-    <entry key='INT_4D'       >np.ndarray</entry>
-    <entry key='INT_5D'       >np.ndarray</entry>
-    <entry key='INT_6D'       >np.ndarray</entry>
+    <entry key='INT_1D'       >array_type</entry>
+    <entry key='int_1d_type'  >array_type</entry>
+    <entry key='INT_2D'       >array_type</entry>
+    <entry key='INT_3D'       >array_type</entry>
+    <entry key='INT_4D'       >array_type</entry>
+    <entry key='INT_5D'       >array_type</entry>
+    <entry key='INT_6D'       >array_type</entry>
     <entry key='FLT_0D'       >float</entry>
     <entry key='flt_type'     >float</entry>
-    <entry key='FLT_1D'       >np.ndarray</entry>
-    <entry key='flt_1d_type'  >np.ndarray</entry>
-    <entry key='FLT_2D'       >np.ndarray</entry>
-    <entry key='FLT_3D'       >np.ndarray</entry>
-    <entry key='FLT_4D'       >np.ndarray</entry>
-    <entry key='FLT_5D'       >np.ndarray</entry>
-    <entry key='FLT_6D'       >np.ndarray</entry>
+    <entry key='FLT_1D'       >array_type</entry>
+    <entry key='flt_1d_type'  >array_type</entry>
+    <entry key='FLT_2D'       >array_type</entry>
+    <entry key='FLT_3D'       >array_type</entry>
+    <entry key='FLT_4D'       >array_type</entry>
+    <entry key='FLT_5D'       >array_type</entry>
+    <entry key='FLT_6D'       >array_type</entry>
     <entry key='cpx_type'     >complex</entry>
-    <entry key='cplx_1d_type' >np.ndarray</entry>
-    <entry key='CPX_0D'       >np.ndarray</entry>
-    <entry key='CPX_1D'       >np.ndarray</entry>
-    <entry key='CPX_2D'       >np.ndarray</entry>
-    <entry key='CPX_3D'       >np.ndarray</entry>
-    <entry key='CPX_4D'       >np.ndarray</entry>
-    <entry key='CPX_5D'       >np.ndarray</entry>
-    <entry key='CPX_6D'       >np.ndarray</entry>
+    <entry key='cplx_1d_type' >array_type</entry>
+    <entry key='CPX_0D'       >array_type</entry>
+    <entry key='CPX_1D'       >array_type</entry>
+    <entry key='CPX_2D'       >array_type</entry>
+    <entry key='CPX_3D'       >array_type</entry>
+    <entry key='CPX_4D'       >array_type</entry>
+    <entry key='CPX_5D'       >array_type</entry>
+    <entry key='CPX_6D'       >array_type</entry>
     
     <entry key='signal_flt_1d'>Signal[float]</entry>
     <entry key='signal_flt_2d'>SignalND[float]</entry>
@@ -364,10 +375,10 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
 
     <entry key='signal_flt_1d_validity'>Signal[float]</entry>
     <entry key='magnetics_method_distinct'>Signal[float]</entry>
-
+    <entry key='detector_aperture'>DetectorAperture</entry>
 
     <entry key='code'>_T_Code</entry>
-    <entry key='time'>np.ndarray</entry>
+    <entry key='time'>array_type</entry>
 
 
 
