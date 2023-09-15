@@ -1,12 +1,13 @@
-import pathlib
 import os
+import pathlib
+
 import numpy as np
 from spdm.data.File import File
-from spdm.view.View import display
 from spdm.utils.logger import logger
+from spdm.view.View import display
+
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.Tokamak import Tokamak
-
 
 WORKSPACE = "/home/salmon/workspace"  # "/ssd01/salmon_work/workspace/"
 
