@@ -6,7 +6,6 @@ from spdm.data.File import File
 from spdm.utils.logger import logger
 from spdm.view.View import display
 
-from fytok.modules.Equilibrium import Equilibrium
 from fytok.Tokamak import Tokamak
 
 WORKSPACE = "/home/salmon/workspace"  # "/ssd01/salmon_work/workspace/"
@@ -23,4 +22,4 @@ if __name__ == "__main__":
     # display(tok, title=f"EAST RZ  View", output=output_path/"east_rz.svg")
     display(tok, title=f"EAST Top View", output=output_path/"east_top.svg", view="TOP")
 
-    logger.info("Done")
+    

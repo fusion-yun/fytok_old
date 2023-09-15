@@ -70,7 +70,7 @@ class Code(SpDict):
     parameters: Dict = sp_property(type="constant")
     """List of the code specific parameters in XML format"""
 
-    output_flag: np.ndarray = sp_property(coordinate1="/time", type="dynamic")
+    output_flag: array_type = sp_property(coordinate1="/time", type="dynamic")
     """Output flag : 0 means the run is successful, other values mean some difficulty
        has been encountered, the exact meaning is then code specific. Negative values
        mean the result shall not be used."""
@@ -111,12 +111,10 @@ class Module(Actor):
 class IDS(Module):
     """Base class of IDS"""
 
-    _plugin_registry = {}
-
     ids_properties: _T_ids_properties = sp_property()
     """Interface Data Structure properties. This element identifies the node above as an IDS"""
 
-    time: np.ndarray = sp_property(type="dynamic", units="s", ndims=1, data_type=float)
+    time: array_type = sp_property(type="dynamic", units="s", ndims=1, data_type=float)
     """Generic time"""
 
     def advance(self, *args, time=None, **kwargs):
@@ -161,8 +159,8 @@ class CurveRZ(SpDict, Curve):
 
 @dataclass
 class RZTuple_:
-    r: np.ndarray | Expression
-    z: np.ndarray | Expression
+    r: array_type | Expression
+    z: array_type | Expression
 
 
 class CoreRadialGrid(_T_core_radial_grid):
@@ -196,7 +194,7 @@ class CoreRadialGrid(_T_core_radial_grid):
 
     rho_tor_boundary: float = sp_property()
 
-    rho_tor_norm: np.ndarray = sp_property(type="dynamic", coordinate1="1...N", units="-")
+    rho_tor_norm: array_type = sp_property(type="dynamic", coordinate1="1...N", units="-")
 
     psi_norm: Function[float] = sp_property(coordinate1="../rho_tor_norm", units="-")
 
