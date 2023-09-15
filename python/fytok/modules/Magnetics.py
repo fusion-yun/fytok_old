@@ -1,8 +1,8 @@
 
-from fytok._imas.lastest.magnetics import _T_magnetics
+from .._imas.lastest.magnetics import _T_magnetics
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Point import Point
-from spdm.utils.logger import logger
+from ..utils.logger import logger
 import typing
 
 

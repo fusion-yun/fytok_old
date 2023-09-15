@@ -21,12 +21,15 @@ from spdm.utils.typing import array_type
 
 from fytok._imas.lastest.utilities import _T_curved_object  # TODO: implement
 from fytok._imas.lastest.utilities import _T_polarizer  # TODO: implement
-
 from fytok._imas.lastest.utilities import (_T_core_radial_grid,
                                            _T_detector_aperture,
                                            _T_ids_properties, _T_library,
                                            _T_rz0d_dynamic_aos,
                                            _T_rz1d_dynamic_aos)
+
+from .logger import logger
+
+
 class Library(SpDict):
     """
     Library used by the code that has produced this IDS
@@ -46,7 +49,6 @@ class Library(SpDict):
 
     parameters: Dict = sp_property(type="constant")
     """List of the code specific parameters in XML format"""
-
 
 
 class Code(SpDict):
@@ -103,6 +105,8 @@ class Module(Actor):
             return
 
         super().__init__(*args, **kwargs)
+
+        logger.debug(f"Load module {self.__class__.__name__}")  # MPI_ENBLAED={self.mpi_enabled}
 
     code: Code = sp_property()
     """Generic decription of the code-specific parameters for the code that has produced this IDS"""
@@ -216,7 +220,7 @@ class DetectorAperture(_T_detector_aperture):
         return geo, styles
 
 
-__all__ = ["IDS", "Module", "Code", "Library", 
+__all__ = ["IDS", "Module", "Code", "Library",
            "DetectorAperture", "CoreRadialGrid", "RZTuple", "RZTuple1D", "CurveRZ",
            "array_type", "Function", "Field",
            "HTree", "List", "Dict", "SpDict", "sp_property",

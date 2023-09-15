@@ -2,17 +2,16 @@
 from spdm.data.AoS import AoS
 from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
-from spdm.utils.logger import logger
 
-from fytok._imas.lastest.core_transport import (
+from .._imas.lastest.core_transport import (
     _T_core_transport, _T_core_transport_model,
     _T_core_transport_model_1_momentum, _T_core_transport_model_electrons,
     _T_core_transport_model_ions, _T_core_transport_model_neutral,
     _T_core_transport_model_profiles_1d)
-
+from ..utils.logger import logger
+from ..utils.utilities import CoreRadialGrid
 from .CoreProfiles import CoreProfiles
 from .Equilibrium import Equilibrium
-from ..utils.utilities import CoreRadialGrid
 
 
 class CoreTransportElectrons(_T_core_transport_model_electrons):

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from spdm.geometry.GeoObject import GeoObject
 
-from fytok._imas.lastest.ic_antennas import _T_ic_antennas
+from .._imas.lastest.ic_antennas import _T_ic_antennas
 
 
 class ICAntennas(_T_ic_antennas):

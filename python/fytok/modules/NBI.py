@@ -6,7 +6,7 @@ from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Line import Line
 from spdm.geometry.Polygon import Rectangle
 
-from fytok._imas.lastest.nbi import _T_nbi, _T_nbi_unit
+from .._imas.lastest.nbi import _T_nbi, _T_nbi_unit
 
 
 def draw_nbi_unit(unit: _T_nbi_unit, name: str):

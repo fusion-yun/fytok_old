@@ -1,3 +1,4 @@
+from spdm.utils.logger import logger
 __path__ = __import__('pkgutil').extend_path(__path__, __name__)
 
 try:
@@ -12,15 +13,17 @@ except:
 import os
 
 from pathlib import Path
+
 from spdm.utils.logger import logger
 
+# logger.name = __package__[:__package__.find('.')]
 
 mapping_path = Path(__file__).parent / "_mapping"
 
 if mapping_path.exists():
 
     SP_DATA_MAPPING_PATH = (":".join([mapping_path.as_posix(),
-                                    os.environ.get("SP_DATA_MAPPING_PATH", '')])).strip(':')
+                                      os.environ.get("SP_DATA_MAPPING_PATH", '')])).strip(':')
 
     os.environ["SP_DATA_MAPPING_PATH"] = SP_DATA_MAPPING_PATH
 

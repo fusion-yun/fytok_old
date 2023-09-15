@@ -21,13 +21,8 @@ if __name__ == "__main__":
 
     display(eq, title=f"EQUILIBRIUM", output=output_path/"EQUILIBRIUM.svg")
 
-    tok = Tokamak(
-        f"EAST+MDSplus://{WORKSPACE}/fytok_data/mdsplus/~t/?shot=70745",
-        # equilibrium={"code": {"name": "efit"}},
-    )
+    tok = Tokamak(f"EAST+MDSplus://{WORKSPACE}/fytok_data/mdsplus/~t/?shot=70745")
 
     tok.refresh(time=5.0)
 
     display(tok, title=f"EAST", output=output_path / "tok_east.svg")
-
-    logger.info("Done")

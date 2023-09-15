@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from spdm.utils.logger import logger
+from ..utils.logger import logger
 
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Line import Line
 
-from fytok._imas.lastest.interferometer import _T_interferometer
+from .._imas.lastest.interferometer import _T_interferometer
 
 
 class Interferometer(_T_interferometer):

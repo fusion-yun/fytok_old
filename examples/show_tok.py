@@ -19,7 +19,9 @@ if __name__ == "__main__":
 
     tok = Tokamak(f"EAST+MDSplus://{WORKSPACE}/fytok_data/mdsplus/~t/?shot=70754")
 
-    # display(tok, title=f"EAST RZ  View", output=output_path/"east_rz.svg")
-    display(tok, title=f"EAST Top View", output=output_path/"east_top.svg", view="TOP")
+    tok.refresh(time=5.0)
+
+    display(tok, title=f"EAST RZ  View", output=output_path/"east_rz.svg")
+    # display(tok, title=f"EAST Top View", output=output_path/"east_top.svg", view="TOP")
 
     

@@ -2,9 +2,9 @@ import typing
 
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Polygon import Rectangle
-from spdm.utils.logger import logger
+from ..utils.logger import logger
 
-from fytok._imas.lastest.pf_active import _T_pf_active
+from .._imas.lastest.pf_active import _T_pf_active
 
 
 class PFActive(_T_pf_active):

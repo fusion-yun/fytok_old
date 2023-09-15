@@ -2,24 +2,23 @@ from __future__ import annotations
 
 import typing
 
-from fytok._imas.lastest.equilibrium import (
-    _T_equilibrium,
-    _T_equilibrium_boundary,
-    _T_equilibrium_boundary_separatrix,
-    _T_equilibrium_constraints,
-    _T_equilibrium_coordinate_system,
-    _T_equilibrium_global_quantities,
-    _T_equilibrium_profiles_1d,
-    _T_equilibrium_profiles_2d,
-    _T_equilibrium_time_slice,
-)
-from fytok._imas.lastest.utilities import _T_b_tor_vacuum_aos3
 from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.geometry.Curve import Curve
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Point import Point
-from spdm.utils.logger import logger
+
+from .._imas.lastest.equilibrium import (_T_equilibrium,
+                                         _T_equilibrium_boundary,
+                                         _T_equilibrium_boundary_separatrix,
+                                         _T_equilibrium_constraints,
+                                         _T_equilibrium_coordinate_system,
+                                         _T_equilibrium_global_quantities,
+                                         _T_equilibrium_profiles_1d,
+                                         _T_equilibrium_profiles_2d,
+                                         _T_equilibrium_time_slice)
+from .._imas.lastest.utilities import _T_b_tor_vacuum_aos3
+from ..utils.logger import logger
 
 
 class EquilibriumTimeSlice(_T_equilibrium_time_slice):

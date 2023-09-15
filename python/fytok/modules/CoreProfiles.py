@@ -2,9 +2,9 @@ import typing
 
 import numpy as np
 import scipy.constants
-from fytok._imas.lastest.core_profiles import (_T_core_profiles,
+from .._imas.lastest.core_profiles import (_T_core_profiles,
                                                _T_core_profiles_profiles_1d)
-from fytok._imas.lastest.utilities import (
+from .._imas.lastest.utilities import (
     _T_core_profile_ions, _T_core_profiles_profiles_1d_electrons,
     _T_core_profiles_vector_components_1)
 from scipy import constants
@@ -14,7 +14,7 @@ from spdm.data.Function import Function
 from spdm.data.HTree import HTree
 from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
-from spdm.utils.logger import logger
+from ..utils.logger import logger
 from spdm.utils.tags import _not_found_
 from spdm.utils.tree_utils import merge_tree_recursive
 from spdm.utils.typing import HTreeLike

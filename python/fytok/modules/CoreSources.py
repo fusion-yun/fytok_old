@@ -5,7 +5,7 @@ from __future__ import annotations
 from spdm.data.AoS import AoS
 from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
-from spdm.utils.logger import logger
+from ..utils.logger import logger
 from spdm.utils.typing import array_type
 
 from .._imas.lastest.core_sources import (_T_core_sources,
