@@ -133,14 +133,12 @@ class Equilibrium(_T_equilibrium):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    time_slice: TimeSeriesAoS[TimeSlice] = sp_property(
-        coordinate1="time", type="dynamic"
-    )
+    time_slice: TimeSeriesAoS[TimeSlice] = sp_property(coordinate1="time", type="dynamic")
 
     def refresh(self, *args, **kwargs):
         """update the last time slice"""
 
-        self.time_slice.current.refresh(*args, **kwargs)
+        self.time_slice.refresh(*args, **kwargs)
 
         # self.grids_ggd.refresh(*args, **kwargs)
 
@@ -149,20 +147,4 @@ class Equilibrium(_T_equilibrium):
         # self.grids_ggd.advance(*args, **kwargs)
 
     def __geometry__(self, view="RZ", **kwargs) -> GeoObject:
-        geo = None
-
-        if view == "RZ":
-            try:
-                geo = self.time_slice.current.__geometry__(view=view, **kwargs)
-            except Exception as error:
-                # raise RuntimeError(f"Can not get geometry! {error}") from error
-                logger.error(f"Fail to draw equilibrium! {error}")
-
-        return geo
-
-    # def plot(self, axis,  *args, time_slice=-1,  **kwargs):
-    #     if len(self.time_slice) == 0 or time_slice >= len(self.time_slice):
-    #         logger.error(f"Time slice {time_slice} is out range {len(self.time_slice)} !")
-    #         return axis
-    #     else:
-    #         return self.time_slice[time_slice].plot(axis, *args, **kwargs)
+        return self.time_slice.current.__geometry__(view=view, **kwargs)

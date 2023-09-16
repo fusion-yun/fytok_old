@@ -110,10 +110,10 @@ class Tokamak(SpDict):
     # fmt:on
 
     def advance(self, *args, dt=None, do_refresh=False, **kwargs):
-        pass
+        logger.warning(f"NOTHING TO DO !!")
 
     def refresh(self, *args, **kwargs):
-        self.equilibrium.refresh(*args, **kwargs)
+        logger.warning(f"NOTHING TO DO !!")
 
     def solve_15D_adv(self, *args, tolerance=1.0e-4, max_iteration=1, **kwargs):
         self._time += dt

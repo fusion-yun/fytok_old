@@ -23,6 +23,6 @@ if __name__ == "__main__":
 
     tok = Tokamak(f"EAST+MDSplus://{WORKSPACE}/fytok_data/mdsplus/~t/?shot=70745")
 
-    tok.refresh(time=5.0)
+    tok.equilibrium.refresh(time=5.0)
 
     display(tok, title=f"EAST", output=output_path / "tok_east.svg")
