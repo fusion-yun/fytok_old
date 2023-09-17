@@ -133,7 +133,7 @@ class Equilibrium(_T_equilibrium):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    time_slice: TimeSeriesAoS[TimeSlice] = sp_property(coordinate1="time", type="dynamic")
+    time_slice: TimeSeriesAoS[EquilibriumTimeSlice] = sp_property(coordinate1="time", type="dynamic")
 
     def refresh(self, *args, **kwargs):
         """update the last time slice"""

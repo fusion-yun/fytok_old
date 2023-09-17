@@ -109,113 +109,36 @@ class Tokamak(SpDict):
 
     # fmt:on
 
-    def advance(self, *args, dt=None, do_refresh=False, **kwargs):
-        logger.warning(f"NOTHING TO DO !!")
+    def advance(self, *args, **kwargs):
+        self.transport_solver.advance(*args, **kwargs,
+                                      equilibrium=self.equilibrium,
+                                      core_profiles=self.core_profiles,
+                                      core_sources=self.core_sources,
+                                      core_transport=self.core_transport,
 
-    def refresh(self, *args, **kwargs):
-        logger.warning(f"NOTHING TO DO !!")
+                                      )
 
-    def solve_15D_adv(self, *args, tolerance=1.0e-4, max_iteration=1, **kwargs):
-        self._time += dt
+    def refresh(self, *args, time=None, **kwargs):
+        if time is not None:
+            # 同步时间片
+            self["time"] = time
 
-        core_profiles_1d_prev = self.core_profiles.profiles_1d.current
+            self.equilibrium.refresh(time=time)
+            # self.core_profiles.refresh(time=time)
+            # self.core_transport.refresh(time=time)
+            # self.core_sources.refresh(time=time)
 
-        equilibrium = self.equilibrium.advance(
-            time=self.time,
-            core_profile_1d=core_profiles_1d_prev,
-            wall=self.wall,
-            pf_active=self.pf_active,
-        )
+        # self.equilibrium.refresh(*args, **kwargs)
 
-        core_transport_profiles_1d = self.core_transport.advance(
-            time=self.time,
-            equilibrium=equilibrium,
-            core_profile_1d=core_profiles_1d_prev,
-        )
+        # self.core_sources.refresh(*args, **kwargs)
 
-        core_source_profiles_1d = self.core_sources.advance(
-            time=self.time,
-            equilibrium=equilibrium,
-            core_profile_1d=core_profiles_1d_prev,
-        )
+        # self.core_transport.refresh(*args, **kwargs)
 
-        core_profiles_1d_next = self.transport_solver.solve(
-            equilibrium=equilibrium,
-            core_profile_1d=core_profiles_1d_prev,
-            core_transport_profiles_1d=core_transport_profiles_1d,
-            core_source_profiles_1d=core_source_profiles_1d,
-        )
-
-        self.core_profiles.advance(core_profiles_1d_next)
-
-        self.core_profiles.advance(core_profiles_1d_next)
-        self.core_sources.advance()
-        self.core_transport.advance()
-
-        if do_refresh:
-            return self.refresh()
-        else:
-            return core_profiles_1d_next
-
-    def solve_15D(self, *args, tolerance=1.0e-4, max_iteration=1, **kwargs):
-        self.equilibrium.refresh(
-            core_profiles_1d=core_profiles_1d_iter,
-            wall=self.wall,
-            pf_active=self.pf_active,
-            tf=self.tf,
-            tolerance=tolerance,
-            **kwargs,
-        )
-
-        residual = tolerance
-
-        core_profiles_1d_iter = copy(self.core_profiles.profiles_1d.current)
-
-        for step_num in range(max_iteration):
-            equilibrium_time_slice = self.equilibrium.time_slice.current
-
-            self.core_transport.refresh(
-                equilibrium=equilibrium_time_slice,
-                core_profile_1d=core_profiles_1d_iter,
-            )
-
-            core_transport_profiles_1d = (
-                self.core_transport.model.combined.profiles_1d.current
-            )
-
-            self.core_sources.refresh(
-                equilibrium=equilibrium_time_slice,
-                core_profile_1d=core_profiles_1d_iter,
-            )
-
-            core_source_profiles_1d = (
-                self.core_sources.source.combined.profiles_1d.current
-            )
-
-            core_profiles_1d_next = self.transport_solver.solve(
-                equilibrium=equilibrium_time_slice,
-                core_profiles_prev=core_profiles_1d_iter,
-                core_transport_profiles_1d=core_transport_profiles_1d,
-                core_source_profiles_1d=core_source_profiles_1d,
-            )
-
-            residual = self.check_converge(core_profiles_1d_iter, core_profiles_1d_next)
-
-            if residual <= tolerance:
-                break
-            else:
-                core_profiles_1d_iter = core_profiles_1d_next
-        else:
-            logger.debug(
-                f"time={self.time}  iterator step {step_num}/{max_iteration} residual={residual}"
-            )
-
-        if residual >= tolerance:
-            logger.warning(
-                f"The solution does not converge, and the number of iterations exceeds the maximum {max_iteration}"
-            )
-
-        return core_profiles_1d_iter
+        # self.transport_solver.refresh(core_profiles=self.core_profiles,
+        #                               equilibrium=self.equilibrium,
+        #                               core_sources=self.core_sources,
+        #                               core_transport=self.core_transport
+        #                               )
 
     def __geometry__(self, view="RZ", **kwargs) -> GeoObject:
 
