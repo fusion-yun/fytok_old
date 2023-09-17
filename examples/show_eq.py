@@ -25,8 +25,6 @@ if __name__ == "__main__":
 
     tok = Tokamak(f"EAST+MDSplus://{WORKSPACE}/fytok_data/mdsplus/~t/?shot=70745")
 
-    time = 5.0
-    
-    tok.refresh(time=time)
+    tok.refresh(time=5.0)
 
-    display(tok, title=f"EAST time={time}s", output=output_path / "tok_east.svg")
+    display(tok, title=f"EAST time={tok.equilibrium.time_slice.current.time}s", output=output_path / "tok_east.svg")
