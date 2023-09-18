@@ -7,7 +7,6 @@ from spdm.geometry.GeoObject import GeoObject
 from spdm.utils.logger import logger
 
 from ._imas.lastest import __version__ as imas_version
-
 # ---------------------------------
 from .modules.CoreProfiles import CoreProfiles
 from .modules.CoreSources import CoreSources
@@ -96,9 +95,11 @@ class Tokamak(SpDict):
 
     # transport: state of device
     equilibrium             : Equilibrium               = sp_property()
+    
     core_profiles           : CoreProfiles              = sp_property()
     core_transport          : CoreTransport             = sp_property()
     core_sources            : CoreSources               = sp_property()
+
     # edge_profiles         : EdgeProfiles              = sp_property()
     # edge_transport        : EdgeTransport             = sp_property()
     # edge_sources          : EdgeSources               = sp_property()
