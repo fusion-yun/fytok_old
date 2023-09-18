@@ -110,13 +110,18 @@ class Tokamak(SpDict):
     # fmt:on
 
     def advance(self, *args, **kwargs):
-        self.transport_solver.advance(*args, **kwargs,
-                                      equilibrium=self.equilibrium,
-                                      core_profiles=self.core_profiles,
-                                      core_sources=self.core_sources,
-                                      core_transport=self.core_transport,
 
-                                      )
+        self.equilibrium.advance(*args, **kwargs)
+
+        self["time"] = self.equilibrium.time_slice.current.time
+
+        # self.transport_solver.advance(*args, **kwargs,
+        #                               equilibrium=self.equilibrium,
+        #                               core_profiles=self.core_profiles,
+        #                               core_sources=self.core_sources,
+        #                               core_transport=self.core_transport,
+
+        #                               )
 
     def refresh(self, *args, time=None, **kwargs):
         if time is not None:

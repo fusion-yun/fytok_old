@@ -7,6 +7,7 @@ from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.geometry.Curve import Curve
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Point import Point
+from spdm.utils.tree_utils import merge_tree_recursive
 
 from .._imas.lastest.equilibrium import (_T_equilibrium,
                                          _T_equilibrium_boundary,
@@ -77,6 +78,8 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
                 }
             },
         }
+        styles = merge_tree_recursive(styles, kwargs)
+        
         return geo, styles
 
 

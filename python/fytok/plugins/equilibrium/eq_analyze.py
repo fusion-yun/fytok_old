@@ -16,14 +16,15 @@ from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.geometry.Curve import Curve
 from spdm.geometry.GeoObject import GeoObject, GeoObjectSet
 from spdm.geometry.Point import Point
-from spdm.mesh.mesh_curvilinear import CurvilinearMesh
 from spdm.mesh.Mesh import Mesh
+from spdm.mesh.mesh_curvilinear import CurvilinearMesh
 from spdm.numlib.contours import find_countours
 from spdm.numlib.optimize import minimize_filter
 from spdm.utils.constants import *
 from spdm.utils.logger import logger
 # from spdm.utils.misc import convert_to_named_tuple
 from spdm.utils.tags import _not_found_
+from spdm.utils.tree_utils import merge_tree_recursive
 from spdm.utils.typing import (ArrayLike, ArrayType, NumericType, array_type,
                                scalar_type)
 
@@ -1032,13 +1033,18 @@ class EquilibriumTimeSlice(Equilibrium.TimeSlice):
 
         geo["psi"] = self.profiles_2d[0].psi
 
-        return geo, {
+        styles = {
             "o_points":  {"$matplotlib": {"color": 'red',   'marker': '.', "linewidths": 0.5}},
             "x_points":  {"$matplotlib": {"color": 'blue',  'marker': 'x', "linewidths": 0.5}},
             "boundary":  {"$matplotlib": {"color": 'blue', 'linestyle': 'dotted', 'linewidth': 0.5}},
             "boundary_separatrix": {"$matplotlib": {"color": 'red', "linestyle": 'dashed', 'linewidth': 0.25}},
             "psi": {"$matplotlib": {"levels": 40, "cmap": "jet"}},
         }
+
+        styles = merge_tree_recursive(styles, kwargs)
+
+       
+        return geo,styles
 
 
 @Equilibrium.register(["eq_analyze"])
