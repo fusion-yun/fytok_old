@@ -2,10 +2,10 @@ import os
 import pathlib
 
 import numpy as np
+from spdm.data.Entry import Entry
 from spdm.data.File import File
 from spdm.utils.logger import logger
 from spdm.view.View import display
-from spdm.data.Entry import Entry
 
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.Tokamak import Tokamak
@@ -18,17 +18,22 @@ os.environ["SP_DATA_MAPPING_PATH"] = f"{WORKSPACE}/fytok_data/mapping"
 if __name__ == "__main__":
     output_path = pathlib.Path(f"{WORKSPACE}/output/")
 
-    eq = Equilibrium(f"file+GEQdsk://{WORKSPACE}/gacode/neo/tools/input/profile_data/g141459.03890#equilibrium")
+    eq0 = Equilibrium(f"file+GEQdsk://{WORKSPACE}/gacode/neo/tools/input/profile_data/g141459.03890#equilibrium")
 
-    logger.debug(eq.time_slice.current.profiles_2d[0].psi.__value__)
+    display(eq0, title=f"EQUILIBRIUM", output=output_path/"EQUILIBRIUM.svg")
 
-    display(eq, title=f"EQUILIBRIUM", output=output_path/"EQUILIBRIUM.svg")
+    eq_dump = eq0.dump()
 
-    # logger.debug(eq.dump())
+    with File(f"{output_path}/EQUILIBRIUM.gfile", mode="w", format="GEQdsk") as oid:
+        oid.write({"equilibrium": eq_dump})
+        oid.close()
 
-    # with File(f"{output_path}/EQUILIBRIUM.gfile", mode="w", format="GEQdsk") as oid:
-    #     oid.write({"equilibrium": eq.dump()})
-    
+    eq1 = Equilibrium(f"file+GEQdsk://{WORKSPACE}/output/EQUILIBRIUM.gfile#equilibrium")
+
+    logger.debug(eq0.time_slice.current.profiles_1d.q.__value__)
+
+    logger.debug(eq1.time_slice.current.profiles_1d.q.__value__)
+
     # shot = 70745
 
     # tok = Tokamak(f"EAST+MDSplus://{WORKSPACE}/fytok_data/mdsplus/~t/?enable=efit_east&shot={shot}")

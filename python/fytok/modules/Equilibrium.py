@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import numpy as np
 import typing
 
 from spdm.data.AoS import AoS
@@ -9,6 +9,7 @@ from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.geometry.Curve import Curve
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Point import Point
+from spdm.utils.tags import _not_found_
 from spdm.utils.tree_utils import merge_tree_recursive
 
 from .._imas.lastest.equilibrium import (_T_equilibrium,
@@ -20,7 +21,8 @@ from .._imas.lastest.equilibrium import (_T_equilibrium,
                                          _T_equilibrium_profiles_1d,
                                          _T_equilibrium_profiles_2d,
                                          _T_equilibrium_time_slice)
-from .._imas.lastest.utilities import _T_b_tor_vacuum_aos3
+from .._imas.lastest.utilities import (_T_b_tor_vacuum_aos3,
+                                       _T_equilibrium_profiles_2d_grid)
 from ..utils.logger import logger
 
 
@@ -163,7 +165,14 @@ class Equilibrium(_T_equilibrium):
     ```
     """
     _plugin_prefix = 'fytok.plugins.equilibrium.'
-    _plugin_config = {"code": {"name": "eq_analyze"}}
+    _plugin_config = {
+
+        "time_slice": {
+            "coordinate_system": {"grid":  {
+                "dim1": np.linspace(0, 0.995, 128),
+                "dim2": np.linspace(0, 1, 64),
+            }}},
+        "code": {"name": "eq_analyze"}}
 
     TimeSlice = EquilibriumTimeSlice
 

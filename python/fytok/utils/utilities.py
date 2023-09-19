@@ -138,7 +138,7 @@ RZTuple = _T_rz0d_dynamic_aos
 # CoreRadialGrid = _T_core_radial_grid
 
 
-class CurveRZ(SpDict, Curve):
+class CurveRZ(SpDict):
 
     def __init__(self, *args, **kwargs) -> None:
         if len(args) == 1 and not isinstance(args[0], array_type):
