@@ -139,8 +139,8 @@ class TransportSolverNumerics(_T_transport_solver_numerics):
     def solve(self, /,
               core_profiles_prev: CoreProfiles,
               core_transport: CoreTransport,
-              core_sources: CoreSources.Source.Profiles1d,
-              equilibrium_next: Equilibrium.TimeSlice.Profiles1d,
+              core_sources: CoreSources.Source.Profiles1D,
+              equilibrium_next: Equilibrium.TimeSlice.Profiles1D,
               equilibrium_prev: Equilibrium = None,
               dt: float = None,
               **kwargs) -> CoreProfiles:

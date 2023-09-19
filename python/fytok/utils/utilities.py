@@ -182,11 +182,17 @@ class CoreRadialGrid(_T_core_radial_grid):
         return self.get("../../vacuum_toroidal_field/b0")(time)
 
     def remesh(self, _rho_tor_norm: array_type) -> CoreRadialGrid:
+
         return CoreRadialGrid({
+
             "rho_tor_norm": _rho_tor_norm,
-            "psi_norm": self.psi_norm(_rho_tor_norm),
+
+            "psi_norm": Function(self.psi_norm, self.rho_tor_norm)(_rho_tor_norm),
+
             "psi_magnetic_axis": self.psi_magnetic_axis,
+
             "psi_boundary": self.psi_boundary,
+
             "rho_tor_boundary": self.rho_tor_boundary,
         },
             parent=self._parent
@@ -198,19 +204,19 @@ class CoreRadialGrid(_T_core_radial_grid):
 
     rho_tor_boundary: float = sp_property()
 
-    rho_tor_norm: array_type = sp_property(type="dynamic", coordinate1="1...N", units="-")
+    rho_tor_norm: array_type = sp_property(type="dynamic",  units="-")
 
-    psi_norm: Function[float] = sp_property(coordinate1="../rho_tor_norm", units="-")
-
-    @sp_property(type="dynamic", coordinate1="../rho_tor_norm", units="m")
-    def rho_tor(self) -> Function[float]: return self.rho_tor_norm*self.rho_tor_boundary
-
-    @sp_property()
-    def psi(self) -> Function[float]:
-        return self.psi_norm * (self.psi_boundary - self.psi_magnetic_axis) + self.psi_magnetic_axis
+    psi_norm: array_type = sp_property(type="dynamic", units="-")
 
     @sp_property
-    def rho_pol_norm(self) -> Function[float]: return np.sqrt(self.psi_norm)
+    def rho_pol_norm(self) -> array_type: return np.sqrt(self.psi_norm)
+
+    @sp_property(type="dynamic", coordinate1="../rho_tor_norm", units="m")
+    def rho_tor(self) -> Function: return self.rho_tor_norm*self.rho_tor_boundary
+
+    @sp_property()
+    def psi(self) -> Function:
+        return self.psi_norm * (self.psi_boundary - self.psi_magnetic_axis) + self.psi_magnetic_axis
 
 
 class DetectorAperture(_T_detector_aperture):

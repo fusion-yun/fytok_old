@@ -21,14 +21,14 @@ class CoreSourcesSource(_T_core_sources_source):
     _plugin_prefix = 'fytok.plugins.core_sources.source.'
     _plugin_config = {}
 
-    Profiles1d = _T_core_sources_source_profiles_1d
+    Profiles1D = _T_core_sources_source_profiles_1d
 
     GlobalQuantities = _T_core_sources_source_global
 
     @property
     def time(self) -> array_type: return self._parent.time
 
-    profiles_1d: TimeSeriesAoS[Profiles1d] = sp_property()
+    profiles_1d: TimeSeriesAoS[Profiles1D] = sp_property()
 
     global_quantities: TimeSeriesAoS[GlobalQuantities] = sp_property()
 
@@ -51,10 +51,10 @@ class CoreSources(_T_core_sources):
         "code": {"name": None},
     })
 
-    def advance(self, *args, equilibrium: Equilibrium.TimeSlice, core_profiles_1d: CoreProfiles.Profiles1d, **kwargs):
+    def advance(self, *args, equilibrium: Equilibrium.TimeSlice, core_profiles_1d: CoreProfiles.Profiles1D, **kwargs):
         for source in self.source:
             source.advance(*args, equilibrium=equilibrium, core_profiles_1d=core_profiles_1d, **kwargs)
 
-    def refresh(self, *args, equilibrium: Equilibrium.TimeSlice, core_profiles_1d: CoreProfiles.Profiles1d, **kwargs):
+    def refresh(self, *args, equilibrium: Equilibrium.TimeSlice, core_profiles_1d: CoreProfiles.Profiles1D, **kwargs):
         for source in self.source:
             source.refresh(*args, equilibrium=equilibrium, core_profiles_1d=core_profiles_1d, **kwargs)

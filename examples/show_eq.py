@@ -28,7 +28,9 @@ if __name__ == "__main__":
     tok.refresh(time=2.0)
 
     psi = tok.equilibrium.time_slice.current.profiles_2d[0].psi.__value__
+    
     psi_min = psi.min()
+    
     psi_max = psi.max()
 
     levels = np.arange(psi_min, psi_max, (psi_max-psi_min)/40)

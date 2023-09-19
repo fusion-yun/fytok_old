@@ -40,13 +40,13 @@ class CoreTransportProfiles1D(_T_core_transport_model_profiles_1d):
 
     grid_d: CoreRadialGrid = sp_property()
 
-    @sp_property[CoreRadialGrid]
-    def grid_v(self) -> CoreRadialGrid:
-        return self.grid_d.remesh(self.grid_d.rho_tor_norm)
+    @property
+    def grid_v(self) -> CoreRadialGrid: return self.grid_d.remesh(self.grid_d.rho_tor_norm)
 
-    @sp_property[CoreRadialGrid]
+    @property
     def grid_flux(self) -> CoreRadialGrid:
-        return self.grid_d.remesh(0.5*(self.grid_d.rho_tor_norm[:-1]+self.grid_d.rho_tor_norm[1:]))
+        rho_tor_norm = self.grid_d.rho_tor_norm
+        return self.grid_d.remesh(0.5*(rho_tor_norm[:-1]+rho_tor_norm[1:]))
 
     electrons: Electrons = sp_property()
 
@@ -61,16 +61,15 @@ class CoreTransportModel(_T_core_transport_model):
 
     Profiles1D = CoreTransportProfiles1D
 
-    @property
-    def time(self): return self._parent.time
-
     profiles_1d: TimeSeriesAoS[Profiles1D] = sp_property()
 
-    def refresh(self, *args, **kwargs):
+    def refresh(self, cache=None,   **kwargs):
         logger.debug(f"{self.__class__.__name__}.refresh")
+        self.profiles_1d.refresh(cache.pop("profiles_1d", None) if cache is not None else None,   **kwargs)
 
     def advance(self, *args, **kwargs):
         logger.debug(f"{self.__class__.__name__}.advance")
+        self.profiles_1d.advance(*args, **kwargs)
 
 
 class CoreTransport(_T_core_transport):

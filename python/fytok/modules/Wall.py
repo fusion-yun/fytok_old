@@ -19,13 +19,13 @@ class Wall(_T_wall):
 
         desc = self.description_2d[0]  # 0 for equilibrium codes
 
-        match view:
-            case "Top":
+        match view.lower():
+            case "top":
                 vessel_r = desc.vessel.unit[0].annular.outline_outer.r
                 vessel_z = desc.vessel.unit[0].annular.outline_outer.z
                 geo["vessel_outer"] = [Circle(0.0, 0.0, vessel_r.min()), Circle(0.0, 0.0, vessel_r.max())]
 
-            case "RZ":
+            case "rz":
                 geo["limiter"] = Polyline(desc.limiter.unit[0].outline.r,
                                           desc.limiter.unit[0].outline.z)
 

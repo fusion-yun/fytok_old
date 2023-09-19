@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import typing
 
+from spdm.data.AoS import AoS
+from spdm.data.Function import Function
 from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.geometry.Curve import Curve
@@ -22,21 +24,53 @@ from .._imas.lastest.utilities import _T_b_tor_vacuum_aos3
 from ..utils.logger import logger
 
 
+class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
+    pass
+
+
+class EquilibriumGlobalQuantities(_T_equilibrium_global_quantities):
+    pass
+
+
+class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
+
+    minor_radius: Function = sp_property(type="dynamic", coordinate1="../psi", units="m")
+    """ minor radius """
+
+    triangularity: Function = sp_property(type="dynamic", coordinate1="../psi", units="-")
+    """ triangularity """
+
+    squareness: Function = sp_property(type="dynamic", coordinate1="../psi", units="-")
+    """ squareness: T. Luce, Plasma Phys. Control. Fusion 55 (2013) 095009 """
+
+
+class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
+    pass
+
+
 class EquilibriumTimeSlice(_T_equilibrium_time_slice):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._R0 = self.vacuum_toroidal_field.r0
         self._B0 = self.vacuum_toroidal_field.b0
 
-    CoordinateSystem = _T_equilibrium_coordinate_system
-    Profiles1d = _T_equilibrium_profiles_1d
-    Profiles2d = _T_equilibrium_profiles_2d
-    GlobalQuantities = _T_equilibrium_global_quantities
+    CoordinateSystem = EquilibriumCoordinateSystem
+    Profiles1D = EquilibriumProfiles1D
+    Profiles2D = EquilibriumProfiles2D
+    GlobalQuantities = EquilibriumGlobalQuantities
     Boundary = _T_equilibrium_boundary
     BoundarySeparatrix = _T_equilibrium_boundary_separatrix
     Constraints = _T_equilibrium_constraints
 
     vacuum_toroidal_field: _T_b_tor_vacuum_aos3 = sp_property()
+
+    global_quantities: GlobalQuantities = sp_property()
+
+    profiles_1d: Profiles1D = sp_property()
+
+    profiles_2d: AoS[Profiles2D] = sp_property()
+
+    coordinate_system: CoordinateSystem = sp_property()
 
     def __geometry__(self, view="RZ", **kwargs) -> GeoObject:
         geo = {}
@@ -79,7 +113,7 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
             },
         }
         styles = merge_tree_recursive(styles, kwargs)
-        
+
         return geo, styles
 
 
