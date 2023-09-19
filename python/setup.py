@@ -24,15 +24,15 @@ version = subprocess.check_output(['git', 'describe', '--always', '--dirty']).st
 
 fy_git_describe = subprocess.check_output(['git', 'describe', '--always', '--dirty']).strip().decode('utf-8')
 
-SRC_ROOT = pathlib.Path(__file__).parent/"python"
+SRC_ROOT = pathlib.Path(__file__).parent
 
-SETUP_HELPER_DIR = pathlib.Path(__file__).parent/"setup_helper"
+SETUP_HELPER_DIR = SRC_ROOT/"setup_helper"
 
 # Get the long description from the README file
-with open('README.md') as f:
+with open('../README.md') as f:
     long_description = f.read()
 
-with open('LICENSE.txt') as f:
+with open('../LICENSE.txt') as f:
     license = f.read()
 
 # Get the requirements from the requirements.txt file
