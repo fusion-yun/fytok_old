@@ -923,7 +923,9 @@ class FyEquilibriumBoundary(Equilibrium.TimeSlice.Boundary):
         return self._coord.shape_property(self.psi)
 
     @sp_property
-    def geometric_axis(self) -> RZTuple: return self._shape_property.geometric_axis
+    def geometric_axis(self) -> RZTuple:
+        return {"r": (self._shape_property.Rmin+self._shape_property.Rmax)*0.5,
+                "z": (self._shape_property.Zmin+self._shape_property.Zmax)*0.5}
 
     @sp_property
     def minor_radius(self) -> float: return self._shape_property.minor_radius
