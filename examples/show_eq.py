@@ -1,17 +1,15 @@
 import os
 import pathlib
 
-import numpy as np
 from fytok.modules.Equilibrium import Equilibrium
-from fytok.Tokamak import Tokamak
 from fytok.utils.logger import logger
-from spdm.data.Entry import Entry
 from spdm.data.File import File
 from spdm.view.View import display
 
 WORKSPACE = "/home/salmon/workspace"  # "/ssd01/salmon_work/workspace/"
 
-os.environ["SP_DATA_MAPPING_PATH"] = f"{WORKSPACE}/fytok_data/mapping"
+# os.environ["SP_DATA_MAPPING_PATH"] = f"{WORKSPACE}/fytok_data/mapping"
+
 output_path = pathlib.Path(f"{WORKSPACE}/output/")
 
 

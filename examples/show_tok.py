@@ -2,16 +2,14 @@ import os
 import pathlib
 
 import numpy as np
-from spdm.data.File import File
-from fytok.utils.logger import logger
-from spdm.view.View import display
-
 from fytok.Tokamak import Tokamak
+from fytok.utils.logger import logger
+from spdm.data.File import File
+from spdm.view.View import display
 
 WORKSPACE = "/home/salmon/workspace"  # "/ssd01/salmon_work/workspace/"
 
-os.environ["SP_DATA_MAPPING_PATH"] = f"{WORKSPACE}/fytok_data/mapping"
-
+# os.environ["SP_DATA_MAPPING_PATH"] = f"{WORKSPACE}/fytok_data/mapping"
 
 if __name__ == "__main__":
 
