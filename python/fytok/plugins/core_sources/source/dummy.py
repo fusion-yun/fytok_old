@@ -5,7 +5,7 @@ import numpy as np
 from fytok.modules.CoreProfiles import CoreProfiles
 from fytok.modules.CoreSources import CoreSources
 from fytok.modules.Equilibrium import Equilibrium
-from spdm.utils.logger import logger
+from fytok.utils.logger import logger
 
 
 class CoreSourceDummy(CoreSources.Source):

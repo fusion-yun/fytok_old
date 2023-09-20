@@ -18,7 +18,7 @@ from fytok.transport.MagneticCoordSystem import RadialMesh
 from spdm.numlib.misc import array_like
 from scipy import constants
 from spdm.data import Dict, Function, List, function_like
-from spdm.utils.logger import logger
+from fytok.utils.logger import logger
 from spdm.utils.tags import _not_found_
 
 EPSILON = 1.0e-15

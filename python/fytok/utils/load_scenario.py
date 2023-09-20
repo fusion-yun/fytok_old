@@ -8,7 +8,7 @@ from scipy import constants
 from spdm.data.Expression import Piecewise, Variable
 from spdm.data.File import File
 from spdm.numlib.smooth import smooth_1d
-from spdm.utils.logger import logger
+from fytok.utils.logger import logger
 
 from .atoms import get_species
 

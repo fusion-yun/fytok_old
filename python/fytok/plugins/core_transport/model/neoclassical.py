@@ -6,7 +6,7 @@ from spdm.numlib.misc import array_like
 from scipy import constants
 from spdm.data import Function, function_like
 from spdm.data.Entry import _next_
-from spdm.utils.logger import logger
+from fytok.utils.logger import logger
 from spdm.utils.tags import _not_found_
 from spdm.utils.tree_utils import merge_tree_recursive
 

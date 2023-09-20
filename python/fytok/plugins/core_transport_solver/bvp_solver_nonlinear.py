@@ -18,7 +18,7 @@ from spdm.data.Path import Path
 
 from spdm.numlib.bvp import solve_bvp
 from spdm.numlib.misc import array_like
-from spdm.utils.logger import logger
+from fytok.utils.logger import logger
 
 EPSILON = 1.0e-15
 TOLERANCE = 1.0e-6

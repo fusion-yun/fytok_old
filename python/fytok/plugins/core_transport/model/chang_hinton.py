@@ -7,7 +7,7 @@ from fytok.modules.CoreTransport import CoreTransport, CoreTransportProfiles1D
 from fytok.modules.Equilibrium import Equilibrium
 from scipy import constants
 from spdm.data import Function
-from spdm.utils.logger import logger
+from fytok.utils.logger import logger
 
 
 class ChangHiton(CoreTransport.Model):

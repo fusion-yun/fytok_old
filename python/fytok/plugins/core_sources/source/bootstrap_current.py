@@ -8,7 +8,7 @@ from fytok.modules.Equilibrium import Equilibrium
 from scipy import constants
 from spdm.data.Function import function_like
 from spdm.numlib.misc import array_like
-from spdm.utils.logger import logger
+from fytok.utils.logger import logger
 
 
 class BootstrapCurrent(CoreSources.Source):

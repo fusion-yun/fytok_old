@@ -4,7 +4,7 @@ from copy import copy
 from spdm.data.Entry import open_entry
 from spdm.data.sp_property import SpDict, sp_property
 from spdm.geometry.GeoObject import GeoObject
-from spdm.utils.logger import logger
+from fytok.utils.logger import logger
 
 from ._imas.lastest import __version__ as imas_version
 # ---------------------------------

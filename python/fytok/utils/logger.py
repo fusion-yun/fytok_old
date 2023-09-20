@@ -1,11 +1,6 @@
-import logging
 import os
-
-from spdm.utils.logger import logger
-__all__ = ["logger"]
-
+import logging
 from spdm.utils.logger import sp_enable_logging
-
 
 logger = sp_enable_logging(__package__[:__package__.find('.')], handler="STDOUT")
 
@@ -20,3 +15,5 @@ match FY_DEBUG:
         logger.setLevel(logging.CRITICAL)
     case _:
         logger.setLevel(logging.INFO)
+
+__all__ = ["logger", "FY_DEBUG"]

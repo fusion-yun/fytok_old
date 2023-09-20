@@ -1,4 +1,3 @@
-from spdm.utils.logger import logger
 __path__ = __import__('pkgutil').extend_path(__path__, __name__)
 
 try:
@@ -14,7 +13,7 @@ import os
 
 from pathlib import Path
 
-from spdm.utils.logger import logger
+from fytok.utils.logger import logger
 
 # logger.name = __package__[:__package__.find('.')]
 
@@ -55,7 +54,7 @@ if mapping_path.exists():
 # from .Tokamak import Tokamak
 
 # try:
-#     from spdm.utils.logger import logger
+#     from fytok.utils.logger import logger
 # except ModuleNotFoundError as error:
 #     raise error
 # else:

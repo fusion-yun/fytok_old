@@ -3,7 +3,7 @@ import pathlib
 
 import numpy as np
 from spdm.data.File import File
-from spdm.utils.logger import logger
+from fytok.utils.logger import logger
 from spdm.view.View import display
 
 from fytok.Tokamak import Tokamak

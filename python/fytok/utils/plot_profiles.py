@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from spdm.data.Function import Function
 from spdm.data.HTree import Dict
-from spdm.utils.logger import logger
+from fytok.utils.logger import logger
 
 # def signaturebar(fig, text, fontsize=10, pad=5, xpos=20, ypos=7.5,
 #                  rect_kw={"facecolor": "grey", "edgecolor": None},

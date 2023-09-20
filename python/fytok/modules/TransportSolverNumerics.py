@@ -1,5 +1,5 @@
 from scipy import constants
-from spdm.utils.logger import logger
+from fytok.utils.logger import logger
 
 from fytok._imas.lastest.transport_solver_numerics import \
     _T_transport_solver_numerics

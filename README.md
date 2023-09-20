@@ -1,4 +1,5 @@
-# FyTok
+FyTok
+==================================================
 
 ## Description
   
@@ -23,11 +24,11 @@ export IMAS_DD_PATH=<IMAS DD Path>
 export FYTOK_MAPPING_PATH=<FYTOK_MAPPING_PATH>
 
 cd $IMAS_DD_PATH
-patch -s -p0 < <fytok dir>/setup_helper/dd_<dd version>.patch
+patch -s -p0 < <fytok dir>/python/setup_helper/dd_<dd version>.patch
 
 
-cd <fytok dir>
-python3 setup.py install_imas_wrapper --prefix=./python
+cd <fytok dir>/python
+python3 setup.py install_imas_wrapper --prefix=./
 ```
  
 ### Release Build
@@ -35,7 +36,7 @@ python3 setup.py install_imas_wrapper --prefix=./python
 TODO:...
 
 ```{bash}
-cd <fytok dir>
+cd <fytok dir>/python
 python3 setup.py bist_
 ```
 

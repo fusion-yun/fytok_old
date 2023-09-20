@@ -21,7 +21,7 @@ from spdm.mesh.mesh_curvilinear import CurvilinearMesh
 from spdm.numlib.contours import find_countours
 from spdm.numlib.optimize import minimize_filter
 from spdm.utils.constants import *
-from spdm.utils.logger import logger
+from fytok.utils.logger import logger
 # from spdm.utils.misc import convert_to_named_tuple
 from spdm.utils.tags import _not_found_
 from spdm.utils.tree_utils import merge_tree_recursive
