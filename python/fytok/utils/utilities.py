@@ -90,17 +90,18 @@ class Module(Actor):
                 getattr(self.__class__, "_plugin_config", {}), kwargs.pop("default_value", {})
             )
 
-            plugin_name = None
+            code = default_value.pop("code", {})
 
             if len(args) > 0 and isinstance(args[0], dict):
-                plugin_name = args[0].get("code", {}).get("name", None)
+                code = merge_tree_recursive(code, args[0].pop("code", None))
 
-            if plugin_name is None:
-                plugin_name = default_value.get("code", {}).get("name", None)
+            code = merge_tree_recursive(code, kwargs.pop("code", None))
 
-            self.__class__.__dispatch_init__(
-                [plugin_name], self, *args, default_value=default_value, **kwargs
-            )
+            default_value["code"] = code
+
+            plugin_name = code.get("name", None)
+
+            self.__class__.__dispatch_init__([plugin_name], self, *args, default_value=default_value, **kwargs)
 
             return
 

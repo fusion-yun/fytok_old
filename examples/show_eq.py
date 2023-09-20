@@ -12,7 +12,6 @@ WORKSPACE = "/home/salmon/workspace"  # "/ssd01/salmon_work/workspace/"
 
 output_path = pathlib.Path(f"{WORKSPACE}/output/")
 
-
 if __name__ == "__main__":
 
     # Example: gfile I/O,  equilibrium.dump()
@@ -23,6 +22,8 @@ if __name__ == "__main__":
 
     with File(f"{output_path}/EQUILIBRIUM.gfile", mode="w", format="GEQdsk") as oid:
         oid.write({"equilibrium": eq0.dump()})
+
+    eq0.refresh()
 
     eq1 = Equilibrium(f"file+GEQdsk://{WORKSPACE}/output/EQUILIBRIUM.gfile#equilibrium")
 

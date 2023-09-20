@@ -15,8 +15,6 @@ from pathlib import Path
 
 from fytok.utils.logger import logger
 
-# logger.name = __package__[:__package__.find('.')]
-
 mapping_path = Path(__file__).parent.resolve() / "_mapping"
 
 if mapping_path.exists():

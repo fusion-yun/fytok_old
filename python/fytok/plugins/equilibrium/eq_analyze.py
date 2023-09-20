@@ -6,6 +6,12 @@ from dataclasses import dataclass
 
 import numpy as np
 import scipy.constants
+from fytok._imas.lastest.equilibrium import \
+    _T_equilibrium_global_quantities_magnetic_axis
+from fytok._imas.lastest.utilities import _T_identifier_dynamic_aos3
+from fytok.modules.Equilibrium import Equilibrium
+from fytok.utils.logger import logger
+from fytok.utils.utilities import CurveRZ, RZTuple, RZTuple_
 from spdm.data.AoS import AoS
 from spdm.data.Expression import Expression, Variable
 from spdm.data.Field import Field
@@ -21,18 +27,10 @@ from spdm.mesh.mesh_curvilinear import CurvilinearMesh
 from spdm.numlib.contours import find_countours
 from spdm.numlib.optimize import minimize_filter
 from spdm.utils.constants import *
-from fytok.utils.logger import logger
-# from spdm.utils.misc import convert_to_named_tuple
 from spdm.utils.tags import _not_found_
 from spdm.utils.tree_utils import merge_tree_recursive
 from spdm.utils.typing import (ArrayLike, ArrayType, NumericType, array_type,
                                scalar_type)
-
-from fytok._imas.lastest.equilibrium import \
-    _T_equilibrium_global_quantities_magnetic_axis
-from fytok._imas.lastest.utilities import _T_identifier_dynamic_aos3
-from fytok.modules.Equilibrium import Equilibrium
-from fytok.utils.utilities import CurveRZ, RZTuple, RZTuple_
 
 _R = Variable(0, "R")
 _Z = Variable(1, "Z")
