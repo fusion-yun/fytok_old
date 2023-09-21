@@ -2,7 +2,7 @@ import typing
 from copy import copy
 
 from spdm.data.Entry import open_entry
-from spdm.data.sp_property import SpDict, sp_property
+from spdm.data.sp_property import SpTree, sp_property
 from spdm.geometry.GeoObject import GeoObject
 from fytok.utils.logger import logger
 
@@ -44,7 +44,7 @@ except ModuleNotFoundError as error:
 from .modules.TransportSolverNumerics import TransportSolverNumerics
 
 
-class Tokamak(SpDict):
+class Tokamak(SpTree):
     """Tokamak
     功能：
         - 描述装置在单一时刻的状态，

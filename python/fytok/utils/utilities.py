@@ -13,7 +13,7 @@ from spdm.data.Field import Field
 from spdm.data.Function import Function
 from spdm.data.HTree import Dict, HTree, List
 from spdm.data.Signal import Signal, SignalND
-from spdm.data.sp_property import SpDict, sp_property
+from spdm.data.sp_property import SpTree, sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS, TimeSlice
 from spdm.geometry.Curve import Curve
 from spdm.utils.tree_utils import merge_tree_recursive
@@ -30,7 +30,7 @@ from fytok._imas.lastest.utilities import (_T_core_radial_grid,
 from .logger import logger
 
 
-class Library(SpDict):
+class Library(SpTree):
     """
     Library used by the code that has produced this IDS
     """
@@ -51,7 +51,7 @@ class Library(SpDict):
     """List of the code specific parameters in XML format"""
 
 
-class Code(SpDict):
+class Code(SpTree):
     """
     Generic decription of the code-specific parameters for the code that has
        produced this IDS
@@ -139,7 +139,7 @@ RZTuple = _T_rz0d_dynamic_aos
 # CoreRadialGrid = _T_core_radial_grid
 
 
-class CurveRZ(SpDict):
+class CurveRZ(SpTree):
 
     def __init__(self, *args, **kwargs) -> None:
         if len(args) == 1 and not isinstance(args[0], array_type):
@@ -230,7 +230,7 @@ class DetectorAperture(_T_detector_aperture):
 __all__ = ["IDS", "Module", "Code", "Library",
            "DetectorAperture", "CoreRadialGrid", "RZTuple", "RZTuple1D", "CurveRZ",
            "array_type", "Function", "Field",
-           "HTree", "List", "Dict", "SpDict", "sp_property",
+           "HTree", "List", "Dict", "SpTree", "sp_property",
            "AoS", "TimeSeriesAoS", "TimeSlice",
            "Signal", "SignalND",
            "IntFlag"]

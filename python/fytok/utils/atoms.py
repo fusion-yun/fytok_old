@@ -5,7 +5,7 @@ import scipy.constants
 from spdm.data.Entry import Entry
 from spdm.data.Function import Function
 from spdm.data.HTree import Dict, Node
-from spdm.data.sp_property import SpDict, sp_property
+from spdm.data.sp_property import SpTree, sp_property
 from spdm.utils.tree_utils import merge_tree_recursive
 atoms = {
     "e": {

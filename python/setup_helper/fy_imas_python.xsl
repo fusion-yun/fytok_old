@@ -123,7 +123,7 @@ from spdm.data.TimeSeries    import TimeSeriesAoS,TimeSlice
 from spdm.data.Signal        import Signal,SignalND
 from spdm.data.Function      import Function 
 from spdm.data.Field         import Field
-from spdm.data.sp_property   import sp_property,SpDict -->
+from spdm.data.sp_property   import sp_property,SpTree -->
 
 from ...utils.utilities import *
 
@@ -188,7 +188,7 @@ from spdm.data.TimeSeries    import TimeSeriesAoS,TimeSlice
 from spdm.data.Signal        import Signal,SignalND
 from spdm.data.Function      import Function 
 from spdm.data.Field         import Field
-from spdm.data.sp_property   import sp_property,SpDict
+from spdm.data.sp_property   import sp_property,SpTree
 from spdm.utils.typing import array_type
 
     <xsl:for-each select="$constants_list"> 
@@ -463,7 +463,7 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
 <xsl:apply-templates select="xs:sequence/xs:element[@name!='time']" mode="DECLARE" />
 </xsl:when>
 <xsl:otherwise>
-<xsl:text>&#xA;&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(SpDict):
+<xsl:text>&#xA;&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(SpTree):
 <xsl:text>&#x9;</xsl:text>"""<xsl:apply-templates select="xs:annotation" />"""
 <xsl:apply-templates select="xs:sequence/xs:element" mode="DECLARE" />
 </xsl:otherwise>
@@ -482,7 +482,7 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
 </xsl:template>
 
 <xsl:template match = "xs:element[not($type_map/entry[@key=@name])]" mode = "DEFINE"> 
-<xsl:text>&#xA;&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(SpDict):
+<xsl:text>&#xA;&#xA;</xsl:text>class _T_<xsl:value-of select="@name" />(SpTree):
 <xsl:text>&#x9;</xsl:text>"""<xsl:apply-templates select="xs:annotation" />"""
   
 <xsl:apply-templates select="xs:complexType/xs:sequence/xs:element" mode="DECLARE" />
