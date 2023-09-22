@@ -9,7 +9,7 @@ from spdm.view.View import display
 
 WORKSPACE = "/home/salmon/workspace"  # "/ssd01/salmon_work/workspace/"
 
-# os.environ["SP_DATA_MAPPING_PATH"] = f"{WORKSPACE}/fytok_data/mapping"
+os.environ["SP_DATA_MAPPING_PATH"] = f"{WORKSPACE}/fytok_data/mapping"
 
 if __name__ == "__main__":
 
@@ -20,6 +20,7 @@ if __name__ == "__main__":
     tok.refresh(time=5.0)
 
     display(tok, title=f"EAST RZ  View", output=output_path/"east_rz.svg")
+    
     display(tok, title=f"EAST Top View", output=output_path/"east_top.svg", view="TOP")
 
     

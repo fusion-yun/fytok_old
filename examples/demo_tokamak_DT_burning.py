@@ -12,7 +12,7 @@ from fytok.utils.logger import logger
 from spdm.view.View import display
 import os
 
-WORKSPACE =  "/home/salmon/workspace" #"/ssd01/salmon_work/workspace/"
+WORKSPACE = "/home/salmon/workspace"  # "/ssd01/salmon_work/workspace/"
 
 
 os.environ["SP_DATA_MAPPING_PATH"] = f"{WORKSPACE}/fytok_data/mapping"
@@ -104,7 +104,7 @@ if __name__ == "__main__":
                       **scenario["core_sources"],
                   }
                   )
-
+ 
     eq = tok.equilibrium
 
     eq_time_slice = tok.equilibrium.time_slice.current
@@ -121,7 +121,7 @@ if __name__ == "__main__":
 
         # logger.debug(eq_profiles_1d.dphi_dpsi.antiderivative()(eq_profiles_1d.psi))
 
-    if False:
+    if True:
         display(  # plot tokamak geometric profile
             [
                 ((eq_profiles_1d.dvolume_dpsi, {"label": r"$\frac{dV}{d\psi}$"}), {"y_label": r"$[Wb]$"}),
@@ -133,9 +133,7 @@ if __name__ == "__main__":
                 ], {"y_label": r"$F_{pol} [Wb\cdot m]$"}),
                 ([
                     (function_like(profiles["q"].values, bs_psi), {"label": r"astra", **bs_line_style}),
-                    # (function_like(eqdsk.get('profiles_1d.psi_norm'), eqdsk.get('profiles_1d.q')), "eqdsk"),
                     (eq_profiles_1d.q,  {"label": r"$fytok$"}),
-                    # (magnetic_surface.dphi_dpsi,  r"$\frac{d\phi}{d\psi}$", r"$[Wb]$"),
                 ], {"y_label": r"$q [-]$"}),
                 ([
                     (function_like(profiles["rho"].values, bs_psi), {"label": r"astra", **bs_line_style}),

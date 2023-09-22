@@ -59,7 +59,7 @@ class Tokamak(SpTree):
             pass
 
         elif entry is None:
-            entry = open_entry(data, schema=f"imas/{imas_version_major}")
+            entry = open_entry(data, global_schema=f"imas/{imas_version_major}")
             data = {"description": {"url": data}}
 
         elif data is not None:
