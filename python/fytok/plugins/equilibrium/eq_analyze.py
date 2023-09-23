@@ -866,8 +866,8 @@ class FyEquilibriumProfiles2D(Equilibrium.TimeSlice.Profiles2D):
     @sp_property
     def z(self) -> Field[float]: return Field(self.grid.points[1], mesh=self.grid)
 
-    @sp_property[Field[float]]
-    def psi(self) -> Field[float]: return super().psi
+    # @sp_property[Field[float]]
+    # def psi(self) -> Field[float]: return super().psi
 
     @property
     def psi_norm(self) -> Field[float]:
@@ -1017,6 +1017,7 @@ class FyEquilibriumTimeSlice(Equilibrium.TimeSlice):
         """
             plot o-point,x-point,lcfs,separatrix and contour of psi
         """
+
         if view != "RZ":
             return None
 

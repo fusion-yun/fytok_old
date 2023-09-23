@@ -166,7 +166,6 @@ class Equilibrium(_T_equilibrium):
     """
     _plugin_prefix = 'fytok.plugins.equilibrium.'
     _plugin_config = {
-
         "time_slice": {
             "coordinate_system": {"grid":  {
                 "dim1": np.linspace(0, 0.995, 128),

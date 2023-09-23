@@ -70,9 +70,9 @@ if __name__ == "__main__":
 
     entry = open_entry(None, source_schema="ITER", target_schema=f"imas/3")
 
-    wall = Wall(entry=entry.child("wall"))
+    wall = Wall(entry.child("wall"))
 
-    pf_active = PFActive(entry=entry.child("pf_active"))
+    pf_active = PFActive(entry.child("pf_active"))
 
     equilibrium = Equilibrium(
         {**scenario["equilibrium"],

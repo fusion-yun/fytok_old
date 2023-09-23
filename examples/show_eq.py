@@ -23,10 +23,10 @@ if __name__ == "__main__":
     with File(f"{output_path}/EQUILIBRIUM.gfile", mode="w", format="GEQdsk") as oid:
         oid.write({"equilibrium": eq0.dump()})
 
-    eq0.refresh()
+    # eq0.refresh()
 
-    eq1 = Equilibrium(f"file+GEQdsk://{WORKSPACE}/output/EQUILIBRIUM.gfile#equilibrium")
+    # eq1 = Equilibrium(f"file+GEQdsk://{WORKSPACE}/output/EQUILIBRIUM.gfile#equilibrium")
 
-    logger.debug(eq0.time_slice.current.profiles_1d.q.__value__)
+    # logger.debug(eq0.time_slice.current.profiles_1d.q.__value__)
 
-    logger.debug(eq1.time_slice.current.profiles_1d.q.__value__)
+    # logger.debug(eq1.time_slice.current.profiles_1d.q.__value__)

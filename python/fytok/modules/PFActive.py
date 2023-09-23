@@ -9,9 +9,11 @@ from .._imas.lastest.pf_active import _T_pf_active
 
 class PFActive(_T_pf_active):
     def __geometry__(self, view="RZ", **kwargs) -> GeoObject:
+        geo = {}
+        styles = {}
 
         if view != "RZ":
-            return None
+            pass
         else:
             geo_coils = []
             for coil in self.coil:
@@ -20,4 +22,7 @@ class PFActive(_T_pf_active):
                                            rect.height / 2.0,   rect.width,  rect.height,
                                            name=coil.name))
 
-            return {"coil": geo_coils}, {"coil": {"$matplotlib": {"color": 'black'}, "text": True}},
+            geo["coil"] = geo_coils
+            styles["coil"] = {"$matplotlib": {"color": 'black'}, "text": True}
+
+        return geo, styles

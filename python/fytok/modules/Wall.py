@@ -18,22 +18,27 @@ class Wall(_T_wall):
         styles = {}
 
         desc = self.description_2d[0]  # 0 for equilibrium codes
+        try:
+            match view.lower():
+                case "top":
+                    vessel_r = desc.vessel.unit[0].annular.outline_outer.r
+                    vessel_z = desc.vessel.unit[0].annular.outline_outer.z
+                    geo["vessel_outer"] = [Circle(0.0, 0.0, vessel_r.min()), Circle(0.0, 0.0, vessel_r.max())]
 
-        match view.lower():
-            case "top":
-                vessel_r = desc.vessel.unit[0].annular.outline_outer.r
-                vessel_z = desc.vessel.unit[0].annular.outline_outer.z
-                geo["vessel_outer"] = [Circle(0.0, 0.0, vessel_r.min()), Circle(0.0, 0.0, vessel_r.max())]
+                case "rz":
+                    geo["limiter"] = Polyline(desc.limiter.unit[0].outline.r,
+                                              desc.limiter.unit[0].outline.z)
 
-            case "rz":
-                geo["limiter"] = Polyline(desc.limiter.unit[0].outline.r,
-                                          desc.limiter.unit[0].outline.z)
+                    vessel = desc.vessel.unit[0].annular
 
-                geo["vessel_inner"] = Polyline(desc.vessel.unit[0].annular.outline_inner.r,
-                                               desc.vessel.unit[0].annular.outline_inner.z)
+                    geo["vessel_inner"] = Polyline(vessel.outline_inner.r,
+                                                   vessel.outline_inner.z)
 
-                geo["vessel_outer"] = Polyline(desc.vessel.unit[0].annular.outline_outer.r,
-                                               desc.vessel.unit[0].annular.outline_outer.z)
+                    geo["vessel_outer"] = Polyline(vessel.outline_outer.r,
+                                                   vessel.outline_outer.z)
+        except Exception:
+            logger.debug(f"Geometry of {self.__class__.__name__} is incomplete!")
+            pass
 
         styles = {  #
             "limiter": {"$matplotlib": {"edgecolor": "green"}},

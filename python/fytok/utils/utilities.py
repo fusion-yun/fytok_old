@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from enum import IntFlag
 
 import numpy as np
+from spdm.data.Path import Path
 from spdm.data.Actor import Actor
 from spdm.data.AoS import AoS
 from spdm.data.Expression import Expression
@@ -85,27 +86,27 @@ class Module(Actor):
     _plugin_registry = {}
 
     def __init__(self, *args, **kwargs):
+
+        cache, entry, default_value, parent,  kwargs = HTree._parser_args(*args, **kwargs)
+
         if self.__class__ is Module or "_plugin_prefix" in vars(self.__class__):
+
             default_value = merge_tree_recursive(
-                getattr(self.__class__, "_plugin_config", {}), kwargs.pop("default_value", {})
-            )
+                getattr(self.__class__, "_plugin_config", {}), default_value)
 
-            code = default_value.pop("code", {})
+            pth = Path("code/name")
 
-            if len(args) > 0 and isinstance(args[0], dict):
-                code = merge_tree_recursive(code, args[0].pop("code", None))
+            plugin_name = pth.fetch(cache, default_value=None) or \
+                pth.fetch(default_value, default_value=None) or \
+                pth.fetch(kwargs, default_value=None)
 
-            code = merge_tree_recursive(code, kwargs.pop("code", None))
-
-            default_value["code"] = code
-
-            plugin_name = code.get("name", None)
-
-            self.__class__.__dispatch_init__([plugin_name], self, *args, default_value=default_value, **kwargs)
+            self.__class__.__dispatch_init__([plugin_name],
+                                             self, cache, entry=entry, default_value=default_value,
+                                             parent=parent, **kwargs)
 
             return
 
-        super().__init__(*args, **kwargs)
+        super().__init__(cache, entry=entry,   default_value=default_value, parent=parent, **kwargs)
 
         logger.debug(f"Load module {self.__class__.__name__}")  # MPI_ENBLAED={self.mpi_enabled}
 

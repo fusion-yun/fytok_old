@@ -1,10 +1,13 @@
 import typing
 from copy import copy
 
+from fytok.utils.logger import logger
 from spdm.data.Entry import open_entry
 from spdm.data.sp_property import SpTree, sp_property
+from spdm.data.HTree import HTree
 from spdm.geometry.GeoObject import GeoObject
-from fytok.utils.logger import logger
+from spdm.utils.tags import _not_found_
+from spdm.utils.tree_utils import merge_tree_recursive
 
 from ._imas.lastest import __version__ as imas_version
 # ---------------------------------
@@ -45,27 +48,39 @@ from .modules.TransportSolverNumerics import TransportSolverNumerics
 
 
 class Tokamak(SpTree):
-    """Tokamak
-    功能：
-        - 描述装置在单一时刻的状态，
-        - 在时间推进时，确定各个子系统之间的依赖和演化关系，
+    """ Tokamak
+        功能：
+            - 描述装置在单一时刻的状态，
+            - 在时间推进时，确定各个子系统之间的依赖和演化关系，
+
     """
 
-    def __init__(self, data: str | typing.Dict = None, *args, entry=None, **kwargs):
-        imas_version_major, *_ = imas_version.split(".")
-        # imas_version_minor, imas_version_patch,
+    def __init__(self,  *args, device=None, shot=None, **kwargs):
 
-        if isinstance(data, dict):
-            pass
+        imas_version_major, *_ = imas_version.split(".")  # imas_version_minor, imas_version_patch,
 
-        elif entry is None:
-            entry = open_entry(data, global_schema=f"imas/{imas_version_major}")
-            data = {"description": {"url": data}}
+        cache, entry, default_value, parent, kwargs = HTree._parser_args(*args, **kwargs)
 
-        elif data is not None:
-            raise ValueError(f"Invalid data={data}")
+        metadata = kwargs.pop("metadata", {})
 
-        super().__init__(data, entry=entry, **kwargs)
+        cache = merge_tree_recursive(cache, kwargs)
+
+        cache["imas_version"] = imas_version
+        cache["device"] = device
+        cache["shot"] = shot or ""
+
+        # if device is not None:
+        #     entry = [f"{device}+://"]+entry
+
+        entry = open_entry(entry, shot=shot, local_schema=device,  global_schema=f"imas/{imas_version_major}")
+
+        super().__init__(cache, entry=entry,  parent=parent, default_value=default_value, metadata=metadata)
+
+        self._device = device
+
+    device: str = sp_property(default_value="unknown")
+
+    shot: int = sp_property(default_value=0)
 
     time: float = sp_property(default_value=0.0)
 
@@ -95,7 +110,7 @@ class Tokamak(SpTree):
 
     # transport: state of device
     equilibrium             : Equilibrium               = sp_property()
-    
+
     core_profiles           : CoreProfiles              = sp_property()
     core_transport          : CoreTransport             = sp_property()
     core_sources            : CoreSources               = sp_property()
