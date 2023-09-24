@@ -26,7 +26,7 @@ fy_git_describe = subprocess.check_output(['git', 'describe', '--always', '--dir
 
 SRC_ROOT = pathlib.Path(__file__).parent
 
-SETUP_HELPER_DIR = SRC_ROOT/"setup_helper"
+SETUP_HELPER_DIR = SRC_ROOT/"_setup_helper"
 
 # Get the long description from the README file
 with open('../README.md') as f:

@@ -15,19 +15,16 @@ if __name__ == "__main__":
 
     output_path = pathlib.Path(f"{WORKSPACE}/output")
 
-    # tok = Tokamak(f"EAST+MDSplus://{WORKSPACE}/fytok_data/mdsplus/~t/?enable=efit_east&shot=70754")
+    tok = Tokamak(f"EAST+MDSplus://{WORKSPACE}/fytok_data/mdsplus/~t/?enable=efit_east&shot=70754",
+                  device="east")
 
-    tok = Tokamak(f"MDSplus://{WORKSPACE}/fytok_data/mdsplus/~t/?enable=efit_east",
-                  device="east", shot="70754")
+    # tok = Tokamak(f"east+MDSplus://{WORKSPACE}/fytok_data/mdsplus/~t/?enable=efit_east",
+    #               device="east", shot="70754")
 
-    outline = tok.wall.description_2d[0].limiter.unit[0].outline
-
-    logger.debug(outline.r)
+    # outline = tok.wall.description_2d[0].limiter.unit[0].outline
 
     tok.refresh(time=5.0)
 
-    logger.debug(tok.equilibrium)
+    display(tok, output=output_path/f"{tok.device}_rz.svg")
 
-    display(tok, title=f"EAST RZ  View", output=output_path/"east_rz.svg")
-
-    display(tok, title=f"EAST Top View", output=output_path/"east_top.svg", view="TOP")
+    display(tok,  output=output_path/f"{tok.device}_top.svg", view="TOP")

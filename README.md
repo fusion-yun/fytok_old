@@ -4,6 +4,12 @@
 
 Tokamak integrated modeling and analysis toolkit.
 
+## NOTICE：
+
+- This project is still under development, and the API may change at any time.
+- IMAS data dictionary is not included in this project, please download it from the official website.
+- TO Developer: 与 dd 相关的 spdm.plugins 放在 project fytok 下
+
 ## Software Architecture
 
 Software architecture description

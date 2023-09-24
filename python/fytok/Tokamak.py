@@ -1,7 +1,7 @@
 import typing
 from copy import copy
 
-from fytok.utils.logger import logger
+from fytok.utils.logger import logger, FY_DEBUG
 from spdm.data.Entry import open_entry
 from spdm.data.sp_property import SpTree, sp_property
 from spdm.data.HTree import HTree
@@ -55,9 +55,13 @@ class Tokamak(SpTree):
 
     """
 
-    def __init__(self,  *args, device=None, shot=None, **kwargs):
+    def __init__(self,  *args, device=None, shot=None, run=None, **kwargs):
 
         imas_version_major, *_ = imas_version.split(".")  # imas_version_minor, imas_version_patch,
+
+        if device is None and len(args) > 0 and isinstance(args[0], str) and args[0].isidentifier():
+            device = args[0]
+            args = args[1:]
 
         cache, entry, default_value, parent, kwargs = HTree._parser_args(*args, **kwargs)
 
@@ -66,21 +70,22 @@ class Tokamak(SpTree):
         cache = merge_tree_recursive(cache, kwargs)
 
         cache["imas_version"] = imas_version
-        cache["device"] = device
-        cache["shot"] = shot or ""
+        cache["device"] = device or "unknown"
+        cache["shot"] = shot or 0
+        cache["run"] = run
 
-        # if device is not None:
-        #     entry = [f"{device}+://"]+entry
+        if device is not None:
+            entry = [f"{device}+://"]+entry
 
-        entry = open_entry(entry, shot=shot, local_schema=device,  global_schema=f"imas/{imas_version_major}")
+        entry = open_entry(entry, shot=shot, run=run,  global_schema=f"imas/{imas_version_major}")
 
         super().__init__(cache, entry=entry,  parent=parent, default_value=default_value, metadata=metadata)
 
-        self._device = device
-
-    device: str = sp_property(default_value="unknown")
+    device: str = sp_property()
 
     shot: int = sp_property(default_value=0)
+
+    run: int = sp_property(default_value=0)
 
     time: float = sp_property(default_value=0.0)
 
@@ -163,27 +168,50 @@ class Tokamak(SpTree):
 
     def __geometry__(self, view="RZ", **kwargs) -> GeoObject:
 
-        # fmt:off
-        geo = {
-            "wall"          : self.wall.__geometry__(view=view, **kwargs),
-            "tf"            : self.tf.__geometry__(view=view, **kwargs),
-            "pf_active"     : self.pf_active.__geometry__(view=view, **kwargs),
-            "magnetics"     : self.magnetics.__geometry__(view=view, **kwargs),
+        # # fmt:off
+        # geo = {
+        #     "wall"          : self.wall.__geometry__(view=view, **kwargs),
+        #     "tf"            : self.tf.__geometry__(view=view, **kwargs),
+        #     "pf_active"     : self.pf_active.__geometry__(view=view, **kwargs),
+        #     "magnetics"     : self.magnetics.__geometry__(view=view, **kwargs),
 
 
-            ##################
-            "ec_launchers"  : self.ec_launchers.__geometry__(view=view, **kwargs),
-            "ic_antennas"   : self.ic_antennas.__geometry__(view=view, **kwargs),
-            "lh_antennas"   : self.lh_antennas.__geometry__(view=view, **kwargs),
-            "nbi"           : self.nbi.__geometry__(view=view, **kwargs),
-            "pellets"       : self.pellets.__geometry__(view=view, **kwargs),
-            "interferometer": self.interferometer.__geometry__(view=view, **kwargs),
+        #     ##################
+        #     "ec_launchers"  : self.ec_launchers.__geometry__(view=view, **kwargs),
+        #     "ic_antennas"   : self.ic_antennas.__geometry__(view=view, **kwargs),
+        #     "lh_antennas"   : self.lh_antennas.__geometry__(view=view, **kwargs),
+        #     "nbi"           : self.nbi.__geometry__(view=view, **kwargs),
+        #     "pellets"       : self.pellets.__geometry__(view=view, **kwargs),
+        #     "interferometer": self.interferometer.__geometry__(view=view, **kwargs),
 
+        # }
+        #     ##################
+        # try:
+        #     geo[ "equilibrium" ]  = self.equilibrium.__geometry__(view=view, **kwargs)
+        # except Exception as error:
+        #     logger.error(error)
+        #     pass
+        # # fmt:on
 
-            ##################
-            "equilibrium"   : self.equilibrium.__geometry__(view=view, **kwargs),
-        }
-        # fmt:on
+        geo = {}
+
+        o_list = ["wall", "tf", "pf_active", "magnetics", "ec_launchers", "ic_antennas",
+                  "lh_antennas", "nbi", "pellets", "interferometer", "equilibrium"]
+
+        for o_name in o_list:
+            try:
+                o = getattr(self, o_name, None)
+                if o is None:
+                    continue
+                g = o.__geometry__(view=view, **kwargs)
+
+            except Exception as error:
+                if FY_DEBUG > 0:
+                    raise RuntimeError(f"Fail to access {o.__class__.__name__}.__geometry__ !") from error
+                else:
+                    logger.error(f"Fail to access {o.__class__.__name__}.__geometry__ ! \n\tError:\t{error}")
+            else:
+                geo[o_name] = g
 
         if view != "RZ":
             styles = {
@@ -195,6 +223,21 @@ class Tokamak(SpTree):
                 "xlabel": r"Major radius $R$ [m]",
                 "ylabel": r"Height $Z$ [m]",
             }
+
+        title = kwargs.pop("title", None)
+        if title is None:
+            title = f"{self.device.upper()}"
+
+            if self.shot is not None:
+                title += f" shot={self.shot}"
+
+            if self.run is not None:
+                title += f" run={self.run}"
+
+            title += f"  time={self.time} {view} View"
+
+            styles["title"] = title
+
         return geo, styles
 
     # def plot(self, axis=None, /,  **kwargs):
