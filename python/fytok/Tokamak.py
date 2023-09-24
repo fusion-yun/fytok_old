@@ -218,9 +218,9 @@ class Tokamak(SpTree):
 
             except Exception as error:
                 if FY_DEBUG > 0:
-                    raise RuntimeError(f"Fail to access {o.__class__.__name__}.__geometry__ !") from error
+                    raise RuntimeError(f"{FY_DEBUG} Fail to access {o.__class__.__name__}.__geometry__ !") from error
                 else:
-                    logger.error(f"Fail to access {o.__class__.__name__}.__geometry__ ! \n\tError:\t{error}")
+                    logger.error(f"{FY_DEBUG} Fail to access {o.__class__.__name__}.__geometry__ ! \n\tError:\t{error}")
             else:
                 geo[o_name] = g
 

@@ -1,10 +1,11 @@
 import typing
 
-from .._imas.lastest.wall import _T_wall
-
+from spdm.geometry.Circle import Circle
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Polyline import Polyline
-from spdm.geometry.Circle import Circle
+from spdm.utils.tags import _not_found_
+
+from .._imas.lastest.wall import _T_wall, _T_wall_2d
 from ..utils.logger import logger
 
 
@@ -21,22 +22,38 @@ class Wall(_T_wall):
 
         match view.lower():
             case "top":
+
                 vessel_r = desc.vessel.unit[0].annular.outline_outer.r
                 vessel_z = desc.vessel.unit[0].annular.outline_outer.z
                 geo["vessel_outer"] = [Circle(0.0, 0.0, vessel_r.min()), Circle(0.0, 0.0, vessel_r.max())]
 
             case "rz":
-                geo["limiter"] = Polyline(desc.limiter.unit[0].outline.r,
-                                          desc.limiter.unit[0].outline.z)
+                if desc.limiter.unit[0].outline.r is not _not_found_:
+                    geo["limiter"] = Polyline(desc.limiter.unit[0].outline.r,
+                                              desc.limiter.unit[0].outline.z)
+                units = []
+                for unit in desc.vessel.unit:
+                    if unit.annular.outline_inner.r is not _not_found_:
+                        units.append({
+                            "annular": {
+                                "vessel_inner": Polyline(unit.annular.outline_inner.r,
+                                                         unit.annular.outline_inner.z),
 
-                vessel = desc.vessel.unit[0].annular
+                                "vessel_outer": Polyline(unit.annular.outline_outer.r,
+                                                         unit.annular.outline_outer.z),
+                            }})
 
-                geo["vessel_inner"] = Polyline(vessel.outline_inner.r,
-                                               vessel.outline_inner.z)
+                    else:
 
-                geo["vessel_outer"] = Polyline(vessel.outline_outer.r,
-                                               vessel.outline_outer.z)
-
+                        elements = []
+                        for element in unit.element:
+                            elements.append(Polyline(element.outline.r,
+                                                     element.outline.z,
+                                                     name=element.name)
+                                            )
+                        units.append({"element":   elements})
+                        
+                    geo["unit"] = units
         styles = {  #
             "limiter": {"$matplotlib": {"edgecolor": "green"}},
             "vessel_inner": {"$matplotlib": {"edgecolor": "blue"}},

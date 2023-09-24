@@ -1023,7 +1023,8 @@ class FyEquilibriumTimeSlice(Equilibrium.TimeSlice):
 
         geo = {}
 
-        try:
+        if self.profiles_2d[0].psi.__value__ is not _not_found_:
+            logger.debug(self.profiles_2d[0].psi.__value__)
             o_points, x_points = self.coordinate_system.critical_points
 
             geo["o_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(o_points)]
@@ -1035,11 +1036,7 @@ class FyEquilibriumTimeSlice(Equilibrium.TimeSlice):
             geo["boundary_separatrix"] = [surf for _, surf in
                                           self.coordinate_system.find_surfaces(self.boundary_separatrix.psi, o_point=False)]
 
-        except Exception as error:
-            # logger.error(f"Can not parser psi ! {error}")
-            raise RuntimeError(f"Can not parser psi!") from error
-
-        geo["psi"] = self.profiles_2d[0].psi
+            geo["psi"] = self.profiles_2d[0].psi
 
         styles = {
             "o_points":  {"$matplotlib": {"color": 'red',   'marker': '.', "linewidths": 0.5}},
