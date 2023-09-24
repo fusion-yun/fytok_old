@@ -2,11 +2,12 @@ import typing
 from copy import copy
 
 from fytok.utils.logger import logger, FY_DEBUG
-from spdm.data.Entry import open_entry
+from spdm.data.Entry import open_entry, PROTOCOL_LIST
 from spdm.data.sp_property import SpTree, sp_property
 from spdm.data.HTree import HTree
 from spdm.geometry.GeoObject import GeoObject
 from spdm.utils.tags import _not_found_
+from spdm.utils.uri_utils import uri_split
 from spdm.utils.tree_utils import merge_tree_recursive
 
 from ._imas.lastest import __version__ as imas_version
@@ -59,9 +60,19 @@ class Tokamak(SpTree):
 
         imas_version_major, *_ = imas_version.split(".")  # imas_version_minor, imas_version_patch,
 
-        if device is None and len(args) > 0 and isinstance(args[0], str) and args[0].isidentifier():
-            device = args[0]
-            args = args[1:]
+        if device is None and len(args) > 0 and isinstance(args[0], str):
+            if args[0].isidentifier():
+                device = args[0]
+                args = args[1:]
+            else:
+                url_ = uri_split(args[0])
+                schemas = url_.protocol.split("+")
+                if len(schemas) > 0 and schemas[0] not in PROTOCOL_LIST:
+                    device = schemas[0]
+                if shot is None:
+                    shot = url_.query.get("shot", None)
+                if run is None:
+                    run = url_.query.get("run", None)
 
         cache, entry, default_value, parent, kwargs = HTree._parser_args(*args, **kwargs)
 
