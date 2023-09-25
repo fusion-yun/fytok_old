@@ -165,15 +165,7 @@ __cocos__   ="<xsl:value-of select="xs:annotation/xs:appinfo/cocos"/>"
 from ...utils.logger import logger
 
 logger.info(
-    f"""
-#######################################################################################################################
-
-FyTok ({__fy_rev__}) is compatible with the IMAS data dictionary {__version__}.
-
-Create date:  <xsl:value-of  select="current-dateTime()" />
-
-#######################################################################################################################
-"""
+f"""FyTok ({__fy_rev__}) is compatible with the IMAS data dictionary {__version__}."""
 )
 
 <!-- <xsl:for-each select="xs:complexType/xs:sequence/xs:element">
