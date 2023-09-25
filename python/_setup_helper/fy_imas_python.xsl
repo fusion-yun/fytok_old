@@ -110,7 +110,7 @@
 
 <xsl:variable name="FILE_HEADER_ANNOTATION" >
   Generate at <xsl:value-of  select="current-dateTime()" />
-  by FyTok (rev: <xsl:value-of select="$FY_GIT_DESCRIBE"/>): builder/fy_imas_xsd.xsl
+  FyTok (rev: <xsl:value-of select="$FY_GIT_DESCRIBE"/>) 
 </xsl:variable>
 
 
@@ -132,7 +132,7 @@ from ...utils.utilities import *
 <!-- Directory:  _imas  -->
 <xsl:template match="/*">  
 
-  <xsl:apply-templates select="xs:element[@name='physics_data_dictionary']" mode="file_init_py" />
+  <xsl:apply-templates select="xs:element[@name='physics_data_dictionary']" mode="file_version_py" />
 
   <!-- Scan for all constant identify ENUM -->
   <xsl:variable name="constants_list"   select="for $f in xs:include  return (document(concat($DD_BASE_DIR,$f/@schemaLocation))//doc_identifier ) " />
@@ -150,22 +150,35 @@ from ...utils.utilities import *
 
 
 <!-- FILE:  __init__.py -->
-<xsl:template match="xs:element[@name='physics_data_dictionary']" mode="file_init_py">
-<xsl:result-document method="text" href="__init__.py">"""
+<xsl:template match="xs:element[@name='physics_data_dictionary']" mode="file_version_py">
+<xsl:result-document method="text" href="__version__.py">"""
   <xsl:value-of select="xs:annotation/xs:documentation"/>
 
   From IMAS/dd (<xsl:value-of select="$DD_GIT_DESCRIBE"/>)
   <xsl:copy-of select="$FILE_HEADER_ANNOTATION" />
 """
-__path__ = __import__('pkgutil').extend_path(__path__, __name__)
 
 __fy_rev__  ="<xsl:value-of select="$FY_GIT_DESCRIBE"/>"
 __version__ ="<xsl:value-of select="$DD_GIT_DESCRIBE"/>"
 __cocos__   ="<xsl:value-of select="xs:annotation/xs:appinfo/cocos"/>"
 
-<xsl:for-each select="xs:complexType/xs:sequence/xs:element">
+from ...utils.logger import logger
+
+logger.info(
+    f"""
+#######################################################################################################################
+
+FyTok ({__fy_rev__}) is compatible with the IMAS data dictionary {__version__}.
+
+Create date:  <xsl:value-of  select="current-dateTime()" />
+
+#######################################################################################################################
+"""
+)
+
+<!-- <xsl:for-each select="xs:complexType/xs:sequence/xs:element">
 from .<xsl:value-of select="@ref"/>  import _T_<xsl:value-of select="@ref"/> 
-</xsl:for-each>
+</xsl:for-each> -->
 
 </xsl:result-document>
 </xsl:template>

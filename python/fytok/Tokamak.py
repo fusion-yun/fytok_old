@@ -1,21 +1,34 @@
 import typing
 from copy import copy
 
-from fytok.utils.logger import logger, FY_DEBUG
-from spdm.data.Entry import open_entry, PROTOCOL_LIST
-from spdm.data.sp_property import SpTree, sp_property
+from spdm.data.Entry import PROTOCOL_LIST, open_entry
 from spdm.data.HTree import HTree
+from spdm.data.sp_property import SpTree, sp_property
 from spdm.geometry.GeoObject import GeoObject
 from spdm.utils.tags import _not_found_
-from spdm.utils.uri_utils import uri_split
 from spdm.utils.tree_utils import merge_tree_recursive
+from spdm.utils.uri_utils import uri_split
 
-from ._imas.lastest import __version__ as imas_version
+from ._imas.lastest.__version__ import __version__ as imas_version
+
 # ---------------------------------
 from .modules.CoreProfiles import CoreProfiles
 from .modules.CoreSources import CoreSources
 from .modules.CoreTransport import CoreTransport
+from .modules.ECLaunchers import ECLaunchers
 from .modules.Equilibrium import Equilibrium
+from .modules.ICAntennas import ICAntennas
+from .modules.Interferometer import Interferometer
+from .modules.LHAntennas import LHAntennas
+from .modules.Magnetics import Magnetics
+from .modules.NBI import NBI
+from .modules.Pellets import Pellets
+from .modules.PFActive import PFActive
+from .modules.TF import TF
+from .modules.TransportSolverNumerics import TransportSolverNumerics
+from .modules.Wall import Wall
+from .utils.envs import *
+from .utils.logger import logger
 
 # from .modules.EdgeProfiles import EdgeProfiles
 # from .modules.EdgeSources import EdgeSources
@@ -23,42 +36,18 @@ from .modules.Equilibrium import Equilibrium
 # from .modules.EdgeTransportSolver import EdgeTransportSolver
 # ---------------------------------
 
-try:
-    from .modules.Magnetics import Magnetics
-    from .modules.PFActive import PFActive
-    from .modules.TF import TF
-    from .modules.Wall import Wall
-except ModuleNotFoundError as error:
-    raise RuntimeError(f"Fail to laod 'device' modules  ") from error
-
-try:
-    from .modules.ECLaunchers import ECLaunchers
-    from .modules.ICAntennas import ICAntennas
-    from .modules.LHAntennas import LHAntennas
-    from .modules.NBI import NBI
-    from .modules.Pellets import Pellets
-except ModuleNotFoundError as error:
-    raise RuntimeError(f"Fail to laod 'aux' modules  ") from error
-
-try:
-    from .modules.Interferometer import Interferometer
-except ModuleNotFoundError as error:
-    raise RuntimeError(f"Fail to laod 'diag' modules  ") from error
-
-from .modules.TransportSolverNumerics import TransportSolverNumerics
-
 
 class Tokamak(SpTree):
-    """ Tokamak
-        功能：
-            - 描述装置在单一时刻的状态，
-            - 在时间推进时，确定各个子系统之间的依赖和演化关系，
+    """Tokamak
+    功能：
+        - 描述装置在单一时刻的状态，
+        - 在时间推进时，确定各个子系统之间的依赖和演化关系，
 
     """
 
-    def __init__(self,  *args, device=None, shot=None, run=None, **kwargs):
-
-        imas_version_major, *_ = imas_version.split(".")  # imas_version_minor, imas_version_patch,
+    def __init__(self, *args, device=None, shot=None, run=None, **kwargs):
+        imas_version_major, *_ = imas_version.split(".")
+        # imas_version_minor, imas_version_patch,
 
         if device is None and len(args) > 0 and isinstance(args[0], str):
             if args[0].isidentifier():
@@ -70,27 +59,42 @@ class Tokamak(SpTree):
                 if len(schemas) > 0 and schemas[0] not in PROTOCOL_LIST:
                     device = schemas[0]
                 if shot is None:
-                    shot = url_.query.get("shot", None)
+                    shot = url_.query.pop("shot", None)
                 if run is None:
-                    run = url_.query.get("run", None)
+                    run = url_.query.pop("run", None)
+                args = [url_, *args[1:]]
 
-        cache, entry, default_value, parent, kwargs = HTree._parser_args(*args, **kwargs)
+        cache, entry, default_value, parent, kwargs = HTree._parser_args(
+            *args, **kwargs
+        )
 
         metadata = kwargs.pop("metadata", {})
 
         cache = merge_tree_recursive(cache, kwargs)
 
         cache["imas_version"] = imas_version
-        cache["device"] = device or "unknown"
+        cache["device"] = device or None
         cache["shot"] = shot or 0
         cache["run"] = run
 
         if device is not None:
-            entry = [f"{device}+://"]+entry
+            entry = [f"{device}+://"] + entry
 
-        entry = open_entry(entry, shot=shot, run=run,  global_schema=f"imas/{imas_version_major}")
+        entry = open_entry(
+            entry,
+            shot=shot,
+            run=run,
+            local_schema=device,
+            global_schema=f"imas/{imas_version_major}",
+        )
 
-        super().__init__(cache, entry=entry,  parent=parent, default_value=default_value, metadata=metadata)
+        super().__init__(
+            cache,
+            entry=entry,
+            parent=parent,
+            default_value=default_value,
+            metadata=metadata,
+        )
 
     device: str = sp_property()
 
@@ -142,7 +146,6 @@ class Tokamak(SpTree):
     # fmt:on
 
     def advance(self, *args, **kwargs):
-
         self.equilibrium.advance(*args, **kwargs)
 
         self["time"] = self.equilibrium.time_slice.current.time
@@ -178,14 +181,12 @@ class Tokamak(SpTree):
         #                               )
 
     def __geometry__(self, view="RZ", **kwargs) -> GeoObject:
-
         # # fmt:off
         # geo = {
         #     "wall"          : self.wall.__geometry__(view=view, **kwargs),
         #     "tf"            : self.tf.__geometry__(view=view, **kwargs),
         #     "pf_active"     : self.pf_active.__geometry__(view=view, **kwargs),
         #     "magnetics"     : self.magnetics.__geometry__(view=view, **kwargs),
-
 
         #     ##################
         #     "ec_launchers"  : self.ec_launchers.__geometry__(view=view, **kwargs),
@@ -206,8 +207,19 @@ class Tokamak(SpTree):
 
         geo = {}
 
-        o_list = ["wall", "tf", "pf_active", "magnetics", "ec_launchers", "ic_antennas",
-                  "lh_antennas", "nbi", "pellets", "interferometer", "equilibrium"]
+        o_list = [
+            "wall",
+            "tf",
+            "pf_active",
+            "magnetics",
+            "ec_launchers",
+            "ic_antennas",
+            "lh_antennas",
+            "nbi",
+            "pellets",
+            "interferometer",
+            "equilibrium",
+        ]
 
         for o_name in o_list:
             try:
@@ -217,10 +229,14 @@ class Tokamak(SpTree):
                 g = o.__geometry__(view=view, **kwargs)
 
             except Exception as error:
-                if FY_DEBUG > 0:
-                    raise RuntimeError(f"{FY_DEBUG} Fail to access {o.__class__.__name__}.__geometry__ !") from error
+                if FY_DEBUG:
+                    raise RuntimeError(
+                        f"{FY_DEBUG} Fail to access {o.__class__.__name__}.__geometry__ !"
+                    ) from error
                 else:
-                    logger.error(f"{FY_DEBUG} Fail to access {o.__class__.__name__}.__geometry__ ! \n\tError:\t{error}")
+                    logger.error(
+                        f"{FY_DEBUG} Fail to access {o.__class__.__name__}.__geometry__ ! \n\tError:\t{error}"
+                    )
             else:
                 geo[o_name] = g
 
