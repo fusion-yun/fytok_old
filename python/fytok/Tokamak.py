@@ -108,6 +108,11 @@ class Tokamak(SpTree):
 
     description: str = sp_property(default_value="empty tokamak")
 
+    @property
+    def short_description(self) -> str: return f"{self.device.upper()} shot={self.shot} time={self.time}s"
+
+    @property
+    def tag(self) -> str: return f"{self.device.lower()}_{self.shot}_{int(self.time*100):06d}"
     # fmt:off
 
     # device
@@ -180,7 +185,7 @@ class Tokamak(SpTree):
         #                               core_transport=self.core_transport
         #                               )
 
-    def __geometry__(self, view="RZ", **kwargs) -> GeoObject:
+    def __geometry__(self,  **kwargs) -> GeoObject:
         # # fmt:off
         # geo = {
         #     "wall"          : self.wall.__geometry__(view=view, **kwargs),
@@ -226,7 +231,7 @@ class Tokamak(SpTree):
                 o = getattr(self, o_name, None)
                 if o is None:
                     continue
-                g = o.__geometry__(view=view, **kwargs)
+                g = o.__geometry__(**kwargs)
 
             except Exception as error:
                 if FY_DEBUG:
@@ -240,7 +245,9 @@ class Tokamak(SpTree):
             else:
                 geo[o_name] = g
 
-        if view != "RZ":
+        view_point = (kwargs.get("view_point", None) or "rz").lower()
+
+        if view_point == "top":
             styles = {
                 "xlabel": r" $R$ [m]",
                 "ylabel": r" $R$ [m]",
@@ -251,7 +258,7 @@ class Tokamak(SpTree):
                 "ylabel": r"Height $Z$ [m]",
             }
 
-        title = kwargs.pop("title", None)
+        title = kwargs.pop("title", None) or self.short_description
         if title is None:
             title = f"{self.device.upper()}"
 

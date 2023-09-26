@@ -10,10 +10,10 @@ from .._imas.lastest.interferometer import _T_interferometer
 
 class Interferometer(_T_interferometer):
 
-    def __geometry__(self, view="RZ", **kwargs) -> GeoObject:
+    def __geometry__(self, view_point="RZ", **kwargs) -> GeoObject:
         geo = {}
         styles = {}
-        match view.lower():
+        match view_point.lower():
             case "rz":
                 geo["channel"] = [
                     Line([channel.line_of_sight.first_point.r, channel.line_of_sight.first_point.z],

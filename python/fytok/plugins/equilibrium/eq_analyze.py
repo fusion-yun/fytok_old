@@ -1013,38 +1013,37 @@ class FyEquilibriumTimeSlice(Equilibrium.TimeSlice):
 
     coordinate_system: FyEquilibriumCoordinateSystem = sp_property()
 
-    def __geometry__(self, view="RZ", **kwargs) -> GeoObject:
+    def __geometry__(self, view_point="RZ", **kwargs) -> GeoObject:
         """
             plot o-point,x-point,lcfs,separatrix and contour of psi
         """
 
-        if view != "RZ":
-            return None
-
         geo = {}
+        styles = {}
 
-        if self.profiles_2d[0].psi.__value__ is not _not_found_:
+        match view_point.lower():
+            case "rz":
+                if self.profiles_2d[0].psi.__value__ is not _not_found_:
 
-            o_points, x_points = self.coordinate_system.critical_points
+                    o_points, x_points = self.coordinate_system.critical_points
 
-            geo["o_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(o_points)]
-            geo["x_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(x_points)]
+                    geo["o_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(o_points)]
+                    geo["x_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(x_points)]
 
-            geo["boundary"] = [surf for _, surf in
-                               self.coordinate_system.find_surfaces(self.boundary.psi, o_point=True)]
+                    geo["boundary"] = [surf for _, surf in
+                                       self.coordinate_system.find_surfaces(self.boundary.psi, o_point=True)]
 
-            geo["boundary_separatrix"] = [surf for _, surf in
-                                          self.coordinate_system.find_surfaces(self.boundary_separatrix.psi, o_point=False)]
+                    geo["boundary_separatrix"] = [surf for _, surf in
+                                                  self.coordinate_system.find_surfaces(self.boundary_separatrix.psi, o_point=False)]
 
-            geo["psi"] = self.profiles_2d[0].psi
+                    geo["psi"] = self.profiles_2d[0].psi
 
-        styles = {
-            "o_points":  {"$matplotlib": {"color": 'red',   'marker': '.', "linewidths": 0.5}},
-            "x_points":  {"$matplotlib": {"color": 'blue',  'marker': 'x', "linewidths": 0.5}},
-            "boundary":  {"$matplotlib": {"color": 'blue', 'linestyle': 'dotted', 'linewidth': 0.5}},
-            "boundary_separatrix": {"$matplotlib": {"color": 'red', "linestyle": 'dashed', 'linewidth': 0.25}},
-            "psi": {"$matplotlib": {"levels": 40, "cmap": "jet"}},
-        }
+                styles["o_points"] = {"$matplotlib": {"color": 'red',   'marker': '.', "linewidths": 0.5}}
+                styles["x_points"] = {"$matplotlib": {"color": 'blue',  'marker': 'x', "linewidths": 0.5}}
+                styles["boundary"] = {"$matplotlib": {"color": 'blue', 'linestyle': 'dotted', 'linewidth': 0.5}}
+                styles["boundary_separatrix"] = {"$matplotlib": {
+                    "color": 'red', "linestyle": 'dashed', 'linewidth': 0.25}}
+                styles["psi"] = {"$matplotlib": {"levels": 40, "cmap": "jet"}}
 
         styles = merge_tree_recursive(styles, kwargs)
 

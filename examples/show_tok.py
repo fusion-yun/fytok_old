@@ -19,6 +19,6 @@ if __name__ == "__main__":
 
     tok.refresh(time=5.0)
 
-    display(tok, output=output_path / f"{tok.device}_rz.svg")
+    # display(tok,  output=output_path/f"{tok.tag}_rz.svg")
 
-    display(tok, output=output_path / f"{tok.device}_top.svg", view="TOP")
+    display(tok,  output=output_path/f"{tok.tag}_top.svg", view_point="TOP")

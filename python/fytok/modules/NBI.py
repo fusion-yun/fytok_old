@@ -23,13 +23,12 @@ def draw_nbi_unit(unit: _T_nbi_unit, name: str):
 
 
 class NBI(_T_nbi):
-    def __geometry__(self, view="RZ", **kwargs) -> GeoObject:
+    def __geometry__(self, view_point="RZ", **kwargs) -> GeoObject:
         geo = {}
         styles = {}
 
-        if view == "RZ":
-            pass
-        else:
-            geo["unit"] = [draw_nbi_unit(unit) for unit in self.unit]
+        match view_point.lower():
+            case "top":
+                geo["unit"] = [draw_nbi_unit(unit) for unit in self.unit]
 
         return geo, styles

@@ -13,14 +13,14 @@ class Wall(_T_wall):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def __geometry__(self, view="RZ", **kwargs) -> GeoObject | typing.List[GeoObject]:
+    def __geometry__(self, view_point="RZ", **kwargs) -> GeoObject | typing.List[GeoObject]:
 
         geo = {}
         styles = {}
 
         desc = self.description_2d[0]  # 0 for equilibrium codes
 
-        match view.lower():
+        match view_point.lower():
             case "top":
 
                 vessel_r = desc.vessel.unit[0].annular.outline_outer.r
