@@ -211,6 +211,7 @@ class Tokamak(SpTree):
         # # fmt:on
 
         geo = {}
+        styles = {}
 
         o_list = [
             "wall",
@@ -247,30 +248,11 @@ class Tokamak(SpTree):
 
         view_point = (kwargs.get("view_point", None) or "rz").lower()
 
-        if view_point == "top":
-            styles = {
-                "xlabel": r" $R$ [m]",
-                "ylabel": r" $R$ [m]",
-            }
-        else:
-            styles = {
-                "xlabel": r"Major radius $R$ [m]",
-                "ylabel": r"Height $Z$ [m]",
-            }
+        if view_point == "rz":
+            styles["xlabel"] = r"Major radius $R [m] $"
+            styles["ylabel"] = r"Height $Z [m]$"
 
-        title = kwargs.pop("title", None) or self.short_description
-        if title is None:
-            title = f"{self.device.upper()}"
-
-            if self.shot is not None:
-                title += f" shot={self.shot}"
-
-            if self.run is not None:
-                title += f" run={self.run}"
-
-            title += f"  time={self.time} {view} View"
-
-            styles["title"] = title
+        styles["title"] = kwargs.pop("title", None) or self.short_description
 
         return geo, styles
 
