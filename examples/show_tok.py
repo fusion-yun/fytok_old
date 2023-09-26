@@ -19,6 +19,8 @@ if __name__ == "__main__":
 
     tok.refresh(time=5.0)
 
-    display(tok,  output=output_path/f"{tok.tag}_rz.svg")
+    # display([tok.equilibrium, tok.wall, tok.pf_active],
+    #         title=tok.short_description,  output=output_path/f"{tok.tag}_rz.svg")
+    display(tok, title=tok.short_description, styles={"interferometer": False},  output=output_path/f"{tok.tag}_rz.svg")
 
-    display(tok,  output=output_path/f"{tok.tag}_top.svg", view_point="TOP")
+    # display(tok, title=tok.short_description,   output=output_path/f"{tok.tag}_top.svg", view_point="TOP")
