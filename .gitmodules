@@ -1,0 +1,3 @@
+[submodule "SpDB"]
+	path = SpDB
+	url = git@gitee.com:SimPla/SpDB.git
