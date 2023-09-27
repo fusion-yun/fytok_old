@@ -30,8 +30,7 @@ class CoreProfilesElectrons(_T_core_profiles_profiles_1d_electrons):
     density_fast: Function = sp_property(default_value=0.0)
 
     @sp_property[Function]
-    def density(self):
-        return self.density_thermal + self.density_fast
+    def density(self): return self.density_thermal + self.density_fast
 
     @sp_property[Function]
     def pressure_thermal(self):

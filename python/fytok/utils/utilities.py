@@ -177,9 +177,14 @@ class CoreRadialGrid(_T_core_radial_grid):
         super().__init__(*args,  **kwargs)
         rho_tor_norm = super().rho_tor_norm
         if rho_tor_norm is _not_found_:
-            if self.rho_tor_boundary is _not_found_:
+            if self.rho_tor_boundary is not _not_found_:
+                pass
+            elif super().rho_tor.__value__ is _not_found_:
                 raise RuntimeError(f"Can not find rho_tor_norm or rho_tor_boundary")
-            self._cache["rho_tor_norm"] = super().rho_tor/self.rho_tor_boundary
+            else:
+                self._cache["rho_tor_boundary"] = super().rho_tor.__value__[-1]
+
+            self._cache["rho_tor_norm"] = super().rho_tor.__value__/self.rho_tor_boundary
 
     @sp_property
     def r0(self) -> float: return self.get("../../vacuum_toroidal_field/r0")
