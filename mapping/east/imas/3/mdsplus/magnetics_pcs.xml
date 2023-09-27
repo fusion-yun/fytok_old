@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<magnetics xmlns:spdb="http://fusionyun.org/schema/">
+    <ids_properties>
+        <homogeneous_time dtype="int">1</homogeneous_time>
+    </ids_properties>
+    
+    <ip  id='0' > 
+        <data spdb="pcs_east">DATA(\PCRL01)</data> 
+        <time spdb="pcs_east">DIM_OF(\PCRL01)</time> 
+        <method_name>from pcs PCRL01 tree</method_name> 
+    </ip>
+
+    <b_field_pol_probe id='0' > <field> <data spdb="pcs_east">DATA(\PCBPV1T )</data><time spdb="pcs_east">DIM_OF(\PCBPV1T )</time></field>    </b_field_pol_probe>
+    <b_field_pol_probe id='1' > <field> <data spdb="pcs_east">DATA(\PCBPV2T )</data><time spdb="pcs_east">DIM_OF(\PCBPV2T )</time></field>    </b_field_pol_probe>      
+    <b_field_pol_probe id='2' > <field> <data spdb="pcs_east">DATA(\PCBPV3T )</data><time spdb="pcs_east">DIM_OF(\PCBPV3T )</time></field>    </b_field_pol_probe>
+    <b_field_pol_probe id='3' > <field> <data spdb="pcs_east">DATA(\PCBPV4T )</data><time spdb="pcs_east">DIM_OF(\PCBPV4T )</time></field>    </b_field_pol_probe>    
+    <b_field_pol_probe id='4' > <field> <data spdb="pcs_east">DATA(\PCBPV5T )</data><time spdb="pcs_east">DIM_OF(\PCBPV5T )</time></field>    </b_field_pol_probe>
+    <b_field_pol_probe id='5' > <field> <data spdb="pcs_east">DATA(\PCBPV6T )</data><time spdb="pcs_east">DIM_OF(\PCBPV6T )</time></field>    </b_field_pol_probe>    
+    <b_field_pol_probe id='6' > <field> <data spdb="pcs_east">DATA(\PCBPV7T )</data><time spdb="pcs_east">DIM_OF(\PCBPV7T )</time></field>    </b_field_pol_probe>
+    <b_field_pol_probe id='7' > <field> <data spdb="pcs_east">DATA(\PCBPV8T )</data><time spdb="pcs_east">DIM_OF(\PCBPV8T )</time></field>    </b_field_pol_probe>     
+    <b_field_pol_probe id='8' > <field> <data spdb="pcs_east">DATA(\PCBPV9T )</data><time spdb="pcs_east">DIM_OF(\PCBPV9T )</time></field>    </b_field_pol_probe>
+    <b_field_pol_probe id='9' > <field> <data spdb="pcs_east">DATA(\PCBPV10T)</data><time spdb="pcs_east">DIM_OF(\PCBPV10T)</time></field>    </b_field_pol_probe>     
+    <b_field_pol_probe id='10'> <field> <data spdb="pcs_east">DATA(\PCBPV11T)</data><time spdb="pcs_east">DIM_OF(\PCBPV11T)</time></field>    </b_field_pol_probe>
+    <b_field_pol_probe id='11'> <field> <data spdb="pcs_east">DATA(\PCBPV12T)</data><time spdb="pcs_east">DIM_OF(\PCBPV12T)</time></field>    </b_field_pol_probe>   
+    <b_field_pol_probe id='12'> <field> <data spdb="pcs_east">DATA(\PCBPV13T)</data><time spdb="pcs_east">DIM_OF(\PCBPV13T)</time></field>    </b_field_pol_probe>
+    <b_field_pol_probe id='13'> <field> <data spdb="pcs_east">DATA(\PCBPV14T)</data><time spdb="pcs_east">DIM_OF(\PCBPV14T)</time></field>    </b_field_pol_probe>   
+    <b_field_pol_probe id='14'> <field> <data spdb="pcs_east">DATA(\PCBPV15T)</data><time spdb="pcs_east">DIM_OF(\PCBPV15T)</time></field>    </b_field_pol_probe>
+    <b_field_pol_probe id='15'> <field> <data spdb="pcs_east">DATA(\PCBPV16T)</data><time spdb="pcs_east">DIM_OF(\PCBPV16T)</time></field>    </b_field_pol_probe>   
+    <b_field_pol_probe id='16'> <field> <data spdb="pcs_east">DATA(\PCBPV17T)</data><time spdb="pcs_east">DIM_OF(\PCBPV17T)</time></field>    </b_field_pol_probe>
+    <b_field_pol_probe id='17'> <field> <data spdb="pcs_east">DATA(\PCBPV18T)</data><time spdb="pcs_east">DIM_OF(\PCBPV18T)</time></field>    </b_field_pol_probe>   
+    <b_field_pol_probe id='18'> <field> <data spdb="pcs_east">DATA(\PCBPV19T)</data><time spdb="pcs_east">DIM_OF(\PCBPV19T)</time></field>    </b_field_pol_probe>
+    <b_field_pol_probe id='19'> <field> <data spdb="pcs_east">DATA(\PCBPV20T)</data><time spdb="pcs_east">DIM_OF(\PCBPV20T)</time></field>    </b_field_pol_probe>    
+    <b_field_pol_probe id='20'> <field> <data spdb="pcs_east">DATA(\PCBPV21T)</data><time spdb="pcs_east">DIM_OF(\PCBPV21T)</time></field>    </b_field_pol_probe>
+    <b_field_pol_probe id='21'> <field> <data spdb="pcs_east">DATA(\PCBPV22T)</data><time spdb="pcs_east">DIM_OF(\PCBPV22T)</time></field>    </b_field_pol_probe>      
+    <b_field_pol_probe id='22'> <field> <data spdb="pcs_east">DATA(\PCBPV23T)</data><time spdb="pcs_east">DIM_OF(\PCBPV23T)</time></field>    </b_field_pol_probe>
+    <b_field_pol_probe id='23'> <field> <data spdb="pcs_east">DATA(\PCBPV24T)</data><time spdb="pcs_east">DIM_OF(\PCBPV24T)</time></field>    </b_field_pol_probe>      
+    <b_field_pol_probe id='24'> <field> <data spdb="pcs_east">DATA(\PCBPV25T)</data><time spdb="pcs_east">DIM_OF(\PCBPV25T)</time></field>    </b_field_pol_probe>
+    <b_field_pol_probe id='25'> <field> <data spdb="pcs_east">DATA(\PCBPV26T)</data><time spdb="pcs_east">DIM_OF(\PCBPV26T)</time></field>    </b_field_pol_probe>      
+    <b_field_pol_probe id='26'> <field> <data spdb="pcs_east">DATA(\PCBPV27T)</data><time spdb="pcs_east">DIM_OF(\PCBPV27T)</time></field>    </b_field_pol_probe>
+    <b_field_pol_probe id='27'> <field> <data spdb="pcs_east">DATA(\PCBPV28T)</data><time spdb="pcs_east">DIM_OF(\PCBPV28T)</time></field>    </b_field_pol_probe>        
+    <b_field_pol_probe id='28'> <field> <data spdb="pcs_east">DATA(\PCBPV29T)</data><time spdb="pcs_east">DIM_OF(\PCBPV29T)</time></field>    </b_field_pol_probe>
+    <b_field_pol_probe id='29'> <field> <data spdb="pcs_east">DATA(\PCBPV30T)</data><time spdb="pcs_east">DIM_OF(\PCBPV30T)</time></field>    </b_field_pol_probe>        
+    <b_field_pol_probe id='30'> <field> <data spdb="pcs_east">DATA(\PCBPL1T )</data><time spdb="pcs_east">DIM_OF(\PCBPL1T )</time></field>    </b_field_pol_probe>
+    <b_field_pol_probe id='31'> <field> <data spdb="pcs_east">DATA(\PCBPL2T )</data><time spdb="pcs_east">DIM_OF(\PCBPL2T )</time></field>    </b_field_pol_probe>       
+    <b_field_pol_probe id='32'> <field> <data spdb="pcs_east">DATA(\PCBPL3T )</data><time spdb="pcs_east">DIM_OF(\PCBPL3T )</time></field>    </b_field_pol_probe>
+    <b_field_pol_probe id='33'> <field> <data spdb="pcs_east">DATA(\PCBPL4T )</data><time spdb="pcs_east">DIM_OF(\PCBPL4T )</time></field>    </b_field_pol_probe>        
+    <b_field_pol_probe id='34'> <field> <data spdb="pcs_east">DATA(\PCBPL5T )</data><time spdb="pcs_east">DIM_OF(\PCBPL5T )</time></field>    </b_field_pol_probe>
+    <b_field_pol_probe id='35'> <field> <data spdb="pcs_east">DATA(\PCBPL6T )</data><time spdb="pcs_east">DIM_OF(\PCBPL6T )</time></field>    </b_field_pol_probe>        
+    <b_field_pol_probe id='36'> <field> <data spdb="pcs_east">DATA(\PCBPL7T )</data><time spdb="pcs_east">DIM_OF(\PCBPL7T )</time></field>    </b_field_pol_probe>
+    <b_field_pol_probe id='37'> <field> <data spdb="pcs_east">DATA(\PCBPL8T )</data><time spdb="pcs_east">DIM_OF(\PCBPL8T )</time></field>    </b_field_pol_probe>  
+
+                                                                    
+    <flux_loop  id='0' > <flux>  <data  spdb="pcs_east" >DATA(\PCFL1 )</data>   <time spdb="pcs_east">DIM_OF(\PCFL1 )</time>  </flux>   </flux_loop>
+    <flux_loop  id='1' > <flux>  <data  spdb="pcs_east" >DATA(\PCFL2 )</data>   <time spdb="pcs_east">DIM_OF(\PCFL2 )</time>  </flux>   </flux_loop>     
+    <flux_loop  id='2' > <flux>  <data  spdb="pcs_east" >DATA(\PCFL3 )</data>   <time spdb="pcs_east">DIM_OF(\PCFL3 )</time>  </flux>   </flux_loop>
+    <flux_loop  id='3' > <flux>  <data  spdb="pcs_east" >DATA(\PCFL4 )</data>   <time spdb="pcs_east">DIM_OF(\PCFL4 )</time>  </flux>   </flux_loop>       
+    <flux_loop  id='4' > <flux>  <data  spdb="pcs_east" >DATA(\PCFL5 )</data>   <time spdb="pcs_east">DIM_OF(\PCFL5 )</time>  </flux>   </flux_loop>
+    <flux_loop  id='5' > <flux>  <data  spdb="pcs_east" >DATA(\PCFL6 )</data>   <time spdb="pcs_east">DIM_OF(\PCFL6 )</time>  </flux>   </flux_loop>      
+    <flux_loop  id='6' > <flux>  <data  spdb="pcs_east" >DATA(\PCFL7 )</data>   <time spdb="pcs_east">DIM_OF(\PCFL7 )</time>  </flux>   </flux_loop>
+    <flux_loop  id='7' > <flux>  <data  spdb="pcs_east" >DATA(\PCFL8 )</data>   <time spdb="pcs_east">DIM_OF(\PCFL8 )</time>  </flux>   </flux_loop>      
+    <flux_loop  id='8' > <flux>  <data  spdb="pcs_east" >DATA(\PCFL9 )</data>   <time spdb="pcs_east">DIM_OF(\PCFL9 )</time>  </flux>   </flux_loop>
+    <flux_loop  id='9' > <flux>  <data  spdb="pcs_east" >DATA(\PCFL10)</data>   <time spdb="pcs_east">DIM_OF(\PCFL10)</time>  </flux>   </flux_loop>      
+    <flux_loop  id='10'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL11)</data>   <time spdb="pcs_east">DIM_OF(\PCFL11)</time>  </flux>   </flux_loop>
+    <flux_loop  id='11'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL12)</data>   <time spdb="pcs_east">DIM_OF(\PCFL12)</time>  </flux>   </flux_loop>   
+    <flux_loop  id='12'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL13)</data>   <time spdb="pcs_east">DIM_OF(\PCFL13)</time>  </flux>   </flux_loop>
+    <flux_loop  id='13'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL14)</data>   <time spdb="pcs_east">DIM_OF(\PCFL14)</time>  </flux>   </flux_loop>    
+    <flux_loop  id='14'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL15)</data>   <time spdb="pcs_east">DIM_OF(\PCFL15)</time>  </flux>   </flux_loop>
+    <flux_loop  id='15'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL16)</data>   <time spdb="pcs_east">DIM_OF(\PCFL16)</time>  </flux>   </flux_loop>      
+    <flux_loop  id='16'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL17)</data>   <time spdb="pcs_east">DIM_OF(\PCFL17)</time>  </flux>   </flux_loop>
+    <flux_loop  id='17'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL18)</data>   <time spdb="pcs_east">DIM_OF(\PCFL18)</time>  </flux>   </flux_loop>      
+    <flux_loop  id='18'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL19)</data>   <time spdb="pcs_east">DIM_OF(\PCFL19)</time>  </flux>   </flux_loop>
+    <flux_loop  id='19'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL20)</data>   <time spdb="pcs_east">DIM_OF(\PCFL20)</time>  </flux>   </flux_loop>      
+    <flux_loop  id='20'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL21)</data>   <time spdb="pcs_east">DIM_OF(\PCFL21)</time>  </flux>   </flux_loop>
+    <flux_loop  id='21'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL22)</data>   <time spdb="pcs_east">DIM_OF(\PCFL22)</time>  </flux>   </flux_loop>      
+    <flux_loop  id='22'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL23)</data>   <time spdb="pcs_east">DIM_OF(\PCFL23)</time>  </flux>   </flux_loop>
+    <flux_loop  id='23'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL24)</data>   <time spdb="pcs_east">DIM_OF(\PCFL24)</time>  </flux>   </flux_loop>      
+    <flux_loop  id='24'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL25)</data>   <time spdb="pcs_east">DIM_OF(\PCFL25)</time>  </flux>   </flux_loop>
+    <flux_loop  id='25'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL26)</data>   <time spdb="pcs_east">DIM_OF(\PCFL26)</time>  </flux>   </flux_loop>     
+    <flux_loop  id='26'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL27)</data>   <time spdb="pcs_east">DIM_OF(\PCFL27)</time>  </flux>   </flux_loop>
+    <flux_loop  id='27'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL28)</data>   <time spdb="pcs_east">DIM_OF(\PCFL28)</time>  </flux>   </flux_loop>    
+    <flux_loop  id='28'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL29)</data>   <time spdb="pcs_east">DIM_OF(\PCFL29)</time>  </flux>   </flux_loop>
+    <flux_loop  id='29'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL30)</data>   <time spdb="pcs_east">DIM_OF(\PCFL30)</time>  </flux>   </flux_loop>    
+    <flux_loop  id='30'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL31)</data>   <time spdb="pcs_east">DIM_OF(\PCFL31)</time>  </flux>   </flux_loop>
+    <flux_loop  id='31'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL32)</data>   <time spdb="pcs_east">DIM_OF(\PCFL32)</time>  </flux>   </flux_loop>    
+    <flux_loop  id='32'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL33)</data>   <time spdb="pcs_east">DIM_OF(\PCFL33)</time>  </flux>   </flux_loop>
+    <flux_loop  id='33'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL34)</data>   <time spdb="pcs_east">DIM_OF(\PCFL34)</time>  </flux>   </flux_loop>     
+    <flux_loop  id='34'> <flux>  <data  spdb="pcs_east" >DATA(\PCFL35)</data>   <time spdb="pcs_east">DIM_OF(\PCFL35)</time>  </flux>   </flux_loop>  
+</magnetics>

@@ -4,12 +4,17 @@
   "python.testing.pytestEnabled": false,
   "python.testing.nosetestsEnabled": false,
   "python.testing.promptToConfigure": false,
- 
-  "cSpell.words": [
-    "fytok",
-    "spdm"
-  ],
-  "python.analysis.typeCheckingMode": "off",
- 
 
+  "cSpell.words": ["fytok", "spdm"],
+  "python.analysis.typeCheckingMode": "off",
+  "python.autoComplete.extraPaths": [
+    "/home/salmon/workspace/fytok/SpDB/python",
+    "/home/salmon/workspace/fytok/python",
+    "/home/salmon/workspace/fytok_modules/python"
+  ],
+  "python.analysis.extraPaths": [
+    "/home/salmon/workspace/fytok/SpDB/python",
+    "/home/salmon/workspace/fytok/python",
+    "/home/salmon/workspace/fytok_modules/python"
+  ]
 }

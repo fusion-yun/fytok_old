@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ec_launchers>
+    <ids_properties>
+        <title>Electron Cyclotron Resonance Heating/Current Drive (ECRH/ECCD) System</title>
+        <url>http://202.127.205.54/wiki/index.php/Electron_Cyclotron_Resonance_Heating/Current_Drive_(ECRH/ECCD)_System </url>
+        <comment>  
+            Basic Information
+            Description: Electron Cyclotron Resonance Heating/Current Drive (ECRH/ECCD) System
+
+            State: Active
+
+            Responsible person(s): Handong XU (ext: 63332), Xiaojie WANG(ext: 66514), Jian ZHANG
+
+            Group leader: Fukun LIU (ext: 61609)
+
+            Location: Horizontal port M
+
+            Specifications
+            Frequency: 140GHz
+
+            Maximum power: 1MW with a goal of 100s for each Gyrotron system
+
+            Adjustable injection angle range of wave beam: Poloidal angle: ±5 °~ ∓25 °, Toroidal angle: ±25°
+
+            Data Production
+            Raw data
+            Tree: EAST
+            Nodes:
+            ECRH1 (1-D, output of detector for injected power measurement of No.1 gyrotron, Unit: V)
+            ECRH2 (1-D, output of detector for injected power measurement of No.2 gyrotron, Unit: V)
+            ECRH3 (1-D, output of detector for injected power measurement of No.3 gyrotron, Unit: V)
+            ECRH4 (1-D, output of detector for injected power measurement of No.4 gyrotron, Unit: V)
+            Processed data
+            Tree: Analysis
+            Sub Tree: ECRH_EAST
+            Nodes:
+            PECRH1I (1-D, injected power of No.1 gyrotron, Unit: kW)
+            PECRH2I (1-D, injected power of No.2 gyrotron, Unit: kW)
+            PECRH3I (1-D, injected power of No.3 gyrotron, Unit: kW)
+            PECRH4I (1-D, injected power of No.4 gyrotron, Unit: kW)
+        
+            
+            mode	Identifier for the main plasma wave mode excited by the EC beam. For the ordinary mode (O-mode), mode=1. For the extraordinary mode (X-mode), mode=-1 {constant}
+
+
+        </comment>
+    </ids_properties>    
+    <beam id="0" ><name>PECRH1I</name> <identifier> PECRH1I</identifier><frequency>140E9 </frequency><mode dtype='int'>1</mode><launching_position><r dtype="float"></r><z float="float">0.0</z><phi dtype="float"></phi></launching_position></beam>
+    <beam id="1" ><name>PECRH2I</name> <identifier> PECRH2I</identifier><frequency>140E9 </frequency><mode dtype='int'>1</mode><launching_position><r dtype="float"></r><z float="float">0.0</z><phi dtype="float"></phi></launching_position></beam>
+    <beam id="2" ><name>PECRH3I</name> <identifier> PECRH3I</identifier><frequency>140E9 </frequency><mode dtype='int'>1</mode><launching_position><r dtype="float"></r><z float="float">0.0</z><phi dtype="float"></phi></launching_position></beam>
+    <beam id="3" ><name>PECRH4I</name> <identifier> PECRH4I</identifier><frequency>140E9 </frequency><mode dtype='int'>1</mode><launching_position><r dtype="float"></r><z float="float">0.0</z><phi dtype="float"></phi></launching_position></beam>
+
+
+</ec_launchers>    
+    
+
+ 

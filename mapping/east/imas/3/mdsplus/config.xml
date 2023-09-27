@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mapping xmlns:xi="http://www.w3.org/2001/XInclude">
+    
+    <spdb prefix="mdsplus://127.0.0.1/mdsplus/~t" shot='0'   >
+        <entry id="east"                     > {prefix}?shot={shot}&amp;tree_name=east            </entry>
+        <entry id="pcs_east"                 > {prefix}?shot={shot}&amp;tree_name=pcs_east        </entry>
+        <entry id="efit_east"  enable='false'> {prefix}?shot={shot}&amp;tree_name=efit_east       </entry>
+    </spdb>
+
+    <xi:include href="equilibrium.xml" />
+    <xi:include href="magnetics_pcs.xml" />
+    <xi:include href="pf_active_pcs.xml" />
+    <xi:include href="tf.xml" />
+    <xi:include href="interferometer.xml" />
+
+</mapping>

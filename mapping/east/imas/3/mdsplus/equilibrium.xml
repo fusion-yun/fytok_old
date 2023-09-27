@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<equilibrium xmlns:spdb="http://fusionyun.org/schema/">
+    <ids_properties>
+        <homogeneous_time dtype="int">0</homogeneous_time>
+    </ids_properties>
+    <time spdb="efit_east"> DATA(\TIME)</time>
+    <vacuum_toroidal_field>
+            <r0 spdb="efit_east">DATA(\RBCENT)[0]</r0>                
+            <b0 spdb="efit_east">DATA(\BCENTR)</b0>
+            <fvac spdb="efit_east">DATA(\FPOL)[0,*]</fvac>
+    </vacuum_toroidal_field>
+
+    <time_slice id="*">
+        <time spdb="efit_east"> DATA(\TIME)[{time_slice}]</time>
+
+        <vacuum_toroidal_field>
+            <!-- only For FyTok, add by Salmon 20230912 -->
+            <r0 spdb="efit_east">DATA(\RBCENT)[{time_slice}]</r0>                
+            <b0 spdb="efit_east">DATA(\BCENTR)[{time_slice}]</b0>
+        </vacuum_toroidal_field>
+
+        <boundary>
+            <type>1</type>
+            <outline>
+                <r spdb="efit_east">DATA(\BDRY)[0, 0: DATA(\NBDRY)[{time_slice}]-1,{time_slice}]</r>
+                <z spdb="efit_east">DATA(\BDRY)[1, 0: DATA(\NBDRY)[{time_slice}]-1,{time_slice}]</z>
+            </outline>
+            <!-- <psi_norm dtype="NONE">??</psi_norm> -->
+            <psi spdb="efit_east">DATA(\SSIBRY)</psi>
+
+            <geometric_axis>
+                <r spdb="efit_east">DATA(\RSURF)[{time_slice}]</r>
+                <z spdb="efit_east">DATA(\ZSURF)[{time_slice}]</z>
+            </geometric_axis>
+
+            <!-- <minor_radius dtype="NONE">??</minor_radius> -->
+
+            <elongation spdb="efit_east">DATA(\KAPPA[{time_slice}])</elongation>
+            <!-- <elongation_upper dtype="NONE">??</elongation_upper> -->
+            <!-- <elongation_lower dtype="NONE">??</elongation_lower> -->
+
+            <!-- <triangularity dtype="NONE">??</triangularity> -->
+            <triangularity_lower spdb="efit_east">DATA(\TRIBOT[{time_slice}])</triangularity_lower>
+            <triangularity_upper spdb="efit_east">DATA(\TRITOP[{time_slice}])</triangularity_upper>
+
+            <!-- <x_point>
+                <r dtype="NONE">??</r>
+                <z dtype="NONE">??</z>
+            </x_point>
+
+            <strike_point>
+                <r dtype="NONE">??</r>
+                <z dtype="NONE">??</z>
+            </strike_point>
+
+            <active_limiter_point>
+                <r dtype="NONE">??</r>
+                <z dtype="NONE">??</z>
+            </active_limiter_point> -->
+
+        </boundary>
+
+        <coordinate_system>
+            <grid_type>
+                <name>rectangular</name>
+                <index dtype='int'>1</index>
+                <description>Cylindrical R,Z ala eqdsk (R=dim1, Z=dim2). 
+                    In this case the position arrays should not be filled since 
+                    they are redundant with grid/dim1 and dim2.</description>
+            </grid_type> 
+            <grid>
+                <dim1 spdb="efit_east">DATA(\R)[*]</dim1>
+                <dim2 spdb="efit_east">DATA(\Z)[*]</dim2>
+            </grid>
+            <!-- <r spdb="efit_east">DATA(\R)</r>
+            <z spdb="efit_east">DATA(\Z)</z> -->
+        </coordinate_system>                
+
+        <global_quantities>
+            <beta_pol spdb="efit_east">DATA(\BETAP)[{time_slice}]</beta_pol>
+            <beta_tor spdb="efit_east">DATA(\BETAT)[{time_slice}]</beta_tor>
+            <beta_normal spdb="efit_east">DATA(\BETAN)[{time_slice}]</beta_normal>
+
+            <ip spdb="efit_east">DATA(\EFIT_MFILE:PLASMA)[{time_slice}]</ip>
+
+            <li_3 spdb="efit_east">DATA(\LI)[{time_slice}]</li_3>
+
+            <volume spdb="efit_east">DATA(\VOLUME)[{time_slice}]</volume>
+
+            <psi_axis spdb="efit_east">DATA(\SSIMAG)[{time_slice}]</psi_axis>
+
+            <psi_boundary spdb="efit_east">DATA(\SSIBRY)[{time_slice}]</psi_boundary>
+
+            <magnetic_axis>
+                <r spdb="efit_east">DATA(\RMAXIS)[{time_slice}]</r>
+                <z spdb="efit_east">DATA(\ZMAXIS)[{time_slice}]</z>
+                <b_field_tor spdb="efit_east">DATA(\BCENTR)[{time_slice}]</b_field_tor>
+            </magnetic_axis>
+
+            <q_axis spdb="efit_east">DATA(\Q0)[{time_slice}]</q_axis>
+            <q_95 spdb="efit_east">DATA(\Q95)[{time_slice}]</q_95>
+            <q_min>
+                <value spdb="efit_east">DATA(\QL)[{time_slice}]</value>
+                <rho_tor_norm spdb="efit_east">DATA(\AMINOR)[{time_slice}]</rho_tor_norm> <!-- need comment -->
+            </q_min>
+
+            <energy_mhd spdb="efit_east">DATA(\WMHD)[{time_slice}]</energy_mhd>
+        </global_quantities>
+
+        <profiles_1d>
+            <!-- <psi spdb="efit_east">DATA(\PSIREF)[{time_slice}]</psi> -->
+            <!-- <phi dtype="NONE">??</phi> -->
+            <!-- <pressure dtype="NONE" spdb="efit_east">DATA(\PPRIME)[*,{time_slice}]</pressure> -->
+
+            <f spdb="efit_east">DATA(\FPOL)[*,{time_slice}]</f>
+            <dpressure_dpsi spdb="efit_east">DATA(\PPRIME)[*,{time_slice}]</dpressure_dpsi>
+            <f_df_dpsi spdb="efit_east">DATA(\FFPRIM)[*,{time_slice}]</f_df_dpsi>
+
+            <!-- <j_tor dtype="NONE">???</j_tor> -->
+            <!-- <j_parallel dtype="NONE">???</j_parallel> -->
+
+            <q spdb="efit_east">DATA(\QPSI)[*,{time_slice}]</q>
+
+            <!-- <geometric_axis>
+                <r dtype="NONE" /> 
+                <z dtype="NONE" /> 
+            </geometric_axis> -->
+
+            <!-- <magnetic_shear dtype="NONE" />  -->
+            <!-- <r_inboard dtype="NONE" />  -->
+            <!-- <r_outboard dtype="NONE" />  -->
+            <!-- <rho_tor dtype="NONE" />  -->
+            <!-- <rho_tor_norm dtype="NONE" />  -->
+            <!-- <dpsi_drho_tor dtype="NONE" />  -->
+            
+            <!-- <elongation dtype="NONE" />  -->
+            <!-- <triangularity_upper dtype="NONE" />  -->
+            <!-- <triangularity_lower dtype="NONE" />  -->
+
+            <!-- <volume spdb="efit_east">DATA(\VOLUME)[*,{time_slice}]</volume>    -->
+            <!-- <rho_volume_norm dtype="NONE" />  -->
+            <!-- <dvolume_dpsi dtype="NONE" />  -->
+            <!-- <dvolume_drho_tor dtype="NONE" />  -->
+
+            <!-- <area dtype="NONE" />  -->
+            
+            <!-- <b_field_average dtype="NONE" />  -->
+            <!-- <b_field_min dtype="NONE" />  -->
+            <!-- <b_field_max dtype="NONE" />  -->
+            <!-- <beta_pol dtype="NONE" />  -->
+            <!-- <mass_density dtype="NONE" />  -->
+
+
+        </profiles_1d>
+
+        <profiles_2d id="0">   
+            <grid>
+                <dim1 spdb="efit_east">DATA(\R)[*]</dim1>
+                <dim2 spdb="efit_east">DATA(\Z)[*]</dim2>
+            </grid>
+
+            <!-- <r dtype="NONE"/> -->
+
+            <!-- <z dtype="NONE"/> -->
+
+            <psi spdb="efit_east">DATA(\PSIRZ)[*,*,{time_slice}]</psi>
+
+            <!-- <theta dtype="NONE"/> -->
+
+            <!-- <phi dtype="NONE"/> -->
+            
+            <!-- <j_tor dtype="NONE"/> -->
+
+            <!-- <j_parallel dtype="NONE"/> -->
+
+            <!-- <b_field_r dtype="NONE"/> -->
+
+            <!-- <b_field_z dtype="NONE"/> -->
+
+            <!-- <b_field_tor dtype="NONE"/> -->
+
+        </profiles_2d>
+    
+    </time_slice>
+</equilibrium>

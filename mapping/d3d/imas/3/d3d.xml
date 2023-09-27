@@ -1,0 +1,4338 @@
+<mapping>
+  <wall>
+    <description_2d id="0">
+      
+     
+      <vessel>
+        <unit id="0">
+          <name>unit1</name>
+          <element id="0">
+            <outline>
+              <r dtype="float" shape="4">0.9270999999999999, 0.9270999999999999, 0.9589, 0.9589</r>
+              <z dtype="float" shape="4">0.0, 0.424, 0.424, 0.0</z>
+            </outline>
+          </element>
+        </unit>
+        <unit id="1">
+          <name>unit2</name>
+          <element id="0">
+            <outline>
+              <r dtype="float" shape="4">0.9270999999999999, 0.9270999999999999, 0.9589, 0.9589</r>
+              <z dtype="float" shape="4">0.42400000000000004, 0.848, 0.848, 0.42400000000000004</z>
+            </outline>
+          </element>
+        </unit>
+        <unit id="2">
+          <name>unit3</name>
+          <element id="0">
+            <outline>
+              <r dtype="float" shape="4">0.9270999999999999, 0.9270999999999999, 0.9589, 0.9589</r>
+              <z dtype="float" shape="4">0.8479000000000001, 1.2719, 1.2719, 0.8479000000000001</z>
+            </outline>
+          </element>
+        </unit>
+        <unit id="3">
+          <name>unit4</name>
+          <element id="0">
+            <outline>
+              <r dtype="float" shape="4">0.94295, 0.94295, 1.11325, 1.11325</r>
+              <z dtype="float" shape="4">1.33015, 1.38405, 1.38405, 1.33015</z>
+            </outline>
+          </element>
+        </unit>
+        <unit id="4">
+          <name>unit5</name>
+          <element id="0">
+            <outline>
+              <r dtype="float" shape="4">1.1133, 1.1133, 1.4023, 1.4023</r>
+              <z dtype="float" shape="4">1.42315, 1.46125, 1.46125, 1.42315</z>
+            </outline>
+          </element>
+        </unit>
+        <unit id="5">
+          <name>unit6</name>
+          <element id="0">
+            <outline>
+              <r dtype="float" shape="4">1.4022999999999999, 1.4022999999999999, 1.6913, 1.6913</r>
+              <z dtype="float" shape="4">1.42315, 1.46125, 1.46125, 1.42315</z>
+            </outline>
+          </element>
+        </unit>
+        <unit id="6">
+          <name>unit7</name>
+          <element id="0">
+            <outline>
+              <r dtype="float" shape="4">1.6912500000000001, 1.6912500000000001, 1.94035, 1.94035</r>
+              <z dtype="float" shape="4">1.317, 1.3659999999999999, 1.3659999999999999, 1.317</z>
+            </outline>
+          </element>
+        </unit>
+        <unit id="7">
+          <name>unit8</name>
+          <element id="0">
+            <outline>
+              <r dtype="float" shape="4">1.9403500000000002, 1.9403500000000002, 2.1894500000000003, 2.1894500000000003</r>
+              <z dtype="float" shape="4">1.1155, 1.1644999999999999, 1.1644999999999999, 1.1155</z>
+            </outline>
+          </element>
+        </unit>
+        <unit id="8">
+          <name>unit9</name>
+          <element id="0">
+            <outline>
+              <r dtype="float" shape="4">2.296523102116193, 2.168876897883807, 2.210076897883807, 2.337723102116193</r>
+              <z dtype="float" shape="4">0.779228906369781, 1.0892289063697809, 0.9891710936302188, 0.6791710936302189</z>
+            </outline>
+          </element>
+        </unit>
+        <unit id="9">
+          <name>unit10</name>
+          <element id="0">
+            <outline>
+              <r dtype="float" shape="4">2.424123102116193, 2.296476897883807, 2.337676897883807, 2.465323102116193</r>
+              <z dtype="float" shape="4">0.46922890636978104, 0.7792289063697811, 0.679171093630219, 0.369171093630219</z>
+            </outline>
+          </element>
+        </unit>
+        <unit id="10">
+          <name>unit11</name>
+          <element id="0">
+            <outline>
+              <r dtype="float" shape="4">2.4320999999999997, 2.4320999999999997, 2.4575, 2.4575</r>
+              <z dtype="float" shape="4">0.2884, 0.4192, 0.4192, 0.2884</z>
+            </outline>
+          </element>
+        </unit>
+        <unit id="11">
+          <name>unit12</name>
+          <element id="0">
+            <outline>
+              <r dtype="float" shape="4">2.4320999999999997, 2.4320999999999997, 2.4575, 2.4575</r>
+              <z dtype="float" shape="4">0.0, 0.2884, 0.2884, 0.0</z>
+            </outline>
+          </element>
+        </unit>
+        <unit id="12">
+          <name>unit13</name>
+          <element id="0">
+            <outline>
+              <r dtype="float" shape="4">0.9270999999999999, 0.9270999999999999, 0.9589, 0.9589</r>
+              <z dtype="float" shape="4">-0.424, 0.0, 0.0, -0.424</z>
+            </outline>
+          </element>
+        </unit>
+        <unit id="13">
+          <name>unit14</name>
+          <element id="0">
+            <outline>
+              <r dtype="float" shape="4">0.9270999999999999, 0.9270999999999999, 0.9589, 0.9589</r>
+              <z dtype="float" shape="4">-0.848, -0.42400000000000004, -0.42400000000000004, -0.848</z>
+            </outline>
+          </element>
+        </unit>
+        <unit id="14">
+          <name>unit15</name>
+          <element id="0">
+            <outline>
+              <r dtype="float" shape="4">0.9270999999999999, 0.9270999999999999, 0.9589, 0.9589</r>
+              <z dtype="float" shape="4">-1.2719, -0.8479000000000001, -0.8479000000000001, -1.2719</z>
+            </outline>
+          </element>
+        </unit>
+        <unit id="15">
+          <name>unit16</name>
+          <element id="0">
+            <outline>
+              <r dtype="float" shape="4">0.94295, 0.94295, 1.11325, 1.11325</r>
+              <z dtype="float" shape="4">-1.38405, -1.33015, -1.33015, -1.38405</z>
+            </outline>
+          </element>
+        </unit>
+        <unit id="16">
+          <name>unit17</name>
+          <element id="0">
+            <outline>
+              <r dtype="float" shape="4">1.1133000000000002, 1.1133000000000002, 1.4815, 1.4815</r>
+              <z dtype="float" shape="4">-1.46125, -1.42315, -1.42315, -1.46125</z>
+            </outline>
+          </element>
+        </unit>
+        <unit id="17">
+          <name>unit18</name>
+          <element id="0">
+            <outline>
+              <r dtype="float" shape="4">1.4814, 1.4814, 1.8496, 1.8496</r>
+              <z dtype="float" shape="4">-1.46125, -1.42315, -1.42315, -1.46125</z>
+            </outline>
+          </element>
+        </unit>
+        <unit id="18">
+          <name>unit19</name>
+          <element id="0">
+            <outline>
+              <r dtype="float" shape="4">1.84965, 1.84965, 2.01955, 2.01955</r>
+              <z dtype="float" shape="4">-1.3710499999999999, -1.31195, -1.31195, -1.3710499999999999</z>
+            </outline>
+          </element>
+        </unit>
+        <unit id="19">
+          <name>unit20</name>
+          <element id="0">
+            <outline>
+              <r dtype="float" shape="4">2.0195499999999997, 2.0195499999999997, 2.18945, 2.18945</r>
+              <z dtype="float" shape="4">-1.1695499999999999, -1.11045, -1.11045, -1.1695499999999999</z>
+            </outline>
+          </element>
+        </unit>
+        <unit id="20">
+          <name>unit21</name>
+          <element id="0">
+            <outline>
+              <r dtype="float" shape="4">2.168876897883807, 2.296523102116193, 2.337723102116193, 2.210076897883807</r>
+              <z dtype="float" shape="4">-1.0892289063697809, -0.779228906369781, -0.6791710936302189, -0.9891710936302189</z>
+            </outline>
+          </element>
+        </unit>
+        <unit id="21">
+          <name>unit22</name>
+          <element id="0">
+            <outline>
+              <r dtype="float" shape="4">2.296476897883807, 2.424123102116193, 2.465323102116193, 2.337676897883807</r>
+              <z dtype="float" shape="4">-0.779228906369781, -0.46922890636978104, -0.369171093630219, -0.6791710936302191</z>
+            </outline>
+          </element>
+        </unit>
+        <unit id="22">
+          <name>unit23</name>
+          <element id="0">
+            <outline>
+              <r dtype="float" shape="4">2.4320999999999997, 2.4320999999999997, 2.4575, 2.4575</r>
+              <z dtype="float" shape="4">-0.4192, -0.2884, -0.2884, -0.4192</z>
+            </outline>
+          </element>
+        </unit>
+        <unit id="23">
+          <name>unit24</name>
+          <element id="0">
+            <outline>
+              <r dtype="float" shape="4">2.4320999999999997, 2.4320999999999997, 2.4575, 2.4575</r>
+              <z dtype="float" shape="4">-0.2884, 0.0, 0.0, -0.2884</z>
+            </outline>
+          </element>
+        </unit>
+      </vessel>
+    </description_2d>
+  </wall>
+  <pf_active>
+    <coil id="0">
+      <name>PF0</name>
+      <identifier>PF0</identifier>
+      <element id="0">
+        <geometry>
+          <geometry_type>2</geometry_type>
+          <rectangle>
+            <r>0.8608</r>
+            <z>0.1683</z>
+            <width>0.0508</width>
+            <height>0.32106</height>
+          </rectangle>
+        </geometry>
+        <turns_with_sign>1</turns_with_sign>
+      </element>
+    </coil>
+    <coil id="1">
+      <name>PF1</name>
+      <identifier>PF1</identifier>
+      <element id="0">
+        <geometry>
+          <geometry_type>2</geometry_type>
+          <rectangle>
+            <r>0.8614</r>
+            <z>0.5081</z>
+            <width>0.0508</width>
+            <height>0.32106</height>
+          </rectangle>
+        </geometry>
+        <turns_with_sign>1</turns_with_sign>
+      </element>
+    </coil>
+    <coil id="2">
+      <name>PF2</name>
+      <identifier>PF2</identifier>
+      <element id="0">
+        <geometry>
+          <geometry_type>2</geometry_type>
+          <rectangle>
+            <r>0.8628</r>
+            <z>0.8491</z>
+            <width>0.0508</width>
+            <height>0.32106</height>
+          </rectangle>
+        </geometry>
+        <turns_with_sign>1</turns_with_sign>
+      </element>
+    </coil>
+    <coil id="3">
+      <name>PF3</name>
+      <identifier>PF3</identifier>
+      <element id="0">
+        <geometry>
+          <geometry_type>2</geometry_type>
+          <rectangle>
+            <r>0.8611</r>
+            <z>1.1899</z>
+            <width>0.0508</width>
+            <height>0.32106</height>
+          </rectangle>
+        </geometry>
+        <turns_with_sign>1</turns_with_sign>
+      </element>
+    </coil>
+    <coil id="4">
+      <name>PF4</name>
+      <identifier>PF4</identifier>
+      <element id="0">
+        <geometry>
+          <geometry_type>2</geometry_type>
+          <rectangle>
+            <r>1.0041</r>
+            <z>1.5169</z>
+            <width>0.1392</width>
+            <height>0.1194</height>
+          </rectangle>
+        </geometry>
+        <turns_with_sign>1</turns_with_sign>
+      </element>
+    </coil>
+    <coil id="5">
+      <name>PF5</name>
+      <identifier>PF5</identifier>
+      <element id="0">
+        <geometry>
+          <geometry_type>2</geometry_type>
+          <rectangle>
+            <r>2.6124</r>
+            <z>0.4376</z>
+            <width>0.1732</width>
+            <height>0.1946</height>
+          </rectangle>
+        </geometry>
+        <turns_with_sign>1</turns_with_sign>
+      </element>
+    </coil>
+    <coil id="6">
+      <name>PF6</name>
+      <identifier>PF6</identifier>
+      <element id="0">
+        <geometry>
+          <geometry_type>2</geometry_type>
+          <rectangle>
+            <r>2.3733</r>
+            <z>1.1171</z>
+            <width>0.188</width>
+            <height>0.1692</height>
+          </rectangle>
+        </geometry>
+        <turns_with_sign>1</turns_with_sign>
+      </element>
+    </coil>
+    <coil id="7">
+      <name>PF7</name>
+      <identifier>PF7</identifier>
+      <element id="0">
+        <geometry>
+          <geometry_type>2</geometry_type>
+          <rectangle>
+            <r>1.2518</r>
+            <z>1.6019</z>
+            <width>0.2349</width>
+            <height>0.0851</height>
+          </rectangle>
+        </geometry>
+        <turns_with_sign>1</turns_with_sign>
+      </element>
+    </coil>
+    <coil id="8">
+      <name>PF8</name>
+      <identifier>PF8</identifier>
+      <element id="0">
+        <geometry>
+          <geometry_type>2</geometry_type>
+          <rectangle>
+            <r>1.689</r>
+            <z>1.5874</z>
+            <width>0.1694</width>
+            <height>0.1331</height>
+          </rectangle>
+        </geometry>
+        <turns_with_sign>1</turns_with_sign>
+      </element>
+    </coil>
+    <coil id="9">
+      <name>PF9</name>
+      <identifier>PF9</identifier>
+      <element id="0">
+        <geometry>
+          <geometry_type>2</geometry_type>
+          <rectangle>
+            <r>0.8608</r>
+            <z>-0.1737</z>
+            <width>0.0508</width>
+            <height>0.32106</height>
+          </rectangle>
+        </geometry>
+        <turns_with_sign>1</turns_with_sign>
+      </element>
+    </coil>
+    <coil id="10">
+      <name>PF10</name>
+      <identifier>PF10</identifier>
+      <element id="0">
+        <geometry>
+          <geometry_type>2</geometry_type>
+          <rectangle>
+            <r>0.8607</r>
+            <z>-0.5135</z>
+            <width>0.0508</width>
+            <height>0.32106</height>
+          </rectangle>
+        </geometry>
+        <turns_with_sign>1</turns_with_sign>
+      </element>
+    </coil>
+    <coil id="11">
+      <name>PF11</name>
+      <identifier>PF11</identifier>
+      <element id="0">
+        <geometry>
+          <geometry_type>2</geometry_type>
+          <rectangle>
+            <r>0.8611</r>
+            <z>-0.8543</z>
+            <width>0.0508</width>
+            <height>0.32106</height>
+          </rectangle>
+        </geometry>
+        <turns_with_sign>1</turns_with_sign>
+      </element>
+    </coil>
+    <coil id="12">
+      <name>PF12</name>
+      <identifier>PF12</identifier>
+      <element id="0">
+        <geometry>
+          <geometry_type>2</geometry_type>
+          <rectangle>
+            <r>0.863</r>
+            <z>-1.1957</z>
+            <width>0.0508</width>
+            <height>0.32106</height>
+          </rectangle>
+        </geometry>
+        <turns_with_sign>1</turns_with_sign>
+      </element>
+    </coil>
+    <coil id="13">
+      <name>PF13</name>
+      <identifier>PF13</identifier>
+      <element id="0">
+        <geometry>
+          <geometry_type>2</geometry_type>
+          <rectangle>
+            <r>1.0025</r>
+            <z>-1.5169</z>
+            <width>0.1392</width>
+            <height>0.1194</height>
+          </rectangle>
+        </geometry>
+        <turns_with_sign>1</turns_with_sign>
+      </element>
+    </coil>
+    <coil id="14">
+      <name>PF14</name>
+      <identifier>PF14</identifier>
+      <element id="0">
+        <geometry>
+          <geometry_type>2</geometry_type>
+          <rectangle>
+            <r>2.6124</r>
+            <z>-0.4376</z>
+            <width>0.1732</width>
+            <height>0.1946</height>
+          </rectangle>
+        </geometry>
+        <turns_with_sign>1</turns_with_sign>
+      </element>
+    </coil>
+    <coil id="15">
+      <name>PF15</name>
+      <identifier>PF15</identifier>
+      <element id="0">
+        <geometry>
+          <geometry_type>2</geometry_type>
+          <rectangle>
+            <r>2.3834</r>
+            <z>-1.1171</z>
+            <width>0.188</width>
+            <height>0.1692</height>
+          </rectangle>
+        </geometry>
+        <turns_with_sign>1</turns_with_sign>
+      </element>
+    </coil>
+    <coil id="16">
+      <name>PF16</name>
+      <identifier>PF16</identifier>
+      <element id="0">
+        <geometry>
+          <geometry_type>2</geometry_type>
+          <rectangle>
+            <r>1.2524</r>
+            <z>-1.6027</z>
+            <width>0.2349</width>
+            <height>0.0851</height>
+          </rectangle>
+        </geometry>
+        <turns_with_sign>1</turns_with_sign>
+      </element>
+    </coil>
+    <coil id="17">
+      <name>PF17</name>
+      <identifier>PF17</identifier>
+      <element id="0">
+        <geometry>
+          <geometry_type>2</geometry_type>
+          <rectangle>
+            <r>1.6889</r>
+            <z>-1.578</z>
+            <width>0.1694</width>
+            <height>0.1331</height>
+          </rectangle>
+        </geometry>
+        <turns_with_sign>1</turns_with_sign>
+      </element>
+    </coil>
+    <coil id="18">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_0</name>
+        <identifier>OH0_0</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>0.0382</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="19">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_0</name>
+        <identifier>OH1_0</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>0.0382</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="20">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_1</name>
+        <identifier>OH1_1</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>0.1147</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="21">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_1</name>
+        <identifier>OH0_1</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>0.1147</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="22">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_2</name>
+        <identifier>OH0_2</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>0.1912</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="23">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_2</name>
+        <identifier>OH1_2</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>0.1912</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="24">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_3</name>
+        <identifier>OH1_3</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>0.2677</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="25">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_3</name>
+        <identifier>OH0_3</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>0.2677</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="26">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_4</name>
+        <identifier>OH0_4</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>0.3442</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="27">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_4</name>
+        <identifier>OH1_4</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>0.3442</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="28">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_5</name>
+        <identifier>OH1_5</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>0.4207</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="29">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_5</name>
+        <identifier>OH0_5</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>0.4207</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="30">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_6</name>
+        <identifier>OH0_6</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>0.4972</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="31">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_6</name>
+        <identifier>OH1_6</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>0.4972</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="32">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_7</name>
+        <identifier>OH1_7</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>0.5737</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="33">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_7</name>
+        <identifier>OH0_7</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>0.5737</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="34">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_8</name>
+        <identifier>OH0_8</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>0.6502</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="35">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_8</name>
+        <identifier>OH1_8</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>0.6502</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="36">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_9</name>
+        <identifier>OH1_9</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>0.7267</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="37">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_9</name>
+        <identifier>OH0_9</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>0.7267</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="38">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_10</name>
+        <identifier>OH0_10</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>0.8032</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="39">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_10</name>
+        <identifier>OH1_10</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>0.8032</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="40">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_11</name>
+        <identifier>OH1_11</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>0.8797</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="41">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_11</name>
+        <identifier>OH0_11</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>0.8797</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="42">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_12</name>
+        <identifier>OH0_12</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>0.9562</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="43">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_12</name>
+        <identifier>OH1_12</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>0.9562</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="44">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_13</name>
+        <identifier>OH1_13</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>1.0326</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="45">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_13</name>
+        <identifier>OH0_13</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>1.0326</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="46">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_14</name>
+        <identifier>OH0_14</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>1.1091</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="47">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_14</name>
+        <identifier>OH1_14</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>1.1091</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="48">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_15</name>
+        <identifier>OH1_15</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>1.1853</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="49">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_15</name>
+        <identifier>OH0_15</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>1.1853</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="50">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_16</name>
+        <identifier>OH0_16</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>1.2615</z>
+            <width>0.05867</width>
+            <height>0.07341</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="51">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_16</name>
+        <identifier>OH1_16</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>1.2615</z>
+            <width>0.05867</width>
+            <height>0.07341</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="52">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_17</name>
+        <identifier>OH1_17</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>1.3351</z>
+            <width>0.05867</width>
+            <height>0.07135</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="53">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_17</name>
+        <identifier>OH0_17</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>1.3351</z>
+            <width>0.05867</width>
+            <height>0.07135</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="54">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_18</name>
+        <identifier>OH0_18</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>1.4095</z>
+            <width>0.05867</width>
+            <height>0.07021</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="55">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_18</name>
+        <identifier>OH1_18</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>1.4095</z>
+            <width>0.05867</width>
+            <height>0.07021</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="56">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_19</name>
+        <identifier>OH1_19</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>1.4801</z>
+            <width>0.05867</width>
+            <height>0.06622</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="57">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_19</name>
+        <identifier>OH0_19</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>1.4801</z>
+            <width>0.05867</width>
+            <height>0.06622</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="58">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_20</name>
+        <identifier>OH0_20</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>1.5482</z>
+            <width>0.05867</width>
+            <height>0.0621</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="59">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_20</name>
+        <identifier>OH1_20</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>1.5482</z>
+            <width>0.05867</width>
+            <height>0.0621</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="60">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_21</name>
+        <identifier>OH1_21</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.69</r>
+            <z>1.6108</z>
+            <width>0.04953</width>
+            <height>0.05796</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="61">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_21</name>
+        <identifier>OH0_21</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7599</r>
+            <z>1.6108</z>
+            <width>0.04953</width>
+            <height>0.05796</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="62">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_22</name>
+        <identifier>OH0_22</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.695</r>
+            <z>1.6684</z>
+            <width>0.04953</width>
+            <height>0.0555</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="63">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_22</name>
+        <identifier>OH1_22</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7625</r>
+            <z>1.6684</z>
+            <width>0.04953</width>
+            <height>0.0555</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="64">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_23</name>
+        <identifier>OH1_23</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7025</r>
+            <z>1.7255</z>
+            <width>0.04953</width>
+            <height>0.05474</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="65">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_23</name>
+        <identifier>OH0_23</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7625</r>
+            <z>1.7255</z>
+            <width>0.04953</width>
+            <height>0.05474</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="66">
+      <name>OH2</name>
+      <identifier>OH2</identifier>
+      <element id="0">
+        <name>OH2_0</name>
+        <identifier>OH2_0</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.8792</r>
+            <z>1.7123</z>
+            <width>0.1138</width>
+            <height>0.0293</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="67">
+      <name>OH2</name>
+      <identifier>OH2</identifier>
+      <element id="0">
+        <name>OH2_1</name>
+        <identifier>OH2_1</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.8792</r>
+            <z>1.7437</z>
+            <width>0.1138</width>
+            <height>0.0293</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="68">
+      <name>OH2</name>
+      <identifier>OH2</identifier>
+      <element id="0">
+        <name>OH2_2</name>
+        <identifier>OH2_2</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.8792</r>
+            <z>1.7751</z>
+            <width>0.1138</width>
+            <height>0.0293</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="69">
+      <name>OH2</name>
+      <identifier>OH2</identifier>
+      <element id="0">
+        <name>OH2_3</name>
+        <identifier>OH2_3</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.8792</r>
+            <z>1.8064</z>
+            <width>0.1138</width>
+            <height>0.0293</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="70">
+      <name>OH5</name>
+      <identifier>OH5</identifier>
+      <element id="0">
+        <name>OH5_0</name>
+        <identifier>OH5_0</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.9525</r>
+            <z>1.9458</z>
+            <width>0.0587</width>
+            <height>0.0559</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="71">
+      <name>OH5</name>
+      <identifier>OH5</identifier>
+      <element id="0">
+        <name>OH5_1</name>
+        <identifier>OH5_1</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>1.0124</r>
+            <z>1.9585</z>
+            <width>0.0587</width>
+            <height>0.0559</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="72">
+      <name>OH5</name>
+      <identifier>OH5</identifier>
+      <element id="0">
+        <name>OH5_2</name>
+        <identifier>OH5_2</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>1.0991</r>
+            <z>1.9855</z>
+            <width>0.0587</width>
+            <height>0.0744</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="73">
+      <name>OH5</name>
+      <identifier>OH5</identifier>
+      <element id="0">
+        <name>OH5_3</name>
+        <identifier>OH5_3</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>1.1641</r>
+            <z>1.9855</z>
+            <width>0.0587</width>
+            <height>0.0744</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="74">
+      <name>OH5</name>
+      <identifier>OH5</identifier>
+      <element id="0">
+        <name>OH5_4</name>
+        <identifier>OH5_4</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>1.3512</r>
+            <z>1.8745</z>
+            <width>0.0888</width>
+            <height>0.0749</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="75">
+      <name>OH5</name>
+      <identifier>OH5</identifier>
+      <element id="0">
+        <name>OH5_5</name>
+        <identifier>OH5_5</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>1.3512</r>
+            <z>1.9515</z>
+            <width>0.0888</width>
+            <height>0.0749</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="76">
+      <name>OH5</name>
+      <identifier>OH5</identifier>
+      <element id="0">
+        <name>OH5_6</name>
+        <identifier>OH5_6</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>1.786</r>
+            <z>1.7479</z>
+            <width>0.1793</width>
+            <height>0.0279</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="77">
+      <name>OH2</name>
+      <identifier>OH2</identifier>
+      <element id="0">
+        <name>OH2_4</name>
+        <identifier>OH2_4</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>2.3464</r>
+            <z>1.2286</z>
+            <width>0.1692</width>
+            <height>0.0254</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="78">
+      <name>OH2</name>
+      <identifier>OH2</identifier>
+      <element id="0">
+        <name>OH2_5</name>
+        <identifier>OH2_5</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>2.6087</r>
+            <z>0.5603</z>
+            <width>0.1692</width>
+            <height>0.0254</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="79">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_24</name>
+        <identifier>OH1_24</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>-0.0382</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="80">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_24</name>
+        <identifier>OH0_24</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>-0.0382</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="81">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_25</name>
+        <identifier>OH0_25</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>-0.1147</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="82">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_25</name>
+        <identifier>OH1_25</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>-0.1147</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="83">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_26</name>
+        <identifier>OH1_26</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>-0.1912</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="84">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_26</name>
+        <identifier>OH0_26</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>-0.1912</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="85">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_27</name>
+        <identifier>OH0_27</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>-0.2677</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="86">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_27</name>
+        <identifier>OH1_27</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>-0.2677</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="87">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_28</name>
+        <identifier>OH1_28</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>-0.3442</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="88">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_28</name>
+        <identifier>OH0_28</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>-0.3442</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="89">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_29</name>
+        <identifier>OH0_29</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>-0.4207</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="90">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_29</name>
+        <identifier>OH1_29</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>-0.4207</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="91">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_30</name>
+        <identifier>OH1_30</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>-0.4972</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="92">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_30</name>
+        <identifier>OH0_30</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>-0.4972</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="93">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_31</name>
+        <identifier>OH0_31</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>-0.5737</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="94">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_31</name>
+        <identifier>OH1_31</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>-0.5737</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="95">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_32</name>
+        <identifier>OH1_32</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>-0.6502</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="96">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_32</name>
+        <identifier>OH0_32</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>-0.6502</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="97">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_33</name>
+        <identifier>OH0_33</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>-0.7267</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="98">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_33</name>
+        <identifier>OH1_33</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>-0.7267</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="99">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_34</name>
+        <identifier>OH1_34</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>-0.8032</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="100">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_34</name>
+        <identifier>OH0_34</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>-0.8032</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="101">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_35</name>
+        <identifier>OH0_35</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>-0.8797</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="102">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_35</name>
+        <identifier>OH1_35</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>-0.8797</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="103">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_36</name>
+        <identifier>OH1_36</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>-0.9562</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="104">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_36</name>
+        <identifier>OH0_36</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>-0.9562</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="105">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_37</name>
+        <identifier>OH0_37</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>-1.0326</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="106">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_37</name>
+        <identifier>OH1_37</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>-1.0326</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="107">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_38</name>
+        <identifier>OH1_38</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>-1.1091</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="108">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_38</name>
+        <identifier>OH0_38</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>-1.1091</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="109">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_39</name>
+        <identifier>OH0_39</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>-1.1853</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="110">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_39</name>
+        <identifier>OH1_39</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>-1.1853</z>
+            <width>0.05867</width>
+            <height>0.07442</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="111">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_40</name>
+        <identifier>OH1_40</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>-1.2615</z>
+            <width>0.05867</width>
+            <height>0.07341</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="112">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_40</name>
+        <identifier>OH0_40</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>-1.2615</z>
+            <width>0.05867</width>
+            <height>0.07341</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="113">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_41</name>
+        <identifier>OH0_41</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>-1.3351</z>
+            <width>0.05867</width>
+            <height>0.07135</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="114">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_41</name>
+        <identifier>OH1_41</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>-1.3351</z>
+            <width>0.05867</width>
+            <height>0.07135</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="115">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_42</name>
+        <identifier>OH1_42</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>-1.4095</z>
+            <width>0.05867</width>
+            <height>0.07021</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="116">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_42</name>
+        <identifier>OH0_42</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>-1.4095</z>
+            <width>0.05867</width>
+            <height>0.07021</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="117">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_43</name>
+        <identifier>OH0_43</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>-1.4801</z>
+            <width>0.05867</width>
+            <height>0.06622</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="118">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_43</name>
+        <identifier>OH1_43</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>-1.4801</z>
+            <width>0.05867</width>
+            <height>0.06622</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="119">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_44</name>
+        <identifier>OH1_44</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.6875</r>
+            <z>-1.5482</z>
+            <width>0.05867</width>
+            <height>0.0621</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="120">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_44</name>
+        <identifier>OH0_44</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7575</r>
+            <z>-1.5482</z>
+            <width>0.05867</width>
+            <height>0.0621</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="121">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_45</name>
+        <identifier>OH0_45</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.69</r>
+            <z>-1.6108</z>
+            <width>0.04953</width>
+            <height>0.05796</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="122">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_45</name>
+        <identifier>OH1_45</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7599</r>
+            <z>-1.6108</z>
+            <width>0.04953</width>
+            <height>0.05796</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="123">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_46</name>
+        <identifier>OH1_46</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.695</r>
+            <z>-1.6684</z>
+            <width>0.04953</width>
+            <height>0.0555</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="124">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_46</name>
+        <identifier>OH0_46</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7625</r>
+            <z>-1.6684</z>
+            <width>0.04953</width>
+            <height>0.0555</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="125">
+      <name>OH0</name>
+      <identifier>OH0</identifier>
+      <element id="0">
+        <name>OH0_47</name>
+        <identifier>OH0_47</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7025</r>
+            <z>-1.7255</z>
+            <width>0.04953</width>
+            <height>0.05474</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="126">
+      <name>OH1</name>
+      <identifier>OH1</identifier>
+      <element id="0">
+        <name>OH1_47</name>
+        <identifier>OH1_47</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.7625</r>
+            <z>-1.7255</z>
+            <width>0.04953</width>
+            <height>0.05474</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="127">
+      <name>OH3</name>
+      <identifier>OH3</identifier>
+      <element id="0">
+        <name>OH3_0</name>
+        <identifier>OH3_0</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.879</r>
+            <z>-1.7128</z>
+            <width>0.1138</width>
+            <height>0.0293</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="128">
+      <name>OH3</name>
+      <identifier>OH3</identifier>
+      <element id="0">
+        <name>OH3_1</name>
+        <identifier>OH3_1</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.879</r>
+            <z>-1.7441</z>
+            <width>0.1138</width>
+            <height>0.0293</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="129">
+      <name>OH3</name>
+      <identifier>OH3</identifier>
+      <element id="0">
+        <name>OH3_2</name>
+        <identifier>OH3_2</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.879</r>
+            <z>-1.7755</z>
+            <width>0.1138</width>
+            <height>0.0293</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="130">
+      <name>OH3</name>
+      <identifier>OH3</identifier>
+      <element id="0">
+        <name>OH3_3</name>
+        <identifier>OH3_3</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.879</r>
+            <z>-1.8069</z>
+            <width>0.1138</width>
+            <height>0.0293</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="131">
+      <name>OH4</name>
+      <identifier>OH4</identifier>
+      <element id="0">
+        <name>OH4_0</name>
+        <identifier>OH4_0</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>0.9533</r>
+            <z>-1.9454</z>
+            <width>0.0587</width>
+            <height>0.0559</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="132">
+      <name>OH4</name>
+      <identifier>OH4</identifier>
+      <element id="0">
+        <name>OH4_1</name>
+        <identifier>OH4_1</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>1.0132</r>
+            <z>-1.9581</z>
+            <width>0.0587</width>
+            <height>0.0559</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="133">
+      <name>OH4</name>
+      <identifier>OH4</identifier>
+      <element id="0">
+        <name>OH4_2</name>
+        <identifier>OH4_2</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>1.0998</r>
+            <z>-1.9851</z>
+            <width>0.0587</width>
+            <height>0.0744</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="134">
+      <name>OH4</name>
+      <identifier>OH4</identifier>
+      <element id="0">
+        <name>OH4_3</name>
+        <identifier>OH4_3</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>1.1648</r>
+            <z>-1.9851</z>
+            <width>0.0587</width>
+            <height>0.0744</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="135">
+      <name>OH4</name>
+      <identifier>OH4</identifier>
+      <element id="0">
+        <name>OH4_4</name>
+        <identifier>OH4_4</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>1.3533</r>
+            <z>-1.8735</z>
+            <width>0.0888</width>
+            <height>0.0749</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="136">
+      <name>OH4</name>
+      <identifier>OH4</identifier>
+      <element id="0">
+        <name>OH4_5</name>
+        <identifier>OH4_5</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>1.3533</r>
+            <z>-1.9505</z>
+            <width>0.0888</width>
+            <height>0.0749</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="137">
+      <name>OH4</name>
+      <identifier>OH4</identifier>
+      <element id="0">
+        <name>OH4_6</name>
+        <identifier>OH4_6</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>1.7876</r>
+            <z>-1.7477</z>
+            <width>0.1793</width>
+            <height>0.0279</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="138">
+      <name>OH3</name>
+      <identifier>OH3</identifier>
+      <element id="0">
+        <name>OH3_4</name>
+        <identifier>OH3_4</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>2.3565</r>
+            <z>-1.2286</z>
+            <width>0.1692</width>
+            <height>0.0254</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+    <coil id="139">
+      <name>OH3</name>
+      <identifier>OH3</identifier>
+      <element id="0">
+        <name>OH3_5</name>
+        <identifier>OH3_5</identifier>
+        <turns_with_sign>1.0</turns_with_sign>
+        <geometry>
+          <rectangle>
+            <r>2.6087</r>
+            <z>-0.5603</z>
+            <width>0.1692</width>
+            <height>0.0254</height>
+          </rectangle>
+          <geometry_type>1</geometry_type>
+        </geometry>
+      </element>
+    </coil>
+  </pf_active>
+  <magnetics>
+    <flux_loop id="0">
+      <name>PSF1A     </name>
+      <identifier>PSF1A     </identifier>
+      <position id="0">
+        <r>0.8929</r>
+        <z>0.1683</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="1">
+      <name>PSF2A     </name>
+      <identifier>PSF2A     </identifier>
+      <position id="0">
+        <r>0.8936</r>
+        <z>0.5092</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="2">
+      <name>PSF3A     </name>
+      <identifier>PSF3A     </identifier>
+      <position id="0">
+        <r>0.895</r>
+        <z>0.85</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="3">
+      <name>PSF4A     </name>
+      <identifier>PSF4A     </identifier>
+      <position id="0">
+        <r>0.8932</r>
+        <z>1.1909</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="4">
+      <name>PSF5A     </name>
+      <identifier>PSF5A     </identifier>
+      <position id="0">
+        <r>1.0106</r>
+        <z>1.4475</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="5">
+      <name>PSF6NA    </name>
+      <identifier>PSF6NA    </identifier>
+      <position id="0">
+        <r>2.511</r>
+        <z>0.332</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="6">
+      <name>PSF7NA    </name>
+      <identifier>PSF7NA    </identifier>
+      <position id="0">
+        <r>2.285</r>
+        <z>1.018</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="7">
+      <name>PSF8A     </name>
+      <identifier>PSF8A     </identifier>
+      <position id="0">
+        <r>1.2517</r>
+        <z>1.5517</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="8">
+      <name>PSF9A     </name>
+      <identifier>PSF9A     </identifier>
+      <position id="0">
+        <r>1.6885</r>
+        <z>1.5169</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="9">
+      <name>PSF1B     </name>
+      <identifier>PSF1B     </identifier>
+      <position id="0">
+        <r>0.8929</r>
+        <z>-0.1726</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="10">
+      <name>PSF2B     </name>
+      <identifier>PSF2B     </identifier>
+      <position id="0">
+        <r>0.8928</r>
+        <z>-0.5135</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="11">
+      <name>PSF3B     </name>
+      <identifier>PSF3B     </identifier>
+      <position id="0">
+        <r>0.8933</r>
+        <z>-0.8543</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="12">
+      <name>PSF4B     </name>
+      <identifier>PSF4B     </identifier>
+      <position id="0">
+        <r>0.8952</r>
+        <z>-1.1953</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="13">
+      <name>PSF5B     </name>
+      <identifier>PSF5B     </identifier>
+      <position id="0">
+        <r>1.0152</r>
+        <z>-1.4536</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="14">
+      <name>PSF6NB    </name>
+      <identifier>PSF6NB    </identifier>
+      <position id="0">
+        <r>2.509</r>
+        <z>-0.335</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="15">
+      <name>PSF7NB    </name>
+      <identifier>PSF7NB    </identifier>
+      <position id="0">
+        <r>2.297</r>
+        <z>-1.01</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="16">
+      <name>PSF8B     </name>
+      <identifier>PSF8B     </identifier>
+      <position id="0">
+        <r>1.2491</r>
+        <z>-1.5527</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="17">
+      <name>PSF9B     </name>
+      <identifier>PSF9B     </identifier>
+      <position id="0">
+        <r>1.6882</r>
+        <z>-1.5075</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="18">
+      <name>PSI11M    </name>
+      <identifier>PSI11M    </identifier>
+      <position id="0">
+        <r>0.9247</r>
+        <z>0.0</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="19">
+      <name>PSI12A    </name>
+      <identifier>PSI12A    </identifier>
+      <position id="0">
+        <r>0.9247</r>
+        <z>0.3429</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="20">
+      <name>PSI23A    </name>
+      <identifier>PSI23A    </identifier>
+      <position id="0">
+        <r>0.9247</r>
+        <z>0.6858</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="21">
+      <name>PSI34A    </name>
+      <identifier>PSI34A    </identifier>
+      <position id="0">
+        <r>0.9247</r>
+        <z>1.0287</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="22">
+      <name>PSI45A    </name>
+      <identifier>PSI45A    </identifier>
+      <position id="0">
+        <r>0.9621</r>
+        <z>1.3208</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="23">
+      <name>PSI58A    </name>
+      <identifier>PSI58A    </identifier>
+      <position id="0">
+        <r>1.1212</r>
+        <z>1.4646</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="24">
+      <name>PSI9A     </name>
+      <identifier>PSI9A     </identifier>
+      <position id="0">
+        <r>1.6978</r>
+        <z>1.4646</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="25">
+      <name>PSF7FA    </name>
+      <identifier>PSF7FA    </identifier>
+      <position id="0">
+        <r>2.209</r>
+        <z>1.213</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="26">
+      <name>PSI7A     </name>
+      <identifier>PSI7A     </identifier>
+      <position id="0">
+        <r>2.1933</r>
+        <z>1.0629</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="27">
+      <name>PSF6FA    </name>
+      <identifier>PSF6FA    </identifier>
+      <position id="0">
+        <r>2.501</r>
+        <z>0.527</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="28">
+      <name>PSI6A     </name>
+      <identifier>PSI6A     </identifier>
+      <position id="0">
+        <r>2.4347</r>
+        <z>0.4902</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="29">
+      <name>PSI12B    </name>
+      <identifier>PSI12B    </identifier>
+      <position id="0">
+        <r>0.9247</r>
+        <z>-0.3429</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="30">
+      <name>PSI23B    </name>
+      <identifier>PSI23B    </identifier>
+      <position id="0">
+        <r>0.9247</r>
+        <z>-0.6858</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="31">
+      <name>PSI34B    </name>
+      <identifier>PSI34B    </identifier>
+      <position id="0">
+        <r>0.9247</r>
+        <z>-1.0287</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="32">
+      <name>PSI45B    </name>
+      <identifier>PSI45B    </identifier>
+      <position id="0">
+        <r>0.9611</r>
+        <z>-1.3198</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="33">
+      <name>PSI58B    </name>
+      <identifier>PSI58B    </identifier>
+      <position id="0">
+        <r>1.1199</r>
+        <z>-1.4625</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="34">
+      <name>PSI9B     </name>
+      <identifier>PSI9B     </identifier>
+      <position id="0">
+        <r>1.8559</r>
+        <z>-1.4625</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="35">
+      <name>PSF7FB    </name>
+      <identifier>PSF7FB    </identifier>
+      <position id="0">
+        <r>2.215</r>
+        <z>-1.214</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="36">
+      <name>PSI7B     </name>
+      <identifier>PSI7B     </identifier>
+      <position id="0">
+        <r>2.1933</r>
+        <z>-1.0602</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="37">
+      <name>PSF6FB    </name>
+      <identifier>PSF6FB    </identifier>
+      <position id="0">
+        <r>2.501</r>
+        <z>-0.524</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="38">
+      <name>PSI6B     </name>
+      <identifier>PSI6B     </identifier>
+      <position id="0">
+        <r>2.4328</r>
+        <z>-0.4909</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="39">
+      <name>PSI89FB   </name>
+      <identifier>PSI89FB   </identifier>
+      <position id="0">
+        <r>1.3828</r>
+        <z>-1.4625</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="40">
+      <name>PSI89NB   </name>
+      <identifier>PSI89NB   </identifier>
+      <position id="0">
+        <r>1.5771</r>
+        <z>-1.4625</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="41">
+      <name>PSI1L     </name>
+      <identifier>PSI1L     </identifier>
+      <position id="0">
+        <r>1.3929</r>
+        <z>-1.3057</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="42">
+      <name>PSI2L     </name>
+      <identifier>PSI2L     </identifier>
+      <position id="0">
+        <r>1.5983</r>
+        <z>-1.3057</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <flux_loop id="43">
+      <name>PSI3L     </name>
+      <identifier>PSI3L     </identifier>
+      <position id="0">
+        <r>1.7759</r>
+        <z>-1.3053</z>
+      </position>
+      <type>
+        <index>1</index>
+      </type>
+    </flux_loop>
+    <b_field_pol_probe id="0">
+      <name>MPI11M067 </name>
+      <identifier>MPI11M067 </identifier>
+      <position>
+        <r>0.9729</r>
+        <z>-0.0037</z>
+      </position>
+      <length>0.1408</length>
+      <poloidal_angle>-1.5707963267948966</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="1">
+      <name>MPI1A139  </name>
+      <identifier>MPI1A139  </identifier>
+      <position>
+        <r>0.9787</r>
+        <z>0.0699</z>
+      </position>
+      <length>0.1419</length>
+      <poloidal_angle>-1.575334182850082</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="2">
+      <name>MPI2A067  </name>
+      <identifier>MPI2A067  </identifier>
+      <position>
+        <r>0.9726</r>
+        <z>0.518</z>
+      </position>
+      <length>0.1404</length>
+      <poloidal_angle>-1.567305668290908</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="3">
+      <name>MPI2A139  </name>
+      <identifier>MPI2A139  </identifier>
+      <position>
+        <r>0.9767</r>
+        <z>0.2094</z>
+      </position>
+      <length>0.1408</length>
+      <poloidal_angle>-1.568527398767304</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="4">
+      <name>MPI3A139  </name>
+      <identifier>MPI3A139  </identifier>
+      <position>
+        <r>0.9793</r>
+        <z>0.3471</z>
+      </position>
+      <length>0.1412</length>
+      <poloidal_angle>-1.5720180572712925</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="5">
+      <name>MPI4A139  </name>
+      <identifier>MPI4A139  </identifier>
+      <position>
+        <r>0.9764</r>
+        <z>0.4851</z>
+      </position>
+      <length>0.1409</length>
+      <poloidal_angle>-1.570970859720096</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="6">
+      <name>MPI5A139  </name>
+      <identifier>MPI5A139  </identifier>
+      <position>
+        <r>0.9785</r>
+        <z>0.7591</z>
+      </position>
+      <length>0.1414</length>
+      <poloidal_angle>-1.5662584707397111</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="7">
+      <name>MPI66M247 </name>
+      <identifier>MPI66M247 </identifier>
+      <position>
+        <r>2.413</r>
+        <z>-0.0025</z>
+      </position>
+      <length>0.1402</length>
+      <poloidal_angle>1.579522973054868</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="8">
+      <name>MPI79A147 </name>
+      <identifier>MPI79A147 </identifier>
+      <position>
+        <r>1.7617</r>
+        <z>1.3123</z>
+      </position>
+      <length>0.1534</length>
+      <poloidal_angle>0.6894050545377601</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="9">
+      <name>MPI67A142 </name>
+      <identifier>MPI67A142 </identifier>
+      <position>
+        <r>2.2665</r>
+        <z>0.7572</z>
+      </position>
+      <length>0.1534</length>
+      <poloidal_angle>1.1746065865921838</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="10">
+      <name>MPI67A157 </name>
+      <identifier>MPI67A157 </identifier>
+      <position>
+        <r>2.2641</r>
+        <z>0.7598</z>
+      </position>
+      <length>0.1561</length>
+      <poloidal_angle>1.1833332328521553</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="11">
+      <name>MPI67A097 </name>
+      <identifier>MPI67A097 </identifier>
+      <position>
+        <r>2.2655</r>
+        <z>0.7578</z>
+      </position>
+      <length>0.155</length>
+      <poloidal_angle>1.1798425743481666</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="12">
+      <name>MPI6NA132 </name>
+      <identifier>MPI6NA132 </identifier>
+      <position>
+        <r>2.4088</r>
+        <z>0.2766</z>
+      </position>
+      <length>0.1381</length>
+      <poloidal_angle>1.5533430342749532</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="13">
+      <name>MPI6NA157 </name>
+      <identifier>MPI6NA157 </identifier>
+      <position>
+        <r>2.4066</r>
+        <z>0.2544</z>
+      </position>
+      <length>0.1406</length>
+      <poloidal_angle>1.5601498183577311</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="14">
+      <name>MPI66M067 </name>
+      <identifier>MPI66M067 </identifier>
+      <position>
+        <r>2.4133</r>
+        <z>0.0029</z>
+      </position>
+      <length>0.1409</length>
+      <poloidal_angle>1.5690509975429023</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="15">
+      <name>MPI1B139  </name>
+      <identifier>MPI1B139  </identifier>
+      <position>
+        <r>0.9771</r>
+        <z>-0.0691</z>
+      </position>
+      <length>0.1418</length>
+      <poloidal_angle>-1.570970859720096</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="16">
+      <name>MPI2B067  </name>
+      <identifier>MPI2B067  </identifier>
+      <position>
+        <r>0.9722</r>
+        <z>-0.5165</z>
+      </position>
+      <length>0.1392</length>
+      <poloidal_angle>-1.5760323145508797</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="17">
+      <name>MPI2B139  </name>
+      <identifier>MPI2B139  </identifier>
+      <position>
+        <r>0.9792</r>
+        <z>-0.207</z>
+      </position>
+      <length>0.1414</length>
+      <poloidal_angle>-1.5636404768617198</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="18">
+      <name>MPI3B139  </name>
+      <identifier>MPI3B139  </identifier>
+      <position>
+        <r>0.9769</r>
+        <z>-0.3428</z>
+      </position>
+      <length>0.1411</length>
+      <poloidal_angle>-1.5716689914208934</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="19">
+      <name>MPI4B139  </name>
+      <identifier>MPI4B139  </identifier>
+      <position>
+        <r>0.9801</r>
+        <z>-0.4818</z>
+      </position>
+      <length>0.1407</length>
+      <poloidal_angle>-1.5683528658421044</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="20">
+      <name>MPI5B139  </name>
+      <identifier>MPI5B139  </identifier>
+      <position>
+        <r>0.9774</r>
+        <z>-0.757</z>
+      </position>
+      <length>0.142</length>
+      <poloidal_angle>-1.5671311353657085</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="21">
+      <name>MPI66M157 </name>
+      <identifier>MPI66M157 </identifier>
+      <position>
+        <r>2.4129</r>
+        <z>-0.001</z>
+      </position>
+      <length>0.1375</length>
+      <poloidal_angle>1.566956602440509</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="22">
+      <name>MPI1B157  </name>
+      <identifier>MPI1B157  </identifier>
+      <position>
+        <r>0.9719</r>
+        <z>-0.1831</z>
+      </position>
+      <length>0.1408</length>
+      <poloidal_angle>-1.5629423451609221</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="23">
+      <name>MPI79B142 </name>
+      <identifier>MPI79B142 </identifier>
+      <position>
+        <r>2.0436</r>
+        <z>-1.1098</z>
+      </position>
+      <length>0.1537</length>
+      <poloidal_angle>2.253220064324679</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="24">
+      <name>MPI7NB142 </name>
+      <identifier>MPI7NB142 </identifier>
+      <position>
+        <r>2.2089</r>
+        <z>-0.8669</z>
+      </position>
+      <length>0.1422</length>
+      <poloidal_angle>1.9647171389700167</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="25">
+      <name>MPI67B157 </name>
+      <identifier>MPI67B157 </identifier>
+      <position>
+        <r>2.2596</r>
+        <z>-0.7538</z>
+      </position>
+      <length>0.1549</length>
+      <poloidal_angle>1.9687313962496038</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="26">
+      <name>MPI67B097 </name>
+      <identifier>MPI67B097 </identifier>
+      <position>
+        <r>2.2624</r>
+        <z>-0.751</z>
+      </position>
+      <length>0.1557</length>
+      <poloidal_angle>1.965240737745615</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="27">
+      <name>MPI6FB142 </name>
+      <identifier>MPI6FB142 </identifier>
+      <position>
+        <r>2.3119</r>
+        <z>-0.6202</z>
+      </position>
+      <length>0.1398</length>
+      <poloidal_angle>1.9722220547535922</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="28">
+      <name>MPI6NB157 </name>
+      <identifier>MPI6NB157 </identifier>
+      <position>
+        <r>2.414</r>
+        <z>-0.2441</z>
+      </position>
+      <length>0.1407</length>
+      <poloidal_angle>1.5634659439365204</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="29">
+      <name>MPI8A322  </name>
+      <identifier>MPI8A322  </identifier>
+      <position>
+        <r>1.2194</r>
+        <z>1.4055</z>
+      </position>
+      <length>0.1394</length>
+      <poloidal_angle>-0.005235987755982988</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="30">
+      <name>MPI89A322 </name>
+      <identifier>MPI89A322 </identifier>
+      <position>
+        <r>1.4017</r>
+        <z>1.407</z>
+      </position>
+      <length>0.1145</length>
+      <poloidal_angle>-0.011641346110802179</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="31">
+      <name>MPI9A322  </name>
+      <identifier>MPI9A322  </identifier>
+      <position>
+        <r>1.5841</r>
+        <z>1.4084</z>
+      </position>
+      <length>0.1403</length>
+      <poloidal_angle>-0.010768681484805013</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="32">
+      <name>MPI79FA322</name>
+      <identifier>MPI79FA322</identifier>
+      <position>
+        <r>1.7825</r>
+        <z>1.323</z>
+      </position>
+      <length>0.1409</length>
+      <poloidal_angle>0.6856176900609325</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="33">
+      <name>MPI79NA322</name>
+      <identifier>MPI79NA322</identifier>
+      <position>
+        <r>1.9243</r>
+        <z>1.2064</z>
+      </position>
+      <length>0.1141</length>
+      <poloidal_angle>0.6835931081286191</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="34">
+      <name>MPI7FA322 </name>
+      <identifier>MPI7FA322 </identifier>
+      <position>
+        <r>2.0673</r>
+        <z>1.0904</z>
+      </position>
+      <length>0.1398</length>
+      <poloidal_angle>0.6879564312586048</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="35">
+      <name>MPI7NA322 </name>
+      <identifier>MPI7NA322 </identifier>
+      <position>
+        <r>2.2193</r>
+        <z>0.8698</z>
+      </position>
+      <length>0.1403</length>
+      <poloidal_angle>1.1885692206081382</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="36">
+      <name>MPI67A322 </name>
+      <identifier>MPI67A322 </identifier>
+      <position>
+        <r>2.2702</r>
+        <z>0.7462</z>
+      </position>
+      <length>0.1407</length>
+      <poloidal_angle>1.1850785621041497</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="37">
+      <name>MPI6FA322 </name>
+      <identifier>MPI6FA322 </identifier>
+      <position>
+        <r>2.3189</r>
+        <z>0.6228</z>
+      </position>
+      <length>0.1402</length>
+      <poloidal_angle>1.186823891356144</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="38">
+      <name>MPI6NA322 </name>
+      <identifier>MPI6NA322 </identifier>
+      <position>
+        <r>2.4159</r>
+        <z>0.2492</z>
+      </position>
+      <length>0.1407</length>
+      <poloidal_angle>1.5591549806840943</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="39">
+      <name>MPI66M322 </name>
+      <identifier>MPI66M322 </identifier>
+      <position>
+        <r>2.4182</r>
+        <z>-0.0009</z>
+      </position>
+      <length>0.1399</length>
+      <poloidal_angle>1.5690509975429023</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="40">
+      <name>MPI6NB322 </name>
+      <identifier>MPI6NB322 </identifier>
+      <position>
+        <r>2.4162</r>
+        <z>-0.2438</z>
+      </position>
+      <length>0.1399</length>
+      <poloidal_angle>-4.699299010994732</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="41">
+      <name>MPI6FB322 </name>
+      <identifier>MPI6FB322 </identifier>
+      <position>
+        <r>2.3154</r>
+        <z>-0.624</z>
+      </position>
+      <length>0.1403</length>
+      <poloidal_angle>1.9792033717615696</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="42">
+      <name>MPI67B322 </name>
+      <identifier>MPI67B322 </identifier>
+      <position>
+        <r>2.2631</r>
+        <z>-0.7487</z>
+      </position>
+      <length>0.14</length>
+      <poloidal_angle>1.9687313962496038</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="43">
+      <name>MPI7NB322 </name>
+      <identifier>MPI7NB322 </identifier>
+      <position>
+        <r>2.212</r>
+        <z>-0.8725</z>
+      </position>
+      <length>0.1407</length>
+      <poloidal_angle>1.980948701013564</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="44">
+      <name>MPI7FB322 </name>
+      <identifier>MPI7FB322 </identifier>
+      <position>
+        <r>2.0848</r>
+        <z>-1.102</z>
+      </position>
+      <length>0.1403</length>
+      <poloidal_angle>-4.028516619575752</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="45">
+      <name>MPI79B322 </name>
+      <identifier>MPI79B322 </identifier>
+      <position>
+        <r>1.894</r>
+        <z>-1.3327</z>
+      </position>
+      <length>0.1406</length>
+      <poloidal_angle>-4.022407967193772</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="46">
+      <name>MPI9B322  </name>
+      <identifier>MPI9B322  </identifier>
+      <position>
+        <r>1.6989</r>
+        <z>-1.4063</z>
+      </position>
+      <length>0.1415</length>
+      <poloidal_angle>-3.1392713656846403</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="47">
+      <name>MPI89B322 </name>
+      <identifier>MPI89B322 </identifier>
+      <position>
+        <r>1.4769</r>
+        <z>-1.4055</z>
+      </position>
+      <length>0.1403</length>
+      <poloidal_angle>-3.143041276868948</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="48">
+      <name>MPI8B322  </name>
+      <identifier>MPI8B322  </identifier>
+      <position>
+        <r>1.2541</r>
+        <z>-1.4047</z>
+      </position>
+      <length>0.1403</length>
+      <poloidal_angle>-3.142168612242951</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="49">
+      <name>MPI5B322  </name>
+      <identifier>MPI5B322  </identifier>
+      <position>
+        <r>1.0479</r>
+        <z>-1.3302</z>
+      </position>
+      <length>0.1403</length>
+      <poloidal_angle>-2.3803323937474263</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="50">
+      <name>MPI4B322  </name>
+      <identifier>MPI4B322  </identifier>
+      <position>
+        <r>0.9724</r>
+        <z>-1.1589</z>
+      </position>
+      <length>0.1405</length>
+      <poloidal_angle>-1.563239051133761</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="51">
+      <name>MPI3B322  </name>
+      <identifier>MPI3B322  </identifier>
+      <position>
+        <r>0.974</r>
+        <z>-0.8542</z>
+      </position>
+      <length>0.1402</length>
+      <poloidal_angle>-1.5664330036649108</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="52">
+      <name>MPI2B322  </name>
+      <identifier>MPI2B322  </identifier>
+      <position>
+        <r>0.9748</r>
+        <z>-0.5122</z>
+      </position>
+      <length>0.1404</length>
+      <poloidal_angle>-1.5754563558977213</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="53">
+      <name>MPI1B322  </name>
+      <identifier>MPI1B322  </identifier>
+      <position>
+        <r>0.9737</r>
+        <z>-0.187</z>
+      </position>
+      <length>0.14</length>
+      <poloidal_angle>-1.5728383620197302</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="54">
+      <name>MPI11M322 </name>
+      <identifier>MPI11M322 </identifier>
+      <position>
+        <r>0.9732</r>
+        <z>-0.0023</z>
+      </position>
+      <length>0.1153</length>
+      <poloidal_angle>-1.5696269561960605</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="55">
+      <name>MPI1A322  </name>
+      <identifier>MPI1A322  </identifier>
+      <position>
+        <r>0.9741</r>
+        <z>0.1817</z>
+      </position>
+      <length>0.14</length>
+      <poloidal_angle>-1.5710930327677355</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="56">
+      <name>MPI2A322  </name>
+      <identifier>MPI2A322  </identifier>
+      <position>
+        <r>0.9742</r>
+        <z>0.5116</z>
+      </position>
+      <length>0.1403</length>
+      <poloidal_angle>-1.5655603390389137</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="57">
+      <name>MPI3A322  </name>
+      <identifier>MPI3A322  </identifier>
+      <position>
+        <r>0.9745</r>
+        <z>0.8503</z>
+      </position>
+      <length>0.1404</length>
+      <poloidal_angle>-1.5734143206728881</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="58">
+      <name>MPI4A322  </name>
+      <identifier>MPI4A322  </identifier>
+      <position>
+        <r>0.9722</r>
+        <z>1.1609</z>
+      </position>
+      <length>0.1404</length>
+      <poloidal_angle>-1.5792262670820292</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="59">
+      <name>MPI5A322  </name>
+      <identifier>MPI5A322  </identifier>
+      <position>
+        <r>1.0511</r>
+        <z>1.3304</z>
+      </position>
+      <length>0.1407</length>
+      <poloidal_angle>-0.77871355236231</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="60">
+      <name>MPI1U157</name>
+      <identifier>MPI1U157</identifier>
+      <position>
+        <r>1.445</r>
+        <z>1.277</z>
+      </position>
+      <length>0.027</length>
+      <poloidal_angle>0.7077310116837006</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="61">
+      <name>MPI2U157</name>
+      <identifier>MPI2U157</identifier>
+      <position>
+        <r>1.56</r>
+        <z>1.187</z>
+      </position>
+      <length>0.027</length>
+      <poloidal_angle>0.7115707360380882</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="62">
+      <name>MPI3U157</name>
+      <identifier>MPI3U157</identifier>
+      <position>
+        <r>1.723</r>
+        <z>1.112</z>
+      </position>
+      <length>0.027</length>
+      <poloidal_angle>0.05759586531581287</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="63">
+      <name>MPI4U157</name>
+      <identifier>MPI4U157</identifier>
+      <position>
+        <r>1.873</r>
+        <z>1.116</z>
+      </position>
+      <length>0.054</length>
+      <poloidal_angle>0.04799655442984406</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="64">
+      <name>DSL1U180</name>
+      <identifier>DSL1U180</identifier>
+      <position>
+        <r>1.506</r>
+        <z>1.27</z>
+      </position>
+      <length>-0.094</length>
+      <poloidal_angle>-0.8644615785127914</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="65">
+      <name>DSL2U180</name>
+      <identifier>DSL2U180</identifier>
+      <position>
+        <r>1.59</r>
+        <z>1.198</z>
+      </position>
+      <length>-0.088</length>
+      <poloidal_angle>-0.8644615785127914</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="66">
+      <name>DSL3U180</name>
+      <identifier>DSL3U180</identifier>
+      <position>
+        <r>1.73</r>
+        <z>1.142</z>
+      </position>
+      <length>-0.106</length>
+      <poloidal_angle>-1.610938899590766</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="67">
+      <name>DSL4U157</name>
+      <identifier>DSL4U157</identifier>
+      <position>
+        <r>1.877</r>
+        <z>1.133</z>
+      </position>
+      <length>-0.1955</length>
+      <poloidal_angle>-1.579522973054868</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="68">
+      <name>MPI5U157</name>
+      <identifier>MPI5U157</identifier>
+      <position>
+        <r>1.218</r>
+        <z>1.298</z>
+      </position>
+      <length>0.027</length>
+      <poloidal_angle>-1.1572056539498004</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="69">
+      <name>MPI6U157</name>
+      <identifier>MPI6U157</identifier>
+      <position>
+        <r>1.075</r>
+        <z>1.202</z>
+      </position>
+      <length>0.027</length>
+      <poloidal_angle>-0.012723450247038661</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="70">
+      <name>MPI7U157</name>
+      <identifier>MPI7U157</identifier>
+      <position>
+        <r>0.976</r>
+        <z>0.979</z>
+      </position>
+      <length>0.027</length>
+      <poloidal_angle>-1.5753167295575619</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="71">
+      <name>DSL5U157</name>
+      <identifier>DSL5U157</identifier>
+      <position>
+        <r>1.185</r>
+        <z>1.286</z>
+      </position>
+      <length>-0.091</length>
+      <poloidal_angle>-2.732312943997123</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="72">
+      <name>DSL6U157</name>
+      <identifier>DSL6U157</identifier>
+      <position>
+        <r>1.086</r>
+        <z>1.228</z>
+      </position>
+      <length>-0.107</length>
+      <poloidal_angle>-1.5777776438028739</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="73">
+      <name>MPI1L180</name>
+      <identifier>MPI1L180</identifier>
+      <position>
+        <r>1.5104</r>
+        <z>-1.2915</z>
+      </position>
+      <length>0.0271</length>
+      <poloidal_angle>-3.141767186514992</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="74">
+      <name>MPI2L180</name>
+      <identifier>MPI2L180</identifier>
+      <position>
+        <r>1.6103</r>
+        <z>-1.2915</z>
+      </position>
+      <length>0.0277</length>
+      <poloidal_angle>-3.145955976719779</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+    <b_field_pol_probe id="75">
+      <name>MPI3L180</name>
+      <identifier>MPI3L180</identifier>
+      <position>
+        <r>1.7103</r>
+        <z>-1.2918</z>
+      </position>
+      <length>0.0273</length>
+      <poloidal_angle>-3.1595695448853345</poloidal_angle>
+      <toroidal_angle>0.0</toroidal_angle>
+      <type>
+        <index>1</index>
+      </type>
+      <turns>1</turns>
+    </b_field_pol_probe>
+  </magnetics>
+</mapping>

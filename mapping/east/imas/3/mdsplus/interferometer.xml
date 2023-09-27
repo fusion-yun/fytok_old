@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interferometer>
+    <ids_properties>
+        <provider> 刘海庆</provider>
+        <creation_date>2022-12-05</creation_date>
+    </ids_properties>    
+    <channel id="0" > <n_e_line><data spdb="east">DATA(\POINT_N1) *1.0E-19 </data><time spdb="east">DIM_OF(\POINT_N1) </time></n_e_line></channel>
+    <channel id="1" > <n_e_line><data spdb="east">DATA(\POINT_N2) *1.0E-19 </data><time spdb="east">DIM_OF(\POINT_N2) </time></n_e_line></channel>
+    <channel id="2" > <n_e_line><data spdb="east">DATA(\POINT_N3) *1.0E-19 </data><time spdb="east">DIM_OF(\POINT_N3) </time></n_e_line></channel>
+    <channel id="3" > <n_e_line><data spdb="east">DATA(\POINT_N4) *1.0E-19 </data><time spdb="east">DIM_OF(\POINT_N4) </time></n_e_line></channel>
+    <channel id="4" > <n_e_line><data spdb="east">DATA(\POINT_N5) *1.0E-19 </data><time spdb="east">DIM_OF(\POINT_N5) </time></n_e_line></channel>
+    <channel id="5" > <n_e_line><data spdb="east">DATA(\POINT_N6) *1.0E-19 </data><time spdb="east">DIM_OF(\POINT_N6) </time></n_e_line></channel>
+    <channel id="6" > <n_e_line><data spdb="east">DATA(\POINT_N7) *1.0E-19 </data><time spdb="east">DIM_OF(\POINT_N7) </time></n_e_line></channel>
+    <channel id="7" > <n_e_line><data spdb="east">DATA(\POINT_N8) *1.0E-19 </data><time spdb="east">DIM_OF(\POINT_N8) </time></n_e_line></channel>
+    <channel id="8" > <n_e_line><data spdb="east">DATA(\POINT_N9) *1.0E-19 </data><time spdb="east">DIM_OF(\POINT_N9) </time></n_e_line></channel>
+    <channel id="9" > <n_e_line><data spdb="east">DATA(\POINT_N10)*1.0E-19 </data><time spdb="east">DIM_OF(\POINT_N10)</time></n_e_line></channel>
+    <channel id="10"> <n_e_line><data spdb="east">DATA(\POINT_N11)*1.0E-19 </data><time spdb="east">DIM_OF(\POINT_N11)</time></n_e_line></channel>
+    
+    <channel id="11"> <n_e_line_average><data spdb="pcs_east">                      </data><time spdb="pcs_east">                  </time> </n_e_line_average></channel>
+    <channel id="12"> <n_e_line_average><data spdb="pcs_east">DATA(\dfsdev)*1.0E-19 </data><time spdb="pcs_east">DIM_OF(\dfsdev)   </time> </n_e_line_average></channel>
+    <channel id="13"> <n_e_line_average><data spdb="pcs_east">                      </data><time spdb="pcs_east">                  </time> </n_e_line_average></channel>
+    
+
+
+</interferometer>

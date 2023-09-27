@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pf_active xmlns:spdb="http://fusionyun.org/schema/"  >
+  <ids_properties>
+    <homogeneous_time dtype="int">1</homogeneous_time>
+  </ids_properties>
+  <time spdb="pcs_east">  DATA(\TIMEPCSA1) </time>
+
+  <coil id='0'>  <current><data  spdb="pcs_east">DATA(\pcpf1 ) </data> <time  spdb="pcs_east">DIM_OF(\pcpf1) </time></current> <voltage><data  spdb="pcs_east">DATA(\sycps1 )</data> <time  spdb="pcs_east">DIM_OF(\sycps1 )</time></voltage>   </coil>
+  <coil id='1'>  <current><data  spdb="pcs_east">DATA(\pcpf2 ) </data> <time  spdb="pcs_east">DIM_OF(\pcpf2) </time></current> <voltage><data  spdb="pcs_east">DATA(\sycps2 )</data> <time  spdb="pcs_east">DIM_OF(\sycps2 )</time></voltage>   </coil>
+  <coil id='2'>  <current><data  spdb="pcs_east">DATA(\pcpf3 ) </data> <time  spdb="pcs_east">DIM_OF(\pcpf3) </time></current> <voltage><data  spdb="pcs_east">DATA(\sycps3 )</data> <time  spdb="pcs_east">DIM_OF(\sycps3 )</time></voltage>   </coil>
+  <coil id='3'>  <current><data  spdb="pcs_east">DATA(\pcpf4 ) </data> <time  spdb="pcs_east">DIM_OF(\pcpf4) </time></current> <voltage><data  spdb="pcs_east">DATA(\sycps4 )</data> <time  spdb="pcs_east">DIM_OF(\sycps4 )</time></voltage>   </coil>
+  <coil id='4'>  <current><data  spdb="pcs_east">DATA(\pcpf5 ) </data> <time  spdb="pcs_east">DIM_OF(\pcpf5) </time></current> <voltage><data  spdb="pcs_east">DATA(\sycps5 )</data> <time  spdb="pcs_east">DIM_OF(\sycps5 )</time></voltage>   </coil>
+  <coil id='5'>  <current><data  spdb="pcs_east">DATA(\pcpf6 ) </data> <time  spdb="pcs_east">DIM_OF(\pcpf6) </time></current> <voltage><data  spdb="pcs_east">DATA(\sycps6 )</data> <time  spdb="pcs_east">DIM_OF(\sycps6 )</time></voltage>   </coil>
+  <coil id='6'>  <current><data  spdb="pcs_east">DATA(\pcpf7 ) </data> <time  spdb="pcs_east">DIM_OF(\pcpf7) </time></current> <voltage><data  spdb="pcs_east">DATA(\sycps7 )</data> <time  spdb="pcs_east">DIM_OF(\sycps7 )</time></voltage>   </coil>
+  <coil id='7'>  <current><data  spdb="pcs_east">DATA(\pcpf8 ) </data> <time  spdb="pcs_east">DIM_OF(\pcpf8) </time></current> <voltage><data  spdb="pcs_east">DATA(\sycps8 )</data> <time  spdb="pcs_east">DIM_OF(\sycps8 )</time></voltage>   </coil>
+  <coil id='8'>  <current><data  spdb="pcs_east">DATA(\pcpf7 ) </data> <time  spdb="pcs_east">DIM_OF(\pcpf7) </time></current> <voltage><data  spdb="pcs_east">DATA(\sycps7 )</data> <time  spdb="pcs_east">DIM_OF(\sycps7 )</time></voltage>   </coil>
+  <coil id='9'>  <current><data  spdb="pcs_east">DATA(\pcpf8 ) </data> <time  spdb="pcs_east">DIM_OF(\pcpf8) </time></current> <voltage><data  spdb="pcs_east">DATA(\sycps8 )</data> <time  spdb="pcs_east">DIM_OF(\sycps8 )</time></voltage>   </coil>
+  <coil id='10'> <current><data  spdb="pcs_east">DATA(\pcpf11) </data> <time  spdb="pcs_east">DIM_OF(\pcpf11)</time></current> <voltage><data  spdb="pcs_east">DATA(\sycps9 )</data> <time  spdb="pcs_east">DIM_OF(\sycps9 )</time></voltage>   </coil>
+  <coil id='11'> <current><data  spdb="pcs_east">DATA(\pcpf12) </data> <time  spdb="pcs_east">DIM_OF(\pcpf12)</time></current> <voltage><data  spdb="pcs_east">DATA(\sycps10)</data> <time  spdb="pcs_east">DIM_OF(\sycps10)</time></voltage>   </coil>
+  <coil id='12'> <current><data  spdb="pcs_east">DATA(\pcpf13) </data> <time  spdb="pcs_east">DIM_OF(\pcpf13)</time></current> <voltage><data  spdb="pcs_east">DATA(\sycps11)</data> <time  spdb="pcs_east">DIM_OF(\sycps11)</time></voltage>   </coil>
+  <coil id='13'> <current><data  spdb="pcs_east">DATA(\pcpf14) </data> <time  spdb="pcs_east">DIM_OF(\pcpf14)</time></current> <voltage><data  spdb="pcs_east">DATA(\sycps12)</data> <time  spdb="pcs_east">DIM_OF(\sycps12)</time></voltage>   </coil>
+  <coil id='14'> <current><data  spdb="pcs_east">DATA(\ic1)    </data> <time  spdb="pcs_east">DIM_OF(\ic1)   </time></current> <voltage><data  spdb="pcs_east">              </data> <time  spdb="pcs_east">                </time></voltage>   </coil>
+  <coil id='15'> <current><data  spdb="pcs_east">DATA(\ic2)    </data> <time  spdb="pcs_east">DIM_OF(\ic2)   </time></current> <voltage><data  spdb="pcs_east">              </data> <time  spdb="pcs_east">                </time></voltage>   </coil>
+
+</pf_active>

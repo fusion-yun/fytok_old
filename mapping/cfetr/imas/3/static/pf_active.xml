@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pf_active>
+ 
+     <ids_properties>
+          <comment>      
+                    COILS     R(m)       Z(m)     dR(m)     dZ(m)     TURNS
+                    CS1U	     1.62      1.025	1.0	     2.05	     738
+                    CS2U	     1.62      3.075	1.0	     2.05	     738
+                    CS3U	     1.62      5.125	1.0	     2.05	     738
+                    CS4U	     1.62      7.175	1.0	     2.05	     738
+                    CS4L	     1.62      -7.175	1.0	     2.05	     738
+                    CS3L	     1.62      -5.125	1.0	     2.05	     738
+                    CS2L	     1.62      -3.075	1.0	     2.05	     738
+                    CS1L	     1.62      -1.025	1.0	     2.05	     738
+                    PF1	     4.60      9.83	     1.036	1.512	468
+                    PF2	     13.03	6.653	0.697	1.167	240
+                    PF3	     15.30	3.30	     0.697	1.167	240
+                    PF4	     15.30	-3.30	0.697	1.167	240
+                    PF5	     14.91	-6.25	0.697	1.167	240
+                    PF6	     7.13	     -10.00	0.697	1.167	240
+                    PF7	     4.60	     -9.83	1.036	1.512	468
+          </comment>
+     <provider>"Li Hang"  lih@ipp.ac.cn </provider>
+     <creation_date>2020-10-12</creation_date>
+     </ids_properties>
+    
+     <coil id='0' ><name>CS1U</name><identifier>CS1U</identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float"> 1.62 </r> <z dtype="float">1.025  </z> <width dtype="float">1.0   </width> <height dtype="float">2.05  </height>  </rectangle> </geometry>   <turns_with_sign dtype="int">738 </turns_with_sign></element></coil> 
+     <coil id='1' ><name>CS2U</name><identifier>CS2U</identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float"> 1.62 </r> <z dtype="float">3.075  </z> <width dtype="float">1.0   </width> <height dtype="float">2.05  </height>  </rectangle> </geometry>   <turns_with_sign dtype="int">738 </turns_with_sign></element></coil>
+     <coil id='2' ><name>CS3U</name><identifier>CS3U</identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float"> 1.62 </r> <z dtype="float">5.125  </z> <width dtype="float">1.0   </width> <height dtype="float">2.05  </height>  </rectangle> </geometry>   <turns_with_sign dtype="int">738 </turns_with_sign></element></coil>  
+     <coil id='3' ><name>CS4U</name><identifier>CS4U</identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float"> 1.62 </r> <z dtype="float">7.175  </z> <width dtype="float">1.0   </width> <height dtype="float">2.05  </height>  </rectangle> </geometry>   <turns_with_sign dtype="int">738 </turns_with_sign></element></coil> 
+     <coil id='4' ><name>CS4L</name><identifier>CS4L</identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float"> 1.62 </r> <z dtype="float">-7.175 </z> <width dtype="float">1.0   </width> <height dtype="float">2.05  </height>  </rectangle> </geometry>   <turns_with_sign dtype="int">738 </turns_with_sign></element></coil>    
+     <coil id='5' ><name>CS3L</name><identifier>CS3L</identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float"> 1.62 </r> <z dtype="float">-5.125 </z> <width dtype="float">1.0   </width> <height dtype="float">2.05  </height>  </rectangle> </geometry>   <turns_with_sign dtype="int">738 </turns_with_sign></element></coil>  
+     <coil id='6' ><name>CS2L</name><identifier>CS2L</identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float"> 1.62 </r> <z dtype="float">-3.075 </z> <width dtype="float">1.0   </width> <height dtype="float">2.05  </height>  </rectangle> </geometry>   <turns_with_sign dtype="int">738 </turns_with_sign></element></coil>  
+     <coil id='7' ><name>CS1L</name><identifier>CS1L</identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float"> 1.62 </r> <z dtype="float">-1.025 </z> <width dtype="float">1.0   </width> <height dtype="float">2.05  </height>  </rectangle> </geometry>   <turns_with_sign dtype="int">738 </turns_with_sign></element></coil>   
+     <coil id='8' ><name>PF1 </name><identifier>PF1 </identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float"> 4.60 </r> <z dtype="float">9.83   </z> <width dtype="float">1.036 </width> <height dtype="float">1.512 </height>  </rectangle> </geometry>   <turns_with_sign dtype="int">468 </turns_with_sign></element></coil>  
+     <coil id='9'><name>PF2 </name><identifier>PF2 </identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float">13.03 </r> <z dtype="float">6.653  </z> <width dtype="float">0.697 </width> <height dtype="float">1.167 </height>  </rectangle> </geometry>   <turns_with_sign dtype="int">240 </turns_with_sign></element></coil>  
+     <coil id='10'><name>PF3 </name><identifier>PF3 </identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float">15.30 </r> <z dtype="float">3.30   </z> <width dtype="float">0.697 </width> <height dtype="float">1.167 </height>  </rectangle> </geometry>   <turns_with_sign dtype="int">240 </turns_with_sign></element></coil>  
+     <coil id='11'><name>PF4 </name><identifier>PF4 </identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float">15.30 </r> <z dtype="float">-3.30  </z> <width dtype="float">0.697 </width> <height dtype="float">1.167 </height>  </rectangle> </geometry>   <turns_with_sign dtype="int">240 </turns_with_sign></element></coil>   
+     <coil id='12'><name>PF5 </name><identifier>PF5 </identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float">14.91 </r> <z dtype="float">-6.25  </z> <width dtype="float">0.697 </width> <height dtype="float">1.167 </height>  </rectangle> </geometry>   <turns_with_sign dtype="int">240 </turns_with_sign></element></coil>   
+     <coil id='13'><name>PF6 </name><identifier>PF6 </identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float"> 7.13 </r> <z dtype="float">-10.00 </z> <width dtype="float">0.697 </width> <height dtype="float">1.167 </height>  </rectangle> </geometry>   <turns_with_sign dtype="int">240 </turns_with_sign></element></coil>   
+     <coil id='14'><name>PF7 </name><identifier>PF7 </identifier><element><geometry><geometry_type dtype='int'>2</geometry_type>  <rectangle>    <r dtype="float"> 4.60 </r> <z dtype="float">-9.83  </z> <width dtype="float">1.036 </width> <height dtype="float">1.512 </height>  </rectangle> </geometry>   <turns_with_sign dtype="int">468 </turns_with_sign></element></coil>   
+
+
+    
+
+</pf_active>
