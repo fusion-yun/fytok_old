@@ -58,28 +58,28 @@ def sp_to_imas(data: dict):
     namei                                                                               = data[n:=n+1][1:]
     namen                                                                               = data[n:=n+1][1:]
     entry["time"]                                                                       = data[n:=n+1][1]
-    entry["geometric_center/r"]                                                         = data[n:=n+1][1] # Rgeom : major radius of geometric center at elevation of magnetic axis, meters
-    entry["magnetic_axis/r"]                                                            = data[n:=n+1][1] # major radius of magnetic axis, meters
-    entry["equilibrium/vacuum_toroidal_field/r0"]                                       = data[n:=n+1][1] # major radius of vacuum btor ref location, meters
-    entry["equilibrium/time_slice/0/vacuum_toroidal_field/r0"]                          = data[n][1] # major radius of vacuum btor ref location, meters
-    entry["equilibrium/time_slice/0/boundary/elongation"]                               = data[n:=n+1][1]#  kappa : plasma elongation
-    entry["equilibrium/time_slice/0/boundary/triangularity"]                            = data[n:=n+1][1]#  delta : plasma triangularity
-    entry["equilibrium/time_slice/0/boundary/indentation"]                              = data[n:=n+1][1]#  pindent : plasma indentation
-    entry["equilibrium/time_slice/0/global_quantities/volume"]                          = data[n:=n+1][1]#  volo : plasma volume, meters**3
-    entry["equilibrium/time_slice/0/global_quantities/area"]                            = data[n:=n+1][1]#  cxareao : plasma cross-sectional area, meters**2
-    entry["equilibrium/vacuum_toroidal_field/b0"]                                       = data[n:=n+1][1:]#  Btor : vacuum toroidal field at rmajor, tesla
-    entry["equilibrium/time_slice/0/vacuum_toroidal_field/b0"]                          = data[n][1]#  Btor : vacuum toroidal field at rmajor, tesla
-    entry["core_profiles/global_quantities/0/current"]                                  = data[n:=n+1][1] #  total, ohmic, bootstrap, beam and RF currents, amps
-    entry["core_profiles/global_quantities/0/current_ohmic"]                            = data[n][2]      #  ohmic current
-    entry["core_profiles/global_quantities/0/current_bootstrap"]                        = data[n][3]      #  bootstrap current
+    entry["geometric_center/r"]                                                         = data[n:=n+1][1]   # Rgeom : major radius of geometric center at elevation of magnetic axis, meters
+    entry["magnetic_axis/r"]                                                            = data[n:=n+1][1]   # major radius of magnetic axis, meters
+    entry["equilibrium/vacuum_toroidal_field/r0"]                                       = data[n:=n+1][1]   # major radius of vacuum btor ref location, meters
+    entry["equilibrium/time_slice/0/vacuum_toroidal_field/r0"]                          = data[n][1]        # major radius of vacuum btor ref location, meters
+    entry["equilibrium/time_slice/0/boundary/elongation"]                               = data[n:=n+1][1]   #  kappa : plasma elongation
+    entry["equilibrium/time_slice/0/boundary/triangularity"]                            = data[n:=n+1][1]   #  delta : plasma triangularity
+    entry["equilibrium/time_slice/0/boundary/indentation"]                              = data[n:=n+1][1]   #  pindent : plasma indentation
+    entry["equilibrium/time_slice/0/global_quantities/volume"]                          = data[n:=n+1][1]   #  volo : plasma volume, meters**3
+    entry["equilibrium/time_slice/0/global_quantities/area"]                            = data[n:=n+1][1]   #  cxareao : plasma cross-sectional area, meters**2
+    entry["equilibrium/vacuum_toroidal_field/b0"]                                       = data[n:=n+1][1:]  #  Btor : vacuum toroidal field at rmajor, tesla
+    entry["equilibrium/time_slice/0/vacuum_toroidal_field/b0"]                          = data[n][1]        #  Btor : vacuum toroidal field at rmajor, tesla
+    entry["core_profiles/global_quantities/0/current"]                                  = data[n:=n+1][1]   #  total, ohmic, bootstrap, beam and RF currents, amps
+    entry["core_profiles/global_quantities/0/current_ohmic"]                            = data[n][2]        #  ohmic current
+    entry["core_profiles/global_quantities/0/current_bootstrap"]                        = data[n][3]        #  bootstrap current
     entry["core_profiles/global_quantities/0/current_non_inductive"]                    = data[n][4] + data[n][5] #  beam +RF current
-    entry["core_profiles/global_quantities/0/beta_pol"]                                 = data[n:=n+1][1]  #  betap : poloidal beta
-    entry["core_profiles/global_quantities/0/beta_tor"]                                 = data[n:=n+1][1]  #  beta : toroidal beta
-    entry["core_profiles/global_quantities/0/li_3"]                                     = data[n:=n+1][1]  #  ali : plasma inductance
-    entry["core_profiles/global_quantities/0/t_e_peaking"]                              = data[n:=n+1][1]  #  te0 : central electron temperature
-    entry["core_profiles/global_quantities/0/t_i_average_peaking"]                      = data[n:=n+1][1]  #  ti0 : central ion temperature
+    entry["core_profiles/global_quantities/0/beta_pol"]                                 = data[n:=n+1][1]   #  betap : poloidal beta
+    entry["core_profiles/global_quantities/0/beta_tor"]                                 = data[n:=n+1][1]   #  beta : toroidal beta
+    entry["core_profiles/global_quantities/0/li_3"]                                     = data[n:=n+1][1]   #  ali : plasma inductance
+    entry["core_profiles/global_quantities/0/t_e_peaking"]                              = data[n:=n+1][1]   #  te0 : central electron temperature
+    entry["core_profiles/global_quantities/0/t_i_average_peaking"]                      = data[n:=n+1][1]   #  ti0 : central ion temperature
     entry["core_profiles/profiles_1d/0/grid/psi"]                                       = np.asarray(data[n:=n+1][1:])  #  psi on rho grid, volt*second/radian
-    entry["core_profiles/profiles_1d/0/grid/rho"]                                       = np.asarray(data[n:=n+1][1:])  #  rho grid, meters
+    entry["core_profiles/profiles_1d/0/grid/rho_tor"]                                   = np.asarray(data[n:=n+1][1:])  #  rho grid, meters
     entry["core_profiles/profiles_1d/0/fcap"]                                           = np.asarray(data[n:=n+1][1:])  #  fcap, (i.e., f(psilim)/f(psi))
     entry["core_profiles/profiles_1d/0/gcap"]                                           = np.asarray(data[n:=n+1][1:])  #  gcap, (i.e., <(grad rho)**2*(R0/R)**2>)
     entry["core_profiles/profiles_1d/0/hcap"]                                           = np.asarray(data[n:=n+1][1:])  #  hcap, (i.e., (dvolume/drho)/(4*pi*pi*R0*rho))
@@ -88,8 +88,10 @@ def sp_to_imas(data: dict):
     entry["core_profiles/profiles_1d/0/q"]                                              = np.asarray(data[n:=n+1][1:])  # q (i.e., safety factor) profile
     entry["core_profiles/profiles_1d/0/electrons/density"]                              = np.asarray(data[n:=n+1][1:])  # electron density, #/meter**3
 
-    for i_ion in range(nion):   
-        entry[f"core_profiles/profiles_1d/0/ion/{i_ion}/density"]                       = np.asarray(data[n:=n+1][1:]) # primary ion density, #/meter**3, species: d       
+
+    for i_prim in range(nprim):        
+        entry[f"core_profiles/profiles_1d/0/ion/{i_prim}/label"]                        = namep[i_prim]                # ion name  
+        entry[f"core_profiles/profiles_1d/0/ion/{i_prim}/density"]                      = np.asarray(data[n:=n+1][1:]) # primary ion density, #/meter**3, species: d       
 
     for i_prim in range(nprim):
         entry[f"core_sources/source/ionisation/profiles_1d/0/ion/{i_prim}/density"]     = np.asarray(data[n:=n+1][1:]) # ionisation
@@ -97,7 +99,7 @@ def sp_to_imas(data: dict):
         entry[f"core_sources/source/equipartition/profiles_1d/0/ion/{i_prim}/density"]  = np.asarray(data[n:=n+1][1:]) # collisional_equipartition ,scx : s
         entry[f"core_sources/source/nbi/profiles_1d/0/ion/{i_prim}/density"]            = np.asarray(data[n:=n+1][1:]) # nbi ,sbcx : sink due to cx with be
         entry[f"core_sources/source/total/profiles_1d/0/ion/{i_prim}/density"]          = np.asarray(data[n:=n+1][1:]) # total source rate,
-        entry[f"core_sources/source/custom_1/profiles_1d/0/ion/{i_prim}/density"]       = np.asarray(data[n:=n+1][1:]) #  dudt : s dot, #/(meter**3*second)
+        entry[f"core_sources/source/custom_1/profiles_1d/0/ion/{i_prim}/density"]       = np.asarray(data[n:=n+1][1:]) # dudt : s dot, #/(meter**3*second)
 
     for i_prim in range(nprim): 
         entry[f"core_profiles/profiles_1d/0/ion/{i_prim}/density_fast"]                 = np.asarray(data[n:=n+1][1:]) # fast ion density, #/meter**3, species: d       

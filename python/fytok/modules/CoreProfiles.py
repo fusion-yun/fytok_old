@@ -59,18 +59,20 @@ class CoreProfilesElectrons(_T_core_profiles_profiles_1d_electrons):
 
 
 class CoreProfilesIon(_T_core_profile_ions):
-    def __init__(
-        self, cache: typing.Any = None, /, entry: HTreeLike | Entry = None, **kwargs
-    ) -> None:
+    def __init__(self, cache: typing.Any = None, /, entry: HTreeLike | Entry = None, **kwargs) -> None:
         if cache is None or cache is _not_found_:
             cache = {}
-        label = cache.get("label", None) or entry.get("label", None)
+
+        label = (cache.get("label", None) or entry.get("label", "")).upper()
 
         desc = atoms.get(label, None)
 
         if desc is None:
             raise RuntimeError(f"Can not find ion {label}")
+
         cache = merge_tree_recursive(cache, desc)
+        cache["label"] = label
+
         super().__init__(cache, entry=entry, **kwargs)
 
     is_impurity: bool = sp_property(default_value=False)
@@ -90,12 +92,10 @@ class CoreProfilesIon(_T_core_profile_ions):
         return super().z_ion_1d
 
     @sp_property
-    def z_ion_square_1d(self) -> Function:
-        return self.z_ion * self.z_ion
+    def z_ion_square_1d(self) -> Function: return self.z_ion * self.z_ion
 
     @property
-    def density(self) -> Function:
-        return self.density_thermal + self.density_fast
+    def density(self) -> Function: return self.density_thermal + self.density_fast
 
     density_thermal: Function = sp_property(default_value=0.0)
 
@@ -149,7 +149,7 @@ class CoreProfiles1D(_T_core_profiles_profiles_1d):
     def zeff(self) -> Function:
         return (sum([((ion.z_ion_1d**2) * ion.density) for ion in self.ion]) / self.n_i_total)
 
-    @sp_property(coordinate1="../grid/rho_tor_norm", units="Pa", type="dynamic")
+    @sp_property
     def pressure(self) -> Function:
         p = [ion.pressure for ion in self.ion]
         if len(p) == 1:
@@ -157,10 +157,10 @@ class CoreProfiles1D(_T_core_profiles_profiles_1d):
         else:
             return np.sum(p, axis=0)
 
-    @sp_property(coorindate1="../grid/rho_tor_norm")
+    @sp_property
     def pprime(self) -> Function: return self.pressure.d()
 
-    @sp_property(coordinate1="../grid/rho_tor_norm")
+    @sp_property
     def pressure_thermal(self) -> Function:
         return (sum([ion.pressure_thermal for ion in self.ion]) + self.electrons.pressure_thermal)
 
@@ -171,9 +171,8 @@ class CoreProfiles1D(_T_core_profiles_profiles_1d):
 
     j_total: Function = sp_property(coordinate1="../grid/rho_tor_norm")
 
-    @sp_property(coordinate1="../grid/rho_tor_norm")
-    def current_parallel_inside(self) -> Function:
-        return self.j_total.antiderivative()
+    @sp_property
+    def current_parallel_inside(self) -> Function: return self.j_total.antiderivative()
 
     # current_parallel_inside: Function = sp_property()
 
@@ -183,7 +182,7 @@ class CoreProfiles1D(_T_core_profiles_profiles_1d):
     @sp_property
     def conductivity_parallel(self) -> Function: return self.j_ohmic / self.e_field.parallel
 
-    @property
+    @sp_property
     def beta_pol(self) -> Function:
         return (4 * self.pressure.antiderivative() / (self.grid.r0 * constants.mu_0 * (self.j_total**2)))
 

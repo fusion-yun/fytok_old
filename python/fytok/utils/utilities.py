@@ -19,14 +19,15 @@ from spdm.data.TimeSeries import TimeSeriesAoS, TimeSlice
 from spdm.geometry.Curve import Curve
 from spdm.utils.tree_utils import merge_tree_recursive
 from spdm.utils.typing import array_type
+from spdm.utils.tags import _not_found_
 
-from fytok._imas.lastest.utilities import _T_curved_object  # TODO: implement
-from fytok._imas.lastest.utilities import _T_polarizer  # TODO: implement
-from fytok._imas.lastest.utilities import (_T_core_radial_grid,
-                                           _T_detector_aperture,
-                                           _T_ids_properties, _T_library,
-                                           _T_rz0d_dynamic_aos,
-                                           _T_rz1d_dynamic_aos)
+from .._imas.lastest.utilities import _T_curved_object  # TODO: implement
+from .._imas.lastest.utilities import _T_polarizer  # TODO: implement
+from .._imas.lastest.utilities import (_T_core_radial_grid,
+                                       _T_detector_aperture,
+                                       _T_ids_properties, _T_library,
+                                       _T_rz0d_dynamic_aos,
+                                       _T_rz1d_dynamic_aos)
 
 from .logger import logger
 
@@ -174,11 +175,16 @@ class CoreRadialGrid(_T_core_radial_grid):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args,  **kwargs)
+        rho_tor_norm = super().rho_tor_norm
+        if rho_tor_norm is _not_found_:
+            if self.rho_tor_boundary is _not_found_:
+                raise RuntimeError(f"Can not find rho_tor_norm or rho_tor_boundary")
+            self._cache["rho_tor_norm"] = super().rho_tor/self.rho_tor_boundary
 
-    @functools.cached_property
+    @sp_property
     def r0(self) -> float: return self.get("../../vacuum_toroidal_field/r0")
 
-    @functools.cached_property
+    @sp_property
     def b0(self) -> float:
         time = self.get("../time", 0.0)
         return self.get("../../vacuum_toroidal_field/b0")(time)
