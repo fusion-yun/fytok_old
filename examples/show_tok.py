@@ -7,9 +7,10 @@ from spdm.view.View import display
 
 WORKSPACE = "/home/salmon/workspace"  # "/ssd01/salmon_work/workspace/"
 
-# os.environ["SP_DATA_MAPPING_PATH"] = f"{WORKSPACE}/fytok_data/mapping"
+os.environ["SP_DATA_MAPPING_PATH"] = f"{WORKSPACE}/fytok_data/mapping"
 
 if __name__ == "__main__":
+    
     output_path = pathlib.Path(f"{WORKSPACE}/output")
 
     tok = Tokamak(
@@ -21,6 +22,8 @@ if __name__ == "__main__":
 
     # display([tok.equilibrium, tok.wall, tok.pf_active],
     #         title=tok.short_description,  output=output_path/f"{tok.tag}_rz.svg")
-    display(tok, title=tok.short_description, styles={"interferometer": False},  output=output_path/f"{tok.tag}_rz.svg")
+    display(tok, title=tok.short_description,
+            styles={"interferometer": False},
+            output=output_path/f"{tok.tag}_rz.svg")
 
     # display(tok, title=tok.short_description,   output=output_path/f"{tok.tag}_top.svg", view_point="TOP")

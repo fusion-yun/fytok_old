@@ -129,5 +129,4 @@ dmypy.json
 # Generated files
 python/fytok/_imas
 python/fytok/_mapping
-python/fytok/_schema
 **/obsolete/
