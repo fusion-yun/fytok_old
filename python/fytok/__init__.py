@@ -3,7 +3,7 @@ __path__ = __import__("pkgutil").extend_path(__path__, __name__)
 import os
 from pathlib import Path
 from .utils.logger import logger
-from .__version__ import __version__,__copyright__
+from .__version__ import __version__, __copyright__
 
 logger.info(
     rf"""
@@ -20,14 +20,14 @@ version = {__version__}
 """
 )
 
+try:
+    from importlib import resources as impresources
+    from . import mapping
+    from spdm.data.Entry import EntryProxy
 
-mapping_path = Path(__file__).parent.resolve() / "_mapping"
+    EntryProxy._mapping_path.extend(impresources.files(mapping)._paths)
 
-if mapping_path.exists():
-    SP_DATA_MAPPING_PATH = (
-        ":".join([mapping_path.as_posix(), os.environ.get("SP_DATA_MAPPING_PATH", "")])
-    ).strip(":")
-
-    os.environ["SP_DATA_MAPPING_PATH"] = SP_DATA_MAPPING_PATH
-
-    logger.info(f"FyTok Mapping path: {SP_DATA_MAPPING_PATH}")
+except Exception as error:
+    raise FileNotFoundError(f"Can not find mappings!") from error
+else:
+    logger.info(f"Mapping path {EntryProxy._mapping_path}")

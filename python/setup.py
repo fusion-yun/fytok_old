@@ -286,10 +286,10 @@ class BuildPyCommand(build_py):
             symlink_as_lastest=True,
         )
 
-        copy_data_mapping(
-            target_path=(build_dir / "_mapping").as_posix(),
-            mapping_path=self.mapping_path,
-        )
+        # copy_data_mapping(
+        #     target_path=(build_dir / "_mapping").as_posix(),
+        #     mapping_path=self.mapping_path,
+        # )
 
 
 # Setup the package
@@ -310,6 +310,11 @@ setup(
         "python",
         include=["fytok", "fytok.*", "_imas", "_imas.*", "_mapping", "_mapping.*"],
     ),  # 指定需要安装的包
+    package_data={
+        'fytok': ['mapping/*'],  # 包含 mypackage/data 目录下的所有 .dat 文件
+    },
+    include_package_data=True,
+
     # requires=requirements,              # 项目运行依赖的第三方包
     setup_requires=["saxonche"],  # 项目构建依赖的第三方包
     classifiers=[
