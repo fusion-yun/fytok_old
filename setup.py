@@ -41,6 +41,9 @@ with open("LICENSE.txt") as f:
 with open("requirements.txt") as f:
     requirements = f.read().splitlines()
 
+with open("COPYRIGHT") as f:
+    copyright = f.read().splitlines()
+
 with open("requirements_dev.txt") as f:
     requirements_dev = f.read().splitlines()
 
@@ -245,9 +248,8 @@ class BuildPyCommand(build_py):
         with open(build_dir / "__version__.py", "w") as f:
             f.write(f'__version__ = "{self.distribution.get_version()}"')
 
-        if not (build_dir / "__doc__.py").exists():
-            with open(build_dir / "__doc__.py", "w") as f:
-                f.write(f'"""\n{self.distribution.get_long_description()}\n"""')
+        # with open(build_dir / "__doc__.py", "w") as f:
+        #     f.write(f'copyright="""\n{copyright}\n"""')
 
         create_imas_warpper(
             target_path=build_dir,

@@ -109,7 +109,7 @@ class Tokamak(SpTree):
     description: str = sp_property(default_value="empty tokamak")
 
     @property
-    def short_description(self) -> str: return f"{self.device.upper()} shot={self.shot} time={self.time}s"
+    def short_description(self) -> str: return f"{self.device.upper()} #{self.shot} time={self.time}s"
 
     @property
     def tag(self) -> str: return f"{self.device.lower()}_{self.shot}_{int(self.time*100):06d}"

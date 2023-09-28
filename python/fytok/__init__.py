@@ -3,18 +3,11 @@ __path__ = __import__("pkgutil").extend_path(__path__, __name__)
 import os
 from .utils.logger import logger
 from .__version__ import __version__
-
+from .__doc__ import copyright
 logger.info(
     rf"""
 #######################################################################################################################
-    ______      _____     _
-   / ____/_  __|_   _|__ | | __
-  / /_  / / / /  | |/ _ \| |/ /
- / __/ / /_/ /   | | (_) |   <
-/_/    \__, /    |_|\___/|_|\_\
-      /____/      
-Copyright (c) 2021-present Zhi YU (Institute of Plasma Physics Chinese Academy of Sciences) 
-URL         : https://github.com/fusion-yun/fytok
+{copyright}
 version = {__version__}
 #######################################################################################################################
 """
