@@ -109,7 +109,12 @@ class Module(Actor):
 
         super().__init__(cache, entry=entry,   default_value=default_value, parent=parent, **kwargs)
 
-        logger.debug(f"Load module {self.__class__.__name__}")  # MPI_ENBLAED={self.mpi_enabled}
+        logger.debug(f"""Load module {self.__class__.__name__}  
+###############################################################################
+{self.code.dump()}
+{self.__class__.__doc__}
+###############################################################################
+""")
 
     code: Code = sp_property()
     """Generic decription of the code-specific parameters for the code that has produced this IDS"""

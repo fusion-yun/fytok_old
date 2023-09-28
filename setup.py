@@ -16,7 +16,9 @@ import pprint
 import shutil
 import subprocess
 
-from setuptools import Command, find_namespace_packages, setup
+
+#  TODO: replace setuptools after Python 3.11
+from setuptools import Command, find_namespace_packages, setup, find_packages
 from setuptools.command.build_py import build_py
 
 # Get version from git, '--abbrev=0'
@@ -167,9 +169,9 @@ def copy_data_mapping(target_path, mapping_path: str):
     # 用logger输出log信息
     print(f"Copy device data mapping for IMAS warpper to {target_path}")
 
-    target_path = pathlib.Path(target_path)
+    target_path = target_path
 
-    mapping_path = pathlib.Path(mapping_path) / "mapping"
+    mapping_path = mapping_path / "mapping"
 
     if mapping_path.exists():
         shutil.copytree(mapping_path, target_path / "_mapping", dirs_exist_ok=True)
@@ -225,13 +227,10 @@ class BuildPyCommand(build_py):
 
     def initialize_options(self):
         super().initialize_options()
-        self.dd_path = os.environ.get("IMAS_PREFIX", None) or os.environ.get(
-            "IMAS_DD_PATH", "/home/salmon/workspace/data-dictionary"
-        )
+        self.dd_path = os.environ.get("IMAS_PREFIX", None) or \
+            os.environ.get("IMAS_DD_PATH", "/home/salmon/workspace/data-dictionary")
 
-        self.mapping_path = os.environ.get(
-            "FYTOK_MAPPING_PATH", "/home/salmon/workspace/fytok_data"
-        )
+        self.mapping_path = os.environ.get("FYTOK_MAPPING_PATH", "/home/salmon/workspace/fytok_data")
 
     def finalize_options(self):
         super().finalize_options()
@@ -251,22 +250,25 @@ class BuildPyCommand(build_py):
                 f.write(f'"""\n{self.distribution.get_long_description()}\n"""')
 
         create_imas_warpper(
-            target_path=(build_dir / "_imas").as_posix(),
+            target_path=build_dir,
             dd_path=self.dd_path,
             symlink_as_lastest=True,
         )
 
         copy_data_mapping(
-            target_path=(build_dir / "_mapping").as_posix(),
-            mapping_path=self.mapping_path,
+            target_path=build_dir,
+            mapping_path=pathlib.Path(self.mapping_path),
         )
+
+
+fytok_pkgs = find_namespace_packages("python", exclude=["*._*", "*.unimplemented", "*.unimplemented.*&", "*.tests"])
 
 
 # Setup the package
 setup(
     name="fytok",
     version=version,
-    description=f"Fusion Tokamak Simulation Toolkit",
+    description=f"FuYun Tokamak Ontology Toolkit",
     long_description=long_description,
     url="http://fytok.github.io",
     author="Zhi YU",
@@ -277,11 +279,13 @@ setup(
         "install_imas_wrapper": InstallIMASWrapper,
     },
     packages=find_namespace_packages(
-        "python",
-        include=["fytok", "fytok.*", "_imas", "_imas.*", "_mapping", "_mapping.*"],
-    ),  # 指定需要安装的包
-    # requires=requirements,              # 项目运行依赖的第三方包
+        "python", exclude=["*._*", "*.todo", "*.todo.*", "*obsolete", "*.tests"]),  # 指定需要安装的包
+
+    package_dir={"": "python"},  # 指定包的root目录
+
+
     setup_requires=["saxonche"],  # 项目构建依赖的第三方包
+
     classifiers=[
         "Development Status :: 0 - Beta",
         "Intended Audience :: Plasma Physicists",
