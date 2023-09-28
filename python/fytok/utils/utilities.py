@@ -109,12 +109,16 @@ class Module(Actor):
 
         super().__init__(cache, entry=entry,   default_value=default_value, parent=parent, **kwargs)
 
-        logger.debug(f"""Load module {self.__class__.__name__}  
+        if self.__class__.__doc__ is not None:
+
+            logger.debug(f"""
 ###############################################################################
-{self.code.dump()}
+Load module {self.code.name or self.__class__.__name__}  version={self.code.version or '0.0.0'}
 {self.__class__.__doc__}
 ###############################################################################
 """)
+        else:
+            logger.debug(f"""Load module {self.code.name or self.__class__.__name__}  version={self.code.version  or '0.0.0'}""")
 
     code: Code = sp_property()
     """Generic decription of the code-specific parameters for the code that has produced this IDS"""
