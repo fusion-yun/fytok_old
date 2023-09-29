@@ -22,9 +22,9 @@ if __name__ == "__main__":
 
     tok = Tokamak(f"EAST+MDSplus://{WORKSPACE}/fytok_data/mdsplus/~t/?enable=efit_east&shot={shot}")
 
-    tok.refresh(time=2.0)
+    tok.refresh(time=9.26)
 
-    psi = tok.equilibrium.time_slice.current.profiles_2d[0].psi.__value__
+    psi = tok.equilibrium.time_slice.current.profiles_2d[0].psi.__array__()
 
     psi_min = psi.min()
 
@@ -35,9 +35,9 @@ if __name__ == "__main__":
     for i in range(150):
         display(tok.equilibrium,
                 title=f"EAST shot={shot} time={tok.equilibrium.time_slice.current.time:.2f}s ",
-                output=output_path / f"tok_east_{int(tok.equilibrium.time_slice.current.time*100)}.png",
+                output=output_path / f"{tok.tag}.png",
                 transparent=False,
-                psi={"$matplotlib": {"levels": levels}}
+                styles={"psi": {"$matplotlib": {"levels": levels}}}
                 )
         logger.debug(f"Equilibrium [{i:5d}] time={tok.equilibrium.time_slice.current.time:.2f}s")
 
