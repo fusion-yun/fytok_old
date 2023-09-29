@@ -437,7 +437,7 @@ class GEQdskFile(File):
             logger.debug(f"Open File mode={self.mode}  {self.url} ")
 
     def __del__(self):
-        if self._fid is not None:
+        if getattr(self, "_fid", None) is not None:
             self._fid.close()
             self._fid = None
 

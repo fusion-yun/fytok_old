@@ -120,7 +120,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         return 5
 
     @functools.cached_property
-    def _psirz(self) -> Field[float]:
+    def _psirz(self) -> Field:
         psirz = super().get("psirz", _not_found_, force=True, type_hint=np.ndarray)
 
         if isinstance(psirz, np.ndarray):
@@ -264,21 +264,21 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     def psi_boundary(self) -> float: return self.critical_points[1][0].psi
 
     @sp_property
-    def r(self) -> Field[float]: return Field(self.grid.points[0], grid=self.grid)
+    def r(self) -> Field: return Field(self.grid.points[0], grid=self.grid)
 
     @sp_property
-    def z(self) -> Field[float]: return Field(self.grid.points[1], grid=self.grid)
+    def z(self) -> Field: return Field(self.grid.points[1], grid=self.grid)
 
     @sp_property
-    def jacobian(self) -> Field[float]:
+    def jacobian(self) -> Field:
         raise NotImplementedError(f"")
 
     @sp_property
-    def tensor_covariant(self) -> Field[float]:
+    def tensor_covariant(self) -> Field:
         raise NotImplementedError(f"")
 
     @sp_property
-    def tensor_contravariant(self) -> Field[float]:
+    def tensor_contravariant(self) -> Field:
         raise NotImplementedError(f"")
 
     def find_surfaces(self, psi:  float | ArrayType | typing.Sequence[float], o_point: OXPoint = True) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
@@ -861,43 +861,43 @@ class FyEquilibriumProfiles2D(Equilibrium.TimeSlice.Profiles2D):
         return Mesh(dim1, dim2, mesh_type=mesh_type)
 
     @sp_property
-    def r(self) -> Field[float]: return Field(self.grid.points[0], mesh=self.grid)
+    def r(self) -> Field: return Field(self.grid.points[0], mesh=self.grid)
 
     @sp_property
-    def z(self) -> Field[float]: return Field(self.grid.points[1], mesh=self.grid)
+    def z(self) -> Field: return Field(self.grid.points[1], mesh=self.grid)
 
-    # @sp_property[Field[float]]
-    # def psi(self) -> Field[float]: return super().psi
+    # @sp_property[Field]
+    # def psi(self) -> Field: return super().psi
 
     @property
-    def psi_norm(self) -> Field[float]:
+    def psi_norm(self) -> Field:
         return (super().psi-self._coord.psi_magetic_axis)/(self._coord.psi_boundary - self._coord.psi_magetic_axis)
 
     @sp_property
-    def phi(self) -> Field[float]: return super().phi
+    def phi(self) -> Field: return super().phi
 
     @sp_property
-    def theta(self) -> Field[float]: return super().theta
+    def theta(self) -> Field: return super().theta
 
     @sp_property
-    def j_tor(self) -> Field[float]:
+    def j_tor(self) -> Field:
         return _R*self._profiles_1d.pprime(self.psi) + self._profiles_1d.ffprime(self.psi)/(_R*scipy.constants.mu_0)
         # return super().j_tor  # return self._profiles_1d.j_tor(self.psi)
 
     @sp_property
-    def j_parallel(self) -> Field[float]: return super().j_parallel  # return self._profiles_1d.j_parallel(self.psi)
+    def j_parallel(self) -> Field: return super().j_parallel  # return self._profiles_1d.j_parallel(self.psi)
 
     @sp_property
-    def b_field_r(self) -> Field[float]:
+    def b_field_r(self) -> Field:
         """ COCOS Eq.19 [O. Sauter and S.Yu. Medvedev, Computer Physics Communications 184 (2013) 293] """
         return self.psi.pd(0, 1) / _R * (self._coord._s_RpZ * self._coord._s_Bp / self._coord._s_eBp_2PI)
 
     @sp_property
-    def b_field_z(self) -> Field[float]:
+    def b_field_z(self) -> Field:
         return -self.psi.pd(1, 0) / _R * (self._coord._s_RpZ * self._coord._s_Bp / self._coord._s_eBp_2PI)
 
     @sp_property
-    def b_field_tor(self) -> Field[float]: return self._coord.fpol(self.psi) / _R
+    def b_field_tor(self) -> Field: return self._coord.fpol(self.psi) / _R
 
 
 class FyEquilibriumBoundary(Equilibrium.TimeSlice.Boundary):
@@ -1023,7 +1023,7 @@ class FyEquilibriumTimeSlice(Equilibrium.TimeSlice):
 
         match view_point.lower():
             case "rz":
-                if self.profiles_2d[0].psi.__value__ is not _not_found_:
+                if self.profiles_2d[0].psi._cache is not _not_found_:
 
                     o_points, x_points = self.coordinate_system.critical_points
 

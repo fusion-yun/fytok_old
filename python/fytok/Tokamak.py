@@ -64,9 +64,7 @@ class Tokamak(SpTree):
                     run = url_.query.pop("run", None)
                 args = [url_, *args[1:]]
 
-        cache, entry, default_value, parent, kwargs = HTree._parser_args(
-            *args, **kwargs
-        )
+        cache, entry, default_value, parent, kwargs = HTree._parser_args(*args, **kwargs)
 
         metadata = kwargs.pop("metadata", {})
 

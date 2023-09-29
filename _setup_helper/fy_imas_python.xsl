@@ -414,7 +414,7 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
     <xsl:when test="($type_hint='FLT_1D' or $type_hint='flt_1d_type') and ends-with(xs:annotation/xs:appinfo/coordinate1,'time')">Function</xsl:when>
     <xsl:when test="($type_hint='FLT_1D' or $type_hint='flt_1d_type') and ends-with(xs:annotation/xs:appinfo/coordinate1,'rho_tor_norm')">Function</xsl:when>                  
     <xsl:when test="($type_hint='FLT_1D' or $type_hint='flt_1d_type') and ends-with(xs:annotation/xs:appinfo/coordinate1,'psi')">Function</xsl:when>                     
-    <xsl:when test="($type_hint='FLT_2D' or $type_hint='flt_2d_type') and normalize-space(xs:annotation/xs:appinfo/coordinate1)=('../grid/dim1')  and normalize-space(xs:annotation/xs:appinfo/coordinate2)=('../grid/dim2')">Field[float]</xsl:when>          
+    <xsl:when test="($type_hint='FLT_2D' or $type_hint='flt_2d_type') and normalize-space(xs:annotation/xs:appinfo/coordinate1)=('../grid/dim1')  and normalize-space(xs:annotation/xs:appinfo/coordinate2)=('../grid/dim2')">Field</xsl:when>          
     <xsl:when test="$type_map/entry[@key=$type_hint]"><xsl:value-of select="$type_map/entry[@key=$type_hint]"/></xsl:when>          
     <xsl:when test="xs:annotation/xs:appinfo/doc_identifier">_E_<xsl:value-of select = "document(concat($DD_BASE_DIR, xs:annotation/xs:appinfo/doc_identifier))/constants/@name"/></xsl:when>
     <xsl:otherwise>_T_<xsl:value-of select="$type_hint"/> </xsl:otherwise>   

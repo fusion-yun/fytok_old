@@ -18,7 +18,7 @@ try:
     from . import _mapping
     from spdm.data.Entry import EntryProxy
 
-    EntryProxy._mapping_path.extend(impresources.files(_mapping)._paths)
+    EntryProxy._mapping_path.extend([p.resolve() for p in impresources.files(_mapping)._paths])
 
 except Exception as error:
     raise FileNotFoundError(f"Can not find mappings!") from error
