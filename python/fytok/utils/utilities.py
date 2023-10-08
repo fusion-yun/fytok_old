@@ -24,22 +24,46 @@ from spdm.utils.tags import _not_found_
 from .logger import logger
 
 
+@sp_tree
+class IDSProperties:
+    """Interface Data Structure properties. This element identifies the node above as
+        an IDS"""
+
+    comment: str
+    """ Any comment describing the content of this IDS"""
+
+    homogeneous_time: int
+
+    provider: str
+    """ Name of the person in charge of producing this data"""
+
+    creation_date: str
+    """ Date at which this data has been produced"""
+
+    version_put: SpTree = sp_property()
+    """ Version of the access layer package used to PUT this IDS"""
+
+    provenance: SpTree
+    """ Provenance information about this IDS"""
+
+
 class Library(SpTree):
-    name: str = sp_property()
-    commit: str = sp_property()
-    version: str = sp_property()
-    repository: str = sp_property()
-    parameters: SpTree = sp_property()
+    name: str  # = sp_property()
+    commit: str  # = sp_property()
+    version: str  # = sp_property()
+    repository: str  # = sp_property()
+    parameters: SpTree  # = sp_property()
 
 
-class Code(SpTree):
-    name: str = sp_property()
-    commit: str = sp_property()
-    version: str = sp_property()
-    repository: str = sp_property()
-    parameters: SpTree = sp_property()
-    output_flag: array_type = sp_property()
-    library: List[Library] = sp_property()
+@sp_tree
+class Code:
+    name: str               # = sp_property()
+    commit: str             # = sp_property()
+    version: str            # = sp_property()
+    repository: str         # = sp_property()
+    parameters: SpTree      # = sp_property()
+    output_flag: array_type  # = sp_property()
+    library: List[Library]  # = sp_property()
 
 
 class Module(Actor):
@@ -86,7 +110,7 @@ Load module {self.code.name or self.__class__.__name__}  version={self.code.vers
 class IDS(Module):
     """Base class of IDS"""
 
-    ids_properties = sp_property()
+    ids_properties: ids_properties = sp_property()
     """Interface Data Structure properties. This element identifies the node above as an IDS"""
 
     time: array_type = sp_property(type="dynamic", units="s", ndims=1, data_type=float)
@@ -101,12 +125,14 @@ class IDS(Module):
         super().refresh(*args, **kwargs)
 
 
-class PointRZ(SpTree):  # utilities._T_rz0d_dynamic_aos
+@sp_tree
+class PointRZ:  # utilities._T_rz0d_dynamic_aos
     r: float
     z: float
 
 
-class CurveRZ(SpTree):  # utilities._T_rz1d_dynamic_aos
+@sp_tree
+class CurveRZ:  # utilities._T_rz1d_dynamic_aos
     r: array_type
     z: array_type
 
