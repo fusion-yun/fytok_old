@@ -1,11 +1,7 @@
 import os
 import pathlib
 
-import numpy as np
 from fytok.Tokamak import Tokamak
-from fytok.utils.logger import logger
-from spdm.data.File import File
-from spdm.data.Entry import Entry, open_entry
 from spdm.view.View import display
 
 WORKSPACE = "/home/salmon/workspace"  # "/ssd01/salmon_work/workspace/"
@@ -32,5 +28,5 @@ if __name__ == "__main__":
                   ],
                   equilibrium={"code": {"name": "eq_analyze"}})
 
-    display(tok, title=f"{tok.device.upper()} RZ   View ", output=output_path/"east_rz.svg")
-    display(tok, title=f"{tok.device.upper()} Top  View ", output=output_path/"east_top.svg", view="TOP")
+    display(tok, title=f"{tok.device.upper()} RZ   View ", output=output_path/"d3d_rz.svg")
+    # display(tok, title=f"{tok.device.upper()} Top  View ", output=output_path/"d3d_top.svg", view_point="TOP")

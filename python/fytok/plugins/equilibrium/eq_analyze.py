@@ -1023,7 +1023,7 @@ class FyEquilibriumTimeSlice(Equilibrium.TimeSlice):
 
         match view_point.lower():
             case "rz":
-                if self.profiles_2d[0].psi._cache is not _not_found_:
+                if self.profiles_2d[0].psi is not _not_found_:
 
                     o_points, x_points = self.coordinate_system.critical_points
 
