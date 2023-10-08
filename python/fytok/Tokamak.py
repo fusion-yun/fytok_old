@@ -28,7 +28,7 @@ from .modules.TransportSolverNumerics import TransportSolverNumerics
 from .modules.Wall import Wall
 from .utils.envs import *
 from .utils.logger import logger
-from .schema import GLOBAL_SCHEMA
+from .modules.schema import GLOBAL_SCHEMA
 # from .modules.EdgeProfiles import EdgeProfiles
 # from .modules.EdgeSources import EdgeSources
 # from .modules.EdgeTransport import EdgeTransport

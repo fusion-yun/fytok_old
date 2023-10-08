@@ -5,7 +5,7 @@ from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Polyline import Polyline
 from spdm.utils.tags import _not_found_
 
-from ..schema import  wall  
+from .schema import  wall  
 from ..utils.logger import logger
 
 

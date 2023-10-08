@@ -5,7 +5,7 @@ from ..utils.logger import logger
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Line import Line
 
-from ..schema import interferometer
+from .schema import interferometer
 
 
 class Interferometer(interferometer._T_interferometer):

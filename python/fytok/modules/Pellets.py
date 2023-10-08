@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from spdm.geometry.GeoObject import GeoObject
 
-from ..schema import pellets
+from .schema import pellets
 
 
 class Pellets(pellets._T_pellets):

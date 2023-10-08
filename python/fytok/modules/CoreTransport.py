@@ -3,7 +3,7 @@ from spdm.data.AoS import AoS
 from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 
-from ..schema import core_transport
+from .schema import core_transport
 
 from ..utils.logger import logger
 from ..utils.utilities import CoreRadialGrid

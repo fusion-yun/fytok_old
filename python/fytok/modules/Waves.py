@@ -1,4 +1,4 @@
-from ..schema import waves
+from .schema import waves
 
 
 class Waves(waves._T_waves):

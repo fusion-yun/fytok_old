@@ -1,8 +1,6 @@
-import os
 import pathlib
 
 from fytok.modules.Equilibrium import Equilibrium
-from fytok.utils.logger import logger
 from spdm.data.File import File
 from spdm.view.View import display
 

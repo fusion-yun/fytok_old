@@ -12,7 +12,7 @@ from spdm.geometry.Point import Point
 from spdm.utils.tags import _not_found_
 from spdm.utils.tree_utils import merge_tree_recursive
 
-from ..schema import equilibrium, utilities
+from .schema import equilibrium, utilities
 from ..utils.utilities import *
 from ..utils.logger import logger
 
@@ -42,25 +42,16 @@ class EquilibriumProfiles2D(equilibrium._T_equilibrium_profiles_2d):
 
 
 class EquilibriumBoundary(equilibrium._T_equilibrium_boundary):
-    """Geometry of the plasma boundary typically taken at psi_norm = 99.x % of the
-            separatrix"""
 
     type: int = sp_property(type="dynamic")
-    """ 0 (limiter) or 1 (diverted)"""
 
     outline: CurveRZ = sp_property()
-    """ RZ outline of the plasma boundary"""
 
     psi_norm: float = sp_property(type="dynamic", units="-")
-    """ Value of the normalised poloidal flux at which the boundary is taken (typically
-		99.x %), the flux being normalised to its value at the separatrix"""
 
     psi: float = sp_property(type="dynamic", units="Wb")
-    """ Value of the poloidal flux at which the boundary is taken"""
 
     geometric_axis: PointRZ = sp_property()
-    """ RZ position of the geometric axis (defined as (Rmin+Rmax) / 2 and (Zmin+Zmax) /
-		2 of the boundary)"""
 
 
 class EquilibriumTimeSlice(equilibrium._T_equilibrium_time_slice):

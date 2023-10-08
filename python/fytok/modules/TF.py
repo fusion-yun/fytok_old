@@ -4,10 +4,9 @@ import numpy as np
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Polygon import Polygon
 from spdm.utils.constants import TWOPI
-from ..utils.logger import logger
 from spdm.utils.typing import _not_found_
-
-from ..schema import tf
+from ..utils.logger import logger
+from .schema import tf
 
 
 class TF(tf._T_tf):

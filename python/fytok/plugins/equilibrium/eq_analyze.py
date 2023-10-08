@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import scipy.constants
-from fytok.schema import equilibrium, utilities
+from fytok.modules.schema import equilibrium, utilities
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.utils.logger import logger
 from fytok.utils.utilities import CurveRZ, CurveRZ, PointRZ

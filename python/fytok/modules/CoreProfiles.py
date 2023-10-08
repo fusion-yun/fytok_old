@@ -13,7 +13,7 @@ from spdm.utils.tags import _not_found_
 from spdm.utils.tree_utils import merge_tree_recursive
 from spdm.utils.typing import HTreeLike
 
-from ..schema import core_profiles, utilities
+from .schema import core_profiles, utilities
 from ..utils.atoms import atoms
 from ..utils.logger import logger
 from ..utils.utilities import CoreRadialGrid

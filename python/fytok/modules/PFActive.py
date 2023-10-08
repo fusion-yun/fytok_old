@@ -1,10 +1,8 @@
-import typing
 
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Polygon import Rectangle
-from ..utils.logger import logger
 
-from ..schema import pf_active
+from .schema import pf_active
 
 
 class PFActive(pf_active._T_pf_active):

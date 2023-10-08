@@ -7,7 +7,7 @@ from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 from ..utils.logger import logger
 from spdm.utils.typing import array_type
-from ..schema import core_sources
+from .schema import core_sources
 from .CoreProfiles import CoreProfiles
 from .Equilibrium import Equilibrium
 from ..utils.utilities import CoreRadialGrid

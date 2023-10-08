@@ -1,9 +1,7 @@
 
-from ..schema import magnetics
+from .schema import magnetics
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Point import Point
-from ..utils.logger import logger
-import typing
 
 
 class Magnetics(magnetics._T_magnetics):
