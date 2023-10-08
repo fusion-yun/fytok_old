@@ -6,12 +6,10 @@ from dataclasses import dataclass
 
 import numpy as np
 import scipy.constants
-from fytok._imas.lastest.equilibrium import \
-    _T_equilibrium_global_quantities_magnetic_axis
-from fytok._imas.lastest.utilities import _T_identifier_dynamic_aos3
+from fytok.schema import equilibrium, utilities
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.utils.logger import logger
-from fytok.utils.utilities import CurveRZ, RZTuple, RZTuple_
+from fytok.utils.utilities import CurveRZ, CurveRZ, PointRZ
 from spdm.data.AoS import AoS
 from spdm.data.Expression import Expression, Variable
 from spdm.data.Field import Field
@@ -200,7 +198,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         return opoints, xpoints
 
     @sp_property
-    def grid_type(self) -> _T_identifier_dynamic_aos3:
+    def grid_type(self) -> utilities._T_identifier_dynamic_aos3:
         desc = super().grid_type
         if desc.name is None or desc.name is _not_found_:
             desc = {"name": "rectangular", "index": 1, "description": "default"}
@@ -620,7 +618,7 @@ class FyEquilibriumGlobalQuantities(Equilibrium.TimeSlice.GlobalQuantities):
     def psi_boundary(self) -> float: return self._coord.psi_boundary  # sp_property(type="dynamic",units="Wb")
 
     @sp_property
-    def magnetic_axis(self) -> _T_equilibrium_global_quantities_magnetic_axis:
+    def magnetic_axis(self) -> equilibrium._T_equilibrium_global_quantities_magnetic_axis:
         """Magnetic axis position and toroidal field	structure"""
         return {
             "r":  self._coord.magnetic_axis[0],
@@ -628,15 +626,15 @@ class FyEquilibriumGlobalQuantities(Equilibrium.TimeSlice.GlobalQuantities):
             "b_field_tor": np.nan  # FIXME: b_field_tor
         }
 
-        # magnetic_axis  :_T_equilibrium_global_quantities_magnetic_axis =  sp_property()
+        # magnetic_axis  :equilibrium._T_equilibrium_global_quantities_magnetic_axis =  sp_property()
 
-        # current_centre  :_T_equilibrium_global_quantities_current_centre =  sp_property()
+        # current_centre  :equilibrium._T_equilibrium_global_quantities_current_centre =  sp_property()
 
         # q_axis  :float =  sp_property(type="dynamic",units="-",cocos_label_transformation="q_like",cocos_transformation_expression=".fact_q",cocos_leaf_name_aos_indices="equilibrium.time_slice{i}.global_quantities.q_axis")
 
         # q_95  :float =  sp_property(type="dynamic",units="-",cocos_label_transformation="q_like",cocos_transformation_expression=".fact_q",cocos_leaf_name_aos_indices="equilibrium.time_slice{i}.global_quantities.q_95")
 
-        # q_min  :_T_equilibrium_global_quantities_qmin =  sp_property()
+        # q_min  :equilibrium._T_equilibrium_global_quantities_qmin =  sp_property()
 
         # energy_mhd  :float =  sp_property(type="dynamic",units="J")
 
@@ -690,10 +688,12 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
 
     @sp_property
     def j_parallel(self) -> Function:
-        fvac = self._coord._fvac
-        d = np.asarray(function_like(np.asarray(self.volume),
-                                     np.asarray(fvac*self.plasma_current/self.fpol)).pd())
-        return self._coord._R0*(self.fpol / fvac)**2 * d
+        return self._coord.surface_average(dot(self._coord.j, self._coord.B)/np.sqrt(self._coord.B2))
+
+        # fvac = self._coord._fvac
+        # d = np.asarray(function_like(np.asarray(self.volume),
+        #                              np.asarray(fvac*self.plasma_current/self.fpol)).pd())
+        # return self._coord._R0*(self.fpol / fvac)**2 * d
 
     @sp_property
     def q(self) -> Function:
@@ -794,7 +794,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
         return self._coord.shape_property(self.psi)
 
     @sp_property
-    def geometric_axis(self) -> RZTuple_:
+    def geometric_axis(self) -> PointRZ:
         return {"r": (self._shape_property.Rmin+self._shape_property.Rmax)*0.5,
                 "z": (self._shape_property.Zmin+self._shape_property.Zmax)*0.5}
 
@@ -926,7 +926,7 @@ class FyEquilibriumBoundary(Equilibrium.TimeSlice.Boundary):
         return self._coord.shape_property(self.psi)
 
     @sp_property
-    def geometric_axis(self) -> RZTuple:
+    def geometric_axis(self) -> PointRZ:
         return {"r": (self._shape_property.Rmin+self._shape_property.Rmax)*0.5,
                 "z": (self._shape_property.Zmin+self._shape_property.Zmax)*0.5}
 
@@ -967,7 +967,7 @@ class FyEquilibriumBoundary(Equilibrium.TimeSlice.Boundary):
         return
 
     @sp_property
-    def active_limiter_point(self) -> List[RZTuple]: return NotImplemented
+    def active_limiter_point(self) -> List[PointRZ]: return NotImplemented
 
 
 class FyEquilibriumBoundarySeparatrix(Equilibrium.TimeSlice.BoundarySeparatrix):
@@ -990,12 +990,12 @@ class FyEquilibriumBoundarySeparatrix(Equilibrium.TimeSlice.BoundarySeparatrix):
     def psi(self) -> float: return self._coord.psi_boundary
 
     @sp_property
-    def x_point(self) -> List[RZTuple]:
+    def x_point(self) -> List[PointRZ]:
         _, x = self._coord.critical_points
-        return List[RZTuple]([{"r": v.r, "z": v.z} for v in x[:]])
+        return List[PointRZ]([{"r": v.r, "z": v.z} for v in x[:]])
 
     @sp_property
-    def strike_point(self) -> List[RZTuple]: raise NotImplementedError("TODO: strike_point")
+    def strike_point(self) -> List[PointRZ]: raise NotImplementedError("TODO: strike_point")
 
 
 class FyEquilibriumTimeSlice(Equilibrium.TimeSlice):

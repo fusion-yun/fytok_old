@@ -5,11 +5,11 @@ from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Polyline import Polyline
 from spdm.utils.tags import _not_found_
 
-from .._imas.lastest.wall import _T_wall, _T_wall_2d
+from ..schema import  wall  
 from ..utils.logger import logger
 
 
-class Wall(_T_wall):
+class Wall(wall._T_wall):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

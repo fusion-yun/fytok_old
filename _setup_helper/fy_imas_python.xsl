@@ -364,26 +364,26 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
     <entry key='CPX_5D'       >array_type</entry>
     <entry key='CPX_6D'       >array_type</entry>
     
-    <entry key='signal_flt_1d'>Signal[float]</entry>
-    <entry key='signal_flt_2d'>SignalND[float]</entry>
-    <entry key='signal_flt_3d'>SignalND[float]</entry>
-    <entry key='signal_flt_4d'>SignalND[float]</entry>
-    <entry key='signal_flt_5d'>SignalND[float]</entry>
-    <entry key='signal_flt_6d'>SignalND[float]</entry>
+    <entry key='signal_flt_1d'>Signal</entry>
+    <entry key='signal_flt_2d'>SignalND</entry>
+    <entry key='signal_flt_3d'>SignalND</entry>
+    <entry key='signal_flt_4d'>SignalND</entry>
+    <entry key='signal_flt_5d'>SignalND</entry>
+    <entry key='signal_flt_6d'>SignalND</entry>
 
-    <entry key='signal_int_1d'>Signal[int]</entry>
-    <entry key='signal_int_2d'>SignalND[int]</entry>
-    <entry key='signal_int_3d'>SignalND[int]</entry>
-    <entry key='signal_int_4d'>SignalND[int]</entry>
-    <entry key='signal_int_5d'>SignalND[int]</entry>
-    <entry key='signal_int_6d'>SignalND[int]</entry>
+    <entry key='signal_int_1d'>Signal</entry>
+    <entry key='signal_int_2d'>SignalND</entry>
+    <entry key='signal_int_3d'>SignalND</entry>
+    <entry key='signal_int_4d'>SignalND</entry>
+    <entry key='signal_int_5d'>SignalND</entry>
+    <entry key='signal_int_6d'>SignalND</entry>
 
-    <entry key='signal_flt_1d_validity'>Signal[float]</entry>
+    <entry key='signal_flt_1d_validity'>Signal</entry>
     <entry key='time'>array_type</entry>
    
     <entry key='code'>Code</entry>
 
-    <entry key='magnetics_method_distinct'>Signal[float]</entry>
+    <entry key='magnetics_method_distinct'>Signal</entry>
     <entry key='detector_aperture'>DetectorAperture</entry>
 
 

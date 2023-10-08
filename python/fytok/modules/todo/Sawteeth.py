@@ -1,4 +1,4 @@
-from  fytok._imas.lastest.sawteeth import _T_sawteeth
+from  ..schema import sawteeth import _T_sawteeth
 
 
 class Sawteeth(_T_sawteeth):

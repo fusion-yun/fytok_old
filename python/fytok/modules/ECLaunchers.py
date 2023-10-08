@@ -3,10 +3,11 @@ from __future__ import annotations
 
 from spdm.geometry.GeoObject import GeoObject
 
-from .._imas.lastest.ec_launchers import _T_ec_launchers
+
+from ..schema import ec_launchers
 
 
-class ECLaunchers(_T_ec_launchers):
+class ECLaunchers(ec_launchers._T_ec_launchers):
     def __geometry__(self, view_point="RZ", **kwargs) -> GeoObject:
 
         geo = {}

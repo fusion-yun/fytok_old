@@ -12,29 +12,20 @@ from spdm.geometry.Point import Point
 from spdm.utils.tags import _not_found_
 from spdm.utils.tree_utils import merge_tree_recursive
 
-from .._imas.lastest.equilibrium import (_T_equilibrium,
-                                         _T_equilibrium_boundary,
-                                         _T_equilibrium_boundary_separatrix,
-                                         _T_equilibrium_constraints,
-                                         _T_equilibrium_coordinate_system,
-                                         _T_equilibrium_global_quantities,
-                                         _T_equilibrium_profiles_1d,
-                                         _T_equilibrium_profiles_2d,
-                                         _T_equilibrium_time_slice)
-from .._imas.lastest.utilities import (_T_b_tor_vacuum_aos3,
-                                       _T_equilibrium_profiles_2d_grid)
+from ..schema import equilibrium, utilities
+
 from ..utils.logger import logger
 
 
-class EquilibriumCoordinateSystem(_T_equilibrium_coordinate_system):
+class EquilibriumCoordinateSystem(equilibrium._T_equilibrium_coordinate_system):
     pass
 
 
-class EquilibriumGlobalQuantities(_T_equilibrium_global_quantities):
+class EquilibriumGlobalQuantities(equilibrium._T_equilibrium_global_quantities):
     pass
 
 
-class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
+class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
     minor_radius: Function = sp_property(type="dynamic", coordinate1="../psi", units="m")
     """ minor radius """
@@ -46,11 +37,11 @@ class EquilibriumProfiles1D(_T_equilibrium_profiles_1d):
     """ squareness: T. Luce, Plasma Phys. Control. Fusion 55 (2013) 095009 """
 
 
-class EquilibriumProfiles2D(_T_equilibrium_profiles_2d):
+class EquilibriumProfiles2D(equilibrium._T_equilibrium_profiles_2d):
     pass
 
 
-class EquilibriumTimeSlice(_T_equilibrium_time_slice):
+class EquilibriumTimeSlice(equilibrium._T_equilibrium_time_slice):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._R0 = self.vacuum_toroidal_field.r0
@@ -60,11 +51,11 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
     Profiles1D = EquilibriumProfiles1D
     Profiles2D = EquilibriumProfiles2D
     GlobalQuantities = EquilibriumGlobalQuantities
-    Boundary = _T_equilibrium_boundary
-    BoundarySeparatrix = _T_equilibrium_boundary_separatrix
-    Constraints = _T_equilibrium_constraints
+    Boundary = equilibrium._T_equilibrium_boundary
+    BoundarySeparatrix = equilibrium._T_equilibrium_boundary_separatrix
+    Constraints = equilibrium._T_equilibrium_constraints
 
-    vacuum_toroidal_field: _T_b_tor_vacuum_aos3 = sp_property()
+    vacuum_toroidal_field: utilities._T_b_tor_vacuum_aos3 = sp_property()
 
     global_quantities: GlobalQuantities = sp_property()
 
@@ -119,7 +110,7 @@ class EquilibriumTimeSlice(_T_equilibrium_time_slice):
         return geo, styles
 
 
-class Equilibrium(_T_equilibrium):
+class Equilibrium(equilibrium._T_equilibrium):
     r"""
     Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
 

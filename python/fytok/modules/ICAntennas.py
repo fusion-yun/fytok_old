@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from spdm.geometry.GeoObject import GeoObject
 
-from .._imas.lastest.ic_antennas import _T_ic_antennas
+from ..schema import ic_antennas 
 
 
-class ICAntennas(_T_ic_antennas):
+class ICAntennas(ic_antennas._T_ic_antennas):
     def __geometry__(self, view="RZ", **kwargs) -> GeoObject:
 
         geo = {}

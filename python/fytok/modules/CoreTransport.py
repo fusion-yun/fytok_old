@@ -3,34 +3,31 @@ from spdm.data.AoS import AoS
 from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 
-from .._imas.lastest.core_transport import (
-    _T_core_transport, _T_core_transport_model,
-    _T_core_transport_model_1_momentum, _T_core_transport_model_electrons,
-    _T_core_transport_model_ions, _T_core_transport_model_neutral,
-    _T_core_transport_model_profiles_1d)
+from ..schema import core_transport
+
 from ..utils.logger import logger
 from ..utils.utilities import CoreRadialGrid
 from .CoreProfiles import CoreProfiles
 from .Equilibrium import Equilibrium
 
 
-class CoreTransportElectrons(_T_core_transport_model_electrons):
+class CoreTransportElectrons(core_transport._T_core_transport_model_electrons):
 
-    momentum: _T_core_transport_model_1_momentum = sp_property()
+    momentum: core_transport._T_core_transport_model_1_momentum = sp_property()
     """ Transport coefficients related to the ion momentum equations for various
 		components (directions)"""
 
 
-class CoreTransportNeutral(_T_core_transport_model_neutral):
+class CoreTransportNeutral(core_transport._T_core_transport_model_neutral):
     pass
 
 
-class CoreTransportIon(_T_core_transport_model_ions):
+class CoreTransportIon(core_transport._T_core_transport_model_ions):
     """Transport coefficients for density equations. Coordinates two levels above."""
     pass
 
 
-class CoreTransportProfiles1D(_T_core_transport_model_profiles_1d):
+class CoreTransportProfiles1D(core_transport._T_core_transport_model_profiles_1d):
 
     Ion = CoreTransportIon
 
@@ -55,7 +52,7 @@ class CoreTransportProfiles1D(_T_core_transport_model_profiles_1d):
     neutral: AoS[Neutral] = sp_property(coordinate1="1...N")
 
 
-class CoreTransportModel(_T_core_transport_model):
+class CoreTransportModel(core_transport._T_core_transport_model):
     _plugin_prefix = 'fytok.plugins.core_transport.model.'
     _plugin_config = {}
 
@@ -72,7 +69,7 @@ class CoreTransportModel(_T_core_transport_model):
         self.profiles_1d.advance(*args, **kwargs)
 
 
-class CoreTransport(_T_core_transport):
+class CoreTransport(core_transport._T_core_transport):
 
     Model = CoreTransportModel
 

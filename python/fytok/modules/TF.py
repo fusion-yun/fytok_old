@@ -7,10 +7,10 @@ from spdm.utils.constants import TWOPI
 from ..utils.logger import logger
 from spdm.utils.typing import _not_found_
 
-from .._imas.lastest.tf import _T_tf
+from ..schema import tf
 
 
-class TF(_T_tf):
+class TF(tf._T_tf):
 
     def __geometry__(self, view_point="RZ", **kwargs) -> GeoObject:
         geo = {}

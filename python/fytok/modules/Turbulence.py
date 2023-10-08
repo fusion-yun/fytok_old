@@ -1,4 +1,4 @@
-from  fytok._imas.lastest.turbulence import _T_turbulence
+from  ..schema import turbulence import _T_turbulence
 
 
 class Turbulence(_T_turbulence):

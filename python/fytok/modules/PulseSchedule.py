@@ -1,6 +1,5 @@
-from  fytok._imas.lastest.pulse_schedule import _T_pulse_schedule
+from ..schema import pulse_schedule
 
-  
 
-class PulseSchedule(_T_pulse_schedule):
-   pass
+class PulseSchedule(pulse_schedule._T_pulse_schedule):
+    pass

@@ -7,23 +7,19 @@ from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS
 from ..utils.logger import logger
 from spdm.utils.typing import array_type
-
-from .._imas.lastest.core_sources import (_T_core_sources,
-                                          _T_core_sources_source,
-                                          _T_core_sources_source_global,
-                                          _T_core_sources_source_profiles_1d)
+from ..schema import core_sources
 from .CoreProfiles import CoreProfiles
 from .Equilibrium import Equilibrium
 from ..utils.utilities import CoreRadialGrid
 
 
-class CoreSourcesSource(_T_core_sources_source):
+class CoreSourcesSource(core_sources._T_core_sources_source):
     _plugin_prefix = 'fytok.plugins.core_sources.source.'
     _plugin_config = {}
 
-    Profiles1D = _T_core_sources_source_profiles_1d
+    Profiles1D = core_sources._T_core_sources_source_profiles_1d
 
-    GlobalQuantities = _T_core_sources_source_global
+    GlobalQuantities = core_sources._T_core_sources_source_global
 
     @property
     def time(self) -> array_type: return self._parent.time
@@ -39,7 +35,7 @@ class CoreSourcesSource(_T_core_sources_source):
         logger.debug(f"{self.__class__.__name__}.advance")
 
 
-class CoreSources(_T_core_sources):
+class CoreSources(core_sources._T_core_sources):
 
     Source = CoreSourcesSource
 

@@ -1,12 +1,12 @@
 
-from .._imas.lastest.magnetics import _T_magnetics
+from ..schema import magnetics
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Point import Point
 from ..utils.logger import logger
 import typing
 
 
-class Magnetics(_T_magnetics):
+class Magnetics(magnetics._T_magnetics):
     """Magnetic diagnostics for equilibrium identification and plasma shape control.
     """
 

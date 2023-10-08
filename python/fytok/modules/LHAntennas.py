@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from spdm.geometry.GeoObject import GeoObject
 
-from .._imas.lastest.lh_antennas import _T_lh_antennas
+from ..schema import lh_antennas
 
 
-class LHAntennas(_T_lh_antennas):
+class LHAntennas(lh_antennas._T_lh_antennas):
     def __geometry__(self, view_point="RZ", **kwargs) -> GeoObject:
 
         geo = {}

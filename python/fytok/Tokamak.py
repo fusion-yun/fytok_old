@@ -9,7 +9,6 @@ from spdm.utils.tags import _not_found_
 from spdm.utils.tree_utils import merge_tree_recursive
 from spdm.utils.uri_utils import uri_split
 
-from ._imas.lastest.__version__ import __version__ as imas_version
 
 # ---------------------------------
 from .modules.CoreProfiles import CoreProfiles
@@ -29,7 +28,7 @@ from .modules.TransportSolverNumerics import TransportSolverNumerics
 from .modules.Wall import Wall
 from .utils.envs import *
 from .utils.logger import logger
-
+from .schema import GLOBAL_SCHEMA
 # from .modules.EdgeProfiles import EdgeProfiles
 # from .modules.EdgeSources import EdgeSources
 # from .modules.EdgeTransport import EdgeTransport
@@ -46,8 +45,6 @@ class Tokamak(SpTree):
     """
 
     def __init__(self, *args, device=None, shot=None, run=None, **kwargs):
-        imas_version_major, *_ = imas_version.split(".")
-        # imas_version_minor, imas_version_patch,
 
         if device is None and len(args) > 0 and isinstance(args[0], str):
             if args[0].isidentifier():
@@ -70,7 +67,7 @@ class Tokamak(SpTree):
 
         cache = merge_tree_recursive(cache, kwargs)
 
-        cache["imas_version"] = imas_version
+        cache["schema"] = GLOBAL_SCHEMA
         cache["device"] = device or None
         cache["shot"] = shot or 0
         cache["run"] = run
@@ -83,7 +80,7 @@ class Tokamak(SpTree):
             shot=shot,
             run=run,
             local_schema=device,
-            global_schema=f"imas/{imas_version_major}",
+            global_schema=GLOBAL_SCHEMA,
         )
 
         super().__init__(

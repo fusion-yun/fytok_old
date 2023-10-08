@@ -113,7 +113,6 @@ def create_imas_warpper(
     dd_path: str,
     xsl_file: str = None,
     xsl_schema_file: str = None,
-    symlink_as_lastest=True,
 ):
     """Create IMAS warpper for python"""
 
@@ -162,8 +161,8 @@ def create_imas_warpper(
             output_file=(target_path / "_imas" / dd_version / "._physics_data_dictionary.txt").as_posix(),
         )
 
-    if symlink_as_lastest:
-        cp_to_lastest(target_path / "_imas", dd_version)
+    # if symlink_as_lastest:
+    #     cp_to_lastest(target_path / "_imas", dd_version)
 
 
 def copy_data_mapping(target_path, mapping_path: str):
@@ -172,9 +171,9 @@ def copy_data_mapping(target_path, mapping_path: str):
     # 用logger输出log信息
     print(f"Copy device data mapping for IMAS warpper to {target_path}")
 
-    target_path = target_path
+    target_path = pathlib.Path(target_path)
 
-    mapping_path = mapping_path / "mapping"
+    mapping_path = pathlib.Path(mapping_path) / "mapping"
 
     if mapping_path.exists():
         shutil.copytree(mapping_path, target_path / "_mapping", dirs_exist_ok=True)
@@ -194,7 +193,6 @@ class InstallIMASWrapper(Command):
 
     def initialize_options(self):
         self.prefix = SRC_ROOT
-        self.as_lastest = True
         self.dd_path = os.environ.get("IMAS_PREFIX", None) or os.environ.get(
             "IMAS_DD_PATH", "/home/salmon/workspace/data-dictionary"
         )
@@ -213,7 +211,6 @@ class InstallIMASWrapper(Command):
             target_path=(target_path).as_posix(),
             dd_path=self.dd_path,
             xsl_file=self.stylesheet_file,
-            symlink_as_lastest=self.as_lastest,
         )
 
         copy_data_mapping(
@@ -251,16 +248,9 @@ class BuildPyCommand(build_py):
         # with open(build_dir / "__doc__.py", "w") as f:
         #     f.write(f'copyright="""\n{copyright}\n"""')
 
-        create_imas_warpper(
-            target_path=build_dir,
-            dd_path=self.dd_path,
-            symlink_as_lastest=True,
-        )
+        create_imas_warpper(target_path=build_dir,  dd_path=self.dd_path,)
 
-        copy_data_mapping(
-            target_path=build_dir,
-            mapping_path=pathlib.Path(self.mapping_path),
-        )
+        copy_data_mapping(target_path=build_dir, mapping_path=pathlib.Path(self.mapping_path), )
 
 
 fytok_pkgs = find_namespace_packages("python", exclude=["*._*", "*.unimplemented", "*.unimplemented.*&", "*.tests"])

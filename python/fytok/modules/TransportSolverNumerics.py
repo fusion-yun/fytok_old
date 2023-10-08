@@ -1,9 +1,7 @@
 from scipy import constants
 from fytok.utils.logger import logger
 
-from fytok._imas.lastest.transport_solver_numerics import \
-    _T_transport_solver_numerics
-
+from ..schema import transport_solver_numerics
 from .CoreProfiles import CoreProfiles
 from .CoreSources import CoreSources
 from .CoreTransport import CoreTransport
@@ -15,7 +13,7 @@ TOLERANCE = 1.0e-6
 TWOPI = 2.0 * constants.pi
 
 
-class TransportSolverNumerics(_T_transport_solver_numerics):
+class TransportSolverNumerics(transport_solver_numerics._T_transport_solver_numerics):
     r"""
         Solve transport equations
         :math:`\rho=\sqrt{ \Phi/\pi B_{0}}`

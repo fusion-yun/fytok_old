@@ -1,4 +1,5 @@
-from  fytok._imas.lastest.gyrokinetics import _T_gyrokinetics
+from ..schema import gyrokinetics
 
-class Gyrokinetics(_T_gyrokinetics):
+
+class Gyrokinetics(gyrokinetics._T_gyrokinetics):
     pass

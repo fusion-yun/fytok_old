@@ -1,6 +1,6 @@
 
 
-from  fytok._imas.lastest.mse import _T_mse
+from  ..schema import mse import _T_mse
 
 
 class MSE(_T_mse):

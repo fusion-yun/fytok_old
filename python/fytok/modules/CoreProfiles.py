@@ -13,11 +13,7 @@ from spdm.utils.tags import _not_found_
 from spdm.utils.tree_utils import merge_tree_recursive
 from spdm.utils.typing import HTreeLike
 
-from .._imas.lastest.core_profiles import (_T_core_profiles,
-                                           _T_core_profiles_profiles_1d)
-from .._imas.lastest.utilities import (_T_core_profile_ions,
-                                       _T_core_profiles_profiles_1d_electrons,
-                                       _T_core_profiles_vector_components_1)
+from ..schema import core_profiles, utilities
 from ..utils.atoms import atoms
 from ..utils.logger import logger
 from ..utils.utilities import CoreRadialGrid
@@ -26,7 +22,7 @@ PI = scipy.constants.pi
 TWOPI = 2.0 * PI
 
 
-class CoreProfilesElectrons(_T_core_profiles_profiles_1d_electrons):
+class CoreProfilesElectrons(utilities._T_core_profiles_profiles_1d_electrons):
     density_fast: Function = sp_property(default_value=0.0)
 
     @sp_property[Function]
@@ -57,7 +53,7 @@ class CoreProfilesElectrons(_T_core_profiles_profiles_1d_electrons):
         return np.sqrt(self.temperature * scipy.constants.electron_volt / scipy.constants.electron_mass)
 
 
-class CoreProfilesIon(_T_core_profile_ions):
+class CoreProfilesIon(utilities._T_core_profile_ions):
     def __init__(self, cache: typing.Any = None, /, entry: HTreeLike | Entry = None, **kwargs) -> None:
         if cache is None or cache is _not_found_:
             cache = {}
@@ -117,7 +113,7 @@ class CoreProfilesIon(_T_core_profile_ions):
         )
 
 
-class CoreProfiles1D(_T_core_profiles_profiles_1d):
+class CoreProfiles1D(utilities._T_core_profiles_profiles_1d):
     Ion = CoreProfilesIon
 
     Electrons = CoreProfilesElectrons
@@ -231,7 +227,7 @@ class CoreProfiles1D(_T_core_profiles_profiles_1d):
         lnCoul = self.coulomb_logarithm(self.grid.rho_tor_norm)
         return 1.09e16 * ((Te / 1000.0) ** (3 / 2)) / Ne / lnCoul
 
-    class EField(_T_core_profiles_vector_components_1):
+    class EField(utilities._T_core_profiles_vector_components_1):
         @sp_property
         def parallel(self) -> Function:
             e_par = self.get("parallel", None)
@@ -257,7 +253,7 @@ class CoreProfiles1D(_T_core_profiles_profiles_1d):
     pprime: Function = sp_property(coordinate1="../grid/rho_tor_norm", label="$p^{\prime}$")
 
 
-class CoreProfiles(_T_core_profiles):
+class CoreProfiles(core_profiles._T_core_profiles):
     Profiles1D = CoreProfiles1D
 
     profiles_1d: TimeSeriesAoS[Profiles1D] = sp_property()
