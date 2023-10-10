@@ -206,7 +206,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     @sp_property
     def grid(self) -> Mesh:
 
-        psi_norm = super().get("dim1", _not_found_)
+        psi_norm = super().get("dim1", _not_found_, _type_hint=array_type)
 
         if psi_norm is _not_found_:
             psi_norm = self.get("../../code/parameters/psi_norm", 128)
@@ -226,7 +226,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
             logger.warning(
                 f"Singular values are caused when psi_norm takes values of 0.0 or 1.0.! {psi_norm[0]} {psi_norm[-1]}")
 
-        theta = super().get("dim2", _not_found_)
+        theta = super().get("dim2", _not_found_, _type_hint=array_type)
 
         if theta is _not_found_:
             theta = self.get("../../code/parameters/theta", 64)
@@ -669,7 +669,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
     r"""  $\Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi$    """
 
     @sp_property
-    def dphi_dpsi(self) -> Expression: return self.fpol * self._coord.surface_integral(1.0/(_R**2))
+    def dphi_dpsi(self) -> Function: return self.fpol * self._coord.surface_integral(1.0/(_R**2))
 
     @sp_property
     def fpol(self) -> Function: return np.sqrt(2.0*self.f_df_dpsi.antiderivative()+(self._coord._R0*self._coord._B0)**2)

@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     # coordinate_system = tok.equilibrium.time_slice.current.coordinate_system
 
-    # logger.debug(profiles_1d.f_df_dpsi(profiles_1d.psi))
+    logger.debug(profiles_1d.f_df_dpsi(profiles_1d.psi))
 
     # display([tok.equilibrium, tok.wall, tok.pf_active],
     #         title=tok.short_description,  output=output_path/f"{tok.tag}_rz.svg")

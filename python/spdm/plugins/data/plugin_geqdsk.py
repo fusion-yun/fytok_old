@@ -224,13 +224,13 @@ def sp_to_geqdsk(d, description: str | None = None,  time_slice=0,   **kwargs) -
 
     # psi
 
-    psirz = eq.get("profiles_2d/0/psi")
+    psirz = eq.get("profiles_2d/psi")
 
-    if eq.get("profiles_2d/0/grid_type/index", None) != 1:
-        raise NotImplementedError(f"TODO: {eq.get('profiles_2d/0/grid_type/index', None)}")
+    if eq.get("profiles_2d/grid_type/index", None) != 1:
+        raise NotImplementedError(f"TODO: {eq.get('profiles_2d/grid_type/index', None)}")
 
-    dim1 = eq.get("profiles_2d/0/grid/dim1", None)
-    dim2 = eq.get("profiles_2d/0/grid/dim2", None)
+    dim1 = eq.get("profiles_2d/grid/dim1", None)
+    dim2 = eq.get("profiles_2d/grid/dim2", None)
 
     nw = dim1.size
     nh = dim2.size
