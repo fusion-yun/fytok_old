@@ -109,7 +109,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
     @sp_property
     def cocos(self) -> int:
-        cocos_flag = super().get("cocos", _not_found_, type_hint=int)
+        cocos_flag = super().get("cocos", _not_found_, _type_hint=int)
 
         if cocos_flag is not _not_found_ and cocos_flag is not None:
             return cocos_flag
@@ -118,7 +118,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
     @functools.cached_property
     def _psirz(self) -> Field:
-        psirz = super().get("psirz", _not_found_, force=True, type_hint=np.ndarray)
+        psirz = super().get("psirz", _not_found_, _force=True, _type_hint=np.ndarray)
 
         if isinstance(psirz, np.ndarray):
             dim1 = super().get("grid/dim1", _not_found_)
@@ -130,9 +130,9 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
             psirz = Field(psirz, dim1, dim2, mesh_type=grid_type, name="psirz")
         elif psirz is _not_found_ or psirz is None:
-            psirz = self._parent.profiles_2d[0].psi
+            psirz = self._parent.profiles_2d.psi
         else:
-            logger.warning(f"Ignore {type(psirz)}. Using ../profiles_2d[0].psi ")
+            logger.warning(f"Ignore {type(psirz)}. Using ../profiles_2d.psi ")
 
         if not isinstance(psirz, Field):
             raise RuntimeError(f"Can not get psirz! {type(psirz)}")
@@ -672,7 +672,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
     def dphi_dpsi(self) -> Expression: return self.fpol * self._coord.surface_integral(1.0/(_R**2))
 
     @sp_property
-    def fpol(self) -> Function: return np.sqrt(2.0*self.f_df_dpsi.antiderivative()+(self._R0*self._B0)**2)
+    def fpol(self) -> Function: return np.sqrt(2.0*self.f_df_dpsi.antiderivative()+(self._coord._R0*self._coord._B0)**2)
 
     dpressure_dpsi: Function = sp_property(coordinate1="../psi", extrapolate='zeros')
 
@@ -1008,7 +1008,7 @@ class FyEquilibriumTimeSlice(Equilibrium.TimeSlice):
 
     profiles_1d: FyEquilibriumProfiles1D
 
-    profiles_2d: AoS[FyEquilibriumProfiles2D]
+    profiles_2d: FyEquilibriumProfiles2D
 
     global_quantities: FyEquilibriumGlobalQuantities
 
@@ -1028,7 +1028,7 @@ class FyEquilibriumTimeSlice(Equilibrium.TimeSlice):
 
         match view_point.lower():
             case "rz":
-                if self.profiles_2d[0].psi is not _not_found_:
+                if self.profiles_2d.psi is not _not_found_:
 
                     o_points, x_points = self.coordinate_system.critical_points
 
@@ -1041,7 +1041,7 @@ class FyEquilibriumTimeSlice(Equilibrium.TimeSlice):
                     geo["boundary_separatrix"] = [surf for _, surf in
                                                   self.coordinate_system.find_surfaces(self.boundary_separatrix.psi, o_point=False)]
 
-                    geo["psi"] = self.profiles_2d[0].psi
+                    geo["psi"] = self.profiles_2d.psi
 
                 styles["o_points"] = {"$matplotlib": {"color": 'red',   'marker': '.', "linewidths": 0.5}}
                 styles["x_points"] = {"$matplotlib": {"color": 'blue',  'marker': 'x', "linewidths": 0.5}}

@@ -61,9 +61,7 @@ class Tokamak(SpTree):
                     run = url_.query.pop("run", None)
                 args = [url_, *args[1:]]
 
-        cache, entry, default_value, parent, kwargs = HTree._parser_args(*args, **kwargs)
-
-        metadata = kwargs.pop("metadata", {})
+        cache, entry, parent, kwargs = HTree._parser_args(*args, **kwargs)
 
         cache = merge_tree_recursive(cache, kwargs)
 
@@ -85,10 +83,8 @@ class Tokamak(SpTree):
 
         super().__init__(
             cache,
-            entry=entry,
-            parent=parent,
-            default_value=default_value,
-            metadata=metadata,
+            _entry=entry,
+            _parent=parent,
         )
 
     device: str = sp_property()

@@ -72,26 +72,25 @@ class Module(Actor):
 
     def __init__(self, *args, **kwargs):
 
-        cache, entry, default_value, parent,  kwargs = HTree._parser_args(*args, **kwargs)
+        cache, entry, parent,   kwargs = HTree._parser_args(*args, **kwargs)
 
         if self.__class__ is Module or "_plugin_prefix" in vars(self.__class__):
-
-            default_value = merge_tree_recursive(
-                getattr(self.__class__, "_plugin_config", {}), default_value)
 
             pth = Path("code/name")
 
             plugin_name = pth.fetch(cache, default_value=None) or \
-                pth.fetch(default_value, default_value=None) or \
+                pth.fetch(self.__class__._metadata.get("default_value", {}), default_value=None) or \
                 pth.fetch(kwargs, default_value=None)
 
             self.__class__.__dispatch_init__([plugin_name],
-                                             self, cache, entry=entry, default_value=default_value,
-                                             parent=parent, **kwargs)
+                                             self, cache,
+                                             _entry=entry,
+                                             _parent=parent,
+                                             **kwargs)
 
             return
 
-        super().__init__(cache, entry=entry,   default_value=default_value, parent=parent, **kwargs)
+        super().__init__(cache, _entry=entry, _parent=parent,  **kwargs)
 
         if self.__class__.__doc__ is not None and self.code.version is not _not_found_:
 

@@ -405,7 +405,7 @@ def sp_from_geqdsk(geqdsk: dict, eq: typing.Optional[Entry] = None) -> Entry:
                 "q": geqdsk["qpsi"],
                 "psi": np.linspace(psi_axis, psi_boundary, nw),
             },
-            "profiles_2d": [
+            "profiles_2d":
                 {
                     "type": "total",  # total field
                     "grid_type": {"name": "rectangular", "index": 1},
@@ -414,8 +414,7 @@ def sp_from_geqdsk(geqdsk: dict, eq: typing.Optional[Entry] = None) -> Entry:
                         "dim2": np.linspace(zmin, zmax, nh),
                     },
                     "psi": psirz,
-                }
-            ],
+            },
         }
     ]
 

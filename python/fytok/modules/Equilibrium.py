@@ -377,7 +377,7 @@ class EquilibriumTimeSlice(TimeSlice):
 
     profiles_1d: Profiles1D
 
-    profiles_2d: AoS[Profiles2D]
+    profiles_2d: Profiles2D
 
     coordinate_system: CoordinateSystem
 
@@ -474,13 +474,13 @@ class Equilibrium(IDS):
 
     _plugin_prefix = 'fytok.plugins.equilibrium.'
 
-    _plugin_config = {
+    _metadata = {"default_value": {
         "time_slice": {
             "coordinate_system": {"grid":  {
                 "dim1": np.linspace(0, 0.995, 128),
                 "dim2": np.linspace(0, 1, 64),
             }}},
-        "code": {"name": "eq_analyze"}}
+        "code": {"name": "eq_analyze"}}}
 
     TimeSlice = EquilibriumTimeSlice
 
