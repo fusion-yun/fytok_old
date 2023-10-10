@@ -102,7 +102,7 @@ class EquilibriumGlobalQuantities:
     plasma_resistance: float = sp_property(units="ohm")
 
 
-@sp_tree(coordinate1="../psi")
+@sp_tree(coordinate1="psi", extrapolate='zeros')
 class EquilibriumProfiles1D:
 
     psi: array_type = sp_property(units="Wb")

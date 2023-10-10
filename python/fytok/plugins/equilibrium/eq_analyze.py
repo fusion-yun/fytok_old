@@ -674,9 +674,9 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
     @sp_property
     def fpol(self) -> Function: return np.sqrt(2.0*self.f_df_dpsi.antiderivative()+(self._coord._R0*self._coord._B0)**2)
 
-    dpressure_dpsi: Function = sp_property(coordinate1="../psi", extrapolate='zeros')
+    dpressure_dpsi: Function
 
-    f_df_dpsi: Function = sp_property(coordinate1="../psi", extrapolate='zeros')
+    f_df_dpsi: Function
 
     @property
     def ffprime(self) -> Function: return self.f_df_dpsi
@@ -823,7 +823,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
     def elongation_lower(self) -> Function:
         return ((self._shape_property.Zmax+self._shape_property.Zmin)*0.5-self._shape_property.Zmin)/(self._shape_property.Rmax-self._shape_property.Rmin)
 
-    @sp_property(coordinate1="../psi")
+    @sp_property
     def triangularity(self) -> Function:
         return (self._shape_property.Rzmax-self._shape_property.Rzmin)/(self._shape_property.Rmax - self._shape_property.Rmin)*2
 
