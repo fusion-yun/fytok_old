@@ -15,7 +15,7 @@ from spdm.data.Expression import Expression, Variable
 from spdm.data.Field import Field
 from spdm.data.Function import Function, function_like
 from spdm.data.HTree import List
-from spdm.data.sp_property import sp_property
+from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.geometry.Curve import Curve
 from spdm.geometry.GeoObject import GeoObject, GeoObjectSet
@@ -27,8 +27,7 @@ from spdm.numlib.optimize import minimize_filter
 from spdm.utils.constants import *
 from spdm.utils.tags import _not_found_
 from spdm.utils.tree_utils import merge_tree_recursive
-from spdm.utils.typing import (ArrayLike, ArrayType, NumericType, array_type,
-                               scalar_type)
+from spdm.utils.typing import (ArrayLike,  NumericType, array_type, scalar_type)
 
 _R = Variable(0, "R")
 _Z = Variable(1, "Z")
@@ -91,11 +90,10 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # logger.debug(f"Create MagneticCoordSystem.")
 
-        self._B0 = self._parent._B0  # super().get("b0", )   # magnetic field on magnetic axis
-        self._R0 = self._parent._R0  # super().get("r0", , type_hint=float)   # major radius of magnetic axis
-        self._Ip = self._parent.global_quantities.ip  # super().get("ip", , type_hint=float)  # plasma current
+        self._B0 = self._parent.vacuum_toroidal_field.b0
+        self._R0 = self._parent.vacuum_toroidal_field.r0
+        self._Ip = self._parent.global_quantities.ip
 
         self._fpol = self._parent.profiles_1d.f  # poloidal current function
 
@@ -113,9 +111,10 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     def cocos(self) -> int:
         cocos_flag = super().get("cocos", _not_found_, type_hint=int)
 
-        if cocos_flag is not _not_found_:
+        if cocos_flag is not _not_found_ and cocos_flag is not None:
             return cocos_flag
-        return 5
+        else:
+            return 5
 
     @functools.cached_property
     def _psirz(self) -> Field:
@@ -130,7 +129,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
                 raise RuntimeError(f"Can not create grid!")
 
             psirz = Field(psirz, dim1, dim2, mesh_type=grid_type, name="psirz")
-        elif psirz is _not_found_:
+        elif psirz is _not_found_ or psirz is None:
             psirz = self._parent.profiles_2d[0].psi
         else:
             logger.warning(f"Ignore {type(psirz)}. Using ../profiles_2d[0].psi ")
@@ -147,7 +146,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         xpoints = []
 
-        psi = self._psirz
+        psi: Field = self._psirz
 
         R, Z = psi.mesh.points
 
@@ -204,12 +203,13 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
             desc = {"name": "rectangular", "index": 1, "description": "default"}
         return desc
 
-    @sp_property[Mesh]
+    @sp_property
     def grid(self) -> Mesh:
-        psi_norm = super().grid.dim1
+
+        psi_norm = super().get("dim1", _not_found_)
 
         if psi_norm is _not_found_:
-            psi_norm = self._parent.code.parameters.get("psi_norm", 128)
+            psi_norm = self.get("../../code/parameters/psi_norm", 128)
 
         if isinstance(psi_norm, np.ndarray) and psi_norm.ndim == 0:
             psi_norm_boundary = self._parent.boundary.psi_norm
@@ -226,7 +226,10 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
             logger.warning(
                 f"Singular values are caused when psi_norm takes values of 0.0 or 1.0.! {psi_norm[0]} {psi_norm[-1]}")
 
-        theta = super().grid.dim2
+        theta = super().get("dim2", _not_found_)
+
+        if theta is _not_found_:
+            theta = self.get("../../code/parameters/theta", 64)
 
         if isinstance(theta, int):
             theta = np.linspace(0, TWOPI, theta, endpoint=False)
@@ -241,10 +244,10 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         return CurvilinearMesh(psi_norm, theta, geometry=surfs, cycles=[False, TWOPI])
 
     @property
-    def psi_norm(self) -> ArrayType: return self.grid.dim1
+    def psi_norm(self) -> array_type: return self.grid.dim1
 
     @property
-    def psi(self) -> ArrayType:
+    def psi(self) -> array_type:
         return self.psi_norm * (self.psi_boundary-self.psi_magnetic_axis) + self.psi_magnetic_axis
 
     def psirz(self, r: NumericType, z: NumericType) -> NumericType:
@@ -279,7 +282,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     def tensor_contravariant(self) -> Field:
         raise NotImplementedError(f"")
 
-    def find_surfaces(self, psi:  float | ArrayType | typing.Sequence[float], o_point: OXPoint = True) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
+    def find_surfaces(self, psi:  float | array_type | typing.Sequence[float], o_point: OXPoint = True) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
         """
             if o_point is not None:
                 only return  closed surface  enclosed o-point
@@ -407,7 +410,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
                 # else:
                 #     yield level, Curve(surf, theta, is_closed=is_closed)
 
-    def find_surfaces_by_psi_norm(self, psi_norm: float | ArrayType | typing.Sequence[float], *args,   **kwargs) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
+    def find_surfaces_by_psi_norm(self, psi_norm: float | array_type | typing.Sequence[float], *args,   **kwargs) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
 
         psi_magnetic_axis = self.psi_magnetic_axis
 
@@ -655,26 +658,25 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
 
     ###############################
     # 1-D
-    @property
-    def psi_norm(self) -> ArrayType: return self._coord.psi_norm
+    @sp_property
+    def psi_norm(self) -> array_type: return self._coord.psi_norm
 
-    @property
-    def psi(self) -> ArrayType: return self._coord.psi
+    @sp_property
+    def psi(self) -> array_type: return self._coord.psi
 
     @sp_property
     def phi(self) -> Function: return self.dphi_dpsi.antiderivative()
     r"""  $\Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi$    """
 
-    @sp_property(coordinate1="../psi")
-    def dphi_dpsi(self) -> Function: return self.f * self._coord.surface_integral(1.0/(_R**2))
-    # return self.f * self.gm1 * self.dvolume_dpsi / TWOPI
+    @sp_property
+    def dphi_dpsi(self) -> Expression: return self.fpol * self._coord.surface_integral(1.0/(_R**2))
 
-    @property
+    @sp_property
     def fpol(self) -> Function: return np.sqrt(2.0*self.f_df_dpsi.antiderivative()+(self._R0*self._B0)**2)
 
-    dpressure_dpsi: Function = sp_property(extrapolate='zeros')
+    dpressure_dpsi: Function = sp_property(coordinate1="../psi", extrapolate='zeros')
 
-    f_df_dpsi: Function = sp_property(extrapolate='zeros')
+    f_df_dpsi: Function = sp_property(coordinate1="../psi", extrapolate='zeros')
 
     @property
     def ffprime(self) -> Function: return self.f_df_dpsi
@@ -857,7 +859,7 @@ class FyEquilibriumProfiles2D(Equilibrium.TimeSlice.Profiles2D):
     def grid(self) -> Mesh:
         dim1 = super().grid.dim1
         dim2 = super().grid.dim2
-        mesh_type = super().grid_type
+        mesh_type = super().grid_type.name
         return Mesh(dim1, dim2, mesh_type=mesh_type)
 
     @sp_property
@@ -998,20 +1000,23 @@ class FyEquilibriumBoundarySeparatrix(Equilibrium.TimeSlice.BoundarySeparatrix):
     def strike_point(self) -> List[PointRZ]: raise NotImplementedError("TODO: strike_point")
 
 
+@sp_tree
 class FyEquilibriumTimeSlice(Equilibrium.TimeSlice):
 
-    profiles_1d: FyEquilibriumProfiles1D = sp_property()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    profiles_2d: AoS[FyEquilibriumProfiles2D] = sp_property()
-    """ 定义多个 profiles_2d, type==0 对应  Total fields """
+    profiles_1d: FyEquilibriumProfiles1D
 
-    global_quantities: FyEquilibriumGlobalQuantities = sp_property()
+    profiles_2d: AoS[FyEquilibriumProfiles2D]
 
-    boundary: FyEquilibriumBoundary = sp_property()
+    global_quantities: FyEquilibriumGlobalQuantities
 
-    boundary_separatrix: FyEquilibriumBoundarySeparatrix = sp_property()
+    boundary: FyEquilibriumBoundary
 
-    coordinate_system: FyEquilibriumCoordinateSystem = sp_property()
+    boundary_separatrix: FyEquilibriumBoundarySeparatrix
+
+    coordinate_system: FyEquilibriumCoordinateSystem
 
     def __geometry__(self, view_point="RZ", **kwargs) -> GeoObject:
         """
@@ -1069,7 +1074,7 @@ class FyEqAnalyze(Equilibrium):
 
     TimeSlice = FyEquilibriumTimeSlice
 
-    time_slice: TimeSeriesAoS[FyEquilibriumTimeSlice] = sp_property()
+    time_slice: TimeSeriesAoS[TimeSlice] = sp_property()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, ** kwargs)

@@ -383,6 +383,7 @@ from .utilities import _E_<xsl:value-of select = "document(concat($DD_BASE_DIR, 
    
     <entry key='code'>Code</entry>
     <entry key='ids_properties'>IDSProperties</entry>
+    <!-- <entry key='identifier_dynamic_aos3'>Identifier</entry> -->
 
     <entry key='rz0d_dynamic_aos'>PointRZ</entry>
     <entry key='rz1d_dynamic_aos'>CurveRZ</entry>

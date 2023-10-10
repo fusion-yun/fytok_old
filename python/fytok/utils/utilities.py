@@ -206,10 +206,11 @@ class DetectorAperture:  # (utilities._T_detector_aperture):
         return geo, styles
 
 
+@sp_tree
 class Identifier(SpTree):
-    name: str = sp_property(type="dynamic")
-    index: int = sp_property(type="dynamic")
-    description: str = sp_property(type="dynamic")
+    name: str
+    index: int
+    description: str
 
 
 # __all__ = ["IDS", "Module", "Code", "Library",

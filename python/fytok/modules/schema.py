@@ -4,9 +4,8 @@
 # =============================================================================
 
 import os
-
-from .._imas.v3_38_1_dirty.__version__ import __version__ as imas_version
-from .._imas.v3_38_1_dirty import equilibrium, core_profiles, core_sources,\
+from .._schemas.imas_v3_38_1_dirty.__version__ import __version__ as imas_version
+from .._schemas.imas_v3_38_1_dirty import equilibrium, core_profiles, core_sources,\
     ic_antennas, interferometer, lh_antennas, magnetics, nbi, pellets,\
     core_transport,  wall, pf_active, tf, transport_solver_numerics, utilities, ec_launchers, amns_data
 
