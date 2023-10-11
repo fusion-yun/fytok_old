@@ -9,7 +9,7 @@ import scipy.constants
 from fytok.modules.schema import equilibrium, utilities
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.utils.logger import logger
-from fytok.utils.utilities import CurveRZ, CurveRZ, PointRZ
+from fytok.modules.Utilities import CurveRZ, CurveRZ, PointRZ
 from spdm.data.AoS import AoS
 from spdm.data.Expression import Expression, Variable
 from spdm.data.Field import Field

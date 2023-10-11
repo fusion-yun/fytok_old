@@ -6,7 +6,7 @@ from spdm.data.TimeSeries import TimeSeriesAoS
 from .schema import core_transport
 
 from ..utils.logger import logger
-from ..utils.utilities import CoreRadialGrid
+from .Utilities import CoreRadialGrid
 from .CoreProfiles import CoreProfiles
 from .Equilibrium import Equilibrium
 

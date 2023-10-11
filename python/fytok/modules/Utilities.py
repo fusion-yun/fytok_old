@@ -5,11 +5,11 @@ import typing
 from dataclasses import dataclass
 from enum import IntFlag
 
+from enum import IntFlag
 import numpy as np
 from spdm.data.Path import Path
 from spdm.data.Actor import Actor
 from spdm.data.AoS import AoS
-from spdm.data.Expression import Expression
 from spdm.data.Field import Field
 from spdm.data.Function import Function
 from spdm.data.HTree import Dict, HTree, List
@@ -21,54 +21,43 @@ from spdm.utils.tree_utils import merge_tree_recursive
 from spdm.utils.typing import array_type
 from spdm.utils.tags import _not_found_
 
-from .logger import logger
+from ..utils.logger import logger
 
 
 @sp_tree
 class IDSProperties:
-    """Interface Data Structure properties. This element identifies the node above as
-        an IDS"""
-
     comment: str
-    """ Any comment describing the content of this IDS"""
-
     homogeneous_time: int
-
     provider: str
-    """ Name of the person in charge of producing this data"""
-
     creation_date: str
-    """ Date at which this data has been produced"""
-
-    version_put: SpTree = sp_property()
-    """ Version of the access layer package used to PUT this IDS"""
-
+    version_put: SpTree
     provenance: SpTree
-    """ Provenance information about this IDS"""
 
 
-class Library(SpTree):
-    name: str  # = sp_property()
-    commit: str  # = sp_property()
-    version: str  # = sp_property()
-    repository: str  # = sp_property()
-    parameters: SpTree  # = sp_property()
+@sp_tree
+class Library:
+    name: str
+    commit: str
+    version: str
+    repository: str
+    parameters: SpTree
 
 
 @sp_tree
 class Code:
-    name: str               # = sp_property()
-    commit: str             # = sp_property()
-    version: str            # = sp_property()
-    repository: str         # = sp_property()
-    parameters: SpTree      # = sp_property()
-    output_flag: array_type  # = sp_property()
-    library: List[Library]  # = sp_property()
+    name: str
+    commit: str
+    version: str
+    repository: str
+    parameters: SpTree
+    output_flag: array_type
+    library: List[Library]
 
 
 class Module(Actor):
 
     _plugin_registry = {}
+    _metadata = {"time": "time"}
 
     def __init__(self, *args, **kwargs):
 
@@ -109,10 +98,10 @@ Load module {self.code.name or self.__class__.__name__}  version={self.code.vers
 class IDS(Module):
     """Base class of IDS"""
 
-    ids_properties: ids_properties = sp_property()
+    ids_properties: IDSProperties
     """Interface Data Structure properties. This element identifies the node above as an IDS"""
 
-    time: array_type = sp_property(type="dynamic", units="s", ndims=1, data_type=float)
+    time: array_type = sp_property(units="s", ndims=1, data_type=float)
     """Generic time"""
 
     def advance(self, *args, time=None, **kwargs):
@@ -136,8 +125,51 @@ class CurveRZ:  # utilities._T_rz1d_dynamic_aos
     z: array_type
 
 
-class CoreRadialGrid:  # (utilities._T_core_radial_grid):
-    """1D radial grid for core profiles"""
+@sp_tree
+class VacuumToroidalField:
+    r0: float
+    b0: float
+
+
+@sp_tree
+class Identifier:
+    name: str
+    index: int
+    description: str
+
+
+class DetectorAperture:  # (utilities._T_detector_aperture):
+    def __geometry__(self, view="RZ", **kwargs):
+        geo = {}
+        styles = {}
+        return geo, styles
+
+
+@sp_tree
+class PlasmaCompositionIonState:
+    label: str
+    z_min: float = sp_property(units="Elementary Charge Unit")
+    z_max: float = sp_property(units="Elementary Charge Unit")
+    electron_configuration: str
+    vibrational_level: float = sp_property(units="Elementary Charge Unit")
+    vibrational_mode: str
+
+
+@sp_tree
+class PlasmaCompositionSpecies:
+    label: str
+    a: float = sp_property(units="Atomic Mass Unit", )
+    z_n: float = sp_property(units="Elementary Charge Unit", )
+
+
+@sp_tree
+class PlasmaCompositionNeutralElement(SpTree):
+    a: float = sp_property(units="Atomic Mass Unit", )
+    z_n: float = sp_property(units="Elementary Charge Unit", )
+    atoms_n: int
+
+
+class CoreRadialGrid(SpTree):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args,  **kwargs)
@@ -183,39 +215,25 @@ class CoreRadialGrid:  # (utilities._T_core_radial_grid):
 
     rho_tor_boundary: float = sp_property()
 
-    rho_tor_norm: array_type = sp_property(type="dynamic",  units="-")
+    rho_tor_norm: array_type = sp_property(units="-")
 
-    psi_norm: array_type = sp_property(type="dynamic", units="-")
+    psi_norm: array_type = sp_property(units="-")
 
     @sp_property
     def rho_pol_norm(self) -> array_type: return np.sqrt(self.psi_norm)
 
-    @sp_property(type="dynamic", coordinate1="../rho_tor_norm", units="m")
-    def rho_tor(self) -> Function: return self.rho_tor_norm*self.rho_tor_boundary
+    @sp_property
+    def rho_tor(self) -> array_type: return self.rho_tor_norm*self.rho_tor_boundary
 
-    @sp_property()
-    def psi(self) -> Function:
+    @sp_property
+    def psi(self) -> array_type:
         return self.psi_norm * (self.psi_boundary - self.psi_magnetic_axis) + self.psi_magnetic_axis
 
 
-class DetectorAperture:  # (utilities._T_detector_aperture):
-    def __geometry__(self, view="RZ", **kwargs):
-        geo = {}
-        styles = {}
-        return geo, styles
-
-
-@sp_tree
-class Identifier(SpTree):
-    name: str
-    index: int
-    description: str
-
-
-# __all__ = ["IDS", "Module", "Code", "Library",
-#            "DetectorAperture", "CoreRadialGrid", "PointRZ",   "CurveRZ",
-#            "array_type", "Function", "Field",
-#            "HTree", "List", "Dict", "SpTree", "sp_property",
-#            "AoS", "TimeSeriesAoS", "TimeSlice",
-#            "Signal", "SignalND", "Identifier"
-#            "IntFlag"]
+__all__ = ["IDS", "Module", "Code", "Library",
+           "DetectorAperture", "CoreRadialGrid", "PointRZ",   "CurveRZ",
+           "array_type", "Function", "Field",
+           "HTree", "List", "Dict", "SpTree", "sp_property",
+           "AoS", "TimeSeriesAoS", "TimeSlice",
+           "Signal", "SignalND", "Identifier"
+           "IntFlag"]

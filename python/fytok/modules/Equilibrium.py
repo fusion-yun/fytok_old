@@ -1,22 +1,22 @@
 from __future__ import annotations
 import numpy as np
-import typing
 
 from spdm.data.AoS import AoS
 from spdm.data.Function import Function
 from spdm.data.sp_property import sp_property
-from spdm.data.TimeSeries import TimeSeriesAoS
+from spdm.data.TimeSeries import TimeSeriesAoS, TimeSlice
 from spdm.geometry.Curve import Curve
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Point import Point
 from spdm.utils.tags import _not_found_
 from spdm.utils.tree_utils import merge_tree_recursive
 from spdm.mesh.Mesh import Mesh
-from ..utils.utilities import *
+
+from .Utilities import *
 from ..utils.logger import logger
 
 
-@sp_tree(mesh="../grid")
+@sp_tree
 class EquilibriumCoordinateSystem:
     """Flux surface coordinate system on a square grid of flux and poloidal angle """
 
@@ -31,7 +31,7 @@ class EquilibriumCoordinateSystem:
 
     z: Field = sp_property(units="m")
 
-    jacobian: Field = sp_property(units="mixed")
+    jacobian: Field = sp_property(mesh="../grid", units="mixed")
 
     tensor_covariant: array_type = sp_property(coordinate3="1...3", coordinate4="1...3", units="mixed")
 
@@ -360,11 +360,6 @@ class EquilibriumTimeSlice(TimeSlice):
     Profiles1D = EquilibriumProfiles1D
     Profiles2D = EquilibriumProfiles2D
 
-    @sp_tree
-    class VacuumToroidalField:
-        r0: float
-        b0: float
-
     vacuum_toroidal_field: VacuumToroidalField
 
     boundary: Boundary
@@ -384,7 +379,7 @@ class EquilibriumTimeSlice(TimeSlice):
     def __geometry__(self, view_port="RZ", **kwargs) -> GeoObject:
         geo = {}
 
-        try:
+        if view_port == "RZ":
             o_points, x_points = self.coordinate_system.critical_points
 
             geo["o_points"] = [
@@ -402,10 +397,6 @@ class EquilibriumTimeSlice(TimeSlice):
                 self.boundary_separatrix.outline.r.__array__(),
                 self.boundary_separatrix.outline.z.__array__(),
             )
-
-        except Exception as error:
-            logger.error(f"Can not parser psi ! {error}")
-            # raise RuntimeError(f"Can not get o-point/x-point! {error}") from error
 
         geo["psi"] = self.profiles_2d[0].psi
 

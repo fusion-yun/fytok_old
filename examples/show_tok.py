@@ -21,15 +21,15 @@ if __name__ == "__main__":
 
     tok.refresh(time=5.0)
 
-    logger.debug(tok.equilibrium.time_slice.current.vacuum_toroidal_field.b0)
+    # logger.debug(tok.equilibrium.time_slice.current.vacuum_toroidal_field.b0)
 
-    profiles_1d = tok.equilibrium.time_slice.current.profiles_1d
+    # profiles_1d = tok.equilibrium.time_slice.current.profiles_1d
 
-    profiles_2d = tok.equilibrium.time_slice.current.profiles_2d
+    # profiles_2d = tok.equilibrium.time_slice.current.profiles_2d
 
     # coordinate_system = tok.equilibrium.time_slice.current.coordinate_system
 
-    logger.debug(profiles_1d.f_df_dpsi.__array__())
+    # logger.debug(profiles_1d.f_df_dpsi.__array__())
 
     # display([tok.equilibrium, tok.wall, tok.pf_active],
     #         title=tok.short_description,  output=output_path/f"{tok.tag}_rz.svg")

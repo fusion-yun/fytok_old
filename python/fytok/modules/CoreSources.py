@@ -10,7 +10,7 @@ from spdm.utils.typing import array_type
 from .schema import core_sources
 from .CoreProfiles import CoreProfiles
 from .Equilibrium import Equilibrium
-from ..utils.utilities import CoreRadialGrid
+from .Utilities import CoreRadialGrid
 
 
 class CoreSourcesSource(core_sources._T_core_sources_source):
