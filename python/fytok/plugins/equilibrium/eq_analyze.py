@@ -706,7 +706,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
         return self.rho_tor * self.q.pd()/self.q*self.dpsi_drho_tor
 
     @sp_property
-    def rho_tor(self) -> Function: return np.sqrt(self.phi / (PI*self._coord._B0))
+    def rho_tor(self) -> Function: return np.sqrt(self._coord._s_B0*self.phi / (PI*self._coord._B0))
 
     @sp_property
     def rho_tor_norm(self) -> Function:
