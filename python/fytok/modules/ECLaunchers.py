@@ -4,7 +4,7 @@ from __future__ import annotations
 from spdm.geometry.GeoObject import GeoObject
 
 
-from .schema import ec_launchers
+from .._ontology import ec_launchers
 
 
 class ECLaunchers(ec_launchers._T_ec_launchers):

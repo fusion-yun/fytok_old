@@ -14,6 +14,8 @@ if __name__ == "__main__":
     output_path = pathlib.Path(f"{WORKSPACE}/output")
 
     tok = Tokamak(
+        # f"file+GEQdsk://{WORKSPACE}/gacode/neo/tools/input/profile_data/g141459.03890",
+        # device="d3d"
         # f"east+mdsplus://{WORKSPACE}/fytok_data/mdsplus/~t/?enable=efit_east&shot=70754",
         f"mdsplus://{WORKSPACE}/fytok_data/mdsplus/~t/?enable=efit_east",
         device="EAST", shot=70754,
@@ -31,10 +33,10 @@ if __name__ == "__main__":
 
     # logger.debug(profiles_1d.f_df_dpsi.__array__())
 
-    # display([tok.equilibrium, tok.wall, tok.pf_active],
-    #         title=tok.short_description,  output=output_path/f"{tok.tag}_rz.svg")
-    display(tok, title=tok.short_description,
-            styles={"interferometer": False},
-            output=output_path/f"{tok.tag}_rz.svg")
+    display([tok.equilibrium],
+            title=tok.short_description,  output=output_path/f"{tok.tag}_rz.svg")
+    # display(tok, title=tok.short_description,
+    #         styles={"interferometer": False},
+    #         output=output_path/f"{tok.tag}_rz.svg")
 
     # display(tok, title=tok.short_description,   output=output_path/f"{tok.tag}_top.svg", view_point="TOP")

@@ -5,13 +5,12 @@ from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Polyline import Polyline
 from spdm.utils.tags import _not_found_
 
-from .schema import  wall  
+from .._ontology import wall
+
 from ..utils.logger import logger
 
 
 class Wall(wall._T_wall):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     def __geometry__(self, view_point="RZ", **kwargs) -> GeoObject | typing.List[GeoObject]:
 
@@ -24,7 +23,7 @@ class Wall(wall._T_wall):
             case "top":
 
                 vessel_r = desc.vessel.unit[0].annular.outline_outer.r
-                vessel_z = desc.vessel.unit[0].annular.outline_outer.z
+                # vessel_z = desc.vessel.unit[0].annular.outline_outer.z
                 geo["vessel_outer"] = [Circle(0.0, 0.0, vessel_r.min()), Circle(0.0, 0.0, vessel_r.max())]
 
             case "rz":
@@ -52,7 +51,7 @@ class Wall(wall._T_wall):
                                                      name=element.name)
                                             )
                         units.append({"element":   elements})
-                        
+
                     geo["unit"] = units
         styles = {  #
             "limiter": {"$matplotlib": {"edgecolor": "green"}},

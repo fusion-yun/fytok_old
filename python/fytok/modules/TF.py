@@ -6,7 +6,7 @@ from spdm.geometry.Polygon import Polygon
 from spdm.utils.constants import TWOPI
 from spdm.utils.typing import _not_found_
 from ..utils.logger import logger
-from .schema import tf
+from .._ontology import tf
 
 
 class TF(tf._T_tf):

@@ -23,4 +23,4 @@ try:
 except Exception as error:
     raise FileNotFoundError(f"Can not find mappings!") from error
 else:
-    logger.info(f"Mapping path {EntryProxy._mapping_path}")
+    logger.info(f"Mapping path    \t: {EntryProxy._mapping_path}")

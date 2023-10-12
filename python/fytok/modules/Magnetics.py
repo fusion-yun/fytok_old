@@ -1,5 +1,5 @@
 
-from .schema import magnetics
+from .._ontology import magnetics
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Point import Point
 

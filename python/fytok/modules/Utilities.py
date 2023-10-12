@@ -4,8 +4,6 @@ import functools
 import typing
 from dataclasses import dataclass
 from enum import IntFlag
-
-from enum import IntFlag
 import numpy as np
 from spdm.data.Path import Path
 from spdm.data.Actor import Actor
@@ -54,10 +52,16 @@ class Code:
     library: List[Library]
 
 
+@sp_tree
+class Identifier:
+    name: str
+    index: int
+    description: str
+
+
 class Module(Actor):
 
     _plugin_registry = {}
-    _metadata = {"time": "time"}
 
     def __init__(self, *args, **kwargs):
 
@@ -94,23 +98,26 @@ Load module {self.code.name or self.__class__.__name__}  version={self.code.vers
 
     code: Code = sp_property()
 
+    TimeSlice = TimeSlice
+
+    time: array_type = sp_property(units="s", ndims=1, data_type=float)
+
+    time_slice: TimeSeriesAoS[TimeSlice]
+
+    def refresh(self, *args, **kwargs):
+        """update the last time slice"""
+        self.time_slice.refresh(*args, **kwargs)
+
+    def advance(self, *args, **kwargs):
+        """advance time_series to next slice"""
+        self.time_slice.advance(*args, **kwargs)
+
 
 class IDS(Module):
     """Base class of IDS"""
 
     ids_properties: IDSProperties
     """Interface Data Structure properties. This element identifies the node above as an IDS"""
-
-    time: array_type = sp_property(units="s", ndims=1, data_type=float)
-    """Generic time"""
-
-    def advance(self, *args, time=None, **kwargs):
-        if time is not None:
-            self.time.append(time)
-        super().advance(*args, time=time, **kwargs)
-
-    def refresh(self, *args, **kwargs):
-        super().refresh(*args, **kwargs)
 
 
 @sp_tree
@@ -129,44 +136,6 @@ class CurveRZ:  # utilities._T_rz1d_dynamic_aos
 class VacuumToroidalField:
     r0: float
     b0: float
-
-
-@sp_tree
-class Identifier:
-    name: str
-    index: int
-    description: str
-
-
-class DetectorAperture:  # (utilities._T_detector_aperture):
-    def __geometry__(self, view="RZ", **kwargs):
-        geo = {}
-        styles = {}
-        return geo, styles
-
-
-@sp_tree
-class PlasmaCompositionIonState:
-    label: str
-    z_min: float = sp_property(units="Elementary Charge Unit")
-    z_max: float = sp_property(units="Elementary Charge Unit")
-    electron_configuration: str
-    vibrational_level: float = sp_property(units="Elementary Charge Unit")
-    vibrational_mode: str
-
-
-@sp_tree
-class PlasmaCompositionSpecies:
-    label: str
-    a: float = sp_property(units="Atomic Mass Unit", )
-    z_n: float = sp_property(units="Elementary Charge Unit", )
-
-
-@sp_tree
-class PlasmaCompositionNeutralElement(SpTree):
-    a: float = sp_property(units="Atomic Mass Unit", )
-    z_n: float = sp_property(units="Elementary Charge Unit", )
-    atoms_n: int
 
 
 class CoreRadialGrid(SpTree):
@@ -230,10 +199,70 @@ class CoreRadialGrid(SpTree):
         return self.psi_norm * (self.psi_boundary - self.psi_magnetic_axis) + self.psi_magnetic_axis
 
 
-__all__ = ["IDS", "Module", "Code", "Library",
-           "DetectorAperture", "CoreRadialGrid", "PointRZ",   "CurveRZ",
-           "array_type", "Function", "Field",
-           "HTree", "List", "Dict", "SpTree", "sp_property",
-           "AoS", "TimeSeriesAoS", "TimeSlice",
-           "Signal", "SignalND", "Identifier"
-           "IntFlag"]
+class DetectorAperture:  # (utilities._T_detector_aperture):
+    def __geometry__(self, view="RZ", **kwargs):
+        geo = {}
+        styles = {}
+        return geo, styles
+
+
+@sp_tree
+class PlasmaCompositionIonState:
+    label: str
+    z_min: float = sp_property(units="Elementary Charge Unit")
+    z_max: float = sp_property(units="Elementary Charge Unit")
+    electron_configuration: str
+    vibrational_level: float = sp_property(units="Elementary Charge Unit")
+    vibrational_mode: str
+
+
+@sp_tree
+class PlasmaCompositionSpecies:
+    label: str
+    a: float  # = sp_property(units="Atomic Mass Unit", )
+    z_n: float  # = sp_property(units="Elementary Charge Unit", )
+
+
+@sp_tree
+class PlasmaCompositionNeutralElement(SpTree):
+    a: float  # = sp_property(units="Atomic Mass Unit", )
+    z_n: float  # = sp_property(units="Elementary Charge Unit", )
+    atoms_n: int
+
+
+@sp_tree
+class PlasmaCompositionIons:
+    label: str
+    element: AoS[PlasmaCompositionNeutralElement]
+    z_ion: float  # = sp_property( units="Elementary Charge Unit")
+    state: PlasmaCompositionIonState
+
+
+class PlasmaCompositionNeutralState:
+    label: str
+    electron_configuration: str
+    vibrational_level: float  # = sp_property(units="Elementary Charge Unit")
+    vibrational_mode: str
+    neutral_type: str
+
+
+class PlasmaCompositionNeutral:
+    label: str
+    element: AoS[PlasmaCompositionNeutralElement]
+    state: PlasmaCompositionNeutralState
+
+
+@sp_tree
+class DistributionSpecies(SpTree):
+    type: str
+    ion: PlasmaCompositionIons
+    neutral: PlasmaCompositionNeutral
+
+
+# __all__ = ["IDS", "Module", "Code", "Library",
+#            "DetectorAperture", "CoreRadialGrid", "PointRZ",   "CurveRZ",
+#            "array_type", "Function", "Field",
+#            "HTree", "List", "Dict", "SpTree", "sp_property",
+#            "AoS", "TimeSeriesAoS", "TimeSlice",
+#            "Signal", "SignalND", "Identifier"
+#            "IntFlag"]

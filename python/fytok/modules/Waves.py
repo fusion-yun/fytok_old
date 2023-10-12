@@ -1,4 +1,4 @@
-from .schema import waves
+from .._ontology import waves
 
 
 class Waves(waves._T_waves):

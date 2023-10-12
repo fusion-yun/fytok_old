@@ -1,4 +1,4 @@
-from  ..schema import sawteeth import _T_sawteeth
+from  ..ontology import sawteeth import _T_sawteeth
 
 
 class Sawteeth(_T_sawteeth):

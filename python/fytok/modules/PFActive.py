@@ -2,10 +2,11 @@
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Polygon import Rectangle
 
-from .schema import pf_active
+from .._ontology import pf_active
 
 
 class PFActive(pf_active._T_pf_active):
+
     def __geometry__(self, view_point="RZ", **kwargs) -> GeoObject:
         geo = {}
         styles = {}

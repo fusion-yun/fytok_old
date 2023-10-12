@@ -3,17 +3,13 @@ import collections.abc
 import functools
 import typing
 from dataclasses import dataclass
-
 import numpy as np
 import scipy.constants
-from fytok.modules.schema import equilibrium, utilities
-from fytok.modules.Equilibrium import Equilibrium
-from fytok.utils.logger import logger
-from fytok.modules.Utilities import CurveRZ, CurveRZ, PointRZ
-from spdm.data.AoS import AoS
+
+
 from spdm.data.Expression import Expression, Variable
 from spdm.data.Field import Field
-from spdm.data.Function import Function, function_like
+from spdm.data.Function import Function
 from spdm.data.HTree import List
 from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
@@ -28,6 +24,11 @@ from spdm.utils.constants import *
 from spdm.utils.tags import _not_found_
 from spdm.utils.tree_utils import merge_tree_recursive
 from spdm.utils.typing import (ArrayLike,  NumericType, array_type, scalar_type)
+
+from fytok.modules.Equilibrium import Equilibrium
+from fytok.utils.logger import logger
+from fytok.modules.Utilities import *
+
 
 _R = Variable(0, "R")
 _Z = Variable(1, "Z")
@@ -194,10 +195,13 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         xpoints.sort(key=lambda x: (x.psi - o_psi)**2)
 
+        if len(opoints)==0 or len(xpoints)==0:
+            raise RuntimeError(f"Can not find O-point or X-point! {opoints} {xpoints}")
+            
         return opoints, xpoints
 
     @sp_property
-    def grid_type(self) -> utilities._T_identifier_dynamic_aos3:
+    def grid_type(self) -> Identifier:
         desc = super().grid_type
         if desc.name is None or desc.name is _not_found_:
             desc = {"name": "rectangular", "index": 1, "description": "default"}
@@ -596,24 +600,6 @@ class FyEquilibriumGlobalQuantities(Equilibrium.TimeSlice.GlobalQuantities):
     @property
     def _coord(self) -> FyEquilibriumCoordinateSystem: return self._parent.coordinate_system
 
-    # beta_pol  :float =  sp_property(type="dynamic",units="-")
-
-    # beta_tor  :float =  sp_property(type="dynamic",units="-")
-
-    # beta_normal  :float =  sp_property(type="dynamic",units="-")
-
-    # ip  :float =  sp_property(type="dynamic",units="A",cocos_label_transformation="ip_like",cocos_transformation_expression=".sigma_ip_eff",cocos_leaf_name_aos_indices="equilibrium.time_slice{i}.global_quantities.ip")
-
-    # li_3  :float =  sp_property(type="dynamic",units="-")
-
-    # volume  :float =  sp_property(type="dynamic",units="m^3")
-
-    # area  :float =  sp_property(type="dynamic",units="m^2")
-
-    # surface  :float =  sp_property(type="dynamic",units="m^2")
-
-    # length_pol  :float =  sp_property(type="dynamic",units="m")
-
     @sp_property
     def psi_axis(self) -> float: return self._coord.psi_magnetic_axis  # sp_property(type="dynamic",units="Wb")
 
@@ -621,33 +607,13 @@ class FyEquilibriumGlobalQuantities(Equilibrium.TimeSlice.GlobalQuantities):
     def psi_boundary(self) -> float: return self._coord.psi_boundary  # sp_property(type="dynamic",units="Wb")
 
     @sp_property
-    def magnetic_axis(self) -> equilibrium._T_equilibrium_global_quantities_magnetic_axis:
+    def magnetic_axis(self):
         """Magnetic axis position and toroidal field	structure"""
         return {
             "r":  self._coord.magnetic_axis[0],
             "z":  self._coord.magnetic_axis[1],
             "b_field_tor": np.nan  # FIXME: b_field_tor
         }
-
-        # magnetic_axis  :equilibrium._T_equilibrium_global_quantities_magnetic_axis =  sp_property()
-
-        # current_centre  :equilibrium._T_equilibrium_global_quantities_current_centre =  sp_property()
-
-        # q_axis  :float =  sp_property(type="dynamic",units="-",cocos_label_transformation="q_like",cocos_transformation_expression=".fact_q",cocos_leaf_name_aos_indices="equilibrium.time_slice{i}.global_quantities.q_axis")
-
-        # q_95  :float =  sp_property(type="dynamic",units="-",cocos_label_transformation="q_like",cocos_transformation_expression=".fact_q",cocos_leaf_name_aos_indices="equilibrium.time_slice{i}.global_quantities.q_95")
-
-        # q_min  :equilibrium._T_equilibrium_global_quantities_qmin =  sp_property()
-
-        # energy_mhd  :float =  sp_property(type="dynamic",units="J")
-
-        # psi_external_average  :float =  sp_property(type="dynamic",units="Wb",cocos_label_transformation="psi_like",cocos_transformation_expression=".fact_psi",cocos_leaf_name_aos_indices="equilibrium.time_slice{i}.global_quantities.psi_external_average")
-
-        # v_external  :float =  sp_property(type="dynamic",units="V",cocos_label_transformation="ip_like",cocos_transformation_expression=".sigma_ip_eff",cocos_leaf_name_aos_indices=["core_profiles.global_quantities.v_loop","equilibrium.time_slice{i}.global_quantities.v_external"],introduced_after_version="3.37.2")
-
-        # plasma_inductance  :float =  sp_property(type="dynamic",units="H")
-
-        # plasma_resistance  :float =  sp_property(type="dynamic",units="ohm",introduced_after_version="3.37.2")
 
 
 class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
@@ -855,7 +821,7 @@ class FyEquilibriumProfiles2D(Equilibrium.TimeSlice.Profiles2D):
     @property
     def _profiles_1d(self) -> FyEquilibriumProfiles1D: return self._parent.profiles_1d
 
-    @sp_property[Mesh]
+    @sp_property
     def grid(self) -> Mesh:
         dim1 = super().grid.dim1
         dim2 = super().grid.dim2

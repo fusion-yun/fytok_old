@@ -1,7 +1,7 @@
 from scipy import constants
 from fytok.utils.logger import logger
 
-from .schema import transport_solver_numerics
+from .._ontology import transport_solver_numerics
 from .CoreProfiles import CoreProfiles
 from .CoreSources import CoreSources
 from .CoreTransport import CoreTransport
@@ -137,7 +137,7 @@ class TransportSolverNumerics(transport_solver_numerics._T_transport_solver_nume
     def solve(self, /,
               core_profiles_prev: CoreProfiles,
               core_transport: CoreTransport,
-              core_sources: CoreSources.Source.Profiles1D,
+              core_sources: CoreSources.Source.TimeSlice.Profiles1D,
               equilibrium_next: Equilibrium.TimeSlice.Profiles1D,
               equilibrium_prev: Equilibrium = None,
               dt: float = None,

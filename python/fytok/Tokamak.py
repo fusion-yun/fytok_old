@@ -28,7 +28,7 @@ from .modules.TransportSolverNumerics import TransportSolverNumerics
 from .modules.Wall import Wall
 from .utils.envs import *
 from .utils.logger import logger
-from .modules.schema import GLOBAL_SCHEMA
+from ._ontology import GLOBAL_ONTOLOGY
 # from .modules.EdgeProfiles import EdgeProfiles
 # from .modules.EdgeSources import EdgeSources
 # from .modules.EdgeTransport import EdgeTransport
@@ -65,7 +65,7 @@ class Tokamak(SpTree):
 
         cache = merge_tree_recursive(cache, kwargs)
 
-        cache["schema"] = GLOBAL_SCHEMA
+        cache["schema"] = GLOBAL_ONTOLOGY
         cache["device"] = device or None
         cache["shot"] = shot or 0
         cache["run"] = run
@@ -78,7 +78,7 @@ class Tokamak(SpTree):
             shot=shot,
             run=run,
             local_schema=device,
-            global_schema=GLOBAL_SCHEMA,
+            global_schema=GLOBAL_ONTOLOGY,
         )
 
         super().__init__(

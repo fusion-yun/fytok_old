@@ -1,56 +1,47 @@
 
 from __future__ import annotations
 
-
 from spdm.data.AoS import AoS
-from spdm.data.sp_property import sp_property
+from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
+
 from ..utils.logger import logger
-from spdm.utils.typing import array_type
-from .schema import core_sources
+
 from .CoreProfiles import CoreProfiles
 from .Equilibrium import Equilibrium
-from .Utilities import CoreRadialGrid
+from .Utilities import *
 
 
-class CoreSourcesSource(core_sources._T_core_sources_source):
-    _plugin_prefix = 'fytok.plugins.core_sources.source.'
-    _plugin_config = {}
+@sp_tree
+class CoreSourceTimeSlice(TimeSlice):
 
-    Profiles1D = core_sources._T_core_sources_source_profiles_1d
+    @sp_tree(coordinate1="grid/rho_tor_norm", bind="core_sources.source.prorfiles_1d")
+    class Profiles1D(TimeSlice):
+        grid: CoreRadialGrid
 
-    GlobalQuantities = core_sources._T_core_sources_source_global
+    @sp_tree(bind="core_sources.source.global_quantities")
+    class GlobalQuantities(TimeSlice):
+        pass
 
-    @property
-    def time(self) -> array_type: return self._parent.time
+    profiles_1d: Profiles1D
 
-    profiles_1d: TimeSeriesAoS[Profiles1D] = sp_property()
-
-    global_quantities: TimeSeriesAoS[GlobalQuantities] = sp_property()
-
-    def refresh(self, *args, **kwargs):
-        logger.debug(f"{self.__class__.__name__}.refresh")
-
-    def advance(self, *args, **kwargs):
-        logger.debug(f"{self.__class__.__name__}.advance")
+    global_quantities: GlobalQuantities
 
 
-class CoreSources(core_sources._T_core_sources):
+@sp_tree
+class CoreSources(IDS):
 
-    Source = CoreSourcesSource
+    @sp_tree
+    class Source(Module):
 
-    grid: CoreRadialGrid = sp_property()
+        _plugin_prefix = 'fytok.plugins.core_sources.source.'
 
-    source: AoS[Source] = sp_property(default_value={
-        "identifier": {"name": "total", "index": 1,
-                               "description": "Total source; combines all sources"},
-        "code": {"name": None},
-    })
+        identifier: str
 
-    def advance(self, *args, equilibrium: Equilibrium.TimeSlice, core_profiles_1d: CoreProfiles.Profiles1D, **kwargs):
-        for source in self.source:
-            source.advance(*args, equilibrium=equilibrium, core_profiles_1d=core_profiles_1d, **kwargs)
+        species: DistributionSpecies
 
-    def refresh(self, *args, equilibrium: Equilibrium.TimeSlice, core_profiles_1d: CoreProfiles.Profiles1D, **kwargs):
-        for source in self.source:
-            source.refresh(*args, equilibrium=equilibrium, core_profiles_1d=core_profiles_1d, **kwargs)
+        TimeSlice = CoreSourceTimeSlice
+
+        time_slice: TimeSeriesAoS[CoreSourceTimeSlice]
+
+    source: AoS[Source]

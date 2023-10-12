@@ -12,16 +12,14 @@ from spdm.utils.tags import _not_found_
 from spdm.utils.tree_utils import merge_tree_recursive
 from spdm.mesh.Mesh import Mesh
 
-from .Utilities import *
 from ..utils.logger import logger
+from .._ontology import equilibrium
+
+from .Utilities import *
 
 
-@sp_tree
-class EquilibriumCoordinateSystem:
-    """Flux surface coordinate system on a square grid of flux and poloidal angle """
-
-    def __init__(self,  *args, **kwargs):
-        super().__init__(*args, **kwargs)
+@sp_tree(mesh="../grid")
+class EquilibriumCoordinateSystem(equilibrium._T_equilibrium_coordinate_system):
 
     grid_type: Identifier
 
@@ -31,7 +29,7 @@ class EquilibriumCoordinateSystem:
 
     z: Field = sp_property(units="m")
 
-    jacobian: Field = sp_property(mesh="../grid", units="mixed")
+    jacobian: Field = sp_property(units="mixed")
 
     tensor_covariant: array_type = sp_property(coordinate3="1...3", coordinate4="1...3", units="mixed")
 
@@ -39,17 +37,17 @@ class EquilibriumCoordinateSystem:
 
 
 @sp_tree
-class EquilibriumGlobalQuantities:
+class EquilibriumGlobalQuantities(equilibrium._T_equilibrium_global_quantities):
 
-    beta_pol: float = sp_property(units="-")
+    beta_pol: float
 
-    beta_tor: float = sp_property(units="-")
+    beta_tor: float
 
-    beta_normal: float = sp_property(units="-")
+    beta_normal: float
 
     ip: float = sp_property(units="A")
 
-    li_3: float = sp_property(units="-")
+    li_3: float
 
     volume: float = sp_property(units="m^3")
 
@@ -69,7 +67,7 @@ class EquilibriumGlobalQuantities:
         z: float = sp_property(units="m")
         b_field_tor: float = sp_property(units="T")
 
-    magnetic_axis: MagneticAxis = sp_property()
+    magnetic_axis: MagneticAxis
     """ Magnetic axis position and toroidal field"""
 
     @sp_tree
@@ -78,18 +76,18 @@ class EquilibriumGlobalQuantities:
         z: float = sp_property(units="m")
         velocity_z: float = sp_property(units="m.s^-1")
 
-    current_centre: CurrentCentre = sp_property()
+    current_centre: CurrentCentre
 
-    q_axis: float = sp_property(units="-")
+    q_axis: float
 
-    q_95: float = sp_property(units="-")
+    q_95: float
 
     @sp_tree
     class Qmin:
-        value: float = sp_property(units="-")
-        rho_tor_norm: float = sp_property(units="-")
+        value: float
+        rho_tor_norm: float
 
-    q_min: Qmin = sp_property()
+    q_min: Qmin
 
     energy_mhd: float = sp_property(units="J")
 
@@ -121,9 +119,9 @@ class EquilibriumProfiles1D:
 
     j_parallel: Function = sp_property(units="A/m^2")
 
-    q: Function = sp_property(units="-")
+    q: Function
 
-    magnetic_shear: Function = sp_property(units="-")
+    magnetic_shear: Function
 
     r_inboard: Function = sp_property(units="m")
 
@@ -131,7 +129,7 @@ class EquilibriumProfiles1D:
 
     rho_tor: Function = sp_property(units="m")
 
-    rho_tor_norm: Function = sp_property(units="-")
+    rho_tor_norm: Function
 
     dpsi_drho_tor: Function = sp_property(units="Wb/m")
 
@@ -142,23 +140,23 @@ class EquilibriumProfiles1D:
 
     geometric_axis: RZ
 
-    elongation: Function = sp_property(units="-")
+    elongation: Function
 
-    triangularity_upper: Function = sp_property(units="-")
+    triangularity_upper: Function
 
-    triangularity_lower: Function = sp_property(units="-")
+    triangularity_lower: Function
 
-    squareness_upper_inner: Function = sp_property(units="-")
+    squareness_upper_inner: Function
 
-    squareness_upper_outer: Function = sp_property(units="-")
+    squareness_upper_outer: Function
 
-    squareness_lower_inner: Function = sp_property(units="-")
+    squareness_lower_inner: Function
 
-    squareness_lower_outer: Function = sp_property(units="-")
+    squareness_lower_outer: Function
 
     volume: Function = sp_property(units="m^3")
 
-    rho_volume_norm: Function = sp_property(units="-")
+    rho_volume_norm: Function
 
     dvolume_dpsi: Function = sp_property(units="m^3.Wb^-1")
 
@@ -172,15 +170,15 @@ class EquilibriumProfiles1D:
 
     surface: Function = sp_property(units="m^2")
 
-    trapped_fraction: Function = sp_property(units="-")
+    trapped_fraction: Function
 
     gm1: Function = sp_property(units="m^-2")
     gm2: Function = sp_property(units="m^-2")
-    gm3: Function = sp_property(units="-")
+    gm3: Function
     gm4: Function = sp_property(units="T^-2")
     gm5: Function = sp_property(units="T^2")
     gm6: Function = sp_property(units="T^-2")
-    gm7: Function = sp_property(units="-")
+    gm7: Function
     gm8: Function = sp_property(units="m")
     gm9: Function = sp_property(units="m^-1")
 
@@ -190,21 +188,21 @@ class EquilibriumProfiles1D:
 
     b_field_max: Function = sp_property(units="T")
 
-    beta_pol: Function = sp_property(units="-")
+    beta_pol: Function
 
     mass_density: Function = sp_property(units="kg.m^-3")
 
     minor_radius: Function = sp_property(units="m")
 
-    triangularity: Function = sp_property(units="-")
+    triangularity: Function
 
-    squareness: Function = sp_property(units="-")
+    squareness: Function
 
 
 @sp_tree(mesh="grid")
-class EquilibriumProfiles2D:
+class EquilibriumProfiles2D(equilibrium._T_equilibrium_profiles_2d):
 
-    type: Identifier = sp_property()
+    type: Identifier
 
     grid_type: Identifier
 
@@ -232,120 +230,94 @@ class EquilibriumProfiles2D:
 
 
 @sp_tree
-class EquilibriumBoundary:
+class EquilibriumBoundary(equilibrium._T_equilibrium_boundary):
 
-    type: int = sp_property()
+    type: int
 
-    outline: CurveRZ = sp_property()
+    outline: CurveRZ
 
-    psi_norm: float = sp_property(units="-")
-
-    psi: float = sp_property(units="Wb")
-
-    geometric_axis: PointRZ = sp_property()
-
-    type: int = sp_property()
-
-    outline: CurveRZ = sp_property()
-
-    psi_norm: float = sp_property(units="-")
+    psi_norm: float
 
     psi: float = sp_property(units="Wb")
 
-    geometric_axis: PointRZ = sp_property()
+    geometric_axis: PointRZ
 
     minor_radius: float = sp_property(units="m")
 
-    elongation: float = sp_property(units="-")
+    elongation: float
 
-    elongation_upper: float = sp_property(units="-")
+    elongation_upper: float
 
-    elongation_lower: float = sp_property(units="-")
+    elongation_lower: float
 
-    triangularity: float = sp_property(units="-")
+    triangularity: float
 
-    triangularity_upper: float = sp_property(units="-")
+    triangularity_upper: float
 
-    triangularity_lower: float = sp_property(units="-")
+    triangularity_lower: float
 
-    squareness_upper_inner: float = sp_property(units="-")
+    squareness_upper_inner: float
 
-    squareness_upper_outer: float = sp_property(units="-")
+    squareness_upper_outer: float
 
-    squareness_lower_inner: float = sp_property(units="-")
+    squareness_lower_inner: float
 
-    squareness_lower_outer: float = sp_property(units="-")
+    squareness_lower_outer: float
 
-    x_point: AoS[PointRZ] = sp_property(coordinate1="1...N")
+    x_point: AoS[PointRZ]
 
-    strike_point: AoS[PointRZ] = sp_property(coordinate1="1...N")
+    strike_point: AoS[PointRZ]
 
-    active_limiter_point: PointRZ = sp_property()
+    active_limiter_point: PointRZ
 
 
 @sp_tree
-class EquilibriumBoundarySeparatrix:
+class EquilibriumBoundarySeparatrix(equilibrium._T_equilibrium_boundary_separatrix):
 
-    type: int = sp_property()
+    type: int
 
-    outline: CurveRZ = sp_property()
+    outline: CurveRZ
 
     psi: float = sp_property(units="Wb")
 
-    geometric_axis: PointRZ = sp_property()
+    geometric_axis: PointRZ
 
     minor_radius: float = sp_property(units="m")
 
-    elongation: float = sp_property(units="-")
+    elongation: float
 
-    elongation_upper: float = sp_property(units="-")
+    elongation_upper: float
 
-    elongation_lower: float = sp_property(units="-")
+    elongation_lower: float
 
-    triangularity: float = sp_property(units="-")
+    triangularity: float
 
-    triangularity_upper: float = sp_property(units="-")
+    triangularity_upper: float
 
-    triangularity_lower: float = sp_property(units="-")
+    triangularity_lower: float
 
-    squareness_upper_inner: float = sp_property(units="-")
+    squareness_upper_inner: float
 
-    squareness_upper_outer: float = sp_property(units="-")
+    squareness_upper_outer: float
 
-    squareness_lower_inner: float = sp_property(units="-")
+    squareness_lower_inner: float
 
-    squareness_lower_outer: float = sp_property(units="-")
+    squareness_lower_outer: float
 
-    x_point: AoS[PointRZ] = sp_property(coordinate1="1...N")
+    x_point: AoS[PointRZ]
 
-    strike_point: AoS[PointRZ] = sp_property(coordinate1="1...N")
+    strike_point: AoS[PointRZ]
 
-    active_limiter_point: PointRZ = sp_property()
-
-    @sp_tree
-    class BoundaryClosest:
-        r: float
-        z: float
-        distance: float
-
-    closest_wall_point: BoundaryClosest = sp_property()
-
-    dr_dz_zero_point: PointRZ = sp_property()
-
-    @sp_tree
-    class Gap:
-        name: str = sp_property()
-        identifier: str = sp_property()
-        r: float = sp_property(units="m")
-        z: float = sp_property(units="m")
-        angle: float = sp_property(units="rad")
-        value: float = sp_property(units="m")
-
-    gap: AoS[Gap]
+    active_limiter_point: PointRZ
 
 
 @sp_tree
-class EequilibriumConstraints:
+class EequilibriumConstraints(equilibrium._T_equilibrium_constraints):
+    pass
+
+
+@sp_tree
+class EquilibriumGGD(equilibrium._T_equilibrium_ggd):
     pass
 
 
@@ -359,6 +331,7 @@ class EquilibriumTimeSlice(TimeSlice):
     CoordinateSystem = EquilibriumCoordinateSystem
     Profiles1D = EquilibriumProfiles1D
     Profiles2D = EquilibriumProfiles2D
+    GGD = EquilibriumGGD
 
     vacuum_toroidal_field: VacuumToroidalField
 
@@ -375,6 +348,8 @@ class EquilibriumTimeSlice(TimeSlice):
     profiles_2d: Profiles2D
 
     coordinate_system: CoordinateSystem
+
+    ggd: GGD
 
     def __geometry__(self, view_port="RZ", **kwargs) -> GeoObject:
         geo = {}
@@ -475,18 +450,7 @@ class Equilibrium(IDS):
 
     TimeSlice = EquilibriumTimeSlice
 
-    time_slice: TimeSeriesAoS[EquilibriumTimeSlice] = sp_property(coordinate1="time", )
-
-    def refresh(self, *args, **kwargs):
-        """update the last time slice"""
-
-        self.time_slice.refresh(*args, **kwargs)
-
-        # self.grids_ggd.refresh(*args, **kwargs)
-
-    def advance(self, *args, **kwargs):
-        self.time_slice.advance(*args, **kwargs)
-        # self.grids_ggd.advance(*args, **kwargs)
+    time_slice: TimeSeriesAoS[EquilibriumTimeSlice]
 
     def __geometry__(self,  *args,  **kwargs) -> GeoObject:
         return self.time_slice.current.__geometry__(*args, **kwargs)

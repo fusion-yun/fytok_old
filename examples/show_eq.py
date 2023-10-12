@@ -18,8 +18,8 @@ if __name__ == "__main__":
 
     display(eq0, title=f"EQUILIBRIUM", output=output_path/"EQUILIBRIUM.svg")
 
-    with File(f"{output_path}/EQUILIBRIUM.gfile", mode="w", format="GEQdsk") as oid:
-        oid.write({"equilibrium": eq0.dump()})
+    # with File(f"{output_path}/EQUILIBRIUM.gfile", mode="w", format="GEQdsk") as oid:
+    #     oid.write({"equilibrium": eq0.dump()})
 
     # eq0.refresh()
 

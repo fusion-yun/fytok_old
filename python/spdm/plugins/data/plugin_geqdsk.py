@@ -427,13 +427,11 @@ class GEQdskFile(File):
         super().__init__(*args, **kwargs)
 
         try:
-            self._fid = open(
-                pathlib.Path(self.url.path).expanduser().resolve(), mode=self.mode_str
-            )
+            self._fid = open(pathlib.Path(self.url.path).expanduser().resolve(), mode=self.mode_str)
         except OSError as error:
             raise FileExistsError(f"Can not open file {self.url}! {error}")
-        else:
-            logger.debug(f"Open File mode={self.mode}  {self.url} ")
+        # else:
+        #     logger.debug(f"Open File mode={self.mode}  {self.url} ")
 
     def __del__(self):
         if getattr(self, "_fid", None) is not None:

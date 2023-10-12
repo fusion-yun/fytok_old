@@ -8,7 +8,7 @@ from scipy import constants
 from spdm.data.AoS import AoS
 from spdm.data.Entry import Entry
 from spdm.data.Function import Function
-from spdm.data.sp_property import sp_property, sp_tree, SpTree
+from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.utils.tags import _not_found_
 from spdm.utils.tree_utils import merge_tree_recursive
