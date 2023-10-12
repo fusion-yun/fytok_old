@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nbi>
+    <ids_properties>
+        <title>Neutral Beam Injection (NBI) System</title>
+        <url>http://202.127.205.54/wiki/index.php/Ion_Cyclotron_Resonance_Heating_(ICRH)_System </url>
+        <comment>
+            Basic Information
+            Description: Neutral Beam Injection (NBI) System
+
+            State: Active
+
+            Responsible person(s):Chundong HU (ext: 63146)
+
+            Group leader: Chundong HU (ext: 63146)
+
+            Location: Horizontal ports A &amp; F
+
+            Specifications
+            Beam Energy: 50~80 keV
+
+            Beam Power: 0~4 MW per beam line
+
+            Beam Pulse: 0~100 s
+
+            NBI System
+            Neutral beam injection system (NBIS) is one of the most effective heating and current drive system for EAST. The system is designed to comprise two sets of neutral beam injector(NBI). Its layout is shown in Fig.1.
+
+            NBI1.jpg
+
+            The global specifications of the NBIS can be described as follows:
+
+            Max beam power : 8 MW (4 MWX2)
+            Beam species: D0
+            Max beam energy: 80 keV
+            Max Pulse length: &gt; 100 s (with modulation)
+            Each of the two NBIs has separate sub-system and can operate independently. Its schematics can be seen from Fig.2. It is about 6 m long from the exit grid of ion source to the center of EAST plasma. The estimated weight of the beamline is about 40 metric tons. The beam centerline is 6.18 m above the ground floor, which is the same height as the EAST midplane. The beamline consists of vacuum vessel, neutralizer, bending magnet, ion dump, calorimeter and cryopanels. The vacuum vessel is divided into three parts. The rear cryopanel, neutralizer and ion dump are installed in the first part. The bending magnet is installed in the second part. The front cryopanel and calorimeter are installed in the third part.
+
+            NBI2.jpg
+
+            During the last two EAST experimental campaigns, EAST-NBIS has displayed good performance and contributed to the impressive results of EAST. However, some damages and problems had also revealed during the operation. After a series of maintenance and improvement, the EAST-NBIS is expected to have a better performance in the oncoming EAST experimental campaign. And the performance prediction is listed in Table 1. Table 1 Performance prediction of EAST-NBIS
+
+            EAST-NBI-1	EAST-NBI-2
+            Beam Energy	Up to 70 keV	Up to 70 keV
+            Beam Power	3 MW	3 MW
+            Beam Pulse	Up to 100 s (with modulation)	Up to 100 s (with modulation)
+
+            Data Production
+            Raw data
+            Tree: EAST
+            Nodes:
+            NBI1LHV (1-D, acceleration voltage of No. 1 beamline's left ion source, Unit: V)
+            NBI1LHI (1-D, beam current of No. 1 beamline's left ion source, Unit: A)
+            NBI1RHV (1-D, acceleration voltage of No. 1 beamline's right ion source, Unit: V)
+            NBI1RHI (1-D, beam current of No. 1 beamline's right ion source, Unit: A)
+            NBI2LHV (1-D, acceleration voltage of No. 2 beamline's left ion source, Unit: V)
+            NBI2LHI (1-D, beam current of No. 2 beamline's left ion source, Unit: A)
+            NBI2RHV (1-D, acceleration voltage of No. 2 beamline's right ion source, Unit: V)
+            NBI2RHI (1-D, beam current of No. 2 beamline's right ion source, Unit: A)
+            Processed data
+            Tree: Analysis
+            Sub Tree: NBI_EAST
+            Nodes:
+            PNBI1LSOURCE (1-D, source power of No. 1 beamline's left ion source, Unit: kW)
+            PNBI1RSOURCE (1-D, source power of No. 1 beamline's right ion source, Unit: kW)
+            PNBI2LSOURCE (1-D, source power of No. 2 beamline's left ion source, Unit: kW)
+            PNBI2RSOURCE (1-D, source power of No. 2 beamline's right ion source, Unit: kW)
+            NBI1LNP (constant, average injected power of No. 1 beamline's left ion source, Unit: kW)
+            NBI1LE1 (constant, ratio of full energy particles, Unit: %)
+            NBI1LE2 (constant, ratio of half energy particles, Unit: %)
+            NBI1LE3 (constant, ratio of third energy particles, Unit: %)
+            NBI1RNP (constant, average injected power of No. 1 beamline's right ion source, Unit: kW)
+            NBI1RE1 (constant, ratio of full energy particles, Unit: %)
+            NBI1RE2 (constant, ratio of half energy particles, Unit: %)
+            NBI1RE3 (constant, ratio of third energy particles, Unit: %)
+            NBI2LNP (constant, average injected power of No. 2 beamline's left ion source, Unit: kW)
+            NBI2LE1 (constant, ratio of full energy particles, Unit: %)
+            NBI2LE2 (constant, ratio of half energy particles, Unit: %)
+            NBI2LE3 (constant, ratio of third energy particles, Unit: %)
+            NBI2RNP (constant, average injected power of No. 2 beamline's right ion source, Unit: kW)
+            NBI2RE1 (constant, ratio of full energy particles, Unit: %)
+            NBI2RE2 (constant, ratio of half energy particles, Unit: %)
+            NBI2RE3 (constant, ratio of third energy particles, Unit: %)
+        </comment>
+    </ids_properties>    
+ 
+    <!-- 非真实占位数据 -->
+    
+
+
+    <unit id="0" ><name>  NBI1</name> <identifier>  NBI1</identifier><species><label>H</label><a dtype="float">1 </a> <z dtype="float"> 1 </z> </species></unit>
+    <unit id="1" ><name>  NBI2</name> <identifier>  NBI2</identifier><species><label>H</label><a dtype="float">1 </a> <z dtype="float"> 1 </z> </species></unit>
+ 
+  
+
+</nbi>    
+    
+
+ 

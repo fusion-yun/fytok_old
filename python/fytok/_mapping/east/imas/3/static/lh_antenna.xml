@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lh_antennas>
+    <ids_properties>
+        <title> LHW Current Drive and Heating System</title>
+        <url>http://202.127.205.54/wiki/index.php/Ion_Cyclotron_Resonance_Heating_(ICRH)_System </url>
+        <comment>
+            LHW Current Drive and Heating System
+            Basic Information
+            Description: 2.45 GHz and 4.6 GHz LHW Current Drive and Heating System
+
+            State: Active
+
+            Responsible person(s): Mao WANG (ext: 63294)
+
+            Group leader: Fukun LIU (ext: 61609)
+
+            Location: Horizontal port N (2.45 GHz), Horizontal port E (4.6 GHz)
+
+            Specifications
+            Title	Frequency	Max power	LaTeX: N_{//}
+            2.45 GHz LHCD syterm	2.45 GHz	4 MW	LaTeX: 1.91<N_{//}<2.43
+            4.6 GHz LHCD syterm	4.6 GHz	6 MW	LaTeX: 1.8<N_{//}<2.23
+            Data Production
+            Tree: EAST
+            Nodes:
+            PLHI1 (1-D, injected power of 2.45 GHz LHW, Unit: kW)
+            PLHR1 (1-D, reflected power of 2.45 GHz LHW, Unit: kW)
+            PLHI2 (1-D, injected power of 4.6 GHz LHW, Unit: kW)
+            PLHR2 (1-D, reflected power of 4.6 GHz LHW, Unit: kW)
+        </comment>
+    </ids_properties>    
+    <reference_point>
+        <!--
+             Reference point used to define the poloidal angle, 
+             e.g. the geometrical centre of the vacuum vessel. Used to define the poloidal mode numbers under antenna/surface_current            
+            不准确，待确定！！！！ 
+        -->
+        <r dtype="float"> 1.7 </r>
+        <z dtype="float"> 0.0 </z>
+    </reference_point>
+
+    <antenna id="0" ><name>  LH1</name> <identifier>  LH1</identifier><frequency dtype="float">2.45E9</frequency> <position><r dtype="float"> </r><z dtype="float"></z><phi dtype="float"> </phi></position></antenna>
+    <antenna id="1" ><name>  LH2</name> <identifier>  LH2</identifier><frequency dtype="float"> 4.6e9</frequency> <position><r dtype="float"> </r><z dtype="float"></z><phi dtype="float"> </phi></position></antenna>
+ 
+  
+
+</lh_antennas>    
+    
+
+ 

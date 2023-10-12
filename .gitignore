@@ -126,8 +126,5 @@ dmypy.json
 # SVG
 *Zone.Identifier
 
-# Generated files
-python/fytok/_ontology/imas_*
-python/fytok/_mapping
 python/fytok/modules/todo
 **/obsolete/

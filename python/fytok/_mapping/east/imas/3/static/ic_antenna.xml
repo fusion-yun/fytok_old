@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ic_antennas>
+    <ids_properties>
+        <url>http://202.127.205.54/wiki/index.php/Ion_Cyclotron_Resonance_Heating_(ICRH)_System </url>
+        <comment>  </comment>
+    </ids_properties>    
+    <reference_point>
+        <!--
+             Reference point used to define the poloidal angle, 
+             e.g. the geometrical centre of the vacuum vessel. Used to define the poloidal mode numbers under antenna/surface_current            
+            不准确，待确定！！！！ 
+        -->
+        <r dtype="float"> 1.7 </r>
+        <z dtype="float"> 0.0 </z>
+    </reference_point>
+    <antenna id="0" ><name>  ICRFI</name> <identifier>  ICRFI</identifier> </antenna>
+    <antenna id="1" ><name>  ICRFB</name> <identifier>  ICRFB</identifier> </antenna>
+    <antenna id="2" ><name>  ICRF1</name> <identifier>  ICRF1</identifier> </antenna>
+    <antenna id="3" ><name>  ICRF2</name> <identifier>  ICRF2</identifier> </antenna>
+    <antenna id="4" ><name>  ICRF3</name> <identifier>  ICRF3</identifier> </antenna>
+    <antenna id="5" ><name>  ICRF4</name> <identifier>  ICRF4</identifier> </antenna>
+    <antenna id="6" ><name>  ICRF5</name> <identifier>  ICRF5</identifier> </antenna>
+    <antenna id="7" ><name>  ICRF6</name> <identifier>  ICRF6</identifier> </antenna>
+    <antenna id="8" ><name>  ICRF7</name> <identifier>  ICRF7</identifier> </antenna>
+    <antenna id="9" ><name>  ICRF8</name> <identifier>  ICRF8</identifier> </antenna>
+
+</ic_antennas>    
+    
+
+ 
