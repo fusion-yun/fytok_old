@@ -45,7 +45,8 @@ class Library:
 class Code:
     name: str
     commit: str
-    version: str
+    version: str = "0.0.0"
+    copyright: str = "Proprietary Software"
     repository: str
     parameters: SpTree
     output_flag: array_type
@@ -72,6 +73,7 @@ class Module(Actor):
             pth = Path("code/name")
 
             plugin_name = pth.fetch(cache, default_value=None) or \
+                pth.fetch(self.__class__._metadata, default_value=None) or \
                 pth.fetch(self.__class__._metadata.get("default_value", {}), default_value=None) or \
                 pth.fetch(kwargs, default_value=None)
 
@@ -83,18 +85,20 @@ class Module(Actor):
 
             return
 
+        cache = merge_tree_recursive(self.__class__._metadata.get("default_value", {}), cache)
+        cache = merge_tree_recursive(cache, {"code": self.__class__._metadata.get("code", {})})
+
         super().__init__(cache, _entry=entry, _parent=parent,  **kwargs)
 
-        if self.__class__.__doc__ is not None and self.code.version is not _not_found_:
+        logger.info(
+            f"Load module   \t:'{self.code.name or self.__class__.__name__}'  VERSION='{self.code.version}' COPYRIGHT='{self.code.copyright}' ")
 
+        if "LICENSE" in self.__class__.__doc__:
             logger.info(f"""
 ###############################################################################
-Load module {self.code.name or self.__class__.__name__}  version={self.code.version}
-{self.__class__.__doc__}
+{self.__class__.__doc__} 
 ###############################################################################
 """)
-        else:
-            logger.info(f"""Load module {self.code.name or self.__class__.__name__} """)
 
     code: Code = sp_property()
 

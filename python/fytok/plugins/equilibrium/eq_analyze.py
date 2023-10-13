@@ -195,9 +195,9 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         xpoints.sort(key=lambda x: (x.psi - o_psi)**2)
 
-        if len(opoints)==0 or len(xpoints)==0:
+        if len(opoints) == 0 or len(xpoints) == 0:
             raise RuntimeError(f"Can not find O-point or X-point! {opoints} {xpoints}")
-            
+
         return opoints, xpoints
 
     @sp_property
@@ -1037,6 +1037,14 @@ class FyEqAnalyze(Equilibrium):
         - Surface average
 
     """
+
+    _metadata = {
+        "code": {
+            "name": "eq_analyze",
+            "version": "0.0.1",
+            "copyright": "Zhi YU @ASIPP (2022 - Now)"
+        }
+    }
 
     TimeSlice = FyEquilibriumTimeSlice
 

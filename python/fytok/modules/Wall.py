@@ -32,7 +32,7 @@ class Wall(wall._T_wall):
                                               desc.limiter.unit[0].outline.z)
                 units = []
                 for unit in desc.vessel.unit:
-                    if unit.annular.outline_inner.r is not _not_found_:
+                    if unit.annular is not _not_found_:
                         units.append({
                             "annular": {
                                 "vessel_inner": Polyline(unit.annular.outline_inner.r,

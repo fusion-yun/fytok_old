@@ -19,10 +19,9 @@ class TF(tf._T_tf):
         match view_point.lower():
             case "rz":
                 conductor = self.coil[0].conductor[0]
-                if conductor.elements.start_points.r is not _not_found_:
-                    geo["coils"] = Polygon(conductor.elements.start_points.r,
-                                           conductor.elements.start_points.z,
-                                           name=self.coil[0].name)
+                geo["coils"] = Polygon(conductor.elements.start_points.r,
+                                       conductor.elements.start_points.z,
+                                       name=self.coil[0].name)
 
             case "top":
                 if self.is_periodic == 0:

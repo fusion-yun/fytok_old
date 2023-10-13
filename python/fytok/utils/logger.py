@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import atexit
 
 from spdm.utils.logger import logger, sp_enable_logging
 
@@ -15,5 +16,12 @@ else:
         handler="STDOUT",
     )
 
+def _at_end():
+    logger.setLevel(logging.INFO)
+    logger.info("The End")
+    logging.shutdown()
+
+
+atexit.register(_at_end)
 
 __all__ = ["logger"]

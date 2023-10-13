@@ -1,8 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <mapping>
   <wall>
     <description_2d id="0">
-      
-     
+      <limiter>
+        <type>
+          <name>limiter</name>
+          <index dtype='int'>0</index>
+        </type>
+        <unit id="0">
+          <name>limiter</name>
+          <closed dtype='int'>1</closed>
+          <outline>
+            <r dtype='float'>
+            1.01600003, 1.01600003, 1.01600003, 1.01600003, 1.01600003, 1.01600003,
+            1.01600003, 1.01600003, 1.01600003, 1.01600003, 1.01600003, 1.01199996,
+            1.00100005, 1.02900004, 1.04200006, 1.046     , 1.05599999, 1.097     ,
+            1.10800004, 1.11600006, 1.13399994, 1.148     , 1.16199994, 1.18099999,
+            1.18200004, 1.18499994, 1.19000006, 1.19500005, 1.20099998, 1.20899999,
+            1.21500003, 1.222     , 1.22800004, 1.23399997, 1.23899996, 1.24199998,
+            1.24800003, 1.25800002, 1.26300001, 1.27999997, 1.27999997, 1.27999997,
+            1.30999994, 1.32799995, 1.36099994, 1.38      , 1.41900003, 1.41900003,
+            1.37199998, 1.37199998, 1.60800004, 1.64699996, 1.78499997, 2.06999993,
+            2.12800002, 2.24499989, 2.32299995, 2.37700009, 2.36249995, 2.36443496,
+            2.36496902, 2.36532402, 2.36512089, 2.36484194, 2.36433411, 2.36249995,
+            2.37700009, 2.13400006, 1.78600001, 1.76800001, 1.76800001, 1.68200004,
+            1.37199998, 1.37199998, 1.41999996, 1.41999996, 1.273     , 1.153     ,
+            1.01600003, 1.01600003, 1.01600003, 1.01600003, 1.01600003, 1.01600003,
+            1.01600003, 1.01600003,
+            </r>
+            <z dtype='float'>
+            0.00000000e+00,  9.63999987e-01,  9.67999995e-01,  1.00100005e+00,
+            1.01900005e+00,  1.07700002e+00,  1.07000005e+00,  1.09599996e+00,
+            1.11300004e+00,  1.13800001e+00,  1.14699996e+00,  1.16499996e+00,
+            1.21700001e+00,  1.21700001e+00,  1.16240001e+00,  1.16237998e+00,
+            1.16260004e+00,  1.16450000e+00,  1.16594005e+00,  1.16591001e+00,
+            1.16895998e+00,  1.17174995e+00,  1.17556000e+00,  1.18299997e+00,
+            1.18350005e+00,  1.18499994e+00,  1.18799996e+00,  1.19099998e+00,
+            1.19599998e+00,  1.20200002e+00,  1.20799994e+00,  1.21399999e+00,
+            1.22099996e+00,  1.23099995e+00,  1.23800004e+00,  1.24399996e+00,
+            1.25399995e+00,  1.27800000e+00,  1.28999996e+00,  1.33099997e+00,
+            1.34700000e+00,  1.34800005e+00,  1.34800005e+00,  1.34800005e+00,
+            1.34800005e+00,  1.34800005e+00,  1.34800005e+00,  1.30999994e+00,
+            1.30999994e+00,  1.29200006e+00,  1.09500003e+00,  1.07700002e+00,
+            1.07700002e+00,  1.03999996e+00,  9.92999971e-01,  7.08999991e-01,
+            5.18999994e-01,  3.88999999e-01,  4.00000006e-01,  2.22000003e-01,
+            1.33000001e-01,  4.39999998e-02, -4.39999998e-02, -1.33000001e-01,
+           -2.22000003e-01, -4.00000006e-01, -3.88999999e-01, -9.72999990e-01,
+           -1.17400002e+00, -1.21099997e+00, -1.25000000e+00, -1.25000000e+00,
+           -1.25000000e+00, -1.32900000e+00, -1.32900000e+00, -1.36300004e+00,
+           -1.36300004e+00, -1.36300004e+00, -1.22300005e+00, -1.22300005e+00,
+           -8.29999983e-01, -8.00000012e-01, -4.14999992e-01, -4.00000006e-01,
+           -1.00000005e-03,  0.00000000e+00,
+            </z>
+
+          </outline>
+        </unit>
+      </limiter>
       <vessel>
         <unit id="0">
           <name>unit1</name>
@@ -231,10 +284,10 @@
         <geometry>
           <geometry_type>2</geometry_type>
           <rectangle>
-            <r>0.8608</r>
-            <z>0.1683</z>
-            <width>0.0508</width>
-            <height>0.32106</height>
+            <r dtype="float">0.8608</r>
+            <z dtype="float">0.1683</z>
+            <width dtype="float">0.0508</width>
+            <height dtype="float">0.32106</height>
           </rectangle>
         </geometry>
         <turns_with_sign>1</turns_with_sign>
@@ -247,10 +300,10 @@
         <geometry>
           <geometry_type>2</geometry_type>
           <rectangle>
-            <r>0.8614</r>
-            <z>0.5081</z>
-            <width>0.0508</width>
-            <height>0.32106</height>
+            <r dtype="float">0.8614</r>
+            <z dtype="float">0.5081</z>
+            <width dtype="float">0.0508</width>
+            <height dtype="float">0.32106</height>
           </rectangle>
         </geometry>
         <turns_with_sign>1</turns_with_sign>
@@ -263,10 +316,10 @@
         <geometry>
           <geometry_type>2</geometry_type>
           <rectangle>
-            <r>0.8628</r>
-            <z>0.8491</z>
-            <width>0.0508</width>
-            <height>0.32106</height>
+            <r dtype="float">0.8628</r>
+            <z dtype="float">0.8491</z>
+            <width dtype="float">0.0508</width>
+            <height dtype="float">0.32106</height>
           </rectangle>
         </geometry>
         <turns_with_sign>1</turns_with_sign>
@@ -279,10 +332,10 @@
         <geometry>
           <geometry_type>2</geometry_type>
           <rectangle>
-            <r>0.8611</r>
-            <z>1.1899</z>
-            <width>0.0508</width>
-            <height>0.32106</height>
+            <r dtype="float">0.8611</r>
+            <z dtype="float">1.1899</z>
+            <width dtype="float">0.0508</width>
+            <height dtype="float">0.32106</height>
           </rectangle>
         </geometry>
         <turns_with_sign>1</turns_with_sign>
@@ -295,10 +348,10 @@
         <geometry>
           <geometry_type>2</geometry_type>
           <rectangle>
-            <r>1.0041</r>
-            <z>1.5169</z>
-            <width>0.1392</width>
-            <height>0.1194</height>
+            <r dtype="float">1.0041</r>
+            <z dtype="float">1.5169</z>
+            <width dtype="float">0.1392</width>
+            <height dtype="float">0.1194</height>
           </rectangle>
         </geometry>
         <turns_with_sign>1</turns_with_sign>
@@ -311,10 +364,10 @@
         <geometry>
           <geometry_type>2</geometry_type>
           <rectangle>
-            <r>2.6124</r>
-            <z>0.4376</z>
-            <width>0.1732</width>
-            <height>0.1946</height>
+            <r dtype="float">2.6124</r>
+            <z dtype="float">0.4376</z>
+            <width dtype="float">0.1732</width>
+            <height dtype="float">0.1946</height>
           </rectangle>
         </geometry>
         <turns_with_sign>1</turns_with_sign>
@@ -327,10 +380,10 @@
         <geometry>
           <geometry_type>2</geometry_type>
           <rectangle>
-            <r>2.3733</r>
-            <z>1.1171</z>
-            <width>0.188</width>
-            <height>0.1692</height>
+            <r dtype="float">2.3733</r>
+            <z dtype="float">1.1171</z>
+            <width dtype="float">0.188</width>
+            <height dtype="float">0.1692</height>
           </rectangle>
         </geometry>
         <turns_with_sign>1</turns_with_sign>
@@ -343,10 +396,10 @@
         <geometry>
           <geometry_type>2</geometry_type>
           <rectangle>
-            <r>1.2518</r>
-            <z>1.6019</z>
-            <width>0.2349</width>
-            <height>0.0851</height>
+            <r dtype="float">1.2518</r>
+            <z dtype="float">1.6019</z>
+            <width dtype="float">0.2349</width>
+            <height dtype="float">0.0851</height>
           </rectangle>
         </geometry>
         <turns_with_sign>1</turns_with_sign>
@@ -359,10 +412,10 @@
         <geometry>
           <geometry_type>2</geometry_type>
           <rectangle>
-            <r>1.689</r>
-            <z>1.5874</z>
-            <width>0.1694</width>
-            <height>0.1331</height>
+            <r dtype="float">1.689</r>
+            <z dtype="float">1.5874</z>
+            <width dtype="float">0.1694</width>
+            <height dtype="float">0.1331</height>
           </rectangle>
         </geometry>
         <turns_with_sign>1</turns_with_sign>
@@ -375,10 +428,10 @@
         <geometry>
           <geometry_type>2</geometry_type>
           <rectangle>
-            <r>0.8608</r>
-            <z>-0.1737</z>
-            <width>0.0508</width>
-            <height>0.32106</height>
+            <r dtype="float">0.8608</r>
+            <z dtype="float">-0.1737</z>
+            <width dtype="float">0.0508</width>
+            <height dtype="float">0.32106</height>
           </rectangle>
         </geometry>
         <turns_with_sign>1</turns_with_sign>
@@ -391,10 +444,10 @@
         <geometry>
           <geometry_type>2</geometry_type>
           <rectangle>
-            <r>0.8607</r>
-            <z>-0.5135</z>
-            <width>0.0508</width>
-            <height>0.32106</height>
+            <r dtype="float">0.8607</r>
+            <z dtype="float">-0.5135</z>
+            <width dtype="float">0.0508</width>
+            <height dtype="float">0.32106</height>
           </rectangle>
         </geometry>
         <turns_with_sign>1</turns_with_sign>
@@ -407,10 +460,10 @@
         <geometry>
           <geometry_type>2</geometry_type>
           <rectangle>
-            <r>0.8611</r>
-            <z>-0.8543</z>
-            <width>0.0508</width>
-            <height>0.32106</height>
+            <r dtype="float">0.8611</r>
+            <z dtype="float">-0.8543</z>
+            <width dtype="float">0.0508</width>
+            <height dtype="float">0.32106</height>
           </rectangle>
         </geometry>
         <turns_with_sign>1</turns_with_sign>
@@ -423,10 +476,10 @@
         <geometry>
           <geometry_type>2</geometry_type>
           <rectangle>
-            <r>0.863</r>
-            <z>-1.1957</z>
-            <width>0.0508</width>
-            <height>0.32106</height>
+            <r dtype="float">0.863</r>
+            <z dtype="float">-1.1957</z>
+            <width dtype="float">0.0508</width>
+            <height dtype="float">0.32106</height>
           </rectangle>
         </geometry>
         <turns_with_sign>1</turns_with_sign>
@@ -439,10 +492,10 @@
         <geometry>
           <geometry_type>2</geometry_type>
           <rectangle>
-            <r>1.0025</r>
-            <z>-1.5169</z>
-            <width>0.1392</width>
-            <height>0.1194</height>
+            <r dtype="float">1.0025</r>
+            <z dtype="float">-1.5169</z>
+            <width dtype="float">0.1392</width>
+            <height dtype="float">0.1194</height>
           </rectangle>
         </geometry>
         <turns_with_sign>1</turns_with_sign>
@@ -455,10 +508,10 @@
         <geometry>
           <geometry_type>2</geometry_type>
           <rectangle>
-            <r>2.6124</r>
-            <z>-0.4376</z>
-            <width>0.1732</width>
-            <height>0.1946</height>
+            <r dtype="float">2.6124</r>
+            <z dtype="float">-0.4376</z>
+            <width dtype="float">0.1732</width>
+            <height dtype="float">0.1946</height>
           </rectangle>
         </geometry>
         <turns_with_sign>1</turns_with_sign>
@@ -471,10 +524,10 @@
         <geometry>
           <geometry_type>2</geometry_type>
           <rectangle>
-            <r>2.3834</r>
-            <z>-1.1171</z>
-            <width>0.188</width>
-            <height>0.1692</height>
+            <r dtype="float">2.3834</r>
+            <z dtype="float">-1.1171</z>
+            <width dtype="float">0.188</width>
+            <height dtype="float">0.1692</height>
           </rectangle>
         </geometry>
         <turns_with_sign>1</turns_with_sign>
@@ -487,10 +540,10 @@
         <geometry>
           <geometry_type>2</geometry_type>
           <rectangle>
-            <r>1.2524</r>
-            <z>-1.6027</z>
-            <width>0.2349</width>
-            <height>0.0851</height>
+            <r dtype="float">1.2524</r>
+            <z dtype="float">-1.6027</z>
+            <width dtype="float">0.2349</width>
+            <height dtype="float">0.0851</height>
           </rectangle>
         </geometry>
         <turns_with_sign>1</turns_with_sign>
@@ -503,10 +556,10 @@
         <geometry>
           <geometry_type>2</geometry_type>
           <rectangle>
-            <r>1.6889</r>
-            <z>-1.578</z>
-            <width>0.1694</width>
-            <height>0.1331</height>
+            <r dtype="float">1.6889</r>
+            <z dtype="float">-1.578</z>
+            <width dtype="float">0.1694</width>
+            <height dtype="float">0.1331</height>
           </rectangle>
         </geometry>
         <turns_with_sign>1</turns_with_sign>
@@ -521,10 +574,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>0.0382</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">0.0382</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -539,10 +592,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>0.0382</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">0.0382</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -557,10 +610,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>0.1147</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">0.1147</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -575,10 +628,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>0.1147</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">0.1147</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -593,10 +646,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>0.1912</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">0.1912</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -611,10 +664,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>0.1912</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">0.1912</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -629,10 +682,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>0.2677</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">0.2677</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -647,10 +700,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>0.2677</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">0.2677</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -665,10 +718,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>0.3442</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">0.3442</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -683,10 +736,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>0.3442</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">0.3442</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -701,10 +754,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>0.4207</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">0.4207</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -719,10 +772,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>0.4207</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">0.4207</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -737,10 +790,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>0.4972</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">0.4972</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -755,10 +808,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>0.4972</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">0.4972</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -773,10 +826,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>0.5737</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">0.5737</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -791,10 +844,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>0.5737</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">0.5737</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -809,10 +862,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>0.6502</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">0.6502</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -827,10 +880,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>0.6502</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">0.6502</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -845,10 +898,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>0.7267</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">0.7267</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -863,10 +916,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>0.7267</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">0.7267</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -881,10 +934,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>0.8032</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">0.8032</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -899,10 +952,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>0.8032</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">0.8032</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -917,10 +970,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>0.8797</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">0.8797</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -935,10 +988,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>0.8797</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">0.8797</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -953,10 +1006,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>0.9562</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">0.9562</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -971,10 +1024,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>0.9562</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">0.9562</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -989,10 +1042,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>1.0326</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">1.0326</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1007,10 +1060,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>1.0326</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">1.0326</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1025,10 +1078,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>1.1091</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">1.1091</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1043,10 +1096,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>1.1091</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">1.1091</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1061,10 +1114,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>1.1853</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">1.1853</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1079,10 +1132,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>1.1853</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">1.1853</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1097,10 +1150,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>1.2615</z>
-            <width>0.05867</width>
-            <height>0.07341</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">1.2615</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07341</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1115,10 +1168,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>1.2615</z>
-            <width>0.05867</width>
-            <height>0.07341</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">1.2615</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07341</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1133,10 +1186,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>1.3351</z>
-            <width>0.05867</width>
-            <height>0.07135</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">1.3351</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07135</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1151,10 +1204,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>1.3351</z>
-            <width>0.05867</width>
-            <height>0.07135</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">1.3351</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07135</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1169,10 +1222,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>1.4095</z>
-            <width>0.05867</width>
-            <height>0.07021</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">1.4095</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07021</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1187,10 +1240,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>1.4095</z>
-            <width>0.05867</width>
-            <height>0.07021</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">1.4095</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07021</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1205,10 +1258,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>1.4801</z>
-            <width>0.05867</width>
-            <height>0.06622</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">1.4801</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.06622</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1223,10 +1276,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>1.4801</z>
-            <width>0.05867</width>
-            <height>0.06622</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">1.4801</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.06622</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1241,10 +1294,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>1.5482</z>
-            <width>0.05867</width>
-            <height>0.0621</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">1.5482</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.0621</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1259,10 +1312,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>1.5482</z>
-            <width>0.05867</width>
-            <height>0.0621</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">1.5482</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.0621</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1277,10 +1330,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.69</r>
-            <z>1.6108</z>
-            <width>0.04953</width>
-            <height>0.05796</height>
+            <r dtype="float">0.69</r>
+            <z dtype="float">1.6108</z>
+            <width dtype="float">0.04953</width>
+            <height dtype="float">0.05796</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1295,10 +1348,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7599</r>
-            <z>1.6108</z>
-            <width>0.04953</width>
-            <height>0.05796</height>
+            <r dtype="float">0.7599</r>
+            <z dtype="float">1.6108</z>
+            <width dtype="float">0.04953</width>
+            <height dtype="float">0.05796</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1313,10 +1366,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.695</r>
-            <z>1.6684</z>
-            <width>0.04953</width>
-            <height>0.0555</height>
+            <r dtype="float">0.695</r>
+            <z dtype="float">1.6684</z>
+            <width dtype="float">0.04953</width>
+            <height dtype="float">0.0555</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1331,10 +1384,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7625</r>
-            <z>1.6684</z>
-            <width>0.04953</width>
-            <height>0.0555</height>
+            <r dtype="float">0.7625</r>
+            <z dtype="float">1.6684</z>
+            <width dtype="float">0.04953</width>
+            <height dtype="float">0.0555</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1349,10 +1402,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7025</r>
-            <z>1.7255</z>
-            <width>0.04953</width>
-            <height>0.05474</height>
+            <r dtype="float">0.7025</r>
+            <z dtype="float">1.7255</z>
+            <width dtype="float">0.04953</width>
+            <height dtype="float">0.05474</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1367,10 +1420,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7625</r>
-            <z>1.7255</z>
-            <width>0.04953</width>
-            <height>0.05474</height>
+            <r dtype="float">0.7625</r>
+            <z dtype="float">1.7255</z>
+            <width dtype="float">0.04953</width>
+            <height dtype="float">0.05474</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1385,10 +1438,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.8792</r>
-            <z>1.7123</z>
-            <width>0.1138</width>
-            <height>0.0293</height>
+            <r dtype="float">0.8792</r>
+            <z dtype="float">1.7123</z>
+            <width dtype="float">0.1138</width>
+            <height dtype="float">0.0293</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1403,10 +1456,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.8792</r>
-            <z>1.7437</z>
-            <width>0.1138</width>
-            <height>0.0293</height>
+            <r dtype="float">0.8792</r>
+            <z dtype="float">1.7437</z>
+            <width dtype="float">0.1138</width>
+            <height dtype="float">0.0293</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1421,10 +1474,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.8792</r>
-            <z>1.7751</z>
-            <width>0.1138</width>
-            <height>0.0293</height>
+            <r dtype="float">0.8792</r>
+            <z dtype="float">1.7751</z>
+            <width dtype="float">0.1138</width>
+            <height dtype="float">0.0293</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1439,10 +1492,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.8792</r>
-            <z>1.8064</z>
-            <width>0.1138</width>
-            <height>0.0293</height>
+            <r dtype="float">0.8792</r>
+            <z dtype="float">1.8064</z>
+            <width dtype="float">0.1138</width>
+            <height dtype="float">0.0293</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1457,10 +1510,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.9525</r>
-            <z>1.9458</z>
-            <width>0.0587</width>
-            <height>0.0559</height>
+            <r dtype="float">0.9525</r>
+            <z dtype="float">1.9458</z>
+            <width dtype="float">0.0587</width>
+            <height dtype="float">0.0559</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1475,10 +1528,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>1.0124</r>
-            <z>1.9585</z>
-            <width>0.0587</width>
-            <height>0.0559</height>
+            <r dtype="float">1.0124</r>
+            <z dtype="float">1.9585</z>
+            <width dtype="float">0.0587</width>
+            <height dtype="float">0.0559</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1493,10 +1546,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>1.0991</r>
-            <z>1.9855</z>
-            <width>0.0587</width>
-            <height>0.0744</height>
+            <r dtype="float">1.0991</r>
+            <z dtype="float">1.9855</z>
+            <width dtype="float">0.0587</width>
+            <height dtype="float">0.0744</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1511,10 +1564,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>1.1641</r>
-            <z>1.9855</z>
-            <width>0.0587</width>
-            <height>0.0744</height>
+            <r dtype="float">1.1641</r>
+            <z dtype="float">1.9855</z>
+            <width dtype="float">0.0587</width>
+            <height dtype="float">0.0744</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1529,10 +1582,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>1.3512</r>
-            <z>1.8745</z>
-            <width>0.0888</width>
-            <height>0.0749</height>
+            <r dtype="float">1.3512</r>
+            <z dtype="float">1.8745</z>
+            <width dtype="float">0.0888</width>
+            <height dtype="float">0.0749</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1547,10 +1600,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>1.3512</r>
-            <z>1.9515</z>
-            <width>0.0888</width>
-            <height>0.0749</height>
+            <r dtype="float">1.3512</r>
+            <z dtype="float">1.9515</z>
+            <width dtype="float">0.0888</width>
+            <height dtype="float">0.0749</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1565,10 +1618,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>1.786</r>
-            <z>1.7479</z>
-            <width>0.1793</width>
-            <height>0.0279</height>
+            <r dtype="float">1.786</r>
+            <z dtype="float">1.7479</z>
+            <width dtype="float">0.1793</width>
+            <height dtype="float">0.0279</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1583,10 +1636,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>2.3464</r>
-            <z>1.2286</z>
-            <width>0.1692</width>
-            <height>0.0254</height>
+            <r dtype="float">2.3464</r>
+            <z dtype="float">1.2286</z>
+            <width dtype="float">0.1692</width>
+            <height dtype="float">0.0254</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1601,10 +1654,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>2.6087</r>
-            <z>0.5603</z>
-            <width>0.1692</width>
-            <height>0.0254</height>
+            <r dtype="float">2.6087</r>
+            <z dtype="float">0.5603</z>
+            <width dtype="float">0.1692</width>
+            <height dtype="float">0.0254</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1619,10 +1672,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>-0.0382</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">-0.0382</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1637,10 +1690,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>-0.0382</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">-0.0382</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1655,10 +1708,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>-0.1147</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">-0.1147</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1673,10 +1726,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>-0.1147</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">-0.1147</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1691,10 +1744,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>-0.1912</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">-0.1912</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1709,10 +1762,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>-0.1912</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">-0.1912</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1727,10 +1780,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>-0.2677</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">-0.2677</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1745,10 +1798,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>-0.2677</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">-0.2677</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1763,10 +1816,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>-0.3442</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">-0.3442</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1781,10 +1834,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>-0.3442</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">-0.3442</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1799,10 +1852,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>-0.4207</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">-0.4207</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1817,10 +1870,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>-0.4207</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">-0.4207</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1835,10 +1888,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>-0.4972</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">-0.4972</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1853,10 +1906,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>-0.4972</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">-0.4972</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1871,10 +1924,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>-0.5737</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">-0.5737</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1889,10 +1942,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>-0.5737</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">-0.5737</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1907,10 +1960,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>-0.6502</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">-0.6502</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1925,10 +1978,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>-0.6502</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">-0.6502</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1943,10 +1996,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>-0.7267</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">-0.7267</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1961,10 +2014,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>-0.7267</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">-0.7267</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1979,10 +2032,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>-0.8032</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">-0.8032</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -1997,10 +2050,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>-0.8032</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">-0.8032</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2015,10 +2068,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>-0.8797</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">-0.8797</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2033,10 +2086,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>-0.8797</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">-0.8797</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2051,10 +2104,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>-0.9562</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">-0.9562</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2069,10 +2122,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>-0.9562</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">-0.9562</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2087,10 +2140,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>-1.0326</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">-1.0326</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2105,10 +2158,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>-1.0326</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">-1.0326</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2123,10 +2176,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>-1.1091</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">-1.1091</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2141,10 +2194,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>-1.1091</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">-1.1091</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2159,10 +2212,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>-1.1853</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">-1.1853</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2177,10 +2230,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>-1.1853</z>
-            <width>0.05867</width>
-            <height>0.07442</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">-1.1853</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07442</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2195,10 +2248,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>-1.2615</z>
-            <width>0.05867</width>
-            <height>0.07341</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">-1.2615</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07341</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2213,10 +2266,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>-1.2615</z>
-            <width>0.05867</width>
-            <height>0.07341</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">-1.2615</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07341</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2231,10 +2284,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>-1.3351</z>
-            <width>0.05867</width>
-            <height>0.07135</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">-1.3351</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07135</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2249,10 +2302,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>-1.3351</z>
-            <width>0.05867</width>
-            <height>0.07135</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">-1.3351</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07135</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2267,10 +2320,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>-1.4095</z>
-            <width>0.05867</width>
-            <height>0.07021</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">-1.4095</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07021</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2285,10 +2338,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>-1.4095</z>
-            <width>0.05867</width>
-            <height>0.07021</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">-1.4095</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.07021</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2303,10 +2356,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>-1.4801</z>
-            <width>0.05867</width>
-            <height>0.06622</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">-1.4801</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.06622</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2321,10 +2374,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>-1.4801</z>
-            <width>0.05867</width>
-            <height>0.06622</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">-1.4801</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.06622</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2339,10 +2392,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.6875</r>
-            <z>-1.5482</z>
-            <width>0.05867</width>
-            <height>0.0621</height>
+            <r dtype="float">0.6875</r>
+            <z dtype="float">-1.5482</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.0621</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2357,10 +2410,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7575</r>
-            <z>-1.5482</z>
-            <width>0.05867</width>
-            <height>0.0621</height>
+            <r dtype="float">0.7575</r>
+            <z dtype="float">-1.5482</z>
+            <width dtype="float">0.05867</width>
+            <height dtype="float">0.0621</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2375,10 +2428,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.69</r>
-            <z>-1.6108</z>
-            <width>0.04953</width>
-            <height>0.05796</height>
+            <r dtype="float">0.69</r>
+            <z dtype="float">-1.6108</z>
+            <width dtype="float">0.04953</width>
+            <height dtype="float">0.05796</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2393,10 +2446,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7599</r>
-            <z>-1.6108</z>
-            <width>0.04953</width>
-            <height>0.05796</height>
+            <r dtype="float">0.7599</r>
+            <z dtype="float">-1.6108</z>
+            <width dtype="float">0.04953</width>
+            <height dtype="float">0.05796</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2411,10 +2464,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.695</r>
-            <z>-1.6684</z>
-            <width>0.04953</width>
-            <height>0.0555</height>
+            <r dtype="float">0.695</r>
+            <z dtype="float">-1.6684</z>
+            <width dtype="float">0.04953</width>
+            <height dtype="float">0.0555</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2429,10 +2482,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7625</r>
-            <z>-1.6684</z>
-            <width>0.04953</width>
-            <height>0.0555</height>
+            <r dtype="float">0.7625</r>
+            <z dtype="float">-1.6684</z>
+            <width dtype="float">0.04953</width>
+            <height dtype="float">0.0555</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2447,10 +2500,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7025</r>
-            <z>-1.7255</z>
-            <width>0.04953</width>
-            <height>0.05474</height>
+            <r dtype="float">0.7025</r>
+            <z dtype="float">-1.7255</z>
+            <width dtype="float">0.04953</width>
+            <height dtype="float">0.05474</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2465,10 +2518,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.7625</r>
-            <z>-1.7255</z>
-            <width>0.04953</width>
-            <height>0.05474</height>
+            <r dtype="float">0.7625</r>
+            <z dtype="float">-1.7255</z>
+            <width dtype="float">0.04953</width>
+            <height dtype="float">0.05474</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2483,10 +2536,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.879</r>
-            <z>-1.7128</z>
-            <width>0.1138</width>
-            <height>0.0293</height>
+            <r dtype="float">0.879</r>
+            <z dtype="float">-1.7128</z>
+            <width dtype="float">0.1138</width>
+            <height dtype="float">0.0293</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2501,10 +2554,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.879</r>
-            <z>-1.7441</z>
-            <width>0.1138</width>
-            <height>0.0293</height>
+            <r dtype="float">0.879</r>
+            <z dtype="float">-1.7441</z>
+            <width dtype="float">0.1138</width>
+            <height dtype="float">0.0293</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2519,10 +2572,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.879</r>
-            <z>-1.7755</z>
-            <width>0.1138</width>
-            <height>0.0293</height>
+            <r dtype="float">0.879</r>
+            <z dtype="float">-1.7755</z>
+            <width dtype="float">0.1138</width>
+            <height dtype="float">0.0293</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2537,10 +2590,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.879</r>
-            <z>-1.8069</z>
-            <width>0.1138</width>
-            <height>0.0293</height>
+            <r dtype="float">0.879</r>
+            <z dtype="float">-1.8069</z>
+            <width dtype="float">0.1138</width>
+            <height dtype="float">0.0293</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2555,10 +2608,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>0.9533</r>
-            <z>-1.9454</z>
-            <width>0.0587</width>
-            <height>0.0559</height>
+            <r dtype="float">0.9533</r>
+            <z dtype="float">-1.9454</z>
+            <width dtype="float">0.0587</width>
+            <height dtype="float">0.0559</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2573,10 +2626,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>1.0132</r>
-            <z>-1.9581</z>
-            <width>0.0587</width>
-            <height>0.0559</height>
+            <r dtype="float">1.0132</r>
+            <z dtype="float">-1.9581</z>
+            <width dtype="float">0.0587</width>
+            <height dtype="float">0.0559</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2591,10 +2644,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>1.0998</r>
-            <z>-1.9851</z>
-            <width>0.0587</width>
-            <height>0.0744</height>
+            <r dtype="float">1.0998</r>
+            <z dtype="float">-1.9851</z>
+            <width dtype="float">0.0587</width>
+            <height dtype="float">0.0744</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2609,10 +2662,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>1.1648</r>
-            <z>-1.9851</z>
-            <width>0.0587</width>
-            <height>0.0744</height>
+            <r dtype="float">1.1648</r>
+            <z dtype="float">-1.9851</z>
+            <width dtype="float">0.0587</width>
+            <height dtype="float">0.0744</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2627,10 +2680,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>1.3533</r>
-            <z>-1.8735</z>
-            <width>0.0888</width>
-            <height>0.0749</height>
+            <r dtype="float">1.3533</r>
+            <z dtype="float">-1.8735</z>
+            <width dtype="float">0.0888</width>
+            <height dtype="float">0.0749</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2645,10 +2698,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>1.3533</r>
-            <z>-1.9505</z>
-            <width>0.0888</width>
-            <height>0.0749</height>
+            <r dtype="float">1.3533</r>
+            <z dtype="float">-1.9505</z>
+            <width dtype="float">0.0888</width>
+            <height dtype="float">0.0749</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2663,10 +2716,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>1.7876</r>
-            <z>-1.7477</z>
-            <width>0.1793</width>
-            <height>0.0279</height>
+            <r dtype="float">1.7876</r>
+            <z dtype="float">-1.7477</z>
+            <width dtype="float">0.1793</width>
+            <height dtype="float">0.0279</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2681,10 +2734,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>2.3565</r>
-            <z>-1.2286</z>
-            <width>0.1692</width>
-            <height>0.0254</height>
+            <r dtype="float">2.3565</r>
+            <z dtype="float">-1.2286</z>
+            <width dtype="float">0.1692</width>
+            <height dtype="float">0.0254</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2699,10 +2752,10 @@
         <turns_with_sign>1.0</turns_with_sign>
         <geometry>
           <rectangle>
-            <r>2.6087</r>
-            <z>-0.5603</z>
-            <width>0.1692</width>
-            <height>0.0254</height>
+            <r dtype="float">2.6087</r>
+            <z dtype="float">-0.5603</z>
+            <width dtype="float">0.1692</width>
+            <height dtype="float">0.0254</height>
           </rectangle>
           <geometry_type>1</geometry_type>
         </geometry>
@@ -2714,8 +2767,8 @@
       <name>PSF1A     </name>
       <identifier>PSF1A     </identifier>
       <position id="0">
-        <r>0.8929</r>
-        <z>0.1683</z>
+        <r dtype="float">0.8929</r>
+        <z dtype="float">0.1683</z>
       </position>
       <type>
         <index>1</index>
@@ -2725,8 +2778,8 @@
       <name>PSF2A     </name>
       <identifier>PSF2A     </identifier>
       <position id="0">
-        <r>0.8936</r>
-        <z>0.5092</z>
+        <r dtype="float">0.8936</r>
+        <z dtype="float">0.5092</z>
       </position>
       <type>
         <index>1</index>
@@ -2736,8 +2789,8 @@
       <name>PSF3A     </name>
       <identifier>PSF3A     </identifier>
       <position id="0">
-        <r>0.895</r>
-        <z>0.85</z>
+        <r dtype="float">0.895</r>
+        <z dtype="float">0.85</z>
       </position>
       <type>
         <index>1</index>
@@ -2747,8 +2800,8 @@
       <name>PSF4A     </name>
       <identifier>PSF4A     </identifier>
       <position id="0">
-        <r>0.8932</r>
-        <z>1.1909</z>
+        <r dtype="float">0.8932</r>
+        <z dtype="float">1.1909</z>
       </position>
       <type>
         <index>1</index>
@@ -2758,8 +2811,8 @@
       <name>PSF5A     </name>
       <identifier>PSF5A     </identifier>
       <position id="0">
-        <r>1.0106</r>
-        <z>1.4475</z>
+        <r dtype="float">1.0106</r>
+        <z dtype="float">1.4475</z>
       </position>
       <type>
         <index>1</index>
@@ -2769,8 +2822,8 @@
       <name>PSF6NA    </name>
       <identifier>PSF6NA    </identifier>
       <position id="0">
-        <r>2.511</r>
-        <z>0.332</z>
+        <r dtype="float">2.511</r>
+        <z dtype="float">0.332</z>
       </position>
       <type>
         <index>1</index>
@@ -2780,8 +2833,8 @@
       <name>PSF7NA    </name>
       <identifier>PSF7NA    </identifier>
       <position id="0">
-        <r>2.285</r>
-        <z>1.018</z>
+        <r dtype="float">2.285</r>
+        <z dtype="float">1.018</z>
       </position>
       <type>
         <index>1</index>
@@ -2791,8 +2844,8 @@
       <name>PSF8A     </name>
       <identifier>PSF8A     </identifier>
       <position id="0">
-        <r>1.2517</r>
-        <z>1.5517</z>
+        <r dtype="float">1.2517</r>
+        <z dtype="float">1.5517</z>
       </position>
       <type>
         <index>1</index>
@@ -2802,8 +2855,8 @@
       <name>PSF9A     </name>
       <identifier>PSF9A     </identifier>
       <position id="0">
-        <r>1.6885</r>
-        <z>1.5169</z>
+        <r dtype="float">1.6885</r>
+        <z dtype="float">1.5169</z>
       </position>
       <type>
         <index>1</index>
@@ -2813,8 +2866,8 @@
       <name>PSF1B     </name>
       <identifier>PSF1B     </identifier>
       <position id="0">
-        <r>0.8929</r>
-        <z>-0.1726</z>
+        <r dtype="float">0.8929</r>
+        <z dtype="float">-0.1726</z>
       </position>
       <type>
         <index>1</index>
@@ -2824,8 +2877,8 @@
       <name>PSF2B     </name>
       <identifier>PSF2B     </identifier>
       <position id="0">
-        <r>0.8928</r>
-        <z>-0.5135</z>
+        <r dtype="float">0.8928</r>
+        <z dtype="float">-0.5135</z>
       </position>
       <type>
         <index>1</index>
@@ -2835,8 +2888,8 @@
       <name>PSF3B     </name>
       <identifier>PSF3B     </identifier>
       <position id="0">
-        <r>0.8933</r>
-        <z>-0.8543</z>
+        <r dtype="float">0.8933</r>
+        <z dtype="float">-0.8543</z>
       </position>
       <type>
         <index>1</index>
@@ -2846,8 +2899,8 @@
       <name>PSF4B     </name>
       <identifier>PSF4B     </identifier>
       <position id="0">
-        <r>0.8952</r>
-        <z>-1.1953</z>
+        <r dtype="float">0.8952</r>
+        <z dtype="float">-1.1953</z>
       </position>
       <type>
         <index>1</index>
@@ -2857,8 +2910,8 @@
       <name>PSF5B     </name>
       <identifier>PSF5B     </identifier>
       <position id="0">
-        <r>1.0152</r>
-        <z>-1.4536</z>
+        <r dtype="float">1.0152</r>
+        <z dtype="float">-1.4536</z>
       </position>
       <type>
         <index>1</index>
@@ -2868,8 +2921,8 @@
       <name>PSF6NB    </name>
       <identifier>PSF6NB    </identifier>
       <position id="0">
-        <r>2.509</r>
-        <z>-0.335</z>
+        <r dtype="float">2.509</r>
+        <z dtype="float">-0.335</z>
       </position>
       <type>
         <index>1</index>
@@ -2879,8 +2932,8 @@
       <name>PSF7NB    </name>
       <identifier>PSF7NB    </identifier>
       <position id="0">
-        <r>2.297</r>
-        <z>-1.01</z>
+        <r dtype="float">2.297</r>
+        <z dtype="float">-1.01</z>
       </position>
       <type>
         <index>1</index>
@@ -2890,8 +2943,8 @@
       <name>PSF8B     </name>
       <identifier>PSF8B     </identifier>
       <position id="0">
-        <r>1.2491</r>
-        <z>-1.5527</z>
+        <r dtype="float">1.2491</r>
+        <z dtype="float">-1.5527</z>
       </position>
       <type>
         <index>1</index>
@@ -2901,8 +2954,8 @@
       <name>PSF9B     </name>
       <identifier>PSF9B     </identifier>
       <position id="0">
-        <r>1.6882</r>
-        <z>-1.5075</z>
+        <r dtype="float">1.6882</r>
+        <z dtype="float">-1.5075</z>
       </position>
       <type>
         <index>1</index>
@@ -2912,8 +2965,8 @@
       <name>PSI11M    </name>
       <identifier>PSI11M    </identifier>
       <position id="0">
-        <r>0.9247</r>
-        <z>0.0</z>
+        <r dtype="float">0.9247</r>
+        <z dtype="float">0.0</z>
       </position>
       <type>
         <index>1</index>
@@ -2923,8 +2976,8 @@
       <name>PSI12A    </name>
       <identifier>PSI12A    </identifier>
       <position id="0">
-        <r>0.9247</r>
-        <z>0.3429</z>
+        <r dtype="float">0.9247</r>
+        <z dtype="float">0.3429</z>
       </position>
       <type>
         <index>1</index>
@@ -2934,8 +2987,8 @@
       <name>PSI23A    </name>
       <identifier>PSI23A    </identifier>
       <position id="0">
-        <r>0.9247</r>
-        <z>0.6858</z>
+        <r dtype="float">0.9247</r>
+        <z dtype="float">0.6858</z>
       </position>
       <type>
         <index>1</index>
@@ -2945,8 +2998,8 @@
       <name>PSI34A    </name>
       <identifier>PSI34A    </identifier>
       <position id="0">
-        <r>0.9247</r>
-        <z>1.0287</z>
+        <r dtype="float">0.9247</r>
+        <z dtype="float">1.0287</z>
       </position>
       <type>
         <index>1</index>
@@ -2956,8 +3009,8 @@
       <name>PSI45A    </name>
       <identifier>PSI45A    </identifier>
       <position id="0">
-        <r>0.9621</r>
-        <z>1.3208</z>
+        <r dtype="float">0.9621</r>
+        <z dtype="float">1.3208</z>
       </position>
       <type>
         <index>1</index>
@@ -2967,8 +3020,8 @@
       <name>PSI58A    </name>
       <identifier>PSI58A    </identifier>
       <position id="0">
-        <r>1.1212</r>
-        <z>1.4646</z>
+        <r dtype="float">1.1212</r>
+        <z dtype="float">1.4646</z>
       </position>
       <type>
         <index>1</index>
@@ -2978,8 +3031,8 @@
       <name>PSI9A     </name>
       <identifier>PSI9A     </identifier>
       <position id="0">
-        <r>1.6978</r>
-        <z>1.4646</z>
+        <r dtype="float">1.6978</r>
+        <z dtype="float">1.4646</z>
       </position>
       <type>
         <index>1</index>
@@ -2989,8 +3042,8 @@
       <name>PSF7FA    </name>
       <identifier>PSF7FA    </identifier>
       <position id="0">
-        <r>2.209</r>
-        <z>1.213</z>
+        <r dtype="float">2.209</r>
+        <z dtype="float">1.213</z>
       </position>
       <type>
         <index>1</index>
@@ -3000,8 +3053,8 @@
       <name>PSI7A     </name>
       <identifier>PSI7A     </identifier>
       <position id="0">
-        <r>2.1933</r>
-        <z>1.0629</z>
+        <r dtype="float">2.1933</r>
+        <z dtype="float">1.0629</z>
       </position>
       <type>
         <index>1</index>
@@ -3011,8 +3064,8 @@
       <name>PSF6FA    </name>
       <identifier>PSF6FA    </identifier>
       <position id="0">
-        <r>2.501</r>
-        <z>0.527</z>
+        <r dtype="float">2.501</r>
+        <z dtype="float">0.527</z>
       </position>
       <type>
         <index>1</index>
@@ -3022,8 +3075,8 @@
       <name>PSI6A     </name>
       <identifier>PSI6A     </identifier>
       <position id="0">
-        <r>2.4347</r>
-        <z>0.4902</z>
+        <r dtype="float">2.4347</r>
+        <z dtype="float">0.4902</z>
       </position>
       <type>
         <index>1</index>
@@ -3033,8 +3086,8 @@
       <name>PSI12B    </name>
       <identifier>PSI12B    </identifier>
       <position id="0">
-        <r>0.9247</r>
-        <z>-0.3429</z>
+        <r dtype="float">0.9247</r>
+        <z dtype="float">-0.3429</z>
       </position>
       <type>
         <index>1</index>
@@ -3044,8 +3097,8 @@
       <name>PSI23B    </name>
       <identifier>PSI23B    </identifier>
       <position id="0">
-        <r>0.9247</r>
-        <z>-0.6858</z>
+        <r dtype="float">0.9247</r>
+        <z dtype="float">-0.6858</z>
       </position>
       <type>
         <index>1</index>
@@ -3055,8 +3108,8 @@
       <name>PSI34B    </name>
       <identifier>PSI34B    </identifier>
       <position id="0">
-        <r>0.9247</r>
-        <z>-1.0287</z>
+        <r dtype="float">0.9247</r>
+        <z dtype="float">-1.0287</z>
       </position>
       <type>
         <index>1</index>
@@ -3066,8 +3119,8 @@
       <name>PSI45B    </name>
       <identifier>PSI45B    </identifier>
       <position id="0">
-        <r>0.9611</r>
-        <z>-1.3198</z>
+        <r dtype="float">0.9611</r>
+        <z dtype="float">-1.3198</z>
       </position>
       <type>
         <index>1</index>
@@ -3077,8 +3130,8 @@
       <name>PSI58B    </name>
       <identifier>PSI58B    </identifier>
       <position id="0">
-        <r>1.1199</r>
-        <z>-1.4625</z>
+        <r dtype="float">1.1199</r>
+        <z dtype="float">-1.4625</z>
       </position>
       <type>
         <index>1</index>
@@ -3088,8 +3141,8 @@
       <name>PSI9B     </name>
       <identifier>PSI9B     </identifier>
       <position id="0">
-        <r>1.8559</r>
-        <z>-1.4625</z>
+        <r dtype="float">1.8559</r>
+        <z dtype="float">-1.4625</z>
       </position>
       <type>
         <index>1</index>
@@ -3099,8 +3152,8 @@
       <name>PSF7FB    </name>
       <identifier>PSF7FB    </identifier>
       <position id="0">
-        <r>2.215</r>
-        <z>-1.214</z>
+        <r dtype="float">2.215</r>
+        <z dtype="float">-1.214</z>
       </position>
       <type>
         <index>1</index>
@@ -3110,8 +3163,8 @@
       <name>PSI7B     </name>
       <identifier>PSI7B     </identifier>
       <position id="0">
-        <r>2.1933</r>
-        <z>-1.0602</z>
+        <r dtype="float">2.1933</r>
+        <z dtype="float">-1.0602</z>
       </position>
       <type>
         <index>1</index>
@@ -3121,8 +3174,8 @@
       <name>PSF6FB    </name>
       <identifier>PSF6FB    </identifier>
       <position id="0">
-        <r>2.501</r>
-        <z>-0.524</z>
+        <r dtype="float">2.501</r>
+        <z dtype="float">-0.524</z>
       </position>
       <type>
         <index>1</index>
@@ -3132,8 +3185,8 @@
       <name>PSI6B     </name>
       <identifier>PSI6B     </identifier>
       <position id="0">
-        <r>2.4328</r>
-        <z>-0.4909</z>
+        <r dtype="float">2.4328</r>
+        <z dtype="float">-0.4909</z>
       </position>
       <type>
         <index>1</index>
@@ -3143,8 +3196,8 @@
       <name>PSI89FB   </name>
       <identifier>PSI89FB   </identifier>
       <position id="0">
-        <r>1.3828</r>
-        <z>-1.4625</z>
+        <r dtype="float">1.3828</r>
+        <z dtype="float">-1.4625</z>
       </position>
       <type>
         <index>1</index>
@@ -3154,8 +3207,8 @@
       <name>PSI89NB   </name>
       <identifier>PSI89NB   </identifier>
       <position id="0">
-        <r>1.5771</r>
-        <z>-1.4625</z>
+        <r dtype="float">1.5771</r>
+        <z dtype="float">-1.4625</z>
       </position>
       <type>
         <index>1</index>
@@ -3165,8 +3218,8 @@
       <name>PSI1L     </name>
       <identifier>PSI1L     </identifier>
       <position id="0">
-        <r>1.3929</r>
-        <z>-1.3057</z>
+        <r dtype="float">1.3929</r>
+        <z dtype="float">-1.3057</z>
       </position>
       <type>
         <index>1</index>
@@ -3176,8 +3229,8 @@
       <name>PSI2L     </name>
       <identifier>PSI2L     </identifier>
       <position id="0">
-        <r>1.5983</r>
-        <z>-1.3057</z>
+        <r dtype="float">1.5983</r>
+        <z dtype="float">-1.3057</z>
       </position>
       <type>
         <index>1</index>
@@ -3187,8 +3240,8 @@
       <name>PSI3L     </name>
       <identifier>PSI3L     </identifier>
       <position id="0">
-        <r>1.7759</r>
-        <z>-1.3053</z>
+        <r dtype="float">1.7759</r>
+        <z dtype="float">-1.3053</z>
       </position>
       <type>
         <index>1</index>
@@ -3198,8 +3251,8 @@
       <name>MPI11M067 </name>
       <identifier>MPI11M067 </identifier>
       <position>
-        <r>0.9729</r>
-        <z>-0.0037</z>
+        <r dtype="float">0.9729</r>
+        <z dtype="float">-0.0037</z>
       </position>
       <length>0.1408</length>
       <poloidal_angle>-1.5707963267948966</poloidal_angle>
@@ -3213,8 +3266,8 @@
       <name>MPI1A139  </name>
       <identifier>MPI1A139  </identifier>
       <position>
-        <r>0.9787</r>
-        <z>0.0699</z>
+        <r dtype="float">0.9787</r>
+        <z dtype="float">0.0699</z>
       </position>
       <length>0.1419</length>
       <poloidal_angle>-1.575334182850082</poloidal_angle>
@@ -3228,8 +3281,8 @@
       <name>MPI2A067  </name>
       <identifier>MPI2A067  </identifier>
       <position>
-        <r>0.9726</r>
-        <z>0.518</z>
+        <r dtype="float">0.9726</r>
+        <z dtype="float">0.518</z>
       </position>
       <length>0.1404</length>
       <poloidal_angle>-1.567305668290908</poloidal_angle>
@@ -3243,8 +3296,8 @@
       <name>MPI2A139  </name>
       <identifier>MPI2A139  </identifier>
       <position>
-        <r>0.9767</r>
-        <z>0.2094</z>
+        <r dtype="float">0.9767</r>
+        <z dtype="float">0.2094</z>
       </position>
       <length>0.1408</length>
       <poloidal_angle>-1.568527398767304</poloidal_angle>
@@ -3258,8 +3311,8 @@
       <name>MPI3A139  </name>
       <identifier>MPI3A139  </identifier>
       <position>
-        <r>0.9793</r>
-        <z>0.3471</z>
+        <r dtype="float">0.9793</r>
+        <z dtype="float">0.3471</z>
       </position>
       <length>0.1412</length>
       <poloidal_angle>-1.5720180572712925</poloidal_angle>
@@ -3273,8 +3326,8 @@
       <name>MPI4A139  </name>
       <identifier>MPI4A139  </identifier>
       <position>
-        <r>0.9764</r>
-        <z>0.4851</z>
+        <r dtype="float">0.9764</r>
+        <z dtype="float">0.4851</z>
       </position>
       <length>0.1409</length>
       <poloidal_angle>-1.570970859720096</poloidal_angle>
@@ -3288,8 +3341,8 @@
       <name>MPI5A139  </name>
       <identifier>MPI5A139  </identifier>
       <position>
-        <r>0.9785</r>
-        <z>0.7591</z>
+        <r dtype="float">0.9785</r>
+        <z dtype="float">0.7591</z>
       </position>
       <length>0.1414</length>
       <poloidal_angle>-1.5662584707397111</poloidal_angle>
@@ -3303,8 +3356,8 @@
       <name>MPI66M247 </name>
       <identifier>MPI66M247 </identifier>
       <position>
-        <r>2.413</r>
-        <z>-0.0025</z>
+        <r dtype="float">2.413</r>
+        <z dtype="float">-0.0025</z>
       </position>
       <length>0.1402</length>
       <poloidal_angle>1.579522973054868</poloidal_angle>
@@ -3318,8 +3371,8 @@
       <name>MPI79A147 </name>
       <identifier>MPI79A147 </identifier>
       <position>
-        <r>1.7617</r>
-        <z>1.3123</z>
+        <r dtype="float">1.7617</r>
+        <z dtype="float">1.3123</z>
       </position>
       <length>0.1534</length>
       <poloidal_angle>0.6894050545377601</poloidal_angle>
@@ -3333,8 +3386,8 @@
       <name>MPI67A142 </name>
       <identifier>MPI67A142 </identifier>
       <position>
-        <r>2.2665</r>
-        <z>0.7572</z>
+        <r dtype="float">2.2665</r>
+        <z dtype="float">0.7572</z>
       </position>
       <length>0.1534</length>
       <poloidal_angle>1.1746065865921838</poloidal_angle>
@@ -3348,8 +3401,8 @@
       <name>MPI67A157 </name>
       <identifier>MPI67A157 </identifier>
       <position>
-        <r>2.2641</r>
-        <z>0.7598</z>
+        <r dtype="float">2.2641</r>
+        <z dtype="float">0.7598</z>
       </position>
       <length>0.1561</length>
       <poloidal_angle>1.1833332328521553</poloidal_angle>
@@ -3363,8 +3416,8 @@
       <name>MPI67A097 </name>
       <identifier>MPI67A097 </identifier>
       <position>
-        <r>2.2655</r>
-        <z>0.7578</z>
+        <r dtype="float">2.2655</r>
+        <z dtype="float">0.7578</z>
       </position>
       <length>0.155</length>
       <poloidal_angle>1.1798425743481666</poloidal_angle>
@@ -3378,8 +3431,8 @@
       <name>MPI6NA132 </name>
       <identifier>MPI6NA132 </identifier>
       <position>
-        <r>2.4088</r>
-        <z>0.2766</z>
+        <r dtype="float">2.4088</r>
+        <z dtype="float">0.2766</z>
       </position>
       <length>0.1381</length>
       <poloidal_angle>1.5533430342749532</poloidal_angle>
@@ -3393,8 +3446,8 @@
       <name>MPI6NA157 </name>
       <identifier>MPI6NA157 </identifier>
       <position>
-        <r>2.4066</r>
-        <z>0.2544</z>
+        <r dtype="float">2.4066</r>
+        <z dtype="float">0.2544</z>
       </position>
       <length>0.1406</length>
       <poloidal_angle>1.5601498183577311</poloidal_angle>
@@ -3408,8 +3461,8 @@
       <name>MPI66M067 </name>
       <identifier>MPI66M067 </identifier>
       <position>
-        <r>2.4133</r>
-        <z>0.0029</z>
+        <r dtype="float">2.4133</r>
+        <z dtype="float">0.0029</z>
       </position>
       <length>0.1409</length>
       <poloidal_angle>1.5690509975429023</poloidal_angle>
@@ -3423,8 +3476,8 @@
       <name>MPI1B139  </name>
       <identifier>MPI1B139  </identifier>
       <position>
-        <r>0.9771</r>
-        <z>-0.0691</z>
+        <r dtype="float">0.9771</r>
+        <z dtype="float">-0.0691</z>
       </position>
       <length>0.1418</length>
       <poloidal_angle>-1.570970859720096</poloidal_angle>
@@ -3438,8 +3491,8 @@
       <name>MPI2B067  </name>
       <identifier>MPI2B067  </identifier>
       <position>
-        <r>0.9722</r>
-        <z>-0.5165</z>
+        <r dtype="float">0.9722</r>
+        <z dtype="float">-0.5165</z>
       </position>
       <length>0.1392</length>
       <poloidal_angle>-1.5760323145508797</poloidal_angle>
@@ -3453,8 +3506,8 @@
       <name>MPI2B139  </name>
       <identifier>MPI2B139  </identifier>
       <position>
-        <r>0.9792</r>
-        <z>-0.207</z>
+        <r dtype="float">0.9792</r>
+        <z dtype="float">-0.207</z>
       </position>
       <length>0.1414</length>
       <poloidal_angle>-1.5636404768617198</poloidal_angle>
@@ -3468,8 +3521,8 @@
       <name>MPI3B139  </name>
       <identifier>MPI3B139  </identifier>
       <position>
-        <r>0.9769</r>
-        <z>-0.3428</z>
+        <r dtype="float">0.9769</r>
+        <z dtype="float">-0.3428</z>
       </position>
       <length>0.1411</length>
       <poloidal_angle>-1.5716689914208934</poloidal_angle>
@@ -3483,8 +3536,8 @@
       <name>MPI4B139  </name>
       <identifier>MPI4B139  </identifier>
       <position>
-        <r>0.9801</r>
-        <z>-0.4818</z>
+        <r dtype="float">0.9801</r>
+        <z dtype="float">-0.4818</z>
       </position>
       <length>0.1407</length>
       <poloidal_angle>-1.5683528658421044</poloidal_angle>
@@ -3498,8 +3551,8 @@
       <name>MPI5B139  </name>
       <identifier>MPI5B139  </identifier>
       <position>
-        <r>0.9774</r>
-        <z>-0.757</z>
+        <r dtype="float">0.9774</r>
+        <z dtype="float">-0.757</z>
       </position>
       <length>0.142</length>
       <poloidal_angle>-1.5671311353657085</poloidal_angle>
@@ -3513,8 +3566,8 @@
       <name>MPI66M157 </name>
       <identifier>MPI66M157 </identifier>
       <position>
-        <r>2.4129</r>
-        <z>-0.001</z>
+        <r dtype="float">2.4129</r>
+        <z dtype="float">-0.001</z>
       </position>
       <length>0.1375</length>
       <poloidal_angle>1.566956602440509</poloidal_angle>
@@ -3528,8 +3581,8 @@
       <name>MPI1B157  </name>
       <identifier>MPI1B157  </identifier>
       <position>
-        <r>0.9719</r>
-        <z>-0.1831</z>
+        <r dtype="float">0.9719</r>
+        <z dtype="float">-0.1831</z>
       </position>
       <length>0.1408</length>
       <poloidal_angle>-1.5629423451609221</poloidal_angle>
@@ -3543,8 +3596,8 @@
       <name>MPI79B142 </name>
       <identifier>MPI79B142 </identifier>
       <position>
-        <r>2.0436</r>
-        <z>-1.1098</z>
+        <r dtype="float">2.0436</r>
+        <z dtype="float">-1.1098</z>
       </position>
       <length>0.1537</length>
       <poloidal_angle>2.253220064324679</poloidal_angle>
@@ -3558,8 +3611,8 @@
       <name>MPI7NB142 </name>
       <identifier>MPI7NB142 </identifier>
       <position>
-        <r>2.2089</r>
-        <z>-0.8669</z>
+        <r dtype="float">2.2089</r>
+        <z dtype="float">-0.8669</z>
       </position>
       <length>0.1422</length>
       <poloidal_angle>1.9647171389700167</poloidal_angle>
@@ -3573,8 +3626,8 @@
       <name>MPI67B157 </name>
       <identifier>MPI67B157 </identifier>
       <position>
-        <r>2.2596</r>
-        <z>-0.7538</z>
+        <r dtype="float">2.2596</r>
+        <z dtype="float">-0.7538</z>
       </position>
       <length>0.1549</length>
       <poloidal_angle>1.9687313962496038</poloidal_angle>
@@ -3588,8 +3641,8 @@
       <name>MPI67B097 </name>
       <identifier>MPI67B097 </identifier>
       <position>
-        <r>2.2624</r>
-        <z>-0.751</z>
+        <r dtype="float">2.2624</r>
+        <z dtype="float">-0.751</z>
       </position>
       <length>0.1557</length>
       <poloidal_angle>1.965240737745615</poloidal_angle>
@@ -3603,8 +3656,8 @@
       <name>MPI6FB142 </name>
       <identifier>MPI6FB142 </identifier>
       <position>
-        <r>2.3119</r>
-        <z>-0.6202</z>
+        <r dtype="float">2.3119</r>
+        <z dtype="float">-0.6202</z>
       </position>
       <length>0.1398</length>
       <poloidal_angle>1.9722220547535922</poloidal_angle>
@@ -3618,8 +3671,8 @@
       <name>MPI6NB157 </name>
       <identifier>MPI6NB157 </identifier>
       <position>
-        <r>2.414</r>
-        <z>-0.2441</z>
+        <r dtype="float">2.414</r>
+        <z dtype="float">-0.2441</z>
       </position>
       <length>0.1407</length>
       <poloidal_angle>1.5634659439365204</poloidal_angle>
@@ -3633,8 +3686,8 @@
       <name>MPI8A322  </name>
       <identifier>MPI8A322  </identifier>
       <position>
-        <r>1.2194</r>
-        <z>1.4055</z>
+        <r dtype="float">1.2194</r>
+        <z dtype="float">1.4055</z>
       </position>
       <length>0.1394</length>
       <poloidal_angle>-0.005235987755982988</poloidal_angle>
@@ -3648,8 +3701,8 @@
       <name>MPI89A322 </name>
       <identifier>MPI89A322 </identifier>
       <position>
-        <r>1.4017</r>
-        <z>1.407</z>
+        <r dtype="float">1.4017</r>
+        <z dtype="float">1.407</z>
       </position>
       <length>0.1145</length>
       <poloidal_angle>-0.011641346110802179</poloidal_angle>
@@ -3663,8 +3716,8 @@
       <name>MPI9A322  </name>
       <identifier>MPI9A322  </identifier>
       <position>
-        <r>1.5841</r>
-        <z>1.4084</z>
+        <r dtype="float">1.5841</r>
+        <z dtype="float">1.4084</z>
       </position>
       <length>0.1403</length>
       <poloidal_angle>-0.010768681484805013</poloidal_angle>
@@ -3678,8 +3731,8 @@
       <name>MPI79FA322</name>
       <identifier>MPI79FA322</identifier>
       <position>
-        <r>1.7825</r>
-        <z>1.323</z>
+        <r dtype="float">1.7825</r>
+        <z dtype="float">1.323</z>
       </position>
       <length>0.1409</length>
       <poloidal_angle>0.6856176900609325</poloidal_angle>
@@ -3693,8 +3746,8 @@
       <name>MPI79NA322</name>
       <identifier>MPI79NA322</identifier>
       <position>
-        <r>1.9243</r>
-        <z>1.2064</z>
+        <r dtype="float">1.9243</r>
+        <z dtype="float">1.2064</z>
       </position>
       <length>0.1141</length>
       <poloidal_angle>0.6835931081286191</poloidal_angle>
@@ -3708,8 +3761,8 @@
       <name>MPI7FA322 </name>
       <identifier>MPI7FA322 </identifier>
       <position>
-        <r>2.0673</r>
-        <z>1.0904</z>
+        <r dtype="float">2.0673</r>
+        <z dtype="float">1.0904</z>
       </position>
       <length>0.1398</length>
       <poloidal_angle>0.6879564312586048</poloidal_angle>
@@ -3723,8 +3776,8 @@
       <name>MPI7NA322 </name>
       <identifier>MPI7NA322 </identifier>
       <position>
-        <r>2.2193</r>
-        <z>0.8698</z>
+        <r dtype="float">2.2193</r>
+        <z dtype="float">0.8698</z>
       </position>
       <length>0.1403</length>
       <poloidal_angle>1.1885692206081382</poloidal_angle>
@@ -3738,8 +3791,8 @@
       <name>MPI67A322 </name>
       <identifier>MPI67A322 </identifier>
       <position>
-        <r>2.2702</r>
-        <z>0.7462</z>
+        <r dtype="float">2.2702</r>
+        <z dtype="float">0.7462</z>
       </position>
       <length>0.1407</length>
       <poloidal_angle>1.1850785621041497</poloidal_angle>
@@ -3753,8 +3806,8 @@
       <name>MPI6FA322 </name>
       <identifier>MPI6FA322 </identifier>
       <position>
-        <r>2.3189</r>
-        <z>0.6228</z>
+        <r dtype="float">2.3189</r>
+        <z dtype="float">0.6228</z>
       </position>
       <length>0.1402</length>
       <poloidal_angle>1.186823891356144</poloidal_angle>
@@ -3768,8 +3821,8 @@
       <name>MPI6NA322 </name>
       <identifier>MPI6NA322 </identifier>
       <position>
-        <r>2.4159</r>
-        <z>0.2492</z>
+        <r dtype="float">2.4159</r>
+        <z dtype="float">0.2492</z>
       </position>
       <length>0.1407</length>
       <poloidal_angle>1.5591549806840943</poloidal_angle>
@@ -3783,8 +3836,8 @@
       <name>MPI66M322 </name>
       <identifier>MPI66M322 </identifier>
       <position>
-        <r>2.4182</r>
-        <z>-0.0009</z>
+        <r dtype="float">2.4182</r>
+        <z dtype="float">-0.0009</z>
       </position>
       <length>0.1399</length>
       <poloidal_angle>1.5690509975429023</poloidal_angle>
@@ -3798,8 +3851,8 @@
       <name>MPI6NB322 </name>
       <identifier>MPI6NB322 </identifier>
       <position>
-        <r>2.4162</r>
-        <z>-0.2438</z>
+        <r dtype="float">2.4162</r>
+        <z dtype="float">-0.2438</z>
       </position>
       <length>0.1399</length>
       <poloidal_angle>-4.699299010994732</poloidal_angle>
@@ -3813,8 +3866,8 @@
       <name>MPI6FB322 </name>
       <identifier>MPI6FB322 </identifier>
       <position>
-        <r>2.3154</r>
-        <z>-0.624</z>
+        <r dtype="float">2.3154</r>
+        <z dtype="float">-0.624</z>
       </position>
       <length>0.1403</length>
       <poloidal_angle>1.9792033717615696</poloidal_angle>
@@ -3828,8 +3881,8 @@
       <name>MPI67B322 </name>
       <identifier>MPI67B322 </identifier>
       <position>
-        <r>2.2631</r>
-        <z>-0.7487</z>
+        <r dtype="float">2.2631</r>
+        <z dtype="float">-0.7487</z>
       </position>
       <length>0.14</length>
       <poloidal_angle>1.9687313962496038</poloidal_angle>
@@ -3843,8 +3896,8 @@
       <name>MPI7NB322 </name>
       <identifier>MPI7NB322 </identifier>
       <position>
-        <r>2.212</r>
-        <z>-0.8725</z>
+        <r dtype="float">2.212</r>
+        <z dtype="float">-0.8725</z>
       </position>
       <length>0.1407</length>
       <poloidal_angle>1.980948701013564</poloidal_angle>
@@ -3858,8 +3911,8 @@
       <name>MPI7FB322 </name>
       <identifier>MPI7FB322 </identifier>
       <position>
-        <r>2.0848</r>
-        <z>-1.102</z>
+        <r dtype="float">2.0848</r>
+        <z dtype="float">-1.102</z>
       </position>
       <length>0.1403</length>
       <poloidal_angle>-4.028516619575752</poloidal_angle>
@@ -3873,8 +3926,8 @@
       <name>MPI79B322 </name>
       <identifier>MPI79B322 </identifier>
       <position>
-        <r>1.894</r>
-        <z>-1.3327</z>
+        <r dtype="float">1.894</r>
+        <z dtype="float">-1.3327</z>
       </position>
       <length>0.1406</length>
       <poloidal_angle>-4.022407967193772</poloidal_angle>
@@ -3888,8 +3941,8 @@
       <name>MPI9B322  </name>
       <identifier>MPI9B322  </identifier>
       <position>
-        <r>1.6989</r>
-        <z>-1.4063</z>
+        <r dtype="float">1.6989</r>
+        <z dtype="float">-1.4063</z>
       </position>
       <length>0.1415</length>
       <poloidal_angle>-3.1392713656846403</poloidal_angle>
@@ -3903,8 +3956,8 @@
       <name>MPI89B322 </name>
       <identifier>MPI89B322 </identifier>
       <position>
-        <r>1.4769</r>
-        <z>-1.4055</z>
+        <r dtype="float">1.4769</r>
+        <z dtype="float">-1.4055</z>
       </position>
       <length>0.1403</length>
       <poloidal_angle>-3.143041276868948</poloidal_angle>
@@ -3918,8 +3971,8 @@
       <name>MPI8B322  </name>
       <identifier>MPI8B322  </identifier>
       <position>
-        <r>1.2541</r>
-        <z>-1.4047</z>
+        <r dtype="float">1.2541</r>
+        <z dtype="float">-1.4047</z>
       </position>
       <length>0.1403</length>
       <poloidal_angle>-3.142168612242951</poloidal_angle>
@@ -3933,8 +3986,8 @@
       <name>MPI5B322  </name>
       <identifier>MPI5B322  </identifier>
       <position>
-        <r>1.0479</r>
-        <z>-1.3302</z>
+        <r dtype="float">1.0479</r>
+        <z dtype="float">-1.3302</z>
       </position>
       <length>0.1403</length>
       <poloidal_angle>-2.3803323937474263</poloidal_angle>
@@ -3948,8 +4001,8 @@
       <name>MPI4B322  </name>
       <identifier>MPI4B322  </identifier>
       <position>
-        <r>0.9724</r>
-        <z>-1.1589</z>
+        <r dtype="float">0.9724</r>
+        <z dtype="float">-1.1589</z>
       </position>
       <length>0.1405</length>
       <poloidal_angle>-1.563239051133761</poloidal_angle>
@@ -3963,8 +4016,8 @@
       <name>MPI3B322  </name>
       <identifier>MPI3B322  </identifier>
       <position>
-        <r>0.974</r>
-        <z>-0.8542</z>
+        <r dtype="float">0.974</r>
+        <z dtype="float">-0.8542</z>
       </position>
       <length>0.1402</length>
       <poloidal_angle>-1.5664330036649108</poloidal_angle>
@@ -3978,8 +4031,8 @@
       <name>MPI2B322  </name>
       <identifier>MPI2B322  </identifier>
       <position>
-        <r>0.9748</r>
-        <z>-0.5122</z>
+        <r dtype="float">0.9748</r>
+        <z dtype="float">-0.5122</z>
       </position>
       <length>0.1404</length>
       <poloidal_angle>-1.5754563558977213</poloidal_angle>
@@ -3993,8 +4046,8 @@
       <name>MPI1B322  </name>
       <identifier>MPI1B322  </identifier>
       <position>
-        <r>0.9737</r>
-        <z>-0.187</z>
+        <r dtype="float">0.9737</r>
+        <z dtype="float">-0.187</z>
       </position>
       <length>0.14</length>
       <poloidal_angle>-1.5728383620197302</poloidal_angle>
@@ -4008,8 +4061,8 @@
       <name>MPI11M322 </name>
       <identifier>MPI11M322 </identifier>
       <position>
-        <r>0.9732</r>
-        <z>-0.0023</z>
+        <r dtype="float">0.9732</r>
+        <z dtype="float">-0.0023</z>
       </position>
       <length>0.1153</length>
       <poloidal_angle>-1.5696269561960605</poloidal_angle>
@@ -4023,8 +4076,8 @@
       <name>MPI1A322  </name>
       <identifier>MPI1A322  </identifier>
       <position>
-        <r>0.9741</r>
-        <z>0.1817</z>
+        <r dtype="float">0.9741</r>
+        <z dtype="float">0.1817</z>
       </position>
       <length>0.14</length>
       <poloidal_angle>-1.5710930327677355</poloidal_angle>
@@ -4038,8 +4091,8 @@
       <name>MPI2A322  </name>
       <identifier>MPI2A322  </identifier>
       <position>
-        <r>0.9742</r>
-        <z>0.5116</z>
+        <r dtype="float">0.9742</r>
+        <z dtype="float">0.5116</z>
       </position>
       <length>0.1403</length>
       <poloidal_angle>-1.5655603390389137</poloidal_angle>
@@ -4053,8 +4106,8 @@
       <name>MPI3A322  </name>
       <identifier>MPI3A322  </identifier>
       <position>
-        <r>0.9745</r>
-        <z>0.8503</z>
+        <r dtype="float">0.9745</r>
+        <z dtype="float">0.8503</z>
       </position>
       <length>0.1404</length>
       <poloidal_angle>-1.5734143206728881</poloidal_angle>
@@ -4068,8 +4121,8 @@
       <name>MPI4A322  </name>
       <identifier>MPI4A322  </identifier>
       <position>
-        <r>0.9722</r>
-        <z>1.1609</z>
+        <r dtype="float">0.9722</r>
+        <z dtype="float">1.1609</z>
       </position>
       <length>0.1404</length>
       <poloidal_angle>-1.5792262670820292</poloidal_angle>
@@ -4083,8 +4136,8 @@
       <name>MPI5A322  </name>
       <identifier>MPI5A322  </identifier>
       <position>
-        <r>1.0511</r>
-        <z>1.3304</z>
+        <r dtype="float">1.0511</r>
+        <z dtype="float">1.3304</z>
       </position>
       <length>0.1407</length>
       <poloidal_angle>-0.77871355236231</poloidal_angle>
@@ -4098,8 +4151,8 @@
       <name>MPI1U157</name>
       <identifier>MPI1U157</identifier>
       <position>
-        <r>1.445</r>
-        <z>1.277</z>
+        <r dtype="float">1.445</r>
+        <z dtype="float">1.277</z>
       </position>
       <length>0.027</length>
       <poloidal_angle>0.7077310116837006</poloidal_angle>
@@ -4113,8 +4166,8 @@
       <name>MPI2U157</name>
       <identifier>MPI2U157</identifier>
       <position>
-        <r>1.56</r>
-        <z>1.187</z>
+        <r dtype="float">1.56</r>
+        <z dtype="float">1.187</z>
       </position>
       <length>0.027</length>
       <poloidal_angle>0.7115707360380882</poloidal_angle>
@@ -4128,8 +4181,8 @@
       <name>MPI3U157</name>
       <identifier>MPI3U157</identifier>
       <position>
-        <r>1.723</r>
-        <z>1.112</z>
+        <r dtype="float">1.723</r>
+        <z dtype="float">1.112</z>
       </position>
       <length>0.027</length>
       <poloidal_angle>0.05759586531581287</poloidal_angle>
@@ -4143,8 +4196,8 @@
       <name>MPI4U157</name>
       <identifier>MPI4U157</identifier>
       <position>
-        <r>1.873</r>
-        <z>1.116</z>
+        <r dtype="float">1.873</r>
+        <z dtype="float">1.116</z>
       </position>
       <length>0.054</length>
       <poloidal_angle>0.04799655442984406</poloidal_angle>
@@ -4158,8 +4211,8 @@
       <name>DSL1U180</name>
       <identifier>DSL1U180</identifier>
       <position>
-        <r>1.506</r>
-        <z>1.27</z>
+        <r dtype="float">1.506</r>
+        <z dtype="float">1.27</z>
       </position>
       <length>-0.094</length>
       <poloidal_angle>-0.8644615785127914</poloidal_angle>
@@ -4173,8 +4226,8 @@
       <name>DSL2U180</name>
       <identifier>DSL2U180</identifier>
       <position>
-        <r>1.59</r>
-        <z>1.198</z>
+        <r dtype="float">1.59</r>
+        <z dtype="float">1.198</z>
       </position>
       <length>-0.088</length>
       <poloidal_angle>-0.8644615785127914</poloidal_angle>
@@ -4188,8 +4241,8 @@
       <name>DSL3U180</name>
       <identifier>DSL3U180</identifier>
       <position>
-        <r>1.73</r>
-        <z>1.142</z>
+        <r dtype="float">1.73</r>
+        <z dtype="float">1.142</z>
       </position>
       <length>-0.106</length>
       <poloidal_angle>-1.610938899590766</poloidal_angle>
@@ -4203,8 +4256,8 @@
       <name>DSL4U157</name>
       <identifier>DSL4U157</identifier>
       <position>
-        <r>1.877</r>
-        <z>1.133</z>
+        <r dtype="float">1.877</r>
+        <z dtype="float">1.133</z>
       </position>
       <length>-0.1955</length>
       <poloidal_angle>-1.579522973054868</poloidal_angle>
@@ -4218,8 +4271,8 @@
       <name>MPI5U157</name>
       <identifier>MPI5U157</identifier>
       <position>
-        <r>1.218</r>
-        <z>1.298</z>
+        <r dtype="float">1.218</r>
+        <z dtype="float">1.298</z>
       </position>
       <length>0.027</length>
       <poloidal_angle>-1.1572056539498004</poloidal_angle>
@@ -4233,8 +4286,8 @@
       <name>MPI6U157</name>
       <identifier>MPI6U157</identifier>
       <position>
-        <r>1.075</r>
-        <z>1.202</z>
+        <r dtype="float">1.075</r>
+        <z dtype="float">1.202</z>
       </position>
       <length>0.027</length>
       <poloidal_angle>-0.012723450247038661</poloidal_angle>
@@ -4248,8 +4301,8 @@
       <name>MPI7U157</name>
       <identifier>MPI7U157</identifier>
       <position>
-        <r>0.976</r>
-        <z>0.979</z>
+        <r dtype="float">0.976</r>
+        <z dtype="float">0.979</z>
       </position>
       <length>0.027</length>
       <poloidal_angle>-1.5753167295575619</poloidal_angle>
@@ -4263,8 +4316,8 @@
       <name>DSL5U157</name>
       <identifier>DSL5U157</identifier>
       <position>
-        <r>1.185</r>
-        <z>1.286</z>
+        <r dtype="float">1.185</r>
+        <z dtype="float">1.286</z>
       </position>
       <length>-0.091</length>
       <poloidal_angle>-2.732312943997123</poloidal_angle>
@@ -4278,8 +4331,8 @@
       <name>DSL6U157</name>
       <identifier>DSL6U157</identifier>
       <position>
-        <r>1.086</r>
-        <z>1.228</z>
+        <r dtype="float">1.086</r>
+        <z dtype="float">1.228</z>
       </position>
       <length>-0.107</length>
       <poloidal_angle>-1.5777776438028739</poloidal_angle>
@@ -4293,8 +4346,8 @@
       <name>MPI1L180</name>
       <identifier>MPI1L180</identifier>
       <position>
-        <r>1.5104</r>
-        <z>-1.2915</z>
+        <r dtype="float">1.5104</r>
+        <z dtype="float">-1.2915</z>
       </position>
       <length>0.0271</length>
       <poloidal_angle>-3.141767186514992</poloidal_angle>
@@ -4308,8 +4361,8 @@
       <name>MPI2L180</name>
       <identifier>MPI2L180</identifier>
       <position>
-        <r>1.6103</r>
-        <z>-1.2915</z>
+        <r dtype="float">1.6103</r>
+        <z dtype="float">-1.2915</z>
       </position>
       <length>0.0277</length>
       <poloidal_angle>-3.145955976719779</poloidal_angle>
@@ -4323,8 +4376,8 @@
       <name>MPI3L180</name>
       <identifier>MPI3L180</identifier>
       <position>
-        <r>1.7103</r>
-        <z>-1.2918</z>
+        <r dtype="float">1.7103</r>
+        <z dtype="float">-1.2918</z>
       </position>
       <length>0.0273</length>
       <poloidal_angle>-3.1595695448853345</poloidal_angle>
