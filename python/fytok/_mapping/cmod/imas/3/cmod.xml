@@ -4,8 +4,8 @@
       <name>FLUX_00</name>
       <identifier>FLUX_00</identifier>
       <position id="0">
-        <r>0.415</r>
-        <z>-0.003</z>
+        <r dtype="float">0.415</r>
+        <z dtype="float">-0.003</z>
       </position>
       <type>
         <index>1</index>
@@ -15,8 +15,8 @@
       <name>FLUX_01</name>
       <identifier>FLUX_01</identifier>
       <position id="0">
-        <r>0.415</r>
-        <z>0.108</z>
+        <r dtype="float">0.415</r>
+        <z dtype="float">0.108</z>
       </position>
       <type>
         <index>1</index>
@@ -26,8 +26,8 @@
       <name>FLUX_02</name>
       <identifier>FLUX_02</identifier>
       <position id="0">
-        <r>0.415</r>
-        <z>0.214</z>
+        <r dtype="float">0.415</r>
+        <z dtype="float">0.214</z>
       </position>
       <type>
         <index>1</index>
@@ -37,8 +37,8 @@
       <name>FLUX_03</name>
       <identifier>FLUX_03</identifier>
       <position id="0">
-        <r>0.415</r>
-        <z>0.323</z>
+        <r dtype="float">0.415</r>
+        <z dtype="float">0.323</z>
       </position>
       <type>
         <index>1</index>
@@ -48,8 +48,8 @@
       <name>FLUX_04</name>
       <identifier>FLUX_04</identifier>
       <position id="0">
-        <r>0.415</r>
-        <z>0.429</z>
+        <r dtype="float">0.415</r>
+        <z dtype="float">0.429</z>
       </position>
       <type>
         <index>1</index>
@@ -59,8 +59,8 @@
       <name>FLUX_05</name>
       <identifier>FLUX_05</identifier>
       <position id="0">
-        <r>0.544</r>
-        <z>0.526</z>
+        <r dtype="float">0.544</r>
+        <z dtype="float">0.526</z>
       </position>
       <type>
         <index>1</index>
@@ -70,8 +70,8 @@
       <name>FLUX_06</name>
       <identifier>FLUX_06</identifier>
       <position id="0">
-        <r>0.548</r>
-        <z>0.621</z>
+        <r dtype="float">0.548</r>
+        <z dtype="float">0.621</z>
       </position>
       <type>
         <index>1</index>
@@ -81,8 +81,8 @@
       <name>FLUX_07</name>
       <identifier>FLUX_07</identifier>
       <position id="0">
-        <r>0.699</r>
-        <z>0.621</z>
+        <r dtype="float">0.699</r>
+        <z dtype="float">0.621</z>
       </position>
       <type>
         <index>1</index>
@@ -92,8 +92,8 @@
       <name>FLUX_08</name>
       <identifier>FLUX_08</identifier>
       <position id="0">
-        <r>0.801</r>
-        <z>0.621</z>
+        <r dtype="float">0.801</r>
+        <z dtype="float">0.621</z>
       </position>
       <type>
         <index>1</index>
@@ -103,8 +103,8 @@
       <name>FLUX_09</name>
       <identifier>FLUX_09</identifier>
       <position id="0">
-        <r>0.805</r>
-        <z>0.415</z>
+        <r dtype="float">0.805</r>
+        <z dtype="float">0.415</z>
       </position>
       <type>
         <index>1</index>
@@ -114,8 +114,8 @@
       <name>FLUX_10</name>
       <identifier>FLUX_10</identifier>
       <position id="0">
-        <r>0.946</r>
-        <z>0.338</z>
+        <r dtype="float">0.946</r>
+        <z dtype="float">0.338</z>
       </position>
       <type>
         <index>1</index>
@@ -125,8 +125,8 @@
       <name>FLUX_11</name>
       <identifier>FLUX_11</identifier>
       <position id="0">
-        <r>1.052</r>
-        <z>0.334</z>
+        <r dtype="float">1.052</r>
+        <z dtype="float">0.334</z>
       </position>
       <type>
         <index>1</index>
@@ -136,8 +136,8 @@
       <name>FLUX_12</name>
       <identifier>FLUX_12</identifier>
       <position id="0">
-        <r>1.061</r>
-        <z>0.165</z>
+        <r dtype="float">1.061</r>
+        <z dtype="float">0.165</z>
       </position>
       <type>
         <index>1</index>
@@ -147,8 +147,8 @@
       <name>FLUX_13</name>
       <identifier>FLUX_13</identifier>
       <position id="0">
-        <r>1.061</r>
-        <z>0.0</z>
+        <r dtype="float">1.061</r>
+        <z dtype="float">0.0</z>
       </position>
       <type>
         <index>1</index>
@@ -158,8 +158,8 @@
       <name>FLUX_14</name>
       <identifier>FLUX_14</identifier>
       <position id="0">
-        <r>1.061</r>
-        <z>-0.165</z>
+        <r dtype="float">1.061</r>
+        <z dtype="float">-0.165</z>
       </position>
       <type>
         <index>1</index>
@@ -169,8 +169,8 @@
       <name>FLUX_15</name>
       <identifier>FLUX_15</identifier>
       <position id="0">
-        <r>1.053</r>
-        <z>-0.334</z>
+        <r dtype="float">1.053</r>
+        <z dtype="float">-0.334</z>
       </position>
       <type>
         <index>1</index>
@@ -180,8 +180,8 @@
       <name>FLUX_16</name>
       <identifier>FLUX_16</identifier>
       <position id="0">
-        <r>0.952</r>
-        <z>-0.338</z>
+        <r dtype="float">0.952</r>
+        <z dtype="float">-0.338</z>
       </position>
       <type>
         <index>1</index>
@@ -191,8 +191,8 @@
       <name>FLUX_17</name>
       <identifier>FLUX_17</identifier>
       <position id="0">
-        <r>0.804</r>
-        <z>-0.416</z>
+        <r dtype="float">0.804</r>
+        <z dtype="float">-0.416</z>
       </position>
       <type>
         <index>1</index>
@@ -202,8 +202,8 @@
       <name>FLUX_18</name>
       <identifier>FLUX_18</identifier>
       <position id="0">
-        <r>0.803</r>
-        <z>-0.621</z>
+        <r dtype="float">0.803</r>
+        <z dtype="float">-0.621</z>
       </position>
       <type>
         <index>1</index>
@@ -213,8 +213,8 @@
       <name>FLUX_19</name>
       <identifier>FLUX_19</identifier>
       <position id="0">
-        <r>0.697</r>
-        <z>-0.621</z>
+        <r dtype="float">0.697</r>
+        <z dtype="float">-0.621</z>
       </position>
       <type>
         <index>1</index>
@@ -224,8 +224,8 @@
       <name>FLUX_20</name>
       <identifier>FLUX_20</identifier>
       <position id="0">
-        <r>0.548</r>
-        <z>-0.621</z>
+        <r dtype="float">0.548</r>
+        <z dtype="float">-0.621</z>
       </position>
       <type>
         <index>1</index>
@@ -235,8 +235,8 @@
       <name>FLUX_21</name>
       <identifier>FLUX_21</identifier>
       <position id="0">
-        <r>0.544</r>
-        <z>-0.527</z>
+        <r dtype="float">0.544</r>
+        <z dtype="float">-0.527</z>
       </position>
       <type>
         <index>1</index>
@@ -246,8 +246,8 @@
       <name>FLUX_22</name>
       <identifier>FLUX_22</identifier>
       <position id="0">
-        <r>0.415</r>
-        <z>-0.429</z>
+        <r dtype="float">0.415</r>
+        <z dtype="float">-0.429</z>
       </position>
       <type>
         <index>1</index>
@@ -257,8 +257,8 @@
       <name>FLUX_23</name>
       <identifier>FLUX_23</identifier>
       <position id="0">
-        <r>0.415</r>
-        <z>-0.323</z>
+        <r dtype="float">0.415</r>
+        <z dtype="float">-0.323</z>
       </position>
       <type>
         <index>1</index>
@@ -268,8 +268,8 @@
       <name>FLUX_24</name>
       <identifier>FLUX_24</identifier>
       <position id="0">
-        <r>0.415</r>
-        <z>-0.214</z>
+        <r dtype="float">0.415</r>
+        <z dtype="float">-0.214</z>
       </position>
       <type>
         <index>1</index>
@@ -279,8 +279,8 @@
       <name>FLUX_25</name>
       <identifier>FLUX_25</identifier>
       <position id="0">
-        <r>0.415</r>
-        <z>-0.108</z>
+        <r dtype="float">0.415</r>
+        <z dtype="float">-0.108</z>
       </position>
       <type>
         <index>1</index>
@@ -290,8 +290,8 @@
       <name>BP_00</name>
       <identifier>BP_00</identifier>
       <position>
-        <r>0.4183</r>
-        <z>0.0539</z>
+        <r dtype="float">0.4183</r>
+        <z dtype="float">0.0539</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>-1.5707963267948966</poloidal_angle>
@@ -305,8 +305,8 @@
       <name>BP_01</name>
       <identifier>BP_01</identifier>
       <position>
-        <r>0.4183</r>
-        <z>0.1617</z>
+        <r dtype="float">0.4183</r>
+        <z dtype="float">0.1617</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>-1.5707963267948966</poloidal_angle>
@@ -320,8 +320,8 @@
       <name>BP_02</name>
       <identifier>BP_02</identifier>
       <position>
-        <r>0.4183</r>
-        <z>0.2695</z>
+        <r dtype="float">0.4183</r>
+        <z dtype="float">0.2695</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>-1.5707963267948966</poloidal_angle>
@@ -335,8 +335,8 @@
       <name>BP_03</name>
       <identifier>BP_03</identifier>
       <position>
-        <r>0.4183</r>
-        <z>0.3772</z>
+        <r dtype="float">0.4183</r>
+        <z dtype="float">0.3772</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>-1.5707963267948966</poloidal_angle>
@@ -350,8 +350,8 @@
       <name>BP_04</name>
       <identifier>BP_04</identifier>
       <position>
-        <r>0.4871</r>
-        <z>0.503</z>
+        <r dtype="float">0.4871</r>
+        <z dtype="float">0.503</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>-0.2617993877991494</poloidal_angle>
@@ -365,8 +365,8 @@
       <name>BP_05</name>
       <identifier>BP_05</identifier>
       <position>
-        <r>0.548</r>
-        <z>0.5807</z>
+        <r dtype="float">0.548</r>
+        <z dtype="float">0.5807</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>-1.5707963267948966</poloidal_angle>
@@ -380,8 +380,8 @@
       <name>BP_06</name>
       <identifier>BP_06</identifier>
       <position>
-        <r>0.6118</r>
-        <z>0.6179</z>
+        <r dtype="float">0.6118</r>
+        <z dtype="float">0.6179</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>-0.0</poloidal_angle>
@@ -395,8 +395,8 @@
       <name>BP_07</name>
       <identifier>BP_07</identifier>
       <position>
-        <r>0.742</r>
-        <z>0.6179</z>
+        <r dtype="float">0.742</r>
+        <z dtype="float">0.6179</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>-0.0</poloidal_angle>
@@ -410,8 +410,8 @@
       <name>BP_08</name>
       <identifier>BP_08</identifier>
       <position>
-        <r>0.8058</r>
-        <z>0.5077</z>
+        <r dtype="float">0.8058</r>
+        <z dtype="float">0.5077</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>1.5707963267948966</poloidal_angle>
@@ -425,8 +425,8 @@
       <name>BP_09</name>
       <identifier>BP_09</identifier>
       <position>
-        <r>0.8879</r>
-        <z>0.3513</z>
+        <r dtype="float">0.8879</r>
+        <z dtype="float">0.3513</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>0.2617993877991494</poloidal_angle>
@@ -440,8 +440,8 @@
       <name>BP_10</name>
       <identifier>BP_10</identifier>
       <position>
-        <r>1.0119</r>
-        <z>0.3334</z>
+        <r dtype="float">1.0119</r>
+        <z dtype="float">0.3334</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>-0.0</poloidal_angle>
@@ -455,8 +455,8 @@
       <name>BP_11</name>
       <identifier>BP_11</identifier>
       <position>
-        <r>1.0573</r>
-        <z>0.2534</z>
+        <r dtype="float">1.0573</r>
+        <z dtype="float">0.2534</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>1.5707963267948966</poloidal_angle>
@@ -470,8 +470,8 @@
       <name>BP_12</name>
       <identifier>BP_12</identifier>
       <position>
-        <r>1.0573</r>
-        <z>0.0845</z>
+        <r dtype="float">1.0573</r>
+        <z dtype="float">0.0845</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>1.5707963267948966</poloidal_angle>
@@ -485,8 +485,8 @@
       <name>BP_13</name>
       <identifier>BP_13</identifier>
       <position>
-        <r>1.0573</r>
-        <z>-0.0845</z>
+        <r dtype="float">1.0573</r>
+        <z dtype="float">-0.0845</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>1.5707963267948966</poloidal_angle>
@@ -500,8 +500,8 @@
       <name>BP_14</name>
       <identifier>BP_14</identifier>
       <position>
-        <r>1.0573</r>
-        <z>-0.2534</z>
+        <r dtype="float">1.0573</r>
+        <z dtype="float">-0.2534</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>1.5707963267948966</poloidal_angle>
@@ -515,8 +515,8 @@
       <name>BP_15</name>
       <identifier>BP_15</identifier>
       <position>
-        <r>1.0119</r>
-        <z>-0.3334</z>
+        <r dtype="float">1.0119</r>
+        <z dtype="float">-0.3334</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>-3.141592653589793</poloidal_angle>
@@ -530,8 +530,8 @@
       <name>BP_16</name>
       <identifier>BP_16</identifier>
       <position>
-        <r>0.8879</r>
-        <z>-0.3513</z>
+        <r dtype="float">0.8879</r>
+        <z dtype="float">-0.3513</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>2.8797932657906435</poloidal_angle>
@@ -545,8 +545,8 @@
       <name>BP_17</name>
       <identifier>BP_17</identifier>
       <position>
-        <r>0.8058</r>
-        <z>-0.5077</z>
+        <r dtype="float">0.8058</r>
+        <z dtype="float">-0.5077</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>1.5707963267948966</poloidal_angle>
@@ -560,8 +560,8 @@
       <name>BP_18</name>
       <identifier>BP_18</identifier>
       <position>
-        <r>0.742</r>
-        <z>-0.6179</z>
+        <r dtype="float">0.742</r>
+        <z dtype="float">-0.6179</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>-3.141592653589793</poloidal_angle>
@@ -575,8 +575,8 @@
       <name>BP_19</name>
       <identifier>BP_19</identifier>
       <position>
-        <r>0.6118</r>
-        <z>-0.6179</z>
+        <r dtype="float">0.6118</r>
+        <z dtype="float">-0.6179</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>-3.141592653589793</poloidal_angle>
@@ -590,8 +590,8 @@
       <name>BP_20</name>
       <identifier>BP_20</identifier>
       <position>
-        <r>0.548</r>
-        <z>-0.5807</z>
+        <r dtype="float">0.548</r>
+        <z dtype="float">-0.5807</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>-1.5707963267948966</poloidal_angle>
@@ -605,8 +605,8 @@
       <name>BP_21</name>
       <identifier>BP_21</identifier>
       <position>
-        <r>0.4871</r>
-        <z>-0.503</z>
+        <r dtype="float">0.4871</r>
+        <z dtype="float">-0.503</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>-2.8797932657906435</poloidal_angle>
@@ -620,8 +620,8 @@
       <name>BP_22</name>
       <identifier>BP_22</identifier>
       <position>
-        <r>0.4183</r>
-        <z>-0.3772</z>
+        <r dtype="float">0.4183</r>
+        <z dtype="float">-0.3772</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>-1.5707963267948966</poloidal_angle>
@@ -635,8 +635,8 @@
       <name>BP_23</name>
       <identifier>BP_23</identifier>
       <position>
-        <r>0.4183</r>
-        <z>-0.2695</z>
+        <r dtype="float">0.4183</r>
+        <z dtype="float">-0.2695</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>-1.5707963267948966</poloidal_angle>
@@ -650,8 +650,8 @@
       <name>BP_24</name>
       <identifier>BP_24</identifier>
       <position>
-        <r>0.4183</r>
-        <z>-0.1617</z>
+        <r dtype="float">0.4183</r>
+        <z dtype="float">-0.1617</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>-1.5707963267948966</poloidal_angle>
@@ -665,8 +665,8 @@
       <name>BP_25</name>
       <identifier>BP_25</identifier>
       <position>
-        <r>0.4183</r>
-        <z>-0.0539</z>
+        <r dtype="float">0.4183</r>
+        <z dtype="float">-0.0539</z>
       </position>
       <length>0.03</length>
       <poloidal_angle>-1.5707963267948966</poloidal_angle>
@@ -680,8 +680,8 @@
       <name>BP16_GHK</name>
       <identifier>BP16_GHK</identifier>
       <position>
-        <r>0.8669</r>
-        <z>0.227</z>
+        <r dtype="float">0.8669</r>
+        <z dtype="float">0.227</z>
       </position>
       <length>0.013</length>
       <poloidal_angle>0.8813912722571364</poloidal_angle>
@@ -695,8 +695,8 @@
       <name>BP17_GHK</name>
       <identifier>BP17_GHK</identifier>
       <position>
-        <r>0.8858</r>
-        <z>0.201</z>
+        <r dtype="float">0.8858</r>
+        <z dtype="float">0.201</z>
       </position>
       <length>0.013</length>
       <poloidal_angle>0.972148410814134</poloidal_angle>
@@ -710,8 +710,8 @@
       <name>BP18_GHK</name>
       <identifier>BP18_GHK</identifier>
       <position>
-        <r>0.9047</r>
-        <z>0.17</z>
+        <r dtype="float">0.9047</r>
+        <z dtype="float">0.17</z>
       </position>
       <length>0.013</length>
       <poloidal_angle>1.0733774899765127</poloidal_angle>
@@ -725,8 +725,8 @@
       <name>BP19_GHK</name>
       <identifier>BP19_GHK</identifier>
       <position>
-        <r>0.9197</r>
-        <z>0.138</z>
+        <r dtype="float">0.9197</r>
+        <z dtype="float">0.138</z>
       </position>
       <length>0.013</length>
       <poloidal_angle>1.1728612049803118</poloidal_angle>
@@ -740,8 +740,8 @@
       <name>BP20_GHK</name>
       <identifier>BP20_GHK</identifier>
       <position>
-        <r>0.9306</r>
-        <z>0.108</z>
+        <r dtype="float">0.9306</r>
+        <z dtype="float">0.108</z>
       </position>
       <length>0.013</length>
       <poloidal_angle>1.2723450596104513</poloidal_angle>
@@ -755,8 +755,8 @@
       <name>BP21_GHK</name>
       <identifier>BP21_GHK</identifier>
       <position>
-        <r>0.9396</r>
-        <z>0.077</z>
+        <r dtype="float">0.9396</r>
+        <z dtype="float">0.077</z>
       </position>
       <length>0.013</length>
       <poloidal_angle>1.3543754646410147</poloidal_angle>
@@ -770,8 +770,8 @@
       <name>BP22_GHK</name>
       <identifier>BP22_GHK</identifier>
       <position>
-        <r>0.9456</r>
-        <z>0.038</z>
+        <r dtype="float">0.9456</r>
+        <z dtype="float">0.038</z>
       </position>
       <length>0.013</length>
       <poloidal_angle>1.4730579235897991</poloidal_angle>
@@ -785,8 +785,8 @@
       <name>BP23_GHK</name>
       <identifier>BP23_GHK</identifier>
       <position>
-        <r>0.9456</r>
-        <z>-0.038</z>
+        <r dtype="float">0.9456</r>
+        <z dtype="float">-0.038</z>
       </position>
       <length>0.013</length>
       <poloidal_angle>1.6772613762599657</poloidal_angle>
@@ -800,8 +800,8 @@
       <name>BP24_GHK</name>
       <identifier>BP24_GHK</identifier>
       <position>
-        <r>0.9396</r>
-        <z>-0.077</z>
+        <r dtype="float">0.9396</r>
+        <z dtype="float">-0.077</z>
       </position>
       <length>0.013</length>
       <poloidal_angle>1.7872171889487785</poloidal_angle>
@@ -815,8 +815,8 @@
       <name>BP25_GHK</name>
       <identifier>BP25_GHK</identifier>
       <position>
-        <r>0.9306</r>
-        <z>-0.108</z>
+        <r dtype="float">0.9306</r>
+        <z dtype="float">-0.108</z>
       </position>
       <length>0.013</length>
       <poloidal_angle>1.872738339749793</poloidal_angle>
@@ -830,8 +830,8 @@
       <name>BP26_GHK</name>
       <identifier>BP26_GHK</identifier>
       <position>
-        <r>0.9197</r>
-        <z>-0.138</z>
+        <r dtype="float">0.9197</r>
+        <z dtype="float">-0.138</z>
       </position>
       <length>0.013</length>
       <poloidal_angle>1.9669860146377318</poloidal_angle>
@@ -845,8 +845,8 @@
       <name>BP27_GHK</name>
       <identifier>BP27_GHK</identifier>
       <position>
-        <r>0.9047</r>
-        <z>-0.17</z>
+        <r dtype="float">0.9047</r>
+        <z dtype="float">-0.17</z>
       </position>
       <length>0.013</length>
       <poloidal_angle>2.0682151636132806</poloidal_angle>
@@ -860,8 +860,8 @@
       <name>BP28_GHK</name>
       <identifier>BP28_GHK</identifier>
       <position>
-        <r>0.8858</r>
-        <z>-0.201</z>
+        <r dtype="float">0.8858</r>
+        <z dtype="float">-0.201</z>
       </position>
       <length>0.013</length>
       <poloidal_angle>2.171189624387531</poloidal_angle>
@@ -875,8 +875,8 @@
       <name>BP29_GHK</name>
       <identifier>BP29_GHK</identifier>
       <position>
-        <r>0.8669</r>
-        <z>-0.227</z>
+        <r dtype="float">0.8669</r>
+        <z dtype="float">-0.227</z>
       </position>
       <length>0.013</length>
       <poloidal_angle>2.258455947360907</poloidal_angle>
