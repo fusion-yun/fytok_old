@@ -83,22 +83,22 @@ class Module(Actor):
                                              _parent=parent,
                                              **kwargs)
 
+            logger.info(
+                f"Load module   \t:'{self.code.name or self.__class__.__name__}'  VERSION='{self.code.version}' COPYRIGHT='{self.code.copyright}' ")
+
+            if "LICENSE" in self.__class__.__doc__:
+                logger.info(f"""
+###############################################################################
+{self.__class__.__doc__} 
+###############################################################################
+""")
+
             return
 
         cache = merge_tree_recursive(self.__class__._metadata.get("default_value", {}), cache)
         cache = merge_tree_recursive(cache, {"code": self.__class__._metadata.get("code", {})})
 
         super().__init__(cache, _entry=entry, _parent=parent,  **kwargs)
-
-        logger.info(
-            f"Load module   \t:'{self.code.name or self.__class__.__name__}'  VERSION='{self.code.version}' COPYRIGHT='{self.code.copyright}' ")
-
-        if "LICENSE" in self.__class__.__doc__:
-            logger.info(f"""
-###############################################################################
-{self.__class__.__doc__} 
-###############################################################################
-""")
 
     code: Code = sp_property()
 

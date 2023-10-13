@@ -9,11 +9,13 @@
   "python.analysis.typeCheckingMode": "off",
   "python.autoComplete.extraPaths": [
     "/home/salmon/workspace/fytok/SpDB/python",
-    "/home/salmon/workspace/fytok/python"
+    "/home/salmon/workspace/fytok/python",
+    "/home/salmon/workspace/fytok_ext/python"
   ],
   "python.analysis.extraPaths": [
     "/home/salmon/workspace/fytok/SpDB/python",
-    "/home/salmon/workspace/fytok/python"
+    "/home/salmon/workspace/fytok/python",
+    "/home/salmon/workspace/fytok_ext/python"
   ],
 
 }

@@ -9,6 +9,8 @@ from spdm.data.sp_property import AttributeTree
 
 GLOBAL_ONTOLOGY = os.environ.get("FYTOK_ONTOLOGY",  f"imas/3")
 
+logger.info(f"Ontology      \t: {GLOBAL_ONTOLOGY}")
+
 try:
 
     from fytok._ontology.imas_lastest.__version__ import __version__ as imas_version
@@ -26,7 +28,10 @@ except ModuleNotFoundError as error:
     # logger.debug(f"Can not find IMAS wrapper, using dummy! {error}")
     pass
 
-if "imas_version" in locals() and (GLOBAL_ONTOLOGY == f"imas/{imas_version.split('.')[0]}"):
+else:
+    if (GLOBAL_ONTOLOGY != f"imas/{imas_version.split('.')[0]}"):
+        raise RuntimeError(f"Global ontology {GLOBAL_ONTOLOGY} is not compatible with IMAS version {imas_version}")
+
     logger.info(f"IMAS version  \t: {imas_version}")
 
 
@@ -47,4 +52,3 @@ def __getattr__(key: str) -> DummyModule:
     return DummyModule(key)
 
 
-logger.info(f"Ontology      \t: {GLOBAL_ONTOLOGY}")
