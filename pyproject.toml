@@ -1,12 +1,17 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "fytok"
 
-version = "0.3.0"
+authors = [{ name = "Zhi YU", email = "yuzhi@ipp.ac.cn" }]
+
+dynamic = ["version"]
 
 readme = "README.md"
 
 license = { file = "LICENSE.txt" }
-
 
 description = "Tokamak integrated modeling and analysis toolkit."
 
@@ -36,5 +41,5 @@ namespaces = true
 "*" = ["*.xml"]
 
 
-[build-system]
-requires = ["setuptools>=61.0"]
+[tool.setuptools.dynamic]
+version = { file = "VERSION" }
