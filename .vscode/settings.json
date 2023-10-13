@@ -15,7 +15,5 @@
     "/home/salmon/workspace/fytok/SpDB/python",
     "/home/salmon/workspace/fytok/python"
   ],
-  "terminal.integrated.env.linux": {
-    "PYTHONPATH": "/home/salmon/workspace/fytok/SpDB/python:/home/salmon/workspace/fytok/python:/home/salmon/workspace/fytok_modules/python:$PYTHONPATH"
-  }
+
 }

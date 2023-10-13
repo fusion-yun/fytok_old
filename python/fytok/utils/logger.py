@@ -16,6 +16,11 @@ else:
         handler="STDOUT",
     )
 
+
+from spdm.utils.logger import _at_end as _spdm_at_end
+atexit.unregister(_spdm_at_end)
+
+
 def _at_end():
     logger.setLevel(logging.INFO)
     logger.info("The End")
@@ -23,5 +28,4 @@ def _at_end():
 
 
 atexit.register(_at_end)
-
 __all__ = ["logger"]
