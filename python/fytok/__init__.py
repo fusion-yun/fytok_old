@@ -1,9 +1,10 @@
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)
 
 import os
-from .utils.logger import logger
 import getpass
 import datetime
+
+from .utils.logger import logger
 from .__version__ import __version__
 
 logger.info(rf"""
@@ -20,8 +21,7 @@ logger.info(rf"""
 
  Run by  {getpass.getuser().capitalize()} at {datetime.datetime.now().isoformat()}
 #######################################################################################################################
-"""
-            )
+""")
 
 try:
     from importlib import resources as impresources

@@ -29,8 +29,8 @@ except ModuleNotFoundError as error:
     pass
 
 else:
-    if (GLOBAL_ONTOLOGY != f"imas/{imas_version.split('.')[0]}"):
-        raise RuntimeError(f"Global ontology {GLOBAL_ONTOLOGY} is not compatible with IMAS version {imas_version}")
+    # if (GLOBAL_ONTOLOGY != f"imas/{imas_version.split('.')[0]}"):
+    #     raise RuntimeError(f"Global ontology {GLOBAL_ONTOLOGY} is not compatible with IMAS version {imas_version}")
 
     logger.info(f"IMAS DD version  \t: {imas_version}")
 
