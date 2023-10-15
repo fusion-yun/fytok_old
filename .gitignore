@@ -128,4 +128,4 @@ dmypy.json
 
 
 **/obsolete/
-python/spdm/__version__.py
+python/fytok/__version__.py
