@@ -9,6 +9,15 @@ description = "Bundle of Python packages for FuYun"
 toolchain = {'name': 'foss', 'version': '2022b'}
 toolchainopts = {'pic': True, 'lowopt': True}
 
+sources = [
+    {
+    'filename': '%(namelower)s-%(version)s.tar.gz',
+    'git_config': {
+        'url': 'https://gitee.com/SimPla/SpDM.git',
+        'repo_name': '%(namelower)s',
+        'tag': '%(version)s',
+    },
+}]
 
 dependencies = [
     ('Python', '3.10.8'),
