@@ -25,10 +25,13 @@ classifiers = [
 
 requires-python = ">=3.10"
 
-dependencies = ["spdb"]
+dependencies = [
+    "spdb>=0.3.0",
+]
 
 [tool.setuptools]
-package-dir = { "" = "python" }
+package-dir = {"" = "python"}
+
 
 [tool.setuptools.packages.find]
 where = ["python"]
@@ -40,6 +43,6 @@ namespaces = true
 [tool.setuptools.package-data]
 "*" = ["*.xml"]
 
-
-[tool.setuptools.dynamic]
-version = { file = "VERSION" }
+ 
+[tool.setuptools_scm]
+version_file = "python/fytok/__version__.py"

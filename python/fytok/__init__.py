@@ -4,12 +4,8 @@ import os
 from .utils.logger import logger
 import getpass
 import datetime
-from importlib.metadata import version, PackageNotFoundError
+from .__version__ import __version__
 
-try:
-    __version__ = version("fytok")
-except PackageNotFoundError:
-    __version__ = "unknown version"
 logger.info(rf"""
 #######################################################################################################################
     ______      _____     _
