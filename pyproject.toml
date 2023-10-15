@@ -26,7 +26,7 @@ classifiers = [
 requires-python = ">=3.10"
 
 dependencies = [
-    "spdb>=0.3.0",
+    "spdm>=0.3.0",
 ]
 
 [tool.setuptools]

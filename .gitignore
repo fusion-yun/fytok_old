@@ -128,3 +128,4 @@ dmypy.json
 
 
 **/obsolete/
+python/spdm/__version__.py
