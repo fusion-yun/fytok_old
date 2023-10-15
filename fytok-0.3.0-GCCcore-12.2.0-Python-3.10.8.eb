@@ -1,10 +1,10 @@
-easyblock = 'PythonBundle'
+easyblock = 'PythonPackage'
 
 name = 'fytok'
 version = '0.2.1'
 
 homepage = 'https://python.org/'
-description = "Bundle of Python packages for FuYun"
+description = "FyTOK: A Python package for FuYun"
 
 toolchain = {'name': 'foss', 'version': '2022b'}
 toolchainopts = {'pic': True, 'lowopt': True}
