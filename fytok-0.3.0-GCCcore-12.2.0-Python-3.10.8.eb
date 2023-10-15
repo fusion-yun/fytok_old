@@ -1,0 +1,35 @@
+easyblock = 'PythonBundle'
+
+name = 'fytok'
+version = '0.2.1'
+
+homepage = 'https://python.org/'
+description = "Bundle of Python packages for FuYun"
+
+toolchain = {'name': 'foss', 'version': '2022b'}
+toolchainopts = {'pic': True, 'lowopt': True}
+
+
+dependencies = [
+    ('Python', '3.10.8'),
+    ('spdm', '0.3.0'), 
+]
+
+
+exts_default_options = {
+    "source_urls": [PYPI_SOURCE],
+    # "installopts": "  -i https://pypi.tuna.tsinghua.edu.cn/simple ",
+    "pip_ignore_installed": True,
+    "use_pip_for_deps": True,
+    "sanity_pip_check": False,
+    "unpack_sources": False,
+}
+use_pip = True
+
+exts_defaultclass = "PythonPackage"
+# order is important!
+exts_list = []
+
+sanity_pip_check = True
+
+moduleclass = 'physics'
