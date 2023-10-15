@@ -2,33 +2,30 @@ __path__ = __import__("pkgutil").extend_path(__path__, __name__)
 
 import os
 from .utils.logger import logger
-
+import getpass
+import datetime
 from importlib.metadata import version, PackageNotFoundError
 
 try:
     __version__ = version("fytok")
 except PackageNotFoundError:
     __version__ = "unknown version"
-
-copyright = """
+logger.info(rf"""
+#######################################################################################################################
     ______      _____     _
    / ____/_  __|_   _|__ | | __
-  / /_  / / / /  | |/ _ \\| |/ /
+  / /_  / / / /  | |/ _ \| |/ /
  / __/ / /_/ /   | | (_) |   <
-/_/    \__, /    |_|\\___/|_|\\_\\
+/_/    \__, /    |_|\___/|_|\_\
       /____/      
-Copyright (c) 2021-present Zhi YU (Institute of Plasma Physics Chinese Academy of Sciences) 
-URL         : https://gitee.com/openfusion/fytok_tutorial
-"""
 
-logger.info(
-    rf"""
-#######################################################################################################################
-{copyright}
-version = {__version__}
+ Copyright (c) 2021-present Zhi YU (Institute of Plasma Physics Chinese Academy of Sciences) 
+ version = {__version__} URL: https://gitee.com/openfusion/fytok_tutorial
+
+ Run by  {getpass.getuser().capitalize()} at {datetime.datetime.now().isoformat()}
 #######################################################################################################################
 """
-)
+            )
 
 try:
     from importlib import resources as impresources
