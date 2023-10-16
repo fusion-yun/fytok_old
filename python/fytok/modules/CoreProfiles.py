@@ -458,20 +458,21 @@ class CoreGlobalQuantities:
 
 
 @sp_tree
-class CoreProfiles(IDS):
-
+class CoreProfilesTimeSlice(TimeSlice):
     Profiles1D = CoreProfiles1D
 
     GlobalQuantities = CoreGlobalQuantities
 
-    profiles_1d: TimeSeriesAoS[CoreProfiles1D]
+    profiles_1d: CoreProfiles1D
 
-    global_quantities: TimeSeriesAoS[CoreGlobalQuantities]
+    global_quantities: CoreGlobalQuantities
 
     vacuum_toroidal_field: VacuumToroidalField
 
-    def refresh(self, *args, **kwargs) -> Profiles1D:
-        return self.profiles_1d.refresh(*args, **kwargs)
 
-    def advance(self, *args, **kwargs) -> Profiles1D:
-        return self.profiles_1d.advance(*args, **kwargs)
+@sp_tree
+class CoreProfiles(IDS):
+
+    TimeSlice = CoreProfilesTimeSlice
+
+    time_slice: TimeSeriesAoS[CoreProfilesTimeSlice]

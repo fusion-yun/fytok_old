@@ -61,7 +61,7 @@ class Identifier:
 
 
 class Module(Actor):
-
+    _plugin_prefix = __package__
     _plugin_registry = {}
 
     def __init__(self, *args, **kwargs):
@@ -99,6 +99,7 @@ class Module(Actor):
         cache = merge_tree_recursive(cache, {"code": self.__class__._metadata.get("code", {})})
 
         super().__init__(cache, _entry=entry, _parent=parent,  **kwargs)
+
 
     code: Code = sp_property()
 
