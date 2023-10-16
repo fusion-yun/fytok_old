@@ -5,7 +5,6 @@ import os
 import typing
 
 
-from spdm.data.sp_property import AttributeTree
 
 GLOBAL_ONTOLOGY = os.environ.get("FYTOK_ONTOLOGY",  f"imas/3")
 
@@ -34,6 +33,7 @@ else:
 
     logger.info(f"IMAS DD version  \t: {imas_version}")
 
+from spdm.data.sp_property import AttributeTree
 
 class DummyModule:
     def __init__(self, name):

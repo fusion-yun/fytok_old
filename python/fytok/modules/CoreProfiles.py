@@ -28,21 +28,12 @@ class CoreProfilesIon:
 
     _metadata = {"identifier": "label"}
 
-    def __init__(self, cache: typing.Any = None, /, entry: HTreeLike | Entry = None, **kwargs) -> None:
-        if cache is None or cache is _not_found_:
-            cache = {}
+    def __init__(self, *args,   **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
-        label = (cache.get("label", None) or entry.get("label", "")).upper()
+        atom_desc = atoms.get(self.label.capitalize(), None)
 
-        desc = atoms.get(label, None)
-
-        if desc is None:
-            raise RuntimeError(f"Can not find ion {label}")
-
-        cache = merge_tree_recursive(cache, desc)
-        cache["label"] = label
-
-        super().__init__(cache, entry=entry, **kwargs)
+        self._cache = merge_tree_recursive(self._cache, atom_desc)
 
     is_impurity: bool = sp_property(default_value=False)
 
@@ -459,6 +450,7 @@ class CoreGlobalQuantities:
 
 @sp_tree
 class CoreProfilesTimeSlice(TimeSlice):
+
     Profiles1D = CoreProfiles1D
 
     GlobalQuantities = CoreGlobalQuantities

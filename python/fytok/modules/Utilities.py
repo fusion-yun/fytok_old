@@ -100,7 +100,6 @@ class Module(Actor):
 
         super().__init__(cache, _entry=entry, _parent=parent,  **kwargs)
 
-
     code: Code = sp_property()
 
     TimeSlice = TimeSlice
@@ -147,7 +146,7 @@ class CoreRadialGrid(SpTree):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args,  **kwargs)
-        rho_tor_norm = super().rho_tor_norm
+        rho_tor_norm = super().get("rho_tor_norm", _not_found_)
         if rho_tor_norm is _not_found_:
             if self.rho_tor_boundary is not _not_found_:
                 pass
@@ -159,12 +158,10 @@ class CoreRadialGrid(SpTree):
             self._cache["rho_tor_norm"] = super().rho_tor.__value__/self.rho_tor_boundary
 
     @sp_property
-    def r0(self) -> float: return self.get("../../vacuum_toroidal_field/r0")
+    def r0(self) -> float: return self.get("../vacuum_toroidal_field/r0")
 
     @sp_property
-    def b0(self) -> float:
-        time = self.get("../time", 0.0)
-        return self.get("../../vacuum_toroidal_field/b0")(time)
+    def b0(self) -> float: return self.get("../vacuum_toroidal_field/b0")
 
     def remesh(self, _rho_tor_norm: array_type) -> CoreRadialGrid:
 
