@@ -15,8 +15,8 @@ license = { file = "LICENSE.txt" }
 description = "Tokamak integrated modeling and analysis toolkit."
 
 classifiers = [
-    "Development Status :: 0 - Beta",
-    "Intended Audience :: Plasma Physicists",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Physics",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.10",

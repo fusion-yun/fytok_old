@@ -7,6 +7,14 @@ import datetime
 from .utils.logger import logger
 from .__version__ import __version__
 
+try:
+    from fytok.__extension_version__ import __version__ as __extension_version__
+except ImportError:
+    __extension_version__ = ''
+else:
+    __extension_version__ = f"(extension:{__extension_version__})"
+
+
 logger.info(rf"""
 #######################################################################################################################
     ______      _____     _
@@ -17,7 +25,7 @@ logger.info(rf"""
       /____/      
 
  Copyright (c) 2021-present Zhi YU (Institute of Plasma Physics Chinese Academy of Sciences) 
- version = {__version__} URL: https://gitee.com/openfusion/fytok_tutorial
+ version = {__version__}{__extension_version__} URL: https://gitee.com/openfusion/fytok_tutorial
 
  Run by  {getpass.getuser().capitalize()} at {datetime.datetime.now().isoformat()}
 #######################################################################################################################
