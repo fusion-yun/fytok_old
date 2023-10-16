@@ -8,11 +8,9 @@ from .utils.logger import logger
 from .__version__ import __version__
 
 try:
-    from fytok.__extension_version__ import __version__ as __extension_version__
+    from .extension import tags as extension_tags
 except ImportError:
-    __extension_version__ = ''
-else:
-    __extension_version__ = f"(extension:{__extension_version__})"
+    extension_tags = ""
 
 
 logger.info(rf"""
@@ -22,12 +20,17 @@ logger.info(rf"""
   / /_  / / / /  | |/ _ \| |/ /
  / __/ / /_/ /   | | (_) |   <
 /_/    \__, /    |_|\___/|_|\_\
-      /____/      
+      /____/
 
- Copyright (c) 2021-present Zhi YU (Institute of Plasma Physics Chinese Academy of Sciences) 
- version = {__version__}{__extension_version__} URL: https://gitee.com/openfusion/fytok_tutorial
+ Copyright (c) 2021-present Zhi YU (Institute of Plasma Physics Chinese Academy of Sciences)
+            
+ version = {__version__} {extension_tags} 
+ 
+ url: https://gitee.com/openfusion/fytok_tutorial 
+      https://github.com/fusion-yun/fytok_tutorial
 
- Run by  {getpass.getuser().capitalize()} at {datetime.datetime.now().isoformat()}
+ Run by {getpass.getuser().capitalize()} on {os.uname().nodename} at {datetime.datetime.now().isoformat()}
+
 #######################################################################################################################
 """)
 

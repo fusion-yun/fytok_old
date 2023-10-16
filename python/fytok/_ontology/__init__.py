@@ -26,7 +26,7 @@ try:
 
 except ModuleNotFoundError as error:
     # logger.debug(f"Can not find IMAS wrapper, using dummy! {error}")
-    pass
+    imas_version = None
 
 else:
     # if (GLOBAL_ONTOLOGY != f"imas/{imas_version.split('.')[0]}"):
@@ -50,5 +50,3 @@ class DummyModule:
 
 def __getattr__(key: str) -> DummyModule:
     return DummyModule(key)
-
-

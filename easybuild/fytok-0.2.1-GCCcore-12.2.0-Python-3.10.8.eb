@@ -13,7 +13,7 @@ sources = [
     {
     'filename': '%(namelower)s-%(version)s.tar.gz',
     'git_config': {
-        'url': 'https://gitee.com/SimPla/SpDM.git',
+        'url': 'https://gitee.com/fusion_yun/fytok'.git',
         'repo_name': '%(namelower)s',
         'tag': '%(version)s',
     },
