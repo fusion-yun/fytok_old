@@ -21,7 +21,7 @@ sources = [
 
 dependencies = [
     ('Python', '3.10.8'),
-    ('spdm', '0.3.0'), 
+    ('spdm', '0.3.1'), 
 ]
 
 
