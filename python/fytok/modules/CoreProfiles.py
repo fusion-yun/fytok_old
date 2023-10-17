@@ -1,18 +1,14 @@
 from __future__ import annotations
 
-import typing
 
 import numpy as np
 import scipy.constants
 from scipy import constants
 from spdm.data.AoS import AoS
-from spdm.data.Entry import Entry
 from spdm.data.Function import Function
 from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
-from spdm.utils.tags import _not_found_
 from spdm.utils.tree_utils import merge_tree_recursive
-from spdm.utils.typing import HTreeLike, array_type
 
 from ..utils.atoms import atoms
 from ..utils.logger import logger
@@ -241,14 +237,17 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
 
     pressure_ion_total: Function = sp_property(units="Pa")
 
+   
     pressure_thermal: Function = sp_property(units="Pa")
 
     pressure_perpendicular: Function = sp_property(units="Pa")
 
+   
     pressure_parallel: Function = sp_property(units="Pa")
 
     j_total: Function = sp_property(units="A/m^2")
 
+    
     @sp_property(units="A")
     def current_parallel_inside(self) -> Function: return self.j_total.antiderivative()
 
@@ -265,6 +264,7 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
     def conductivity_parallel(self) -> Function: return self.j_ohmic / self.e_field.parallel
 
     @sp_tree
+   
     class EFieldVectorComponents:
 
         radial: Function
@@ -355,7 +355,7 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
 
 
 @sp_tree
-class CoreGlobalQuantities:
+class CoreGlobalQuantities(core_profiles._T_core_profiles_global_quantities):
 
     vacuum_toroidal_field: VacuumToroidalField
 

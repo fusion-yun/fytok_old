@@ -12,10 +12,12 @@ from spdm.utils.tags import _not_found_
 from spdm.utils.tree_utils import merge_tree_recursive
 from spdm.mesh.Mesh import Mesh
 
+from .Utilities import *
+
 from ..utils.logger import logger
+
 from ..ontology import equilibrium
 
-from .Utilities import *
 
 
 @sp_tree(mesh="../grid")
