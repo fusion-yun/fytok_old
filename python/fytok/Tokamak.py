@@ -28,7 +28,7 @@ from .modules.TransportSolverNumerics import TransportSolverNumerics
 from .modules.Wall import Wall
 from .utils.envs import *
 from .utils.logger import logger
-from ._ontology.not__init__ import GLOBAL_ONTOLOGY
+from .ontology  import GLOBAL_ONTOLOGY
 # from .modules.EdgeProfiles import EdgeProfiles
 # from .modules.EdgeSources import EdgeSources
 # from .modules.EdgeTransport import EdgeTransport
