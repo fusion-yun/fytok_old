@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm", "saxonche"]
+requires = ["setuptools", "setuptools-scm"]
 
 [project]
 name = "fytok"
