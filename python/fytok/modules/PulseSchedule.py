@@ -1,4 +1,4 @@
-from .._ontology import pulse_schedule
+from ..ontology import pulse_schedule
 
 
 class PulseSchedule(pulse_schedule._T_pulse_schedule):

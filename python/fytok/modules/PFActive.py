@@ -2,7 +2,7 @@
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Polygon import Rectangle
 from ..utils.logger import logger
-from .._ontology import pf_active
+from ..ontology import pf_active
 
 
 class PFActive(pf_active._T_pf_active):

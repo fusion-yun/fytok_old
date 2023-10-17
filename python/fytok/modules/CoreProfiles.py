@@ -18,13 +18,14 @@ from ..utils.atoms import atoms
 from ..utils.logger import logger
 
 from .Utilities import *
+from ..ontology import core_profiles, utilities
 
 PI = scipy.constants.pi
 TWOPI = 2.0 * PI
 
 
 @sp_tree(coordinate1="../grid/rho_tor_norm")
-class CoreProfilesIon:
+class CoreProfilesIon(utilities._T_core_profile_ions):
 
     _metadata = {"identifier": "label"}
 
@@ -80,7 +81,7 @@ class CoreProfilesIon:
     @sp_property
     def z_ion_square_1d(self) -> Function: return self.z_ion * self.z_ion
 
-    @property
+    @sp_property(units="m^-3")
     def density(self) -> Function: return self.density_thermal + self.density_fast
 
     density_thermal: Function = sp_property(default_value=0.0)
@@ -103,56 +104,9 @@ class CoreProfilesIon:
             + self.pressure_fast_perpendicular
         )
 
-    @sp_tree
-    class IonsChargeStates:
-
-        z_min: float = sp_property(units="Elementary Charge Unit")
-
-        z_max: float = sp_property(units="Elementary Charge Unit")
-
-        z_average: float = sp_property(units="Elementary Charge Unit")
-
-        z_square_average: float = sp_property(units="Elementary Charge Unit")
-
-        z_average_1d: Function = sp_property(units="-")
-
-        z_average_square_1d: Function = sp_property(units="-")
-
-        ionisation_potential: float = sp_property(units="eV")
-
-        label: str
-
-        electron_configuration: str
-
-        vibrational_level: float = sp_property(units="Elementary Charge Unit")
-
-        vibrational_mode: str
-
-        rotation_frequency_tor: Function = sp_property(units="rad.s^-1")
-
-        temperature: Function = sp_property(units="eV")
-
-        density: Function = sp_property(units="m^-3")
-
-        # density_fit: _T_core_profiles_1D_fit = sp_property(units="m^-3")
-
-        density_thermal: Function = sp_property(units="m^-3")
-
-        density_fast: Function = sp_property(units="m^-3")
-
-        pressure: Function = sp_property(units="Pa")
-
-        pressure_thermal: Function = sp_property(units="Pa")
-
-        pressure_fast_perpendicular: Function = sp_property(units="Pa")
-
-        pressure_fast_parallel: Function = sp_property(units="Pa")
-
-    state: AoS[IonsChargeStates]
-
 
 @sp_tree(coordinate1="../grid/rho_tor_norm")
-class CoreProfilesNeutral:
+class CoreProfilesNeutral(utilities._T_core_profile_neutral):
     _metadata = {"identifier": "label"}
 
     label: str
@@ -183,7 +137,7 @@ class CoreProfilesNeutral:
 
 
 @sp_tree(coordinate1="../grid/rho_tor_norm")
-class CoreProfilesElectrons:
+class CoreProfilesElectrons(utilities._T_core_profiles_profiles_1d_electrons):
 
     @sp_property[Function]
     def tau(self):
@@ -222,7 +176,7 @@ class CoreProfilesElectrons:
 
 
 @sp_tree(coordinate1="grid/rho_tor_norm")
-class CoreProfiles1D:
+class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
 
     Ion = CoreProfilesIon
 

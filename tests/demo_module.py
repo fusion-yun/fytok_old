@@ -1,4 +1,4 @@
 
-from fytok._ontology import wall
+from fytok._ontology.no import wall
 
 print(wall)

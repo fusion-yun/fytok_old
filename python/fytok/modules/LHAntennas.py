@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from spdm.geometry.GeoObject import GeoObject
 
-from .._ontology import lh_antennas
+from ..ontology import lh_antennas
 
 
 class LHAntennas(lh_antennas._T_lh_antennas):

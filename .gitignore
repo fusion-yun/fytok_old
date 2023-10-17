@@ -129,3 +129,4 @@ dmypy.json
 
 **/obsolete/
 python/fytok/__version__.py
+python/fytok/ontology/imas*

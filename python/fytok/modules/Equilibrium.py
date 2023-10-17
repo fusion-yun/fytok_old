@@ -13,7 +13,7 @@ from spdm.utils.tree_utils import merge_tree_recursive
 from spdm.mesh.Mesh import Mesh
 
 from ..utils.logger import logger
-from .._ontology import equilibrium
+from ..ontology import equilibrium
 
 from .Utilities import *
 

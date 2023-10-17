@@ -22,6 +22,8 @@ try:
 except Exception as error:
     raise FileNotFoundError(f"Can not find mappings!") from error
 
+from .ontology import GLOBAL_ONTOLOGY
+
 logger.info(rf"""
 #######################################################################################################################
     ______      _____     _
@@ -36,10 +38,9 @@ logger.info(rf"""
  url: https://gitee.com/openfusion/fytok_tutorial 
       https://github.com/fusion-yun/fytok_tutorial
 
- version = {__version__} {extension_tags} 
+ ontology = {GLOBAL_ONTOLOGY}, version = {__version__} {extension_tags} 
 
  Run by {getpass.getuser().capitalize()} on {os.uname().nodename} at {datetime.datetime.now().isoformat()}
 
 #######################################################################################################################
 """)
-

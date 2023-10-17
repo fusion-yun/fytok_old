@@ -1,20 +1,18 @@
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)
 
-from ..utils.logger import logger
 import os
 import typing
-
+from spdm.data.sp_property import AttributeTree
+from ..utils.logger import logger
 
 
 GLOBAL_ONTOLOGY = os.environ.get("FYTOK_ONTOLOGY",  f"imas/3")
 
-logger.info(f"Ontology      \t: {GLOBAL_ONTOLOGY}")
 
 try:
+    from .imas_lastest.__version__ import __version__ as imas_version
 
-    from fytok._ontology.imas_lastest.__version__ import __version__ as imas_version
-
-    from fytok._ontology.imas_lastest import equilibrium, core_profiles, core_sources,\
+    from .imas_lastest import equilibrium, core_profiles, core_sources,\
         ic_antennas, interferometer, lh_antennas, magnetics, nbi, pellets,\
         core_transport, pf_active, tf, transport_solver_numerics, utilities, \
         ec_launchers, amns_data, wall
@@ -23,17 +21,14 @@ try:
                "ic_antennas", "interferometer", "lh_antennas", "magnetics", "nbi", "pellets", "amns_data",
                "core_transport", "wall", "pf_active", "tf", "transport_solver_numerics", "utilities"]
 
+
 except ModuleNotFoundError as error:
-    # logger.debug(f"Can not find IMAS wrapper, using dummy! {error}")
     imas_version = None
 
-else:
-    # if (GLOBAL_ONTOLOGY != f"imas/{imas_version.split('.')[0]}"):
-    #     raise RuntimeError(f"Global ontology {GLOBAL_ONTOLOGY} is not compatible with IMAS version {imas_version}")
+# else:
+    if (GLOBAL_ONTOLOGY != f"imas/{imas_version[1:].split('.')[0]}"):
+        raise RuntimeError(f"Global ontology {GLOBAL_ONTOLOGY} is not compatible with IMAS version {imas_version}")
 
-    logger.info(f"IMAS DD version  \t: {imas_version}")
-
-from spdm.data.sp_property import AttributeTree
 
 class DummyModule:
     def __init__(self, name):

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
+requires = ["setuptools", "setuptools-scm", "saxonche"]
 
 [project]
 name = "fytok"
@@ -26,6 +26,7 @@ requires-python = ">=3.10"
 
 dependencies = ["spdm"]
 
+
 [tool.setuptools]
 package-dir = { "" = "python" }
 
@@ -33,7 +34,7 @@ package-dir = { "" = "python" }
 [tool.setuptools.packages.find]
 where = ["python"]
 
-exclude = ["*.obsolete", "*.obsolete.*", "*.todo", "*.todo.*"]
+exclude = ["*.obsolete", "*.obsolete.*", "*.todo"]
 
 namespaces = true
 

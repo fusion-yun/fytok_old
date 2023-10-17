@@ -1,7 +1,7 @@
 from scipy import constants
 from fytok.utils.logger import logger
 
-from .._ontology import transport_solver_numerics
+from ..ontology import transport_solver_numerics
 from .CoreProfiles import CoreProfiles
 from .CoreSources import CoreSources
 from .CoreTransport import CoreTransport

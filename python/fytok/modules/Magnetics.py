@@ -1,5 +1,5 @@
 
-from .._ontology import magnetics
+from ..ontology import magnetics
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Point import Point
 from spdm.utils.tags import _not_found_

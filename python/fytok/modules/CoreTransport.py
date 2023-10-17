@@ -9,7 +9,7 @@ from .Utilities import *
 from .CoreProfiles import CoreProfiles
 from .Equilibrium import Equilibrium
 
-from .._ontology import core_transport
+from ..ontology import core_transport
 
 
 @sp_tree

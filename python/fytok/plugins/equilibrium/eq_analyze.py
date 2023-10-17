@@ -1042,7 +1042,7 @@ class FyEqAnalyze(Equilibrium):
         "code": {
             "name": "eq_analyze",
             "version": "0.0.1",
-            "copyright": "Zhi YU @ASIPP (2022 - Now)"
+            "copyright": "Zhi YU@ASIPP"
         }
     }
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from spdm.geometry.GeoObject import GeoObject
 
-from .._ontology import ic_antennas 
+from ..ontology import ic_antennas 
 
 
 class ICAntennas(ic_antennas._T_ic_antennas):

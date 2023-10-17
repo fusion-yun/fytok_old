@@ -6,7 +6,7 @@ from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Line import Line
 from spdm.geometry.Polygon import Rectangle
 
-from .._ontology import nbi
+from ..ontology import nbi
 
 
 def draw_nbi_unit(unit: nbi. _T_nbi_unit, name: str):

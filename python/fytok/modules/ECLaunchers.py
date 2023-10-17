@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from spdm.geometry.GeoObject import GeoObject
 
-from .._ontology import ec_launchers
+from ..ontology import ec_launchers
 
 
 class ECLaunchers(ec_launchers._T_ec_launchers):
