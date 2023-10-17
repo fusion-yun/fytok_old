@@ -237,17 +237,14 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
 
     pressure_ion_total: Function = sp_property(units="Pa")
 
-   
     pressure_thermal: Function = sp_property(units="Pa")
 
     pressure_perpendicular: Function = sp_property(units="Pa")
 
-   
     pressure_parallel: Function = sp_property(units="Pa")
 
     j_total: Function = sp_property(units="A/m^2")
 
-    
     @sp_property(units="A")
     def current_parallel_inside(self) -> Function: return self.j_total.antiderivative()
 
@@ -264,7 +261,6 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
     def conductivity_parallel(self) -> Function: return self.j_ohmic / self.e_field.parallel
 
     @sp_tree
-   
     class EFieldVectorComponents:
 
         radial: Function
@@ -394,7 +390,6 @@ class CoreGlobalQuantities(core_profiles._T_core_profiles_global_quantities):
     @sp_tree
     class GlobalQuantitiesIon:
         t_i_volume_average: float = sp_property(units="eV")
-
         n_i_volume_average: float = sp_property(units="m^-3")
 
     ion: AoS[GlobalQuantitiesIon]
@@ -422,3 +417,21 @@ class CoreProfiles(IDS):
     TimeSlice = CoreProfilesTimeSlice
 
     time_slice: TimeSeriesAoS[CoreProfilesTimeSlice]
+
+    def refresh(self, *args,   core_transport, core_source, transport_solver, **kwargs):
+        super().refresh(*args, **kwargs)
+
+        prev_iter = self.time_slice.current
+
+        next_iter = transport_solver.refresh(prev_iter, core_transport=core_transport, core_source=core_source)
+
+        self.time_slice.current.update(next_iter)
+
+    def advance(self, *args,  core_transport, core_source, transport_solver, **kwargs):
+        prev_iter = self.time_slice.current
+
+        next_iter = transport_solver.advance(prev_iter, core_transport=core_transport, core_source=core_source)
+
+        super().advance(*args, **kwargs)
+
+        self.time_slice.current.update(next_iter)

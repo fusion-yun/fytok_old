@@ -9,7 +9,7 @@ from typing import (Tuple)
 import numpy as np
 from fytok.modules.CoreProfiles import CoreProfiles
 from fytok.modules.CoreSources import CoreSources
-from fytok.modules.CoreTransport import CoreTransport, TransportCoeff
+from fytok.modules.CoreTransport import CoreTransport
 from fytok.modules.TransportSolverNumerics import TransportSolverNumerics
 from fytok.modules.Equilibrium import Equilibrium
 from scipy import constants
@@ -26,7 +26,8 @@ TOLERANCE = 1.0e-6
 TWO_PI = 2.0 * constants.pi
 
 
-class TransportSolverNumericsBVPNonlinear(TransportSolverNumerics):
+@TransportSolverNumerics.register(["bvp"])
+class TransportSolverBVP(TransportSolverNumerics):
     r"""
         Solve transport equations :math:`\rho=\sqrt{ \Phi/\pi B_{0}}`
         See  :cite:`hinton_theory_1976,coster_european_2010,pereverzev_astraautomated_1991`
@@ -743,14 +744,14 @@ class TransportSolverNumericsBVPNonlinear(TransportSolverNumerics):
                     self._var_list.append((["ion", {"label": ion.label}, "temperature"],
                                            self.transp_ion_energy, self.bc_ion_energy))
 
-    def solve(self, /,
-              core_profiles_prev: CoreProfiles.Profiles1D,
-              core_sources: CoreSources.Source.Profiles1D,
-              core_transport: CoreTransport.Model.Profiles1D,
-              equilibrium_prev: Equilibrium.TimeSlice,
-              equilibrium_next: Equilibrium.TimeSlice = None,
-              var_list=None,
-              **kwargs) -> CoreProfiles:
+    def refresh(self, /,
+                core_profiles_prev: CoreProfiles.Profiles1D,
+                core_sources: CoreSources.Source.Profiles1D,
+                core_transport: CoreTransport.Model.Profiles1D,
+                equilibrium_prev: Equilibrium.TimeSlice,
+                equilibrium_next: Equilibrium.TimeSlice = None,
+                var_list=None,
+                **kwargs) -> CoreProfiles:
 
         self._update_context(
             core_profiles_prev=core_profiles_prev,
@@ -835,6 +836,3 @@ class TransportSolverNumericsBVPNonlinear(TransportSolverNumerics):
                 """)
 
         return core_profiles_next
-
-
-__SP_EXPORT__ = TransportSolverNumericsBVPNonlinear

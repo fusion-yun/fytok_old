@@ -55,7 +55,7 @@ class CoreTransportProfiles1D(core_transport._T_core_transport_model_profiles_1d
 
 
 @sp_tree
-class CoreTransportTimeSlice:
+class CoreTransportTimeSlice(TimeSlice):
 
     Profiles1D = CoreTransportProfiles1D
 

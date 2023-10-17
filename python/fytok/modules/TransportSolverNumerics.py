@@ -1,11 +1,12 @@
 from scipy import constants
 from fytok.utils.logger import logger
-
-from ..ontology import transport_solver_numerics
+from spdm.data.sp_property import sp_tree
 from .CoreProfiles import CoreProfiles
 from .CoreSources import CoreSources
 from .CoreTransport import CoreTransport
 from .Equilibrium import Equilibrium
+
+from ..ontology import transport_solver_numerics
 
 EPSILON = 1.0e-15
 TOLERANCE = 1.0e-6
@@ -18,19 +19,7 @@ class TransportSolverNumerics(transport_solver_numerics._T_transport_solver_nume
         Solve transport equations
         :math:`\rho=\sqrt{ \Phi/\pi B_{0}}`
     """
-
-    def refresh(self, *args,     **kwargs):
-        logger.warning(f"NOTHING TO DO !!")
-
-        # if boundary_conditions_1d is not None:
-        #     self.boundary_conditions_1d.refresh(boundary_conditions_1d)
-        return 0.0
-
-    def advance(self, *args,     **kwargs):
-        logger.warning(f"NOTHING TO DO !!")
-        # if boundary_conditions_1d is not None:
-        #     self.boundary_conditions_1d.refresh(boundary_conditions_1d)
-        return 0.0
+    _plugin_prefix = 'fytok.plugins.transport_solver_numerics.'
 
     def solve_15D_adv(self, *args, tolerance=1.0e-4, max_iteration=1, **kwargs):
         self._time += dt
@@ -134,19 +123,19 @@ class TransportSolverNumerics(transport_solver_numerics._T_transport_solver_nume
 
         return core_profiles_1d_iter
 
-    def solve(self, /,
-              core_profiles_prev: CoreProfiles,
-              core_transport: CoreTransport,
-              core_sources: CoreSources.Source.TimeSlice.Profiles1D,
-              equilibrium_next: Equilibrium.TimeSlice.Profiles1D,
-              equilibrium_prev: Equilibrium = None,
-              dt: float = None,
-              **kwargs) -> CoreProfiles:
+    def refresh(self, /,
+                core_profiles: CoreProfiles.TimeSlice,
+                core_transport: CoreTransport.TimeSlice,
+                core_sources: CoreSources.Source.TimeSlice,
+                equilibrium_prev: Equilibrium.TimeSlice,
+                equilibrium_next: Equilibrium.TimeSlice = None,
+                dt: float = None,
+                **kwargs) -> CoreProfiles.TimeSlice:
         """
             solve transport equation until residual < tolerance
             return core_profiles
         """
-        raise NotImplementedError()
+        raise NotImplementedError("TransportSolverNumerics.refresh")
 
         # return CoreProfiles({
         #     "profiles_1d": {
@@ -155,3 +144,6 @@ class TransportSolverNumerics(transport_solver_numerics._T_transport_solver_nume
         #         "ion": [{"label": ion.label} for ion in core_profiles_prev.profiles_1d.ion]
         #     }
         # })
+
+    def advance(self, *args, **kwargs) -> CoreProfiles.TimeSlice:
+        raise NotImplementedError("TransportSolverNumerics.advance")
