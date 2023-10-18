@@ -125,7 +125,7 @@ class TransportSolverNumerics(transport_solver_numerics._T_transport_solver_nume
 
     def refresh(self, /,
                 core_profiles: CoreProfiles.TimeSlice,
-                core_transport: CoreTransport.TimeSlice,
+                core_transport: CoreTransport.Model.TimeSlice,
                 core_sources: CoreSources.Source.TimeSlice,
                 equilibrium_prev: Equilibrium.TimeSlice,
                 equilibrium_next: Equilibrium.TimeSlice = None,

@@ -19,7 +19,6 @@ from ..utils.logger import logger
 from ..ontology import equilibrium
 
 
-
 @sp_tree(mesh="../grid")
 class EquilibriumCoordinateSystem(equilibrium._T_equilibrium_coordinate_system):
 
@@ -394,50 +393,50 @@ class EquilibriumTimeSlice(TimeSlice):
         return geo, styles
 
 
-class Equilibrium(IDS):
+class Equilibrium(TimeBasedActor[EquilibriumTimeSlice]):
     r"""
-    Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
+        Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
 
-    Reference:
-        - O. Sauter and S. Yu Medvedev, "Tokamak coordinate conventions: COCOS", Computer Physics Communications 184, 2 (2013), pp. 293--302.
+        Reference:
+            - O. Sauter and S. Yu Medvedev, "Tokamak coordinate conventions: COCOS", Computer Physics Communications 184, 2 (2013), pp. 293--302.
 
-    COCOS  11
-    ```{text}
-        Top view
-                 ***************
-                *               *
-               *   ***********   *
-              *   *           *   *
-             *   *             *   *
-             *   *             *   *
-         Ip  v   *             *   ^  \phi
-             *   *    Z o--->R *   *
-             *   *             *   *
-             *   *             *   *
-             *   *     Bpol    *   *
-              *   *     o     *   *
-               *   ***********   *
-                *               *
-                 ***************
-                   Bpol x
-                Poloidal view
-            ^Z
-            |
-            |       ************
-            |      *            *
-            |     *         ^    *
-            |     *   \rho /     *
-            |     *       /      *
-            +-----*------X-------*---->R
-            |     *  Ip, \phi   *
-            |     *              *
-            |      *            *
-            |       *****<******
-            |       Bpol,\theta
-            |
-                Cylindrical coordinate      : $(R,\phi,Z)$
-        Poloidal plane coordinate   : $(\rho,\theta,\phi)$
-    ```
+        COCOS  11
+        ```{text}
+            Top view
+                    ***************
+                    *               *
+                *   ***********   *
+                *   *           *   *
+                *   *             *   *
+                *   *             *   *
+            Ip  v   *             *   ^  \phi
+                *   *    Z o--->R *   *
+                *   *             *   *
+                *   *             *   *
+                *   *     Bpol    *   *
+                *   *     o     *   *
+                *   ***********   *
+                    *               *
+                    ***************
+                    Bpol x
+                    Poloidal view
+                ^Z
+                |
+                |       ************
+                |      *            *
+                |     *         ^    *
+                |     *   \rho /     *
+                |     *       /      *
+                +-----*------X-------*---->R
+                |     *  Ip, \phi   *
+                |     *              *
+                |      *            *
+                |       *****<******
+                |       Bpol,\theta
+                |
+                    Cylindrical coordinate      : $(R,\phi,Z)$
+            Poloidal plane coordinate   : $(\rho,\theta,\phi)$
+        ```
     """
 
     _plugin_prefix = 'fytok.plugins.equilibrium.'
@@ -450,9 +449,11 @@ class Equilibrium(IDS):
             }}},
         "code": {"name": "eq_analyze"}}}
 
+    ids_properties: IDSProperties
+
     TimeSlice = EquilibriumTimeSlice
 
     time_slice: TimeSeriesAoS[EquilibriumTimeSlice]
 
-    def __geometry__(self,  *args,  **kwargs) -> GeoObject:
+    def __geometry__(self,  *args,  **kwargs):
         return self.time_slice.current.__geometry__(*args, **kwargs)

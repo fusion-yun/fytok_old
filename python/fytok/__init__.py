@@ -40,7 +40,7 @@ logger.info(rf"""
 
  ontology = {GLOBAL_ONTOLOGY}, version = {__version__} {extension_tags} 
 
- Run by {getpass.getuser().capitalize()} on {os.uname().nodename} at {datetime.datetime.now().isoformat()}
+ Run by {getpass.getuser()} on {os.uname().nodename} at {datetime.datetime.now().isoformat()}
 
 #######################################################################################################################
 """)

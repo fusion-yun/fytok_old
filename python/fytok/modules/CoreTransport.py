@@ -36,7 +36,7 @@ class CoreTransportProfiles1D(core_transport._T_core_transport_model_profiles_1d
 
     Neutral = CoreTransportNeutral
 
-    grid_d: CoreRadialGrid
+    grid_d: CoreRadialGrid = sp_property(default_value={"rho_tor_norm": np.linspace(0, 1, 100)})
 
     @sp_property
     def grid_v(self) -> CoreRadialGrid:
@@ -61,20 +61,34 @@ class CoreTransportTimeSlice(TimeSlice):
 
     vacuum_toroidal_field: VacuumToroidalField
 
-    profiles_1d: Profiles1D
+    profiles_1d: CoreTransportProfiles1D
 
 
 @sp_tree
-class CoreTransport(IDS):
+class CoreTransportModel(TimeBasedActor[CoreTransportTimeSlice]):
+    _plugin_prefix = 'fytok.plugins.core_transport.model.'
 
-    @sp_tree
-    class Model(Module):
-        _plugin_prefix = 'fytok.plugins.core_transport.model.'
+    identifier: str
 
-        identifier: str
+    TimeSlice = CoreTransportTimeSlice
 
-        TimeSlice = CoreTransportTimeSlice
+    time_slice: TimeSeriesAoS[CoreTransportTimeSlice]
 
-        time_slice: TimeSeriesAoS[CoreTransportTimeSlice]
 
-    model: AoS[Model]
+@sp_tree
+class CoreTransport(core_transport._T_core_transport):
+
+    Model = CoreTransportModel
+
+    model: AoS[CoreTransportModel]
+
+    def refresh(self, *args, **kwargs):
+        """update the last time slice"""
+
+        for model in self.model:
+            model.refresh(*args, **kwargs)
+
+    def advance(self, *args, **kwargs):
+        """advance time_series to next slice"""
+        for model in self.model:
+            model.advance(*args, **kwargs)

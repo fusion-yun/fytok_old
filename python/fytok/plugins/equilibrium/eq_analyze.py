@@ -1048,7 +1048,7 @@ class FyEqAnalyze(Equilibrium):
 
     TimeSlice = FyEquilibriumTimeSlice
 
-    time_slice: TimeSeriesAoS[TimeSlice] = sp_property()
+    time_slice: TimeSeriesAoS[FyEquilibriumTimeSlice] = sp_property()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, ** kwargs)

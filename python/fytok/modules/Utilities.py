@@ -46,7 +46,7 @@ class Code:
     name: str
     commit: str
     version: str = "0.0.0"
-    copyright: str = "Proprietary Software"
+    copyright: str = ""
     repository: str
     parameters: SpTree
     output_flag: array_type
@@ -84,14 +84,7 @@ class Module(Actor):
                                              **kwargs)
 
             logger.info(
-                f"Load module   \t:'{self.code.name or self.__class__.__name__}'  VERSION='{self.code.version}' COPYRIGHT='{self.code.copyright}' ")
-
-            if "LICENSE" in self.__class__.__doc__:
-                logger.info(f"""
-###############################################################################
-{self.__class__.__doc__} 
-###############################################################################
-""")
+                f"Load module   \t:'{self.code.name or self.__class__.__name__}'  VERSION='{self.code.version}'  COPYRIGHT: {self.code.copyright}")
 
             return
 
@@ -102,11 +95,19 @@ class Module(Actor):
 
     code: Code = sp_property()
 
-    TimeSlice = TimeSlice
 
-    time: array_type = sp_property(units="s", ndims=1, data_type=float)
+_TSlice = typing.TypeVar("_TSlice")
 
-    time_slice: TimeSeriesAoS[TimeSlice]
+
+@sp_tree
+class TimeBasedActor(Module, typing.Generic[_TSlice]):
+
+    TimeSlice = _TSlice
+
+    time_slice: TimeSeriesAoS[_TSlice]
+
+    @property
+    def current(self) -> _TSlice: return self.time_slice.current
 
     def refresh(self, *args, **kwargs):
         """update the last time slice"""
@@ -122,6 +123,7 @@ class IDS(Module):
 
     ids_properties: IDSProperties
     """Interface Data Structure properties. This element identifies the node above as an IDS"""
+
 
 
 @sp_tree
@@ -146,7 +148,7 @@ class CoreRadialGrid(SpTree):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args,  **kwargs)
-        rho_tor_norm = super().get("rho_tor_norm", _not_found_)
+        rho_tor_norm = super().get("rho_tor_norm", _not_found_) or self._metadata.get("../grid/rho_tor_norm", _not_found_)
         if rho_tor_norm is _not_found_:
             if self.rho_tor_boundary is not _not_found_:
                 pass

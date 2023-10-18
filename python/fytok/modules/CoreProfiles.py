@@ -412,7 +412,9 @@ class CoreProfilesTimeSlice(TimeSlice):
 
 
 @sp_tree
-class CoreProfiles(IDS):
+class CoreProfiles(TimeBasedActor[CoreProfilesTimeSlice]):
+
+    ids_properties: IDSProperties
 
     TimeSlice = CoreProfilesTimeSlice
 

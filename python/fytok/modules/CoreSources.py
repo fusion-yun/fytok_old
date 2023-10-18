@@ -10,17 +10,18 @@ from ..utils.logger import logger
 from .CoreProfiles import CoreProfiles
 from .Equilibrium import Equilibrium
 from .Utilities import *
+from ..ontology import core_sources
 
 
 @sp_tree
 class CoreSourceTimeSlice(TimeSlice):
 
-    @sp_tree(coordinate1="grid/rho_tor_norm", bind="core_sources.source.prorfiles_1d")
-    class Profiles1D(TimeSlice):
+    @sp_tree
+    class Profiles1D(core_sources._T_core_sources_source_profiles_1d):
         grid: CoreRadialGrid
 
-    @sp_tree(bind="core_sources.source.global_quantities")
-    class GlobalQuantities(TimeSlice):
+    @sp_tree
+    class GlobalQuantities(core_sources._T_core_sources_source_global):
         pass
 
     profiles_1d: Profiles1D
@@ -29,19 +30,30 @@ class CoreSourceTimeSlice(TimeSlice):
 
 
 @sp_tree
+class CoreSourcesSource(TimeBasedActor[CoreSourceTimeSlice]):
+
+    _plugin_prefix = 'fytok.plugins.core_sources.source.'
+
+    identifier: str
+
+    species: DistributionSpecies
+
+    TimeSlice = CoreSourceTimeSlice
+
+    time_slice: TimeSeriesAoS[CoreSourceTimeSlice]
+
+
+@sp_tree
 class CoreSources(IDS):
 
-    @sp_tree
-    class Source(Module):
+    Source = CoreSourcesSource
 
-        _plugin_prefix = 'fytok.plugins.core_sources.source.'
+    source: AoS[CoreSourcesSource]
 
-        identifier: str
+    def refresh(self, *args, **kwargs):
+        for source in self.source:
+            source.refresh(*args, **kwargs)
 
-        species: DistributionSpecies
-
-        TimeSlice = CoreSourceTimeSlice
-
-        time_slice: TimeSeriesAoS[CoreSourceTimeSlice]
-
-    source: AoS[Source]
+    def advance(self, *args, **kwargs):
+        for source in self.source:
+            source.advance(*args, **kwargs)
