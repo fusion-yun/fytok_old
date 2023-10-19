@@ -441,13 +441,7 @@ class Equilibrium(TimeBasedActor[EquilibriumTimeSlice]):
 
     _plugin_prefix = 'fytok.plugins.equilibrium.'
 
-    _metadata = {"default_value": {
-        "time_slice": {
-            "coordinate_system": {"grid":  {
-                "dim1": np.linspace(0, 0.995, 128),
-                "dim2": np.linspace(0, 1, 64),
-            }}},
-        "code": {"name": "eq_analyze"}}}
+    _metadata = {"code": {"name": "eq_analyze"}}
 
     ids_properties: IDSProperties
 

@@ -17,7 +17,7 @@ class TF(tf._T_tf):
         r0 = self.r0
 
         match view_point.lower():
-            case "rz":
+            case "rz_":
                 conductor = self.coil[0].conductor[0]
                 geo["coils"] = Polygon(conductor.elements.start_points.r,
                                        conductor.elements.start_points.z,

@@ -82,13 +82,11 @@ class Module(Actor):
             pth = Path("code/name")
 
             plugin_name = pth.fetch(cache, default_value=None) or \
-                pth.fetch(self.__class__._metadata, default_value=None) or \
-                pth.fetch(kwargs, default_value=None)
+                pth.fetch(self.__class__._metadata, default_value=None) or\
+                pth.fetch(kwargs.get("default_value", _not_found_), default_value=None)
 
             self.__class__.__dispatch_init__([plugin_name], self, cache, _entry=entry, _parent=parent, **kwargs)
 
-            update_tree(self._cache, None, self.__class__._metadata.get("default_value", _not_found_))
-            update_tree(self._cache, "code", self.__class__._metadata.get("code", _not_found_))
             logger.info(f"Load module {self.code}")
 
             return
@@ -149,7 +147,9 @@ class CoreRadialGrid(SpTree):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args,  **kwargs)
-        rho_tor_norm = super().get("rho_tor_norm", _not_found_) or self._metadata.get("../grid/rho_tor_norm", _not_found_)
+
+        rho_tor_norm = super().get("rho_tor_norm", _not_found_)
+
         if rho_tor_norm is _not_found_:
             if self.rho_tor_boundary is not _not_found_:
                 pass

@@ -108,14 +108,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         # logger.debug(f"COCOS={self.cocos}")
 
-    @sp_property
-    def cocos(self) -> int:
-        cocos_flag = super().get("cocos", _not_found_, _type_hint=int)
-
-        if cocos_flag is not _not_found_ and cocos_flag is not None:
-            return cocos_flag
-        else:
-            return 5
+    cocos: int = sp_property(default_value=5)
 
     @functools.cached_property
     def _psirz(self) -> Field:
@@ -968,7 +961,6 @@ class FyEquilibriumBoundarySeparatrix(Equilibrium.TimeSlice.BoundarySeparatrix):
 
 @sp_tree
 class FyEquilibriumTimeSlice(Equilibrium.TimeSlice):
-    
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
