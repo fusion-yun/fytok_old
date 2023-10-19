@@ -968,6 +968,7 @@ class FyEquilibriumBoundarySeparatrix(Equilibrium.TimeSlice.BoundarySeparatrix):
 
 @sp_tree
 class FyEquilibriumTimeSlice(Equilibrium.TimeSlice):
+    
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
