@@ -411,14 +411,13 @@ class CoreProfilesTimeSlice(TimeSlice):
     vacuum_toroidal_field: VacuumToroidalField
 
 
-@sp_tree
-class CoreProfiles(TimeBasedActor[CoreProfilesTimeSlice]):
+class CoreProfiles(TimeBasedActor):
 
-    ids_properties: IDSProperties
+    ids_properties: IDSProperties = sp_property()
 
     TimeSlice = CoreProfilesTimeSlice
 
-    time_slice: TimeSeriesAoS[CoreProfilesTimeSlice]
+    time_slice: TimeSeriesAoS[CoreProfilesTimeSlice] = sp_property()
 
     def refresh(self, *args,   core_transport, core_source, transport_solver, **kwargs):
         super().refresh(*args, **kwargs)

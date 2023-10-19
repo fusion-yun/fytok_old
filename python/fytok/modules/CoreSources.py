@@ -30,7 +30,7 @@ class CoreSourceTimeSlice(TimeSlice):
 
 
 @sp_tree
-class CoreSourcesSource(TimeBasedActor[CoreSourceTimeSlice]):
+class CoreSourcesSource(TimeBasedActor):
 
     _plugin_prefix = 'fytok.plugins.core_sources.source.'
 

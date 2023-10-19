@@ -64,15 +64,15 @@ class CoreTransportTimeSlice(TimeSlice):
     profiles_1d: CoreTransportProfiles1D
 
 
-@sp_tree
-class CoreTransportModel(TimeBasedActor[CoreTransportTimeSlice]):
+class CoreTransportModel(TimeBasedActor):
+
     _plugin_prefix = 'fytok.plugins.core_transport.model.'
 
-    identifier: str
+    identifier: str = sp_property()
 
     TimeSlice = CoreTransportTimeSlice
 
-    time_slice: TimeSeriesAoS[CoreTransportTimeSlice]
+    time_slice: TimeSeriesAoS[CoreTransportTimeSlice] = sp_property()
 
 
 @sp_tree

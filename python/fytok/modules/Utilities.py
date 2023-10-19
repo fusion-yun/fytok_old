@@ -62,7 +62,7 @@ class Code:
         return ", ".join([f"{key}='{value}'" for key, value in desc.items() if value is not _not_found_ and value is not None and value != ""])
 
 
-@ sp_tree
+@sp_tree
 class Identifier:
     name: str
     index: int
@@ -99,15 +99,13 @@ class Module(Actor):
 _TSlice = typing.TypeVar("_TSlice")
 
 
-@ sp_tree
-class TimeBasedActor(Module, typing.Generic[_TSlice]):
+@sp_tree
+class TimeBasedActor(Module):
 
-    TimeSlice = _TSlice
+    time_slice: TimeSeriesAoS
 
-    time_slice: TimeSeriesAoS[_TSlice]
-
-    @ property
-    def current(self) -> _TSlice: return self.time_slice.current
+    @property
+    def current(self) -> typing.Type(TimeSlice): return self.time_slice.current
 
     def refresh(self, *args, **kwargs):
         """update the last time slice"""
@@ -125,19 +123,19 @@ class IDS(Module):
     """Interface Data Structure properties. This element identifies the node above as an IDS"""
 
 
-@ sp_tree
+@sp_tree
 class PointRZ:  # utilities._T_rz0d_dynamic_aos
     r: float
     z: float
 
 
-@ sp_tree
+@sp_tree
 class CurveRZ:  # utilities._T_rz1d_dynamic_aos
     r: array_type
     z: array_type
 
 
-@ sp_tree
+@sp_tree
 class VacuumToroidalField:
     r0: float
     b0: float
@@ -162,10 +160,10 @@ class CoreRadialGrid(SpTree):
 
             self._cache["rho_tor_norm"] = rho_tor / self.rho_tor_boundary
 
-    @ sp_property
+    @sp_property
     def r0(self) -> float: return self.get("../vacuum_toroidal_field/r0")
 
-    @ sp_property
+    @sp_property
     def b0(self) -> float: return self.get("../vacuum_toroidal_field/b0")
 
     def remesh(self, _rho_tor_norm: array_type) -> CoreRadialGrid:
@@ -195,13 +193,13 @@ class CoreRadialGrid(SpTree):
 
     psi_norm: array_type = sp_property(units="-")
 
-    @ sp_property
+    @sp_property
     def rho_pol_norm(self) -> array_type: return np.sqrt(self.psi_norm)
 
-    @ sp_property
+    @sp_property
     def rho_tor(self) -> array_type: return self.rho_tor_norm*self.rho_tor_boundary
 
-    @ sp_property
+    @sp_property
     def psi(self) -> array_type:
         return self.psi_norm * (self.psi_boundary - self.psi_magnetic_axis) + self.psi_magnetic_axis
 
@@ -213,7 +211,7 @@ class DetectorAperture:  # (utilities._T_detector_aperture):
         return geo, styles
 
 
-@ sp_tree
+@sp_tree
 class PlasmaCompositionIonState:
     label: str
     z_min: float = sp_property(units="Elementary Charge Unit")
@@ -223,21 +221,21 @@ class PlasmaCompositionIonState:
     vibrational_mode: str
 
 
-@ sp_tree
+@sp_tree
 class PlasmaCompositionSpecies:
     label: str
     a: float  # = sp_property(units="Atomic Mass Unit", )
     z_n: float  # = sp_property(units="Elementary Charge Unit", )
 
 
-@ sp_tree
+@sp_tree
 class PlasmaCompositionNeutralElement(SpTree):
     a: float  # = sp_property(units="Atomic Mass Unit", )
     z_n: float  # = sp_property(units="Elementary Charge Unit", )
     atoms_n: int
 
 
-@ sp_tree
+@sp_tree
 class PlasmaCompositionIons:
     label: str
     element: AoS[PlasmaCompositionNeutralElement]
@@ -259,7 +257,7 @@ class PlasmaCompositionNeutral:
     state: PlasmaCompositionNeutralState
 
 
-@ sp_tree
+@sp_tree
 class DistributionSpecies(SpTree):
     type: str
     ion: PlasmaCompositionIons
