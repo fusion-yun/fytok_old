@@ -12,7 +12,7 @@ from spdm.data.Field import Field
 from spdm.data.Function import Function
 from spdm.data.HTree import Dict, HTree, List
 from spdm.data.Signal import Signal, SignalND
-from spdm.data.sp_property import SpTree, sp_property, sp_tree
+from spdm.data.sp_property import SpTree, sp_property, sp_tree, AttributeTree
 from spdm.data.TimeSeries import TimeSeriesAoS, TimeSlice
 from spdm.geometry.Curve import Curve
 from spdm.utils.tree_utils import merge_tree_recursive, update_tree
@@ -48,7 +48,7 @@ class Code:
     version: str
     copyright: str
     repository: str
-    parameters: SpTree
+    parameters: AttributeTree
     output_flag: array_type
     library: List[Library]
 
