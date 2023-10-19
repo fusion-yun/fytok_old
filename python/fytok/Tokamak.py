@@ -28,7 +28,7 @@ from .modules.TransportSolverNumerics import TransportSolverNumerics
 from .modules.Wall import Wall
 from .utils.envs import *
 from .utils.logger import logger
-from .ontology  import GLOBAL_ONTOLOGY
+from .ontology import GLOBAL_ONTOLOGY
 # from .modules.EdgeProfiles import EdgeProfiles
 # from .modules.EdgeSources import EdgeSources
 # from .modules.EdgeTransport import EdgeTransport
@@ -154,15 +154,14 @@ class Tokamak(SpTree):
 
         #                               )
 
-    def refresh(self, *args, time=None, **kwargs):
-        if time is not None:
-            # 同步时间片
-            self["time"] = time
+    def refresh(self, *args, **kwargs):
 
-            self.equilibrium.refresh(time=time)
-            # self.core_profiles.refresh(time=time)
-            # self.core_transport.refresh(time=time)
-            # self.core_sources.refresh(time=time)
+        super().update(*args, **kwargs)
+
+        self.equilibrium.refresh(*args,   **kwargs)
+        # self.core_profiles.refresh(time=time)
+        # self.core_transport.refresh(time=time)
+        # self.core_sources.refresh(time=time)
 
         # self.equilibrium.refresh(*args, **kwargs)
 
@@ -226,7 +225,7 @@ class Tokamak(SpTree):
                 g = o.__geometry__(**kwargs)
 
             except Exception as error:
-                logger.debug(f"Can not get {o.__class__.__name__}.__geometry__ !")
+                logger.debug(f"Can not get {o.__class__.__name__}.__geometry__ ! Error:{error}")
             else:
                 geo[o_name] = g
 

@@ -15,7 +15,7 @@ from spdm.data.Signal import Signal, SignalND
 from spdm.data.sp_property import SpTree, sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS, TimeSlice
 from spdm.geometry.Curve import Curve
-from spdm.utils.tree_utils import merge_tree_recursive
+from spdm.utils.tree_utils import merge_tree_recursive, update_tree
 from spdm.utils.typing import array_type
 from spdm.utils.tags import _not_found_
 
@@ -89,7 +89,8 @@ class Module(Actor):
             return
 
         cache = merge_tree_recursive(self.__class__._metadata.get("default_value", {}), cache)
-        cache = merge_tree_recursive(cache, {"code": self.__class__._metadata.get("code", {})})
+
+        update_tree(cache, "code", self.__class__._metadata.get("code", {}))
 
         super().__init__(cache, _entry=entry, _parent=parent,  **kwargs)
 
@@ -123,7 +124,6 @@ class IDS(Module):
 
     ids_properties: IDSProperties
     """Interface Data Structure properties. This element identifies the node above as an IDS"""
-
 
 
 @sp_tree
