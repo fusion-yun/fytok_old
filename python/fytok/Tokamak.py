@@ -142,9 +142,13 @@ class Tokamak(SpTree):
     # fmt:on
 
     def advance(self, *args, **kwargs):
+        # super().advance(*args, **kwargs)
+
         self.equilibrium.advance(*args, **kwargs)
 
-        self["time"] = self.equilibrium.time_slice.current.time
+        self["time"] = self.equilibrium.time_slice.time
+
+        # self["time"] = self.equilibrium.time_slice.current.time
 
         # self.transport_solver.advance(*args, **kwargs,
         #                               equilibrium=self.equilibrium,
@@ -158,7 +162,12 @@ class Tokamak(SpTree):
 
         super().update(*args, **kwargs)
 
-        self.equilibrium.refresh(*args,   **kwargs)
+        self.equilibrium.refresh(*args, **kwargs)
+
+        time = self.equilibrium.time_slice.current.time
+
+        self["time"] = time
+
         # self.core_profiles.refresh(time=time)
         # self.core_transport.refresh(time=time)
         # self.core_sources.refresh(time=time)
@@ -225,7 +234,9 @@ class Tokamak(SpTree):
                 g = o.__geometry__(**kwargs)
 
             except Exception as error:
-                logger.debug(f"Can not get {o.__class__.__name__}.__geometry__ ! Error:{error}")
+
+                if FY_DEBUG == "strict":
+                    raise RuntimeError(f"Can not get {o.__class__.__name__}.__geometry__ ! Error:{error}") from error
             else:
                 geo[o_name] = g
 
