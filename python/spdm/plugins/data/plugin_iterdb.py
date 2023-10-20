@@ -78,8 +78,18 @@ def sp_to_imas(data: dict):
     entry["core_profiles/time_slice/0/global_quantities/li_3"]                                     = data[n:=n+1][1]   #  ali : plasma inductance
     entry["core_profiles/time_slice/0/global_quantities/t_e_peaking"]                              = data[n:=n+1][1]   #  te0 : central electron temperature
     entry["core_profiles/time_slice/0/global_quantities/t_i_average_peaking"]                      = data[n:=n+1][1]   #  ti0 : central ion temperature
-    entry["core_profiles/time_slice/0/profiles_1d/grid/psi"]                                       = np.asarray(data[n:=n+1][1:])  #  psi on rho grid, volt*second/radian
-    entry["core_profiles/time_slice/0/profiles_1d/grid/rho_tor"]                                   = np.asarray(data[n:=n+1][1:])  #  rho grid, meters
+    psi                                                                                   = np.asarray(data[n:=n+1][1:])  #  psi on rho grid, volt*second/radian
+    rho_tor                                                                               = np.asarray(data[n:=n+1][1:])  #  rho grid, meters
+    psi_axis                                                                                  = psi[0]
+    psi_boundary                                                                              = psi[-1]
+    rho_tor_boundary                                                                          = rho_tor[-1]
+    entry["core_profiles/time_slice/0/profiles_1d/grid/psi"]                                       = psi 
+    entry["core_profiles/time_slice/0/profiles_1d/grid/rho_tor"]                                   = rho_tor
+    entry["core_profiles/time_slice/0/profiles_1d/grid/psi_magnetic_axis"]                         = psi_axis
+    entry["core_profiles/time_slice/0/profiles_1d/grid/psi_boundary"]                              = psi_boundary 
+    entry["core_profiles/time_slice/0/profiles_1d/grid/rho_tor_boundary"]                          = rho_tor_boundary
+    entry["core_profiles/time_slice/0/profiles_1d/grid/psi_norm"]                                  = (psi -psi_axis)/(psi_boundary-psi_axis)
+    entry["core_profiles/time_slice/0/profiles_1d/grid/rho_tor_norm"]                              = rho_tor/rho_tor_boundary
     entry["core_profiles/time_slice/0/profiles_1d/fcap"]                                           = np.asarray(data[n:=n+1][1:])  #  fcap, (i.e., f(psilim)/f(psi))
     entry["core_profiles/time_slice/0/profiles_1d/gcap"]                                           = np.asarray(data[n:=n+1][1:])  #  gcap, (i.e., <(grad rho)**2*(R0/R)**2>)
     entry["core_profiles/time_slice/0/profiles_1d/hcap"]                                           = np.asarray(data[n:=n+1][1:])  #  hcap, (i.e., (dvolume/drho)/(4*pi*pi*R0*rho))
@@ -88,7 +98,7 @@ def sp_to_imas(data: dict):
     entry["core_profiles/time_slice/0/profiles_1d/q"]                                              = np.asarray(data[n:=n+1][1:])  # q (i.e., safety factor) profile
     entry["core_profiles/time_slice/0/profiles_1d/electrons/density_thermal"]                      = np.asarray(data[n:=n+1][1:])  # electron density, #/meter**3
 
-    
+
     for i_prim in range(nprim):        
         entry[f"core_profiles/time_slice/0/profiles_1d/ion/{i_prim}/label"]                        = namep[i_prim]                # ion name  
         entry[f"core_profiles/time_slice/0/profiles_1d/ion/{i_prim}/density_thermal"]              = np.asarray(data[n:=n+1][1:]) # primary ion density, #/meter**3, species: d       
@@ -101,7 +111,7 @@ def sp_to_imas(data: dict):
         entry[f"core_sources/source/total/time_slice/0/profiles_1d/ion/{i_prim}/density"]          = np.asarray(data[n:=n+1][1:]) # total source rate,
         entry[f"core_sources/source/custom_1/time_slice/0/profiles_1d/ion/{i_prim}/density"]       = np.asarray(data[n:=n+1][1:]) # dudt : s dot, #/(meter**3*second)
 
-    
+
     for i_prim in range(nprim): 
         entry[f"core_profiles/time_slice/0/profiles_1d/ion/{i_prim}/density_fast"]                 = np.asarray(data[n:=n+1][1:]) # fast ion density, #/meter**3, species: d       
 

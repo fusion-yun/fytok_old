@@ -6,6 +6,7 @@ import scipy.constants
 from scipy import constants
 from spdm.data.AoS import AoS
 from spdm.data.Function import Function
+from spdm.data.Expression import Expression
 from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.utils.tree_utils import merge_tree_recursive
@@ -43,7 +44,7 @@ class CoreProfilesIon(utilities._T_core_profile_ions):
     neutral_index: int
     z_ion_1d: Function = sp_property(units="-")
     z_ion_square_1d: Function = sp_property(units="-")
-    temperature: Function = sp_property(units="eV")
+    temperature: Function = sp_property(units="eV", default_value=0.0)
     # temperature_validity: int
     # temperature_fit: _T_core_profiles_1D_fit = sp_property(units="eV")
 
@@ -95,9 +96,9 @@ class CoreProfilesIon(utilities._T_core_profile_ions):
     @sp_property
     def pressure(self) -> Function:
         return (
-            self.pressure_thermal
-            + self.pressure_fast_parallel
-            + self.pressure_fast_perpendicular
+            self.pressure_thermal.__array__() +
+            self.pressure_fast_parallel.__array__() +
+            self.pressure_fast_perpendicular.__array__()
         )
 
 
@@ -153,7 +154,7 @@ class CoreProfilesElectrons(utilities._T_core_profiles_profiles_1d_electrons):
     density_fast: Function = sp_property(units="m^-3", default_value=0.0)
 
     @sp_property(units="Pa")
-    def pressure(self) -> Function:
+    def pressure(self) -> Expression:
         return (
             self.pressure_thermal
             + self.pressure_fast_parallel
@@ -161,7 +162,7 @@ class CoreProfilesElectrons(utilities._T_core_profiles_profiles_1d_electrons):
         )
 
     @sp_property(units="Pa")
-    def pressure_thermal(self) -> Function:
+    def pressure_thermal(self) -> Expression:
         return self.density * self.temperature * scipy.constants.electron_volt
 
     pressure_fast_perpendicular: Function = sp_property(units="Pa", default_value=0.0)
@@ -210,7 +211,7 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
 
     @sp_property
     def pressure(self) -> Function:
-        p = [ion.pressure for ion in self.ion]
+        p = [ion.pressure.__array__() for ion in self.ion]
         if len(p) == 1:
             return p[0]
         else:

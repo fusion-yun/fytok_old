@@ -753,7 +753,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
         return self._coord.shape_property(self.psi)
 
     @sp_property
-    def geometric_axis(self) -> PointRZ:
+    def geometric_axis(self) -> Equilibrium.TimeSlice.Profiles1D.RZ:
         return {"r": (self._shape_property.Rmin+self._shape_property.Rmax)*0.5,
                 "z": (self._shape_property.Zmin+self._shape_property.Zmax)*0.5}
 
