@@ -4,11 +4,10 @@ from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
 
 
-from ..utils.logger import logger
 from .Utilities import *
 from .CoreProfiles import CoreProfiles
 from .Equilibrium import Equilibrium
-
+from ..utils.logger import logger
 from ..ontology import core_transport
 
 
@@ -64,15 +63,16 @@ class CoreTransportTimeSlice(TimeSlice):
     profiles_1d: CoreTransportProfiles1D
 
 
+@sp_tree
 class CoreTransportModel(TimeBasedActor):
 
     _plugin_prefix = 'fytok.plugins.core_transport.model.'
 
-    identifier: str = sp_property()
-
     TimeSlice = CoreTransportTimeSlice
 
-    time_slice: TimeSeriesAoS[CoreTransportTimeSlice] = sp_property()
+    identifier: str
+
+    time_slice: TimeSeriesAoS[CoreTransportTimeSlice]
 
 
 @sp_tree

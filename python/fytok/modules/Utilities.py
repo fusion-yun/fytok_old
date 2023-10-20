@@ -99,10 +99,9 @@ class Module(Actor):
 _TSlice = typing.TypeVar("_TSlice")
 
 
-@sp_tree
 class TimeBasedActor(Module):
 
-    time_slice: TimeSeriesAoS
+    time_slice: TimeSeriesAoS = sp_property()
 
     @property
     def current(self) -> typing.Type(TimeSlice): return self.time_slice.current
