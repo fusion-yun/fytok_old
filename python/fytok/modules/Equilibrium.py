@@ -210,7 +210,7 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
     triangularity: Function
 
-    squareness: Function
+    squareness: Function = sp_property(default_value=0.0)
 
 
 @sp_tree(mesh="grid")

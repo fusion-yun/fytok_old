@@ -60,15 +60,19 @@ def sp_to_imas(data: dict):
     entry["time"]                                                                                  = data[n:=n+1][1]
     entry["geometric_center/r"]                                                                    = data[n:=n+1][1]   # Rgeom : major radius of geometric center at elevation of magnetic axis, meters
     entry["magnetic_axis/r"]                                                                       = data[n:=n+1][1]   # major radius of magnetic axis, meters
-    entry["equilibrium/vacuum_toroidal_field/r0"]                                                  = data[n:=n+1][1]   # major radius of vacuum btor ref location, meters
-    entry["equilibrium/time_slice/0/vacuum_toroidal_field/r0"]                                     = data[n][1]        # major radius of vacuum btor ref location, meters
+    r0                                                                                        = data[n:=n+1][1]   # major radius of vacuum btor ref location, meters
+    entry["equilibrium/vacuum_toroidal_field/r0"]                                                  = r0 
+    entry["equilibrium/time_slice/0/vacuum_toroidal_field/r0"]                                     = r0 
+    entry["core_profiles/time_slice/0/vacuum_toroidal_field/r0"]                                   = r0 
     entry["equilibrium/time_slice/0/boundary/elongation"]                                          = data[n:=n+1][1]   #  kappa : plasma elongation
     entry["equilibrium/time_slice/0/boundary/triangularity"]                                       = data[n:=n+1][1]   #  delta : plasma triangularity
     entry["equilibrium/time_slice/0/boundary/indentation"]                                         = data[n:=n+1][1]   #  pindent : plasma indentation
     entry["equilibrium/time_slice/0/global_quantities/volume"]                                     = data[n:=n+1][1]   #  volo : plasma volume, meters**3
     entry["equilibrium/time_slice/0/global_quantities/area"]                                       = data[n:=n+1][1]   #  cxareao : plasma cross-sectional area, meters**2
-    entry["equilibrium/vacuum_toroidal_field/b0"]                                                  = data[n:=n+1][1:]  #  Btor : vacuum toroidal field at rmajor, tesla
-    entry["equilibrium/time_slice/0/vacuum_toroidal_field/b0"]                                     = data[n][1]        #  Btor : vacuum toroidal field at rmajor, tesla
+    b0                                                                                        = data[n:=n+1][1:]  #  Btor : vacuum toroidal field at rmajor, tesla
+    entry["equilibrium/vacuum_toroidal_field/b0"]                                                  = np.asarray([b0])
+    entry["equilibrium/time_slice/0/vacuum_toroidal_field/b0"]                                     = b0
+    entry["core_profiles/time_slice/0/vacuum_toroidal_field/b0"]                                   = b0
     entry["core_profiles/time_slice/0/global_quantities/current"]                                  = data[n:=n+1][1]   #  total, ohmic, bootstrap, beam and RF currents, amps
     entry["core_profiles/time_slice/0/global_quantities/current_ohmic"]                            = data[n][2]        #  ohmic current
     entry["core_profiles/time_slice/0/global_quantities/current_bootstrap"]                        = data[n][3]        #  bootstrap current

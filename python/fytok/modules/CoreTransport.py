@@ -12,21 +12,48 @@ from ..ontology import core_transport
 
 
 @sp_tree
+class CoreTransportModelParticles(core_transport._T_core_transport_model_2_density):
+    d: Function = sp_property(coordinate1="../../../grid_d/rho_tor_norm", units="m^2.s^-1", default_value=np.nan)
+    v: Function = sp_property(coordinate1="../../../grid_v/rho_tor_norm", units="m.s^-1", default_value=np.nan)
+    flux: Function = sp_property(coordinate1="../../../grid_flux/rho_tor_norm",
+                                 units="m^-2.s^-1", default_value=np.nan)
+
+
+@sp_tree
+class CoreTransportModelEnergy(core_transport._T_core_transport_model_2_energy):
+    d: Function = sp_property(coordinate1="../../../grid_d/rho_tor_norm", units="m^2.s^-1", default_value=np.nan)
+    v: Function = sp_property(coordinate1="../../../grid_v/rho_tor_norm", units="m.s^-1", default_value=np.nan)
+    flux: Function = sp_property(coordinate1="../../../grid_flux/rho_tor_norm", units="W.m^-2", default_value=np.nan)
+
+
+@sp_tree
+class CoreTransportModelMomentum(core_transport._T_core_transport_model_4_momentum):
+    d: Function = sp_property(coordinate1="../../../grid_d/rho_tor_norm", units="m^2.s^-1", default_value=np.nan)
+    v: Function = sp_property(coordinate1="../../../grid_v/rho_tor_norm", units="m.s^-1", default_value=np.nan)
+    flux: Function = sp_property(coordinate1="../../../grid_flux/rho_tor_norm", units="W.m^-2", default_value=np.nan)
+
+
+@sp_tree
 class CoreTransportElectrons(core_transport._T_core_transport_model_electrons):
-    pass
+    particles: CoreTransportModelParticles
+    energy: CoreTransportModelEnergy
+    momentum: CoreTransportModelMomentum
 
 
 @sp_tree
 class CoreTransportIon(core_transport._T_core_transport_model_ions):
-    pass
+    particles: CoreTransportModelParticles
+    energy: CoreTransportModelEnergy
+    momentum: CoreTransportModelMomentum
 
 
 @sp_tree
 class CoreTransportNeutral(core_transport._T_core_transport_model_neutral):
-    pass
+    particles: CoreTransportModelParticles
+    energy: CoreTransportModelEnergy
 
 
-@sp_tree
+@sp_tree(coordinate1="grid_d/rho_tor_norm")
 class CoreTransportProfiles1D(core_transport._T_core_transport_model_profiles_1d):
 
     Electrons = CoreTransportElectrons
@@ -79,11 +106,17 @@ class CoreTransportModel(TimeBasedActor):
                 ** kwargs):
         """update the last time slice"""
 
-        super().refresh(*args,
-                        time=equilibrium.time,
-                        profiles_1d={"grid_d": equilibrium.profiles_1d.grid},
-                        vacuum_toroidal_field=equilibrium.vacuum_toroidal_field,
-                        ** kwargs)
+        super().refresh(
+            {
+                "time": core_profiles.time,
+                "vacuum_toroidal_field": core_profiles.vacuum_toroidal_field,
+                "profiles_1d": {
+                    "grid_d": core_profiles.profiles_1d.grid,
+                    "ion": [{"label": ion.label} for ion in core_profiles.profiles_1d.ion],
+                    "neutral": [{"label": neutral.label} for neutral in core_profiles.profiles_1d.neutral]
+                }
+            },
+            *args, ** kwargs)
 
 
 @ sp_tree

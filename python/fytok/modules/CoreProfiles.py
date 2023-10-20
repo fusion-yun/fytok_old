@@ -40,23 +40,41 @@ class CoreProfilesIon(utilities._T_core_profile_ions):
     element: AoS[PlasmaCompositionNeutralElement]
 
     z_ion: float = sp_property(units="Elementary Charge Unit")
-    label: str
-    neutral_index: int
-    z_ion_1d: Function = sp_property(units="-")
-    z_ion_square_1d: Function = sp_property(units="-")
-    temperature: Function = sp_property(units="eV", default_value=0.0)
-    # temperature_validity: int
-    # temperature_fit: _T_core_profiles_1D_fit = sp_property(units="eV")
 
-    density: Function = sp_property(units="m^-3")
-    # density_validity: int
-    # density_fit: _T_core_profiles_1D_fit = sp_property(units="m^-3")
+    label: str
+
+    neutral_index: int
+
+    z: float
+
+    a: float
+
+    z_ion_1d: Function = sp_property(units="-")
+
+    z_ion_square_1d: Function = sp_property(units="-")
+
+    temperature: Function = sp_property(units="eV", default_value=0.0)
+
+    @sp_property(units="m^-3")
+    def density(self) -> Function: return self.density_thermal+self.density_fast
+
     density_thermal: Function = sp_property(units="m^-3")
     density_fast: Function = sp_property(units="m^-3")
-    pressure: Function = sp_property(units="Pa")
-    pressure_thermal: Function = sp_property(units="Pa")
-    pressure_fast_perpendicular: Function = sp_property(units="Pa")
-    pressure_fast_parallel: Function = sp_property(units="Pa")
+
+    @sp_property(units="Pa")
+    def pressure(self) -> Function:
+        # FIXME: coefficient on pressure fast
+        return self.pressure_thermal + \
+            self.pressure_fast_perpendicular + \
+            self.pressure_fast_parallel
+
+    @sp_property(units="Pa")
+    def pressure_thermal(self) -> Function:
+        return self.density_thermal*self.temperature*scipy.constants.electron_volt
+
+    pressure_fast_perpendicular: Function = sp_property(units="Pa", default=0.0)
+    pressure_fast_parallel: Function = sp_property(units="Pa", default=0.0)
+
     rotation_frequency_tor: Function = sp_property(units="rad.s^-1")
 
     # velocity: _T_core_profiles_vector_components_2 = sp_property(units="m.s^-1")
@@ -64,12 +82,10 @@ class CoreProfilesIon(utilities._T_core_profile_ions):
     multiple_states_flag: int
 
     @property
-    def mass(self) -> float:
-        return self.element[0].a
+    def mass(self) -> float: return self.element[0].a
 
     @property
-    def charge(self) -> float:
-        return self.element[0].z
+    def charge(self) -> float: return self.element[0].z
 
     @sp_property
     def z_ion_1d(self) -> Function:
@@ -169,7 +185,7 @@ class CoreProfilesElectrons(utilities._T_core_profiles_profiles_1d_electrons):
 
     pressure_fast_parallel: Function = sp_property(units="Pa", default_value=0.0)
 
-    collisionality_norm: Function = sp_property(units="-")
+    collisionality_norm: Function = sp_property(units="-", default_value=0.0)
 
 
 @sp_tree(coordinate1="grid/rho_tor_norm")
@@ -298,7 +314,7 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
 
     @sp_property
     def beta_pol(self) -> Function:
-        return (4 * self.pressure.antiderivative() / (self.grid.r0 * constants.mu_0 * (self.j_total**2)))
+        return (4 * self.pressure.antiderivative() / (self._parent.vacuum_toroidal_field.r0 * constants.mu_0 * (self.j_total**2)))
 
     # if isinstance(d, np.ndarray) or (hasattr(d.__class__, 'empty') and not d.empty):
     #     return d
