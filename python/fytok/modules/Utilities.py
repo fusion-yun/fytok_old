@@ -69,6 +69,7 @@ class Identifier:
     description: str
 
 
+@sp_tree
 class Module(Actor):
     _plugin_prefix = __package__
     _plugin_registry = {}
@@ -93,18 +94,19 @@ class Module(Actor):
 
         super().__init__(cache, _entry=entry, _parent=parent,  **kwargs)
 
-    code: Code = sp_property()
+    code: Code
 
 
 _TSlice = typing.TypeVar("_TSlice")
 
 
+@sp_tree
 class TimeBasedActor(Module):
 
-    time_slice: TimeSeriesAoS = sp_property()
+    time_slice: TimeSeriesAoS
 
     @property
-    def current(self) -> typing.Type(TimeSlice): return self.time_slice.current
+    def current(self) -> TimeSlice: return self.time_slice.current
 
     def refresh(self, *args, **kwargs):
         """update the last time slice"""

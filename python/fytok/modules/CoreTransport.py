@@ -37,11 +37,11 @@ class CoreTransportProfiles1D(core_transport._T_core_transport_model_profiles_1d
 
     grid_d: CoreRadialGrid = sp_property(default_value={"rho_tor_norm": np.linspace(0, 1, 100)})
 
-    @sp_property
+    @sp_property[CoreRadialGrid]
     def grid_v(self) -> CoreRadialGrid:
         return self.grid_d.remesh(self.grid_d.rho_tor_norm)
 
-    @sp_property
+    @sp_property[CoreRadialGrid]
     def grid_flux(self) -> CoreRadialGrid:
         rho_tor_norm = self.grid_d.rho_tor_norm
         return self.grid_d.remesh(0.5*(rho_tor_norm[:-1]+rho_tor_norm[1:]))
