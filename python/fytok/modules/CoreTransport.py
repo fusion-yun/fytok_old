@@ -35,13 +35,12 @@ class CoreTransportProfiles1D(core_transport._T_core_transport_model_profiles_1d
 
     Neutral = CoreTransportNeutral
 
-    grid_d: CoreRadialGrid = sp_property(default_value={"rho_tor_norm": np.linspace(0, 1, 100)})
+    grid_d: CoreRadialGrid
 
-    @sp_property[CoreRadialGrid]
-    def grid_v(self) -> CoreRadialGrid:
-        return self.grid_d.remesh(self.grid_d.rho_tor_norm)
+    @sp_property
+    def grid_v(self) -> CoreRadialGrid: return self.grid_d.remesh(self.grid_d.rho_tor_norm)
 
-    @sp_property[CoreRadialGrid]
+    @sp_property
     def grid_flux(self) -> CoreRadialGrid:
         rho_tor_norm = self.grid_d.rho_tor_norm
         return self.grid_d.remesh(0.5*(rho_tor_norm[:-1]+rho_tor_norm[1:]))
@@ -74,8 +73,20 @@ class CoreTransportModel(TimeBasedActor):
 
     time_slice: TimeSeriesAoS[CoreTransportTimeSlice]
 
+    def refresh(self, *args,
+                core_profiles: CoreProfiles.TimeSlice,
+                equilibrium: Equilibrium.TimeSlice,
+                ** kwargs):
+        """update the last time slice"""
 
-@sp_tree
+        super().refresh(*args,
+                        time=equilibrium.time,
+                        profiles_1d={"grid_d": equilibrium.profiles_1d.grid},
+                        vacuum_toroidal_field=equilibrium.vacuum_toroidal_field,
+                        ** kwargs)
+
+
+@ sp_tree
 class CoreTransport(core_transport._T_core_transport):
 
     Model = CoreTransportModel

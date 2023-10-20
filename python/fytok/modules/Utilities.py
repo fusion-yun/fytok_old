@@ -108,11 +108,11 @@ class TimeBasedActor(Module):
     @property
     def current(self) -> TimeSlice: return self.time_slice.current
 
-    def refresh(self, *args, **kwargs):
+    def refresh(self, *args, **kwargs) -> typing.Type[TimeSlice]:
         """update the last time slice"""
         self.time_slice.refresh(*args, **kwargs)
 
-    def advance(self, *args, **kwargs):
+    def advance(self, *args, **kwargs) -> typing.Type[TimeSlice]:
         """advance time_series to next slice"""
         self.time_slice.advance(*args, **kwargs)
 
@@ -142,30 +142,8 @@ class VacuumToroidalField:
     b0: float
 
 
-class CoreRadialGrid(SpTree):
-
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args,  **kwargs)
-
-        rho_tor_norm = super().get("rho_tor_norm", _not_found_)
-
-        if rho_tor_norm is _not_found_:
-            if self.rho_tor_boundary is not _not_found_:
-                pass
-            else:
-                rho_tor = super().get("rho_tor", _not_found_)
-                if rho_tor is _not_found_:
-                    raise RuntimeError(f"Can not find rho_tor_norm or rho_tor_boundary")
-                else:
-                    self._cache["rho_tor_boundary"] = rho_tor[-1]
-
-            self._cache["rho_tor_norm"] = rho_tor / self.rho_tor_boundary
-
-    @sp_property
-    def r0(self) -> float: return self.get("../vacuum_toroidal_field/r0")
-
-    @sp_property
-    def b0(self) -> float: return self.get("../vacuum_toroidal_field/b0")
+@sp_tree
+class CoreRadialGrid:
 
     def remesh(self, _rho_tor_norm: array_type) -> CoreRadialGrid:
 
@@ -184,15 +162,15 @@ class CoreRadialGrid(SpTree):
             parent=self._parent
         )
 
-    psi_magnetic_axis: float = sp_property()
+    psi_magnetic_axis: float
 
-    psi_boundary: float = sp_property()
+    psi_boundary: float
 
-    rho_tor_boundary: float = sp_property()
+    rho_tor_boundary: float
 
-    rho_tor_norm: array_type = sp_property(units="-")
+    rho_tor_norm: array_type
 
-    psi_norm: array_type = sp_property(units="-")
+    psi_norm: array_type
 
     @sp_property
     def rho_pol_norm(self) -> array_type: return np.sqrt(self.psi_norm)

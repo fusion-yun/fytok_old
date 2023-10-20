@@ -135,11 +135,11 @@ class CoreProfilesNeutral(utilities._T_core_profile_neutral):
 @sp_tree(coordinate1="../grid/rho_tor_norm")
 class CoreProfilesElectrons(utilities._T_core_profiles_profiles_1d_electrons):
 
-    @sp_property[Function]
+    @sp_property
     def tau(self):
         return (1.09e16 * ((self.temperature / 1000) ** (3 / 2)) / self.density / self._parent.coulomb_logarithm)
 
-    @sp_property[Function]
+    @sp_property
     def vT(self):
         return np.sqrt(self.temperature * scipy.constants.electron_volt / scipy.constants.electron_mass)
 

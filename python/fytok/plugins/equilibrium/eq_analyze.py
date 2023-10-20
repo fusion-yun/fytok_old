@@ -661,15 +661,13 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
         return self.dphi_dpsi * (self._coord._s_Bp * self._coord._s_rtp * self._coord._s_eBp_2PI/TWOPI)
 
     @sp_property
-    def magnetic_shear(self) -> Function:
-        return self.rho_tor * self.q.pd()/self.q*self.dpsi_drho_tor
+    def magnetic_shear(self) -> Function: return self.rho_tor * self.q.d()/self.q*self.dpsi_drho_tor
 
     @sp_property
     def rho_tor(self) -> Function: return np.sqrt(self._coord._s_B0*self.phi / (PI*self._coord._B0))
 
     @sp_property
-    def rho_tor_norm(self) -> Function:
-        return np.sqrt(self.phi/self.phi(self._parent.boundary.psi))
+    def rho_tor_norm(self) -> Function: return np.sqrt(self.phi/self.phi(self._parent.boundary.psi))
 
     @sp_property
     def drho_tor_dpsi(self) -> Function: return 1.0/self.dpsi_drho_tor
@@ -865,7 +863,7 @@ class FyEquilibriumBoundary(Equilibrium.TimeSlice.Boundary):
     @property
     def _coord(self) -> FyEquilibriumCoordinateSystem: return self._parent.coordinate_system
 
-    @sp_property[Curve](coordinates="r z")
+    @sp_property(coordinates="r z")
     def outline(self) -> Curve:
         _, surf = next(self._coord.find_surfaces(self.psi, o_point=True))
         return surf
@@ -936,7 +934,7 @@ class FyEquilibriumBoundarySeparatrix(Equilibrium.TimeSlice.BoundarySeparatrix):
     @property
     def _coord(self) -> Equilibrium.TimeSlice.CoordinateSystem: return self._parent.coordinate_system
 
-    @sp_property[Curve](coordinates="r z")
+    @sp_property(coordinates="r z")
     def outline(self) -> Curve:
         """RZ outline of the plasma boundary  """
         _, surf = next(self._coord.find_surfaces(self.psi, o_point=None))

@@ -102,9 +102,22 @@ class EquilibriumGlobalQuantities(equilibrium._T_equilibrium_global_quantities):
 
 
 @sp_tree(coordinate1="psi", extrapolate='zeros')
-class EquilibriumProfiles1D:
+class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
+
+    @sp_property
+    def grid(self) -> CoreRadialGrid:
+        g = self._parent.global_quantities
+        return CoreRadialGrid({
+            "psi_norm": (self.psi-g .psi_boundary)/(g .psi_axis-g .psi_boundary),
+            "rho_tor_norm": self.rho_tor_norm(self.psi),
+            "psi_magnetic_axis": g .psi_axis,
+            "psi_boundary": g .psi_boundary,
+            "rho_tor_boundary": self.rho_tor(g .psi_boundary),
+        })
 
     psi: array_type = sp_property(units="Wb")
+
+    psi_norm: Function = sp_property(units="-")
 
     phi: Function = sp_property(units="Wb")
 
@@ -323,7 +336,7 @@ class EquilibriumGGD(equilibrium._T_equilibrium_ggd):
 
 
 @sp_tree
-class EquilibriumTimeSlice(TimeSlice):
+class EquilibriumTimeSlice(equilibrium._T_equilibrium_time_slice):
 
     Constraints = EequilibriumConstraints
     BoundarySeparatrix = EquilibriumBoundarySeparatrix
