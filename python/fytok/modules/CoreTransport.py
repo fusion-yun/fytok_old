@@ -118,7 +118,7 @@ class CoreTransportModel(TimeBasedActor):
             *args, ** kwargs)
 
 
-@ sp_tree
+@sp_tree
 class CoreTransport(core_transport._T_core_transport):
 
     Model = CoreTransportModel
