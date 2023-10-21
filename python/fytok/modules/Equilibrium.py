@@ -173,7 +173,7 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
     squareness_lower_outer: Function
 
-    squareness: Function = sp_property(default_value=0.0)
+    squareness: Function = sp_property(default_value=1.0)
 
     volume: Function = sp_property(units="m^3")
 

@@ -69,7 +69,7 @@ def sp_to_imas(data: dict):
     entry["equilibrium/time_slice/0/boundary/indentation"]                                         = data[n:=n+1][1]   #  pindent : plasma indentation
     entry["equilibrium/time_slice/0/global_quantities/volume"]                                     = data[n:=n+1][1]   #  volo : plasma volume, meters**3
     entry["equilibrium/time_slice/0/global_quantities/area"]                                       = data[n:=n+1][1]   #  cxareao : plasma cross-sectional area, meters**2
-    b0                                                                                        = data[n:=n+1][1:]  #  Btor : vacuum toroidal field at rmajor, tesla
+    b0                                                                                        = data[n:=n+1][1]  #  Btor : vacuum toroidal field at rmajor, tesla
     entry["equilibrium/vacuum_toroidal_field/b0"]                                                  = np.asarray([b0])
     entry["equilibrium/time_slice/0/vacuum_toroidal_field/b0"]                                     = b0
     entry["core_profiles/time_slice/0/vacuum_toroidal_field/b0"]                                   = b0
