@@ -147,18 +147,23 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
     dpsi_drho_tor: Function = sp_property(units="Wb/m")
 
-    @sp_tree
-    class RZ:
-        r: Function
-        z: Function
+    @sp_property
+    def geometric_axis(self) -> RZTuple: return {"r": self.major_radius,  "z":  self.magnetic_z}
 
-    geometric_axis: RZ
+    minor_radius: Function = sp_property(units="m")
+
+    major_radius: Function = sp_property(units="m")  # R0
+
+    magnetic_z: Function = sp_property(units="m")  # Z0
 
     elongation: Function
 
     triangularity_upper: Function
 
     triangularity_lower: Function
+
+    @sp_property
+    def triangularity(self) -> Function: return (self.triangularity_upper+self.triangularity_lower)*0.5
 
     squareness_upper_inner: Function
 
@@ -167,6 +172,8 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
     squareness_lower_inner: Function
 
     squareness_lower_outer: Function
+
+    squareness: Function = sp_property(default_value=0.0)
 
     volume: Function = sp_property(units="m^3")
 
@@ -205,12 +212,6 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
     beta_pol: Function
 
     mass_density: Function = sp_property(units="kg.m^-3")
-
-    minor_radius: Function = sp_property(units="m")
-
-    triangularity: Function
-
-    squareness: Function = sp_property(default_value=0.0)
 
 
 @sp_tree(mesh="grid")

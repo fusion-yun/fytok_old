@@ -753,13 +753,16 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
         return self._coord.shape_property(self.psi)
 
     @sp_property
-    def geometric_axis(self) -> Equilibrium.TimeSlice.Profiles1D.RZ:
-        return {"r": (self._shape_property.Rmin+self._shape_property.Rmax)*0.5,
-                "z": (self._shape_property.Zmin+self._shape_property.Zmax)*0.5}
-
-    @sp_property
     def minor_radius(self) -> Function:
         return (self._shape_property.Rmax - self._shape_property.Rmin)*0.5
+
+    @sp_property
+    def major_radius(self) -> Function:
+        return (self._shape_property.Rmax + self._shape_property.Rmin)*0.5
+
+    @sp_property
+    def magnetic_z(self) -> Function:
+        return (self._shape_property.Zmax + self._shape_property.Zmin)*0.5
 
     @sp_property
     def r_inboard(self) -> Function:
@@ -781,12 +784,8 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
         return ((self._shape_property.Zmax+self._shape_property.Zmin)*0.5-self._shape_property.Zmin)/(self._shape_property.Rmax-self._shape_property.Rmin)
 
     @sp_property
-    def triangularity(self) -> Function:
-        return (self._shape_property.Rzmax-self._shape_property.Rzmin)/(self._shape_property.Rmax - self._shape_property.Rmin)*2
-
-    @sp_property
     def triangularity_upper(self) -> Function:
-        return ((self._shape_property.Rmax+self._shape_property.Rmin)*0.5 - self._shape_property.Rzmax)/(self._shape_property.Rmax - self._shape_property.Rmin)*2
+        return ((self._shape_property.Rmax-self._shape_property.Rmin)*0.5 - self._shape_property.Rzmax)/(self._shape_property.Rmax - self._shape_property.Rmin)*2
 
     @sp_property
     def triangularity_lower(self) -> Function:

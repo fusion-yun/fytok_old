@@ -9,65 +9,49 @@ from spdm.data.sp_property import SpTree, sp_property
 from spdm.utils.tree_utils import merge_tree_recursive
 atoms = {
     "e": {
-        "label": "e",
-        "z": -1,
+        "label": "e", "z": -1,  "a": scipy.constants.m_e/scipy.constants.m_p,
         "element": [{"a": scipy.constants.m_e/scipy.constants.m_p, "z_n": 1, "atoms_n": 1}],
     },
     "electron": {
-        "label": "e",
-        "z": -1,
+        "label": "e", "z": -1,  "a": scipy.constants.m_e/scipy.constants.m_p,
         "element": [{"a": scipy.constants.m_e/scipy.constants.m_p, "z_n": 1, "atoms_n": 1}],
     },
     "n": {
-        "label": "n",
-        "z": 0,
+        "label": "n", "z": 0, "a": scipy.constants.m_n/scipy.constants.m_p,
         "element": [{"a": scipy.constants.m_n/scipy.constants.m_p, "z_n": 0, "atoms_n": 1}],
     },
     "p": {
-        "label": "p",
-        "z": 1,
+        "label": "p", "z": 1, "a": 1,
         "element": [{"a": 1, "z_n": 1, "atoms_n": 1}],
     },
 
     "H": {
-        "label": "H",
-        "z": 1,
-        "z_ion": 1,
+        "label": "H", "z": 1, "a": 1,
         "element": [{"a": 1, "z_n": 1, "atoms_n": 1}],
 
     },
     "D": {
-        "label": "D",
-        "z": 1,
-        "z_ion": 1,
+        "label": "D", "z": 1, "a": 2,
         "element": [{"a": 2, "z_n": 1, "atoms_n": 1}],
 
     },
     "T": {
-        "label": "T",
-        "z": 1,
-        "z_ion": 1,
+        "label": "T", "z": 1, "a": 3,
         "element": [{"a": 3, "z_n": 1, "atoms_n": 1}],
 
     },
     "He": {
-        "label": "He",
-        "z": 2,
-        "z_ion": 2,
+        "label": "He", "z": 2, "a": 4,
         "element": [{"a": 4, "z_n": 1, "atoms_n": 1}],
 
     },
     "Be": {
-        "label": "Be",
-        "z": 4,
-        "z_ion": 4,
+        "label": "Be",  "z": 4, "a": 9,
         "element": [{"a": 9, "z_n": 1, "atoms_n":   1}],
 
     },
     "Ar": {
-        "label": "Ar",
-        "z": 18,
-        "z_ion": 18,
+        "label": "Ar",  "z": 18, "a": 40,
         "element": [{"a": 40, "z_n": 1, "atoms_n":   1}],
 
     }
@@ -75,13 +59,13 @@ atoms = {
 
 
 def get_species(species):
-    
+
     if isinstance(species, str):
         return atoms.get(species, {"label": species})
-    
+
     elif isinstance(species, collections.abc.Sequence):
         return [atoms.get(s, {"label": s}) for s in species]
-    
+
     elif isinstance(species, collections.abc.Mapping):
         label = species.get("label", None)
         if label is None:

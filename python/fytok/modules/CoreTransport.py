@@ -13,24 +13,23 @@ from ..ontology import core_transport
 
 @sp_tree
 class CoreTransportModelParticles(core_transport._T_core_transport_model_2_density):
-    d: Function = sp_property(coordinate1="../../../grid_d/rho_tor_norm", units="m^2.s^-1", default_value=np.nan)
-    v: Function = sp_property(coordinate1="../../../grid_v/rho_tor_norm", units="m.s^-1", default_value=np.nan)
-    flux: Function = sp_property(coordinate1="../../../grid_flux/rho_tor_norm",
-                                 units="m^-2.s^-1", default_value=np.nan)
+    d: Function = sp_property(coordinate1=".../grid_d/rho_tor_norm", units="m^2.s^-1", default_value=np.nan)
+    v: Function = sp_property(coordinate1=".../grid_v/rho_tor_norm", units="m.s^-1", default_value=np.nan)
+    flux: Function = sp_property(coordinate1=".../grid_flux/rho_tor_norm", units="m^-2.s^-1", default_value=np.nan)
 
 
 @sp_tree
 class CoreTransportModelEnergy(core_transport._T_core_transport_model_2_energy):
-    d: Function = sp_property(coordinate1="../../../grid_d/rho_tor_norm", units="m^2.s^-1", default_value=np.nan)
-    v: Function = sp_property(coordinate1="../../../grid_v/rho_tor_norm", units="m.s^-1", default_value=np.nan)
-    flux: Function = sp_property(coordinate1="../../../grid_flux/rho_tor_norm", units="W.m^-2", default_value=np.nan)
+    d: Function = sp_property(coordinate1=".../grid_d/rho_tor_norm", units="m^2.s^-1", default_value=np.nan)
+    v: Function = sp_property(coordinate1=".../grid_v/rho_tor_norm", units="m.s^-1", default_value=np.nan)
+    flux: Function = sp_property(coordinate1=".../grid_flux/rho_tor_norm", units="W.m^-2", default_value=np.nan)
 
 
 @sp_tree
 class CoreTransportModelMomentum(core_transport._T_core_transport_model_4_momentum):
-    d: Function = sp_property(coordinate1="../../../grid_d/rho_tor_norm", units="m^2.s^-1", default_value=np.nan)
-    v: Function = sp_property(coordinate1="../../../grid_v/rho_tor_norm", units="m.s^-1", default_value=np.nan)
-    flux: Function = sp_property(coordinate1="../../../grid_flux/rho_tor_norm", units="W.m^-2", default_value=np.nan)
+    d: Function = sp_property(coordinate1=".../grid_d/rho_tor_norm", units="m^2.s^-1", default_value=np.nan)
+    v: Function = sp_property(coordinate1=".../grid_v/rho_tor_norm", units="m.s^-1", default_value=np.nan)
+    flux: Function = sp_property(coordinate1=".../grid_flux/rho_tor_norm", units="W.m^-2", default_value=np.nan)
 
 
 @sp_tree

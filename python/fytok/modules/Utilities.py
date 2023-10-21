@@ -125,6 +125,12 @@ class IDS(Module):
 
 
 @sp_tree
+class RZTuple:
+    r: typing.Any
+    z: typing.Any
+
+
+@sp_tree
 class PointRZ:  # utilities._T_rz0d_dynamic_aos
     r: float
     z: float

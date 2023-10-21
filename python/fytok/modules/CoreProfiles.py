@@ -37,10 +37,6 @@ class CoreProfilesIon(utilities._T_core_profile_ions):
 
     has_fast_particle: bool = sp_property(default_value=False)
 
-    element: AoS[PlasmaCompositionNeutralElement]
-
-    z_ion: float = sp_property(units="Elementary Charge Unit")
-
     label: str
 
     neutral_index: int
@@ -49,11 +45,20 @@ class CoreProfilesIon(utilities._T_core_profile_ions):
 
     a: float
 
+    @sp_property(unit="kg")
+    def mass(self) -> float: return self.a*scipy.constants.atomic_mass
+
+    @sp_property(unit="C")
+    def charge(self) -> float: return self.z*scipy.constants.elementary_charge
+
     z_ion_1d: Function = sp_property(units="-")
 
-    z_ion_square_1d: Function = sp_property(units="-")
+    @sp_property
+    def z_ion_square_1d(self) -> Function: return self.z_ion * self.z_ion
 
-    temperature: Function = sp_property(units="eV", default_value=0.0)
+    element: AoS[PlasmaCompositionNeutralElement]
+
+    temperature: Function = sp_property(units="eV", default_value=1.0)
 
     @sp_property(units="m^-3")
     def density(self) -> Function: return self.density_thermal+self.density_fast
@@ -81,19 +86,6 @@ class CoreProfilesIon(utilities._T_core_profile_ions):
 
     multiple_states_flag: int
 
-    @property
-    def mass(self) -> float: return self.element[0].a
-
-    @property
-    def charge(self) -> float: return self.element[0].z
-
-    @sp_property
-    def z_ion_1d(self) -> Function:
-        return super().z_ion_1d
-
-    @sp_property
-    def z_ion_square_1d(self) -> Function: return self.z_ion * self.z_ion
-
     @sp_property(units="m^-3")
     def density(self) -> Function: return self.density_thermal + self.density_fast
 
@@ -115,6 +107,19 @@ class CoreProfilesIon(utilities._T_core_profile_ions):
             self.pressure_thermal.__array__() +
             self.pressure_fast_parallel.__array__() +
             self.pressure_fast_perpendicular.__array__()
+        )
+
+    @sp_property(unit="s^-1", default_value=0.1)
+    def collision_frequency(self) -> Function:
+        r"""
+            collision frequency
+            $$
+                \tau_{ss}^{-1} = \frac{\sqrt{2} \pi e^4 z_s^4 n_{0s}}{m_s^{1/2} T_{0s}^{3/2}} {\rm ln} \Lambda
+            $$
+        """
+        return (
+            np.sqrt(2) * PI * scipy.constants.elementary_charge**4 * self.z**4 * self.density_thermal
+            / np.sqrt(self.mass) / self.temperature**1.5 / self._parent.coulomb_logarithm
         )
 
 
@@ -152,13 +157,8 @@ class CoreProfilesNeutral(utilities._T_core_profile_neutral):
 @sp_tree(coordinate1="../grid/rho_tor_norm")
 class CoreProfilesElectrons(utilities._T_core_profiles_profiles_1d_electrons):
 
-    @sp_property
-    def tau(self):
-        return (1.09e16 * ((self.temperature / 1000) ** (3 / 2)) / self.density / self._parent.coulomb_logarithm)
-
-    @sp_property
-    def vT(self):
-        return np.sqrt(self.temperature * scipy.constants.electron_volt / scipy.constants.electron_mass)
+    charge: float = -scipy.constants.elementary_charge
+    mass: float = scipy.constants.electron_mass
 
     temperature: Function = sp_property(units="eV")
 
@@ -186,6 +186,14 @@ class CoreProfilesElectrons(utilities._T_core_profiles_profiles_1d_electrons):
     pressure_fast_parallel: Function = sp_property(units="Pa", default_value=0.0)
 
     collisionality_norm: Function = sp_property(units="-", default_value=0.0)
+
+    @sp_property
+    def tau(self):
+        return (1.09e16 * ((self.temperature / 1000) ** (3 / 2)) / self.density / self._parent.coulomb_logarithm)
+
+    @sp_property
+    def vT(self):
+        return np.sqrt(self.temperature * scipy.constants.electron_volt / scipy.constants.electron_mass)
 
 
 @sp_tree(coordinate1="grid/rho_tor_norm")
