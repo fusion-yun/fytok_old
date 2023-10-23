@@ -6,7 +6,6 @@ import scipy.constants
 from scipy import constants
 from spdm.data.AoS import AoS
 from spdm.data.Function import Function
-from spdm.data.Expression import Expression
 from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.utils.tree_utils import merge_tree_recursive
@@ -157,6 +156,8 @@ class CoreProfilesNeutral(utilities._T_core_profile_neutral):
 @sp_tree(coordinate1="../grid/rho_tor_norm")
 class CoreProfilesElectrons(utilities._T_core_profiles_profiles_1d_electrons):
 
+    z: float = -1
+    a: float = scipy.constants.electron_mass / scipy.constants.atomic_mass
     charge: float = -scipy.constants.elementary_charge
     mass: float = scipy.constants.electron_mass
 
@@ -170,7 +171,7 @@ class CoreProfilesElectrons(utilities._T_core_profiles_profiles_1d_electrons):
     density_fast: Function = sp_property(units="m^-3", default_value=0.0)
 
     @sp_property(units="Pa")
-    def pressure(self) -> Expression:
+    def pressure(self) -> Function:
         return (
             self.pressure_thermal
             + self.pressure_fast_parallel
@@ -178,7 +179,7 @@ class CoreProfilesElectrons(utilities._T_core_profiles_profiles_1d_electrons):
         )
 
     @sp_property(units="Pa")
-    def pressure_thermal(self) -> Expression:
+    def pressure_thermal(self) -> Function:
         return self.density * self.temperature * scipy.constants.electron_volt
 
     pressure_fast_perpendicular: Function = sp_property(units="Pa", default_value=0.0)
