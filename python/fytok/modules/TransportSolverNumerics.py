@@ -125,18 +125,15 @@ class TransportSolverNumerics(transport_solver_numerics._T_transport_solver_nume
 
     def refresh(self, /,
                 core_profiles: CoreProfiles.TimeSlice,
-                core_transport: CoreTransport.Model.TimeSlice,
-                core_sources: CoreSources.Source.TimeSlice,
-                equilibrium_prev: Equilibrium.TimeSlice,
-                equilibrium_next: Equilibrium.TimeSlice = None,
-                dt: float = None,
-                **kwargs) -> CoreProfiles.TimeSlice:
+                equilibrium: Equilibrium.TimeSlice = None,
+                core_transport: CoreTransport.Model.TimeSlice = None,
+                core_sources: CoreSources.Source.TimeSlice = None,
+                **kwargs):
         """
             solve transport equation until residual < tolerance
             return core_profiles
         """
-        raise NotImplementedError("TransportSolverNumerics.refresh")
-
+        pass
         # return CoreProfiles({
         #     "profiles_1d": {
         #         "grid": core_profiles_prev.profiles_1d.grid,

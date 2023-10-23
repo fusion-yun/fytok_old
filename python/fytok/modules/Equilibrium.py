@@ -19,12 +19,14 @@ from ..utils.logger import logger
 from ..ontology import equilibrium
 
 
-@sp_tree(mesh="../grid")
+@sp_tree(mesh="grid")
 class EquilibriumCoordinateSystem(equilibrium._T_equilibrium_coordinate_system):
 
     grid_type: Identifier
 
     grid: Mesh
+
+    radial_grid: CoreRadialGrid
 
     r: Field = sp_property(units="m")
 
@@ -106,18 +108,16 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
     @sp_property
     def grid(self) -> CoreRadialGrid:
-        g = self._parent.global_quantities
-        return CoreRadialGrid({
-            "psi_norm": (self.psi-g .psi_boundary)/(g .psi_axis-g .psi_boundary),
-            "rho_tor_norm": self.rho_tor_norm(self.psi),
-            "psi_magnetic_axis": g .psi_axis,
-            "psi_boundary": g .psi_boundary,
-            "rho_tor_boundary": self.rho_tor(g .psi_boundary),
-        })
+        coord_grid: CoreRadialGrid = self._parent.coordinate_system.radial_grid
+        if self.psi_norm is _not_found_:
+            self["psi"] = coord_grid.psi
+            return coord_grid
+        else:
+            return coord_grid.remesh(self.psi, label="psi")
 
-    psi: array_type = sp_property(units="Wb")
+    psi_norm: array_type = sp_property(units="-")
 
-    psi_norm: Function = sp_property(units="-")
+    psi: Function = sp_property(units="Wb")
 
     phi: Function = sp_property(units="Wb")
 

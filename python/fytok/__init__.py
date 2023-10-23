@@ -1,11 +1,24 @@
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)
 
 import os
-import getpass
-import datetime
+try:
+    for k, v in os.environ.items():
+        if k.startswith("FY_"):
+            os.environ[f"SP_{k[3:]}"] = v
 
-from .utils.logger import logger
+    os.environ["SP_LABEL"] = "fytok"
+except Exception:
+    pass
+
+from .ontology import GLOBAL_ONTOLOGY
 from .__version__ import __version__
+from .utils.logger import logger
+import datetime
+import getpass
+
+
+############################################################
+
 
 try:
     from .extension import tags as extension_tags
@@ -22,7 +35,6 @@ try:
 except Exception as error:
     raise FileNotFoundError(f"Can not find mappings!") from error
 
-from .ontology import GLOBAL_ONTOLOGY
 
 logger.info(rf"""
 #######################################################################################################################

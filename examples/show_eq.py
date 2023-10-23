@@ -1,7 +1,6 @@
 import pathlib
 
 from fytok.modules.Equilibrium import Equilibrium
-from spdm.data.File import File
 from spdm.view.View import display
 
 WORKSPACE = "/home/salmon/workspace"  # "/ssd01/salmon_work/workspace/"

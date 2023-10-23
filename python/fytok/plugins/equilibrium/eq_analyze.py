@@ -241,14 +241,24 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         return CurvilinearMesh(psi_norm, theta, geometry=surfs, cycles=[False, TWOPI])
 
     @property
+    def radial_grid(self) -> CoreRadialGrid:
+
+        return CoreRadialGrid({
+            "psi_norm":  self.psi_norm,
+            "rho_tor_norm":  self.rho_tor_norm,
+            "psi_magnetic_axis": self.psi_magnetic_axis,
+            "psi_boundary": self.psi_boundary,
+            "rho_tor_boundary": self.rho_tor(g.psi_boundary),
+        })
+
+    @property
     def psi_norm(self) -> array_type: return self.grid.dim1
 
     @property
     def psi(self) -> array_type:
         return self.psi_norm * (self.psi_boundary-self.psi_magnetic_axis) + self.psi_magnetic_axis
 
-    def psirz(self, r: NumericType, z: NumericType) -> NumericType:
-        return self._psirz(r, z)
+    def psirz(self, r: NumericType, z: NumericType) -> array_type: return self._psirz(r, z)
 
     @functools.cached_property
     def magnetic_axis(self) -> typing.Tuple[float, float]:
@@ -608,12 +618,14 @@ class FyEquilibriumGlobalQuantities(Equilibrium.TimeSlice.GlobalQuantities):
             "b_field_tor": np.nan  # FIXME: b_field_tor
         }
 
-
+@sp_tree
 class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
 
     @property
-    def _coord(self) -> Equilibrium.TimeSlice.CoordinateSystem:
-        return self._parent.coordinate_system
+    def _coord(self) -> FyEquilibriumCoordinateSystem: return self._parent.coordinate_system
+
+    @sp_property
+    def grid(self) -> CoreRadialGrid: return self._coord.radial_grid
 
     ###############################
     # 1-D
@@ -621,21 +633,15 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
     def psi_norm(self) -> array_type: return self._coord.psi_norm
 
     @sp_property
-    def psi(self) -> array_type: return self._coord.psi
-
-    @sp_property
-    def phi(self) -> Function: return self.dphi_dpsi.antiderivative()
-    r"""  $\Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi$    """
-
-    @sp_property
-    def dphi_dpsi(self) -> Function: return self.fpol * self._coord.surface_integral(1.0/(_R**2))
-
-    @sp_property
-    def fpol(self) -> Function: return np.sqrt(2.0*self.f_df_dpsi.antiderivative()+(self._coord._R0*self._coord._B0)**2)
+    def psi(self) -> array_type: return self.psi_norm * (self._coord.psi_boundary -
+                                                         self._coord.psi_magnetic_axis) + self._coord.psi_magnetic_axis
 
     dpressure_dpsi: Function
 
     f_df_dpsi: Function
+
+    @sp_property
+    def fpol(self) -> Function: return np.sqrt(2.0*self.f_df_dpsi.antiderivative()+(self._coord._R0*self._coord._B0)**2)
 
     @property
     def ffprime(self) -> Function: return self.f_df_dpsi
@@ -657,6 +663,13 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
         # return self._coord._R0*(self.fpol / fvac)**2 * d
 
     @sp_property
+    def phi(self) -> Function: return self.dphi_dpsi.antiderivative()
+    r"""  $\Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi$    """
+
+    @sp_property
+    def dphi_dpsi(self) -> Function: return self.fpol * self._coord.surface_integral(1.0/(_R**2))
+
+    @sp_property
     def q(self) -> Function:
         return self.dphi_dpsi * (self._coord._s_Bp * self._coord._s_rtp * self._coord._s_eBp_2PI/TWOPI)
 
@@ -667,7 +680,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
     def rho_tor(self) -> Function: return np.sqrt(self._coord._s_B0*self.phi / (PI*self._coord._B0))
 
     @sp_property
-    def rho_tor_norm(self) -> Function: return np.sqrt(self.phi/self.phi(self._parent.boundary.psi))
+    def rho_tor_norm(self) -> Function: return np.sqrt(self.phi/self.phi(self._coord.psi_boundary))
 
     @sp_property
     def drho_tor_dpsi(self) -> Function: return 1.0/self.dpsi_drho_tor
@@ -690,8 +703,6 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
     @sp_property
     def dvolume_drho_tor(self) -> Function:
         return (self._coord._s_B0*self._coord._s_eBp_2PI*self._coord._B0) * self.dvolume_dpsi*self.dpsi_drho_tor
-    # return self._coord._s_Ip * TWOPI * self.rho_tor / \
-    #     (self.gm1)/(self._coord._R0*self._coord._B0/self.fpol)/self._coord._R0
 
     @sp_property
     def area(self) -> Function: return self.darea_dpsi.antiderivative()

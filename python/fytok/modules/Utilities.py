@@ -20,6 +20,7 @@ from spdm.utils.typing import array_type
 from spdm.utils.tags import _not_found_
 
 from ..utils.logger import logger
+from ..utils.envs import FY_JOBID
 
 
 @sp_tree
@@ -94,6 +95,9 @@ class Module(Actor):
 
         super().__init__(cache, _entry=entry, _parent=parent,  **kwargs)
 
+    @property
+    def tag(self) -> str: return f"{FY_JOBID}/{self._plugin_prefix}{self.code.name or self.__class__.__name__.lower()}"
+
     code: Code
 
 
@@ -151,22 +155,20 @@ class VacuumToroidalField:
 @sp_tree
 class CoreRadialGrid:
 
-    def remesh(self, _rho_tor_norm: array_type) -> CoreRadialGrid:
+    def remesh(self, axis: array_type, label="rho_tor_norm") -> CoreRadialGrid:
 
-        return CoreRadialGrid({
-
-            "rho_tor_norm": _rho_tor_norm,
-
-            "psi_norm": Function(self.psi_norm, self.rho_tor_norm)(_rho_tor_norm),
-
-            "psi_magnetic_axis": self.psi_magnetic_axis,
-
-            "psi_boundary": self.psi_boundary,
-
-            "rho_tor_boundary": self.rho_tor_boundary,
-        },
-            parent=self._parent
-        )
+        match label:
+            case "rho_tor_norm":
+                grid = CoreRadialGrid({
+                    "rho_tor_norm": axis,
+                    "psi_norm": Function(self.psi_norm, self.rho_tor_norm)(axis),
+                    "psi_magnetic_axis": self.psi_magnetic_axis,
+                    "psi_boundary": self.psi_boundary,
+                    "rho_tor_boundary": self.rho_tor_boundary,
+                },
+                    parent=self._parent
+                )
+        return grid
 
     psi_magnetic_axis: float
 
