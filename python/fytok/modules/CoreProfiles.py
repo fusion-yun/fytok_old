@@ -289,7 +289,7 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
     @sp_tree
     class EFieldVectorComponents:
 
-        radial: Function
+        radial: Function = sp_property(default_value=0.0)
 
         diamagnetic: Function
 
