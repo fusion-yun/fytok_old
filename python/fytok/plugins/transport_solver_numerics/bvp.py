@@ -96,7 +96,7 @@ class TransportSolverBVP(TransportSolverNumerics):
 
     ###########################################################################################################################################
 
-    def transp_current(self, x: np.ndarray,  core_profiles_1d: CoreProfiles.Profiles1D, *args, **kwargs):
+    def transp_current(self, x: np.ndarray,  core_profiles_1d: CoreProfiles.TimeSlice.Profiles1D, *args, **kwargs):
 
         ym = array_like(x, self._core_profiles_prev.profiles_1d.get("psi", 0))
 
@@ -203,7 +203,7 @@ class TransportSolverBVP(TransportSolverNumerics):
 
         return float((ua * ya + va * ga - wa)), float((ub * yb + vb * gb - wb))
 
-    def transp_electrons_particle(self, x: np.ndarray, core_profiles_1d: CoreProfiles.Profiles1D, *args, **kwargs) -> Tuple[np.ndarray, np.ndarray]:
+    def transp_electrons_particle(self, x: np.ndarray, core_profiles_1d: CoreProfiles.TimeSlice.Profiles1D, *args, **kwargs) -> Tuple[np.ndarray, np.ndarray]:
 
         ym = self._core_profiles_prev.profiles_1d.electrons.density(x)
 
@@ -219,7 +219,7 @@ class TransportSolverBVP(TransportSolverNumerics):
     def bc_electrons_particle(self, ya: float, ga: float, yb: float, gb: float, *args):
         return self.bc_particle(ya, ga, yb, gb, self.boundary_conditions_1d.electrons.particles)
 
-    def transp_electrons_energy(self, x: np.ndarray, core_profiles_1d: CoreProfiles.Profiles1D, *args, **kwargs) -> Tuple[np.ndarray, np.ndarray]:
+    def transp_electrons_energy(self, x: np.ndarray, core_profiles_1d: CoreProfiles.TimeSlice.Profiles1D, *args, **kwargs) -> Tuple[np.ndarray, np.ndarray]:
         ym = array_like(x, self._core_profiles_prev.profiles_1d.electrons.temperature)
 
         y = array_like(x, core_profiles_1d.electrons.temperature)
@@ -240,7 +240,7 @@ class TransportSolverBVP(TransportSolverNumerics):
     def bc_electrons_energy(self, ya: float, ga: float, yb: float, gb: float, *args):
         return self.bc_energy(ya, ga, yb, gb, self.boundary_conditions_1d.electrons.energy)
 
-    def transp_ion_particle(self, x: np.ndarray, core_profiles_1d: CoreProfiles.Profiles1D, var) -> Tuple[np.ndarray, np.ndarray]:
+    def transp_ion_particle(self, x: np.ndarray, core_profiles_1d: CoreProfiles.TimeSlice.Profiles1D, var) -> Tuple[np.ndarray, np.ndarray]:
 
         ym = array_like(x, self._core_profiles_prev.profiles_1d.ion[var[1]].density)
 
@@ -257,7 +257,7 @@ class TransportSolverBVP(TransportSolverNumerics):
                                     ion_transp.particles.v(x),
                                     ion_src.particles(x))
 
-    def transp_ion_particle_thermal(self, x: np.ndarray, core_profiles_1d: CoreProfiles.Profiles1D, var) -> Tuple[np.ndarray, np.ndarray]:
+    def transp_ion_particle_thermal(self, x: np.ndarray, core_profiles_1d: CoreProfiles.TimeSlice.Profiles1D, var) -> Tuple[np.ndarray, np.ndarray]:
 
         ym = array_like(x, self._core_profiles_prev.profiles_1d.ion[var[1]].density_thermal)
 
@@ -274,7 +274,7 @@ class TransportSolverBVP(TransportSolverNumerics):
                                     ion_transp.particles.v(x),
                                     ion_src.particles(x))
 
-    def transp_ion_particle_fast(self, x: np.ndarray, core_profiles_1d: CoreProfiles.Profiles1D, var) -> Tuple[np.ndarray, np.ndarray]:
+    def transp_ion_particle_fast(self, x: np.ndarray, core_profiles_1d: CoreProfiles.TimeSlice.Profiles1D, var) -> Tuple[np.ndarray, np.ndarray]:
 
         ym = array_like(x, self._core_profiles_prev.profiles_1d.ion[var[1]].density_fast)
 
@@ -300,7 +300,7 @@ class TransportSolverBVP(TransportSolverNumerics):
     def bc_ion_particle(self, ya: float, ga: float, yb: float, gb: float, var):
         return self.bc_particle(ya, ga, yb, gb, self.boundary_conditions_1d.ion[var[1]].particles)
 
-    def transp_ion_energy(self, x: np.ndarray, core_profiles_1d: CoreProfiles.Profiles1D, var) -> Tuple[np.ndarray, np.ndarray]:
+    def transp_ion_energy(self, x: np.ndarray, core_profiles_1d: CoreProfiles.TimeSlice.Profiles1D, var) -> Tuple[np.ndarray, np.ndarray]:
         ym = array_like(x, self._core_profiles_prev.profiles_1d.ion[var[1]].temperature)
 
         y = array_like(x, core_profiles_1d.ion[var[1]].temperature)
@@ -376,7 +376,7 @@ class TransportSolverBVP(TransportSolverNumerics):
         dg = array_like(x, dg)
         return dy, dg
 
-    def bc_particle(self, ya: float, ga: float, yb: float, gb: float, bc: TransportSolverNumerics.BoundaryConditions1D.BoundaryConditions):
+    def bc_particle(self, ya: float, ga: float, yb: float, gb: float, bc: TransportSolverNumerics.BoundaryConditions1D):
 
         # axis
         u0, v0, w0 = 0, 1, 0
@@ -456,7 +456,7 @@ class TransportSolverBVP(TransportSolverNumerics):
         dy[0] = 0
         return dy, dg
 
-    def bc_energy(self, ya: float, ga: float, yb: float, gb: float, bc: TransportSolverNumerics.BoundaryConditions1D.BoundaryConditions,):
+    def bc_energy(self, ya: float, ga: float, yb: float, gb: float, bc: TransportSolverNumerics.BoundaryConditions1D,):
 
         # ----------------------------------------------
         # Boundary Condition
@@ -485,7 +485,7 @@ class TransportSolverBVP(TransportSolverNumerics):
         logger.warning(f"TODO: Rotation Transport is not implemented!")
         return 0.0
 
-    def quasi_neutrality_condition(self, core_profiles_1d: CoreProfiles.Profiles1D) -> None:
+    def quasi_neutrality_condition(self, core_profiles_1d: CoreProfiles.TimeSlice.Profiles1D) -> None:
 
         rho_tor_norm = core_profiles_1d.grid.rho_tor_norm
 
@@ -526,7 +526,7 @@ class TransportSolverBVP(TransportSolverNumerics):
         #     profiles_1d_next[var_id] =  sol.y[idx*2]
         #     profiles_1d_next[var_id[:-1]+[f"{var_id[-1]}_flux"]] =   sol.y[idx*2+1]
 
-    def _gather(self, x: np.ndarray, core_profiles_1d: CoreProfiles.Profiles1D) -> np.ndarray:
+    def _gather(self, x: np.ndarray, core_profiles_1d: CoreProfiles.TimeSlice.Profiles1D) -> np.ndarray:
         assert (len(self._var_list) > 0)
         y_list = [
             [array_like(x, core_profiles_1d.get(var, 0)),
@@ -575,8 +575,8 @@ class TransportSolverBVP(TransportSolverNumerics):
         # logger.debug(core_profiles.profiles_1d.ion[{"label": "He"}].density_fast(x))
 
         # if self._enable_nonlinear:
-        self._core_transport.refresh(core_profiles=self._core_profiles_iter, equilibrium=self._eq_next)
-        self._core_sources.refresh(core_profiles=self._core_profiles_iter, equilibrium=self._eq_next)
+        self._core_transport.refresh(core_profiles=self._core_profiles_iter, equilibrium=self._eq)
+        self._core_sources.refresh(core_profiles=self._core_profiles_iter, equilibrium=self._eq)
 
         self._core_transport_1d = self._core_transport.model_combiner.profiles_1d
         self._core_sources_1d = self._core_sources.source_combiner.profiles_1d
@@ -593,11 +593,10 @@ class TransportSolverBVP(TransportSolverNumerics):
         return res_list
 
     def _update_context(self, /,
-                        core_profiles_prev: CoreProfiles,
-                        core_sources: CoreSources,
-                        core_transport: CoreTransport,
-                        equilibrium_prev: Equilibrium,
-                        equilibrium_next: Equilibrium = None,
+                        core_profiles: CoreProfiles.TimeSlice,
+                        core_sources: CoreSources.Source.TimeSlice,
+                        core_transport: CoreTransport.Model.TimeSlice,
+                        equilibrium: Equilibrium.TimeSlice,
                         dt: float = None,
                         var_list=None,
                         **kwargs
@@ -614,19 +613,17 @@ class TransportSolverBVP(TransportSolverNumerics):
 
         self._core_transport = core_transport
 
-        self._core_transport_1d = self._core_transport.model_combiner.profiles_1d
+        self._core_transport_1d = self._core_transport.model.profiles_1d
 
-        self._core_sources_1d = self._core_sources.source_combiner.profiles_1d
+        self._core_sources_1d = self._core_sources.source.profiles_1d
 
-        self._eq_prev = equilibrium_prev
-
-        self._eq_next = equilibrium_next if equilibrium_next is not None else self._eq_prev
+        self._eq = equilibrium
 
         # -----------------------------------------------------------
         # Setup common variables
         #
 
-        self._radial_grid = self._eq_next.radial_grid.remesh("rho_tor_norm")
+        self._radial_grid = self._eq.radial_grid.remesh("rho_tor_norm")
 
         rho_tor_norm = self._radial_grid.rho_tor_norm
 
@@ -634,20 +631,20 @@ class TransportSolverBVP(TransportSolverNumerics):
 
         # geometry
 
-        self._tau = dt if dt is not None else self._eq_next.time-self._eq_prev.time
+        self._tau = dt if dt is not None else self._eq.time-self._eq_prev.time
 
         self._inv_tau = 0.0 if isclose(self._tau, 0.0) else 1.0/self._tau
 
         # $R_0$ characteristic major radius of the device   [m]
-        self._R0 = self._eq_next.vacuum_toroidal_field.r0
+        self._R0 = self._eq.vacuum_toroidal_field.r0
 
         # $B_0$ magnetic field measured at $R_0$            [T]
-        self._B0 = self._eq_next.vacuum_toroidal_field.b0
+        self._B0 = self._eq.vacuum_toroidal_field.b0
 
         self._B0m = self._eq_prev.vacuum_toroidal_field.b0
 
         # Mesh
-        self._rho_tor_boundary = self._eq_next.profiles_1d.rho_tor[-1]
+        self._rho_tor_boundary = self._eq.profiles_1d.rho_tor[-1]
 
         self._rho_tor_boundary_m = self._eq_prev.profiles_1d.rho_tor[-1]
 
@@ -659,11 +656,11 @@ class TransportSolverBVP(TransportSolverNumerics):
         self._k_phi = self._k_B + self._k_rho_bdry
 
         # diamagnetic function,$F=R B_\phi$                 [T*m]
-        self._fpol = function_like(self._eq_next.profiles_1d.fpol(psi_norm), rho_tor_norm)
+        self._fpol = function_like(self._eq.profiles_1d.fpol(psi_norm), rho_tor_norm)
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
 
-        self._vpr = function_like(self._eq_next.profiles_1d.dvolume_drho_tor(psi_norm), rho_tor_norm)
+        self._vpr = function_like(self._eq.profiles_1d.dvolume_drho_tor(psi_norm), rho_tor_norm)
 
         self._vprm = function_like(self._eq_prev.profiles_1d.dvolume_drho_tor(psi_norm), rho_tor_norm)
 
@@ -671,17 +668,17 @@ class TransportSolverBVP(TransportSolverNumerics):
 
         self._vpr5_3m = np.abs(self._vprm)**(5/3)
 
-        if np.isclose(self._eq_next.profiles_1d.dvolume_drho_tor(psi_norm[0]), 0.0):
-            self._inv_vpr23 = function_like(self._eq_next.profiles_1d.dvolume_drho_tor(
+        if np.isclose(self._eq.profiles_1d.dvolume_drho_tor(psi_norm[0]), 0.0):
+            self._inv_vpr23 = function_like(self._eq.profiles_1d.dvolume_drho_tor(
                 psi_norm[1:])**(-2/3), rho_tor_norm[1:])
         else:
-            self._inv_vpr23 = function_like(self._eq_next.profiles_1d.dvolume_drho_tor(psi_norm)**(-2/3), rho_tor_norm)
+            self._inv_vpr23 = function_like(self._eq.profiles_1d.dvolume_drho_tor(psi_norm)**(-2/3), rho_tor_norm)
 
         # $q$ safety factor                                 [-]
-        self._qsf = function_like(self._eq_next.profiles_1d.q(psi_norm), rho_tor_norm)
-        self._gm1 = function_like(self._eq_next.profiles_1d.gm1(psi_norm), rho_tor_norm)
-        self._gm2 = function_like(self._eq_next.profiles_1d.gm2(psi_norm), rho_tor_norm)
-        self._gm3 = function_like(self._eq_next.profiles_1d.gm3(psi_norm), rho_tor_norm)
+        self._qsf = function_like(self._eq.profiles_1d.q(psi_norm), rho_tor_norm)
+        self._gm1 = function_like(self._eq.profiles_1d.gm1(psi_norm), rho_tor_norm)
+        self._gm2 = function_like(self._eq.profiles_1d.gm2(psi_norm), rho_tor_norm)
+        self._gm3 = function_like(self._eq.profiles_1d.gm3(psi_norm), rho_tor_norm)
 
         self._Qimp_k_ns = (3*self._k_rho_bdry - self._k_phi * self._vpr.derivative())
 
@@ -696,7 +693,7 @@ class TransportSolverBVP(TransportSolverNumerics):
             or self._enable_impurity or len(self._fusion_reaction) > 0
 
         ###############################################################################
-        self._core_profiles_prev = core_profiles_prev
+        self._core_profiles_prev = core_profiles
 
         # update var list
 
@@ -745,21 +742,17 @@ class TransportSolverBVP(TransportSolverNumerics):
                                            self.transp_ion_energy, self.bc_ion_energy))
 
     def refresh(self, /,
-                core_profiles_prev: CoreProfiles.Profiles1D,
-                core_sources: CoreSources.Source.Profiles1D,
-                core_transport: CoreTransport.Model.Profiles1D,
-                equilibrium_prev: Equilibrium.TimeSlice,
-                equilibrium_next: Equilibrium.TimeSlice = None,
-                var_list=None,
-                **kwargs) -> CoreProfiles:
+                core_profiles: CoreProfiles.TimeSlice,
+                equilibrium: Equilibrium.TimeSlice,
+                core_sources: CoreSources.Source.TimeSlice = None,
+                core_transport: CoreTransport.Model.TimeSlice = None,
+                **kwargs):
 
         self._update_context(
-            core_profiles_prev=core_profiles_prev,
+            equilibrium=equilibrium,
+            core_profiles=core_profiles,
             core_sources=core_sources,
             core_transport=core_transport,
-            equilibrium_prev=equilibrium_prev,
-            equilibrium_next=equilibrium_next,
-            var_list=var_list,
             **kwargs)
 
         # --------------------------------------------------------------------------------------------
@@ -767,9 +760,9 @@ class TransportSolverBVP(TransportSolverNumerics):
         #
         x0 = self._radial_grid.rho_tor_norm
 
-        if core_profiles_prev is not None:
-            Y0 = self._gather(x0, core_profiles_prev.profiles_1d)
-
+        eq = equilibrium.profiles_1d
+        if core_profiles is not None:
+            Y0 = self._gather(x0, core_profiles.profiles_1d)
         else:
             Y0 = np.zeros([len(self._var_list), len(x0)])
 

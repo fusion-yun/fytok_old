@@ -55,12 +55,6 @@ class CoreTransportNeutral(core_transport._T_core_transport_model_neutral):
 @sp_tree(coordinate1="grid_d/rho_tor_norm")
 class CoreTransportProfiles1D(core_transport._T_core_transport_model_profiles_1d):
 
-    Electrons = CoreTransportElectrons
-
-    Ion = CoreTransportIon
-
-    Neutral = CoreTransportNeutral
-
     grid_d: CoreRadialGrid
 
     @sp_property
@@ -71,11 +65,17 @@ class CoreTransportProfiles1D(core_transport._T_core_transport_model_profiles_1d
         rho_tor_norm = self.grid_d.rho_tor_norm
         return self.grid_d.remesh(0.5*(rho_tor_norm[:-1]+rho_tor_norm[1:]))
 
-    electrons: Electrons
+    Electrons = CoreTransportElectrons
 
-    ion: AoS[Ion]
+    electrons: CoreTransportElectrons
 
-    neutral: AoS[Neutral]
+    Ion = CoreTransportIon
+
+    ion: AoS[CoreTransportIon]
+
+    Neutral = CoreTransportNeutral
+
+    neutral: AoS[CoreTransportNeutral]
 
 
 @sp_tree
