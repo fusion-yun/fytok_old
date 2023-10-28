@@ -85,7 +85,7 @@ class CoreTransportTimeSlice(TimeSlice):
 
     vacuum_toroidal_field: VacuumToroidalField
 
-    flux_multiplier: float
+    flux_multiplier: float = sp_property(default_value=0)
 
     profiles_1d: CoreTransportProfiles1D
 

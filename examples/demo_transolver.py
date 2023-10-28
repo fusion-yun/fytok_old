@@ -19,16 +19,11 @@ if __name__ == "__main__":
 
     core_profiles = CoreProfiles(f"file+iterdb://{input_path}/iterdb141459.03890#core_profiles")
 
-    trans = TransportSolverNumerics(
-        {"code":  {"name": "fytrans",
-                   "parameters": {"input_file": "/home/salmon/workspace/gacode/tgyro/tools/input/iter01/input.gacode", "sim_model": 1}, },
-
-         "$default_value": {"model/time_slice/profiles_1d/grid_d/rho_tor_norm": np.linspace(0, 1, 100), }
-         })
+    trans = TransportSolverNumerics({"code":  {"name": "fytrans", }})
 
     trans.refresh(
-        core_profiles=core_profiles.time_slice.current,
-        equilibrium=equilibrium.time_slice.current,
+        core_profiles=core_profiles,
+        equilibrium=equilibrium,
     )
 
     # core_profiles_1d: CoreProfiles.TimeSlice.Profiles1D = core_profiles.time_slice.current.profiles_1d

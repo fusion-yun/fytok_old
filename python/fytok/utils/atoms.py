@@ -16,6 +16,12 @@ atoms = {
         "label": "e", "z": -1,  "a": scipy.constants.m_e/scipy.constants.m_p,
         "element": [{"a": scipy.constants.m_e/scipy.constants.m_p, "z_n": 1, "atoms_n": 1}],
     },
+    "electrons": {
+        "label": "e", "z": -1,  "a": scipy.constants.m_e/scipy.constants.m_p,
+        "mass": scipy.constants.m_e,
+        "charge": -scipy.constants.e,
+        "element": [{"a": scipy.constants.m_e/scipy.constants.m_p, "z_n": 1, "atoms_n": 1}],
+    },
     "n": {
         "label": "n", "z": 0, "a": scipy.constants.m_n/scipy.constants.m_p,
         "element": [{"a": scipy.constants.m_n/scipy.constants.m_p, "z_n": 0, "atoms_n": 1}],

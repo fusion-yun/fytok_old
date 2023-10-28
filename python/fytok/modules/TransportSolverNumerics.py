@@ -211,12 +211,12 @@ class TransportSolverNumerics(Module):
             {"primary_quantity":{"identifier":{"name": "psi",                               "index":(idx       ) }}, "boundary_conditions": []},
 
             {"primary_quantity":{"identifier":{"name": "electrons/density_thermal",         "index":(idx:=idx+1) }}, "boundary_conditions": []},
-            {"primary_quantity":{"identifier":{"name": "electrons/density_fast",            "index":(idx:=idx+1) }}, "boundary_conditions": []},
+            # {"primary_quantity":{"identifier":{"name": "electrons/density_fast",            "index":(idx:=idx+1) }}, "boundary_conditions": []},
             {"primary_quantity":{"identifier":{"name": "electrons/temperature",             "index":(idx:=idx+1) }}, "boundary_conditions": []},
             {"primary_quantity":{"identifier":{"name": "electrons/momentum",                "index":(idx:=idx+1) }}, "boundary_conditions": []},
             *sum([[
             {"primary_quantity":{"identifier":{"name": f"ion/{s}/density_thermal",          "index":(idx:=idx+1) }}, "boundary_conditions": []},
-            {"primary_quantity":{"identifier":{"name": f"ion/{s}/density_fast",             "index":(idx:=idx+1) }}, "boundary_conditions": []},
+            # {"primary_quantity":{"identifier":{"name": f"ion/{s}/density_fast",             "index":(idx:=idx+1) }}, "boundary_conditions": []},
             {"primary_quantity":{"identifier":{"name": f"ion/{s}/temperature",              "index":(idx:=idx+1) }}, "boundary_conditions": []},
             {"primary_quantity":{"identifier":{"name": f"ion/{s}/momentum",                 "index":(idx:=idx+1) }}, "boundary_conditions": []},
             ] for s,ion in  enumerate(core_profiles.time_slice.current.profiles_1d.ion)], [])
@@ -241,7 +241,7 @@ class TransportSolverNumerics(Module):
         core_profiles_1d["grid"] = solver_1d.grid
 
         for eq in solver_1d.equation:
-            core_profiles_1d[eq.primary_quantity.identifier.name] = eq.primary_quantity.profile.__array__()
+            core_profiles_1d[eq.primary_quantity.identifier.name] = eq.primary_quantity.profile
 
     def advance(self, *args, **kwargs) -> CoreProfiles.TimeSlice:
         self.time_slice.advance(*args, **kwargs)
