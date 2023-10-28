@@ -52,10 +52,10 @@ class TransportSolverNumericsEquation:
 
     computation_mode: int
     """
-    Name          Index    Description
-    static            0    Equation is not solved, no profile evolution
-    interpretative    1    Equation is not solved, profile is evolved by interpolating from input objects
-    predictive        2    Equation is solved, profile evolves
+        Name          Index    Description
+        static            0    Equation is not solved, no profile evolution
+        interpretative    1    Equation is not solved, profile is evolved by interpolating from input objects
+        predictive        2    Equation is solved, profile evolves
     """
 
     @sp_tree
@@ -159,10 +159,12 @@ class TransportSolverNumericsBC:
 
 @sp_tree
 class TransportSolverNumericsSlice(TimeSlice):
+
     primary_coordinate: Identifier
 
     vacuum_toroidal_field: VacuumToroidalField
 
+    Solver1D = TransportSolverNumericsSolver1D
     solver_1d: TransportSolverNumericsSolver1D
     """ Numerics related to 1D radial solver, for various time slices."""
 
@@ -189,152 +191,57 @@ class TransportSolverNumerics(Module):
 
     time_slice: TimeSeriesAoS[TransportSolverNumericsSlice]
 
-    def solve_15D_adv(self, *args, tolerance=1.0e-4, max_iteration=1, **kwargs):
-        self._time += dt
-
-        core_profiles_1d_prev = self.core_profiles.profiles_1d.current
-
-        equilibrium = self.equilibrium.advance(
-            time=self.time,
-            core_profile_1d=core_profiles_1d_prev,
-            wall=self.wall,
-            pf_active=self.pf_active,
-        )
-
-        core_transport_profiles_1d = self.core_transport.advance(
-            time=self.time,
-            equilibrium=equilibrium,
-            core_profile_1d=core_profiles_1d_prev,
-        )
-
-        core_source_profiles_1d = self.core_sources.advance(
-            time=self.time,
-            equilibrium=equilibrium,
-            core_profile_1d=core_profiles_1d_prev,
-        )
-
-        core_profiles_1d_next = self.transport_solver.solve(
-            equilibrium=equilibrium,
-            core_profile_1d=core_profiles_1d_prev,
-            core_transport_profiles_1d=core_transport_profiles_1d,
-            core_source_profiles_1d=core_source_profiles_1d,
-        )
-
-        self.core_profiles.advance(core_profiles_1d_next)
-
-        self.core_profiles.advance(core_profiles_1d_next)
-        self.core_sources.advance()
-        self.core_transport.advance()
-
-        if do_refresh:
-            return self.refresh()
-        else:
-            return core_profiles_1d_next
-
-    def solve_15D(self, *args, tolerance=1.0e-4, max_iteration=1, **kwargs):
-        self.equilibrium.refresh(
-            core_profiles_1d=core_profiles_1d_iter,
-            wall=self.wall,
-            pf_active=self.pf_active,
-            tf=self.tf,
-            tolerance=tolerance,
-            **kwargs,
-        )
-
-        residual = tolerance
-
-        core_profiles_1d_iter = copy(self.core_profiles.profiles_1d.current)
-
-        for step_num in range(max_iteration):
-            equilibrium_time_slice = self.equilibrium.time_slice.current
-
-            self.core_transport.refresh(
-                equilibrium=equilibrium_time_slice,
-                core_profile_1d=core_profiles_1d_iter,
-            )
-
-            core_transport_profiles_1d = (
-                self.core_transport.model.combined.profiles_1d.current
-            )
-
-            self.core_sources.refresh(
-                equilibrium=equilibrium_time_slice,
-                core_profile_1d=core_profiles_1d_iter,
-            )
-
-            core_source_profiles_1d = (
-                self.core_sources.source.combined.profiles_1d.current
-            )
-
-            core_profiles_1d_next = self.transport_solver.solve(
-                equilibrium=equilibrium_time_slice,
-                core_profiles_prev=core_profiles_1d_iter,
-                core_transport_profiles_1d=core_transport_profiles_1d,
-                core_source_profiles_1d=core_source_profiles_1d,
-            )
-
-            residual = self.check_converge(core_profiles_1d_iter, core_profiles_1d_next)
-
-            if residual <= tolerance:
-                break
-            else:
-                core_profiles_1d_iter = core_profiles_1d_next
-        else:
-            logger.debug(
-                f"time={self.time}  iterator step {step_num}/{max_iteration} residual={residual}"
-            )
-
-        if residual >= tolerance:
-            logger.warning(
-                f"The solution does not converge, and the number of iterations exceeds the maximum {max_iteration}"
-            )
-
-        return core_profiles_1d_iter
-
     def refresh(self, *args,
-                core_profiles: CoreProfiles.TimeSlice,
-                core_transport: CoreTransport.Model = None,
-                core_sources: CoreSources.Source = None,
-                equilibrium: Equilibrium.TimeSlice = None,
+                core_profiles: CoreProfiles,
+                equilibrium: Equilibrium,
+                core_transport: CoreTransport.Model,
+                core_sources: CoreSources.Source,
                 **kwargs):
         """
             solve transport equation until residual < tolerance
             return core_profiles
+
         """
 
+        core_profiles_1d = core_profiles.time_slice.current.profiles_1d
+
+        idx = 0
         # fmt:off
-        equation = [
-            {"primary_quantity":{"identifier":{"name": "electrons.density_thermal",         "description": "electrons.density_thermal",   }}, "boundary_conditions": []},
-            {"primary_quantity":{"identifier":{"name": "electrons.density_fast",            "description": "electrons.density_fast",   }}, "boundary_conditions": []},
-            {"primary_quantity":{"identifier":{"name": "electrons.temperature",             "description": "electrons.temperature"}}, "boundary_conditions": []},
+        equations = [
+            {"primary_quantity":{"identifier":{"name": "psi",                               "index":(idx       ) }}, "boundary_conditions": []},
+
+            {"primary_quantity":{"identifier":{"name": "electrons/density_thermal",         "index":(idx:=idx+1) }}, "boundary_conditions": []},
+            {"primary_quantity":{"identifier":{"name": "electrons/density_fast",            "index":(idx:=idx+1) }}, "boundary_conditions": []},
+            {"primary_quantity":{"identifier":{"name": "electrons/temperature",             "index":(idx:=idx+1) }}, "boundary_conditions": []},
+            {"primary_quantity":{"identifier":{"name": "electrons/momentum",                "index":(idx:=idx+1) }}, "boundary_conditions": []},
             *sum([[
-            {"primary_quantity":{"identifier":{"name": f"ion.{ion.label}.density_thermal", "index":idx,"description":f"ion.{idx}.density_thermal",   }}, "boundary_conditions": []},
-            {"primary_quantity":{"identifier":{"name": f"ion.{ion.label}.density_fast",    "index":idx,"description":f"ion.{idx}.density_fast",   }}, "boundary_conditions": []},
-            {"primary_quantity":{"identifier":{"name": f"ion.{ion.label}.temperature",     "index":idx,"description":f"ion.{idx}.temperature"}}, "boundary_conditions": []},
-            ] for idx, ion in enumerate(core_profiles.profiles_1d.ion)], [])
+            {"primary_quantity":{"identifier":{"name": f"ion/{s}/density_thermal",          "index":(idx:=idx+1) }}, "boundary_conditions": []},
+            {"primary_quantity":{"identifier":{"name": f"ion/{s}/density_fast",             "index":(idx:=idx+1) }}, "boundary_conditions": []},
+            {"primary_quantity":{"identifier":{"name": f"ion/{s}/temperature",              "index":(idx:=idx+1) }}, "boundary_conditions": []},
+            {"primary_quantity":{"identifier":{"name": f"ion/{s}/momentum",                 "index":(idx:=idx+1) }}, "boundary_conditions": []},
+            ] for s,ion in  enumerate(core_profiles.time_slice.current.profiles_1d.ion)], [])
         ]
         # fmt:on
 
-        core_profiles_1d = core_profiles.profiles_1d
-
-        for eq in equation:
-            path = eq["primary_quantity"]["identifier"]["description"]
-            equation["primary_quantity"]["profile"] = core_profiles_1d.get(path, _not_found_)
-
         self.time_slice.refresh(*args, {
             "primary_coordinate": self.code.parameters.primary_coordinate or "rho_tor_norm",
-            "vacuum_toroidal_field": core_profiles.vacuum_toroidal_field,
+            "vacuum_toroidal_field": core_profiles.time_slice.current.vacuum_toroidal_field,
             "solver_1d": {
                 "grid": core_profiles_1d.grid,
-                "equation": equation
+                "equation": equations
             }},
-            **kwargs)
+            core_profiles=core_profiles,
+            equilibrium=equilibrium,
+            core_transport=core_transport,
+            core_sources=core_sources,
+            ** kwargs)
+
         solver_1d: TransportSolverNumericsSolver1D = self.time_slice.current.solver_1d
 
         core_profiles_1d["grid"] = solver_1d.grid
 
         for eq in solver_1d.equation:
-            core_profiles_1d[eq.primary_quantity.identifier.description] = eq.primary_quantity.profile.__array__()
+            core_profiles_1d[eq.primary_quantity.identifier.name] = eq.primary_quantity.profile.__array__()
 
     def advance(self, *args, **kwargs) -> CoreProfiles.TimeSlice:
         self.time_slice.advance(*args, **kwargs)

@@ -4,6 +4,7 @@ import functools
 import typing
 from dataclasses import dataclass
 import numpy as np
+import numba
 import scipy.constants
 
 
@@ -535,6 +536,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     ###############################
     # surface integral
 
+  
     def _surface_integral(self, func: Expression, psi: NumericType = None) -> typing.Tuple[ArrayLike, ArrayLike]:
         r"""
             $ V^{\prime} =  2 \pi  \int{ R / \left|\nabla \psi \right| * dl }$
@@ -617,6 +619,7 @@ class FyEquilibriumGlobalQuantities(Equilibrium.TimeSlice.GlobalQuantities):
             "z":  self._coord.magnetic_axis[1],
             "b_field_tor": np.nan  # FIXME: b_field_tor
         }
+
 
 @sp_tree
 class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):

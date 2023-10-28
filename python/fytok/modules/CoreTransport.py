@@ -85,6 +85,8 @@ class CoreTransportTimeSlice(TimeSlice):
 
     vacuum_toroidal_field: VacuumToroidalField
 
+    flux_multiplier: float
+
     profiles_1d: CoreTransportProfiles1D
 
 
