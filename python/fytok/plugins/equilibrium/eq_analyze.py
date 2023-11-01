@@ -531,12 +531,11 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
     @functools.cached_property
     def dvolume_dpsi(self) -> Function:
-        return Function(*self._surface_integral(1.0), name="dvolume_dpsi")
+        return Function(*self._surface_integral(1.0), name="dvolume_dpsi", label=r"$\frac{d volume}{d\psi}$")
 
     ###############################
     # surface integral
 
-  
     def _surface_integral(self, func: Expression, psi: NumericType = None) -> typing.Tuple[ArrayLike, ArrayLike]:
         r"""
             $ V^{\prime} =  2 \pi  \int{ R / \left|\nabla \psi \right| * dl }$
@@ -592,7 +591,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         if np.isscalar(psi):
             return value
         else:
-            return Function(value, psi, name=f"surface_integral({str(func)})")
+            return Function(value, psi, name=f"surface_integral({func.__label__})", label=rf"\int {func.__repr__()} dl ")
 
     def surface_average(self, func: Expression, *xargs) -> Expression | ArrayLike:
         r"""
@@ -641,7 +640,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
 
     dpressure_dpsi: Function
 
-    f_df_dpsi: Function
+    f_df_dpsi: Function = sp_property(label=r" \frac{f d f}{d \psi}")
 
     @sp_property
     def fpol(self) -> Function: return np.sqrt(2.0*self.f_df_dpsi.antiderivative()+(self._coord._R0*self._coord._B0)**2)
