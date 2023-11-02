@@ -94,9 +94,6 @@ class Module(Actor):
     code: Code
 
 
-_TSlice = typing.TypeVar("_TSlice")
-
-
 @sp_tree
 class TimeBasedActor(Module):
 
@@ -155,30 +152,46 @@ class CoreRadialGrid:
         #     self["psi"] = self.psi_norm * (self.psi_boundary - self.psi_magnetic_axis) + self.psi_magnetic_axis
 
         if self.psi_norm is _not_found_:
-            if self.psi_magnetic_axis is _not_found_ or self.psi_boundary is _not_found_:
+            if self.psi is _not_found_:
+                raise ValueError("psi_norm or psi must be provided")
+            elif self.psi_magnetic_axis is _not_found_ or self.psi_boundary is _not_found_:
                 self["psi_magnetic_axis"] = self.psi.min()
                 self["psi_boundary"] = self.psi.max()
             self["psi_norm"] = (self.psi - self.psi_magnetic_axis) / (self.psi_boundary - self.psi_magnetic_axis)
 
-        # if self.rho_tor is _not_found_:
-        #     self["rho_tor"] = self.rho_tor_norm*self.rho_tor_boundary
-        # el
+        # elif self.psi is _not_found_:
+        #     if self.psi_magnetic_axis is _not_found_ or self.psi_boundary is _not_found_:
+        #         raise ValueError("psi_magnetic_axis or psi_boundary must be provided")
+
+        #     self["psi"] = self.psi_norm * (self.psi_boundary - self.psi_magnetic_axis) + self.psi_magnetic_axis
+
+        # elif self.psi_magnetic_axis is _not_found_ or self.psi_boundary is _not_found_:
+        #     self["psi_magnetic_axis"] = self.psi.min()
+        #     self["psi_boundary"] = self.psi.max()
+
         if self.rho_tor_norm is _not_found_:
-            if self.rho_tor_boundary is _not_found_:
+            if self.rho_tor is _not_found_:
+                raise ValueError("rho_tor_norm or rho_tor must be provided")
+            elif self.rho_tor_boundary is _not_found_:
                 self["rho_tor_boundary"] = self.rho_tor.max()
             self["rho_tor_norm"] = self.rho_tor/self.rho_tor_boundary
+        elif self.rho_tor is _not_found_:
+            if self.rho_tor_boundary is _not_found_:
+                raise ValueError("rho_tor_boundary must be provided")
+            self["rho_tor"] = self.rho_tor_norm*self.rho_tor_boundary
+        elif self.rho_tor_boundary is _not_found_:
+            self["rho_tor_boundary"] = self.rho_tor.max()
 
     def remesh(self, axis: array_type, label="rho_tor_norm") -> CoreRadialGrid:
 
         match label:
             case "rho_tor_norm":
-                grid = CoreRadialGrid({
-                    "rho_tor_norm": axis,
-                    "psi_norm": Function(self.psi_norm, self.rho_tor_norm)(axis),
-                    "psi_magnetic_axis": self.psi_magnetic_axis,
-                    "psi_boundary": self.psi_boundary,
-                    "rho_tor_boundary": self.rho_tor_boundary,
-                },  parent=self._parent
+                grid = CoreRadialGrid(
+                    rho_tor_norm=axis,
+                    psi_norm=Function(self.psi_norm, self.rho_tor_norm)(axis),
+                    psi_magnetic_axis=self.psi_magnetic_axis,
+                    psi_boundary=self.psi_boundary,
+                    rho_tor_boundary=self.rho_tor_boundary
                 )
         return grid
 

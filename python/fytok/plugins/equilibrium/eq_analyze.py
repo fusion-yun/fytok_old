@@ -246,13 +246,13 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     @property
     def radial_grid(self) -> CoreRadialGrid:
 
-        return CoreRadialGrid({
-            "psi_norm":  self.psi_norm,
-            "rho_tor_norm":  self.rho_tor_norm,
-            "psi_magnetic_axis": self.psi_magnetic_axis,
-            "psi_boundary": self.psi_boundary,
-            "rho_tor_boundary": self.rho_tor_boundary,
-        })
+        return CoreRadialGrid(
+            psi_norm=self.psi_norm,
+            rho_tor_norm=self.rho_tor_norm,
+            psi_magnetic_axis=self.psi_magnetic_axis,
+            psi_boundary=self.psi_boundary,
+            rho_tor_boundary=self.rho_tor_boundary,
+        )
 
     @property
     def psi_norm(self) -> array_type: return self.grid.dim1
@@ -268,7 +268,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     def dphi_dpsi(self) -> array_type: return self._fpol * self.surface_integral(1.0/(_R**2), self.psi)
 
     @property
-    def rho_tor(self) -> array_type: return np.sqrt(self._s_B0*self.phi / (PI*self._B0))
+    def rho_tor(self) -> array_type: return np.sqrt(np.abs(self.phi / (PI*self._B0)))
 
     @property
     def rho_tor_norm(self) -> array_type: return np.sqrt(self.phi/self.phi[-1])
