@@ -4,7 +4,7 @@ import typing
 import numpy as np
 import scipy.constants
 
-from spdm.data.Expression import Expression, Variable, show_expr
+from spdm.data.Expression import Expression, Variable
 from spdm.data.Function import Function, function_like
 from spdm.data.Path import Path
 from spdm.utils.typing import array_type
@@ -104,8 +104,9 @@ class FyTrans(TransportSolverNumerics):
         for idx, eq in enumerate(solver_1d.equation):
             name = eq.primary_quantity.identifier.name
 
-            vars[name] = Variable(idx*2+1, name)
-            vars[name + "_flux"] = Variable(idx*2+2, name+"_flux")
+            vars[name] = Variable(idx*2+1, name, label=eq.primary_quantity.label or name)
+            vars[name + "_flux"] = Variable(idx*2+2, name+"_flux",
+                                            label=rf"\Gamma_{{{eq.primary_quantity.label}}}" or name+"_flux")
 
         psi = Function(solver_1d.grid.psi, solver_1d.grid.rho_tor_norm, label="psi")(x)
 
@@ -425,7 +426,7 @@ class FyTrans(TransportSolverNumerics):
 
             eq["boundary_condition"] = [{"value": bc[0]}, {"value": bc[1]}]
 
-            logger.debug((var_name, a, b, c, d, e, f, g, bc))
+            # logger.debug((var_name, a, b, c, d, e, f, g, bc))
         return vars
 
     def _solve(self, *args, tau, core_profiles: CoreProfiles, **kwargs):
@@ -433,7 +434,7 @@ class FyTrans(TransportSolverNumerics):
         hyper_diff = kwargs.get("hyper_diff", None) or\
             self.code.parameters.get("hyper_diff", None) or\
             self._metadata.get("hyper_diff", None) or\
-            0.0
+            0.001
 
         vars = self._update_solver(tau, core_profiles=core_profiles, **kwargs)
 
@@ -457,9 +458,9 @@ class FyTrans(TransportSolverNumerics):
 
             a, b, c, d, e, f, g, *_ = equ.coefficient
 
-            dG = c*(f - g * Y-(a*Y-b*Ym)*inv_tau)
-
             dY = (-G + e * Y + hyper_diff * Y.d)/(d + hyper_diff)
+
+            dG = c*(f - g * Y-(a*Y-b*Ym)*inv_tau)
 
             equ_s.append([Y, dY,  equ.boundary_condition[0].value])
 
@@ -467,12 +468,23 @@ class FyTrans(TransportSolverNumerics):
 
         def func(x: array_type, y: array_type, *args) -> array_type:
             # TODO: 需要加速
-            res = np.stack([(eq(x, *y[:], *args) if not isinstance(eq, (int, float)) else np.full_like(x, eq))
-                           for _, eq, _ in equ_s])
+            # res = np.stack([(eq(x, *y[:], *args) if not isinstance(eq, (int, float)) else np.full_like(x, eq))
+            #                for _, eq, _ in equ_s])
             # logger.debug(res)
+            res = []
+            for _, eq, _ in equ_s:
+                if isinstance(eq, (int, float)):
+                    res.append(np.full_like(x, eq))
+                else:
+                    try:
+                        eq_value = eq(x, *y[:], *args)
+                    except Exception as error:
+                        raise RuntimeError(f"Error when apply  op={eq.__repr__()} x={x} args={(y)} !") from error
+                    else:
+                        res.append(eq_value)
             return res
 
-        def bc(ya: array_type, yb: array_type) -> array_type:
+        def bc(ya: array_type, yb: array_type, *args) -> array_type:
             res = np.stack([((u*ya[idx]+v*ya[idx+1]-w) if int(idx/2)*2 == idx else (u*yb[idx]+v*yb[idx-1]-w))
                            for idx, (_, _, (u, v, w)) in enumerate(equ_s)])
             # logger.debug(res)

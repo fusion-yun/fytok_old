@@ -26,6 +26,8 @@ class TransportSolverNumericsEquationPrimary:
         node contains the path to the quantity in the physics IDS (example:
         core_profiles/profiles_1d/ion(1)/density)"""
 
+    label: str
+
     profile: array_type
     """ Profile of the primary quantity"""
 
@@ -208,17 +210,17 @@ class TransportSolverNumerics(Module):
         idx = 0
         # fmt:off
         equations = [
-            # {"primary_quantity":{"identifier":{"name": "psi",                               "index":(idx       ) }}, "boundary_conditions": []},
+            # {"primary_quantity":{"identifier":{"name": "psi",                                      "index":(idx       ) }}, "boundary_conditions": []},
 
-            {"primary_quantity":{"identifier":{"name": "electrons/density_thermal",         "index":(idx:=idx+1) }}, "boundary_conditions": []},
-            # {"primary_quantity":{"identifier":{"name": "electrons/density_fast",            "index":(idx:=idx+1) }}, "boundary_conditions": []},
-            # {"primary_quantity":{"identifier":{"name": "electrons/temperature",             "index":(idx:=idx+1) }}, "boundary_conditions": []},
-            # {"primary_quantity":{"identifier":{"name": "electrons/momentum",                "index":(idx:=idx+1) }}, "boundary_conditions": []},
-            *sum([[
-            {"primary_quantity":{"identifier":{"name": f"ion/{s}/density_thermal",          "index":(idx:=idx+1) }}, "boundary_conditions": []},
-            # {"primary_quantity":{"identifier":{"name": f"ion/{s}/density_fast",             "index":(idx:=idx+1) }}, "boundary_conditions": []},
-            # {"primary_quantity":{"identifier":{"name": f"ion/{s}/temperature",              "index":(idx:=idx+1) }}, "boundary_conditions": []},
-            # {"primary_quantity":{"identifier":{"name": f"ion/{s}/momentum",                 "index":(idx:=idx+1) }}, "boundary_conditions": []},
+            {"primary_quantity":{"identifier":{"name": "electrons/density_thermal","index":(idx:=idx+1) }, "label":r"n_e"}, "boundary_conditions": []},
+            # {"primary_quantity":{"identifier":{"name": "electrons/density_fast",                   "index":(idx:=idx+1) }}, "boundary_conditions": []},
+            # {"primary_quantity":{"identifier":{"name": "electrons/temperature",                    "index":(idx:=idx+1) }}, "boundary_conditions": []},
+            # {"primary_quantity":{"identifier":{"name": "electrons/momentum",                       "index":(idx:=idx+1) }}, "boundary_conditions": []},
+            *sum([[       
+            {"primary_quantity":{"identifier":{"name": f"ion/{s}/density_thermal", "index":(idx:=idx+1) }, "label":f"n_{ion.label}"}, "boundary_conditions": []},
+            # {"primary_quantity":{"identifier":{"name": f"ion/{s}/density_fast",  "index":(idx:=idx+1) } }, "boundary_conditions": []},
+            # {"primary_quantity":{"identifier":{"name": f"ion/{s}/temperature",   "index":(idx:=idx+1) } }, "boundary_conditions": []},
+            # {"primary_quantity":{"identifier":{"name": f"ion/{s}/momentum",      "index":(idx:=idx+1) } }, "boundary_conditions": []},
             ] for s,ion in  enumerate(core_profiles.time_slice.current.profiles_1d.ion)], [])
         ]
         # fmt:on

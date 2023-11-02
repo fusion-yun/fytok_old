@@ -591,7 +591,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         if np.isscalar(psi):
             return value
         else:
-            return Function(value, psi, name=f"surface_integral({func.__label__})", label=rf"\int {func.__repr__()} dl ")
+            return Function(value, psi, name=f"surface_integral({func.__label__})", label=rf"<{func.__repr__()}>")
 
     def surface_average(self, func: Expression, *xargs) -> Expression | ArrayLike:
         r"""
