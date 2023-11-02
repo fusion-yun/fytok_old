@@ -87,7 +87,7 @@ class FyTrans(TransportSolverNumerics):
 
         core_profiles_prev = core_profiles.time_slice.previous
 
-        core_profiles_1d_prev = core_profiles_prev.profiles_1d
+        core_profiles_1d_prev = core_profiles_prev.profiles_1d if core_profiles_prev is not _not_found_ else _not_found_
 
         core_profiles_1d_next = core_profiles_next.profiles_1d
 
@@ -97,7 +97,7 @@ class FyTrans(TransportSolverNumerics):
 
         eq_1d_next = equilibrium_next.profiles_1d
 
-        eq_1d_prev = equilibrium_prev.profiles_1d if equilibrium_prev is not None else None
+        eq_1d_prev = equilibrium_prev.profiles_1d if equilibrium_prev is not _not_found_ else _not_found_
 
         inv_tau = 1.0/tau if tau > 0 else 0
 
@@ -116,15 +116,14 @@ class FyTrans(TransportSolverNumerics):
         # $B_0$ magnetic field measured at $R_0$            [T]
         B0 = equilibrium_next.vacuum_toroidal_field.b0
 
-        B0m = equilibrium_prev.vacuum_toroidal_field.b0 if equilibrium_prev is not None else np.nan
+        B0m = equilibrium_prev.vacuum_toroidal_field.b0 if equilibrium_prev is not _not_found_ else np.nan
 
         k_B = (B0 - B0m) / (B0 + B0m) * 2.0/tau if tau > 0 else 0
 
         # Mesh
-        rho_tor_boundary = eq_1d_next.rho_tor(equilibrium_next.boundary.psi)
+        rho_tor_boundary = eq_1d_next.grid.rho_tor_boundary
 
-        rho_tor_boundary_m = eq_1d_prev.rho_tor(equilibrium_prev.boundary.psi) \
-            if equilibrium_prev is not None else np.nan
+        rho_tor_boundary_m = eq_1d_prev.grid.rho_tor_boundary if eq_1d_prev is not _not_found_ else _not_found_
 
         k_rho_bdry = (rho_tor_boundary - rho_tor_boundary_m) / \
             (rho_tor_boundary + rho_tor_boundary_m)*2.0/tau if tau > 0 else 0
@@ -140,7 +139,7 @@ class FyTrans(TransportSolverNumerics):
 
         vpr = eq_1d_next.dvolume_drho_tor(psi)
 
-        vprm = eq_1d_prev.dvolume_drho_tor(psi) if eq_1d_prev is not None else np.nan
+        vprm = eq_1d_prev.dvolume_drho_tor(psi) if eq_1d_prev is not _not_found_ else np.nan
 
         inv_vpr23 = vpr**(-2/3)
 
@@ -452,7 +451,7 @@ class FyTrans(TransportSolverNumerics):
 
             Y = vars[var_name]
 
-            Ym = core_profiles_prev.get(f"profiles_1d/{var_name}", 0) if core_profiles_prev is not None else 0
+            Ym = core_profiles_prev.get(f"profiles_1d/{var_name}", 0) if core_profiles_prev is not _not_found_ else 0
 
             G = vars[var_name+"_flux"]
 
@@ -480,11 +479,11 @@ class FyTrans(TransportSolverNumerics):
                         raise RuntimeError(f"Error when apply  op={eq.__repr__()} x={x} args={(y)} !") from error
                     else:
                         res.append(eq_value)
-                        
+
             res = np.stack(res)
 
             logger.debug(res)
-            
+
             return res
 
         def bc(ya: array_type, yb: array_type, *args) -> array_type:

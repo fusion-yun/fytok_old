@@ -7,10 +7,9 @@ import pandas as pd
 from scipy import constants
 from spdm.data.Expression import Piecewise, Variable
 from spdm.data.File import File
+from spdm.utils.tree_utils import update_tree
 from spdm.numlib.smooth import smooth_1d
 from fytok.utils.logger import logger
-
-from .atoms import get_species
 
 TWOPI = 2.0*constants.pi
 
@@ -53,12 +52,14 @@ def load_core_profiles(d):
             "rho_tor_norm":  bs_r_norm,
             "rho_tor":  d["rho"].values,
             "psi_norm": bs_psi_norm,
+            # "psi_boundary": psi_boundary,
+            # "psi_magnetic_axis": psi_axis,
         },
         "electrons": {"label": "e", "density_thermal":  b_ne,   "temperature": b_Te, },
         "ion": [
             {"label": "D",  "density_thermal":      b_nDT,      "temperature": b_Ti},
             {"label": "T",  "density_thermal":      b_nDT,      "temperature": b_Ti},
-            {"label": "He", "density_thermal":      b_nHe,      "temperature": b_Ti,  "has_fast_particle": True},
+            {"label": "He", "density_thermal":      b_nHe,      "temperature": b_Ti,  "density_fast": True},
             {"label": "Be", "density_thermal":  0.02*b_ne,      "temperature": b_Ti, "z_ion_1d": z_Be,  "is_impurity": True},
             {"label": "Ar", "density_thermal": 0.0012*b_ne,     "temperature": b_Ti, "z_ion_1d": z_Ar,  "is_impurity": True},
         ],
@@ -175,98 +176,63 @@ def load_core_source(profiles, R0: float, B0: float = None):
 
 
 def load_scenario_ITER(path):
+
     path = pathlib.Path(path)
-    scenario = {
-        "name": "15MA Inductive at burn-ASTRA",
-        "description": "15MA Inductive at burn-ASTRA"
-    }
 
     # eq_file = path/"Standard domain R-Z/Medium resolution - 129x257/g900003.00230_ITER_15MA_eqdsk16MR.txt"
 
-    profiles_file = path/'15MA Inductive at burn-ASTRA.xls'
+    profiles_file = next(path.glob("*.xls"))
 
     logger.info(f"Load scenario/profiles from {profiles_file}")
 
     excel_file = pd.read_excel(profiles_file, sheet_name=1)
+
+    scenario = {
+        "name": "15MA Inductive at burn-ASTRA",
+        "description": f"{profiles_file.name}"
+    }
 
     desc = {}
     for s in excel_file.iloc[0, 3:7]:
         res = re.match(r'(\w+)=(\d+\.?\d*)(\D+)', s)
         desc[res.group(1)] = (float(res.group(2)), str(res.group(3)))
 
-    time = [0.0]
+    time = 0.0
 
-    vacuum_toroidal_field = {"r0": desc["R"][0], "b0": [desc["B"][0]]}
+    vacuum_toroidal_field = {"r0": desc["R"][0], "b0": desc["B"][0]}
 
     d_core_profiles = pd.read_excel(profiles_file, sheet_name=1, header=10, usecols="B:BN")
 
-    rho_tor_norm = np.linspace(0.0, 0.9, 128)
-
-    scenario["core_profiles"] = {
-        'vacuum_toroidal_field': vacuum_toroidal_field,
-        "time": time,
-        "profiles_1d": [load_core_profiles(d_core_profiles)],
-        "$default_value": {
-            "profiles_1d": {
-                "electrons": get_species("e"),
-                "ion": get_species(["D", "T", "He", "Be", "Ar"])
-            }
-        }
-    }
-
-    scenario["core_transport"] = {
+    scenario["core_profiles"] = {"time_slice": [{
         "time": time,
         'vacuum_toroidal_field': vacuum_toroidal_field,
-        "model": [
-            {"code": {"name": "dummy"},
-             "profiles_1d": [load_core_transport(d_core_profiles, vacuum_toroidal_field["r0"])]}
-        ],
-        "$default_value": {
+        "profiles_1d": load_core_profiles(d_core_profiles),
+    }]}
 
-            "model": {
-                "profiles_1d": {
-                    "grid_d": {"rho_tor_norm": rho_tor_norm},
-                    "electrons": get_species("e"),
-                    "ion": get_species(["D", "T", "He"])
-                }}
-        }
-    }
+    scenario["core_transport"] = {"model": [{
+        "code": {"name": "dummy"},
+        "time_slice": [{
+            "time": time,
+            'vacuum_toroidal_field': vacuum_toroidal_field,
+            "profiles_1d": load_core_transport(d_core_profiles, vacuum_toroidal_field["r0"]),
+        }]
+    }]}
 
-    scenario["core_sources"] = {
-        "time": time,
-        'vacuum_toroidal_field': vacuum_toroidal_field,
+    scenario["core_sources"] = {"source": [{
+        "code": {"name": "dummy"},
+        "time_slice": [{
+            "time": time,
+            'vacuum_toroidal_field': vacuum_toroidal_field,
+            "profiles_1d": load_core_source(d_core_profiles, vacuum_toroidal_field["r0"])
+        }]
+    }]}
 
-        "source": [
-            {"code": {"name": "dummy"},
-             "profiles_1d": [load_core_source(d_core_profiles, vacuum_toroidal_field["r0"])]
-             }],
+    # /"Increased domain R-Z/Medium resolution - 129x257/g900003.00230_ITER_15MA_eqdsk16VVMR.txt"
+    eq_file = next(path.glob("**/*.txt"))
 
-        "$default_value": {
-            "source": {"profiles_1d": {
-                "electrons": get_species("e"),
-                "ion": get_species(["D", "T", "He"])
-            }}
-        }
-    }
-
-    eq_file = path/"Increased domain R-Z/Medium resolution - 129x257/g900003.00230_ITER_15MA_eqdsk16VVMR.txt"
-
-    scenario["equilibrium"] = {
-        "time": time,
-        'vacuum_toroidal_field': vacuum_toroidal_field,
-    }
-
-    scenario["equilibrium"].update(File(eq_file, format="GEQdsk").read().dump())
-
-    scenario["transport_solver"] = {
-        "$default_value": {
-            "boundary_conditions_1d": {
-                "electrons": get_species("e"),
-                "ion": get_species(["D", "T", "He"])
-            }
-        }
-    }
     logger.info(f"Load scenario/equilibrium from {eq_file}")
+
+    update_tree(scenario, None, File(eq_file, format="GEQdsk").read().dump())
 
     return scenario
 

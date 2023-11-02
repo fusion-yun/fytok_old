@@ -5,7 +5,6 @@ import pandas as pd
 import scipy.constants
 from fytok.Tokamak import Tokamak
 from fytok.utils.load_scenario import load_scenario
-from fytok.utils.plot_profiles import plot_profiles
 from spdm.data.File import File
 from spdm.data.Function import function_like
 from fytok.utils.logger import logger

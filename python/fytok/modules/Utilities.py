@@ -75,24 +75,17 @@ class Module(Actor):
     _plugin_prefix = __package__
     _plugin_registry = {}
 
+    @classmethod
+    def _plugin_guess_name(cls, self, cache, *args, **kwargs) -> str:
+        pth = Path("code/name")
+        plugin_name = pth.fetch(cache, default_value=None) or \
+            pth.fetch(self.__class__._metadata, default_value=None) or\
+            pth.fetch(kwargs.get("default_value", _not_found_), default_value=None)
+
+        return plugin_name
+
     def __init__(self, *args, **kwargs):
-
         cache, entry, parent,   kwargs = self.__class__._parser_args(*args, **kwargs)
-
-        if self.__class__ is Module or "_plugin_prefix" in vars(self.__class__):
-
-            pth = Path("code/name")
-
-            plugin_name = pth.fetch(cache, default_value=None) or \
-                pth.fetch(self.__class__._metadata, default_value=None) or\
-                pth.fetch(kwargs.get("default_value", _not_found_), default_value=None)
-
-            self.__class__.__dispatch_init__([plugin_name], self, cache, _entry=entry, _parent=parent, **kwargs)
-
-            logger.info(f"Load module {self.code}")
-
-            return
-
         super().__init__(cache, _entry=entry, _parent=parent,  **kwargs)
 
     @property
@@ -152,8 +145,28 @@ class VacuumToroidalField:
     b0: float
 
 
-@sp_tree
+@sp_tree(default_value=np.nan)
 class CoreRadialGrid:
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # if self.psi is _not_found_:
+        #     self["psi"] = self.psi_norm * (self.psi_boundary - self.psi_magnetic_axis) + self.psi_magnetic_axis
+
+        if self.psi_norm is _not_found_:
+            if self.psi_magnetic_axis is _not_found_ or self.psi_boundary is _not_found_:
+                self["psi_magnetic_axis"] = self.psi.min()
+                self["psi_boundary"] = self.psi.max()
+            self["psi_norm"] = (self.psi - self.psi_magnetic_axis) / (self.psi_boundary - self.psi_magnetic_axis)
+
+        # if self.rho_tor is _not_found_:
+        #     self["rho_tor"] = self.rho_tor_norm*self.rho_tor_boundary
+        # el
+        if self.rho_tor_norm is _not_found_:
+            if self.rho_tor_boundary is _not_found_:
+                self["rho_tor_boundary"] = self.rho_tor.max()
+            self["rho_tor_norm"] = self.rho_tor/self.rho_tor_boundary
 
     def remesh(self, axis: array_type, label="rho_tor_norm") -> CoreRadialGrid:
 
@@ -165,8 +178,7 @@ class CoreRadialGrid:
                     "psi_magnetic_axis": self.psi_magnetic_axis,
                     "psi_boundary": self.psi_boundary,
                     "rho_tor_boundary": self.rho_tor_boundary,
-                },
-                    parent=self._parent
+                },  parent=self._parent
                 )
         return grid
 
@@ -180,15 +192,12 @@ class CoreRadialGrid:
 
     psi_norm: array_type
 
+    psi: array_type
+
+    rho_tor: array_type
+
     @sp_property
     def rho_pol_norm(self) -> array_type: return np.sqrt(self.psi_norm)
-
-    @sp_property
-    def rho_tor(self) -> array_type: return self.rho_tor_norm*self.rho_tor_boundary
-
-    @sp_property
-    def psi(self) -> array_type:
-        return self.psi_norm * (self.psi_boundary - self.psi_magnetic_axis) + self.psi_magnetic_axis
 
 
 class DetectorAperture:  # (utilities._T_detector_aperture):

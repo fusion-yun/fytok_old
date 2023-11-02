@@ -1,30 +1,43 @@
 import os
 import numpy as np
-from fytok.modules.CoreProfiles import CoreProfiles
-from fytok.modules.TransportSolverNumerics import TransportSolverNumerics
+
 from fytok.modules.Equilibrium import Equilibrium
+from fytok.modules.CoreProfiles import CoreProfiles
+from fytok.modules.CoreTransport import CoreTransport
+from fytok.modules.CoreSources import CoreSources
+from fytok.modules.TransportSolverNumerics import TransportSolverNumerics
 from fytok.utils.logger import logger
+from fytok.utils.load_scenario import load_scenario
 from spdm.view import View as sp_view
 
 if __name__ == "__main__":
     WORKSPACE = "/home/salmon/workspace"
 
-    input_path = f"{WORKSPACE}/gacode/neo/tools/input/profile_data"
+    # f"{WORKSPACE}/gacode/neo/tools/input/profile_data"
+    input_path = "/home/salmon/workspace/fytok_data/data/15MA inductive - burn"
 
     output_path = f"{WORKSPACE}/output"
 
-    equilibrium = Equilibrium(f"file+geqdsk://{input_path}/g141459.03890#equilibrium")
+    scenario = load_scenario(input_path)
 
-    profiles_1d = equilibrium.time_slice.current.profiles_1d
+    equilibrium = Equilibrium(scenario["equilibrium"])
 
-    core_profiles = CoreProfiles(f"file+iterdb://{input_path}/iterdb141459.03890#core_profiles")
+    core_profiles = CoreProfiles(scenario["core_profiles"])
+
+    core_transport = CoreTransport(scenario["core_transport"])
+
+    core_sources = CoreSources(scenario["core_sources"])
 
     trans = TransportSolverNumerics({"code":  {"name": "fytrans", }})
 
     trans.refresh(
-        core_profiles=core_profiles,
         equilibrium=equilibrium,
+        core_profiles=core_profiles,
+        core_transport=core_transport,
+        core_sources=core_sources,
     )
+
+    # eq_profiles_1d = equilibrium.time_slice.current.profiles_1d
 
     # core_profiles_1d: CoreProfiles.TimeSlice.Profiles1D = core_profiles.time_slice.current.profiles_1d
 

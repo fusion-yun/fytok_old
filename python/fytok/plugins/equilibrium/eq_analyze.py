@@ -241,6 +241,8 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         return CurvilinearMesh(psi_norm, theta, geometry=surfs, cycles=[False, TWOPI])
 
+    def psirz(self, r: NumericType, z: NumericType) -> array_type: return self._psirz(r, z)
+
     @property
     def radial_grid(self) -> CoreRadialGrid:
 
@@ -249,7 +251,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
             "rho_tor_norm":  self.rho_tor_norm,
             "psi_magnetic_axis": self.psi_magnetic_axis,
             "psi_boundary": self.psi_boundary,
-            "rho_tor_boundary": self.rho_tor(g.psi_boundary),
+            "rho_tor_boundary": self.rho_tor_boundary,
         })
 
     @property
@@ -259,7 +261,20 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     def psi(self) -> array_type:
         return self.psi_norm * (self.psi_boundary-self.psi_magnetic_axis) + self.psi_magnetic_axis
 
-    def psirz(self, r: NumericType, z: NumericType) -> array_type: return self._psirz(r, z)
+    @property
+    def phi(self) -> array_type: return Function(self.dphi_dpsi, self.psi).antiderivative()(self.psi)
+
+    @property
+    def dphi_dpsi(self) -> array_type: return self._fpol * self.surface_integral(1.0/(_R**2), self.psi)
+
+    @property
+    def rho_tor(self) -> array_type: return np.sqrt(self._s_B0*self.phi / (PI*self._B0))
+
+    @property
+    def rho_tor_norm(self) -> array_type: return np.sqrt(self.phi/self.phi[-1])
+
+    @property
+    def rho_tor_boundary(self) -> float: return self.rho_tor[-1]
 
     @functools.cached_property
     def magnetic_axis(self) -> typing.Tuple[float, float]:
@@ -665,11 +680,12 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
         # return self._coord._R0*(self.fpol / fvac)**2 * d
 
     @sp_property
-    def phi(self) -> Function: return self.dphi_dpsi.antiderivative()
+    def phi(self) -> Function: return self._coord.phi  # self.dphi_dpsi.antiderivative()
     r"""  $\Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi$    """
 
     @sp_property
-    def dphi_dpsi(self) -> Function: return self.fpol * self._coord.surface_integral(1.0/(_R**2))
+    def dphi_dpsi(self) -> Function: return self._coord.dphi_dpsi
+    # return self.fpol * self._coord.surface_integral(1.0/(_R**2))
 
     @sp_property
     def q(self) -> Function:
