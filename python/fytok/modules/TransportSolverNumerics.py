@@ -21,7 +21,7 @@ TWOPI = 2.0 * constants.pi
 class TransportSolverNumericsEquationPrimary:
     """Profile and derivatives a the primary quantity for a 1D transport equation"""
 
-    identifier: Identifier
+    identifier: str
     """ Identifier of the primary quantity of the transport equation. The description
         node contains the path to the quantity in the physics IDS (example:
         core_profiles/profiles_1d/ion(1)/density)"""
@@ -210,20 +210,23 @@ class TransportSolverNumerics(Module):
         idx = 0
         # fmt:off
         equations = [
-            # {"primary_quantity":{"identifier":{"name": "psi",                                      "index":(idx       ) }}, "boundary_conditions": []},
+            # {"primary_quantity":{"identifier":"psi",                                      },          "boundary_conditions": []},
 
-            {"primary_quantity":{"identifier":{"name": "electrons/density_thermal","index":(idx:=idx+1) }, "label":r"n_e"}, "boundary_conditions": []},
-            # {"primary_quantity":{"identifier":{"name": "electrons/density_fast",                   "index":(idx:=idx+1) }}, "boundary_conditions": []},
-            # {"primary_quantity":{"identifier":{"name": "electrons/temperature",                    "index":(idx:=idx+1) }}, "boundary_conditions": []},
-            # {"primary_quantity":{"identifier":{"name": "electrons/momentum",                       "index":(idx:=idx+1) }}, "boundary_conditions": []},
+            {"primary_quantity":{"identifier": "electrons/density_thermal", "label":r"n_e"},            "boundary_conditions": []},
+            # {"primary_quantity":{"identifier":"electrons/density_fast",       },                      "boundary_conditions": []},
+            # {"primary_quantity":{"identifier":"electrons/temperature",        },                      "boundary_conditions": []},
+            # {"primary_quantity":{"identifier":"electrons/momentum",           },                      "boundary_conditions": []},
             *sum([[       
-            {"primary_quantity":{"identifier":{"name": f"ion/{s}/density_thermal", "index":(idx:=idx+1) }, "label":f"n_{ion.label}"}, "boundary_conditions": []},
-            # {"primary_quantity":{"identifier":{"name": f"ion/{s}/density_fast",  "index":(idx:=idx+1) } }, "boundary_conditions": []},
-            # {"primary_quantity":{"identifier":{"name": f"ion/{s}/temperature",   "index":(idx:=idx+1) } }, "boundary_conditions": []},
-            # {"primary_quantity":{"identifier":{"name": f"ion/{s}/momentum",      "index":(idx:=idx+1) } }, "boundary_conditions": []},
+            {"primary_quantity":{"identifier": f"ion/{s}/density_thermal", "label":f"n_{ion.label}"},   "boundary_conditions": []},
+            # {"primary_quantity":{"identifier":f"ion/{s}/density_fast",    },                          "boundary_conditions": []},
+            # {"primary_quantity":{"identifier":f"ion/{s}/temperature",     },                          "boundary_conditions": []},
+            # {"primary_quantity":{"identifier":f"ion/{s}/momentum",        },                          "boundary_conditions": []},
             ] for s,ion in  enumerate(core_profiles.time_slice.current.profiles_1d.ion)], [])
         ]
         # fmt:on
+
+        for eq in equations:
+            eq["primary_quantity"]["profile"] = core_profiles_1d[eq["primary_quantity"]["identifier"]].__array__()
 
         self.time_slice.refresh(*args, {
             "primary_coordinate": self.code.parameters.primary_coordinate or "rho_tor_norm",
@@ -243,7 +246,7 @@ class TransportSolverNumerics(Module):
         core_profiles_1d["grid"] = solver_1d.grid
 
         for eq in solver_1d.equation:
-            core_profiles_1d[eq.primary_quantity.identifier.name] = eq.primary_quantity.profile
+            core_profiles_1d[eq.primary_quantity.identifier] = eq.primary_quantity.profile
 
     def advance(self, *args, **kwargs) -> CoreProfiles.TimeSlice:
         self.time_slice.advance(*args, **kwargs)

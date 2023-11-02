@@ -102,7 +102,7 @@ class FyTrans(TransportSolverNumerics):
         inv_tau = 1.0/tau if tau > 0 else 0
 
         for idx, eq in enumerate(solver_1d.equation):
-            name = eq.primary_quantity.identifier.name
+            name = eq.primary_quantity.identifier
 
             vars[name] = Variable(idx*2+1, name, label=eq.primary_quantity.label or name)
             vars[name + "_flux"] = Variable(idx*2+2, name+"_flux",
@@ -181,7 +181,7 @@ class FyTrans(TransportSolverNumerics):
 
         for idx, eq in enumerate(solver_1d.equation):
 
-            var_name = eq.primary_quantity.identifier.name
+            var_name = eq.primary_quantity.identifier
 
             bc = [[0, 0, 0], [0, 0, 0]]
 
@@ -448,7 +448,7 @@ class FyTrans(TransportSolverNumerics):
 
         for equ in solver_1d.equation:
 
-            var_name = equ.primary_quantity.identifier.name
+            var_name = equ.primary_quantity.identifier
 
             Y = vars[var_name]
 
@@ -468,9 +468,7 @@ class FyTrans(TransportSolverNumerics):
 
         def func(x: array_type, y: array_type, *args) -> array_type:
             # TODO: 需要加速
-            # res = np.stack([(eq(x, *y[:], *args) if not isinstance(eq, (int, float)) else np.full_like(x, eq))
-            #                for _, eq, _ in equ_s])
-            # logger.debug(res)
+
             res = []
             for _, eq, _ in equ_s:
                 if isinstance(eq, (int, float)):
@@ -482,6 +480,11 @@ class FyTrans(TransportSolverNumerics):
                         raise RuntimeError(f"Error when apply  op={eq.__repr__()} x={x} args={(y)} !") from error
                     else:
                         res.append(eq_value)
+                        
+            res = np.stack(res)
+
+            logger.debug(res)
+            
             return res
 
         def bc(ya: array_type, yb: array_type, *args) -> array_type:
@@ -495,7 +498,7 @@ class FyTrans(TransportSolverNumerics):
         Y0 = np.zeros([len(equ_s), len(X0)])
 
         for idx, eq in enumerate(solver_1d.equation):
-            Y0[idx*2] = eq.primary_quantity.profile or 0
+            Y0[idx*2] = eq.primary_quantity.profile
             Y0[idx*2+1] = 0
 
         sol = solve_bvp(
