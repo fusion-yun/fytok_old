@@ -103,9 +103,15 @@ class EquilibriumGlobalQuantities(equilibrium._T_equilibrium_global_quantities):
     plasma_resistance: float = sp_property(units="ohm")
 
 
-@sp_tree(coordinate1="psi", extrapolate='zeros')
+@sp_tree(coordinate1="psi", default_value=np.nan, extrapolate='zeros')
 class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
-
+    """
+        1D profiles of the equilibrium quantities
+        NOTE:
+            - psi_norm is the normalized poloidal flux
+            - psi is the poloidal flux, 
+            - 以psi而不是psi_norm为主坐标,原因是 profiles1d 中涉及对 psi 的求导和积分
+    """
     @sp_property
     def grid(self) -> CoreRadialGrid:
         coord_grid: CoreRadialGrid = self._parent.coordinate_system.radial_grid
@@ -356,7 +362,7 @@ class EquilibriumTimeSlice(equilibrium._T_equilibrium_time_slice):
 
     constraints: Constraints
 
-    global_quantities: GlobalQuantities
+    global_quantities: EquilibriumGlobalQuantities
 
     profiles_1d: Profiles1D
 
