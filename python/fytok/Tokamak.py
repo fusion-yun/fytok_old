@@ -234,9 +234,9 @@ class Tokamak(SpTree):
                 g = o.__geometry__(**kwargs)
 
             except Exception as error:
+                logger.error(f"Can not get {o.__class__.__name__}.__geometry__ !")
 
-                if FY_DEBUG == "strict":
-                    raise RuntimeError(f"Can not get {o.__class__.__name__}.__geometry__ ! Error:{error}") from error
+                raise RuntimeError(f"Can not get {o.__class__.__name__}.__geometry__ !") from error
             else:
                 geo[o_name] = g
 

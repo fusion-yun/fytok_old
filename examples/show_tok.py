@@ -14,6 +14,9 @@ if __name__ == "__main__":
     tok = Tokamak(f"mdsplus://{WORKSPACE}/fytok_data/mdsplus/~t/?enable=efit_east", device="EAST", shot=70754,)
     # f"file+GEQdsk://{WORKSPACE}/gacode/neo/tools/input/profile_data/g141459.03890", device="d3d"
 
+#     tok = Tokamak("file+geqdsk:///home/salmon/workspace/fytok_tutorial/tutorial/data/g900003.00230_ITER_15MA_eqdsk16HR.txt",
+#                   device='ITER', shot='900003', time=2.3)
+
     tok.refresh({"time": 5})
 
     display(tok,

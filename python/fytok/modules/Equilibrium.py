@@ -133,7 +133,7 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
     dpressure_dpsi: Function = sp_property(units="Pa.Wb^-1")
 
-    f_df_dpsi: Function = sp_property(units="T^2.m^2/Wb")
+    f_df_dpsi: Function = sp_property(units="T^2.m^2/Wb",label=r"\frac{f d f}{d \psi}")
 
     j_tor: Function = sp_property(units="A.m^-2")
 

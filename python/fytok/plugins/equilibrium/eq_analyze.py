@@ -24,7 +24,7 @@ from spdm.numlib.optimize import minimize_filter
 from spdm.utils.constants import *
 from spdm.utils.tags import _not_found_
 from spdm.utils.tree_utils import merge_tree_recursive
-from spdm.utils.typing import (ArrayLike,  NumericType, array_type, scalar_type)
+from spdm.utils.typing import (ArrayLike,  NumericType, array_type, scalar_type, as_array)
 
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.utils.logger import logger
@@ -93,23 +93,27 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._B0 = self._parent.vacuum_toroidal_field.b0
-        self._R0 = self._parent.vacuum_toroidal_field.r0
-        self._Ip = self._parent.global_quantities.ip
-
-        self._fpol = self._parent.profiles_1d.f  # poloidal current function
+        self._B0 = super().get("../vacuum_toroidal_field/b0", np.nan)
+        self._R0 = super().get("../vacuum_toroidal_field/r0", np.nan)
+        self._Ip = super().get("../global_quantities/ip", np.nan)
 
         self._s_B0 = np.sign(self._B0)
-
         self._s_Ip = np.sign(self._Ip)
 
         self._e_Bp,  self._s_Bp, self._s_RpZ, self._s_rtp = COCOS_TABLE[self.cocos]
 
         self._s_eBp_2PI = 1.0 if self._e_Bp == 0 else TWOPI
 
-        # logger.debug(f"COCOS={self.cocos}")
+        ffprime = as_array(super().get("../profiles_1d/f_df_dpsi", np.nan))
+
+        psi = as_array(super().get("../profiles_1d/psi", np.nan))
+
+        self._fpol = np.sqrt(2.0*Function(ffprime, psi).antiderivative()+(self._B0*self._R0)**2)
 
     cocos: int = sp_property(default_value=5)
+
+    @property
+    def _root(self) -> Equilibrium.TimeSlice: return self._parent
 
     @functools.cached_property
     def _psirz(self) -> Field:
@@ -352,7 +356,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
                     if np.isclose(psi_val, o_point.psi):
                         yield psi_val, Point(o_point.r, o_point.z)
                     else:
-                        logger.warning(f"{psi_val} {o_point.psi}")
+                        # logger.warning(f"{psi_val} {o_point.psi}")
                         yield psi_val, None
                 elif current_count > 1:
                     raise RuntimeError(f"Something wrong! Get {current_count} closed surfaces for psi={current_psi}")
@@ -647,7 +651,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
 
     # 环向磁通， q
 
-    f_df_dpsi: Function = sp_property(label=r" \frac{f d f}{d \psi}")
+    f_df_dpsi: Function
 
     ffprime: Function = sp_property(alias="f_df_dpsi")
 
@@ -1001,20 +1005,22 @@ class FyEquilibriumTimeSlice(Equilibrium.TimeSlice):
 
         match view_point.lower():
             case "rz":
-                if self.profiles_2d.psi is not _not_found_:
+                if self.profiles_2d.psi is _not_found_:
+                    logger.error(f"Can not find psirz")
+                    raise RuntimeError(f"Can not find psirz")
 
-                    o_points, x_points = self.coordinate_system.critical_points
+                o_points, x_points = self.coordinate_system.critical_points
 
-                    geo["o_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(o_points)]
-                    geo["x_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(x_points)]
+                geo["o_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(o_points)]
+                geo["x_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(x_points)]
 
-                    geo["boundary"] = [surf for _, surf in
-                                       self.coordinate_system.find_surfaces(self.boundary.psi, o_point=True)]
+                geo["boundary"] = [surf for _, surf in
+                                   self.coordinate_system.find_surfaces(self.boundary.psi, o_point=True)]
 
-                    geo["boundary_separatrix"] = [surf for _, surf in
-                                                  self.coordinate_system.find_surfaces(self.boundary_separatrix.psi, o_point=False)]
+                geo["boundary_separatrix"] = [surf for _, surf in
+                                              self.coordinate_system.find_surfaces(self.boundary_separatrix.psi, o_point=False)]
 
-                    geo["psi"] = self.profiles_2d.psi
+                geo["psi"] = self.profiles_2d.psi
 
                 styles["o_points"] = {"$matplotlib": {"color": 'red',   'marker': '.', "linewidths": 0.5}}
                 styles["x_points"] = {"$matplotlib": {"color": 'blue',  'marker': 'x', "linewidths": 0.5}}
