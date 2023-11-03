@@ -23,12 +23,17 @@ if __name__ == "__main__":
                       device="iter",
                       transport_solver={"code":  {"name": "fytrans", }})
 
-    tokamak.transport_solver.refresh(
-        equilibrium=tokamak.equilibrium,
-        core_profiles=tokamak.core_profiles,
-        core_transport=tokamak.core_transport,
-        core_sources=tokamak.core_sources,
-    )
+    core_profiles_1d = tokamak.core_profiles.time_slice.current.profiles_1d
+    
+    for ion in core_profiles_1d.ion:
+        logger.debug(ion.label)
+
+    # tokamak.transport_solver.refresh(
+    #     equilibrium=tokamak.equilibrium,
+    #     core_profiles=tokamak.core_profiles,
+    #     core_transport=tokamak.core_transport,
+    #     core_sources=tokamak.core_sources,
+    # )
 
     # eq_profiles_1d = equilibrium.time_slice.current.profiles_1d
 

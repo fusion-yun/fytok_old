@@ -482,7 +482,7 @@ class FyTrans(TransportSolverNumerics):
 
             res = np.stack(res)
 
-            logger.debug(res)
+            logger.debug(equ_s)
 
             return res
 

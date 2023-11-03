@@ -104,16 +104,21 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         self._s_eBp_2PI = 1.0 if self._e_Bp == 0 else TWOPI
 
-        ffprime = as_array(super().get("../profiles_1d/f_df_dpsi", np.nan))
-
-        psi = as_array(super().get("../profiles_1d/psi", np.nan))
-
-        self._fpol = np.sqrt(2.0*Function(ffprime, psi).antiderivative()+(self._B0*self._R0)**2)
-
     cocos: int = sp_property(default_value=5)
 
     @property
     def _root(self) -> Equilibrium.TimeSlice: return self._parent
+
+    @functools.cached_property
+    def _fpol(self) -> Function:
+        ffprime = as_array(self._root.profiles_1d.f_df_dpsi)
+
+        psi = as_array(self._root.profiles_1d.psi)
+
+        if psi is None or psi is _not_found_:
+            psi = np.linspace(0, 1, len(ffprime))*(self.psi_boundary - self.psi_axis)+self.psi_axis
+
+        return np.sqrt(2.0*Function(ffprime, psi).antiderivative()+(self._B0*self._R0)**2)
 
     @functools.cached_property
     def _psirz(self) -> Field:

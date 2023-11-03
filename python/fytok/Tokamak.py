@@ -235,7 +235,6 @@ class Tokamak(SpTree):
 
             except Exception as error:
                 logger.error(f"Can not get {o.__class__.__name__}.__geometry__ !")
-
                 raise RuntimeError(f"Can not get {o.__class__.__name__}.__geometry__ !") from error
             else:
                 geo[o_name] = g
