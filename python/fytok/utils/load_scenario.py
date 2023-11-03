@@ -14,24 +14,24 @@ from fytok.utils.logger import logger
 TWOPI = 2.0*constants.pi
 
 
-def load_core_profiles(d):
+def load_core_profiles(profiles, grid):
 
-    bs_r_norm = d["x"].values
+    bs_r_norm = profiles["x"].values
 
     # Core profile
     r_ped = 0.96  # np.sqrt(0.88)
     i_ped = np.argmin(np.abs(bs_r_norm-r_ped))
     # fmt:off
-    bs_psi_norm = d["Fp"].values
+    bs_psi_norm = profiles["Fp"].values
     # bs_psi = bs_psi_norm*(psi_boundary-psi_axis)+psi_axis
 
-    b_Te =    smooth_1d(d["TE"].values,     bs_r_norm, i_end=i_ped-10, window_len=21)*1000
-    b_Ti =    smooth_1d(d["TI"].values,     bs_r_norm, i_end=i_ped-10, window_len=21)*1000
-    b_ne =    smooth_1d(d["NE"].values,     bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19
-    b_nDT =   smooth_1d(d["Nd+t"].values,   bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19*0.5
-    b_nHe =   smooth_1d(d["Nath"].values,   bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19
-    b_nImp =  smooth_1d(d["Nz"].values,     bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19
-    b_zeff = d["Zeff"].values
+    b_Te =    smooth_1d(profiles["TE"].values,     bs_r_norm, i_end=i_ped-10, window_len=21)*1000
+    b_Ti =    smooth_1d(profiles["TI"].values,     bs_r_norm, i_end=i_ped-10, window_len=21)*1000
+    b_ne =    smooth_1d(profiles["NE"].values,     bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19
+    b_nDT =   smooth_1d(profiles["Nd+t"].values,   bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19*0.5
+    b_nHe =   smooth_1d(profiles["Nath"].values,   bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19
+    b_nImp =  smooth_1d(profiles["Nz"].values,     bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19
+    b_zeff = profiles["Zeff"].values
     # fmt:on
 
     z_eff_star = b_zeff-(b_nDT*2.0+4*b_nHe)/b_ne
@@ -48,13 +48,7 @@ def load_core_profiles(d):
 
     return {
         "time": 0.0,
-        "grid": {
-            "rho_tor_norm":  bs_r_norm,
-            "rho_tor":  d["rho"].values,
-            "psi_norm": bs_psi_norm,
-            # "psi_boundary": psi_boundary,
-            # "psi_magnetic_axis": psi_axis,
-        },
+        "grid": grid,
         "electrons": {"label": "e", "density_thermal":  b_ne,   "temperature": b_Te, },
         "ion": [
             {"label": "D",  "density_thermal":      b_nDT,      "temperature": b_Ti},
@@ -66,23 +60,24 @@ def load_core_profiles(d):
         # "e_field": {"parallel":  Function(e_parallel,bs_r_norm)},
         # "conductivity_parallel": Function(baseline["Joh"].values*1.0e6 / baseline["U"].values * (TWOPI * grid.r0),bs_r_norm),
 
-        "rho_tor":          d["rho"].values,
-        "zeff":             d["Zeff"].values,
-        "vloop":            d["U"].values,
-        "j_ohmic":          d["Joh"].values*1.0e6,
-        "j_non_inductive":  d["Jnoh"].values*1.0e6,
-        "j_bootstrap":      d["Jbs"].values*1.0e6,
-        "j_total":          d["Jtot"].values*1.0e6,
-        "XiNC":             d["XiNC"].values,
+        "rho_tor":          profiles["rho"].values,
+        "zeff":             profiles["Zeff"].values,
+        "vloop":            profiles["U"].values,
+        "j_ohmic":          profiles["Joh"].values*1.0e6,
+        "j_non_inductive":  profiles["Jnoh"].values*1.0e6,
+        "j_bootstrap":      profiles["Jbs"].values*1.0e6,
+        "j_total":          profiles["Jtot"].values*1.0e6,
+        "XiNC":             profiles["XiNC"].values,
 
-        "ffprime":          d["EQFF"].values*1.0e6,
-        "pprime":           d["EQPF"].values*1.0e6,
+        "ffprime":          profiles["EQFF"].values*1.0e6,
+        "pprime":           profiles["EQPF"].values*1.0e6,
     }
 
 
-def load_core_transport(profiles, R0: float, B0: float = None):
+def load_core_transport(profiles, grid, R0: float, B0: float = None):
 
     bs_r_norm = profiles["x"].values
+    bs_psi_norm = profiles["Fp"].values
 
     _x = Variable(0, "rho_tor_norm")
 
@@ -106,7 +101,7 @@ def load_core_transport(profiles, R0: float, B0: float = None):
     v_pinch_Ti = chi * _x / R0
 
     return {
-        "grid_d": {"rho_tor_norm": bs_r_norm},
+        "grid_d": grid,
         "conductivity_parallel":  profiles["Joh"].values*1.0e6 / profiles["U"].values * (TWOPI * R0),
         "electrons": {
             "label": "e",
@@ -133,8 +128,9 @@ def load_core_transport(profiles, R0: float, B0: float = None):
     }
 
 
-def load_core_source(profiles, R0: float, B0: float = None):
+def load_core_source(profiles, grid, R0: float, B0: float = None):
     bs_r_norm = profiles["x"].values
+    bs_psi_norm = profiles["Fp"].values
 
     _x = Variable(0, "rho_tor_norm")
 
@@ -159,7 +155,8 @@ def load_core_source(profiles, R0: float, B0: float = None):
 
     # Core Source
     return {
-        "grid": {"rho_tor_norm": bs_r_norm},
+
+        "grid": grid,
         "j_parallel": (
             # profiles["Jtot"].values
             profiles["Joh"].values
@@ -201,12 +198,22 @@ def load_scenario_ITER(path):
 
     vacuum_toroidal_field = {"r0": desc["R"][0], "b0": desc["B"][0]}
 
-    d_core_profiles = pd.read_excel(profiles_file, sheet_name=1, header=10, usecols="B:BN")
+    profiles = pd.read_excel(profiles_file, sheet_name=1, header=10, usecols="B:BN")
+    bs_r_norm = profiles["x"].values
+    bs_psi_norm = profiles["Fp"].values
+
+    grid = {
+        "rho_tor_norm":  bs_r_norm,
+        "rho_tor":  profiles["rho"].values,
+        "psi_norm": bs_psi_norm,
+        # "psi_boundary": psi_boundary,
+        # "psi_axis": psi_axis,
+    },
 
     scenario["core_profiles"] = {"time_slice": [{
         "time": time,
         'vacuum_toroidal_field': vacuum_toroidal_field,
-        "profiles_1d": load_core_profiles(d_core_profiles),
+        "profiles_1d": load_core_profiles(profiles, grid=grid),
     }]}
 
     scenario["core_transport"] = {"model": [{
@@ -214,7 +221,7 @@ def load_scenario_ITER(path):
         "time_slice": [{
             "time": time,
             'vacuum_toroidal_field': vacuum_toroidal_field,
-            "profiles_1d": load_core_transport(d_core_profiles, vacuum_toroidal_field["r0"]),
+            "profiles_1d": load_core_transport(profiles, vacuum_toroidal_field["r0"]),
         }]
     }]}
 
@@ -223,7 +230,7 @@ def load_scenario_ITER(path):
         "time_slice": [{
             "time": time,
             'vacuum_toroidal_field': vacuum_toroidal_field,
-            "profiles_1d": load_core_source(d_core_profiles, vacuum_toroidal_field["r0"])
+            "profiles_1d": load_core_source(profiles, vacuum_toroidal_field["r0"])
         }]
     }]}
 

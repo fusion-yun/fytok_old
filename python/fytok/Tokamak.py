@@ -46,20 +46,20 @@ class Tokamak(SpTree):
 
     def __init__(self, *args, device=None, shot=None, run=None, **kwargs):
 
-        if device is None and len(args) > 0 and isinstance(args[0], str):
-            if args[0].isidentifier():
-                device = args[0]
-                args = args[1:]
-            else:
-                url_ = uri_split(args[0])
-                schemas = url_.protocol.split("+")
-                if len(schemas) > 0 and schemas[0] not in PROTOCOL_LIST:
-                    device = schemas[0]
-                if shot is None:
-                    shot = url_.query.pop("shot", None)
-                if run is None:
-                    run = url_.query.pop("run", None)
-                args = [url_, *args[1:]]
+        # if device is None and len(args) > 0 and isinstance(args[0], str):
+        #     if args[0].isidentifier():
+        #         device = args[0]
+        #         args = args[1:]
+        #     else:
+        #         url_ = uri_split(args[0])
+        #         schemas = url_.protocol.split("+")
+        #         if len(schemas) > 0 and schemas[0] not in PROTOCOL_LIST:
+        #             device = schemas[0]
+        #         if shot is None:
+        #             shot = url_.query.pop("shot", None)
+        #         if run is None:
+        #             run = url_.query.pop("run", None)
+        #         args = [url_, *args[1:]]
 
         cache, entry, parent, kwargs = HTree._parser_args(*args, **kwargs)
 

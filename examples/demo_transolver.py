@@ -1,11 +1,12 @@
 import os
 import numpy as np
-
+import pathlib
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.modules.CoreProfiles import CoreProfiles
 from fytok.modules.CoreTransport import CoreTransport
 from fytok.modules.CoreSources import CoreSources
 from fytok.modules.TransportSolverNumerics import TransportSolverNumerics
+from fytok.Tokamak import Tokamak
 from fytok.utils.logger import logger
 from fytok.utils.load_scenario import load_scenario
 from spdm.view import View as sp_view
@@ -14,27 +15,19 @@ if __name__ == "__main__":
     WORKSPACE = "/home/salmon/workspace"
 
     # f"{WORKSPACE}/gacode/neo/tools/input/profile_data"
-    input_path = "/home/salmon/workspace/fytok_data/data/15MA inductive - burn"
-
+    input_path = pathlib.Path("/home/salmon/workspace/fytok_data/data/15MA inductive - burn")
     output_path = f"{WORKSPACE}/output"
 
-    scenario = load_scenario(input_path)
+    tokamak = Tokamak(f"file+iterprofiles://{next(input_path.glob('*.xls')).as_posix()}",
+                      f"file+geqdsk://{next(input_path.glob('**/*.txt')).as_posix()}",
+                      device="iter",
+                      transport_solver={"code":  {"name": "fytrans", }})
 
-    equilibrium = Equilibrium(scenario["equilibrium"])
-
-    core_profiles = CoreProfiles(scenario["core_profiles"])
-
-    core_transport = CoreTransport(scenario["core_transport"])
-
-    core_sources = CoreSources(scenario["core_sources"])
-
-    trans = TransportSolverNumerics({"code":  {"name": "fytrans", }})
-
-    trans.refresh(
-        equilibrium=equilibrium,
-        core_profiles=core_profiles,
-        core_transport=core_transport,
-        core_sources=core_sources,
+    tokamak.transport_solver.refresh(
+        equilibrium=tokamak.equilibrium,
+        core_profiles=tokamak.core_profiles,
+        core_transport=tokamak.core_transport,
+        core_sources=tokamak.core_sources,
     )
 
     # eq_profiles_1d = equilibrium.time_slice.current.profiles_1d

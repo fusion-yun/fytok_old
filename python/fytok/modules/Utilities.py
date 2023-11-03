@@ -157,9 +157,9 @@ class CoreRadialGrid:
             self["psi_norm"] = (self.psi - self.psi_axis) / (self.psi_boundary - self.psi_axis)
         elif self.psi is _not_found_:
             if self.psi_axis is _not_found_ or self.psi_boundary is _not_found_:
-                raise ValueError("psi_axis or psi_boundary must be provided")
-
-            self["psi"] = self.psi_norm * (self.psi_boundary - self.psi_axis) + self.psi_axis
+                logger.error("psi_axis or psi_boundary are not provided")
+            else:
+                self["psi"] = self.psi_norm * (self.psi_boundary - self.psi_axis) + self.psi_axis
         elif self.psi_axis is _not_found_ or self.psi_boundary is _not_found_:
             self["psi_axis"] = self.psi.min()
             self["psi_boundary"] = self.psi.max()
