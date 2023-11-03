@@ -1,15 +1,5 @@
-import os
-import numpy as np
 import pathlib
-from fytok.modules.Equilibrium import Equilibrium
-from fytok.modules.CoreProfiles import CoreProfiles
-from fytok.modules.CoreTransport import CoreTransport
-from fytok.modules.CoreSources import CoreSources
-from fytok.modules.TransportSolverNumerics import TransportSolverNumerics
 from fytok.Tokamak import Tokamak
-from fytok.utils.logger import logger
-from fytok.utils.load_scenario import load_scenario
-from spdm.view import View as sp_view
 
 if __name__ == "__main__":
     WORKSPACE = "/home/salmon/workspace"
@@ -24,16 +14,13 @@ if __name__ == "__main__":
                       transport_solver={"code":  {"name": "fytrans", }})
 
     core_profiles_1d = tokamak.core_profiles.time_slice.current.profiles_1d
-    
-    for ion in core_profiles_1d.ion:
-        logger.debug(ion.label)
 
-    # tokamak.transport_solver.refresh(
-    #     equilibrium=tokamak.equilibrium,
-    #     core_profiles=tokamak.core_profiles,
-    #     core_transport=tokamak.core_transport,
-    #     core_sources=tokamak.core_sources,
-    # )
+    tokamak.transport_solver.refresh(
+        equilibrium=tokamak.equilibrium,
+        core_profiles=tokamak.core_profiles,
+        core_transport=tokamak.core_transport,
+        core_sources=tokamak.core_sources,
+    )
 
     # eq_profiles_1d = equilibrium.time_slice.current.profiles_1d
 

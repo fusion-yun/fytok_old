@@ -157,7 +157,6 @@ class FyTrans(TransportSolverNumerics):
 
         # quasi_neutrality_condition
         if "electons.density_thermal" not in vars:
-
             ns = 0
             for k, ni in vars.items():
                 if k.endswith("density_thermal") or k.endswith("density_fast") and ni is not _not_found_:
@@ -215,7 +214,7 @@ class FyTrans(TransportSolverNumerics):
 
                 for i in range(2):
                     bc_ = eq.boundary_condition[i]
-
+                    x = bc_.rho_tor_norm
                     match bc_.identifier.index:
                         case 1:  # poloidal flux;
                             u = 1
@@ -230,7 +229,7 @@ class FyTrans(TransportSolverNumerics):
                             Uloop_bdry = bc_.value[0]
                             u = 0
                             v = 1
-                            w = (tau*Uloop_bdry + core_profiles_1d_prev.psi[-1])*d(1.0)
+                            w = (tau*Uloop_bdry + psi_prev(x))*d(x)
                         case 5:  # generic boundary condition y expressed as a1y' + a2y=a3;
                             u = bc_.value[1]
                             v = bc_.value[0]
@@ -265,8 +264,12 @@ class FyTrans(TransportSolverNumerics):
                 if core_sources is not None:
                     for source in core_sources.source:
                         core_source_1d = source.time_slice.current.profiles_1d
-                        Sexpl         += core_source_1d.get(f"{spec}/particles_decomposed/explicit_part", 0)
-                        Simpl         += core_source_1d.get(f"{spec}/particles_decomposed/implicit_part", 0)
+                        S=core_source_1d.get(f"{spec}/particles", None)
+                        if S is not None:
+                            Sexpl         += S
+                        else:
+                            Sexpl         += core_source_1d.get(f"{spec}/particles_decomposed/explicit_part", 0)
+                            Simpl         += core_source_1d.get(f"{spec}/particles_decomposed/implicit_part", 0)
                         # fmt:on
 
                 a = vpr
@@ -286,14 +289,31 @@ class FyTrans(TransportSolverNumerics):
                 for i in range(2):
                     bc_ = eq.boundary_condition[i]
 
+                    x = bc_.rho_tor_norm or (0.0 if i == 0 else 1.0)
+
                     match bc_.identifier.index:
-                        case 1:
+                        case 1:   # 1: value of the field y;
                             u = 1
                             v = 0
-                            w = bc.value[0]
+                            w = bc_.value[0]
+                        case 2:  # 2: radial derivative of the field (-dy/drho_tor);
+                            u = -e(x)/d(x)
+                            v = 1.0/d(x)
+                            w = bc_.value[0]
+                        case 3:  # 3: scale length of the field y/(-dy/drho_tor);
+                            raise NotImplementedError(f" # 3: scale length of the field y/(-dy/drho_tor);")
+                        case 4:   # 4: flux;
+                            u = 0
+                            v = 1
+                            w = bc_.value[0]
+                        case 5:  # 5: generic boundary condition y expressed as a1y'+a2y=a3.
+                            raise NotImplementedError(f"5: generic boundary condition y expressed as a1y'+a2y=a3.")
+                        case 6:  # 6: equation not solved;
+                            raise NotImplementedError(f"6: equation not solved;")
                         case _:
                             u, v, w = 0, 0, 0
                             # raise NotImplementedError(bc_.identifier)
+
                     bc[i] = [u, v, w]
 
             elif var_name.endswith("temperature"):
@@ -323,8 +343,13 @@ class FyTrans(TransportSolverNumerics):
                 if core_sources is not None:
                     for source in core_sources.source:
                         core_source_1d = source.time_slice.current.profiles_1d
-                        Qexpl                    += core_source_1d.get(f"{spec}/energy_decomposed/explicit_part")
-                        Qimpl                    += core_source_1d.get(f"{spec}/energy_decomposed/implicit_part")
+                        Q=core_source_1d.get(f"{spec}/energy", None)
+
+                        if Q is not None:
+                            Qexpl         += Q
+                        else:
+                            Qexpl                    += core_source_1d.get(f"{spec}/energy_decomposed/explicit_part")
+                            Qimpl                    += core_source_1d.get(f"{spec}/energy_decomposed/implicit_part")
 
                 ns               = vars.get(f"{spec}/density",0)
 
@@ -349,15 +374,31 @@ class FyTrans(TransportSolverNumerics):
                 for i in range(2):
                     bc_ = eq.boundary_condition[i]
 
+                    x = bc_.rho_tor_norm or (0.0 if i == 0 else 1.0)
+
                     match bc_.identifier.index:
-                        case 1:
+                        case 1:   # 1: value of the field y;
                             u = 1
                             v = 0
                             w = bc_.value[0]
+                        case 2:  # 2: radial derivative of the field (-dy/drho_tor);
+                            u = -e(x)/d(x)
+                            v = 1.0/d(x)
+                            w = bc_.value[0]
+                        case 3:  # 3: scale length of the field y/(-dy/drho_tor);
+                            raise NotImplementedError(f" # 3: scale length of the field y/(-dy/drho_tor);")
+                        case 4:   # 4: flux;
+                            u = 0
+                            v = 1
+                            w = bc_.value[0]
+                        case 5:  # 5: generic boundary condition y expressed as a1y'+a2y=a3.
+                            raise NotImplementedError(f"5: generic boundary condition y expressed as a1y'+a2y=a3.")
+                        case 6:  # 6: equation not solved;
+                            raise NotImplementedError(f"6: equation not solved;")
                         case _:
                             u, v, w = 0, 0, 0
+                            # raise NotImplementedError(bc_.identifier)
 
-                            # raise NotImplementedError(bc.identifier)
                     bc[i] = [u, v, w]
 
             elif var_name.endswith("momentum"):
@@ -409,13 +450,31 @@ class FyTrans(TransportSolverNumerics):
                 for i in range(2):
                     bc_ = eq.boundary_condition[i]
 
+                    x = bc_.rho_tor_norm or (0.0 if i == 0 else 1.0)
+
                     match bc_.identifier.index:
-                        case 1:
+                        case 1:   # 1: value of the field y;
                             u = 1
                             v = 0
                             w = bc_.value[0]
+                        case 2:  # 2: radial derivative of the field (-dy/drho_tor);
+                            u = -e(x)/d(x)
+                            v = 1.0/d(x)
+                            w = bc_.value[0]
+                        case 3:  # 3: scale length of the field y/(-dy/drho_tor);
+                            raise NotImplementedError(f" # 3: scale length of the field y/(-dy/drho_tor);")
+                        case 4:   # 4: flux;
+                            u = 0
+                            v = 1
+                            w = bc_.value[0]
+                        case 5:  # 5: generic boundary condition y expressed as a1y'+a2y=a3.
+                            raise NotImplementedError(f"5: generic boundary condition y expressed as a1y'+a2y=a3.")
+                        case 6:  # 6: equation not solved;
+                            raise NotImplementedError(f"6: equation not solved;")
                         case _:
                             u, v, w = 0, 0, 0
+                            # raise NotImplementedError(bc_.identifier)
+
                     bc[i] = [u, v, w]
 
             else:
@@ -440,6 +499,8 @@ class FyTrans(TransportSolverNumerics):
         inv_tau = 1.0/tau if tau > 0 else 0
 
         core_profiles_prev = core_profiles.time_slice.previous
+
+        core_profiles_1d = core_profiles.time_slice.current.profiles_1d
 
         solver_1d = self.time_slice.current.solver_1d
 
@@ -469,21 +530,20 @@ class FyTrans(TransportSolverNumerics):
             # TODO: 需要加速
 
             res = []
-            for _, eq, _ in equ_s:
+            for var, eq, bc in equ_s:
                 if isinstance(eq, (int, float)):
                     res.append(np.full_like(x, eq))
                 else:
                     try:
-                        eq_value = eq(x, *y[:], *args)
+                        eq_res = eq(x, *y[:], *args)
                     except Exception as error:
                         raise RuntimeError(f"Error when apply  op={eq.__repr__()} x={x} args={(y)} !") from error
                     else:
-                        res.append(eq_value)
+                        # logger.debug((var.__label__, bc, eq_res[:5]))
+                        res.append(eq_res)
 
             res = np.stack(res)
-
-            logger.debug(equ_s)
-
+            # logger.debug(res[:, :5])
             return res
 
         def bc(ya: array_type, yb: array_type, *args) -> array_type:
@@ -492,22 +552,28 @@ class FyTrans(TransportSolverNumerics):
             # logger.debug(res)
             return res
 
-        X0 = solver_1d.grid.rho_tor_norm
+        x = solver_1d.grid.rho_tor_norm
 
-        Y0 = np.zeros([len(equ_s), len(X0)])
+        Y0 = np.zeros([len(equ_s), len(x)])
 
-        for idx, eq in enumerate(solver_1d.equation):
-            Y0[idx*2] = eq.primary_quantity.profile
-            Y0[idx*2+1] = 0
+        for idx, equ in enumerate(solver_1d.equation):
+
+            a, b, c, d, e, f, g = equ.coefficient
+
+            y = core_profiles_1d[equ.primary_quantity.identifier].__array__()
+
+            Y0[idx*2] = y
+
+            Y0[idx*2+1] = -Function(y, x).d()(x)*d(x) + y*e(x)
 
         sol = solve_bvp(
             func,
             bc,
-            X0, Y0,
+            x, Y0,
             bvp_rms_mask=self.code.parameters.get("bvp_rms_mask",  []),
             tolerance=self.code.parameters.get("tolerance", 1.0e-3),
             max_nodes=self.code.parameters.get("max_nodes", 250),
-            verbose=self.code.parameters.get("verbose", 0)
+            verbose=self.code.parameters.get("verbose", 2)
         )
 
         if not sol.success:

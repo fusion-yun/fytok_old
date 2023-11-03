@@ -133,7 +133,7 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
     dpressure_dpsi: Function = sp_property(units="Pa.Wb^-1")
 
-    f_df_dpsi: Function = sp_property(units="T^2.m^2/Wb",label=r"\frac{f d f}{d \psi}")
+    f_df_dpsi: Function = sp_property(units="T^2.m^2/Wb", label=r"\frac{f d f}{d \psi}")
 
     j_tor: Function = sp_property(units="A.m^-2")
 
@@ -187,7 +187,7 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
     dvolume_dpsi: Function = sp_property(units="m^3.Wb^-1")
 
-    dvolume_drho_tor: Function = sp_property(units="m^2")
+    dvolume_drho_tor: Function = sp_property(units="m^2", label=r"\frac{dvolume}{d\rho_{tor}}")
 
     area: Function = sp_property(units="m^2")
 
@@ -356,7 +356,7 @@ class EquilibriumTimeSlice(equilibrium._T_equilibrium_time_slice):
 
     vacuum_toroidal_field: VacuumToroidalField
 
-    boundary: Boundary
+    boundary: EquilibriumBoundary
 
     boundary_separatrix: BoundarySeparatrix
 

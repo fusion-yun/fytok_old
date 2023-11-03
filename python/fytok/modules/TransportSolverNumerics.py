@@ -210,29 +210,47 @@ class TransportSolverNumerics(Module):
         idx = 0
         # fmt:off
         equations = [
-            # {"primary_quantity":{"identifier":"psi",                                      },          "boundary_conditions": []},
+            # {"primary_quantity":{"identifier":"psi",                                      },          "boundary_condition": []},
 
-            {"primary_quantity":{"identifier": "electrons/density_thermal", "label":r"n_e"},            "boundary_conditions": []},
-            # {"primary_quantity":{"identifier":"electrons/density_fast",       },                      "boundary_conditions": []},
-            # {"primary_quantity":{"identifier":"electrons/temperature",        },                      "boundary_conditions": []},
-            # {"primary_quantity":{"identifier":"electrons/momentum",           },                      "boundary_conditions": []},
-            *sum([[       
-            {"primary_quantity":{"identifier": f"ion/{s}/density_thermal", "label":f"n_{ion.label}"},   "boundary_conditions": []},
-            # {"primary_quantity":{"identifier":f"ion/{s}/density_fast",    },                          "boundary_conditions": []},
-            # {"primary_quantity":{"identifier":f"ion/{s}/temperature",     },                          "boundary_conditions": []},
-            # {"primary_quantity":{"identifier":f"ion/{s}/momentum",        },                          "boundary_conditions": []},
-            ] for s,ion in  enumerate(core_profiles.time_slice.current.profiles_1d.ion)], [])
+            {"primary_quantity":{"identifier": "electrons/density_thermal", "label":r"n_e"},            "boundary_condition": [{"identifier":{"index":4},"value":[0],"rho_tor_norm":0.01},{"identifier":{"index":1},"value":[1.0e19],"rho_tor_norm":0.95}]},
+            # {"primary_quantity":{"identifier":"electrons/density_fast",       },                      "boundary_condition": []},
+            # {"primary_quantity":{"identifier":"electrons/temperature",        },                      "boundary_condition": []},
+            # {"primary_quantity":{"identifier":"electrons/momentum",           },                      "boundary_condition": []},
+            # *sum([[       
+            # {"primary_quantity":{"identifier": f"ion/{s}/density_thermal", "label":f"n_{ion.label}"},   "boundary_condition": []},
+            # # {"primary_quantity":{"identifier":f"ion/{s}/density_fast",    },                          "boundary_condition": []},
+            # # {"primary_quantity":{"identifier":f"ion/{s}/temperature",     },                          "boundary_condition": []},
+            # # {"primary_quantity":{"identifier":f"ion/{s}/momentum",        },                          "boundary_condition": []},
+            # ] for s,ion in  enumerate(core_profiles.time_slice.current.profiles_1d.ion)], [])
         ]
         # fmt:on
 
-        for eq in equations:
-            eq["primary_quantity"]["profile"] = core_profiles_1d[eq["primary_quantity"]["identifier"]].__array__()
+        # for equ in equations:
+        #     equ["primary_quantity"]["profile"] = core_profiles_1d[equ["primary_quantity"]["identifier"]].__array__()
+
+        eq = equilibrium.time_slice.current
+
+        psi_norm = core_profiles_1d.grid.psi_norm
+        rho_tor_norm = core_profiles_1d.grid.rho_tor_norm
+
+        if np.isclose(rho_tor_norm[0], 0.0):
+            rho_tor_norm = rho_tor_norm[1:]
+            psi_norm = psi_norm[1:]
+
+        grid = {
+            "psi_axis": eq.global_quantities.psi_axis,
+            "psi_boundary": eq.global_quantities.psi_boundary,
+            "rho_tor_boundary": eq.profiles_1d.rho_tor(eq.global_quantities.psi_boundary),
+
+            "psi_norm": psi_norm,
+            "rho_tor_norm": rho_tor_norm,
+        }
 
         self.time_slice.refresh(*args, {
             "primary_coordinate": self.code.parameters.primary_coordinate or "rho_tor_norm",
             "vacuum_toroidal_field": core_profiles.time_slice.current.vacuum_toroidal_field,
             "solver_1d": {
-                "grid": core_profiles_1d.grid,
+                "grid": grid,
                 "equation": equations
             }},
             core_profiles=core_profiles,
