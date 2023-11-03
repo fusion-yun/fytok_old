@@ -576,6 +576,13 @@ class FyTrans(TransportSolverNumerics):
             verbose=self.code.parameters.get("verbose", 2)
         )
 
+        solver_1d.grid.remesh(rho_tor_norm=sol.x)
+
+        for idx, equ in enumerate(solver_1d.equation):
+
+            equ.primary_quantity["profile"] = sol.y[2*idx]
+            equ.primary_quantity["flux"] = sol.y[2*idx+1]
+
         if not sol.success:
             raise RuntimeError(sol.message)
         else:

@@ -31,6 +31,9 @@ class TransportSolverNumericsEquationPrimary:
     profile: array_type
     """ Profile of the primary quantity"""
 
+    flux: array_type
+    """ Flux of the primary quantity"""
+
     d_dr: array_type
     """ Radial derivative with respect to the primary coordinate"""
 
@@ -80,6 +83,8 @@ class TransportSolverNumericsEquation:
         """ Position, in normalised toroidal flux, at which the boundary condition is
         imposed. Outside this position, the value of the data are considered to be
         prescribed."""
+
+    rho_tor_norm: array_type
 
     primary_quantity: TransportSolverNumericsEquationPrimary
     """ Profile and derivatives of the primary quantity of the transport equation"""

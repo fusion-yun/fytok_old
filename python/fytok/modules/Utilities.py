@@ -174,18 +174,27 @@ class CoreRadialGrid:
         elif self.rho_tor_boundary is _not_found_:
             self["rho_tor_boundary"] = self.rho_tor.max()
 
-    def remesh(self, axis: array_type, label="rho_tor_norm") -> CoreRadialGrid:
+    def remesh(self, **kwargs) -> CoreRadialGrid:
+        psi_norm = kwargs.get("psi_norm", None)
 
-        match label:
-            case "rho_tor_norm":
-                grid = CoreRadialGrid({
-                    "psi_axis": self.psi_axis,
-                    "psi_boundary": self.psi_boundary,
-                    "psi_norm": Function(self.psi_norm, self.rho_tor_norm)(axis),
-                    "rho_tor_boundary": self.rho_tor_boundary,
-                    "rho_tor_norm": axis,
-                })
-        return grid
+        rho_tor_norm = kwargs.get("rho_tor_norm", None)
+
+        if rho_tor_norm is None:
+            rho_tor_norm = self.rho_tor_norm
+            if psi_norm is None:
+                psi_norm = self.psi_norm
+        elif psi_norm is None:
+            psi_norm = Function(self.psi_norm, self.rho_tor_norm)(rho_tor_norm)
+
+        self.__init__({
+            "psi_axis": kwargs.get("psi_axis", self.psi_axis),
+            "psi_boundary": kwargs.get("psi_boundary", self.psi_boundary),
+            "rho_tor_boundary": kwargs.get("psi_boundary",  self.rho_tor_boundary),
+            "psi_norm":  psi_norm,
+            "rho_tor_norm": rho_tor_norm,
+        })
+
+        return self
 
     psi_axis: float
     psi_boundary: float
