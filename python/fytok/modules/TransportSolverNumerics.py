@@ -1,4 +1,5 @@
 from scipy import constants
+from copy import copy
 from fytok.utils.logger import logger
 from spdm.data.sp_property import sp_tree, sp_property
 from spdm.data.TimeSeries import TimeSlice
@@ -33,7 +34,8 @@ class TransportSolverNumericsEquationPrimary:
 
     flux: array_type
     """ Flux of the primary quantity"""
-
+    dflux_dr: array_type
+    """ Flux of the primary quantity"""
     d_dr: array_type
     """ Radial derivative with respect to the primary coordinate"""
 
@@ -217,7 +219,7 @@ class TransportSolverNumerics(Module):
         equations = [
             # {"primary_quantity":{"identifier":"psi",                                      },          "boundary_condition": []},
 
-            {"primary_quantity":{"identifier": "electrons/density_thermal", "label":r"n_e"},            "boundary_condition": [{"identifier":{"index":4},"value":[0],"rho_tor_norm":0.01},{"identifier":{"index":1},"value":[1.0e19],"rho_tor_norm":0.95}]},
+            {"primary_quantity":{"identifier": "electrons/density_thermal", "profile":core_profiles_1d.electrons.density_thermal},            "boundary_condition": [{"identifier":{"index":4},"value":[0],"rho_tor_norm":0.01},{"identifier":{"index":1},"value":[3.0e19],"rho_tor_norm":0.95}]},
             # {"primary_quantity":{"identifier":"electrons/density_fast",       },                      "boundary_condition": []},
             # {"primary_quantity":{"identifier":"electrons/temperature",        },                      "boundary_condition": []},
             # {"primary_quantity":{"identifier":"electrons/momentum",           },                      "boundary_condition": []},
@@ -232,32 +234,17 @@ class TransportSolverNumerics(Module):
 
         # for equ in equations:
         #     equ["primary_quantity"]["profile"] = core_profiles_1d[equ["primary_quantity"]["identifier"]].__array__()
-
         eq = equilibrium.time_slice.current
 
-        psi_norm = core_profiles_1d.grid.psi_norm
-        rho_tor_norm = core_profiles_1d.grid.rho_tor_norm
+        grid = copy(eq.profiles_1d.grid).remesh(self.code.parameters.rho_tor_norm)
 
-        if np.isclose(rho_tor_norm[0], 0.0):
-            rho_tor_norm = rho_tor_norm[1:]
-            psi_norm = psi_norm[1:]
-
-        grid = {
-            "psi_axis": eq.global_quantities.psi_axis,
-            "psi_boundary": eq.global_quantities.psi_boundary,
-            "rho_tor_boundary": eq.profiles_1d.rho_tor(eq.global_quantities.psi_boundary),
-
-            "psi_norm": psi_norm,
-            "rho_tor_norm": rho_tor_norm,
-        }
-
-        self.time_slice.refresh(*args, {
-            "primary_coordinate": self.code.parameters.primary_coordinate or "rho_tor_norm",
-            "vacuum_toroidal_field": core_profiles.time_slice.current.vacuum_toroidal_field,
-            "solver_1d": {
-                "grid": grid,
-                "equation": equations
-            }},
+        self.time_slice.refresh(
+            *args,
+            {
+                "primary_coordinate":  "rho_tor_norm",
+                "vacuum_toroidal_field": eq.vacuum_toroidal_field,
+                "solver_1d": {"grid": grid, "equation": equations}
+            },
             core_profiles=core_profiles,
             equilibrium=equilibrium,
             core_transport=core_transport,
@@ -268,8 +255,8 @@ class TransportSolverNumerics(Module):
 
         core_profiles_1d["grid"] = solver_1d.grid
 
-        for eq in solver_1d.equation:
-            core_profiles_1d[eq.primary_quantity.identifier] = eq.primary_quantity.profile
+        for equ in solver_1d.equation:
+            core_profiles_1d[equ.primary_quantity.identifier] = equ.primary_quantity.profile
 
     def advance(self, *args, **kwargs) -> CoreProfiles.TimeSlice:
         self.time_slice.advance(*args, **kwargs)

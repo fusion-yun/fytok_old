@@ -8,8 +8,7 @@ from spdm.data.Expression import Expression, Variable
 from spdm.data.Function import Function, function_like
 from spdm.data.Path import Path
 from spdm.utils.typing import array_type
-from spdm.numlib.bvp import solve_bvp
-from spdm.numlib.misc import array_like
+
 from spdm.utils.tags import _not_found_
 
 from fytok.modules.CoreProfiles import CoreProfiles
@@ -19,6 +18,10 @@ from fytok.modules.TransportSolverNumerics import TransportSolverNumerics
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.utils.logger import logger
 from fytok.utils.atoms import atoms
+from spdm.numlib.smooth import smooth_1d
+
+# from scipy.integrate import solve_bvp
+from spdm.numlib.bvp import solve_bvp
 
 EPSILON = 1.0e-15
 TOLERANCE = 1.0e-6
@@ -28,6 +31,9 @@ TWO_PI = 2.0 * scipy.constants.pi
 
 @TransportSolverNumerics.register(["fytrans"])
 class FyTrans(TransportSolverNumerics):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def refresh(self, *args,
                 core_profiles: CoreProfiles,
@@ -60,22 +66,22 @@ class FyTrans(TransportSolverNumerics):
 
         super().advance(*args, **kwargs)
 
-        self._solve(
-            tau=equilibrium.time_slice.current.time-equilibrium.time_slice.previous.time,
-            core_profiles=core_profiles,
-            equilibrium=equilibrium,
-            core_transport=core_transport,
-            core_sources=core_sources,
-        )
+        self._solve(tau=equilibrium.time_slice.current.time-equilibrium.time_slice.previous.time,
+                    core_profiles=core_profiles,
+                    equilibrium=equilibrium,
+                    core_transport=core_transport,
+                    core_sources=core_sources,
+                    )
 
-    def _update_solver(self,
-                       tau: float,
-                       equilibrium: Equilibrium,
-                       core_profiles: CoreProfiles,
-                       core_transport: CoreTransport,
-                       core_sources: CoreSources,
-                       **kwargs
-                       ):
+    def _update_coefficient(self,
+                            tau: float,
+                            equilibrium: Equilibrium,
+                            core_profiles: CoreProfiles,
+                            core_transport: CoreTransport,
+                            core_sources: CoreSources,
+                            **kwargs
+                            ):
+        inv_tau = 1.0/tau if tau > 0 else 0
 
         solver_1d = self.time_slice.current.solver_1d
 
@@ -83,23 +89,17 @@ class FyTrans(TransportSolverNumerics):
 
         vars = {"x": x}
 
-        core_profiles_next = core_profiles.time_slice.current
+        core_profiles_1d_prev = core_profiles.time_slice.previous.profiles_1d if core_profiles.time_slice.previous is not _not_found_ else _not_found_
 
-        core_profiles_prev = core_profiles.time_slice.previous
+        core_profiles_1d = core_profiles.time_slice.current.profiles_1d
 
-        core_profiles_1d_prev = core_profiles_prev.profiles_1d if core_profiles_prev is not _not_found_ else _not_found_
-
-        core_profiles_1d_next = core_profiles_next.profiles_1d
-
-        equilibrium_next = equilibrium.time_slice.current
+        equilibrium_ = equilibrium.time_slice.current
 
         equilibrium_prev = equilibrium.time_slice.previous
 
-        eq_1d_next = equilibrium_next.profiles_1d
+        eq_1d = equilibrium.time_slice.current.profiles_1d
 
-        eq_1d_prev = equilibrium_prev.profiles_1d if equilibrium_prev is not _not_found_ else _not_found_
-
-        inv_tau = 1.0/tau if tau > 0 else 0
+        eq_1d_prev = equilibrium.time_slice.previous.profiles_1d if equilibrium.time_slice.previous is not _not_found_ else None
 
         for idx, eq in enumerate(solver_1d.equation):
             name = eq.primary_quantity.identifier
@@ -111,48 +111,48 @@ class FyTrans(TransportSolverNumerics):
         psi = Function(solver_1d.grid.psi, solver_1d.grid.rho_tor_norm, label="psi")(x)
 
         # $R_0$ characteristic major radius of the device   [m]
-        R0 = equilibrium_next.vacuum_toroidal_field.r0
+        R0 = equilibrium_.vacuum_toroidal_field.r0
 
         # $B_0$ magnetic field measured at $R_0$            [T]
-        B0 = equilibrium_next.vacuum_toroidal_field.b0
+        B0 = equilibrium_.vacuum_toroidal_field.b0
 
         B0m = equilibrium_prev.vacuum_toroidal_field.b0 if equilibrium_prev is not _not_found_ else np.nan
 
-        k_B = (B0 - B0m) / (B0 + B0m) * 2.0/tau if tau > 0 else 0
+        k_B = (B0 - B0m) / (B0 + B0m) * 2.0*inv_tau
 
         # Mesh
-        rho_tor_boundary = eq_1d_next.grid.rho_tor_boundary
+        rho_tor_boundary = eq_1d.grid.rho_tor_boundary
 
-        rho_tor_boundary_m = eq_1d_prev.grid.rho_tor_boundary if eq_1d_prev is not _not_found_ else _not_found_
+        rho_tor_boundary_m = eq_1d_prev.grid.rho_tor_boundary if eq_1d_prev is not None else 0
 
         k_rho_bdry = (rho_tor_boundary - rho_tor_boundary_m) / \
-            (rho_tor_boundary + rho_tor_boundary_m)*2.0/tau if tau > 0 else 0
+            (rho_tor_boundary + rho_tor_boundary_m)*2.0*inv_tau
 
         k_phi = k_B + k_rho_bdry
 
         rho_tor = rho_tor_boundary*x
 
         # diamagnetic function,$F=R B_\phi$                 [T*m]
-        fpol = eq_1d_next.f(psi)
+        fpol = eq_1d.f(psi)
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
 
-        vpr = eq_1d_next.dvolume_drho_tor(psi)
+        vpr = eq_1d.dvolume_drho_tor(psi)
 
-        vprm = eq_1d_prev.dvolume_drho_tor(psi) if eq_1d_prev is not _not_found_ else np.nan
+        vprm = eq_1d_prev.dvolume_drho_tor(psi) if eq_1d_prev is not None else np.nan
 
         inv_vpr23 = vpr**(-2/3)
 
-        fpol = eq_1d_next.f(psi)
+        fpol = eq_1d.f(psi)
 
         fpol2 = fpol**2
 
         # $q$ safety factor                                 [-]
-        qsf = eq_1d_next.q(psi)
-        gm1 = eq_1d_next.gm1(psi)  # <1/R^2>
-        gm2 = eq_1d_next.gm2(psi)  # <|grad_rho_tor|^2/R^2>
-        gm3 = eq_1d_next.gm3(psi)  # <|grad_rho_tor|^2>
-        gm8 = eq_1d_next.gm8(psi)  # <R>
+        qsf = eq_1d.q(psi)
+        gm1 = eq_1d.gm1(psi)  # <1/R^2>
+        gm2 = eq_1d.gm2(psi)  # <|grad_rho_tor|^2/R^2>
+        gm3 = eq_1d.gm3(psi)  # <|grad_rho_tor|^2>
+        gm8 = eq_1d.gm8(psi)  # <R>
         # Qimp_k_ns = (3*k_rho_bdry - k_phi * Function(vpr, x).d())
 
         # quasi_neutrality_condition
@@ -167,13 +167,13 @@ class FyTrans(TransportSolverNumerics):
         else:
             ne = vars["electons.density_thermal"]
 
-            num_of_ion = sum([1 for ion in core_profiles_1d_next.ion if not ion.is_impurity])
+            num_of_ion = sum([1 for ion in core_profiles_1d.ion if not ion.is_impurity])
 
-            nz = sum([ion.z_ion_1d*ion.density for ion in core_profiles_1d_next.ion if ion.is_impurity])
+            nz = sum([ion.z_ion_1d*ion.density for ion in core_profiles_1d.ion if ion.is_impurity])
 
             n_i_prop = (ne-nz) / num_of_ion
 
-            for ion in core_profiles_1d_next.ion:
+            for ion in core_profiles_1d.ion:
                 if not ion.is_impurity:
                     ion["density"] = n_i_prop/ion.z
 
@@ -278,9 +278,9 @@ class FyTrans(TransportSolverNumerics):
 
                 c = rho_tor_boundary
 
-                d = vpr * gm3 * transp_d / rho_tor_boundary
+                d = vpr * gm3 * transp_d/rho_tor_boundary
 
-                e = vpr * gm3 * transp_v - rho_tor*k_phi
+                e = vpr * gm3 * (transp_v - rho_tor*k_phi)
 
                 f = vpr * Sexpl
 
@@ -413,7 +413,7 @@ class FyTrans(TransportSolverNumerics):
 
                 ns          = vars.get(f"{spec}/density_thermal")
 
-                ns_m       = core_profiles_prev.get(f"profiles_1d/{spec}/density",0) if core_profiles_prev is not None else 0
+                ns_m       = core_profiles_1d_prev.get(f"{spec}/density_thermal",0) if core_profiles_1d_prev is not None else 0
 
                 ns_flux     = vars.get(f"{spec}/density_thermal_flux")
 
@@ -485,46 +485,41 @@ class FyTrans(TransportSolverNumerics):
             eq["boundary_condition"] = [{"value": bc[0]}, {"value": bc[1]}]
 
             # logger.debug((var_name, a, b, c, d, e, f, g, bc))
-        return vars
 
-    def _solve(self, *args, tau, core_profiles: CoreProfiles, **kwargs):
+        return vars, inv_tau
 
-        hyper_diff = kwargs.get("hyper_diff", None) or\
-            self.code.parameters.get("hyper_diff", None) or\
-            self._metadata.get("hyper_diff", None) or\
-            0.001
+    def _solve(self, *args,  **kwargs):
 
-        vars = self._update_solver(tau, core_profiles=core_profiles, **kwargs)
+        vars, inv_tau,  = self._update_coefficient(*args,**kwargs)
 
-        inv_tau = 1.0/tau if tau > 0 else 0
+        hyper_diff = self.code.parameters.get("hyper_diff", 0)
 
-        core_profiles_prev = core_profiles.time_slice.previous
-
-        core_profiles_1d = core_profiles.time_slice.current.profiles_1d
+        logger.debug(f"hyper_diff={hyper_diff}")
 
         solver_1d = self.time_slice.current.solver_1d
+        equs_prev = self.time_slice.previous.solver_1d.equation if self.time_slice.previous is not _not_found_ else None
 
         equ_s = []
 
-        for equ in solver_1d.equation:
+        for idx, equ in enumerate(solver_1d.equation):
 
             var_name = equ.primary_quantity.identifier
 
-            Y = vars[var_name]
+            y = vars[var_name]
 
-            Ym = core_profiles_prev.get(f"profiles_1d/{var_name}", 0) if core_profiles_prev is not _not_found_ else 0
+            ym = equs_prev[idx].primary_quantity.profile if equs_prev is not None else 0
 
-            G = vars[var_name+"_flux"]
+            flux = vars[var_name+"_flux"]
 
             a, b, c, d, e, f, g, *_ = equ.coefficient
 
-            dY = (-G + e * Y + hyper_diff * Y.d)/(d + hyper_diff)
+            dy = (-flux + e * y + hyper_diff * y.d)/(d + hyper_diff)
 
-            dG = c*(f - g * Y-(a*Y-b*Ym)*inv_tau)
+            dflux = c*(f - g * y-(a*y-b*ym)*inv_tau)
 
-            equ_s.append([Y, dY,  equ.boundary_condition[0].value])
+            equ_s.append([y, dy,  equ.boundary_condition[0].value])
 
-            equ_s.append([G, dG,  equ.boundary_condition[1].value])
+            equ_s.append([flux, dflux,  equ.boundary_condition[1].value])
 
         def func(x: array_type, y: array_type, *args) -> array_type:
             # TODO: 需要加速
@@ -540,6 +535,9 @@ class FyTrans(TransportSolverNumerics):
                         raise RuntimeError(f"Error when apply  op={eq.__repr__()} x={x} args={(y)} !") from error
                     else:
                         # logger.debug((var.__label__, bc, eq_res[:5]))
+                        if any(np.isnan(eq_res)):
+                            logger.error((eq, eq_res))
+
                         res.append(eq_res)
 
             res = np.stack(res)
@@ -560,9 +558,11 @@ class FyTrans(TransportSolverNumerics):
 
             a, b, c, d, e, f, g = equ.coefficient
 
-            y = core_profiles_1d[equ.primary_quantity.identifier].__array__()
+            y = equ.primary_quantity.profile
+            if callable(y):
+                y = y(x)
 
-            Y0[idx*2] = y
+            Y0[idx*2] = y if isinstance(y, np.ndarray) else np.full_like(x, y)
 
             Y0[idx*2+1] = -Function(y, x).d()(x)*d(x) + y*e(x)
 
@@ -570,8 +570,8 @@ class FyTrans(TransportSolverNumerics):
             func,
             bc,
             x, Y0,
-            bvp_rms_mask=self.code.parameters.get("bvp_rms_mask",  []),
-            tolerance=self.code.parameters.get("tolerance", 1.0e-3),
+            # bvp_rms_mask=self.code.parameters.get("bvp_rms_mask",  []),
+            # tolerance=self.code.parameters.get("tolerance", 1.0e-3),
             max_nodes=self.code.parameters.get("max_nodes", 250),
             verbose=self.code.parameters.get("verbose", 2)
         )
@@ -579,16 +579,19 @@ class FyTrans(TransportSolverNumerics):
         solver_1d.grid.remesh(rho_tor_norm=sol.x)
 
         for idx, equ in enumerate(solver_1d.equation):
-
             equ.primary_quantity["profile"] = sol.y[2*idx]
+            equ.primary_quantity["d_dr"] = sol.yp[2*idx]
             equ.primary_quantity["flux"] = sol.y[2*idx+1]
+            equ.primary_quantity["dflux_dr"] = sol.yp[2*idx+1]
 
         if not sol.success:
-            raise RuntimeError(sol.message)
+            logger.error(f"Solve BVP failed: {sol.message} , {sol.niter} iterations")
         else:
             logger.debug(f"Solve BVP success: {sol.message} , {sol.niter} iterations")
 
-        solver_1d.grid.remesh(rho_tor_norm=sol.x, psi=sol.y[0])
+            solver_1d.grid.remesh(rho_tor_norm=sol.x, psi=sol.y[0])
 
-        for idx, equ in enumerate(solver_1d.equation):
-            equ.primary_quantity.profile = sol.y[2*idx]
+            for idx, equ in enumerate(solver_1d.equation):
+                equ.primary_quantity.profile = sol.y[2*idx]
+
+        return sol.status

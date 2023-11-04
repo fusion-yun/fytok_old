@@ -174,22 +174,31 @@ class CoreRadialGrid:
         elif self.rho_tor_boundary is _not_found_:
             self["rho_tor_boundary"] = self.rho_tor.max()
 
-    def remesh(self, **kwargs) -> CoreRadialGrid:
-        psi_norm = kwargs.get("psi_norm", None)
+    def __copy__(self):
+        return self.__class__({
+            "psi_axis": self.psi_axis,
+            "psi_boundary": self.psi_boundary,
+            "psi_norm": self.psi_norm,
+            "rho_tor_boundary": self.rho_tor_boundary,
+            "rho_tor_norm": self.rho_tor_norm,
+        })
 
-        rho_tor_norm = kwargs.get("rho_tor_norm", None)
+    def remesh(self, rho_tor_norm=None,  psi_norm=None) -> CoreRadialGrid:
 
-        if rho_tor_norm is None:
-            rho_tor_norm = self.rho_tor_norm
-            if psi_norm is None:
-                psi_norm = self.psi_norm
-        elif psi_norm is None:
+        if (rho_tor_norm is None or rho_tor_norm is _not_found_):
+            if psi_norm is None or psi_norm is _not_found_:
+                return self
+            else:
+                rho_tor_norm = Function(self.rho_tor_norm, self.psi_norm)(psi_norm)
+        elif psi_norm is None or psi_norm is _not_found_:
             psi_norm = Function(self.psi_norm, self.rho_tor_norm)(rho_tor_norm)
+        else:
+            logger.warning("Both rho_tor_norm and psi_norm are provided! ")
 
         self.__init__({
-            "psi_axis": kwargs.get("psi_axis", self.psi_axis),
-            "psi_boundary": kwargs.get("psi_boundary", self.psi_boundary),
-            "rho_tor_boundary": kwargs.get("psi_boundary",  self.rho_tor_boundary),
+            "psi_axis": self.psi_axis,
+            "psi_boundary": self.psi_boundary,
+            "rho_tor_boundary": self.rho_tor_boundary,
             "psi_norm":  psi_norm,
             "rho_tor_norm": rho_tor_norm,
         })

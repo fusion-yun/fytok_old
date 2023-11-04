@@ -1,4 +1,5 @@
 import pathlib
+import numpy as np
 from fytok.Tokamak import Tokamak
 
 if __name__ == "__main__":
@@ -11,9 +12,18 @@ if __name__ == "__main__":
     tokamak = Tokamak(f"file+iterprofiles://{next(input_path.glob('*.xls')).as_posix()}",
                       f"file+geqdsk://{next(input_path.glob('**/*.txt')).as_posix()}",
                       device="iter",
-                      transport_solver={"code":  {"name": "fytrans", }})
+                      transport_solver={
+                          "code":  {"name": "fytrans",
+                                    "parameters": {
+                                        "rho_tor_norm": np.linspace(0.01, 0.995, 32),
+                                        "bvp_rms_mask": [0.96],
+                                        "hyper_diff": 1,
+                                    },
+                                    }})
 
     core_profiles_1d = tokamak.core_profiles.time_slice.current.profiles_1d
+
+    core_profiles_1d.electrons["density_thermal"] = 1.0e19
 
     tokamak.transport_solver.refresh(
         equilibrium=tokamak.equilibrium,
