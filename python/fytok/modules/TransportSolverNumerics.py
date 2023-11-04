@@ -219,7 +219,7 @@ class TransportSolverNumerics(Module):
         equations = [
             # {"primary_quantity":{"identifier":"psi",                                      },          "boundary_condition": []},
 
-            {"primary_quantity":{"identifier": "electrons/density_thermal", "profile":core_profiles_1d.electrons.density_thermal},            "boundary_condition": [{"identifier":{"index":4},"value":[0],"rho_tor_norm":0.01},{"identifier":{"index":1},"value":[3.0e19],"rho_tor_norm":0.95}]},
+            {"primary_quantity":{"identifier": "electrons/density_thermal", "profile":core_profiles_1d.electrons.density_thermal},            "boundary_condition": [{"identifier":{"index":4},"value":[0],"rho_tor_norm":0.01},{"identifier":{"index":1},"value":[3.0e19],"rho_tor_norm":0.995}]},
             # {"primary_quantity":{"identifier":"electrons/density_fast",       },                      "boundary_condition": []},
             # {"primary_quantity":{"identifier":"electrons/temperature",        },                      "boundary_condition": []},
             # {"primary_quantity":{"identifier":"electrons/momentum",           },                      "boundary_condition": []},

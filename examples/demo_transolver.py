@@ -17,7 +17,7 @@ if __name__ == "__main__":
                                     "parameters": {
                                         "rho_tor_norm": np.linspace(0.01, 0.995, 32),
                                         "bvp_rms_mask": [0.96],
-                                        "hyper_diff": 1,
+                                        "hyper_diff": 0.001,
                                     },
                                     }})
 

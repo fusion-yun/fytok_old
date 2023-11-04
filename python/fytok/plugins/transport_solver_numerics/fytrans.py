@@ -50,7 +50,7 @@ class FyTrans(TransportSolverNumerics):
                         **kwargs)
 
         self._solve(
-            tau=0,
+            dt=0,
             core_profiles=core_profiles,
             equilibrium=equilibrium,
             core_transport=core_transport,
@@ -66,7 +66,7 @@ class FyTrans(TransportSolverNumerics):
 
         super().advance(*args, **kwargs)
 
-        self._solve(tau=equilibrium.time_slice.current.time-equilibrium.time_slice.previous.time,
+        self._solve(dt=equilibrium.time_slice.current.time-equilibrium.time_slice.previous.time,
                     core_profiles=core_profiles,
                     equilibrium=equilibrium,
                     core_transport=core_transport,
@@ -74,14 +74,14 @@ class FyTrans(TransportSolverNumerics):
                     )
 
     def _update_coefficient(self,
-                            tau: float,
+                            dt: float,
                             equilibrium: Equilibrium,
                             core_profiles: CoreProfiles,
                             core_transport: CoreTransport,
                             core_sources: CoreSources,
                             **kwargs
-                            ):
-        inv_tau = 1.0/tau if tau > 0 else 0
+                            ) -> typing.Tuple[typing.List[Variable], float]:
+        one_over_dt = 1.0/dt if dt > 0 else 0
 
         solver_1d = self.time_slice.current.solver_1d
 
@@ -118,7 +118,7 @@ class FyTrans(TransportSolverNumerics):
 
         B0m = equilibrium_prev.vacuum_toroidal_field.b0 if equilibrium_prev is not _not_found_ else np.nan
 
-        k_B = (B0 - B0m) / (B0 + B0m) * 2.0*inv_tau
+        k_B = (B0 - B0m) / (B0 + B0m) * 2.0*one_over_dt
 
         # Mesh
         rho_tor_boundary = eq_1d.grid.rho_tor_boundary
@@ -126,7 +126,7 @@ class FyTrans(TransportSolverNumerics):
         rho_tor_boundary_m = eq_1d_prev.grid.rho_tor_boundary if eq_1d_prev is not None else 0
 
         k_rho_bdry = (rho_tor_boundary - rho_tor_boundary_m) / \
-            (rho_tor_boundary + rho_tor_boundary_m)*2.0*inv_tau
+            (rho_tor_boundary + rho_tor_boundary_m)*2.0*one_over_dt
 
         k_phi = k_B + k_rho_bdry
 
@@ -229,7 +229,7 @@ class FyTrans(TransportSolverNumerics):
                             Uloop_bdry = bc_.value[0]
                             u = 0
                             v = 1
-                            w = (tau*Uloop_bdry + psi_prev(x))*d(x)
+                            w = (dt*Uloop_bdry + psi_prev(x))*d(x)
                         case 5:  # generic boundary condition y expressed as a1y' + a2y=a3;
                             u = bc_.value[1]
                             v = bc_.value[0]
@@ -480,23 +480,22 @@ class FyTrans(TransportSolverNumerics):
             else:
                 raise RuntimeError(f"Unknown equation of {var_name}!")
 
-            eq["coefficient"] = [a, b, c, d, e, f, g]
+            eq["coefficient"] = [a, b, c, d, e, f, g]+bc
 
-            eq["boundary_condition"] = [{"value": bc[0]}, {"value": bc[1]}]
+            # eq["boundary_condition"] = [{"value": bc[0]}, {"value": bc[1]}]
 
             # logger.debug((var_name, a, b, c, d, e, f, g, bc))
 
-        return vars, inv_tau
+        return vars, one_over_dt
 
     def _solve(self, *args,  **kwargs):
 
-        vars, inv_tau,  = self._update_coefficient(*args,**kwargs)
+        vars, one_over_dt,  = self._update_coefficient(*args, **kwargs)
 
-        hyper_diff = self.code.parameters.get("hyper_diff", 0)
-
-        logger.debug(f"hyper_diff={hyper_diff}")
+        hyper_diff = self.code.parameters.get("hyper_diff", 0.001)
 
         solver_1d = self.time_slice.current.solver_1d
+
         equs_prev = self.time_slice.previous.solver_1d.equation if self.time_slice.previous is not _not_found_ else None
 
         equ_s = []
@@ -511,15 +510,15 @@ class FyTrans(TransportSolverNumerics):
 
             flux = vars[var_name+"_flux"]
 
-            a, b, c, d, e, f, g, *_ = equ.coefficient
+            a, b, c, d, e, f, g, (u0, v0, w0), (u1, v1, w1) = equ.coefficient
 
             dy = (-flux + e * y + hyper_diff * y.d)/(d + hyper_diff)
 
-            dflux = c*(f - g * y-(a*y-b*ym)*inv_tau)
+            dflux = (f - g * y-(a*y-b*ym)*one_over_dt + hyper_diff*flux.d)/(1.0/c+hyper_diff)
 
-            equ_s.append([y, dy,  equ.boundary_condition[0].value])
+            equ_s.append([y, dy, (u0, v0, w0)])
 
-            equ_s.append([flux, dflux,  equ.boundary_condition[1].value])
+            equ_s.append([flux, dflux, (u1, v1, w1)])
 
         def func(x: array_type, y: array_type, *args) -> array_type:
             # TODO: 需要加速
@@ -534,10 +533,6 @@ class FyTrans(TransportSolverNumerics):
                     except Exception as error:
                         raise RuntimeError(f"Error when apply  op={eq.__repr__()} x={x} args={(y)} !") from error
                     else:
-                        # logger.debug((var.__label__, bc, eq_res[:5]))
-                        if any(np.isnan(eq_res)):
-                            logger.error((eq, eq_res))
-
                         res.append(eq_res)
 
             res = np.stack(res)
@@ -545,10 +540,16 @@ class FyTrans(TransportSolverNumerics):
             return res
 
         def bc(ya: array_type, yb: array_type, *args) -> array_type:
-            res = np.stack([((u*ya[idx]+v*ya[idx+1]-w) if int(idx/2)*2 == idx else (u*yb[idx]+v*yb[idx-1]-w))
-                           for idx, (_, _, (u, v, w)) in enumerate(equ_s)])
+            res = []
+            for idx, (var, eq, bc) in enumerate(equ_s):
+                u, v, w = bc
+                if idx % 2 == 0:
+                    res.append(u*ya[idx]+v*ya[idx+1]-w)
+                else:
+                    res.append(u*yb[idx-1]+v*yb[idx]-w)
+
             # logger.debug(res)
-            return res
+            return np.array(res)
 
         x = solver_1d.grid.rho_tor_norm
 
@@ -556,7 +557,7 @@ class FyTrans(TransportSolverNumerics):
 
         for idx, equ in enumerate(solver_1d.equation):
 
-            a, b, c, d, e, f, g = equ.coefficient
+            a, b, c, d, e, f, g, *_ = equ.coefficient
 
             y = equ.primary_quantity.profile
             if callable(y):
@@ -570,8 +571,8 @@ class FyTrans(TransportSolverNumerics):
             func,
             bc,
             x, Y0,
-            # bvp_rms_mask=self.code.parameters.get("bvp_rms_mask",  []),
-            # tolerance=self.code.parameters.get("tolerance", 1.0e-3),
+            bvp_rms_mask=self.code.parameters.get("bvp_rms_mask",  []),
+            tolerance=self.code.parameters.get("tolerance", 1.0e-3),
             max_nodes=self.code.parameters.get("max_nodes", 250),
             verbose=self.code.parameters.get("verbose", 2)
         )
@@ -588,10 +589,5 @@ class FyTrans(TransportSolverNumerics):
             logger.error(f"Solve BVP failed: {sol.message} , {sol.niter} iterations")
         else:
             logger.debug(f"Solve BVP success: {sol.message} , {sol.niter} iterations")
-
-            solver_1d.grid.remesh(rho_tor_norm=sol.x, psi=sol.y[0])
-
-            for idx, equ in enumerate(solver_1d.equation):
-                equ.primary_quantity.profile = sol.y[2*idx]
 
         return sol.status
