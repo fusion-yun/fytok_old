@@ -3,11 +3,15 @@ from math import isclose
 import typing
 import numpy as np
 import scipy.constants
-
+from spdm.data.TimeSeries import TimeSeriesAoS, TimeSlice
 from spdm.data.Expression import Expression, Variable
 from spdm.data.Function import Function, function_like
 from spdm.data.Path import Path
 from spdm.utils.typing import array_type
+
+
+from spdm.numlib.bvp import solve_bvp
+
 
 from spdm.utils.tags import _not_found_
 
@@ -18,10 +22,6 @@ from fytok.modules.TransportSolverNumerics import TransportSolverNumerics
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.utils.logger import logger
 from fytok.utils.atoms import atoms
-from spdm.numlib.smooth import smooth_1d
-
-# from scipy.integrate import solve_bvp
-from spdm.numlib.bvp import solve_bvp
 
 EPSILON = 1.0e-15
 TOLERANCE = 1.0e-6
@@ -32,66 +32,24 @@ TWO_PI = 2.0 * scipy.constants.pi
 @TransportSolverNumerics.register(["fytrans"])
 class FyTrans(TransportSolverNumerics):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def refresh(self, *args,
-                core_profiles: CoreProfiles,
-                equilibrium: Equilibrium = None,
-                core_transport: CoreTransport = None,
-                core_sources: CoreSources = None,
-                **kwargs):
-
-        super().refresh(*args,
-                        core_profiles=core_profiles,
-                        equilibrium=equilibrium,
-                        core_transport=core_transport,
-                        core_sources=core_sources,
-                        **kwargs)
-
-        self._solve(
-            dt=0,
-            core_profiles=core_profiles,
-            equilibrium=equilibrium,
-            core_transport=core_transport,
-            core_sources=core_sources,
-        )
-
-    def advance(self, *args,
-                core_profiles: CoreProfiles,
-                equilibrium: Equilibrium = None,
-                core_transport: CoreTransport = None,
-                core_sources: CoreSources = None,
-                **kwargs):
-
-        super().advance(*args, **kwargs)
-
-        self._solve(dt=equilibrium.time_slice.current.time-equilibrium.time_slice.previous.time,
-                    core_profiles=core_profiles,
-                    equilibrium=equilibrium,
-                    core_transport=core_transport,
-                    core_sources=core_sources,
-                    )
-
     def _update_coefficient(self,
-                            dt: float,
+                            solver_1d: TransportSolverNumerics.TimeSlice.Solver1D,
                             equilibrium: Equilibrium,
-                            core_profiles: CoreProfiles,
                             core_transport: CoreTransport,
                             core_sources: CoreSources,
+                            dt: float = 0,
                             **kwargs
-                            ) -> typing.Tuple[typing.List[Variable], float]:
-        one_over_dt = 1.0/dt if dt > 0 else 0
+                            ) -> typing.Tuple[TransportSolverNumerics.TimeSlice.Solver1D, typing.List[Variable], float]:
 
-        solver_1d = self.time_slice.current.solver_1d
+        one_over_dt = 1.0/dt if dt > 0 else 0
 
         x = Variable(0, "x")
 
         vars = {"x": x}
 
-        core_profiles_1d_prev = core_profiles.time_slice.previous.profiles_1d if core_profiles.time_slice.previous is not _not_found_ else _not_found_
+        # core_profiles_1d_prev = core_profiles.time_slice.previous.profiles_1d if core_profiles.time_slice.previous is not _not_found_ else _not_found_
 
-        core_profiles_1d = core_profiles.time_slice.current.profiles_1d
+        # core_profiles_1d = core_profiles.time_slice.current.profiles_1d
 
         equilibrium_ = equilibrium.time_slice.current
 
@@ -101,12 +59,12 @@ class FyTrans(TransportSolverNumerics):
 
         eq_1d_prev = equilibrium.time_slice.previous.profiles_1d if equilibrium.time_slice.previous is not _not_found_ else None
 
-        for idx, eq in enumerate(solver_1d.equation):
-            name = eq.primary_quantity.identifier
+        for idx, equ in enumerate(solver_1d.equation):
+            name = equ.primary_quantity.identifier
 
-            vars[name] = Variable(idx*2+1, name, label=eq.primary_quantity.label or name)
+            vars[name] = Variable(idx*2+1, name, label=equ.primary_quantity.label or name)
             vars[name + "_flux"] = Variable(idx*2+2, name+"_flux",
-                                            label=rf"\Gamma_{{{eq.primary_quantity.label}}}" or name+"_flux")
+                                            label=rf"\Gamma_{{{equ.primary_quantity.label}}}" or name+"_flux")
 
         psi = Function(solver_1d.grid.psi, solver_1d.grid.rho_tor_norm, label="psi")(x)
 
@@ -165,21 +123,21 @@ class FyTrans(TransportSolverNumerics):
 
             vars["electons.density_thermal"] = ne = -1 * ns
         else:
-            ne = vars["electons.density_thermal"]
+            ne = vars["electons/density_thermal"]
 
-            num_of_ion = sum([1 for ion in core_profiles_1d.ion if not ion.is_impurity])
+            # num_of_ion = sum([1 for ion in core_profiles_1d.ion if not ion.is_impurity])
 
-            nz = sum([ion.z_ion_1d*ion.density for ion in core_profiles_1d.ion if ion.is_impurity])
+            # nz = sum([ion.z_ion_1d*ion.density for ion in core_profiles_1d.ion if ion.is_impurity])
 
-            n_i_prop = (ne-nz) / num_of_ion
+            # n_i_prop = (ne-nz) / num_of_ion
 
-            for ion in core_profiles_1d.ion:
-                if not ion.is_impurity:
-                    ion["density"] = n_i_prop/ion.z
+            # for ion in core_profiles_1d.ion:
+            #     if not ion.is_impurity:
+            #         ion["density"] = n_i_prop/ion.z
 
-        for idx, eq in enumerate(solver_1d.equation):
+        for idx, equ in enumerate(solver_1d.equation):
 
-            var_name = eq.primary_quantity.identifier
+            var_name = equ.primary_quantity.identifier
 
             bc = [[0, 0, 0], [0, 0, 0]]
 
@@ -213,7 +171,7 @@ class FyTrans(TransportSolverNumerics):
                 g = - vpr * (j_parallel_imp)/TWO_PI
 
                 for i in range(2):
-                    bc_ = eq.boundary_condition[i]
+                    bc_ = equ.boundary_condition[i]
                     x = bc_.rho_tor_norm
                     match bc_.identifier.index:
                         case 1:  # poloidal flux;
@@ -287,7 +245,7 @@ class FyTrans(TransportSolverNumerics):
                 g = vpr * (Simpl+k_phi)
 
                 for i in range(2):
-                    bc_ = eq.boundary_condition[i]
+                    bc_ = equ.boundary_condition[i]
 
                     x = bc_.rho_tor_norm or (0.0 if i == 0 else 1.0)
 
@@ -372,7 +330,7 @@ class FyTrans(TransportSolverNumerics):
                 g = (vpr**(5/3)) * (Qimpl + nu_z*ns)
 
                 for i in range(2):
-                    bc_ = eq.boundary_condition[i]
+                    bc_ = equ.boundary_condition[i]
 
                     x = bc_.rho_tor_norm or (0.0 if i == 0 else 1.0)
 
@@ -448,7 +406,7 @@ class FyTrans(TransportSolverNumerics):
                 g = vpr * (Uimpl+gm8*(n_z+ms*ns*k_rho_bdry))
 
                 for i in range(2):
-                    bc_ = eq.boundary_condition[i]
+                    bc_ = equ.boundary_condition[i]
 
                     x = bc_.rho_tor_norm or (0.0 if i == 0 else 1.0)
 
@@ -480,23 +438,26 @@ class FyTrans(TransportSolverNumerics):
             else:
                 raise RuntimeError(f"Unknown equation of {var_name}!")
 
-            eq["coefficient"] = [a, b, c, d, e, f, g]+bc
+            equ["coefficient"] = [a, b, c, d, e, f, g]+bc
 
             # eq["boundary_condition"] = [{"value": bc[0]}, {"value": bc[1]}]
 
             # logger.debug((var_name, a, b, c, d, e, f, g, bc))
 
-        return vars, one_over_dt
+        return solver_1d, vars, one_over_dt
 
-    def _solve(self, *args,  **kwargs):
+    def _solve(self,
+               current: TransportSolverNumerics.TimeSlice,
+               previous: TransportSolverNumerics.TimeSlice,
+               *args, **kwargs):
 
-        vars, one_over_dt,  = self._update_coefficient(*args, **kwargs)
+        dt = 0 if previous is None or previous is _not_found_ else current.time-previous.time
+
+        solver_1d, vars, one_over_dt = self._update_coefficient(current.solver_1d, *args, dt=dt, **kwargs)
+
+        solver_1d_prev: TransportSolverNumerics.TimeSlice.Solver1D = getattr(previous, "solver_1d", None)
 
         hyper_diff = self.code.parameters.get("hyper_diff", 0.001)
-
-        solver_1d = self.time_slice.current.solver_1d
-
-        equs_prev = self.time_slice.previous.solver_1d.equation if self.time_slice.previous is not _not_found_ else None
 
         equ_s = []
 
@@ -506,7 +467,7 @@ class FyTrans(TransportSolverNumerics):
 
             y = vars[var_name]
 
-            ym = equs_prev[idx].primary_quantity.profile if equs_prev is not None else 0
+            ym = solver_1d_prev.equation[idx].primary_quantity.profile if solver_1d_prev is not None else 0
 
             flux = vars[var_name+"_flux"]
 
@@ -591,3 +552,8 @@ class FyTrans(TransportSolverNumerics):
             logger.debug(f"Solve BVP success: {sol.message} , {sol.niter} iterations")
 
         return sol.status
+
+    def refresh(self, *args, **kwargs):
+        super().refresh(*args,  **kwargs)
+        self._solve(self.time_slice.current, self.time_slice.previous, **self._dependence)
+

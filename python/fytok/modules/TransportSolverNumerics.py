@@ -167,22 +167,12 @@ class TransportSolverNumericsBC:
 
 
 @sp_tree
-class TransportSolverNumericsSlice(TimeSlice):
-
-    primary_coordinate: Identifier
-
-    vacuum_toroidal_field: VacuumToroidalField
+class TransportSolverNumericsTimeSlice(TimeSlice):
 
     Solver1D = TransportSolverNumericsSolver1D
+
     solver_1d: TransportSolverNumericsSolver1D
     """ Numerics related to 1D radial solver, for various time slices."""
-
-    boundary_conditions_ggd: transport_solver_numerics._T_numerics_bc_ggd
-    """ Boundary conditions of the transport equations, provided on the GGD, for various
-        time slices"""
-
-    convergence: transport_solver_numerics._T_numerics_convergence
-    """ Convergence details To be removed when the solver_1d structure is finalized."""
 
 
 @sp_tree
@@ -194,69 +184,90 @@ class TransportSolverNumerics(Module):
     _plugin_prefix = 'fytok.plugins.transport_solver_numerics.'
 
     solver: Identifier
-    """ Solver identifier"""
 
-    TimeSlice = TransportSolverNumericsSlice
+    primary_coordinate: Identifier
 
-    time_slice: TimeSeriesAoS[TransportSolverNumericsSlice]
+    TimeSlice = TransportSolverNumericsTimeSlice
+
+    time_slice: TimeSeriesAoS[TransportSolverNumericsTimeSlice]
 
     def refresh(self, *args,
                 core_profiles: CoreProfiles,
                 equilibrium: Equilibrium,
-                core_transport: CoreTransport.Model,
-                core_sources: CoreSources.Source,
-                **kwargs):
+                core_transport: CoreTransport,
+                core_sources: CoreSources,
+                **kwargs) -> TransportSolverNumericsTimeSlice:
         """
             solve transport equation until residual < tolerance
             return core_profiles
 
         """
 
-        core_profiles_1d = core_profiles.time_slice.current.profiles_1d
+        # core_profiles_1d = core_profiles.time_slice.current.profiles_1d
+        # # fmt:off
+        # equations = [
+        #     # {"primary_quantity":{"identifier":"psi",                                      },          "boundary_condition": []},
 
-        idx = 0
-        # fmt:off
-        equations = [
-            # {"primary_quantity":{"identifier":"psi",                                      },          "boundary_condition": []},
-
-            {"primary_quantity":{"identifier": "electrons/density_thermal", "profile":core_profiles_1d.electrons.density_thermal},            "boundary_condition": [{"identifier":{"index":4},"value":[0],"rho_tor_norm":0.01},{"identifier":{"index":1},"value":[3.0e19],"rho_tor_norm":0.995}]},
-            # {"primary_quantity":{"identifier":"electrons/density_fast",       },                      "boundary_condition": []},
-            # {"primary_quantity":{"identifier":"electrons/temperature",        },                      "boundary_condition": []},
-            # {"primary_quantity":{"identifier":"electrons/momentum",           },                      "boundary_condition": []},
-            # *sum([[       
-            # {"primary_quantity":{"identifier": f"ion/{s}/density_thermal", "label":f"n_{ion.label}"},   "boundary_condition": []},
-            # # {"primary_quantity":{"identifier":f"ion/{s}/density_fast",    },                          "boundary_condition": []},
-            # # {"primary_quantity":{"identifier":f"ion/{s}/temperature",     },                          "boundary_condition": []},
-            # # {"primary_quantity":{"identifier":f"ion/{s}/momentum",        },                          "boundary_condition": []},
-            # ] for s,ion in  enumerate(core_profiles.time_slice.current.profiles_1d.ion)], [])
-        ]
-        # fmt:on
+        #     {"primary_quantity":{"identifier": "electrons/density_thermal", "profile":core_profiles_1d.electrons.density_thermal},            "boundary_condition": [{"identifier":{"index":4},"value":[0],"rho_tor_norm":0.01},{"identifier":{"index":1},"value":[3.0e19],"rho_tor_norm":0.995}]},
+        #     # {"primary_quantity":{"identifier":"electrons/density_fast",       },                      "boundary_condition": []},
+        #     # {"primary_quantity":{"identifier":"electrons/temperature",        },                      "boundary_condition": []},
+        #     # {"primary_quantity":{"identifier":"electrons/momentum",           },                      "boundary_condition": []},
+        #     # *sum([[       
+        #     # {"primary_quantity":{"identifier": f"ion/{s}/density_thermal", "label":f"n_{ion.label}"},   "boundary_condition": []},
+        #     # # {"primary_quantity":{"identifier":f"ion/{s}/density_fast",    },                          "boundary_condition": []},
+        #     # # {"primary_quantity":{"identifier":f"ion/{s}/temperature",     },                          "boundary_condition": []},
+        #     # # {"primary_quantity":{"identifier":f"ion/{s}/momentum",        },                          "boundary_condition": []},
+        #     # ] for s,ion in  enumerate(core_profiles.time_slice.current.profiles_1d.ion)], [])
+        # ]
+        # # fmt:on
 
         # for equ in equations:
         #     equ["primary_quantity"]["profile"] = core_profiles_1d[equ["primary_quantity"]["identifier"]].__array__()
+
         eq = equilibrium.time_slice.current
 
         grid = copy(eq.profiles_1d.grid).remesh(self.code.parameters.rho_tor_norm)
 
-        self.time_slice.refresh(
+        current: TransportSolverNumericsTimeSlice = super().refresh(
             *args,
             {
                 "primary_coordinate":  "rho_tor_norm",
                 "vacuum_toroidal_field": eq.vacuum_toroidal_field,
-                "solver_1d": {"grid": grid, "equation": equations}
+                "solver_1d": {"grid": grid}
             },
             core_profiles=core_profiles,
             equilibrium=equilibrium,
             core_transport=core_transport,
             core_sources=core_sources,
-            ** kwargs)
+            **kwargs)
 
-        solver_1d: TransportSolverNumericsSolver1D = self.time_slice.current.solver_1d
+        # current = super().refresh({
+        #     "primary_coordinate":  "rho_tor_norm",
+        #     "vacuum_toroidal_field": eq.vacuum_toroidal_field,
+        #     "solver_1d": {"grid": grid, "equation": equations}
+        # })
 
-        core_profiles_1d["grid"] = solver_1d.grid
+        # current.refresh(
+        #     *args,
+        #     core_profiles=core_profiles,
+        #     equilibrium=equilibrium,
+        #     core_transport=core_transport,
+        #     core_sources=core_sources,
+        #     ** kwargs)
 
-        for equ in solver_1d.equation:
-            core_profiles_1d[equ.primary_quantity.identifier] = equ.primary_quantity.profile
+        solver_1d: TransportSolverNumericsSolver1D = current.solver_1d
 
-    def advance(self, *args, **kwargs) -> CoreProfiles.TimeSlice:
-        self.time_slice.advance(*args, **kwargs)
+        # core_profiles_1d["grid"] = solver_1d.grid
+
+        # for equ in solver_1d.equation:
+        #     core_profiles_1d[equ.primary_quantity.identifier] = equ.primary_quantity.profile
+
+        return current
+
+    def advance(self, *args, **kwargs):
+
+        return super().advance(
+            *args,
+            {
+                "solver_1d": {"equation": []}
+            }, **kwargs)

@@ -9,28 +9,41 @@ if __name__ == "__main__":
     input_path = pathlib.Path("/home/salmon/workspace/fytok_data/data/15MA inductive - burn")
     output_path = f"{WORKSPACE}/output"
 
-    tokamak = Tokamak(f"file+iterprofiles://{next(input_path.glob('*.xls')).as_posix()}",
-                      f"file+geqdsk://{next(input_path.glob('**/*.txt')).as_posix()}",
-                      device="iter",
-                      transport_solver={
-                          "code":  {"name": "fytrans",
+    tokamak = Tokamak(
+        f"file+iterprofiles://{next(input_path.glob('*.xls')).as_posix()}",
+        f"file+geqdsk://{next(input_path.glob('**/*.txt')).as_posix()}",
+        device="iter",
+        transport_solver={"code":  {"name": "fytrans",
                                     "parameters": {
-                                        "rho_tor_norm": np.linspace(0.01, 0.995, 32),
                                         "bvp_rms_mask": [0.96],
-                                        "hyper_diff": 0.001,
-                                    },
-                                    }})
+                                        "hyper_diff": 0.001, }}
+                          }
+    )
 
-    core_profiles_1d = tokamak.core_profiles.time_slice.current.profiles_1d
 
-    core_profiles_1d.electrons["density_thermal"] = 1.0e19
-
+    # fmt:off
     tokamak.transport_solver.refresh(
+        {"solver_1d":{
+            "grid":{"rho_tor_norm":np.linspace(0.01, 0.995, 32)},
+            "equations": [
+            # {"primary_quantity":{"identifier":"psi",                                      },          "boundary_condition": []},
+            {"primary_quantity": {"identifier": "electrons/density_thermal", "profile": 3.0e19},        "boundary_condition": [{"identifier": {"index": 4}, "value": [0], "rho_tor_norm":0.01}, {"identifier": {"index": 1}, "value": [3.0e19], "rho_tor_norm":0.995}]},
+            # {"primary_quantity":{"identifier":"electrons/density_fast",       },                      "boundary_condition": []},
+            # {"primary_quantity":{"identifier":"electrons/temperature",        },                      "boundary_condition": []},
+            # {"primary_quantity":{"identifier":"electrons/momentum",           },                      "boundary_condition": []},
+            # *sum([[
+            # {"primary_quantity":{"identifier": f"ion/{s}/density_thermal", "label":f"n_{ion.label}"},   "boundary_condition": []},
+            # # {"primary_quantity":{"identifier":f"ion/{s}/density_fast",    },                          "boundary_condition": []},
+            # # {"primary_quantity":{"identifier":f"ion/{s}/temperature",     },                          "boundary_condition": []},
+            # # {"primary_quantity":{"identifier":f"ion/{s}/momentum",        },                          "boundary_condition": []},
+            # ] for s,ion in  enumerate(core_profiles.time_slice.current.profiles_1d.ion)], [])
+        ]}},
         equilibrium=tokamak.equilibrium,
         core_profiles=tokamak.core_profiles,
         core_transport=tokamak.core_transport,
         core_sources=tokamak.core_sources,
     )
+    # fmt:on
 
     # eq_profiles_1d = equilibrium.time_slice.current.profiles_1d
 
