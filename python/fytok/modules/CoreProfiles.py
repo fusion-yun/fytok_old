@@ -124,7 +124,6 @@ class CoreProfilesIon(utilities._T_core_profile_ions):
 
 @sp_tree(coordinate1="../grid/rho_tor_norm")
 class CoreProfilesNeutral(utilities._T_core_profile_neutral):
-    _metadata = {"identifier": "label"}
 
     label: str
 
@@ -210,9 +209,9 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
 
     electrons: CoreProfilesElectrons
 
-    ion: AoS[CoreProfilesIon]
+    ion: AoS[CoreProfilesIon] = sp_property(identifier="label")
 
-    neutral: AoS[CoreProfilesNeutral]
+    neutral: AoS[CoreProfilesNeutral] = sp_property(identifier="label")
 
     @sp_property
     def t_i_average(self) -> Function:

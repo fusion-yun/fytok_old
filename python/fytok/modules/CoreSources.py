@@ -5,10 +5,7 @@ from spdm.data.AoS import AoS
 from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
 
-from ..utils.logger import logger
 
-from .CoreProfiles import CoreProfiles
-from .Equilibrium import Equilibrium
 from .Utilities import *
 from ..ontology import core_sources
 
@@ -56,9 +53,9 @@ class CoreSourcesProfiles1D(core_sources._T_core_sources_source_profiles_1d):
 
     conductivity_parallel: Function = sp_property(units="ohm^-1.m^-1")
 
-    ion: AoS[CoreSourcesIon]
+    ion: AoS[CoreSourcesIon] = sp_property(identifier="label")
 
-    neutral: AoS[CoreSourcesNeutral]
+    neutral: AoS[CoreSourcesNeutral] = sp_property(identifier="label")
 
 
 @sp_tree

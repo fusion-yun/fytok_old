@@ -1,6 +1,7 @@
 import pathlib
 import numpy as np
 from fytok.Tokamak import Tokamak
+from fytok.utils.logger import logger
 
 if __name__ == "__main__":
     WORKSPACE = "/home/salmon/workspace"
@@ -20,13 +21,16 @@ if __name__ == "__main__":
             }}
     )
 
+    ion = tokamak.core_transport.model[0].time_slice.current.profiles_1d.ion
+    # logger.debug(ion.get("D/particles/d").__repr__())
+
     tokamak.transport_solver.refresh(
         rho_tor_norm=np.linspace(0.01, 0.995, 32),
         equation={
             "electrons/density_thermal": {
                 "profile": 3.0e19,
                 "boundary_condition": [{"identifier": {"index": 4}, "value": [0]}, {"identifier": {"index": 1}, "value": [3.0e19]}]},
-            "ion/0/density_thermal": {
+            "ion/D/density_thermal": {
                 "profile": 3.0e19,
                 "boundary_condition": [{"identifier": {"index": 4}, "value": [0]}, {"identifier": {"index": 1}, "value": [3.0e19]}]},
         },
