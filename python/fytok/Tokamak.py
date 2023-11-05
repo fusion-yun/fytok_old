@@ -3,6 +3,7 @@ from copy import copy
 
 from spdm.data.Entry import PROTOCOL_LIST, open_entry
 from spdm.data.HTree import HTree
+from spdm.data.Actor import Actor
 from spdm.data.sp_property import SpTree, sp_property
 from spdm.geometry.GeoObject import GeoObject
 from spdm.utils.tags import _not_found_
@@ -36,7 +37,7 @@ from .ontology import GLOBAL_ONTOLOGY
 # ---------------------------------
 
 
-class Tokamak(SpTree):
+class Tokamak(Actor):
     """Tokamak
     功能：
         - 描述装置在单一时刻的状态，
@@ -93,14 +94,12 @@ class Tokamak(SpTree):
 
     run: int = sp_property(default_value=0)
 
-    time: float = sp_property(default_value=0.0)
-
     name: str = sp_property(default_value="unknown")
 
     description: str = sp_property(default_value="empty tokamak")
 
     @property
-    def short_description(self) -> str: return f"{self.device.upper()} #{self.shot} time={self.time}s"
+    def short_description(self) -> str: return f"{self.device.upper()} #{self.shot} time={self.time:.2f}s"
 
     @property
     def tag(self) -> str: return f"{self.device.lower()}_{self.shot}_{int(self.time*100):06d}"
@@ -146,8 +145,7 @@ class Tokamak(SpTree):
 
         self.equilibrium.advance(*args, **kwargs)
 
-        self["time"] = self.equilibrium.time_slice.time
-
+        super().advance(time=self.equilibrium.time_slice.current.time)
         # self["time"] = self.equilibrium.time_slice.current.time
 
         # self.transport_solver.advance(*args, **kwargs,
@@ -160,13 +158,9 @@ class Tokamak(SpTree):
 
     def refresh(self, *args, **kwargs):
 
-        super().update(*args, **kwargs)
-
         self.equilibrium.refresh(*args, **kwargs)
 
-        time = self.equilibrium.time_slice.current.time
-
-        self["time"] = time
+        super().refresh(time=self.equilibrium.time_slice.current.time)
 
         # self.core_profiles.refresh(time=time)
         # self.core_transport.refresh(time=time)
