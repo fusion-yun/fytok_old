@@ -247,7 +247,7 @@ class FyTrans(TransportSolverNumerics):
                 for i in range(2):
                     bc_ = equ.boundary_condition[i]
 
-                    x = bc_.rho_tor_norm or (0.0 if i == 0 else 1.0)
+                    r_bc = solver_1d.grid.rho_tor_norm[0] if i == 0 else solver_1d.grid.rho_tor_norm[-1]
 
                     match bc_.identifier.index:
                         case 1:   # 1: value of the field y;
@@ -255,8 +255,8 @@ class FyTrans(TransportSolverNumerics):
                             v = 0
                             w = bc_.value[0]
                         case 2:  # 2: radial derivative of the field (-dy/drho_tor);
-                            u = -e(x)/d(x)
-                            v = 1.0/d(x)
+                            u = -e(r_bc)/d(r_bc)
+                            v = 1.0/d(r_bc)
                             w = bc_.value[0]
                         case 3:  # 3: scale length of the field y/(-dy/drho_tor);
                             raise NotImplementedError(f" # 3: scale length of the field y/(-dy/drho_tor);")
@@ -332,7 +332,7 @@ class FyTrans(TransportSolverNumerics):
                 for i in range(2):
                     bc_ = equ.boundary_condition[i]
 
-                    x = bc_.rho_tor_norm or (0.0 if i == 0 else 1.0)
+                    r_bc = solver_1d.grid.rho_tor_norm[0] if i == 0 else solver_1d.grid.rho_tor_norm[-1]
 
                     match bc_.identifier.index:
                         case 1:   # 1: value of the field y;
@@ -340,8 +340,8 @@ class FyTrans(TransportSolverNumerics):
                             v = 0
                             w = bc_.value[0]
                         case 2:  # 2: radial derivative of the field (-dy/drho_tor);
-                            u = -e(x)/d(x)
-                            v = 1.0/d(x)
+                            u = -e(r_bc)/d(r_bc)
+                            v = 1.0/d(r_bc)
                             w = bc_.value[0]
                         case 3:  # 3: scale length of the field y/(-dy/drho_tor);
                             raise NotImplementedError(f" # 3: scale length of the field y/(-dy/drho_tor);")
@@ -408,7 +408,7 @@ class FyTrans(TransportSolverNumerics):
                 for i in range(2):
                     bc_ = equ.boundary_condition[i]
 
-                    x = bc_.rho_tor_norm or (0.0 if i == 0 else 1.0)
+                    r_bc = solver_1d.grid.rho_tor_norm[0] if i == 0 else solver_1d.grid.rho_tor_norm[-1]
 
                     match bc_.identifier.index:
                         case 1:   # 1: value of the field y;
@@ -416,8 +416,8 @@ class FyTrans(TransportSolverNumerics):
                             v = 0
                             w = bc_.value[0]
                         case 2:  # 2: radial derivative of the field (-dy/drho_tor);
-                            u = -e(x)/d(x)
-                            v = 1.0/d(x)
+                            u = -e(r_bc)/d(r_bc)
+                            v = 1.0/d(r_bc)
                             w = bc_.value[0]
                         case 3:  # 3: scale length of the field y/(-dy/drho_tor);
                             raise NotImplementedError(f" # 3: scale length of the field y/(-dy/drho_tor);")
@@ -446,10 +446,10 @@ class FyTrans(TransportSolverNumerics):
 
         return solver_1d, vars, one_over_dt
 
-    def _solve(self,
-               current: TransportSolverNumerics.TimeSlice,
-               previous: TransportSolverNumerics.TimeSlice,
-               *args, **kwargs):
+    def solve(self,
+              current: TransportSolverNumerics.TimeSlice,
+              previous: TransportSolverNumerics.TimeSlice,
+              *args, **kwargs):
 
         dt = 0 if previous is None or previous is _not_found_ else current.time-previous.time
 
@@ -504,6 +504,7 @@ class FyTrans(TransportSolverNumerics):
             res = []
             for idx, (var, eq, bc) in enumerate(equ_s):
                 u, v, w = bc
+
                 if idx % 2 == 0:
                     res.append(u*ya[idx]+v*ya[idx+1]-w)
                 else:
@@ -552,8 +553,3 @@ class FyTrans(TransportSolverNumerics):
             logger.debug(f"Solve BVP success: {sol.message} , {sol.niter} iterations")
 
         return sol.status
-
-    def refresh(self, *args, **kwargs):
-        super().refresh(*args,  **kwargs)
-        self._solve(self.time_slice.current, self.time_slice.previous, **self._dependence)
-

@@ -191,55 +191,55 @@ class TransportSolverNumerics(Module):
 
     time_slice: TimeSeriesAoS[TransportSolverNumericsTimeSlice]
 
-    def refresh(self, *args,
-                core_profiles: CoreProfiles,
-                equilibrium: Equilibrium,
-                core_transport: CoreTransport,
-                core_sources: CoreSources,
-                **kwargs) -> TransportSolverNumericsTimeSlice:
+    def solve(self,
+              current: TimeSlice,
+              previous: TimeSlice | None,
+              *args, **kwargs) -> TransportSolverNumericsTimeSlice:
+        raise NotImplementedError(f"{self.__class__.__name__}.solve() is not implemented!")
+
+    def refresh(self, *args,  equilibrium: Equilibrium, **kwargs) -> TransportSolverNumericsTimeSlice:
         """
             solve transport equation until residual < tolerance
-            return core_profiles
-
         """
 
-        # core_profiles_1d = core_profiles.time_slice.current.profiles_1d
+        eq_grid = equilibrium.time_slice.current.profiles_1d.grid
+
+        rho_tor_norm = kwargs.pop("rho_tor_norm", self.code.parameters.rho_tor_norm)
+
+        if rho_tor_norm is None or rho_tor_norm is _not_found_:
+            rho_tor_norm = np.linspace(0.01, 0.995, len(eq_grid.rho_tor_norm))
+
+        grid = copy(eq_grid).remesh(rho_tor_norm)
+
+        # ions = self.code.parameters.get("ions", [])
         # # fmt:off
-        # equations = [
-        #     # {"primary_quantity":{"identifier":"psi",                                      },          "boundary_condition": []},
+        # equations = {
+        #     "psi"                          :{                      "boundary_condition": []},
+        #     "electrons.density_thermal"    :{"profile": 3.0e19,    "boundary_condition": [{"identifier": {"index": 4}, "value": [0]}, {"identifier": {"index": 1}, "value": [3.0e19]}]},
+        #     "electrons.density_fast"       :{                      "boundary_condition": []},
+        #     "electrons.temperature"        :{                      "boundary_condition": []},
+        #     "electrons.momentum"           :{                      "boundary_condition": []},
+        # }
+        # for label in ions:
+        #     update_tree(equations, None, {
+        #     f"ion.{label}.density_thermal" :{"profile": 3.0e19,    "boundary_condition": []},
+        #     f"ion.{label}.temperature"     :{                      "boundary_condition": []},
+        #     f"ion.{label}.density_fast"    :{                      "boundary_condition": []},
+        #     f"ion.{label}.temperature"     :{                      "boundary_condition": []},
+        #     f"ion.{label}.momentum"        :{                      "boundary_condition": []},
+        #     })
+        # equations = update_tree(kwargs.pop("equation", None),equations)
 
-        #     {"primary_quantity":{"identifier": "electrons/density_thermal", "profile":core_profiles_1d.electrons.density_thermal},            "boundary_condition": [{"identifier":{"index":4},"value":[0],"rho_tor_norm":0.01},{"identifier":{"index":1},"value":[3.0e19],"rho_tor_norm":0.995}]},
-        #     # {"primary_quantity":{"identifier":"electrons/density_fast",       },                      "boundary_condition": []},
-        #     # {"primary_quantity":{"identifier":"electrons/temperature",        },                      "boundary_condition": []},
-        #     # {"primary_quantity":{"identifier":"electrons/momentum",           },                      "boundary_condition": []},
-        #     # *sum([[       
-        #     # {"primary_quantity":{"identifier": f"ion/{s}/density_thermal", "label":f"n_{ion.label}"},   "boundary_condition": []},
-        #     # # {"primary_quantity":{"identifier":f"ion/{s}/density_fast",    },                          "boundary_condition": []},
-        #     # # {"primary_quantity":{"identifier":f"ion/{s}/temperature",     },                          "boundary_condition": []},
-        #     # # {"primary_quantity":{"identifier":f"ion/{s}/momentum",        },                          "boundary_condition": []},
-        #     # ] for s,ion in  enumerate(core_profiles.time_slice.current.profiles_1d.ion)], [])
-        # ]
-        # # fmt:on
+        equation=kwargs.pop("equation", {})
 
-        # for equ in equations:
-        #     equ["primary_quantity"]["profile"] = core_profiles_1d[equ["primary_quantity"]["identifier"]].__array__()
+        equ = []
 
-        eq = equilibrium.time_slice.current
+        for key,value in equation.items(): 
+            equ.append({"primary_quantity": {"identifier": key.replace('.','/'),   "profile": value.pop("profile",None)},**value})
 
-        grid = copy(eq.profiles_1d.grid).remesh(self.code.parameters.rho_tor_norm)
+        super().refresh(*args, {"solver_1d": {"grid": grid, "equation": equ}}, equilibrium=equilibrium, **kwargs)
 
-        current: TransportSolverNumericsTimeSlice = super().refresh(
-            *args,
-            {
-                "primary_coordinate":  "rho_tor_norm",
-                "vacuum_toroidal_field": eq.vacuum_toroidal_field,
-                "solver_1d": {"grid": grid}
-            },
-            core_profiles=core_profiles,
-            equilibrium=equilibrium,
-            core_transport=core_transport,
-            core_sources=core_sources,
-            **kwargs)
+        self.solve(self.time_slice.current, self.time_slice.previous, **self.dependences)
 
         # current = super().refresh({
         #     "primary_coordinate":  "rho_tor_norm",
@@ -255,14 +255,14 @@ class TransportSolverNumerics(Module):
         #     core_sources=core_sources,
         #     ** kwargs)
 
-        solver_1d: TransportSolverNumericsSolver1D = current.solver_1d
+        # solver_1d: TransportSolverNumericsSolver1D = self.time_slice.current.solver_1d
 
         # core_profiles_1d["grid"] = solver_1d.grid
 
         # for equ in solver_1d.equation:
         #     core_profiles_1d[equ.primary_quantity.identifier] = equ.primary_quantity.profile
 
-        return current
+        return self.time_slice.current
 
     def advance(self, *args, **kwargs):
 
