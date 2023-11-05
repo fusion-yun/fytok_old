@@ -76,7 +76,7 @@ class CoreSourcesTimeSlice(TimeSlice):
 
 
 @sp_tree
-class CoreSourcesSource(TimeBasedActor):
+class CoreSourcesSource(Module):
 
     _plugin_prefix = 'fytok.plugins.core_sources.source.'
 

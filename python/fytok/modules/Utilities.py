@@ -94,23 +94,6 @@ class Module(Actor):
     code: Code
 
 
-@sp_tree
-class TimeBasedActor(Module):
-
-    time_slice: TimeSeriesAoS
-
-    @property
-    def current(self) -> TimeSlice: return self.time_slice.current
-
-    def refresh(self, *args, **kwargs) -> typing.Type[TimeSlice]:
-        """update the last time slice"""
-        self.time_slice.refresh(*args, **kwargs)
-
-    def advance(self, *args, **kwargs) -> typing.Type[TimeSlice]:
-        """advance time_series to next slice"""
-        self.time_slice.advance(*args, **kwargs)
-
-
 class IDS(Module):
     """Base class of IDS"""
 

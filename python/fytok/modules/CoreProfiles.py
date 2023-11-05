@@ -437,7 +437,7 @@ class CoreProfilesTimeSlice(TimeSlice):
 
 
 @sp_tree
-class CoreProfiles(TimeBasedActor):
+class CoreProfiles(Module):
 
     ids_properties: IDSProperties
 

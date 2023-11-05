@@ -89,7 +89,7 @@ class CoreTransportTimeSlice(TimeSlice):
 
 
 @sp_tree
-class CoreTransportModel(TimeBasedActor):
+class CoreTransportModel(Module):
 
     _plugin_prefix = 'fytok.plugins.core_transport.model.'
 

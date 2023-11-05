@@ -413,7 +413,7 @@ class EquilibriumTimeSlice(equilibrium._T_equilibrium_time_slice):
         return geo, styles
 
 
-class Equilibrium(TimeBasedActor):
+class Equilibrium(Module):
     r"""
         Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
 
