@@ -22,7 +22,7 @@ if __name__ == "__main__":
     )
 
     ion = tokamak.core_transport.model[0].time_slice.current.profiles_1d.ion
-    # logger.debug(ion.get("D/particles/d").__repr__())
+    logger.debug(ion.get("D").label)
 
     tokamak.transport_solver.refresh(
         rho_tor_norm=np.linspace(0.01, 0.995, 32),
