@@ -25,7 +25,10 @@ if __name__ == "__main__":
         equation={
             "electrons/density_thermal": {
                 "profile": 3.0e19,
-                "boundary_condition": [{"identifier": {"index": 4}, "value": [0]}, {"identifier": {"index": 1}, "value": [3.0e19]}]}
+                "boundary_condition": [{"identifier": {"index": 4}, "value": [0]}, {"identifier": {"index": 1}, "value": [3.0e19]}]},
+            "ion/0/density_thermal": {
+                "profile": 3.0e19,
+                "boundary_condition": [{"identifier": {"index": 4}, "value": [0]}, {"identifier": {"index": 1}, "value": [3.0e19]}]},
         },
         equilibrium=tokamak.equilibrium,
         core_transport=tokamak.core_transport,

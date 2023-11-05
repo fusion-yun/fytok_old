@@ -194,10 +194,10 @@ class TransportSolverNumerics(Module):
     def solve(self,
               current: TimeSlice,
               previous: TimeSlice | None,
-              *args, **kwargs) -> TransportSolverNumericsTimeSlice:
+              *args, **kwargs):
         raise NotImplementedError(f"{self.__class__.__name__}.solve() is not implemented!")
 
-    def refresh(self, *args,  equilibrium: Equilibrium, **kwargs) -> TransportSolverNumericsTimeSlice:
+    def refresh(self, *args,  equilibrium: Equilibrium, **kwargs):
         """
             solve transport equation until residual < tolerance
         """
@@ -262,7 +262,6 @@ class TransportSolverNumerics(Module):
         # for equ in solver_1d.equation:
         #     core_profiles_1d[equ.primary_quantity.identifier] = equ.primary_quantity.profile
 
-        return self.time_slice.current
 
     def advance(self, *args, **kwargs):
 
