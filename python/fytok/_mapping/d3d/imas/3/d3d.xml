@@ -1,5 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mapping>
+  <dataset_fair>
+    <identifier>??? </identifier>
+
+    <rights_holder> GA </rights_holder>
+
+    <license> NOT OPEN </license>
+
+    <ontology>imas/3 modified</ontology>
+
+    <description>
+      <device>D3D</device>
+      <shot>{shot}</shot>
+    </description>
+
+  </dataset_fair>
   <wall>
     <description_2d id="0">
       <limiter>

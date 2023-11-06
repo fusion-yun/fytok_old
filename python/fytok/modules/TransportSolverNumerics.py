@@ -36,10 +36,10 @@ class TransportSolverNumericsEquationPrimary:
     flux: array_type
     """ Flux of the primary quantity"""
 
-    dflux_dr: Expression
+    dflux_dr: typing.Any
     """ Flux of the primary quantity"""
 
-    d_dr: Expression
+    d_dr: typing.Any
     """ Radial derivative with respect to the primary coordinate"""
 
     d2_dr2: Expression

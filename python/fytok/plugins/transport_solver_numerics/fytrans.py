@@ -1,32 +1,18 @@
-import collections
-from math import isclose
 import typing
 import numpy as np
 import scipy.constants
-from spdm.data.TimeSeries import TimeSeriesAoS, TimeSlice
-from spdm.data.Expression import Expression, Variable
-from spdm.data.Function import Function, function_like
-from spdm.data.Path import Path
+from spdm.data.Expression import Variable
+from spdm.data.Function import Function
 from spdm.utils.typing import array_type
-
-
+from spdm.utils.tags import _not_found_
 from spdm.numlib.bvp import solve_bvp
 
-
-from spdm.utils.tags import _not_found_
-
-from fytok.modules.CoreProfiles import CoreProfiles
 from fytok.modules.CoreSources import CoreSources
 from fytok.modules.CoreTransport import CoreTransport
 from fytok.modules.TransportSolverNumerics import TransportSolverNumerics
 from fytok.modules.Equilibrium import Equilibrium
-from fytok.utils.logger import logger
 from fytok.utils.atoms import atoms
-
-EPSILON = 1.0e-15
-TOLERANCE = 1.0e-6
-
-TWO_PI = 2.0 * scipy.constants.pi
+from fytok.utils.logger import logger
 
 
 @TransportSolverNumerics.register(["fytrans"])
@@ -35,6 +21,7 @@ class FyTrans(TransportSolverNumerics):
     def _update_coefficient(self,
                             current: TransportSolverNumerics.TimeSlice,
                             previous: TransportSolverNumerics.TimeSlice | None,
+                            *args,
                             equilibrium: Equilibrium,
                             core_transport: CoreTransport,
                             core_sources: CoreSources,
@@ -183,13 +170,13 @@ class FyTrans(TransportSolverNumerics):
 
                     c = (scipy.constants.mu_0 * B0*rho_tor * rho_tor_boundary)/fpol2
 
-                    d = vpr * gm2 / (fpol * rho_tor_boundary)/(TWO_PI**2)
+                    d = vpr * gm2 / (fpol * rho_tor_boundary)/((2.0 * scipy.constants.pi)**2)
 
                     e = 0
 
-                    f = - vpr * (j_parallel)/TWO_PI
+                    f = - vpr * (j_parallel)/(2.0 * scipy.constants.pi)
 
-                    g = - vpr * (j_parallel_imp)/TWO_PI
+                    g = - vpr * (j_parallel_imp)/(2.0 * scipy.constants.pi)
 
                     for i in range(2):
                         bc_ = equ.boundary_condition[i]
@@ -463,9 +450,12 @@ class FyTrans(TransportSolverNumerics):
 
         return solver_1d, vars
 
-    def solve(self, *args, **kwargs):
+    def solve(self,
+              current: TransportSolverNumerics.TimeSlice,
+              previous: TransportSolverNumerics.TimeSlice | None,
+              *args, **kwargs):
 
-        solver_1d, vars = self._update_coefficient(*args,  **kwargs)
+        solver_1d, vars = self._update_coefficient(current, previous, *args,  **kwargs)
 
         logger.info(
             f"Solve transport equations [{len(solver_1d.equation)}] : {','.join([equ.primary_quantity.identifier for equ in solver_1d.equation])}")
@@ -493,6 +483,7 @@ class FyTrans(TransportSolverNumerics):
                 try:
                     dydr = equ.primary_quantity.d_dr
                     dydr = dydr(x, *y, *args) if callable(dydr) else np.full_like(x, dydr)
+
                     dfluxdr = equ.primary_quantity.dflux_dr
                     dfluxdr = dfluxdr(x, *y, *args) if callable(dfluxdr) else np.full_like(x, dfluxdr)
                 except Exception as error:

@@ -12,12 +12,12 @@ GLOBAL_ONTOLOGY = os.environ.get("FYTOK_ONTOLOGY",  f"imas/3")
 try:
     from .imas_lastest.__version__ import __version__ as imas_version
 
-    from .imas_lastest import equilibrium, core_profiles, core_sources,\
+    from .imas_lastest import dataset_fair, summary, equilibrium, core_profiles, core_sources,\
         ic_antennas, interferometer, lh_antennas, magnetics, nbi, pellets,\
         core_transport, pf_active, tf, transport_solver_numerics, utilities, \
         ec_launchers, amns_data, wall
 
-    __all__ = ["equilibrium", "core_profiles", "core_sources", "ec_launchers",
+    __all__ = ["dataset_fair", "summary", "equilibrium", "core_profiles", "core_sources", "ec_launchers",
                "ic_antennas", "interferometer", "lh_antennas", "magnetics", "nbi", "pellets", "amns_data",
                "core_transport", "wall", "pf_active", "tf", "transport_solver_numerics", "utilities"]
 

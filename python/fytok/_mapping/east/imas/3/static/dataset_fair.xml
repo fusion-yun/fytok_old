@@ -1,14 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <dataset_fair>
     <ids_properties>
-         
-    </ids_properties>   
+
+    </ids_properties>
 
     <identifier>http://202.127.205.54/wiki/index.php/OfflineEFIT_(signal_name) </identifier>
-    
+
     <rights_holder> ASIPP </rights_holder>
 
     <license> NOT OPEN </license>
+
+    <ontology>imas/3 modified</ontology>
+
+    <description>
+        <device>EAST</device>
+        <shot>{shot}</shot>
+    </description>
 
 </dataset_fair>    
     

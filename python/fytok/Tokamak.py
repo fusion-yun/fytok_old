@@ -12,6 +12,9 @@ from spdm.utils.uri_utils import uri_split
 
 
 # ---------------------------------
+from .modules.DatasetFAIR import DatasetFAIR
+from .modules.Summary import Summary
+
 from .modules.CoreProfiles import CoreProfiles
 from .modules.CoreSources import CoreSources
 from .modules.CoreTransport import CoreTransport
@@ -45,31 +48,18 @@ class Tokamak(Actor):
 
     """
 
-    def __init__(self, *args, device=None, shot=None, run=None, **kwargs):
-
-        # if device is None and len(args) > 0 and isinstance(args[0], str):
-        #     if args[0].isidentifier():
-        #         device = args[0]
-        #         args = args[1:]
-        #     else:
-        #         url_ = uri_split(args[0])
-        #         schemas = url_.protocol.split("+")
-        #         if len(schemas) > 0 and schemas[0] not in PROTOCOL_LIST:
-        #             device = schemas[0]
-        #         if shot is None:
-        #             shot = url_.query.pop("shot", None)
-        #         if run is None:
-        #             run = url_.query.pop("run", None)
-        #         args = [url_, *args[1:]]
+    def __init__(self, *args, device=_not_found_, shot=_not_found_, run=_not_found_, **kwargs):
 
         cache, entry, parent, kwargs = HTree._parser_args(*args, **kwargs)
 
         cache = merge_tree_recursive(cache, kwargs)
 
-        cache["schema"] = GLOBAL_ONTOLOGY
-        cache["device"] = device or None
-        cache["shot"] = shot or 0
-        cache["run"] = run
+        cache["dataset_fair"] = {
+            "description": {
+                "device": device,
+                "shot": shot,
+                "run": run,
+            }}
 
         if device is not None:
             entry = [f"{device}+://"] + entry
@@ -86,26 +76,48 @@ class Tokamak(Actor):
             cache,
             _entry=entry,
             _parent=parent,
+
         )
 
-    device: str = sp_property()
+        logger.info(self.brief_summary())
 
-    shot: int = sp_property(default_value=0)
+    def brief_summary(self) -> str:
+        return f"""Tokamak simulation : 
+-----------------------------------------------------------------------------------------------------------------------
+                                                Brief Summary
+-----------------------------------------------------------------------------------------------------------------------
+Dataset Description:
+{self.dataset_fair}
+-----------------------------------------------------------------------------------------------------------------------
+Modules:
+    transport_solver        : {self.transport_solver.code.name or 'N/A'}
+    equilibrium             : {self.equilibrium.code.name or 'N/A'}
 
-    run: int = sp_property(default_value=0)
+    core_profiles           : N/A             
+    core_transport          : {','.join([s.code.name for s in self.core_transport.model])}
+    core_sources            : {','.join([s.code.name for s in self.core_sources.source])}
 
-    name: str = sp_property(default_value="unknown")
-
-    description: str = sp_property(default_value="empty tokamak")
+    edge_profiles           : N/A       
+    edge_transport          : N/A       
+    edge_sources            : N/A       
+    edge_transport_solver   : N/A       
+-----------------------------------------------------------------------------------------------------------------------
+Data source:
+    {self._entry}
+-----------------------------------------------------------------------------------------------------------------------
+    File: {__file__}:{__package__}.{self.__class__.__name__}
+"""
 
     @property
-    def short_description(self) -> str: return f"{self.device.upper()} #{self.shot} time={self.time:.2f}s"
+    def title(self) -> str: return f"{self.dataset_fair.description}  time={self.time:.2f}s"
 
     @property
-    def tag(self) -> str: return f"{self.device.lower()}_{self.shot}_{int(self.time*100):06d}"
+    def tag(self) -> str: return f"{self.dataset_fair.description.tag}_{int(self.time*100):06d}"
     # fmt:off
 
     # device
+    dataset_fair            : DatasetFAIR               = sp_property()
+
     wall                    : Wall                      = sp_property()
 
     # magnetics
@@ -138,6 +150,7 @@ class Tokamak(Actor):
     # solver
     transport_solver        : TransportSolverNumerics   = sp_property()
 
+    summary                 : Summary                   = sp_property()
     # fmt:on
 
     def advance(self, *args, **kwargs):
@@ -229,7 +242,7 @@ class Tokamak(Actor):
 
             except Exception as error:
                 logger.error(f"Can not get {o.__class__.__name__}.__geometry__ !")
-                raise RuntimeError(f"Can not get {o.__class__.__name__}.__geometry__ !") from error
+                # raise RuntimeError(f"Can not get {o.__class__.__name__}.__geometry__ !") from error
             else:
                 geo[o_name] = g
 
@@ -239,7 +252,7 @@ class Tokamak(Actor):
             styles["xlabel"] = r"Major radius $R [m] $"
             styles["ylabel"] = r"Height $Z [m]$"
 
-        styles["title"] = kwargs.pop("title", None) or self.short_description
+        styles["title"] = kwargs.pop("title", None) or self.title
 
         return geo, styles
 

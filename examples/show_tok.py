@@ -20,19 +20,19 @@ if __name__ == "__main__":
     tok.refresh({"time": 5})
 
     display(tok,
-            title=tok.short_description,
+            title=tok.title,
             styles={"interferometer": False},
             output=output_path/f"{tok.tag}_rz.svg")
 
     tok.advance()
 
     display(tok,
-            title=tok.short_description,
+            title=tok.title,
             styles={"interferometer": False},
             output=output_path/f"{tok.tag}_rz.svg")
     tok.advance()
 
     display(tok,
-            title=tok.short_description,
+            title=tok.title,
             styles={"interferometer": False},
             output=output_path/f"{tok.tag}_rz.svg")

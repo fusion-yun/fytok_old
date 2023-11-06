@@ -30,29 +30,30 @@ class Wall(wall._T_wall):
                 if desc.limiter.unit[0].outline.r is not _not_found_:
                     geo["limiter"] = Polyline(desc.limiter.unit[0].outline.r,
                                               desc.limiter.unit[0].outline.z)
-                units = []
-                for unit in desc.vessel.unit:
-                    if unit.annular is not _not_found_:
-                        units.append({
-                            "annular": {
-                                "vessel_inner": Polyline(unit.annular.outline_inner.r,
-                                                         unit.annular.outline_inner.z),
+                else:
+                    units = []
+                    for unit in desc.vessel.unit:
+                        if unit.annular is not _not_found_:
+                            units.append({
+                                "annular": {
+                                    "vessel_inner": Polyline(unit.annular.outline_inner.r,
+                                                             unit.annular.outline_inner.z),
 
-                                "vessel_outer": Polyline(unit.annular.outline_outer.r,
-                                                         unit.annular.outline_outer.z),
-                            }})
+                                    "vessel_outer": Polyline(unit.annular.outline_outer.r,
+                                                             unit.annular.outline_outer.z),
+                                }})
 
-                    else:
+                        else:
 
-                        elements = []
-                        for element in unit.element:
-                            elements.append(Polyline(element.outline.r,
-                                                     element.outline.z,
-                                                     name=element.name)
-                                            )
-                        units.append({"element":   elements})
+                            elements = []
+                            for element in unit.element:
+                                elements.append(Polyline(element.outline.r,
+                                                         element.outline.z,
+                                                         name=element.name)
+                                                )
+                            units.append({"element":   elements})
 
-                    geo["unit"] = units
+                        geo["unit"] = units
         styles = {  #
             "limiter": {"$matplotlib": {"edgecolor": "green"}},
             "vessel_inner": {"$matplotlib": {"edgecolor": "blue"}},
