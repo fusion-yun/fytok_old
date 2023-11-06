@@ -1,6 +1,7 @@
 from scipy import constants
 from copy import copy
 from fytok.utils.logger import logger
+from spdm.data.Expression import Expression
 from spdm.data.sp_property import sp_tree, sp_property
 from spdm.data.TimeSeries import TimeSlice
 from spdm.utils.tags import _not_found_
@@ -34,22 +35,24 @@ class TransportSolverNumericsEquationPrimary:
 
     flux: array_type
     """ Flux of the primary quantity"""
-    dflux_dr: array_type
+
+    dflux_dr: Expression
     """ Flux of the primary quantity"""
-    d_dr: array_type
+
+    d_dr: Expression
     """ Radial derivative with respect to the primary coordinate"""
 
-    d2_dr2: array_type
+    d2_dr2: Expression
     """ Second order radial derivative with respect to the primary coordinate"""
 
-    d_dt: array_type
+    d_dt: Expression
     """ Time derivative"""
 
-    d_dt_cphi: array_type
+    d_dt_cphi: Expression
     """ Derivative with respect to time, at constant toroidal flux (for current
         diffusion equation)"""
 
-    d_dt_cr: array_type
+    d_dt_cr: Expression
     """ Derivative with respect to time, at constant primary coordinate coordinate (for
         current diffusion equation)"""
 
@@ -85,6 +88,8 @@ class TransportSolverNumericsEquation:
         """ Position, in normalised toroidal flux, at which the boundary condition is
         imposed. Outside this position, the value of the data are considered to be
         prescribed."""
+
+        func: Expression
 
     rho_tor_norm: array_type
 

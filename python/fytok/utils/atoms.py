@@ -2,12 +2,14 @@ import collections.abc
 
 import numpy as np
 import scipy.constants
-from spdm.data.Entry import Entry
-from spdm.data.Function import Function
+
 from spdm.data.HTree import Dict, Node
-from spdm.data.sp_property import SpTree, sp_property
+from spdm.data.sp_property import SpTree, sp_property, sp_tree, AttributeTree
+from spdm.data.AoS import AoS
 from spdm.utils.tree_utils import merge_tree_recursive
-atoms = {
+
+
+predefined_species = {
     "e": {
         "label": "e", "z": -1,  "a": scipy.constants.m_e/scipy.constants.m_p,
         "element": [{"a": scipy.constants.m_e/scipy.constants.m_p, "z_n": 1, "atoms_n": 1}],
@@ -59,9 +61,24 @@ atoms = {
     "Ar": {
         "label": "Ar",  "z": 18, "a": 40,
         "element": [{"a": 40, "z_n": 1, "atoms_n":   1}],
-
     }
 }
+
+
+@sp_tree
+class Atom:
+    label: str
+    z: float
+    a: float
+    elements: AoS[AttributeTree]
+
+
+class Atoms(Dict[Atom]):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+atoms = Atoms(predefined_species)
 
 
 def get_species(species):
