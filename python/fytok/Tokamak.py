@@ -96,18 +96,16 @@ Modules:
     core_profiles           : N/A             
     core_transport          : {','.join([s.code.name for s in self.core_transport.model])}
     core_sources            : {','.join([s.code.name for s in self.core_sources.source])}
-
-    edge_profiles           : N/A       
-    edge_transport          : N/A       
-    edge_sources            : N/A       
-    edge_transport_solver   : N/A       
 -----------------------------------------------------------------------------------------------------------------------
 Data source:
     {self._entry}
 -----------------------------------------------------------------------------------------------------------------------
     File: {__file__}:{__package__}.{self.__class__.__name__}
 """
-
+    # edge_profiles           : N/A       
+    # edge_transport          : N/A       
+    # edge_sources            : N/A       
+    # edge_transport_solver   : N/A       
     @property
     def title(self) -> str: return f"{self.dataset_fair.description}  time={self.time:.2f}s"
 

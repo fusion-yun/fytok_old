@@ -57,10 +57,16 @@ class Code:
         desc = {
             "name": self.name or self._parent.__class__.__name__,
             "version": self.version,
-            "copyright": self.copyright
+            "copyright": self.copyright,
         }
 
-        return ", ".join([f"{key}='{value}'" for key, value in desc.items() if value is not _not_found_ and value is not None and value != ""])
+        return ", ".join(
+            [
+                f"{key}='{value}'"
+                for key, value in desc.items()
+                if value is not _not_found_ and value is not None and value != ""
+            ]
+        )
 
 
 @sp_tree
@@ -78,18 +84,21 @@ class Module(Actor):
     @classmethod
     def _plugin_guess_name(cls, self, cache, *args, **kwargs) -> str:
         pth = Path("code/name")
-        plugin_name = pth.fetch(cache, default_value=None) or \
-            pth.fetch(self.__class__._metadata, default_value=None) or\
-            pth.fetch(kwargs.get("default_value", _not_found_), default_value=None)
+        plugin_name = (
+            pth.fetch(cache, default_value=None)
+            or pth.fetch(self.__class__._metadata, default_value=None)
+            or pth.fetch(kwargs.get("default_value", _not_found_), default_value=None)
+        )
 
         return plugin_name
 
     def __init__(self, *args, **kwargs):
-        cache, entry, parent,   kwargs = self.__class__._parser_args(*args, **kwargs)
-        super().__init__(cache, _entry=entry, _parent=parent,  **kwargs)
+        cache, entry, parent, kwargs = self.__class__._parser_args(*args, **kwargs)
+        super().__init__(cache, _entry=entry, _parent=parent, **kwargs)
 
     @property
-    def tag(self) -> str: return f"{FY_JOBID}/{self._plugin_prefix}{self.code.name or self.__class__.__name__.lower()}"
+    def tag(self) -> str:
+        return f"{FY_JOBID}/{self._plugin_prefix}{self.code.name or self.__class__.__name__.lower()}"
 
     code: Code
 
@@ -125,9 +134,8 @@ class VacuumToroidalField:
     b0: float
 
 
-@sp_tree(default_value=np.nan)
+@sp_tree(default_value=np.nan, force=True)
 class CoreRadialGrid:
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -149,26 +157,27 @@ class CoreRadialGrid:
                 raise ValueError("rho_tor_norm or rho_tor must be provided")
             elif self.rho_tor_boundary is _not_found_:
                 self["rho_tor_boundary"] = self.rho_tor.max()
-            self["rho_tor_norm"] = self.rho_tor/self.rho_tor_boundary
+            self["rho_tor_norm"] = self.rho_tor / self.rho_tor_boundary
         elif self.rho_tor is _not_found_:
             if self.rho_tor_boundary is _not_found_:
                 raise ValueError("rho_tor_boundary must be provided")
-            self["rho_tor"] = self.rho_tor_norm*self.rho_tor_boundary
+            self["rho_tor"] = self.rho_tor_norm * self.rho_tor_boundary
         elif self.rho_tor_boundary is _not_found_:
             self["rho_tor_boundary"] = self.rho_tor.max()
 
     def __copy__(self):
-        return self.__class__({
-            "psi_axis": self.psi_axis,
-            "psi_boundary": self.psi_boundary,
-            "psi_norm": self.psi_norm,
-            "rho_tor_boundary": self.rho_tor_boundary,
-            "rho_tor_norm": self.rho_tor_norm,
-        })
+        return self.__class__(
+            {
+                "psi_axis": self.psi_axis,
+                "psi_boundary": self.psi_boundary,
+                "psi_norm": self.psi_norm,
+                "rho_tor_boundary": self.rho_tor_boundary,
+                "rho_tor_norm": self.rho_tor_norm,
+            }
+        )
 
-    def remesh(self, rho_tor_norm=None,  psi_norm=None) -> CoreRadialGrid:
-
-        if (rho_tor_norm is None or rho_tor_norm is _not_found_):
+    def remesh(self, rho_tor_norm=None, psi_norm=None) -> CoreRadialGrid:
+        if rho_tor_norm is None or rho_tor_norm is _not_found_:
             if psi_norm is None or psi_norm is _not_found_:
                 return self
             else:
@@ -178,15 +187,22 @@ class CoreRadialGrid:
         else:
             logger.warning("Both rho_tor_norm and psi_norm are provided! ")
 
-        self.__init__({
-            "psi_axis": self.psi_axis,
-            "psi_boundary": self.psi_boundary,
-            "rho_tor_boundary": self.rho_tor_boundary,
-            "psi_norm":  psi_norm,
-            "rho_tor_norm": rho_tor_norm,
-        })
+        self.__init__(
+            {
+                "psi_axis": self.psi_axis,
+                "psi_boundary": self.psi_boundary,
+                "rho_tor_boundary": self.rho_tor_boundary,
+                "psi_norm": psi_norm,
+                "rho_tor_norm": rho_tor_norm,
+            }
+        )
 
         return self
+
+    def duplicate(self, *args, **kwargs) -> CoreRadialGrid:
+        g = self.__copy__()
+        g.remesh(*args, **kwargs)
+        return g
 
     psi_axis: float
     psi_boundary: float
@@ -198,7 +214,8 @@ class CoreRadialGrid:
     rho_tor: array_type
 
     @sp_property
-    def rho_pol_norm(self) -> array_type: return np.sqrt(self.psi_norm)
+    def rho_pol_norm(self) -> array_type:
+        return np.sqrt(self.psi_norm)
 
 
 class DetectorAperture:  # (utilities._T_detector_aperture):

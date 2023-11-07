@@ -1,4 +1,3 @@
-
 from spdm.data.AoS import AoS
 from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
@@ -54,16 +53,17 @@ class CoreTransportNeutral(core_transport._T_core_transport_model_neutral):
 
 @sp_tree(coordinate1="grid_d/rho_tor_norm")
 class CoreTransportProfiles1D(core_transport._T_core_transport_model_profiles_1d):
-
+   
     grid_d: CoreRadialGrid
 
     @sp_property
-    def grid_v(self) -> CoreRadialGrid: return self.grid_d.remesh(self.grid_d.rho_tor_norm)
+    def grid_v(self) -> CoreRadialGrid:
+        return self.grid.duplicate(self.grid_d.rho_tor_norm)
 
     @sp_property
     def grid_flux(self) -> CoreRadialGrid:
         rho_tor_norm = self.grid_d.rho_tor_norm
-        return self.grid_d.remesh(0.5*(rho_tor_norm[:-1]+rho_tor_norm[1:]))
+        return self.grid_d.duplicate(0.5 * (rho_tor_norm[:-1] + rho_tor_norm[1:]))
 
     Electrons = CoreTransportElectrons
     Ion = CoreTransportIon
@@ -78,7 +78,6 @@ class CoreTransportProfiles1D(core_transport._T_core_transport_model_profiles_1d
 
 @sp_tree
 class CoreTransportTimeSlice(TimeSlice):
-
     Profiles1D = CoreTransportProfiles1D
 
     vacuum_toroidal_field: VacuumToroidalField
@@ -90,8 +89,7 @@ class CoreTransportTimeSlice(TimeSlice):
 
 @sp_tree
 class CoreTransportModel(Module):
-
-    _plugin_prefix = 'fytok.plugins.core_transport.model.'
+    _plugin_prefix = "fytok.plugins.core_transport.model."
 
     TimeSlice = CoreTransportTimeSlice
 
@@ -99,10 +97,7 @@ class CoreTransportModel(Module):
 
     time_slice: TimeSeriesAoS[CoreTransportTimeSlice]
 
-    def refresh(self, *args,
-                core_profiles: CoreProfiles.TimeSlice,
-                equilibrium: Equilibrium.TimeSlice,
-                ** kwargs):
+    def refresh(self, *args, core_profiles: CoreProfiles.TimeSlice, equilibrium: Equilibrium.TimeSlice, **kwargs):
         """update the last time slice"""
 
         super().refresh(
@@ -112,15 +107,16 @@ class CoreTransportModel(Module):
                 "profiles_1d": {
                     "grid_d": core_profiles.profiles_1d.grid,
                     "ion": [{"label": ion.label} for ion in core_profiles.profiles_1d.ion],
-                    "neutral": [{"label": neutral.label} for neutral in core_profiles.profiles_1d.neutral]
-                }
+                    "neutral": [{"label": neutral.label} for neutral in core_profiles.profiles_1d.neutral],
+                },
             },
-            *args, ** kwargs)
+            *args,
+            **kwargs,
+        )
 
 
 @sp_tree
 class CoreTransport(core_transport._T_core_transport):
-
     Model = CoreTransportModel
 
     model: AoS[CoreTransportModel]

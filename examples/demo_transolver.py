@@ -17,26 +17,48 @@ if __name__ == "__main__":
         transport_solver={
             "code": {
                 "name": "fytrans",
-                "parameters": {"bvp_rms_mask": [0.96],  "hyper_diff": 0.001, }
-            }}
-    )
-
-    ion = tokamak.core_transport.model[0].time_slice.current.profiles_1d.ion
-
-    tokamak.transport_solver.refresh(
-        rho_tor_norm=np.linspace(0.01, 0.995, 32),
-        equation={
-            "electrons/density_thermal": {
-                "profile": 3.0e19,
-                "boundary_condition": [{"identifier": {"index": 4}, "value": [0]}, {"identifier": {"index": 1}, "value": [3.0e19]}]},
-            "ion/D/density_thermal": {
-                "profile": 3.0e19,
-                "boundary_condition": [{"identifier": {"index": 4}, "value": [0]}, {"identifier": {"index": 1}, "value": [3.0e19]}]},
+                "parameters": {
+                    "bvp_rms_mask": [0.96],
+                    "hyper_diff": 0.001,
+                },
+            }
         },
-        equilibrium=tokamak.equilibrium,
-        core_transport=tokamak.core_transport,
-        core_sources=tokamak.core_sources,
     )
+
+    # core_transport_1d = tokamak.core_transport.model[0].time_slice.current.profiles_1d
+    # func = core_transport_1d.electrons.energy.d
+    # logger.debug(func(np.linspace(0.01, 0.995, 32)))
+
+    if True:
+        tokamak.transport_solver.refresh(
+            rho_tor_norm=np.linspace(0.01, 0.995, 32),
+            equation={
+                "electrons/temperature": {
+                    "profile": 2.0e3,
+                    "boundary_condition": [
+                        {"identifier": {"index": 4}, "value": [0]},
+                        {"identifier": {"index": 1}, "value": [1.0e3]},
+                    ],
+                },
+                "ion/T/density_thermal": {
+                    "profile": 1.5e19,
+                    "boundary_condition": [
+                        {"identifier": {"index": 4}, "value": [0]},
+                        {"identifier": {"index": 1}, "value": [2.0e19]},
+                    ],
+                },
+                "ion/D/density_thermal": {
+                    "profile": 1.5e19,
+                    "boundary_condition": [
+                        {"identifier": {"index": 4}, "value": [0]},
+                        {"identifier": {"index": 1}, "value": [2.0e19]},
+                    ],
+                },
+            },
+            equilibrium=tokamak.equilibrium,
+            core_transport=tokamak.core_transport,
+            core_sources=tokamak.core_sources,
+        )
 
     # eq_profiles_1d = equilibrium.time_slice.current.profiles_1d
 
