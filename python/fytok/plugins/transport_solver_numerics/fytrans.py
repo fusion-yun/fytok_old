@@ -352,6 +352,7 @@ class FyTrans(TransportSolverNumerics):
 
                         bc[i] = [u, v, w]
                         logger.debug(bc_.value)
+
                 case "temperature":
                     energy_diff = 0
                     energy_vcon = 0

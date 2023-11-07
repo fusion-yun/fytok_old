@@ -22,13 +22,13 @@ if __name__ == "__main__":
                     "hyper_diff": 0.001,
                     "grid": {"rho_tor_norm": np.linspace(0.01, 0.995, 32)},
                     "equations": {
-                        # "electrons/temperature": {
-                        #     "profile": 2.0e3,
-                        #     "boundary_condition": [
-                        #         {"identifier": {"index": 4}, "value": [0]},
-                        #         {"identifier": {"index": 1}, "value": [1.0e3]},
-                        #     ],
-                        # },
+                        "electrons/temperature": {
+                            "profile": 2.0e3,
+                            "boundary_condition": [
+                                {"identifier": {"index": 4}, "value": [0]},
+                                {"identifier": {"index": 1}, "value": [1.0e3]},
+                            ],
+                        },
                         "ion/T/density_thermal": {
                             "profile": 1.5e19,
                             "boundary_condition": [
