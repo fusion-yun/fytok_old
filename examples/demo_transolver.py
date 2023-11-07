@@ -20,6 +20,30 @@ if __name__ == "__main__":
                 "parameters": {
                     "bvp_rms_mask": [0.96],
                     "hyper_diff": 0.001,
+                    "grid": {"rho_tor_norm": np.linspace(0.01, 0.995, 32)},
+                    "equations": {
+                        # "electrons/temperature": {
+                        #     "profile": 2.0e3,
+                        #     "boundary_condition": [
+                        #         {"identifier": {"index": 4}, "value": [0]},
+                        #         {"identifier": {"index": 1}, "value": [1.0e3]},
+                        #     ],
+                        # },
+                        "ion/T/density_thermal": {
+                            "profile": 1.5e19,
+                            "boundary_condition": [
+                                {"identifier": {"index": 4}, "value": [0]},
+                                {"identifier": {"index": 1}, "value": [2.0e19]},
+                            ],
+                        },
+                        "ion/D/density_thermal": {
+                            "profile": 1.5e19,
+                            "boundary_condition": [
+                                {"identifier": {"index": 4}, "value": [0]},
+                                {"identifier": {"index": 1}, "value": [2.0e19]},
+                            ],
+                        },
+                    },
                 },
             }
         },
@@ -31,34 +55,12 @@ if __name__ == "__main__":
 
     if True:
         tokamak.transport_solver.refresh(
-            rho_tor_norm=np.linspace(0.01, 0.995, 32),
-            equation={
-                "electrons/temperature": {
-                    "profile": 2.0e3,
-                    "boundary_condition": [
-                        {"identifier": {"index": 4}, "value": [0]},
-                        {"identifier": {"index": 1}, "value": [1.0e3]},
-                    ],
-                },
-                "ion/T/density_thermal": {
-                    "profile": 1.5e19,
-                    "boundary_condition": [
-                        {"identifier": {"index": 4}, "value": [0]},
-                        {"identifier": {"index": 1}, "value": [2.0e19]},
-                    ],
-                },
-                "ion/D/density_thermal": {
-                    "profile": 1.5e19,
-                    "boundary_condition": [
-                        {"identifier": {"index": 4}, "value": [0]},
-                        {"identifier": {"index": 1}, "value": [2.0e19]},
-                    ],
-                },
-            },
             equilibrium=tokamak.equilibrium,
             core_transport=tokamak.core_transport,
             core_sources=tokamak.core_sources,
         )
+
+        tokamak.transport_solver.refresh(boundary_condition={"ion/T/density_thermal": [[0], [3.0e19]]})
 
     # eq_profiles_1d = equilibrium.time_slice.current.profiles_1d
 
