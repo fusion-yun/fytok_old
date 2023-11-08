@@ -701,6 +701,7 @@ class FyTrans(TransportSolverNumerics):
                 vars[k] = v
 
         for idx, equ in enumerate(solver_1d.equation):
+            logger.debug(equ.primary_quantity.identifier)
             assert np.all(vars.pop(f"{equ.primary_quantity.identifier}", 0) == sol.y[2 * idx])
             assert np.all(vars.pop(f"{equ.primary_quantity.identifier}_flux", 0) == sol.y[2 * idx + 1])
             equ.primary_quantity["profile"] = sol.y[2 * idx]
@@ -708,20 +709,20 @@ class FyTrans(TransportSolverNumerics):
             equ.primary_quantity["flux"] = sol.y[2 * idx + 1]
             equ.primary_quantity["dflux_dr"] = sol.yp[2 * idx + 1]
 
-        for k in list(vars.keys()):
-            if k.endswith("_flux"):
-                continue
-            solver_1d.equation._cache.append(
-                {
-                    "primary_quantity": {
-                        "identifier": k,
-                        "profile": vars.pop(k, 0),
-                        "flux": vars.pop(f"{k}_flux", 0),
-                    }
-                }
-            )
-        if len(vars) > 0:
-            logger.warning(f"ignore vars {list(vars.keys())}")
+        # for k in list(vars.keys()):
+        #     if k.endswith("_flux"):
+        #         continue
+        #     solver_1d.equation._cache.append(
+        #         {
+        #             "primary_quantity": {
+        #                 "identifier": k,
+        #                 "profile": vars.pop(k, 0),
+        #                 "flux": vars.pop(f"{k}_flux", 0),
+        #             }
+        #         }
+        #     )
+        # if len(vars) > 0:
+        #     logger.warning(f"ignore vars {list(vars.keys())}")
 
         if not sol.success:
             logger.error(f"Solve BVP failed: {sol.message} , {sol.niter} iterations")

@@ -326,8 +326,8 @@ def read_iter_profiles(path):
 
     D = 0.1 * (chi + chi_e)
 
-    v_pinch_ne = -0.6 * D * _x / R0
-    v_pinch_Te = -2.5 * chi_e * _x / R0
+    v_pinch_ne = 0.6 * D * _x / R0
+    v_pinch_Te = 2.5 * chi_e * _x / R0
     v_pinch_ni = D * _x / R0
     v_pinch_Ti = chi * _x / R0
 
