@@ -25,7 +25,7 @@ if __name__ == "__main__":
                         "electrons/temperature": {
                             "profile": 2.0e3,
                             "boundary_condition": [
-                                {"identifier": {"index": 4}, "value": [0]},
+                                {"identifier": {"index": 2}, "value": [0]},
                                 {"identifier": {"index": 1}, "value": [1.0e3]},
                             ],
                         },
@@ -60,7 +60,7 @@ if __name__ == "__main__":
             core_sources=tokamak.core_sources,
         )
 
-        tokamak.transport_solver.refresh(boundary_condition={"ion/T/density_thermal": [[0], [3.0e19]]})
+        # tokamak.transport_solver.refresh(boundary_condition={"ion/T/density_thermal": [[0], [3.0e19]]})
 
     # eq_profiles_1d = equilibrium.time_slice.current.profiles_1d
 

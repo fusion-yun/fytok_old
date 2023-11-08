@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from spdm.data.AoS import AoS
@@ -11,21 +10,21 @@ from ..ontology import core_sources
 
 
 @sp_tree
-class CoreSourcesElectrons(core_sources. _T_core_sources_source_profiles_1d_electrons):
+class CoreSourcesElectrons(core_sources._T_core_sources_source_profiles_1d_electrons):
     pass
 
 
 @sp_tree
-class CoreSourcesIon(core_sources. _T_core_sources_source_profiles_1d_ions):
+class CoreSourcesIon(core_sources._T_core_sources_source_profiles_1d_ions):
     pass
 
 
 @sp_tree
-class CoreSourcesNeutral(core_sources. _T_core_sources_source_profiles_1d_neutral):
+class CoreSourcesNeutral(core_sources._T_core_sources_source_profiles_1d_neutral):
     pass
 
 
-@sp_tree(coordinate1="grid/rho_tor_norm")
+@sp_tree(coordinate1="grid/rho_tor_norm", default_value=0)
 class CoreSourcesProfiles1D(core_sources._T_core_sources_source_profiles_1d):
     grid: CoreRadialGrid
 
@@ -65,7 +64,6 @@ class CoreSourcesGlobalQuantities(core_sources._T_core_sources_source_global):
 
 @sp_tree
 class CoreSourcesTimeSlice(TimeSlice):
-
     Profiles1D = CoreSourcesProfiles1D
 
     GlobalQuantities = CoreSourcesGlobalQuantities
@@ -77,8 +75,7 @@ class CoreSourcesTimeSlice(TimeSlice):
 
 @sp_tree
 class CoreSourcesSource(Module):
-
-    _plugin_prefix = 'fytok.plugins.core_sources.source.'
+    _plugin_prefix = "fytok.plugins.core_sources.source."
 
     identifier: str
 
@@ -91,7 +88,6 @@ class CoreSourcesSource(Module):
 
 @sp_tree
 class CoreSources(IDS):
-
     Source = CoreSourcesSource
 
     source: AoS[CoreSourcesSource]
