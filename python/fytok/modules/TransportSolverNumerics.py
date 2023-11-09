@@ -121,10 +121,10 @@ class TransportSolverNumericsSolver1D:
     control_parameters: AttributeTree
     """ Solver-specific input or output quantities"""
 
-    drho_tor_dt: Function = sp_property(units="m.s^-1")
+    drho_tor_dt: Expression = sp_property(units="m.s^-1")
     """ Partial derivative of the toroidal flux coordinate profile with respect to time"""
 
-    d_dvolume_drho_tor_dt: Function = sp_property(units="m^2.s^-1")
+    d_dvolume_drho_tor_dt: Expression = sp_property(units="m^2.s^-1")
     """ Partial derivative with respect to time of the derivative of the volume with
       respect to the toroidal flux coordinate"""
 

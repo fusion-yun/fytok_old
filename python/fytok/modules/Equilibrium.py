@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np
 
 from spdm.data.AoS import AoS
-from spdm.data.Function import Function
+from spdm.data.Expression import Expression 
 from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS, TimeSlice
 from spdm.geometry.Curve import Curve
@@ -21,7 +21,6 @@ from ..ontology import equilibrium
 
 @sp_tree(mesh="grid")
 class EquilibriumCoordinateSystem(equilibrium._T_equilibrium_coordinate_system):
-
     grid_type: Identifier
 
     grid: Mesh
@@ -41,7 +40,6 @@ class EquilibriumCoordinateSystem(equilibrium._T_equilibrium_coordinate_system):
 
 @sp_tree
 class EquilibriumGlobalQuantities(equilibrium._T_equilibrium_global_quantities):
-
     beta_pol: float
 
     beta_tor: float
@@ -103,15 +101,16 @@ class EquilibriumGlobalQuantities(equilibrium._T_equilibrium_global_quantities):
     plasma_resistance: float = sp_property(units="ohm")
 
 
-@sp_tree(coordinate1="psi", default_value=np.nan, extrapolate='zeros')
+@sp_tree(coordinate1="psi", default_value=np.nan, extrapolate="zeros")
 class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
     """
-        1D profiles of the equilibrium quantities
-        NOTE:
-            - psi_norm is the normalized poloidal flux
-            - psi is the poloidal flux, 
-            - 以psi而不是psi_norm为主坐标,原因是 profiles1d 中涉及对 psi 的求导和积分
+    1D profiles of the equilibrium quantities
+    NOTE:
+        - psi_norm is the normalized poloidal flux
+        - psi is the poloidal flux,
+        - 以psi而不是psi_norm为主坐标,原因是 profiles1d 中涉及对 psi 的求导和积分
     """
+
     @sp_property
     def grid(self) -> CoreRadialGrid:
         coord_grid: CoreRadialGrid = self._parent.coordinate_system.radial_grid
@@ -123,106 +122,107 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
     psi_norm: array_type = sp_property(units="-")
 
-    psi: Function = sp_property(units="Wb")
+    psi: Expression = sp_property(units="Wb")
 
-    phi: Function = sp_property(units="Wb")
+    phi: Expression = sp_property(units="Wb")
 
-    pressure: Function = sp_property(units="Pa")
+    pressure: Expression = sp_property(units="Pa")
 
-    f: Function = sp_property(units="T.m")
+    f: Expression = sp_property(units="T.m")
 
-    dpressure_dpsi: Function = sp_property(units="Pa.Wb^-1")
+    dpressure_dpsi: Expression = sp_property(units="Pa.Wb^-1")
 
-    f_df_dpsi: Function = sp_property(units="T^2.m^2/Wb", label=r"\frac{f d f}{d \psi}")
+    f_df_dpsi: Expression = sp_property(units="T^2.m^2/Wb", label=r"\frac{f d f}{d \psi}")
 
-    j_tor: Function = sp_property(units="A.m^-2")
+    j_tor: Expression = sp_property(units="A.m^-2")
 
-    j_parallel: Function = sp_property(units="A/m^2")
+    j_parallel: Expression = sp_property(units="A/m^2")
 
-    q: Function
+    q: Expression
 
-    magnetic_shear: Function
+    magnetic_shear: Expression
 
-    r_inboard: Function = sp_property(units="m")
+    r_inboard: Expression = sp_property(units="m")
 
-    r_outboard: Function = sp_property(units="m")
+    r_outboard: Expression = sp_property(units="m")
 
-    rho_tor: Function = sp_property(units="m")
+    rho_tor: Expression = sp_property(units="m")
 
-    rho_tor_norm: Function
+    rho_tor_norm: Expression
 
-    dpsi_drho_tor: Function = sp_property(units="Wb/m")
-
-    @sp_property
-    def geometric_axis(self) -> RZTuple: return {"r": self.major_radius,  "z":  self.magnetic_z}
-
-    minor_radius: Function = sp_property(units="m")
-
-    major_radius: Function = sp_property(units="m")  # R0
-
-    magnetic_z: Function = sp_property(units="m")  # Z0
-
-    elongation: Function
-
-    triangularity_upper: Function
-
-    triangularity_lower: Function
+    dpsi_drho_tor: Expression = sp_property(units="Wb/m")
 
     @sp_property
-    def triangularity(self) -> Function: return (self.triangularity_upper+self.triangularity_lower)*0.5
+    def geometric_axis(self) -> RZTuple:
+        return {"r": self.major_radius, "z": self.magnetic_z}
 
-    squareness_upper_inner: Function
+    minor_radius: Expression = sp_property(units="m")
 
-    squareness_upper_outer: Function
+    major_radius: Expression = sp_property(units="m")  # R0
 
-    squareness_lower_inner: Function
+    magnetic_z: Expression = sp_property(units="m")  # Z0
 
-    squareness_lower_outer: Function
+    elongation: Expression
 
-    squareness: Function = sp_property(default_value=1.0)
+    triangularity_upper: Expression
 
-    volume: Function = sp_property(units="m^3")
+    triangularity_lower: Expression
 
-    rho_volume_norm: Function
+    @sp_property
+    def triangularity(self) -> Expression :
+        return (self.triangularity_upper + self.triangularity_lower) * 0.5
 
-    dvolume_dpsi: Function = sp_property(units="m^3.Wb^-1")
+    squareness_upper_inner: Expression
 
-    dvolume_drho_tor: Function = sp_property(units="m^2", label=r"\frac{dvolume}{d\rho_{tor}}")
+    squareness_upper_outer: Expression
 
-    area: Function = sp_property(units="m^2")
+    squareness_lower_inner: Expression
 
-    darea_dpsi: Function = sp_property(units="m^2.Wb^-1")
+    squareness_lower_outer: Expression
 
-    darea_drho_tor: Function = sp_property(units="m")
+    squareness: Expression = sp_property(default_value=1.0)
 
-    surface: Function = sp_property(units="m^2")
+    volume: Expression = sp_property(units="m^3")
 
-    trapped_fraction: Function
+    rho_volume_norm: Expression
 
-    gm1: Function = sp_property(units="m^-2")
-    gm2: Function = sp_property(units="m^-2")
-    gm3: Function
-    gm4: Function = sp_property(units="T^-2")
-    gm5: Function = sp_property(units="T^2")
-    gm6: Function = sp_property(units="T^-2")
-    gm7: Function
-    gm8: Function = sp_property(units="m")
-    gm9: Function = sp_property(units="m^-1")
+    dvolume_dpsi: Expression = sp_property(units="m^3.Wb^-1")
 
-    b_field_average: Function = sp_property(units="T")
+    dvolume_drho_tor: Expression = sp_property(units="m^2", label=r"\frac{dvolume}{d\rho_{tor}}")
 
-    b_field_min: Function = sp_property(units="T")
+    area: Expression = sp_property(units="m^2")
 
-    b_field_max: Function = sp_property(units="T")
+    darea_dpsi: Expression = sp_property(units="m^2.Wb^-1")
 
-    beta_pol: Function
+    darea_drho_tor: Expression = sp_property(units="m")
 
-    mass_density: Function = sp_property(units="kg.m^-3")
+    surface: Expression = sp_property(units="m^2")
+
+    trapped_fraction: Expression
+
+    gm1: Expression = sp_property(units="m^-2")
+    gm2: Expression = sp_property(units="m^-2")
+    gm3: Expression
+    gm4: Expression = sp_property(units="T^-2")
+    gm5: Expression = sp_property(units="T^2")
+    gm6: Expression = sp_property(units="T^-2")
+    gm7: Expression
+    gm8: Expression = sp_property(units="m")
+    gm9: Expression = sp_property(units="m^-1")
+
+    b_field_average: Expression = sp_property(units="T")
+
+    b_field_min: Expression = sp_property(units="T")
+
+    b_field_max: Expression = sp_property(units="T")
+
+    beta_pol: Expression
+
+    mass_density: Expression = sp_property(units="kg.m^-3")
 
 
 @sp_tree(mesh="grid")
 class EquilibriumProfiles2D(equilibrium._T_equilibrium_profiles_2d):
-
     type: Identifier
 
     grid_type: Identifier
@@ -252,7 +252,6 @@ class EquilibriumProfiles2D(equilibrium._T_equilibrium_profiles_2d):
 
 @sp_tree
 class EquilibriumBoundary(equilibrium._T_equilibrium_boundary):
-
     type: int
 
     outline: CurveRZ
@@ -294,7 +293,6 @@ class EquilibriumBoundary(equilibrium._T_equilibrium_boundary):
 
 @sp_tree
 class EquilibriumBoundarySeparatrix(equilibrium._T_equilibrium_boundary_separatrix):
-
     type: int
 
     outline: CurveRZ
@@ -344,7 +342,6 @@ class EquilibriumGGD(equilibrium._T_equilibrium_ggd):
 
 @sp_tree
 class EquilibriumTimeSlice(equilibrium._T_equilibrium_time_slice):
-
     Constraints = EequilibriumConstraints
     BoundarySeparatrix = EquilibriumBoundarySeparatrix
     Boundary = EquilibriumBoundary
@@ -378,16 +375,10 @@ class EquilibriumTimeSlice(equilibrium._T_equilibrium_time_slice):
         if view_port == "RZ":
             o_points, x_points = self.coordinate_system.critical_points
 
-            geo["o_points"] = [
-                Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(o_points)
-            ]
-            geo["x_points"] = [
-                Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(x_points)
-            ]
+            geo["o_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(o_points)]
+            geo["x_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(x_points)]
 
-            geo["boundary"] = Curve(
-                self.boundary.outline.r.__array__(), self.boundary.outline.z.__array__()
-            )
+            geo["boundary"] = Curve(self.boundary.outline.r.__array__(), self.boundary.outline.z.__array__())
 
             geo["boundary_separatrix"] = Curve(
                 self.boundary_separatrix.outline.r.__array__(),
@@ -415,51 +406,51 @@ class EquilibriumTimeSlice(equilibrium._T_equilibrium_time_slice):
 
 class Equilibrium(Module):
     r"""
-        Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
+    Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
 
-        Reference:
-            - O. Sauter and S. Yu Medvedev, "Tokamak coordinate conventions: COCOS", Computer Physics Communications 184, 2 (2013), pp. 293--302.
+    Reference:
+        - O. Sauter and S. Yu Medvedev, "Tokamak coordinate conventions: COCOS", Computer Physics Communications 184, 2 (2013), pp. 293--302.
 
-        COCOS  11
-        ```{text}
-            Top view
-                    ***************
-                    *               *
-                *   ***********   *
-                *   *           *   *
-                *   *             *   *
-                *   *             *   *
-            Ip  v   *             *   ^  \phi
-                *   *    Z o--->R *   *
-                *   *             *   *
-                *   *             *   *
-                *   *     Bpol    *   *
-                *   *     o     *   *
-                *   ***********   *
-                    *               *
-                    ***************
-                    Bpol x
-                    Poloidal view
-                ^Z
-                |
-                |       ************
-                |      *            *
-                |     *         ^    *
-                |     *   \rho /     *
-                |     *       /      *
-                +-----*------X-------*---->R
-                |     *  Ip, \phi   *
-                |     *              *
-                |      *            *
-                |       *****<******
-                |       Bpol,\theta
-                |
-                    Cylindrical coordinate      : $(R,\phi,Z)$
-            Poloidal plane coordinate   : $(\rho,\theta,\phi)$
-        ```
+    COCOS  11
+    ```{text}
+        Top view
+                ***************
+                *               *
+            *   ***********   *
+            *   *           *   *
+            *   *             *   *
+            *   *             *   *
+        Ip  v   *             *   ^  \phi
+            *   *    Z o--->R *   *
+            *   *             *   *
+            *   *             *   *
+            *   *     Bpol    *   *
+            *   *     o     *   *
+            *   ***********   *
+                *               *
+                ***************
+                Bpol x
+                Poloidal view
+            ^Z
+            |
+            |       ************
+            |      *            *
+            |     *         ^    *
+            |     *   \rho /     *
+            |     *       /      *
+            +-----*------X-------*---->R
+            |     *  Ip, \phi   *
+            |     *              *
+            |      *            *
+            |       *****<******
+            |       Bpol,\theta
+            |
+                Cylindrical coordinate      : $(R,\phi,Z)$
+        Poloidal plane coordinate   : $(\rho,\theta,\phi)$
+    ```
     """
 
-    _plugin_prefix = 'fytok.plugins.equilibrium.'
+    _plugin_prefix = "fytok.plugins.equilibrium."
 
     _metadata = {"code": {"name": "eq_analyze"}}
 
@@ -469,5 +460,8 @@ class Equilibrium(Module):
 
     time_slice: TimeSeriesAoS[EquilibriumTimeSlice]
 
-    def __geometry__(self,  *args,  **kwargs):
+    def __geometry__(self, *args, **kwargs):
         return self.time_slice.current.__geometry__(*args, **kwargs)
+
+    def fetch(self, *args, **kwargs) -> EquilibriumTimeSlice:
+        return super().fetch(*args, **kwargs)

@@ -9,7 +9,8 @@ from spdm.data.Path import Path
 from spdm.data.Actor import Actor
 from spdm.data.AoS import AoS
 from spdm.data.Field import Field
-from spdm.data.Function import Function
+from spdm.data.Expression import Expression 
+from spdm.data.Function import Function 
 from spdm.data.HTree import Dict, HTree, List
 from spdm.data.Signal import Signal, SignalND
 from spdm.data.sp_property import SpTree, sp_property, sp_tree, AttributeTree

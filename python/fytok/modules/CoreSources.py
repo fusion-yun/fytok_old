@@ -3,6 +3,7 @@ from __future__ import annotations
 from spdm.data.AoS import AoS
 from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
+from spdm.data.Expression import Expression
 
 
 from .Utilities import *
@@ -33,24 +34,24 @@ class CoreSourcesProfiles1D(core_sources._T_core_sources_source_profiles_1d):
     electrons: CoreSourcesElectrons
     """ Sources for electrons"""
 
-    total_ion_energy: Function = sp_property(units="W.m^-3")
+    total_ion_energy: Expression = sp_property(units="W.m^-3")
     """ Source term for the total (summed over ion species) energy equation"""
 
     total_ion_energy_decomposed: core_sources._T_core_sources_source_profiles_1d_energy_decomposed_2
 
-    total_ion_power_inside: Function = sp_property(units="W")
+    total_ion_power_inside: Expression = sp_property(units="W")
 
-    momentum_tor: Function = sp_property(units="kg.m^-1.s^-2")
+    momentum_tor: Expression = sp_property(units="kg.m^-1.s^-2")
 
-    torque_tor_inside: Function = sp_property(units="kg.m^2.s^-2")
+    torque_tor_inside: Expression = sp_property(units="kg.m^2.s^-2")
 
-    momentum_tor_j_cross_b_field: Function = sp_property(units="kg.m^-1.s^-2")
+    momentum_tor_j_cross_b_field: Expression = sp_property(units="kg.m^-1.s^-2")
 
-    j_parallel: Function = sp_property(units="A.m^-2")
+    j_parallel: Expression = sp_property(units="A.m^-2")
 
-    current_parallel_inside: Function = sp_property(units="A")
+    current_parallel_inside: Expression = sp_property(units="A")
 
-    conductivity_parallel: Function = sp_property(units="ohm^-1.m^-1")
+    conductivity_parallel: Expression = sp_property(units="ohm^-1.m^-1")
 
     ion: AoS[CoreSourcesIon] = sp_property(identifier="label")
 

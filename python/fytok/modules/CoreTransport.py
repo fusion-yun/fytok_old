@@ -1,34 +1,36 @@
 from spdm.data.AoS import AoS
 from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
-
+from spdm.data.Expression import Expression
 
 from .Utilities import *
 from .CoreProfiles import CoreProfiles
 from .Equilibrium import Equilibrium
+
 from ..utils.logger import logger
+
 from ..ontology import core_transport
 
 
 @sp_tree
 class CoreTransportModelParticles(core_transport._T_core_transport_model_2_density):
-    d: Function = sp_property(coordinate1=".../grid_d/rho_tor_norm", units="m^2.s^-1", default_value=np.nan)
-    v: Function = sp_property(coordinate1=".../grid_v/rho_tor_norm", units="m.s^-1", default_value=np.nan)
-    flux: Function = sp_property(coordinate1=".../grid_flux/rho_tor_norm", units="m^-2.s^-1", default_value=np.nan)
+    d: Expression = sp_property(coordinate1=".../grid_d/rho_tor_norm", units="m^2.s^-1", default_value=np.nan)
+    v: Expression = sp_property(coordinate1=".../grid_v/rho_tor_norm", units="m.s^-1", default_value=np.nan)
+    flux: Expression = sp_property(coordinate1=".../grid_flux/rho_tor_norm", units="m^-2.s^-1", default_value=np.nan)
 
 
 @sp_tree
 class CoreTransportModelEnergy(core_transport._T_core_transport_model_2_energy):
-    d: Function = sp_property(coordinate1=".../grid_d/rho_tor_norm", units="m^2.s^-1", default_value=np.nan)
-    v: Function = sp_property(coordinate1=".../grid_v/rho_tor_norm", units="m.s^-1", default_value=np.nan)
-    flux: Function = sp_property(coordinate1=".../grid_flux/rho_tor_norm", units="W.m^-2", default_value=np.nan)
+    d: Expression = sp_property(coordinate1=".../grid_d/rho_tor_norm", units="m^2.s^-1", default_value=np.nan)
+    v: Expression = sp_property(coordinate1=".../grid_v/rho_tor_norm", units="m.s^-1", default_value=np.nan)
+    flux: Expression = sp_property(coordinate1=".../grid_flux/rho_tor_norm", units="W.m^-2", default_value=np.nan)
 
 
 @sp_tree
 class CoreTransportModelMomentum(core_transport._T_core_transport_model_4_momentum):
-    d: Function = sp_property(coordinate1=".../grid_d/rho_tor_norm", units="m^2.s^-1", default_value=np.nan)
-    v: Function = sp_property(coordinate1=".../grid_v/rho_tor_norm", units="m.s^-1", default_value=np.nan)
-    flux: Function = sp_property(coordinate1=".../grid_flux/rho_tor_norm", units="W.m^-2", default_value=np.nan)
+    d: Expression = sp_property(coordinate1=".../grid_d/rho_tor_norm", units="m^2.s^-1", default_value=np.nan)
+    v: Expression = sp_property(coordinate1=".../grid_v/rho_tor_norm", units="m.s^-1", default_value=np.nan)
+    flux: Expression = sp_property(coordinate1=".../grid_flux/rho_tor_norm", units="W.m^-2", default_value=np.nan)
 
 
 @sp_tree
@@ -57,7 +59,7 @@ class CoreTransportProfiles1D(core_transport._T_core_transport_model_profiles_1d
 
     @sp_property
     def grid_v(self) -> CoreRadialGrid:
-        return self.grid.duplicate(self.grid_d.rho_tor_norm)
+        return self.grid_d.duplicate(self.grid_d.rho_tor_norm)
 
     @sp_property
     def grid_flux(self) -> CoreRadialGrid:
@@ -114,7 +116,7 @@ class CoreTransportModel(Module):
         )
 
     def fetch(self, *args, **kwargs) -> CoreTransportTimeSlice:
-        return CoreTransportTimeSlice(super().fetch(*args, **kwargs)._cache)
+        return super().fetch(*args, **kwargs)
 
 
 @sp_tree
