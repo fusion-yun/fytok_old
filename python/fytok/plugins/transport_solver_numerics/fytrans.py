@@ -124,9 +124,9 @@ class FyTrans(TransportSolverNumerics):
 
         psi = Function(solver_1d.grid.psi, solver_1d.grid.rho_tor_norm, label="psi")(x)
 
-        eq_1d = equilibrium.fetch(0, psi).profiles_1d
+        eq_1d = equilibrium.time_slice.current.profiles_1d
 
-        eq_1d_m = equilibrium.fetch(-1, psi).profiles_1d
+        eq_1d_m = equilibrium.time_slice.previous.profiles_1d
 
         # $R_0$ characteristic major radius of the device   [m]
         R0 = equilibrium.fetch(0).vacuum_toroidal_field.r0
@@ -306,14 +306,14 @@ class FyTrans(TransportSolverNumerics):
 
                     if core_transport is not None:
                         for model in core_transport.model:
-                            core_transp_1d = model.fetch(0, x, **vars).profiles_1d
+                            core_transp_1d = model.fetch(0, **vars).profiles_1d
                             transp_d += core_transp_1d.get(f"{spec}/particles/d", 0)
                             transp_v += core_transp_1d.get(f"{spec}/particles/v", 0)
                             transp_flux += core_transp_1d.get(f"{spec}/particles/flux", 0)
 
                     if core_sources is not None:
                         for source in core_sources.source:
-                            core_source_1d = source.fetch(0, x, **vars).profiles_1d
+                            core_source_1d = source.fetch(0, **vars).profiles_1d
                             Sexpl += core_source_1d.get(f"{spec}/particles", 0)
                             Sexpl += core_source_1d.get(f"{spec}/particles_decomposed/explicit_part", 0)
                             Simpl += core_source_1d.get(f"{spec}/particles_decomposed/implicit_part", 0)
@@ -376,7 +376,7 @@ class FyTrans(TransportSolverNumerics):
 
                     if core_transport is not None:
                         for model in core_transport.model:
-                            core_transp_1d = model.fetch(0, x, **vars).profiles_1d
+                            core_transp_1d = model.fetch(0, **vars).profiles_1d
                             logger.debug((type(core_transp_1d.get(f"{spec}/energy/d", 0)), spec))
                             energy_diff += core_transp_1d.get(f"{spec}/energy/d", 0)
                             energy_vcon += core_transp_1d.get(f"{spec}/energy/v", 0)
@@ -384,7 +384,7 @@ class FyTrans(TransportSolverNumerics):
 
                     if core_sources is not None:
                         for source in core_sources.source:
-                            core_source_1d = source.fetch(0, x, **vars).profiles_1d
+                            core_source_1d = source.fetch(0, **vars).profiles_1d
                             Qexpl += core_source_1d.get(f"{spec}/energy", 0)
                             Qexpl += core_source_1d.get(f"{spec}/energy_decomposed/explicit_part", 0)
                             Qimpl += core_source_1d.get(f"{spec}/energy_decomposed/implicit_part", 0)
