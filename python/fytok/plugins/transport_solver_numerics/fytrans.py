@@ -101,7 +101,6 @@ class FyTrans(TransportSolverNumerics):
             vars[name + "_flux"] = Variable(
                 nums_of_unknown := nums_of_unknown + 1, name + "_flux", label=name + "_flux"
             )
-        logger.debug(list(vars.keys()))
 
         vars_m = {}
 
@@ -129,9 +128,7 @@ class FyTrans(TransportSolverNumerics):
 
         eq_1d = equilibrium.time_slice.current.profiles_1d
 
-        eq_1d_m = (
-            equilibrium.time_slice.previous.profiles_1d if equilibrium.time_slice.previous is not _not_found_ else None
-        )
+        eq_1d_m = equilibrium_m.profiles_1d if equilibrium_m is not _not_found_ else None
 
         psi = Function(solver_1d.grid.psi, solver_1d.grid.rho_tor_norm, label="psi")(x)
 
@@ -310,36 +307,23 @@ class FyTrans(TransportSolverNumerics):
                     transp_d = 0
                     transp_v = 0
                     transp_flux = 0
+
                     Sexpl = 0
                     Simpl = 0
 
                     if core_transport is not None:
                         for model in core_transport.model:
-                            core_transp_1d = model.time_slice.current.profiles_1d
+                            core_transp_1d = model.fetch(x, vars).profiles_1d
                             transp_d += core_transp_1d.get(f"{spec}/particles/d", 0)
                             transp_v += core_transp_1d.get(f"{spec}/particles/v", 0)
                             transp_flux += core_transp_1d.get(f"{spec}/particles/flux", 0)
 
                     if core_sources is not None:
                         for source in core_sources.source:
-                            core_source_1d = source.time_slice.current.profiles_1d
-                            S = core_source_1d.get(f"{spec}/particles", None)
-                            if S is not None:
-                                Sexpl += S
-                            else:
-                                Sexpl += core_source_1d.get(f"{spec}/particles_decomposed/explicit_part", 0)
-                                Simpl += core_source_1d.get(f"{spec}/particles_decomposed/implicit_part", 0)
-
-                    if isinstance(transp_d, Expression):
-                        transp_d = transp_d(x)
-                    if isinstance(transp_v, Expression):
-                        transp_v = transp_v(x)
-                    if isinstance(transp_flux, Expression):
-                        transp_flux = transp_flux(x)
-                    if isinstance(Sexpl, Expression):
-                        Sexpl = Sexpl(x)
-                    if isinstance(Simpl, Expression):
-                        Simpl = Simpl(x)
+                            core_source_1d = source.fetch(x, vars).profiles_1d
+                            Sexpl += core_source_1d.get(f"{spec}/particles", 0)
+                            Sexpl += core_source_1d.get(f"{spec}/particles_decomposed/explicit_part", 0)
+                            Simpl += core_source_1d.get(f"{spec}/particles_decomposed/implicit_part", 0)
 
                     a = vpr
 
@@ -393,44 +377,24 @@ class FyTrans(TransportSolverNumerics):
                     energy_diff = 0
                     energy_vcon = 0
                     energy_flux = 0
+
                     Qexpl = 0
                     Qimpl = 0
 
                     if core_transport is not None:
                         for model in core_transport.model:
-                            core_transp_1d = model.time_slice.current.profiles_1d
+                            core_transp_1d = model.fetch(x, vars).profiles_1d
+                            logger.debug((type(core_transp_1d.get(f"{spec}/energy/d", 0)), spec))
                             energy_diff += core_transp_1d.get(f"{spec}/energy/d", 0)
                             energy_vcon += core_transp_1d.get(f"{spec}/energy/v", 0)
                             energy_flux += core_transp_1d.get(f"{spec}/energy/flux", 0)
 
                     if core_sources is not None:
                         for source in core_sources.source:
-                            core_source_1d = source.time_slice.current.profiles_1d
+                            core_source_1d = source.fetch(x, vars).profiles_1d
                             Qexpl += core_source_1d.get(f"{spec}/energy", 0)
                             Qexpl += core_source_1d.get(f"{spec}/energy_decomposed/explicit_part", 0)
                             Qimpl += core_source_1d.get(f"{spec}/energy_decomposed/implicit_part", 0)
-
-                    # for equ in solver_1d.equation:
-                    #     identifier = equ.primary_quantity.identifier.split("/")
-                    #     z = "/".join(identifier[:-1])
-                    #     if identifier[-1] != "temperature" or spec == z:
-                    #         continue
-                    #     n_z = density[z]
-                    #     T_z = vars[f"{z}/temperature"]
-                    #     nu_zs = 0  # collisionla_rate[spec, z]
-                    #     Qexpl += nu_zs * T_z
-                    #     Qimpl += nu_zs
-
-                    if isinstance(energy_diff, Expression):
-                        energy_diff = energy_diff(x)
-                    if isinstance(energy_vcon, Expression):
-                        energy_vcon = energy_vcon(x)
-                    if isinstance(energy_flux, Expression):
-                        energy_flux = energy_flux(x)
-                    if isinstance(Qexpl, Expression):
-                        Qexpl = Qexpl(x)
-                    if isinstance(Qimpl, Expression):
-                        Qimpl = Qimpl(x)
 
                     ns = vars.get(f"{spec}/density_thermal", 0)
 
@@ -701,7 +665,6 @@ class FyTrans(TransportSolverNumerics):
                 vars[k] = v
 
         for idx, equ in enumerate(solver_1d.equation):
-            logger.debug(equ.primary_quantity.identifier)
             assert np.all(vars.pop(f"{equ.primary_quantity.identifier}", 0) == sol.y[2 * idx])
             assert np.all(vars.pop(f"{equ.primary_quantity.identifier}_flux", 0) == sol.y[2 * idx + 1])
             equ.primary_quantity["profile"] = sol.y[2 * idx]

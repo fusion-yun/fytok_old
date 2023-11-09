@@ -85,6 +85,9 @@ class CoreSourcesSource(Module):
 
     time_slice: TimeSeriesAoS[CoreSourcesTimeSlice]
 
+    def fetch(self, *args, **kwargs) -> CoreSourcesTimeSlice:
+        return super().fetch(*args, **kwargs)
+
 
 @sp_tree
 class CoreSources(IDS):

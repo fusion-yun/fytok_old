@@ -53,7 +53,6 @@ class CoreTransportNeutral(core_transport._T_core_transport_model_neutral):
 
 @sp_tree(coordinate1="grid_d/rho_tor_norm")
 class CoreTransportProfiles1D(core_transport._T_core_transport_model_profiles_1d):
-   
     grid_d: CoreRadialGrid
 
     @sp_property
@@ -113,6 +112,9 @@ class CoreTransportModel(Module):
             *args,
             **kwargs,
         )
+
+    def fetch(self, *args, **kwargs) -> CoreTransportTimeSlice:
+        return CoreTransportTimeSlice(super().fetch(*args, **kwargs)._cache)
 
 
 @sp_tree
