@@ -21,12 +21,12 @@ def load_core_profiles(profiles, grid):
     bs_psi_norm = profiles["Fp"].values
     # bs_psi = bs_psi_norm*(psi_boundary-psi_axis)+psi_axis
 
-    b_Te =    smooth_1d(profiles["TE"].values,     bs_r_norm, i_end=i_ped-10, window_len=21)*1000
-    b_Ti =    smooth_1d(profiles["TI"].values,     bs_r_norm, i_end=i_ped-10, window_len=21)*1000
-    b_ne =    smooth_1d(profiles["NE"].values,     bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19
-    b_nDT =   smooth_1d(profiles["Nd+t"].values,   bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19*0.5
-    b_nHe =   smooth_1d(profiles["Nath"].values,   bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19
-    b_nImp =  smooth_1d(profiles["Nz"].values,     bs_r_norm, i_end=i_ped-10, window_len=21)*1.0e19
+    b_Te =    smooth_1d( bs_r_norm, profiles["TE"].values,     i_end=i_ped-10, window_len=21)*1000
+    b_Ti =    smooth_1d( bs_r_norm, profiles["TI"].values,     i_end=i_ped-10, window_len=21)*1000
+    b_ne =    smooth_1d( bs_r_norm, profiles["NE"].values,     i_end=i_ped-10, window_len=21)*1.0e19
+    b_nDT =   smooth_1d( bs_r_norm, profiles["Nd+t"].values,   i_end=i_ped-10, window_len=21)*1.0e19*0.5
+    b_nHe =   smooth_1d( bs_r_norm, profiles["Nath"].values,   i_end=i_ped-10, window_len=21)*1.0e19
+    b_nImp =  smooth_1d( bs_r_norm, profiles["Nz"].values,     i_end=i_ped-10, window_len=21)*1.0e19
     b_zeff = profiles["Zeff"].values
     # fmt:on
 
@@ -63,8 +63,8 @@ def load_core_profiles(profiles, grid):
                 "is_impurity": True,
             },
         ],
-        # "e_field": {"parallel":  Function(e_parallel,bs_r_norm)},
-        # "conductivity_parallel": Function(baseline["Joh"].values*1.0e6 / baseline["U"].values * (TWOPI * grid.r0),bs_r_norm),
+        # "e_field": {"parallel":  Function(bs_r_norm,e_parallel,)},
+        # "conductivity_parallel": Function(bs_r_norm,baseline["Joh"].values*1.0e6 / baseline["U"].values * (TWOPI * grid.r0),),
         "rho_tor": profiles["rho"].values,
         "zeff": profiles["Zeff"].values,
         "vloop": profiles["U"].values,
@@ -240,12 +240,12 @@ def read_iter_profiles(path):
     psi_norm = profiles_1D["Fp"].values
     # bs_psi = bs_psi_norm*(psi_boundary-psi_axis)+psi_axis
 
-    b_Te =    smooth_1d(profiles_1D["TE"].values,     rho_tor_norm, i_end=i_ped-10, window_len=21)*1000
-    b_Ti =    smooth_1d(profiles_1D["TI"].values,     rho_tor_norm, i_end=i_ped-10, window_len=21)*1000
-    b_ne =    smooth_1d(profiles_1D["NE"].values,     rho_tor_norm, i_end=i_ped-10, window_len=21)*1.0e19
-    b_nDT =   smooth_1d(profiles_1D["Nd+t"].values,   rho_tor_norm, i_end=i_ped-10, window_len=21)*1.0e19*0.5
-    b_nHe =   smooth_1d(profiles_1D["Nath"].values,   rho_tor_norm, i_end=i_ped-10, window_len=21)*1.0e19
-    b_nImp =  smooth_1d(profiles_1D["Nz"].values,     rho_tor_norm, i_end=i_ped-10, window_len=21)*1.0e19
+    b_Te =    smooth_1d(rho_tor_norm, profiles_1D["TE"].values,      i_end=i_ped-10, window_len=21)*1000
+    b_Ti =    smooth_1d(rho_tor_norm, profiles_1D["TI"].values,      i_end=i_ped-10, window_len=21)*1000
+    b_ne =    smooth_1d(rho_tor_norm, profiles_1D["NE"].values,      i_end=i_ped-10, window_len=21)*1.0e19
+    b_nDT =   smooth_1d(rho_tor_norm, profiles_1D["Nd+t"].values,    i_end=i_ped-10, window_len=21)*1.0e19*0.5
+    b_nHe =   smooth_1d(rho_tor_norm, profiles_1D["Nath"].values,    i_end=i_ped-10, window_len=21)*1.0e19
+    b_nImp =  smooth_1d(rho_tor_norm, profiles_1D["Nz"].values,      i_end=i_ped-10, window_len=21)*1.0e19
     b_zeff = profiles_1D["Zeff"].values
     # fmt:on
 

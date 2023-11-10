@@ -223,8 +223,6 @@ class TransportSolverNumerics(Module):
 
         """
 
-        solver_1d = {}
-
         rho_tor_norm = kwargs.pop("rho_tor_norm", None)
 
         if not self.time_slice.is_initializied:

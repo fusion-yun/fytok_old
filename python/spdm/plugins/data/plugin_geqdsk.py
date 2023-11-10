@@ -49,7 +49,6 @@ def sp_read_geqdsk(file):
     file.readline()
 
     def _read_data(count, width=16):
-
         data = []
         if count == 0:
             return data
@@ -60,7 +59,7 @@ def sp_read_geqdsk(file):
             try:
                 v = float(d)
             except Exception as error:
-                raise RuntimeError(f"Error reading data {n} {count} {data[-4:]} \'{d}\'") from error
+                raise RuntimeError(f"Error reading data {n} {count} {data[-4:]} '{d}'") from error
             data.append(v)
             if n >= count - 1 or ((n + 1) % 5 == 0):
                 file.readline()
@@ -135,22 +134,10 @@ def sp_write_geqdsk(p, file):
     nw = p["nw"]
     nh = p["nh"]
 
-    file.write(
-        "%48s%4i%4i%4i\n"
-        % (p.get("description", "NO DESCRIPTION"), 3, nw, nh)
-    )
-    file.write(
-        "%16.8e%16.8e%16.8e%16.8e%16.8e\n"
-        % (p["rdim"], p["zdim"], p["rcentr"], p["rleft"], p["zmid"])
-    )
-    file.write(
-        "%16.8e%16.8e%16.8e%16.8e%16.8e\n"
-        % (p["rmaxis"], p["zmaxis"], p["simag"], p["sibry"], p["bcentr"])
-    )
-    file.write(
-        "%16.8e%16.8e%16.8e%16.8e%16.8e\n"
-        % (p["current"], p["simag"], 0, p["rmaxis"], 0)
-    )
+    file.write("%48s%4i%4i%4i\n" % (p.get("description", "NO DESCRIPTION"), 3, nw, nh))
+    file.write("%16.8e%16.8e%16.8e%16.8e%16.8e\n" % (p["rdim"], p["zdim"], p["rcentr"], p["rleft"], p["zmid"]))
+    file.write("%16.8e%16.8e%16.8e%16.8e%16.8e\n" % (p["rmaxis"], p["zmaxis"], p["simag"], p["sibry"], p["bcentr"]))
+    file.write("%16.8e%16.8e%16.8e%16.8e%16.8e\n" % (p["current"], p["simag"], 0, p["rmaxis"], 0))
     file.write("%16.8e%16.8e%16.8e%16.8e%16.8e\n" % (p["zmaxis"], 0, p["sibry"], 0, 0))
 
     def _write_data(d):
@@ -182,11 +169,10 @@ def sp_write_geqdsk(p, file):
     return
 
 
-def sp_to_geqdsk(d, description: str | None = None,  time_slice=0,   **kwargs) -> dict:
-
+def sp_to_geqdsk(d, description: str | None = None, time_slice=0, **kwargs) -> dict:
     entry: Entry = asentry(d)
 
-    geqdsk: dict = {"description":  description or entry.get("description", "NOTHING TO SAY")}
+    geqdsk: dict = {"description": description or entry.get("description", "NOTHING TO SAY")}
 
     limiter_r = entry.get("wall/description_2d/0/limiter/unit/0/outline/r", None)
     limiter_z = entry.get("wall/description_2d/0/limiter/unit/0/outline/z", None)
@@ -218,9 +204,7 @@ def sp_to_geqdsk(d, description: str | None = None,  time_slice=0,   **kwargs) -
     rbbs = eq.get("boundary/outline/r", np.zeros([0]))
     zbbs = eq.get("boundary/outline/z", np.zeros([0]))
 
-    geqdsk["bbsrz"] = np.append(
-        rbbs.reshape([1, rbbs.size]), zbbs.reshape([1, rbbs.size]), axis=0
-    ).transpose()
+    geqdsk["bbsrz"] = np.append(rbbs.reshape([1, rbbs.size]), zbbs.reshape([1, rbbs.size]), axis=0).transpose()
 
     # psi
 
@@ -278,7 +262,7 @@ def sp_to_geqdsk(d, description: str | None = None,  time_slice=0,   **kwargs) -
             else:
                 x = psi
             try:
-                res = Function(f, x)(psi_s)
+                res = Function(x, f)(psi_s)
             except Exception:
                 return nan_array
             else:
@@ -342,11 +326,22 @@ def sp_from_geqdsk(geqdsk: dict, eq: typing.Optional[Entry] = None) -> Entry:
     e_Bp_TWOPI = 1.0
     limrz = geqdsk.get("limrz", None)
     if isinstance(limrz, np.ndarray):
-
-        eq["wall"] = {"description_2d":  [{"limiter": {"unit": [{"outline": {
-            "r": limrz[:, 0],
-            "z": limrz[:, 1],
-        }}]}}]}
+        eq["wall"] = {
+            "description_2d": [
+                {
+                    "limiter": {
+                        "unit": [
+                            {
+                                "outline": {
+                                    "r": limrz[:, 0],
+                                    "z": limrz[:, 1],
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
 
     eq["equilibrium/time"] = [0.0]
     eq["equilibrium/vacuum_toroidal_field/r0"] = r0
@@ -384,17 +379,16 @@ def sp_from_geqdsk(geqdsk: dict, eq: typing.Optional[Entry] = None) -> Entry:
                 "psi_boundary": psi_boundary,
                 "ip": Ip,
             },
-
             # boundary
             "boundary": {
                 "outline": {
                     "r": geqdsk["bbsrz"][:, 0],
                     "z": geqdsk["bbsrz"][:, 1],
                 },
-                "geometric_axis":{
+                "geometric_axis": {
                     "r": geqdsk["rcentr"],
                     "z": geqdsk["zmid"],
-                }
+                },
             },
             # profile 1d
             "profiles_1d": {
@@ -405,12 +399,12 @@ def sp_from_geqdsk(geqdsk: dict, eq: typing.Optional[Entry] = None) -> Entry:
                 "q": geqdsk["qpsi"],
                 "psi": np.linspace(psi_axis, psi_boundary, nw),
             },
-            "profiles_2d":{
+            "profiles_2d": {
                 "type": "total",  # total field
                 "grid_type": {"name": "rectangular", "index": 1},
                 "grid": {
-                        "dim1": np.linspace(rmin, rmax, nw),
-                        "dim2": np.linspace(zmin, zmax, nh),
+                    "dim1": np.linspace(rmin, rmax, nw),
+                    "dim2": np.linspace(zmin, zmax, nh),
                 },
                 "psi": psirz,
             },

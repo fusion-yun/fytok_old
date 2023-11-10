@@ -49,6 +49,8 @@ if __name__ == "__main__":
         },
     )
 
+    eq_1d = tokamak.equilibrium.time_slice.current.profiles_1d
+    # logger.debug(eq_1d.phi.__array__())
     # core_transport_1d = tokamak.core_transport.model[0].time_slice.current.profiles_1d
     # func = core_transport_1d.electrons.energy.d
     # logger.debug(func(np.linspace(0.01, 0.995, 32)))

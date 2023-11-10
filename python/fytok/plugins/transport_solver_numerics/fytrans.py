@@ -122,19 +122,19 @@ class FyTrans(TransportSolverNumerics):
         # 设定全局参数
         hyper_diff = self.code.parameters.get("hyper_diff", 0.001)
 
-        psi = Function(solver_1d.grid.psi, solver_1d.grid.rho_tor_norm, label="psi")(x)
+        psi = Function(solver_1d.grid.rho_tor_norm, solver_1d.grid.psi, label="psi")(x)
 
         eq_1d = equilibrium.time_slice.current.profiles_1d
 
         eq_1d_m = equilibrium.time_slice.previous.profiles_1d
 
         # $R_0$ characteristic major radius of the device   [m]
-        R0 = equilibrium.fetch(0).vacuum_toroidal_field.r0
+        R0 = equilibrium.time_slice.current.vacuum_toroidal_field.r0
 
         # $B_0$ magnetic field measured at $R_0$            [T]
-        B0 = equilibrium.fetch(0).vacuum_toroidal_field.b0
+        B0 = equilibrium.time_slice.current.vacuum_toroidal_field.b0
 
-        B0m = equilibrium.fetch(-1).vacuum_toroidal_field.b0
+        B0m = equilibrium.time_slice.previous.vacuum_toroidal_field.b0
 
         # Mesh
         rho_tor_boundary = eq_1d.grid.rho_tor_boundary
@@ -149,9 +149,6 @@ class FyTrans(TransportSolverNumerics):
 
         rho_tor = rho_tor_boundary * x
 
-        # diamagnetic function,$F=R B_\phi$                 [T*m]
-        fpol = eq_1d.f(psi)
-
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
         vpr = eq_1d.dvolume_drho_tor(psi)
 
@@ -161,6 +158,7 @@ class FyTrans(TransportSolverNumerics):
 
         k_vppr = 0  # (3 / 2) * k_rho_bdry - k_phi *　x * vpr(psi).dln()
 
+        # diamagnetic function,$F=R B_\phi$                 [T*m]
         fpol = eq_1d.f(psi)
 
         fpol2 = fpol**2
@@ -240,7 +238,7 @@ class FyTrans(TransportSolverNumerics):
 
                     if core_sources is not None:
                         for source in core_sources.source:
-                            core_source_1d = source.fetch(**vars).profiles_1d
+                            core_source_1d = source.time_slice.current.profiles_1d
                             conductivity_parallel += core_source_1d.conductivity_parallel or 0
                             j_parallel += core_source_1d.j_parallel or 0
                             j_parallel_imp += core_source_1d.j_parallel_imp or 0
@@ -306,14 +304,14 @@ class FyTrans(TransportSolverNumerics):
 
                     if core_transport is not None:
                         for model in core_transport.model:
-                            core_transp_1d = model.fetch(0, **vars).profiles_1d
+                            core_transp_1d = model.time_slice.current.profiles_1d
                             transp_d += core_transp_1d.get(f"{spec}/particles/d", 0)
                             transp_v += core_transp_1d.get(f"{spec}/particles/v", 0)
                             transp_flux += core_transp_1d.get(f"{spec}/particles/flux", 0)
 
                     if core_sources is not None:
                         for source in core_sources.source:
-                            core_source_1d = source.fetch(0, **vars).profiles_1d
+                            core_source_1d = source.time_slice.current.profiles_1d
                             Sexpl += core_source_1d.get(f"{spec}/particles", 0)
                             Sexpl += core_source_1d.get(f"{spec}/particles_decomposed/explicit_part", 0)
                             Simpl += core_source_1d.get(f"{spec}/particles_decomposed/implicit_part", 0)
@@ -376,7 +374,7 @@ class FyTrans(TransportSolverNumerics):
 
                     if core_transport is not None:
                         for model in core_transport.model:
-                            core_transp_1d = model.fetch(0, **vars).profiles_1d
+                            core_transp_1d = model.time_slice.current.profiles_1d
                             logger.debug((type(core_transp_1d.get(f"{spec}/energy/d", 0)), spec))
                             energy_diff += core_transp_1d.get(f"{spec}/energy/d", 0)
                             energy_vcon += core_transp_1d.get(f"{spec}/energy/v", 0)
@@ -384,7 +382,7 @@ class FyTrans(TransportSolverNumerics):
 
                     if core_sources is not None:
                         for source in core_sources.source:
-                            core_source_1d = source.fetch(0, **vars).profiles_1d
+                            core_source_1d = source.time_slice.current.profiles_1d
                             Qexpl += core_source_1d.get(f"{spec}/energy", 0)
                             Qexpl += core_source_1d.get(f"{spec}/energy_decomposed/explicit_part", 0)
                             Qimpl += core_source_1d.get(f"{spec}/energy_decomposed/implicit_part", 0)
@@ -572,7 +570,8 @@ class FyTrans(TransportSolverNumerics):
         for idx, equ in enumerate(solver_1d.equation):
             a, b, c, d, e, f, g, *_ = equ.coefficient
             y = Y0[idx * 2]
-            Y0[idx * 2 + 1] = -Function(y, x).d()(x) * d(x, *Y0) + y * e(x, *Y0)
+
+            Y0[idx * 2 + 1] = -Function(x, y).d(x) * d(x, *Y0) + y * e(x, *Y0)
 
             if np.any(np.isnan(Y0[idx * 2 + 1])):
                 logger.error((equ.primary_quantity.identifier, d))
