@@ -408,10 +408,12 @@ class FyTrans(TransportSolverNumerics):
                     if core_sources is not None:
                         for source in core_sources.source:
                             core_source_1d = source.time_slice.current.profiles_1d
+                            logger.debug( core_source_1d.get(f"{spec}/energy_decomposed/explicit_part", 0))
                             Qexpl += core_source_1d.get(f"{spec}/energy", 0)
                             Qexpl += core_source_1d.get(f"{spec}/energy_decomposed/explicit_part", 0)
                             Qimpl += core_source_1d.get(f"{spec}/energy_decomposed/implicit_part", 0)
 
+                    logger.debug(Qexpl.__repr__())
                     if isinstance(energy_diff, Expression):
                         energy_diff = energy_diff(x)
                     if isinstance(energy_vcon, Expression):
@@ -619,44 +621,56 @@ class FyTrans(TransportSolverNumerics):
                 try:
                     dydr = equ.primary_quantity.d_dr
                     if callable(dydr):
-                        dydr = dydr(x, *y, *args)
+                        value = dydr(x, *y, *args)
                     else:
-                        dydr = np.full_like(x, dydr)
+                        value = np.full_like(x, dydr)
                 except Exception as error:
                     raise RuntimeError(
                         f"Error when apply  dydr={equ.primary_quantity.d_dr.__repr__()}  x={x} args={(y)}  !"
                     ) from error
                 else:
-                    if np.any(np.isnan(dydr)):
-                        raise RuntimeError((equ.primary_quantity.identifier, equ.primary_quantity.d_dr))
+                    if np.any(np.isnan(value)):
+                        a, b, c, d, e, f, g, *_ = equ.coefficient
+                        raise RuntimeError(
+                            (
+                                equ.primary_quantity.identifier,
+                                equ.primary_quantity.d_dr,
+                                value,
+                                d(x, *y),
+                                e(x, *y),
+                                f(x, *y),
+                                g(x, *y),
+                            )
+                        )
                     else:
-                        res.append(dydr)
+                        res.append(value)
 
                 try:
                     dfluxdr = equ.primary_quantity.dflux_dr
                     if callable(dfluxdr):
-                        dfluxdr = dfluxdr(x, *y, *args)
+                        value = dfluxdr(x, *y, *args)
                     else:
-                        dfluxdr = np.full_like(x, dfluxdr)
+                        value = np.full_like(x, dfluxdr)
                 except Exception as error:
                     raise RuntimeError(
                         f"Error when apply  dflux_dr={equ.primary_quantity.dflux_dr.__repr__()} x={x} args={(y)} !"
                     ) from error
                 else:
-                    # if np.any(np.isnan(dfluxdr)):
-                    #     a, b, c, d, e, f, g, *_ = equ.coefficient
-                    #     raise RuntimeError(
-                    #         (
-                    #             equ.primary_quantity.identifier,
-                    #             equ.primary_quantity.dflux_dr,
-                    #             d(x, *y),
-                    #             e(x, *y),
-                    #             f(x, *y),
-                    #             # g(x,*y),
-                    #         )
-                    #     )
-                    # else:
-                    res.append(dfluxdr)
+                    if np.any(np.isnan(value)):
+                        a, b, c, d, e, f, g, *_ = equ.coefficient
+                        raise RuntimeError(
+                            (
+                                equ.primary_quantity.identifier,
+                                equ.primary_quantity.dflux_dr,
+                                value,
+                                d(x, *y),
+                                e(x, *y),
+                                f(x, *y),
+                                g(x, *y),
+                            )
+                        )
+                    else:
+                        res.append(value)
 
             res = np.stack(res)
             return res
@@ -664,7 +678,6 @@ class FyTrans(TransportSolverNumerics):
         def bc(ya: array_type, yb: array_type, *args) -> array_type:
             res = []
             for eq in solver_1d.equation:
-                logger.debug(eq.boundary_condition[0].func.__repr__())
                 res.append(eq.boundary_condition[0].func(x[0], *ya))
                 res.append(eq.boundary_condition[1].func(x[-1], *yb))
             return np.array(res)

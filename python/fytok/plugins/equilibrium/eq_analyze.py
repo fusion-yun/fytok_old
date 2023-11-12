@@ -120,7 +120,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         if psi is None or psi is _not_found_:
             psi = np.linspace(0, 1, len(ffprime)) * (self.psi_boundary - self.psi_axis) + self.psi_axis
 
-        return np.sqrt(2.0 * Expression(ffprime, psi).antiderivative() + (self._B0 * self._R0) ** 2)
+        return np.sqrt(2.0 * Function(psi, ffprime).I + (self._B0 * self._R0) ** 2)
 
     @functools.cached_property
     def _psirz(self) -> Field:
@@ -268,7 +268,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     #     return self.psi_norm * (self.psi_boundary-self.psi_axis) + self.psi_axis
 
     # @property
-    # def phi(self) -> array_type: return Expression(self.dphi_dpsi, self.psi).antiderivative()(self.psi)
+    # def phi(self) -> array_type: return Function(self.psi,self.dphi_dpsi).I(self.psi)
 
     # @property
     # def dphi_dpsi(self) -> array_type: return self._fpol * self.surface_integral(1.0/(_R**2), self.psi)
@@ -505,14 +505,14 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         else:
             return FyEquilibriumCoordinateSystem.ShapeProperty(
                 psi,
-                Expression(rmin, psi, name="rmin"),
-                Expression(zmin, psi, name="zmin"),
-                Expression(rmax, psi, name="rmax"),
-                Expression(zmax, psi, name="zmax"),
-                Expression(rzmin, psi, name="rzmin"),
-                Expression(rzmax, psi, name="rzmax"),
-                Expression(r_inboard, psi, name="r_inboard"),
-                Expression(r_outboard, psi, name="r_outboard"),
+                Function(psi, rmin,        name="rmin"),
+                Function(psi, zmin,        name="zmin"),
+                Function(psi, rmax,        name="rmax"),
+                Function(psi, zmax,        name="zmax"),
+                Function(psi, rzmin,       name="rzmin"),
+                Function(psi, rzmax,       name="rzmax"),
+                Function(psi, r_inboard,   name="r_inboard"),
+                Function(psi, r_outboard,  name="r_outboard"),
             )
 
     #################################
@@ -738,7 +738,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
 
     @sp_property
     def volume(self) -> Expression:
-        return self.dvolume_dpsi.antiderivative()
+        return self.dvolume_dpsi.I
 
     @sp_property
     def dvolume_dpsi(self) -> Expression:
@@ -752,7 +752,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
 
     @sp_property
     def area(self) -> Expression:
-        return self.darea_dpsi.antiderivative()
+        return self.darea_dpsi.I
 
     @sp_property
     def darea_dpsi(self) -> Expression:
