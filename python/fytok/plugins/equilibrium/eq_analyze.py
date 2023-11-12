@@ -560,7 +560,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
     @functools.cached_property
     def dvolume_dpsi(self) -> Expression:
-        return Expression(*self._surface_integral(1.0), name="dvolume_dpsi", label=r"$\frac{d volume}{d\psi}$")
+        return Expression(*self._surface_integral(1.0), name="dvolume_dpsi", label=r"\frac{d volume}{d\psi}")
 
     ###############################
     # surface integral

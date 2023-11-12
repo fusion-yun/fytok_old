@@ -82,7 +82,7 @@ def load_core_transport(profiles, grid, R0: float, B0: float = None):
     bs_r_norm = profiles["x"].values
     bs_psi_norm = profiles["Fp"].values
 
-    _x = Variable(0, "rho_tor_norm",label=r"\bar{\rho}_{tor}")
+    _x = Variable(0, "rho_tor_norm", label=r"\bar{\rho}_{tor}")
 
     # Core profiles
     r_ped = 0.96  # np.sqrt(0.88)
@@ -93,8 +93,8 @@ def load_core_transport(profiles, grid, R0: float, B0: float = None):
     Cped = 0.17
     Ccore = 0.4
     # Function( profiles["Xi"].values,bs_r_norm)  Cped = 0.2
-    chi = Piecewise([Ccore * (1.0 + 3 * (_x**2)), Cped], [(_x < r_ped), (_x >= r_ped)])
-    chi_e = Piecewise([0.5 * Ccore * (1.0 + 3 * (_x**2)), Cped], [(_x < r_ped), (_x >= r_ped)])
+    chi = Piecewise([Ccore * (1.0 + 3 * (_x**2)), Cped], [(_x < r_ped), (_x >= r_ped)], label=r"\chi")
+    chi_e = Piecewise([0.5 * Ccore * (1.0 + 3 * (_x**2)), Cped], [(_x < r_ped), (_x >= r_ped)], label=r"\chi_e")
 
     D = 0.1 * (chi + chi_e)
 
@@ -135,7 +135,7 @@ def load_core_source(profiles, grid, R0: float, B0: float = None):
     bs_r_norm = profiles["x"].values
     bs_psi_norm = profiles["Fp"].values
 
-    _x = Variable(0, "rho_tor_norm",label=r"\bar{\rho}_{tor}")
+    _x = Variable(0, "rho_tor_norm", label=r"\bar{\rho}_{tor}")
 
     S = 9e20 * np.exp(15.0 * (_x**2 - 1.0))
 

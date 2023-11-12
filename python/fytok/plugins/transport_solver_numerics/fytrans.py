@@ -413,7 +413,7 @@ class FyTrans(TransportSolverNumerics):
                             Qexpl += core_source_1d.get(f"{spec}/energy_decomposed/explicit_part", 0)
                             Qimpl += core_source_1d.get(f"{spec}/energy_decomposed/implicit_part", 0)
 
-                    logger.debug(Qexpl.__repr__())
+                    
                     if isinstance(energy_diff, Expression):
                         energy_diff = energy_diff(x)
                     if isinstance(energy_vcon, Expression):

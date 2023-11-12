@@ -5,7 +5,7 @@ import numpy as np
 import scipy.constants
 from scipy import constants
 from spdm.data.AoS import AoS
-from spdm.data.Expression import Expression 
+from spdm.data.Expression import Expression
 from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.utils.tree_utils import merge_tree_recursive
@@ -22,10 +22,9 @@ TWOPI = 2.0 * PI
 
 @sp_tree(coordinate1="../grid/rho_tor_norm")
 class CoreProfilesIon(utilities._T_core_profile_ions):
-
     _metadata = {"identifier": "label"}
 
-    def __init__(self, *args,   **kwargs) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
         atom_desc = atoms.get(self.label.capitalize(), None)
@@ -45,39 +44,42 @@ class CoreProfilesIon(utilities._T_core_profile_ions):
     a: float
 
     @sp_property(unit="kg")
-    def mass(self) -> float: return self.a*scipy.constants.atomic_mass
+    def mass(self) -> float:
+        return self.a * scipy.constants.atomic_mass
 
     @sp_property(unit="C")
-    def charge(self) -> float: return self.z*scipy.constants.elementary_charge
+    def charge(self) -> float:
+        return self.z * scipy.constants.elementary_charge
 
     z_ion_1d: Expression = sp_property(units="-")
 
     @sp_property
-    def z_ion_square_1d(self) -> Expression : return self.z_ion * self.z_ion
+    def z_ion_square_1d(self) -> Expression:
+        return self.z_ion * self.z_ion
 
     element: AoS[PlasmaCompositionNeutralElement]
 
     temperature: Expression = sp_property(units="eV", default_value=1.0)
 
-    @sp_property(units="m^-3")
-    def density(self) -> Expression : return self.density_thermal+self.density_fast
+    @sp_property
+    def density(self) -> Expression:
+        return self.density_thermal + self.density_fast
 
-    density_thermal: Expression = sp_property(units="m^-3")
-    density_fast: Expression = sp_property(units="m^-3")
+    density_thermal: Expression
+    density_fast: Expression
 
-    @sp_property(units="Pa")
-    def pressure(self) -> Expression :
+    @sp_property
+    def pressure(self) -> Expression:
         # FIXME: coefficient on pressure fast
-        return self.pressure_thermal + \
-            self.pressure_fast_perpendicular + \
-            self.pressure_fast_parallel
+        return self.pressure_thermal + self.pressure_fast_perpendicular + self.pressure_fast_parallel
 
-    @sp_property(units="Pa")
-    def pressure_thermal(self) -> Expression :
-        return self.density_thermal*self.temperature*scipy.constants.electron_volt
+    @sp_property
+    def pressure_thermal(self) -> Expression:
+        return self.density_thermal * self.temperature * scipy.constants.electron_volt
 
-    pressure_fast_perpendicular: Expression = sp_property(units="Pa", default=0.0)
-    pressure_fast_parallel: Expression = sp_property(units="Pa", default=0.0)
+    pressure_fast_perpendicular: Expression
+
+    pressure_fast_parallel: Expression
 
     rotation_frequency_tor: Expression = sp_property(units="rad.s^-1")
 
@@ -85,46 +87,28 @@ class CoreProfilesIon(utilities._T_core_profile_ions):
 
     multiple_states_flag: int
 
-    @sp_property(units="m^-3")
-    def density(self) -> Expression : return self.density_thermal + self.density_fast
-
-    density_thermal: Expression = sp_property(default_value=0.0)
-
-    density_fast: Expression = sp_property(default_value=0.0)
-
-    @sp_property
-    def pressure_thermal(self) -> Expression :
-        return self.density_thermal * self.temperature * scipy.constants.electron_volt
-
-    pressure_fast_perpendicular: Expression = sp_property(default_value=0.0)
-
-    pressure_fast_parallel: Expression = sp_property(default_value=0.0)
-
-    @sp_property
-    def pressure(self) -> Expression :
-        return (
-            self.pressure_thermal.__array__() +
-            self.pressure_fast_parallel.__array__() +
-            self.pressure_fast_perpendicular.__array__()
-        )
-
     @sp_property(unit="s^-1", default_value=0.1)
-    def collision_frequency(self) -> Expression :
+    def collision_frequency(self) -> Expression:
         r"""
-            collision frequency
-            $$
-                \tau_{ss}^{-1} = \frac{\sqrt{2} \pi e^4 z_s^4 n_{0s}}{m_s^{1/2} T_{0s}^{3/2}} {\rm ln} \Lambda
-            $$
+        collision frequency
+        $$
+            \tau_{ss}^{-1} = \frac{\sqrt{2} \pi e^4 z_s^4 n_{0s}}{m_s^{1/2} T_{0s}^{3/2}} {\rm ln} \Lambda
+        $$
         """
         return (
-            np.sqrt(2) * PI * scipy.constants.elementary_charge**4 * self.z**4 * self.density_thermal
-            / np.sqrt(self.mass) / self.temperature**1.5 / self._parent.coulomb_logarithm
+            np.sqrt(2)
+            * PI
+            * scipy.constants.elementary_charge**4
+            * self.z**4
+            * self.density_thermal
+            / np.sqrt(self.mass)
+            / self.temperature**1.5
+            / self._parent.coulomb_logarithm
         )
 
 
 @sp_tree(coordinate1="../grid/rho_tor_norm")
 class CoreProfilesNeutral(utilities._T_core_profile_neutral):
-
     label: str
 
     ion_index: int
@@ -154,7 +138,6 @@ class CoreProfilesNeutral(utilities._T_core_profile_neutral):
 
 @sp_tree(coordinate1="../grid/rho_tor_norm")
 class CoreProfilesElectrons(utilities._T_core_profiles_profiles_1d_electrons):
-
     z: float = -1
     a: float = scipy.constants.electron_mass / scipy.constants.atomic_mass
     charge: float = -scipy.constants.elementary_charge
@@ -163,22 +146,19 @@ class CoreProfilesElectrons(utilities._T_core_profiles_profiles_1d_electrons):
     temperature: Expression = sp_property(units="eV")
 
     @sp_property(units="m^-3")
-    def density(self) -> Expression : return self.density_thermal + self.density_fast
+    def density(self) -> Expression:
+        return self.density_thermal + self.density_fast
 
     density_thermal: Expression = sp_property(units="m^-3", default_value=0.0)
 
     density_fast: Expression = sp_property(units="m^-3", default_value=0.0)
 
     @sp_property(units="Pa")
-    def pressure(self) -> Expression :
-        return (
-            self.pressure_thermal
-            + self.pressure_fast_parallel
-            + self.pressure_fast_perpendicular
-        )
+    def pressure(self) -> Expression:
+        return self.pressure_thermal + self.pressure_fast_parallel + self.pressure_fast_perpendicular
 
     @sp_property(units="Pa")
-    def pressure_thermal(self) -> Expression :
+    def pressure_thermal(self) -> Expression:
         return self.density * self.temperature * scipy.constants.electron_volt
 
     pressure_fast_perpendicular: Expression = sp_property(units="Pa", default_value=0.0)
@@ -189,7 +169,7 @@ class CoreProfilesElectrons(utilities._T_core_profiles_profiles_1d_electrons):
 
     @sp_property
     def tau(self):
-        return (1.09e16 * ((self.temperature / 1000) ** (3 / 2)) / self.density / self._parent.coulomb_logarithm)
+        return 1.09e16 * ((self.temperature / 1000) ** (3 / 2)) / self.density / self._parent.coulomb_logarithm
 
     @sp_property
     def vT(self):
@@ -198,7 +178,6 @@ class CoreProfilesElectrons(utilities._T_core_profiles_profiles_1d_electrons):
 
 @sp_tree(coordinate1="grid/rho_tor_norm")
 class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
-
     Ion = CoreProfilesIon
 
     Electrons = CoreProfilesElectrons
@@ -214,27 +193,27 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
     neutral: AoS[CoreProfilesNeutral] = sp_property(identifier="label")
 
     @sp_property
-    def t_i_average(self) -> Expression :
-        return (sum([ion.z_ion_1d * ion.temperature * ion.density for ion in self.ion]) / self.n_i_total)
+    def t_i_average(self) -> Expression:
+        return sum([ion.z_ion_1d * ion.temperature * ion.density for ion in self.ion]) / self.n_i_total
 
     @sp_property
-    def n_i_total(self) -> Expression :
+    def n_i_total(self) -> Expression:
         return sum([(ion.z_ion_1d * ion.density) for ion in self.ion])
 
     @sp_property
-    def n_i_total_over_n_e(self) -> Expression :
+    def n_i_total_over_n_e(self) -> Expression:
         return self.n_i_total / self.electrons.density
 
     @sp_property
-    def n_i_thermal_total(self) -> Expression :
+    def n_i_thermal_total(self) -> Expression:
         return sum([ion.z * ion.density_thermal for ion in self.ion])
 
     @sp_property
-    def zeff(self) -> Expression :
-        return (sum([((ion.z_ion_1d**2) * ion.density) for ion in self.ion]) / self.n_i_total)
+    def zeff(self) -> Expression:
+        return sum([((ion.z_ion_1d**2) * ion.density) for ion in self.ion]) / self.n_i_total
 
     @sp_property
-    def pressure(self) -> Expression :
+    def pressure(self) -> Expression:
         p = [ion.pressure.__array__() for ion in self.ion]
         if len(p) == 1:
             return p[0]
@@ -242,11 +221,12 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
             return np.sum(p, axis=0)
 
     @sp_property
-    def pprime(self) -> Expression : return self.pressure.d()
+    def pprime(self) -> Expression:
+        return self.pressure.d()
 
     @sp_property
-    def pressure_thermal(self) -> Expression :
-        return (sum([ion.pressure_thermal for ion in self.ion]) + self.electrons.pressure_thermal)
+    def pressure_thermal(self) -> Expression:
+        return sum([ion.pressure_thermal for ion in self.ion]) + self.electrons.pressure_thermal
 
     t_i_average: Expression = sp_property(units="eV")
     # t_i_average_fit: _T_core_profiles_1D_fit = sp_property(units="eV")
@@ -271,23 +251,25 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
     j_total: Expression = sp_property(units="A/m^2")
 
     @sp_property(units="A")
-    def current_parallel_inside(self) -> Expression : return self.j_total.antiderivative()
+    def current_parallel_inside(self) -> Expression:
+        return self.j_total.antiderivative()
 
     j_tor: Expression = sp_property(units="A/m^2")
 
     j_ohmic: Expression = sp_property(units="A/m^2")
 
     @sp_property(units="A/m^2")
-    def j_non_inductive(self) -> Expression : return self.j_total - self.j_ohmic
+    def j_non_inductive(self) -> Expression:
+        return self.j_total - self.j_ohmic
 
     j_bootstrap: Expression = sp_property(units="A/m^2")
 
     @sp_property(units="ohm^-1.m^-1")
-    def conductivity_parallel(self) -> Expression : return self.j_ohmic / self.e_field.parallel
+    def conductivity_parallel(self) -> Expression:
+        return self.j_ohmic / self.e_field.parallel
 
     @sp_tree
     class EFieldVectorComponents:
-
         radial: Expression = sp_property(default_value=0.0)
 
         diamagnetic: Expression
@@ -299,7 +281,7 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
         toroidal: Expression
 
         @sp_property
-        def parallel(self) -> Expression :
+        def parallel(self) -> Expression:
             vloop = self._parent.get("vloop", None)
             if vloop is None:
                 logger.error(f"Can not calculate E_parallel from vloop!")
@@ -317,12 +299,16 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
     q: Expression = sp_property(units="-")
 
     @sp_property(units="-")
-    def magnetic_shear(self) -> Expression :
+    def magnetic_shear(self) -> Expression:
         return self.grid.rho_tor_norm * (self.q.derivative() / self.q())
 
     @sp_property
-    def beta_pol(self) -> Expression :
-        return (4 * self.pressure.antiderivative() / (self._parent.vacuum_toroidal_field.r0 * constants.mu_0 * (self.j_total**2)))
+    def beta_pol(self) -> Expression:
+        return (
+            4
+            * self.pressure.antiderivative()
+            / (self._parent.vacuum_toroidal_field.r0 * constants.mu_0 * (self.j_total**2))
+        )
 
     # if isinstance(d, np.ndarray) or (hasattr(d.__class__, 'empty') and not d.empty):
     #     return d
@@ -347,7 +333,7 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
     #         / constants.m_e
 
     @sp_property
-    def coulomb_logarithm(self) -> Expression :
+    def coulomb_logarithm(self) -> Expression:
         """Coulomb logarithm,
         @ref: Tokamaks 2003  Ch.14.5 p727 ,2003
         """
@@ -357,11 +343,12 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
         # Coulomb logarithm
         #  Ch.14.5 p727 Tokamaks 2003
 
-        return (14.9 - 0.5 * np.log(Ne / 1e20) + np.log(Te / 1000)) * (Te < 10) +\
-            (15.2 - 0.5 * np.log(Ne / 1e20) + np.log(Te / 1000)) * (Te >= 10)
+        return (14.9 - 0.5 * np.log(Ne / 1e20) + np.log(Te / 1000)) * (Te < 10) + (
+            15.2 - 0.5 * np.log(Ne / 1e20) + np.log(Te / 1000)
+        ) * (Te >= 10)
 
     @sp_property
-    def electron_collision_time(self) -> Expression :
+    def electron_collision_time(self) -> Expression:
         """electron collision time ,
         @ref: Tokamak 2003, eq 14.6.1
         """
@@ -377,7 +364,6 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
 
 @sp_tree
 class CoreGlobalQuantities(core_profiles._T_core_profiles_global_quantities):
-
     vacuum_toroidal_field: VacuumToroidalField
 
     ip: float = sp_property(units="A")
@@ -424,7 +410,6 @@ class CoreGlobalQuantities(core_profiles._T_core_profiles_global_quantities):
 
 @sp_tree
 class CoreProfilesTimeSlice(TimeSlice):
-
     Profiles1D = CoreProfiles1D
 
     GlobalQuantities = CoreGlobalQuantities
@@ -438,14 +423,13 @@ class CoreProfilesTimeSlice(TimeSlice):
 
 @sp_tree
 class CoreProfiles(Module):
-
     ids_properties: IDSProperties
 
     TimeSlice = CoreProfilesTimeSlice
 
     time_slice: TimeSeriesAoS[CoreProfilesTimeSlice]
 
-    def refresh(self, *args,   core_transport, core_source, transport_solver, **kwargs):
+    def refresh(self, *args, core_transport, core_source, transport_solver, **kwargs):
         super().refresh(*args, **kwargs)
 
         prev_iter = self.time_slice.current
@@ -454,7 +438,7 @@ class CoreProfiles(Module):
 
         self.time_slice.current.update(next_iter)
 
-    def advance(self, *args,  core_transport, core_source, transport_solver, **kwargs):
+    def advance(self, *args, core_transport, core_source, transport_solver, **kwargs):
         prev_iter = self.time_slice.current
 
         next_iter = transport_solver.advance(prev_iter, core_transport=core_transport, core_source=core_source)
