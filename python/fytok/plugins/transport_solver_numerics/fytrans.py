@@ -408,7 +408,7 @@ class FyTrans(TransportSolverNumerics):
                     if core_sources is not None:
                         for source in core_sources.source:
                             core_source_1d = source.time_slice.current.profiles_1d
-                            logger.debug( core_source_1d.get(f"{spec}/energy_decomposed/explicit_part", 0))
+
                             Qexpl += core_source_1d.get(f"{spec}/energy", 0)
                             Qexpl += core_source_1d.get(f"{spec}/energy_decomposed/explicit_part", 0)
                             Qimpl += core_source_1d.get(f"{spec}/energy_decomposed/implicit_part", 0)

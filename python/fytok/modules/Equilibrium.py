@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np
 
 from spdm.data.AoS import AoS
-from spdm.data.Expression import Expression 
+from spdm.data.Expression import Expression
 from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS, TimeSlice
 from spdm.geometry.Curve import Curve
@@ -169,7 +169,7 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
     triangularity_lower: Expression
 
     @sp_property
-    def triangularity(self) -> Expression :
+    def triangularity(self) -> Expression:
         return (self.triangularity_upper + self.triangularity_lower) * 0.5
 
     squareness_upper_inner: Expression
@@ -200,15 +200,15 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
     trapped_fraction: Expression
 
-    gm1: Expression = sp_property(units="m^-2")
-    gm2: Expression = sp_property(units="m^-2")
+    gm1: Expression
+    gm2: Expression
     gm3: Expression
-    gm4: Expression = sp_property(units="T^-2")
-    gm5: Expression = sp_property(units="T^2")
-    gm6: Expression = sp_property(units="T^-2")
+    gm4: Expression
+    gm5: Expression
+    gm6: Expression
     gm7: Expression
-    gm8: Expression = sp_property(units="m")
-    gm9: Expression = sp_property(units="m^-1")
+    gm8: Expression
+    gm9: Expression
 
     b_field_average: Expression = sp_property(units="T")
 
