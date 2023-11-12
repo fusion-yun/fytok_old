@@ -704,21 +704,20 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
             self._coord._s_Bp * self._coord._s_rtp * self._coord._s_eBp_2PI / (2.0 * scipy.constants.pi)
         )
 
-    @sp_property
+    @sp_property(label=r"\phi")
     def phi(self) -> Expression:
+        r"""$\Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi$"""
         return self.dphi_dpsi.I
-
-    r"""  $\Phi_{tor}\left(\psi\right) =\int_{0} ^ {\psi}qd\psi$    """
 
     @sp_property
     def magnetic_shear(self) -> Expression:
         return self.rho_tor * self.q.d() / self.q * self.dpsi_drho_tor
 
-    @sp_property
+    @sp_property(label=r"\rho_{tor}")
     def rho_tor(self) -> Expression:
         return np.sqrt(self.phi / np.abs(PI * self._root.vacuum_toroidal_field.b0))
 
-    @sp_property
+    @sp_property(label=r"\bar{\rho}_{tor}")
     def rho_tor_norm(self) -> Expression:
         return np.sqrt(self.phi / self.phi(self._root.global_quantities.psi_boundary))
 
@@ -745,7 +744,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
     def dvolume_dpsi(self) -> Expression:
         return self._coord.dvolume_dpsi
 
-    @sp_property
+    @sp_property(label=r"\frac{dV}{d\rho_{tor}}")
     def dvolume_drho_tor(self) -> Expression:
         return np.abs(
             self._coord._s_eBp_2PI * self._root.vacuum_toroidal_field.b0 * self.dvolume_dpsi * self.dpsi_drho_tor

@@ -82,7 +82,7 @@ def load_core_transport(profiles, grid, R0: float, B0: float = None):
     bs_r_norm = profiles["x"].values
     bs_psi_norm = profiles["Fp"].values
 
-    _x = Variable(0, "rho_tor_norm")
+    _x = Variable(0, "rho_tor_norm",label=r"\bar{\rho}_{tor}")
 
     # Core profiles
     r_ped = 0.96  # np.sqrt(0.88)
@@ -135,7 +135,7 @@ def load_core_source(profiles, grid, R0: float, B0: float = None):
     bs_r_norm = profiles["x"].values
     bs_psi_norm = profiles["Fp"].values
 
-    _x = Variable(0, "rho_tor_norm")
+    _x = Variable(0, "rho_tor_norm",label=r"\bar{\rho}_{tor}")
 
     S = 9e20 * np.exp(15.0 * (_x**2 - 1.0))
 
