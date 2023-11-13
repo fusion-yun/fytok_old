@@ -1,10 +1,6 @@
-import collections
 import typing
 from fytok.utils.atoms import nuclear_reaction
-from fytok.modules.CoreProfiles import CoreProfiles
 from fytok.modules.CoreSources import CoreSources
-from fytok.modules.Equilibrium import Equilibrium
-
 from spdm.data.Expression import Variable, Expression
 
 
@@ -53,45 +49,32 @@ class FusionReaction(CoreSources.Source):
 
     _metadata = {
         "identifier": {
-            "name": f"fusion",
+            "name": "fusion",
             "index": 13,
-            "description": f"  $D + T -> \\alpha$ burning and slowing down ",
+            "description": r"Burning $D + T \rightarrow \alpha$",
         },
-        "code": {"name": "fusion_reaction"},
     }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._reactivities = nuclear_reaction[r"D(t,n)\alpha"]["reactivities"]
+    def fetch(self, x: Variable, vars: typing.Dict[str, Expression]) -> CoreSources.Source.TimeSlice:
+        reactivities = nuclear_reaction[r"D(t,n)\alpha"]["reactivities"]
 
-    def fetch(self, core_profiles_1d: typing.Dict[str, Expression]) -> CoreSources.Source.TimeSlice:
-        self._reactivities = nuclear_reaction[r"D(t,n)\alpha"]["reactivities"]
-
-        nD = core_profiles_1d.get("ion/D/density_thermal")
-        nT = core_profiles_1d.get("ion/T/density_thermal")
-        TD = core_profiles_1d.get("ion/T/temperature")
-        TT = core_profiles_1d.get("ion/T/temperature")
-        Te = core_profiles_1d.get("electrons/temperature")
-        ne = core_profiles_1d.get("electrons/density_thermal")
-        nAlpha = core_profiles_1d.get("ion/T/density_fast")
+        nD: Expression | None = vars.get("ion/D/density_thermal")
+        nT = vars.get("ion/T/density_thermal")
+        TD = vars.get("ion/T/temperature")
+        TT = vars.get("ion/T/temperature")
+        Te = vars.get("electrons/temperature")
+        ne = vars.get("electrons/density_thermal")
+        nAlpha = vars.get("ion/alpha/density")
 
         Ti = (nD * TD + nT * TT) / (nD + nT)
 
-        sDT = self._reactivities(Ti)
-
-        lnGamma = 17
-
-        tau_slowing_down = 1.99 * ((Te / 1000) ** (3 / 2)) / (ne * 1.0e-19 * lnGamma)
-
-        S_slowing_down = nAlpha / tau_slowing_down
+        sDT = reactivities(Ti)
 
         res = CoreSources.Source.TimeSlice({})
-
         core_source_1d = res.profiles_1d
+
         core_source_1d.ion["D"].particles_decomposed.implicit_part = -sDT * nT
         core_source_1d.ion["T"].particles_decomposed.implicit_part = -sDT * nD
-        core_source_1d.ion["alpha"].particles_decomposed.explicit_part = sDT * nD * nT - S_slowing_down
-        core_source_1d.ion["He"].particles = S_slowing_down
-        core_source_1d.electrons.energy = S_slowing_down * Te
+        core_source_1d.ion["alpha"].particles_decomposed.explicit_part = sDT * nD * nT
 
         return res

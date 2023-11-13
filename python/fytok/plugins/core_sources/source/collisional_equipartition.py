@@ -5,23 +5,15 @@ from fytok.modules.CoreProfiles import CoreProfiles
 from fytok.modules.CoreSources import CoreSources
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.utils.atoms import atoms
-from scipy import constants
 from spdm.utils.tags import _next_
 from spdm.data.Expression import Expression, Variable
 
 
 @CoreSources.Source.register(["collisional_equipartition"])
 class CollisionalEquipartition(CoreSources.Source):
-    def __init__(self, d=None, /, **kwargs):
-        super().__init__(
-            d,
-            identifier={
-                "name": f"collisional_equipartition",
-                "index": 11,
-                "description": f"{self.__class__.__name__} Collisional Energy Tansport ",
-            },
-            **kwargs,
-        )
+    _metadata = {
+        "identifier": {"name": "collisional_equipartition", "index": 11, "description": "Collisional Energy Tansport "}
+    }
 
     def update(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles, **kwargs) -> float:
         residual = super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
@@ -30,11 +22,11 @@ class CollisionalEquipartition(CoreSources.Source):
         ne = core_profiles.profiles_1d.electrons.density
 
         gamma_ei = 15.2 - np.log(ne) / np.log(1.0e20) + np.log(Te) / np.log(1.0e3)
-        epsilon = constants.epsilon_0
-        e = constants.elementary_charge
-        me = constants.electron_mass
-        mp = constants.proton_mass
-        PI = constants.pi
+        epsilon = scipy.constants.epsilon_0
+        e = scipy.constants.elementary_charge
+        me = scipy.constants.electron_mass
+        mp = scipy.constants.proton_mass
+        PI = scipy.constants.pi
         tau_e = (
             12 * (PI ** (3 / 2)) * (epsilon**2) / (e**4) * np.sqrt(me / 2) * ((e * Te) ** (3 / 2)) / ne / gamma_ei
         )
@@ -65,7 +57,6 @@ class CollisionalEquipartition(CoreSources.Source):
         return residual
 
     def fetch(self, x: Variable, vars: typing.Dict[str, Expression]) -> CoreSources.Source.TimeSlice:
-        
         ns = vars[f"{spec}/density_thermal"]
 
         Ts = vars[f"{spec}/temperature"]

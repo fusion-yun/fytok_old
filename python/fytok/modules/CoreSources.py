@@ -12,12 +12,17 @@ from ..ontology import core_sources
 
 @sp_tree
 class CoreSourcesElectrons(core_sources._T_core_sources_source_profiles_1d_electrons):
-    pass
+    particles_decomposed = {"implicit_part": 0, "explicit_part": 0}
+    energy_decomposed = {"implicit_part": 0, "explicit_part": 0}
+    particles: Expression = sp_property(label="S_{e}")
+    energy: Expression = sp_property(label="S_{e}")
 
 
 @sp_tree
 class CoreSourcesIon(core_sources._T_core_sources_source_profiles_1d_ions):
-    pass
+    particles_decomposed = {"implicit_part": 0, "explicit_part": 0}
+    energy_decomposed = {"implicit_part": 0, "explicit_part": 0}
+    particles: Expression = 0
 
 
 @sp_tree
@@ -28,30 +33,27 @@ class CoreSourcesNeutral(core_sources._T_core_sources_source_profiles_1d_neutral
 @sp_tree(coordinate1="grid/rho_tor_norm", default_value=0)
 class CoreSourcesProfiles1D(core_sources._T_core_sources_source_profiles_1d):
     grid: CoreRadialGrid
-
     """ Radial grid"""
 
     electrons: CoreSourcesElectrons
-    """ Sources for electrons"""
 
-    total_ion_energy: Expression = sp_property(units="W.m^-3")
-    """ Source term for the total (summed over ion species) energy equation"""
+    total_ion_energy: Expression
 
-    total_ion_energy_decomposed: core_sources._T_core_sources_source_profiles_1d_energy_decomposed_2
+    total_ion_energy_decomposed = {"implicit_part": 0, "explicit_part": 0}
 
-    total_ion_power_inside: Expression = sp_property(units="W")
+    total_ion_power_inside: Expression
 
-    momentum_tor: Expression = sp_property(units="kg.m^-1.s^-2")
+    momentum_tor: Expression
 
-    torque_tor_inside: Expression = sp_property(units="kg.m^2.s^-2")
+    torque_tor_inside: Expression
 
-    momentum_tor_j_cross_b_field: Expression = sp_property(units="kg.m^-1.s^-2")
+    momentum_tor_j_cross_b_field: Expression
 
-    j_parallel: Expression = sp_property(units="A.m^-2")
+    j_parallel: Expression
 
-    current_parallel_inside: Expression = sp_property(units="A")
+    current_parallel_inside: Expression
 
-    conductivity_parallel: Expression = sp_property(units="ohm^-1.m^-1")
+    conductivity_parallel: Expression
 
     ion: AoS[CoreSourcesIon] = sp_property(identifier="label")
 
@@ -86,8 +88,46 @@ class CoreSourcesSource(Module):
 
     time_slice: TimeSeriesAoS[CoreSourcesTimeSlice]
 
-    def fetch(self, *args, **kwargs) -> CoreSourcesTimeSlice:
-        return super().fetch(*args, **kwargs)
+    def fetch(self, /, x: Expression, **vars) -> CoreSourcesTimeSlice:
+        res = CoreSourcesTimeSlice({"profiles_1d": {}})
+
+        res_1d = res.profiles_1d
+
+        core_souce_1d = self.time_slice.current.profiles_1d
+
+        res_1d.electrons["particles"] = (
+            core_souce_1d.electrons.particles(x)
+            + core_souce_1d.electrons.particles_decomposed.explicit_part(x)
+            + core_souce_1d.electrons.particles_decomposed.implicit_part(x) * vars.get("electrons/density_thermal", 0)
+        )
+
+        res_1d.electrons["energy"] = (
+            core_souce_1d.electrons.energy(x)
+            + core_souce_1d.electrons.energy_decomposed.explicit_part(x)
+            + core_souce_1d.electrons.energy_decomposed.implicit_part(x) * vars.get("electrons/temperature", 0)
+        )
+        logger.debug(res_1d.electrons.energy)
+
+        ions = []
+
+        for ion in core_souce_1d.ion:
+            ions.append(
+                {
+                    "label": ion.label,
+                    "particles": (
+                        ion.particles(x)
+                        + ion.particles_decomposed.explicit_part(x)
+                        + ion.particles_decomposed.implicit_part(x) * vars.get(f"ion/{ion.label}/density_thermal", 0)
+                    ),
+                    "energy": (
+                        ion.energy(x)
+                        + ion.energy_decomposed.explicit_part(x)
+                        + ion.energy_decomposed.implicit_part(x) * vars.get(f"ion/{ion.label}/temperature", 0)
+                    ),
+                }
+            )
+        res_1d["ion"] = ions
+        return res
 
 
 @sp_tree

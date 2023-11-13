@@ -124,6 +124,8 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
     psi: Expression = sp_property(units="Wb")
 
+    dphi_dpsi: Expression = sp_property(label=r"\frac{d\phi}{d\psi}", units="-")
+
     phi: Expression = sp_property(units="Wb")
 
     pressure: Expression = sp_property(units="Pa")

@@ -6,31 +6,29 @@ from spdm.data.Expression import Expression
 from .Utilities import *
 from .CoreProfiles import CoreProfiles
 from .Equilibrium import Equilibrium
-
-from ..utils.logger import logger
-
 from ..ontology import core_transport
+from ..utils.logger import logger
 
 
 @sp_tree
 class CoreTransportModelParticles(core_transport._T_core_transport_model_2_density):
-    d: Expression = sp_property(coordinate1=".../grid_d/rho_tor_norm", units="m^2.s^-1", default_value=np.nan)
-    v: Expression = sp_property(coordinate1=".../grid_v/rho_tor_norm", units="m.s^-1", default_value=np.nan)
-    flux: Expression = sp_property(coordinate1=".../grid_flux/rho_tor_norm", units="m^-2.s^-1", default_value=np.nan)
+    d: Expression = 0
+    v: Expression = 0
+    flux: Expression = 0
 
 
 @sp_tree
 class CoreTransportModelEnergy(core_transport._T_core_transport_model_2_energy):
-    d: Expression = sp_property(coordinate1=".../grid_d/rho_tor_norm", units="m^2.s^-1", default_value=np.nan)
-    v: Expression = sp_property(coordinate1=".../grid_v/rho_tor_norm", units="m.s^-1", default_value=np.nan)
-    flux: Expression = sp_property(coordinate1=".../grid_flux/rho_tor_norm", units="W.m^-2", default_value=np.nan)
+    d: Expression = 0
+    v: Expression = 0
+    flux: Expression = 0
 
 
 @sp_tree
 class CoreTransportModelMomentum(core_transport._T_core_transport_model_4_momentum):
-    d: Expression = sp_property(coordinate1=".../grid_d/rho_tor_norm", units="m^2.s^-1", default_value=np.nan)
-    v: Expression = sp_property(coordinate1=".../grid_v/rho_tor_norm", units="m.s^-1", default_value=np.nan)
-    flux: Expression = sp_property(coordinate1=".../grid_flux/rho_tor_norm", units="W.m^-2", default_value=np.nan)
+    d: Expression = 0
+    v: Expression = 0
+    flux: Expression = 0
 
 
 @sp_tree
@@ -115,8 +113,44 @@ class CoreTransportModel(Module):
             **kwargs,
         )
 
-    def fetch(self, *args, **kwargs) -> CoreTransportTimeSlice:
-        return super().fetch(*args, **kwargs)
+    def fetch(self, /, x, **vars) -> CoreTransportTimeSlice:
+        res = CoreTransportTimeSlice({"profiles_1d": {}})
+
+        res_1d = res.profiles_1d
+
+        core_trans_1d = self.time_slice.current.profiles_1d
+
+        res_1d.electrons["particles"] = (
+            {
+                "d": core_trans_1d.electrons.particles.d(x),
+                "v": core_trans_1d.electrons.particles.v(x),
+                "flux": core_trans_1d.electrons.particles.flux(x),
+            },
+        )
+        res_1d.electrons["energy"] = {
+            "d": core_trans_1d.electrons.energy.d(x),
+            "v": core_trans_1d.electrons.energy.v(x),
+            "flux": core_trans_1d.electrons.energy.flux(x),
+        }
+
+        res_1d["ion"] = [
+            {
+                "label": ion.label,
+                "particles": {
+                    "d": ion.particles.d(x),
+                    "v": ion.particles.v(x),
+                    "flux": ion.particles.flux(x),
+                },
+                "energy": {
+                    "d": ion.energy.d(x),
+                    "v": ion.energy.v(x),
+                    "flux": ion.energy.flux(x),
+                },
+            }
+            for ion in core_trans_1d.ion
+        ]
+
+        return res
 
 
 @sp_tree

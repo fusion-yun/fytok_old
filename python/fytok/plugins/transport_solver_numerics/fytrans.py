@@ -1,5 +1,6 @@
 import typing
 import numpy as np
+from copy import copy
 import scipy.constants
 from spdm.data.Expression import Variable, Expression
 from spdm.data.Function import Function
@@ -121,6 +122,7 @@ class FyTrans(TransportSolverNumerics):
 
         if not isinstance(previous, TransportSolverNumerics.TimeSlice):
             one_over_dt = 0
+
         else:
             dt = current.time - previous.time
 
@@ -186,24 +188,79 @@ class FyTrans(TransportSolverNumerics):
         gm3 = eq_1d.gm3(psi)  # <|grad_rho_tor|^2>
         gm8 = eq_1d.gm8(psi)  # <R>
 
-        flux_multiplier = 0
-        for model in core_transport.model:
-            flux_multiplier += model.time_slice.current.flux_multiplier
+        species: typing.List[str] = []
+
+        for equ in solver_1d.equation:
+            identifier = equ.primary_quantity.identifier
+            if identifier == "psi" or identifier.endswith("/momentum"):
+                continue
+            species.append("/".join(identifier.split("/")[:-1]))
+
+        coeff: typing.Dict[str, Expression] = {
+            k: copy(
+                {
+                    "transp_D": 0.0,
+                    "transp_V": 0.0,
+                    "transp_F": 0.0,
+                    "energy_D": 0.0,
+                    "energy_V": 0.0,
+                    "energy_F": 0.0,
+                    "chi_u": 0.0,
+                    "S": 0.0,
+                    "Q": 0.0,
+                    "U": 0.0,
+                }
+            )
+            for k in species
+        }
+
+        if core_transport is not None:
+            flux_multiplier = sum(
+                [
+                    model.time_slice.current.flux_multiplier
+                    for model in core_transport.model
+                    if model.time_slice.current.flux_multiplier is not _not_found_
+                ],
+                0,
+            )
+
+        else:
+            flux_multiplier = 1
+
+        if core_transport is not None:
+            for model in core_transport.model:
+                trans_1d = model.fetch(**vars).profiles_1d
+                for spec, d in coeff.items():
+                    d["transp_D"] += trans_1d.get(f"{spec}/particles/d", 0)
+                    d["transp_V"] += trans_1d.get(f"{spec}/particles/v", 0)
+                    d["transp_F"] += trans_1d.get(f"{spec}/particles/flux", 0)
+                    d["energy_D"] += trans_1d.get(f"{spec}/energy/d", 0)
+                    d["energy_V"] += trans_1d.get(f"{spec}/energy/v", 0)
+                    d["energy_F"] += trans_1d.get(f"{spec}/energy/flux", 0)
+                    d["chi_u"] += trans_1d.get(f"{spec}/momentum/d", 0)
+
+        if core_sources is not None:
+            for source in core_sources.source:
+                source_1d = source.fetch(**vars).profiles_1d
+                for spec, d in coeff.items():
+                    d["S"] += source_1d.get(f"{spec}/particles", 0)
+                    d["Q"] += source_1d.get(f"{spec}/energy", 0)
+                    d["U"] += source_1d.get(f"{spec}/momentum/toroidal", 0)
+
+        # coeff = {
+        #     spec: {k: (v(x) if isinstance(v, Expression) else v) for k, v in d.items()} for spec, d in coeff.items()
+        # }
 
         # quasi_neutrality_condition
         if "electrons/density_thermal" not in vars:
             ne = 0
             ne_flux = 0
-            for k in list(vars.keys()):
-                if not k.startswith("ion/"):
+            for spec in species:
+                if spec == "electrons":
                     continue
-                elif k.endswith("/density_thermal"):
-                    spec = k.removesuffix("/density_thermal").removeprefix("ion/")
-                    ne += atoms[spec].z * vars[k]
-                elif k.endswith("/density_thermal_flux"):
-                    spec = k.removesuffix("/density_thermal_flux").removeprefix("ion/")
 
-                    ne_flux += atoms[spec].z * vars[k]
+                ne += atoms[spec.removeprefix("ion/")].z * vars.get(f"{spec}/density_thermal", 0.0)
+                ne_flux += atoms[spec].z * vars.get(f"{spec}/density_thermal_flux", 0.0)
 
             vars["electrons/density_thermal"] = ne
             vars["electrons/density_thermal_flux"] = ne_flux
@@ -220,16 +277,18 @@ class FyTrans(TransportSolverNumerics):
             #     S_ne_implicit = S_ne_implicit(x)
 
             # vars["electrons/density_thermal_flux"] = rho_tor_boundary * (vpr * (S_ne_explicit + ne * S_ne_implicit)).I
+
         else:
-            raise NotImplementedError(f"ne solver")
             ne = vars["electrons/density_thermal"]
+            ne_flux = vars["electrons/density_thermal_flux"]
 
             z_of_ions = 0
-            for k, v in vars.items():
-                if k.endswith("/energy"):
-                    spec = k.removesuffix("/energy")
-                    vars[spec] = None
-                    z_of_ions += atoms[spec.removeprefix("ion/")].z
+            for spec in species:
+                if spec == "electrons":
+                    continue
+
+                vars[f"{spec}/density_thermal"] = None
+                z_of_ions += atoms[spec.removeprefix("ion/")].z
 
             for k in vars:
                 vars[k] = -ne / z_of_ions
@@ -310,37 +369,9 @@ class FyTrans(TransportSolverNumerics):
                         bc[i] = [u, v, w]
 
                 case "density_thermal":
-                    transp_diff = 0
-                    transp_vcon = 0
-                    transp_flux = 0
-
-                    Sexpl = 0
-                    Simpl = 0
-
-                    if core_transport is not None:
-                        for model in core_transport.model:
-                            core_transp_1d = model.time_slice.current.profiles_1d
-                            transp_diff += core_transp_1d.get(f"{spec}/particles/d", 0)
-                            transp_vcon += core_transp_1d.get(f"{spec}/particles/v", 0)
-                            transp_flux += core_transp_1d.get(f"{spec}/particles/flux", 0)
-
-                    if core_sources is not None:
-                        for source in core_sources.source:
-                            core_source_1d = source.time_slice.current.profiles_1d
-                            Sexpl += core_source_1d.get(f"{spec}/particles", 0)
-                            Sexpl += core_source_1d.get(f"{spec}/particles_decomposed/explicit_part", 0)
-                            Simpl += core_source_1d.get(f"{spec}/particles_decomposed/implicit_part", 0)
-
-                    if isinstance(transp_diff, Expression):
-                        transp_diff = transp_diff(x)
-                    if isinstance(transp_vcon, Expression):
-                        transp_vcon = transp_vcon(x)
-                    if isinstance(transp_flux, Expression):
-                        transp_flux = transp_flux(x)
-                    if isinstance(Sexpl, Expression):
-                        Sexpl = Sexpl(x)
-                    if isinstance(Simpl, Expression):
-                        Simpl = Simpl(x)
+                    transp_D = coeff[spec].get("transp_D", 0)
+                    transp_V = coeff[spec].get("transp_V", 0)
+                    S = coeff[spec].get("S", 0)
 
                     a = vpr
 
@@ -348,13 +379,13 @@ class FyTrans(TransportSolverNumerics):
 
                     c = rho_tor_boundary
 
-                    d = vpr * gm3 * transp_diff / rho_tor_boundary
+                    d = vpr * gm3 * transp_D / rho_tor_boundary
 
-                    e = vpr * gm3 * (transp_vcon - rho_tor * k_phi)
+                    e = vpr * gm3 * (transp_V - rho_tor * k_phi)
 
-                    f = vpr * Sexpl
+                    f = vpr * S
 
-                    g = vpr * (Simpl + k_phi)
+                    g = vpr * k_phi
 
                     for i in range(2):
                         bc_ = equ.boundary_condition[i]
@@ -391,39 +422,9 @@ class FyTrans(TransportSolverNumerics):
                         bc[i] = [u, v, w]
 
                 case "temperature":
-                    energy_diff = 0
-                    energy_vcon = 0
-                    energy_flux = 0
-
-                    Qexpl = 0
-                    Qimpl = 0
-
-                    if core_transport is not None:
-                        for model in core_transport.model:
-                            core_transp_1d = model.time_slice.current.profiles_1d
-                            energy_diff += core_transp_1d.get(f"{spec}/energy/d", 0)
-                            energy_vcon += core_transp_1d.get(f"{spec}/energy/v", 0)
-                            energy_flux += core_transp_1d.get(f"{spec}/energy/flux", 0)
-
-                    if core_sources is not None:
-                        for source in core_sources.source:
-                            core_source_1d = source.time_slice.current.profiles_1d
-
-                            Qexpl += core_source_1d.get(f"{spec}/energy", 0)
-                            Qexpl += core_source_1d.get(f"{spec}/energy_decomposed/explicit_part", 0)
-                            Qimpl += core_source_1d.get(f"{spec}/energy_decomposed/implicit_part", 0)
-
-                    
-                    if isinstance(energy_diff, Expression):
-                        energy_diff = energy_diff(x)
-                    if isinstance(energy_vcon, Expression):
-                        energy_vcon = energy_vcon(x)
-                    if isinstance(energy_flux, Expression):
-                        energy_flux = energy_flux(x)
-                    if isinstance(Qexpl, Expression):
-                        Qexpl = Qexpl(x)
-                    if isinstance(Qimpl, Expression):
-                        Qimpl = Qimpl(x)
+                    energy_D = coeff[spec].get("energy_D", 0)
+                    energy_V = coeff[spec].get("energy_V", 0)
+                    Q = coeff[spec].get("Q", 0)
 
                     ns = vars.get(f"{spec}/density_thermal", 0)
 
@@ -437,14 +438,14 @@ class FyTrans(TransportSolverNumerics):
 
                     c = rho_tor_boundary * inv_vpr23
 
-                    d = vpr * gm3 * ns * energy_diff / rho_tor_boundary
+                    d = vpr * gm3 * ns * energy_D / rho_tor_boundary
 
-                    e = vpr * gm3 * ns * energy_vcon + ns_flux
+                    e = vpr * gm3 * ns * energy_V + ns_flux
                     # - vpr*(3/2*k_phi)*rho_tor_boundary*x*ns
 
-                    f = (vpr ** (5 / 3)) * Qexpl
+                    f = (vpr ** (5 / 3)) * Q
 
-                    g = (vpr ** (5 / 3)) * Qimpl + k_vppr * ns
+                    g = k_vppr * ns
 
                     for i in range(2):
                         bc_ = equ.boundary_condition[i]
@@ -489,28 +490,9 @@ class FyTrans(TransportSolverNumerics):
 
                     ns_m = vars_m.get(f"{spec}/density_thermal", 0)
 
-                    chi_u = 0
-                    Uexpl = 0
-                    Uimpl = 0
+                    chi_u = coeff[spec].get("chi_u", 0)
 
-                    if core_transport is not None:
-                        for model in core_transport.model:
-                            core_transp_1d += model.time_slice.current.profiles_1d
-                            chi_u += core_transp_1d.get(f"{spec}/momentum/d", 0)
-
-                        if isinstance(chi_u, Expression):
-                            chi_u = chi_u(x)
-
-                    if core_sources is not None:
-                        for source in core_sources.source:
-                            core_source_1d = source.time_slice.current.profiles_1d
-                            Uexpl = core_source_1d.get(f"{spec}/momentum/toroidal_decomposed/explicit_part", 0)
-                            Uimpl = core_source_1d.get(f"{spec}/momentum/toroidal_decomposed/implicit_part", 0)
-
-                        if isinstance(Uexpl, Expression):
-                            Uexpl = Uexpl(x)
-                        if isinstance(Uimpl, Expression):
-                            Uimpl = Uimpl(x)
+                    U = coeff[spec].get("U", 0)
 
                     a = (vpr ** (5 / 3)) * ms * ns
 
@@ -522,9 +504,9 @@ class FyTrans(TransportSolverNumerics):
 
                     e = vpr * gm3 * ms * gm8 * ns + ms * gm8 * ns_flux - ms * gm8 * vpr * rho_tor * k_phi * ns
 
-                    f = vpr * (Uexpl + gm8 * n_u_z)
+                    f = vpr * (U + gm8 * n_u_z)
 
-                    g = vpr * (Uimpl + gm8 * (n_z + ms * ns * k_rho_bdry))
+                    g = vpr * gm8 * (n_z + ms * ns * k_rho_bdry)
 
                     for i in range(2):
                         bc_ = equ.boundary_condition[i]
