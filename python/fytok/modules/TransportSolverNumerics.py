@@ -244,20 +244,18 @@ class TransportSolverNumerics(Module):
             if len(args) > 0:
                 equations = update_tree(equations, None, args[0])
 
-            equations_ = []
+            eq_list = [
+                {
+                    "primary_quantity": {
+                        "identifier": key.replace(".", "/"),
+                        "profile": value.pop("profile", None),
+                    },
+                    **value,
+                }
+                for key, value in equations.items()
+            ]
 
-            for key, value in equations.items():
-                equations_.append(
-                    {
-                        "primary_quantity": {
-                            "identifier": key.replace(".", "/"),
-                            "profile": value.pop("profile", None),
-                        },
-                        **value,
-                    }
-                )
-
-            super().refresh({"solver_1d": {"grid": grid, "equation": equations_}}, **kwargs)
+            super().refresh({"solver_1d": {"grid": grid, "equation": eq_list}}, **kwargs)
 
         else:
             if rho_tor_norm is not None:

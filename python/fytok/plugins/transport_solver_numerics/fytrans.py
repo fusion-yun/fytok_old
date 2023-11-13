@@ -229,6 +229,7 @@ class FyTrans(TransportSolverNumerics):
 
         if core_transport is not None:
             for model in core_transport.model:
+                logger.debug(model.code.name)
                 trans_1d = model.fetch(**vars).profiles_1d
                 for spec, d in coeff.items():
                     d["transp_D"] += trans_1d.get(f"{spec}/particles/d", 0)
@@ -246,10 +247,6 @@ class FyTrans(TransportSolverNumerics):
                     d["S"] += source_1d.get(f"{spec}/particles", 0)
                     d["Q"] += source_1d.get(f"{spec}/energy", 0)
                     d["U"] += source_1d.get(f"{spec}/momentum/toroidal", 0)
-
-        # coeff = {
-        #     spec: {k: (v(x) if isinstance(v, Expression) else v) for k, v in d.items()} for spec, d in coeff.items()
-        # }
 
         # quasi_neutrality_condition
         if "electrons/density_thermal" not in vars:

@@ -89,44 +89,41 @@ class CoreSourcesSource(Module):
     time_slice: TimeSeriesAoS[CoreSourcesTimeSlice]
 
     def fetch(self, /, x: Expression, **vars) -> CoreSourcesTimeSlice:
-        res = CoreSourcesTimeSlice({"profiles_1d": {}})
+        res: CoreSourcesTimeSlice = self.time_slice.current.clone(
+            lambda o: o if not isinstance(o, Expression) else o(x)
+        )
 
         res_1d = res.profiles_1d
 
-        core_souce_1d = self.time_slice.current.profiles_1d
-
         res_1d.electrons["particles"] = (
-            core_souce_1d.electrons.particles(x)
-            + core_souce_1d.electrons.particles_decomposed.explicit_part(x)
-            + core_souce_1d.electrons.particles_decomposed.implicit_part(x) * vars.get("electrons/density_thermal", 0)
+            res_1d.electrons.particles(x)
+            + res_1d.electrons.particles_decomposed.explicit_part(x)
+            + res_1d.electrons.particles_decomposed.implicit_part(x) * vars.get("electrons/density_thermal", 0)
         )
 
         res_1d.electrons["energy"] = (
-            core_souce_1d.electrons.energy(x)
-            + core_souce_1d.electrons.energy_decomposed.explicit_part(x)
-            + core_souce_1d.electrons.energy_decomposed.implicit_part(x) * vars.get("electrons/temperature", 0)
+            res_1d.electrons.energy(x)
+            + res_1d.electrons.energy_decomposed.explicit_part(x)
+            + res_1d.electrons.energy_decomposed.implicit_part(x) * vars.get("electrons/temperature", 0)
         )
-        logger.debug(res_1d.electrons.energy)
 
-        ions = []
+        res_1d["ion"] = [
+            {
+                "label": ion.label,
+                "particles": (
+                    ion.particles(x)
+                    + ion.particles_decomposed.explicit_part(x)
+                    + ion.particles_decomposed.implicit_part(x) * vars.get(f"ion/{ion.label}/density_thermal", 0)
+                ),
+                "energy": (
+                    ion.energy(x)
+                    + ion.energy_decomposed.explicit_part(x)
+                    + ion.energy_decomposed.implicit_part(x) * vars.get(f"ion/{ion.label}/temperature", 0)
+                ),
+            }
+            for ion in res_1d.ion
+        ]
 
-        for ion in core_souce_1d.ion:
-            ions.append(
-                {
-                    "label": ion.label,
-                    "particles": (
-                        ion.particles(x)
-                        + ion.particles_decomposed.explicit_part(x)
-                        + ion.particles_decomposed.implicit_part(x) * vars.get(f"ion/{ion.label}/density_thermal", 0)
-                    ),
-                    "energy": (
-                        ion.energy(x)
-                        + ion.energy_decomposed.explicit_part(x)
-                        + ion.energy_decomposed.implicit_part(x) * vars.get(f"ion/{ion.label}/temperature", 0)
-                    ),
-                }
-            )
-        res_1d["ion"] = ions
         return res
 
 

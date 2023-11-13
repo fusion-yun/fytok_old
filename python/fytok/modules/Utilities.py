@@ -9,8 +9,8 @@ from spdm.data.Path import Path
 from spdm.data.Actor import Actor
 from spdm.data.AoS import AoS
 from spdm.data.Field import Field
-from spdm.data.Expression import Expression 
-from spdm.data.Function import Function 
+from spdm.data.Expression import Expression
+from spdm.data.Function import Function
 from spdm.data.HTree import Dict, HTree, List
 from spdm.data.Signal import Signal, SignalND
 from spdm.data.sp_property import SpTree, sp_property, sp_tree, AttributeTree
@@ -45,10 +45,10 @@ class Library:
 
 @sp_tree
 class Code:
-    name: str
+    name: str = "unnamed"
     commit: str
     version: str
-    copyright: str
+    copyright: str = "unknown"
     repository: str
     parameters: AttributeTree
     output_flag: array_type

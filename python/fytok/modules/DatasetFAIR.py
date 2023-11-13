@@ -1,4 +1,3 @@
-
 import getpass
 import os
 import datetime
@@ -9,7 +8,6 @@ from ..ontology import dataset_fair, GLOBAL_ONTOLOGY
 
 @sp_tree
 class DataDescription:
-
     device: str
 
     shot: int
@@ -18,27 +16,31 @@ class DataDescription:
 
     summary: str = sp_property(default_value="")
 
-    def __str__(self) -> str: return f"{self.device.upper()} #{self.shot}/{self.run}"
+    def __str__(self) -> str:
+        return f"{self.device.upper()} #{self.shot}/{self.run}"
 
     @sp_property
-    def tag(self) -> str: return f"{self.device.lower()}_{self.shot}_{self.run}"
+    def tag(self) -> str:
+        return f"{self.device.lower()}_{self.shot}_{self.run}"
 
 
 @sp_tree
 class DatasetFAIR(dataset_fair._T_dataset_fair):
-
-    ontology: str
+    ontology: str = GLOBAL_ONTOLOGY
 
     description: DataDescription
 
     @sp_property
-    def creator(self) -> str: return getpass.getuser().capitalize()
+    def creator(self) -> str:
+        return getpass.getuser().capitalize()
 
     @sp_property
-    def create_time(self) -> str: return datetime.datetime.now().isoformat()
+    def create_time(self) -> str:
+        return datetime.datetime.now().isoformat()
 
     @sp_property
-    def site(self) -> str: return os.uname().nodename
+    def site(self) -> str:
+        return os.uname().nodename
 
     def __str__(self) -> str:
         return f""" 

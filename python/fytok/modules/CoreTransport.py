@@ -114,23 +114,23 @@ class CoreTransportModel(Module):
         )
 
     def fetch(self, /, x, **vars) -> CoreTransportTimeSlice:
-        res = CoreTransportTimeSlice({"profiles_1d": {}})
+        res: CoreTransportTimeSlice = self.time_slice.current.clone(
+            lambda o: o if not isinstance(o, Expression) else o(x)
+        )
 
         res_1d = res.profiles_1d
 
-        core_trans_1d = self.time_slice.current.profiles_1d
-
         res_1d.electrons["particles"] = (
             {
-                "d": core_trans_1d.electrons.particles.d(x),
-                "v": core_trans_1d.electrons.particles.v(x),
-                "flux": core_trans_1d.electrons.particles.flux(x),
+                "d": res_1d.electrons.particles.d(x),
+                "v": res_1d.electrons.particles.v(x),
+                "flux": res_1d.electrons.particles.flux(x),
             },
         )
         res_1d.electrons["energy"] = {
-            "d": core_trans_1d.electrons.energy.d(x),
-            "v": core_trans_1d.electrons.energy.v(x),
-            "flux": core_trans_1d.electrons.energy.flux(x),
+            "d": res_1d.electrons.energy.d(x),
+            "v": res_1d.electrons.energy.v(x),
+            "flux": res_1d.electrons.energy.flux(x),
         }
 
         res_1d["ion"] = [
@@ -147,7 +147,7 @@ class CoreTransportModel(Module):
                     "flux": ion.energy.flux(x),
                 },
             }
-            for ion in core_trans_1d.ion
+            for ion in res_1d.ion
         ]
 
         return res
