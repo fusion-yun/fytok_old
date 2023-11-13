@@ -7,7 +7,7 @@ from spdm.data.Actor import Actor
 from spdm.data.sp_property import SpTree, sp_property
 from spdm.geometry.GeoObject import GeoObject
 from spdm.utils.tags import _not_found_
-from spdm.utils.tree_utils import merge_tree_recursive
+from spdm.utils.tree_utils import merge_tree_recursive, update_tree
 from spdm.utils.uri_utils import uri_split
 
 
@@ -33,6 +33,7 @@ from .modules.Wall import Wall
 from .utils.envs import *
 from .utils.logger import logger
 from .ontology import GLOBAL_ONTOLOGY
+
 # from .modules.EdgeProfiles import EdgeProfiles
 # from .modules.EdgeSources import EdgeSources
 # from .modules.EdgeTransport import EdgeTransport
@@ -49,20 +50,35 @@ class Tokamak(Actor):
     """
 
     def __init__(self, *args, device=_not_found_, shot=_not_found_, run=_not_found_, **kwargs):
-
         cache, entry, parent, kwargs = HTree._parser_args(*args, **kwargs)
 
         cache = merge_tree_recursive(cache, kwargs)
 
+        # for idx, e in enumerate(entry):
+        #     if not isinstance(e, str):
+        #         continue
+
+        #     if e.isidentifier():
+        #         e = f"{entry}://"
+        #     else:
+        #         e = uri_split(e)
+        #         if isinstance(device, str) and device.isidentifier():
+        #             e.protocol = f"{device}+{e.protocol}"
+        #         elif device is _not_found_ or device is None:
+        #             device = e.protocol.split("+")[0]
+        #     update_tree(e.query, None, {"shot": shot, "run": run})
+        #     shot = e.query.get("shot", None)
+        #     run = e.query.get("run", None)
+        #     entry[idx] = e
+
         cache["dataset_fair"] = {
             "description": {
+                "entry": entry,
                 "device": device,
-                "shot": shot,
-                "run": run,
-            }}
-
-        if device is not None:
-            entry = [f"{device}+://"] + entry
+                "shot": shot or 0,
+                "run": run or 0,
+            }
+        }
 
         entry = open_entry(
             entry,
@@ -76,7 +92,6 @@ class Tokamak(Actor):
             cache,
             _entry=entry,
             _parent=parent,
-
         )
 
         logger.info(self.brief_summary())
@@ -102,15 +117,19 @@ Data source:
 -----------------------------------------------------------------------------------------------------------------------
     File: {__file__}:{__package__}.{self.__class__.__name__}
 """
-    # edge_profiles           : N/A       
-    # edge_transport          : N/A       
-    # edge_sources            : N/A       
-    # edge_transport_solver   : N/A       
+
+    # edge_profiles           : N/A
+    # edge_transport          : N/A
+    # edge_sources            : N/A
+    # edge_transport_solver   : N/A
     @property
-    def title(self) -> str: return f"{self.dataset_fair.description}  time={self.time:.2f}s"
+    def title(self) -> str:
+        return f"{self.dataset_fair.description}  time={self.time:.2f}s"
 
     @property
-    def tag(self) -> str: return f"{self.dataset_fair.description.tag}_{int(self.time*100):06d}"
+    def tag(self) -> str:
+        return f"{self.dataset_fair.description.tag}_{int(self.time*100):06d}"
+
     # fmt:off
 
     # device
@@ -168,7 +187,6 @@ Data source:
         #                               )
 
     def refresh(self, *args, **kwargs):
-
         self.equilibrium.refresh(*args, **kwargs)
 
         super().refresh(time=self.equilibrium.time_slice.current.time)
@@ -189,7 +207,7 @@ Data source:
         #                               core_transport=self.core_transport
         #                               )
 
-    def __geometry__(self,  **kwargs) -> GeoObject:
+    def __geometry__(self, **kwargs) -> GeoObject:
         # # fmt:off
         # geo = {
         #     "wall"          : self.wall.__geometry__(view=view, **kwargs),
