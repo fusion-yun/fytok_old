@@ -7,7 +7,7 @@ from spdm.data.HTree import Dict, Node, List
 from spdm.data.Function import Function
 from spdm.data.sp_property import SpTree, sp_property, sp_tree, AttributeTree
 from spdm.data.AoS import AoS
-from spdm.utils.tree_utils import merge_tree_recursive
+from spdm.utils.tree_utils import merge_tree
 
 
 predefined_species = {
@@ -110,7 +110,7 @@ def get_species(species):
         if label is None:
             raise ValueError(f"Species {species} must have a label")
         else:
-            return merge_tree_recursive(species, atoms.get(label, {"label": label}))
+            return merge_tree(species, atoms.get(label, {"label": label}))
     else:
         raise TypeError(f"Unknown species type: {type(species)}")
 

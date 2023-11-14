@@ -54,7 +54,9 @@ class FusionReaction(CoreSources.Source):
             "description": r"Burning $D + T \rightarrow \alpha$",
         },
     }
-
+    def refresh(self,*args,**kwargs):
+        super().refresh(*args,**kwargs)
+        
     def fetch(self, /, x: Variable, **vars: typing.Dict[str, Expression]) -> CoreSources.Source.TimeSlice:
         res = super().fetch(x=x, **vars)
 

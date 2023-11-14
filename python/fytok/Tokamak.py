@@ -171,23 +171,13 @@ Data source:
     # fmt:on
 
     def advance(self, *args, **kwargs):
-        # super().advance(*args, **kwargs)
+        super().advance(*args, **kwargs)
 
-        self.equilibrium.advance(*args, **kwargs)
-
-        super().advance(time=self.equilibrium.time_slice.current.time)
-        # self["time"] = self.equilibrium.time_slice.current.time
-
-        # self.transport_solver.advance(*args, **kwargs,
-        #                               equilibrium=self.equilibrium,
-        #                               core_profiles=self.core_profiles,
-        #                               core_sources=self.core_sources,
-        #                               core_transport=self.core_transport,
-
-        #                               )
-
-    def refresh(self, *args, boundary_condition=None, **kwargs):
+    def refresh(self, *args, **kwargs):
         super().refresh(*args, **kwargs)
+
+    def update_core_profiles(self, *args, boundary_condition=None, **kwargs):
+        assert self.transport_solver is not _not_found_, "transport_solver is not initialized !"
 
         self.equilibrium.refresh(time=self.time, core_profiles=self.core_profiles)
 
@@ -203,17 +193,14 @@ Data source:
             core_sources=self.core_sources,
         )
 
-        trans_solver_1d: TransportSolverNumerics.TimeSlice.Solver1D = self.transport_solver.fetch().solver_1d
+        # trans_solver_1d: TransportSolverNumerics.TimeSlice.Solver1D = self.transport_solver.fetch().solver_1d
 
-        self.core_profiles.refresh({"time": self.time, "profiles_1d": {"grid": trans_solver_1d.grid}})
+        # self.core_profiles.refresh({"time": self.time, "profiles_1d": {"grid": trans_solver_1d.grid}})
 
-        core_profiles_1d = self.core_profiles.time_slice.current.profiles_1d
+        # core_profiles_1d = self.core_profiles.time_slice.current.profiles_1d
 
-        for equ in trans_solver_1d.equation:
-            core_profiles_1d[equ.primary_quantity.identifier] = equ.primary_quantity.profile
-
-    def advance(self, *args, **kwargs):
-        super().advance(*args, **kwargs)
+        # for equ in trans_solver_1d.equation:
+        #     core_profiles_1d[equ.primary_quantity.identifier] = equ.primary_quantity.profile
 
     def __geometry__(self, **kwargs) -> GeoObject:
         # # fmt:off
