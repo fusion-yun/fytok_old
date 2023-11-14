@@ -16,7 +16,7 @@ from fytok.utils.atoms import atoms
 from fytok.utils.logger import logger
 
 
-@TransportSolverNumerics.register(["fytrans"])
+@TransportSolverNumerics.register(["fy_trans"])
 class FyTrans(TransportSolverNumerics):
     r"""
         Solve transport equations $\rho=\sqrt{ \Phi/\pi B_{0}}$
@@ -75,6 +75,8 @@ class FyTrans(TransportSolverNumerics):
                             V^{\prime\frac{5}{3}}\left[Q_{e,exp}-Q_{e,imp}\cdot T_{e}+Q_{ei}-Q_{\gamma i}\right]
                   $$ transport_electron_temperature
         """
+    
+    _metadata = {"code": {"name": "fy_trans", "version": "0.0.1", "copyright": "Zhi YU@ASIPP"}}
 
     def _update_coefficient(
         self,

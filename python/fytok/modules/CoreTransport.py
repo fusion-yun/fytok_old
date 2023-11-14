@@ -114,43 +114,7 @@ class CoreTransportModel(Module):
         )
 
     def fetch(self, /, x, **vars) -> CoreTransportTimeSlice:
-        res: CoreTransportTimeSlice = self.time_slice.current.clone(
-            lambda o: o if not isinstance(o, Expression) else o(x)
-        )
-
-        res_1d = res.profiles_1d
-
-        res_1d.electrons["particles"] = (
-            {
-                "d": res_1d.electrons.particles.d(x),
-                "v": res_1d.electrons.particles.v(x),
-                "flux": res_1d.electrons.particles.flux(x),
-            },
-        )
-        res_1d.electrons["energy"] = {
-            "d": res_1d.electrons.energy.d(x),
-            "v": res_1d.electrons.energy.v(x),
-            "flux": res_1d.electrons.energy.flux(x),
-        }
-
-        res_1d["ion"] = [
-            {
-                "label": ion.label,
-                "particles": {
-                    "d": ion.particles.d(x),
-                    "v": ion.particles.v(x),
-                    "flux": ion.particles.flux(x),
-                },
-                "energy": {
-                    "d": ion.energy.d(x),
-                    "v": ion.energy.v(x),
-                    "flux": ion.energy.flux(x),
-                },
-            }
-            for ion in res_1d.ion
-        ]
-
-        return res
+        return super().fetch(lambda o: o if not isinstance(o, Expression) else o(x))
 
 
 @sp_tree
