@@ -205,12 +205,15 @@ Data source:
 
         trans_solver_1d: TransportSolverNumerics.TimeSlice.Solver1D = self.transport_solver.fetch().solver_1d
 
-        profiles_1d = {
-            "grid": trans_solver_1d.grid,
-            **{equ.primary_quantity.identifier: equ.primary_quantity.profile for equ in trans_solver_1d.equation},
-        }
+        self.core_profiles.refresh({"time": self.time, "profiles_1d": {"grid": trans_solver_1d.grid}})
 
-        self.core_profiles.refresh({"time": self.time, "profiles_1d": profiles_1d})
+        core_profiles_1d = self.core_profiles.time_slice.current.profiles_1d
+
+        for equ in trans_solver_1d.equation:
+            core_profiles_1d[equ.primary_quantity.identifier] = equ.primary_quantity.profile
+
+    def advance(self, *args, **kwargs):
+        super().advance(*args, **kwargs)
 
     def __geometry__(self, **kwargs) -> GeoObject:
         # # fmt:off
