@@ -1,6 +1,8 @@
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)
-
+import datetime
+import getpass
 import os
+
 try:
     for k, v in os.environ.items():
         if k.startswith("FY_"):
@@ -11,19 +13,14 @@ except Exception:
     pass
 
 from .ontology import GLOBAL_ONTOLOGY
-from .__version__ import __version__
-from .utils.logger import logger
-import datetime
-import getpass
 
+from .utils.logger import logger
+from .utils.envs import *
+
+__version__ = FY_VERSION
 
 ############################################################
 
-
-try:
-    from .extension import tags as extension_tags
-except ImportError:
-    extension_tags = ""
 
 try:
     from importlib import resources as impresources
@@ -36,7 +33,8 @@ except Exception as error:
     raise FileNotFoundError(f"Can not find mappings!") from error
 
 
-logger.info(rf"""
+logger.info(
+    rf"""
 #######################################################################################################################
     ______      _____     _
    / ____/_  __|_   _|__ | | __
@@ -50,9 +48,12 @@ logger.info(rf"""
  url: https://gitee.com/openfusion/fytok_tutorial 
       https://github.com/fusion-yun/fytok_tutorial
 
- version = {__version__} {extension_tags} 
+ version = {FY_VERSION} {FY_EXT_VERSION} 
 
- Run by {getpass.getuser()} on {os.uname().nodename} at {datetime.datetime.now().isoformat()}
+ Run by {getpass.getuser()} at {datetime.datetime.now().isoformat()}.
+ Job ID: {FY_JOBID}
 
 #######################################################################################################################
-""")
+"""
+)
+

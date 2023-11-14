@@ -55,7 +55,9 @@ class FusionReaction(CoreSources.Source):
         },
     }
 
-    def fetch(self, x: Variable, vars: typing.Dict[str, Expression]) -> CoreSources.Source.TimeSlice:
+    def fetch(self, /, x: Variable, **vars: typing.Dict[str, Expression]) -> CoreSources.Source.TimeSlice:
+        res = super().fetch(x, **vars)
+
         reactivities = nuclear_reaction[r"D(t,n)\alpha"]["reactivities"]
 
         nD: Expression | None = vars.get("ion/D/density_thermal")
@@ -70,7 +72,7 @@ class FusionReaction(CoreSources.Source):
 
         sDT = reactivities(Ti)
 
-        res = CoreSources.Source.TimeSlice({})
+        
         core_source_1d = res.profiles_1d
 
         core_source_1d.ion["D"].particles_decomposed.implicit_part = -sDT * nT

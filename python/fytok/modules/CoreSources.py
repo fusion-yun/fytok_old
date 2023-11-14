@@ -4,8 +4,9 @@ from spdm.data.AoS import AoS
 from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.data.Expression import Expression
+from spdm.utils.tags import _not_found_
 
-
+from .Equilibrium import Equilibrium
 from .Utilities import *
 from ..ontology import core_sources
 
@@ -87,6 +88,19 @@ class CoreSourcesSource(Module):
     TimeSlice = CoreSourcesTimeSlice
 
     time_slice: TimeSeriesAoS[CoreSourcesTimeSlice]
+
+    def refresh(self, *args, equilibrium: Equilibrium, **kwargs):
+        eq_grid = equilibrium.time_slice.current.profiles_1d.grid
+        rho_tor_norm = kwargs.pop("rho_tor_norm", self._metadata.get("rho_tor_norm", None))
+        if rho_tor_norm is None:
+            rho_tor_norm_length = eq_grid.rho_tor_norm.size()
+            rho_tor_norm_axis = eq_grid.rho_tor_norm[0]
+            rho_tor_norm_bdry = eq_grid.rho_tor_norm[-1]
+            rho_tor_norm = np.linspace(rho_tor_norm_axis, rho_tor_norm_bdry, rho_tor_norm_length)
+
+        grid = eq_grid.remesh(rho_tor_norm)
+        
+        super().refresh({"profiles_1d": {"grid": grid}})
 
     def fetch(self, /, x: Expression, **vars) -> CoreSourcesTimeSlice:
         res: CoreSourcesTimeSlice = super().fetch(lambda o: o if not isinstance(o, Expression) else o(x))

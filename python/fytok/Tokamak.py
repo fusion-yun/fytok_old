@@ -186,10 +186,15 @@ Data source:
 
         #                               )
 
-    def refresh(self, *args, **kwargs):
-        self.equilibrium.refresh(*args, **kwargs)
 
-        super().refresh(time=self.equilibrium.time_slice.current.time)
+    def refresh(self, *args, **kwargs):
+        super().refresh(time=kwargs.get("time",None))
+
+        self.equilibrium.refresh(**kwargs)
+        self.core_profiles.refresh(*args, **kwargs)
+        self.core_sources.refresh(*args, equilibrium=self.equilibrium, core_profiles=self.core_profiles, **kwargs)
+        self.core_transport.refresh(*args,equilibrium=self.equilibrium, core_profiles=self.core_profiles, **kwargs)
+        
 
         # self.core_profiles.refresh(time=time)
         # self.core_transport.refresh(time=time)
