@@ -186,31 +186,31 @@ Data source:
 
         #                               )
 
+    def refresh(self, *args, boundary_condition=None, **kwargs):
+        super().refresh(*args, **kwargs)
 
-    def refresh(self, *args, **kwargs):
-        super().refresh(time=kwargs.get("time",None))
+        self.equilibrium.refresh(time=self.time, core_profiles=self.core_profiles)
 
-        self.equilibrium.refresh(**kwargs)
-        self.core_profiles.refresh(*args, **kwargs)
-        self.core_sources.refresh(*args, equilibrium=self.equilibrium, core_profiles=self.core_profiles, **kwargs)
-        self.core_transport.refresh(*args,equilibrium=self.equilibrium, core_profiles=self.core_profiles, **kwargs)
-        
+        self.core_sources.refresh(time=self.time, equilibrium=self.equilibrium, core_profiles=self.core_profiles)
 
-        # self.core_profiles.refresh(time=time)
-        # self.core_transport.refresh(time=time)
-        # self.core_sources.refresh(time=time)
+        self.core_transport.refresh(time=self.time, equilibrium=self.equilibrium, core_profiles=self.core_profiles)
 
-        # self.equilibrium.refresh(*args, **kwargs)
+        self.transport_solver.refresh(
+            boundary_condition=boundary_condition,
+            equilibrium=self.equilibrium,
+            core_profiles=self.core_profiles,
+            core_transport=self.core_transport,
+            core_sources=self.core_sources,
+        )
 
-        # self.core_sources.refresh(*args, **kwargs)
+        trans_solver_1d: TransportSolverNumerics.TimeSlice.Solver1D = self.transport_solver.fetch().solver_1d
 
-        # self.core_transport.refresh(*args, **kwargs)
+        profiles_1d = {
+            "grid": trans_solver_1d.grid,
+            **{equ.primary_quantity.identifier: equ.primary_quantity.profile for equ in trans_solver_1d.equation},
+        }
 
-        # self.transport_solver.refresh(core_profiles=self.core_profiles,
-        #                               equilibrium=self.equilibrium,
-        #                               core_sources=self.core_sources,
-        #                               core_transport=self.core_transport
-        #                               )
+        self.core_profiles.refresh({"time": self.time, "profiles_1d": profiles_1d})
 
     def __geometry__(self, **kwargs) -> GeoObject:
         # # fmt:off

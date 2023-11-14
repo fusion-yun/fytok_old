@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+from copy import copy
 from spdm.data.AoS import AoS
 from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
@@ -15,15 +15,15 @@ from ..ontology import core_sources
 class CoreSourcesElectrons(core_sources._T_core_sources_source_profiles_1d_electrons):
     particles_decomposed = {"implicit_part": 0, "explicit_part": 0}
     energy_decomposed = {"implicit_part": 0, "explicit_part": 0}
-    particles: Expression = sp_property(label="S_{e}")
-    energy: Expression = sp_property(label="S_{e}")
+    particles: Expression = sp_property(label="S_{e}", default_value=0)
+    energy: Expression = sp_property(label="S_{e}", default_value=0)
 
 
 @sp_tree
 class CoreSourcesIon(core_sources._T_core_sources_source_profiles_1d_ions):
     particles_decomposed = {"implicit_part": 0, "explicit_part": 0}
     energy_decomposed = {"implicit_part": 0, "explicit_part": 0}
-    particles: Expression = 0
+    particles: Expression = sp_property(label="S_{i}", default_value=0)
 
 
 @sp_tree
@@ -89,18 +89,12 @@ class CoreSourcesSource(Module):
 
     time_slice: TimeSeriesAoS[CoreSourcesTimeSlice]
 
-    def refresh(self, *args, equilibrium: Equilibrium, **kwargs):
-        eq_grid = equilibrium.time_slice.current.profiles_1d.grid
-        rho_tor_norm = kwargs.pop("rho_tor_norm", self._metadata.get("rho_tor_norm", None))
-        if rho_tor_norm is None:
-            rho_tor_norm_length = eq_grid.rho_tor_norm.size()
-            rho_tor_norm_axis = eq_grid.rho_tor_norm[0]
-            rho_tor_norm_bdry = eq_grid.rho_tor_norm[-1]
-            rho_tor_norm = np.linspace(rho_tor_norm_axis, rho_tor_norm_bdry, rho_tor_norm_length)
-
-        grid = eq_grid.remesh(rho_tor_norm)
-        
-        super().refresh({"profiles_1d": {"grid": grid}})
+    def refresh(self, *args, **kwargs):
+        super().refresh(*args, **kwargs)
+        if self.time_slice.current.profiles_1d.get("grid", _not_found_) is _not_found_ and "equilibrium" in kwargs:
+            equilibrium: Equilibrium = kwargs["equilibrium"]
+            grid = copy(equilibrium.time_slice.current.profiles_1d.grid).remesh(kwargs.pop("rho_tor_norm", None))
+            self.time_slice.current.profiles_1d["grid"] = grid
 
     def fetch(self, /, x: Expression, **vars) -> CoreSourcesTimeSlice:
         res: CoreSourcesTimeSlice = super().fetch(lambda o: o if not isinstance(o, Expression) else o(x))
@@ -141,10 +135,13 @@ class CoreSources(IDS):
 
     source: AoS[CoreSourcesSource]
 
-    def refresh(self, *args, **kwargs):
-        for source in self.source:
-            source.refresh(*args, **kwargs)
+    def refresh(self, *args, equilibrium: Equilibrium, **kwargs):
+        eq = equilibrium.time_slice.current
 
-    def advance(self, *args, **kwargs):
         for source in self.source:
-            source.advance(*args, **kwargs)
+            source.refresh(
+                {"time": eq.time, "vacuum_toroidal_field": eq.vacuum_toroidal_field},
+                *args,
+                equilibrium=equilibrium,
+                **kwargs,
+            )

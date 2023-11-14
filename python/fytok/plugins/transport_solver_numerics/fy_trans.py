@@ -75,7 +75,7 @@ class FyTrans(TransportSolverNumerics):
                             V^{\prime\frac{5}{3}}\left[Q_{e,exp}-Q_{e,imp}\cdot T_{e}+Q_{ei}-Q_{\gamma i}\right]
                   $$ transport_electron_temperature
         """
-    
+
     _metadata = {"code": {"name": "fy_trans", "version": "0.0.1", "copyright": "Zhi YU@ASIPP"}}
 
     def _update_coefficient(
@@ -563,13 +563,15 @@ class FyTrans(TransportSolverNumerics):
 
         return solver_1d, vars, nums_of_unknown
 
-    def solve(
+    def execute(
         self,
         current: TransportSolverNumerics.TimeSlice,
         previous: TransportSolverNumerics.TimeSlice | None,
         *args,
         **kwargs,
     ):
+        super().execute(current, previous, *args, **kwargs)
+
         solver_1d, vars, nums_of_unknown = self._update_coefficient(current, previous, *args, **kwargs)
 
         logger.info(
@@ -693,21 +695,6 @@ class FyTrans(TransportSolverNumerics):
             equ.primary_quantity["d_dr"] = sol.yp[2 * idx]
             equ.primary_quantity["flux"] = sol.y[2 * idx + 1]
             equ.primary_quantity["dflux_dr"] = sol.yp[2 * idx + 1]
-
-        # for k in list(vars.keys()):
-        #     if k.endswith("_flux"):
-        #         continue
-        #     solver_1d.equation._cache.append(
-        #         {
-        #             "primary_quantity": {
-        #                 "identifier": k,
-        #                 "profile": vars.pop(k, 0),
-        #                 "flux": vars.pop(f"{k}_flux", 0),
-        #             }
-        #         }
-        #     )
-        # if len(vars) > 0:
-        #     logger.warning(f"ignore vars {list(vars.keys())}")
 
         if not sol.success:
             logger.error(f"Solve BVP failed: {sol.message} , {sol.niter} iterations")

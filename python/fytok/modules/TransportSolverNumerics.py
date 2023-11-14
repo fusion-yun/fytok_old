@@ -196,8 +196,14 @@ class TransportSolverNumerics(Module):
 
     time_slice: TimeSeriesAoS[TransportSolverNumericsTimeSlice]
 
-    def solve(self, current: TimeSlice, previous: TimeSlice | None, *args, **kwargs):
-        raise NotImplementedError(f"{self.__class__.__name__}.solve() is not implemented!")
+    def execute(self, current: TimeSlice, previous: TimeSlice | None, *args, **kwargs):
+        boundary_condition = kwargs.get("boundary_condition", _not_found_)
+
+        if isinstance(boundary_condition, dict):
+            for equ in current.solver_1d.equation:
+                bc = boundary_condition.get(equ.primary_quantity.identifier, [])
+                for idx, v in enumerate(bc):
+                    equ.boundary_condition[idx]["value"] = v
 
     def refresh(self, *args, **kwargs):
         """
@@ -258,19 +264,7 @@ class TransportSolverNumerics(Module):
             super().refresh({"solver_1d": {"grid": grid, "equation": eq_list}}, **kwargs)
 
         else:
-            if rho_tor_norm is not None:
-                self.time_slice.current.solver_1d.grid.remesh(rho_tor_norm)
-
-            equations = args[0] if len(args) > 0 and isinstance(args[0], dict) else {}
-
-            boundary_condition = kwargs.get("boundary_condition", _not_found_)
-            if isinstance(boundary_condition, dict):
-                for equ in self.time_slice.current.solver_1d.equation:
-                    bc = boundary_condition.get(equ.primary_quantity.identifier, [])
-                    for idx, v in enumerate(bc):
-                        equ.boundary_condition[idx]["value"] = v
-
-        self.solve(self.time_slice.current, self.time_slice.previous, **self.dependences)
+            super().refresh(*args, **kwargs)
 
         # current = super().refresh({
         #     "primary_coordinate":  "rho_tor_norm",

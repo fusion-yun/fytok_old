@@ -429,20 +429,8 @@ class CoreProfiles(Module):
 
     time_slice: TimeSeriesAoS[CoreProfilesTimeSlice]
 
-    def refresh(self, *args, core_transport, core_source, transport_solver, **kwargs):
+    def refresh(self, *args, **kwargs):
         super().refresh(*args, **kwargs)
 
-        prev_iter = self.time_slice.current
-
-        next_iter = transport_solver.refresh(prev_iter, core_transport=core_transport, core_source=core_source)
-
-        self.time_slice.current.update(next_iter)
-
-    def advance(self, *args, core_transport, core_source, transport_solver, **kwargs):
-        prev_iter = self.time_slice.current
-
-        next_iter = transport_solver.advance(prev_iter, core_transport=core_transport, core_source=core_source)
-
+    def advance(self, *args, **kwargs):
         super().advance(*args, **kwargs)
-
-        self.time_slice.current.update(next_iter)

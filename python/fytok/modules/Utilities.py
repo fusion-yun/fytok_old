@@ -17,7 +17,7 @@ from spdm.data.sp_property import SpTree, sp_property, sp_tree, AttributeTree
 from spdm.data.TimeSeries import TimeSeriesAoS, TimeSlice
 from spdm.geometry.Curve import Curve
 from spdm.utils.tree_utils import merge_tree_recursive, update_tree
-from spdm.utils.typing import array_type
+from spdm.utils.typing import array_type, is_array
 from spdm.utils.tags import _not_found_
 
 from ..utils.logger import logger
@@ -177,16 +177,18 @@ class CoreRadialGrid:
             }
         )
 
-    def remesh(self, rho_tor_norm=None, psi_norm=None) -> CoreRadialGrid:
-        if rho_tor_norm is None or rho_tor_norm is _not_found_:
-            if psi_norm is None or psi_norm is _not_found_:
-                return self
-            else:
-                rho_tor_norm = Function(self.rho_tor_norm, self.psi_norm)(psi_norm)
-        elif psi_norm is None or psi_norm is _not_found_:
-            psi_norm = Function(self.psi_norm, self.rho_tor_norm)(rho_tor_norm)
-        else:
-            logger.warning("Both rho_tor_norm and psi_norm are provided! ")
+    def remesh(self, rho_tor_norm=_not_found_, psi_norm=_not_found_) -> CoreRadialGrid:
+        if (rho_tor_norm is None or rho_tor_norm is _not_found_) and (psi_norm is _not_found_ or psi_norm is None):
+            rho_tor_norm_length = self.rho_tor_norm.size
+            rho_tor_norm_axis = self.rho_tor_norm[0]
+            rho_tor_norm_bdry = self.rho_tor_norm[-1]
+            rho_tor_norm = np.linspace(rho_tor_norm_axis, rho_tor_norm_bdry, rho_tor_norm_length)
+            psi_norm = self.psi_norm
+        elif is_array(rho_tor_norm) and (psi_norm is _not_found_ or psi_norm is None):
+            psi_norm = Function(self.rho_tor_norm, self.psi_norm)(rho_tor_norm)
+
+        elif is_array(psi_norm) and (rho_tor_norm is None or rho_tor_norm is _not_found_):
+            rho_tor_norm = Function(self.psi_norm, self.rho_tor_norm)(psi_norm)
 
         self.__init__(
             {

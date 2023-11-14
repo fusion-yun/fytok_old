@@ -17,6 +17,8 @@ from .ontology import GLOBAL_ONTOLOGY
 from .utils.logger import logger
 from .utils.envs import *
 
+from spdm.utils.envs import SP_VERSION
+
 __version__ = FY_VERSION
 
 ############################################################
@@ -48,7 +50,7 @@ logger.info(
  url: https://gitee.com/openfusion/fytok_tutorial 
       https://github.com/fusion-yun/fytok_tutorial
 
- version = {FY_VERSION} {FY_EXT_VERSION} 
+ version = {FY_VERSION}  (spdm={SP_VERSION} {FY_EXT_VERSION})
 
  Run by {getpass.getuser()} at {datetime.datetime.now().isoformat()}.
  Job ID: {FY_JOBID}
@@ -56,4 +58,3 @@ logger.info(
 #######################################################################################################################
 """
 )
-

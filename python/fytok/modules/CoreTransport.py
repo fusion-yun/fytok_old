@@ -1,8 +1,10 @@
+from copy import copy
+
 from spdm.data.AoS import AoS
 from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.data.Expression import Expression
-
+from spdm.utils.tags import _not_found_
 from .Utilities import *
 from .CoreProfiles import CoreProfiles
 from .Equilibrium import Equilibrium
@@ -96,25 +98,12 @@ class CoreTransportModel(Module):
 
     time_slice: TimeSeriesAoS[CoreTransportTimeSlice]
 
-    def refresh(self, *args, core_profiles: CoreProfiles.TimeSlice, equilibrium: Equilibrium.TimeSlice, **kwargs):
-        """update the last time slice"""
-
-        super().refresh(
-            {
-                "time": core_profiles.time,
-                "vacuum_toroidal_field": core_profiles.vacuum_toroidal_field,
-                "profiles_1d": {
-                    "grid_d": core_profiles.profiles_1d.grid,
-                    "ion": [{"label": ion.label} for ion in core_profiles.profiles_1d.ion],
-                    "neutral": [{"label": neutral.label} for neutral in core_profiles.profiles_1d.neutral],
-                },
-            },
-            *args,
-            **kwargs,
-        )
-
-    def fetch(self, /, x, **vars) -> CoreTransportTimeSlice:
-        return super().fetch(lambda o: o if not isinstance(o, Expression) else o(x))
+    def refresh(self, *args, **kwargs):
+        super().refresh(*args, **kwargs)
+        if self.time_slice.current.profiles_1d.get("grid", _not_found_) is _not_found_ and "equilibrium" in kwargs:
+            equilibrium: Equilibrium = kwargs["equilibrium"]
+            grid = copy(equilibrium.time_slice.current.profiles_1d.grid).remesh(kwargs.pop("rho_tor_norm", None))
+            self.time_slice.current.profiles_1d["grid"] = grid
 
 
 @sp_tree
@@ -123,11 +112,17 @@ class CoreTransport(core_transport._T_core_transport):
 
     model: AoS[CoreTransportModel]
 
-    def refresh(self, *args, **kwargs):
+    def refresh(self, *args, equilibrium: Equilibrium, **kwargs):
         """update the last time slice"""
+        eq = equilibrium.time_slice.current
 
         for model in self.model:
-            model.refresh(*args, **kwargs)
+            model.refresh(
+                {"time": eq.time, "vacuum_toroidal_field": eq.vacuum_toroidal_field},
+                *args,
+                equilibrium=equilibrium,
+                **kwargs,
+            )
 
     def advance(self, *args, **kwargs):
         """advance time_series to next slice"""
