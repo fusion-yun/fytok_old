@@ -36,7 +36,7 @@ class CoreSourcesProfiles1D(core_sources._T_core_sources_source_profiles_1d):
     grid: CoreRadialGrid
     """ Radial grid"""
 
-    electrons: CoreSourcesElectrons
+    electrons: CoreSourcesElectrons = {}
 
     total_ion_energy: Expression
 
@@ -72,7 +72,7 @@ class CoreSourcesTimeSlice(TimeSlice):
 
     GlobalQuantities = CoreSourcesGlobalQuantities
 
-    profiles_1d: CoreSourcesProfiles1D
+    profiles_1d: CoreSourcesProfiles1D = {}
 
     global_quantities: CoreSourcesGlobalQuantities
 
@@ -91,9 +91,12 @@ class CoreSourcesSource(Module):
 
     def refresh(self, *args, **kwargs):
         super().refresh(*args, **kwargs)
-        if self.time_slice.current.profiles_1d.get("grid", _not_found_) is _not_found_ and "equilibrium" in kwargs:
+        if (
+            self.time_slice.current.profiles_1d.grid.get("psi_axis", _not_found_) is _not_found_
+            and "equilibrium" in kwargs
+        ):
             equilibrium: Equilibrium = kwargs["equilibrium"]
-            grid = copy(equilibrium.time_slice.current.profiles_1d.grid).remesh(kwargs.pop("rho_tor_norm", None))
+            grid = equilibrium.time_slice.current.profiles_1d.grid.duplicate(kwargs.pop("rho_tor_norm", None))
             self.time_slice.current.profiles_1d["grid"] = grid
 
     def fetch(self, /, x: Expression, **vars) -> CoreSourcesTimeSlice:
@@ -135,13 +138,6 @@ class CoreSources(IDS):
 
     source: AoS[CoreSourcesSource]
 
-    def refresh(self, *args, equilibrium: Equilibrium, **kwargs):
-        eq = equilibrium.time_slice.current
-
+    def refresh(self, *args, **kwargs):
         for source in self.source:
-            source.refresh(
-                {"time": eq.time, "vacuum_toroidal_field": eq.vacuum_toroidal_field},
-                *args,
-                equilibrium=equilibrium,
-                **kwargs,
-            )
+            source.refresh(*args, **kwargs)

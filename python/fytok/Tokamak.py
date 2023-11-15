@@ -1,5 +1,6 @@
 import typing
 from copy import copy
+import pprint
 
 from spdm.data.Entry import PROTOCOL_LIST, open_entry
 from spdm.data.HTree import HTree
@@ -7,9 +8,8 @@ from spdm.data.Actor import Actor
 from spdm.data.sp_property import SpTree, sp_property
 from spdm.geometry.GeoObject import GeoObject
 from spdm.utils.tags import _not_found_
-from spdm.utils.tree_utils import merge_tree_recursive, update_tree
+from spdm.utils.tree_utils import merge_tree, update_tree
 from spdm.utils.uri_utils import uri_split
-
 
 # ---------------------------------
 from .modules.DatasetFAIR import DatasetFAIR
@@ -52,49 +52,15 @@ class Tokamak(Actor):
     def __init__(self, *args, device=_not_found_, shot=_not_found_, run=_not_found_, **kwargs):
         cache, entry, parent, kwargs = HTree._parser_args(*args, **kwargs)
 
-        cache = merge_tree_recursive(cache, kwargs)
+        cache = merge_tree(cache, kwargs)
 
-        # for idx, e in enumerate(entry):
-        #     if not isinstance(e, str):
-        #         continue
+        cache["dataset_fair"] = {"description": {"entry": entry, "device": device, "shot": shot or 0, "run": run or 0}}
 
-        #     if e.isidentifier():
-        #         e = f"{entry}://"
-        #     else:
-        #         e = uri_split(e)
-        #         if isinstance(device, str) and device.isidentifier():
-        #             e.protocol = f"{device}+{e.protocol}"
-        #         elif device is _not_found_ or device is None:
-        #             device = e.protocol.split("+")[0]
-        #     update_tree(e.query, None, {"shot": shot, "run": run})
-        #     shot = e.query.get("shot", None)
-        #     run = e.query.get("run", None)
-        #     entry[idx] = e
+        entry = open_entry(entry, shot=shot, run=run, local_schema=device, global_schema=GLOBAL_ONTOLOGY)
 
-        cache["dataset_fair"] = {
-            "description": {
-                "entry": entry,
-                "device": device,
-                "shot": shot or 0,
-                "run": run or 0,
-            }
-        }
+        super().__init__(cache, _entry=entry, _parent=parent)
 
-        entry = open_entry(
-            entry,
-            shot=shot,
-            run=run,
-            local_schema=device,
-            global_schema=GLOBAL_ONTOLOGY,
-        )
-
-        super().__init__(
-            cache,
-            _entry=entry,
-            _parent=parent,
-        )
-
-        logger.info(self.brief_summary())
+        # logger.debug(self.brief_summary())
 
     def brief_summary(self) -> str:
         return f"""Tokamak simulation : 
@@ -113,10 +79,11 @@ Modules:
     core_sources            : {','.join([s.code.name for s in self.core_sources.source])}
 -----------------------------------------------------------------------------------------------------------------------
 Data source:
-    {self._entry}
+    {pprint.pformat(str(self._entry).split(','))}
 -----------------------------------------------------------------------------------------------------------------------
-    File: {__file__}:{__package__}.{self.__class__.__name__}
 """
+
+    # File: {__file__}:{__package__}.{self.__class__.__name__}
 
     # edge_profiles           : N/A
     # edge_transport          : N/A
@@ -171,12 +138,20 @@ Data source:
     # fmt:on
 
     def advance(self, *args, **kwargs):
-        super().advance(*args, **kwargs)
+        return super().advance(*args, **kwargs)
 
-    def refresh(self, *args, **kwargs):
+    def refresh(self, *args, **kwargs) -> None:
         super().refresh(*args, **kwargs)
 
-    def update_core_profiles(self, *args, boundary_condition=None, **kwargs):
+        self.equilibrium.refresh(time=self.time)
+
+        self.core_sources.refresh(time=self.time)
+
+        self.core_transport.refresh(time=self.time)
+
+        self.transport_solver.refresh(time=self.time)
+
+    def update_core_profiles(self, *args, boundary_condition=None, **kwargs) -> None:
         assert self.transport_solver is not _not_found_, "transport_solver is not initialized !"
 
         self.equilibrium.refresh(time=self.time, core_profiles=self.core_profiles)
@@ -252,7 +227,7 @@ Data source:
                 g = o.__geometry__(**kwargs)
 
             except Exception as error:
-                logger.error(f"Can not get {o.__class__.__name__}.__geometry__ !")
+                logger.error(f"Can not get {o.__class__.__name__}.__geometry__ ! {error}")
                 # raise RuntimeError(f"Can not get {o.__class__.__name__}.__geometry__ !") from error
             else:
                 geo[o_name] = g

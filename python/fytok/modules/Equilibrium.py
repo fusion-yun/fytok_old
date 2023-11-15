@@ -9,7 +9,7 @@ from spdm.geometry.Curve import Curve
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Point import Point
 from spdm.utils.tags import _not_found_
-from spdm.utils.tree_utils import merge_tree_recursive
+from spdm.utils.tree_utils import merge_tree
 from spdm.mesh.Mesh import Mesh
 
 from .Utilities import *
@@ -256,13 +256,13 @@ class EquilibriumProfiles2D(equilibrium._T_equilibrium_profiles_2d):
 class EquilibriumBoundary(equilibrium._T_equilibrium_boundary):
     type: int
 
-    outline: CurveRZ
+    outline: Curve
 
     psi_norm: float
 
     psi: float = sp_property(units="Wb")
 
-    geometric_axis: PointRZ
+    geometric_axis: Point
 
     minor_radius: float = sp_property(units="m")
 
@@ -286,11 +286,11 @@ class EquilibriumBoundary(equilibrium._T_equilibrium_boundary):
 
     squareness_lower_outer: float
 
-    x_point: AoS[PointRZ]
+    x_point: AoS[Point]
 
-    strike_point: AoS[PointRZ]
+    strike_point: AoS[Point]
 
-    active_limiter_point: PointRZ
+    active_limiter_point: Point
 
 
 @sp_tree
@@ -301,7 +301,7 @@ class EquilibriumBoundarySeparatrix(equilibrium._T_equilibrium_boundary_separatr
 
     psi: float = sp_property(units="Wb")
 
-    geometric_axis: PointRZ
+    geometric_axis: Point
 
     minor_radius: float = sp_property(units="m")
 
@@ -325,11 +325,11 @@ class EquilibriumBoundarySeparatrix(equilibrium._T_equilibrium_boundary_separatr
 
     squareness_lower_outer: float
 
-    x_point: AoS[PointRZ]
+    x_point: AoS[Point]
 
-    strike_point: AoS[PointRZ]
+    strike_point: AoS[Point]
 
-    active_limiter_point: PointRZ
+    active_limiter_point: Point
 
 
 @sp_tree
@@ -371,41 +371,78 @@ class EquilibriumTimeSlice(equilibrium._T_equilibrium_time_slice):
 
     ggd: GGD
 
-    def __geometry__(self, view_port="RZ", **kwargs) -> GeoObject:
+    # def __geometry__(self, view_port="RZ", **kwargs) -> GeoObject:
+    #     geo = {}
+
+    #     if view_port == "RZ":
+    #         o_points, x_points = self.coordinate_system.critical_points
+
+    #         geo["o_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(o_points)]
+    #         geo["x_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(x_points)]
+
+    #         geo["boundary"] = Curve(self.boundary.outline.r.__array__(), self.boundary.outline.z.__array__())
+
+    #         geo["boundary_separatrix"] = Curve(
+    #             self.boundary_separatrix.outline.r.__array__(),
+    #             self.boundary_separatrix.outline.z.__array__(),
+    #         )
+
+    #     geo["psi"] = self.profiles_2d.psi.__geometry__()
+
+    #     styles = {
+    #         "o_points": {"$matplotlib": {"c": "red", "marker": "."}},
+    #         "x_points": {"$matplotlib": {"c": "blue", "marker": "x"}},
+    #         "boundary": {"$matplotlib": {"color": "red", "linewidth": 0.5}},
+    #         "boundary_separatrix": {
+    #             "$matplotlib": {
+    #                 "color": "red",
+    #                 "linestyle": "dashed",
+    #                 "linewidth": 0.25,
+    #             }
+    #         },
+    #     }
+    #     styles = merge_tree(styles, kwargs)
+
+    #     return geo, styles
+
+    def __geometry__(self, view_point="RZ", **kwargs) -> GeoObject:
+        """
+        plot o-point,x-point,lcfs,separatrix and contour of psi
+        """
+
         geo = {}
+        styles = {}
 
-        if view_port == "RZ":
-            o_points, x_points = self.coordinate_system.critical_points
+        match view_point.lower():
+            case "rz":
+                geo["o_points"] = Point(self.global_quantities.magnetic_axis.r, self.global_quantities.magnetic_axis.z)
 
-            geo["o_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(o_points)]
-            geo["x_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(x_points)]
+                geo["x_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(self.boundary.x_point)]
 
-            geo["boundary"] = Curve(self.boundary.outline.r.__array__(), self.boundary.outline.z.__array__())
+                geo["strike_points"] = [
+                    Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(self.boundary.strike_point)
+                ]
 
-            geo["boundary_separatrix"] = Curve(
-                self.boundary_separatrix.outline.r.__array__(),
-                self.boundary_separatrix.outline.z.__array__(),
-            )
+                geo["boundary"] = self.boundary.outline
 
-        geo["psi"] = self.profiles_2d[0].psi
+                geo["boundary_separatrix"] = self.boundary_separatrix.outline
 
-        styles = {
-            "o_points": {"$matplotlib": {"c": "red", "marker": "."}},
-            "x_points": {"$matplotlib": {"c": "blue", "marker": "x"}},
-            "boundary": {"$matplotlib": {"color": "red", "linewidth": 0.5}},
-            "boundary_separatrix": {
-                "$matplotlib": {
-                    "color": "red",
-                    "linestyle": "dashed",
-                    "linewidth": 0.25,
+                geo["psi"], styles["psi"] = self.profiles_2d.psi.__geometry__()
+
+                styles["o_points"] = {"$matplotlib": {"color": "red", "marker": ".", "linewidths": 0.5}}
+                styles["x_points"] = {"$matplotlib": {"color": "blue", "marker": "x", "linewidths": 0.5}}
+                styles["boundary"] = {"$matplotlib": {"color": "blue", "linestyle": "dotted", "linewidth": 0.5}}
+                styles["boundary_separatrix"] = {
+                    "$matplotlib": {"color": "red", "linestyle": "dashed", "linewidth": 0.25}
                 }
-            },
-        }
-        styles = merge_tree_recursive(styles, kwargs)
+                styles["psi"].update({"$matplotlib": {"levels": 40, "cmap": "jet"}})
+
+        styles = merge_tree(styles, kwargs)
 
         return geo, styles
 
 
+@sp_tree
 class Equilibrium(Module):
     r"""
     Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
@@ -454,7 +491,7 @@ class Equilibrium(Module):
 
     _plugin_prefix = "fytok.plugins.equilibrium."
 
-    _metadata = {"code": {"name": "fy_eq"}}
+    _metadata = {"code": {"name": "fy_eq"}}  # default plugin
 
     ids_properties: IDSProperties
 
@@ -464,6 +501,3 @@ class Equilibrium(Module):
 
     def __geometry__(self, *args, **kwargs):
         return self.time_slice.current.__geometry__(*args, **kwargs)
-
-    def fetch(self, *args, **kwargs) -> EquilibriumTimeSlice:
-        return super().fetch(*args, **kwargs)

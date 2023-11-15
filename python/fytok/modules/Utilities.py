@@ -45,7 +45,7 @@ class Library:
 
 @sp_tree
 class Code:
-    name: str = "unnamed"
+    name: str = "N/A"
     commit: str
     version: str
     copyright: str = "unknown"
@@ -81,6 +81,8 @@ class Identifier:
 class Module(Actor):
     _plugin_prefix = __package__
     _plugin_registry = {}
+
+    
 
     @classmethod
     def _plugin_guess_name(cls, self, cache, *args, **kwargs) -> str:
@@ -137,34 +139,6 @@ class VacuumToroidalField:
 
 @sp_tree(default_value=np.nan, force=True)
 class CoreRadialGrid:
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        if self.psi_norm is _not_found_:
-            if self.psi is _not_found_:
-                raise ValueError("psi_norm or psi must be provided")
-            elif self.psi_axis is _not_found_ or self.psi_boundary is _not_found_:
-                self["psi_axis"] = self.psi.min()
-                self["psi_boundary"] = self.psi.max()
-            self["psi_norm"] = (self.psi - self.psi_axis) / (self.psi_boundary - self.psi_axis)
-        elif self.psi is _not_found_ and not (self.psi_axis is _not_found_ or self.psi_boundary is _not_found_):
-            self["psi"] = self.psi_norm * (self.psi_boundary - self.psi_axis) + self.psi_axis
-        # elif self.psi_axis is _not_found_ or self.psi_boundary is _not_found_:
-        #     self["psi_axis"] = self.psi.min()
-        #     self["psi_boundary"] = self.psi.max()
-
-        if self.rho_tor_norm is _not_found_:
-            if self.rho_tor is _not_found_:
-                raise ValueError("rho_tor_norm or rho_tor must be provided")
-            elif self.rho_tor_boundary is _not_found_:
-                self["rho_tor_boundary"] = self.rho_tor.max()
-            self["rho_tor_norm"] = self.rho_tor / self.rho_tor_boundary
-        elif self.rho_tor is _not_found_:
-            if self.rho_tor_boundary is _not_found_:
-                raise ValueError("rho_tor_boundary must be provided")
-            self["rho_tor"] = self.rho_tor_norm * self.rho_tor_boundary
-        elif self.rho_tor_boundary is _not_found_:
-            self["rho_tor_boundary"] = self.rho_tor.max()
 
     def __copy__(self):
         return self.__class__(
@@ -210,11 +184,17 @@ class CoreRadialGrid:
     psi_axis: float
     psi_boundary: float
     psi_norm: array_type
-    psi: array_type
+
+    @sp_property
+    def psi(self) -> array_type:
+        return self.psi_norm * (self.psi_boundary - self.psi_axis) + self.psi_axis
 
     rho_tor_boundary: float
     rho_tor_norm: array_type
-    rho_tor: array_type
+
+    @sp_property
+    def rho_tor(self) -> array_type:
+        return self.rho_tor_norm * self.rho_tor_boundary
 
     @sp_property
     def rho_pol_norm(self) -> array_type:

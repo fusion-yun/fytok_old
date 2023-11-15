@@ -112,17 +112,9 @@ class CoreTransport(core_transport._T_core_transport):
 
     model: AoS[CoreTransportModel]
 
-    def refresh(self, *args, equilibrium: Equilibrium, **kwargs):
-        """update the last time slice"""
-        eq = equilibrium.time_slice.current
-
+    def refresh(self, *args, **kwargs):
         for model in self.model:
-            model.refresh(
-                {"time": eq.time, "vacuum_toroidal_field": eq.vacuum_toroidal_field},
-                *args,
-                equilibrium=equilibrium,
-                **kwargs,
-            )
+            model.refresh(*args, **kwargs)
 
     def advance(self, *args, **kwargs):
         """advance time_series to next slice"""

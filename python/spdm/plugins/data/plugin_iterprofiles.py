@@ -218,20 +218,13 @@ def read_iter_profiles(path):
 
     grid = {
         "rho_tor_norm": rho_tor_norm,
-        "rho_tor": rho_tor,
+        "rho_tor_boundary": rho_tor[-1],
         "psi_norm": psi_norm,
-        # "psi_boundary": psi_boundary,
-        # "psi_axis": psi_axis,
+        "psi_boundary": None,
+        "psi_axis": None,
     }
 
-    entry["core_profiles"] = {
-        "time_slice": [
-            {
-                "time": time,
-                "vacuum_toroidal_field": vacuum_toroidal_field,
-            }
-        ]
-    }
+    entry["core_profiles"] = {"time_slice": [{"time": time, "vacuum_toroidal_field": vacuum_toroidal_field}]}
 
     # Core profile
     r_ped = 0.96  # np.sqrt(0.88)

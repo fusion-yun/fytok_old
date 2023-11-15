@@ -22,7 +22,7 @@ from spdm.mesh.mesh_curvilinear import CurvilinearMesh
 from spdm.numlib.contours import find_countours
 from spdm.numlib.optimize import minimize_filter
 from spdm.utils.tags import _not_found_
-from spdm.utils.tree_utils import merge_tree_recursive
+from spdm.utils.tree_utils import merge_tree
 from spdm.utils.typing import ArrayLike, NumericType, array_type, scalar_type, as_array
 
 from fytok.modules.Equilibrium import Equilibrium
@@ -72,6 +72,7 @@ COCOS_TABLE = [
 # fmt:on
 
 
+@sp_tree
 class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     r"""
     Flux surface coordinate system on a square grid of flux and poloidal angle
@@ -101,11 +102,11 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         self._s_B0 = np.sign(self._B0)
         self._s_Ip = np.sign(self._Ip)
 
-        self._e_Bp, self._s_Bp, self._s_RpZ, self._s_rtp = COCOS_TABLE[self.cocos]
+        self._e_Bp, self._s_Bp, self._s_RpZ, self._s_rtp = COCOS_TABLE[5]
 
         self._s_eBp_2PI = 1.0 if self._e_Bp == 0 else (2.0 * scipy.constants.pi)
 
-    cocos: int = sp_property(default_value=5)
+    cocos: int = 5
 
     @property
     def _root(self) -> Equilibrium.TimeSlice:
@@ -505,14 +506,14 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         else:
             return FyEquilibriumCoordinateSystem.ShapeProperty(
                 psi,
-                Function(psi, rmin,        name="rmin"),
-                Function(psi, zmin,        name="zmin"),
-                Function(psi, rmax,        name="rmax"),
-                Function(psi, zmax,        name="zmax"),
-                Function(psi, rzmin,       name="rzmin"),
-                Function(psi, rzmax,       name="rzmax"),
-                Function(psi, r_inboard,   name="r_inboard"),
-                Function(psi, r_outboard,  name="r_outboard"),
+                Function(psi, rmin, name="rmin"),
+                Function(psi, zmin, name="zmin"),
+                Function(psi, rmax, name="rmax"),
+                Function(psi, zmax, name="zmax"),
+                Function(psi, rzmin, name="rzmin"),
+                Function(psi, rzmax, name="rzmax"),
+                Function(psi, r_inboard, name="r_inboard"),
+                Function(psi, r_outboard, name="r_outboard"),
             )
 
     #################################
@@ -1000,7 +1001,7 @@ class FyEquilibriumBoundary(Equilibrium.TimeSlice.Boundary):
         return self._coord.shape_property(self.psi)
 
     @sp_property
-    def geometric_axis(self) -> PointRZ:
+    def geometric_axis(self) -> Point:
         return {
             "r": (self._shape_property.Rmin + self._shape_property.Rmax) * 0.5,
             "z": (self._shape_property.Zmin + self._shape_property.Zmax) * 0.5,
@@ -1062,7 +1063,7 @@ class FyEquilibriumBoundary(Equilibrium.TimeSlice.Boundary):
         return
 
     @sp_property
-    def active_limiter_point(self) -> List[PointRZ]:
+    def active_limiter_point(self) -> List[Point]:
         return NotImplemented
 
 
@@ -1088,12 +1089,12 @@ class FyEquilibriumBoundarySeparatrix(Equilibrium.TimeSlice.BoundarySeparatrix):
         return self._coord.psi_boundary
 
     @sp_property
-    def x_point(self) -> List[PointRZ]:
+    def x_point(self) -> List[OXPoint]:
         _, x = self._coord.critical_points
-        return List[PointRZ]([{"r": v.r, "z": v.z} for v in x[:]])
+        return List[Point]([(v.r, v.z, v.psi) for v in x[:]])
 
     @sp_property
-    def strike_point(self) -> List[PointRZ]:
+    def strike_point(self) -> List[Point]:
         raise NotImplementedError("TODO: strike_point")
 
 
@@ -1113,48 +1114,6 @@ class FyEquilibriumTimeSlice(Equilibrium.TimeSlice):
     boundary_separatrix: FyEquilibriumBoundarySeparatrix
 
     coordinate_system: FyEquilibriumCoordinateSystem
-
-    def __geometry__(self, view_point="RZ", **kwargs) -> GeoObject:
-        """
-        plot o-point,x-point,lcfs,separatrix and contour of psi
-        """
-
-        geo = {}
-        styles = {}
-
-        match view_point.lower():
-            case "rz":
-                if self.profiles_2d.psi is _not_found_:
-                    logger.error(f"Can not find psirz")
-                    raise RuntimeError(f"Can not find psirz")
-
-                o_points, x_points = self.coordinate_system.critical_points
-
-                geo["o_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(o_points)]
-                geo["x_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(x_points)]
-
-                geo["boundary"] = [
-                    surf for _, surf in self.coordinate_system.find_surfaces(self.boundary.psi, o_point=True)
-                ]
-
-                geo["boundary_separatrix"] = [
-                    surf
-                    for _, surf in self.coordinate_system.find_surfaces(self.boundary_separatrix.psi, o_point=False)
-                ]
-
-                geo["psi"] = self.profiles_2d.psi
-
-                styles["o_points"] = {"$matplotlib": {"color": "red", "marker": ".", "linewidths": 0.5}}
-                styles["x_points"] = {"$matplotlib": {"color": "blue", "marker": "x", "linewidths": 0.5}}
-                styles["boundary"] = {"$matplotlib": {"color": "blue", "linestyle": "dotted", "linewidth": 0.5}}
-                styles["boundary_separatrix"] = {
-                    "$matplotlib": {"color": "red", "linestyle": "dashed", "linewidth": 0.25}
-                }
-                styles["psi"] = {"$matplotlib": {"levels": 40, "cmap": "jet"}}
-
-        styles = merge_tree_recursive(styles, kwargs)
-
-        return geo, styles
 
 
 @Equilibrium.register(["fy_eq"])
@@ -1178,7 +1137,7 @@ class FyEqAnalyze(Equilibrium):
 
     TimeSlice = FyEquilibriumTimeSlice
 
-    time_slice: TimeSeriesAoS[FyEquilibriumTimeSlice] = sp_property()
+    time_slice: TimeSeriesAoS[FyEquilibriumTimeSlice]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -82,11 +82,10 @@ class FyTrans(TransportSolverNumerics):
         self,
         current: TransportSolverNumerics.TimeSlice,
         previous: TransportSolverNumerics.TimeSlice | None,
-        *args,
         equilibrium: Equilibrium,
         core_transport: CoreTransport,
         core_sources: CoreSources,
-        **kwargs,
+        **others,
     ) -> typing.Tuple[TransportSolverNumerics.TimeSlice.Solver1D, typing.List[Variable], float]:
         solver_1d = current.solver_1d
 
@@ -567,12 +566,11 @@ class FyTrans(TransportSolverNumerics):
         self,
         current: TransportSolverNumerics.TimeSlice,
         previous: TransportSolverNumerics.TimeSlice | None,
-        *args,
-        **kwargs,
+        **inputs,
     ):
-        super().execute(current, previous, *args, **kwargs)
+        super().execute(current, previous, **inputs)
 
-        solver_1d, vars, nums_of_unknown = self._update_coefficient(current, previous, *args, **kwargs)
+        solver_1d, vars, nums_of_unknown = self._update_coefficient(current, previous, **inputs)
 
         logger.info(
             f"Solve transport equations [{len(solver_1d.equation)}] : {','.join([equ.primary_quantity.identifier for equ in solver_1d.equation])}"
@@ -696,9 +694,6 @@ class FyTrans(TransportSolverNumerics):
             equ.primary_quantity["flux"] = sol.y[2 * idx + 1]
             equ.primary_quantity["dflux_dr"] = sol.yp[2 * idx + 1]
 
-        if not sol.success:
-            logger.error(f"Solve BVP failed: {sol.message} , {sol.niter} iterations")
-        else:
-            logger.debug(f"Solve BVP success: {sol.message} , {sol.niter} iterations")
+        logger.debug(f"Solve BVP { 'success' if   sol.success else 'failed'}: {sol.message} , {sol.niter} iterations")
 
         return sol.status

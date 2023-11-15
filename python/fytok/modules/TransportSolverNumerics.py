@@ -188,6 +188,8 @@ class TransportSolverNumerics(Module):
 
     _plugin_prefix = "fytok.plugins.transport_solver_numerics."
 
+    # _metadata = {"code": {"name": "fy_trans"}}  # default plugin
+
     solver: Identifier
 
     primary_coordinate: Identifier
@@ -196,8 +198,8 @@ class TransportSolverNumerics(Module):
 
     time_slice: TimeSeriesAoS[TransportSolverNumericsTimeSlice]
 
-    def execute(self, current: TimeSlice, previous: TimeSlice | None, *args, **kwargs):
-        boundary_condition = kwargs.get("boundary_condition", _not_found_)
+    def execute(self, current: TimeSlice, previous: TimeSlice | None, **inputs: typing.Tuple[Actor]):
+        boundary_condition = inputs.get("boundary_condition", _not_found_)
 
         if isinstance(boundary_condition, dict):
             for equ in current.solver_1d.equation:
@@ -205,7 +207,33 @@ class TransportSolverNumerics(Module):
                 for idx, v in enumerate(bc):
                     equ.boundary_condition[idx]["value"] = v
 
-    def refresh(self, *args, **kwargs):
+        if not current.solver_1d.grid.rho_tor_norm is _not_found_:
+            equilibrium: Equilibrium = inputs.get("equilibrium", _not_found_)
+
+            if equilibrium is _not_found_:
+                raise ValueError(f"Need 'equilibrium'! ")
+
+            eq_grid = equilibrium.time_slice.current.profiles_1d.grid
+
+            grid = eq_grid.duplicate(self.code.parameters.get("rho_tor_norm", None))
+
+            current.solver_1d["grid"] = grid
+
+        if len(current.solver_1d.equation) == 0:
+            equations = self.code.parameters.get("equations", {})
+            logger.debug(f"equations={equations._cache}")
+            eq_list = [
+                {
+                    "primary_quantity": {
+                        "identifier": key.replace(".", "/"),
+                        "profile": value.pop("profile", None),
+                    },
+                    **value,
+                }
+                for key, value in equations._cache.items()
+            ]
+            current.solver_1d["equation"] = eq_list
+
         """
         solve transport equation until residual < tolerance
         # ions = self.code.parameters.get("ions", [])
@@ -228,64 +256,3 @@ class TransportSolverNumerics(Module):
         # equations = update_tree(kwargs.pop("equation", None),equations)
 
         """
-
-        rho_tor_norm = kwargs.pop("rho_tor_norm", None)
-
-        if not self.time_slice.is_initializied:
-            equilibrium: Equilibrium = kwargs.get("equilibrium", _not_found_)
-
-            if equilibrium is _not_found_:
-                raise ValueError(f"Need 'equilibrium'! ")
-
-            eq_grid = equilibrium.time_slice.current.profiles_1d.grid
-
-            if rho_tor_norm is None:
-                rho_tor_norm = self.code.parameters.get(
-                    "gird/rho_tor_norm", np.linspace(0.01, 0.995, len(eq_grid.rho_tor_norm))
-                )
-            grid = eq_grid.duplicate(rho_tor_norm)
-
-            equations = self.code.parameters.get("equations", {})
-
-            if len(args) > 0:
-                equations = update_tree(equations, None, args[0])
-
-            eq_list = [
-                {
-                    "primary_quantity": {
-                        "identifier": key.replace(".", "/"),
-                        "profile": value.pop("profile", None),
-                    },
-                    **value,
-                }
-                for key, value in equations.items()
-            ]
-
-            super().refresh({"solver_1d": {"grid": grid, "equation": eq_list}}, **kwargs)
-
-        else:
-            super().refresh(*args, **kwargs)
-
-        # current = super().refresh({
-        #     "primary_coordinate":  "rho_tor_norm",
-        #     "vacuum_toroidal_field": eq.vacuum_toroidal_field,
-        #     "solver_1d": {"grid": grid, "equation": equations}
-        # })
-
-        # current.refresh(
-        #     *args,
-        #     core_profiles=core_profiles,
-        #     equilibrium=equilibrium,
-        #     core_transport=core_transport,
-        #     core_sources=core_sources,
-        #     ** kwargs)
-
-        # solver_1d: TransportSolverNumericsSolver1D = self.time_slice.current.solver_1d
-
-        # core_profiles_1d["grid"] = solver_1d.grid
-
-        # for equ in solver_1d.equation:
-        #     core_profiles_1d[equ.primary_quantity.identifier] = equ.primary_quantity.profile
-
-    def advance(self, *args, **kwargs):
-        return super().advance(*args, {"solver_1d": {"equation": []}}, **kwargs)
