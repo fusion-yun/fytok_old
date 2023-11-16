@@ -5,7 +5,7 @@ import typing
 from dataclasses import dataclass
 from enum import IntFlag
 import numpy as np
-from spdm.data.Path import Path, merge_tree, update_tree
+from spdm.data.Path import Path,  update_tree
 from spdm.data.Actor import Actor
 from spdm.data.AoS import AoS
 from spdm.data.Field import Field

@@ -8,7 +8,7 @@ from spdm.data.Actor import Actor
 from spdm.data.sp_property import SpTree, sp_property
 from spdm.geometry.GeoObject import GeoObject
 from spdm.utils.tags import _not_found_
-from spdm.data.Path import merge_tree, update_tree
+from spdm.data.Path import  update_tree
 from spdm.utils.uri_utils import uri_split
 
 # ---------------------------------
@@ -52,7 +52,7 @@ class Tokamak(Actor):
     def __init__(self, *args, device=_not_found_, shot=_not_found_, run=_not_found_, **kwargs):
         cache, entry, parent, kwargs = HTree._parser_args(*args, **kwargs)
 
-        cache = merge_tree(cache, kwargs)
+        cache = update_tree(cache, kwargs)
 
         cache["dataset_fair"] = {"description": {"entry": entry, "device": device, "shot": shot or 0, "run": run or 0}}
 

@@ -650,7 +650,7 @@ class FyEquilibriumGlobalQuantities(Equilibrium.TimeSlice.GlobalQuantities):
         z = opoint.z
         return {"r": r, "z": z, "b_field_tor": self._coord.b_field_tor(r, z)}
 
-
+@sp_tree
 class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
     @property
     def _coord(self) -> FyEquilibriumCoordinateSystem:
@@ -680,7 +680,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
             self._root.global_quantities.psi_boundary - self._root.global_quantities.psi_axis
         )
 
-    psi: array_type = sp_property()
+    psi: array_type  
 
     # 环向磁通， q
 

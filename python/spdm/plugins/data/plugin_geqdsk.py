@@ -392,6 +392,11 @@ def sp_from_geqdsk(geqdsk: dict, eq: typing.Optional[Entry] = None) -> Entry:
             },
             # profile 1d
             "profiles_1d": {
+                "grid":{
+                    "psi_axis": psi_axis,
+                    "psi_boundary": psi_boundary,
+                    "psi_norm":np.linspace(0.0, 1.0, nw),
+                },
                 "f": geqdsk["fpol"],
                 "f_df_dpsi": geqdsk["ffprim"],
                 "pressure": geqdsk["pres"],

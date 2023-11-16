@@ -142,22 +142,37 @@ class FyTrans(TransportSolverNumerics):
 
         psi = Function(solver_1d.grid.rho_tor_norm, solver_1d.grid.psi, label="psi")(x)
 
-        eq_1d = equilibrium.time_slice.current.profiles_1d
-
-        eq_1d_m = equilibrium.time_slice.previous.profiles_1d
-
         # $R_0$ characteristic major radius of the device   [m]
         R0 = equilibrium.time_slice.current.vacuum_toroidal_field.r0
+
+        eq_1d = equilibrium.time_slice.current.profiles_1d
 
         # $B_0$ magnetic field measured at $R_0$            [T]
         B0 = equilibrium.time_slice.current.vacuum_toroidal_field.b0
 
-        B0m = equilibrium.time_slice.previous.vacuum_toroidal_field.b0
-
-        # Mesh
         rho_tor_boundary = eq_1d.grid.rho_tor_boundary
 
-        rho_tor_boundary_m = eq_1d_m.grid.rho_tor_boundary if eq_1d_m is not None else 0
+        # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
+        vpr = eq_1d.dvolume_drho_tor(psi)
+
+
+        eq_m=equilibrium.time_slice.previous
+
+        if eq_m is not _not_found_:
+
+            B0m = eq_m.vacuum_toroidal_field.b0   
+
+            rho_tor_boundary_m = eq_m.profiles_1d.grid.rho_tor_boundary  
+
+            vprm = eq_m.profiles_1d.dvolume_drho_tor(psi)  
+
+        else:
+            B0m=B0
+
+            rho_tor_boundary_m=rho_tor_boundary
+
+            vprm=vpr
+
 
         k_B = (B0 - B0m) / (B0 + B0m) * one_over_dt
 
@@ -166,11 +181,6 @@ class FyTrans(TransportSolverNumerics):
         k_phi = k_B + k_rho_bdry
 
         rho_tor = rho_tor_boundary * x
-
-        # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        vpr = eq_1d.dvolume_drho_tor(psi)
-
-        vprm = eq_1d_m.dvolume_drho_tor(psi) if eq_1d_m is not None else 0
 
         inv_vpr23 = vpr ** (-2 / 3)
 

@@ -1,6 +1,6 @@
 
 from fytok.modules.CoreTransport import CoreTransport
-from spdm.data.Path import merge_tree
+from spdm.data.Path import update_tree
 
 
 class TransportModelDummy(CoreTransport.Model):
@@ -11,7 +11,7 @@ class TransportModelDummy(CoreTransport.Model):
     """
 
     def __init__(self, d, *args,   **kwargs):
-        super().__init__(merge_tree({
+        super().__init__(update_tree({
             "identifier": "unspecified",
             "code": {"name": "dummy",
                      "description": f"{self.__class__.__name__} Dummy CoreTransport.Model "}}, d),

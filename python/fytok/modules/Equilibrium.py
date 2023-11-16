@@ -9,7 +9,7 @@ from spdm.geometry.Curve import Curve
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Point import Point
 from spdm.utils.tags import _not_found_
-from spdm.data.Path import merge_tree
+from spdm.data.Path import update_tree
 from spdm.mesh.Mesh import Mesh
 
 from .Utilities import *
@@ -401,7 +401,7 @@ class EquilibriumTimeSlice(equilibrium._T_equilibrium_time_slice):
     #             }
     #         },
     #     }
-    #     styles = merge_tree(styles, kwargs)
+    #     styles = update_tree(styles, kwargs)
 
     #     return geo, styles
 
@@ -437,7 +437,7 @@ class EquilibriumTimeSlice(equilibrium._T_equilibrium_time_slice):
                 }
                 styles["psi"].update({"$matplotlib": {"levels": 40, "cmap": "jet"}})
 
-        styles = merge_tree(styles, kwargs)
+        styles = update_tree(styles, kwargs)
 
         return geo, styles
 
