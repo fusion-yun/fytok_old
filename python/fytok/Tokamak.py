@@ -8,7 +8,7 @@ from spdm.data.Actor import Actor
 from spdm.data.sp_property import SpTree, sp_property
 from spdm.geometry.GeoObject import GeoObject
 from spdm.utils.tags import _not_found_
-from spdm.utils.tree_utils import merge_tree, update_tree
+from spdm.data.Path import merge_tree, update_tree
 from spdm.utils.uri_utils import uri_split
 
 # ---------------------------------

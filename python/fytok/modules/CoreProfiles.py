@@ -8,7 +8,7 @@ from spdm.data.AoS import AoS
 from spdm.data.Expression import Expression
 from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
-from spdm.utils.tree_utils import merge_tree_recursive
+from spdm.data.Path import merge_tree
 
 from ..utils.atoms import atoms
 from ..utils.logger import logger
@@ -29,7 +29,7 @@ class CoreProfilesIon(utilities._T_core_profile_ions):
 
         atom_desc = atoms.get(self.label.capitalize(), None)
 
-        self._cache = merge_tree_recursive(self._cache, atom_desc)
+        self._cache = merge_tree(self._cache, atom_desc)
 
     is_impurity: bool = sp_property(default_value=False)
 

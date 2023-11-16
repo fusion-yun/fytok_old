@@ -7,7 +7,6 @@ from fytok.modules.Equilibrium import Equilibrium
 from scipy import constants
 from spdm.utils.logger import logger
 from spdm.utils.tags import _not_found_
-from spdm.utils.tree_utils import merge_tree_recursive
 
 
 @CoreTransport.Model.register(["fas_alpha"])

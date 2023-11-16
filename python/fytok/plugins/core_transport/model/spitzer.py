@@ -1,4 +1,3 @@
-
 import collections
 import collections.abc
 
@@ -10,30 +9,27 @@ from scipy import constants
 from spdm.data.Function import function_like
 from spdm.numlib.misc import array_like
 from fytok.utils.logger import logger
-from spdm.utils.tree_utils import merge_tree_recursive
 
 
 class Spitzer(CoreTransport.Model):
     """
-        Spitzer Resistivity
+    Spitzer Resistivity
 
-        References:
-        - Tokamaks, Third Edition, Chapter 14  ,p727,  J.A.Wesson 2003
+    References:
+    - Tokamaks, Third Edition, Chapter 14  ,p727,  J.A.Wesson 2003
     """
 
-    def __init__(self, cache: collections.abc.Mapping = None, *args,  **kwargs):
-        cache = merge_tree_recursive(
-            {
-                "identifier": "neoclassical",
-                "code": {
-                    "name": "spitzer",
-                    "description":  f"{self.__class__.__name__} Spitzer Resistivity",
-                }
-            },
-            cache)
-        super().__init__(cache,  *args, **kwargs)
+    _metadata = {
+        "identifier": "neoclassical",
+        "code": {
+            "name": "spitzer",
+            "description": f" Spitzer Resistivity",
+        },
+    }
 
-    def refresh(self, *args, equilibrium: Equilibrium.TimeSlice, core_profiles_1d: CoreProfiles.Profiles1d,  **kwargs) -> float:
+    def refresh(
+        self, *args, equilibrium: Equilibrium.TimeSlice, core_profiles_1d: CoreProfiles.Profiles1d, **kwargs
+    ) -> float:
         # residual = super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
         eV = constants.electron_volt
@@ -48,7 +44,7 @@ class Spitzer(CoreTransport.Model):
         psi_norm = radial_grid.psi_norm(rho_tor)
         psi_axis = equilibrium.global_quantities.psi_axis
         psi_boundary = equilibrium.global_quantities.psi_boundary
-        psi = psi_norm*(psi_boundary-psi_axis)+psi_axis
+        psi = psi_norm * (psi_boundary - psi_axis) + psi_axis
 
         q = equilibrium.profiles_1d.q(psi)
 
@@ -69,36 +65,37 @@ class Spitzer(CoreTransport.Model):
         lnCoul = core_profiles_1d.coulomb_logarithm(rho_tor_norm)
 
         # electron collision time , eq 14.6.1
-        tau_e = 1.09e16*((Te/1000)**(3/2))/Ne/lnCoul
+        tau_e = 1.09e16 * ((Te / 1000) ** (3 / 2)) / Ne / lnCoul
 
-        vTe = np.sqrt(Te*eV/constants.electron_mass)
+        vTe = np.sqrt(Te * eV / constants.electron_mass)
 
         # Larmor radius,   eq 14.7.2
         # rho_e = 1.07e-4*((Te/1000)**(1/2))/B0
 
         # rho_tor[0] = max(rho_e[0], rho_tor[0])
 
-        epsilon = rho_tor/R0
+        epsilon = rho_tor / R0
         epsilon12 = np.sqrt(epsilon)
-        epsilon32 = epsilon**(3/2)
+        epsilon32 = epsilon ** (3 / 2)
         ###########################################################################################
         #  Sec 14.10 Resistivity
         #
-        eta_s = 1.65e-9*lnCoul*(Te/1000)**(-3/2)
+        eta_s = 1.65e-9 * lnCoul * (Te / 1000) ** (-3 / 2)
         Zeff = core_profiles_1d.zeff(rho_tor_norm)
-        fT = 1.0 - (1-epsilon)**2/np.sqrt(1.0-epsilon**2)/(1+1.46*np.sqrt(epsilon))
+        fT = 1.0 - (1 - epsilon) ** 2 / np.sqrt(1.0 - epsilon**2) / (1 + 1.46 * np.sqrt(epsilon))
 
         phi = np.zeros_like(rho_tor_norm)
-        nu_e = R0*q[1:]/vTe[1:]/tau_e[1:]/epsilon32[1:]
-        phi[1:] = fT[1:]/(1.0+(0.58+0.20*Zeff[1:])*nu_e)
+        nu_e = R0 * q[1:] / vTe[1:] / tau_e[1:] / epsilon32[1:]
+        phi[1:] = fT[1:] / (1.0 + (0.58 + 0.20 * Zeff[1:]) * nu_e)
         phi[0] = 0
 
-        C = 0.56/Zeff*(3.0-Zeff)/(3.0+Zeff)
+        C = 0.56 / Zeff * (3.0 - Zeff) / (3.0 + Zeff)
 
-        eta = eta_s*Zeff/(1-phi)/(1.0-C*phi)*(1.0+0.27*(Zeff-1.0))/(1.0+0.47*(Zeff-1.0))
+        eta = eta_s * Zeff / (1 - phi) / (1.0 - C * phi) * (1.0 + 0.27 * (Zeff - 1.0)) / (1.0 + 0.47 * (Zeff - 1.0))
 
-        self.profiles_1d.current["conductivity_parallel"] = function_like(array_like(rho_tor_norm, 1.0/eta), rho_tor_norm)
-
+        self.profiles_1d.current["conductivity_parallel"] = function_like(
+            array_like(rho_tor_norm, 1.0 / eta), rho_tor_norm
+        )
 
 
 __SP_EXPORT__ = Spitzer

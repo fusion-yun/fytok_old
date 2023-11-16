@@ -9,7 +9,7 @@ from spdm.geometry.Curve import Curve
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Point import Point
 from spdm.utils.tags import _not_found_
-from spdm.utils.tree_utils import merge_tree
+from spdm.data.Path import merge_tree
 from spdm.mesh.Mesh import Mesh
 
 from .Utilities import *

@@ -5,7 +5,7 @@ import typing
 from dataclasses import dataclass
 from enum import IntFlag
 import numpy as np
-from spdm.data.Path import Path
+from spdm.data.Path import Path,merge_tree, update_tree
 from spdm.data.Actor import Actor
 from spdm.data.AoS import AoS
 from spdm.data.Field import Field
@@ -13,13 +13,13 @@ from spdm.data.Expression import Expression
 from spdm.data.Function import Function
 from spdm.data.HTree import Dict, HTree, List
 from spdm.data.Signal import Signal, SignalND
-from spdm.data.sp_property import SpTree, sp_property, sp_tree, AttributeTree
+
+from spdm.data.sp_property import SpTree, sp_property, sp_tree, PropertyTree
 from spdm.data.TimeSeries import TimeSeriesAoS, TimeSlice
 from spdm.geometry.Curve import Curve
-from spdm.utils.tree_utils import merge_tree_recursive, update_tree
 from spdm.utils.typing import array_type, is_array
 from spdm.utils.tags import _not_found_
-
+from spdm.view import View as sp_view
 from ..utils.logger import logger
 from ..utils.envs import FY_JOBID
 
@@ -50,7 +50,7 @@ class Code:
     version: str
     copyright: str = "unknown"
     repository: str
-    parameters: AttributeTree
+    parameters: PropertyTree
     output_flag: array_type
     library: List[Library]
 
@@ -82,8 +82,6 @@ class Module(Actor):
     _plugin_prefix = __package__
     _plugin_registry = {}
 
-    
-
     @classmethod
     def _plugin_guess_name(cls, self, cache, *args, **kwargs) -> str:
         pth = Path("code/name")
@@ -104,6 +102,13 @@ class Module(Actor):
         return f"{FY_JOBID}/{self._plugin_prefix}{self.code.name or self.__class__.__name__.lower()}"
 
     code: Code
+
+    def _repr_svg_(self) -> str:
+        try:
+            res = sp_view.display(self.__geometry__(), output="svg")
+        except Exception:
+            res = ""
+        return res
 
 
 class IDS(Module):
@@ -139,7 +144,6 @@ class VacuumToroidalField:
 
 @sp_tree(default_value=np.nan, force=True)
 class CoreRadialGrid:
-
     def __copy__(self):
         return self.__class__(
             {

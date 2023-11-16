@@ -56,9 +56,9 @@ class CoreSourcesProfiles1D(core_sources._T_core_sources_source_profiles_1d):
 
     conductivity_parallel: Expression
 
-    ion: AoS[CoreSourcesIon] = sp_property(identifier="label")
+    ion: AoS[CoreSourcesIon] = sp_property(identifier="label", default_value=[])
 
-    neutral: AoS[CoreSourcesNeutral] = sp_property(identifier="label")
+    neutral: AoS[CoreSourcesNeutral] = sp_property(identifier="label", default_value=[])
 
 
 @sp_tree
@@ -72,7 +72,7 @@ class CoreSourcesTimeSlice(TimeSlice):
 
     GlobalQuantities = CoreSourcesGlobalQuantities
 
-    profiles_1d: CoreSourcesProfiles1D = {}
+    profiles_1d: CoreSourcesProfiles1D
 
     global_quantities: CoreSourcesGlobalQuantities
 

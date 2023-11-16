@@ -7,7 +7,7 @@ import pandas as pd
 from scipy import constants
 from spdm.data.Expression import Piecewise, Variable
 from spdm.data.File import File
-from spdm.utils.tree_utils import update_tree
+from spdm.data.Path import update_tree
 from spdm.numlib.smooth import smooth_1d
 from fytok.utils.logger import logger
 

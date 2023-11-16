@@ -5,9 +5,9 @@ import scipy.constants
 
 from spdm.data.HTree import Dict, Node, List
 from spdm.data.Function import Function
-from spdm.data.sp_property import SpTree, sp_property, sp_tree, AttributeTree
+from spdm.data.sp_property import SpTree, sp_property, sp_tree, PropertyTree
 from spdm.data.AoS import AoS
-from spdm.utils.tree_utils import merge_tree
+from spdm.data.Path import merge_tree
 
 
 predefined_species = {
@@ -87,7 +87,7 @@ class Atom:
     label: str
     z: float
     a: float
-    elements: AoS[AttributeTree]
+    elements: AoS[PropertyTree]
 
 
 class Atoms(Dict[Atom]):

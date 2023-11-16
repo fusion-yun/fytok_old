@@ -570,6 +570,8 @@ class FyTrans(TransportSolverNumerics):
     ):
         super().execute(current, previous, **inputs)
 
+        logger.debug(f"Execute {self.code.name} {self.code.version} {self.code.parameters.dump()}")
+
         solver_1d, vars, nums_of_unknown = self._update_coefficient(current, previous, **inputs)
 
         logger.info(

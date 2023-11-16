@@ -102,7 +102,7 @@ class TransportSolverNumericsEquation:
     coefficient: AoS
     """ Set of numerical coefficients involved in the transport equation"""
 
-    convergence: AttributeTree
+    convergence: PropertyTree
     """ Convergence details"""
 
 
@@ -118,7 +118,7 @@ class TransportSolverNumericsSolver1D:
     equation: AoS[TransportSolverNumericsEquation]
     """ Set of transport equations"""
 
-    control_parameters: AttributeTree
+    control_parameters: PropertyTree
     """ Solver-specific input or output quantities"""
 
     drho_tor_dt: Expression = sp_property(units="m.s^-1")
@@ -188,7 +188,7 @@ class TransportSolverNumerics(Module):
 
     _plugin_prefix = "fytok.plugins.transport_solver_numerics."
 
-    # _metadata = {"code": {"name": "fy_trans"}}  # default plugin
+    _metadata = {"code": {"name": "fy_trans"}}  # default plugin
 
     solver: Identifier
 
@@ -207,7 +207,7 @@ class TransportSolverNumerics(Module):
                 for idx, v in enumerate(bc):
                     equ.boundary_condition[idx]["value"] = v
 
-        if not current.solver_1d.grid.rho_tor_norm is _not_found_:
+        if  current.solver_1d.grid.rho_tor_norm is _not_found_:
             equilibrium: Equilibrium = inputs.get("equilibrium", _not_found_)
 
             if equilibrium is _not_found_:
@@ -220,18 +220,22 @@ class TransportSolverNumerics(Module):
             current.solver_1d["grid"] = grid
 
         if len(current.solver_1d.equation) == 0:
-            equations = self.code.parameters.get("equations", {})
-            logger.debug(f"equations={equations._cache}")
-            eq_list = [
-                {
-                    "primary_quantity": {
-                        "identifier": key.replace(".", "/"),
-                        "profile": value.pop("profile", None),
-                    },
-                    **value,
-                }
-                for key, value in equations._cache.items()
-            ]
+            equations = self.code.parameters.equations
+
+            if equations is None:
+                eq_list = []
+            else:
+                eq_list = [
+                    {
+                        "primary_quantity": {
+                            "identifier": key,
+                            "profile": value.pop("profile", None),
+                        },
+                        **value,
+                    }
+                    for key, value in equations._cache.items()
+                ]
+
             current.solver_1d["equation"] = eq_list
 
         """

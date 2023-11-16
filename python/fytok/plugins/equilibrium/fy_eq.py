@@ -22,7 +22,6 @@ from spdm.mesh.mesh_curvilinear import CurvilinearMesh
 from spdm.numlib.contours import find_countours
 from spdm.numlib.optimize import minimize_filter
 from spdm.utils.tags import _not_found_
-from spdm.utils.tree_utils import merge_tree
 from spdm.utils.typing import ArrayLike, NumericType, array_type, scalar_type, as_array
 
 from fytok.modules.Equilibrium import Equilibrium

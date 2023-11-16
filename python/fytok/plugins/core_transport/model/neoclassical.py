@@ -8,7 +8,7 @@ from spdm.data import Function, function_like
 from spdm.data.Entry import _next_
 from fytok.utils.logger import logger
 from spdm.utils.tags import _not_found_
-from spdm.utils.tree_utils import merge_tree_recursive
+from spdm.data.Path import merge_tree
 
 
 class NeoClassical(CoreTransport.Model):
@@ -22,7 +22,7 @@ class NeoClassical(CoreTransport.Model):
     """
 
     def __init__(self, d=None,  *args, **kwargs):
-        super().__init__(merge_tree_recursive(
+        super().__init__(merge_tree(
                          {"identifier": "neoclassical",
                           "code": {"name": "neoclassical",
                                    "description": f"{self.__class__.__name__}  Neoclassical model, based on  Tokamaks, 3ed, J.A.Wesson 2003"}}, d),

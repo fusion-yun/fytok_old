@@ -2,7 +2,7 @@ __path__ = __import__("pkgutil").extend_path(__path__, __name__)
 
 import os
 import typing
-from spdm.data.sp_property import AttributeTree
+from spdm.data.sp_property import PropertyTree
 from ..utils.logger import logger
 
 
@@ -37,8 +37,8 @@ except ModuleNotFoundError as error:
 #     def __str__(self) -> str:
 #         return f"<dummy_module '{__package__}.dummy.{self._module}'>"
 
-#     def __getattr__(self, __name: str) -> typing.Type[AttributeTree]:
-#         cls = type(__name, (AttributeTree,), {})
+#     def __getattr__(self, __name: str) -> typing.Type[PropertyTree]:
+#         cls = type(__name, (PropertyTree,), {})
 #         cls.__module__ = f"{__package__}.dummy.{self._module}"
 #         return cls
 
