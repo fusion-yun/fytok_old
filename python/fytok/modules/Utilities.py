@@ -5,7 +5,7 @@ import typing
 from dataclasses import dataclass
 from enum import IntFlag
 import numpy as np
-from spdm.data.Path import Path,merge_tree, update_tree
+from spdm.data.Path import Path, merge_tree, update_tree
 from spdm.data.Actor import Actor
 from spdm.data.AoS import AoS
 from spdm.data.Field import Field
@@ -104,11 +104,7 @@ class Module(Actor):
     code: Code
 
     def _repr_svg_(self) -> str:
-        try:
-            res = sp_view.display(self.__geometry__(), output="svg")
-        except Exception:
-            res = ""
-        return res
+        return sp_view.display(self.__geometry__(), output="svg")
 
 
 class IDS(Module):
