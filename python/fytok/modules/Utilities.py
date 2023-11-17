@@ -5,7 +5,7 @@ import typing
 from dataclasses import dataclass
 from enum import IntFlag
 import numpy as np
-from spdm.data.Path import Path,  update_tree
+from spdm.data.Path import Path, update_tree
 from spdm.data.Actor import Actor
 from spdm.data.AoS import AoS
 from spdm.data.Field import Field
@@ -96,6 +96,9 @@ class Module(Actor):
     def __init__(self, *args, **kwargs):
         cache, entry, parent, kwargs = self.__class__._parser_args(*args, **kwargs)
         super().__init__(cache, _entry=entry, _parent=parent, **kwargs)
+        code = self._metadata.get("code", _not_found_)
+        if code is not _not_found_:
+            self.code.update(code)
 
     @property
     def tag(self) -> str:
@@ -105,6 +108,10 @@ class Module(Actor):
 
     def _repr_svg_(self) -> str:
         return sp_view.display(self.__geometry__(), output="svg")
+
+    def execute(self, *args, **kwargs) -> typing.Type[Actor]:
+        logger.debug(f"Execute {self.code.name}[{self.code.version}] class={self.__class__.__name__} ")
+        return super().execute(*args, **kwargs)
 
 
 class IDS(Module):
@@ -138,8 +145,11 @@ class VacuumToroidalField:
     b0: float
 
 
-@sp_tree(default_value=np.nan, force=True)
+@sp_tree
 class CoreRadialGrid:
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
     def __copy__(self):
         return self.__class__(
             {

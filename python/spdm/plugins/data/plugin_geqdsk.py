@@ -366,6 +366,8 @@ def sp_from_geqdsk(geqdsk: dict, eq: typing.Optional[Entry] = None) -> Entry:
     if psirz.shape != (nw, nh):
         raise ValueError(f"Invalid shape for psirz: {psirz.shape}!={(nw, nh)}")
 
+    psi_norm = np.linspace(0.0, 1.0, nw)
+    
     eq["equilibrium/time_slice"] = [
         {
             "time": 0.0,
@@ -392,11 +394,12 @@ def sp_from_geqdsk(geqdsk: dict, eq: typing.Optional[Entry] = None) -> Entry:
             },
             # profile 1d
             "profiles_1d": {
-                "grid":{
+                "grid": {
                     "psi_axis": psi_axis,
                     "psi_boundary": psi_boundary,
-                    "psi_norm":np.linspace(0.0, 1.0, nw),
+                    "psi_norm": psi_norm,
                 },
+                "psi_norm": psi_norm,
                 "f": geqdsk["fpol"],
                 "f_df_dpsi": geqdsk["ffprim"],
                 "pressure": geqdsk["pres"],

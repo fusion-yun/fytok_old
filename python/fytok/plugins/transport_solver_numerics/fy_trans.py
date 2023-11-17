@@ -95,7 +95,7 @@ class FyTrans(TransportSolverNumerics):
         vars = {"x": x}
 
         nums_of_unknown = 0
-        
+
         for equ in solver_1d.equation:
             identifier = equ.primary_quantity.identifier
             s = equ.primary_quantity.identifier.split("/")
@@ -146,34 +146,31 @@ class FyTrans(TransportSolverNumerics):
         # $R_0$ characteristic major radius of the device   [m]
         R0 = equilibrium.time_slice.current.vacuum_toroidal_field.r0
 
-        eq_1d = equilibrium.time_slice.current.profiles_1d
-
         # $B_0$ magnetic field measured at $R_0$            [T]
         B0 = equilibrium.time_slice.current.vacuum_toroidal_field.b0
+
+        eq_1d = equilibrium.time_slice.current.profiles_1d
 
         rho_tor_boundary = eq_1d.grid.rho_tor_boundary
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
         vpr = eq_1d.dvolume_drho_tor(psi)
 
-
-        eq_m=equilibrium.time_slice.previous
+        eq_m = equilibrium.time_slice.previous
 
         if eq_m is not _not_found_:
+            B0m = eq_m.vacuum_toroidal_field.b0
 
-            B0m = eq_m.vacuum_toroidal_field.b0   
+            rho_tor_boundary_m = eq_m.profiles_1d.grid.rho_tor_boundary
 
-            rho_tor_boundary_m = eq_m.profiles_1d.grid.rho_tor_boundary  
-
-            vprm = eq_m.profiles_1d.dvolume_drho_tor(psi)  
+            vprm = eq_m.profiles_1d.dvolume_drho_tor(psi)
 
         else:
-            B0m=B0
+            B0m = B0
 
-            rho_tor_boundary_m=rho_tor_boundary
+            rho_tor_boundary_m = rho_tor_boundary
 
-            vprm=vpr
-
+            vprm = vpr
 
         k_B = (B0 - B0m) / (B0 + B0m) * one_over_dt
 
@@ -242,7 +239,9 @@ class FyTrans(TransportSolverNumerics):
         if core_transport is not None:
             for model in core_transport.model:
                 logger.debug(model.code.name)
-                trans_1d = model.fetch(**vars).profiles_1d
+                trans: CoreTransport.Model.TimeSlice = model.fetch(**vars)
+                trans_1d = trans.profiles_1d
+
                 for spec, d in coeff.items():
                     d["transp_D"] += trans_1d.get(f"{spec}/particles/d", 0)
                     d["transp_V"] += trans_1d.get(f"{spec}/particles/v", 0)
@@ -581,7 +580,6 @@ class FyTrans(TransportSolverNumerics):
     ):
         super().execute(current, previous, **inputs)
 
-        logger.debug(f"Execute {self.code.name} {self.code.version} {self.code.parameters.dump()}")
 
         solver_1d, vars, nums_of_unknown = self._update_coefficient(current, previous, **inputs)
 

@@ -188,7 +188,9 @@ class TransportSolverNumerics(Module):
 
     _plugin_prefix = "fytok.plugins.transport_solver_numerics."
 
-    _metadata = {"code": {"name": "fy_trans"}}  # default plugin
+    _metadata = {}
+
+    code: Code = {"code": {"name": "fy_trans"}}  # default plugin
 
     solver: Identifier
 
@@ -207,7 +209,7 @@ class TransportSolverNumerics(Module):
                 for idx, v in enumerate(bc):
                     equ.boundary_condition[idx]["value"] = v
 
-        if  current.solver_1d.grid.rho_tor_norm is _not_found_:
+        if current.solver_1d.grid.rho_tor_norm is _not_found_:
             equilibrium: Equilibrium = inputs.get("equilibrium", _not_found_)
 
             if equilibrium is _not_found_:
@@ -221,9 +223,9 @@ class TransportSolverNumerics(Module):
 
         if len(current.solver_1d.equation) == 0:
             equations = self.code.parameters.equations
-            logger.debug(equations._cache)
+
             eq_list = []
-            if isinstance(equations,dict):
+            if isinstance(equations, dict):
                 eq_list = [
                     {
                         "primary_quantity": {

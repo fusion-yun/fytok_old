@@ -103,7 +103,7 @@ class CoreTransportModel(Module):
         if self.time_slice.current.profiles_1d.get("grid", _not_found_) is _not_found_ and "equilibrium" in kwargs:
             equilibrium: Equilibrium = kwargs["equilibrium"]
             grid = copy(equilibrium.time_slice.current.profiles_1d.grid).remesh(kwargs.pop("rho_tor_norm", None))
-            self.time_slice.current.profiles_1d["grid"] = grid
+            self.time_slice.current.profiles_1d["grid_d"] = grid
 
 
 @sp_tree
