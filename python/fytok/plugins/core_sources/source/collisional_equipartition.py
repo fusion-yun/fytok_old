@@ -6,16 +6,17 @@ from fytok.modules.CoreSources import CoreSources
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.utils.atoms import atoms
 from spdm.utils.tags import _next_
+from spdm.data.sp_property import sp_tree
 from spdm.data.Expression import Expression, Variable
 
 
 @CoreSources.Source.register(["collisional_equipartition"])
+@sp_tree
 class CollisionalEquipartition(CoreSources.Source):
-    _metadata = {
-        "identifier": {"name": "collisional_equipartition", "index": 11, "description": "Collisional Energy Tansport "}
-    }
+    identifier = "collisional_equipartition"
+    code = {"name": "collisional_equipartition", "description": "Collisional Energy Tansport "}
 
-    def update(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles, **kwargs) -> float:
+    def execute(self, *args, equilibrium: Equilibrium, core_profiles: CoreProfiles, **kwargs) -> float:
         residual = super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
         Te = core_profiles.profiles_1d.electrons.temperature

@@ -1,23 +1,20 @@
-
 import collections
 
 import numpy as np
+from spdm.data.sp_property import sp_tree
 from fytok.modules.CoreProfiles import CoreProfiles
 from fytok.modules.CoreSources import CoreSources
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.utils.logger import logger
 
 
+@sp_tree
 class CoreSourceDummy(CoreSources.Source):
-    def __init__(self, d=None, *args,  **kwargs):
+    code = {"name": "dummy", "description": " Dummy CoreSources.Source "}
 
-        super().__init__(collections.ChainMap({
-            "identifier": {"name": "unspecified", "index": 5,
-                           "description": f"{self.__class__.__name__} Dummy CoreTransport.Model "},
-            "code": {"name": "dummy"}}, d or {}),
-            *args, **kwargs)
+    identifier = "unspecified"
 
-    def refresh(self, *args,  **kwargs):
+    def refresh(self, *args, **kwargs):
         return super().refresh(*args, **kwargs)
 
 

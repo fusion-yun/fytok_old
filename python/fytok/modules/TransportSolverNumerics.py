@@ -188,9 +188,9 @@ class TransportSolverNumerics(Module):
 
     _plugin_prefix = "fytok.plugins.transport_solver_numerics."
 
-    _metadata = {}
+    _metadata = {}  
 
-    code: Code = {"code": {"name": "fy_trans"}}  # default plugin
+    code: Code = {"name": "fy_trans"}# default plugin
 
     solver: Identifier
 

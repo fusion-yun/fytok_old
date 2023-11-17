@@ -497,7 +497,7 @@ class Equilibrium(Module):
 
     _plugin_prefix = "fytok.plugins.equilibrium."
 
-    _metadata = {"code": {"name": "fy_eq"}}  # default plugin
+    code: Code = {"name": "fy_eq"}  # default plugin
 
     ids_properties: IDSProperties
 

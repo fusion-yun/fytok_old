@@ -4,6 +4,7 @@ from copy import copy
 import scipy.constants
 from spdm.data.Expression import Variable, Expression
 from spdm.data.Function import Function
+from spdm.data.sp_property import sp_tree
 from spdm.utils.typing import array_type
 from spdm.utils.tags import _not_found_
 from spdm.numlib.bvp import solve_bvp
@@ -12,11 +13,13 @@ from fytok.modules.CoreSources import CoreSources
 from fytok.modules.CoreTransport import CoreTransport
 from fytok.modules.TransportSolverNumerics import TransportSolverNumerics
 from fytok.modules.Equilibrium import Equilibrium
+from fytok.modules.Utilities import Code
 from fytok.utils.atoms import atoms
 from fytok.utils.logger import logger
 
 
 @TransportSolverNumerics.register(["fy_trans"])
+@sp_tree
 class FyTrans(TransportSolverNumerics):
     r"""
         Solve transport equations $\rho=\sqrt{ \Phi/\pi B_{0}}$
@@ -74,9 +77,9 @@ class FyTrans(TransportSolverNumerics):
                             \left(n_{e}T_{e}V^{\prime\frac{5}{3}}\right)+V^{\prime\frac{2}{3}}\frac{\partial}{\partial\rho}\left(q_{e}+T_{e}\gamma_{e}\right)=
                             V^{\prime\frac{5}{3}}\left[Q_{e,exp}-Q_{e,imp}\cdot T_{e}+Q_{ei}-Q_{\gamma i}\right]
                   $$ transport_electron_temperature
-        """
-
-    _metadata = {"code": {"name": "fy_trans", "version": "0.0.1", "copyright": "Zhi YU@ASIPP"}}
+        """    
+  
+    code: Code = {"name": "fy_trans", "version": "0.0.1"}
 
     def _update_coefficient(
         self,
@@ -579,7 +582,6 @@ class FyTrans(TransportSolverNumerics):
         **inputs,
     ):
         super().execute(current, previous, **inputs)
-
 
         solver_1d, vars, nums_of_unknown = self._update_coefficient(current, previous, **inputs)
 

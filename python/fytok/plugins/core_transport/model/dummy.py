@@ -1,21 +1,19 @@
-
 from fytok.modules.CoreTransport import CoreTransport
 from spdm.data.Path import update_tree
+from spdm.data.sp_property import  sp_tree
 
 
+@sp_tree
 class TransportModelDummy(CoreTransport.Model):
     """
-       Dummy CoreTransport.Model
-       ===============================
+    Dummy CoreTransport.Model
+    ===============================
 
     """
 
-    def __init__(self, d, *args,   **kwargs):
-        super().__init__(update_tree({
-            "identifier": "unspecified",
-            "code": {"name": "dummy",
-                     "description": f"{self.__class__.__name__} Dummy CoreTransport.Model "}}, d),
-            *args, **kwargs)
+    code = {"name": "dummy", "description": f" Dummy CoreTransport.Model "}
+
+    identifier = "unspecified"
 
     def refresh(self, *args, **kwargs) -> float:
         return super().refresh(*args, **kwargs)

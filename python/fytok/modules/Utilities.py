@@ -45,18 +45,21 @@ class Library:
 
 @sp_tree
 class Code:
-    name: str = "N/A"
+    name: str
     commit: str
     version: str
-    copyright: str = "unknown"
+    copyright: str
     repository: str
     parameters: PropertyTree
     output_flag: array_type
     library: List[Library]
 
     def __str__(self) -> str:
+        return f"{self.name}-{self.version or '0.0.0'} [{self.copyright or 'fytok'}]"
+
+    def __repr__(self) -> str:
         desc = {
-            "name": self.name or self._parent.__class__.__name__,
+            "name": self.name,
             "version": self.version,
             "copyright": self.copyright,
         }
@@ -83,28 +86,29 @@ class Module(Actor):
     _plugin_registry = {}
 
     @classmethod
-    def _plugin_guess_name(cls, self, cache, *args, **kwargs) -> str:
+    def _plugin_guess_name(cls, self: Module, cache, *args, **kwargs) -> str:
         pth = Path("code/name")
         plugin_name = (
-            pth.fetch(cache, default_value=None)
-            or pth.fetch(self.__class__._metadata, default_value=None)
-            or pth.fetch(kwargs.get("default_value", _not_found_), default_value=None)
+            Path("code/metadata/default_value/name").get(cls, None)
+            or pth.get(cache, None)
+            or pth.get(self.__class__._metadata, None)
+            or pth.get(kwargs.get("default_value", _not_found_), None)
         )
 
         return plugin_name
 
     def __init__(self, *args, **kwargs):
-        cache, entry, parent, kwargs = self.__class__._parser_args(*args, **kwargs)
-        super().__init__(cache, _entry=entry, _parent=parent, **kwargs)
+        # cache, entry, parent, kwargs = self.__class__._parser_args(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         code = self._metadata.get("code", _not_found_)
         if code is not _not_found_:
             self.code.update(code)
 
+    code: Code
+
     @property
     def tag(self) -> str:
         return f"{FY_JOBID}/{self._plugin_prefix}{self.code.name or self.__class__.__name__.lower()}"
-
-    code: Code
 
     def _repr_svg_(self) -> str:
         return sp_view.display(self.__geometry__(), output="svg")

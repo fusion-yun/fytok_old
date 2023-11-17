@@ -1092,6 +1092,7 @@ class FyEquilibriumTimeSlice(Equilibrium.TimeSlice):
 
 
 @Equilibrium.register(["fy_eq"])
+@sp_tree
 class FyEqAnalyze(Equilibrium):
     """
     Magnetic surface analyze 磁面分析工具
@@ -1107,8 +1108,7 @@ class FyEqAnalyze(Equilibrium):
         - Surface average
 
     """
-
-    _metadata = {"code": {"name": "fy_eq", "version": "0.0.1", "copyright": "Zhi YU@ASIPP"}}
+    code: Code    = {"name": "fy_eq", "version": "0.0.1", "copyright": "Zhi YU@ASIPP"} 
 
     TimeSlice = FyEquilibriumTimeSlice
 

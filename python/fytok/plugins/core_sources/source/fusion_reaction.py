@@ -2,9 +2,11 @@ import typing
 from fytok.utils.atoms import nuclear_reaction
 from fytok.modules.CoreSources import CoreSources
 from spdm.data.Expression import Variable, Expression
+from spdm.data.sp_property import sp_tree
 
 
 @CoreSources.Source.register(["fusion_reaction"])
+@sp_tree
 class FusionReaction(CoreSources.Source):
     """[summary]
 
@@ -47,16 +49,12 @@ class FusionReaction(CoreSources.Source):
     Here $E_{c}$ is the slowing down critical energy. We remind that $E_{c}/E_{\\alpha}=33.05 T_e/E_{\\alpha}$, where $E_{\\alpha}=3500 keV$  is the thirth energy of $\\alpha$ particles.
     """
 
-    _metadata = {
-        "identifier": {
-            "name": "fusion",
-            "index": 13,
-            "description": r"Burning $D + T \rightarrow \alpha$",
-        },
-    }
-    def refresh(self,*args,**kwargs):
-        super().refresh(*args,**kwargs)
-        
+    identifier = "fusion"
+    code = {"name": "fusion_reaction", "description": r"Burning $D + T \rightarrow \alpha$"}
+
+    def refresh(self, *args, **kwargs):
+        super().refresh(*args, **kwargs)
+
     def fetch(self, /, x: Variable, **vars: typing.Dict[str, Expression]) -> CoreSources.Source.TimeSlice:
         res = super().fetch(x=x, **vars)
 

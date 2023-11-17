@@ -8,7 +8,7 @@ from spdm.data.Actor import Actor
 from spdm.data.sp_property import SpTree, sp_property
 from spdm.geometry.GeoObject import GeoObject
 from spdm.utils.tags import _not_found_
-from spdm.data.Path import  update_tree
+from spdm.data.Path import update_tree
 from spdm.utils.uri_utils import uri_split
 
 # ---------------------------------
@@ -56,7 +56,9 @@ class Tokamak(Actor):
 
         cache["dataset_fair"] = {"description": {"entry": entry, "device": device, "shot": shot or 0, "run": run or 0}}
 
-        entry = open_entry([f"{device}://",*entry], shot=shot, run=run, local_schema=device, global_schema=GLOBAL_ONTOLOGY)
+        entry = open_entry(
+            [f"{device}://", *entry], shot=shot, run=run, local_schema=device, global_schema=GLOBAL_ONTOLOGY
+        )
 
         super().__init__(cache, _entry=entry, _parent=parent)
 
@@ -71,12 +73,12 @@ Dataset Description:
 {self.dataset_fair}
 -----------------------------------------------------------------------------------------------------------------------
 Modules:
-    transport_solver        : {self.transport_solver.code.name or 'N/A'}
-    equilibrium             : {self.equilibrium.code.name or 'N/A'}
+    transport_solver        : {self.transport_solver.code }
+    equilibrium             : {self.equilibrium.code }
 
     core_profiles           : N/A             
-    core_transport          : {','.join([s.code.name for s in self.core_transport.model])}
-    core_sources            : {','.join([s.code.name for s in self.core_sources.source])}
+    core_transport          : {','.join([str(s.code) for s in self.core_transport.model])}
+    core_sources            : {','.join([str(s.code)  for s in self.core_sources.source])}
 -----------------------------------------------------------------------------------------------------------------------
 Data source:
     {pprint.pformat(str(self._entry).split(','))}
