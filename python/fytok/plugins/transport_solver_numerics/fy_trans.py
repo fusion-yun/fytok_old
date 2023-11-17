@@ -95,6 +95,7 @@ class FyTrans(TransportSolverNumerics):
         vars = {"x": x}
 
         nums_of_unknown = 0
+        
         for equ in solver_1d.equation:
             identifier = equ.primary_quantity.identifier
             s = equ.primary_quantity.identifier.split("/")

@@ -101,7 +101,7 @@ class EquilibriumGlobalQuantities(equilibrium._T_equilibrium_global_quantities):
     plasma_resistance: float = sp_property(units="ohm")
 
 
-@sp_tree(coordinate1="psi", default_value=np.nan, extrapolate="zeros")
+@sp_tree(coordinate1="psi", extrapolate="zeros")
 class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
     """
     1D profiles of the equilibrium quantities
@@ -111,14 +111,22 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
         - 以psi而不是psi_norm为主坐标,原因是 profiles1d 中涉及对 psi 的求导和积分
     """
 
+ 
+    @property
+    def _root(self) -> Equilibrium.TimeSlice:
+        return self._parent
+
     @sp_property
     def grid(self) -> CoreRadialGrid:
-        coord_grid: CoreRadialGrid = self._parent.coordinate_system.radial_grid
-        if self.psi_norm is _not_found_:
-            self["psi"] = coord_grid.psi
-            return coord_grid
-        else:
-            return coord_grid.remesh(self.psi, label="psi")
+        return CoreRadialGrid(
+            {
+                "psi_norm": self.psi_norm,
+                "psi_axis": self._root.global_quantities.psi_axis,
+                "psi_boundary": self._root.global_quantities.psi_boundary,
+                "rho_tor_norm": self.rho_tor_norm,
+                "rho_tor_boundary": self.rho_tor(self._root.global_quantities.psi_boundary),
+            }
+        )
 
     psi_norm: array_type = sp_property(units="-")
 
@@ -126,9 +134,9 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
     dphi_dpsi: Expression = sp_property(label=r"\frac{d\phi}{d\psi}", units="-")
 
-    phi: Expression = sp_property(units="Wb")
+    phi: Expression = sp_property(units="Wb",label=r"\phi")
 
-    pressure: Expression = sp_property(units="Pa")
+    pressure: Expression = sp_property(units="Pa",label=r"P")
 
     f: Expression = sp_property(units="T.m")
 
@@ -148,11 +156,11 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
     r_outboard: Expression = sp_property(units="m")
 
-    rho_tor: Expression = sp_property(units="m")
+    rho_tor: Expression = sp_property(units="m",label=r"\rho_{tor}")
 
-    rho_tor_norm: Expression
+    rho_tor_norm: Expression= sp_property(units="m",label=r"\bar{\rho_{tor}}")
 
-    dpsi_drho_tor: Expression = sp_property(units="Wb/m")
+    dpsi_drho_tor: Expression = sp_property(units="Wb/m",label=r"\frac{d\psi}{\rho_{tor}}")
 
     @sp_property
     def geometric_axis(self) -> RZTuple:

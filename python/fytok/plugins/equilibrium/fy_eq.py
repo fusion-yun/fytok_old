@@ -650,39 +650,16 @@ class FyEquilibriumGlobalQuantities(Equilibrium.TimeSlice.GlobalQuantities):
         z = opoint.z
         return {"r": r, "z": z, "b_field_tor": self._coord.b_field_tor(r, z)}
 
+
 @sp_tree
 class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
     @property
     def _coord(self) -> FyEquilibriumCoordinateSystem:
         return self._parent.coordinate_system
 
-    @property
-    def _root(self) -> Equilibrium.TimeSlice:
-        return self._parent
+    psi: array_type
 
-    @sp_property
-    def grid(self) -> CoreRadialGrid:
-        return CoreRadialGrid(
-            {
-                "psi_norm": self.psi_norm,
-                "psi_axis": self._root.global_quantities.psi_axis,
-                "psi_boundary": self._root.global_quantities.psi_boundary,
-                "rho_tor_norm": self.rho_tor_norm,
-                "rho_tor_boundary": self.rho_tor(self._root.global_quantities.psi_boundary),
-            }
-        )
-
-    ###############################
-    # 1-D
-    @sp_property
-    def psi_norm(self) -> array_type:
-        return (self.psi - self._root.global_quantities.psi_axis) / (
-            self._root.global_quantities.psi_boundary - self._root.global_quantities.psi_axis
-        )
-
-    psi: array_type  
-
-    # 环向磁通， q
+    psi_norm: array_type
 
     f_df_dpsi: Expression
 
@@ -756,9 +733,8 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
 
     @sp_property
     def darea_dpsi(self) -> Expression:
+        """FIXME: just a simple approximation!"""
         return self.dvolume_dpsi / ((2.0 * scipy.constants.pi) * self._coord._R0)
-
-    """FIXME: just a simple approximation! """
 
     @sp_property
     def darea_drho_tor(self) -> Expression:

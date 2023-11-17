@@ -56,7 +56,7 @@ class Tokamak(Actor):
 
         cache["dataset_fair"] = {"description": {"entry": entry, "device": device, "shot": shot or 0, "run": run or 0}}
 
-        entry = open_entry(entry, shot=shot, run=run, local_schema=device, global_schema=GLOBAL_ONTOLOGY)
+        entry = open_entry([f"{device}://",*entry], shot=shot, run=run, local_schema=device, global_schema=GLOBAL_ONTOLOGY)
 
         super().__init__(cache, _entry=entry, _parent=parent)
 
@@ -227,8 +227,8 @@ Data source:
                 g = o.__geometry__(**kwargs)
 
             except Exception as error:
-                logger.error(f"Can not get {o.__class__.__name__}.__geometry__ ! {error}")
-                # raise RuntimeError(f"Can not get {o.__class__.__name__}.__geometry__ !") from error
+                # logger.error(f"Can not get {o.__class__.__name__}.__geometry__ ! {error}")
+                raise RuntimeError(f"Can not get {o.__class__.__name__}.__geometry__ !") from error
             else:
                 geo[o_name] = g
 

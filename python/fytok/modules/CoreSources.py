@@ -31,7 +31,7 @@ class CoreSourcesNeutral(core_sources._T_core_sources_source_profiles_1d_neutral
     pass
 
 
-@sp_tree(coordinate1="grid/rho_tor_norm", default_value=0)
+@sp_tree(coordinate1="grid/rho_tor_norm")
 class CoreSourcesProfiles1D(core_sources._T_core_sources_source_profiles_1d):
     grid: CoreRadialGrid
     """ Radial grid"""
