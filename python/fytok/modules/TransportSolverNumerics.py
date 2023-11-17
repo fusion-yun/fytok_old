@@ -221,15 +221,14 @@ class TransportSolverNumerics(Module):
 
         if len(current.solver_1d.equation) == 0:
             equations = self.code.parameters.equations
-
-            if equations is None:
-                eq_list = []
-            else:
+            logger.debug(equations._cache)
+            eq_list = []
+            if isinstance(equations,dict):
                 eq_list = [
                     {
                         "primary_quantity": {
                             "identifier": key,
-                            "profile": value.pop("profile", None),
+                            "profile": value,
                         },
                         **value,
                     }
