@@ -64,6 +64,7 @@ class Tokamak(Actor):
 
         # logger.debug(self.brief_summary())
 
+    @property
     def brief_summary(self) -> str:
         return f"""Tokamak simulation : 
 -----------------------------------------------------------------------------------------------------------------------

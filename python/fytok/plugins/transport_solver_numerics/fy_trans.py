@@ -242,8 +242,7 @@ class FyTrans(TransportSolverNumerics):
         if core_transport is not None:
             for model in core_transport.model:
                 logger.debug(model.code.name)
-                trans: CoreTransport.Model.TimeSlice = model.fetch(**vars)
-                trans_1d = trans.profiles_1d
+                trans_1d = model.fetch(**vars).profiles_1d
 
                 for spec, d in coeff.items():
                     d["transp_D"] += trans_1d.get(f"{spec}/particles/d", 0)

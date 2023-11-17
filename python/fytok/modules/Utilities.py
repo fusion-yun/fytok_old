@@ -114,7 +114,7 @@ class Module(Actor):
         return sp_view.display(self.__geometry__(), output="svg")
 
     def execute(self, *args, **kwargs) -> typing.Type[Actor]:
-        logger.debug(f"Execute {self.code.name}[{self.code.version}] class={self.__class__.__name__} ")
+        logger.debug(f"Execute {self._plugin_prefix}{self.code}")
         return super().execute(*args, **kwargs)
 
 
