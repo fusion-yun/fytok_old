@@ -181,47 +181,45 @@ class TransportSolverNumericsTimeSlice(TimeSlice):
 
 
 @sp_tree
-class TransportSolverNumerics(Module):
-    r"""Solve transport equations
-    :math:`\rho=\sqrt{ \Phi/\pi B_{0}}`
-    """
+class TransportSolverNumerics(IDS):
+    r"""Solve transport equations  $\rho=\sqrt{ \Phi/\pi B_{0}}$"""
 
     _plugin_prefix = "fytok.plugins.transport_solver_numerics."
 
-    _metadata = {}  
-
-    code: Code = {"name": "fy_trans"}# default plugin
+    code: Code = {"name": "fy_trans"}
 
     solver: Identifier
 
-    primary_coordinate: Identifier
+    primary_coordinate: Identifier = "rho_tor_norm"  # $\rho_{tor}=\sqrt{ \Phi/\pi B_{0}}$
 
-    TimeSlice = TransportSolverNumericsTimeSlice
+    TimeSlice = TransportSolverNumericsSolver1D
 
-    time_slice: TimeSeriesAoS[TransportSolverNumericsTimeSlice]
+    time_slice: TimeSeriesAoS[TransportSolverNumericsSolver1D]
 
-    def execute(self, current: TimeSlice, previous: TimeSlice | None, **inputs: typing.Tuple[Actor]):
-        boundary_condition = inputs.get("boundary_condition", _not_found_)
+    def pre_process(
+        self,
+        current: TimeSlice,
+        *args,
+        equilibrium: Equilibrium,
+        boundary_condition: dict = None,
+        **kwargs,
+    ):
+        # current = self.time_slice.current
 
         if isinstance(boundary_condition, dict):
-            for equ in current.solver_1d.equation:
+            for equ in current.equation:
                 bc = boundary_condition.get(equ.primary_quantity.identifier, [])
                 for idx, v in enumerate(bc):
                     equ.boundary_condition[idx]["value"] = v
 
-        if current.solver_1d.grid.rho_tor_norm is _not_found_:
-            equilibrium: Equilibrium = inputs.get("equilibrium", _not_found_)
-
-            if equilibrium is _not_found_:
-                raise ValueError(f"Need 'equilibrium'! ")
-
+        if current.grid.rho_tor_norm is _not_found_:
             eq_grid = equilibrium.time_slice.current.profiles_1d.grid
 
             grid = eq_grid.duplicate(self.code.parameters.get("rho_tor_norm", None))
 
-            current.solver_1d["grid"] = grid
+            current["grid"] = grid
 
-        if len(current.solver_1d.equation) == 0:
+        if current.cache_get("equation", _not_found_) is _not_found_:
             equations = self.code.parameters.equations
 
             eq_list = []
@@ -237,7 +235,7 @@ class TransportSolverNumerics(Module):
                     for key, value in equations._cache.items()
                 ]
 
-            current.solver_1d["equation"] = eq_list
+            current["equation"] = eq_list
 
         """
         solve transport equation until residual < tolerance
@@ -261,3 +259,35 @@ class TransportSolverNumerics(Module):
         # equations = update_tree(kwargs.pop("equation", None),equations)
 
         """
+
+    def refresh(
+        self,
+        *args,
+        equilibrium: Equilibrium = None,
+        core_transport: CoreTransport = None,
+        core_sources: CoreSources = None,
+        **kwargs,
+    ):
+        super().refresh(
+            *args,
+            equilibrium=equilibrium,
+            core_sources=core_sources,
+            core_transport=core_transport,
+            **kwargs,
+        )
+
+    def advance(
+        self,
+        *args,
+        equilibrium: Equilibrium = None,
+        core_transport: CoreTransport = None,
+        core_sources: CoreSources = None,
+        **kwargs,
+    ):
+        super().advance(
+            *args,
+            equilibrium=equilibrium,
+            core_sources=core_sources,
+            core_transport=core_transport,
+            **kwargs,
+        )

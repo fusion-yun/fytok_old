@@ -77,8 +77,8 @@ class FyTrans(TransportSolverNumerics):
                             \left(n_{e}T_{e}V^{\prime\frac{5}{3}}\right)+V^{\prime\frac{2}{3}}\frac{\partial}{\partial\rho}\left(q_{e}+T_{e}\gamma_{e}\right)=
                             V^{\prime\frac{5}{3}}\left[Q_{e,exp}-Q_{e,imp}\cdot T_{e}+Q_{ei}-Q_{\gamma i}\right]
                   $$ transport_electron_temperature
-        """    
-  
+        """
+
     code: Code = {"name": "fy_trans", "version": "0.0.1"}
 
     def _update_coefficient(
@@ -89,8 +89,8 @@ class FyTrans(TransportSolverNumerics):
         core_transport: CoreTransport,
         core_sources: CoreSources,
         **others,
-    ) -> typing.Tuple[TransportSolverNumerics.TimeSlice.Solver1D, typing.List[Variable], float]:
-        solver_1d = current.solver_1d
+    ) -> typing.Tuple[TransportSolverNumerics.TimeSlice, typing.List[Variable], float]:
+        solver_1d = current
 
         # 声明变量
         x = Variable(0, "x")
@@ -136,7 +136,7 @@ class FyTrans(TransportSolverNumerics):
             else:
                 one_over_dt = 1.0 / dt
 
-            for equ in previous.solver_1d.equation:
+            for equ in previous.equation:
                 identifier = equ.primary_quantity.identifier
                 vars_m[identifier] = equ.primary_quantity.profile
                 vars_m[f"{identifier}_flux"] = equ.primary_quantity.flux
@@ -578,6 +578,7 @@ class FyTrans(TransportSolverNumerics):
         self,
         current: TransportSolverNumerics.TimeSlice,
         previous: TransportSolverNumerics.TimeSlice | None,
+        *other_slices,
         **inputs,
     ):
         super().execute(current, previous, **inputs)

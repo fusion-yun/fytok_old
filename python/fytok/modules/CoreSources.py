@@ -6,8 +6,10 @@ from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.data.Expression import Expression
 from spdm.utils.tags import _not_found_
 
+from .CoreProfiles import CoreProfiles
 from .Equilibrium import Equilibrium
 from .Utilities import *
+
 from ..ontology import core_sources
 
 
@@ -89,15 +91,10 @@ class CoreSourcesSource(Module):
 
     time_slice: TimeSeriesAoS[CoreSourcesTimeSlice]
 
-    def refresh(self, *args, **kwargs):
-        super().refresh(*args, **kwargs)
-        if (
-            self.time_slice.current.profiles_1d.grid.get("psi_axis", _not_found_) is _not_found_
-            and "equilibrium" in kwargs
-        ):
-            equilibrium: Equilibrium = kwargs["equilibrium"]
-            grid = equilibrium.time_slice.current.profiles_1d.grid.duplicate(kwargs.pop("rho_tor_norm", None))
-            self.time_slice.current.profiles_1d["grid"] = grid
+    def refresh(self, *args, equilibrium: Equilibrium, **kwargs):
+        grid = equilibrium.time_slice.current.profiles_1d.grid.duplicate(kwargs.pop("rho_tor_norm", None))
+
+        super().refresh(*args, {"profiles_1d/grid": grid}, equilibrium=equilibrium, **kwargs)
 
     def fetch(self, /, x: Expression, **vars) -> CoreSourcesTimeSlice:
         res: CoreSourcesTimeSlice = super().fetch(lambda o: o if not isinstance(o, Expression) else o(x))
@@ -138,6 +135,14 @@ class CoreSources(IDS):
 
     source: AoS[CoreSourcesSource]
 
-    def refresh(self, *args, **kwargs):
+    def refresh(self, *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None, **kwargs):
+        super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
+
         for source in self.source:
-            source.refresh(*args, **kwargs)
+            source.refresh(**self._inputs)
+
+    def advance(self, *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None, **kwargs):
+        super().advance(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
+
+        for source in self.source:
+            source.advance(**self._inputs)

@@ -110,11 +110,9 @@ class Module(Actor):
     def tag(self) -> str:
         return f"{FY_JOBID}/{self._plugin_prefix}{self.code.name or self.__class__.__name__.lower()}"
 
-    def _repr_svg_(self) -> str:
-        return sp_view.display(self.__geometry__(), output="svg")
-
     def execute(self, *args, **kwargs) -> typing.Type[Actor]:
-        logger.debug(f"Execute {self._plugin_prefix}{self.code}")
+        if self.code.name is not _not_found_:
+            logger.debug(f"Execute {self._plugin_prefix}{self.code}")
         return super().execute(*args, **kwargs)
 
 
@@ -123,6 +121,25 @@ class IDS(Module):
 
     ids_properties: IDSProperties
     """Interface Data Structure properties. This element identifies the node above as an IDS"""
+
+    def __geometry__(self):
+        return {}, {}
+
+    def _repr_svg_(self) -> str:
+        try:
+            res = sp_view.display(self.__geometry__(), output="svg")
+        except Exception as error:
+            raise RuntimeError(f"{self}") from error
+            # res = None
+        return res
+
+    def _update_inputs(self, *args, **kwargs):
+        args, kwargs = super()._update_inputs(*args, **kwargs)
+
+        for key, value in self._inputs.items():
+            if value is None or value is _not_found_:
+                self._inputs[key] = getattr(self._parent, key, _not_found_)
+        return args, kwargs
 
 
 @sp_tree
