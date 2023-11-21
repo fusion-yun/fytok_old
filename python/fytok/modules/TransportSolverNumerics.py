@@ -27,20 +27,17 @@ class TransportSolverNumericsEquationPrimary:
     identifier: str
     """ Identifier of the primary quantity of the transport equation. The description
         node contains the path to the quantity in the physics IDS (example:
-        core_profiles/profiles_1d/ion(1)/density)"""
-
-    label: str
-
-    profile: array_type
+        core_profiles/profiles_1d/ion/D/density)"""
+    profile: array_type = 0.0
     """ Profile of the primary quantity"""
 
     flux: array_type
     """ Flux of the primary quantity"""
 
-    dflux_dr: typing.Any
+    dflux_dr: Expression
     """ Flux of the primary quantity"""
 
-    d_dr: typing.Any
+    d_dr: Expression
     """ Radial derivative with respect to the primary coordinate"""
 
     d2_dr2: Expression
@@ -60,13 +57,8 @@ class TransportSolverNumericsEquationPrimary:
 
 @sp_tree
 class TransportSolverNumericsEquation:
-    computation_mode: int
-    """
-        Name          Index    Description
-        static            0    Equation is not solved, no profile evolution
-        interpretative    1    Equation is not solved, profile is evolved by interpolating from input objects
-        predictive        2    Equation is solved, profile evolves
-    """
+    primary_quantity: TransportSolverNumericsEquationPrimary
+    """ Profile and derivatives of the primary quantity of the transport equation"""
 
     @sp_tree
     class EquationBC:
@@ -91,13 +83,7 @@ class TransportSolverNumericsEquation:
 
         func: Expression
 
-    rho_tor_norm: array_type
-
-    primary_quantity: TransportSolverNumericsEquationPrimary
-    """ Profile and derivatives of the primary quantity of the transport equation"""
-
     boundary_condition: AoS[EquationBC]
-    """ Set of boundary conditions of the transport equation"""
 
     coefficient: AoS
     """ Set of numerical coefficients involved in the transport equation"""
@@ -107,7 +93,7 @@ class TransportSolverNumericsEquation:
 
 
 @sp_tree(coordinate1="grid/rho_tor_norm")
-class TransportSolverNumericsSolver1D:
+class TransportSolverNumericsTimeSlice(TimeSlice):
     """Numerics related to 1D radial solver for a given time slice"""
 
     Equation = TransportSolverNumericsEquation
@@ -173,45 +159,29 @@ class TransportSolverNumericsBC:
 
 
 @sp_tree
-class TransportSolverNumericsTimeSlice(TimeSlice):
-    Solver1D = TransportSolverNumericsSolver1D
-
-    solver_1d: TransportSolverNumericsSolver1D
-    """ Numerics related to 1D radial solver, for various time slices."""
-
-
-@sp_tree
 class TransportSolverNumerics(IDS):
     r"""Solve transport equations  $\rho=\sqrt{ \Phi/\pi B_{0}}$"""
 
     _plugin_prefix = "fytok.plugins.transport_solver_numerics."
 
-    code: Code = {"name": "fy_trans"}
+    code: Code = {"name": None}
 
     solver: Identifier
 
     primary_coordinate: Identifier = "rho_tor_norm"  # $\rho_{tor}=\sqrt{ \Phi/\pi B_{0}}$
 
-    TimeSlice = TransportSolverNumericsSolver1D
+    TimeSlice = TransportSolverNumericsTimeSlice
 
-    time_slice: TimeSeriesAoS[TransportSolverNumericsSolver1D]
+    time_slice: TimeSeriesAoS[TransportSolverNumericsTimeSlice]
 
-    def pre_process(
+    def execute(
         self,
         current: TimeSlice,
         *args,
         equilibrium: Equilibrium,
-        boundary_condition: dict = None,
         **kwargs,
     ):
         # current = self.time_slice.current
-
-        if isinstance(boundary_condition, dict):
-            for equ in current.equation:
-                bc = boundary_condition.get(equ.primary_quantity.identifier, [])
-                for idx, v in enumerate(bc):
-                    equ.boundary_condition[idx]["value"] = v
-
         if current.grid.rho_tor_norm is _not_found_:
             eq_grid = equilibrium.time_slice.current.profiles_1d.grid
 
@@ -219,23 +189,27 @@ class TransportSolverNumerics(IDS):
 
             current["grid"] = grid
 
-        if current.cache_get("equation", _not_found_) is _not_found_:
-            equations = self.code.parameters.equations
+        # if current.cache_get("equation", _not_found_) is _not_found_ or len(current.equation) == 0:
+        #     equations = self.code.parameters.equations
 
-            eq_list = []
-            if isinstance(equations, dict):
-                eq_list = [
-                    {
-                        "primary_quantity": {
-                            "identifier": key,
-                            "profile": value,
-                        },
-                        **value,
-                    }
-                    for key, value in equations._cache.items()
-                ]
+        #     eq_list = []
 
-            current["equation"] = eq_list
+        #     eq_list = [
+        #         {
+        #             "identifier": key,
+        #             "primary_quantity": {"profile": value},
+        #             **value,
+        #         }
+        #         for key, value in equations._cache.items()
+        #     ]
+
+        #     current["equation"] = eq_list
+
+        # if isinstance(boundary_condition, dict):
+        #     for equ in current.equation:
+        #         bc = boundary_condition.get(equ.primary_quantity.identifier, [])
+        #         for idx, v in enumerate(bc):
+        #             equ.boundary_condition[idx]["value"] = v
 
         """
         solve transport equation until residual < tolerance
@@ -260,6 +234,48 @@ class TransportSolverNumerics(IDS):
 
         """
 
+    def parser_arguments(self, *args, **kwargs) -> typing.Tuple[typing.Any]:
+        args, kwargs = super().parser_arguments(*args, **kwargs)
+
+        equilibrium: Equilibrium = self._inputs["equilibrium"]
+
+        rho_tor_norm = kwargs.pop("rho_tor_norm", _not_found_)
+
+        if rho_tor_norm is _not_found_:
+            rho_tor_norm = self.code.parameters.get("rho_tor_norm", None)
+
+        previous = self.time_slice.previous
+
+        if previous is not _not_found_:
+            grid = previous.grid.duplicate(rho_tor_norm)
+            # equation_s = previous.equation
+
+        else:
+            grid = equilibrium.time_slice.current.profiles_1d.grid.duplicate(rho_tor_norm)
+            # equation_s = self.code.parameters.equation
+
+        # equation = [
+        #     {
+        #         "primary_quantity": {
+        #             "identifier": equ.primary_quantity.identifier,
+        #             "profile": equ.primary_quantity.profile,
+        #         },
+        #         "boundary_condition": [
+        #             {
+        #                 "identifier": equ.boundary_condition[0].identifier,
+        #                 "value": equ.boundary_condition[0].value,
+        #             },
+        #             {
+        #                 "identifier": equ.boundary_condition[1].identifier,
+        #                 "value": equ.boundary_condition[1].value,
+        #             },
+        #         ],
+        #     }
+        #     for equ in equation_s
+        # ]
+
+        return [*args, {"grid": grid}], kwargs
+
     def refresh(
         self,
         *args,
@@ -271,8 +287,8 @@ class TransportSolverNumerics(IDS):
         super().refresh(
             *args,
             equilibrium=equilibrium,
-            core_sources=core_sources,
             core_transport=core_transport,
+            core_sources=core_sources,
             **kwargs,
         )
 
@@ -285,9 +301,5 @@ class TransportSolverNumerics(IDS):
         **kwargs,
     ):
         super().advance(
-            *args,
-            equilibrium=equilibrium,
-            core_sources=core_sources,
-            core_transport=core_transport,
-            **kwargs,
+            *args, equilibrium=equilibrium, core_sources=core_sources, core_transport=core_transport, **kwargs
         )

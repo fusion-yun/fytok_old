@@ -241,7 +241,6 @@ class FyTrans(TransportSolverNumerics):
 
         if core_transport is not None:
             for model in core_transport.model:
-                logger.debug(model.code.name)
                 trans_1d = model.fetch(**vars).profiles_1d
 
                 for spec, d in coeff.items():
@@ -305,6 +304,7 @@ class FyTrans(TransportSolverNumerics):
 
         for equ in solver_1d.equation:
             identifier = equ.primary_quantity.identifier
+
             var_name = identifier.split("/")
 
             quantity_name = var_name[-1]
@@ -554,23 +554,23 @@ class FyTrans(TransportSolverNumerics):
 
             equ["coefficient"] = [a, b, c, d, e, f, g] + bc
 
-            a, b, c, d, e, f, g, (u0, v0, w0), (u1, v1, w1) = equ.coefficient
+            # a, b, c, d, e, f, g, (u0, v0, w0), (u1, v1, w1) = equ.coefficient
 
-            y = vars[equ.primary_quantity.identifier]
+            y = vars[identifier]
 
-            flux = vars[equ.primary_quantity.identifier + "_flux"]
+            flux = vars[identifier + "_flux"]
 
             ym = vars_m.get(identifier, 0)
 
-            equ.primary_quantity["d_dr"] = (-flux + e * y + hyper_diff * y.d) / (d + hyper_diff)
+            equ.primary_quantity["d_dr"] = dy_dr = (-flux + e * y + hyper_diff * y.d) / (d + hyper_diff)
 
             equ.primary_quantity["d_dt"] = dy_dt = (a * y - b * ym) * one_over_dt
 
             equ.primary_quantity["dflux_dr"] = (f - g * y - dy_dt + hyper_diff * flux.d) / (1.0 / c + hyper_diff)
 
-            equ.boundary_condition[0]["func"] = u0 * y + v0 * flux - w0
+            equ.boundary_condition[0]["func"] = bc[0][0] * y + bc[0][1] * flux - bc[0][2]
 
-            equ.boundary_condition[1]["func"] = u1 * y + v1 * flux - w1
+            equ.boundary_condition[1]["func"] = bc[1][0] * y + bc[1][1] * flux - bc[1][2]
 
         return solver_1d, vars, nums_of_unknown
 
@@ -591,6 +591,9 @@ class FyTrans(TransportSolverNumerics):
 
         x = solver_1d.grid.rho_tor_norm
 
+        rho_tor_norm_axis = x[0]
+        rho_tor_norm_bdry = x[-1]
+
         Y0 = np.zeros([nums_of_unknown, len(x)])
 
         for idx, equ in enumerate(solver_1d.equation):
@@ -607,74 +610,29 @@ class FyTrans(TransportSolverNumerics):
             if np.any(np.isnan(Y0[idx * 2 + 1])):
                 logger.error((equ.primary_quantity.identifier, d))
 
+        equ_list = []
+        bc_list = []
+        for equ in solver_1d.equation:
+            equ_list.append(equ.primary_quantity.d_dr)
+            equ_list.append(equ.primary_quantity.dflux_dr)
+            bc_list.append(equ.boundary_condition[0].func)
+            bc_list.append(equ.boundary_condition[1].func)
+
         def func(x: array_type, y: array_type, *args) -> array_type:
-            # TODO: 需要加速
+            res = np.zeros([len(equ_list),x.size])
 
-            res = []
-            for equ in solver_1d.equation:
+            for idx, equ in enumerate(equ_list):
                 try:
-                    dydr = equ.primary_quantity.d_dr
-                    if callable(dydr):
-                        value = dydr(x, *y, *args)
-                    else:
-                        value = np.full_like(x, dydr)
+                    res[idx] = equ(x, *y, *args)
                 except Exception as error:
                     raise RuntimeError(
-                        f"Error when apply  dydr={equ.primary_quantity.d_dr.__repr__()}  x={x} args={(y)}  !"
+                        f"Failure to calculate the equation of {solver_1d.equation[int(idx/2)].primary_quantity.identifier}{'_flux' if int(idx/2)*2!=idx else ''} {equ._repr_latex_()} x={x} args={(y)}  !"
                     ) from error
-                else:
-                    if np.any(np.isnan(value)):
-                        a, b, c, d, e, f, g, *_ = equ.coefficient
-                        raise RuntimeError(
-                            (
-                                equ.primary_quantity.identifier,
-                                equ.primary_quantity.d_dr,
-                                value,
-                                d(x, *y),
-                                e(x, *y),
-                                f(x, *y),
-                                g(x, *y),
-                            )
-                        )
-                    else:
-                        res.append(value)
 
-                try:
-                    dfluxdr = equ.primary_quantity.dflux_dr
-                    if callable(dfluxdr):
-                        value = dfluxdr(x, *y, *args)
-                    else:
-                        value = np.full_like(x, dfluxdr)
-                except Exception as error:
-                    raise RuntimeError(
-                        f"Error when apply  dflux_dr={equ.primary_quantity.dflux_dr.__repr__()} x={x} args={(y)} !"
-                    ) from error
-                else:
-                    if np.any(np.isnan(value)):
-                        a, b, c, d, e, f, g, *_ = equ.coefficient
-                        raise RuntimeError(
-                            (
-                                equ.primary_quantity.identifier,
-                                equ.primary_quantity.dflux_dr,
-                                value,
-                                d(x, *y),
-                                e(x, *y),
-                                f(x, *y),
-                                g(x, *y),
-                            )
-                        )
-                    else:
-                        res.append(value)
-
-            res = np.stack(res)
             return res
 
         def bc(ya: array_type, yb: array_type, *args) -> array_type:
-            res = []
-            for eq in solver_1d.equation:
-                res.append(eq.boundary_condition[0].func(x[0], *ya))
-                res.append(eq.boundary_condition[1].func(x[-1], *yb))
-            return np.array(res)
+            return np.array([bc(rho_tor_norm_axis, *ya, *args) if idx % 2 == 0 else bc(rho_tor_norm_bdry, *yb, *args) for bc in enumerate(bc_list)])
 
         sol = solve_bvp(
             func,

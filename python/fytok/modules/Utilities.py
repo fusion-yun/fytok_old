@@ -89,10 +89,9 @@ class Module(Actor):
     def _plugin_guess_name(cls, self: Module, cache, *args, **kwargs) -> str:
         pth = Path("code/name")
         plugin_name = (
-            Path("code/metadata/default_value/name").get(cls, None)
-            or pth.get(cache, None)
-            or pth.get(self.__class__._metadata, None)
+            pth.get(cache, None)
             or pth.get(kwargs.get("default_value", _not_found_), None)
+            or Path("code/metadata/default_value/name").get(cls, None)
         )
 
         return plugin_name
@@ -133,8 +132,8 @@ class IDS(Module):
             # res = None
         return res
 
-    def _update_inputs(self, *args, **kwargs):
-        args, kwargs = super()._update_inputs(*args, **kwargs)
+    def parser_arguments(self, *args, **kwargs):
+        args, kwargs = super().parser_arguments(*args, **kwargs)
 
         for key, value in self._inputs.items():
             if value is None or value is _not_found_:
@@ -215,13 +214,12 @@ class CoreRadialGrid:
     psi_axis: float
     psi_boundary: float
     psi_norm: array_type
+    rho_tor_boundary: float
+    rho_tor_norm: array_type
 
     @sp_property
     def psi(self) -> array_type:
         return self.psi_norm * (self.psi_boundary - self.psi_axis) + self.psi_axis
-
-    rho_tor_boundary: float
-    rho_tor_norm: array_type
 
     @sp_property
     def rho_tor(self) -> array_type:

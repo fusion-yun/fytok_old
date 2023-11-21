@@ -98,12 +98,10 @@ class CoreTransportModel(Module):
 
     time_slice: TimeSeriesAoS[CoreTransportTimeSlice]
 
-    def refresh(self, *args, **kwargs):
-        super().refresh(*args, **kwargs)
-        if self.time_slice.current.profiles_1d.get("grid", _not_found_) is _not_found_ and "equilibrium" in kwargs:
-            equilibrium: Equilibrium = kwargs["equilibrium"]
-            grid = copy(equilibrium.time_slice.current.profiles_1d.grid).remesh(kwargs.pop("rho_tor_norm", None))
-            self.time_slice.current.profiles_1d["grid_d"] = grid
+    def refresh(self, *args, equilibrium: Equilibrium, **kwargs):
+        grid = equilibrium.time_slice.current.profiles_1d.grid.duplicate(self.code.parameters.get("rho_tor_norm", None))
+
+        super().refresh(*args, {"profiles_1d/grid_d": grid}, equilibrium=equilibrium, **kwargs)
 
 
 @sp_tree
@@ -112,11 +110,27 @@ class CoreTransport(core_transport._T_core_transport):
 
     model: AoS[CoreTransportModel]
 
-    def refresh(self, *args, **kwargs):
-        for model in self.model:
-            model.refresh(*args, **kwargs)
+    def refresh(
+        self,
+        *args,
+        equilibrium: Equilibrium = None,
+        core_profiles: CoreProfiles = None,
+        **kwargs,
+    ):
+        super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
-    def advance(self, *args, **kwargs):
-        """advance time_series to next slice"""
         for model in self.model:
-            model.advance(*args, **kwargs)
+            model.refresh(time=self.time, **self._inputs)
+
+    def advance(
+        self,
+        *args,
+        equilibrium: Equilibrium = None,
+        core_profiles: CoreProfiles = None,
+        **kwargs,
+    ):
+        """advance time_series to next slice"""
+        super().advance(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
+
+        for model in self.model:
+            model.advance(time=self.time, **self._inputs)

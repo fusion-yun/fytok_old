@@ -1,15 +1,13 @@
-import typing
-from copy import copy
 import pprint
 
-from spdm.data.Entry import PROTOCOL_LIST, open_entry
+from spdm.data.Entry import open_entry
 from spdm.data.HTree import HTree
 from spdm.data.Actor import Actor
-from spdm.data.sp_property import SpTree, sp_property
+from spdm.data.sp_property import sp_property
 from spdm.geometry.GeoObject import GeoObject
 from spdm.utils.tags import _not_found_
 from spdm.data.Path import update_tree
-from spdm.utils.uri_utils import uri_split
+from spdm.view import View as sp_view
 
 # ---------------------------------
 from .modules.DatasetFAIR import DatasetFAIR
@@ -146,65 +144,27 @@ Data source:
     def refresh(self, *args, **kwargs) -> None:
         super().refresh(*args, **kwargs)
 
-        self.equilibrium.refresh(time=self.time)
+        self.equilibrium.refresh(time=self.time, **self._inputs)
 
-        self.core_sources.refresh(time=self.time)
+        self.core_sources.refresh(time=self.time, **self._inputs)
 
-        self.core_transport.refresh(time=self.time)
+        self.core_transport.refresh(time=self.time, **self._inputs)
 
-        self.transport_solver.refresh(time=self.time)
+    def update_core_profiles(self, *args, **kwargs) -> None:
+        self.refresh()
 
-    def update_core_profiles(self, *args, boundary_condition=None, **kwargs) -> None:
-        assert self.transport_solver is not _not_found_, "transport_solver is not initialized !"
+        self.transport_solver.refresh(*args, time=self.time, **kwargs)
 
-        self.equilibrium.refresh(time=self.time, core_profiles=self.core_profiles)
-
-        self.core_sources.refresh(time=self.time, equilibrium=self.equilibrium, core_profiles=self.core_profiles)
-
-        self.core_transport.refresh(time=self.time, equilibrium=self.equilibrium, core_profiles=self.core_profiles)
-
-        self.transport_solver.refresh(
-            boundary_condition=boundary_condition,
-            equilibrium=self.equilibrium,
-            core_profiles=self.core_profiles,
-            core_transport=self.core_transport,
-            core_sources=self.core_sources,
-        )
-
-        # trans_solver_1d: TransportSolverNumerics.TimeSlice.Solver1D = self.transport_solver.fetch().solver_1d
+        trans_solver_1d: TransportSolverNumerics.TimeSlice = self.transport_solver.fetch()
 
         # self.core_profiles.refresh({"time": self.time, "profiles_1d": {"grid": trans_solver_1d.grid}})
 
-        # core_profiles_1d = self.core_profiles.time_slice.current.profiles_1d
+        core_profiles_1d = self.core_profiles.time_slice.current.profiles_1d
 
-        # for equ in trans_solver_1d.equation:
-        #     core_profiles_1d[equ.primary_quantity.identifier] = equ.primary_quantity.profile
+        for equ in trans_solver_1d.equation:
+            core_profiles_1d[equ.primary_quantity.identifier] = equ.primary_quantity.profile
 
     def __geometry__(self, **kwargs) -> GeoObject:
-        # # fmt:off
-        # geo = {
-        #     "wall"          : self.wall.__geometry__(view=view, **kwargs),
-        #     "tf"            : self.tf.__geometry__(view=view, **kwargs),
-        #     "pf_active"     : self.pf_active.__geometry__(view=view, **kwargs),
-        #     "magnetics"     : self.magnetics.__geometry__(view=view, **kwargs),
-
-        #     ##################
-        #     "ec_launchers"  : self.ec_launchers.__geometry__(view=view, **kwargs),
-        #     "ic_antennas"   : self.ic_antennas.__geometry__(view=view, **kwargs),
-        #     "lh_antennas"   : self.lh_antennas.__geometry__(view=view, **kwargs),
-        #     "nbi"           : self.nbi.__geometry__(view=view, **kwargs),
-        #     "pellets"       : self.pellets.__geometry__(view=view, **kwargs),
-        #     "interferometer": self.interferometer.__geometry__(view=view, **kwargs),
-
-        # }
-        #     ##################
-        # try:
-        #     geo[ "equilibrium" ]  = self.equilibrium.__geometry__(view=view, **kwargs)
-        # except Exception as error:
-        #     logger.error(error)
-        #     pass
-        # # fmt:on
-
         geo = {}
         styles = {}
 
@@ -230,8 +190,8 @@ Data source:
                 g = o.__geometry__(**kwargs)
 
             except Exception as error:
-                # logger.error(f"Can not get {o.__class__.__name__}.__geometry__ ! {error}")
-                raise RuntimeError(f"Can not get {o.__class__.__name__}.__geometry__ !") from error
+                logger.error(f"Can not get {o.__class__.__name__}.__geometry__ ! {error}")
+                # raise RuntimeError(f"Can not get {o.__class__.__name__}.__geometry__ !") from error
             else:
                 geo[o_name] = g
 
@@ -244,6 +204,14 @@ Data source:
         styles["title"] = kwargs.pop("title", None) or self.title
 
         return geo, styles
+
+    def _repr_svg_(self):
+        try:
+            res = sp_view.display(self.__geometry__(), output="svg")
+        except Exception as error:
+            raise RuntimeError(f"{self}") from error
+            # res = None
+        return res
 
     # def plot(self, axis=None, /,  **kwargs):
     #     import matplotlib.pylab as plt

@@ -92,7 +92,7 @@ class CoreSourcesSource(Module):
     time_slice: TimeSeriesAoS[CoreSourcesTimeSlice]
 
     def refresh(self, *args, equilibrium: Equilibrium, **kwargs):
-        grid = equilibrium.time_slice.current.profiles_1d.grid.duplicate(kwargs.pop("rho_tor_norm", None))
+        grid = equilibrium.time_slice.current.profiles_1d.grid.duplicate(self.code.parameters.get("rho_tor_norm", None))
 
         super().refresh(*args, {"profiles_1d/grid": grid}, equilibrium=equilibrium, **kwargs)
 
@@ -139,10 +139,10 @@ class CoreSources(IDS):
         super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
         for source in self.source:
-            source.refresh(**self._inputs)
+            source.refresh(time=self.time, **self._inputs)
 
     def advance(self, *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None, **kwargs):
         super().advance(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
         for source in self.source:
-            source.advance(**self._inputs)
+            source.advance(time=self.time, **self._inputs)
