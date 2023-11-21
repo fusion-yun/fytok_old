@@ -97,11 +97,13 @@ class Module(Actor):
         return plugin_name
 
     def __init__(self, *args, **kwargs):
-        # cache, entry, parent, kwargs = self.__class__._parser_args(*args, **kwargs)
         super().__init__(*args, **kwargs)
         code = self._metadata.get("code", _not_found_)
         if code is not _not_found_:
             self.code.update(code)
+
+        for name, edge in self.inputs.items():
+            edge.source.update(getattr(self._parent, name, _not_found_))
 
     code: Code
 
@@ -131,14 +133,6 @@ class IDS(Module):
             raise RuntimeError(f"{self}") from error
             # res = None
         return res
-
-    def parser_arguments(self, *args, **kwargs):
-        args, kwargs = super().parser_arguments(*args, **kwargs)
-
-        for key, value in self._inputs.items():
-            if value is None or value is _not_found_:
-                self._inputs[key] = getattr(self._parent, key, _not_found_)
-        return args, kwargs
 
 
 @sp_tree

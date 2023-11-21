@@ -144,25 +144,11 @@ Data source:
     def refresh(self, *args, **kwargs) -> None:
         super().refresh(*args, **kwargs)
 
-        self.equilibrium.refresh(time=self.time, **self._inputs)
+        self.equilibrium.refresh(time=self.time, **self._inputs.fetch())
 
-        self.core_sources.refresh(time=self.time, **self._inputs)
+        self.core_sources.refresh(time=self.time, **self._inputs.fetch())
 
-        self.core_transport.refresh(time=self.time, **self._inputs)
-
-    def update_core_profiles(self, *args, **kwargs) -> None:
-        self.refresh()
-
-        self.transport_solver.refresh(*args, time=self.time, **kwargs)
-
-        trans_solver_1d: TransportSolverNumerics.TimeSlice = self.transport_solver.fetch()
-
-        # self.core_profiles.refresh({"time": self.time, "profiles_1d": {"grid": trans_solver_1d.grid}})
-
-        core_profiles_1d = self.core_profiles.time_slice.current.profiles_1d
-
-        for equ in trans_solver_1d.equation:
-            core_profiles_1d[equ.primary_quantity.identifier] = equ.primary_quantity.profile
+        self.core_transport.refresh(time=self.time, **self._inputs.fetch())
 
     def __geometry__(self, **kwargs) -> GeoObject:
         geo = {}

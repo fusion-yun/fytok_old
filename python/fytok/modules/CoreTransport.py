@@ -99,9 +99,13 @@ class CoreTransportModel(Module):
     time_slice: TimeSeriesAoS[CoreTransportTimeSlice]
 
     def refresh(self, *args, equilibrium: Equilibrium, **kwargs):
-        grid = equilibrium.time_slice.current.profiles_1d.grid.duplicate(self.code.parameters.get("rho_tor_norm", None))
+        super().refresh(*args, equilibrium=equilibrium, **kwargs)
 
-        super().refresh(*args, {"profiles_1d/grid_d": grid}, equilibrium=equilibrium, **kwargs)
+        # current = self.time_slice.current.profiles_1d
+        # if current.cache_get("grid", _not_found_) is _not_found_:
+        #     equilibrium: Equilibrium = self._inputs.get("equilibrium")
+        #     rho_tor_norm = self.code.parameters.get("rho_tor_norm", None)
+        #     current["grid"] = equilibrium.time_slice.current.profiles_1d.grid.duplicate(rho_tor_norm)
 
 
 @sp_tree

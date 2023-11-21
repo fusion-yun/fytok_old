@@ -34,23 +34,23 @@ class TransportSolverNumericsEquationPrimary:
     flux: array_type
     """ Flux of the primary quantity"""
 
-    dflux_dr: Expression
-    """ Flux of the primary quantity"""
-
-    d_dr: Expression
+    d_dr: Expression | array_type
     """ Radial derivative with respect to the primary coordinate"""
 
-    d2_dr2: Expression
+    dflux_dr: Expression | array_type
+    """ Radial derivative of Flux of the primary quantity"""
+
+    d2_dr2: Expression | array_type
     """ Second order radial derivative with respect to the primary coordinate"""
 
-    d_dt: Expression
+    d_dt: Expression | array_type
     """ Time derivative"""
 
-    d_dt_cphi: Expression
+    d_dt_cphi: Expression | array_type
     """ Derivative with respect to time, at constant toroidal flux (for current
         diffusion equation)"""
 
-    d_dt_cr: Expression
+    d_dt_cr: Expression | array_type
     """ Derivative with respect to time, at constant primary coordinate coordinate (for
         current diffusion equation)"""
 
@@ -170,69 +170,11 @@ class TransportSolverNumerics(IDS):
 
     primary_coordinate: Identifier = "rho_tor_norm"  # $\rho_{tor}=\sqrt{ \Phi/\pi B_{0}}$
 
+    equations: AoS[TransportSolverNumericsEquation]
+
     TimeSlice = TransportSolverNumericsTimeSlice
 
     time_slice: TimeSeriesAoS[TransportSolverNumericsTimeSlice]
-
-    def execute(
-        self,
-        current: TimeSlice,
-        *args,
-        equilibrium: Equilibrium,
-        **kwargs,
-    ):
-        # current = self.time_slice.current
-        if current.grid.rho_tor_norm is _not_found_:
-            eq_grid = equilibrium.time_slice.current.profiles_1d.grid
-
-            grid = eq_grid.duplicate(self.code.parameters.get("rho_tor_norm", None))
-
-            current["grid"] = grid
-
-        # if current.cache_get("equation", _not_found_) is _not_found_ or len(current.equation) == 0:
-        #     equations = self.code.parameters.equations
-
-        #     eq_list = []
-
-        #     eq_list = [
-        #         {
-        #             "identifier": key,
-        #             "primary_quantity": {"profile": value},
-        #             **value,
-        #         }
-        #         for key, value in equations._cache.items()
-        #     ]
-
-        #     current["equation"] = eq_list
-
-        # if isinstance(boundary_condition, dict):
-        #     for equ in current.equation:
-        #         bc = boundary_condition.get(equ.primary_quantity.identifier, [])
-        #         for idx, v in enumerate(bc):
-        #             equ.boundary_condition[idx]["value"] = v
-
-        """
-        solve transport equation until residual < tolerance
-        # ions = self.code.parameters.get("ions", [])
-        # # fmt:off
-        # equations = {
-        #     "psi"                          :{                      "boundary_condition": []},
-        #     "electrons.density_thermal"    :{"profile": 3.0e19,    "boundary_condition": [{"identifier": {"index": 4}, "value": [0]}, {"identifier": {"index": 1}, "value": [3.0e19]}]},
-        #     "electrons.density_fast"       :{                      "boundary_condition": []},
-        #     "electrons.temperature"        :{                      "boundary_condition": []},
-        #     "electrons.momentum"           :{                      "boundary_condition": []},
-        # }
-        # for label in ions:
-        #     update_tree(equations, None, {
-        #     f"ion.{label}.density_thermal" :{"profile": 3.0e19,    "boundary_condition": []},
-        #     f"ion.{label}.temperature"     :{                      "boundary_condition": []},
-        #     f"ion.{label}.density_fast"    :{                      "boundary_condition": []},
-        #     f"ion.{label}.temperature"     :{                      "boundary_condition": []},
-        #     f"ion.{label}.momentum"        :{                      "boundary_condition": []},
-        #     })
-        # equations = update_tree(kwargs.pop("equation", None),equations)
-
-        """
 
     def parser_arguments(self, *args, **kwargs) -> typing.Tuple[typing.Any]:
         args, kwargs = super().parser_arguments(*args, **kwargs)
@@ -248,11 +190,9 @@ class TransportSolverNumerics(IDS):
 
         if previous is not _not_found_:
             grid = previous.grid.duplicate(rho_tor_norm)
-            # equation_s = previous.equation
 
         else:
             grid = equilibrium.time_slice.current.profiles_1d.grid.duplicate(rho_tor_norm)
-            # equation_s = self.code.parameters.equation
 
         # equation = [
         #     {
@@ -275,6 +215,9 @@ class TransportSolverNumerics(IDS):
         # ]
 
         return [*args, {"grid": grid}], kwargs
+
+    def execute(self, current: TimeSlice, *args, **kwargs):
+        pass
 
     def refresh(
         self,
@@ -301,5 +244,9 @@ class TransportSolverNumerics(IDS):
         **kwargs,
     ):
         super().advance(
-            *args, equilibrium=equilibrium, core_sources=core_sources, core_transport=core_transport, **kwargs
+            *args,
+            equilibrium=equilibrium,
+            core_sources=core_sources,
+            core_transport=core_transport,
+            **kwargs,
         )

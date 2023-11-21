@@ -562,7 +562,7 @@ class FyTrans(TransportSolverNumerics):
 
             ym = vars_m.get(identifier, 0)
 
-            equ.primary_quantity["d_dr"] = dy_dr = (-flux + e * y + hyper_diff * y.d) / (d + hyper_diff)
+            equ.primary_quantity["d_dr"] =  (-flux + e * y + hyper_diff * y.d) / (d + hyper_diff)
 
             equ.primary_quantity["d_dt"] = dy_dt = (a * y - b * ym) * one_over_dt
 
@@ -612,27 +612,51 @@ class FyTrans(TransportSolverNumerics):
 
         equ_list = []
         bc_list = []
-        for equ in solver_1d.equation:
+        for equ in self.equations:
             equ_list.append(equ.primary_quantity.d_dr)
             equ_list.append(equ.primary_quantity.dflux_dr)
             bc_list.append(equ.boundary_condition[0].func)
             bc_list.append(equ.boundary_condition[1].func)
 
         def func(x: array_type, y: array_type, *args) -> array_type:
-            res = np.zeros([len(equ_list),x.size])
+            res = np.zeros([len(equ_list), x.size])
 
-            for idx, equ in enumerate(equ_list):
+            for idx, equ in enumerate(solver_1d.equation):
                 try:
-                    res[idx] = equ(x, *y, *args)
+                    res[idx*2] = equ.primary_quantity.d_dr(x,*y,*args)
+                    res[idx*2+1] = equ.primary_quantity.dflux_dr(x,*y,*args)
                 except Exception as error:
+                    a, b, c, d, e, f, g, *_ = equ.coefficient
+                    logger.error(
+                        (
+                            equ.primary_quantity.identifier,
+                            equ.primary_quantity.d_dr,
+                            equ.primary_quantity.dflux_dr,
+                            d(x, *y),
+                            e(x, *y),
+                            f(x, *y),
+                            g(x, *y),
+                            x,
+                            *y,
+                        )
+                    )
+
                     raise RuntimeError(
-                        f"Failure to calculate the equation of {solver_1d.equation[int(idx/2)].primary_quantity.identifier}{'_flux' if int(idx/2)*2!=idx else ''} {equ._repr_latex_()} x={x} args={(y)}  !"
+                        f"Failure to calculate the equation of {solver_1d.equation[int(idx/2)].primary_quantity.identifier}{'_flux' if int(idx/2)*2!=idx else ''} {equ._repr_latex_()}   !"
                     ) from error
 
             return res
 
+        # def func(x: array_type, y: array_type, *args) -> array_type:
+        #     return  np.array( [equ(x, *y, *args) for  equ in equ_list])
+
         def bc(ya: array_type, yb: array_type, *args) -> array_type:
-            return np.array([bc(rho_tor_norm_axis, *ya, *args) if idx % 2 == 0 else bc(rho_tor_norm_bdry, *yb, *args) for bc in enumerate(bc_list)])
+            return np.array(
+                [
+                    bc(rho_tor_norm_axis, *ya, *args) if idx % 2 == 0 else bc(rho_tor_norm_bdry, *yb, *args)
+                    for idx, bc in enumerate(bc_list)
+                ]
+            )
 
         sol = solve_bvp(
             func,
