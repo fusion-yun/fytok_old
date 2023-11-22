@@ -85,10 +85,10 @@ class FyTrans(TransportSolverNumerics):
         self,
         current: TransportSolverNumerics.TimeSlice,
         previous: TransportSolverNumerics.TimeSlice | None,
+        *args,
         equilibrium: Equilibrium,
         core_transport: CoreTransport,
         core_sources: CoreSources,
-        **others,
     ) -> typing.Tuple[TransportSolverNumerics.TimeSlice, typing.List[Variable], float]:
         solver_1d = current
 
@@ -562,7 +562,7 @@ class FyTrans(TransportSolverNumerics):
 
             ym = vars_m.get(identifier, 0)
 
-            equ.primary_quantity["d_dr"] =  (-flux + e * y + hyper_diff * y.d) / (d + hyper_diff)
+            equ.primary_quantity["d_dr"] = (-flux + e * y + hyper_diff * y.d) / (d + hyper_diff)
 
             equ.primary_quantity["d_dt"] = dy_dt = (a * y - b * ym) * one_over_dt
 
@@ -623,8 +623,8 @@ class FyTrans(TransportSolverNumerics):
 
             for idx, equ in enumerate(solver_1d.equation):
                 try:
-                    res[idx*2] = equ.primary_quantity.d_dr(x,*y,*args)
-                    res[idx*2+1] = equ.primary_quantity.dflux_dr(x,*y,*args)
+                    res[idx * 2] = equ.primary_quantity.d_dr(x, *y, *args)
+                    res[idx * 2 + 1] = equ.primary_quantity.dflux_dr(x, *y, *args)
                 except Exception as error:
                     a, b, c, d, e, f, g, *_ = equ.coefficient
                     logger.error(
@@ -632,17 +632,17 @@ class FyTrans(TransportSolverNumerics):
                             equ.primary_quantity.identifier,
                             equ.primary_quantity.d_dr,
                             equ.primary_quantity.dflux_dr,
-                            d(x, *y),
-                            e(x, *y),
-                            f(x, *y),
-                            g(x, *y),
+                            d(x, *y) if callable(d) else d,
+                            e(x, *y) if callable(e) else e,
+                            f(x, *y) if callable(f) else f,
+                            g(x, *y) if callable(g) else g,
                             x,
                             *y,
                         )
                     )
 
                     raise RuntimeError(
-                        f"Failure to calculate the equation of {solver_1d.equation[int(idx/2)].primary_quantity.identifier}{'_flux' if int(idx/2)*2!=idx else ''} {equ._repr_latex_()}   !"
+                        f"Failure to calculate the equation of {solver_1d.equation[int(idx/2)].primary_quantity.identifier}{'_flux' if int(idx/2)*2!=idx else ''} {equ}   !"
                     ) from error
 
             return res

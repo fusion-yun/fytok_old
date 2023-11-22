@@ -878,7 +878,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
         # return self._coord._R0*(self.fpol / fvac)**2 * d
 
 
-@sp_tree(mesh="grid")
+@sp_tree #(mesh="grid")
 class FyEquilibriumProfiles2D(Equilibrium.TimeSlice.Profiles2D):
     @property
     def _coord(self) -> FyEquilibriumCoordinateSystem:

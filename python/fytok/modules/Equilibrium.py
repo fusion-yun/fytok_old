@@ -417,35 +417,43 @@ class EquilibriumTimeSlice(equilibrium._T_equilibrium_time_slice):
         """
 
         geo = {}
-        styles = {}
 
         match view_point.lower():
             case "rz":
-                geo["o_points"] = Point(self.global_quantities.magnetic_axis.r, self.global_quantities.magnetic_axis.z)
+                geo["o_points"] = Point(
+                    self.global_quantities.magnetic_axis.r,
+                    self.global_quantities.magnetic_axis.z,
+                    styles={"$matplotlib": {"color": "red", "marker": ".", "linewidths": 0.5}},
+                )
 
-                geo["x_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(self.boundary.x_point)]
+                geo["x_points"] = [
+                    Point(
+                        p.r,
+                        p.z,
+                        name=f"{idx}",
+                        styles={"$matplotlib": {"color": "blue", "marker": "x", "linewidths": 0.5}},
+                    )
+                    for idx, p in enumerate(self.boundary.x_point)
+                ]
 
                 geo["strike_points"] = [
                     Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(self.boundary.strike_point)
                 ]
 
                 geo["boundary"] = self.boundary.outline
-
+                geo["boundary"]._metadata["styles"] = {
+                    "$matplotlib": {"color": "blue", "linestyle": "dotted", "linewidth": 0.5}
+                }
                 geo["boundary_separatrix"] = self.boundary_separatrix.outline
-
-                geo["psi"], styles["psi"] = self.profiles_2d.psi.__geometry__()
-
-                styles["o_points"] = {"$matplotlib": {"color": "red", "marker": ".", "linewidths": 0.5}}
-                styles["x_points"] = {"$matplotlib": {"color": "blue", "marker": "x", "linewidths": 0.5}}
-                styles["boundary"] = {"$matplotlib": {"color": "blue", "linestyle": "dotted", "linewidth": 0.5}}
-                styles["boundary_separatrix"] = {
+                geo["boundary_separatrix"]._metadata["styles"] = {
                     "$matplotlib": {"color": "red", "linestyle": "dashed", "linewidth": 0.25}
                 }
-                styles["psi"].update({"$matplotlib": {"levels": 40, "cmap": "jet"}})
 
-        styles = update_tree(styles, kwargs)
+                geo["psi"] = self.profiles_2d.psi.__geometry__()
 
-        return geo, styles
+        geo["styles"] = kwargs
+
+        return geo
 
 
 @sp_tree

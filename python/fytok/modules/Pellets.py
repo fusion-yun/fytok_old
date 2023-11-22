@@ -7,6 +7,5 @@ from ..ontology import pellets
 
 
 class Pellets(pellets._T_pellets):
-    def __geometry__(self, view="RZ", **kwargs) -> GeoObject:
-
-        return {}
+    def __geometry__(self, view="RZ", **kwargs):
+        return {} 

@@ -11,7 +11,6 @@ class Magnetics(magnetics._T_magnetics):
 
     def __geometry__(self, view_point="RZ", **kwargs) -> GeoObject:
         geo = {}
-        styles = {}
         match view_point.lower():
             case "rz":
                 if self.b_field_tor_probe is not _not_found_:
@@ -20,4 +19,4 @@ class Magnetics(magnetics._T_magnetics):
                 if self.flux_loop is not _not_found_:
                     geo["flux_loop"] = [Point(p.position[0].r,  p.position[0].z, name=p.name) for p in self.flux_loop]
 
-        return geo, styles
+        return geo 

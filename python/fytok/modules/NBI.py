@@ -9,12 +9,10 @@ from spdm.geometry.Polygon import Rectangle
 from ..ontology import nbi
 
 
-def draw_nbi_unit(unit: nbi. _T_nbi_unit, name: str):
+def draw_nbi_unit(unit: nbi._T_nbi_unit, name: str):
     geo = None
     if unit.source.geometry_type == 3:
-        geo = [
-            Line(),
-            Rectangle(name=unit.name)]
+        geo = [Line(), Rectangle(name=unit.name)]
 
     else:
         pass
@@ -31,4 +29,4 @@ class NBI(nbi._T_nbi):
             case "top":
                 geo["unit"] = [draw_nbi_unit(unit) for unit in self.unit]
 
-        return geo, styles
+        return geo

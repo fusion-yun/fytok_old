@@ -152,7 +152,6 @@ Data source:
 
     def __geometry__(self, **kwargs) -> GeoObject:
         geo = {}
-        styles = {}
 
         o_list = [
             "wall",
@@ -170,18 +169,20 @@ Data source:
 
         for o_name in o_list:
             try:
-                o = getattr(self, o_name, None)
-                if o is None:
+                g = getattr(self, o_name, None)
+                if g is None:
                     continue
-                g = o.__geometry__(**kwargs)
+                g = g.__geometry__(**kwargs)
 
             except Exception as error:
-                logger.error(f"Can not get {o.__class__.__name__}.__geometry__ ! {error}")
-                # raise RuntimeError(f"Can not get {o.__class__.__name__}.__geometry__ !") from error
+                # logger.error(f"Can not get {o.__class__.__name__}.__geometry__ ! {error}")
+                raise RuntimeError(f"Can not get {g.__class__.__name__}.__geometry__ !") from error
             else:
                 geo[o_name] = g
 
         view_point = (kwargs.get("view_point", None) or "rz").lower()
+
+        styles = {}
 
         if view_point == "rz":
             styles["xlabel"] = r"Major radius $R [m] $"
@@ -189,7 +190,9 @@ Data source:
 
         styles["title"] = kwargs.pop("title", None) or self.title
 
-        return geo, styles
+        geo["$styles"] = styles
+
+        return geo
 
     def _repr_svg_(self):
         try:

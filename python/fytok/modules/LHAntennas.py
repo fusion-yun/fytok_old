@@ -15,4 +15,4 @@ class LHAntennas(lh_antennas._T_lh_antennas):
                 geo["antenna"] = [antenna.name for antenna in self.antenna]
                 styles["antenna"] = {"$matplotlib": {"color": 'blue'}, "text": True}
 
-        return geo, styles
+        return geo 

@@ -46,4 +46,4 @@ class TF(tf._T_tf):
                             np.sin(coil.conductor[0].cross_section.delta_phi),
                             name=coil.name) for coil in self.coil]
 
-        return geo, styles
+        return geo

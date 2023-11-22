@@ -216,8 +216,18 @@ class TransportSolverNumerics(IDS):
 
         return [*args, {"grid": grid}], kwargs
 
-    def execute(self, current: TimeSlice, *args, **kwargs):
-        pass
+    def execute(
+        self,
+        current: TimeSlice,
+        *args,
+        equilibrium: Equilibrium,
+        core_transport: CoreTransport,
+        core_sources: CoreSources,
+        **kwargs,
+    ):
+        if current.cache_get("grid", _not_found_) is _not_found_:
+            rho_tor_norm = self.code.parameters.get("rho_tor_norm", None)
+            current["grid"] = equilibrium.time_slice.current.profiles_1d.grid.remesh(rho_tor_norm)
 
     def refresh(
         self,
