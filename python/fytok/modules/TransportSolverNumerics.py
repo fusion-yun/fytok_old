@@ -1,7 +1,7 @@
 from scipy import constants
 from copy import copy
-from fytok.utils.logger import logger
-from spdm.data.Expression import Expression
+import math
+from spdm.data.Expression import Expression, Variable
 from spdm.data.sp_property import sp_tree, sp_property
 from spdm.data.TimeSeries import TimeSlice
 from spdm.utils.tags import _not_found_
@@ -12,6 +12,9 @@ from .CoreSources import CoreSources
 from .CoreTransport import CoreTransport
 from .Equilibrium import Equilibrium
 from .Utilities import *
+
+from ..utils.logger import logger
+
 from ..ontology import transport_solver_numerics
 
 EPSILON = 1.0e-15
@@ -164,69 +167,85 @@ class TransportSolverNumerics(IDS):
 
     _plugin_prefix = "fytok.plugins.transport_solver_numerics."
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._cache["primary_coordinate"] = Variable((index := 0), "x", label=r"\bar{rho}_{tor_norm}")
+
+        def guess_label(name):
+            s = name.split("/")
+            if len(s) >= 2:
+                if s[-2] == "electrons":
+                    s[-2] = "e"
+            if len(s) == 1:
+                label = name
+            elif s[-1] == "density_thermal":
+                label = f"n_{{{s[-2]}}}"
+            elif s[-1] == "density_thermal_flux":
+                label = f"\Gamma_{{{s[-2]}}}"
+            elif s[-1] == "temperature":
+                label = f"T_{{{s[-2]}}}"
+            elif s[-1] == "temperature_flux":
+                label = f"H_{{{s[-2]}}}"
+            else:
+                label = name
+
+            return label
+
+        # 初始化变量 Variable
+        self._cache["equations"] = [
+            {
+                **equ,
+                "profile": Variable(
+                    (index := index + 1),
+                    equ["identifier"],
+                    label=guess_label(equ["identifier"]),
+                ),
+                "flux": Variable(
+                    (index := index + 1),
+                    f"{equ['identifier']}_flux",
+                    label=guess_label(f"{equ['identifier']}_flux"),
+                ),
+            }
+            for equ in self._cache.get("equations", [])
+        ]
+
     code: Code = {"name": None}
 
     solver: Identifier
 
-    primary_coordinate: Identifier = "rho_tor_norm"  # $\rho_{tor}=\sqrt{ \Phi/\pi B_{0}}$
+    primary_coordinate: Variable
+    r""" $\rho_{tor}=\sqrt{ \Phi/\pi B_{0}}$ """
 
-    equations: AoS[TransportSolverNumericsEquation]
+    @sp_tree
+    class TransEquatuion:
+        identifier: str
+        boundary_condition: List[int]
+        profile: Variable
+        flux: Variable
+
+    equations: AoS[TransEquatuion]
 
     TimeSlice = TransportSolverNumericsTimeSlice
 
     time_slice: TimeSeriesAoS[TransportSolverNumericsTimeSlice]
 
-    def parser_arguments(self, *args, **kwargs) -> typing.Tuple[typing.Any]:
-        args, kwargs = super().parser_arguments(*args, **kwargs)
+    def preprocess(self, *args, initial_value=None, boundary_condition=None, **kwargs):
+        super().preprocess(*args, **kwargs)
 
-        equilibrium: Equilibrium = self._inputs["equilibrium"]
+        current = self.time_slice.current
 
-        rho_tor_norm = kwargs.pop("rho_tor_norm", _not_found_)
-
-        if rho_tor_norm is _not_found_:
-            rho_tor_norm = self.code.parameters.get("rho_tor_norm", None)
-
-        previous = self.time_slice.previous
-
-        if previous is not _not_found_:
-            grid = previous.grid.duplicate(rho_tor_norm)
-
-        else:
-            grid = equilibrium.time_slice.current.profiles_1d.grid.duplicate(rho_tor_norm)
-
-        # equation = [
-        #     {
-        #         "primary_quantity": {
-        #             "identifier": equ.primary_quantity.identifier,
-        #             "profile": equ.primary_quantity.profile,
-        #         },
-        #         "boundary_condition": [
-        #             {
-        #                 "identifier": equ.boundary_condition[0].identifier,
-        #                 "value": equ.boundary_condition[0].value,
-        #             },
-        #             {
-        #                 "identifier": equ.boundary_condition[1].identifier,
-        #                 "value": equ.boundary_condition[1].value,
-        #             },
-        #         ],
-        #     }
-        #     for equ in equation_s
-        # ]
-
-        return [*args, {"grid": grid}], kwargs
-
-    def execute(
-        self,
-        current: TimeSlice,
-        *args,
-        equilibrium: Equilibrium,
-        core_transport: CoreTransport,
-        core_sources: CoreSources,
-        **kwargs,
-    ):
         if current.cache_get("grid", _not_found_) is _not_found_:
+            equilibrium: Equilibrium = self._inputs["equilibrium"].source.node
+
+            assert math.isclose(equilibrium.time, self.time), f"{equilibrium.time} != {self.time}"
+
             rho_tor_norm = self.code.parameters.get("rho_tor_norm", None)
+
+            # TODO: 根据时间获取时间片, 例如：
+            #   eq:Equilibrium.TimeSlice= equilibrium.time_slice.get(self.time)
+            #   current["grid"] = eq.profiles_1d.grid.remesh(rho_tor_norm)
+
             current["grid"] = equilibrium.time_slice.current.profiles_1d.grid.remesh(rho_tor_norm)
 
     def refresh(
@@ -242,21 +261,5 @@ class TransportSolverNumerics(IDS):
             equilibrium=equilibrium,
             core_transport=core_transport,
             core_sources=core_sources,
-            **kwargs,
-        )
-
-    def advance(
-        self,
-        *args,
-        equilibrium: Equilibrium = None,
-        core_transport: CoreTransport = None,
-        core_sources: CoreSources = None,
-        **kwargs,
-    ):
-        super().advance(
-            *args,
-            equilibrium=equilibrium,
-            core_sources=core_sources,
-            core_transport=core_transport,
             **kwargs,
         )

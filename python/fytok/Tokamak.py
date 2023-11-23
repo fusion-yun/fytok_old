@@ -3,7 +3,7 @@ import pprint
 from spdm.data.Entry import open_entry
 from spdm.data.HTree import HTree
 from spdm.data.Actor import Actor
-from spdm.data.sp_property import sp_property
+from spdm.data.sp_property import sp_property, sp_tree
 from spdm.geometry.GeoObject import GeoObject
 from spdm.utils.tags import _not_found_
 from spdm.data.Path import update_tree
@@ -39,6 +39,7 @@ from .ontology import GLOBAL_ONTOLOGY
 # ---------------------------------
 
 
+@sp_tree
 class Tokamak(Actor):
     """Tokamak
     功能：
@@ -47,7 +48,7 @@ class Tokamak(Actor):
 
     """
 
-    def __init__(self, *args, device=_not_found_, shot=_not_found_, run=_not_found_, **kwargs):
+    def __init__(self, *args, device=_not_found_, shot=_not_found_, run=_not_found_, time=None, **kwargs):
         cache, entry, parent, kwargs = HTree._parser_args(*args, **kwargs)
 
         cache = update_tree(cache, kwargs)
@@ -60,6 +61,8 @@ class Tokamak(Actor):
 
         super().__init__(cache, _entry=entry, _parent=parent)
 
+        if time is not None:
+            self.refresh(time=time)
         # logger.debug(self.brief_summary())
 
     @property
@@ -99,43 +102,43 @@ Data source:
         return f"{self.dataset_fair.description.tag}_{int(self.time*100):06d}"
 
     # fmt:off
-
+  
     # device
-    dataset_fair            : DatasetFAIR               = sp_property()
+    dataset_fair            : DatasetFAIR               
 
-    wall                    : Wall                      = sp_property()
+    wall                    : Wall                      
 
     # magnetics
-    tf                      : TF                        = sp_property()
-    pf_active               : PFActive                  = sp_property()
-    magnetics               : Magnetics                 = sp_property()
+    tf                      : TF                        
+    pf_active               : PFActive                  
+    magnetics               : Magnetics                 
 
     # aux
-    ec_launchers            : ECLaunchers               = sp_property()
-    ic_antennas             : ICAntennas                = sp_property()    
-    lh_antennas             : LHAntennas                = sp_property()
-    nbi                     : NBI                       = sp_property()
-    pellets                 : Pellets                   = sp_property()
+    ec_launchers            : ECLaunchers               
+    ic_antennas             : ICAntennas                    
+    lh_antennas             : LHAntennas                
+    nbi                     : NBI                       
+    pellets                 : Pellets                   
 
     # diag
-    interferometer          : Interferometer            = sp_property()
+    interferometer          : Interferometer            
 
     # transport: state of device
-    equilibrium             : Equilibrium               = sp_property()
+    equilibrium             : Equilibrium               
 
-    core_profiles           : CoreProfiles              = sp_property()
-    core_transport          : CoreTransport             = sp_property()
-    core_sources            : CoreSources               = sp_property()
+    core_profiles           : CoreProfiles              
+    core_transport          : CoreTransport             
+    core_sources            : CoreSources               
 
-    # edge_profiles         : EdgeProfiles              = sp_property()
-    # edge_transport        : EdgeTransport             = sp_property()
-    # edge_sources          : EdgeSources               = sp_property()
-    # edge_transport_solver : EdgeTransportSolver       = sp_property()
+    # edge_profiles         : EdgeProfiles              
+    # edge_transport        : EdgeTransport             
+    # edge_sources          : EdgeSources               
+    # edge_transport_solver : EdgeTransportSolver       
 
     # solver
-    transport_solver        : TransportSolverNumerics   = sp_property()
+    transport_solver        : TransportSolverNumerics   
 
-    summary                 : Summary                   = sp_property()
+    summary                 : Summary                   
     # fmt:on
 
     def advance(self, *args, **kwargs):
