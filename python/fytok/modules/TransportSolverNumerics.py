@@ -5,7 +5,6 @@ from spdm.data.Expression import Expression, Variable
 from spdm.data.sp_property import sp_tree, sp_property
 from spdm.data.TimeSeries import TimeSlice
 from spdm.utils.tags import _not_found_
-from spdm.data.Entry import Entry
 from spdm.utils.typing import array_type, as_array
 from .CoreProfiles import CoreProfiles
 from .CoreSources import CoreSources
@@ -31,10 +30,11 @@ class TransportSolverNumericsEquationPrimary:
     """ Identifier of the primary quantity of the transport equation. The description
         node contains the path to the quantity in the physics IDS (example:
         core_profiles/profiles_1d/ion/D/density)"""
-    profile: array_type = 0.0
+
+    profile: Variable | array_type
     """ Profile of the primary quantity"""
 
-    flux: array_type
+    flux: Variable | array_type
     """ Flux of the primary quantity"""
 
     d_dr: Expression | array_type
@@ -65,7 +65,7 @@ class TransportSolverNumericsEquation:
 
     @sp_tree
     class EquationBC:
-        identifier: Identifier
+        identifier: int
         """ Identifier of the boundary condition type.  ID =
             1: value of the field y;
             2: radial derivative of the field (-dy/drho_tor);
@@ -170,7 +170,7 @@ class TransportSolverNumerics(IDS):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._cache["primary_coordinate"] = Variable((index := 0), "x", label=r"\bar{rho}_{tor_norm}")
+        self["primary_coordinate"] = Variable((index := 0), "x", label=r"\bar{rho}_{tor_norm}")
 
         def guess_label(name):
             s = name.split("/")
@@ -193,7 +193,7 @@ class TransportSolverNumerics(IDS):
             return label
 
         # 初始化变量 Variable
-        self._cache["equations"] = [
+        self["equations"] = [
             {
                 **equ,
                 "profile": Variable(
@@ -230,13 +230,13 @@ class TransportSolverNumerics(IDS):
 
     time_slice: TimeSeriesAoS[TransportSolverNumericsTimeSlice]
 
-    def preprocess(self, *args, initial_value=None, boundary_condition=None, **kwargs):
+    def preprocess(self, *args, boundary_value=None, control_parameters=None, **kwargs):
         super().preprocess(*args, **kwargs)
 
         current = self.time_slice.current
 
         if current.cache_get("grid", _not_found_) is _not_found_:
-            equilibrium: Equilibrium = self._inputs["equilibrium"].source.node
+            equilibrium: Equilibrium = self.inputs.get_source("equilibrium")
 
             assert math.isclose(equilibrium.time, self.time), f"{equilibrium.time} != {self.time}"
 
@@ -247,6 +247,29 @@ class TransportSolverNumerics(IDS):
             #   current["grid"] = eq.profiles_1d.grid.remesh(rho_tor_norm)
 
             current["grid"] = equilibrium.time_slice.current.profiles_1d.grid.remesh(rho_tor_norm)
+
+        num_of_equations = len(self.equations)
+        if boundary_value is None:
+            boundary_value = [[0, 0]] * num_of_equations
+
+        current["equation"] = [
+            {
+                "primary_quantity": {
+                    "identifier": equ.identifier,
+                    "profile": equ.profile,
+                    "flux": equ.flux,
+                },
+                "boundary_condition": [
+                    {"identifier": equ.boundary_condition[0], "value": boundary_value[idx][0]},
+                    {"identifier": equ.boundary_condition[1], "value": boundary_value[idx][1]},
+                ],
+            }
+            for idx, equ in enumerate(self.equations)
+        ]
+
+        current["control_parameters"] = self.code.parameters.control_parameters
+
+        current.control_parameters.update(control_parameters)
 
     def refresh(
         self,
