@@ -5,7 +5,7 @@ import getpass
 try:
     from ..__version__ import version
 except Exception:
-    FY_VERSION = "develop"
+    FY_VERSION = "alpha"
 else:
     FY_VERSION = version
 

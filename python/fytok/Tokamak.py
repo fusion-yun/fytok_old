@@ -48,7 +48,15 @@ class Tokamak(Actor):
 
     """
 
-    def __init__(self, *args, device=_not_found_, shot=_not_found_, run=_not_found_, time=None, **kwargs):
+    def __init__(
+        self,
+        *args,
+        device: str = _not_found_,
+        shot: int = _not_found_,
+        run: int = _not_found_,
+        time: float = None,
+        **kwargs,
+    ):
         cache, entry, parent, kwargs = HTree._parser_args(*args, **kwargs)
 
         cache = update_tree(cache, kwargs)
@@ -68,12 +76,12 @@ class Tokamak(Actor):
     @property
     def brief_summary(self) -> str:
         return f"""Tokamak simulation : 
------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
                                                 Brief Summary
------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 Dataset Description:
 {self.dataset_fair}
------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 Modules:
     transport_solver        : {self.transport_solver.code }
     equilibrium             : {self.equilibrium.code }
@@ -81,11 +89,12 @@ Modules:
     core_profiles           : N/A             
     core_transport          : {','.join([str(s.code) for s in self.core_transport.model])}
     core_sources            : {','.join([str(s.code)  for s in self.core_sources.source])}
------------------------------------------------------------------------------------------------------------------------
-Data source:
-    {pprint.pformat(str(self._entry).split(','))}
------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 """
+# Data source:
+#     {pprint.pformat(str(self._entry).split(','))}
+# ---------------------------------------------------------------------------------------------------
+
 
     # File: {__file__}:{__package__}.{self.__class__.__name__}
 

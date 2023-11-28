@@ -106,6 +106,8 @@ class Module(Actor):
             edge.source.update(getattr(self._parent, name, _not_found_))
 
     code: Code
+    """Generic decription of the code-specific parameters for the code that has
+        produced this IDS"""
 
     @property
     def tag(self) -> str:

@@ -210,7 +210,7 @@ class TransportSolverNumerics(IDS):
             for equ in self._cache.get("equations", [])
         ]
 
-    code: Code = {"name": None}
+    code: Code = {"name": "fy_trans"}
 
     solver: Identifier
 
