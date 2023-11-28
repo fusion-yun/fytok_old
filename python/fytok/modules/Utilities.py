@@ -45,12 +45,15 @@ class Library:
 
 @sp_tree
 class Code:
-    name: str
+    name: str 
+    """代码名称，也是调用 plugin 的 identifier"""
+    parameters: PropertyTree
+    """指定参数列表，代码调用时所需，但不在由 Module 定义的参数列表中的参数。 """
+
     commit: str
     version: str
     copyright: str
     repository: str
-    parameters: PropertyTree
     output_flag: array_type
     library: List[Library]
 
@@ -106,8 +109,8 @@ class Module(Actor):
             edge.source.update(getattr(self._parent, name, _not_found_))
 
     code: Code
-    """Generic decription of the code-specific parameters for the code that has
-        produced this IDS"""
+    """ 对于 Module 的一般性说明。 
+        @note code 在 __init__ 时由初始化参数定义，同时会根据 code.name 查找相应的 plugin 。"""
 
     @property
     def tag(self) -> str:

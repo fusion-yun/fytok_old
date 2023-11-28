@@ -57,6 +57,13 @@ class Tokamak(Actor):
         time: float = None,
         **kwargs,
     ):
+        """
+            :param device: 指定装置名称，例如， east，ITER, d3d 等
+            :param shot:   指定实验炮号
+            :param run:    指定模拟计算的序号
+            :param time:   指定当前时间
+            :param kwargs: 指定子模块的初始输入,例如 wall, tf, pf_active, magnetics, equilibrium, core_profiles, core_transport, core_sources, transport_solver
+        """
         cache, entry, parent, kwargs = HTree._parser_args(*args, **kwargs)
 
         cache = update_tree(cache, kwargs)
