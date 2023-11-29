@@ -456,15 +456,35 @@ class EquilibriumTimeSlice(equilibrium._T_equilibrium_time_slice):
         return geo
 
 
+
 @sp_tree
 class Equilibrium(IDS):
     r"""
     Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
-
+    
     Reference:
-        - O. Sauter and S. Yu Medvedev, "Tokamak coordinate conventions: COCOS", Computer Physics Communications 184, 2 (2013), pp. 293--302.
 
-    COCOS  11
+    - O. Sauter and S. Yu Medvedev, "Tokamak coordinate conventions: COCOS", Computer Physics Communications 184, 2 (2013), pp. 293--302.
+    """
+
+    _plugin_prefix = "fytok.plugins.equilibrium."
+
+    code: Code = {"name": "fy_eq"}  # default plugin
+
+    ids_properties: IDSProperties
+
+    TimeSlice = EquilibriumTimeSlice
+
+    time_slice: TimeSeriesAoS[EquilibriumTimeSlice]
+
+    def __geometry__(self, *args, **kwargs):
+        return self.time_slice.current.__geometry__(*args, **kwargs)
+
+            
+                
+                
+r"""
+  COCOS  11
     ```{text}
         Top view
                 ***************
@@ -501,17 +521,4 @@ class Equilibrium(IDS):
                 Cylindrical coordinate      : $(R,\phi,Z)$
         Poloidal plane coordinate   : $(\rho,\theta,\phi)$
     ```
-    """
-
-    _plugin_prefix = "fytok.plugins.equilibrium."
-
-    code: Code = {"name": "fy_eq"}  # default plugin
-
-    ids_properties: IDSProperties
-
-    TimeSlice = EquilibriumTimeSlice
-
-    time_slice: TimeSeriesAoS[EquilibriumTimeSlice]
-
-    def __geometry__(self, *args, **kwargs):
-        return self.time_slice.current.__geometry__(*args, **kwargs)
+"""

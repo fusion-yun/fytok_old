@@ -41,12 +41,6 @@ from .ontology import GLOBAL_ONTOLOGY
 
 @sp_tree
 class Tokamak(Actor):
-    """Tokamak
-    功能：
-        - 描述装置在单一时刻的状态，
-        - 在时间推进时，确定各个子系统之间的依赖和演化关系，
-
-    """
 
     def __init__(
         self,
@@ -58,11 +52,16 @@ class Tokamak(Actor):
         **kwargs,
     ):
         """
+            用于集成子模块，以实现工作流。
+        
+            现有子模块包括： wall, tf, pf_active, magnetics, equilibrium, core_profiles, core_transport, core_sources, transport_solver
+    
+            :param args:   初始化数据，可以为 dict，str 或者  Entry。 输入会通过数据集成合并为单一的HTree，其子节点会作为子模块的初始化数据。
             :param device: 指定装置名称，例如， east，ITER, d3d 等
             :param shot:   指定实验炮号
             :param run:    指定模拟计算的序号
             :param time:   指定当前时间
-            :param kwargs: 指定子模块的初始输入,例如 wall, tf, pf_active, magnetics, equilibrium, core_profiles, core_transport, core_sources, transport_solver
+            :param kwargs: 指定子模块的初始化数据，，会与args中指定的数据源子节点合并。
         """
         cache, entry, parent, kwargs = HTree._parser_args(*args, **kwargs)
 
@@ -82,6 +81,7 @@ class Tokamak(Actor):
 
     @property
     def brief_summary(self) -> str:
+        """综述模拟内容"""
         return f"""Tokamak simulation : 
 ---------------------------------------------------------------------------------------------------
                                                 Brief Summary
@@ -111,10 +111,12 @@ Modules:
     # edge_transport_solver   : N/A
     @property
     def title(self) -> str:
+        """标题，由初始化信息 dataset_fair.description """
         return f"{self.dataset_fair.description}  time={self.time:.2f}s"
 
     @property
     def tag(self) -> str:
+        """当前状态标签，由程序版本、用户名、时间戳等信息确定"""
         return f"{self.dataset_fair.description.tag}_{int(self.time*100):06d}"
 
     # fmt:off

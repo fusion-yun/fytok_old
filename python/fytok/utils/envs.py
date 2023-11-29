@@ -1,6 +1,7 @@
-from spdm.utils import envs
+from spdm.utils import envs as sp_envs
 import os
 import getpass
+import datetime
 
 try:
     from ..__version__ import version
@@ -19,10 +20,36 @@ else:
 
 FY_DEBUG = os.environ.get("FY_DEBUG", True)
 
+FY_QUIET = os.environ.get("FY_QUIET", sp_envs.SP_QUIET)
+
 # os.environ["SP_DEBUG"] = str(FY_DEBUG)
 # envs.SP_DEBUG = FY_DEBUG
 
 
 FY_JOBID = f"fytok_{getpass.getuser().lower()}_{os.uname().nodename.lower()}_{os.getpid()}"
 
-__all__ = ["FY_DEBUG", "FY_JOBID", "FY_VERSION", "FY_EXT_VERSION"]
+
+FY_LOGO = rf"""
+###################################################################################################
+
+    ______      _____     _
+   / ____/_  __|_   _|__ | | __
+  / /_  / / / /  | |/ _ \| |/ /
+ / __/ / /_/ /   | | (_) |   <
+/_/    \__, /    |_|\___/|_|\_\
+      /____/
+
+ Copyright (c) 2021-present Zhi YU (Institute of Plasma Physics Chinese Academy of Sciences)
+            
+ url: https://gitee.com/openfusion/fytok_tutorial 
+      https://github.com/fusion-yun/fytok_tutorial
+
+ version = {FY_VERSION}  (spdm={sp_envs.SP_VERSION} {FY_EXT_VERSION})
+
+ Run by {getpass.getuser()} at {datetime.datetime.now().isoformat()}.
+ Job ID: {FY_JOBID}
+
+###################################################################################################
+"""
+
+__all__ = ["FY_DEBUG", "FY_JOBID", "FY_LOGO", "FY_QUIET", "FY_VERSION", "FY_EXT_VERSION"]

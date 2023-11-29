@@ -1,5 +1,5 @@
 import typing
-
+from spdm.data.AoS import AoS
 from spdm.geometry.Circle import Circle
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Polyline import Polyline
@@ -11,6 +11,11 @@ from ..utils.logger import logger
 
 
 class Wall(wall._T_wall):
+    """Description of the torus wall and its interaction with the plasma"""
+    Description2D= wall._T_wall_2d
+
+    description_2d: AoS[Description2D]
+
     def __geometry__(self, view_point="RZ", **kwargs) -> GeoObject | typing.List[GeoObject]:
         geo = {}
 
