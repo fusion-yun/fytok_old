@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     shot = 70745
 
-    tok = Tokamak(f"EAST+MDSplus://{WORKSPACE}/fytok_data/mdsplus/~t/?enable=efit_east&shot={shot}")
+    tok = Tokamak(C)
 
     tok.refresh(time=9.26)
 

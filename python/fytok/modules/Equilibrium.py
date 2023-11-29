@@ -138,7 +138,7 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
     f: Expression = sp_property(units="T.m")
 
-    dpressure_dpsi: Expression = sp_property(units="Pa.Wb^-1")
+    dpressure_dpsi: Expression = sp_property(units="Pa.Wb^-1", label=r"\frac{dP}{d\psi}")
 
     f_df_dpsi: Expression = sp_property(units="T^2.m^2/Wb", label=r"\frac{f d f}{d \psi}")
 
@@ -456,12 +456,11 @@ class EquilibriumTimeSlice(equilibrium._T_equilibrium_time_slice):
         return geo
 
 
-
 @sp_tree
 class Equilibrium(IDS):
     r"""
     Description of a 2D, axi-symmetric, tokamak equilibrium; result of an equilibrium code.
-    
+
     Reference:
 
     - O. Sauter and S. Yu Medvedev, "Tokamak coordinate conventions: COCOS", Computer Physics Communications 184, 2 (2013), pp. 293--302.
@@ -480,9 +479,7 @@ class Equilibrium(IDS):
     def __geometry__(self, *args, **kwargs):
         return self.time_slice.current.__geometry__(*args, **kwargs)
 
-            
-                
-                
+
 r"""
   COCOS  11
     ```{text}
