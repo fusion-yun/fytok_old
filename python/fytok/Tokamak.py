@@ -41,7 +41,6 @@ from .ontology import GLOBAL_ONTOLOGY
 
 @sp_tree
 class Tokamak(Actor):
-
     def __init__(
         self,
         *args,
@@ -52,16 +51,16 @@ class Tokamak(Actor):
         **kwargs,
     ):
         """
-            用于集成子模块，以实现工作流。
-        
-            现有子模块包括： wall, tf, pf_active, magnetics, equilibrium, core_profiles, core_transport, core_sources, transport_solver
-    
-            :param args:   初始化数据，可以为 dict，str 或者  Entry。 输入会通过数据集成合并为单一的HTree，其子节点会作为子模块的初始化数据。
-            :param device: 指定装置名称，例如， east，ITER, d3d 等
-            :param shot:   指定实验炮号
-            :param run:    指定模拟计算的序号
-            :param time:   指定当前时间
-            :param kwargs: 指定子模块的初始化数据，，会与args中指定的数据源子节点合并。
+        用于集成子模块，以实现工作流。
+
+        现有子模块包括： wall, tf, pf_active, magnetics, equilibrium, core_profiles, core_transport, core_sources, transport_solver
+
+        :param args:   初始化数据，可以为 dict，str 或者  Entry。 输入会通过数据集成合并为单一的HTree，其子节点会作为子模块的初始化数据。
+        :param device: 指定装置名称，例如， east，ITER, d3d 等
+        :param shot:   指定实验炮号
+        :param run:    指定模拟计算的序号
+        :param time:   指定当前时间
+        :param kwargs: 指定子模块的初始化数据，，会与args中指定的数据源子节点合并。
         """
         cache, entry, parent, kwargs = HTree._parser_args(*args, **kwargs)
 
@@ -98,10 +97,10 @@ Modules:
     core_sources            : {','.join([str(s.code)  for s in self.core_sources.source])}
 ---------------------------------------------------------------------------------------------------
 """
-# Data source:
-#     {pprint.pformat(str(self._entry).split(','))}
-# ---------------------------------------------------------------------------------------------------
 
+    # Data source:
+    #     {pprint.pformat(str(self._entry).split(','))}
+    # ---------------------------------------------------------------------------------------------------
 
     # File: {__file__}:{__package__}.{self.__class__.__name__}
 
@@ -111,7 +110,7 @@ Modules:
     # edge_transport_solver   : N/A
     @property
     def title(self) -> str:
-        """标题，由初始化信息 dataset_fair.description """
+        """标题，由初始化信息 dataset_fair.description"""
         return f"{self.dataset_fair.description}  time={self.time:.2f}s"
 
     @property
@@ -176,16 +175,16 @@ Modules:
 
         o_list = [
             "wall",
-            "tf",
+            "equilibrium",
             "pf_active",
             "magnetics",
-            "ec_launchers",
-            "ic_antennas",
-            "lh_antennas",
-            "nbi",
-            "pellets",
             "interferometer",
-            "equilibrium",
+            "tf",
+            # "ec_launchers",
+            # "ic_antennas",
+            # "lh_antennas",
+            # "nbi",
+            # "pellets",
         ]
 
         for o_name in o_list:
@@ -196,8 +195,8 @@ Modules:
                 g = g.__geometry__(**kwargs)
 
             except Exception as error:
-                # logger.error(f"Can not get {o.__class__.__name__}.__geometry__ ! {error}")
-                raise RuntimeError(f"Can not get {g.__class__.__name__}.__geometry__ !") from error
+                logger.error(f"Can not get {o.__class__.__name__}.__geometry__ ! {error}")
+                # raise RuntimeError(f"Can not get {g.__class__.__name__}.__geometry__ !") from error
             else:
                 geo[o_name] = g
 
