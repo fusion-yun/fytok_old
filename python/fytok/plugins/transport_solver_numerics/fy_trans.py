@@ -98,6 +98,10 @@ class FyTrans(TransportSolverNumerics):
 
         core_sources: CoreSources = self.inputs.get_source("core_sources")
 
+        core_profiles: CoreProfiles = self.inputs.get_source("core_profiles")
+
+        core_profiles_1d = core_profiles.time_slice.current.profiles_1d
+
         # 声明变量
         x = self.primary_coordinate
 
@@ -255,6 +259,10 @@ class FyTrans(TransportSolverNumerics):
                 ne += atoms[spec.removeprefix("ion/")].z * vars.get(f"{spec}/density_thermal", 0.0)
                 ne_flux += atoms[spec].z * vars.get(f"{spec}/density_thermal_flux", 0.0)
 
+            for ion in core_profiles_1d.ion:
+                if f"ion/{ion.label}/density_thermal" not in vars:
+                    ne += ion.density_thermal(x)
+
             vars["electrons/density_thermal"] = ne
             vars["electrons/density_thermal_flux"] = ne_flux
             # S_ne_explicit = 0
@@ -284,7 +292,7 @@ class FyTrans(TransportSolverNumerics):
                 z_of_ions += atoms[spec.removeprefix("ion/")].z
 
             for k in vars:
-                vars[k] = -ne / z_of_ions
+                vars[k] = -ne / z_of_ions(x)
 
         for equ in current.equation:
             identifier = equ.primary_quantity.identifier
@@ -668,9 +676,9 @@ class FyTrans(TransportSolverNumerics):
             x,
             Y0,
             bvp_rms_mask=current.control_parameters.bvp_rms_mask,
-            tolerance   =current.control_parameters.tolerance   ,
-            max_nodes   =current.control_parameters.max_nodes   ,
-            verbose     =current.control_parameters.verbose     ,
+            tolerance=current.control_parameters.tolerance,
+            max_nodes=current.control_parameters.max_nodes,
+            verbose=current.control_parameters.verbose,
         )
 
         x = sol.x

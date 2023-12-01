@@ -10,6 +10,9 @@ from spdm.data.File import File
 from spdm.data.Entry import Entry
 from spdm.numlib.smooth import smooth_1d
 
+PI = scipy.constants.pi
+TWOPI = scipy.constants.pi * 2.0
+
 
 def load_core_profiles(profiles, grid):
     bs_r_norm = profiles["x"].values
@@ -53,15 +56,9 @@ def load_core_profiles(profiles, grid):
         "ion": [
             {"label": "D", "density_thermal": b_nDT, "temperature": b_Ti},
             {"label": "T", "density_thermal": b_nDT, "temperature": b_Ti},
-            {"label": "He", "density_thermal": b_nHe, "temperature": b_Ti, "density_fast": True},
+            {"label": "He", "density_thermal": b_nHe, "temperature": b_Ti},
             {"label": "Be", "density_thermal": 0.02 * b_ne, "temperature": b_Ti, "z_ion_1d": z_Be, "is_impurity": True},
-            {
-                "label": "Ar",
-                "density_thermal": 0.0012 * b_ne,
-                "temperature": b_Ti,
-                "z_ion_1d": z_Ar,
-                "is_impurity": True,
-            },
+            {"label": "Ar", "density_thermal": 0.0012 * b_ne, "temperature": b_Ti, "z_ion_1d": z_Ar, "is_impurity": True},
         ],
         # "e_field": {"parallel":  Function(bs_r_norm,e_parallel,)},
         # "conductivity_parallel": Function(bs_r_norm,baseline["Joh"].values*1.0e6 / baseline["U"].values * (TWOPI * grid.r0),),
@@ -158,7 +155,7 @@ def load_core_source(profiles, grid, R0: float, B0: float = None):
         / scipy.constants.electron_volt
     )
 
-    Q_He = (-profiles["Pdti"].values - profiles["Pdte"].values) * 1e6 / scipy.constants.electron_volt
+    Q_He =(profiles["Pdti"].values + profiles["Pdte"].values) * 1e6 / scipy.constants.electron_volt
 
     # Core Source
     return {
@@ -175,15 +172,12 @@ def load_core_source(profiles, grid, R0: float, B0: float = None):
         "ion": [
             {"label": "D", "particles": S * 0.5, "energy": Q_DT * 0.5},
             {"label": "T", "particles": S * 0.5, "energy": Q_DT * 0.5},
-            {"label": "He", "particles": S * 0.01, "energy": Q_He},
+            {"label": "He", "particles": S * 0.1, "energy": Q_He},
         ],
     }
 
 
 def read_iter_profiles(path):
-    PI = scipy.constants.pi
-    TWOPI = scipy.constants.pi * 2.0
-
     path = pathlib.Path(path)
 
     excel_file = pd.read_excel(path, sheet_name=1)
@@ -388,7 +382,7 @@ def read_iter_profiles(path):
         / scipy.constants.electron_volt
     )
 
-    Q_He = (-profiles_1D["Pdti"].values - profiles_1D["Pdte"].values) * 1e6 / scipy.constants.electron_volt
+    Q_He = (profiles_1D["Pdti"].values + profiles_1D["Pdte"].values) * 1e6 / scipy.constants.electron_volt
 
     # Core Source
     entry["core_sources/source/0/time_slice/0/profiles_1d"] = {
@@ -405,7 +399,7 @@ def read_iter_profiles(path):
         "ion": [
             {"label": "D", "particles": S * 0.5, "energy": Q_DT * 0.5},
             {"label": "T", "particles": S * 0.5, "energy": Q_DT * 0.5},
-            {"label": "He", "particles": S * 0.01, "energy": Q_He},
+            {"label": "He", "particles": S * 0.01, "energy": Q_DT*0.01},
         ],
     }
 

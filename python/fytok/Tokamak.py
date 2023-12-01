@@ -1,18 +1,15 @@
-import pprint
-
+from spdm.data.Path import update_tree
 from spdm.data.Entry import open_entry
 from spdm.data.HTree import HTree
 from spdm.data.Actor import Actor
-from spdm.data.sp_property import sp_property, sp_tree
+from spdm.data.sp_property import sp_tree
 from spdm.geometry.GeoObject import GeoObject
 from spdm.utils.tags import _not_found_
-from spdm.data.Path import update_tree
 from spdm.view import View as sp_view
 
 # ---------------------------------
 from .modules.DatasetFAIR import DatasetFAIR
 from .modules.Summary import Summary
-
 from .modules.CoreProfiles import CoreProfiles
 from .modules.CoreSources import CoreSources
 from .modules.CoreTransport import CoreTransport
@@ -28,6 +25,7 @@ from .modules.PFActive import PFActive
 from .modules.TF import TF
 from .modules.TransportSolverNumerics import TransportSolverNumerics
 from .modules.Wall import Wall
+
 from .utils.envs import *
 from .utils.logger import logger
 from .ontology import GLOBAL_ONTOLOGY
@@ -81,7 +79,7 @@ class Tokamak(Actor):
     @property
     def brief_summary(self) -> str:
         """综述模拟内容"""
-        return f"""Tokamak simulation : 
+        return f"""{FY_LOGO}
 ---------------------------------------------------------------------------------------------------
                                                 Brief Summary
 ---------------------------------------------------------------------------------------------------

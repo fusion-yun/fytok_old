@@ -277,6 +277,7 @@ class TransportSolverNumerics(IDS):
         equilibrium: Equilibrium = None,
         core_transport: CoreTransport = None,
         core_sources: CoreSources = None,
+        core_profiles: CoreProfiles = None,
         **kwargs,
     ):
         super().refresh(
@@ -284,5 +285,6 @@ class TransportSolverNumerics(IDS):
             equilibrium=equilibrium,
             core_transport=core_transport,
             core_sources=core_sources,
+            core_profiles=core_profiles,
             **kwargs,
         )
