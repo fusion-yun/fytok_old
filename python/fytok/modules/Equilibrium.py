@@ -126,7 +126,7 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
         return CoreRadialGrid(g)
 
-    psi_norm: array_type = sp_property(units="-")
+    psi_norm: array_type = sp_property(units="-", label=r"$\bar{\psi}$")
 
     psi: Expression = sp_property(units="Wb")
 
