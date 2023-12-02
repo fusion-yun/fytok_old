@@ -2,24 +2,25 @@ import collections.abc
 
 import numpy as np
 import scipy.constants
-
+from spdm.data.Path import Path
 from spdm.data.HTree import Dict, Node, List
 from spdm.data.Function import Function
 from spdm.data.sp_property import SpTree, sp_property, sp_tree, PropertyTree
 from spdm.data.AoS import AoS
 from spdm.data.Path import update_tree
+from spdm.utils.typing import get_args
 
-
-predefined_species = {
+_predef_atoms = {
     "e": {"label": "e", "z": -1, "a": scipy.constants.m_e / scipy.constants.m_p},
-    "electron": {"label": "e", "z": -1, "a": scipy.constants.m_e / scipy.constants.m_p},
-    "electrons": {"label": "e", "z": -1, "a": scipy.constants.m_e / scipy.constants.m_p},
+    "electron": "e",
+    "electrons": "e",
     "n": {"label": "n", "z": 0, "a": scipy.constants.m_n / scipy.constants.m_p},
     "p": {"label": "p", "z": 1, "a": 1},
     "H": {"label": "H", "z": 1, "a": 1},
     "D": {"label": "D", "z": 1, "a": 2},
     "T": {"label": "T", "z": 1, "a": 3},
     "He": {"label": "He", "z": 2, "a": 4},
+    "alpha": "He",
     "Be": {"label": "Be", "z": 4, "a": 9},
     "Ar": {"label": "Ar", "z": 18, "a": 40},
 }
@@ -37,8 +38,15 @@ class Atoms(Dict[Atom]):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    def __getitem__(self, key) -> Atom:
+        value = super().cache_get(key)
+        if isinstance(value, str):
+            return self.__getitem__(value)
+        else:
+            return super()._as_child(value, key, _type_hint=Atom)
 
-atoms = Atoms(predefined_species)
+
+atoms = Atoms(_predef_atoms)
 
 
 def get_species(species):
@@ -67,47 +75,17 @@ class Reaction:
 
 
 class NuclearReaction(Dict[Reaction]):
-    pass
+    def __getitem__(self, key) -> Reaction:
+        return self._get(key, _type_hint=Reaction)
 
 
 nuclear_reaction = NuclearReaction(
     {
-        r"D(t,n)\alpha": {
+        r"D(t,n)He": {
             "reactants": ["D", "T"],
             "products": ["He", "n"],
             "energy": 13.5e6,  # eV
-            "reactivities": (  # m^3/s
-                np.array(
-                    [
-                        1.254e-32,
-                        7.292e-31,
-                        9.344e-30,
-                        5.697e-29,
-                        2.253e-28,
-                        6.740e-28,
-                        1.662e-27,
-                        6.857e-27,
-                        2.546e-26,
-                        3.174e-26,
-                        6.923e-26,
-                        1.539e-25,
-                        1.773e-25,
-                        2.977e-25,
-                        8.425e-25,
-                        1.867e-24,
-                        5.974e-24,
-                        1.366e-23,
-                        2.554e-23,
-                        6.222e-23,
-                        1.136e-22,
-                        1.747e-22,
-                        2.740e-22,
-                        4.330e-22,
-                        6.681e-22,
-                        7.998e-22,
-                        8.649e-22,
-                    ]
-                ),
+            "reactivities": (
                 # eV
                 np.array(
                     [
@@ -138,6 +116,38 @@ nuclear_reaction = NuclearReaction(
                         30.0e3,
                         40.0e3,
                         50.0e3,
+                    ]
+                ),
+                # m^3/s
+                np.array(
+                    [
+                        1.254e-32,
+                        7.292e-31,
+                        9.344e-30,
+                        5.697e-29,
+                        2.253e-28,
+                        6.740e-28,
+                        1.662e-27,
+                        6.857e-27,
+                        2.546e-26,
+                        3.174e-26,
+                        6.923e-26,
+                        1.539e-25,
+                        1.773e-25,
+                        2.977e-25,
+                        8.425e-25,
+                        1.867e-24,
+                        5.974e-24,
+                        1.366e-23,
+                        2.554e-23,
+                        6.222e-23,
+                        1.136e-22,
+                        1.747e-22,
+                        2.740e-22,
+                        4.330e-22,
+                        6.681e-22,
+                        7.998e-22,
+                        8.649e-22,
                     ]
                 ),
             ),

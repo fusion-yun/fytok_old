@@ -58,7 +58,7 @@ class Code:
     library: List[Library]
 
     def __str__(self) -> str:
-        return f"{self.name}-{self.version or '0.0.0'} [{self.copyright or 'fytok'}]"
+        return f"{self.name} [{self.version or '0.0.0'}-{self.copyright or 'fytok'}]"
 
     def __repr__(self) -> str:
         desc = {
@@ -105,8 +105,7 @@ class Module(Actor):
         if code is not _not_found_:
             self.code.update(code)
 
-        for name, edge in self.inputs.items():
-            edge.source.update(getattr(self._parent, name, _not_found_))
+       
 
     code: Code
     """ 对于 Module 的一般性说明。 

@@ -1107,7 +1107,7 @@ class FyEqAnalyze(Equilibrium):
         - Surface average
 
     """
-    code: Code    = {"name": "fy_eq", "version": "0.0.1", "copyright": "Zhi YU@ASIPP"} 
+    code: Code    = {"name": "fy_eq"} 
 
     TimeSlice = FyEquilibriumTimeSlice
 

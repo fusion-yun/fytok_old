@@ -52,30 +52,36 @@ class FusionReaction(CoreSources.Source):
     identifier = "fusion"
     code = {"name": "fusion_reaction", "description": r"Burning $D + T \rightarrow \alpha$"}
 
-    def refresh(self, *args, **kwargs):
-        super().refresh(*args, **kwargs)
+    def fetch(self, x: Variable, **vars: typing.Dict[str, Expression]) -> CoreSources.Source.TimeSlice:
+        res = super().fetch(x, **vars)
 
-    def fetch(self, /, x: Variable, **vars: typing.Dict[str, Expression]) -> CoreSources.Source.TimeSlice:
-        res = super().fetch(x=x, **vars)
+        core_source_1d = res.profiles_1d
 
-        reactivities = nuclear_reaction[r"D(t,n)\alpha"]["reactivities"]
+        reactivities = nuclear_reaction[r"D(t,n)He"]["reactivities"]
 
-        nD: Expression | None = vars.get("ion/D/density_thermal")
-        nT = vars.get("ion/T/density_thermal")
-        TD = vars.get("ion/T/temperature")
+        nD: Expression | None = vars.get("ion/D/density")
+        nT = vars.get("ion/T/density")
+        TD = vars.get("ion/D/temperature")
         TT = vars.get("ion/T/temperature")
         Te = vars.get("electrons/temperature")
-        ne = vars.get("electrons/density_thermal")
+        ne = vars.get("electrons/density")
         nAlpha = vars.get("ion/alpha/density")
 
         Ti = (nD * TD + nT * TT) / (nD + nT)
 
-        sDT = reactivities(Ti)
+        S = reactivities(Ti) * nT * nD
 
-        core_source_1d = res.profiles_1d
+        lnGamma = 17
 
-        core_source_1d.ion["D"].particles_decomposed.implicit_part = -sDT * nT
-        core_source_1d.ion["T"].particles_decomposed.implicit_part = -sDT * nD
-        core_source_1d.ion["alpha"].particles_decomposed.explicit_part = sDT * nD * nT
+        tau_slowing_down = 1.99 * ((Te / 1000) ** (3 / 2)) / (ne * 1.0e-19 * lnGamma)
+
+        core_source_1d.ion = [
+            {"label": "D", "particles": -S},
+            {"label": "T", "particles": -S},
+            {"label": "He", "particles": S},
+            {"label": "alpha", "particles": S - nAlpha / tau_slowing_down},
+        ]
+
+        # core_source_1d.electrons.energy = nAlpha / tau_slowing_down * Te
 
         return res

@@ -179,9 +179,9 @@ class TransportSolverNumerics(IDS):
                     s[-2] = "e"
             if len(s) == 1:
                 label = name
-            elif s[-1] == "density_thermal":
+            elif s[-1] == "density":
                 label = f"n_{{{s[-2]}}}"
-            elif s[-1] == "density_thermal_flux":
+            elif s[-1] == "density_flux":
                 label = f"\Gamma_{{{s[-2]}}}"
             elif s[-1] == "temperature":
                 label = f"T_{{{s[-2]}}}"

@@ -83,7 +83,7 @@ class FyTrans(TransportSolverNumerics):
                   $$ transport_electron_temperature
         """
 
-    code: Code = {"name": "fy_trans", "version": "0.0.1"}
+    code: Code = {"name": "fy_trans"}
 
     def preprocess(self, *args, **kwargs):
         super().preprocess(*args, **kwargs)
@@ -214,6 +214,52 @@ class FyTrans(TransportSolverNumerics):
             for k in species
         }
 
+        # quasi_neutrality_condition
+        if "electrons/density" not in vars:
+            ne = 0
+            ne_flux = 0
+            for spec in species:
+                if spec == "electrons":
+                    continue
+                z = atoms[spec.removeprefix("ion/")].z
+                ne += z * vars.get(f"{spec}/density", 0.0)
+                ne_flux += z * vars.get(f"{spec}/density_flux", 0.0)
+
+            for ion in core_profiles_1d.ion:
+                if f"ion/{ion.label}/density" not in vars:
+                    ne += ion.density(x)
+
+            vars["electrons/density"] = ne
+            vars["electrons/density_flux"] = ne_flux
+            # S_ne_explicit = 0
+            # S_ne_implicit = 0
+            # for source in core_sources.source:
+            #     electrons = source.time_slice.current.profiles_1d.electrons
+            #     S_ne_explicit += electrons.get("particles", 0)
+            #     S_ne_explicit += electrons.particles_decomposed.get("explicit_part", 0)
+            #     S_ne_implicit += electrons.particles_decomposed.get("implicit_part", 0)
+            # if isinstance(S_ne_explicit, Expression):
+            #     S_ne_explicit = S_ne_explicit(x)
+            # if isinstance(S_ne_implicit, Expression):
+            #     S_ne_implicit = S_ne_implicit(x)
+
+            # vars["electrons/density_flux"] = rho_tor_boundary * (vpr * (S_ne_explicit + ne * S_ne_implicit)).I
+
+        else:
+            ne = vars["electrons/density"]
+            ne_flux = vars["electrons/density_flux"]
+
+            z_of_ions = 0
+            for spec in species:
+                if spec == "electrons":
+                    continue
+
+                vars[f"{spec}/density"] = None
+                z_of_ions += atoms[spec.removeprefix("ion/")].z
+
+            for k in vars:
+                vars[k] = -ne / z_of_ions(x)
+
         if core_transport is not None:
             flux_multiplier = sum(
                 [
@@ -247,52 +293,6 @@ class FyTrans(TransportSolverNumerics):
                     d["S"] += source_1d.get(f"{spec}/particles", 0)
                     d["Q"] += source_1d.get(f"{spec}/energy", 0)
                     d["U"] += source_1d.get(f"{spec}/momentum/toroidal", 0)
-
-        # quasi_neutrality_condition
-        if "electrons/density_thermal" not in vars:
-            ne = 0
-            ne_flux = 0
-            for spec in species:
-                if spec == "electrons":
-                    continue
-
-                ne += atoms[spec.removeprefix("ion/")].z * vars.get(f"{spec}/density_thermal", 0.0)
-                ne_flux += atoms[spec].z * vars.get(f"{spec}/density_thermal_flux", 0.0)
-
-            for ion in core_profiles_1d.ion:
-                if f"ion/{ion.label}/density_thermal" not in vars:
-                    ne += ion.density_thermal(x)
-
-            vars["electrons/density_thermal"] = ne
-            vars["electrons/density_thermal_flux"] = ne_flux
-            # S_ne_explicit = 0
-            # S_ne_implicit = 0
-            # for source in core_sources.source:
-            #     electrons = source.time_slice.current.profiles_1d.electrons
-            #     S_ne_explicit += electrons.get("particles", 0)
-            #     S_ne_explicit += electrons.particles_decomposed.get("explicit_part", 0)
-            #     S_ne_implicit += electrons.particles_decomposed.get("implicit_part", 0)
-            # if isinstance(S_ne_explicit, Expression):
-            #     S_ne_explicit = S_ne_explicit(x)
-            # if isinstance(S_ne_implicit, Expression):
-            #     S_ne_implicit = S_ne_implicit(x)
-
-            # vars["electrons/density_thermal_flux"] = rho_tor_boundary * (vpr * (S_ne_explicit + ne * S_ne_implicit)).I
-
-        else:
-            ne = vars["electrons/density_thermal"]
-            ne_flux = vars["electrons/density_thermal_flux"]
-
-            z_of_ions = 0
-            for spec in species:
-                if spec == "electrons":
-                    continue
-
-                vars[f"{spec}/density_thermal"] = None
-                z_of_ions += atoms[spec.removeprefix("ion/")].z
-
-            for k in vars:
-                vars[k] = -ne / z_of_ions(x)
 
         for equ in current.equation:
             identifier = equ.primary_quantity.identifier
@@ -372,7 +372,7 @@ class FyTrans(TransportSolverNumerics):
 
                         equ.coefficient += [[u, v, w]]
 
-                case "density_thermal":
+                case "density":
                     transp_D = coeff[spec].get("transp_D", 0)
                     transp_V = coeff[spec].get("transp_V", 0)
                     S = coeff[spec].get("S", 0)
@@ -430,11 +430,11 @@ class FyTrans(TransportSolverNumerics):
                     energy_V = coeff[spec].get("energy_V", 0)
                     Q = coeff[spec].get("Q", 0)
 
-                    ns = vars.get(f"{spec}/density_thermal", 0)
+                    ns = vars.get(f"{spec}/density", 0)
 
-                    ns_m = vars_m.get(f"{spec}/density_thermal", 0)
+                    ns_m = vars_m.get(f"{spec}/density", 0)
 
-                    ns_flux = flux_multiplier * vars.get(f"{spec}/density_thermal_flux", 0)
+                    ns_flux = flux_multiplier * vars.get(f"{spec}/density_flux", 0)
 
                     a = (3 / 2) * (vpr ** (5 / 3)) * ns
 
@@ -489,11 +489,11 @@ class FyTrans(TransportSolverNumerics):
                 case "momentum":
                     ms = atoms.get(f"{spec}/mass", np.nan)
 
-                    ns = vars.get(f"{spec}/density_thermal", 0)
+                    ns = vars.get(f"{spec}/density", 0)
 
-                    ns_flux = vars.get(f"{spec}/density_thermal_flux", 0)
+                    ns_flux = vars.get(f"{spec}/density_flux", 0)
 
-                    ns_m = vars_m.get(f"{spec}/density_thermal", 0)
+                    ns_m = vars_m.get(f"{spec}/density", 0)
 
                     chi_u = coeff[spec].get("chi_u", 0)
 

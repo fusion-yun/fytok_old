@@ -47,21 +47,15 @@ class SlowingDown(CoreSources.Source):
     Here $E_{c}$ is the slowing down critical energy. We remind that $E_{c}/E_{\\alpha}=33.05 T_e/E_{\\alpha}$, where $E_{\\alpha}=3500 keV$  is the thirth energy of $\\alpha$ particles.
     """
 
-    _metadata = {
-        "identifier": {
-            "name": f"slowing_down",
-            "index": 11,
-            "description": r"  $\alpha -> He$ burning and slowing down ",
-        }
-    }
+    code = {"name": f"slowing_down", "description": r"  $\alpha -> He$ burning and slowing down "}
 
     def fetch(self, x: Variable, vars: typing.Dict[str, Expression], **kwargs) -> float:
-        nD: Expression | None = vars.get("ion/D/density_thermal")
-        nT = vars.get("ion/T/density_thermal")
+        nD: Expression | None = vars.get("ion/D/density")
+        nT = vars.get("ion/T/density")
         TD = vars.get("ion/T/temperature")
         TT = vars.get("ion/T/temperature")
         Te = vars.get("electrons/temperature")
-        ne = vars.get("electrons/density_thermal")
+        ne = vars.get("electrons/density")
         nAlpha = vars.get("ion/alpha/density")
 
         res = CoreSources.Source.TimeSlice({})
@@ -72,9 +66,10 @@ class SlowingDown(CoreSources.Source):
 
         core_source_1d = res.profiles_1d
 
-        core_source_1d.ion["alpha"].particles_decomposed.implicit_part = -1 / tau_slowing_down
-
-        core_source_1d.ion["He"].particles = nAlpha / tau_slowing_down
+        core_source_1d.ion[
+            {"label": "alpha", "particles": -nAlpha / tau_slowing_down},
+            {"label": "He", "particles": nAlpha / tau_slowing_down},
+        ]
 
         core_source_1d.electrons.energy = nAlpha / tau_slowing_down * Te
 

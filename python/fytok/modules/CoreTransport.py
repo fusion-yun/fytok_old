@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from copy import copy
 
 from spdm.data.AoS import AoS
@@ -94,6 +96,12 @@ class CoreTransportModel(Module):
 
     code: Code = {"name": "dummy"}
 
+    def __init__(self, *args, _parent: CoreTransport = None, **kwargs):
+        if isinstance(_parent, AoS):
+            _parent = _parent._parent
+
+        super().__init__(*args, _parent=_parent, **kwargs)
+
     TimeSlice = CoreTransportTimeSlice
 
     identifier: str
@@ -115,7 +123,7 @@ class CoreTransport(core_transport._T_core_transport):
     Model = CoreTransportModel
 
     model: AoS[CoreTransportModel]
-            
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

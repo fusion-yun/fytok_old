@@ -100,12 +100,12 @@ def sp_to_imas(data: dict):
     entry["core_profiles/time_slice/0/profiles_1d/electrons/temperature"]                          = np.asarray(data[n:=n+1][1:])*1000.0  #  electron temperature, eV
     entry["core_profiles/time_slice/0/profiles_1d/t_i_average"]                                    = np.asarray(data[n:=n+1][1:])*1000.0  #  ion temperatue, eV
     entry["core_profiles/time_slice/0/profiles_1d/q"]                                              = np.asarray(data[n:=n+1][1:])  # q (i.e., safety factor) profile
-    entry["core_profiles/time_slice/0/profiles_1d/electrons/density_thermal"]                      = np.asarray(data[n:=n+1][1:])  # electron density, #/meter**3
+    entry["core_profiles/time_slice/0/profiles_1d/electrons/density"]                              = np.asarray(data[n:=n+1][1:])  # electron density, #/meter**3
 
 
     for i_prim in range(nprim):        
         entry[f"core_profiles/time_slice/0/profiles_1d/ion/{i_prim}/label"]                        = namep[i_prim]                # ion name  
-        entry[f"core_profiles/time_slice/0/profiles_1d/ion/{i_prim}/density_thermal"]              = np.asarray(data[n:=n+1][1:]) # primary ion density, #/meter**3, species: d       
+        entry[f"core_profiles/time_slice/0/profiles_1d/ion/{i_prim}/density"]                      = np.asarray(data[n:=n+1][1:]) # primary ion density, #/meter**3, species: d       
 
     for i_prim in range(nprim):
         entry[f"core_sources/source/ionisation/time_slice/0/profiles_1d/ion/{i_prim}/density"]     = np.asarray(data[n:=n+1][1:]) # ionisation

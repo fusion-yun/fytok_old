@@ -61,11 +61,10 @@ class CoreProfilesIon(utilities._T_core_profile_ions):
 
     temperature: Expression = sp_property(units="eV", default_value=1.0)
 
-    @sp_property
-    def density(self) -> Expression:
-        return self.density_thermal + self.density_fast
+    density: Expression
 
     density_thermal: Expression
+    
     density_fast: Expression
 
     @sp_property

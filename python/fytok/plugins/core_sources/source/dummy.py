@@ -14,8 +14,5 @@ class CoreSourceDummy(CoreSources.Source):
 
     identifier = "unspecified"
 
-    def refresh(self, *args, **kwargs):
-        return super().refresh(*args, **kwargs)
-
 
 __SP_EXPORT__ = CoreSourceDummy

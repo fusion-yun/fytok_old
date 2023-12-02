@@ -83,6 +83,11 @@ class CoreSourcesTimeSlice(TimeSlice):
 class CoreSourcesSource(Module):
     _plugin_prefix = "fytok.plugins.core_sources.source."
 
+    def __init__(self, *args, _parent: CoreSources = None, **kwargs):
+        if isinstance(_parent, AoS):
+            _parent = _parent._parent
+        super().__init__(*args, _parent=_parent, **kwargs)
+
     identifier: str
 
     species: DistributionSpecies
@@ -91,8 +96,8 @@ class CoreSourcesSource(Module):
 
     time_slice: TimeSeriesAoS[CoreSourcesTimeSlice]
 
-    def refresh(self, *args, equilibrium: Equilibrium, **kwargs):
-        super().refresh(*args, equilibrium=equilibrium, **kwargs)
+    def refresh(self, *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None, **kwargs):
+        super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
         # current = self.time_slice.current.profiles_1d
         # if current.cache_get("grid_d", _not_found_) is _not_found_:
