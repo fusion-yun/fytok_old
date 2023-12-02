@@ -1,5 +1,6 @@
 from __future__ import annotations
 from copy import copy
+import math
 from spdm.data.AoS import AoS
 from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
@@ -83,11 +84,6 @@ class CoreSourcesTimeSlice(TimeSlice):
 class CoreSourcesSource(Module):
     _plugin_prefix = "fytok.plugins.core_sources.source."
 
-    def __init__(self, *args, _parent: CoreSources = None, **kwargs):
-        if isinstance(_parent, AoS):
-            _parent = _parent._parent
-        super().__init__(*args, _parent=_parent, **kwargs)
-
     identifier: str
 
     species: DistributionSpecies
@@ -95,6 +91,23 @@ class CoreSourcesSource(Module):
     TimeSlice = CoreSourcesTimeSlice
 
     time_slice: TimeSeriesAoS[CoreSourcesTimeSlice]
+
+    def preprocess(self, *args, **kwargs):
+        super().preprocess(*args, **kwargs)
+
+        current = self.time_slice.current
+
+        if current.cache_get("grid", _not_found_) is _not_found_:
+            equilibrium: Equilibrium.TimeSlice = self.inputs.get_source("equilibrium").time_slice.current
+
+            if current.time is _not_found_ or current.time is None:
+                current.time = equilibrium.time
+
+            assert math.isclose(equilibrium.time, self.time), f"{equilibrium.time} != {self.time}"
+
+            current["profiles_1d/grid"] = equilibrium.profiles_1d.grid.remesh(
+                self.code.parameters.get("rho_tor_norm", None)
+            )
 
     def refresh(self, *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None, **kwargs):
         super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)

@@ -43,7 +43,6 @@ def sp_read_iterdb_txt(path: str | pathlib.Path):
 
 
 def sp_to_imas(data: dict):
-
     entry = Entry({})
     n = 0
     # fmt:off
@@ -97,8 +96,8 @@ def sp_to_imas(data: dict):
     entry["core_profiles/time_slice/0/profiles_1d/fcap"]                                           = np.asarray(data[n:=n+1][1:])  #  fcap, (i.e., f(psilim)/f(psi))
     entry["core_profiles/time_slice/0/profiles_1d/gcap"]                                           = np.asarray(data[n:=n+1][1:])  #  gcap, (i.e., <(grad rho)**2*(R0/R)**2>)
     entry["core_profiles/time_slice/0/profiles_1d/hcap"]                                           = np.asarray(data[n:=n+1][1:])  #  hcap, (i.e., (dvolume/drho)/(4*pi*pi*R0*rho))
-    entry["core_profiles/time_slice/0/profiles_1d/electrons/temperature"]                          = np.asarray(data[n:=n+1][1:])*1000.0  #  electron temperature, eV
-    entry["core_profiles/time_slice/0/profiles_1d/t_i_average"]                                    = np.asarray(data[n:=n+1][1:])*1000.0  #  ion temperatue, eV
+    entry["core_profiles/time_slice/0/profiles_1d/electrons/temperature"]                          = Te = np.asarray(data[n:=n+1][1:])*1000.0  #  electron temperature, eV
+    entry["core_profiles/time_slice/0/profiles_1d/t_i_average"]                                    = Ti = np.asarray(data[n:=n+1][1:])*1000.0  #  ion temperatue, eV
     entry["core_profiles/time_slice/0/profiles_1d/q"]                                              = np.asarray(data[n:=n+1][1:])  # q (i.e., safety factor) profile
     entry["core_profiles/time_slice/0/profiles_1d/electrons/density"]                              = np.asarray(data[n:=n+1][1:])  # electron density, #/meter**3
 
@@ -106,7 +105,7 @@ def sp_to_imas(data: dict):
     for i_prim in range(nprim):        
         entry[f"core_profiles/time_slice/0/profiles_1d/ion/{i_prim}/label"]                        = namep[i_prim]                # ion name  
         entry[f"core_profiles/time_slice/0/profiles_1d/ion/{i_prim}/density"]                      = np.asarray(data[n:=n+1][1:]) # primary ion density, #/meter**3, species: d       
-
+        entry[f"core_profiles/time_slice/0/profiles_1d/ion/{i_prim}/temperature"]                  = Ti
     for i_prim in range(nprim):
         entry[f"core_sources/source/ionisation/time_slice/0/profiles_1d/ion/{i_prim}/density"]     = np.asarray(data[n:=n+1][1:]) # ionisation
         entry[f"core_sources/source/recombination/time_slice/0/profiles_1d/ion/{i_prim}/density"]  = np.asarray(data[n:=n+1][1:]) # recombination
@@ -125,26 +124,26 @@ def sp_to_imas(data: dict):
         entry[f"core_profiles/time_slice/0/profiles_1d/neutral/{i_neu}/density"]                   = np.asarray(data[n:=n+1][1:]) #  neutral density from volume source, #/meter**3, species: d       
         entry[f"core_sources/source/particles_to_wall/time_slice/0/profiles_1d/neutral/{i_neu}/density"] = np.asarray(data[n:=n+1][1:]) #  volume source of neutrals, #/(meter**3*second), species: d       
 
-    entry["core_sources/source/nbi/time_slice/0/profiles_1d/electrons/density"]                    = np.asarray(data[n:=n+1][1:]) # beam electron source, #/(meter**3*second)
-    entry["core_sources/source/nbi/time_slice/0/profiles_1d/ion/0/density"]                        = np.asarray(data[n:=n+1][1:]) # beam ion source, #/(meter**3*second)
+    entry["core_sources/source/nbi/time_slice/0/profiles_1d/electrons/particle"]                   = np.asarray(data[n:=n+1][1:]) # beam electron source, #/(meter**3*second)
+    entry["core_sources/source/nbi/time_slice/0/profiles_1d/ion/0/particle"]                       = np.asarray(data[n:=n+1][1:]) # beam ion source, #/(meter**3*second)
     entry["core_profiles/time_slice/0/profiles_1d/j_total"]                                        = np.asarray(data[n:=n+1][1:]) #  total current density, amps/meter**2
     entry["core_profiles/time_slice/0/profiles_1d/j_ohmic"]                                        = np.asarray(data[n:=n+1][1:]) # ohmic current density, amps/meter**2
     entry["core_profiles/time_slice/0/profiles_1d/j_bootstrap"]                                    = np.asarray(data[n:=n+1][1:]) # bootstrap current density, amps/meter**2
     entry["core_profiles/time_slice/0/profiles_1d/j_non_inductive"]                                =(np.asarray(data[n:=n+1][1:]) # beam-driven current density, amps/meter**2
-                                                                                        + np.asarray(data[n:=n+1][1:])) # RF current density, amps/meter**2
+                                                                                                    + np.asarray(data[n:=n+1][1:])) # RF current density, amps/meter**2
     entry["core_profiles/time_slice/0/profiles_1d/_rbfgh"]                                         = np.asarray(data[n:=n+1][1:]) # rho*bp0*fcap*gcap*hcap, tesla*meters
     entry["core_profiles/time_slice/0/profiles_1d/zeff"]                                           = np.asarray(data[n:=n+1][1:]) # rho*bp0*fcap*gcap*hcap, tesla*meters
     entry["core_profiles/time_slice/0/profiles_1d/rotation_frequency_tor_sonic"]                   = np.asarray(data[n:=n+1][1:]) # angular rotation speed profile, rad/sec
 
-    entry["core_transport/model/0/time_slice/0/profiles_1d/electrons/particles/d"]                = np.asarray(data[n:=n+1][1:]) # electron thermal diffusivity, meters**2/sec on half grid
-    entry["core_transport/model/0/time_slice/0/profiles_1d/ion/0/particles/d"]                    = np.asarray(data[n:=n+1][1:]) # ion thermal diffusivity, meters**2/second on half grid
-    entry["core_transport/model/5/time_slice/0/profiles_1d/ion/0/energy/d"]                       = np.asarray(data[n:=n+1][1:]) # ion neoclassical thermal conductivity, 1/(meter*second), on half grid
-    entry["core_transport/model/0/time_slice/0/profiles_1d/electrons/dpdt"]                       = np.asarray(data[n:=n+1][1:]) # wdot, electrons, watts/meter**3
-    entry["core_transport/model/0/time_slice/0/profiles_1d/ion/0/dpdt"]                           = np.asarray(data[n:=n+1][1:]) # wdot, ions, watts/meter**3
-    entry["core_transport/model/0/time_slice/0/profiles_1d/conductivity_parallel"]                = np.asarray(data[n:=n+1][1:]) # electron conduction, watts/meter**3
-    entry["core_transport/model/0/time_slice/0/profiles_1d/ion/0/conductivity_parallel"]          = np.asarray(data[n:=n+1][1:]) # ion conduction, watts/meter**3
-    entry["core_transport/model/0/time_slice/0/profiles_1d/electrons/particles/v"]                = np.asarray(data[n:=n+1][1:]) # electron convection, watts/meter**3
-    entry["core_transport/model/0/time_slice/0/profiles_1d/ion/0/particles/v"]                    = np.asarray(data[n:=n+1][1:]) # ion convection, watts/meter**3
+    entry["core_transport/model/0/time_slice/0/profiles_1d/electrons/particles/d"]                 = np.asarray(data[n:=n+1][1:]) # electron thermal diffusivity, meters**2/sec on half grid
+    entry["core_transport/model/0/time_slice/0/profiles_1d/ion/0/particles/d"]                     = np.asarray(data[n:=n+1][1:]) # ion thermal diffusivity, meters**2/second on half grid
+    entry["core_transport/model/5/time_slice/0/profiles_1d/ion/0/energy/d"]                        = np.asarray(data[n:=n+1][1:]) # ion neoclassical thermal conductivity, 1/(meter*second), on half grid
+    entry["core_transport/model/0/time_slice/0/profiles_1d/electrons/dpdt"]                        = np.asarray(data[n:=n+1][1:]) # wdot, electrons, watts/meter**3
+    entry["core_transport/model/0/time_slice/0/profiles_1d/ion/0/dpdt"]                            = np.asarray(data[n:=n+1][1:]) # wdot, ions, watts/meter**3
+    entry["core_transport/model/0/time_slice/0/profiles_1d/conductivity_parallel"]                 = np.asarray(data[n:=n+1][1:]) # electron conduction, watts/meter**3
+    entry["core_transport/model/0/time_slice/0/profiles_1d/ion/0/conductivity_parallel"]           = np.asarray(data[n:=n+1][1:]) # ion conduction, watts/meter**3
+    entry["core_transport/model/0/time_slice/0/profiles_1d/electrons/particles/v"]                 = np.asarray(data[n:=n+1][1:]) # electron convection, watts/meter**3
+    entry["core_transport/model/0/time_slice/0/profiles_1d/ion/0/particles/v"]                     = np.asarray(data[n:=n+1][1:]) # ion convection, watts/meter**3
 
     # Energy Source
     entry["core_sources/source/nbi/time_slice/0/profiles_1d/electrons/energy"]                     = np.asarray(data[n:=n+1][1:]) #  power to elec. from beam, watts/meter**3
@@ -168,21 +167,21 @@ def sp_to_imas(data: dict):
     entry["core_sources/source/ohmic/time_slice/0/profiles_1d/electrons/energy"]                   = np.asarray(data[n:=n+1][1:]) #  (electron) ohmic power density, watts/meter**3
 
     # flux surface  
-    entry["equilibrium/time_slice/0/profiles_1d/major_radius"]                          = np.asarray(data[n:=n+1][1:]) #  average major radius of each flux surface, meters, evaluated at elevation of magnetic axis
-    entry["equilibrium/time_slice/0/profiles_1d/minor_radius"]                          = np.asarray(data[n:=n+1][1:]) #  average minor radius of each flux surface, meters, evaluated at elevation of magnetic axis
-    entry["equilibrium/time_slice/0/profiles_1d/volume"]                                = np.asarray(data[n:=n+1][1:]) #  volume of each flux surface, meters**3
-    entry["equilibrium/time_slice/0/profiles_1d/elongation"]                            = np.asarray(data[n:=n+1][1:]) #  elongation of each flux surface
-    entry["equilibrium/time_slice/0/profiles_1d/triangularity"]                         = np.asarray(data[n:=n+1][1:]) #  triangularity of each flux surface
-    entry["equilibrium/time_slice/0/profiles_1d/indentation"]                           = np.asarray(data[n:=n+1][1:]) #  indentation of each flux surface
-    entry["equilibrium/time_slice/0/profiles_1d/surface"]                               = np.asarray(data[n:=n+1][1:]) #  surface area of each flux surface, meter**2
-    entry["equilibrium/time_slice/0/profiles_1d/Rhr4pp"]                                = np.asarray(data[n:=n+1][1:]) #  this is 4*pi*pi*R0*hcap*rho*<ABS(grad rho)>; see file "iter1.ps" for explanation
-    entry["equilibrium/time_slice/0/profiles_1d/area"]                                  = np.asarray(data[n:=n+1][1:]) #  cross-sectional area of each flux surface, meters**2
-    entry["equilibrium/time_slice/0/profiles_1d/gm7"]                                   = np.asarray(data[n:=n+1][1:]) #  flux surface average absolute grad rho
-    entry["equilibrium/time_slice/0/profiles_1d/gm3"]                                   = np.asarray(data[n:=n+1][1:]) #  flux surface average (grad rho)**2
-
-    nbbdry                                                                              = data[n:=n+1][1]              #  nplasbdry : number of points on plasma boundary
-    entry["equilibrium/time_slice/0/boundary/outline/r"]                                = np.asarray(data[n:=n+1][1:]) #  r points for plasma boundary, meters
-    entry["equilibrium/time_slice/0/boundary/outline/z"]                                = np.asarray(data[n:=n+1][1:]) #  z points for plasma boundary, meters
+    entry["equilibrium/time_slice/0/profiles_1d/major_radius"]                                     = np.asarray(data[n:=n+1][1:]) #  average major radius of each flux surface, meters, evaluated at elevation of magnetic axis
+    entry["equilibrium/time_slice/0/profiles_1d/minor_radius"]                                     = np.asarray(data[n:=n+1][1:]) #  average minor radius of each flux surface, meters, evaluated at elevation of magnetic axis
+    entry["equilibrium/time_slice/0/profiles_1d/volume"]                                           = np.asarray(data[n:=n+1][1:]) #  volume of each flux surface, meters**3
+    entry["equilibrium/time_slice/0/profiles_1d/elongation"]                                       = np.asarray(data[n:=n+1][1:]) #  elongation of each flux surface
+    entry["equilibrium/time_slice/0/profiles_1d/triangularity"]                                    = np.asarray(data[n:=n+1][1:]) #  triangularity of each flux surface
+    entry["equilibrium/time_slice/0/profiles_1d/indentation"]                                      = np.asarray(data[n:=n+1][1:]) #  indentation of each flux surface
+    entry["equilibrium/time_slice/0/profiles_1d/surface"]                                          = np.asarray(data[n:=n+1][1:]) #  surface area of each flux surface, meter**2
+    entry["equilibrium/time_slice/0/profiles_1d/Rhr4pp"]                                           = np.asarray(data[n:=n+1][1:]) #  this is 4*pi*pi*R0*hcap*rho*<ABS(grad rho)>; see file "iter1.ps" for explanation
+    entry["equilibrium/time_slice/0/profiles_1d/area"]                                             = np.asarray(data[n:=n+1][1:]) #  cross-sectional area of each flux surface, meters**2
+    entry["equilibrium/time_slice/0/profiles_1d/gm7"]                                              = np.asarray(data[n:=n+1][1:]) #  flux surface average absolute grad rho
+    entry["equilibrium/time_slice/0/profiles_1d/gm3"]                                              = np.asarray(data[n:=n+1][1:]) #  flux surface average (grad rho)**2
+        
+    nbbdry                                                                                    = data[n:=n+1][1]              #  nplasbdry : number of points on plasma boundary
+    entry["equilibrium/time_slice/0/boundary/outline/r"]                                           = np.asarray(data[n:=n+1][1:]) #  r points for plasma boundary, meters
+    entry["equilibrium/time_slice/0/boundary/outline/z"]                                           = np.asarray(data[n:=n+1][1:]) #  z points for plasma boundary, meters
 
     while n < len(data)-1:
         entry[f"core_profiles/time_slice/0/profiles_1d/{data[n:=n+1][0]}"]                         = np.asarray(data[n][1:]) # beam   torque density, nt-m/m**3
@@ -194,7 +193,7 @@ def sp_to_imas(data: dict):
 
 @File.register(["iterdb"])
 class ITERDBFile(File):
-    """ Read iterdb file  (from gacode) """
+    """Read iterdb file  (from gacode)"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -212,4 +211,5 @@ class ITERDBFile(File):
 
         return sp_to_imas(data)
 
-    def write(self, d, *args, **kwargs): raise NotImplementedError(f"TODO: write ITERDB {self.url}")
+    def write(self, d, *args, **kwargs):
+        raise NotImplementedError(f"TODO: write ITERDB {self.url}")

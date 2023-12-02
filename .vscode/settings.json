@@ -2,10 +2,8 @@
   "python.testing.unittestEnabled": true,
   "python.testing.unittestArgs": ["-v", "-s", "./tests/", "-p", "test_*.py"],
   "python.testing.pytestEnabled": false,
-  "python.testing.nosetestsEnabled": false,
   "python.testing.promptToConfigure": false,
 
-  "cSpell.words": ["fytok", "spdm"],
   "python.analysis.typeCheckingMode": "off",
   "python.autoComplete.extraPaths": [
     "/home/salmon/workspace/fytok/SpDM/python",

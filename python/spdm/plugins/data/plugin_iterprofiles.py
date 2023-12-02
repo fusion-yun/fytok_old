@@ -124,6 +124,11 @@ def load_core_transport(profiles, grid, R0: float, B0: float = None):
                 "particles": {"d": D, "v": v_pinch_ni},
                 "energy": {"d": chi, "v": v_pinch_Ti},
             },
+            {
+                "label": "alpha",
+                "particles": {"d": D, "v": v_pinch_ni},
+                "energy": {"d": chi, "v": v_pinch_Ti},
+            },
         ],
     }
 
@@ -155,7 +160,7 @@ def load_core_source(profiles, grid, R0: float, B0: float = None):
         / scipy.constants.electron_volt
     )
 
-    Q_He =(profiles["Pdti"].values + profiles["Pdte"].values) * 1e6 / scipy.constants.electron_volt
+    Q_He = (profiles["Pdti"].values + profiles["Pdte"].values) * 1e6 / scipy.constants.electron_volt
 
     # Core Source
     return {
@@ -399,7 +404,7 @@ def read_iter_profiles(path):
         "ion": [
             {"label": "D", "particles": S * 0.5, "energy": Q_DT * 0.5},
             {"label": "T", "particles": S * 0.5, "energy": Q_DT * 0.5},
-            {"label": "He", "particles": S * 0.01, "energy": Q_DT*0.01},
+            {"label": "He", "particles": S * 0.01, "energy": Q_DT * 0.01},
         ],
     }
 

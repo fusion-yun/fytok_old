@@ -27,8 +27,8 @@ class CollisionalEquipartition(CoreSources.Source):
 
         core_profiles_1d = core_profiles.time_slice.current.profiles_1d
 
-        Te = core_profiles_1d.electrons.temperature
-        ne = core_profiles_1d.electrons.density
+        Te = core_profiles_1d.electrons.temperature(x)
+        ne = core_profiles_1d.electrons.density(x)
 
         gamma_ei = 15.2 - np.log(ne) / np.log(1.0e20) + np.log(Te) / np.log(1.0e3)
         epsilon = scipy.constants.epsilon_0
@@ -44,11 +44,11 @@ class CollisionalEquipartition(CoreSources.Source):
         coeff = (3 / 2) * e / (mp / me / 2) / tau_e
 
         core_source_1d["ion"] = [
-            {"label": ion.label, "energy": (ion.density * (ion.z**2) / ion.a * (Te - ion.temperature) * coeff)}
+            {"label": ion.label, "energy": (ion.density(x) * (ion.z**2) / ion.a * (Te - ion.temperature(x)) * coeff)}
             for ion in core_profiles_1d.ion
         ]
 
-        core_source_1d.electrons["energy"] = -sum([ion.energy for ion in core_source_1d.ion], 0)
+        core_source_1d.electrons["energy"] = -sum([ion.energy(x) for ion in core_source_1d.ion], 0)
 
         return res
 

@@ -9,6 +9,7 @@ from spdm.data.Expression import Expression
 from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.data.Path import update_tree
+from spdm.utils.tags import _not_found_
 
 from ..utils.atoms import atoms
 from ..utils.logger import logger
@@ -51,26 +52,30 @@ class CoreProfilesIon(utilities._T_core_profile_ions):
     def charge(self) -> float:
         return self.z * scipy.constants.elementary_charge
 
-    z_ion_1d: Expression = sp_property(units="-")
+    @sp_property(unit="C")
+    def z_ion_1d(self) -> Expression:
+        value = self.cache_get("z_ion_id", _not_found_)
+        if value is _not_found_:
+            value = self.z
+        return value
 
     @sp_property
     def z_ion_square_1d(self) -> Expression:
-        return self.z_ion * self.z_ion
+        return self.z_ion_1d * self.z_ion_1d
 
-    element: AoS[PlasmaCompositionNeutralElement]
+    temperature: Expression = sp_property(units="eV")
 
-    temperature: Expression = sp_property(units="eV", default_value=1.0)
-
-    density: Expression
+    density: Expression = sp_property(units="m^-3")
 
     density_thermal: Expression
-    
+
     density_fast: Expression
 
     @sp_property
     def pressure(self) -> Expression:
+        return self.density * self.temperature * scipy.constants.electron_volt
         # FIXME: coefficient on pressure fast
-        return self.pressure_thermal + self.pressure_fast_perpendicular + self.pressure_fast_parallel
+        # return self.pressure_thermal + self.pressure_fast_perpendicular + self.pressure_fast_parallel
 
     @sp_property
     def pressure_thermal(self) -> Expression:
@@ -122,9 +127,16 @@ class CoreProfilesNeutral(utilities._T_core_profile_neutral):
 
     density_fast: Expression = sp_property(units="m^-3")
 
-    pressure: Expression = sp_property(units="Pa")
+    @sp_property(units="Pa")
+    def pressure(self) -> Expression:
+        if self.density_thermal is _not_found_:
+            return self.density * self.temperature * scipy.constants.electron_volt
+        else:
+            return self.pressure_thermal + self.pressure_fast_parallel + self.pressure_fast_perpendicular
 
-    pressure_thermal: Expression = sp_property(units="Pa")
+    @sp_property(units="Pa")
+    def pressure_thermal(self) -> Expression:
+        return self.density_thermal * self.temperature * scipy.constants.electron_volt
 
     pressure_fast_perpendicular: Expression = sp_property(units="Pa")
 
@@ -146,25 +158,35 @@ class CoreProfilesElectrons(utilities._T_core_profiles_profiles_1d_electrons):
 
     @sp_property(units="m^-3")
     def density(self) -> Expression:
-        return self.density_thermal + self.density_fast
+        res = self.cache_get("density", _not_found_)
+        if self.density_thermal is not _not_found_:
+            res = self.density_thermal + self.density_fast
+        elif res is _not_found_ and self._parent is not None:
+            res = -sum([ion.z_ion_1d * ion.density for ion in self._parent.ion], 0)
+        return res
 
-    density_thermal: Expression = sp_property(units="m^-3", default_value=0.0)
+    density_thermal: Expression = sp_property(units="m^-3")
 
-    density_fast: Expression = sp_property(units="m^-3", default_value=0.0)
+    density_fast: Expression = sp_property(units="m^-3")
 
     @sp_property(units="Pa")
     def pressure(self) -> Expression:
-        return self.pressure_thermal + self.pressure_fast_parallel + self.pressure_fast_perpendicular
+        if self.density_thermal is _not_found_:
+            return self.density * self.temperature * scipy.constants.electron_volt
+        else:
+            return self.pressure_thermal + self.pressure_fast_parallel + self.pressure_fast_perpendicular
 
     @sp_property(units="Pa")
     def pressure_thermal(self) -> Expression:
-        return self.density * self.temperature * scipy.constants.electron_volt
+        return self.density_thermal * self.temperature * scipy.constants.electron_volt
 
-    pressure_fast_perpendicular: Expression = sp_property(units="Pa", default_value=0.0)
+    pressure_fast_perpendicular: Expression = sp_property(units="Pa", defalut_value=0)
 
-    pressure_fast_parallel: Expression = sp_property(units="Pa", default_value=0.0)
+    pressure_fast_parallel: Expression = sp_property(units="Pa", defalut_value=0)
 
-    collisionality_norm: Expression = sp_property(units="-", default_value=0.0)
+    @sp_property(units="-")
+    def collisionality_norm(self) -> Expression:
+        raise NotImplementedError("collisionality_norm")
 
     @sp_property
     def tau(self):
@@ -213,11 +235,7 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
 
     @sp_property
     def pressure(self) -> Expression:
-        p = [ion.pressure.__array__() for ion in self.ion]
-        if len(p) == 1:
-            return p[0]
-        else:
-            return np.sum(p, axis=0)
+        return sum([ion.pressure for ion in self.ion], self.electrons.pressure)
 
     @sp_property
     def pprime(self) -> Expression:
@@ -225,7 +243,7 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
 
     @sp_property
     def pressure_thermal(self) -> Expression:
-        return sum([ion.pressure_thermal for ion in self.ion]) + self.electrons.pressure_thermal
+        return sum([ion.pressure_thermal for ion in self.ion], self.electrons.pressure_thermal)
 
     t_i_average: Expression = sp_property(units="eV")
     # t_i_average_fit: _T_core_profiles_1D_fit = sp_property(units="eV")
@@ -303,11 +321,7 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
 
     @sp_property
     def beta_pol(self) -> Expression:
-        return (
-            4
-            * self.pressure.antiderivative()
-            / (self._parent.vacuum_toroidal_field.r0 * constants.mu_0 * (self.j_total**2))
-        )
+        return 4 * self.pressure.I / (self._parent.vacuum_toroidal_field.r0 * constants.mu_0 * (self.j_total**2))
 
     # if isinstance(d, np.ndarray) or (hasattr(d.__class__, 'empty') and not d.empty):
     #     return d

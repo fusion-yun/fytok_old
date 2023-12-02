@@ -1,5 +1,4 @@
 import collections
-
 import numpy as np
 from spdm.data.sp_property import sp_tree
 from fytok.modules.CoreProfiles import CoreProfiles

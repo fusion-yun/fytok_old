@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import copy
-
+import math
 from spdm.data.AoS import AoS
 from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
@@ -10,8 +10,10 @@ from spdm.utils.tags import _not_found_
 from .Utilities import *
 from .CoreProfiles import CoreProfiles
 from .Equilibrium import Equilibrium
-from ..ontology import core_transport
+
 from ..utils.logger import logger
+
+from ..ontology import core_transport
 
 
 @sp_tree
@@ -96,20 +98,31 @@ class CoreTransportModel(Module):
 
     code: Code = {"name": "dummy"}
 
-    def __init__(self, *args, _parent: CoreTransport = None, **kwargs):
-        if isinstance(_parent, AoS):
-            _parent = _parent._parent
-
-        super().__init__(*args, _parent=_parent, **kwargs)
-
     TimeSlice = CoreTransportTimeSlice
 
     identifier: str
 
     time_slice: TimeSeriesAoS[CoreTransportTimeSlice]
 
-    def refresh(self, *args, equilibrium: Equilibrium, **kwargs):
-        super().refresh(*args, equilibrium=equilibrium, **kwargs)
+    def preprocess(self, *args, **kwargs):
+        super().preprocess(*args, **kwargs)
+
+        current = self.time_slice.current
+
+        if current.cache_get("grid_d", _not_found_) is _not_found_:
+            equilibrium: Equilibrium.TimeSlice = self.inputs.get_source("equilibrium").time_slice.current
+
+            if current.time is _not_found_ or current.time is None:
+                current.time = equilibrium.time
+
+            assert math.isclose(equilibrium.time, self.time), f"{equilibrium.time} != {self.time}"
+
+            current["profiles_1d/grid_d"] = equilibrium.profiles_1d.grid.remesh(
+                self.code.parameters.get("rho_tor_norm", None)
+            )
+
+    def refresh(self, *args, core_profiles: CoreProfiles = None, equilibrium: Equilibrium = None, **kwargs):
+        super().refresh(*args, core_profiles=core_profiles, equilibrium=equilibrium, **kwargs)
 
         # current = self.time_slice.current.profiles_1d
         # if current.cache_get("grid", _not_found_) is _not_found_:

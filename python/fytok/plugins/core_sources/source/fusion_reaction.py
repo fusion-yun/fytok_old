@@ -61,11 +61,12 @@ class FusionReaction(CoreSources.Source):
 
         nD: Expression | None = vars.get("ion/D/density")
         nT = vars.get("ion/T/density")
+        nEP = vars.get("ion/alpha/density")
+
         TD = vars.get("ion/D/temperature")
         TT = vars.get("ion/T/temperature")
         Te = vars.get("electrons/temperature")
         ne = vars.get("electrons/density")
-        nAlpha = vars.get("ion/alpha/density")
 
         Ti = (nD * TD + nT * TT) / (nD + nT)
 
@@ -78,10 +79,10 @@ class FusionReaction(CoreSources.Source):
         core_source_1d.ion = [
             {"label": "D", "particles": -S},
             {"label": "T", "particles": -S},
-            {"label": "He", "particles": S},
-            {"label": "alpha", "particles": S - nAlpha / tau_slowing_down},
+            {"label": "He", "particles": nEP / tau_slowing_down},
+            {"label": "alpha", "particles": S - nEP / tau_slowing_down},
         ]
 
-        # core_source_1d.electrons.energy = nAlpha / tau_slowing_down * Te
+        core_source_1d.electrons.energy = nEP / tau_slowing_down * Te
 
         return res
