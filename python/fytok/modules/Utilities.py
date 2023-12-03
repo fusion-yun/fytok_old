@@ -58,7 +58,7 @@ class Code:
     library: List[Library]
 
     def __str__(self) -> str:
-        return f"{self.name} [{self.version or '0.0.0'}-{self.copyright or 'fytok'}]"
+        return " ".join([s for s in [self.name, self.version, self.copyright] if s is not _not_found_])
 
     def __repr__(self) -> str:
         desc = {
@@ -85,7 +85,7 @@ class Identifier:
 
 @sp_tree
 class Module(Actor):
-    _plugin_prefix = __package__
+    _plugin_prefix = f"{__package__}."
     _plugin_registry = {}
 
     @classmethod
@@ -103,12 +103,15 @@ class Module(Actor):
         if self.__class__ is Module or "_plugin_prefix" in vars(self.__class__):
             self.__class__.__dispatch_init__(None, self, *args, **kwargs)
             return
-        
+
         super().__init__(*args, **kwargs)
 
         code = self._metadata.get("code", _not_found_)
         if code is not _not_found_:
             self.code.update(code)
+
+        if self.code.name is _not_found_:
+            self.code.name = self.__class__.__name__
 
         logger.info(f"Initialize module {self._plugin_prefix}{self.code or self.__class__.__name__} ")
 

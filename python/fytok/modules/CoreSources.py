@@ -84,6 +84,8 @@ class CoreSourcesTimeSlice(TimeSlice):
 class CoreSourcesSource(Module):
     _plugin_prefix = "fytok.plugins.core_sources.source."
 
+    code: Code = {"name": "dummy"}
+
     identifier: str
 
     species: DistributionSpecies

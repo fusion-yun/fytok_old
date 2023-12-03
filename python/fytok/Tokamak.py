@@ -66,14 +66,12 @@ class Tokamak(Actor):
 
         cache["dataset_fair"] = {"description": {"entry": entry, "device": device, "shot": shot or 0, "run": run or 0}}
 
-        entry = open_entry(
-            [f"{device}://", *entry], shot=shot, run=run, local_schema=device, global_schema=GLOBAL_ONTOLOGY
-        )
+        entry = open_entry(entry, shot=shot, run=run, local_schema=device, global_schema=GLOBAL_ONTOLOGY)
 
         super().__init__(cache, _entry=entry, _parent=parent)
 
-        if time is not None:
-            self.refresh(time=time)
+        # if time is not None:
+        #     self.refresh(time=time)
         # logger.debug(self.brief_summary())
 
     @property
