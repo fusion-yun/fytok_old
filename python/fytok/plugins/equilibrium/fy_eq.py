@@ -847,6 +847,20 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
         )
 
     @sp_property
+    def triangularity(self) -> Expression:
+        psi = self.grid.psi[1:]
+        res = (
+            (self._shape_property.Rzmax(psi) - self._shape_property.Rzmin(psi))
+            / (self._shape_property.Rmax(psi) - self._shape_property.Rmin(psi))
+            * 2
+        )
+        return Function(psi, res, name="triangularity")
+
+    @sp_property
+    def squareness(self) -> Expression:
+        return 0.0
+
+    @sp_property
     def trapped_fraction(self) -> Expression:
         """Trapped particle fraction[-]
         Tokamak 3ed, 14.10
@@ -877,7 +891,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
         # return self._coord._R0*(self.fpol / fvac)**2 * d
 
 
-@sp_tree #(mesh="grid")
+@sp_tree  # (mesh="grid")
 class FyEquilibriumProfiles2D(Equilibrium.TimeSlice.Profiles2D):
     @property
     def _coord(self) -> FyEquilibriumCoordinateSystem:
@@ -1107,7 +1121,8 @@ class FyEqAnalyze(Equilibrium):
         - Surface average
 
     """
-    code: Code    = {"name": "fy_eq"} 
+
+    code: Code = {"name": "fy_eq"}
 
     TimeSlice = FyEquilibriumTimeSlice
 

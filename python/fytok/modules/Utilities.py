@@ -58,7 +58,7 @@ class Code:
     library: List[Library]
 
     def __str__(self) -> str:
-        return " ".join([s for s in [self.name, self.version, self.copyright] if s is not _not_found_])
+        return ",".join([s for s in [self.name, self.version, self.copyright] if s is not _not_found_])
 
     def __repr__(self) -> str:
         desc = {
@@ -121,7 +121,7 @@ class Module(Actor):
 
     @property
     def tag(self) -> str:
-        return f"{FY_JOBID}/{self._plugin_prefix}{self.code}"
+        return f"{FY_JOBID}/{self._plugin_prefix}{self.code.name}"
 
     def execute(self, *args, **kwargs) -> typing.Type[Actor]:
         logger.info(f"Execute module {self._plugin_prefix}{self.code}")

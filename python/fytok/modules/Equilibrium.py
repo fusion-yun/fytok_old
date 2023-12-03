@@ -176,9 +176,7 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
     triangularity_lower: Expression
 
-    @sp_property
-    def triangularity(self) -> Expression:
-        return (self.triangularity_upper + self.triangularity_lower) * 0.5
+    triangularity: Expression
 
     squareness_upper_inner: Expression
 
@@ -456,6 +454,12 @@ class EquilibriumTimeSlice(equilibrium._T_equilibrium_time_slice):
         return geo
 
 
+from .Wall import Wall
+from .TF import TF
+from .Magnetics import Magnetics
+from .PFActive import PFActive
+
+
 @sp_tree
 class Equilibrium(IDS):
     r"""
@@ -478,6 +482,26 @@ class Equilibrium(IDS):
 
     def __geometry__(self, *args, **kwargs):
         return self.time_slice.current.__geometry__(*args, **kwargs)
+
+    def refresh(
+        self,
+        *args,
+        time=None,
+        wall: Wall = None,
+        tf: TF = None,
+        magnetics: Magnetics = None,
+        pf_active: PFActive = None,
+        **kwargs,
+    ) -> None:
+        return super().refresh(
+            *args,
+            time=time,
+            tf=tf,
+            wall=wall,
+            magnetics=magnetics,
+            pf_active=pf_active,
+            **kwargs,
+        )
 
 
 r"""
