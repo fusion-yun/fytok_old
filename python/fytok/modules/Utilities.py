@@ -45,7 +45,7 @@ class Library:
 
 @sp_tree
 class Code:
-    name: str 
+    name: str
     """代码名称，也是调用 plugin 的 identifier"""
     parameters: PropertyTree
     """指定参数列表，代码调用时所需，但不在由 Module 定义的参数列表中的参数。 """
@@ -100,12 +100,17 @@ class Module(Actor):
         return plugin_name
 
     def __init__(self, *args, **kwargs):
+        if self.__class__ is Module or "_plugin_prefix" in vars(self.__class__):
+            self.__class__.__dispatch_init__(None, self, *args, **kwargs)
+            return
+        
         super().__init__(*args, **kwargs)
+
         code = self._metadata.get("code", _not_found_)
         if code is not _not_found_:
             self.code.update(code)
 
-       
+        logger.info(f"Initialize module {self._plugin_prefix}{self.code or self.__class__.__name__} ")
 
     code: Code
     """ 对于 Module 的一般性说明。 
@@ -113,11 +118,10 @@ class Module(Actor):
 
     @property
     def tag(self) -> str:
-        return f"{FY_JOBID}/{self._plugin_prefix}{self.code.name or self.__class__.__name__.lower()}"
+        return f"{FY_JOBID}/{self._plugin_prefix}{self.code}"
 
     def execute(self, *args, **kwargs) -> typing.Type[Actor]:
-        if self.code.name is not _not_found_:
-            logger.debug(f"Execute {self._plugin_prefix}{self.code}")
+        logger.info(f"Execute module {self._plugin_prefix}{self.code}")
         return super().execute(*args, **kwargs)
 
 

@@ -171,7 +171,7 @@ class EquilibriumFreeGS(FyEqAnalyze):
             )
         return eq_time_slice
 
-    def refresh(self, *args, core_profiles_1d: CoreProfiles.TimeSlice.Profiles1D = None,  **kwargs) -> TimeSlice:
+    def refresh(self, *args, core_profiles_1d: CoreProfiles = None,  **kwargs) -> TimeSlice:
         """ update the last time slice, base on profiles_2d[-1].psi, and core_profiles_1d, wall, pf_active    """
 
         eq_solver = self._setup_eq_solver(**kwargs)

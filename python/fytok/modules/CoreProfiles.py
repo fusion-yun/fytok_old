@@ -438,6 +438,8 @@ class CoreProfilesTimeSlice(TimeSlice):
 class CoreProfiles(Module):
     ids_properties: IDSProperties
 
+    code: Code = {"name": "core_profiles"}
+
     TimeSlice = CoreProfilesTimeSlice
 
     time_slice: TimeSeriesAoS[CoreProfilesTimeSlice]
