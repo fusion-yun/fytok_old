@@ -70,6 +70,9 @@ class Tokamak(Actor):
 
         super().__init__(cache, _entry=entry, _parent=parent)
 
+        self._shot = shot
+        self._run = run
+        self._device = device
         # if time is not None:
         #     self.refresh(time=time)
         # logger.debug(self.brief_summary())
@@ -113,6 +116,18 @@ Modules:
     def tag(self) -> str:
         """当前状态标签，由程序版本、用户名、时间戳等信息确定"""
         return f"{self.dataset_fair.description.tag}_{int(self.time*100):06d}"
+
+    @property
+    def shot(self) -> int:
+        return self._shot
+
+    @property
+    def run(self) -> int:
+        return self._run
+
+    @property
+    def device(self) -> str:
+        return self._device
 
     # fmt:off
   

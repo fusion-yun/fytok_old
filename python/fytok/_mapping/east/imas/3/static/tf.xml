@@ -5,7 +5,7 @@
   <r0 dtype="float">1.7</r0> 
   <is_periodic dtype="int">0</is_periodic>
   <coils_n dtype="int">16</coils_n>
-  <coil id='*'>
+  <coil id='*' max=16>
     <name>TF</name>  
     <identifier>TF</identifier>   
     <conductor id="*">
