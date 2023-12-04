@@ -3,7 +3,7 @@ import numpy as np
 from scipy import constants
 from spdm.utils.tags import _not_found_
 from spdm.data.Dict import Dict
-from spdm.data.Entry import asentry
+from spdm.data.Entry import as_entry
 from spdm.data.Expression import Expression 
 from spdm.data.HTree import List
 from spdm.data.Node import Node
@@ -31,7 +31,7 @@ class Species(Dict[Node]):
     @sp_property
     def element(self, value) -> List[Element]:
         if value is None:
-            value = asentry(atoms).get(f"{self.label}/element")
+            value = as_entry(atoms).get(f"{self.label}/element")
         return value
 
     @sp_property
@@ -44,5 +44,5 @@ class Species(Dict[Node]):
     @sp_property
     def z(self, value) -> float:
         if value is None:
-            value = asentry(atoms).get(f"{self.label}/z")
+            value = as_entry(atoms).get(f"{self.label}/z")
         return value

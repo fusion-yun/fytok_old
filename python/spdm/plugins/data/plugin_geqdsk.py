@@ -2,7 +2,7 @@ import typing
 
 import numpy as np
 from scipy import interpolate
-from spdm.data.Entry import Entry, asentry
+from spdm.data.Entry import Entry, as_entry
 from spdm.data.File import File, FileEntry
 from spdm.utils.logger import logger
 import pathlib
@@ -170,7 +170,7 @@ def sp_write_geqdsk(p, file):
 
 
 def sp_to_geqdsk(d, description: str | None = None, time_slice=0, **kwargs) -> dict:
-    entry: Entry = asentry(d)
+    entry: Entry = as_entry(d)
 
     geqdsk: dict = {"description": description or entry.get("description", "NOTHING TO SAY")}
 
