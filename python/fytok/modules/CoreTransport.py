@@ -18,23 +18,23 @@ from ..ontology import core_transport
 
 @sp_tree
 class CoreTransportModelParticles(core_transport._T_core_transport_model_2_density):
-    d: Expression = 0
-    v: Expression = 0
-    flux: Expression = 0
+    d: Expression = sp_property(coordinate1=".../grid_d/rho_tor_norm")
+    v: Expression = sp_property(coordinate1=".../grid_v/rho_tor_norm")
+    flux: Expression = sp_property(coordinate1=".../grid_flux/rho_tor_norm")
 
 
 @sp_tree
 class CoreTransportModelEnergy(core_transport._T_core_transport_model_2_energy):
-    d: Expression = 0
-    v: Expression = 0
-    flux: Expression = 0
+    d: Expression = sp_property(coordinate1=".../grid_d/rho_tor_norm")
+    v: Expression = sp_property(coordinate1=".../grid_v/rho_tor_norm")
+    flux: Expression = sp_property(coordinate1=".../grid_flux/rho_tor_norm")
 
 
 @sp_tree
 class CoreTransportModelMomentum(core_transport._T_core_transport_model_4_momentum):
-    d: Expression = 0
-    v: Expression = 0
-    flux: Expression = 0
+    d: Expression = sp_property(coordinate1=".../grid_d/rho_tor_norm")
+    v: Expression = sp_property(coordinate1=".../grid_v/rho_tor_norm")
+    flux: Expression = sp_property(coordinate1=".../grid_flux/rho_tor_norm")
 
 
 @sp_tree
@@ -57,7 +57,7 @@ class CoreTransportNeutral(core_transport._T_core_transport_model_neutral):
     energy: CoreTransportModelEnergy
 
 
-@sp_tree(coordinate1="grid_d/rho_tor_norm")
+@sp_tree
 class CoreTransportProfiles1D(core_transport._T_core_transport_model_profiles_1d):
     grid_d: CoreRadialGrid
 

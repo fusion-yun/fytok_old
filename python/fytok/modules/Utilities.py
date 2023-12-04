@@ -91,17 +91,15 @@ class Module(Actor):
     @classmethod
     def _plugin_guess_name(cls, self: Module, cache, *args, **kwargs) -> str:
         pth = Path("code/name")
-        plugin_name = (
-            pth.get(cache, None)
-            or pth.get(kwargs.get("default_value", _not_found_), None)
-            or Path("code/metadata/default_value/name").get(cls, None)
-        )
-
+        plugin_name = pth.get(cache, None) or pth.get(kwargs, None)
+        if plugin_name is None:
+            plugin_name = Path("code/metadata/default_value/name").get(cls, None)
         return plugin_name
 
     def __init__(self, *args, **kwargs):
-        if self.__class__ is Module or "_plugin_prefix" in vars(self.__class__):
-            self.__class__.__dispatch_init__(None, self, *args, **kwargs)
+        if (self.__class__ is Module or "_plugin_prefix" in vars(self.__class__)) and self.__class__.__dispatch_init__(
+            None, self, *args, **kwargs
+        ) is not False:
             return
 
         super().__init__(*args, **kwargs)
