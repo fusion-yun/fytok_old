@@ -1,5 +1,7 @@
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)
 
+from spdm.utils.envs import SP_MPI
+
 import os
 
 try:
@@ -36,5 +38,5 @@ except Exception as error:
 ############################################################
 
 
-if not FY_QUIET:  # 粗略猜测是否在交互环境下运行
+if not FY_QUIET and SP_MPI is not None and SP_MPI.COMM_WORLD.Get_rank() == 0:  # 粗略猜测是否在交互环境下运行
     logger.info(FY_LOGO)
