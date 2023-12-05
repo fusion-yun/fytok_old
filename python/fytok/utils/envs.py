@@ -1,4 +1,3 @@
-from spdm.utils import envs as sp_envs
 import os
 import getpass
 import datetime
@@ -20,7 +19,7 @@ else:
 
 FY_DEBUG = os.environ.get("FY_DEBUG", True)
 
-FY_QUIET = os.environ.get("FY_QUIET", sp_envs.SP_QUIET)
+FY_QUIET = os.environ.get("FY_QUIET", True)
 
 # os.environ["SP_DEBUG"] = str(FY_DEBUG)
 # envs.SP_DEBUG = FY_DEBUG
@@ -28,6 +27,7 @@ FY_QUIET = os.environ.get("FY_QUIET", sp_envs.SP_QUIET)
 
 FY_JOBID = f"fytok_{getpass.getuser().lower()}_{os.uname().nodename.lower()}_{os.getpid()}"
 
+import spdm.utils.envs as sp_envs
 
 FY_LOGO = rf"""
 ###################################################################################################

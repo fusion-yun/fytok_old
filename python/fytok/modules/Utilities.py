@@ -47,6 +47,8 @@ class Library:
 class Code:
     name: str
     """代码名称，也是调用 plugin 的 identifier"""
+    module_path: str
+    """模块路径， 可用于 import 模块"""
     parameters: PropertyTree
     """指定参数列表，代码调用时所需，但不在由 Module 定义的参数列表中的参数。 """
 
@@ -85,7 +87,6 @@ class Identifier:
 
 @sp_tree
 class Module(Actor):
-    _plugin_prefix = f"{__package__}."
     _plugin_registry = {}
 
     @classmethod
@@ -97,7 +98,7 @@ class Module(Actor):
         return plugin_name
 
     def __init__(self, *args, **kwargs):
-        if (self.__class__ is Module or "_plugin_prefix" in vars(self.__class__)) and self.__class__.__dispatch_init__(
+        if "_plugin_prefix" in vars(self.__class__) and self.__class__.__dispatch_init__(
             None, self, *args, **kwargs
         ) is not False:
             return
@@ -111,7 +112,9 @@ class Module(Actor):
         if self.code.name is _not_found_:
             self.code.name = self.__class__.__name__
 
-        logger.info(f"Initialize module {self._plugin_prefix}{self.code or self.__class__.__name__} ")
+        self.code.module_path=f"{self._plugin_prefix}{self.code.name}"
+
+        logger.info(f"Initialize module {self.code.module_path}, {self.code.copyright or ''} ")
 
     code: Code
     """ 对于 Module 的一般性说明。 
@@ -122,14 +125,16 @@ class Module(Actor):
         return f"{FY_JOBID}/{self._plugin_prefix}{self.code.name}"
 
     def execute(self, *args, **kwargs) -> typing.Type[Actor]:
-        logger.info(f"Execute module {self._plugin_prefix}{self.code}")
+        logger.info(f"Execute module {self.code.module_path}")
         return super().execute(*args, **kwargs)
 
 
 class IDS(Module):
     """Base class of IDS"""
+    _plugin_prefix=f"fytok.modules."
 
     ids_properties: IDSProperties
+
     """Interface Data Structure properties. This element identifies the node above as an IDS"""
 
     def __geometry__(self):

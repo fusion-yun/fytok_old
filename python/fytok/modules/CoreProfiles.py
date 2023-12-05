@@ -435,7 +435,7 @@ class CoreProfilesTimeSlice(TimeSlice):
 
 
 @sp_tree
-class CoreProfiles(Module):
+class CoreProfiles(IDS):
     ids_properties: IDSProperties
 
     TimeSlice = CoreProfilesTimeSlice

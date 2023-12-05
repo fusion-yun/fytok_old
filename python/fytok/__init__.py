@@ -1,18 +1,16 @@
 __path__ = __import__("pkgutil").extend_path(__path__, __name__)
 
-from spdm.utils.envs import SP_MPI
-
 import os
 
-try:
-    for k, v in os.environ.items():
-        if k.startswith("FY_"):
-            os.environ[f"SP_{k[3:]}"] = v
+for k, v in os.environ.items():
+    if k.startswith("FY_"):
+        os.environ[f"SP_{k[3:]}"] = v
 
-    os.environ["SP_LABEL"] = "fytok"
-    os.environ["SP_QUIET"] = FY_QUIET
-except Exception:
-    pass
+os.environ["SP_LABEL"] = "fytok"
+
+ 
+
+from spdm.utils.envs import SP_MPI
 
 from .ontology import GLOBAL_ONTOLOGY
 
