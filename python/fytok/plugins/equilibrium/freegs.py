@@ -16,6 +16,8 @@ from fytok.modules.Wall import Wall
 from fytok.plugins.equilibrium.fy_eq import FyEqAnalyze
 from spdm.data.TimeSeries import TimeSlice
 from spdm.mesh.Mesh import Mesh
+from spdm.data.Field import Field
+
 from spdm.utils.constants import *
 from spdm.utils.logger import logger
 from spdm.utils.numeric import bitwise_and, squeeze
@@ -91,7 +93,7 @@ class EquilibriumFreeGS(FyEqAnalyze):
 
         return self._machine
 
-    def _setup_eq_solver(self, grid: Mesh, psi: ArrayType, **kwargs) -> freegs.Equilibrium:
+    def _setup_eq_solver(self,  psi_f: Field, **kwargs) -> freegs.Equilibrium:
         if self._eq_solver is not None:
             return self._eq_solver
 
@@ -99,11 +101,9 @@ class EquilibriumFreeGS(FyEqAnalyze):
 
         boundary_type = kwargs.pop("boundary_type", None) or self.code.parameters.get("boundary", "free")
 
-        if grid is None:
-            grid = self.time_slice.current.profiles_2d[0].grid  # type:ignore
-
-        if psi is None:
-            psi = as_array(self.time_slice.current.profiles_2d[0].psi)
+        grid=psi_f.mesh
+       
+        psi = psi_f.__array__()
 
         nx, ny = grid.shape
 
@@ -124,69 +124,19 @@ class EquilibriumFreeGS(FyEqAnalyze):
 
         return self._eq_solver
 
-    def _to_imas(self, equilibrium: freegs.Equilibrium, trim=0):
-        psi_norm = self.code.parameters.get("psi_norm", None)
-        if psi_norm is None or psi_norm is _not_found_:
-            psi_norm = np.linspace(0, 1.0, 128)
-
-        if equilibrium.psi_bndry is not None:
-            psi = psi_norm * (equilibrium.psi_bndry - equilibrium.psi_axis) + equilibrium.psi_axis
-        else:
-            psi = None
-        eq_time_slice = {
-            # "time": equilibrium.time,
-            "global_quantities": {
-                "ip": equilibrium.plasmaCurrent(),
-            },
-            "profiles_1d": {
-                "psi": psi,
-                # "q": equilibrium.q(psi_norm),
-                # "pressure": equilibrium.pressure(psi_norm),
-                "dpressure_dpsi": equilibrium.pprime(psi_norm),
-                # "f": equilibrium.fpol(psi_norm),
-                "f_df_dpsi": equilibrium.ffprime(psi_norm),
-            },
-            "profiles_2d": [
-                {
-                    "type": "total",
-                    "grid_type": {"name": "rectangular", "index": 1},
-                }
-            ],
-        }
-
-        if trim > 0:
-            eq_time_slice["profiles_2d"][0].update(
-                {
-                    "grid": {
-                        "dim1": equilibrium.R_1D[trim:-trim],
-                        "dim2": equilibrium.Z_1D[trim:-trim],
-                    },
-                    "psi": equilibrium.psi()[trim:-trim, trim:-trim],
-                }
-            )
-        else:
-            eq_time_slice["profiles_2d"][0].update(
-                {
-                    "grid": {
-                        "dim1": equilibrium.R_1D,
-                        "dim2": equilibrium.Z_1D,
-                    },
-                    "psi": equilibrium.psi(),
-                    # "j_tor": equilibrium.Jtor,
-                }
-            )
-        return eq_time_slice
-
-    def refresh(self, *args, core_profiles_1d: CoreProfiles, **kwargs) -> TimeSlice:
+    def execute(self,current:Equilibrium.TimeSlice, *previous:Equilibrium.TimeSlice,  **kwargs)  :
         """update the last time slice, base on profiles_2d[-1].psi, and core_profiles_1d, wall, pf_active"""
+        super().execute(current, *previous, **kwargs)
+        core_profiles: CoreProfiles=self.inputs.get_source("core_profiles") # type:ignore
 
-        eq_solver = self._setup_eq_solver(**kwargs)
+        core_profiles_1d=core_profiles.time_slice.current.profiles_1d
+
+        eq_solver = self._setup_eq_solver(current.profiles_2d.psi, **kwargs)
 
         self.code.parameters["boudary"]
 
-        if core_profiles_1d is not None:
-            R0 = core_profiles_1d.time_slice.current.vacuum_toroidal_field.r0
-            B0 = core_profiles_1d.time_slice.current.vacuum_toroidal_field.b0
+        R0 = core_profiles.time_slice.current.vacuum_toroidal_field.r0
+        B0 = core_profiles.time_slice.current.vacuum_toroidal_field.b0
 
         fvac: float = R0 * B0  # type:ignore
 
@@ -221,9 +171,7 @@ class EquilibriumFreeGS(FyEqAnalyze):
                         """
             )
         else:
-            if core_profiles_1d is None:
-                core_profiles_1d = self._parent.core_profiles.profiles_1d.current
-
+            
             pprime = core_profiles_1d.pprime(core_profiles_1d.grid.psi_norm)
 
             ffprime = core_profiles_1d.ffprime(core_profiles_1d.grid.psi_norm)
@@ -231,10 +179,7 @@ class EquilibriumFreeGS(FyEqAnalyze):
             freegs_profiles = freegs.jtor.ProfilesPprimeFfprime(pprime, ffprime, fvac)
 
             logger.info("Create Profile: Specified profile functions p'(psi), ff'(psi)")
-
-        # else:
-        #     raise RuntimeError(f"freegs is not defined!")
-
+ 
         freegs_constraints = None
 
         # if boundary_type == "fixed":
@@ -290,28 +235,51 @@ class EquilibriumFreeGS(FyEqAnalyze):
         else:
             logger.info(f"Solve G-S equation Done")
 
-        current_slice = self.time_slice.current
+        psi_norm = self.code.parameters.get("psi_norm", None)
+        if psi_norm is None or psi_norm is _not_found_:
+            psi_norm = np.linspace(0, 1.0, 128)
 
-        current_slice.refresh(self._to_imas(eq_solver))
+        if eq_solver.psi_bndry is not None:
+            psi = psi_norm * (eq_solver.psi_bndry - eq_solver.psi_axis) + eq_solver.psi_axis
+        else:
+            psi = None
 
-        # del current_slice._cache["boundary"]
-        # del current_slice._cache["boundary_separatrix"]
-        # del current_slice._cache["coordinate_system"]
+        current["global_quantities"]= {
+                "ip": eq_solver.plasmaCurrent()
+            } 
+        current[ "profiles_1d"]= {
+                "psi": psi,
+                # "q": equilibrium.q(psi_norm),
+                # "pressure": equilibrium.pressure(psi_norm),
+                "dpressure_dpsi": eq_solver.pprime(psi_norm),
+                # "f": equilibrium.fpol(psi_norm),
+                "f_df_dpsi": eq_solver.ffprime(psi_norm),
+            } 
+   
+        trim=self.code.parameters.get("trim",0)
 
-        logger.info(f"Refresh Equilibrium: {self.__class__.__name__} Done")
+        if trim > 0:
+            current["profiles_2d"]= {
+                    "grid": {
+                         "type": "total",
+                    "grid_type": {"name": "rectangular", "index": 1},
+                        "dim1": eq_solver.R_1D[trim:-trim],
+                        "dim2": eq_solver.Z_1D[trim:-trim],
+                    },
+                    "psi": eq_solver.psi()[trim:-trim, trim:-trim],
+                }
+             
+        else:
+            current["profiles_2d"]={
+                    "grid": {
+                        "type": "total",
+                        "grid_type": {"name": "rectangular", "index": 1},
+                        "dim1": eq_solver.R_1D,
+                        "dim2": eq_solver.Z_1D,
+                    },
+                    "psi": eq_solver.psi(),
+                    # "j_tor": equilibrium.Jtor,
+                }
+           
 
-        return current_slice
-
-    def advance(
-        self,
-        *args,
-        time: float = 0.0,
-        core_profile_1d: CoreProfiles.TimeSlice.Profiles1D = None,
-        pf_active: PFActive = None,
-        wall: Wall = None,
-        **kwargs,
-    ) -> Equilibrium.TimeSlice:
-        return super().advance(*args, time=time, **kwargs)
-
-
-__SP_EXPORT__ = EquilibriumFreeGS
+ 

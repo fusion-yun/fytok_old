@@ -1122,7 +1122,7 @@ class FyEqAnalyze(Equilibrium):
 
     """
 
-    code: Code = {"name": "fy_eq"}
+    code: Code = {"name": "fy_eq", "copyright":"fytok"}
 
     TimeSlice = FyEquilibriumTimeSlice
 

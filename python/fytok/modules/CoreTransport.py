@@ -98,13 +98,14 @@ class CoreTransportTimeSlice(TimeSlice):
 class CoreTransportModel(Module):
     _plugin_prefix = "fytok.plugins.core_transport.model."
 
-    code: Code = {"name": "dummy"}
-
     TimeSlice = CoreTransportTimeSlice
 
     identifier: str
 
     time_slice: TimeSeriesAoS[CoreTransportTimeSlice]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def preprocess(self, *args, **kwargs):
         super().preprocess(*args, **kwargs)

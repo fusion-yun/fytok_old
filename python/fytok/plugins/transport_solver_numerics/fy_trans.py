@@ -3,7 +3,7 @@ import numpy as np
 import scipy.constants
 from copy import copy
 
-from spdm.data.Expression import Variable, Expression
+from spdm.data.Expression import Variable, Expression,Scalar
 from spdm.data.Function import Function
 from spdm.data.sp_property import sp_tree
 from spdm.utils.typing import array_type
@@ -83,7 +83,7 @@ class FyTrans(TransportSolverNumerics):
                   $$ transport_electron_temperature
         """
 
-    code: Code = {"name": "fy_trans"}
+    code: Code = {"name": "fy_trans", "copyright":"fytok"} # type: ignore
 
     def preprocess(self, *args, **kwargs):
         super().preprocess(*args, **kwargs)
@@ -105,7 +105,7 @@ class FyTrans(TransportSolverNumerics):
         # 声明变量
         x = self.primary_coordinate
 
-        vars = {"x": x}
+        vars: typing.Dict[str, Expression|float] = {"x": x}
 
         for equ in self.equations:
             vars[equ.profile.name] = equ.profile
@@ -196,19 +196,19 @@ class FyTrans(TransportSolverNumerics):
                 continue
             species.append("/".join(identifier.split("/")[:-1]))
 
-        coeff: typing.Dict[str, Expression] = {
+        coeff: typing.Dict[str, typing.Dict[str,Expression|float]] = {
             k: copy(
                 {
-                    "transp_D": 0.0,
-                    "transp_V": 0.0,
-                    "transp_F": 0.0,
-                    "energy_D": 0.0,
-                    "energy_V": 0.0,
-                    "energy_F": 0.0,
-                    "chi_u": 0.0,
-                    "S": 0.0,
-                    "Q": 0.0,
-                    "U": 0.0,
+                    "transp_D"  : 0,
+                    "transp_V"  : 0,
+                    "transp_F"  : 0,
+                    "energy_D"  : 0,
+                    "energy_V"  : 0,
+                    "energy_F"  : 0,
+                    "chi_u"     : 0,
+                    "S"         : 0,
+                    "Q"         : 0,
+                    "U"         : 0,
                 }
             )
             for k in species
@@ -222,8 +222,8 @@ class FyTrans(TransportSolverNumerics):
                 if spec == "electrons":
                     continue
                 z = atoms[spec.removeprefix("ion/")].z
-                ne += z * vars.get(f"{spec}/density", 0.0)
-                ne_flux += z * vars.get(f"{spec}/density_flux", 0.0)
+                ne += z * vars.get(f"{spec}/density", 0)
+                ne_flux += z * vars.get(f"{spec}/density_flux", 0)
 
             for ion in core_profiles_1d.ion:
                 if f"ion/{ion.label}/density" not in vars:
@@ -249,12 +249,12 @@ class FyTrans(TransportSolverNumerics):
             ne = vars["electrons/density"]
             ne_flux = vars["electrons/density_flux"]
 
-            z_of_ions = 0
+            z_of_ions = Scalar(0)
             for spec in species:
                 if spec == "electrons":
                     continue
 
-                vars[f"{spec}/density"] = None
+                vars[f"{spec}/density"] = 0
                 z_of_ions += atoms[spec.removeprefix("ion/")].z
 
             for k in vars:
@@ -275,7 +275,7 @@ class FyTrans(TransportSolverNumerics):
 
         if core_transport is not None:
             for model in core_transport.model:
-                trans_1d = model.fetch(**vars).profiles_1d
+                trans_1d:CoreTransport.Model.TimeSlice.Profiles1D = model.fetch(**vars).profiles_1d
 
                 for spec, d in coeff.items():
                     d["transp_D"] += trans_1d.get(f"{spec}/particles/d", 0)
@@ -596,9 +596,10 @@ class FyTrans(TransportSolverNumerics):
 
             # 计算 y 和 dydr
             for idx, equ in enumerate(current.equation):
-                y: Function = core_profiles_1d.get(equ.primary_quantity.identifier)
-                Y0[idx * 2] = y(x)
-                Y0[idx * 2 + 1] = y.d(x)
+                y: Function = core_profiles_1d.get(equ.primary_quantity.identifier,None)
+
+                Y0[idx * 2] = y(x) if y is not None else np.zeros_like(x)
+                Y0[idx * 2 + 1] = y.d(x) if y is not None else np.zeros_like(x)
 
             # 将 dydr 换成 flux
             for idx, equ in enumerate(current.equation):

@@ -50,23 +50,23 @@ class FusionReaction(CoreSources.Source):
     """
 
     identifier = "fusion"
-    code = {"name": "fusion_reaction", "description": r"Burning $D + T \rightarrow \alpha$"}
+    code = {"name": "fusion_reaction", "description": r"Burning $D + T \rightarrow \alpha$"} # type: ignore
 
-    def fetch(self, x: Variable, **vars: typing.Dict[str, Expression]) -> CoreSources.Source.TimeSlice:
+    def fetch(self, x: Variable, **vars: Expression) -> CoreSources.Source.TimeSlice:
         res = super().fetch(x, **vars)
 
         core_source_1d = res.profiles_1d
 
-        reactivities = nuclear_reaction[r"D(t,n)He"]["reactivities"]
+        reactivities = nuclear_reaction[r"D(t,n)He"].reactivities
 
-        nD: Expression | None = vars.get("ion/D/density")
-        nT = vars.get("ion/T/density")
-        nEP = vars.get("ion/alpha/density")
+        nD= vars.get("ion/D/density",0.0)
+        nT = vars.get("ion/T/density",0.0)
+        nEP = vars.get("ion/alpha/density",0.0)
 
-        TD = vars.get("ion/D/temperature")
-        TT = vars.get("ion/T/temperature")
-        Te = vars.get("electrons/temperature")
-        ne = vars.get("electrons/density")
+        TD = vars.get("ion/D/temperature",0.0)
+        TT = vars.get("ion/T/temperature",0.0)
+        Te  = vars.get("electrons/temperature",0.0)
+        ne = vars.get("electrons/density",0.0)
 
         Ti = (nD * TD + nT * TT) / (nD + nT)
 
@@ -76,13 +76,13 @@ class FusionReaction(CoreSources.Source):
 
         tau_slowing_down = 1.99 * ((Te / 1000) ** (3 / 2)) / (ne * 1.0e-19 * lnGamma)
 
-        core_source_1d.ion = [
+        core_source_1d["ion"] = [
             {"label": "D", "particles": -S},
             {"label": "T", "particles": -S},
             {"label": "He", "particles": nEP / tau_slowing_down},
             {"label": "alpha", "particles": S - nEP / tau_slowing_down},
         ]
 
-        core_source_1d.electrons.energy = nEP / tau_slowing_down * Te
+        core_source_1d.electrons["energy"] = nEP / tau_slowing_down * Te
 
         return res

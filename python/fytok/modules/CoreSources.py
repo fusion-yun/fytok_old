@@ -84,8 +84,6 @@ class CoreSourcesTimeSlice(TimeSlice):
 class CoreSourcesSource(Module):
     _plugin_prefix = "fytok.plugins.core_sources.source."
 
-    code: Code = {"name": "dummy"}
-
     identifier: str
 
     species: DistributionSpecies
@@ -160,13 +158,13 @@ class CoreSources(IDS):
     source: AoS[CoreSourcesSource]
 
     def refresh(self, *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None, **kwargs):
-        super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
+        super().refresh(*args, **kwargs)
 
         for source in self.source:
-            source.refresh(time=self.time, **self._inputs)
+            source.refresh(time=self.time, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
     def advance(self, *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None, **kwargs):
-        super().advance(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
+        super().advance(*args,  **kwargs)
 
         for source in self.source:
-            source.advance(time=self.time, **self._inputs)
+            source.advance(time=self.time, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
