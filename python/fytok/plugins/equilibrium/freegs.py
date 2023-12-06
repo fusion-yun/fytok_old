@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import collections
 import collections.abc
 import functools
@@ -18,8 +20,7 @@ from spdm.utils.constants import *
 from spdm.utils.logger import logger
 from spdm.utils.numeric import bitwise_and, squeeze
 from spdm.utils.tags import _not_found_
-from spdm.utils.typing import (ArrayLike, ArrayType, NumericType, array_type,
-                               as_array, as_scalar, is_array, scalar_type)
+from spdm.utils.typing import ArrayLike, ArrayType, NumericType, array_type, as_array, as_scalar, is_array, scalar_type
 
 try:
     import freegs
@@ -30,8 +31,7 @@ except ModuleNotFoundError as error:
 
 @Equilibrium.register(["freegs"])
 class EquilibriumFreeGS(FyEqAnalyze):
-
-    def __init__(self, *args,  **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self._machine = None
@@ -41,12 +41,12 @@ class EquilibriumFreeGS(FyEqAnalyze):
         self._setup_eq_solver(**kwargs)
 
     def _setup_machine(self, *args, **kwargs) -> freegs.machine.Machine:
-        """ update the description of machine
-            TODO:
-                - check if wall and pf_active is changed
-                - update current of coils
+        """update the description of machine
+        TODO:
+            - check if wall and pf_active is changed
+            - update current of coils
 
-            return True if machine is updated
+        return True if machine is updated
         """
         if self._machine is not None:
             return self._machine
@@ -60,10 +60,7 @@ class EquilibriumFreeGS(FyEqAnalyze):
                 rect = coil.element[0].geometry.rectangle
 
                 turns = int(coil.element[0].turns_with_sign)
-                t_coil = freegs.machine.Coil(
-                    rect.r+rect.width/2,
-                    rect.z+rect.height/2,
-                    turns=turns)
+                t_coil = freegs.machine.Coil(rect.r + rect.width / 2, rect.z + rect.height / 2, turns=turns)
                 eq_coils.append((coil.name, t_coil))
 
         eq_wall = None
@@ -71,8 +68,9 @@ class EquilibriumFreeGS(FyEqAnalyze):
         wall: Wall = kwargs.get("wall", None) or getattr(self._parent, "wall", None)  # type:ignore
 
         if wall is not None:
-            eq_wall = freegs.machine.Wall(wall.description_2d[0].limiter.unit[0].outline.r,
-                                          wall.description_2d[0].limiter.unit[0].outline.z)
+            eq_wall = freegs.machine.Wall(
+                wall.description_2d[0].limiter.unit[0].outline.r, wall.description_2d[0].limiter.unit[0].outline.z
+            )
 
         eq_sensors = []
 
@@ -93,14 +91,13 @@ class EquilibriumFreeGS(FyEqAnalyze):
 
         return self._machine
 
-    def _setup_eq_solver(self, grid: Mesh = None, psi: ArrayType = None, **kwargs) -> freegs.Equilibrium:
-
+    def _setup_eq_solver(self, grid: Mesh, psi: ArrayType, **kwargs) -> freegs.Equilibrium:
         if self._eq_solver is not None:
             return self._eq_solver
 
         machine = self._setup_machine(**kwargs)
 
-        boundary_type = kwargs.pop("boundary_type", None) or self.code.parameters.get("boundary",  "free")
+        boundary_type = kwargs.pop("boundary_type", None) or self.code.parameters.get("boundary", "free")
 
         if grid is None:
             grid = self.time_slice.current.profiles_2d[0].grid  # type:ignore
@@ -119,13 +116,10 @@ class EquilibriumFreeGS(FyEqAnalyze):
         else:
             boundary = freegs.boundary.freeBoundaryHagenow
 
-        logger.info(F"Using {boundary_type} boundary")
+        logger.info(f"Using {boundary_type} boundary")
 
         self._eq_solver = freegs.Equilibrium(
-            tokamak=machine,
-            Rmin=Rmin, Rmax=Rmax, Zmin=Zmin, Zmax=Zmax, nx=nx, ny=ny,
-            psi=psi,
-            boundary=boundary
+            tokamak=machine, Rmin=Rmin, Rmax=Rmax, Zmin=Zmin, Zmax=Zmax, nx=nx, ny=ny, psi=psi, boundary=boundary
         )
 
         return self._eq_solver
@@ -136,7 +130,7 @@ class EquilibriumFreeGS(FyEqAnalyze):
             psi_norm = np.linspace(0, 1.0, 128)
 
         if equilibrium.psi_bndry is not None:
-            psi = psi_norm*(equilibrium.psi_bndry-equilibrium.psi_axis)+equilibrium.psi_axis
+            psi = psi_norm * (equilibrium.psi_bndry - equilibrium.psi_axis) + equilibrium.psi_axis
         else:
             psi = None
         eq_time_slice = {
@@ -152,70 +146,80 @@ class EquilibriumFreeGS(FyEqAnalyze):
                 # "f": equilibrium.fpol(psi_norm),
                 "f_df_dpsi": equilibrium.ffprime(psi_norm),
             },
-            "profiles_2d": [{"type": "total",  "grid_type": {"name": "rectangular", "index": 1}, }],
+            "profiles_2d": [
+                {
+                    "type": "total",
+                    "grid_type": {"name": "rectangular", "index": 1},
+                }
+            ],
         }
 
         if trim > 0:
-            eq_time_slice["profiles_2d"][0].update({
-                "grid": {"dim1": equilibrium.R_1D[trim:-trim],
-                         "dim2": equilibrium.Z_1D[trim:-trim], },
-                "psi": equilibrium.psi()[trim:-trim, trim:-trim], }
+            eq_time_slice["profiles_2d"][0].update(
+                {
+                    "grid": {
+                        "dim1": equilibrium.R_1D[trim:-trim],
+                        "dim2": equilibrium.Z_1D[trim:-trim],
+                    },
+                    "psi": equilibrium.psi()[trim:-trim, trim:-trim],
+                }
             )
         else:
-            eq_time_slice["profiles_2d"][0].update({
-                "grid": {"dim1": equilibrium.R_1D,
-                         "dim2": equilibrium.Z_1D, },
-                "psi": equilibrium.psi(),
-                #"j_tor": equilibrium.Jtor, 
+            eq_time_slice["profiles_2d"][0].update(
+                {
+                    "grid": {
+                        "dim1": equilibrium.R_1D,
+                        "dim2": equilibrium.Z_1D,
+                    },
+                    "psi": equilibrium.psi(),
+                    # "j_tor": equilibrium.Jtor,
                 }
             )
         return eq_time_slice
 
-    def refresh(self, *args, core_profiles_1d: CoreProfiles = None,  **kwargs) -> TimeSlice:
-        """ update the last time slice, base on profiles_2d[-1].psi, and core_profiles_1d, wall, pf_active    """
+    def refresh(self, *args, core_profiles_1d: CoreProfiles, **kwargs) -> TimeSlice:
+        """update the last time slice, base on profiles_2d[-1].psi, and core_profiles_1d, wall, pf_active"""
 
         eq_solver = self._setup_eq_solver(**kwargs)
 
         self.code.parameters["boudary"]
 
         if core_profiles_1d is not None:
-            R0 = core_profiles_1d.grid.r0
-            B0 = core_profiles_1d.grid.b0
-            # self.vacuum_toroidal_field.b0[-1] = B0
-        else:
-            R0 = self.vacuum_toroidal_field.r0
-            B0 = self.vacuum_toroidal_field.b0(self.time[-1])
+            R0 = core_profiles_1d.time_slice.current.vacuum_toroidal_field.r0
+            B0 = core_profiles_1d.time_slice.current.vacuum_toroidal_field.b0
 
-        fvac: float = R0*B0  # type:ignore
+        fvac: float = R0 * B0  # type:ignore
 
         if "Ip" in kwargs and "beta_p" in kwargs:
-
             Ip = kwargs.pop("Ip")
 
             beta_p = kwargs.pop("beta_p")
 
             freegs_profiles = freegs.jtor.ConstrainBetapIp(eq_solver, beta_p, Ip, fvac)
 
-            logger.info(f"""Create Profile: Constrain poloidal Beta and plasma current
+            logger.info(
+                f"""Create Profile: Constrain poloidal Beta and plasma current
                         Betap                      = {beta_p} [-],
                         Plasma current Ip          = {Ip} [Amp],
                         R0*B0                      = {fvac} [T.m]
-                        """)
+                        """
+            )
 
         elif "pressure_axis" in kwargs and "Ip" in kwargs:
-
             Ip = kwargs.pop("Ip")
 
             pressure_axis = kwargs.pop("pressure_axis")
 
             freegs_profiles = freegs.jtor.ConstrainPaxisIp(eq_solver, pressure_axis, Ip, fvac, Raxis=R0)
 
-            logger.info(f"""Create Profile: Constrain pressure on axis and plasma current
+            logger.info(
+                f"""Create Profile: Constrain pressure on axis and plasma current
                         Plasma pressure on axis    = {pressure_axis} [Pascals],
                         Plasma current Ip          = {Ip} [Amp ],
                         fvac                       = {fvac} [T.m],
                         Raxis                      = {R0} [m]
-                        """)
+                        """
+            )
         else:
             if core_profiles_1d is None:
                 core_profiles_1d = self._parent.core_profiles.profiles_1d.current
@@ -273,13 +277,14 @@ class EquilibriumFreeGS(FyEqAnalyze):
 
         try:
             logger.info("Solve G-S equation START")
-            freegs.solve(eq_solver,
-                         freegs_profiles,
-                         freegs_constraints,
-                         show=True,
-                         #  psi_bndry=psi_bndry,
-                         rtol=rtol
-                         )
+            freegs.solve(
+                eq_solver,
+                freegs_profiles,
+                freegs_constraints,
+                show=True,
+                #  psi_bndry=psi_bndry,
+                rtol=rtol,
+            )
         except Exception as error:
             raise RuntimeError(f"Solve G-S equation failed [{self.__class__.__name__}]!") from error
         else:
@@ -297,11 +302,15 @@ class EquilibriumFreeGS(FyEqAnalyze):
 
         return current_slice
 
-    def advance(self, *args, time: float = 0.0,
-                core_profile_1d: CoreProfiles.TimeSlice.Profiles1D = None,
-                pf_active: PFActive = None,
-                wall: Wall = None, **kwargs) -> Equilibrium.TimeSlice:
-
+    def advance(
+        self,
+        *args,
+        time: float = 0.0,
+        core_profile_1d: CoreProfiles.TimeSlice.Profiles1D = None,
+        pf_active: PFActive = None,
+        wall: Wall = None,
+        **kwargs,
+    ) -> Equilibrium.TimeSlice:
         return super().advance(*args, time=time, **kwargs)
 
 
