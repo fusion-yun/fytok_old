@@ -125,27 +125,27 @@ class CoreSourcesSource(Module):
 
         res_1d.electrons["particles"] = (
             res_1d.electrons.particles
-            + res_1d.electrons.particles_decomposed.implicit_part * vars.get("electrons/density_thermal", 0)
-            + res_1d.electrons.particles_decomposed.explicit_part
+            + res_1d.electrons.particles_decomposed.get("implicit_part",0) * vars.get("electrons/density_thermal", 0)
+            + res_1d.electrons.particles_decomposed.get("explicit_part",0)
         )
 
         res_1d.electrons["energy"] = (
             res_1d.electrons.energy
-            + res_1d.electrons.energy_decomposed.implicit_part * vars.get("electrons/temperature", 0)
-            + res_1d.electrons.energy_decomposed.explicit_part
+            + res_1d.electrons.energy_decomposed.get("implicit_part",0) * vars.get("electrons/temperature", 0)
+            + res_1d.electrons.energy_decomposed.get("explicit_part",0)
         )
 
         for ion in res_1d.ion:
             ion["particles"] = (
                 ion.particles
-                + ion.particles_decomposed.implicit_part * vars.get(f"ion/{ion.label}/density_thermal", 0)
-                + ion.particles_decomposed.explicit_part
+                + ion.particles_decomposed.get("implicit_part",0) * vars.get(f"ion/{ion.label}/density_thermal", 0)
+                + ion.particles_decomposed.get("explicit_part",0)
             )
 
             ion["energy"] = (
                 ion.energy
-                + ion.energy_decomposed.implicit_part * vars.get(f"ion/{ion.label}/temperature", 0)
-                + ion.energy_decomposed.explicit_part
+                + ion.energy_decomposed.get("implicit_part",0) * vars.get(f"ion/{ion.label}/temperature", 0)
+                + ion.energy_decomposed.get("explicit_part",0)
             )
 
         return res

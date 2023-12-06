@@ -199,16 +199,16 @@ class FyTrans(TransportSolverNumerics):
         coeff: typing.Dict[str, typing.Dict[str,Expression|float]] = {
             k: copy(
                 {
-                    "transp_D"  : 0,
-                    "transp_V"  : 0,
-                    "transp_F"  : 0,
-                    "energy_D"  : 0,
-                    "energy_V"  : 0,
-                    "energy_F"  : 0,
-                    "chi_u"     : 0,
-                    "S"         : 0,
-                    "Q"         : 0,
-                    "U"         : 0,
+                    "transp_D"  : Scalar(0),
+                    "transp_V"  : Scalar(0),
+                    "transp_F"  : Scalar(0),
+                    "energy_D"  : Scalar(0),
+                    "energy_V"  : Scalar(0),
+                    "energy_F"  : Scalar(0),
+                    "chi_u"     : Scalar(0),
+                    "S"         : Scalar(0),
+                    "Q"         : Scalar(0),
+                    "U"         : Scalar(0),
                 }
             )
             for k in species
@@ -318,9 +318,9 @@ class FyTrans(TransportSolverNumerics):
                     if core_sources is not None:
                         for source in core_sources.source:
                             core_source_1d = source.time_slice.current.profiles_1d
-                            conductivity_parallel += core_source_1d.conductivity_parallel or 0
-                            j_parallel += core_source_1d.j_parallel or 0
-                            j_parallel_imp += core_source_1d.j_parallel_imp or 0
+                            conductivity_parallel += core_source_1d.conductivity_parallel  
+                            j_parallel += core_source_1d.j_parallel  
+                            j_parallel_imp += core_source_1d.get("j_parallel_imp",0)  
 
                         if isinstance(conductivity_parallel, Expression):
                             conductivity_parallel = conductivity_parallel(x)
@@ -375,6 +375,7 @@ class FyTrans(TransportSolverNumerics):
                 case "density":
                     transp_D = coeff[spec].get("transp_D", 0)
                     transp_V = coeff[spec].get("transp_V", 0)
+
                     S = coeff[spec].get("S", 0)
 
                     a = vpr
@@ -559,7 +560,7 @@ class FyTrans(TransportSolverNumerics):
     def execute(
         self,
         current: TransportSolverNumerics.TimeSlice,
-        previous: TransportSolverNumerics.TimeSlice | None,
+        previous: TransportSolverNumerics.TimeSlice ,
         *args,
         initial_value=None,
         **kwargs,
@@ -679,8 +680,8 @@ class FyTrans(TransportSolverNumerics):
             Y0,
             bvp_rms_mask=current.control_parameters.bvp_rms_mask,
             tolerance=current.control_parameters.tolerance,
-            max_nodes=current.control_parameters.max_nodes,
-            verbose=current.control_parameters.verbose,
+            max_nodes=current.control_parameters.max_nodes or 0,
+            verbose=current.control_parameters.verbose or 0,
         )
 
         x = sol.x
