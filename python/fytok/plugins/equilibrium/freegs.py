@@ -40,7 +40,7 @@ class EquilibriumFreeGS(FyEqAnalyze):
 
         self._eq_solver: freegs.Equilibrium = None
 
-        self._setup_eq_solver(**kwargs)
+       
 
     def _setup_machine(self, *args, **kwargs) -> freegs.machine.Machine:
         """update the description of machine
@@ -239,48 +239,48 @@ class EquilibriumFreeGS(FyEqAnalyze):
     def postprocess(self, current: TimeSlice):
         super().postprocess(current)
         
-        psi_norm = self.code.parameters.get("psi_norm", None)
-        if psi_norm is None or psi_norm is _not_found_:
-            psi_norm = np.linspace(0, 1.0, 128)
+        # psi_norm = self.code.parameters.get("psi_norm", None)
+        # if psi_norm is None or psi_norm is _not_found_:
+        #     psi_norm = np.linspace(0, 1.0, 128)
 
-        if self._eq_solver.psi_bndry is not None:
-            psi = psi_norm * (self._eq_solver.psi_bndry - self._eq_solver.psi_axis) + self._eq_solver.psi_axis
-        else:
-            psi = None
-        current["global_quantities"]= {
-                "ip": self._eq_solver.plasmaCurrent()
-            } 
-        current[ "profiles_1d"]= {
-                "psi": psi,
-                # "q": equilibrium.q(psi_norm),
-                # "pressure": equilibrium.pressure(psi_norm),
-                "dpressure_dpsi": self._eq_solver.pprime(psi_norm),
-                # "f": equilibrium.fpol(psi_norm),
-                "f_df_dpsi": self._eq_solver.ffprime(psi_norm),
-            } 
+        # if self._eq_solver.psi_bndry is not None:
+        #     psi = psi_norm * (self._eq_solver.psi_bndry - self._eq_solver.psi_axis) + self._eq_solver.psi_axis
+        # else:
+        #     psi = None
+        # current["global_quantities"]= {
+        #         "ip": self._eq_solver.plasmaCurrent()
+        #     } 
+        # current[ "profiles_1d"]= {
+        #         "psi": psi,
+        #         # "q": equilibrium.q(psi_norm),
+        #         # "pressure": equilibrium.pressure(psi_norm),
+        #         "dpressure_dpsi": self._eq_solver.pprime(psi_norm),
+        #         # "f": equilibrium.fpol(psi_norm),
+        #         "f_df_dpsi": self._eq_solver.ffprime(psi_norm),
+        #     } 
    
-        trim=self.code.parameters.get("trim",0)
+        # trim=self.code.parameters.get("trim",0)
 
-        if trim > 0:
-            current["profiles_2d"]= {
-                    "grid": {
-                         "type": "total",
-                    "grid_type": {"name": "rectangular", "index": 1},
-                        "dim1": self._eq_solver.R_1D[trim:-trim],
-                        "dim2": self._eq_solver.Z_1D[trim:-trim],
-                    },
-                    "psi": self._eq_solver.psi()[trim:-trim, trim:-trim],
-                }
+        # if trim > 0:
+        #     current["profiles_2d"]= {
+        #             "type": "total",
+        #             "grid_type": {"name": "rectangular", "index": 1},
+        #             "grid": {
+        #                 "dim1": self._eq_solver.R_1D[trim:-trim],
+        #                 "dim2": self._eq_solver.Z_1D[trim:-trim],
+        #             },
+        #             "psi": self._eq_solver.psi()[trim:-trim, trim:-trim],
+        #         }
              
-        else:
-            current["profiles_2d"]={
+        # else:
+        current["profiles_2d"]={ 
+                    "type": "total",
+                    "grid_type": {"name": "rectangular", "index": 1},
                     "grid": {
-                        "type": "total",
-                        "grid_type": {"name": "rectangular", "index": 1},
-                        "dim1": self._eq_solver.R_1D,
-                        "dim2": self._eq_solver.Z_1D,
+                        "dim1":0,# self._eq_solver.R_1D,
+                        "dim2":0,# self._eq_solver.Z_1D,
                     },
-                    "psi": self._eq_solver.psi(),
+                    # "psi": self._eq_solver.psi(),
                     # "j_tor": equilibrium.Jtor,
                 }
            
