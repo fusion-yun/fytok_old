@@ -2,11 +2,7 @@ __path__ = __import__("pkgutil").extend_path(__path__, __name__)
 
 import os
 
-for k, v in os.environ.items():
-    if k.startswith("FY_"):
-        os.environ[f"SP_{k[3:]}"] = v
 
-os.environ["SP_LABEL"] = "fytok"
 
  
 
@@ -36,5 +32,5 @@ except Exception as error:
 ############################################################
 
 
-if not FY_QUIET and SP_MPI is not None and SP_MPI.COMM_WORLD.Get_rank() == 0:  # 粗略猜测是否在交互环境下运行
+if not FY_QUIET and (SP_MPI is  None or SP_MPI.COMM_WORLD.Get_rank() == 0):  # 粗略猜测是否在交互环境下运行
     logger.info(FY_LOGO)

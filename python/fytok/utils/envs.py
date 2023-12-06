@@ -17,13 +17,15 @@ else:
     FY_EXT_VERSION = extension_tags
 
 
+for k, v in os.environ.items():
+    if k.startswith("FY_"):
+        os.environ[f"SP_{k[3:]}"] = v
+
+os.environ["SP_LABEL"] = "fytok"
+
 FY_DEBUG = os.environ.get("FY_DEBUG", True)
 
-FY_QUIET = os.environ.get("FY_QUIET", True)
-
-# os.environ["SP_DEBUG"] = str(FY_DEBUG)
-# envs.SP_DEBUG = FY_DEBUG
-
+FY_QUIET = os.environ.get("FY_QUIET", False)
 
 FY_JOBID = f"fytok_{getpass.getuser().lower()}_{os.uname().nodename.lower()}_{os.getpid()}"
 
