@@ -21,7 +21,7 @@ PI = scipy.constants.pi
 TWOPI = 2.0 * PI
 
 
-@sp_tree(coordinate1="../grid/rho_tor_norm")
+@sp_tree(coordinate1=".../grid/rho_tor_norm")
 class CoreProfilesIon(utilities._T_core_profile_ions):
     _metadata = {"identifier": "label"}
 

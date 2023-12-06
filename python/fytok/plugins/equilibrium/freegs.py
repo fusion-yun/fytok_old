@@ -124,7 +124,7 @@ class EquilibriumFreeGS(FyEqAnalyze):
 
         return self._eq_solver
 
-    def execute(self,current:Equilibrium.TimeSlice, *previous:Equilibrium.TimeSlice,  **kwargs)  :
+    def execute1(self,current:Equilibrium.TimeSlice, *previous:Equilibrium.TimeSlice,  **kwargs)  :
         """update the last time slice, base on profiles_2d[-1].psi, and core_profiles_1d, wall, pf_active"""
         super().execute(current, *previous, **kwargs)
         core_profiles: CoreProfiles=self.inputs.get_source("core_profiles") # type:ignore
@@ -235,25 +235,28 @@ class EquilibriumFreeGS(FyEqAnalyze):
         else:
             logger.info(f"Solve G-S equation Done")
 
+      
+    def postprocess(self, current: TimeSlice):
+        super().postprocess(current)
+        
         psi_norm = self.code.parameters.get("psi_norm", None)
         if psi_norm is None or psi_norm is _not_found_:
             psi_norm = np.linspace(0, 1.0, 128)
 
-        if eq_solver.psi_bndry is not None:
-            psi = psi_norm * (eq_solver.psi_bndry - eq_solver.psi_axis) + eq_solver.psi_axis
+        if self._eq_solver.psi_bndry is not None:
+            psi = psi_norm * (self._eq_solver.psi_bndry - self._eq_solver.psi_axis) + self._eq_solver.psi_axis
         else:
             psi = None
-
         current["global_quantities"]= {
-                "ip": eq_solver.plasmaCurrent()
+                "ip": self._eq_solver.plasmaCurrent()
             } 
         current[ "profiles_1d"]= {
                 "psi": psi,
                 # "q": equilibrium.q(psi_norm),
                 # "pressure": equilibrium.pressure(psi_norm),
-                "dpressure_dpsi": eq_solver.pprime(psi_norm),
+                "dpressure_dpsi": self._eq_solver.pprime(psi_norm),
                 # "f": equilibrium.fpol(psi_norm),
-                "f_df_dpsi": eq_solver.ffprime(psi_norm),
+                "f_df_dpsi": self._eq_solver.ffprime(psi_norm),
             } 
    
         trim=self.code.parameters.get("trim",0)
@@ -263,10 +266,10 @@ class EquilibriumFreeGS(FyEqAnalyze):
                     "grid": {
                          "type": "total",
                     "grid_type": {"name": "rectangular", "index": 1},
-                        "dim1": eq_solver.R_1D[trim:-trim],
-                        "dim2": eq_solver.Z_1D[trim:-trim],
+                        "dim1": self._eq_solver.R_1D[trim:-trim],
+                        "dim2": self._eq_solver.Z_1D[trim:-trim],
                     },
-                    "psi": eq_solver.psi()[trim:-trim, trim:-trim],
+                    "psi": self._eq_solver.psi()[trim:-trim, trim:-trim],
                 }
              
         else:
@@ -274,10 +277,10 @@ class EquilibriumFreeGS(FyEqAnalyze):
                     "grid": {
                         "type": "total",
                         "grid_type": {"name": "rectangular", "index": 1},
-                        "dim1": eq_solver.R_1D,
-                        "dim2": eq_solver.Z_1D,
+                        "dim1": self._eq_solver.R_1D,
+                        "dim2": self._eq_solver.Z_1D,
                     },
-                    "psi": eq_solver.psi(),
+                    "psi": self._eq_solver.psi(),
                     # "j_tor": equilibrium.Jtor,
                 }
            
