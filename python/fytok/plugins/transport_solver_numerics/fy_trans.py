@@ -561,6 +561,7 @@ class FyTrans(TransportSolverNumerics):
         current: TransportSolverNumerics.TimeSlice,
         previous: TransportSolverNumerics.TimeSlice | None,
         *args,
+        initial_value=None,
         **kwargs,
     ):
         super().execute(current, previous, *args, **kwargs)
@@ -578,7 +579,7 @@ class FyTrans(TransportSolverNumerics):
 
         Y0 = np.zeros([num_of_equation * 2, len(x)])
 
-        initial_value = self.inputs.get_source("initial_value")
+        # initial_value = self.inputs.get_source("initial_value")
 
         if isinstance(initial_value, array_type) and initial_value.shape == (num_of_equation * 2, x.size):
             Y0 = initial_value
@@ -624,7 +625,7 @@ class FyTrans(TransportSolverNumerics):
             bc_list.append(equ.boundary_condition[0].func)
             bc_list.append(equ.boundary_condition[1].func)
 
-        if True:
+        if FY_DEBUG:
 
             def func(x: array_type, y: array_type, *args) -> array_type:
                 res = np.zeros([len(current.equation) * 2, x.size])

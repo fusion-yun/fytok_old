@@ -1,3 +1,4 @@
+from __future__ import annotations
 from scipy import constants
 from copy import copy
 import math
