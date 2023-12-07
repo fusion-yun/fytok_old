@@ -169,7 +169,7 @@ def sp_write_geqdsk(p, file):
     return
 
 
-def sp_to_geqdsk(d, description: str | None = None, time_slice='current', **kwargs) -> dict:
+def sp_to_geqdsk(d, description: str | None = None, time_slice=-1, **kwargs) -> dict:
     entry: Entry = as_entry(d)
 
     geqdsk: dict = {"description": description or entry.get("description", "NOTHING TO SAY")}

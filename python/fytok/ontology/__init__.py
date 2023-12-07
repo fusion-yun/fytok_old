@@ -33,7 +33,7 @@ try:
         ec_launchers,
         amns_data,
         wall,
-        waves
+        waves,
     )
 
     __all__ = [
@@ -57,30 +57,28 @@ try:
         "tf",
         "transport_solver_numerics",
         "utilities",
-        "waves"
+        "waves",
     ]
 
 
 except ModuleNotFoundError as error:
-    imas_version = None
+    imas_version = "None"
 
-    # else:
-    if GLOBAL_ONTOLOGY != f"imas/{imas_version[1:].split('.')[0]}":
-        raise RuntimeError(f"Global ontology {GLOBAL_ONTOLOGY} is not compatible with IMAS version {imas_version}")
+    class DummyModule:
+        def __init__(self, name):
+            self._module = name
 
+        def __str__(self) -> str:
+            return f"<dummy_module '{__package__}.dummy.{self._module}'>"
 
-# class DummyModule:
-#     def __init__(self, name):
-#         self._module = name
+        def __getattr__(self, __name: str) -> typing.Type[PropertyTree]:
+            cls = type(__name, (PropertyTree,), {})
+            cls.__module__ = f"{__package__}.dummy.{self._module}"
+            return cls
 
-#     def __str__(self) -> str:
-#         return f"<dummy_module '{__package__}.dummy.{self._module}'>"
+    def __getattr__(key: str) -> DummyModule:
+        return DummyModule(key)
 
-#     def __getattr__(self, __name: str) -> typing.Type[PropertyTree]:
-#         cls = type(__name, (PropertyTree,), {})
-#         cls.__module__ = f"{__package__}.dummy.{self._module}"
-#         return cls
-
-
-# def __getattr__(key: str) -> DummyModule:
-#     return DummyModule(key)
+else:
+    if GLOBAL_ONTOLOGY != f"imas/{imas_version[1:].split('_')[0]}":
+        raise RuntimeError(f"Global ontology {GLOBAL_ONTOLOGY} is not compatible with IMAS version {imas_version[1:].split('.')[0]}")

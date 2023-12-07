@@ -260,39 +260,34 @@ class FyTrans(TransportSolverNumerics):
             for k in vars:
                 vars[k] = -ne / z_of_ions(x)
 
-        if core_transport is not None:
-            flux_multiplier = sum(
-                [
-                    model.time_slice.current.flux_multiplier
-                    for model in core_transport.model
-                    if model.time_slice.current.flux_multiplier is not _not_found_
-                ],
-                0,
-            )
+        flux_multiplier = 0.0
+        for model in core_transport.model:
+            logger.debug(model.code.name)
 
-        else:
-            flux_multiplier = 1
+            core_transp: CoreTransport.Model.TimeSlice = model.fetch(**vars)
 
-        if core_transport is not None:
-            for model in core_transport.model:
-                trans_1d: CoreTransport.Model.TimeSlice.Profiles1D = model.fetch(**vars).profiles_1d
+            flux_multiplier += core_transp.flux_multiplier or 0.0
 
-                for spec, d in coeff.items():
-                    d["transp_D"] += trans_1d.get(f"{spec}/particles/d", 0)
-                    d["transp_V"] += trans_1d.get(f"{spec}/particles/v", 0)
-                    d["transp_F"] += trans_1d.get(f"{spec}/particles/flux", 0)
-                    d["energy_D"] += trans_1d.get(f"{spec}/energy/d", 0)
-                    d["energy_V"] += trans_1d.get(f"{spec}/energy/v", 0)
-                    d["energy_F"] += trans_1d.get(f"{spec}/energy/flux", 0)
-                    d["chi_u"] += trans_1d.get(f"{spec}/momentum/d", 0)
+            trans_1d = core_transp.profiles_1d
 
-        if core_sources is not None:
-            for source in core_sources.source:
-                source_1d = source.fetch(**vars).profiles_1d
-                for spec, d in coeff.items():
-                    d["S"] += source_1d.get(f"{spec}/particles", 0)
-                    d["Q"] += source_1d.get(f"{spec}/energy", 0)
-                    d["U"] += source_1d.get(f"{spec}/momentum/toroidal", 0)
+            for spec, d in coeff.items():
+                d["transp_D"] += trans_1d.get(f"{spec}/particles/d", 0)
+                d["transp_V"] += trans_1d.get(f"{spec}/particles/v", 0)
+                d["transp_F"] += trans_1d.get(f"{spec}/particles/flux", 0)
+                d["energy_D"] += trans_1d.get(f"{spec}/energy/d", 0)
+                d["energy_V"] += trans_1d.get(f"{spec}/energy/v", 0)
+                d["energy_F"] += trans_1d.get(f"{spec}/energy/flux", 0)
+                d["chi_u"] += trans_1d.get(f"{spec}/momentum/d", 0)
+
+        if flux_multiplier == 0.0:
+            flux_multiplier = 1.0
+
+        for source in core_sources.source:
+            source_1d = source.fetch(**vars).profiles_1d
+            for spec, d in coeff.items():
+                d["S"] += source_1d.get(f"{spec}/particles", 0)
+                d["Q"] += source_1d.get(f"{spec}/energy", 0)
+                d["U"] += source_1d.get(f"{spec}/momentum/toroidal", 0)
 
         for equ in current.equation:
             identifier = equ.primary_quantity.identifier
@@ -568,7 +563,7 @@ class FyTrans(TransportSolverNumerics):
         super().execute(current, previous, *args, **kwargs)
 
         logger.info(
-            f"Solve transport equations : {','.join([equ.primary_quantity.identifier for equ in current.equation])}"
+            f"Solve transport equations : { '  ,'.join([equ.primary_quantity.identifier for equ in current.equation])}"
         )
 
         x = current.grid.rho_tor_norm

@@ -7,9 +7,12 @@ from fytok.modules.Equilibrium import Equilibrium
 from scipy import constants
 from spdm.utils.logger import logger
 from spdm.utils.tags import _not_found_
+from spdm.data.Expression import Variable, Expression
+from spdm.data.sp_property import sp_tree
 
 
-@CoreTransport.Model.register(["fas_alpha"])
+@CoreTransport.Model.register(["fast_alpha"])
+@sp_tree
 class FastAlpha(CoreTransport.Model):
     """
     FastAlpha   Model
@@ -24,15 +27,16 @@ class FastAlpha(CoreTransport.Model):
         Nuclear Fusion, 54(10), 104006. https://doi.org/10.1088/0029-5515/54/10/104006
 
     """
+    identifier = "slowing_down"
+    code = {"name": "fast_alpha", "description": f" Fast alpha", "copyright": "fytok"}
 
-    _metadata = {"identifier": "neoclassical", "code": {"name": "FastAlpha", "description": f" Fast alpha"}}
+    def fetch(self, x: Variable, **vars: Expression) -> CoreTransport.Model.TimeSlice:
+        res: CoreTransport.Model.TimeSlice = super().fetch(x, **vars)
 
-    def refresh(self, *args, core_profiles_1d: CoreProfiles.Profiles1d, **kwargs) -> None:
-        rho_tor_norm = core_profiles_1d.grid.rho_tor_norm
-
-        Te = core_profiles_1d.electrons.temperature(rho_tor_norm)
-
-        L_Te = Te / core_profiles_1d.electrons.temperature.derivative()
+        core_trans_1d = res.profiles_1d
+        Te = vars.get("electrons/temperature")
+        # ne = vars.get("electrons/density")
+        inv_L_Te = Te.dln
 
         Te_Ea = Te / 3.5e6
 
@@ -40,15 +44,13 @@ class FastAlpha(CoreTransport.Model):
 
         fast_factor_d = 0.02 + 4.5 * (Te_Ea) + 8.0 * (Te_Ea**2) + 350 * (Te_Ea**3)
 
-        fast_factor_v = fast_factor_d * 1.5 * (1.0 / np.log((Ec_Ea ** (-1.5) + 1) * (Ec_Ea**1.5 + 1)) - 1) / L_Te
+        fast_factor_v = fast_factor_d * 1.5 * (1.0 / np.log((Ec_Ea ** (-1.5) + 1) * (Ec_Ea**1.5 + 1)) - 1) * inv_L_Te
 
-        self.time_slice.current.profiles_1d["ion"] = [
+        core_trans_1d["ion"] = [
             {
-                "label": "He",
-                "particles": {"d_fast_factor": fast_factor_d, "v_fast_factor": fast_factor_v},
+                "label": "alpha",
+                "particles": {"D": fast_factor_d, "v": fast_factor_v},
                 #  "energy": {"d_fast": diff, "v_fast": vconv}
             },
         ]
-
-
-__SP_EXPORT__ = FastAlpha
+        return res

@@ -4,8 +4,6 @@ import os
 
 
 
- 
-
 from spdm.utils.envs import SP_MPI
 
 from .ontology import GLOBAL_ONTOLOGY

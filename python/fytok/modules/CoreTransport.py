@@ -73,7 +73,7 @@ class CoreTransportProfiles1D(core_transport._T_core_transport_model_profiles_1d
     Electrons = CoreTransportElectrons
 
     Ion = CoreTransportIon
-    
+
     Neutral = CoreTransportNeutral
 
     electrons: CoreTransportElectrons
@@ -104,12 +104,8 @@ class CoreTransportModel(Module):
 
     time_slice: TimeSeriesAoS[CoreTransportTimeSlice]
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     def preprocess(self, *args, **kwargs):
         super().preprocess(*args, **kwargs)
-
         current = self.time_slice.current
 
         if current.cache_get("grid_d", _not_found_) is _not_found_:
@@ -127,43 +123,26 @@ class CoreTransportModel(Module):
     def refresh(self, *args, core_profiles: CoreProfiles = None, equilibrium: Equilibrium = None, **kwargs):
         super().refresh(*args, core_profiles=core_profiles, equilibrium=equilibrium, **kwargs)
 
-        # current = self.time_slice.current.profiles_1d
-        # if current.cache_get("grid", _not_found_) is _not_found_:
-        #     equilibrium: Equilibrium = self._inputs.get("equilibrium")
-        #     rho_tor_norm = self.code.parameters.get("rho_tor_norm", None)
-        #     current["grid"] = equilibrium.time_slice.current.profiles_1d.grid.duplicate(rho_tor_norm)
+    def fetch(self, /, x: Expression, **vars) -> CoreTransportTimeSlice:
+        res: CoreTransportTimeSlice = super().fetch(lambda o: o if not isinstance(o, Expression) else o(x))
+        return res
 
 
 @sp_tree
-class CoreTransport(core_transport._T_core_transport):
+class CoreTransport(IDS):
     Model = CoreTransportModel
 
     model: AoS[CoreTransportModel]
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def refresh(
-        self,
-        *args,
-        equilibrium: Equilibrium = None,
-        core_profiles: CoreProfiles = None,
-        **kwargs,
-    ):
-        super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
+    def refresh(self, *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None, **kwargs):
+        super().refresh(*args, **kwargs)
 
         for model in self.model:
-            model.refresh(time=self.time, **self._inputs)
+            model.refresh(time=self.time, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
-    def advance(
-        self,
-        *args,
-        equilibrium: Equilibrium = None,
-        core_profiles: CoreProfiles = None,
-        **kwargs,
-    ):
+    def advance(self, *args, **kwargs):
         """advance time_series to next slice"""
-        super().advance(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
+        super().advance(*args, **kwargs)
 
         for model in self.model:
-            model.advance(time=self.time, **self._inputs)
+            model.advance(time=self.time, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)

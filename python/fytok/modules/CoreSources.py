@@ -112,12 +112,6 @@ class CoreSourcesSource(Module):
     def refresh(self, *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None, **kwargs):
         super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
-        # current = self.time_slice.current.profiles_1d
-        # if current.cache_get("grid_d", _not_found_) is _not_found_:
-        #     equilibrium: Equilibrium = self._inputs.get("equilibrium")
-        #     rho_tor_norm = self.code.parameters.get("rho_tor_norm", None)
-        #     current["grid"] = equilibrium.time_slice.current.profiles_1d.grid.duplicate(rho_tor_norm)
-
     def fetch(self, /, x: Expression, **vars) -> CoreSourcesTimeSlice:
         res: CoreSourcesTimeSlice = super().fetch(lambda o: o if not isinstance(o, Expression) else o(x))
 
@@ -125,27 +119,27 @@ class CoreSourcesSource(Module):
 
         res_1d.electrons["particles"] = (
             res_1d.electrons.particles
-            + res_1d.electrons.particles_decomposed.get("implicit_part",0) * vars.get("electrons/density_thermal", 0)
-            + res_1d.electrons.particles_decomposed.get("explicit_part",0)
+            + res_1d.electrons.particles_decomposed.get("implicit_part", 0) * vars.get("electrons/density_thermal", 0)
+            + res_1d.electrons.particles_decomposed.get("explicit_part", 0)
         )
 
         res_1d.electrons["energy"] = (
             res_1d.electrons.energy
-            + res_1d.electrons.energy_decomposed.get("implicit_part",0) * vars.get("electrons/temperature", 0)
-            + res_1d.electrons.energy_decomposed.get("explicit_part",0)
+            + res_1d.electrons.energy_decomposed.get("implicit_part", 0) * vars.get("electrons/temperature", 0)
+            + res_1d.electrons.energy_decomposed.get("explicit_part", 0)
         )
 
         for ion in res_1d.ion:
             ion["particles"] = (
                 ion.particles
-                + ion.particles_decomposed.get("implicit_part",0) * vars.get(f"ion/{ion.label}/density_thermal", 0)
-                + ion.particles_decomposed.get("explicit_part",0)
+                + ion.particles_decomposed.get("implicit_part", 0) * vars.get(f"ion/{ion.label}/density_thermal", 0)
+                + ion.particles_decomposed.get("explicit_part", 0)
             )
 
             ion["energy"] = (
                 ion.energy
-                + ion.energy_decomposed.get("implicit_part",0) * vars.get(f"ion/{ion.label}/temperature", 0)
-                + ion.energy_decomposed.get("explicit_part",0)
+                + ion.energy_decomposed.get("implicit_part", 0) * vars.get(f"ion/{ion.label}/temperature", 0)
+                + ion.energy_decomposed.get("explicit_part", 0)
             )
 
         return res
@@ -164,7 +158,7 @@ class CoreSources(IDS):
             source.refresh(time=self.time, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
     def advance(self, *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None, **kwargs):
-        super().advance(*args,  **kwargs)
+        super().advance(*args, **kwargs)
 
         for source in self.source:
             source.advance(time=self.time, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)

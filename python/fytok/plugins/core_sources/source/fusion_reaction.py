@@ -50,23 +50,23 @@ class FusionReaction(CoreSources.Source):
     """
 
     identifier = "fusion"
-    code = {"name": "fusion_reaction", "description": r"Burning $D + T \rightarrow \alpha$"} # type: ignore
+    code = {"name": "fusion_reaction", "description": r"Burning $D + T \rightarrow \alpha$"}  # type: ignore
 
     def fetch(self, x: Variable, **vars: Expression) -> CoreSources.Source.TimeSlice:
-        res = super().fetch(x, **vars)
+        res: CoreSources.Source.TimeSlice = super().fetch(x, **vars)
 
         core_source_1d = res.profiles_1d
 
         reactivities = nuclear_reaction[r"D(t,n)He"].reactivities
 
-        nD= vars.get("ion/D/density",0.0)
-        nT = vars.get("ion/T/density",0.0)
-        nEP = vars.get("ion/alpha/density",0.0)
+        nD = vars.get("ion/D/density", 0.0)
+        nT = vars.get("ion/T/density", 0.0)
+        nEP = vars.get("ion/alpha/density", 0.0)
 
-        TD = vars.get("ion/D/temperature",0.0)
-        TT = vars.get("ion/T/temperature",0.0)
-        Te  = vars.get("electrons/temperature",0.0)
-        ne = vars.get("electrons/density",0.0)
+        TD = vars.get("ion/D/temperature", 0.0)
+        TT = vars.get("ion/T/temperature", 0.0)
+        Te = vars.get("electrons/temperature", 0.0)
+        ne = vars.get("electrons/density", 0.0)
 
         Ti = (nD * TD + nT * TT) / (nD + nT)
 

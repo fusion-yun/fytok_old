@@ -349,6 +349,7 @@ def read_iter_profiles(path):
                 "particles": {"d": D, "v": v_pinch_ni},
                 "energy": {"d": chi, "v": v_pinch_Ti},
             },
+        
         ],
     }
 
