@@ -3,7 +3,7 @@ import numpy as np
 import scipy.constants
 from copy import copy
 
-from spdm.data.Expression import Variable, Expression,Scalar
+from spdm.data.Expression import Variable, Expression, Scalar
 from spdm.data.Function import Function
 from spdm.data.sp_property import sp_tree
 from spdm.utils.typing import array_type
@@ -83,7 +83,7 @@ class FyTrans(TransportSolverNumerics):
                   $$ transport_electron_temperature
         """
 
-    code: Code = {"name": "fy_trans", "copyright":"fytok"} # type: ignore
+    code: Code = {"name": "fy_trans", "copyright": "fytok"}  # type: ignore
 
     def preprocess(self, *args, **kwargs):
         super().preprocess(*args, **kwargs)
@@ -105,7 +105,7 @@ class FyTrans(TransportSolverNumerics):
         # 声明变量
         x = self.primary_coordinate
 
-        vars: typing.Dict[str, Expression|float] = {"x": x}
+        vars: typing.Dict[str, Expression | float] = {"x": x}
 
         for equ in self.equations:
             vars[equ.profile.name] = equ.profile
@@ -196,19 +196,19 @@ class FyTrans(TransportSolverNumerics):
                 continue
             species.append("/".join(identifier.split("/")[:-1]))
 
-        coeff: typing.Dict[str, typing.Dict[str,Expression|float]] = {
+        coeff: typing.Dict[str, typing.Dict[str, Expression | float]] = {
             k: copy(
                 {
-                    "transp_D"  : Scalar(0),
-                    "transp_V"  : Scalar(0),
-                    "transp_F"  : Scalar(0),
-                    "energy_D"  : Scalar(0),
-                    "energy_V"  : Scalar(0),
-                    "energy_F"  : Scalar(0),
-                    "chi_u"     : Scalar(0),
-                    "S"         : Scalar(0),
-                    "Q"         : Scalar(0),
-                    "U"         : Scalar(0),
+                    "transp_D": Scalar(0),
+                    "transp_V": Scalar(0),
+                    "transp_F": Scalar(0),
+                    "energy_D": Scalar(0),
+                    "energy_V": Scalar(0),
+                    "energy_F": Scalar(0),
+                    "chi_u": Scalar(0),
+                    "S": Scalar(0),
+                    "Q": Scalar(0),
+                    "U": Scalar(0),
                 }
             )
             for k in species
@@ -275,7 +275,7 @@ class FyTrans(TransportSolverNumerics):
 
         if core_transport is not None:
             for model in core_transport.model:
-                trans_1d:CoreTransport.Model.TimeSlice.Profiles1D = model.fetch(**vars).profiles_1d
+                trans_1d: CoreTransport.Model.TimeSlice.Profiles1D = model.fetch(**vars).profiles_1d
 
                 for spec, d in coeff.items():
                     d["transp_D"] += trans_1d.get(f"{spec}/particles/d", 0)
@@ -318,9 +318,9 @@ class FyTrans(TransportSolverNumerics):
                     if core_sources is not None:
                         for source in core_sources.source:
                             core_source_1d = source.time_slice.current.profiles_1d
-                            conductivity_parallel += core_source_1d.conductivity_parallel  
-                            j_parallel += core_source_1d.j_parallel  
-                            j_parallel_imp += core_source_1d.get("j_parallel_imp",0)  
+                            conductivity_parallel += core_source_1d.conductivity_parallel
+                            j_parallel += core_source_1d.j_parallel
+                            j_parallel_imp += core_source_1d.get("j_parallel_imp", 0)
 
                         if isinstance(conductivity_parallel, Expression):
                             conductivity_parallel = conductivity_parallel(x)
@@ -560,7 +560,7 @@ class FyTrans(TransportSolverNumerics):
     def execute(
         self,
         current: TransportSolverNumerics.TimeSlice,
-        previous: TransportSolverNumerics.TimeSlice ,
+        previous: TransportSolverNumerics.TimeSlice,
         *args,
         initial_value=None,
         **kwargs,
@@ -597,7 +597,7 @@ class FyTrans(TransportSolverNumerics):
 
             # 计算 y 和 dydr
             for idx, equ in enumerate(current.equation):
-                y: Function = core_profiles_1d.get(equ.primary_quantity.identifier,None)
+                y: Function = core_profiles_1d.get(equ.primary_quantity.identifier, None)
 
                 Y0[idx * 2] = y(x) if y is not None else np.zeros_like(x)
                 Y0[idx * 2 + 1] = y.d(x) if y is not None else np.zeros_like(x)
@@ -607,7 +607,7 @@ class FyTrans(TransportSolverNumerics):
                 y = Y0[idx * 2]
                 yp = Y0[idx * 2 + 1]
 
-                *_, (a, b, c, d, e, f, g) = equ.coefficient
+                bc0, bc1, a, b, c, d, e, f, g = equ.coefficient
 
                 Y0[idx * 2 + 1] = -yp * d(x, *Y0) + y * e(x, *Y0)
 
