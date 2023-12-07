@@ -171,7 +171,7 @@ class TransportSolverNumerics(IDS):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self["primary_coordinate"] = Variable((index := 0), "x", label=r"\bar{rho}_{tor_norm}")
+        self["primary_coordinate"] = Variable((index := 0), "x", label=r"\bar{\rho}_{tor}")
 
         def guess_label(name):
             s = name.split("/")
@@ -211,9 +211,22 @@ class TransportSolverNumerics(IDS):
             for equ in self._cache.get("equations", [])
         ]
 
+        # self["variables"] = variables
+
+    @property
+    def variables(self) -> typing.Dict[str, Variable]:
+        variables = {"x": self.primary_coordinate}
+
+        for equ in self.equations:
+            variables[equ.profile.name] = equ.profile
+            variables[equ.flux.name] = equ.flux
+        return variables
+
     code: Code = {"name": "fy_trans"}
 
     solver: Identifier
+
+    variables: Dict[Variable]
 
     primary_coordinate: Variable
     r""" $\rho_{tor}=\sqrt{ \Phi/\pi B_{0}}$ """

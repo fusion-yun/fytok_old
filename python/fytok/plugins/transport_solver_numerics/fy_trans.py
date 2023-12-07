@@ -28,60 +28,7 @@ class FyTrans(TransportSolverNumerics):
     r"""
         Solve transport equations $\rho=\sqrt{ \Phi/\pi B_{0}}$
         See  :cite:`hinton_theory_1976,coster_european_2010,pereverzev_astraautomated_1991`
-
-            Solve transport equations
-
-            Current Equation
-
-            Args:
-                core_profiles       : profiles at :math:`t-1`
-                equilibrium         : Equilibrium
-                transports          : CoreTransport
-                sources             : CoreSources
-                boundary_condition  :
-
-            Note:
-                .. $$  \sigma_{\parallel}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho} \right) \psi= \
-                            \frac{F^{2}}{\mu_{0}B_{0}\rho}\frac{\partial}{\partial\rho}\left[\frac{V^{\prime}}{4\pi^{2}}\left\langle \left|\frac{\nabla\rho}{R}\right|^{2}\right\rangle \
-                            \frac{1}{F}\frac{\partial\psi}{\partial\rho}\right]-\frac{V^{\prime}}{2\pi\rho}\left(j_{ni,exp}+j_{ni,imp}\psi\right)
-                    $$
-
-
-                if $\psi$ is not solved, then
-
-                .. $$  \psi =\int_{0}^{\rho}\frac{2\pi B_{0}}{q}\rho d\rho$$
-
-            Particle Transport
-            Note:
-
-                ..$$
-                    \left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\
-                    \left(V^{\prime}n_{s}\right)+\frac{\partial}{\partial\rho}\Gamma_{s}=\
-                    V^{\prime}\left(S_{s,exp}-S_{s,imp}\cdot n_{s}\right)
-                 $$
-
-                ..$$
-                    \Gamma_{s}\equiv-D_{s}\cdot\frac{\partial n_{s}}{\partial\rho}+v_{s}^{pinch}\cdot n_{s}
-                  $$
-
-            Heat transport equations
-
-            Note:
-
-                ion
-
-                .. $$ \frac{3}{2}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\
-                            \left(n_{i}T_{i}V^{\prime\frac{5}{3}}\right)+V^{\prime\frac{2}{3}}\frac{\partial}{\partial\rho}\left(q_{i}+T_{i}\gamma_{i}\right)=\
-                            V^{\prime\frac{5}{3}}\left[Q_{i,exp}-Q_{i,imp}\cdot T_{i}+Q_{ei}+Q_{zi}+Q_{\gamma i}\right]
-                   $$
-
-                electron
-
-                ..$$\frac{3}{2}\left(\frac{\partial}{\partial t}-\frac{\dot{B}_{0}}{2B_{0}}\frac{\partial}{\partial\rho}\rho\right)\
-                            \left(n_{e}T_{e}V^{\prime\frac{5}{3}}\right)+V^{\prime\frac{2}{3}}\frac{\partial}{\partial\rho}\left(q_{e}+T_{e}\gamma_{e}\right)=
-                            V^{\prime\frac{5}{3}}\left[Q_{e,exp}-Q_{e,imp}\cdot T_{e}+Q_{ei}-Q_{\gamma i}\right]
-                  $$ transport_electron_temperature
-        """
+"""
 
     code: Code = {"name": "fy_trans", "copyright": "fytok"}  # type: ignore
 
@@ -614,15 +561,7 @@ class FyTrans(TransportSolverNumerics):
         # if np.any(Y0):
         #     ValueError(f"Found nan in initial value! \n {Y0}")
 
-        equ_list = []
-        bc_list = []
-        for equ in current.equation:
-            equ_list.append(equ.primary_quantity.d_dr)
-            equ_list.append(equ.primary_quantity.dflux_dr)
-            bc_list.append(equ.boundary_condition[0].func)
-            bc_list.append(equ.boundary_condition[1].func)
-
-        if FY_DEBUG:
+        if True:
 
             def func(x: array_type, y: array_type, *args) -> array_type:
                 res = np.zeros([len(current.equation) * 2, x.size])
@@ -633,19 +572,11 @@ class FyTrans(TransportSolverNumerics):
                         res[idx * 2 + 1] = equ.primary_quantity.dflux_dr(x, *y, *args)
                     except Exception as error:
                         # a, b, c, d, e, f, g, *_ = equ.coefficient
-                        logger.error(
-                            (
-                                equ.primary_quantity.identifier,
-                                equ.primary_quantity.d_dr,
-                                equ.primary_quantity.dflux_dr,
-                                # d(x, *y) if callable(d) else d,
-                                # e(x, *y) if callable(e) else e,
-                                # f(x, *y) if callable(f) else f,
-                                # g(x, *y) if callable(g) else g,
-                                # x,
-                                # *y,
-                            )
-                        )
+
+                        logger.error(equ.primary_quantity.identifier)
+                        logger.error((x, *y))
+                        # logger.error(equ.primary_quantity.d_dr)
+                        # logger.error(equ.primary_quantity.dflux_dr)
 
                         raise RuntimeError(
                             f"Failure to calculate the equation of {current.equation[int(idx/2)].primary_quantity.identifier}{'_flux' if int(idx/2)*2!=idx else ''} {equ}   !"
@@ -654,19 +585,39 @@ class FyTrans(TransportSolverNumerics):
                     logger.debug(res)
                 return res
 
+            def bc(ya: array_type, yb: array_type, *args) -> array_type:
+                res = []
+                for idx, equ in enumerate(current.equation):
+                    try:
+                        res.append(equ.boundary_condition[0].func(rho_tor_norm_axis, *ya, *args))
+                        res.append(equ.boundary_condition[1].func(rho_tor_norm_bdry, *yb, *args))
+                    except Exception as error:
+                        (u0, v0, w0), (u1, v1, w1), a, b, c, d, e, f, g = equ.coefficient
+                        logger.error(((u0, v0, w0), (u1, v1, w1), a, b, c, d, e, f, g))
+                        raise RuntimeError(f"Boundary error of equation {equ.primary_quantity.identifier}  ") from error
+
+                return np.array(res)
+
         else:
+            equ_list = []
+            bc_list = []
+            for equ in current.equation:
+                equ_list.append(equ.primary_quantity.d_dr)
+                equ_list.append(equ.primary_quantity.dflux_dr)
+                bc_list.append(equ.boundary_condition[0].func)
+                bc_list.append(equ.boundary_condition[1].func)
 
             def func(x: array_type, y: array_type, *args) -> array_type:
                 return np.array([equ(x, *y, *args) for equ in equ_list])
 
-        def bc(ya: array_type, yb: array_type, *args) -> array_type:
-            res = np.array(
-                [
-                    func(rho_tor_norm_axis, *ya, *args) if idx % 2 == 0 else func(rho_tor_norm_bdry, *yb, *args)
-                    for idx, func in enumerate(bc_list)
-                ]
-            )
-            return res
+            def bc(ya: array_type, yb: array_type, *args) -> array_type:
+                res = np.array(
+                    [
+                        func(rho_tor_norm_axis, *ya, *args) if idx % 2 == 0 else func(rho_tor_norm_bdry, *yb, *args)
+                        for idx, func in enumerate(bc_list)
+                    ]
+                )
+                return res
 
         sol = solve_bvp(
             func,

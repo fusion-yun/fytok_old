@@ -27,13 +27,13 @@ class FastAlpha(CoreTransport.Model):
         Nuclear Fusion, 54(10), 104006. https://doi.org/10.1088/0029-5515/54/10/104006
 
     """
+
     identifier = "slowing_down"
     code = {"name": "fast_alpha", "description": f" Fast alpha", "copyright": "fytok"}
 
     def fetch(self, x: Variable, **vars: Expression) -> CoreTransport.Model.TimeSlice:
-        res: CoreTransport.Model.TimeSlice = super().fetch(x, **vars)
+        current: CoreTransport.Model.TimeSlice = super().fetch(x, **vars)
 
-        core_trans_1d = res.profiles_1d
         Te = vars.get("electrons/temperature")
         # ne = vars.get("electrons/density")
         inv_L_Te = Te.dln
@@ -46,11 +46,15 @@ class FastAlpha(CoreTransport.Model):
 
         fast_factor_v = fast_factor_d * 1.5 * (1.0 / np.log((Ec_Ea ** (-1.5) + 1) * (Ec_Ea**1.5 + 1)) - 1) * inv_L_Te
 
+        core_trans_1d = current.profiles_1d
+
+        logger.debug(fast_factor_d._repr_latex_())
+
         core_trans_1d["ion"] = [
             {
                 "label": "alpha",
-                "particles": {"D": fast_factor_d, "v": fast_factor_v},
+                "particles": {"d": fast_factor_d, "v": fast_factor_v},
                 #  "energy": {"d_fast": diff, "v_fast": vconv}
             },
         ]
-        return res
+        return current
