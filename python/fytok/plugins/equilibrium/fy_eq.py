@@ -307,7 +307,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         raise NotImplementedError(f"")
 
     def find_surfaces(
-        self, psi: float | array_type | typing.Sequence[float], o_point: OXPoint = True
+        self, psi: float | array_type | typing.Sequence[float], o_point: OXPoint | bool = True
     ) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
         """
         if o_point is not None:
@@ -891,7 +891,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
         # return self._coord._R0*(self.fpol / fvac)**2 * d
 
 
-@sp_tree  # (mesh="grid")
+@sp_tree(mesh="grid")
 class FyEquilibriumProfiles2D(Equilibrium.TimeSlice.Profiles2D):
     @property
     def _coord(self) -> FyEquilibriumCoordinateSystem:
@@ -901,10 +901,6 @@ class FyEquilibriumProfiles2D(Equilibrium.TimeSlice.Profiles2D):
     def _profiles_1d(self) -> FyEquilibriumProfiles1D:
         return self._root.profiles_1d
 
-    @property
-    def _root(self) -> Equilibrium.TimeSlice:
-        return self._parent
-
     @sp_property
     def grid(self) -> Mesh:
         dim1 = super().grid.dim1
@@ -913,12 +909,12 @@ class FyEquilibriumProfiles2D(Equilibrium.TimeSlice.Profiles2D):
         return Mesh(dim1, dim2, type=mesh_type)
 
     @sp_property
-    def r(self) -> Expression:
-        return Field(self.grid.points[0], mesh=self.grid)
+    def r(self) -> array_type:
+        return self.grid.points[0]
 
     @sp_property
-    def z(self) -> Expression:
-        return Field(self.grid.points[1], mesh=self.grid)
+    def z(self) -> array_type:
+        return self.grid.points[1]
 
     psi: Field
 
@@ -1057,14 +1053,13 @@ class FyEquilibriumBoundary(Equilibrium.TimeSlice.Boundary):
 
 class FyEquilibriumBoundarySeparatrix(Equilibrium.TimeSlice.BoundarySeparatrix):
     @property
-    def _coord(self) -> Equilibrium.TimeSlice.CoordinateSystem:
-        return self._parent.coordinate_system
+    def _coord(self) -> FyEquilibriumCoordinateSystem:
+        return self._parent.coordinate_system  # type:ignore
 
     @sp_property(coordinates="r z")
     def outline(self) -> Curve:
         """RZ outline of the plasma boundary"""
-        _, surf = next(self._coord.find_surfaces(self.psi, o_point=None))
-
+        _, surf = next(self._coord.find_surfaces(self.psi, o_point=True))
         return surf
         # return {"r": points[..., 0], "z": points[..., 1]}
 
@@ -1079,7 +1074,7 @@ class FyEquilibriumBoundarySeparatrix(Equilibrium.TimeSlice.BoundarySeparatrix):
     @sp_property
     def x_point(self) -> List[OXPoint]:
         _, x = self._coord.critical_points
-        return List[Point]([(v.r, v.z, v.psi) for v in x[:]])
+        return List[OXPoint]([(v.r, v.z, v.psi) for v in x[:]])
 
     @sp_property
     def strike_point(self) -> List[Point]:
@@ -1122,7 +1117,7 @@ class FyEqAnalyze(Equilibrium):
 
     """
 
-    code: Code = {"name": "fy_eq", "copyright":"fytok"}
+    code: Code = {"name": "fy_eq", "copyright": "fytok"}
 
     TimeSlice = FyEquilibriumTimeSlice
 
