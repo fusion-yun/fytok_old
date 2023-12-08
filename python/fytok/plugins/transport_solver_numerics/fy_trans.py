@@ -6,6 +6,7 @@ from copy import copy
 from spdm.data.Expression import Variable, Expression, Scalar
 from spdm.data.Function import Function
 from spdm.data.sp_property import sp_tree
+from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.utils.typing import array_type
 from spdm.utils.tags import _not_found_
 from spdm.numlib.bvp import solve_bvp
@@ -22,15 +23,57 @@ from fytok.utils.logger import logger
 from fytok.utils.envs import FY_DEBUG
 
 
+class FyTransTimeSlice(TransportSolverNumerics.TimeSlice):
+    def func(self, x: array_type, y: array_type, *args) -> array_type:
+        current = self
+        res = np.zeros([len(current.equation) * 2, x.size])
+
+        for idx, equ in enumerate(current.equation):
+            try:
+                res[idx * 2] = equ.primary_quantity.d_dr(x, *y, *args)
+                res[idx * 2 + 1] = equ.primary_quantity.dflux_dr(x, *y, *args)
+            except Exception as error:
+                # a, b, c, d, e, f, g, *_ = equ.coefficient
+
+                logger.error(equ.primary_quantity.identifier)
+                logger.error((x, *y))
+                # logger.error(equ.primary_quantity.d_dr)
+                # logger.error(equ.primary_quantity.dflux_dr)
+
+                raise RuntimeError(
+                    f"Failure to calculate the equation of {current.equation[int(idx/2)].primary_quantity.identifier}{'_flux' if int(idx/2)*2!=idx else ''} {equ}   !"
+                ) from error
+        if np.any(np.isnan(res)):
+            logger.debug(res)
+        return res
+
+    def bc(self, ya: array_type, yb: array_type, *args) -> array_type:
+        current = self
+        rho_tor_norm_axis = current.grid.rho_tor_norm[0]
+        rho_tor_norm_bdry = current.grid.rho_tor_norm[-1]
+        res = []
+        for idx, equ in enumerate(current.equation):
+            try:
+                res.append(equ.boundary_condition[0].func(rho_tor_norm_axis, *ya, *args))
+                res.append(equ.boundary_condition[1].func(rho_tor_norm_bdry, *yb, *args))
+            except Exception as error:
+                (u0, v0, w0), (u1, v1, w1), a, b, c, d, e, f, g = equ.coefficient
+                logger.error(((u0, v0, w0), (u1, v1, w1), a, b, c, d, e, f, g))
+                raise RuntimeError(f"Boundary error of equation {equ.primary_quantity.identifier}  ") from error
+
+        return np.array(res)
+
+
 @TransportSolverNumerics.register(["fy_trans"])
 @sp_tree
 class FyTrans(TransportSolverNumerics):
     r"""
-        Solve transport equations $\rho=\sqrt{ \Phi/\pi B_{0}}$
-        See  :cite:`hinton_theory_1976,coster_european_2010,pereverzev_astraautomated_1991`
-"""
+    Solve transport equations $\rho=\sqrt{ \Phi/\pi B_{0}}$
+    See  :cite:`hinton_theory_1976,coster_european_2010,pereverzev_astraautomated_1991`"""
 
     code: Code = {"name": "fy_trans", "copyright": "fytok"}  # type: ignore
+    TimeSlice = FyTransTimeSlice
+    time_slice: TimeSeriesAoS[FyTransTimeSlice]
 
     def preprocess(self, *args, **kwargs):
         super().preprocess(*args, **kwargs)
@@ -561,67 +604,32 @@ class FyTrans(TransportSolverNumerics):
         # if np.any(Y0):
         #     ValueError(f"Found nan in initial value! \n {Y0}")
 
-        if True:
+        # if True:
 
-            def func(x: array_type, y: array_type, *args) -> array_type:
-                res = np.zeros([len(current.equation) * 2, x.size])
+        # else:
+        #     equ_list = []
+        #     bc_list = []
+        #     for equ in current.equation:
+        #         equ_list.append(equ.primary_quantity.d_dr)
+        #         equ_list.append(equ.primary_quantity.dflux_dr)
+        #         bc_list.append(equ.boundary_condition[0].func)
+        #         bc_list.append(equ.boundary_condition[1].func)
 
-                for idx, equ in enumerate(current.equation):
-                    try:
-                        res[idx * 2] = equ.primary_quantity.d_dr(x, *y, *args)
-                        res[idx * 2 + 1] = equ.primary_quantity.dflux_dr(x, *y, *args)
-                    except Exception as error:
-                        # a, b, c, d, e, f, g, *_ = equ.coefficient
+        #     def func(x: array_type, y: array_type, *args) -> array_type:
+        #         return np.array([equ(x, *y, *args) for equ in equ_list])
 
-                        logger.error(equ.primary_quantity.identifier)
-                        logger.error((x, *y))
-                        # logger.error(equ.primary_quantity.d_dr)
-                        # logger.error(equ.primary_quantity.dflux_dr)
-
-                        raise RuntimeError(
-                            f"Failure to calculate the equation of {current.equation[int(idx/2)].primary_quantity.identifier}{'_flux' if int(idx/2)*2!=idx else ''} {equ}   !"
-                        ) from error
-                if np.any(np.isnan(res)):
-                    logger.debug(res)
-                return res
-
-            def bc(ya: array_type, yb: array_type, *args) -> array_type:
-                res = []
-                for idx, equ in enumerate(current.equation):
-                    try:
-                        res.append(equ.boundary_condition[0].func(rho_tor_norm_axis, *ya, *args))
-                        res.append(equ.boundary_condition[1].func(rho_tor_norm_bdry, *yb, *args))
-                    except Exception as error:
-                        (u0, v0, w0), (u1, v1, w1), a, b, c, d, e, f, g = equ.coefficient
-                        logger.error(((u0, v0, w0), (u1, v1, w1), a, b, c, d, e, f, g))
-                        raise RuntimeError(f"Boundary error of equation {equ.primary_quantity.identifier}  ") from error
-
-                return np.array(res)
-
-        else:
-            equ_list = []
-            bc_list = []
-            for equ in current.equation:
-                equ_list.append(equ.primary_quantity.d_dr)
-                equ_list.append(equ.primary_quantity.dflux_dr)
-                bc_list.append(equ.boundary_condition[0].func)
-                bc_list.append(equ.boundary_condition[1].func)
-
-            def func(x: array_type, y: array_type, *args) -> array_type:
-                return np.array([equ(x, *y, *args) for equ in equ_list])
-
-            def bc(ya: array_type, yb: array_type, *args) -> array_type:
-                res = np.array(
-                    [
-                        func(rho_tor_norm_axis, *ya, *args) if idx % 2 == 0 else func(rho_tor_norm_bdry, *yb, *args)
-                        for idx, func in enumerate(bc_list)
-                    ]
-                )
-                return res
+        #     def bc(ya: array_type, yb: array_type, *args) -> array_type:
+        #         res = np.array(
+        #             [
+        #                 func(rho_tor_norm_axis, *ya, *args) if idx % 2 == 0 else func(rho_tor_norm_bdry, *yb, *args)
+        #                 for idx, func in enumerate(bc_list)
+        #             ]
+        #         )
+        #         return res
 
         sol = solve_bvp(
-            func,
-            bc,
+            current.func,
+            current.bc,
             x,
             Y0,
             bvp_rms_mask=current.control_parameters.bvp_rms_mask,

@@ -168,10 +168,12 @@ class TransportSolverNumerics(IDS):
 
     _plugin_prefix = "fytok.plugins.transport_solver_numerics."
 
+    code: Code = {"name": "fy_trans"}
+
+    solver: Identifier = "bvp"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        self["primary_coordinate"] = Variable((index := 0), "x", label=r"\bar{\rho}_{tor}")
 
         def guess_label(name):
             s = name.split("/")
@@ -193,38 +195,24 @@ class TransportSolverNumerics(IDS):
 
             return label
 
+        self["primary_coordinate"] = x = Variable((index := 0), "x", label=r"\bar{\rho}_{tor}")
+
+        self.variables["x"] = x
         # 初始化变量 Variable
-        self["equations"] = [
-            {
-                **equ,
-                "profile": Variable(
-                    (index := index + 1),
-                    equ["identifier"],
-                    label=guess_label(equ["identifier"]),
-                ),
-                "flux": Variable(
-                    (index := index + 1),
-                    f"{equ['identifier']}_flux",
-                    label=guess_label(f"{equ['identifier']}_flux"),
-                ),
-            }
-            for equ in self._cache.get("equations", [])
-        ]
-
-        # self["variables"] = variables
-
-    @property
-    def variables(self) -> typing.Dict[str, Variable]:
-        variables = {"x": self.primary_coordinate}
-
         for equ in self.equations:
-            variables[equ.profile.name] = equ.profile
-            variables[equ.flux.name] = equ.flux
-        return variables
+            equ.profile = Variable(
+                (index := index + 1),
+                equ["identifier"],
+                label=guess_label(equ["identifier"]),
+            )
+            equ.flux = Variable(
+                (index := index + 1),
+                f"{equ['identifier']}_flux",
+                label=guess_label(f"{equ['identifier']}_flux"),
+            )
 
-    code: Code = {"name": "fy_trans"}
-
-    solver: Identifier
+            self.variables[equ.profile.name] = equ.profile
+            self.variables[equ.flux.name] = equ.flux
 
     variables: Dict[Variable]
 

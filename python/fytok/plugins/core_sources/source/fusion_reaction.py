@@ -79,8 +79,8 @@ class FusionReaction(CoreSources.Source):
         core_source_1d["ion"] = [
             {"label": "D", "particles": -S},
             {"label": "T", "particles": -S},
-            # {"label": "He", "particles": nEP / tau_slowing_down},
-            {"label": "alpha", "particles": S - nEP / tau_slowing_down},
+            {"label": "He", "particles": nEP / tau_slowing_down},
+            {"label": "alpha", "particles": S}, #  - nEP / tau_slowing_down
         ]
 
         # core_source_1d.electrons["energy"] = nEP / tau_slowing_down * Te

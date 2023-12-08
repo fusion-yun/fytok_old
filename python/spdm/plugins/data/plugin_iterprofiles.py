@@ -346,10 +346,9 @@ def read_iter_profiles(path):
             },
             {
                 "label": "He",
-                "particles": {"d": D, "v": v_pinch_ni},
-                "energy": {"d": chi, "v": v_pinch_Ti},
+                "particles": {"d":  D* 0.01, "v":   v_pinch_ni * 0.01 },
+                # "energy": {"d": chi, "v": v_pinch_Ti},
             },
-        
         ],
     }
 
@@ -406,6 +405,7 @@ def read_iter_profiles(path):
             {"label": "D", "particles": S * 0.5, "energy": Q_DT * 0.5},
             {"label": "T", "particles": S * 0.5, "energy": Q_DT * 0.5},
             {"label": "He", "particles": S * 0.01, "energy": Q_DT * 0.01},
+            # {"label": "alpha", "particles": S * 0.01, "energy": Q_DT * 0.01},
         ],
     }
 
