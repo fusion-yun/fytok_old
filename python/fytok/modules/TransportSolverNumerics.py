@@ -1,12 +1,15 @@
 from __future__ import annotations
+
 from scipy import constants
 from copy import copy
 import math
 from spdm.data.Expression import Expression, Variable
-from spdm.data.sp_property import sp_tree, sp_property
-from spdm.data.TimeSeries import TimeSlice
+from spdm.data.sp_property import sp_tree, sp_property, PropertyTree
+from spdm.data.TimeSeries import TimeSlice, TimeSeriesAoS
+from spdm.data.AoS import AoS
 from spdm.utils.tags import _not_found_
-from spdm.utils.typing import array_type, as_array
+from spdm.utils.typing import array_type
+
 from .CoreProfiles import CoreProfiles
 from .CoreSources import CoreSources
 from .CoreTransport import CoreTransport
@@ -15,7 +18,7 @@ from .Utilities import *
 
 from ..utils.logger import logger
 
-from ..ontology import transport_solver_numerics
+# from ..ontology import transport_solver_numerics
 
 EPSILON = 1.0e-15
 TOLERANCE = 1.0e-6
@@ -32,10 +35,10 @@ class TransportSolverNumericsEquationPrimary:
         node contains the path to the quantity in the physics IDS (example:
         core_profiles/profiles_1d/ion/D/density)"""
 
-    profile: Variable | array_type
+    profile: array_type
     """ Profile of the primary quantity"""
 
-    flux: Variable | array_type
+    flux: array_type
     """ Flux of the primary quantity"""
 
     d_dr: Expression | array_type
@@ -89,7 +92,7 @@ class TransportSolverNumericsEquation:
 
     boundary_condition: AoS[EquationBC]
 
-    coefficient: AoS
+    coefficient: List[Expression]
     """ Set of numerical coefficients involved in the transport equation"""
 
     convergence: PropertyTree
@@ -99,8 +102,6 @@ class TransportSolverNumericsEquation:
 @sp_tree(coordinate1="grid/rho_tor_norm")
 class TransportSolverNumericsTimeSlice(TimeSlice):
     """Numerics related to 1D radial solver for a given time slice"""
-
-    Equation = TransportSolverNumericsEquation
 
     grid: CoreRadialGrid
     """ Radial grid"""
@@ -180,12 +181,15 @@ class TransportSolverNumerics(IDS):
             if len(s) >= 2:
                 if s[-2] == "electrons":
                     s[-2] = "e"
-            if len(s) == 1:
-                label = name
+
+            if s[-1] == "psi":
+                label = r"\psi"
+            elif s[-1] == "psi_flux":
+                label = r"\psi"
             elif s[-1] == "density":
                 label = f"n_{{{s[-2]}}}"
             elif s[-1] == "density_flux":
-                label = f"\Gamma_{{{s[-2]}}}"
+                label = rf"\Gamma_{{{s[-2]}}}"
             elif s[-1] == "temperature":
                 label = f"T_{{{s[-2]}}}"
             elif s[-1] == "temperature_flux":
@@ -195,38 +199,27 @@ class TransportSolverNumerics(IDS):
 
             return label
 
-        self["primary_coordinate"] = x = Variable((index := 0), "x", label=r"\bar{\rho}_{tor}")
+        self["primary_coordinate"] = Variable((index := 0), "x", label=r"\bar{\rho}_{tor}")
 
-        self.variables["x"] = x
         # 初始化变量 Variable
         for equ in self.equations:
-            equ.profile = Variable(
-                (index := index + 1),
-                equ["identifier"],
-                label=guess_label(equ["identifier"]),
-            )
-            equ.flux = Variable(
-                (index := index + 1),
-                f"{equ['identifier']}_flux",
-                label=guess_label(f"{equ['identifier']}_flux"),
-            )
-
-            self.variables[equ.profile.name] = equ.profile
-            self.variables[equ.flux.name] = equ.flux
-
-    variables: Dict[Variable]
+            identifier = equ.identifier
+            equ._profile = Variable((index := index + 1), identifier, label=guess_label(identifier))
+            equ._flux = Variable((index := index + 1), f"{identifier}_flux", label=guess_label(f"{identifier}_flux"))
 
     primary_coordinate: Variable
     r""" $\rho_{tor}=\sqrt{ \Phi/\pi B_{0}}$ """
 
     @sp_tree
-    class TransEquatuion:
+    class Equatuion:
         identifier: str
-        boundary_condition: List[int]
-        profile: Variable
-        flux: Variable
+        _profile: Variable
+        _flux: Variable
+        profile: array_type | float = 0.0
+        flux: array_type | float = 0.0
+        boundary_condition: typing.List[int]
 
-    equations: AoS[TransEquatuion]
+    equations: AoS[Equatuion]
 
     TimeSlice = TransportSolverNumericsTimeSlice
 
@@ -250,28 +243,28 @@ class TransportSolverNumerics(IDS):
 
             current["grid"] = equilibrium.time_slice.current.profiles_1d.grid.remesh(rho_tor_norm)
 
-        num_of_equations = len(self.equations)
-        if boundary_value is None:
-            boundary_value = [[0, 0]] * num_of_equations
+        # num_of_equations = len(self.equations)
+        # if boundary_value is None:
+        #     boundary_value = [[0, 0]] * num_of_equations
 
-        current["equation"] = [
-            {
-                "primary_quantity": {
-                    "identifier": equ.identifier,
-                    "profile": equ.profile,
-                    "flux": equ.flux,
-                },
-                "boundary_condition": [
-                    {"identifier": equ.boundary_condition[0], "value": boundary_value[idx][0]},
-                    {"identifier": equ.boundary_condition[1], "value": boundary_value[idx][1]},
-                ],
-            }
-            for idx, equ in enumerate(self.equations)
-        ]
+        # current["equation"] = [
+        #     {
+        #         "primary_quantity": {
+        #             "identifier": equ.identifier,
+        #             "profile": equ.profile,
+        #             "flux": equ.flux,
+        #         },
+        #         "boundary_condition": [
+        #             {"identifier": equ.boundary_condition[0], "value": boundary_value[idx][0]},
+        #             {"identifier": equ.boundary_condition[1], "value": boundary_value[idx][1]},
+        #         ],
+        #     }
+        #     for idx, equ in enumerate(self.equations)
+        # ]
 
         current["control_parameters"] = self.code.parameters.control_parameters
 
-        current.control_parameters.update(control_parameters)
+        # current.control_parameters.update(control_parameters)
 
     def refresh(
         self,

@@ -1099,7 +1099,6 @@ class FyEquilibriumTimeSlice(Equilibrium.TimeSlice):
     coordinate_system: FyEquilibriumCoordinateSystem
 
 
-@Equilibrium.register(["fy_eq"])
 @sp_tree
 class FyEqAnalyze(Equilibrium):
     """
@@ -1125,3 +1124,6 @@ class FyEqAnalyze(Equilibrium):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+
+Equilibrium.register(["fy_eq"], FyEqAnalyze)

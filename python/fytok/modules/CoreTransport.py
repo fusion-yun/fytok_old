@@ -123,10 +123,6 @@ class CoreTransportModel(Module):
     def refresh(self, *args, core_profiles: CoreProfiles = None, equilibrium: Equilibrium = None, **kwargs):
         super().refresh(*args, core_profiles=core_profiles, equilibrium=equilibrium, **kwargs)
 
-    def fetch(self, /, x: Expression, **vars) -> CoreTransportTimeSlice:
-        res: CoreTransportTimeSlice = super().fetch(lambda o: o if not isinstance(o, Expression) else o(x))
-        return res
-
 
 @sp_tree
 class CoreTransport(IDS):
@@ -140,7 +136,7 @@ class CoreTransport(IDS):
         for model in self.model:
             model.refresh(time=self.time, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
-    def advance(self, *args, **kwargs):
+    def advance(self, *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None, **kwargs):
         """advance time_series to next slice"""
         super().advance(*args, **kwargs)
 

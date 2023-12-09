@@ -98,9 +98,10 @@ class Module(Actor):
         return plugin_name
 
     def __init__(self, *args, **kwargs):
-        if "_plugin_prefix" in vars(self.__class__) and self.__class__.__dispatch_init__(
-            None, self, *args, **kwargs
-        ) is not False:
+        if (
+            "_plugin_prefix" in vars(self.__class__)
+            and self.__class__.__dispatch_init__(None, self, *args, **kwargs) is not False
+        ):
             return
 
         super().__init__(*args, **kwargs)
@@ -112,11 +113,13 @@ class Module(Actor):
         if self.code.name is _not_found_:
             self.code.name = self.__class__.__name__
 
-        self.code.module_path=f"{self._plugin_prefix}{self.code.name}"
+        self.code.module_path = f"{self._plugin_prefix}{self.code.name}"
 
-        logger.info(f"Initialize module {self.code.module_path}{ (' ['+ self.code.copyright+']') if self.code.copyright is not _not_found_ else ''  } ")
+        logger.info(
+            f"Initialize module {self.code.module_path}{ (' ['+ self.code.copyright+']') if self.code.copyright is not _not_found_ else ''  } "
+        )
 
-    code: Code 
+    code: Code
     """ 对于 Module 的一般性说明。 
         @note code 在 __init__ 时由初始化参数定义，同时会根据 code.name 查找相应的 plugin 。"""
 
@@ -124,14 +127,15 @@ class Module(Actor):
     def tag(self) -> str:
         return f"{FY_JOBID}/{self._plugin_prefix}{self.code.name}"
 
-    def execute(self, current:TimeSlice, *previous:TimeSlice)  :
+    def execute(self, current: TimeSlice, *previous: TimeSlice):
         logger.info(f"Execute module {self.code.module_path}")
-        return super().execute(current,*previous)
+        return super().execute(current, *previous)
 
 
 class IDS(Module):
     """Base class of IDS"""
-    _plugin_prefix=f"fytok.modules."
+
+    _plugin_prefix = f"fytok.modules."
 
     ids_properties: IDSProperties
 

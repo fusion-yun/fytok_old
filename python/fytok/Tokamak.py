@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 from spdm.data.Path import update_tree
 from spdm.data.Entry import open_entry
 from spdm.data.HTree import HTree
 from spdm.data.Actor import Actor
 from spdm.data.sp_property import sp_tree
+from spdm.data.TimeSeries import TimeSlice, TimeSeriesAoS
 from spdm.geometry.GeoObject import GeoObject
 from spdm.utils.tags import _not_found_
 from spdm.view import View as sp_view
@@ -23,8 +26,8 @@ from .modules.NBI import NBI
 from .modules.Pellets import Pellets
 from .modules.PFActive import PFActive
 from .modules.TF import TF
-from .modules.TransportSolverNumerics import TransportSolverNumerics
 from .modules.Wall import Wall
+from .modules.TransportSolverNumerics import TransportSolverNumerics
 
 from .utils.envs import *
 from .utils.logger import logger
