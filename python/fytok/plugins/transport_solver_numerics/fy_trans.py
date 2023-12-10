@@ -137,14 +137,6 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
         gm3 = eq_1d.gm3(psi)  # <|grad_rho_tor|^2>
         gm8 = eq_1d.gm8(psi)  # <R>
 
-        # species: typing.List[str] = []
-
-        # for variable in equations:
-        #     identifier = variable.identifier
-        #     if identifier == "psi" or identifier.endswith("/momentum"):
-        #         continue
-        #     species.append("/".join(identifier.split("/")[:-1]))
-
         # quasi_neutrality_condition
         if "electrons/density" not in variables:
             ne = 0
@@ -187,31 +179,19 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                 variables[f"ion/{spec}/density"] = z * ne / z_of_ions
                 variables[f"ion/{spec}/density_flux"] = z * ne_flux / z_of_ions
 
-        # for model in core_transport.model:
-        #     core_transp: CoreTransport.Model.TimeSlice = model.current
-        #     flux_multiplier += core_transp.flux_multiplier or 0.0
-        #     trans_1d = core_transp.profiles_1d
-        #     for spec, d in coeff.items():
-        #         d["transp_D"] += trans_1d.get(f"{spec}/particles/d", 0)
-        #         d["transp_V"] += trans_1d.get(f"{spec}/particles/v", 0)
-        #         d["transp_F"] += trans_1d.get(f"{spec}/particles/flux", 0)
-        #         d["energy_D"] += trans_1d.get(f"{spec}/energy/d", 0)
-        #         d["energy_V"] += trans_1d.get(f"{spec}/energy/v", 0)
-        #         d["energy_F"] += trans_1d.get(f"{spec}/energy/flux", 0)
-        #         d["chi_u"] += trans_1d.get(f"{spec}/momentum/d", 0)
-
-        # for source in core_sources.source:
-        #     source_1d = source.current.profiles_1d
-        #     for spec, d in coeff.items():
-        # d["S"] += source_1d.get(f"{spec}/particles", 0)
-        # d["Q"] += source_1d.get(f"{spec}/energy", 0)
-        # d["U"] += source_1d.get(f"{spec}/momentum/toroidal", 0)
-
         rho_tor_norm = self.grid.rho_tor_norm
 
         bc_pos = [rho_tor_norm[0], rho_tor_norm[-1]]
 
         eq_list = []
+
+        trans_models: typing.List[CoreTransport.Model.TimeSlice] = [
+            model.fetch(x, **variables) for model in core_transport.model
+        ]
+
+        trans_sources: typing.List[CoreSources.Source.TimeSlice] = [
+            src.fetch(x, **variables) for src in core_sources.source
+        ]
 
         for idx, equ in enumerate(equations):
             identifier = equ.identifier
@@ -293,18 +273,16 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                     transp_D = zero
                     transp_V = zero
 
-                    for model in core_transport.model:
-                        core_transp: CoreTransport.Model.TimeSlice = model.current
-
-                        core_transp_1d = core_transp.profiles_1d
+                    for model in trans_models:
+                        core_transp_1d = model.profiles_1d
 
                         transp_D += core_transp_1d.get(f"{spec}/particles/d", zero)(x)
                         transp_V += core_transp_1d.get(f"{spec}/particles/v", zero)(x)
                         # transp_F += core_transp_1d.get(f"{spec}/particles/flux", 0)
 
                     S = zero
-                    for source in core_sources.source:
-                        source_1d = source.current.profiles_1d
+                    for source in trans_sources:
+                        source_1d = source.profiles_1d
                         S += (
                             source_1d.get(f"{spec}/particles", zero)(x)
                             + source_1d.get(f"{spec}/particles_decomposed.explicit_part", zero)(x)
@@ -366,12 +344,10 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
                     flux_multiplier = zero
 
-                    for model in core_transport.model:
-                        core_transp: CoreTransport.Model.TimeSlice = model.current
+                    for model in trans_models:
+                        flux_multiplier += model.flux_multiplier
 
-                        flux_multiplier += core_transp.flux_multiplier
-
-                        trans_1d = core_transp.profiles_1d
+                        trans_1d = model.profiles_1d
 
                         energy_D += trans_1d.get(f"{spec}/energy/d", zero)(x)
                         energy_V += trans_1d.get(f"{spec}/energy/v", zero)(x)
@@ -381,23 +357,23 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                         flux_multiplier = one
 
                     Q = zero
-                    for source in core_sources.source:
-                        source_1d = source.current.profiles_1d
+                    for source in trans_sources:
+                        source_1d = source.profiles_1d
                         Q += (
                             source_1d.get(f"{spec}/energy", zero)(x)
                             + source_1d.get(f"{spec}/energy_decomposed.explicit_part", zero)(x)
                             + source_1d.get(f"{spec}/energy_decomposed.implicit_part", zero)(x) * y
                         )
 
-                    ns_flux = flux_multiplier * variables[f"{spec}/density_flux"]
+                    ns_flux = variables[f"{spec}/density_flux"]  # * flux_multiplier
 
                     a = (3 / 2) * (vpr ** (5 / 3)) * ns * one_over_dt
 
                     b = (3 / 2) * (vprm ** (5 / 3)) * ns_m * one_over_dt
 
-                    c = rho_tor_boundary * inv_vpr23
+                    c = inv_vpr23 * rho_tor_boundary
 
-                    d = vpr * gm3 * ns * energy_D / rho_tor_boundary
+                    d = vpr * gm3 * ns * energy_D  # / rho_tor_boundary
 
                     e = vpr * gm3 * ns * energy_V + ns_flux - vpr * (3 / 2 * k_phi) * rho_tor_boundary * x * ns
 
@@ -440,17 +416,23 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                         bc_value += [[u, v, w]]
 
                 case "momentum":
+                    chi_u = zero
+                    for model in trans_models:
+                        trans_1d = model.profiles_1d
+                        chi_u += trans_1d.get(f"{spec}/momentum/d", zero)
+
+                    U = zero
+                    for source in trans_sources:
+                        source_1d = source.profiles_1d
+                        U += source_1d.get(f"{spec}/momentum/toroidal", zero)
+
                     ms = atoms.get(f"{spec}/mass", np.nan)
 
-                    ns = variables.get(f"{spec}/density", 0)
+                    ns = variables.get(f"{spec}/density", zero)
 
-                    ns_flux = variables.get(f"{spec}/density_flux", 0)
+                    ns_flux = variables.get(f"{spec}/density_flux", zero)
 
-                    ns_m = variables_m.get(f"{spec}/density", 0)
-
-                    chi_u = coeff[spec].get("chi_u", 0)
-
-                    U = coeff[spec].get("U", 0)
+                    ns_m = variables_m.get(f"{spec}/density", zero)
 
                     a = (vpr ** (5 / 3)) * ms * ns * one_over_dt
 
@@ -627,12 +609,11 @@ class FyTrans(TransportSolverNumerics):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def preprocess(self, *args, initial_value=None, boundary_value=None, **kwargs):
+    def preprocess(self, *args, boundary_value=None, **kwargs):
         super().preprocess(*args, **kwargs)
 
         self.time_slice.current.setup(
             *self.time_slice.previous,
-            initial_value=initial_value,
             boundary_value=boundary_value,
             primary_coordinate=self.primary_coordinate,
             equations=self.equations,
