@@ -494,7 +494,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
         self["equation"] = eq_list
 
     def func(self, x: array_type, Y: array_type, *args) -> array_type:
-        res = np.zeros([len(self.equation) * 2, X.size])
+        res = np.zeros([len(self.equation) * 2, x.size])
         hyper_diff = self.control_parameters.hyper_diff or 0.001
 
         for idx, equ in enumerate(self.equation):

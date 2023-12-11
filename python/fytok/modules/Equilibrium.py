@@ -101,14 +101,17 @@ class EquilibriumGlobalQuantities(equilibrium._T_equilibrium_global_quantities):
     plasma_resistance: float = sp_property(units="ohm")
 
 
-@sp_tree(coordinate1="psi_norm", extrapolate="zeros")
+@sp_tree(coordinate1="grid/psi_norm", extrapolate="zeros")
 class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
     """
     1D profiles of the equilibrium quantities
     NOTE:
         - psi_norm is the normalized poloidal flux
         - psi is the poloidal flux,
-        - 以psi而不是psi_norm为主坐标,原因是 profiles1d 中涉及对 psi 的求导和积分
+        - 以psi_norm为主坐标, 是因为 psi_norm 时必定单调增的，而 psi 由于符号的原因，不一定时单调增的。
+          scipy.interpolate 在一维插值时，要求 x 为单增。以 psi 为 磁面坐标，在插值时会造成问题。
+          profiles_1d 中涉及对磁面坐标的求导和积分时需注意修正 ！！！！
+
     """
 
     @property
@@ -117,18 +120,15 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
     @sp_property
     def grid(self) -> CoreRadialGrid:
-        g: dict = self.cache_get("grid", {})
-        g.setdefault("psi_axis", self._root.global_quantities.psi_axis)
-        g.setdefault("psi_boundary", self._root.global_quantities.psi_boundary)
-        g.setdefault("rho_tor_boundary", self.rho_tor(self._root.global_quantities.psi_boundary))
-        g.setdefault("rho_tor_norm", self.rho_tor_norm.__array__())
-        g.setdefault("psi_norm", self.psi_norm.__array__())
-
+        g: dict = self.cache_get("grid", _not_found_)
+        if g is _not_found_:
+            g = {"psi": self.cache_get("psi", _not_found_)}
+        
         return CoreRadialGrid(g)
 
     psi_norm: array_type = sp_property(units="-", label=r"$\bar{\psi}$")
 
-    psi: Expression = sp_property(units="Wb")
+    psi: Expression = sp_property(units="Wb", label=r"$\psi$")
 
     dphi_dpsi: Expression = sp_property(label=r"\frac{d\phi}{d\psi}", units="-")
 
@@ -161,8 +161,8 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
     dpsi_drho_tor: Expression = sp_property(units="Wb/m", label=r"\frac{d\psi}{\rho_{tor}}")
 
     @sp_property
-    def geometric_axis(self) -> RZTuple:
-        return {"r": self.major_radius, "z": self.magnetic_z}
+    def geometric_axis(self) -> Point:
+        return (self.major_radius, self.magnetic_z)
 
     minor_radius: Expression = sp_property(units="m")
 

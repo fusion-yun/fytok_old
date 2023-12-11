@@ -656,9 +656,9 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
     def _coord(self) -> FyEquilibriumCoordinateSystem:
         return self._parent.coordinate_system
 
-    psi: array_type
-
     psi_norm: array_type
+
+    psi: Expression
 
     f_df_dpsi: Expression
 

@@ -185,11 +185,11 @@ class CoreRadialGrid:
     def __copy__(self):
         return self.__class__(
             {
+                "psi_norm": self.psi_norm,
+                "rho_tor_norm": self.rho_tor_norm,
                 "psi_axis": self.psi_axis,
                 "psi_boundary": self.psi_boundary,
-                "psi_norm": self.psi_norm,
                 "rho_tor_boundary": self.rho_tor_boundary,
-                "rho_tor_norm": self.rho_tor_norm,
             }
         )
 
@@ -225,8 +225,9 @@ class CoreRadialGrid:
 
     psi_axis: float
     psi_boundary: float
-    psi_norm: array_type
     rho_tor_boundary: float
+
+    psi_norm: array_type
     rho_tor_norm: array_type
 
     @sp_property
