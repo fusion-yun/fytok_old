@@ -225,7 +225,7 @@ class TransportSolverNumerics(IDS):
 
     time_slice: TimeSeriesAoS[TransportSolverNumericsTimeSlice]
 
-    def preprocess(self, *args, boundary_value=None, control_parameters=None, **kwargs):
+    def preprocess(self, *args,  **kwargs):
         super().preprocess(*args, **kwargs)
 
         current = self.time_slice.current

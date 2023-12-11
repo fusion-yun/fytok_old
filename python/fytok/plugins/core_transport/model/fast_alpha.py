@@ -31,8 +31,8 @@ class FastAlpha(CoreTransport.Model):
     identifier = "slowing_down"
     code = {"name": "fast_alpha", "description": f" Fast alpha", "copyright": "fytok"}
 
-    def fetch(self, x: Variable, **vars: Expression) -> CoreTransport.Model.TimeSlice:
-        current: CoreTransport.Model.TimeSlice = super().fetch(x, **vars)
+    def fetch(self, x: Variable, **variables: Expression) -> CoreTransport.Model.TimeSlice:
+        current: CoreTransport.Model.TimeSlice = super().fetch(x, **variables)
         r_ped = 0.96
         Cped = 0.17
         Ccore = 0.4
@@ -42,7 +42,7 @@ class FastAlpha(CoreTransport.Model):
 
         D = 0.1 * (chi + chi_e)
 
-        Te = vars.get("electrons/temperature")
+        Te = variables.get("electrons/temperature")
         # ne = vars.get("electrons/density")
         inv_L_Te = Te.dln
 

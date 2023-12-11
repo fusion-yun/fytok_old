@@ -346,23 +346,15 @@ def read_iter_profiles(path):
             },
             {
                 "label": "He",
-                "particles": {"d":  D* 0.01, "v":   v_pinch_ni * 0.01 },
-                # "energy": {"d": chi, "v": v_pinch_Ti},
+                "particles": {"d": D * 0.01, "v": v_pinch_ni * 0.01},
+                "energy": {"d": chi * 0.01, "v": v_pinch_Ti * 0.01},
             },
         ],
     }
 
     entry["core_sources"] = {
         "source": [
-            {
-                "code": {"name": "dummy"},
-                "time_slice": [
-                    {
-                        "time": time,
-                        "vacuum_toroidal_field": vacuum_toroidal_field,
-                    }
-                ],
-            }
+            {"code": {"name": "dummy"}, "time_slice": [{"time": time, "vacuum_toroidal_field": vacuum_toroidal_field}]}
         ]
     }
 
@@ -375,7 +367,7 @@ def read_iter_profiles(path):
             + profiles_1D["Paux"].values
             - profiles_1D["Peic"].values
             - profiles_1D["Prad"].values
-            # - profiles_1D["Pneu"].values
+            - profiles_1D["Pneu"].values
         )
         * 1e6
         / scipy.constants.electron_volt
