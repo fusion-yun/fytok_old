@@ -193,7 +193,7 @@ class EquilibriumFreeGS(FyEqAnalyze):
         #  Poloidal beta
         profiles = {}
 
-        betap = profiles.get("betap", 1.0) or current.global_quantities.beta_pol
+        betap = profiles.get("betap", -1.0) or current.global_quantities.beta_pol
 
         # Plasma current [Amps]
         Ip = profiles.get("ip", None) or current.global_quantities.ip
@@ -202,7 +202,7 @@ class EquilibriumFreeGS(FyEqAnalyze):
 
         fvac = np.abs(B0 * current.vacuum_toroidal_field.r0)
 
-        betap = 1.7996433287982363 if betap is None else betap
+        betap = -1.7996433287982363 if betap is None else betap
 
         # logger.debug(f"BETAP = {betap}, IP = {Ip},B0 = {B0}, fvac = {fvac}")
 
