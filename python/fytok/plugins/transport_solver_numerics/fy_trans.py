@@ -11,7 +11,7 @@ from copy import copy
 
 from spdm.utils.typing import array_type, array_like
 from spdm.utils.tags import _not_found_
-from spdm.data.Expression import Variable, Expression, Scalar, one, zero
+from spdm.data.Expression import Variable, Expression, Scalar, one, zero, derivative
 from spdm.data.Function import Function
 from spdm.data.sp_property import sp_tree
 from spdm.data.AoS import AoS
@@ -215,8 +215,8 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                     j_parallel_imp = 0
 
                     if core_sources is not None:
-                        for source in core_sources.source:
-                            core_source_1d = source.time_slice.current.profiles_1d
+                        for source in trans_sources:
+                            core_source_1d = source.profiles_1d
                             conductivity_parallel += core_source_1d.conductivity_parallel
                             j_parallel += core_source_1d.j_parallel
                             j_parallel_imp += core_source_1d.get("j_parallel_imp", 0)
@@ -276,18 +276,15 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                     for model in trans_models:
                         core_transp_1d = model.profiles_1d
 
-                        transp_D += core_transp_1d.get(f"{spec}/particles/d", zero)(x)
-                        transp_V += core_transp_1d.get(f"{spec}/particles/v", zero)(x)
+                        transp_D += core_transp_1d.get(f"{spec}/particles/d", zero)
+                        transp_V += core_transp_1d.get(f"{spec}/particles/v", zero)
                         # transp_F += core_transp_1d.get(f"{spec}/particles/flux", 0)
 
                     S = zero
                     for source in trans_sources:
                         source_1d = source.profiles_1d
-                        S += (
-                            source_1d.get(f"{spec}/particles", zero)(x)
-                            + source_1d.get(f"{spec}/particles_decomposed.explicit_part", zero)(x)
-                            + source_1d.get(f"{spec}/particles_decomposed.implicit_part", zero)(x) * y
-                        )
+                        S += source_1d.get(f"{spec}/particles", zero)
+
                     a = vpr * one_over_dt
 
                     b = vprm * one_over_dt
@@ -349,9 +346,9 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
                         trans_1d = model.profiles_1d
 
-                        energy_D += trans_1d.get(f"{spec}/energy/d", zero)(x)
-                        energy_V += trans_1d.get(f"{spec}/energy/v", zero)(x)
-                        energy_F += trans_1d.get(f"{spec}/energy/flux", zero)(x)
+                        energy_D += trans_1d.get(f"{spec}/energy/d", zero)
+                        energy_V += trans_1d.get(f"{spec}/energy/v", zero)
+                        energy_F += trans_1d.get(f"{spec}/energy/flux", zero)
 
                     if flux_multiplier is zero:
                         flux_multiplier = one
@@ -359,11 +356,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                     Q = zero
                     for source in trans_sources:
                         source_1d = source.profiles_1d
-                        Q += (
-                            source_1d.get(f"{spec}/energy", zero)(x)
-                            + source_1d.get(f"{spec}/energy_decomposed.explicit_part", zero)(x)
-                            + source_1d.get(f"{spec}/energy_decomposed.implicit_part", zero)(x) * y
-                        )
+                        Q += source_1d.get(f"{spec}/energy", zero)
 
                     ns_flux = variables[f"{spec}/density_flux"]  # * flux_multiplier
 
@@ -482,7 +475,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
             pth = Path(identifier)
 
-            coefficient = [a, b, c, d, e, f, g, pth.get(previous, 0)]
+            coefficient = [a, b, c, d, e, f, g, pth.get(previous, zero)]
 
             eq_list.append(
                 {
@@ -497,42 +490,49 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                     ],
                 }
             )
+
         self["equation"] = eq_list
 
-    def func(self, X: array_type, Y: array_type, *args) -> array_type:
-        current = self
-        res = np.zeros([len(current.equation) * 2, X.size])
-        hyper_diff = current.control_parameters.hyper_diff or 0.001
+    def func(self, x: array_type, Y: array_type, *args) -> array_type:
+        res = np.zeros([len(self.equation) * 2, X.size])
+        hyper_diff = self.control_parameters.hyper_diff or 0.001
 
-        for idx, equ in enumerate(current.equation):
-            x = self._parent.primary_coordinate
-            y = self._parent.equations[idx]._profile
-            flux = self._parent.equations[idx]._flux
-
-            a, b, c, d, e, f, g, ym = equ.coefficient
-
-            d_dr = (-flux + e * y + hyper_diff * y.d) / (d + hyper_diff)
-
-            dy_dt = a * y - b * ym
-
-            dflux_dr = (f - g * y - dy_dt + hyper_diff * flux.d) / (1.0 / c + hyper_diff)
-
+        for idx, equ in enumerate(self.equation):
+            y = Y[idx * 2]
+            flux = Y[idx * 2 + 1]
             try:
-                res[idx * 2] = d_dr(X, *Y, *args)
+                a, b, c, d, e, f, g, ym = equ.coefficient
 
-                res[idx * 2 + 1] = dflux_dr(X, *Y, *args)
+                a = a(x, *Y, *args)
+                b = b(x, *Y, *args)
+                c = c(x, *Y, *args)
+                d = d(x, *Y, *args)
+                e = e(x, *Y, *args)
+                f = f(x, *Y, *args)
+                g = g(x, *Y, *args)
+                ym = ym(x)
 
             except Exception as error:
                 # a, b, c, d, e, f, g, *_ = equ.coefficient
 
                 logger.error(equ.primary_quantity.identifier)
-                logger.error((X, Y))
+                logger.error((x, Y))
                 # logger.error(equ.primary_quantity.d_dr)
                 # logger.error(equ.primary_quantity.dflux_dr)
 
                 raise RuntimeError(
-                    f"Failure to calculate the equation of {current.equation[int(idx/2)].primary_quantity.identifier}{'_flux' if int(idx/2)*2!=idx else ''} {equ}   !"
+                    f"Failure to calculate the equation of {self.equation[int(idx/2)].primary_quantity.identifier}{'_flux' if int(idx/2)*2!=idx else ''} {equ}   !"
                 ) from error
+
+            d_dr = (-flux + e * y + hyper_diff * derivative(y, x)) / (d + hyper_diff)
+
+            dy_dt = a * y - b * ym(x)
+
+            dflux_dr = (f - g * y - dy_dt + hyper_diff * derivative(flux, x)) / (1.0 / c + hyper_diff)
+
+            res[idx * 2] = d_dr
+            res[idx * 2 + 1] = dflux_dr
+
         if np.any(np.isnan(res)):
             logger.debug(res)
         return res
@@ -638,4 +638,4 @@ class FyTrans(TransportSolverNumerics):
             logger.error(f"Solve transport equations failed!")
 
 
-FyTrans = TransportSolverNumerics.register(["fy_trans"], FyTrans)
+TransportSolverNumerics.register(["fy_trans"], FyTrans)

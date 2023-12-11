@@ -4,29 +4,71 @@ import math
 from spdm.data.AoS import AoS
 from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
-from spdm.data.Expression import Expression
+from spdm.data.Expression import Expression, zero, one
 from spdm.utils.tags import _not_found_
 
 from .CoreProfiles import CoreProfiles
 from .Equilibrium import Equilibrium
 from .Utilities import *
+from ..utils.atoms import atoms
 
 from ..ontology import core_sources
 
 
 @sp_tree
-class CoreSourcesElectrons(core_sources._T_core_sources_source_profiles_1d_electrons):
-    particles_decomposed = {"implicit_part": 0, "explicit_part": 0}
-    energy_decomposed = {"implicit_part": 0, "explicit_part": 0}
-    particles: Expression = sp_property(label="S_{e}", default_value=0)
-    energy: Expression = sp_property(label="S_{e}", default_value=0)
+class CoreSourcesSpecies(SpTree):
+    """Source terms related to electrons"""
 
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
-@sp_tree
-class CoreSourcesIon(core_sources._T_core_sources_source_profiles_1d_ions):
-    particles_decomposed = {"implicit_part": 0, "explicit_part": 0}
-    energy_decomposed = {"implicit_part": 0, "explicit_part": 0}
-    particles: Expression = sp_property(label="S_{i}", default_value=0)
+        atom_desc = atoms.get(self.label.capitalize(), None)
+
+        self._cache = update_tree(self._cache, atom_desc)
+
+    label: str
+    """ String identifying the neutral species (e.g. H, D, T, He, C, ...)"""
+
+    z: int
+    """ Charge number of the neutral species"""
+
+    a: float
+    """ Mass number of the neutral species"""
+
+    particles: Expression= sp_property(units="s^-1.m^-3")
+    """Source term for electron density equation"""
+    
+
+    @sp_property(units="s^-1")
+    def particles_inside(self) -> Expression:
+        """Electron source inside the flux surface. Cumulative volume integral of the
+        source term for the electron density equation."""
+        return self.particles.I
+
+    @sp_property(units="W.m^-3")
+    def energy(self) -> Expression:
+        """Source term for the electron energy equation"""
+        value = self.cache_get("energy", _not_found_)
+        if value is _not_found_:
+            if self.label == "e":
+                label = "e"
+            else:
+                label = f"ion/{self.label}"
+
+            temperature = self.get(f".../inputs/core_profiles/{label}/temperature", zero)
+
+            value = (
+                self.cache_get("particles_decomposed/explicit_part", 0)
+                + self.cache_get("particles_decomposed/implicit_part", 0) * temperature
+            )
+
+        return value
+
+    @sp_property(units="W")
+    def power_inside(self) -> Expression:
+        """Power coupled to electrons inside the flux surface. Cumulative volume integral
+        of the source term for the electron energy equation"""
+        return self.energy.I
 
 
 @sp_tree
@@ -39,13 +81,12 @@ class CoreSourcesProfiles1D(core_sources._T_core_sources_source_profiles_1d):
     grid: CoreRadialGrid
     """ Radial grid"""
 
-    electrons: CoreSourcesElectrons = {}
+    total_ion_energy: Expression = sp_property(units="W.m^-3")
+    """Total ion energy source"""
 
-    total_ion_energy: Expression
-
-    total_ion_energy_decomposed = {"implicit_part": 0, "explicit_part": 0}
-
-    total_ion_power_inside: Expression
+    @sp_property(units="W")
+    def total_ion_power_inside(self) -> Expression:
+        return self.torque_tor_inside.I
 
     momentum_tor: Expression
 
@@ -59,9 +100,11 @@ class CoreSourcesProfiles1D(core_sources._T_core_sources_source_profiles_1d):
 
     conductivity_parallel: Expression
 
-    ion: AoS[CoreSourcesIon] = sp_property(identifier="label", default_value=[])
+    electrons: CoreSourcesSpecies
 
-    neutral: AoS[CoreSourcesNeutral] = sp_property(identifier="label", default_value=[])
+    ion: AoS[CoreSourcesSpecies]
+
+    neutral: AoS[CoreSourcesNeutral]
 
 
 @sp_tree
@@ -112,37 +155,26 @@ class CoreSourcesSource(Module):
     def refresh(self, *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None, **kwargs):
         super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
-    # def fetch(self, /, x: Expression, **vars) -> CoreSourcesTimeSlice:
-    #     res: CoreSourcesTimeSlice = super().fetch(lambda o: o if not isinstance(o, Expression) else o(x))
+    def fetch(self, /, x: Expression, **variables) -> CoreSourcesTimeSlice:
+        res: CoreSourcesTimeSlice = super().fetch(lambda o: o if not isinstance(o, Expression) else o(x))
 
-    #     res_1d = res.profiles_1d
+        res["electrons/particles"] = res.cache_get("particles", _not_found_)
+        
+        if value is _not_found_:
+            if self.label == "e":
+                label = "e"
+            else:
+                label = f"ion/{self.label}"
 
-    #     res_1d.electrons["particles"] = (
-    #         res_1d.electrons.particles
-    #         + res_1d.electrons.particles_decomposed.get("implicit_part", 0) * vars.get("electrons/density_thermal", 0)
-    #         + res_1d.electrons.particles_decomposed.get("explicit_part", 0)
-    #     )
+            density = self.get(f".../core_profiles/{label}/density", zero)
 
-    #     res_1d.electrons["energy"] = (
-    #         res_1d.electrons.energy
-    #         + res_1d.electrons.energy_decomposed.get("implicit_part", 0) * vars.get("electrons/temperature", 0)
-    #         + res_1d.electrons.energy_decomposed.get("explicit_part", 0)
-    #     )
+            value = (
+                self.cache_get("particles_decomposed/explicit_part", 0)
+                + self.cache_get("particles_decomposed/implicit_part", 0) * density
+            )
 
-    #     for ion in res_1d.ion:
-    #         ion["particles"] = (
-    #             ion.particles
-    #             + ion.particles_decomposed.get("implicit_part", 0) * vars.get(f"ion/{ion.label}/density_thermal", 0)
-    #             + ion.particles_decomposed.get("explicit_part", 0)
-    #         )
-
-    #         ion["energy"] = (
-    #             ion.energy
-    #             + ion.energy_decomposed.get("implicit_part", 0) * vars.get(f"ion/{ion.label}/temperature", 0)
-    #             + ion.energy_decomposed.get("explicit_part", 0)
-    #         )
-
-    #     return res
+        return value
+        return res
 
 
 @sp_tree

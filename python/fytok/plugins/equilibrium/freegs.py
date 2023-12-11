@@ -31,7 +31,6 @@ except ModuleNotFoundError as error:
     raise ModuleNotFoundError(f"Can not find module 'freegs'!") from error
 
 
-@Equilibrium.register(["freegs"])
 class EquilibriumFreeGS(FyEqAnalyze):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -237,8 +236,8 @@ class EquilibriumFreeGS(FyEqAnalyze):
             freegs.solve(
                 self._eq_solver,
                 self._freegs_profiles,
-                self._freegs_constraints,
-                show=True,
+                constrain=self._freegs_constraints,
+                show=False,
                 #  psi_bndry=psi_bndry,
                 rtol=rtol,
             )
@@ -252,13 +251,13 @@ class EquilibriumFreeGS(FyEqAnalyze):
 
         psi = psi_norm * (self._eq_solver.psi_bndry - self._eq_solver.psi_axis) + self._eq_solver.psi_axis
 
-        R0 = self._eq_solver.Rgeometric
+        R0 = current.vacuum_toroidal_field.r0 or self.code.parameters.r0  # self._eq_solver.Rgeometric()
 
         B0 = self._eq_solver.fvac() / R0
 
         current["global_quantities"] = {"ip": self._eq_solver.plasmaCurrent()}
 
-        current["vacuum_toroidal_field"] = {"b0": B0, "r0": R0}
+        current["vacuum_toroidal_field"] = {"b0": B0}
 
         current["profiles_1d"] = {
             "grid": {
@@ -283,16 +282,10 @@ class EquilibriumFreeGS(FyEqAnalyze):
         trim = self.code.parameters.get("trim", 0)
 
         if trim > 0:
-            grid2d = {
-                "dim1": self._eq_solver.R_1D[trim:-trim],
-                "dim2": self._eq_solver.Z_1D[trim:-trim],
-            }
+            grid2d = {"dim1": self._eq_solver.R_1D[trim:-trim], "dim2": self._eq_solver.Z_1D[trim:-trim]}
             psi2d = psi2d[trim:-trim, trim:-trim]
         else:
-            grid2d = {
-                "dim1": self._eq_solver.R_1D,
-                "dim2": self._eq_solver.Z_1D,
-            }
+            grid2d = {"dim1": self._eq_solver.R_1D, "dim2": self._eq_solver.Z_1D}
 
         current["profiles_2d"] = {
             "type": "total",
@@ -302,3 +295,6 @@ class EquilibriumFreeGS(FyEqAnalyze):
         }
 
         super().postprocess(current)
+
+
+Equilibrium.register(["freegs"], EquilibriumFreeGS)

@@ -123,6 +123,10 @@ class CoreTransportModel(Module):
     def refresh(self, *args, core_profiles: CoreProfiles = None, equilibrium: Equilibrium = None, **kwargs):
         super().refresh(*args, core_profiles=core_profiles, equilibrium=equilibrium, **kwargs)
 
+    def fetch(self, /, x: Expression, **vars) -> CoreTransportTimeSlice:
+        res: CoreTransportTimeSlice = super().fetch(lambda o: o if not isinstance(o, Expression) else o(x))
+        return res
+
 
 @sp_tree
 class CoreTransport(IDS):
