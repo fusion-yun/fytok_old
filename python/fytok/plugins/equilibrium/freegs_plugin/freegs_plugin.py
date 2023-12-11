@@ -35,7 +35,6 @@ except ModuleNotFoundError as error:
 
 
 @Equilibrium.register(["freegs_plugin"])
-
 @sp_tree
 class EquilibriumFreeGS(FyEqAnalyze):
     def __init__(self, *args, **kwargs):
@@ -66,22 +65,45 @@ class EquilibriumFreeGS(FyEqAnalyze):
             t_coil = freegs.machine.Coil(rect.r + rect.width / 2, rect.z + rect.height / 2, turns=turns)
             eq_coils.append((coil.name, t_coil))
 
-        wall: Wall = self.inputs.get_source("wall")  # type:ignore
+        wall: Wall = self.inputs.get_source("wall")
 
         eq_wall = freegs.machine.Wall(
             wall.description_2d[0].limiter.unit[0].outline.r,
             wall.description_2d[0].limiter.unit[0].outline.z,
         )
 
-        magnetics: Magnetics = self.inputs.get_source("magnetics")  # type:ignore
+        magnetics: Magnetics = self.inputs.get_source("magnetics")
 
         eq_sensors = []
 
         for b_prob in magnetics.b_field_pol_probe:
-            eq_sensors.append(freegs.machine.Sensor(b_prob.position.r, b_prob.position.z, b_prob.name))
+            eq_sensors.append(
+                freegs.machine.PoloidalFieldSensor(
+                    b_prob.position.r,
+                    b_prob.position.z,
+                    b_prob.position.phi or 0,
+                    b_prob.name,
+                )
+            )
 
         for flux in magnetics.flux_loop:
-            eq_sensors.append(freegs.machine.FluxLoopSensor(flux.position[0].r, flux.position[0].z, flux.name))
+            eq_sensors.append(
+                freegs.machine.FluxLoopSensor(
+                    flux.position[0].r,
+                    flux.position[0].z,
+                    flux.name,
+                )
+            )
+
+        for rogowski_coil in magnetics.rogowski_coil:
+            eq_sensors.append(
+                freegs.machine.RogowskiSensor(
+                    rogowski_coil.position.r,
+                    rogowski_coil.position.z,
+                    rogowski_coil.position.phi or 0,
+                    name=b_prob.name,
+                )
+            )
 
         self._machine = freegs.machine.Machine(coils=eq_coils, wall=eq_wall, sensors=eq_sensors)
 
@@ -91,6 +113,8 @@ class EquilibriumFreeGS(FyEqAnalyze):
 
     def preprocess(self, *args, **kwargs):
         super().preprocess(*args, **kwargs)
+
+        current = self.time_slice.current
 
         if self._eq_solver is None:
             machine = self._setup_machine()
@@ -108,8 +132,8 @@ class EquilibriumFreeGS(FyEqAnalyze):
             else:
                 wall: Wall = self.inputs.get_source("wall")  # type:ignore
                 description_2d = wall.description_2d[0]
-                rdim = self.current.profiles_2d.grid.dim1
-                zdim = self.current.profiles_2d.grid.dim2
+                rdim = self.time_slice.current.profiles_2d.grid.dim1
+                zdim = self.time_slice.current.profiles_2d.grid.dim2
                 # logger.debug(f"Setup freegs solver: rdim={rdim}, zdim={zdim}")
                 r: array_type = description_2d.limiter.unit[0].outline.r
                 z: array_type = description_2d.limiter.unit[0].outline.z
@@ -118,16 +142,16 @@ class EquilibriumFreeGS(FyEqAnalyze):
                 Rmax = r.max()
                 Zmin = z.min()
                 Zmax = z.max()
-            
+
             if boundary_type == "fixed":
                 boundary = freegs.boundary.fixedBoundary
             else:
                 boundary = freegs.boundary.freeBoundaryHagenow
-            
+
             # boundary = freegs.boundary.fixedBoundary
-            
+
             logger.debug(f"Setup freegs solver: boundary={boundary}")
-            
+
             self._eq_solver = freegs.Equilibrium(
                 tokamak=machine,
                 # Rmin=Rmin,
@@ -137,17 +161,16 @@ class EquilibriumFreeGS(FyEqAnalyze):
                 Rmin=min(rdim),
                 Rmax=max(rdim),
                 Zmin=min(zdim),
-                Zmax=max(zdim) ,  
-                nx=len(rdim), ny=len(zdim),
+                Zmax=max(zdim),
+                nx=len(rdim),
+                ny=len(zdim),
                 boundary=boundary,
             )
 
             logger.info(f"Using {boundary_type} boundary")
-            
-            
 
         logger.debug(f"Setup profiles for equilibrium solver")
-        
+
         ### 从输运算得的core_profiles作为约束
         core_profiles: CoreProfiles = self.inputs.get_source("core_profiles", _not_found_)  # type:ignore
 
@@ -165,34 +188,36 @@ class EquilibriumFreeGS(FyEqAnalyze):
             psi_norm = self.code.parameters.get("psi_norm", np.linspace(0, 1.0, 128))
 
         self._freegs_profiles = None
-        
+
         ### 用IP ，BETAP，PAXIS作为约束
         #  Poloidal beta
-        profiles ={}
-        betap = profiles.get("betap", -1.0) or self.current.global_quantities.beta_pol
-        # Plasma current [Amps]
-        Ip = profiles.get("ip", None) or self.current.global_quantities.ip
-       
-        
-        B0 = self.current.vacuum_toroidal_field.b0
+        profiles = {}
 
-        fvac = B0 * self.current.vacuum_toroidal_field.r0
-        
-        betap = -1.7996433287982363 if betap is None else betap
-        
-        logger.debug(f"BETAP = {betap}, IP = {Ip},B0 = {B0}, fvac = {fvac}")
-        
-        
+        betap = profiles.get("betap", 1.0) or current.global_quantities.beta_pol
+
+        # Plasma current [Amps]
+        Ip = profiles.get("ip", None) or current.global_quantities.ip
+
+        B0 = current.vacuum_toroidal_field.b0
+
+        fvac = np.abs(B0 * current.vacuum_toroidal_field.r0)
+
+        betap = 1.7996433287982363 if betap is None else betap
+
+        # logger.debug(f"BETAP = {betap}, IP = {Ip},B0 = {B0}, fvac = {fvac}")
+
         ## 如果IP betap非空，则用IP betap作为约束
-       
-        if Ip is not None  and  betap is not None :
-            self._freegs_profiles = freegs.jtor.ConstrainBetapIp(self._eq_solver,betap, Ip, fvac)
-            
-            logger.info(f"""Create Profile: Constrain poloidal Beta and plasma current"
+
+        if Ip is not None and betap is not None:
+            self._freegs_profiles = freegs.jtor.ConstrainBetapIp(self._eq_solver, betap, Ip, fvac)
+
+            logger.info(
+                f"""Create Profile: Constrain poloidal Beta and plasma current"
                     Betap                      ={betap} [-],
                     Plasma current Ip          ={Ip} [Amps],
-                    fvac                       ={fvac} [T.m]""")
-        
+                    fvac                       ={fvac} [T.m]"""
+            )
+
         # if "Ip" in kwargs and "beta_p" in kwargs:
         #     Ip = self.code.parameters.Ip
 
@@ -250,7 +275,7 @@ class EquilibriumFreeGS(FyEqAnalyze):
 
         #     psivals = np.vstack([boundary_outline_r, boundary_outline_z, boundary_psi]).T
 
-        self.psi_bndry = self.current.boundary.psi
+        self.psi_bndry = current.boundary.psi
 
         logger.debug(f"psi_bndry = {self.psi_bndry}")
 
@@ -264,21 +289,17 @@ class EquilibriumFreeGS(FyEqAnalyze):
         #     logger.info(f"Using xpoints: {xpoints}")
 
         # isoflux = kwargs.pop("isoflux", False)
-        lfcs_r = self.current.boundary.outline.r
-        lfcs_z =self.current.boundary.outline.z
-        
-        logger.debug(f"lfcs_r = {lfcs_r}, lfcs_z = {lfcs_z}")
-        
-        # psivals = [ (R, Z, 0.0) for R, Z in zip(lfcs_r,lfcs_z)]
+        lfcs_r = current.boundary.outline.r
+        lfcs_z = current.boundary.outline.z
+        boundary_psi = current.boundary.psi
 
+        # logger.debug(f"lfcs_r = {lfcs_r}, lfcs_z = {lfcs_z}")
+        xpoints = []
+        isoflux = []
+        psivals = [(R, Z, 0.0) for R, Z in zip(lfcs_r, lfcs_z)]
 
-        boundary_psi = np.full_like(lfcs_r, self.current.boundary.psi)
+        self._freegs_constraints = freegs.control.constrain(xpoints=xpoints, isoflux=isoflux, psivals=psivals)
 
-        psivals = np.vstack([lfcs_r, lfcs_z, boundary_psi]).T
-        
-        # logger.debug(f"psivals = {psivals}")
-        
-        self._freegs_constraints = freegs.control.constrain(psivals=psivals)
         # try:
         #     self._freegs_constraints = freegs.control.constrain(
         #         psivals=kwargs.pop("psivals", []),
@@ -299,24 +320,24 @@ class EquilibriumFreeGS(FyEqAnalyze):
             freegs.solve(
                 self._eq_solver,
                 self._freegs_profiles,
-                constrain = self._freegs_constraints,
+                constrain=self._freegs_constraints,
                 psi_bndry=self.psi_bndry,
-                show=False,
-                # rtol=rtol,
+                show=True,
+                rtol=1.0e-4,
             )
         except Exception as error:
             raise RuntimeError(f"Solve G-S equation failed [{self.__class__.__name__}]!") from error
         else:
             logger.info(f"Solve G-S equation Done")
-        
+
         print("Plasma current: %e Amps" % (self._eq_solver.plasmaCurrent()))
         print("Plasma pressure on axis: %e Pascals" % (self._eq_solver.pressure(0.0)))
         print("Poloidal beta: %e" % (self._eq_solver.poloidalBeta()))
-        
-        # print("Plasma psiRZ: %e psi" % (eq.psi())) 
-        psiRZ = self._eq_solver.psi()
-        R = self._eq_solver.R
-        Z  = self._eq_solver.Z
+
+        # print("Plasma psiRZ: %e psi" % (eq.psi()))
+        # psiRZ = self._eq_solver.psi()
+        # R = self._eq_solver.R
+        # Z = self._eq_solver.Z
         # logger.debug(psiRZ,R,Z)
         # # Currents in the coils
         # self._machine.printCurrents()
@@ -334,33 +355,36 @@ class EquilibriumFreeGS(FyEqAnalyze):
         psi = psi_norm * (self._eq_solver.psi_bndry - self._eq_solver.psi_axis) + self._eq_solver.psi_axis
 
         # R0 = self._eq_solver.Rgeometric()
-        
+
         # logger.debug(f"R0 = {R0},psi={psi}")
         R0 = current.vacuum_toroidal_field.r0
         B0 = self._eq_solver.fvac() / R0
 
-        current["global_quantities"] = {"ip": self._eq_solver.plasmaCurrent()}
+        cache = {}
+        cache["global_quantities"] = {"ip": self._eq_solver.plasmaCurrent()}
 
-        current["vacuum_toroidal_field"] = {"b0": B0}
-        # , "r0": R0}
+        cache["vacuum_toroidal_field"] = {"b0": B0, "r0": R0}
 
-        # current["profiles_1d"] = {
-        #     "grid": {
-        #         "psi_axis": self._eq_solver.psi_axis,
-        #         "psi_boundary": self._eq_solver.psi_bndry,
-        #         "psi_norm": psi_norm,
-        #         "rho_tor_boundary": np.sqrt(
-        #             self._eq_solver.tor_flux(self._eq_solver.psi_bndry) / (scipy.constants.pi * B0)
-        #         ),
-        #         "rho_tor_norm": self._eq_solver.rhotor(psi),
-        #     },
-        #     "psi": psi,
-        #     "q": self._eq_solver.q(psi_norm),
-        #     "pressure": self._eq_solver.pressure(psi_norm),
-        #     "dpressure_dpsi": self._eq_solver.pprime(psi_norm),
-        #     "f": self._eq_solver.fpol(psi_norm),
-        #     "f_df_dpsi": self._eq_solver.ffprime(psi_norm),
-        # }
+        cache["boundary"] = _not_found_
+
+        # phi_bdry = self._eq_solver.tor_flux(self._eq_solver.psi_bndry)
+
+        cache["profiles_1d"] = {
+            "grid": {
+                "psi_axis": self._eq_solver.psi_axis,
+                "psi_boundary": self._eq_solver.psi_bndry,
+                "psi_norm": psi_norm,
+                # "rho_tor_boundary": np.sqrt(phi_bdry / (scipy.constants.pi * B0)),
+                "rho_tor_norm": self._eq_solver.rhotor(psi),
+            },
+            "psi": psi,
+            "psi_norm": psi_norm,
+            "q": self._eq_solver.q(psi_norm),
+            "pressure": self._eq_solver.pressure(psi_norm),
+            "dpressure_dpsi": self._eq_solver.pprime(psi_norm),
+            "f": self._eq_solver.fpol(psi_norm),
+            "f_df_dpsi": self._eq_solver.ffprime(psi_norm),
+        }
 
         psi2d = self._eq_solver.psi()
 
@@ -378,11 +402,13 @@ class EquilibriumFreeGS(FyEqAnalyze):
                 "dim2": self._eq_solver.Z_1D,
             }
 
-        current["profiles_2d"] = {
+        cache["profiles_2d"] = {
             "type": "total",
             "grid_type": {"name": "rectangular", "index": 1},
             "grid": grid2d,
             "psi": psi2d,
         }
+        current._cache = cache
+        current._entry = None
 
         super().postprocess(current)

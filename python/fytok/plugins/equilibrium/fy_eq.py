@@ -1060,8 +1060,10 @@ class FyEquilibriumBoundarySeparatrix(Equilibrium.TimeSlice.BoundarySeparatrix):
     def outline(self) -> Curve:
         """RZ outline of the plasma boundary"""
         _, surf = next(self._coord.find_surfaces(self.psi, o_point=True))
-        return surf
-        # return {"r": points[..., 0], "z": points[..., 1]}
+        if surf is None:
+            return _not_found_
+        else:
+            return surf
 
     @sp_property
     def magnetic_axis(self) -> float:

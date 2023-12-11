@@ -101,7 +101,7 @@ class EquilibriumGlobalQuantities(equilibrium._T_equilibrium_global_quantities):
     plasma_resistance: float = sp_property(units="ohm")
 
 
-@sp_tree(coordinate1="psi", extrapolate="zeros")
+@sp_tree(coordinate1="psi_norm", extrapolate="zeros")
 class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
     """
     1D profiles of the equilibrium quantities
@@ -301,7 +301,7 @@ class EquilibriumBoundary(equilibrium._T_equilibrium_boundary):
 class EquilibriumBoundarySeparatrix(equilibrium._T_equilibrium_boundary_separatrix):
     type: int
 
-    outline: CurveRZ
+    outline: Curve
 
     psi: float = sp_property(units="Wb")
 
@@ -418,36 +418,40 @@ class EquilibriumTimeSlice(equilibrium._T_equilibrium_time_slice):
 
         match view_point.lower():
             case "rz":
-                geo["o_points"] = Point(
-                    self.global_quantities.magnetic_axis.r,
-                    self.global_quantities.magnetic_axis.z,
-                    styles={"$matplotlib": {"color": "red", "marker": ".", "linewidths": 0.5}},
-                )
-
-                geo["x_points"] = [
-                    Point(
-                        p.r,
-                        p.z,
-                        name=f"{idx}",
-                        styles={"$matplotlib": {"color": "blue", "marker": "x", "linewidths": 0.5}},
-                    )
-                    for idx, p in enumerate(self.boundary.x_point)
-                ]
-
-                geo["strike_points"] = [
-                    Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(self.boundary.strike_point)
-                ]
-
-                geo["boundary"] = self.boundary.outline
-                geo["boundary"]._metadata["styles"] = {
-                    "$matplotlib": {"color": "blue", "linestyle": "dotted", "linewidth": 0.5}
-                }
-                geo["boundary_separatrix"] = self.boundary_separatrix.outline
-                geo["boundary_separatrix"]._metadata["styles"] = {
-                    "$matplotlib": {"color": "red", "linestyle": "dashed", "linewidth": 0.25}
-                }
-
                 geo["psi"] = self.profiles_2d.psi.__geometry__()
+
+                try:
+                    geo["o_points"] = Point(
+                        self.global_quantities.magnetic_axis.r,
+                        self.global_quantities.magnetic_axis.z,
+                        styles={"$matplotlib": {"color": "red", "marker": ".", "linewidths": 0.5}},
+                    )
+
+                    geo["x_points"] = [
+                        Point(
+                            p.r,
+                            p.z,
+                            name=f"{idx}",
+                            styles={"$matplotlib": {"color": "blue", "marker": "x", "linewidths": 0.5}},
+                        )
+                        for idx, p in enumerate(self.boundary.x_point)
+                    ]
+
+                    geo["strike_points"] = [
+                        Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(self.boundary.strike_point)
+                    ]
+
+                    geo["boundary"] = self.boundary.outline
+                    geo["boundary"]._metadata["styles"] = {
+                        "$matplotlib": {"color": "blue", "linestyle": "dotted", "linewidth": 0.5}
+                    }
+                    geo["boundary_separatrix"] = self.boundary_separatrix.outline
+                    if geo["boundary_separatrix"] is not _not_found_:
+                        geo["boundary_separatrix"]._metadata["styles"] = {
+                            "$matplotlib": {"color": "red", "linestyle": "dashed", "linewidth": 0.25}
+                        }
+                except Exception as error:
+                    raise error
 
         geo["styles"] = kwargs
 
