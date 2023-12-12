@@ -17,7 +17,7 @@ from spdm.data.Signal import Signal, SignalND
 from spdm.data.sp_property import SpTree, sp_property, sp_tree, PropertyTree
 from spdm.data.TimeSeries import TimeSeriesAoS, TimeSlice
 from spdm.geometry.Curve import Curve
-from spdm.utils.typing import array_type, is_array
+from spdm.utils.typing import array_type, is_array, as_array
 from spdm.utils.tags import _not_found_
 from spdm.view import View as sp_view
 from ..utils.logger import logger
@@ -181,6 +181,27 @@ class VacuumToroidalField:
 class CoreRadialGrid:
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+
+        if self.cache_get("psi_norm", _not_found_) is _not_found_:
+            psi = self.cache_get("psi", _not_found_)
+            if psi is _not_found_:
+                raise RuntimeError(f"Missing 'psi_norm' and 'psi' ! ")
+            psi = as_array(psi)
+            self._cache["psi_axis"] = psi_axis = psi[0]
+            self._cache["psi_boundary"] = psi_boundary = psi[-1]
+            self._cache["psi_norm"] = (psi - psi_axis) / (psi_boundary - psi_axis)
+        elif self.cache_get("psi", _not_found_) is _not_found_:
+            self._cache["psi"] = self.psi_norm / (self.psi_boundary - self.psi_axis) + self.psi_axis
+
+        if self.cache_get("rho_tor_norm", _not_found_) is _not_found_:
+            rho_tor = self.cache_get("rho_tor", _not_found_)
+            if rho_tor is _not_found_:
+                raise RuntimeError(f"Missing 'rho_tor_norm' and 'rho_tor' ! ")
+            rho_tor = as_array(rho_tor)
+            self._cache["rho_tor_boundary"] = rho_tor_boundary = rho_tor[-1]
+            self._cache["rho_tor_norm"] = rho_tor / rho_tor[-1]
+        elif self.cache_get("rho_tor", _not_found_) is _not_found_:
+            self._cache["rho_tor"] = self.rho_tor_norm * self.rho_tor_boundary
 
     def __copy__(self):
         return self.__class__(

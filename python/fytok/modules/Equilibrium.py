@@ -6,7 +6,7 @@ from spdm.data.Expression import Expression
 from spdm.data.sp_property import sp_property
 from spdm.data.TimeSeries import TimeSeriesAoS, TimeSlice
 from spdm.geometry.Curve import Curve
-from spdm.geometry.GeoObject import GeoObject
+from spdm.geometry.GeoObject import GeoObject, GeoObjectSet
 from spdm.geometry.Point import Point
 from spdm.utils.tags import _not_found_
 from spdm.data.Path import update_tree
@@ -118,13 +118,9 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
     def _root(self) -> Equilibrium.TimeSlice:
         return self._parent
 
-    @sp_property
+    @property
     def grid(self) -> CoreRadialGrid:
-        g: dict = self.cache_get("grid", _not_found_)
-        if g is _not_found_:
-            g = {"psi": self.cache_get("psi", _not_found_)}
-        
-        return CoreRadialGrid(g)
+        return self._root.coordinate_system.radial_grid
 
     psi_norm: array_type = sp_property(units="-", label=r"$\bar{\psi}$")
 
@@ -133,20 +129,20 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
     dphi_dpsi: Expression = sp_property(label=r"\frac{d\phi}{d\psi}", units="-")
 
     phi: Expression = sp_property(units="Wb", label=r"\phi")
+    
+    q: Expression
 
     pressure: Expression = sp_property(units="Pa", label=r"P")
 
-    f: Expression = sp_property(units="T.m")
-
     dpressure_dpsi: Expression = sp_property(units="Pa.Wb^-1", label=r"\frac{dP}{d\psi}")
+
+    f: Expression = sp_property(units="T.m")
 
     f_df_dpsi: Expression = sp_property(units="T^2.m^2/Wb", label=r"\frac{f d f}{d \psi}")
 
     j_tor: Expression = sp_property(units="A.m^-2")
 
     j_parallel: Expression = sp_property(units="A/m^2")
-
-    q: Expression
 
     magnetic_shear: Expression
 
@@ -301,7 +297,7 @@ class EquilibriumBoundary(equilibrium._T_equilibrium_boundary):
 class EquilibriumBoundarySeparatrix(equilibrium._T_equilibrium_boundary_separatrix):
     type: int
 
-    outline: Curve
+    outline: GeoObjectSet
 
     psi: float = sp_property(units="Wb")
 

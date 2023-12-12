@@ -399,7 +399,7 @@ def sp_from_geqdsk(geqdsk: dict, eq: typing.Optional[Entry] = None) -> Entry:
                 #     "psi_boundary": psi_boundary,
                 #     "psi_norm": psi_norm,
                 # },
-                # "psi_norm": psi_norm,
+                "psi_norm": psi_norm,
                 "psi": np.linspace(psi_axis, psi_boundary, nw),
                 "f": geqdsk["fpol"],
                 "f_df_dpsi": geqdsk["ffprim"],
