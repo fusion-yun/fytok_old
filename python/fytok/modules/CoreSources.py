@@ -1,5 +1,5 @@
 from __future__ import annotations
-from copy import copy
+from copy import copy, deepcopy
 import math
 from spdm.data.AoS import AoS
 from spdm.data.sp_property import sp_property, sp_tree
@@ -22,9 +22,10 @@ class CoreSourcesSpecies(SpTree):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        atom_desc = atoms.get(self.label.capitalize(), None)
-
-        self._cache = update_tree(self._cache, atom_desc)
+        if self.z is _not_found_:
+            ion = atoms[self.label.capitalize()]
+            self.z = ion.z
+            self.a = ion.a
 
     label: str
     """ String identifying the neutral species (e.g. H, D, T, He, C, ...)"""
@@ -35,9 +36,8 @@ class CoreSourcesSpecies(SpTree):
     a: float
     """ Mass number of the neutral species"""
 
-    particles: Expression= sp_property(units="s^-1.m^-3")
+    particles: Expression = sp_property(units="s^-1.m^-3")
     """Source term for electron density equation"""
-    
 
     @sp_property(units="s^-1")
     def particles_inside(self) -> Expression:
@@ -140,7 +140,9 @@ class CoreSourcesSource(Module):
 
         current = self.time_slice.current
 
-        if current.cache_get("grid", _not_found_) is _not_found_:
+        grid = current.cache_get("profiles_1d/grid", _not_found_)
+
+        if not isinstance(grid, CoreRadialGrid):
             equilibrium: Equilibrium.TimeSlice = self.inputs.get_source("equilibrium").time_slice.current
 
             if current.time is _not_found_ or current.time is None:
@@ -148,33 +150,12 @@ class CoreSourcesSource(Module):
 
             assert math.isclose(equilibrium.time, self.time), f"{equilibrium.time} != {self.time}"
 
-            current["profiles_1d/grid"] = equilibrium.profiles_1d.grid.remesh(
-                self.code.parameters.get("rho_tor_norm", None)
+            current["profiles_1d/grid"] = equilibrium.profiles_1d.grid.duplicate(
+                grid, rho_tor_norm=self.code.parameters.get("rho_tor_norm", None)
             )
 
     def refresh(self, *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None, **kwargs):
         super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
-
-    def fetch(self, /, x: Expression, **variables) -> CoreSourcesTimeSlice:
-        res: CoreSourcesTimeSlice = super().fetch(lambda o: o if not isinstance(o, Expression) else o(x))
-
-        res["electrons/particles"] = res.cache_get("particles", _not_found_)
-        
-        if value is _not_found_:
-            if self.label == "e":
-                label = "e"
-            else:
-                label = f"ion/{self.label}"
-
-            density = self.get(f".../core_profiles/{label}/density", zero)
-
-            value = (
-                self.cache_get("particles_decomposed/explicit_part", 0)
-                + self.cache_get("particles_decomposed/implicit_part", 0) * density
-            )
-
-        return value
-        return res
 
 
 @sp_tree

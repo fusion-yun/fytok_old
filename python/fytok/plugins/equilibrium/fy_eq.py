@@ -178,7 +178,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
             ffprime = Function(psi_, ffprime)
 
         if isinstance(ffprime, Function):
-            self.ffprime = ffprime(psi)
+            self._cache["ffprime"] = ffprime(psi)
         else:
             raise RuntimeError(f"Can not get ffprime! {type(ffprime)}")
 
@@ -186,7 +186,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
             pprime = Function(psi_, pprime)
 
         if isinstance(pprime, Function):
-            self.pprime = pprime(psi)
+            self._cache["pprime"] = pprime(psi)
         else:
             raise RuntimeError(f"Can not get pprime! {type(pprime)}")
 
@@ -222,7 +222,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
     @sp_property
     def phi(self) -> Expression:
-        return self.dphi_dpsi.I
+        return self.dphi_dpsi.I * (self.psi_boundary - self.psi_axis)
 
     @sp_property
     def phi_boundary(self) -> float:
@@ -234,7 +234,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
     @sp_property
     def q(self) -> Expression:
-        return self.dphi_dpsi * (self._s_Bp * self._s_rtp * self._s_eBp_2PI / (2.0 * scipy.constants.pi))
+        return self.dphi_dpsi * (self._s_eBp_2PI / (2.0 * scipy.constants.pi))
 
     @sp_property
     def rho_tor(self) -> Expression:
@@ -596,7 +596,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
 
     @sp_property
     def volume(self) -> Expression:
-        return self.dvolume_dpsi.I
+        return self.dvolume_dpsi.I * (self.grid.psi_boundary - self.grid.psi_axis)
 
     @sp_property
     def q(self) -> Expression:
@@ -608,7 +608,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
 
     @sp_property
     def area(self) -> Expression:
-        return self.darea_dpsi.I
+        return self.darea_dpsi.I * (self.grid.psi_boundary - self.grid.psi_axis)
 
     @sp_property
     def darea_dpsi(self) -> Expression:

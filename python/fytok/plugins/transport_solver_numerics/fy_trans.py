@@ -15,7 +15,7 @@ from spdm.data.Expression import Variable, Expression, Scalar, one, zero, deriva
 from spdm.data.Function import Function
 from spdm.data.sp_property import sp_tree
 from spdm.data.AoS import AoS
-from spdm.data.TimeSeries import TimeSeriesAoS
+from spdm.data.TimeSeries import TimeSeriesAoS, TimeSlice
 
 from fytok.modules.Utilities import *
 from fytok.modules.CoreProfiles import CoreProfiles
@@ -150,6 +150,8 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
                 z = atoms[spec].z
 
+                logger.debug((spec, z))
+
                 if name.endswith("density"):
                     ne += z * variable
                 elif name.endswith("density_flux"):
@@ -228,7 +230,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                         if isinstance(j_parallel_imp, Expression):
                             j_parallel_imp = j_parallel_imp(x)
 
-                    a = conductivity_parallel * one_over_dt
+                    a = conductivity_parallel(x) * one_over_dt
 
                     b = conductivity_parallel * one_over_dt
 
@@ -238,9 +240,9 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
                     e = 0
 
-                    f = -vpr * (j_parallel) / (2.0 * scipy.constants.pi)
+                    f = -vpr * (j_parallel(x)) / (2.0 * scipy.constants.pi)
 
-                    g = -vpr * (j_parallel_imp) / (2.0 * scipy.constants.pi)
+                    g = -vpr * (j_parallel_imp(x)) / (2.0 * scipy.constants.pi)
 
                     for jdx, bc in enumerate(equ.boundary_condition):
                         match bc:
@@ -291,11 +293,11 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
                     c = rho_tor_boundary
 
-                    d = vpr * gm3 * transp_D / rho_tor_boundary
+                    d = vpr * gm3 * transp_D(x) / rho_tor_boundary
 
-                    e = vpr * gm3 * (transp_V - rho_tor * k_phi)
+                    e = vpr * gm3 * (transp_V(x) - rho_tor * k_phi)
 
-                    f = vpr * S
+                    f = vpr * S(x)
 
                     g = vpr * k_phi
 
@@ -366,11 +368,11 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
                     c = inv_vpr23 * rho_tor_boundary
 
-                    d = vpr * gm3 * ns * energy_D  # / rho_tor_boundary
+                    d = vpr * gm3 * ns * energy_D(x)  # / rho_tor_boundary
 
-                    e = vpr * gm3 * ns * energy_V + ns_flux - vpr * (3 / 2 * k_phi) * rho_tor_boundary * x * ns
+                    e = vpr * gm3 * ns * energy_V(x) + ns_flux - vpr * (3 / 2 * k_phi) * rho_tor_boundary * x * ns
 
-                    f = (vpr ** (5 / 3)) * Q
+                    f = (vpr ** (5 / 3)) * Q(x)
 
                     g = k_vppr * ns
 
@@ -526,7 +528,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
             d_dr = (-flux + e * y + hyper_diff * derivative(y, x)) / (d + hyper_diff)
 
-            dy_dt = a * y - b * ym(x)
+            dy_dt = a * y - b * ym
 
             dflux_dr = (f - g * y - dy_dt + hyper_diff * derivative(flux, x)) / (1.0 / c + hyper_diff)
 
@@ -560,6 +562,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
     def solve(self):
         current = self
+
         x = self.grid.rho_tor_norm
 
         num_of_equation = len(self.equation)
@@ -567,8 +570,12 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
         Y0 = np.zeros([num_of_equation * 2, len(x)])
 
         for idx, equ in enumerate(current.equation):
-            Y0[idx * 2] = array_like(x, equ.primary_quantity.profile)
-            Y0[idx * 2 + 1] = array_like(x, equ.primary_quantity.flux)
+            Y0[idx * 2] = y = array_like(x, equ.primary_quantity.profile)
+
+        for idx, equ in enumerate(current.equation):
+            a, b, c, d, e, f, g, ym = equ.coefficient
+            y = Y0[idx * 2]
+            Y0[idx * 2 + 1] = -d(x, *Y0) * derivative(y, x) + e(x, *Y0)
 
         sol = solve_bvp(
             current.func,
@@ -581,7 +588,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
             verbose=current.control_parameters.verbose or 0,
         )
 
-        current.grid.remesh(sol.x)
+        current["grid"] = current.grid.duplicate(sol.x)
 
         for idx, equ in enumerate(current.equation):
             equ.primary_quantity["profile"] = sol.y[2 * idx]

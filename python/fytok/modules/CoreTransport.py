@@ -10,7 +10,7 @@ from spdm.utils.tags import _not_found_
 from .Utilities import *
 from .CoreProfiles import CoreProfiles
 from .Equilibrium import Equilibrium
-
+from ..utils.atoms import atoms
 from ..utils.logger import logger
 
 from ..ontology import core_transport
@@ -46,6 +46,23 @@ class CoreTransportElectrons(core_transport._T_core_transport_model_electrons):
 
 @sp_tree
 class CoreTransportIon(core_transport._T_core_transport_model_ions):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        if self.z is _not_found_:
+            ion = atoms[self.label.capitalize()]
+            self.z = ion.z
+            self.a = ion.a
+
+    label: str
+    """ String identifying the neutral species (e.g. H, D, T, He, C, ...)"""
+
+    z: int
+    """ Charge number of the neutral species"""
+
+    a: float
+    """ Mass number of the neutral species"""
+
     particles: CoreTransportModelParticles
     energy: CoreTransportModelEnergy
     momentum: CoreTransportModelMomentum
@@ -108,7 +125,9 @@ class CoreTransportModel(Module):
         super().preprocess(*args, **kwargs)
         current = self.time_slice.current
 
-        if current.cache_get("grid_d", _not_found_) is _not_found_:
+        grid = current.cache_get("profiles_1d/grid_d", _not_found_)
+
+        if not isinstance(grid, CoreRadialGrid):
             equilibrium: Equilibrium.TimeSlice = self.inputs.get_source("equilibrium").time_slice.current
 
             if current.time is _not_found_ or current.time is None:
@@ -116,16 +135,13 @@ class CoreTransportModel(Module):
 
             assert math.isclose(equilibrium.time, self.time), f"{equilibrium.time} != {self.time}"
 
-            current["profiles_1d/grid_d"] = equilibrium.profiles_1d.grid.remesh(
-                self.code.parameters.get("rho_tor_norm", None)
+            current["profiles_1d/grid_d"] = equilibrium.profiles_1d.grid.duplicate(
+                grid,
+                rho_tor_norm=self.code.parameters.get("rho_tor_norm", None),
             )
 
     def refresh(self, *args, core_profiles: CoreProfiles = None, equilibrium: Equilibrium = None, **kwargs):
         super().refresh(*args, core_profiles=core_profiles, equilibrium=equilibrium, **kwargs)
-
-    def fetch(self, /, x: Expression, **vars) -> CoreTransportTimeSlice:
-        res: CoreTransportTimeSlice = super().fetch(lambda o: o if not isinstance(o, Expression) else o(x))
-        return res
 
 
 @sp_tree

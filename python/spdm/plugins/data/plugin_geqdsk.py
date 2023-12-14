@@ -326,22 +326,7 @@ def sp_from_geqdsk(geqdsk: dict, eq: typing.Optional[Entry] = None) -> Entry:
     e_Bp_TWOPI = 1.0
     limrz = geqdsk.get("limrz", None)
     if isinstance(limrz, np.ndarray):
-        eq["wall"] = {
-            "description_2d": [
-                {
-                    "limiter": {
-                        "unit": [
-                            {
-                                "outline": {
-                                    "r": limrz[:, 0],
-                                    "z": limrz[:, 1],
-                                }
-                            }
-                        ]
-                    }
-                }
-            ]
-        }
+        eq["wall"] = {"description_2d": [{"limiter": {"unit": [{"outline": {"r": limrz[:, 0], "z": limrz[:, 1]}}]}}]}
 
     eq["equilibrium/time"] = [0.0]
     eq["equilibrium/vacuum_toroidal_field/r0"] = r0
@@ -366,8 +351,6 @@ def sp_from_geqdsk(geqdsk: dict, eq: typing.Optional[Entry] = None) -> Entry:
     if psirz.shape != (nw, nh):
         raise ValueError(f"Invalid shape for psirz: {psirz.shape}!={(nw, nh)}")
 
-    psi_norm = np.linspace(0.0, 1.0, nw)
-    
     eq["equilibrium/time_slice"] = [
         {
             "time": 0.0,
@@ -399,7 +382,7 @@ def sp_from_geqdsk(geqdsk: dict, eq: typing.Optional[Entry] = None) -> Entry:
                 #     "psi_boundary": psi_boundary,
                 #     "psi_norm": psi_norm,
                 # },
-                "psi_norm": psi_norm,
+                "psi_norm": np.linspace(0.0, 1.0, nw),
                 "psi": np.linspace(psi_axis, psi_boundary, nw),
                 "f": geqdsk["fpol"],
                 "f_df_dpsi": geqdsk["ffprim"],
@@ -410,10 +393,7 @@ def sp_from_geqdsk(geqdsk: dict, eq: typing.Optional[Entry] = None) -> Entry:
             "profiles_2d": {
                 "type": "total",  # total field
                 "grid_type": {"name": "rectangular", "index": 1},
-                "grid": {
-                    "dim1": np.linspace(rmin, rmax, nw),
-                    "dim2": np.linspace(zmin, zmax, nh),
-                },
+                "grid": {"dim1": np.linspace(rmin, rmax, nw), "dim2": np.linspace(zmin, zmax, nh)},
                 "psi": psirz,
             },
         }

@@ -239,9 +239,9 @@ class TransportSolverNumerics(IDS):
 
             # TODO: 根据时间获取时间片, 例如：
             #   eq:Equilibrium.TimeSlice= equilibrium.time_slice.get(self.time)
-            #   current["grid"] = eq.profiles_1d.grid.remesh(rho_tor_norm)
+            #   current["grid"] = eq.profiles_1d.grid.duplicate(rho_tor_norm)
 
-            current["grid"] = equilibrium.time_slice.current.profiles_1d.grid.remesh(rho_tor_norm)
+            current["grid"] = equilibrium.time_slice.current.profiles_1d.grid.duplicate(rho_tor_norm)
 
         # num_of_equations = len(self.equations)
         # if boundary_value is None:

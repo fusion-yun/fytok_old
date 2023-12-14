@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import collections
 import functools
 import typing
 from dataclasses import dataclass
@@ -185,23 +185,20 @@ class CoreRadialGrid:
         if self.cache_get("psi_norm", _not_found_) is _not_found_:
             psi = self.cache_get("psi", _not_found_)
             if psi is _not_found_:
-                raise RuntimeError(f"Missing 'psi_norm' and 'psi' ! ")
+                raise RuntimeError(f"Missing 'psi_norm' and 'psi' ! {args} {kwargs} ")
             psi = as_array(psi)
             self._cache["psi_axis"] = psi_axis = psi[0]
             self._cache["psi_boundary"] = psi_boundary = psi[-1]
             self._cache["psi_norm"] = (psi - psi_axis) / (psi_boundary - psi_axis)
-        elif self.cache_get("psi", _not_found_) is _not_found_:
-            self._cache["psi"] = self.psi_norm / (self.psi_boundary - self.psi_axis) + self.psi_axis
+            self._cache["psi"] = psi
 
         if self.cache_get("rho_tor_norm", _not_found_) is _not_found_:
             rho_tor = self.cache_get("rho_tor", _not_found_)
             if rho_tor is _not_found_:
                 raise RuntimeError(f"Missing 'rho_tor_norm' and 'rho_tor' ! ")
             rho_tor = as_array(rho_tor)
-            self._cache["rho_tor_boundary"] = rho_tor_boundary = rho_tor[-1]
+            self._cache["rho_tor_boundary"] = rho_tor[-1]
             self._cache["rho_tor_norm"] = rho_tor / rho_tor[-1]
-        elif self.cache_get("rho_tor", _not_found_) is _not_found_:
-            self._cache["rho_tor"] = self.rho_tor_norm * self.rho_tor_boundary
 
     def __copy__(self):
         return self.__class__(
@@ -214,35 +211,38 @@ class CoreRadialGrid:
             }
         )
 
-    def remesh(self, rho_tor_norm=_not_found_, psi_norm=_not_found_) -> CoreRadialGrid:
-        if (rho_tor_norm is None or rho_tor_norm is _not_found_) and (psi_norm is _not_found_ or psi_norm is None):
-            rho_tor_norm_length = self.rho_tor_norm.size
-            rho_tor_norm_axis = self.rho_tor_norm[0]
-            rho_tor_norm_bdry = self.rho_tor_norm[-1]
-            rho_tor_norm = np.linspace(rho_tor_norm_axis, rho_tor_norm_bdry, rho_tor_norm_length)
-            psi_norm = self.psi_norm
-        elif is_array(rho_tor_norm) and (psi_norm is _not_found_ or psi_norm is None):
+    def duplicate(self, *args, **kwargs) -> CoreRadialGrid:
+        """Duplicate the grid with new rho_tor_norm or psi_norm"""
+        if len(args) == 0 or args[0] is _not_found_ or args[0] is None:
+            grid = kwargs
+        elif isinstance(args[0], dict):
+            grid = collections.ChainMap(args[0], kwargs)
+        elif isinstance(args[0], array_type):
+            grid = collections.ChainMap({"rho_tor_norm": args[0]}, kwargs)
+        else:
+            raise TypeError(f"Invalid type of argument {args} {kwargs}")
+
+        rho_tor_norm = grid.get("rho_tor_norm", _not_found_)
+        psi_norm = grid.get("psi_norm", _not_found_)
+
+        if rho_tor_norm is None or rho_tor_norm is _not_found_:
+            if psi_norm is _not_found_ or psi_norm is None:
+                psi_norm = self.psi_norm
+                rho_tor_norm = self.rho_tor_norm
+            else:
+                rho_tor_norm = Function(self.psi_norm, self.rho_tor_norm)(psi_norm)
+        elif psi_norm is _not_found_ or psi_norm is None:
             psi_norm = Function(self.rho_tor_norm, self.psi_norm)(rho_tor_norm)
 
-        elif is_array(psi_norm) and (rho_tor_norm is None or rho_tor_norm is _not_found_):
-            rho_tor_norm = Function(self.psi_norm, self.rho_tor_norm)(psi_norm)
-
-        self.__init__(
+        return CoreRadialGrid(
             {
+                "rho_tor_norm": rho_tor_norm,
+                "psi_norm": psi_norm,
                 "psi_axis": self.psi_axis,
                 "psi_boundary": self.psi_boundary,
                 "rho_tor_boundary": self.rho_tor_boundary,
-                "psi_norm": psi_norm,
-                "rho_tor_norm": rho_tor_norm,
             }
         )
-
-        return self
-
-    def duplicate(self, *args, **kwargs) -> CoreRadialGrid:
-        g = self.__copy__()
-        g.remesh(*args, **kwargs)
-        return g
 
     psi_axis: float
     psi_boundary: float

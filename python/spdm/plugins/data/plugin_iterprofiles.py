@@ -256,27 +256,18 @@ def read_iter_profiles(path):
     entry["core_profiles/time_slice/0/profiles_1d"] = {
         "time": 0.0,
         "grid": grid,
-        "electrons": {
-            "label": "e",
-            "density": b_ne,
-            "temperature": b_Te,
-        },
+        "electrons": {"label": "e", "density": b_ne, "temperature": b_Te},
         "ion": [
             {"label": "D", "density": b_nDT, "temperature": b_Ti},
             {"label": "T", "density": b_nDT, "temperature": b_Ti},
             {"label": "He", "density": b_nHe, "temperature": b_Ti, "density_fast": True},
             {"label": "Be", "density": 0.02 * b_ne, "temperature": b_Ti, "z_ion_1d": z_Be, "is_impurity": True},
-            {
-                "label": "Ar",
-                "density": 0.0012 * b_ne,
-                "temperature": b_Ti,
-                "z_ion_1d": z_Ar,
-                "is_impurity": True,
-            },
+            {"label": "Ar", "density": 0.0012 * b_ne, "temperature": b_Ti, "z_ion_1d": z_Ar, "is_impurity": True},
         ],
         # "e_field": {"parallel":  Function(e_parallel,bs_r_norm)},
         # "conductivity_parallel": Function(baseline["Joh"].values*1.0e6 / baseline["U"].values * (TWOPI * grid.r0),bs_r_norm),
         "rho_tor": profiles_1D["rho"].values,
+        "q": profiles_1D["q"].values,
         "zeff": profiles_1D["Zeff"].values,
         "vloop": profiles_1D["U"].values,
         "j_ohmic": profiles_1D["Joh"].values * 1.0e6,
@@ -284,21 +275,13 @@ def read_iter_profiles(path):
         "j_bootstrap": profiles_1D["Jbs"].values * 1.0e6,
         "j_total": profiles_1D["Jtot"].values * 1.0e6,
         "XiNC": profiles_1D["XiNC"].values,
-        "ffprime": profiles_1D["EQFF"].values * 1.0e6,
-        "pprime": profiles_1D["EQPF"].values * 1.0e6,
+        "ffprime": profiles_1D["EQFF"].values,
+        "pprime": profiles_1D["EQPF"].values,
     }
 
     entry["core_transport"] = {
         "model": [
-            {
-                "code": {"name": "dummy"},
-                "time_slice": [
-                    {
-                        "time": time,
-                        "vacuum_toroidal_field": vacuum_toroidal_field,
-                    }
-                ],
-            }
+            {"code": {"name": "dummy"}, "time_slice": [{"time": time, "vacuum_toroidal_field": vacuum_toroidal_field}]}
         ]
     }
 
@@ -328,22 +311,10 @@ def read_iter_profiles(path):
     entry["core_transport/model/0/time_slice/0/profiles_1d"] = {
         "grid_d": grid,
         "conductivity_parallel": profiles_1D["Joh"].values * 1.0e6 / profiles_1D["U"].values * (TWOPI * R0),
-        "electrons": {
-            "label": "e",
-            "particles": {"d": D, "v": v_pinch_ne},
-            "energy": {"d": chi_e, "v": v_pinch_Te},
-        },
+        "electrons": {"label": "e", "particles": {"d": D, "v": v_pinch_ne}, "energy": {"d": chi_e, "v": v_pinch_Te}},
         "ion": [
-            {
-                "label": "D",
-                "particles": {"d": D, "v": v_pinch_ni},
-                "energy": {"d": chi, "v": v_pinch_Ti},
-            },
-            {
-                "label": "T",
-                "particles": {"d": D, "v": v_pinch_ni},
-                "energy": {"d": chi, "v": v_pinch_Ti},
-            },
+            {"label": "D", "particles": {"d": D, "v": v_pinch_ni}, "energy": {"d": chi, "v": v_pinch_Ti}},
+            {"label": "T", "particles": {"d": D, "v": v_pinch_ni}, "energy": {"d": chi, "v": v_pinch_Ti}},
             {
                 "label": "He",
                 "particles": {"d": D * 0.01, "v": v_pinch_ni * 0.01},
