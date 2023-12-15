@@ -150,7 +150,7 @@ class CoreSourcesSource(Module):
 
             assert math.isclose(equilibrium.time, self.time), f"{equilibrium.time} != {self.time}"
 
-            current["profiles_1d/grid"] = equilibrium.profiles_1d.grid.duplicate(
+            current["profiles_1d/grid"] = equilibrium.profiles_1d.grid.remesh(
                 grid, rho_tor_norm=self.code.parameters.get("rho_tor_norm", None)
             )
 

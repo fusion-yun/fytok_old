@@ -98,11 +98,11 @@ class Module(Actor):
         return plugin_name
 
     def __init__(self, *args, **kwargs):
-        if (
-            "_plugin_prefix" in vars(self.__class__)
-            and self.__class__.__dispatch_init__(None, self, *args, **kwargs) is not False
-        ):
-            return
+        if self.__class__ is Module or "_plugin_prefix" in vars(self.__class__):
+            prev_cls = self.__class__
+            self.__class__.__dispatch_init__(None, self, *args, **kwargs)
+            if self.__class__ is not prev_cls:
+                return
 
         super().__init__(*args, **kwargs)
 
@@ -211,7 +211,7 @@ class CoreRadialGrid:
             }
         )
 
-    def duplicate(self, *args, **kwargs) -> CoreRadialGrid:
+    def remesh(self, *args, **kwargs) -> CoreRadialGrid:
         """Duplicate the grid with new rho_tor_norm or psi_norm"""
         if len(args) == 0 or args[0] is _not_found_ or args[0] is None:
             grid = kwargs

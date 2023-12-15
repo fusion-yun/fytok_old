@@ -80,12 +80,12 @@ class CoreTransportProfiles1D(core_transport._T_core_transport_model_profiles_1d
 
     @sp_property
     def grid_v(self) -> CoreRadialGrid:
-        return self.grid_d.duplicate(self.grid_d.rho_tor_norm)
+        return self.grid_d.remesh(self.grid_d.rho_tor_norm)
 
     @sp_property
     def grid_flux(self) -> CoreRadialGrid:
         rho_tor_norm = self.grid_d.rho_tor_norm
-        return self.grid_d.duplicate(0.5 * (rho_tor_norm[:-1] + rho_tor_norm[1:]))
+        return self.grid_d.remesh(0.5 * (rho_tor_norm[:-1] + rho_tor_norm[1:]))
 
     Electrons = CoreTransportElectrons
 
@@ -135,7 +135,7 @@ class CoreTransportModel(Module):
 
             assert math.isclose(equilibrium.time, self.time), f"{equilibrium.time} != {self.time}"
 
-            current["profiles_1d/grid_d"] = equilibrium.profiles_1d.grid.duplicate(
+            current["profiles_1d/grid_d"] = equilibrium.profiles_1d.grid.remesh(
                 grid,
                 rho_tor_norm=self.code.parameters.get("rho_tor_norm", None),
             )

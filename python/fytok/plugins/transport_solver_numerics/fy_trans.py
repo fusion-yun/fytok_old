@@ -32,14 +32,16 @@ from fytok.utils.envs import FY_DEBUG
 from spdm.numlib.bvp import solve_bvp
 
 
-@sp_tree
 class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.variables: typing.OrderedDict[str, Expression | array_type] = {}
+
     def setup(
         self,
-        *args,
-        boundary_value,
-        primary_coordinate: Variable,
-        equations: AoS[TransportSolverNumerics.Equatuion],
+        *previous,
+        x: Variable,
+        variables: typing.Dict[str, Expression],
         equilibrium: Equilibrium,
         core_transport: CoreTransport,
         core_sources: CoreSources,
@@ -48,24 +50,28 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
     ):
         current = self
 
-        previous = args[0] if len(args) > 0 else None
+        previous: TransportSolverNumericsTimeSlice = previous[0] if len(previous) > 0 else None
 
-        core_profiles_1d = core_profiles.time_slice.current.profiles_1d
+        psi_norm = Function(current.grid.rho_tor_norm, current.grid.psi_norm, label=r"\bar{\psi}")(x)
 
-        # 声明变量
-        x: Variable = primary_coordinate
+        # 设定全局参数
+        eq_1d = equilibrium.time_slice.current.profiles_1d
+        # $R_0$ characteristic major radius of the device   [m]
+        R0 = equilibrium.time_slice.current.vacuum_toroidal_field.r0
 
-        variables: typing.Dict[str, Variable] = {}
+        # $B_0$ magnetic field measured at $R_0$            [T]
+        B0 = equilibrium.time_slice.current.vacuum_toroidal_field.b0
 
-        for equ in equations:
-            variables[equ.identifier] = equ.profile
-            variables[f"{equ.identifier}_flux"] = equ.flux
-
-        variables_m = {}
+        rho_tor_boundary = Scalar(eq_1d.grid.rho_tor_boundary)
+        # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
+        vpr = eq_1d.dvolume_drho_tor(psi_norm)
 
         if not isinstance(previous, TransportSolverNumerics.TimeSlice):
             one_over_dt = zero
-
+            B0m = B0
+            rho_tor_boundary_m = rho_tor_boundary
+            vprm = vpr
+            variables_m = {}
         else:
             dt = current.time - previous.time
 
@@ -74,43 +80,18 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
             else:
                 one_over_dt = one / dt
 
-            for equ in previous.equation:
-                identifier = equ.primary_quantity.identifier
-                variables_m[identifier] = equ.primary_quantity.profile
-                variables_m[f"{identifier}_flux"] = equ.primary_quantity.flux
+            variables_m: typing.OrderedDict[str, Expression | array_type] = getattr(previous, "variables", {})
 
-        # 设定全局参数
+            eq_m = next(equilibrium.time_slice.previous)
 
-        psi = Function(current.grid.rho_tor_norm, current.grid.psi, label="psi")(x)
+            if eq_m is _not_found_:
+                raise RuntimeError(f"Can not get equilibrium at previous time slice !")
 
-        # $R_0$ characteristic major radius of the device   [m]
-        R0 = equilibrium.time_slice.current.vacuum_toroidal_field.r0
-
-        # $B_0$ magnetic field measured at $R_0$            [T]
-        B0 = equilibrium.time_slice.current.vacuum_toroidal_field.b0
-
-        eq_1d = equilibrium.time_slice.current.profiles_1d
-
-        rho_tor_boundary = Scalar(eq_1d.grid.rho_tor_boundary)
-
-        # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        vpr = eq_1d.dvolume_drho_tor(psi)
-
-        eq_m = next(equilibrium.time_slice.previous)
-
-        if eq_m is not _not_found_:
             B0m = eq_m.vacuum_toroidal_field.b0
 
             rho_tor_boundary_m = eq_m.profiles_1d.grid.rho_tor_boundary
 
-            vprm = eq_m.profiles_1d.dvolume_drho_tor(psi)
-
-        else:
-            B0m = B0
-
-            rho_tor_boundary_m = rho_tor_boundary
-
-            vprm = vpr
+            vprm = eq_m.profiles_1d.dvolume_drho_tor(psi_norm)
 
         k_B = (B0 - B0m) / (B0 + B0m) * one_over_dt
 
@@ -125,67 +106,21 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
         k_vppr = 0  # (3 / 2) * k_rho_bdry - k_phi *　x * vpr(psi).dln()
 
         # diamagnetic function,$F=R B_\phi$                 [T*m]
-        fpol = eq_1d.f(psi)
+        fpol = eq_1d.f(psi_norm)
 
         fpol2 = fpol**2
 
         # $q$ safety factor                                 [-]
-        qsf = eq_1d.q(psi)
+        qsf = eq_1d.q(psi_norm)
 
-        gm1 = eq_1d.gm1(psi)  # <1/R^2>
-        gm2 = eq_1d.gm2(psi)  # <|grad_rho_tor|^2/R^2>
-        gm3 = eq_1d.gm3(psi)  # <|grad_rho_tor|^2>
-        gm8 = eq_1d.gm8(psi)  # <R>
-
-        # quasi_neutrality_condition
-        if "electrons/density" not in variables:
-            ne = 0
-            ne_flux = 0
-
-            for name, variable in variables.items():
-                if name.startswith("electrons"):
-                    continue
-
-                spec = name.split("/")[-2]
-
-                z = atoms[spec].z
-
-                logger.debug((spec, z))
-
-                if name.endswith("density"):
-                    ne += z * variable
-                elif name.endswith("density_flux"):
-                    ne_flux += z * variable
-
-            variables["electrons/density"] = ne
-            variables["electrons/density_flux"] = ne_flux
-
-        else:
-            ne = variables["electrons/density"]
-            ne_flux = variables["electrons/density_flux"]
-
-            z_of_ions = 0.0
-
-            for name, variable in variables.items():
-                if name.startswith("ion") and name.endswith("temperature"):
-                    continue
-                spec = name.split("/")[-2]
-                z_of_ions += atoms[spec].z
-
-            for name, variable in variables.items():
-                if name.startswith("ion") and name.endswith("temperature"):
-                    continue
-                spec = name.split("/")[-1]
-                z = atoms[spec].z
-
-                variables[f"ion/{spec}/density"] = z * ne / z_of_ions
-                variables[f"ion/{spec}/density_flux"] = z * ne_flux / z_of_ions
+        gm1 = eq_1d.gm1(psi_norm)  # <1/R^2>
+        gm2 = eq_1d.gm2(psi_norm)  # <|grad_rho_tor|^2/R^2>
+        gm3 = eq_1d.gm3(psi_norm)  # <|grad_rho_tor|^2>
+        gm8 = eq_1d.gm8(psi_norm)  # <R>
 
         rho_tor_norm = self.grid.rho_tor_norm
 
         bc_pos = [rho_tor_norm[0], rho_tor_norm[-1]]
-
-        eq_list = []
 
         trans_models: typing.List[CoreTransport.Model.TimeSlice] = [
             model.fetch(x, **variables) for model in core_transport.model
@@ -195,10 +130,11 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
             src.fetch(x, **variables) for src in core_sources.source
         ]
 
-        for idx, equ in enumerate(equations):
+        for idx, equ in enumerate(self.equations):
             identifier = equ.identifier
 
-            y = variables.get(identifier)
+            y = variables.get(identifier, zero)
+            ym = variables_m.get(identifier, zero)
 
             var_name = identifier.split("/")
 
@@ -244,26 +180,26 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
                     g = -vpr * (j_parallel_imp(x)) / (2.0 * scipy.constants.pi)
 
-                    for jdx, bc in enumerate(equ.boundary_condition):
+                    for jdx, bc in enumerate(equ.boundary_condition_type):
                         match bc:
                             case 1:  # poloidal flux;
                                 u = 1
                                 v = 0
-                                w = boundary_value[idx][jdx][0]
+                                w = equ.boundary_value[jdx][0]
                             case 2:  # ip, total current inside x=1
-                                Ip = boundary_value[idx][jdx][0]
+                                Ip = equ.boundary_value[jdx][0]
                                 u = 0
                                 v = 1
                                 w = scipy.constants.mu_0 * Ip / fpol
                             case 3:  # loop voltage;
-                                Uloop_bdry = boundary_value[idx][jdx][0]
+                                Uloop_bdry = equ.boundary_value[jdx][0]
                                 u = 0
                                 v = 1
                                 w = (dt * Uloop_bdry + ym) * d
                             case 5:  # generic boundary condition y expressed as a1y' + a2y=a3;
-                                u = boundary_value[idx][jdx][0]
-                                v = boundary_value[idx][jdx][1]
-                                w = boundary_value[idx][jdx][2]
+                                u = equ.boundary_value[jdx][0]
+                                v = equ.boundary_value[jdx][1]
+                                w = equ.boundary_value[jdx][2]
                             case 6:  # equation not solved;
                                 raise NotImplementedError(bc)
                             case _:
@@ -301,17 +237,17 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
                     g = vpr * k_phi
 
-                    for jdx, bc in enumerate(equ.boundary_condition):
+                    for jdx, bc in enumerate(equ.boundary_condition_type):
                         match bc:
                             case 1:  # 1: value of the field y;
                                 u = 1
                                 v = 0
-                                w = boundary_value[idx][jdx][0]
+                                w = equ.boundary_value[jdx][0]
 
                             case 2:  # 2: radial derivative of the field (-dy/drho_tor);
-                                u = e(bc_pos[jdx])
+                                u = e
                                 v = -1.0
-                                w = boundary_value[idx][jdx][0] * d(bc_pos[jdx])
+                                w = equ.boundary_value[jdx][0] * d
 
                             case 3:  # 3: scale length of the field y/(-dy/drho_tor);
                                 raise NotImplementedError(f" # 3: scale length of the field y/(-dy/drho_tor);")
@@ -319,7 +255,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                             case 4:  # 4: flux;
                                 u = 0
                                 v = 1
-                                w = boundary_value[idx][jdx][0]
+                                w = equ.boundary_value[jdx][0]
 
                             case 5:  # 5: generic boundary condition y expressed as a1y'+a2y=a3.
                                 raise NotImplementedError(f"5: generic boundary condition y expressed as a1y'+a2y=a3.")
@@ -334,7 +270,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                         bc_value += [[u, v, w]]
 
                 case "temperature":
-                    ns = variables[f"{spec}/density"]
+                    ns = variables.get(f"{spec}/density", zero)
                     ns_m = variables_m.get(f"{spec}/density", zero)
 
                     energy_D = zero
@@ -368,7 +304,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
                     c = inv_vpr23 * rho_tor_boundary
 
-                    d = vpr * gm3 * ns * energy_D(x)  # / rho_tor_boundary
+                    d = vpr * gm3 * ns * energy_D(x) / rho_tor_boundary
 
                     e = vpr * gm3 * ns * energy_V(x) + ns_flux - vpr * (3 / 2 * k_phi) * rho_tor_boundary * x * ns
 
@@ -376,17 +312,17 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
                     g = k_vppr * ns
 
-                    for jdx, bc in enumerate(equ.boundary_condition):
+                    for jdx, bc in enumerate(equ.boundary_condition_type):
                         match bc:
                             case 1:  # 1: value of the field y;
                                 u = 1
                                 v = 0
-                                w = boundary_value[idx][jdx][0]
+                                w = equ.boundary_value[jdx][0]
 
                             case 2:  # 2: radial derivative of the field (-dy/drho_tor);
-                                u = e(bc_pos[jdx])
+                                u = e
                                 v = -1
-                                w = boundary_value[idx][jdx][0] * d(bc_pos[jdx])
+                                w = equ.boundary_value[jdx][0] * d
 
                             case 3:  # 3: scale length of the field y/(-dy/drho_tor);
                                 raise NotImplementedError(f" # 3: scale length of the field y/(-dy/drho_tor);")
@@ -394,12 +330,12 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                             case 4:  # 4: flux;
                                 u = 0
                                 v = 1
-                                w = boundary_value[idx][jdx][0]
+                                w = equ.boundary_value[jdx][0]
 
                             case 5:  # 5: generic boundary condition y expressed as a1y'+a2y=a3.
-                                u = boundary_value[idx][jdx][0]
-                                v = boundary_value[idx][jdx][1]
-                                w = boundary_value[idx][jdx][2]
+                                u = equ.boundary_value[jdx][0]
+                                v = equ.boundary_value[jdx][1]
+                                w = equ.boundary_value[jdx][2]
 
                             case 6:  # 6: equation not solved;
                                 raise NotImplementedError(f"6: equation not solved;")
@@ -443,24 +379,24 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
                     g = vpr * gm8 * (n_z + ms * ns * k_rho_bdry)
 
-                    for jdx, bc in enumerate(equ.boundary_condition):
+                    for jdx, bc in enumerate(equ.boundary_condition_type):
                         match bc:
                             case 1:  # 1: value of the field y;
                                 u = 1
                                 v = 0
-                                w = boundary_value[idx][jdx][0]
+                                w = equ.boundary_value[jdx][0]
                             # 2: radial derivative of the field (-dy/drho_tor);
                             case 2:
-                                u = -e(bc_pos[jdx])
+                                u = -e
                                 v = 1.0
-                                w = boundary_value[idx][jdx][0] * d(bc_pos[jdx])
+                                w = equ.boundary_value[jdx][0] * d
                             # 3: scale length of the field y/(-dy/drho_tor);
                             case 3:
                                 raise NotImplementedError(f" # 3: scale length of the field y/(-dy/drho_tor);")
                             case 4:  # 4: flux;
                                 u = 0
                                 v = 1
-                                w = boundary_value[idx][jdx][0]
+                                w = equ.boundary_value[jdx][0]
                             # 5: generic boundary condition y expressed as a1y'+a2y=a3.
                             case 5:
                                 raise NotImplementedError(f"5: generic boundary condition y expressed as a1y'+a2y=a3.")
@@ -473,37 +409,19 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                         bc_value += [[u, v, w]]
 
                 case _:
-                    raise RuntimeError(f"Unknown equation of {equ.primary_quantity.identifier}!")
+                    raise RuntimeError(f"Unknown equation of {equ.identifier}!")
 
-            pth = Path(identifier)
-
-            coefficient = [a, b, c, d, e, f, g, pth.get(previous, zero)]
-
-            eq_list.append(
-                {
-                    "coefficient": coefficient,
-                    "primary_quantity": {
-                        "identifier": identifier,
-                        "profile": equ.profile if equ.profile is not _not_found_ else pth.get(core_profiles_1d, 0),
-                    },
-                    "boundary_condition": [
-                        {"identifier": equ.boundary_condition[0], "value": bc_value[0]},
-                        {"identifier": equ.boundary_condition[1], "value": bc_value[1]},
-                    ],
-                }
-            )
-
-        self["equation"] = eq_list
+            equ["coefficient"] = [*bc_value, a, b, c, d, e, f, g, ym]
 
     def func(self, x: array_type, Y: array_type, *args) -> array_type:
-        res = np.zeros([len(self.equation) * 2, x.size])
+        res = np.zeros([len(self.equations) * 2, x.size])
         hyper_diff = self.control_parameters.hyper_diff or 0.001
 
-        for idx, equ in enumerate(self.equation):
+        for idx, equ in enumerate(self.equations):
             y = Y[idx * 2]
             flux = Y[idx * 2 + 1]
             try:
-                a, b, c, d, e, f, g, ym = equ.coefficient
+                bc0, bc1, a, b, c, d, e, f, g, ym = equ.coefficient
 
                 a = a(x, *Y, *args)
                 b = b(x, *Y, *args)
@@ -517,13 +435,13 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
             except Exception as error:
                 # a, b, c, d, e, f, g, *_ = equ.coefficient
 
-                logger.error(equ.primary_quantity.identifier)
+                logger.error(equ.identifier)
                 logger.error((x, Y))
-                # logger.error(equ.primary_quantity.d_dr)
-                # logger.error(equ.primary_quantity.dflux_dr)
+                # logger.error(equ.d_dr)
+                # logger.error(equ.dflux_dr)
 
                 raise RuntimeError(
-                    f"Failure to calculate the equation of {self.equation[int(idx/2)].primary_quantity.identifier}{'_flux' if int(idx/2)*2!=idx else ''} {equ}   !"
+                    f"Failure to calculate the equation of {self.equations[int(idx/2)].identifier}{'_flux' if int(idx/2)*2!=idx else ''} {equ}   !"
                 ) from error
 
             d_dr = (-flux + e * y + hyper_diff * derivative(y, x)) / (d + hyper_diff)
@@ -535,45 +453,56 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
             res[idx * 2] = d_dr
             res[idx * 2 + 1] = dflux_dr
 
-        if np.any(np.isnan(res)):
-            logger.debug(res)
+            if np.any(np.isnan(d_dr)) or np.any(np.isnan(dflux_dr)):
+                logger.exception(f"Error! {equ.identifier} {( a, b, c, d, e, f, g)} ")
+
         return res
 
     def bc(self, ya: array_type, yb: array_type, *args) -> array_type:
         current = self
 
         res = []
-        for idx, equ in enumerate(current.equation):
-            [u0, v0, w0] = equ.boundary_condition[0].value
-            [u1, v1, w1] = equ.boundary_condition[1].value
+        for idx, equ in enumerate(current.equations):
+            x0 = self.grid.rho_tor_norm[0]
+            x1 = self.grid.rho_tor_norm[-1]
+
+            [u0, v0, w0], [u1, v1, w1], *_ = equ.coefficient
+
+            try:
+                u0 = u0(x0, *ya, *args) if isinstance(u0, Expression) else u0
+                v0 = v0(x0, *ya, *args) if isinstance(v0, Expression) else v0
+                w0 = w0(x0, *ya, *args) if isinstance(w0, Expression) else w0
+                u1 = u0(x1, *yb, *args) if isinstance(u1, Expression) else u1
+                v1 = v0(x1, *yb, *args) if isinstance(v1, Expression) else v1
+                w1 = w0(x1, *yb, *args) if isinstance(w1, Expression) else w1
+            except Exception as error:
+                logger.error(((u0, v0, w0), (u1, v1, w1)))
+                raise RuntimeError(f"Boundary error of equation {equ.identifier}  ") from error
+
             y0 = ya[2 * idx]
             flux0 = ya[2 * idx + 1]
+
             y1 = yb[2 * idx]
             flux1 = yb[2 * idx + 1]
-            try:
-                res.append(u0 * y0 + v0 * flux0 - w0)
-                res.append(u1 * y1 + v1 * flux1 - w1)
-            except Exception as error:
-                (u0, v0, w0), (u1, v1, w1), a, b, c, d, e, f, g = equ.coefficient
-                logger.error(((u0, v0, w0), (u1, v1, w1), a, b, c, d, e, f, g))
-                raise RuntimeError(f"Boundary error of equation {equ.primary_quantity.identifier}  ") from error
+
+            res.extend([u0 * y0 + v0 * flux0 - w0, u1 * y1 + v1 * flux1 - w1])
 
         return np.array(res)
 
-    def solve(self):
+    def solve(self, variables: typing.Dict[str, Expression]):
         current = self
 
         x = self.grid.rho_tor_norm
 
-        num_of_equation = len(self.equation)
+        num_of_equation = len(self.equations)
 
         Y0 = np.zeros([num_of_equation * 2, len(x)])
 
-        for idx, equ in enumerate(current.equation):
-            Y0[idx * 2] = y = array_like(x, equ.primary_quantity.profile)
+        for idx, equ in enumerate(current.equations):
+            Y0[idx * 2] = y = array_like(x, equ.profile)
 
-        for idx, equ in enumerate(current.equation):
-            a, b, c, d, e, f, g, ym = equ.coefficient
+        for idx, equ in enumerate(current.equations):
+            bc0, bc1, a, b, c, d, e, f, g, ym = equ.coefficient
             y = Y0[idx * 2]
             Y0[idx * 2 + 1] = -d(x, *Y0) * derivative(y, x) + e(x, *Y0)
 
@@ -588,13 +517,16 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
             verbose=current.control_parameters.verbose or 0,
         )
 
-        current["grid"] = current.grid.duplicate(sol.x)
+        current["grid"] = current.grid.remesh(sol.x)
 
-        for idx, equ in enumerate(current.equation):
-            equ.primary_quantity["profile"] = sol.y[2 * idx]
-            equ.primary_quantity["d_dr"] = sol.yp[2 * idx]
-            equ.primary_quantity["flux"] = sol.y[2 * idx + 1]
-            equ.primary_quantity["dflux_dr"] = sol.yp[2 * idx + 1]
+        for idx, equ in enumerate(current.equations):
+            equ["profile"] = sol.y[2 * idx]
+            equ["d_dr"] = sol.yp[2 * idx]
+            equ["flux"] = sol.y[2 * idx + 1]
+            equ["dflux_dr"] = sol.yp[2 * idx + 1]
+
+        for k in list(variables.keys()):
+            current.variables[k] = variables[k](sol.x, *sol.y)
 
         logger.debug(f"Solve BVP { 'success' if sol.success else 'failed'}: {sol.message} , {sol.niter} iterations")
 
@@ -609,40 +541,69 @@ class FyTrans(TransportSolverNumerics):
 
     code: Code = {"name": "fy_trans", "copyright": "fytok"}
 
+    primary_coordinate: str | Variable = "rho_tor_norm"
+
     TimeSlice = FyTransTimeSlice
 
     time_slice: TimeSeriesAoS[FyTransTimeSlice]
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def preprocess(self, *args, boundary_value=None, **kwargs):
-        super().preprocess(*args, **kwargs)
-
-        self.time_slice.current.setup(
-            *self.time_slice.previous,
-            boundary_value=boundary_value,
-            primary_coordinate=self.primary_coordinate,
-            equations=self.equations,
+    def execute(self, current: FyTransTimeSlice, *previous: FyTransTimeSlice) -> FyTransTimeSlice:
+        current = super().execute(current, *previous)
+         
+        current.setup(
+            x=self.primary_coordinate,
+            variables=self.variables,
             equilibrium=self.inputs.get_source("equilibrium"),
             core_transport=self.inputs.get_source("core_transport"),
             core_sources=self.inputs.get_source("core_sources"),
             core_profiles=self.inputs.get_source("core_profiles"),
         )
 
-    def execute(self, current: FyTransTimeSlice, *previous: FyTransTimeSlice, **kwargs):
-        super().execute(current, *previous, **kwargs)
-
-        logger.info(
-            f"Solve transport equations : { '  ,'.join([equ.primary_quantity.identifier for equ in current.equation])}"
-        )
-
-        status = current.solve()
+        status = current.solve(self.variables)
 
         if status == 0:
             logger.info(f"Solve transport equations success!")
         else:
             logger.error(f"Solve transport equations failed!")
+        return current
 
 
 TransportSolverNumerics.register(["fy_trans"], FyTrans)
+# # 声明变量 Variable
+# def guess_label(name):
+#     s = name.split("/")
+#     if len(s) >= 2:
+#         if s[-2] == "electrons":
+#             s[-2] = "e"
+
+#     if s[-1] == "psi":
+#         label = r"\psi"
+#     elif s[-1] == "psi_flux":
+#         label = r"\psi"
+#     elif s[-1] == "density":
+#         label = f"n_{{{s[-2]}}}"
+#     elif s[-1] == "density_flux":
+#         label = rf"\Gamma_{{{s[-2]}}}"
+#     elif s[-1] == "temperature":
+#         label = f"T_{{{s[-2]}}}"
+#     elif s[-1] == "temperature_flux":
+#         label = f"H_{{{s[-2]}}}"
+#     else:
+#         label = name
+
+#     return label
+
+# variables["x"] =
+# x = Variable((index := 0), "x", label=r"\bar{\rho}_{tor}")
+
+# for idx, equ in enumerate(self.equations):
+#     variables[equ.identifier] = Variable(
+#         (index := index + 1),
+#         equ.identifier,
+#         label=guess_label(equ.identifier),
+#     )
+#     variables[f"{equ.identifier}_flux"] = Variable(
+#         (index := index + 1),
+#         f"{equ.identifier}_flux",
+#         label=guess_label(f"{equ.identifier}_flux"),
+#     )

@@ -3,7 +3,7 @@ from __future__ import annotations
 from scipy import constants
 from copy import copy
 import math
-from spdm.data.Expression import Expression, Variable
+from spdm.data.Expression import Expression, Variable, zero
 from spdm.data.sp_property import sp_tree, sp_property, PropertyTree
 from spdm.data.TimeSeries import TimeSlice, TimeSeriesAoS
 from spdm.data.AoS import AoS
@@ -17,6 +17,7 @@ from .Equilibrium import Equilibrium
 from .Utilities import *
 
 from ..utils.logger import logger
+from ..utils.atoms import atoms
 
 # from ..ontology import transport_solver_numerics
 
@@ -27,7 +28,7 @@ TWOPI = 2.0 * constants.pi
 
 
 @sp_tree
-class TransportSolverNumericsEquationPrimary:
+class TransportSolverNumericsEquation:
     """Profile and derivatives a the primary quantity for a 1D transport equation"""
 
     identifier: str
@@ -41,59 +42,45 @@ class TransportSolverNumericsEquationPrimary:
     flux: array_type
     """ Flux of the primary quantity"""
 
-    d_dr: Expression | array_type
-    """ Radial derivative with respect to the primary coordinate"""
+    coefficient: typing.List[typing.Any]
+    """ Set of numerical coefficients involved in the transport equation
+       
+        [[u0,v0,v0],[u1,v1,w1],a,b,c,d,e,f,g,ym]
+        a * y - b* ym + (1/c)* flux'= f - g*y
+        flux=-d y' + e y
+        u * y + v* flux - w =0 
+    """
 
-    dflux_dr: Expression | array_type
-    """ Radial derivative of Flux of the primary quantity"""
-
-    d2_dr2: Expression | array_type
-    """ Second order radial derivative with respect to the primary coordinate"""
-
-    d_dt: Expression | array_type
-    """ Time derivative"""
-
-    d_dt_cphi: Expression | array_type
-    """ Derivative with respect to time, at constant toroidal flux (for current
-        diffusion equation)"""
-
-    d_dt_cr: Expression | array_type
-    """ Derivative with respect to time, at constant primary coordinate coordinate (for
-        current diffusion equation)"""
-
-
-@sp_tree
-class TransportSolverNumericsEquation:
-    primary_quantity: TransportSolverNumericsEquationPrimary
-    """ Profile and derivatives of the primary quantity of the transport equation"""
-
-    @sp_tree
-    class EquationBC:
-        identifier: int
-        """ Identifier of the boundary condition type.  ID =
+    boundary_condition_type: typing.Tuple[int, int]
+    """ Identifier of the boundary condition type.  ID =
             1: value of the field y;
             2: radial derivative of the field (-dy/drho_tor);
             3: scale length of the field y/(-dy/drho_tor);
             4: flux;
             5: generic boundary condition y expressed as a1y'+a2y=a3.
             6: equation not solved;
-        """
-        value: array_type
-        """ Value of the boundary condition.
-            For ID = 1 to 4, only the first position in the vector is used.
-            For ID = 5, all three positions are used, meaning respectively a1, a2, a3.
-        """
-        rho_tor_norm: float
-        """ Position, in normalised toroidal flux, at which the boundary condition is
-        imposed. Outside this position, the value of the data are considered to be
-        prescribed."""
+    """
+    boundary_value: typing.Tuple[typing.List[float], typing.List[float]]
 
-        func: Expression
+    d_dr: array_type
+    """ Radial derivative with respect to the primary coordinate"""
 
-    boundary_condition: AoS[EquationBC]
+    dflux_dr: array_type
+    """ Radial derivative of Flux of the primary quantity"""
 
-    coefficient: List[Expression]
-    """ Set of numerical coefficients involved in the transport equation"""
+    d2_dr2: array_type
+    """ Second order radial derivative with respect to the primary coordinate"""
+
+    d_dt: array_type
+    """ Time derivative"""
+
+    d_dt_cphi: array_type
+    """ Derivative with respect to time, at constant toroidal flux (for current
+        diffusion equation)"""
+
+    d_dt_cr: array_type
+    """ Derivative with respect to time, at constant primary coordinate coordinate (for
+        current diffusion equation)"""
 
     convergence: PropertyTree
     """ Convergence details"""
@@ -106,7 +93,11 @@ class TransportSolverNumericsTimeSlice(TimeSlice):
     grid: CoreRadialGrid
     """ Radial grid"""
 
-    equation: AoS[TransportSolverNumericsEquation]
+    primary_coordinate: Variable
+
+    variables: typing.OrderedDict[str, Expression | array_type]
+
+    equations: AoS[TransportSolverNumericsEquation]
     """ Set of transport equations"""
 
     control_parameters: PropertyTree
@@ -121,49 +112,6 @@ class TransportSolverNumericsTimeSlice(TimeSlice):
 
 
 @sp_tree
-class TransportSolverNumericsBC:
-    """Boundary conditions of radial transport equations for a given time slice"""
-
-    @sp_tree
-    class ParticleBC:
-        particles: array_type
-        """ Particle flux"""
-
-        energy: array_type
-        """ Energy flux"""
-
-        momentum: array_type
-        """ Momentum flux"""
-
-    rho_tor_norm: float
-    """ Position, in normalised toroidal flux, at which the boundary condition is
-       imposed. Outside this position, the value of the data are considered to be
-       prescribed."""
-
-    identifier: Identifier
-    """ Identifier of the boundary condition type. ID = 1: poloidal flux; 2: ip; 3: loop
-                voltage; 4: undefined; 5: generic boundary condition y expressed as a1y'+a2y=a3.
-                6: equation not solved;"""
-
-    current: float
-    """ Boundary condition for the current diffusion equation."""
-
-    electrons: ParticleBC
-    """ Quantities related to the electrons"""
-
-    ion: AoS[ParticleBC]
-    """ Quantities related to the different ion species"""
-
-    energy_ion_total: ParticleBC = sp_property(units="W.m^-3")
-    """ Boundary condition for the ion total (sum over ion species) energy equation
-       (temperature if ID = 1)"""
-
-    momentum_tor: ParticleBC = sp_property(units="kg.m.s^-1")
-    """ Boundary condition for the total plasma toroidal momentum equation (summed over
-       ion species and electrons) (momentum if ID = 1)"""
-
-
-@sp_tree
 class TransportSolverNumerics(IDS):
     r"""Solve transport equations  $\rho=\sqrt{ \Phi/\pi B_{0}}$"""
 
@@ -171,100 +119,196 @@ class TransportSolverNumerics(IDS):
 
     code: Code = {"name": "fy_trans"}
 
-    solver: Identifier = "bvp"
+    solver: str = "ion_solver"
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    primary_coordinate: str | Variable = "rho_tor_norm"
+    r""" 与 core_profiles 的 primary coordinate 磁面坐标一致
+      rho_tor_norm $\bar{\rho}_{tor}=\sqrt{ \Phi/\Phi_{boundary}}$ """
 
-        def guess_label(name):
-            s = name.split("/")
-            if len(s) >= 2:
-                if s[-2] == "electrons":
-                    s[-2] = "e"
+    species: typing.List[str]
 
-            if s[-1] == "psi":
-                label = r"\psi"
-            elif s[-1] == "psi_flux":
-                label = r"\psi"
-            elif s[-1] == "density":
-                label = f"n_{{{s[-2]}}}"
-            elif s[-1] == "density_flux":
-                label = rf"\Gamma_{{{s[-2]}}}"
-            elif s[-1] == "temperature":
-                label = f"T_{{{s[-2]}}}"
-            elif s[-1] == "temperature_flux":
-                label = f"H_{{{s[-2]}}}"
-            else:
-                label = name
+    boundary_condition_type: typing.Dict[str, typing.Any]
 
-            return label
+    variables: typing.Dict[str, Expression]
 
-        self["primary_coordinate"] = Variable((index := 0), "x", label=r"\bar{\rho}_{tor}")
-
-        # 初始化变量 Variable
-        for equ in self.equations:
-            identifier = equ.identifier
-            equ._profile = Variable((index := index + 1), identifier, label=guess_label(identifier))
-            equ._flux = Variable((index := index + 1), f"{identifier}_flux", label=guess_label(f"{identifier}_flux"))
-
-    primary_coordinate: Variable
-    r""" $\rho_{tor}=\sqrt{ \Phi/\pi B_{0}}$ """
-
-    @sp_tree
-    class Equatuion:
-        identifier: str
-        _profile: Variable
-        _flux: Variable
-        profile: array_type | float = 0.0
-        flux: array_type | float = 0.0
-        boundary_condition: typing.List[int]
-
-    equations: AoS[Equatuion]
+    equations: AoS[TransportSolverNumericsEquation]
 
     TimeSlice = TransportSolverNumericsTimeSlice
 
     time_slice: TimeSeriesAoS[TransportSolverNumericsTimeSlice]
 
-    def preprocess(self, *args,  **kwargs):
-        super().preprocess(*args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        prev_cls = self.__class__
+        super().__init__(*args, **kwargs)
+        if self.__class__ is not prev_cls:
+            return
 
-        current = self.time_slice.current
+        if self.solver != "ion_solver":
+            raise NotImplementedError(f"Only ion_solver is supported!")
 
-        if current.cache_get("grid", _not_found_) is _not_found_:
-            equilibrium: Equilibrium = self.inputs.get_source("equilibrium")
+        enabla_momentum = self.code.parameters.enabla_momentum
 
-            assert math.isclose(equilibrium.time, self.time), f"{equilibrium.time} != {self.time}"
+        enabla_current_diffusion = self.code.parameters.enabla_current_diffusion
 
+        equations = []
+
+        # 定义 equation 和 variable
+        if self.primary_coordinate == "rho_tor_norm":
+            self._cache["primary_coordinate"] = Variable(
+                (index := 0), self.primary_coordinate, label=r"\bar{\rho}_{tor}"
+            )
+
+        elif isinstance(self.primary_coordinate, str):
+            self._cache["primary_coordinate"] = Variable((index := 0), self.primary_coordinate)
+
+        else:
+            index = 0
+
+        variables = {}
+
+        if enabla_current_diffusion:
+            variables["psi"] = Variable(
+                (index := index + 1),
+                "psi",
+                label=r"\psi",
+            )
+            variables["psi_flux"] = Variable(
+                (index := index + 1),
+                "psi",
+                label=r"\Gamma_{\psi}",
+            )
+
+            equations.append(
+                {
+                    "identifier": "psi",
+                    "boundary_condition_type": self.boundary_condition_type.get("psi", (2, 1)),
+                }
+            )
+
+        variables["electrons/temperature"] = Variable(
+            (index := index + 1),
+            "electrons/temperature",
+            label=r"T_{e}",
+        )
+
+        variables["electrons/temperature_flux"] = Variable(
+            (index := index + 1),
+            "electrons/temperature",
+            label=r"H_{Te}",
+        )
+
+        equations.append(
+            {
+                "identifier": "electrons/temperature",
+                "boundary_condition_type": self.boundary_condition_type.get("electrons/temperature", (2, 1)),
+            }
+        )
+
+        n_e = zero
+        flux_e = zero
+        for s in self.species:
+            variables[f"ion/{s}/density"] = ns = Variable((index := index + 1), f"ion/{s}/density", label=rf"n_{s}")
+
+            variables[f"ion/{s}/density_flux"] = ns_flux = Variable(
+                (index := index + 1), f"ion/{s}/density_flux", label=rf"\Gamma_{s}"
+            )
+            equations.append(
+                {
+                    "identifier": f"ion/{s}/density",
+                    "boundary_condition_type": self.boundary_condition_type.get(f"ion/{s}/density", (2, 1)),
+                }
+            )
+
+            variables[f"ion/{s}/temperature"] = Variable(
+                (index := index + 1), f"ion/{s}/temperature", label=rf"T_{{{s}}}"
+            )
+
+            variables[f"ion/{s}/temperature_flux"] = Variable(
+                (index := index + 1), f"ion/{s}/temperature_flux", label=rf"H_{{{s}}}"
+            )
+
+            equations.append(
+                {
+                    "identifier": f"ion/{s}/temperature",
+                    "boundary_condition_type": self.boundary_condition_type.get(f"ion/{s}/temperature", (2, 1)),
+                }
+            )
+
+            if enabla_momentum:
+                variables[f"ion/{s}/momentum"] = ns = Variable(
+                    (index := index + 1), f"ion/{s}/momentum", label=rf"u_{s}"
+                )
+                variables[f"ion/{s}/momentum_flux"] = ns_flux = Variable(
+                    (index := index + 1), f"ion/{s}/momentum_flux", label=rf"U_{s}"
+                )
+
+                equations.append(
+                    {
+                        "identifier": f"ion/{s}/momentum",
+                        "boundary_condition_type": self.boundary_condition_type.get(f"ion/{s}/momentum", (2, 1)),
+                    }
+                )
+
+            z = atoms[s].z
+            n_e -= z * ns
+            flux_e -= z * ns_flux
+
+        # quasi neutrality condition
+        variables["electrons/density"] = n_e
+        variables["electrons/density_flux"] = flux_e
+
+        self._cache["variables"] = variables
+        self["equations"] = equations
+
+        logger.debug(f" Variables : {[k for k,v in self.variables.items() if isinstance(v,Variable)]}")
+
+    def preprocess(
+        self, *args, grid=_not_found_, initial_value=None, boundary_value=None, **kwargs
+    ) -> TransportSolverNumericsTimeSlice:
+        current = super().preprocess(*args, **kwargs)
+
+        equilibrium: Equilibrium.TimeSlice = self.inputs.get_source("equilibrium").time_slice.current
+
+        assert math.isclose(equilibrium.time, self.time), f"{equilibrium.time} != {current.time}"
+
+        # TODO: 根据时间获取时间片, 例如：
+        #   eq:Equilibrium.TimeSlice= equilibrium.time_slice.get(self.time)
+        #   current["grid"] = eq.profiles_1d.grid.duplicate(rho_tor_norm)
+
+        if grid is _not_found_:
             rho_tor_norm = self.code.parameters.get("rho_tor_norm", None)
+            current["grid"] = equilibrium.profiles_1d.grid.remesh(rho_tor_norm)
+        else:
+            current["grid"] = equilibrium.profiles_1d.grid.remesh(grid)
 
-            # TODO: 根据时间获取时间片, 例如：
-            #   eq:Equilibrium.TimeSlice= equilibrium.time_slice.get(self.time)
-            #   current["grid"] = eq.profiles_1d.grid.duplicate(rho_tor_norm)
+        if initial_value is None:
+            initial_value = {}
+        if boundary_value is None:
+            boundary_value = {}
 
-            current["grid"] = equilibrium.time_slice.current.profiles_1d.grid.duplicate(rho_tor_norm)
+        core_profiles: CoreProfiles = self.inputs.get_source("core_profiles")
+        core_profiles_1d = core_profiles.time_slice.current.profiles_1d
 
-        # num_of_equations = len(self.equations)
-        # if boundary_value is None:
-        #     boundary_value = [[0, 0]] * num_of_equations
+        current["equations"] = [
+            {
+                "identifier": equ.identifier,
+                "profile": initial_value.get(equ.identifier, zero),
+                "flux": initial_value.get(f"{equ.identifier}_flux", zero),
+                "boundary_condition_type": equ.boundary_condition_type,
+                "boundary_value": boundary_value.get(equ.identifier, [0, 0]),
+            }
+            for idx, equ in enumerate(self.equations)
+        ]
 
-        # current["equation"] = [
-        #     {
-        #         "primary_quantity": {
-        #             "identifier": equ.identifier,
-        #             "profile": equ.profile,
-        #             "flux": equ.flux,
-        #         },
-        #         "boundary_condition": [
-        #             {"identifier": equ.boundary_condition[0], "value": boundary_value[idx][0]},
-        #             {"identifier": equ.boundary_condition[1], "value": boundary_value[idx][1]},
-        #         ],
-        #     }
-        #     for idx, equ in enumerate(self.equations)
-        # ]
+        current["control_parameters"] = self.code.parameters
 
-        current["control_parameters"] = self.code.parameters.control_parameters
+        return current
 
-        # current.control_parameters.update(control_parameters)
+    def execute(
+        self, current: TransportSolverNumericsTimeSlice, *previous: TransportSolverNumericsTimeSlice
+    ) -> TransportSolverNumericsTimeSlice:
+        logger.info(f"Solve transport equations : { '  ,'.join([equ.identifier for equ in self.equations])}")
+        return super().execute(current, *previous)
 
     def refresh(
         self,
@@ -274,8 +318,8 @@ class TransportSolverNumerics(IDS):
         core_sources: CoreSources = None,
         core_profiles: CoreProfiles = None,
         **kwargs,
-    ):
-        super().refresh(
+    ) -> TransportSolverNumericsTimeSlice:
+        return super().refresh(
             *args,
             equilibrium=equilibrium,
             core_transport=core_transport,
