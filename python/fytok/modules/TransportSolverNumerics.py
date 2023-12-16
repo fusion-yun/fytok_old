@@ -128,9 +128,9 @@ class TransportSolverNumerics(IDS):
     r""" 与 core_profiles 的 primary coordinate 磁面坐标一致
       rho_tor_norm $\bar{\rho}_{tor}=\sqrt{ \Phi/\Phi_{boundary}}$ """
 
-    species: typing.List[str]
+    species: typing.List[str] = []
 
-    impurity: typing.List[str]
+    impurity: typing.List[str] = []
 
     boundary_condition_type: typing.Dict[str, typing.Any]
 
@@ -181,16 +181,12 @@ class TransportSolverNumerics(IDS):
 
         # 定义 equation 和 variable
         if self.primary_coordinate == "rho_tor_norm":
-            primary_coordinate = Variable((i := 0), self.primary_coordinate, label=r"\bar{\rho}_{tor}")
-
-        elif isinstance(self.primary_coordinate, str):
-            primary_coordinate = Variable((i := 0), self.primary_coordinate)
+            x = Variable((i := 0), self.primary_coordinate, label=r"\bar{\rho}_{tor}")
 
         else:
-            primary_coordinate = None
-            i = 0
+            x = Variable((i := 0), self.primary_coordinate)
 
-        current["primary_coordinate"] = primary_coordinate
+        current["primary_coordinate"] = x
 
         variables = {}
 
@@ -202,6 +198,7 @@ class TransportSolverNumerics(IDS):
             equations.append({"identifier": "psi", "boundary_condition_type": bc_type.get("psi", (2, 1))})
 
         n_e = zero
+
         flux_e = zero
 
         for s in self.species:
@@ -291,9 +288,9 @@ class TransportSolverNumerics(IDS):
         )
 
         for s in self.impurity:
-            z_ion_1d = core_profiles_1d.get(f"{s}/z_ion_1d", 0)
-            n_e += core_profiles_1d.get(f"{s}/density", 0) * z_ion_1d
-            flux_e += core_profiles_1d.get(f"{s}/density_flux", 0) * z_ion_1d
+            z_ion_1d = core_profiles_1d.get(f"ion/{s}/z_ion_1d", 0)
+            n_e += (core_profiles_1d.get(f"ion/{s}/density", 0) * z_ion_1d)(x)
+            flux_e += (core_profiles_1d.get(f"ion/{s}/density_flux", 0) * z_ion_1d)(x)
 
         # quasi neutrality condition
         variables["electrons/density"] = n_e
@@ -340,12 +337,29 @@ class TransportSolverNumerics(IDS):
             **kwargs,
         )
 
-    def fetch(self, *args, **kwargs):
+    def fetch(self, *args, **kwargs) -> CoreProfiles.TimeSlice.Profiles1D:
         """获得 CoreProfiles.TimeSlice.Profiles1D 形式状态树。"""
         current = self.time_slice.current
-        res = {"grid": current.grid}
+
+        data = {
+            "grid": current.grid,
+            "ion": [{"label": s} for s in self.species],
+        }
+
         X = current.grid.rho_tor_norm
         Y = current.Y0
         for k, v in current.variables.items():
-            res = Path(k).update(res, v(X, *Y))
-        return res
+            pth = Path(k)
+            if pth[0] == "ion":
+                spec = pth[1]
+                try:
+                    idx = self.species.index(spec)
+                except Exception:
+                    logger.warning(f"ignore {k}")
+                    continue
+                else:
+                    pth[1] = idx
+
+            data = pth.update(data, v(X, *Y))
+
+        return CoreProfiles.TimeSlice.Profiles1D(data)

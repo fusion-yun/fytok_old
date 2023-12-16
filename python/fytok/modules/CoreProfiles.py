@@ -28,9 +28,13 @@ class CoreProfilesIon(utilities._T_core_profile_ions):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
+        if self.cache_get("label", _not_found_) is _not_found_:
+            self._cache["label"] = self._metadata.get("name")
+
         atom_desc = atoms.get(self.label.capitalize(), None)
 
-        self._cache = update_tree(self._cache, atom_desc)
+        self.z = atom_desc["z"]
+        self.a = atom_desc["a"]
 
     is_impurity: bool = sp_property(default_value=False)
 

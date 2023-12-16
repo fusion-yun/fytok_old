@@ -133,7 +133,6 @@ Modules:
         return self._device
 
     # fmt:off
-  
     # device
     dataset_fair            : DatasetFAIR               
 
