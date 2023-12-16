@@ -36,8 +36,6 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
     def setup(
         self,
         *previous,
-        x: Variable,
-        variables: typing.Dict[str, Expression],
         equilibrium: Equilibrium,
         core_transport: CoreTransport,
         core_sources: CoreSources,
@@ -45,6 +43,9 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
         **kwargs,
     ):
         current = self
+
+        x = self.primary_coordinate
+        variables = self.variables
 
         psi_norm = Function(current.grid.rho_tor_norm, current.grid.psi_norm, label=r"\bar{\psi}")(x)
 
@@ -497,7 +498,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
         return np.array(res)
 
-    def solve(self, variables: typing.Dict[str, Expression]):
+    def solve(self):
         current = self
 
         sol = solve_bvp(
@@ -544,15 +545,13 @@ class FyTrans(TransportSolverNumerics):
         current = super().execute(current, *previous)
 
         current.setup(
-            x=self.primary_coordinate,
-            variables=self.variables,
             equilibrium=self.inputs.get_source("equilibrium"),
             core_transport=self.inputs.get_source("core_transport"),
             core_sources=self.inputs.get_source("core_sources"),
             core_profiles=self.inputs.get_source("core_profiles"),
         )
 
-        status = current.solve(self.variables)
+        status = current.solve()
 
         if status == 0:
             logger.info(f"Solve transport equations success!")

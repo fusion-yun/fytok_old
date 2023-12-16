@@ -52,6 +52,7 @@ class TransportSolverNumericsEquation:
     """
 
     boundary_condition_type: typing.Tuple[int, int]
+
     """ Identifier of the boundary condition type.  ID =
             1: value of the field y;
             2: radial derivative of the field (-dy/drho_tor);
@@ -95,6 +96,8 @@ class TransportSolverNumericsTimeSlice(TimeSlice):
 
     primary_coordinate: Variable
 
+    variables: typing.Dict[str, Expression]
+
     equations: AoS[TransportSolverNumericsEquation]
     """ Set of transport equations"""
 
@@ -121,15 +124,15 @@ class TransportSolverNumerics(IDS):
 
     solver: str = "ion_solver"
 
-    primary_coordinate: str | Variable = "rho_tor_norm"
+    primary_coordinate: str = "rho_tor_norm"
     r""" 与 core_profiles 的 primary coordinate 磁面坐标一致
       rho_tor_norm $\bar{\rho}_{tor}=\sqrt{ \Phi/\Phi_{boundary}}$ """
 
     species: typing.List[str]
 
-    boundary_condition_type: typing.Dict[str, typing.Any]
+    impurity: typing.List[str]
 
-    variables: typing.Dict[str, Expression]
+    boundary_condition_type: typing.Dict[str, typing.Any]
 
     equations: AoS[TransportSolverNumericsEquation]
 
@@ -146,21 +149,48 @@ class TransportSolverNumerics(IDS):
         if self.solver != "ion_solver":
             raise NotImplementedError(f"Only ion_solver is supported!")
 
+    def preprocess(self, *args, initial_value=None, boundary_value=None, **kwargs) -> TransportSolverNumericsTimeSlice:
+        current: TransportSolverNumericsTimeSlice = super().preprocess(*args, **kwargs)
+        core_profiles: CoreProfiles = self.inputs.get_source("core_profiles")
+        core_profiles_1d = core_profiles.time_slice.current.profiles_1d
+
+        grid = current.cache_get("grid", _not_found_)
+
+        if not isinstance(grid, CoreRadialGrid):
+            equilibrium: Equilibrium.TimeSlice = self.inputs.get_source("equilibrium").time_slice.current
+
+            # TODO: 根据时间获取时间片, 例如：
+            # assert math.isclose(equilibrium.time, self.time), f"{equilibrium.time} != {current.time}"
+            #   eq:Equilibrium.TimeSlice= equilibrium.time_slice.get(self.time)
+            #   current["grid"] = eq.profiles_1d.grid.duplicate(rho_tor_norm)
+
+            rho_tor_norm = kwargs.get("rho_tor_norm", self.code.parameters.get("rho_tor_norm", None))
+
+            current.grid = equilibrium.profiles_1d.grid.remesh(rho_tor_norm)
+
+        if initial_value is None:
+            initial_value = {}
+        if boundary_value is None:
+            boundary_value = {}
+
         enabla_momentum = self.code.parameters.enabla_momentum
 
         enabla_current_diffusion = self.code.parameters.enabla_current_diffusion
 
-        equations = []
+        equations: typing.List[typing.Dict[str, typing.Any]] = []
 
         # 定义 equation 和 variable
         if self.primary_coordinate == "rho_tor_norm":
-            self._cache["primary_coordinate"] = Variable((i := 0), self.primary_coordinate, label=r"\bar{\rho}_{tor}")
+            primary_coordinate = Variable((i := 0), self.primary_coordinate, label=r"\bar{\rho}_{tor}")
 
         elif isinstance(self.primary_coordinate, str):
-            self._cache["primary_coordinate"] = Variable((i := 0), self.primary_coordinate)
+            primary_coordinate = Variable((i := 0), self.primary_coordinate)
 
         else:
+            primary_coordinate = None
             i = 0
+
+        current["primary_coordinate"] = primary_coordinate
 
         variables = {}
 
@@ -260,57 +290,34 @@ class TransportSolverNumerics(IDS):
             }
         )
 
+        for s in self.impurity:
+            z_ion_1d = core_profiles_1d.get(f"{s}/z_ion_1d", 0)
+            n_e += core_profiles_1d.get(f"{s}/density", 0) * z_ion_1d
+            flux_e += core_profiles_1d.get(f"{s}/density_flux", 0) * z_ion_1d
+
         # quasi neutrality condition
         variables["electrons/density"] = n_e
         variables["electrons/density_flux"] = flux_e
 
-        self._cache["variables"] = variables
-        self["equations"] = equations
-
-        logger.debug(f" Variables : {[k for k,v in self.variables.items() if isinstance(v,Variable)]}")
-
-    def preprocess(self, *args, initial_value=None, boundary_value=None, **kwargs) -> TransportSolverNumericsTimeSlice:
-        current: TransportSolverNumericsTimeSlice = super().preprocess(*args, **kwargs)
-
-        grid = current.cache_get("grid", _not_found_)
-
-        if not isinstance(grid, CoreRadialGrid):
-            equilibrium: Equilibrium.TimeSlice = self.inputs.get_source("equilibrium").time_slice.current
-
-            # TODO: 根据时间获取时间片, 例如：
-            # assert math.isclose(equilibrium.time, self.time), f"{equilibrium.time} != {current.time}"
-            #   eq:Equilibrium.TimeSlice= equilibrium.time_slice.get(self.time)
-            #   current["grid"] = eq.profiles_1d.grid.duplicate(rho_tor_norm)
-
-            rho_tor_norm = kwargs.get("rho_tor_norm", self.code.parameters.get("rho_tor_norm", None))
-
-            current.grid = equilibrium.profiles_1d.grid.remesh(rho_tor_norm)
-
-        if initial_value is None:
-            initial_value = {}
-        if boundary_value is None:
-            boundary_value = {}
-
-        core_profiles: CoreProfiles = self.inputs.get_source("core_profiles")
-        core_profiles_1d = core_profiles.time_slice.current.profiles_1d
-
-        current["equations"] = [
-            {
-                "identifier": equ.identifier,
-                "profile": initial_value.get(equ.identifier, zero),
-                "flux": initial_value.get(f"{equ.identifier}_flux", zero),
-                "boundary_condition_type": equ.boundary_condition_type,
-                "boundary_value": boundary_value.get(equ.identifier, [0, 0]),
-            }
-            for idx, equ in enumerate(self.equations)
-        ]
+        current["equations"] = equations
 
         current["control_parameters"] = self.code.parameters
+
+        current._cache["variables"] = variables
+
+        for equ in current.equations:
+            equ["boundary_value"] = boundary_value.get(equ.identifier, None)
+            equ["profile"] = initial_value.get(equ.identifier, zero)
+            equ["flux"] = initial_value.get(f"{equ.identifier}_flux", zero)
+
+        logger.debug(f" Variables : {[k for k,v in current.variables.items() if isinstance(v,Variable)]}")
 
         return current
 
     def execute(
-        self, current: TransportSolverNumericsTimeSlice, *previous: TransportSolverNumericsTimeSlice
+        self,
+        current: TransportSolverNumericsTimeSlice,
+        *previous: TransportSolverNumericsTimeSlice,
     ) -> TransportSolverNumericsTimeSlice:
         logger.info(f"Solve transport equations : { '  ,'.join([equ.identifier for equ in self.equations])}")
         return super().execute(current, *previous)
@@ -339,6 +346,6 @@ class TransportSolverNumerics(IDS):
         res = {"grid": current.grid}
         X = current.grid.rho_tor_norm
         Y = current.Y0
-        for k, v in self.variables.items():
+        for k, v in current.variables.items():
             res = Path(k).update(res, v(X, *Y))
         return res
