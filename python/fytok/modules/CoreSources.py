@@ -19,6 +19,18 @@ from ..ontology import core_sources
 class CoreSourcesSpecies(SpTree):
     """Source terms related to electrons"""
 
+    @sp_tree
+    class _Decomposed(SpTree):
+        """Source terms decomposed for the particle transport equation, assuming
+        core_radial_grid 3 levels above"""
+
+        implicit_part: Expression
+        """ Implicit part of the source term, i.e. to be multiplied by the equation's
+        primary quantity"""
+
+        explicit_part: Expression
+        """ Explicit part of the source term"""
+
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
@@ -39,36 +51,30 @@ class CoreSourcesSpecies(SpTree):
     particles: Expression = sp_property(units="s^-1.m^-3")
     """Source term for electron density equation"""
 
+    particles_decomposed: _Decomposed
+
     @sp_property(units="s^-1")
     def particles_inside(self) -> Expression:
         """Electron source inside the flux surface. Cumulative volume integral of the
         source term for the electron density equation."""
         return self.particles.I
 
-    @sp_property(units="W.m^-3")
-    def energy(self) -> Expression:
-        """Source term for the electron energy equation"""
-        value = self.cache_get("energy", _not_found_)
-        if value is _not_found_:
-            if self.label == "e":
-                label = "e"
-            else:
-                label = f"ion/{self.label}"
+    energy: Expression = sp_property(units="W.m^-3")
+    """Source term for the electron energy equation"""
 
-            temperature = self.get(f".../inputs/core_profiles/{label}/temperature", zero)
-
-            value = (
-                self.cache_get("particles_decomposed/explicit_part", 0)
-                + self.cache_get("particles_decomposed/implicit_part", 0) * temperature
-            )
-
-        return value
+    energy_decomposed: _Decomposed
 
     @sp_property(units="W")
     def power_inside(self) -> Expression:
         """Power coupled to electrons inside the flux surface. Cumulative volume integral
         of the source term for the electron energy equation"""
         return self.energy.I
+
+
+@sp_tree
+class CoreSourcesElectrons(CoreSourcesSpecies):
+    label: str = "electron"
+    """ String identifying the neutral species (e.g. H, D, T, He, C, ...)"""
 
 
 @sp_tree
@@ -100,7 +106,7 @@ class CoreSourcesProfiles1D(core_sources._T_core_sources_source_profiles_1d):
 
     conductivity_parallel: Expression
 
-    electrons: CoreSourcesSpecies
+    electrons: CoreSourcesElectrons = {"label": "electrons"}
 
     ion: AoS[CoreSourcesSpecies]
 
@@ -156,6 +162,11 @@ class CoreSourcesSource(Module):
 
     def refresh(self, *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None, **kwargs):
         super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
+
+    def fetch(self, *args, **kwargs) -> CoreSourcesTimeSlice:
+        current = super().fetch(*args, **kwargs)
+
+        return current
 
 
 @sp_tree

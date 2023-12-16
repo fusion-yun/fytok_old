@@ -33,10 +33,6 @@ from spdm.numlib.bvp import solve_bvp
 
 
 class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.variables: typing.OrderedDict[str, Expression | array_type] = {}
-
     def setup(
         self,
         *previous,
@@ -49,8 +45,6 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
         **kwargs,
     ):
         current = self
-
-        previous: TransportSolverNumericsTimeSlice = previous[0] if len(previous) > 0 else None
 
         psi_norm = Function(current.grid.rho_tor_norm, current.grid.psi_norm, label=r"\bar{\psi}")(x)
 
@@ -66,32 +60,35 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
         vpr = eq_1d.dvolume_drho_tor(psi_norm)
 
-        if not isinstance(previous, TransportSolverNumerics.TimeSlice):
-            one_over_dt = zero
+        equilibrium_m = next(equilibrium.time_slice.previous)
+
+        if equilibrium_m is _not_found_:
+            one_over_dt = 0
             B0m = B0
             rho_tor_boundary_m = rho_tor_boundary
             vprm = vpr
-            variables_m = {}
         else:
-            dt = current.time - previous.time
+            dt = equilibrium.time - equilibrium_m.time
 
             if np.isclose(dt, 0.0) or dt < 0:
                 raise RuntimeError(f"dt={dt}<=0")
             else:
                 one_over_dt = one / dt
 
-            variables_m: typing.OrderedDict[str, Expression | array_type] = getattr(previous, "variables", {})
+            B0m = equilibrium_m.vacuum_toroidal_field.b0
 
-            eq_m = next(equilibrium.time_slice.previous)
+            rho_tor_boundary_m = equilibrium_m.profiles_1d.grid.rho_tor_boundary
 
-            if eq_m is _not_found_:
-                raise RuntimeError(f"Can not get equilibrium at previous time slice !")
+            vprm = equilibrium_m.profiles_1d.dvolume_drho_tor(psi_norm)
 
-            B0m = eq_m.vacuum_toroidal_field.b0
+        core_profiles_1d = core_profiles.time_slice.current.profiles_1d
 
-            rho_tor_boundary_m = eq_m.profiles_1d.grid.rho_tor_boundary
+        core_profiles_m = next(core_profiles.time_slice.previous)
 
-            vprm = eq_m.profiles_1d.dvolume_drho_tor(psi_norm)
+        if core_profiles_m is _not_found_:
+            core_profiles_1d_m = None
+        else:
+            core_profiles_1d_m = core_profiles_m.profiles_1d
 
         k_B = (B0 - B0m) / (B0 + B0m) * one_over_dt
 
@@ -118,10 +115,6 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
         gm3 = eq_1d.gm3(psi_norm)  # <|grad_rho_tor|^2>
         gm8 = eq_1d.gm8(psi_norm)  # <R>
 
-        rho_tor_norm = self.grid.rho_tor_norm
-
-        bc_pos = [rho_tor_norm[0], rho_tor_norm[-1]]
-
         trans_models: typing.List[CoreTransport.Model.TimeSlice] = [
             model.fetch(x, **variables) for model in core_transport.model
         ]
@@ -130,11 +123,8 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
             src.fetch(x, **variables) for src in core_sources.source
         ]
 
-        for idx, equ in enumerate(self.equations):
+        for idx, equ in enumerate(current.equations):
             identifier = equ.identifier
-
-            y = variables.get(identifier, zero)
-            ym = variables_m.get(identifier, zero)
 
             var_name = identifier.split("/")
 
@@ -271,7 +261,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
                 case "temperature":
                     ns = variables.get(f"{spec}/density", zero)
-                    ns_m = variables_m.get(f"{spec}/density", zero)
+                    ns_m = Path(f"{spec}/density").get(core_profiles_1d_m, zero)
 
                     energy_D = zero
                     energy_V = zero
@@ -296,7 +286,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                         source_1d = source.profiles_1d
                         Q += source_1d.get(f"{spec}/energy", zero)
 
-                    ns_flux = variables[f"{spec}/density_flux"]  # * flux_multiplier
+                    ns_flux = variables[f"{spec}/density_flux"] * flux_multiplier
 
                     a = (3 / 2) * (vpr ** (5 / 3)) * ns * one_over_dt
 
@@ -363,7 +353,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
                     ns_flux = variables.get(f"{spec}/density_flux", zero)
 
-                    ns_m = variables_m.get(f"{spec}/density", zero)
+                    ns_m = Path(f"{spec}/density").get(core_profiles_1d_m, zero)
 
                     a = (vpr ** (5 / 3)) * ms * ns * one_over_dt
 
@@ -411,7 +401,33 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                 case _:
                     raise RuntimeError(f"Unknown equation of {equ.identifier}!")
 
+            ym = Path(identifier).get(core_profiles_1d_m, zero)(x)
+
             equ["coefficient"] = [*bc_value, a, b, c, d, e, f, g, ym]
+
+        if current.Y0 is None:
+            rho_tor_norm = self.grid.rho_tor_norm
+
+            current.Y0 = np.zeros([len(self.equations) * 2, len(rho_tor_norm)])
+
+            for idx, equ in enumerate(current.equations):
+                if equ.profile is not _not_found_:
+                    current.Y0[idx * 2] = np.full_like(rho_tor_norm, equ.profile)
+                else:
+                    current.Y0[idx * 2] = Path(identifier).get(core_profiles_1d, zero)(rho_tor_norm)
+
+            for idx, equ in enumerate(current.equations):
+                if equ.flux is not _not_found_ and equ.flux != 0:
+                    current.Y0[idx * 2 + 1] = np.full_like(rho_tor_norm, equ.flux)
+                else:
+                    # flux = Path(f"{identifier}_flux").get(core_profiles_1d, _not_found_)
+                    # if flux is not _not_found_:
+                    #     current.Y0[idx * 2 + 1] = flux(rho_tor_norm)
+                    # else:
+                    bc0, bc1, a, b, c, d, e, f, g, ym = equ.coefficient
+                    y = current.Y0[idx * 2]
+                    yp = derivative(y, rho_tor_norm)
+                    current.Y0[idx * 2 + 1] = -d(rho_tor_norm, *current.Y0) * yp + e(rho_tor_norm, *current.Y0) * y
 
     def func(self, x: array_type, Y: array_type, *args) -> array_type:
         res = np.zeros([len(self.equations) * 2, x.size])
@@ -420,35 +436,27 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
         for idx, equ in enumerate(self.equations):
             y = Y[idx * 2]
             flux = Y[idx * 2 + 1]
-            try:
-                bc0, bc1, a, b, c, d, e, f, g, ym = equ.coefficient
 
-                a = a(x, *Y, *args)
-                b = b(x, *Y, *args)
-                c = c(x, *Y, *args)
-                d = d(x, *Y, *args)
-                e = e(x, *Y, *args)
-                f = f(x, *Y, *args)
-                g = g(x, *Y, *args)
-                ym = ym(x)
+            bc0, bc1, a, b, c, d, e, f, g, ym = equ.coefficient
 
-            except Exception as error:
-                # a, b, c, d, e, f, g, *_ = equ.coefficient
+            a = a(x, *Y, *args) if isinstance(a, Expression) else a
+            b = b(x, *Y, *args) if isinstance(b, Expression) else b
+            c = c(x, *Y, *args) if isinstance(c, Expression) else c
+            d = d(x, *Y, *args) if isinstance(d, Expression) else d
+            e = e(x, *Y, *args) if isinstance(e, Expression) else e
+            f = f(x, *Y, *args) if isinstance(f, Expression) else f
+            g = g(x, *Y, *args) if isinstance(g, Expression) else g
+            ym = ym(x) if isinstance(ym, Expression) else ym
 
-                logger.error(equ.identifier)
-                logger.error((x, Y))
-                # logger.error(equ.d_dr)
-                # logger.error(equ.dflux_dr)
+            yp = derivative(y, x)
 
-                raise RuntimeError(
-                    f"Failure to calculate the equation of {self.equations[int(idx/2)].identifier}{'_flux' if int(idx/2)*2!=idx else ''} {equ}   !"
-                ) from error
-
-            d_dr = (-flux + e * y + hyper_diff * derivative(y, x)) / (d + hyper_diff)
+            d_dr = (-flux + e * y + hyper_diff * yp) / (d + hyper_diff)
 
             dy_dt = a * y - b * ym
 
-            dflux_dr = (f - g * y - dy_dt + hyper_diff * derivative(flux, x)) / (1.0 / c + hyper_diff)
+            fluxp = derivative(flux, x)
+
+            dflux_dr = (f - g * y - dy_dt + hyper_diff * fluxp) / (1.0 / c + hyper_diff)
 
             res[idx * 2] = d_dr
             res[idx * 2 + 1] = dflux_dr
@@ -492,25 +500,11 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
     def solve(self, variables: typing.Dict[str, Expression]):
         current = self
 
-        x = self.grid.rho_tor_norm
-
-        num_of_equation = len(self.equations)
-
-        Y0 = np.zeros([num_of_equation * 2, len(x)])
-
-        for idx, equ in enumerate(current.equations):
-            Y0[idx * 2] = y = array_like(x, equ.profile)
-
-        for idx, equ in enumerate(current.equations):
-            bc0, bc1, a, b, c, d, e, f, g, ym = equ.coefficient
-            y = Y0[idx * 2]
-            Y0[idx * 2 + 1] = -d(x, *Y0) * derivative(y, x) + e(x, *Y0)
-
         sol = solve_bvp(
             current.func,
             current.bc,
-            x,
-            Y0,
+            current.grid.rho_tor_norm,
+            current.Y0,
             bvp_rms_mask=current.control_parameters.bvp_rms_mask,
             tolerance=current.control_parameters.tolerance,
             max_nodes=current.control_parameters.max_nodes or 0,
@@ -519,14 +513,13 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
         current["grid"] = current.grid.remesh(sol.x)
 
+        self.Y0 = sol.y
+
         for idx, equ in enumerate(current.equations):
             equ["profile"] = sol.y[2 * idx]
-            equ["d_dr"] = sol.yp[2 * idx]
             equ["flux"] = sol.y[2 * idx + 1]
+            equ["d_dr"] = sol.yp[2 * idx]
             equ["dflux_dr"] = sol.yp[2 * idx + 1]
-
-        for k in list(variables.keys()):
-            current.variables[k] = variables[k](sol.x, *sol.y)
 
         logger.debug(f"Solve BVP { 'success' if sol.success else 'failed'}: {sol.message} , {sol.niter} iterations")
 
@@ -549,7 +542,7 @@ class FyTrans(TransportSolverNumerics):
 
     def execute(self, current: FyTransTimeSlice, *previous: FyTransTimeSlice) -> FyTransTimeSlice:
         current = super().execute(current, *previous)
-         
+
         current.setup(
             x=self.primary_coordinate,
             variables=self.variables,

@@ -95,8 +95,6 @@ class TransportSolverNumericsTimeSlice(TimeSlice):
 
     primary_coordinate: Variable
 
-    variables: typing.OrderedDict[str, Expression | array_type]
-
     equations: AoS[TransportSolverNumericsEquation]
     """ Set of transport equations"""
 
@@ -109,6 +107,8 @@ class TransportSolverNumericsTimeSlice(TimeSlice):
     d_dvolume_drho_tor_dt: Expression = sp_property(units="m^2.s^-1")
     """ Partial derivative with respect to time of the derivative of the volume with
       respect to the toroidal flux coordinate"""
+
+    Y0: array_type = None
 
 
 @sp_tree
@@ -185,33 +185,20 @@ class TransportSolverNumerics(IDS):
                 }
             )
 
-        variables["electrons/temperature"] = Variable(
-            (index := index + 1),
-            "electrons/temperature",
-            label=r"T_{e}",
-        )
-
-        variables["electrons/temperature_flux"] = Variable(
-            (index := index + 1),
-            "electrons/temperature",
-            label=r"H_{Te}",
-        )
-
-        equations.append(
-            {
-                "identifier": "electrons/temperature",
-                "boundary_condition_type": self.boundary_condition_type.get("electrons/temperature", (2, 1)),
-            }
-        )
-
         n_e = zero
         flux_e = zero
+
         for s in self.species:
-            variables[f"ion/{s}/density"] = ns = Variable((index := index + 1), f"ion/{s}/density", label=rf"n_{s}")
+            variables[f"ion/{s}/density"] = ns = Variable(
+                (index := index + 1),
+                f"ion/{s}/density",
+                label=rf"n_{s}",
+            )
 
             variables[f"ion/{s}/density_flux"] = ns_flux = Variable(
                 (index := index + 1), f"ion/{s}/density_flux", label=rf"\Gamma_{s}"
             )
+
             equations.append(
                 {
                     "identifier": f"ion/{s}/density",
@@ -220,11 +207,15 @@ class TransportSolverNumerics(IDS):
             )
 
             variables[f"ion/{s}/temperature"] = Variable(
-                (index := index + 1), f"ion/{s}/temperature", label=rf"T_{{{s}}}"
+                (index := index + 1),
+                f"ion/{s}/temperature",
+                label=rf"T_{{{s}}}",
             )
 
             variables[f"ion/{s}/temperature_flux"] = Variable(
-                (index := index + 1), f"ion/{s}/temperature_flux", label=rf"H_{{{s}}}"
+                (index := index + 1),
+                f"ion/{s}/temperature_flux",
+                label=rf"H_{{{s}}}",
             )
 
             equations.append(
@@ -252,6 +243,25 @@ class TransportSolverNumerics(IDS):
             z = atoms[s].z
             n_e -= z * ns
             flux_e -= z * ns_flux
+
+        # variables["electrons/temperature"] = Variable(
+        #     (index := index + 1),
+        #     "electrons/temperature",
+        #     label=r"T_{e}",
+        # )
+
+        # variables["electrons/temperature_flux"] = Variable(
+        #     (index := index + 1),
+        #     "electrons/temperature",
+        #     label=r"H_{Te}",
+        # )
+
+        # equations.append(
+        #     {
+        #         "identifier": "electrons/temperature",
+        #         "boundary_condition_type": self.boundary_condition_type.get("electrons/temperature", (2, 1)),
+        #     }
+        # )
 
         # quasi neutrality condition
         variables["electrons/density"] = n_e
@@ -327,3 +337,13 @@ class TransportSolverNumerics(IDS):
             core_profiles=core_profiles,
             **kwargs,
         )
+
+    def fetch(self, *args, **kwargs):
+        """获得 CoreProfiles.TimeSlice.Profiles1D 形式状态树。"""
+        current = self.time_slice.current
+        res = {"grid": current.grid}
+        X = current.grid.rho_tor_norm
+        Y = current.Y0
+        for k, v in self.variables.items():
+            res = Path(k).update(res, v(X, *Y))
+        return res

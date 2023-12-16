@@ -590,7 +590,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
 
     @sp_property(label=r"\frac{dV}{d\rho_{tor}}")
     def dvolume_drho_tor(self) -> Expression:
-        return self._coord._s_eBp_2PI * self._root.vacuum_toroidal_field.b0 * self.dvolume_dpsi * self.dpsi_drho_tor
+        return self._coord._s_eBp_2PI * np.abs(self._root.vacuum_toroidal_field.b0) * self.dvolume_dpsi * self.dpsi_drho_tor
 
     @sp_property
     def volume(self) -> Expression:

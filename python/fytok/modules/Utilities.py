@@ -200,15 +200,16 @@ class CoreRadialGrid:
             self._cache["rho_tor_boundary"] = rho_tor[-1]
             self._cache["rho_tor_norm"] = rho_tor / rho_tor[-1]
 
-    def __copy__(self):
-        return self.__class__(
+    def __serialize__(self, dumper=None):
+        return HTree._do_serialize(
             {
                 "psi_norm": self.psi_norm,
                 "rho_tor_norm": self.rho_tor_norm,
                 "psi_axis": self.psi_axis,
                 "psi_boundary": self.psi_boundary,
                 "rho_tor_boundary": self.rho_tor_boundary,
-            }
+            },
+            dumper,
         )
 
     def remesh(self, *args, **kwargs) -> CoreRadialGrid:
