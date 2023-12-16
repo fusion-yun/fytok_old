@@ -272,24 +272,22 @@ class TransportSolverNumerics(IDS):
 
         logger.debug(f" Variables : {[k for k,v in self.variables.items() if isinstance(v,Variable)]}")
 
-    def preprocess(
-        self, *args, grid=_not_found_, initial_value=None, boundary_value=None, **kwargs
-    ) -> TransportSolverNumericsTimeSlice:
-        current = super().preprocess(*args, **kwargs)
+    def preprocess(self, *args, initial_value=None, boundary_value=None, **kwargs) -> TransportSolverNumericsTimeSlice:
+        current: TransportSolverNumericsTimeSlice = super().preprocess(*args, **kwargs)
 
-        equilibrium: Equilibrium.TimeSlice = self.inputs.get_source("equilibrium").time_slice.current
+        grid = current.cache_get("grid", _not_found_)
 
-        assert math.isclose(equilibrium.time, self.time), f"{equilibrium.time} != {current.time}"
+        if not isinstance(grid, CoreRadialGrid):
+            equilibrium: Equilibrium.TimeSlice = self.inputs.get_source("equilibrium").time_slice.current
 
-        # TODO: 根据时间获取时间片, 例如：
-        #   eq:Equilibrium.TimeSlice= equilibrium.time_slice.get(self.time)
-        #   current["grid"] = eq.profiles_1d.grid.duplicate(rho_tor_norm)
+            # TODO: 根据时间获取时间片, 例如：
+            # assert math.isclose(equilibrium.time, self.time), f"{equilibrium.time} != {current.time}"
+            #   eq:Equilibrium.TimeSlice= equilibrium.time_slice.get(self.time)
+            #   current["grid"] = eq.profiles_1d.grid.duplicate(rho_tor_norm)
 
-        if grid is _not_found_:
-            rho_tor_norm = self.code.parameters.get("rho_tor_norm", None)
-            current["grid"] = equilibrium.profiles_1d.grid.remesh(rho_tor_norm)
-        else:
-            current["grid"] = equilibrium.profiles_1d.grid.remesh(grid)
+            rho_tor_norm = kwargs.get("rho_tor_norm", self.code.parameters.get("rho_tor_norm", None))
+
+            current.grid = equilibrium.profiles_1d.grid.remesh(rho_tor_norm)
 
         if initial_value is None:
             initial_value = {}

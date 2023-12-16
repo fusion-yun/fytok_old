@@ -151,14 +151,9 @@ class CoreSourcesSource(Module):
         if not isinstance(grid, CoreRadialGrid):
             equilibrium: Equilibrium.TimeSlice = self.inputs.get_source("equilibrium").time_slice.current
 
-            if current.time is _not_found_ or current.time is None:
-                current.time = equilibrium.time
+            rho_tor_norm = kwargs.get("rho_tor_norm", self.code.parameters.get("rho_tor_norm", None))
 
-            assert math.isclose(equilibrium.time, self.time), f"{equilibrium.time} != {self.time}"
-
-            current["profiles_1d/grid"] = equilibrium.profiles_1d.grid.remesh(
-                grid, rho_tor_norm=self.code.parameters.get("rho_tor_norm", None)
-            )
+            current["profiles_1d/grid"] = equilibrium.profiles_1d.grid.remesh(grid, rho_tor_norm=rho_tor_norm)
 
     def refresh(self, *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None, **kwargs):
         super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)

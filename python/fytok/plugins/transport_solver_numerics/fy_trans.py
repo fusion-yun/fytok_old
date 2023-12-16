@@ -513,7 +513,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
         current["grid"] = current.grid.remesh(sol.x)
 
-        self.Y0 = sol.y
+        current.Y0 = sol.y
 
         for idx, equ in enumerate(current.equations):
             equ["profile"] = sol.y[2 * idx]
