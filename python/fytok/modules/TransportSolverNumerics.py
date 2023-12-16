@@ -154,66 +154,55 @@ class TransportSolverNumerics(IDS):
 
         # 定义 equation 和 variable
         if self.primary_coordinate == "rho_tor_norm":
-            self._cache["primary_coordinate"] = Variable(
-                (index := 0), self.primary_coordinate, label=r"\bar{\rho}_{tor}"
-            )
+            self._cache["primary_coordinate"] = Variable((i := 0), self.primary_coordinate, label=r"\bar{\rho}_{tor}")
 
         elif isinstance(self.primary_coordinate, str):
-            self._cache["primary_coordinate"] = Variable((index := 0), self.primary_coordinate)
+            self._cache["primary_coordinate"] = Variable((i := 0), self.primary_coordinate)
 
         else:
-            index = 0
+            i = 0
 
         variables = {}
 
-        if enabla_current_diffusion:
-            variables["psi"] = Variable(
-                (index := index + 1),
-                "psi",
-                label=r"\psi",
-            )
-            variables["psi_flux"] = Variable(
-                (index := index + 1),
-                "psi",
-                label=r"\Gamma_{\psi}",
-            )
+        bc_type = self.boundary_condition_type
 
-            equations.append(
-                {
-                    "identifier": "psi",
-                    "boundary_condition_type": self.boundary_condition_type.get("psi", (2, 1)),
-                }
-            )
+        if enabla_current_diffusion:
+            variables["psi"] = Variable((i := i + 1), "psi", label=r"\psi")
+            variables["psi_flux"] = Variable((i := i + 1), "psi", label=r"\Gamma_{\psi}")
+            equations.append({"identifier": "psi", "boundary_condition_type": bc_type.get("psi", (2, 1))})
 
         n_e = zero
         flux_e = zero
 
         for s in self.species:
             variables[f"ion/{s}/density"] = ns = Variable(
-                (index := index + 1),
+                (i := i + 1),
                 f"ion/{s}/density",
                 label=rf"n_{s}",
             )
 
             variables[f"ion/{s}/density_flux"] = ns_flux = Variable(
-                (index := index + 1), f"ion/{s}/density_flux", label=rf"\Gamma_{s}"
+                (i := i + 1),
+                f"ion/{s}/density_flux",
+                label=rf"\Gamma_{s}",
             )
 
             equations.append(
                 {
                     "identifier": f"ion/{s}/density",
-                    "boundary_condition_type": self.boundary_condition_type.get(f"ion/{s}/density", (2, 1)),
+                    "boundary_condition_type": bc_type.get(f"ion/{s}/density", None)
+                    or bc_type.get(f"*/density", (2, 1)),
                 }
             )
 
             variables[f"ion/{s}/temperature"] = Variable(
-                (index := index + 1),
+                (i := i + 1),
                 f"ion/{s}/temperature",
                 label=rf"T_{{{s}}}",
             )
 
             variables[f"ion/{s}/temperature_flux"] = Variable(
-                (index := index + 1),
+                (i := i + 1),
                 f"ion/{s}/temperature_flux",
                 label=rf"H_{{{s}}}",
             )
@@ -221,47 +210,55 @@ class TransportSolverNumerics(IDS):
             equations.append(
                 {
                     "identifier": f"ion/{s}/temperature",
-                    "boundary_condition_type": self.boundary_condition_type.get(f"ion/{s}/temperature", (2, 1)),
+                    "boundary_condition_type": bc_type.get(f"ion/{s}/temperature", None)
+                    or bc_type.get(f"*/temperature", (2, 1)),
                 }
             )
 
             if enabla_momentum:
                 variables[f"ion/{s}/momentum"] = ns = Variable(
-                    (index := index + 1), f"ion/{s}/momentum", label=rf"u_{s}"
+                    (i := i + 1),
+                    f"ion/{s}/momentum",
+                    label=rf"u_{s}",
                 )
+
                 variables[f"ion/{s}/momentum_flux"] = ns_flux = Variable(
-                    (index := index + 1), f"ion/{s}/momentum_flux", label=rf"U_{s}"
+                    (i := i + 1),
+                    f"ion/{s}/momentum_flux",
+                    label=rf"U_{s}",
                 )
 
                 equations.append(
                     {
                         "identifier": f"ion/{s}/momentum",
-                        "boundary_condition_type": self.boundary_condition_type.get(f"ion/{s}/momentum", (2, 1)),
+                        "boundary_condition_type": bc_type.get(f"ion/{s}/momentum", None)
+                        or bc_type.get(f"*/momentum", (2, 1)),
                     }
                 )
 
             z = atoms[s].z
-            n_e -= z * ns
-            flux_e -= z * ns_flux
+            n_e += z * ns
+            flux_e += z * ns_flux
 
-        # variables["electrons/temperature"] = Variable(
-        #     (index := index + 1),
-        #     "electrons/temperature",
-        #     label=r"T_{e}",
-        # )
+        variables["electrons/temperature"] = Variable(
+            (i := i + 1),
+            "electrons/temperature",
+            label=r"T_{e}",
+        )
 
-        # variables["electrons/temperature_flux"] = Variable(
-        #     (index := index + 1),
-        #     "electrons/temperature",
-        #     label=r"H_{Te}",
-        # )
+        variables["electrons/temperature_flux"] = Variable(
+            (i := i + 1),
+            "electrons/temperature",
+            label=r"H_{Te}",
+        )
 
-        # equations.append(
-        #     {
-        #         "identifier": "electrons/temperature",
-        #         "boundary_condition_type": self.boundary_condition_type.get("electrons/temperature", (2, 1)),
-        #     }
-        # )
+        equations.append(
+            {
+                "identifier": "electrons/temperature",
+                "boundary_condition_type": bc_type.get("electrons/temperature", None)
+                or bc_type.get(f"*/temperature", (2, 1)),
+            }
+        )
 
         # quasi neutrality condition
         variables["electrons/density"] = n_e
