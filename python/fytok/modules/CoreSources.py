@@ -158,11 +158,6 @@ class CoreSourcesSource(Module):
     def refresh(self, *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None, **kwargs):
         super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
-    def fetch(self, *args, **kwargs) -> CoreSourcesTimeSlice:
-        current = super().fetch(*args, **kwargs)
-
-        return current
-
 
 @sp_tree
 class CoreSources(IDS):

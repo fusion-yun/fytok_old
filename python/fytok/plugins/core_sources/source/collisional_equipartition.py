@@ -7,7 +7,7 @@ from fytok.modules.Equilibrium import Equilibrium
 from fytok.utils.atoms import atoms
 from spdm.utils.tags import _next_, _not_found_
 from spdm.data.sp_property import sp_tree
-from spdm.data.Expression import Expression, Variable
+from spdm.data.Expression import Expression, Variable, zero
 
 
 @sp_tree
@@ -43,23 +43,29 @@ class CollisionalEquipartition(CoreSources.Source):
         coeff = (3 / 2) * e / (mp / me / 2) / tau_e
 
         core_source_1d_ion = []
+
+        Qei = zero
+
         for ion in core_profiles_1d.ion:
             ns = variables.get(f"ion/{ion.label}/density", _not_found_)
+
             if ns is _not_found_:
                 ns = ion.density(x)
+
             Ts = variables.get(f"ion/{ion.label}/temperature", _not_found_)
+
             if Ts is _not_found_:
                 Ts = ion.temperature(x)
-            core_source_1d_ion.append(
-                {
-                    "label": ion.label,
-                    "energy": (ns * (ion.z**2) / ion.a * (Te - Ts) * coeff),
-                }
-            )
+
+            Qie = ns * (ion.z**2) / ion.a * (Te - Ts) * coeff
+
+            core_source_1d_ion.append({"label": ion.label, "energy": Qie})
+
+            Qei -= Qie
 
         core_source_1d["ion"] = core_source_1d_ion
 
-        core_source_1d.electrons["energy"] = -sum([ion.energy(x) for ion in core_source_1d.ion], 0)
+        core_source_1d.electrons["energy"] = Qei
 
         return current
 
