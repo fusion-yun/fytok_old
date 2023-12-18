@@ -31,14 +31,10 @@ class CoreProfilesIon(utilities._T_core_profile_ions):
         if self.cache_get("label", _not_found_) is _not_found_:
             self._cache["label"] = self._metadata.get("name")
 
-        atom_desc = atoms.get(self.label.capitalize(), None)
+        atom_desc = atoms.get(self.label.capitalize())
 
         self.z = atom_desc["z"]
         self.a = atom_desc["a"]
-
-    is_impurity: bool = sp_property(default_value=False)
-
-    has_fast_particle: bool = sp_property(default_value=False)
 
     label: str
 
@@ -48,20 +44,7 @@ class CoreProfilesIon(utilities._T_core_profile_ions):
 
     a: float
 
-    @sp_property(unit="kg")
-    def mass(self) -> float:
-        return self.a * scipy.constants.atomic_mass
-
-    @sp_property(unit="C")
-    def charge(self) -> float:
-        return self.z * scipy.constants.elementary_charge
-
-    @sp_property(unit="C")
-    def z_ion_1d(self) -> Expression:
-        value = self.cache_get("z_ion_id", _not_found_)
-        if value is _not_found_:
-            value = self.z
-        return value
+    z_ion_1d: Expression = sp_property(unit="C")
 
     @sp_property
     def z_ion_square_1d(self) -> Expression:

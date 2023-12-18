@@ -5,30 +5,29 @@ from fytok.modules.CoreProfiles import CoreProfiles
 from fytok.modules.CoreSources import CoreSources
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.utils.atoms import atoms
-from spdm.utils.tags import _next_
+from spdm.utils.tags import _next_, _not_found_
 from spdm.data.sp_property import sp_tree
 from spdm.data.Expression import Expression, Variable
 
 
-@CoreSources.Source.register(["collisional_equipartition"])
 @sp_tree
 class CollisionalEquipartition(CoreSources.Source):
     identifier = "collisional_equipartition"
     code = {"name": "collisional_equipartition", "description": "Collisional Energy Tansport "}
 
-    def fetch(self, x: Variable, **vars: typing.Dict[str, Expression]) -> CoreSources.Source.TimeSlice:
-        res: CoreSources.Source.TimeSlice = super().fetch(x, **vars)
+    def preprocess(self, *args, **kwargs):
+        super().preprocess(*args, **kwargs)
 
-        core_source_1d = res.profiles_1d
-
-        # equilibrium: Equilibrium = self.inputs.get_source("equilibrium")
+    def fetch(self, x: Variable, **variables: typing.Dict[str, Expression]) -> CoreSources.Source.TimeSlice:
+        current: CoreSources.Source.TimeSlice = super().fetch()
 
         core_profiles: CoreProfiles = self.inputs.get_source("core_profiles")
-
         core_profiles_1d = core_profiles.time_slice.current.profiles_1d
 
-        Te = core_profiles_1d.electrons.temperature(x)
-        ne = core_profiles_1d.electrons.density(x)
+        core_source_1d = current.profiles_1d
+
+        Te = variables.get("electrons/temperature")
+        ne = variables.get("electrons/density")
 
         gamma_ei = 15.2 - np.log(ne) / np.log(1.0e20) + np.log(Te) / np.log(1.0e3)
         epsilon = scipy.constants.epsilon_0
@@ -43,17 +42,29 @@ class CollisionalEquipartition(CoreSources.Source):
 
         coeff = (3 / 2) * e / (mp / me / 2) / tau_e
 
-        core_source_1d["ion"] = [
-            {"label": ion.label, "energy": (ion.density(x) * (ion.z**2) / ion.a * (Te - ion.temperature(x)) * coeff)}
-            for ion in core_profiles_1d.ion
-        ]
+        core_source_1d_ion = []
+        for ion in core_profiles_1d.ion:
+            ns = variables.get(f"ion/{ion.label}/density", _not_found_)
+            if ns is _not_found_:
+                ns = ion.density(x)
+            Ts = variables.get(f"ion/{ion.label}/temperature", _not_found_)
+            if Ts is _not_found_:
+                Ts = ion.temperature(x)
+            core_source_1d_ion.append(
+                {
+                    "label": ion.label,
+                    "energy": (ns * (ion.z**2) / ion.a * (Te - Ts) * coeff),
+                }
+            )
+
+        core_source_1d["ion"] = core_source_1d_ion
 
         core_source_1d.electrons["energy"] = -sum([ion.energy(x) for ion in core_source_1d.ion], 0)
 
-        return res
+        return current
 
     def fetch_old(self, x: Variable, **vars: typing.Dict[str, Expression]) -> CoreSources.Source.TimeSlice:
-        res: CoreSourcesTimeSlice = super().fetch(x, **vars)
+        res = super().fetch(x, **vars)
 
         ns = vars[f"{spec}/density"]
 
@@ -88,3 +99,6 @@ class CollisionalEquipartition(CoreSources.Source):
             q_implicit += nj * (zj**2) / aj * coeff
 
         return q_explicit, q_implicit
+
+
+CoreSources.Source.register(["collisional_equipartition"], CollisionalEquipartition)

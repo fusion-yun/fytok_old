@@ -121,7 +121,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         if len(x_points) == 0:
             raise RuntimeError(f"Can not find X-point!")
-
+         
         self.magnetic_axis = Point(o_points[0].r, o_points[0].z)
 
         self.psi_axis = o_points[0].value
@@ -135,7 +135,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
             (self.psirz.__array__() - self.psi_axis) / (self.psi_boundary - self.psi_axis),
             mesh=self.psirz.mesh,
             name="psirz_norm",
-            label=r"$\psi_{norm}$",
+            label=r"\psi_{norm}",
             _parent=self,
         )
 
@@ -212,15 +212,15 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
     pprime: Expression = sp_property(name=" dp_dpsi", label=r" \frac{dP}{d\psi}")
 
-    @sp_property
+    @sp_property(label="f")
     def f(self) -> Expression:
         return np.sqrt(2.0 * (self.psi_boundary - self.psi_axis) * self.ffprime.I + (self._B0 * self._R0) ** 2)
 
-    @sp_property
+    @sp_property(label=r"\psi")
     def psi(self) -> Expression:
         return self.psi_norm * (self.psi_boundary - self.psi_axis) + self.psi_axis
 
-    @sp_property
+    @sp_property(label=r"\phi")
     def phi(self) -> Expression:
         return self.dphi_dpsi.I * (self.psi_boundary - self.psi_axis)
 
@@ -228,19 +228,19 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     def phi_boundary(self) -> float:
         return self.phi(1.0)
 
-    @sp_property
+    @sp_property(label=r"\frac{d\phi}{d\psi}")
     def dphi_dpsi(self) -> Expression:
         return self.f * self.surface_integral(1.0 / (_R**2))
 
-    @sp_property
+    @sp_property(label=r"q")
     def q(self) -> Expression:
         return self.dphi_dpsi * (self._s_eBp_2PI / (2.0 * scipy.constants.pi))
 
-    @sp_property
+    @sp_property(label=r"\rho_{tor}")
     def rho_tor(self) -> Expression:
         return np.sqrt(np.abs(self.phi / (scipy.constants.pi * self._B0)))
 
-    @sp_property
+    @sp_property(label=r"\bar{\rho}_{tor}")
     def rho_tor_norm(self) -> Expression:
         return np.sqrt(self.phi / self.phi_boundary)
 
@@ -250,7 +250,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
     @sp_property
     def dvolume_dpsi(self) -> Expression:
-        return Expression(*self._surface_integral(1.0), name="dvolume_dpsi", label=r"\frac{d volume}{d\psi}")
+        return Expression(*self._surface_integral(1.0), name="dvolume_dpsi", label=r"\frac{d V}{d\psi}")
 
     #################################
     # profiles 2d
@@ -300,18 +300,18 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         r"""$B_{pol}= \left|\nabla \psi \right|/2 \pi R $"""
         return np.sqrt(self.b_field_r**2 + self.b_field_z**2)
 
-    @sp_property
+    @sp_property(label="B_{r}")
     def b_field_r(self) -> Expression:
         """COCOS Eq.19 [O. Sauter and S.Yu. Medvedev, Computer Physics Communications 184 (2013) 293]"""
         return self.psirz.pd(0, 1) / _R * (self._s_RpZ * self._s_Bp / self._s_eBp_2PI)
 
-    @sp_property
+    @sp_property(label="B_{z}")
     def b_field_z(self) -> Expression:
         return -self.psirz.pd(1, 0) / _R * (self._s_RpZ * self._s_Bp / self._s_eBp_2PI)
 
-    @sp_property
+    @sp_property #(label="B_{tor}")
     def b_field_tor(self) -> Expression:
-        return self.f(self.psirz_norm) / _R
+        return self.f(self.psirz_norm)  / _R
 
     @sp_property
     def B2(self) -> Expression:
@@ -504,7 +504,11 @@ class FyEquilibriumGlobalQuantities(Equilibrium.TimeSlice.GlobalQuantities):
     def magnetic_axis(self) -> Equilibrium.TimeSlice.GlobalQuantities.MagneticAxis:
         """Magnetic axis position and toroidal field"""
         r, z = self._coord.magnetic_axis
-        return {"r": r, "z": z, "b_field_tor": self._coord.b_field_tor(r, z)}
+        return {
+            "r": r,
+            "z": z,
+            "b_field_tor": self._coord.b_field_tor(r, z),
+        }
 
     @sp_property
     def q_axis(self) -> float:
@@ -590,7 +594,12 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
 
     @sp_property(label=r"\frac{dV}{d\rho_{tor}}")
     def dvolume_drho_tor(self) -> Expression:
-        return self._coord._s_eBp_2PI * np.abs(self._root.vacuum_toroidal_field.b0) * self.dvolume_dpsi * self.dpsi_drho_tor
+        return (
+            self._coord._s_eBp_2PI
+            * np.abs(self._root.vacuum_toroidal_field.b0)
+            * self.dvolume_dpsi
+            * self.dpsi_drho_tor
+        )
 
     @sp_property
     def volume(self) -> Expression:

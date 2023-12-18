@@ -47,7 +47,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
         x = self.primary_coordinate
         variables = self.variables
 
-        psi_norm = Function(current.grid.rho_tor_norm, current.grid.psi_norm, label=r"\bar{\psi}")(x)
+        psi_norm = Function(current.grid.rho_tor_norm, current.grid.psi_norm, label=r"\bar{\psi}_{norm}")(x)
 
         # 设定全局参数
         eq_1d = equilibrium.time_slice.current.profiles_1d
@@ -110,7 +110,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
         # $q$ safety factor                                 [-]
         qsf = eq_1d.q(psi_norm)
-
+        gm1 = eq_1d.gm1
         gm1 = eq_1d.gm1(psi_norm)  # <1/R^2>
         gm2 = eq_1d.gm2(psi_norm)  # <|grad_rho_tor|^2/R^2>
         gm3 = eq_1d.gm3(psi_norm)  # <|grad_rho_tor|^2>
