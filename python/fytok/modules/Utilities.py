@@ -60,7 +60,7 @@ class Code:
     library: List[Library]
 
     def __str__(self) -> str:
-        return ",".join([s for s in [self.name, self.version, self.copyright] if s is not _not_found_])
+        return "-".join([s for s in [self.name, self.version, self.copyright] if s is not _not_found_])
 
     def __repr__(self) -> str:
         desc = {

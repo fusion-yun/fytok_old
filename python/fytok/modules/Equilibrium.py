@@ -129,7 +129,7 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
     dphi_dpsi: Expression = sp_property(label=r"\frac{d\phi}{d\psi}", units="-")
 
     phi: Expression = sp_property(units="Wb", label=r"\phi")
-    
+
     q: Expression
 
     pressure: Expression = sp_property(units="Pa", label=r"P")
@@ -190,7 +190,7 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
     dvolume_dpsi: Expression = sp_property(units="m^3.Wb^-1")
 
-    dvolume_drho_tor: Expression = sp_property(units="m^2", label=r"\frac{dvolume}{d\rho_{tor}}")
+    dvolume_drho_tor: Expression = sp_property(units="m^2", label=r"V^{\prime}")
 
     area: Expression = sp_property(units="m^2")
 

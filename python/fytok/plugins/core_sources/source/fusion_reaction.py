@@ -1,7 +1,7 @@
 import typing
 from fytok.utils.atoms import nuclear_reaction
 from fytok.modules.CoreSources import CoreSources
-from spdm.data.Expression import Variable, Expression
+from spdm.data.Expression import Variable, Expression, zero
 from spdm.data.sp_property import sp_tree
 
 
@@ -16,13 +16,13 @@ class FusionReaction(CoreSources.Source):
 
     $\\alpha$输运模型参考[@angioniGyrokineticCalculationsDiffusive2008; @angioniGyrokineticSimulationsImpurity2009]
 
-    * energetic $\\alpha$ particle density $n_{\\alpha}$
+    * energetic $\\alpha$ particle density_thermal $n_{\\alpha}$
 
     $$
     \\frac{\\partial n_{\\alpha}}{\\partial t}+\\nabla\\left(-D_{\\alpha}\\nabla n_{\\alpha}+Vn_{\\alpha}\\right)=-\\frac{n_{\\alpha}}{\\tau_{sd}^{*}}+n_{D}n_{T}\\left\\langle \\sigma v\\right\\rangle _{DT}
     $$
 
-    * $He$ ash density $n_{He}$
+    * $He$ ash density_thermal $n_{He}$
 
     $$
     \\frac{\\partial n_{He}}{\\partial t}+\\nabla\\left(-D_{He}\\nabla n_{He}+Vn_{He}\\right)=\\frac{n_{\\alpha}}{\\tau_{sd}^{*}}
@@ -50,39 +50,37 @@ class FusionReaction(CoreSources.Source):
     """
 
     identifier = "fusion"
-    code = {"name": "fusion_reaction", "description": r"Burning $D + T \rightarrow \alpha$"}  # type: ignore
+    code = {"name": "fusion_reaction", "description": "Fusion reaction"}  # type: ignore
 
-    def fetch(self, x: Variable, **vars: Expression) -> CoreSources.Source.TimeSlice:
-        res: CoreSources.Source.TimeSlice = super().fetch(x, **vars)
+    def fetch(self, x: Variable, **variables: Expression) -> CoreSources.Source.TimeSlice:
+        reactions = self.code.parameters.reactions or []
 
-        core_source_1d = res.profiles_1d
+        source_ion = {}
 
-        reactivities = nuclear_reaction[r"D(t,n)He"].reactivities
+        for tag in reactions:
+            reaction = nuclear_reaction[tag]
 
-        nD = vars.get("ion/D/density", 0.0)
-        nT = vars.get("ion/T/density", 0.0)
-        nEP = vars.get("ion/alpha/density", 0.0)
+            r0, r1 = reaction.reactants
+            p0, p1 = reaction.products
 
-        TD = vars.get("ion/D/temperature", 0.0)
-        TT = vars.get("ion/T/temperature", 0.0)
-        Te = vars.get("electrons/temperature", 0.0)
-        ne = vars.get("electrons/density", 0.0)
+            n0 = variables.get(f"ion/{r0}/density_thermal")
+            n1 = variables.get(f"ion/{r1}/density_thermal")
+            # nEP = vars.get("ion/alpha/density_thermal", 0.0)
 
-        Ti = (nD * TD + nT * TT) / (nD + nT)
+            T0 = variables.get(f"ion/D/temperature")
+            T1 = variables.get(f"ion/T/temperature")
 
-        S = reactivities(Ti) * nT * nD
+            Ti = (n0 * T0 + n1 * T1) / (n0 + n1)
 
-        lnGamma = 17
+            S = reaction.reactivities(Ti) * n0 * n1
 
-        tau_slowing_down = 1.99 * ((Te / 1000) ** (3 / 2)) / (ne * 1.0e-19 * lnGamma)
+            source_ion.setdefault(r0, {"particles": zero})["particles"] -= S
+            source_ion.setdefault(r1, {"particles": zero})["particles"] -= S
+            source_ion.setdefault(p0, {"particles": zero})["particles"] += S
+            source_ion.setdefault(p1, {"particles": zero})["particles"] += S
 
-        core_source_1d["ion"] = [
-            {"label": "D", "particles": -S},
-            {"label": "T", "particles": -S},
-            {"label": "He", "particles": nEP / tau_slowing_down},
-            {"label": "alpha", "particles": S}, #  - nEP / tau_slowing_down
-        ]
+        current: CoreSources.Source.TimeSlice = super().fetch()
 
-        # core_source_1d.electrons["energy"] = nEP / tau_slowing_down * Te
+        current["profiles_1d/ion"] = [{"label": name, "particles": S["particles"]} for name, S in source_ion.items()]
 
-        return res
+        return current

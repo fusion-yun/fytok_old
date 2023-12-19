@@ -533,7 +533,7 @@ class FyTrans(TransportSolverNumerics):
     Solve transport equations $\rho=\sqrt{ \Phi/\pi B_{0}}$
     See  :cite:`hinton_theory_1976,coster_european_2010,pereverzev_astraautomated_1991`"""
 
-    code: Code = {"name": "fy_trans", "copyright": "fytok"}
+    code: Code = {"name": "fy_trans"}
 
     primary_coordinate: str | Variable = "rho_tor_norm"
 

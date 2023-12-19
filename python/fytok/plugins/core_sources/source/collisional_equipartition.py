@@ -27,7 +27,7 @@ class CollisionalEquipartition(CoreSources.Source):
         core_source_1d = current.profiles_1d
 
         Te = variables.get("electrons/temperature")
-        ne = variables.get("electrons/density")
+        ne = variables.get("electrons/density_thermal")
 
         gamma_ei = 15.2 - np.log(ne) / np.log(1.0e20) + np.log(Te) / np.log(1.0e3)
         epsilon = scipy.constants.epsilon_0
@@ -47,10 +47,10 @@ class CollisionalEquipartition(CoreSources.Source):
         Qei = zero
 
         for ion in core_profiles_1d.ion:
-            ns = variables.get(f"ion/{ion.label}/density", _not_found_)
+            ns = variables.get(f"ion/{ion.label}/density_thermal", _not_found_)
 
             if ns is _not_found_:
-                ns = ion.density(x)
+                ns = ion.density_thermal(x)
 
             Ts = variables.get(f"ion/{ion.label}/temperature", _not_found_)
 
@@ -72,7 +72,7 @@ class CollisionalEquipartition(CoreSources.Source):
     def fetch_old(self, x: Variable, **vars: typing.Dict[str, Expression]) -> CoreSources.Source.TimeSlice:
         res = super().fetch(x, **vars)
 
-        ns = vars[f"{spec}/density"]
+        ns = vars[f"{spec}/density_thermal"]
 
         Ts = vars[f"{spec}/temperature"]
 
@@ -93,9 +93,9 @@ class CollisionalEquipartition(CoreSources.Source):
         q_implicit = 0
 
         for k, v in vars.items():
-            if not k.endswith("density"):
+            if not k.endswith("density_thermal"):
                 continue
-            identifier = vars.get(k.removesuffix("/density"))
+            identifier = vars.get(k.removesuffix("/density_thermal"))
             nj: Expression = v
             Tj = vars.get(f"{identifier}/temperature", 0)
             spec = k.split("/")[-2]

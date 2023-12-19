@@ -71,7 +71,7 @@ class Reaction:
     reactants: List[str]
     products: List[str]
     energy: float = sp_property(units="eV")
-    reactivities: Function
+    reactivities: Function=sp_property(label=r"\sigma")
 
 
 class NuclearReaction(Dict[Reaction]):
