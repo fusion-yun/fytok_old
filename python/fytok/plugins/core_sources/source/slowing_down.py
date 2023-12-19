@@ -49,14 +49,18 @@ class SlowingDown(CoreSources.Source):
 
     code = {"name": f"slowing_down", "description": r"  $\alpha -> He$ burning and slowing down "}
 
-    def fetch(self, x: Variable, vars: typing.Dict[str, Expression], **kwargs) -> float:
-        nD: Expression | None = vars.get("ion/D/density")
-        nT = vars.get("ion/T/density")
+    def fetch(self, x: Variable, **vars: Expression) -> CoreSources.Source.TimeSlice:
+
+        Te = vars.get("electrons/temperature", 0.0)
+        ne = vars.get("electrons/density_thermal", 0.0)
+       
+        nD: Expression | None = vars.get("ion/D/density_thermal")
+        nT = vars.get("ion/T/density_thermal")
         TD = vars.get("ion/T/temperature")
         TT = vars.get("ion/T/temperature")
         Te = vars.get("electrons/temperature")
-        ne = vars.get("electrons/density")
-        nAlpha = vars.get("ion/alpha/density")
+        ne = vars.get("electrons/density_thermal")
+        nAlpha = vars.get("ion/alpha/density_thermal")
 
         res = CoreSources.Source.TimeSlice({})
 

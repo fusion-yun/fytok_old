@@ -34,7 +34,7 @@ class TransportSolverNumericsEquation:
     identifier: str
     """ Identifier of the primary quantity of the transport equation. The description
         node contains the path to the quantity in the physics IDS (example:
-        core_profiles/profiles_1d/ion/D/density)"""
+        core_profiles/profiles_1d/ion/D/density_thermal)"""
 
     profile: array_type
     """ Profile of the primary quantity"""
@@ -202,23 +202,23 @@ class TransportSolverNumerics(IDS):
         flux_e = zero
 
         for s in self.species:
-            variables[f"ion/{s}/density"] = ns = Variable(
+            variables[f"ion/{s}/density_thermal"] = ns = Variable(
                 (i := i + 1),
-                f"ion/{s}/density",
+                f"ion/{s}/density_thermal",
                 label=rf"n_{s}",
             )
 
-            variables[f"ion/{s}/density_flux"] = ns_flux = Variable(
+            variables[f"ion/{s}/density_thermal_flux"] = ns_flux = Variable(
                 (i := i + 1),
-                f"ion/{s}/density_flux",
+                f"ion/{s}/density_thermal_flux",
                 label=rf"\Gamma_{s}",
             )
 
             equations.append(
                 {
-                    "identifier": f"ion/{s}/density",
-                    "boundary_condition_type": bc_type.get(f"ion/{s}/density", None)
-                    or bc_type.get(f"*/density", (2, 1)),
+                    "identifier": f"ion/{s}/density_thermal",
+                    "boundary_condition_type": bc_type.get(f"ion/{s}/density_thermal", None)
+                    or bc_type.get(f"*/density_thermal", (2, 1)),
                 }
             )
 
@@ -289,12 +289,12 @@ class TransportSolverNumerics(IDS):
 
         for s in self.impurity:
             z_ion_1d = core_profiles_1d.get(f"ion/{s}/z_ion_1d", 0)
-            n_e += (core_profiles_1d.get(f"ion/{s}/density", 0) * z_ion_1d)(x)
-            flux_e += (core_profiles_1d.get(f"ion/{s}/density_flux", 0) * z_ion_1d)(x)
+            n_e += (core_profiles_1d.get(f"ion/{s}/density_thermal", 0) * z_ion_1d)(x)
+            flux_e += (core_profiles_1d.get(f"ion/{s}/density_thermal_flux", 0) * z_ion_1d)(x)
 
         # quasi neutrality condition
-        variables["electrons/density"] = n_e
-        variables["electrons/density_flux"] = flux_e
+        variables["electrons/density_thermal"] = n_e
+        variables["electrons/density_thermal_flux"] = flux_e
 
         current["equations"] = equations
 

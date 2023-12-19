@@ -22,9 +22,7 @@ TWOPI = 2.0 * PI
 
 
 @sp_tree(coordinate1=".../grid/rho_tor_norm")
-class CoreProfilesIon(utilities._T_core_profile_ions):
-    _metadata = {"identifier": "label"}
-
+class CoreProfilesSpecies:
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
@@ -33,46 +31,48 @@ class CoreProfilesIon(utilities._T_core_profile_ions):
 
         atom_desc = atoms.get(self.label.capitalize())
 
-        self.z = atom_desc["z"]
-        self.a = atom_desc["a"]
+        self._cache["z"] = atom_desc["z"]
+        self._cache["a"] = atom_desc["a"]
 
     label: str
-
-    neutral_index: int
 
     z: float
 
     a: float
 
-    z_ion_1d: Expression = sp_property(unit="C")
-
-    @sp_property
-    def z_ion_square_1d(self) -> Expression:
-        return self.z_ion_1d * self.z_ion_1d
-
     temperature: Expression = sp_property(units="eV")
 
-    density: Expression = sp_property(units="m^-3")
+    @sp_property(units="m^-3")
+    def density(self) -> Expression:
+        return self.density_thermal + self.density_fast
 
-    density_thermal: Expression
+    density_thermal: Expression = sp_property(units="m^-3")
 
-    density_fast: Expression
+    density_fast: Expression = sp_property(units="m^-3")
 
     @sp_property
     def pressure(self) -> Expression:
-        return self.density * self.temperature * scipy.constants.electron_volt
         # FIXME: coefficient on pressure fast
-        # return self.pressure_thermal + self.pressure_fast_perpendicular + self.pressure_fast_parallel
+        return self.pressure_thermal + self.pressure_fast_perpendicular + self.pressure_fast_parallel
 
     @sp_property
     def pressure_thermal(self) -> Expression:
         return self.density_thermal * self.temperature * scipy.constants.electron_volt
 
-    pressure_fast_perpendicular: Expression
+    pressure_fast_perpendicular: Expression = 0
 
-    pressure_fast_parallel: Expression
+    pressure_fast_parallel: Expression = 0
 
     rotation_frequency_tor: Expression = sp_property(units="rad.s^-1")
+
+
+@sp_tree(coordinate1=".../grid/rho_tor_norm")
+class CoreProfilesIon(CoreProfilesSpecies):
+    z_ion_1d: Expression = sp_property(unit="C")
+
+    @sp_property
+    def z_ion_square_1d(self) -> Expression:
+        return self.z_ion_1d * self.z_ion_1d
 
     # velocity: _T_core_profiles_vector_components_2 = sp_property(units="m.s^-1")
 
@@ -145,12 +145,7 @@ class CoreProfilesElectrons(utilities._T_core_profiles_profiles_1d_electrons):
 
     @sp_property(units="m^-3")
     def density(self) -> Expression:
-        res = self.cache_get("density", _not_found_)
-        if self.density_thermal is not _not_found_:
-            res = self.density_thermal + self.density_fast
-        elif res is _not_found_ and self._parent is not None:
-            res = -sum([ion.z_ion_1d * ion.density for ion in self._parent.ion], 0)
-        return res
+        return self.density_thermal + self.density_fast
 
     density_thermal: Expression = sp_property(units="m^-3")
 

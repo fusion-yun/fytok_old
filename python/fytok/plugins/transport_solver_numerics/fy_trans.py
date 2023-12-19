@@ -198,7 +198,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
                         bc_value += [[u, v, w]]
 
-                case "density":
+                case "density_thermal":
                     transp_D = zero
                     transp_V = zero
 
@@ -261,8 +261,8 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                         bc_value += [[u, v, w]]
 
                 case "temperature":
-                    ns = variables.get(f"{spec}/density", zero)
-                    ns_m = Path(f"{spec}/density").get(core_profiles_1d_m, zero)
+                    ns = variables.get(f"{spec}/density_thermal", zero)
+                    ns_m = Path(f"{spec}/density_thermal").get(core_profiles_1d_m, zero)
 
                     energy_D = zero
                     energy_V = zero
@@ -287,7 +287,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                         source_1d = source.profiles_1d
                         Q += source_1d.get(f"{spec}/energy", zero)
 
-                    ns_flux = variables[f"{spec}/density_flux"] * flux_multiplier
+                    ns_flux = variables[f"{spec}/density_thermal_flux"] * flux_multiplier
 
                     a = (3 / 2) * (vpr ** (5 / 3)) * ns * one_over_dt
 
@@ -350,11 +350,11 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
                     ms = atoms.get(f"{spec}/mass", np.nan)
 
-                    ns = variables.get(f"{spec}/density", zero)
+                    ns = variables.get(f"{spec}/density_thermal", zero)
 
-                    ns_flux = variables.get(f"{spec}/density_flux", zero)
+                    ns_flux = variables.get(f"{spec}/density_thermal_flux", zero)
 
-                    ns_m = Path(f"{spec}/density").get(core_profiles_1d_m, zero)
+                    ns_m = Path(f"{spec}/density_thermal").get(core_profiles_1d_m, zero)
 
                     a = (vpr ** (5 / 3)) * ms * ns * one_over_dt
 
@@ -572,9 +572,9 @@ TransportSolverNumerics.register(["fy_trans"], FyTrans)
 #         label = r"\psi"
 #     elif s[-1] == "psi_flux":
 #         label = r"\psi"
-#     elif s[-1] == "density":
+#     elif s[-1] == "density_thermal":
 #         label = f"n_{{{s[-2]}}}"
-#     elif s[-1] == "density_flux":
+#     elif s[-1] == "density_thermal_flux":
 #         label = rf"\Gamma_{{{s[-2]}}}"
 #     elif s[-1] == "temperature":
 #         label = f"T_{{{s[-2]}}}"

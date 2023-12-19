@@ -43,7 +43,7 @@ class FastAlpha(CoreTransport.Model):
         D = 0.1 * (chi + chi_e)
 
         Te = variables.get("electrons/temperature")
-        # ne = vars.get("electrons/density")
+        # ne = vars.get("electrons/density_thermal")
         inv_L_Te = Te.dln
 
         Te_Ea = Te / 3.5e6  # Te/ 3.5MeV
