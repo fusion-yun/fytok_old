@@ -267,14 +267,8 @@ def read_iter_profiles(path):
             {"label": "D", "density_thermal": b_nDT, "temperature": b_Ti},
             {"label": "T", "density_thermal": b_nDT, "temperature": b_Ti},
             {"label": "He", "density_thermal": b_nHe, "temperature": b_Ti, "density_fast": True},
-            {"label": "Be", "density_thermal": 0.02 * b_ne, "temperature": b_Ti, "z_ion_1d": z_Be, "is_impurity": True},
-            {
-                "label": "Ar",
-                "density_thermal": 0.0012 * b_ne,
-                "temperature": b_Ti,
-                "z_ion_1d": z_Ar,
-                "is_impurity": True,
-            },
+            {"label": "Be", "density_thermal": 0.02 * b_ne, "temperature": b_Ti, "z_ion_1d": z_Be},
+            {"label": "Ar", "density_thermal": 0.0012 * b_ne, "temperature": b_Ti, "z_ion_1d": z_Ar},
         ],
         # "e_field": {"parallel":  Function(e_parallel,bs_r_norm)},
         # "conductivity_parallel": Function(baseline["Joh"].values*1.0e6 / baseline["U"].values * (TWOPI * grid.r0),bs_r_norm),
@@ -375,7 +369,7 @@ def read_iter_profiles(path):
         "ion": [
             {"label": "D", "particles": S * 0.5, "energy": Q_DT * 0.5},
             {"label": "T", "particles": S * 0.5, "energy": Q_DT * 0.5},
-            {"label": "He", "particles": 0, "energy": Q_He},
+            {"label": "He", "particles": 0, "energy": 0},
             # {"label": "alpha", "particles": S * 0.01, "energy": Q_DT * 0.01},
         ],
     }

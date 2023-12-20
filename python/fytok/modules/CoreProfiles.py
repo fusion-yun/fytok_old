@@ -5,7 +5,7 @@ import numpy as np
 import scipy.constants
 from scipy import constants
 from spdm.data.AoS import AoS
-from spdm.data.Expression import Expression
+from spdm.data.Expression import Expression, zero
 from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.data.Path import update_tree
@@ -29,8 +29,8 @@ class CoreProfilesSpecies:
         if self.cache_get("label", _not_found_) is _not_found_:
             self._cache["label"] = self._metadata.get("name")
 
-        atom_desc = atoms.get(self.label.capitalize())
-
+        atom_desc = atoms[self.label]
+        logger.debug((self.label, atom_desc))
         self._cache["z"] = atom_desc["z"]
         self._cache["a"] = atom_desc["a"]
 
@@ -48,7 +48,7 @@ class CoreProfilesSpecies:
 
     density_thermal: Expression = sp_property(units="m^-3")
 
-    density_fast: Expression = sp_property(units="m^-3")
+    density_fast: Expression = sp_property(units="m^-3", default_value=0)
 
     @sp_property
     def pressure(self) -> Expression:
@@ -59,11 +59,31 @@ class CoreProfilesSpecies:
     def pressure_thermal(self) -> Expression:
         return self.density_thermal * self.temperature * scipy.constants.electron_volt
 
-    pressure_fast_perpendicular: Expression = 0
+    pressure_fast_perpendicular: Expression = sp_property(units="Pa", default_value=zero)
 
-    pressure_fast_parallel: Expression = 0
+    pressure_fast_parallel: Expression = sp_property(units="Pa", default_value=zero)
 
-    rotation_frequency_tor: Expression = sp_property(units="rad.s^-1")
+    rotation_frequency_tor: Expression = sp_property(units="rad.s^-1", default_value=zero)
+
+
+@sp_tree(coordinate1=".../grid/rho_tor_norm")
+class CoreProfilesState(CoreProfilesSpecies):
+    label: str
+    """ String identifying state"""
+
+    electron_configuration: str
+    """ Configuration of atomic orbitals of this state, e.g. 1s2-2s1"""
+
+    vibrational_level: float = sp_property(units="Elementary Charge Unit")
+    """ Vibrational level (can be bundled)"""
+
+    vibrational_mode: str
+    """ Vibrational mode of this state, e.g. _A_g_. Need to define, or adopt a standard
+        nomenclature."""
+
+    neutral_type: int
+    """ Neutral type (if the considered state is a neutral), in terms of energy. ID =1:
+        cold; 2: thermal; 3: fast; 4: NBI"""
 
 
 @sp_tree(coordinate1=".../grid/rho_tor_norm")
@@ -75,8 +95,6 @@ class CoreProfilesIon(CoreProfilesSpecies):
         return self.z_ion_1d * self.z_ion_1d
 
     # velocity: _T_core_profiles_vector_components_2 = sp_property(units="m.s^-1")
-
-    multiple_states_flag: int
 
     @sp_property(unit="s^-1", default_value=0.1)
     def collision_frequency(self) -> Expression:
@@ -99,72 +117,21 @@ class CoreProfilesIon(CoreProfilesSpecies):
 
 
 @sp_tree(coordinate1="../grid/rho_tor_norm")
-class CoreProfilesNeutral(utilities._T_core_profile_neutral):
-    label: str
-
-    ion_index: int
-
-    element: AoS[PlasmaCompositionNeutralElement]
-
-    temperature: Expression = sp_property(units="eV")
-
-    density: Expression = sp_property(units="m^-3")
-
-    density_thermal: Expression = sp_property(units="m^-3")
-
-    density_fast: Expression = sp_property(units="m^-3")
-
-    @sp_property(units="Pa")
-    def pressure(self) -> Expression:
-        if self.density_thermal is _not_found_:
-            return self.density * self.temperature * scipy.constants.electron_volt
-        else:
-            return self.pressure_thermal + self.pressure_fast_parallel + self.pressure_fast_perpendicular
-
-    @sp_property(units="Pa")
-    def pressure_thermal(self) -> Expression:
-        return self.density_thermal * self.temperature * scipy.constants.electron_volt
-
-    pressure_fast_perpendicular: Expression = sp_property(units="Pa")
-
-    pressure_fast_parallel: Expression = sp_property(units="Pa")
+class CoreProfilesNeutral(CoreProfilesSpecies):
+    element: AoS[PlasmaCompositionSpecies]
+    """ List of elements forming the atom or molecule"""
 
     multiple_states_flag: int
+    """ Multiple states calculation flag : 0-Only one state is considered; 1-Multiple
+        states are considered and are described in the state structure"""
 
-    # state: AoS[_T_core_profiles_neutral_state]
+    state: AoS[CoreProfilesState]
+    """ Quantities related to the different states of the species (energy, excitation,...)"""
 
 
 @sp_tree(coordinate1="../grid/rho_tor_norm")
-class CoreProfilesElectrons(utilities._T_core_profiles_profiles_1d_electrons):
-    z: float = -1
-    a: float = scipy.constants.electron_mass / scipy.constants.atomic_mass
-    charge: float = -scipy.constants.elementary_charge
-    mass: float = scipy.constants.electron_mass
-
-    temperature: Expression = sp_property(units="eV")
-
-    @sp_property(units="m^-3")
-    def density(self) -> Expression:
-        return self.density_thermal + self.density_fast
-
-    density_thermal: Expression = sp_property(units="m^-3")
-
-    density_fast: Expression = sp_property(units="m^-3")
-
-    @sp_property(units="Pa")
-    def pressure(self) -> Expression:
-        if self.density_thermal is _not_found_:
-            return self.density * self.temperature * scipy.constants.electron_volt
-        else:
-            return self.pressure_thermal + self.pressure_fast_parallel + self.pressure_fast_perpendicular
-
-    @sp_property(units="Pa")
-    def pressure_thermal(self) -> Expression:
-        return self.density_thermal * self.temperature * scipy.constants.electron_volt
-
-    pressure_fast_perpendicular: Expression = sp_property(units="Pa", defalut_value=0)
-
-    pressure_fast_parallel: Expression = sp_property(units="Pa", defalut_value=0)
+class CoreProfilesElectrons(CoreProfilesSpecies):
+    label = "e"
 
     @sp_property(units="-")
     def collisionality_norm(self) -> Expression:
@@ -181,18 +148,15 @@ class CoreProfilesElectrons(utilities._T_core_profiles_profiles_1d_electrons):
 
 @sp_tree(coordinate1="grid/rho_tor_norm")
 class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
-    Ion = CoreProfilesIon
-
-    Electrons = CoreProfilesElectrons
-
-    Neutral = CoreProfilesNeutral
-
     grid: CoreRadialGrid
 
+    Electrons = CoreProfilesElectrons
     electrons: CoreProfilesElectrons
 
+    Ion = CoreProfilesIon
     ion: AoS[CoreProfilesIon] = sp_property(identifier="label")
 
+    Neutral = CoreProfilesNeutral
     neutral: AoS[CoreProfilesNeutral] = sp_property(identifier="label")
 
     @sp_property
