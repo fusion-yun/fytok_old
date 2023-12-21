@@ -36,6 +36,9 @@ class TransportSolverNumericsEquation:
         node contains the path to the quantity in the physics IDS (example:
         core_profiles/profiles_1d/ion/D/density)"""
 
+    normalize_unit: float = 1
+    """ 无量纲化系数， """
+
     profile: array_type
     """ Profile of the primary quantity"""
 
@@ -314,6 +317,10 @@ class TransportSolverNumerics(IDS):
             flux_e += (core_profiles_1d.get(f"ion/{s}/density_flux", 0) * z_ion_1d)(x)
 
         # quasi neutrality condition
+        n_e._metadata["name"] = "ne"
+        n_e._metadata["label"] = r"n_{e}"
+        flux_e._metadata["label"] = r"\Gamma_{e}"
+
         variables["electrons/density"] = n_e
         variables["electrons/density_flux"] = flux_e
 
@@ -369,12 +376,13 @@ class TransportSolverNumerics(IDS):
 
         X = current.grid.rho_tor_norm
         Y = current.Y0
+        particles = self.thermal_particle + self.fast_particle
         for k, v in current.variables.items():
             pth = Path(k)
             if pth[0] == "ion":
                 spec = pth[1]
                 try:
-                    idx = self.thermal_particle.index(spec)
+                    idx = particles.index(spec)
                 except Exception:
                     logger.warning(f"ignore {k}")
                     continue

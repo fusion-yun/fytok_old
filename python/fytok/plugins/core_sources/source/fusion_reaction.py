@@ -1,8 +1,10 @@
 import typing
-from fytok.utils.atoms import nuclear_reaction
-from fytok.modules.CoreSources import CoreSources
+
 from spdm.data.Expression import Variable, Expression, zero
 from spdm.data.sp_property import sp_tree
+from fytok.utils.atoms import nuclear_reaction, atoms
+from fytok.modules.CoreSources import CoreSources
+from fytok.utils.logger import logger
 
 
 @CoreSources.Source.register(["fusion_reaction"])
@@ -57,27 +59,39 @@ class FusionReaction(CoreSources.Source):
 
         source_ion = {}
 
+        Te = variables.get("electrons/temperature")
+        ne = variables.get("electrons/density")
+
+        lnGamma = 17
+
+        # tau_slowing_down = 1.99 * ((Te / 1000) ** (3 / 2)) / (ne * 1.0e-19 * lnGamma)
+        nu_slowing_down = (ne * 1.0e-19 * lnGamma) / (1.99 * ((Te / 1000) ** (3 / 2)))
+
         for tag in reactions:
             reaction = nuclear_reaction[tag]
 
             r0, r1 = reaction.reactants
             p0, p1 = reaction.products
 
+            p1_ion = atoms[p1].label
+
             n0 = variables.get(f"ion/{r0}/density")
             n1 = variables.get(f"ion/{r1}/density")
-            # nEP = vars.get("ion/alpha/density", 0.0)
 
-            T0 = variables.get(f"ion/D/temperature")
-            T1 = variables.get(f"ion/T/temperature")
+            T0 = variables.get(f"ion/{r0}/temperature")
+            T1 = variables.get(f"ion/{r1}/temperature")
 
             Ti = (n0 * T0 + n1 * T1) / (n0 + n1)
 
             S = reaction.reactivities(Ti) * n0 * n1
 
+            nEP: Expression | None = variables.get(f"ion/{p1}/density")
+
             source_ion.setdefault(r0, {"particles": zero})["particles"] -= S
             source_ion.setdefault(r1, {"particles": zero})["particles"] -= S
             source_ion.setdefault(p0, {"particles": zero})["particles"] += S
-            source_ion.setdefault(p1, {"particles": zero})["particles"] += S
+            source_ion.setdefault(p1, {"particles": zero})["particles"] += S #- nEP * nu_slowing_down
+            # source_ion.setdefault(p1_ion, {"particles": zero})["particles"] += nEP * nu_slowing_down
 
         current: CoreSources.Source.TimeSlice = super().fetch()
 

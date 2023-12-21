@@ -26,13 +26,10 @@ class CoreProfilesSpecies:
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        if self.label is _not_found_:
-            self._cache["label"] = self._metadata.get("name")
-
         atom_desc = atoms[self.label]
 
-        self._cache["z"] = atom_desc["z"]
-        self._cache["a"] = atom_desc["a"]
+        self._cache["z"] = atom_desc.z
+        self._cache["a"] = atom_desc.a
 
     label: str
 

@@ -110,7 +110,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
         # $q$ safety factor                                 [-]
         qsf = eq_1d.q(psi_norm)
-      
+
         gm1 = eq_1d.gm1(psi_norm)  # <1/R^2>
         gm2 = eq_1d.gm2(psi_norm)  # <|grad_rho_tor|^2/R^2>
         gm3 = eq_1d.gm3(psi_norm)  # <|grad_rho_tor|^2>
@@ -124,6 +124,9 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
             src.fetch(x, **variables) for src in core_sources.source
         ]
 
+        normalize_units = self.control_parameters.normalize_units or {}
+
+        self.normalize_factor = []
         for idx, equ in enumerate(current.equations):
             identifier = equ.identifier
 
@@ -406,6 +409,17 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
             equ["coefficient"] = [*bc_value, a, b, c, d, e, f, g, ym]
 
+            self.normalize_factor.extend(
+                [
+                    normalize_units.get(quantity_name, 1.0),
+                    normalize_units.get(f"{quantity_name}_flux", 1.0),
+                ]
+            )
+
+        self.normalize_factor = np.array(self.normalize_factor)
+
+        logger.debug(self.normalize_factor)
+
         if current.Y0 is None:
             rho_tor_norm = self.grid.rho_tor_norm
 
@@ -430,9 +444,13 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                     yp = derivative(y, rho_tor_norm)
                     current.Y0[idx * 2 + 1] = -d(rho_tor_norm, *current.Y0) * yp + e(rho_tor_norm, *current.Y0) * y
 
+        current.Y0 /= self.normalize_factor.reshape(-1, 1)
+
     def func(self, x: array_type, Y: array_type, *args) -> array_type:
         res = np.zeros([len(self.equations) * 2, x.size])
         hyper_diff = self.control_parameters.hyper_diff or 0.001
+
+        Y = Y * self.normalize_factor.reshape(-1, 1)
 
         for idx, equ in enumerate(self.equations):
             y = Y[idx * 2]
@@ -465,10 +483,13 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
             if np.any(np.isnan(d_dr)) or np.any(np.isnan(dflux_dr)):
                 logger.exception(f"Error! {equ.identifier} {( a, b, c, d, e, f, g)} ")
 
-        return res
+        return res / self.normalize_factor.reshape(-1, 1)
 
     def bc(self, ya: array_type, yb: array_type, *args) -> array_type:
         current = self
+
+        ya = ya * self.normalize_factor
+        yb = yb * self.normalize_factor
 
         res = []
         for idx, equ in enumerate(current.equations):
@@ -496,7 +517,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
             res.extend([u0 * y0 + v0 * flux0 - w0, u1 * y1 + v1 * flux1 - w1])
 
-        return np.array(res)
+        return np.array(res) / self.normalize_factor
 
     def solve(self):
         current = self
@@ -507,14 +528,15 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
             current.grid.rho_tor_norm,
             current.Y0,
             bvp_rms_mask=current.control_parameters.bvp_rms_mask,
-            tolerance=current.control_parameters.tolerance,
-            max_nodes=current.control_parameters.max_nodes or 0,
+            tol=current.control_parameters.tolerance or 1.0e-3,
+            bc_tol=current.control_parameters.bc_tol or 1e6,
+            max_nodes=current.control_parameters.max_nodes or 1000,
             verbose=current.control_parameters.verbose or 0,
         )
 
         current["grid"] = current.grid.remesh(sol.x)
 
-        current.Y0 = sol.y
+        current.Y0 = sol.y * self.normalize_factor.reshape(-1, 1)
 
         for idx, equ in enumerate(current.equations):
             equ["profile"] = sol.y[2 * idx]
@@ -541,8 +563,8 @@ class FyTrans(TransportSolverNumerics):
 
     time_slice: TimeSeriesAoS[FyTransTimeSlice]
 
-    def execute(self, current: FyTransTimeSlice, *previous: FyTransTimeSlice) -> FyTransTimeSlice:
-        current = super().execute(current, *previous)
+    def preprocess(self, *args, **kwargs) -> FyTransTimeSlice:
+        current: FyTransTimeSlice = super().preprocess(*args, **kwargs)
 
         current.setup(
             equilibrium=self.inputs.get_source("equilibrium"),
@@ -550,6 +572,9 @@ class FyTrans(TransportSolverNumerics):
             core_sources=self.inputs.get_source("core_sources"),
             core_profiles=self.inputs.get_source("core_profiles"),
         )
+
+    def execute(self, current: FyTransTimeSlice, *previous: FyTransTimeSlice) -> FyTransTimeSlice:
+        current = super().execute(current, *previous)
 
         status = current.solve()
 

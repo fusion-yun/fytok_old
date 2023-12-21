@@ -9,6 +9,7 @@ from spdm.data.sp_property import SpTree, sp_property, sp_tree, PropertyTree
 from spdm.data.AoS import AoS
 from spdm.data.Path import update_tree
 from spdm.utils.typing import get_args
+from spdm.utils.tags import _not_found_
 
 _predef_atoms = {
     "e": {"label": "e", "z": -1, "a": scipy.constants.m_e / scipy.constants.m_p},
@@ -39,8 +40,10 @@ class Atoms(Dict[Atom]):
         super().__init__(*args, **kwargs)
 
     def __getitem__(self, key) -> Atom:
-        value = super().cache_get(key)
-        if isinstance(value, str):
+        value = super().cache_get(key, _not_found_)
+        if value is _not_found_:
+            raise KeyError(f"Can not find atom {key}")
+        elif isinstance(value, str):
             return self.__getitem__(value)
         else:
             return super()._as_child(value, key, _type_hint=Atom)

@@ -35,7 +35,7 @@ class CoreSourcesSpecies(SpTree):
         super().__init__(*args, **kwargs)
 
         if self.z is _not_found_:
-            ion = atoms[self.label.capitalize()]
+            ion = atoms[self.label]
             self.z = ion.z
             self.a = ion.a
 

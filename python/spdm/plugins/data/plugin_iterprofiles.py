@@ -266,7 +266,7 @@ def read_iter_profiles(path):
         "ion": [
             {"label": "D", "density": b_nDT, "temperature": b_Ti},
             {"label": "T", "density": b_nDT, "temperature": b_Ti},
-            {"label": "He", "density": b_nHe, "temperature": b_Ti, "density_fast": True},
+            {"label": "He", "density": b_nHe, "temperature": b_Ti},
             {"label": "Be", "density": 0.02 * b_ne, "temperature": b_Ti, "z_ion_1d": z_Be},
             {"label": "Ar", "density": 0.0012 * b_ne, "temperature": b_Ti, "z_ion_1d": z_Ar},
         ],
@@ -322,6 +322,7 @@ def read_iter_profiles(path):
             {"label": "D", "particles": {"d": D, "v": v_pinch_ni}, "energy": {"d": chi, "v": v_pinch_Ti}},
             {"label": "T", "particles": {"d": D, "v": v_pinch_ni}, "energy": {"d": chi, "v": v_pinch_Ti}},
             {"label": "He", "particles": {"d": D, "v": v_pinch_ni}, "energy": {"d": chi, "v": v_pinch_Ti}},
+            {"label": "alpha", "particles": {"d": D, "v": v_pinch_ni}, "energy": {"d": chi, "v": v_pinch_Ti}},
         ],
     }
 
@@ -369,7 +370,7 @@ def read_iter_profiles(path):
         "ion": [
             {"label": "D", "particles": S * 0.5, "energy": Q_DT * 0.5},
             {"label": "T", "particles": S * 0.5, "energy": Q_DT * 0.5},
-            {"label": "He", "particles": 0, "energy": 0},
+            {"label": "He", "particles": S * 0.01, "energy": S * 0.01},
             # {"label": "alpha", "particles": S * 0.01, "energy": Q_DT * 0.01},
         ],
     }
