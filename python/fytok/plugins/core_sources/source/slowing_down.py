@@ -1,9 +1,10 @@
 import typing
 from fytok.modules.CoreSources import CoreSources
 from spdm.data.Expression import Expression, Variable
+from spdm.data.sp_property import sp_tree
 
 
-@CoreSources.Source.register(["slowing_down"])
+@sp_tree
 class SlowingDown(CoreSources.Source):
     """[summary]
 
@@ -47,34 +48,36 @@ class SlowingDown(CoreSources.Source):
     Here $E_{c}$ is the slowing down critical energy. We remind that $E_{c}/E_{\\alpha}=33.05 T_e/E_{\\alpha}$, where $E_{\\alpha}=3500 keV$  is the thirth energy of $\\alpha$ particles.
     """
 
-    code = {"name": f"slowing_down", "description": r"  $\alpha -> He$ burning and slowing down "}
+    code = {"name": "slowing_down", "description": r"  $\alpha -> He$ burning and slowing down "}
 
-    def fetch(self, x: Variable, **vars: Expression) -> CoreSources.Source.TimeSlice:
+    def fetch(self, x: Variable, **variables: Expression) -> CoreSources.Source.TimeSlice:
+        Te = variables.get("electrons/temperature", 0.0)
+        ne = variables.get("electrons/density", 0.0)
 
-        Te = vars.get("electrons/temperature", 0.0)
-        ne = vars.get("electrons/density_thermal", 0.0)
-       
-        nD: Expression | None = vars.get("ion/D/density_thermal")
-        nT = vars.get("ion/T/density_thermal")
-        TD = vars.get("ion/T/temperature")
-        TT = vars.get("ion/T/temperature")
-        Te = vars.get("electrons/temperature")
-        ne = vars.get("electrons/density_thermal")
-        nAlpha = vars.get("ion/alpha/density_thermal")
+        nD: Expression | None = variables.get("ion/D/density")
+        nT = variables.get("ion/T/density")
+        TD = variables.get("ion/T/temperature")
+        TT = variables.get("ion/T/temperature")
+        Te = variables.get("electrons/temperature")
+        ne = variables.get("electrons/density")
+        nAlpha = variables.get("ion/alpha/density")
 
-        res = CoreSources.Source.TimeSlice({})
+        current: CoreSources.Source.TimeSlice = super().fetch()
 
         lnGamma = 17
 
         tau_slowing_down = 1.99 * ((Te / 1000) ** (3 / 2)) / (ne * 1.0e-19 * lnGamma)
 
-        core_source_1d = res.profiles_1d
+        core_source_1d = current.profiles_1d
 
-        core_source_1d.ion[
+        core_source_1d["ion"] = [
             {"label": "alpha", "particles": -nAlpha / tau_slowing_down},
             {"label": "He", "particles": nAlpha / tau_slowing_down},
         ]
 
         core_source_1d.electrons.energy = nAlpha / tau_slowing_down * Te
 
-        return res
+        return current
+
+
+CoreSources.Source.register(["slowing_down"], SlowingDown)

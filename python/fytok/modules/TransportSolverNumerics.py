@@ -34,7 +34,7 @@ class TransportSolverNumericsEquation:
     identifier: str
     """ Identifier of the primary quantity of the transport equation. The description
         node contains the path to the quantity in the physics IDS (example:
-        core_profiles/profiles_1d/ion/D/density_thermal)"""
+        core_profiles/profiles_1d/ion/D/density)"""
 
     profile: array_type
     """ Profile of the primary quantity"""
@@ -61,7 +61,7 @@ class TransportSolverNumericsEquation:
             5: generic boundary condition y expressed as a1y'+a2y=a3.
             6: equation not solved;
     """
-    boundary_value: typing.Tuple[typing.List[float], typing.List[float]]
+    boundary_value: tuple  # typing.Tuple[typing.List[float], typing.List[float]]
 
     d_dr: array_type
     """ Radial derivative with respect to the primary coordinate"""
@@ -128,9 +128,9 @@ class TransportSolverNumerics(IDS):
     r""" 与 core_profiles 的 primary coordinate 磁面坐标一致
       rho_tor_norm $\bar{\rho}_{tor}=\sqrt{ \Phi/\Phi_{boundary}}$ """
 
-    species: typing.List[str] = []
-
-    impurity: typing.List[str] = []
+    thermal_particle: typing.List[str] = []
+    fast_particle: typing.List[str] = []
+    impurities: typing.List[str] = []
 
     boundary_condition_type: typing.Dict[str, typing.Any]
 
@@ -201,24 +201,24 @@ class TransportSolverNumerics(IDS):
 
         flux_e = zero
 
-        for s in self.species:
-            variables[f"ion/{s}/density_thermal"] = ns = Variable(
+        for s in self.thermal_particle:
+            variables[f"ion/{s}/density"] = ns = Variable(
                 (i := i + 1),
-                f"ion/{s}/density_thermal",
+                f"ion/{s}/density",
                 label=rf"n_{s}",
             )
 
-            variables[f"ion/{s}/density_thermal_flux"] = ns_flux = Variable(
+            variables[f"ion/{s}/density_flux"] = ns_flux = Variable(
                 (i := i + 1),
-                f"ion/{s}/density_thermal_flux",
+                f"ion/{s}/density_flux",
                 label=rf"\Gamma_{s}",
             )
 
             equations.append(
                 {
-                    "identifier": f"ion/{s}/density_thermal",
-                    "boundary_condition_type": bc_type.get(f"ion/{s}/density_thermal", None)
-                    or bc_type.get(f"*/density_thermal", (2, 1)),
+                    "identifier": f"ion/{s}/density",
+                    "boundary_condition_type": bc_type.get(f"ion/{s}/density", None)
+                    or bc_type.get(f"*/density", (2, 1)),
                 }
             )
 
@@ -267,6 +267,27 @@ class TransportSolverNumerics(IDS):
             n_e += z * ns
             flux_e += z * ns_flux
 
+        for s in self.fast_particle:
+            variables[f"ion/{s}/density"] = ns = Variable(
+                (i := i + 1),
+                f"ion/{s}/density",
+                label=rf"n_{s}",
+            )
+
+            variables[f"ion/{s}/density_flux"] = ns_flux = Variable(
+                (i := i + 1),
+                f"ion/{s}/density_flux",
+                label=rf"\Gamma_{s}",
+            )
+
+            equations.append(
+                {
+                    "identifier": f"ion/{s}/density",
+                    "boundary_condition_type": bc_type.get(f"ion/{s}/density", None)
+                    or bc_type.get(f"*/density", (2, 1)),
+                }
+            )
+
         variables["electrons/temperature"] = Variable(
             (i := i + 1),
             "electrons/temperature",
@@ -287,14 +308,14 @@ class TransportSolverNumerics(IDS):
             }
         )
 
-        for s in self.impurity:
+        for s in self.impurities:
             z_ion_1d = core_profiles_1d.get(f"ion/{s}/z_ion_1d", 0)
-            n_e += (core_profiles_1d.get(f"ion/{s}/density_thermal", 0) * z_ion_1d)(x)
-            flux_e += (core_profiles_1d.get(f"ion/{s}/density_thermal_flux", 0) * z_ion_1d)(x)
+            n_e += (core_profiles_1d.get(f"ion/{s}/density", 0) * z_ion_1d)(x)
+            flux_e += (core_profiles_1d.get(f"ion/{s}/density_flux", 0) * z_ion_1d)(x)
 
         # quasi neutrality condition
-        variables["electrons/density_thermal"] = n_e
-        variables["electrons/density_thermal_flux"] = flux_e
+        variables["electrons/density"] = n_e
+        variables["electrons/density_flux"] = flux_e
 
         current["equations"] = equations
 
@@ -343,7 +364,7 @@ class TransportSolverNumerics(IDS):
 
         data = {
             "grid": current.grid,
-            "ion": [{"label": s} for s in self.species],
+            "ion": [{"label": s} for s in self.thermal_particle],
         }
 
         X = current.grid.rho_tor_norm
@@ -353,7 +374,7 @@ class TransportSolverNumerics(IDS):
             if pth[0] == "ion":
                 spec = pth[1]
                 try:
-                    idx = self.species.index(spec)
+                    idx = self.thermal_particle.index(spec)
                 except Exception:
                     logger.warning(f"ignore {k}")
                     continue

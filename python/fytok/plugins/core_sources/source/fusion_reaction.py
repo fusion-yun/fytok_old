@@ -16,13 +16,13 @@ class FusionReaction(CoreSources.Source):
 
     $\\alpha$输运模型参考[@angioniGyrokineticCalculationsDiffusive2008; @angioniGyrokineticSimulationsImpurity2009]
 
-    * energetic $\\alpha$ particle density_thermal $n_{\\alpha}$
+    * energetic $\\alpha$ particle density $n_{\\alpha}$
 
     $$
     \\frac{\\partial n_{\\alpha}}{\\partial t}+\\nabla\\left(-D_{\\alpha}\\nabla n_{\\alpha}+Vn_{\\alpha}\\right)=-\\frac{n_{\\alpha}}{\\tau_{sd}^{*}}+n_{D}n_{T}\\left\\langle \\sigma v\\right\\rangle _{DT}
     $$
 
-    * $He$ ash density_thermal $n_{He}$
+    * $He$ ash density $n_{He}$
 
     $$
     \\frac{\\partial n_{He}}{\\partial t}+\\nabla\\left(-D_{He}\\nabla n_{He}+Vn_{He}\\right)=\\frac{n_{\\alpha}}{\\tau_{sd}^{*}}
@@ -63,9 +63,9 @@ class FusionReaction(CoreSources.Source):
             r0, r1 = reaction.reactants
             p0, p1 = reaction.products
 
-            n0 = variables.get(f"ion/{r0}/density_thermal")
-            n1 = variables.get(f"ion/{r1}/density_thermal")
-            # nEP = vars.get("ion/alpha/density_thermal", 0.0)
+            n0 = variables.get(f"ion/{r0}/density")
+            n1 = variables.get(f"ion/{r1}/density")
+            # nEP = vars.get("ion/alpha/density", 0.0)
 
             T0 = variables.get(f"ion/D/temperature")
             T1 = variables.get(f"ion/T/temperature")

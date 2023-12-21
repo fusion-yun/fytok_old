@@ -26,11 +26,11 @@ class CoreProfilesSpecies:
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        if self.cache_get("label", _not_found_) is _not_found_:
+        if self.label is _not_found_:
             self._cache["label"] = self._metadata.get("name")
 
         atom_desc = atoms[self.label]
-        logger.debug((self.label, atom_desc))
+
         self._cache["z"] = atom_desc["z"]
         self._cache["a"] = atom_desc["a"]
 
@@ -42,9 +42,8 @@ class CoreProfilesSpecies:
 
     temperature: Expression = sp_property(units="eV")
 
-    @sp_property(units="m^-3")
-    def density(self) -> Expression:
-        return self.density_thermal + self.density_fast
+    density: Expression = sp_property(units="m^-3")
+    # return self.density_thermal + self.density_fast
 
     density_thermal: Expression = sp_property(units="m^-3")
 
