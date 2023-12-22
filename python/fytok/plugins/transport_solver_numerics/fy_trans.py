@@ -124,8 +124,6 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
             src.fetch(x, **variables) for src in core_sources.source
         ]
 
-        normalize_units = self.control_parameters.normalize_units or {}
-
         self.normalize_factor = []
         for idx, equ in enumerate(current.equations):
             identifier = equ.identifier
@@ -409,16 +407,11 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
             equ["coefficient"] = [*bc_value, a, b, c, d, e, f, g, ym]
 
-            self.normalize_factor.extend(
-                [
-                    normalize_units.get(quantity_name, 1.0),
-                    normalize_units.get(f"{quantity_name}_flux", 1.0),
-                ]
-            )
-
-        self.normalize_factor = np.array(self.normalize_factor)
+            self.normalize_factor.extend(equ.normalize_factor)
 
         logger.debug(self.normalize_factor)
+
+        self.normalize_factor = np.array(self.normalize_factor)
 
         if current.Y0 is None:
             rho_tor_norm = self.grid.rho_tor_norm
@@ -447,7 +440,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
         current.Y0 /= self.normalize_factor.reshape(-1, 1)
 
     def func(self, x: array_type, Y: array_type, *args) -> array_type:
-        res = np.zeros([len(self.equations) * 2, x.size])
+        Yp = np.zeros([len(self.equations) * 2, x.size])
         hyper_diff = self.control_parameters.hyper_diff or 0.001
 
         Y = Y * self.normalize_factor.reshape(-1, 1)
@@ -477,13 +470,15 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
             dflux_dr = (f - g * y - dy_dt + hyper_diff * fluxp) / (1.0 / c + hyper_diff)
 
-            res[idx * 2] = d_dr
-            res[idx * 2 + 1] = dflux_dr
+            Yp[idx * 2] = d_dr
+            Yp[idx * 2 + 1] = dflux_dr
 
             if np.any(np.isnan(d_dr)) or np.any(np.isnan(dflux_dr)):
                 logger.exception(f"Error! {equ.identifier} {( a, b, c, d, e, f, g)} ")
 
-        return res / self.normalize_factor.reshape(-1, 1)
+        Yp /= self.normalize_factor.reshape(-1, 1)
+
+        return Yp
 
     def bc(self, ya: array_type, yb: array_type, *args) -> array_type:
         current = self
@@ -491,7 +486,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
         ya = ya * self.normalize_factor
         yb = yb * self.normalize_factor
 
-        res = []
+        bc = []
         for idx, equ in enumerate(current.equations):
             x0 = self.grid.rho_tor_norm[0]
             x1 = self.grid.rho_tor_norm[-1]
@@ -515,9 +510,9 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
             y1 = yb[2 * idx]
             flux1 = yb[2 * idx + 1]
 
-            res.extend([u0 * y0 + v0 * flux0 - w0, u1 * y1 + v1 * flux1 - w1])
-
-        return np.array(res) / self.normalize_factor
+            bc.extend([u0 * y0 + v0 * flux0 - w0, u1 * y1 + v1 * flux1 - w1])
+        bc = np.array(bc) / self.normalize_factor
+        return bc
 
     def solve(self):
         current = self
@@ -537,6 +532,8 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
         current["grid"] = current.grid.remesh(sol.x)
 
         current.Y0 = sol.y * self.normalize_factor.reshape(-1, 1)
+
+        Y = sol.y
 
         for idx, equ in enumerate(current.equations):
             equ["profile"] = sol.y[2 * idx]

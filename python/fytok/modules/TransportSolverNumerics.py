@@ -36,7 +36,7 @@ class TransportSolverNumericsEquation:
         node contains the path to the quantity in the physics IDS (example:
         core_profiles/profiles_1d/ion/D/density)"""
 
-    normalize_unit: float = 1
+    normalize_factor: typing.List[float] = [1, 1]
     """ 无量纲化系数， """
 
     profile: array_type
@@ -136,6 +136,8 @@ class TransportSolverNumerics(IDS):
     impurities: typing.List[str] = []
 
     boundary_condition_type: typing.Dict[str, typing.Any]
+
+    normalize_units: typing.Dict[str, float]
 
     equations: AoS[TransportSolverNumericsEquation]
 
@@ -330,10 +332,22 @@ class TransportSolverNumerics(IDS):
 
         current._cache["variables"] = variables
 
+        normalize_units = self.normalize_units
         for equ in current.equations:
             equ["boundary_value"] = boundary_value.get(equ.identifier, None)
             equ["profile"] = initial_value.get(equ.identifier, zero)
             equ["flux"] = initial_value.get(f"{equ.identifier}_flux", zero)
+
+            identifier = equ.identifier.replace("/", "|")
+            quantity_name = identifier.split("|")[-1]
+
+            equ["normalize_factor"] = [
+                (normalize_units.get(identifier, None) or normalize_units.get(f"*|{quantity_name}", 1.0)),
+                (
+                    normalize_units.get(f"{identifier}_flux", None)
+                    or normalize_units.get(f"*|{quantity_name}_flux", 1.0)
+                ),
+            ]
 
         logger.debug(f" Variables : {[k for k,v in current.variables.items() if isinstance(v,Variable)]}")
 
@@ -369,14 +383,14 @@ class TransportSolverNumerics(IDS):
         """获得 CoreProfiles.TimeSlice.Profiles1D 形式状态树。"""
         current = self.time_slice.current
 
-        data = {
-            "grid": current.grid,
-            "ion": [{"label": s} for s in self.thermal_particle],
-        }
-
         X = current.grid.rho_tor_norm
         Y = current.Y0
         particles = self.thermal_particle + self.fast_particle
+        
+        data = {
+            "grid": current.grid,
+            "ion": [{"label": s} for s in particles],
+        }
         for k, v in current.variables.items():
             pth = Path(k)
             if pth[0] == "ion":

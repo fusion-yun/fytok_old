@@ -370,7 +370,7 @@ def read_iter_profiles(path):
         "ion": [
             {"label": "D", "particles": S * 0.5, "energy": Q_DT * 0.5},
             {"label": "T", "particles": S * 0.5, "energy": Q_DT * 0.5},
-            {"label": "He", "particles": S * 0.01, "energy": S * 0.01},
+            # {"label": "He", "particles": S * 0.01, "energy": Q_DT*0.01},
             # {"label": "alpha", "particles": S * 0.01, "energy": Q_DT * 0.01},
         ],
     }

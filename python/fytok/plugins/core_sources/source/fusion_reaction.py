@@ -90,8 +90,8 @@ class FusionReaction(CoreSources.Source):
             source_ion.setdefault(r0, {"particles": zero})["particles"] -= S
             source_ion.setdefault(r1, {"particles": zero})["particles"] -= S
             source_ion.setdefault(p0, {"particles": zero})["particles"] += S
-            source_ion.setdefault(p1, {"particles": zero})["particles"] += S #- nEP * nu_slowing_down
-            # source_ion.setdefault(p1_ion, {"particles": zero})["particles"] += nEP * nu_slowing_down
+            source_ion.setdefault(p1, {"particles": zero})["particles"] += S - nEP * nu_slowing_down
+            source_ion.setdefault(p1_ion, {"particles": zero})["particles"] += nEP * nu_slowing_down
 
         current: CoreSources.Source.TimeSlice = super().fetch()
 
