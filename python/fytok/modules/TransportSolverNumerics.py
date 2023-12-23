@@ -205,6 +205,28 @@ class TransportSolverNumerics(IDS):
 
         flux_e = zero
 
+        variables["electrons/temperature"] = Te = Variable(
+            (i := i + 1),
+            "electrons/temperature",
+            label=r"T_{e}",
+        )
+
+        variables["electrons/temperature_flux"] = Variable(
+            (i := i + 1),
+            "electrons/temperature",
+            label=r"H_{Te}",
+        )
+
+        equations.append(
+            {
+                "identifier": "electrons/temperature",
+                "boundary_condition_type": bc_type.get("electrons/temperature", None)
+                or bc_type.get(f"*/temperature", (2, 1)),
+            }
+        )
+
+        Ti = zero
+        ni = zero
         for s in self.thermal_particle:
             variables[f"ion/{s}/density"] = ns = Variable(
                 (i := i + 1),
@@ -226,7 +248,7 @@ class TransportSolverNumerics(IDS):
                 }
             )
 
-            variables[f"ion/{s}/temperature"] = Variable(
+            variables[f"ion/{s}/temperature"] = Ts = Variable(
                 (i := i + 1),
                 f"ion/{s}/temperature",
                 label=rf"T_{{{s}}}",
@@ -267,9 +289,15 @@ class TransportSolverNumerics(IDS):
                     }
                 )
 
+            Ti += ns * Ts
+            ni += ns
+
             z = atoms[s].z
             n_e += z * ns
             flux_e += z * ns_flux
+
+        # 平均离子温度？ FIXME: 需要 double check 离子平均温度的定义
+        Ti /= ni
 
         for s in self.fast_particle:
             variables[f"ion/{s}/density"] = ns = Variable(
@@ -292,25 +320,15 @@ class TransportSolverNumerics(IDS):
                 }
             )
 
-        variables["electrons/temperature"] = Variable(
-            (i := i + 1),
-            "electrons/temperature",
-            label=r"T_{e}",
-        )
+            z = atoms[s].z
+            n_e += z * ns
+            flux_e += z * ns_flux
 
-        variables["electrons/temperature_flux"] = Variable(
-            (i := i + 1),
-            "electrons/temperature",
-            label=r"H_{Te}",
-        )
+        if len(self.fast_particle) > 0:
+            ash = self.fast_particle[-1]
 
-        equations.append(
-            {
-                "identifier": "electrons/temperature",
-                "boundary_condition_type": bc_type.get("electrons/temperature", None)
-                or bc_type.get(f"*/temperature", (2, 1)),
-            }
-        )
+            # 令 He ash 的温度等于离子温度
+            variables[f"ion/{ash}/temperature"] = Ti
 
         for s in self.impurities:
             z_ion_1d = core_profiles_1d.get(f"ion/{s}/z_ion_1d", 0)

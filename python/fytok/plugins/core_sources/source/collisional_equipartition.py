@@ -44,23 +44,28 @@ class CollisionalEquipartition(CoreSources.Source):
 
         Qei = zero
 
-        for idx, ion in enumerate(core_profiles_1d.ion):
-            ns = variables.get(f"ion/{ion.label}/density", _not_found_)
+        core_source_ion = []
+        for identifier, ns in variables.items():
+            if not identifier.endswith("density") or identifier.startswith("electrons"):
+                continue
 
-            if ns is _not_found_:
-                ns = ion.density(x)
+            label = identifier.split("/")[-2]
 
-            Ts = variables.get(f"ion/{ion.label}/temperature", _not_found_)
+            Ts = variables.get(f"ion/{label}/temperature", _not_found_)
 
             if Ts is _not_found_:
-                Ts = ion.temperature(x)
+                continue
+
+            ion = atoms[label]
 
             Qie = ns * (ion.z**2) / ion.a * (Te - Ts) * coeff
 
-            core_source_1d.ion[idx] = {"label": ion.label, "energy": Qie}
+            core_source_ion.append({"label": label, "energy": Qie})
 
             Qei -= Qie
 
+        core_source_1d["ion"] = core_source_ion
+        
         core_source_1d.electrons["energy"] = Qei
 
         return current

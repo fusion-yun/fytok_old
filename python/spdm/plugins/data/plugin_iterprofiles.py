@@ -68,13 +68,13 @@ def read_iter_profiles(path):
     b_Ti =    smooth_1d(rho_tor_norm, profiles_1D["TI"].values,      i_end=i_ped-10, window_len=21)*1000
     b_ne =    smooth_1d(rho_tor_norm, profiles_1D["NE"].values,      i_end=i_ped-10, window_len=21)*1.0e19
     b_nDT =   smooth_1d(rho_tor_norm, profiles_1D["Nd+t"].values,    i_end=i_ped-10, window_len=21)*1.0e19*0.5
-    b_nHe =   smooth_1d(rho_tor_norm, profiles_1D["Nath"].values,    i_end=i_ped-10, window_len=21)*1.0e19
+    b_nath =   smooth_1d(rho_tor_norm, profiles_1D["Nath"].values,    i_end=i_ped-10, window_len=21)*1.0e19
     b_nImp =  smooth_1d(rho_tor_norm, profiles_1D["Nz"].values,      i_end=i_ped-10, window_len=21)*1.0e19
     b_zeff = profiles_1D["Zeff"].values
     # fmt:on
 
-    z_eff_star = b_zeff - (b_nDT * 2.0 + 4 * b_nHe) / b_ne
-    z_imp = 1 - (b_nDT * 2.0 + 2 * b_nHe) / b_ne
+    z_eff_star = b_zeff - (b_nDT * 2.0 + 4 * b_nath) / b_ne
+    z_imp = 1 - (b_nDT * 2.0 + 2 * b_nath) / b_ne
     b = -2 * z_imp / (0.02 + 0.0012)
     c = (z_imp**2 - 0.02 * z_eff_star) / 0.0012 / (0.02 + 0.0012)
 
@@ -92,9 +92,10 @@ def read_iter_profiles(path):
         "ion": [
             {"label": "D", "density": b_nDT, "temperature": b_Ti},
             {"label": "T", "density": b_nDT, "temperature": b_Ti},
-            {"label": "He", "density": b_nHe, "temperature": b_Ti},
             {"label": "Be", "density": 0.02 * b_ne, "temperature": b_Ti, "z_ion_1d": z_Be},
             {"label": "Ar", "density": 0.0012 * b_ne, "temperature": b_Ti, "z_ion_1d": z_Ar},
+            {"label": "He", "density": b_nath},
+            # {"label": "He", "density": b_nHe, "temperature": b_Ti},
         ],
         # "e_field": {"parallel":  Function(e_parallel,bs_r_norm)},
         # "conductivity_parallel": Function(baseline["Joh"].values*1.0e6 / baseline["U"].values * (TWOPI * grid.r0),bs_r_norm),
@@ -198,7 +199,7 @@ def read_iter_profiles(path):
         "ion": [
             {"label": "D", "particles": S * 0.5, "energy": Q_DT * 0.5},
             {"label": "T", "particles": S * 0.5, "energy": Q_DT * 0.5},
-            {"label": "He", "particles": S * 0.01, "energy": Q_DT * 0.01},  #
+            {"label": "He", "particles": S * 0.01, "energy": 0},  #
             # {"label": "alpha", "particles": S * 0.01, "energy": Q_DT * 0.01},
         ],
     }
