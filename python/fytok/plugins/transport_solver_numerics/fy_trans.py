@@ -31,6 +31,8 @@ from fytok.utils.envs import FY_DEBUG
 
 from spdm.numlib.bvp import solve_bvp
 
+EPSILON = 1.0e-32
+
 
 class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
     def setup(
@@ -149,13 +151,18 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                             j_parallel += core_source_1d.j_parallel or zero
                             # j_parallel_imp += core_source_1d.j_parallel_imp or zero
 
+                    if j_parallel is zero:
+                        j_parallel = eq_1d.j_tor(psi_norm)  # FIXME:这里应该是 j_parallel
+
                     a = conductivity_parallel * one_over_dt
 
                     b = conductivity_parallel * one_over_dt
 
                     c = (scipy.constants.mu_0 * B0 * x * (rho_tor_boundary**2)) / fpol2
 
-                    d = vpr * gm2 / (fpol * rho_tor_boundary) / ((2.0 * scipy.constants.pi) ** 2)
+                    d = (
+                        vpr * gm2 / (fpol * rho_tor_boundary) / (-(2.0 * scipy.constants.pi))
+                    )  # FIXME: 检查 psi 的定义，符号，2Pi系数
 
                     e = -k_phi * c * x * conductivity_parallel
 
@@ -437,23 +444,31 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
         Y = Y * self.normalize_factor.reshape(-1, 1)
 
+        # for idx, equ in enumerate(self.equations):
+        #     y = Y[idx * 2]
+        #     if equ.identifier.endswith("temperature") or equ.identifier.endswith("density"):
+        #         mark = y <= 0
+        #         if mark.sum() > 0:
+        #             logger.debug(equ.identifier)
+        #             Y[idx * 2] = np.where(mark, 1, y)
+        #         # logger.debug(Y[idx * 2])
+
         for idx, equ in enumerate(self.equations):
             y = Y[idx * 2]
             flux = Y[idx * 2 + 1]
 
             bc0, bc1, a, b, c, d, e, f, g, ym = equ.coefficient
-
-            if equ.identifier.endswith("He/temperature"):
-                pass
-
-            a = a(x, *Y, *args) if isinstance(a, Expression) else a
-            b = b(x, *Y, *args) if isinstance(b, Expression) else b
-            c = c(x, *Y, *args) if isinstance(c, Expression) else c
-            d = d(x, *Y, *args) if isinstance(d, Expression) else d
-            e = e(x, *Y, *args) if isinstance(e, Expression) else e
-            f = f(x, *Y, *args) if isinstance(f, Expression) else f
-            g = g(x, *Y, *args) if isinstance(g, Expression) else g
-            ym = ym(x) if isinstance(ym, Expression) else ym
+            try:
+                a = a(x, *Y, *args) if isinstance(a, Expression) else a
+                b = b(x, *Y, *args) if isinstance(b, Expression) else b
+                c = c(x, *Y, *args) if isinstance(c, Expression) else c
+                d = d(x, *Y, *args) if isinstance(d, Expression) else d
+                e = e(x, *Y, *args) if isinstance(e, Expression) else e
+                f = f(x, *Y, *args) if isinstance(f, Expression) else f
+                g = g(x, *Y, *args) if isinstance(g, Expression) else g
+                ym = ym(x) if isinstance(ym, Expression) else ym
+            except RuntimeError as error:
+                raise RuntimeError(f"Error when calcuate {equ.identifier}") from error
 
             yp = derivative(y, x)
 
@@ -471,8 +486,8 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
             # if equ.identifier.endswith("He/temperature"):
             #     logger.debug(Yp[idx * 2, -4:])
 
-            if np.any(np.isnan(d_dr)) or np.any(np.isnan(dflux_dr)):
-                raise RuntimeError(f"Error! {equ.identifier} {( a, b, c, d, e, f, g)} ")
+            # if np.any(np.isnan(d_dr)) or np.any(np.isnan(dflux_dr)):
+            #     raise RuntimeError(f"Error! {equ.identifier} {( a, b, c, d, e, f, g)} ")
 
         Yp /= self.normalize_factor.reshape(-1, 1)
 

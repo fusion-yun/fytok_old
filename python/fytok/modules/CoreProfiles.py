@@ -188,13 +188,11 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
     def pressure_thermal(self) -> Expression:
         return sum([ion.pressure_thermal for ion in self.ion], self.electrons.pressure_thermal)
 
-    @sp_property(label=r"\psi", units="Wb")
-    def psi(self) -> Expression:
-        return self.grid.psi
+    psi: Expression = sp_property(label=r"\psi", units="Wb")
 
     @sp_property(label=r"\bar{\psi}", units="-")
     def psi_norm(self) -> Expression:
-        return self.grid.psi_norm
+        return (self.psi - self.grid.psi_axis) / (self.grid.psi_boundary - self.grid.psi_axis)
 
     t_i_average: Expression = sp_property(units="eV")
     # t_i_average_fit: _T_core_profiles_1D_fit = sp_property(units="eV")
@@ -418,4 +416,7 @@ class CoreProfiles(IDS):
             grid["psi_boundary"] = eq_grid.psi_boundary
             grid["rho_tor_boundary"] = eq_grid.rho_tor_boundary
 
+        psi = current.profiles_1d.cache_get("psi", _not_found_)
+        if psi is _not_found_:
+            current.profiles_1d["psi"] = current.profiles_1d.grid.psi
         return current

@@ -121,7 +121,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         if len(x_points) == 0:
             raise RuntimeError(f"Can not find X-point!")
-         
+
         self.magnetic_axis = Point(o_points[0].r, o_points[0].z)
 
         self.psi_axis = o_points[0].value
@@ -309,9 +309,9 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     def b_field_z(self) -> Expression:
         return -self.psirz.pd(1, 0) / _R * (self._s_RpZ * self._s_Bp / self._s_eBp_2PI)
 
-    @sp_property #(label="B_{tor}")
+    @sp_property  # (label="B_{tor}")
     def b_field_tor(self) -> Expression:
-        return self.f(self.psirz_norm)  / _R
+        return self.f(self.psirz_norm) / _R
 
     @sp_property
     def B2(self) -> Expression:
@@ -762,7 +762,8 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
 
     @sp_property
     def j_tor(self) -> Expression:
-        return self.plasma_current.d() / self.dvolume_dpsi * self._root.vacuum_toroidal_field.r0
+        return self._coord.j_tor
+        # return self.plasma_current.d() / self.dvolume_dpsi * self._root.vacuum_toroidal_field.r0
 
     @sp_property
     def j_parallel(self) -> Expression:

@@ -181,8 +181,6 @@ class TransportSolverNumerics(IDS):
 
         enabla_momentum = self.code.parameters.enabla_momentum
 
-        enabla_current_diffusion = self.code.parameters.enabla_current_diffusion
-
         equations: typing.List[typing.Dict[str, typing.Any]] = []
 
         # 定义 equation 和 variable
@@ -198,9 +196,10 @@ class TransportSolverNumerics(IDS):
 
         bc_type = self.boundary_condition_type
 
-        variables["psi"] = Variable((i := i + 1), "psi", label=r"\psi")
-        variables["psi_flux"] = Variable((i := i + 1), "psi", label=r"\Gamma_{\psi}")
-        equations.append({"identifier": "psi", "boundary_condition_type": bc_type.get("psi", (2, 1))})
+        if self.code.parameters.current_diffusion is True:
+            variables["psi"] = Variable((i := i + 1), "psi", label=r"\psi")
+            variables["psi_flux"] = Variable((i := i + 1), "psi", label=r"\Gamma_{\psi}")
+            equations.append({"identifier": "psi", "boundary_condition_type": bc_type.get("psi", (2, 1))})
 
         n_e = zero
 

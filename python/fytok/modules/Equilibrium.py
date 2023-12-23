@@ -503,6 +503,8 @@ class Equilibrium(IDS):
             **kwargs,
         )
 
+    def fetch(self, *args, **kwargs) -> EquilibriumTimeSlice:
+        return super().fetch(*args,**kwargs)
 
 r"""
   COCOS  11

@@ -137,6 +137,26 @@ class CoreTransportModel(Module):
     def refresh(self, *args, core_profiles: CoreProfiles = None, equilibrium: Equilibrium = None, **kwargs):
         super().refresh(*args, core_profiles=core_profiles, equilibrium=equilibrium, **kwargs)
 
+    def fetch(self, *args, **kwargs) -> typing.Type[TimeSlice]:
+        """获得当前时间片的拷贝。"""
+        current: CoreTransportTimeSlice = super().fetch()
+
+        grid = current.profiles_1d.cache_get("grid_d", _not_found_)
+
+        if grid is _not_found_:
+            current.profiles_1d["grid_d"] = self.inputs.get_source("equilibrium").time_slice.current.profiles_1d.grid
+
+        else:
+            grid = current.profiles_1d.grid_d
+            if grid.psi_axis is _not_found_ or grid.psi_axis is None:
+                eq_grid: CoreRadialGrid = self.inputs.get_source("equilibrium").time_slice.current.profiles_1d.grid
+
+                grid["psi_axis"] = eq_grid.psi_axis
+                grid["psi_boundary"] = eq_grid.psi_boundary
+                grid["rho_tor_boundary"] = eq_grid.rho_tor_boundary
+
+        return current
+
 
 @sp_tree
 class CoreTransport(IDS):

@@ -7,7 +7,7 @@ from fytok.modules.Equilibrium import Equilibrium
 from scipy import constants
 from spdm.utils.logger import logger
 from spdm.utils.tags import _not_found_
-from spdm.data.Expression import Variable, Expression, Piecewise
+from spdm.data.Expression import Variable, Expression, Piecewise, derivative
 from spdm.data.sp_property import sp_tree
 
 
@@ -42,7 +42,7 @@ class FastAlpha(CoreTransport.Model):
 
         Te = variables.get("electrons/temperature")
         # ne = vars.get("electrons/density")
-        inv_L_Te = Te.dln
+        inv_L_Te = Te.dln(x)
 
         Te_Ea = Te / 3.5e6  # Te/ 3.5MeV
 
@@ -52,7 +52,7 @@ class FastAlpha(CoreTransport.Model):
 
         fast_factor_v = fast_factor_d * 1.5 * (1.0 / np.log((Ec_Ea ** (-1.5) + 1) * (Ec_Ea**1.5 + 1)) - 1) * inv_L_Te
 
-        current: CoreTransport.Model.TimeSlice = super().fetch(x, **variables)
+        current: CoreTransport.Model.TimeSlice = super().fetch()
 
         current.profiles_1d["ion"] = [
             {
