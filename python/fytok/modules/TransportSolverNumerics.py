@@ -55,7 +55,6 @@ class TransportSolverNumericsEquation:
     """
 
     boundary_condition_type: typing.Tuple[int, int]
-
     """ Identifier of the boundary condition type.  ID =
             1: value of the field y;
             2: radial derivative of the field (-dy/drho_tor);
@@ -64,6 +63,7 @@ class TransportSolverNumericsEquation:
             5: generic boundary condition y expressed as a1y'+a2y=a3.
             6: equation not solved;
     """
+
     boundary_value: tuple  # typing.Tuple[typing.List[float], typing.List[float]]
 
     d_dr: array_type
@@ -175,6 +175,7 @@ class TransportSolverNumerics(IDS):
 
         if initial_value is None:
             initial_value = {}
+
         if boundary_value is None:
             boundary_value = {}
 
@@ -197,10 +198,9 @@ class TransportSolverNumerics(IDS):
 
         bc_type = self.boundary_condition_type
 
-        if enabla_current_diffusion:
-            variables["psi"] = Variable((i := i + 1), "psi", label=r"\psi")
-            variables["psi_flux"] = Variable((i := i + 1), "psi", label=r"\Gamma_{\psi}")
-            equations.append({"identifier": "psi", "boundary_condition_type": bc_type.get("psi", (2, 1))})
+        variables["psi"] = Variable((i := i + 1), "psi", label=r"\psi")
+        variables["psi_flux"] = Variable((i := i + 1), "psi", label=r"\Gamma_{\psi}")
+        equations.append({"identifier": "psi", "boundary_condition_type": bc_type.get("psi", (2, 1))})
 
         n_e = zero
 
@@ -333,8 +333,8 @@ class TransportSolverNumerics(IDS):
         current._cache["variables"] = variables
 
         normalize_units = self.normalize_units
+
         for equ in current.equations:
-            equ["boundary_value"] = boundary_value.get(equ.identifier, None)
             equ["profile"] = initial_value.get(equ.identifier, zero)
             equ["flux"] = initial_value.get(f"{equ.identifier}_flux", zero)
 
@@ -348,6 +348,22 @@ class TransportSolverNumerics(IDS):
                     or normalize_units.get(f"*|{quantity_name}_flux", 1.0)
                 ),
             ]
+
+            bc = boundary_value.get(equ.identifier, None)
+
+            if bc is not None:
+                equ["boundary_value"] = bc
+
+            elif equ.identifier == "psi":
+                match equ.boundary_condition_type[1]:
+                    case 1:
+                        bc_v = [current.grid.psi_boundary]
+                    case _:
+                        raise NotImplementedError(f"boundary_condition_type {equ.boundary_condition_type[1]}")
+
+                equ["boundary_value"] = [[0], bc_v]
+            else:
+                raise RuntimeError(f"No boundary value!")
 
         logger.debug(f" Variables : {[k for k,v in current.variables.items() if isinstance(v,Variable)]}")
 
@@ -386,7 +402,7 @@ class TransportSolverNumerics(IDS):
         X = current.grid.rho_tor_norm
         Y = current.Y0
         particles = self.thermal_particle + self.fast_particle
-        
+
         data = {
             "grid": current.grid,
             "ion": [{"label": s} for s in particles],

@@ -11,7 +11,6 @@ from spdm.data.Expression import Variable, Expression, Piecewise
 from spdm.data.sp_property import sp_tree
 
 
-@CoreTransport.Model.register(["fast_alpha"])
 @sp_tree
 class FastAlpha(CoreTransport.Model):
     """
@@ -32,7 +31,6 @@ class FastAlpha(CoreTransport.Model):
     code = {"name": "fast_alpha", "description": f" Fast alpha", "copyright": "fytok"}
 
     def fetch(self, x: Variable, **variables: Expression) -> CoreTransport.Model.TimeSlice:
-        current: CoreTransport.Model.TimeSlice = super().fetch(x, **variables)
         r_ped = 0.96
         Cped = 0.17
         Ccore = 0.4
@@ -54,9 +52,9 @@ class FastAlpha(CoreTransport.Model):
 
         fast_factor_v = fast_factor_d * 1.5 * (1.0 / np.log((Ec_Ea ** (-1.5) + 1) * (Ec_Ea**1.5 + 1)) - 1) * inv_L_Te
 
-        core_trans_1d = current.profiles_1d
+        current: CoreTransport.Model.TimeSlice = super().fetch(x, **variables)
 
-        core_trans_1d["ion"] = [
+        current.profiles_1d["ion"] = [
             {
                 "label": "alpha",
                 "particles": {"d": fast_factor_d, "v": fast_factor_v},
@@ -64,3 +62,6 @@ class FastAlpha(CoreTransport.Model):
             },
         ]
         return current
+
+
+CoreTransport.Model.register(["fast_alpha"], FastAlpha)

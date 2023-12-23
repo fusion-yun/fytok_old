@@ -73,8 +73,6 @@ class FusionReaction(CoreSources.Source):
             r0, r1 = reaction.reactants
             p0, p1 = reaction.products
 
-            p1_ion = atoms[p1].label
-
             n0 = variables.get(f"ion/{r0}/density")
             n1 = variables.get(f"ion/{r1}/density")
 
@@ -91,7 +89,7 @@ class FusionReaction(CoreSources.Source):
             source_ion.setdefault(r1, {"particles": zero})["particles"] -= S
             source_ion.setdefault(p0, {"particles": zero})["particles"] += S
             source_ion.setdefault(p1, {"particles": zero})["particles"] += S - nEP * nu_slowing_down
-            source_ion.setdefault(p1_ion, {"particles": zero})["particles"] += nEP * nu_slowing_down
+            source_ion.setdefault(atoms[p1].label, {"particles": zero})["particles"] += nEP * nu_slowing_down
 
         current: CoreSources.Source.TimeSlice = super().fetch()
 

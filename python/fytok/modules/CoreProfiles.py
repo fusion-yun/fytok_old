@@ -14,6 +14,7 @@ from spdm.utils.tags import _not_found_
 from ..utils.atoms import atoms
 from ..utils.logger import logger
 
+from .Equilibrium import Equilibrium
 from .Utilities import *
 from ..ontology import core_profiles, utilities
 
@@ -186,6 +187,14 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
     @sp_property
     def pressure_thermal(self) -> Expression:
         return sum([ion.pressure_thermal for ion in self.ion], self.electrons.pressure_thermal)
+
+    @sp_property(label=r"\psi", units="Wb")
+    def psi(self) -> Expression:
+        return self.grid.psi
+
+    @sp_property(label=r"\bar{\psi}", units="-")
+    def psi_norm(self) -> Expression:
+        return self.grid.psi_norm
 
     t_i_average: Expression = sp_property(units="eV")
     # t_i_average_fit: _T_core_profiles_1D_fit = sp_property(units="eV")
@@ -384,8 +393,29 @@ class CoreProfiles(IDS):
 
     time_slice: TimeSeriesAoS[CoreProfilesTimeSlice]
 
-    def refresh(self, *args, **kwargs):
-        super().refresh(*args, **kwargs)
+    def preprocess(self, *args, **kwargs):
+        super().preprocess(*args, **kwargs)
+
+    def refresh(self, *args, equilibrium: Equilibrium = None, **kwargs):
+        super().refresh(*args, equilibrium=equilibrium, **kwargs)
 
     def advance(self, *args, **kwargs):
         super().advance(*args, **kwargs)
+
+    def fetch(self, *args, **kwargs) -> CoreProfilesTimeSlice:
+        """获得当前时间片的拷贝。"""
+        current: CoreProfilesTimeSlice = super().fetch()
+
+        grid = current.profiles_1d.grid
+
+        if not isinstance(grid, CoreRadialGrid):
+            raise RuntimeError(f"'grid' is not defined!")
+
+        elif grid.psi_axis is _not_found_ or grid.psi_axis is None:
+            eq_grid: CoreRadialGrid = self.inputs.get_source("equilibrium").time_slice.current.profiles_1d.grid
+
+            grid["psi_axis"] = eq_grid.psi_axis
+            grid["psi_boundary"] = eq_grid.psi_boundary
+            grid["rho_tor_boundary"] = eq_grid.rho_tor_boundary
+
+        return current

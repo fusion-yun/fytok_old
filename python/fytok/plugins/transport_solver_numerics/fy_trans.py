@@ -138,66 +138,57 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
             match quantity_name:
                 case "psi":
-                    conductivity_parallel = 0
+                    conductivity_parallel = zero
 
-                    j_parallel = 0
-
-                    j_parallel_imp = 0
+                    j_parallel = zero
 
                     if core_sources is not None:
                         for source in trans_sources:
                             core_source_1d = source.profiles_1d
-                            conductivity_parallel += core_source_1d.conductivity_parallel
-                            j_parallel += core_source_1d.j_parallel
-                            j_parallel_imp += core_source_1d.get("j_parallel_imp", 0)
+                            conductivity_parallel += core_source_1d.conductivity_parallel or zero
+                            j_parallel += core_source_1d.j_parallel or zero
+                            # j_parallel_imp += core_source_1d.j_parallel_imp or zero
 
-                        if isinstance(conductivity_parallel, Expression):
-                            conductivity_parallel = conductivity_parallel(x)
-                        if isinstance(j_parallel, Expression):
-                            j_parallel = j_parallel(x)
-                        if isinstance(j_parallel_imp, Expression):
-                            j_parallel_imp = j_parallel_imp(x)
-
-                    a = conductivity_parallel(x) * one_over_dt
+                    a = conductivity_parallel * one_over_dt
 
                     b = conductivity_parallel * one_over_dt
 
-                    c = (scipy.constants.mu_0 * B0 * rho_tor * rho_tor_boundary) / fpol2
+                    c = (scipy.constants.mu_0 * B0 * x * (rho_tor_boundary**2)) / fpol2
 
                     d = vpr * gm2 / (fpol * rho_tor_boundary) / ((2.0 * scipy.constants.pi) ** 2)
 
-                    e = 0
+                    e = -k_phi * c * x * conductivity_parallel
 
-                    f = -vpr * (j_parallel(x)) / (2.0 * scipy.constants.pi)
+                    f = -vpr * (j_parallel) / (2.0 * scipy.constants.pi * x * rho_tor_boundary)
 
-                    g = -vpr * (j_parallel_imp(x)) / (2.0 * scipy.constants.pi)
+                    g = k_phi * conductivity_parallel * (2 - 2 * x * fpol.dln + x * conductivity_parallel.dln)
 
-                    for jdx, bc in enumerate(equ.boundary_condition_type):
-                        match bc:
-                            case 1:  # poloidal flux;
-                                u = 1
-                                v = 0
-                                w = equ.boundary_value[jdx][0]
-                            case 2:  # ip, total current inside x=1
-                                Ip = equ.boundary_value[jdx][0]
-                                u = 0
-                                v = 1
-                                w = scipy.constants.mu_0 * Ip / fpol
-                            case 3:  # loop voltage;
-                                Uloop_bdry = equ.boundary_value[jdx][0]
-                                u = 0
-                                v = 1
-                                w = (dt * Uloop_bdry + ym) * d
-                            case 5:  # generic boundary condition y expressed as a1y' + a2y=a3;
-                                u = equ.boundary_value[jdx][0]
-                                v = equ.boundary_value[jdx][1]
-                                w = equ.boundary_value[jdx][2]
-                            case 6:  # equation not solved;
-                                raise NotImplementedError(bc)
-                            case _:
-                                u, v, w = 0, 0, 0
+                    bc_value = equ.boundary_value[1][0]
+                    match equ.boundary_condition_type[1]:
+                        case 1:  # poloidal flux;
+                            u = 1
+                            v = 0
+                            w = bc_value
+                        case 2:  # ip, total current inside x=1
+                            Ip = bc_value
+                            u = 0
+                            v = 1
+                            w = scipy.constants.mu_0 * Ip / fpol
+                        case 3:  # loop voltage;
+                            Uloop_bdry = bc_value
+                            u = 0
+                            v = 1
+                            w = (dt * Uloop_bdry + ym) * d
+                        case 5:  # generic boundary condition y expressed as a1y' + a2y=a3;
+                            u = equ.boundary_value[1][0]
+                            v = equ.boundary_value[1][1]
+                            w = equ.boundary_value[1][2]
+                        case 6:  # equation not solved;
+                            raise NotImplementedError(bc)
+                        case _:
+                            u, v, w = 0, 0, 0
 
-                        bc_value += [[u, v, w]]
+                    bc_value = [[0, 1.0, 0], [u, v, w]]
 
                 case "density":
                     transp_D = zero
@@ -298,7 +289,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
                     d = vpr * gm3 * ns * energy_D / rho_tor_boundary
 
-                    e = vpr * gm3 * ns * energy_V + ns_flux - vpr * (3 / 2 * k_phi) * rho_tor_boundary * x * ns
+                    e = vpr * gm3 * ns * energy_V + ns_flux  # - vpr * (3 / 2 * k_phi) * rho_tor_boundary * x * ns
 
                     f = (vpr ** (5 / 3)) * Q
 
@@ -409,8 +400,6 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
             self.normalize_factor.extend(equ.normalize_factor)
 
-        logger.debug(self.normalize_factor)
-
         self.normalize_factor = np.array(self.normalize_factor)
 
         if current.Y0 is None:
@@ -432,10 +421,13 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                     # if flux is not _not_found_:
                     #     current.Y0[idx * 2 + 1] = flux(rho_tor_norm)
                     # else:
+                    if equ.identifier.endswith("He/temperature"):
+                        pass
                     bc0, bc1, a, b, c, d, e, f, g, ym = equ.coefficient
                     y = current.Y0[idx * 2]
                     yp = derivative(y, rho_tor_norm)
-                    current.Y0[idx * 2 + 1] = -d(rho_tor_norm, *current.Y0) * yp + e(rho_tor_norm, *current.Y0) * y
+                    flux = -d(rho_tor_norm, *current.Y0) * yp + e(rho_tor_norm, *current.Y0) * y
+                    current.Y0[idx * 2 + 1] = flux
 
         current.Y0 /= self.normalize_factor.reshape(-1, 1)
 
@@ -450,6 +442,9 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
             flux = Y[idx * 2 + 1]
 
             bc0, bc1, a, b, c, d, e, f, g, ym = equ.coefficient
+
+            if equ.identifier.endswith("He/temperature"):
+                pass
 
             a = a(x, *Y, *args) if isinstance(a, Expression) else a
             b = b(x, *Y, *args) if isinstance(b, Expression) else b
@@ -473,8 +468,11 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
             Yp[idx * 2] = d_dr
             Yp[idx * 2 + 1] = dflux_dr
 
+            # if equ.identifier.endswith("He/temperature"):
+            #     logger.debug(Yp[idx * 2, -4:])
+
             if np.any(np.isnan(d_dr)) or np.any(np.isnan(dflux_dr)):
-                logger.exception(f"Error! {equ.identifier} {( a, b, c, d, e, f, g)} ")
+                raise RuntimeError(f"Error! {equ.identifier} {( a, b, c, d, e, f, g)} ")
 
         Yp /= self.normalize_factor.reshape(-1, 1)
 
@@ -509,7 +507,8 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
             y1 = yb[2 * idx]
             flux1 = yb[2 * idx + 1]
-
+            # if equ.identifier.endswith("He/temperature"):
+            #     logger.debug((y1, flux1))
             bc.extend([u0 * y0 + v0 * flux0 - w0, u1 * y1 + v1 * flux1 - w1])
         bc = np.array(bc) / self.normalize_factor
         return bc
