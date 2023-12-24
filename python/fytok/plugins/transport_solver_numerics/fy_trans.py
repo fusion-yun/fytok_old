@@ -34,6 +34,57 @@ from spdm.numlib.bvp import solve_bvp
 EPSILON = 1.0e-32
 
 
+def collisional_equipartition(species, variables):
+    epsilon = scipy.constants.epsilon_0
+    e = scipy.constants.elementary_charge
+    me = scipy.constants.electron_mass
+    mp = scipy.constants.proton_mass
+    PI = scipy.constants.pi
+
+    Qc = {}
+    for idx, i in enumerate(species):
+        ni = variables.get(f"{i}/density", _not_found_)
+        Ti = variables.get(f"{i}/temperature", _not_found_)
+        if ni is _not_found_:
+            raise RuntimeError(f"Density {i} is not defined!")
+
+        zi = atoms[i].z
+        ai = atoms[i].a
+
+        for j in species[idx + 1 :]:
+            nj = variables.get(f"{j}/density", _not_found_)
+            Tj = variables.get(f"{j}/temperature", _not_found_)
+            if nj is _not_found_:
+                raise RuntimeError(f"Density {j} is not defined!")
+
+            zj = atoms[i].z
+            aj = atoms[i].a
+
+            gamma_ij = 15.2 - np.log(ni) + np.log(1.0e20) + np.log(Ti) - np.log(1.0e3)
+
+            tau_i = (
+                12
+                * (PI ** (3 / 2))
+                * (epsilon**2)
+                / (e**4)
+                * np.sqrt(me / 2)
+                * ((e * Ti) ** (3 / 2))
+                / ni
+                / gamma_ij
+            )
+
+            coeff = (3 / 2) * zi / (aj / ai / 2) / tau_i
+
+            nu_ij = ni * nj * (zj**2) / aj * coeff
+
+            Q = nu_ij * (Ti - Tj)
+
+            Qc[i] = Qc.get(i, zero) + Q
+            Qc[j] = Qc.get(j, zero) - Q
+
+    return Qc
+
+
 class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
     def setup(
         self,
@@ -118,6 +169,18 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
         gm3 = eq_1d.gm3(psi_norm)  # <|grad_rho_tor|^2>
         gm8 = eq_1d.gm8(psi_norm)  # <R>
 
+        self.normalize_factor = np.array(sum([equ.normalize_factor for equ in current.equations], []))
+
+        # 粒子组份，包含离子和电子，如 electrons, ion/D,ion/T, ...
+        species = [
+            "/".join(equ.identifier.split("/")[:-1])
+            for equ in current.equations
+            if equ.identifier.endswith("temperature")
+        ]
+
+        # 碰撞 - 能量交换
+        Qc = collisional_equipartition(species, variables)
+
         trans_models: typing.List[CoreTransport.Model.TimeSlice] = [
             model.fetch(x, **variables) for model in core_transport.model
         ]
@@ -126,7 +189,6 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
             src.fetch(x, **variables) for src in core_sources.source
         ]
 
-        self.normalize_factor = []
         for idx, equ in enumerate(current.equations):
             identifier = equ.identifier
 
@@ -281,7 +343,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                     if flux_multiplier is zero:
                         flux_multiplier = one
 
-                    Q = zero
+                    Q = Qc.get(spec, zero)
                     for source in trans_sources:
                         source_1d = source.profiles_1d
                         Q += source_1d.get(f"{spec}/energy", zero)
@@ -405,10 +467,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
             equ["coefficient"] = [*bc_value, a, b, c, d, e, f, g, ym]
 
-            self.normalize_factor.extend(equ.normalize_factor)
-
-        self.normalize_factor = np.array(self.normalize_factor)
-
+        # 设定初值
         if current.Y0 is None:
             rho_tor_norm = self.grid.rho_tor_norm
 

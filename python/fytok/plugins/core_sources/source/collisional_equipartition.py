@@ -1,11 +1,9 @@
 import numpy as np
 import scipy.constants
 import typing
-from fytok.modules.CoreProfiles import CoreProfiles
 from fytok.modules.CoreSources import CoreSources
-from fytok.modules.Equilibrium import Equilibrium
 from fytok.utils.atoms import atoms
-from spdm.utils.tags import _next_, _not_found_
+from spdm.utils.tags import _not_found_
 from spdm.data.sp_property import sp_tree
 from spdm.data.Expression import Expression, Variable, zero
 
