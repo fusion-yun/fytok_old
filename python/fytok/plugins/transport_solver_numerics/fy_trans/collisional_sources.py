@@ -1,24 +1,24 @@
 import numpy as np
 import scipy.constants
 import typing
-from fytok.modules.CoreSources import CoreSources
+
 from fytok.utils.atoms import atoms
+
 from spdm.utils.tags import _not_found_
-from spdm.data.sp_property import sp_tree
 from spdm.data.Expression import Expression, Variable, zero
 
 
-def energy_exchange(variables: typing.Dict[str, Expression]):
+def collisional_sources(Qij: typing.Dict[str, Expression], variables: typing.Dict[str, Expression]):
     # 粒子组份，包含离子和电子，如 electrons, ion/D,ion/T, ...
+    return Qij
     species = ["/".join(k.split("/")[:-1]) for k in variables.keys() if k.endswith("temperature")]
-    return {}
+
     epsilon = scipy.constants.epsilon_0
     e = scipy.constants.elementary_charge
     me = scipy.constants.electron_mass
     mp = scipy.constants.proton_mass
     PI = scipy.constants.pi
 
-    Qc = {}
     for idx, i in enumerate(species):
         ni = variables.get(f"{i}/density", _not_found_)
         Ti = variables.get(f"{i}/temperature", _not_found_)
@@ -56,7 +56,7 @@ def energy_exchange(variables: typing.Dict[str, Expression]):
 
             Q = nu_ij * (Ti - Tj)
 
-            Qc[i] = Qc.get(i, zero) + Q
-            Qc[j] = Qc.get(j, zero) - Q
+            Qij[i] = Qij.get(i, zero) + Q
+            Qij[j] = Qij.get(j, zero) - Q
 
-    return Qc
+    return Qij

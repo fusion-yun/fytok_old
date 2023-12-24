@@ -1,9 +1,7 @@
 import typing
 
 from spdm.data.Expression import Variable, Expression, zero
-from spdm.data.sp_property import sp_tree
 from fytok.utils.atoms import nuclear_reaction, atoms
-from fytok.modules.CoreSources import CoreSources
 from fytok.utils.logger import logger
 
 
@@ -49,7 +47,12 @@ Here $E_{c}$ is the slowing down critical energy. We remind that $E_{c}/E_{\\alp
 """
 
 
-def particle_exchange(variables: typing.Dict[str, Expression], fusion_reactions: typing.List[str]):
+def fusion_sources(
+    Sij: typing.Dict[str, Expression],
+    Qij: typing.Dict[str, Expression],
+    variables: typing.Dict[str, Expression],
+    fusion_reactions: typing.List[str],
+):
     Te = variables.get("electrons/temperature")
     ne = variables.get("electrons/density")
 
@@ -57,8 +60,6 @@ def particle_exchange(variables: typing.Dict[str, Expression], fusion_reactions:
 
     # tau_slowing_down = 1.99 * ((Te / 1000) ** (3 / 2)) / (ne * 1.0e-19 * lnGamma)
     nu_slowing_down = (ne * 1.0e-19 * lnGamma) / (1.99 * ((Te / 1000) ** (3 / 2)))
-
-    Sij = {}
 
     for tag in fusion_reactions:
         reaction = nuclear_reaction[tag]
@@ -90,4 +91,4 @@ def particle_exchange(variables: typing.Dict[str, Expression], fusion_reactions:
         Sij[p1] = Sij.get(p1, zero) + S - nEP * nu_slowing_down
         Sij[ash] = Sij.get(ash, zero) + nEP * nu_slowing_down
 
-    return Sij
+    return Sij, Qij

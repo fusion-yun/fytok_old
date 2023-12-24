@@ -157,22 +157,6 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
     neutral: AoS[CoreProfilesNeutral] = sp_property(identifier="label")
 
     @sp_property
-    def t_i_average(self) -> Expression:
-        return sum([ion.z_ion_1d * ion.temperature * ion.density for ion in self.ion]) / self.n_i_total
-
-    @sp_property
-    def n_i_total(self) -> Expression:
-        return sum([(ion.z_ion_1d * ion.density) for ion in self.ion])
-
-    @sp_property
-    def n_i_total_over_n_e(self) -> Expression:
-        return self.n_i_total / self.electrons.density
-
-    @sp_property
-    def n_i_thermal_total(self) -> Expression:
-        return sum([ion.z * ion.density_thermal for ion in self.ion])
-
-    @sp_property
     def zeff(self) -> Expression:
         return sum([((ion.z_ion_1d**2) * ion.density) for ion in self.ion]) / self.n_i_total
 
@@ -194,12 +178,28 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
     def psi_norm(self) -> Expression:
         return (self.psi - self.grid.psi_axis) / (self.grid.psi_boundary - self.grid.psi_axis)
 
-    t_i_average: Expression = sp_property(units="eV")
-    # t_i_average_fit: _T_core_profiles_1D_fit = sp_property(units="eV")
+    @sp_property
+    def t_i_average(self) -> Expression:
+        return sum([ion.z_ion_1d * ion.temperature * ion.density for ion in self.ion]) / self.n_i_total
 
-    n_i_total_over_n_e: Expression = sp_property(units="-")
+    @sp_property
+    def n_i_total(self) -> Expression:
+        return sum([(ion.z_ion_1d * ion.density) for ion in self.ion])
 
-    n_i_thermal_total: Expression = sp_property(units="m^-3")
+    @sp_property
+    def n_i_total_over_n_e(self) -> Expression:
+        return self.n_i_total / self.electrons.density
+
+    @sp_property
+    def n_i_thermal_total(self) -> Expression:
+        return sum([ion.z * ion.density_thermal for ion in self.ion])
+
+    # t_i_average: Expression = sp_property(units="eV")
+    # # t_i_average_fit: _T_core_profiles_1D_fit = sp_property(units="eV")
+
+    # n_i_total_over_n_e: Expression = sp_property(units="-")
+
+    # n_i_thermal_total: Expression = sp_property(units="m^-3")
 
     momentum_tor: Expression = sp_property(units="kg.m^-1.s^-1")
 
