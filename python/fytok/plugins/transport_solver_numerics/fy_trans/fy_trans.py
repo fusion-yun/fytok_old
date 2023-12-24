@@ -29,60 +29,13 @@ from fytok.utils.atoms import atoms
 from fytok.utils.logger import logger
 from fytok.utils.envs import FY_DEBUG
 
-from spdm.numlib.bvp import solve_bvp
+
+from .particle_exchange import particle_exchange
+from .momentum_exchange import momentum_exchange
+from .energy_exchange import energy_exchange
+from .bvp import solve_bvp
 
 EPSILON = 1.0e-32
-
-
-def collisional_equipartition(species, variables):
-    epsilon = scipy.constants.epsilon_0
-    e = scipy.constants.elementary_charge
-    me = scipy.constants.electron_mass
-    mp = scipy.constants.proton_mass
-    PI = scipy.constants.pi
-
-    Qc = {}
-    for idx, i in enumerate(species):
-        ni = variables.get(f"{i}/density", _not_found_)
-        Ti = variables.get(f"{i}/temperature", _not_found_)
-        if ni is _not_found_:
-            raise RuntimeError(f"Density {i} is not defined!")
-
-        zi = atoms[i].z
-        ai = atoms[i].a
-
-        for j in species[idx + 1 :]:
-            nj = variables.get(f"{j}/density", _not_found_)
-            Tj = variables.get(f"{j}/temperature", _not_found_)
-            if nj is _not_found_:
-                raise RuntimeError(f"Density {j} is not defined!")
-
-            zj = atoms[i].z
-            aj = atoms[i].a
-
-            gamma_ij = 15.2 - np.log(ni) + np.log(1.0e20) + np.log(Ti) - np.log(1.0e3)
-
-            tau_i = (
-                12
-                * (PI ** (3 / 2))
-                * (epsilon**2)
-                / (e**4)
-                * np.sqrt(me / 2)
-                * ((e * Ti) ** (3 / 2))
-                / ni
-                / gamma_ij
-            )
-
-            coeff = (3 / 2) * zi / (aj / ai / 2) / tau_i
-
-            nu_ij = ni * nj * (zj**2) / aj * coeff
-
-            Q = nu_ij * (Ti - Tj)
-
-            Qc[i] = Qc.get(i, zero) + Q
-            Qc[j] = Qc.get(j, zero) - Q
-
-    return Qc
 
 
 class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
@@ -114,48 +67,6 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
         vpr = eq_1d.dvolume_drho_tor(psi_norm)
 
-        equilibrium_m = next(equilibrium.time_slice.previous)
-
-        if equilibrium_m is _not_found_:
-            one_over_dt = 0
-            B0m = B0
-            rho_tor_boundary_m = rho_tor_boundary
-            vprm = vpr
-        else:
-            dt = equilibrium.time - equilibrium_m.time
-
-            if np.isclose(dt, 0.0) or dt < 0:
-                raise RuntimeError(f"dt={dt}<=0")
-            else:
-                one_over_dt = one / dt
-
-            B0m = equilibrium_m.vacuum_toroidal_field.b0
-
-            rho_tor_boundary_m = equilibrium_m.profiles_1d.grid.rho_tor_boundary
-
-            vprm = equilibrium_m.profiles_1d.dvolume_drho_tor(psi_norm)
-
-        core_profiles_1d = core_profiles.time_slice.current.profiles_1d
-
-        core_profiles_m = next(core_profiles.time_slice.previous)
-
-        if core_profiles_m is _not_found_:
-            core_profiles_1d_m = None
-        else:
-            core_profiles_1d_m = core_profiles_m.profiles_1d
-
-        k_B = (B0 - B0m) / (B0 + B0m) * one_over_dt
-
-        k_rho_bdry = (rho_tor_boundary - rho_tor_boundary_m) / (rho_tor_boundary + rho_tor_boundary_m) * one_over_dt
-
-        k_phi = k_B + k_rho_bdry
-
-        rho_tor = rho_tor_boundary * x
-
-        inv_vpr23 = vpr ** (-2 / 3)
-
-        k_vppr = 0  # (3 / 2) * k_rho_bdry - k_phi *　x * vpr(psi).dln()
-
         # diamagnetic function,$F=R B_\phi$                 [T*m]
         fpol = eq_1d.f(psi_norm)
 
@@ -169,17 +80,61 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
         gm3 = eq_1d.gm3(psi_norm)  # <|grad_rho_tor|^2>
         gm8 = eq_1d.gm8(psi_norm)  # <R>
 
+        core_profiles_1d = core_profiles.time_slice.current.profiles_1d
+
+        core_profiles_m = next(core_profiles.time_slice.previous)
+
+        if core_profiles_m is _not_found_:
+            core_profiles_1d_m = None
+        else:
+            core_profiles_1d_m = core_profiles_m.profiles_1d
+
+        equilibrium_m = next(equilibrium.time_slice.previous)
+
+        if equilibrium_m is _not_found_:
+            one_over_dt = 0
+            B0m = B0
+            rho_tor_boundary_m = rho_tor_boundary
+            vpr_m = vpr
+            gm8_m = gm8
+        else:
+            dt = equilibrium.time - equilibrium_m.time
+
+            if np.isclose(dt, 0.0) or dt < 0:
+                raise RuntimeError(f"dt={dt}<=0")
+            else:
+                one_over_dt = one / dt
+
+            B0m = equilibrium_m.vacuum_toroidal_field.b0
+            rho_tor_boundary_m = equilibrium_m.profiles_1d.grid.rho_tor_boundary
+            vpr_m = equilibrium_m.profiles_1d.dvolume_drho_tor(psi_norm)
+            gm8_m = equilibrium_m.profiles_1d.gm8(psi_norm)
+
+        k_B = (B0 - B0m) / (B0 + B0m) * one_over_dt
+
+        k_rho_bdry = (rho_tor_boundary - rho_tor_boundary_m) / (rho_tor_boundary + rho_tor_boundary_m) * one_over_dt
+
+        k_phi = k_B + k_rho_bdry
+
+        rho_tor = rho_tor_boundary * x
+
+        inv_vpr23 = vpr ** (-2 / 3)
+
+        k_vppr = 0  # (3 / 2) * k_rho_bdry - k_phi *　x * vpr(psi).dln()
+
         self.normalize_factor = np.array(sum([equ.normalize_factor for equ in current.equations], []))
 
-        # 粒子组份，包含离子和电子，如 electrons, ion/D,ion/T, ...
-        species = [
-            "/".join(equ.identifier.split("/")[:-1])
-            for equ in current.equations
-            if equ.identifier.endswith("temperature")
-        ]
+        # 粒子交换，包括-
+        #  - 核反应
+        #  - 慢化 快粒子-> 热粒子-
+        #  - 离子 <-> 中性气体
+        Sij = particle_exchange(variables, fusion_reactions=self.control_parameters.fusion_reactions or [])
 
         # 碰撞 - 能量交换
-        Qc = collisional_equipartition(species, variables)
+        Qij = energy_exchange(variables)
+
+        # 环向转动动量交换 momentum exchange with other ion components:
+        Uij = momentum_exchange(variables)
 
         trans_models: typing.List[CoreTransport.Model.TimeSlice] = [
             model.fetch(x, **variables) for model in core_transport.model
@@ -202,6 +157,9 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
             match quantity_name:
                 case "psi":
+                    psi = variables.get(f"psi", zero)
+                    psi_m = Path(f"psi").get(core_profiles_1d_m, zero)(x)
+
                     conductivity_parallel = zero
 
                     j_parallel = zero
@@ -216,21 +174,20 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                     if j_parallel is zero:
                         j_parallel = eq_1d.j_tor(psi_norm)  # FIXME:这里应该是 j_parallel
 
-                    a = conductivity_parallel * one_over_dt
-
-                    b = conductivity_parallel * one_over_dt
-
                     c = (scipy.constants.mu_0 * B0 * x * (rho_tor_boundary**2)) / fpol2
 
-                    d = (
-                        vpr * gm2 / (fpol * rho_tor_boundary) / (-(2.0 * scipy.constants.pi))
-                    )  # FIXME: 检查 psi 的定义，符号，2Pi系数
+                    d_dt = one_over_dt * conductivity_parallel * (psi - psi_m) * c
 
-                    e = -k_phi * c * x * conductivity_parallel
+                    D = (
+                        vpr * gm2 / fpol / (-(2.0 * scipy.constants.pi))
+                    ) / rho_tor_boundary  # FIXME: 检查 psi 的定义，符号，2Pi系数
 
-                    f = -vpr * (j_parallel) / (2.0 * scipy.constants.pi * x * rho_tor_boundary)
+                    V = -k_phi * x * conductivity_parallel * c
 
-                    g = k_phi * conductivity_parallel * (2 - 2 * x * fpol.dln + x * conductivity_parallel.dln)
+                    R = (
+                        -vpr * (j_parallel) / (2.0 * scipy.constants.pi * x * rho_tor_boundary)
+                        - k_phi * conductivity_parallel * (2 - 2 * x * fpol.dln + x * conductivity_parallel.dln) * psi
+                    ) * c
 
                     bc_value = equ.boundary_value[1][0]
                     match equ.boundary_condition_type[1]:
@@ -247,7 +204,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                             Uloop_bdry = bc_value
                             u = 0
                             v = 1
-                            w = (dt * Uloop_bdry + ym) * d
+                            w = (dt * Uloop_bdry + ym) * D
                         case 5:  # generic boundary condition y expressed as a1y' + a2y=a3;
                             u = equ.boundary_value[1][0]
                             v = equ.boundary_value[1][1]
@@ -260,6 +217,9 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                     bc_value = [[0, 1.0, 0], [u, v, w]]
 
                 case "density":
+                    ns = variables.get(f"{spec}/density", zero)
+                    ns_m = Path(f"{spec}/density").get(core_profiles_1d_m, zero)(x)
+
                     transp_D = zero
                     transp_V = zero
 
@@ -270,24 +230,18 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                         transp_V += core_transp_1d.get(f"{spec}/particles/v", zero)
                         # transp_F += core_transp_1d.get(f"{spec}/particles/flux", 0)
 
-                    S = zero
+                    S = Sij.get(spec, zero)
                     for source in trans_sources:
                         source_1d = source.profiles_1d
                         S += source_1d.get(f"{spec}/particles", zero)
 
-                    a = vpr * one_over_dt
+                    d_dt = one_over_dt * (vpr * ns - vpr_m * ns_m) * rho_tor_boundary
 
-                    b = vprm * one_over_dt
+                    D = vpr * gm3 * transp_D / rho_tor_boundary
 
-                    c = rho_tor_boundary
+                    V = vpr * gm3 * (transp_V - rho_tor * k_phi)
 
-                    d = vpr * gm3 * transp_D / rho_tor_boundary
-
-                    e = vpr * gm3 * (transp_V - rho_tor * k_phi)
-
-                    f = vpr * S
-
-                    g = vpr * k_phi
+                    R = vpr * (S - k_phi * ns) * rho_tor_boundary
 
                     for jdx, bc in enumerate(equ.boundary_condition_type):
                         match bc:
@@ -297,9 +251,9 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                                 w = equ.boundary_value[jdx][0]
 
                             case 2:  # 2: radial derivative of the field (-dy/drho_tor);
-                                u = e
+                                u = V
                                 v = -1.0
-                                w = equ.boundary_value[jdx][0] * d
+                                w = equ.boundary_value[jdx][0] * D
 
                             case 3:  # 3: scale length of the field y/(-dy/drho_tor);
                                 raise NotImplementedError(f" # 3: scale length of the field y/(-dy/drho_tor);")
@@ -323,7 +277,10 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
                 case "temperature":
                     ns = variables.get(f"{spec}/density", zero)
-                    ns_m = Path(f"{spec}/density").get(core_profiles_1d_m, zero)
+                    Ts = variables.get(f"{spec}/temperature", zero)
+
+                    ns_m = Path(f"{spec}/density").get(core_profiles_1d_m, zero)(x)
+                    Ts_m = Path(f"{spec}/temperature").get(core_profiles_1d_m, zero)(x)
 
                     energy_D = zero
                     energy_V = zero
@@ -343,26 +300,25 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                     if flux_multiplier is zero:
                         flux_multiplier = one
 
-                    Q = Qc.get(spec, zero)
+                    Q = Qij.get(spec, zero)
                     for source in trans_sources:
                         source_1d = source.profiles_1d
                         Q += source_1d.get(f"{spec}/energy", zero)
 
-                    ns_flux = variables[f"{spec}/density_flux"] * flux_multiplier
+                    gamma_s = variables[f"{spec}/density_flux"] * flux_multiplier
 
-                    a = (3 / 2) * (vpr ** (5 / 3)) * ns * one_over_dt
+                    d_dt = (
+                        one_over_dt
+                        * (3 / 2)
+                        * (vpr * ns * Ts - (vpr_m ** (5 / 3)) * ns_m * Ts_m * inv_vpr23)
+                        * rho_tor_boundary
+                    )
 
-                    b = (3 / 2) * (vprm ** (5 / 3)) * ns_m * one_over_dt
+                    D = vpr * gm3 * ns * energy_D / rho_tor_boundary
 
-                    c = inv_vpr23 * rho_tor_boundary
+                    V = vpr * gm3 * ns * energy_V + gamma_s - (3 / 2) * k_phi * vpr * rho_tor * ns
 
-                    d = vpr * gm3 * ns * energy_D / rho_tor_boundary
-
-                    e = vpr * gm3 * ns * energy_V + ns_flux  # - vpr * (3 / 2 * k_phi) * rho_tor_boundary * x * ns
-
-                    f = (vpr ** (5 / 3)) * Q
-
-                    g = k_vppr * ns
+                    R = vpr * (Q - k_vppr * ns * Ts) * rho_tor_boundary
 
                     for jdx, bc in enumerate(equ.boundary_condition_type):
                         match bc:
@@ -372,9 +328,9 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                                 w = equ.boundary_value[jdx][0]
 
                             case 2:  # 2: radial derivative of the field (-dy/drho_tor);
-                                u = e
+                                u = V
                                 v = -1
-                                w = equ.boundary_value[jdx][0] * d
+                                w = equ.boundary_value[jdx][0] * D
 
                             case 3:  # 3: scale length of the field y/(-dy/drho_tor);
                                 raise NotImplementedError(f" # 3: scale length of the field y/(-dy/drho_tor);")
@@ -399,37 +355,36 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                         bc_value += [[u, v, w]]
 
                 case "momentum":
+                    us = variables.get(f"{spec}/momentum", zero)
+                    ns = variables.get(f"{spec}/density", zero)
+
+                    gamma_s = variables.get(f"{spec}/density_flux", zero)
+
+                    us_m = Path(f"{spec}/momentum").get(core_profiles_1d_m, zero)(x)
+                    ns_m = Path(f"{spec}/density").get(core_profiles_1d_m, zero)(x)
+
                     chi_u = zero
+                    V_u_pinch = zero
+
                     for model in trans_models:
                         trans_1d = model.profiles_1d
                         chi_u += trans_1d.get(f"{spec}/momentum/d", zero)
+                        V_u_pinch += trans_1d.get(f"{spec}/momentum/v", zero)
 
-                    U = zero
+                    U = Uij.get(spec, zero) * gm8
                     for source in trans_sources:
                         source_1d = source.profiles_1d
                         U += source_1d.get(f"{spec}/momentum/toroidal", zero)
 
-                    ms = atoms.get(f"{spec}/mass", np.nan)
+                    ms = atoms[spec].a
 
-                    ns = variables.get(f"{spec}/density", zero)
+                    d_dt = one_over_dt * ms * (vpr * gm8 * ns * us - vpr_m * gm8_m * ns_m * us_m) * rho_tor_boundary
 
-                    ns_flux = variables.get(f"{spec}/density_flux", zero)
+                    D = vpr * gm3 * gm8 * ms * ns * chi_u / rho_tor_boundary
 
-                    ns_m = Path(f"{spec}/density").get(core_profiles_1d_m, zero)
+                    V = (vpr * gm3 * ns * V_u_pinch + gamma_s - k_phi * vpr * rho_tor * ns) * gm8 * ms
 
-                    a = (vpr ** (5 / 3)) * ms * ns * one_over_dt
-
-                    b = (vprm ** (5 / 3)) * ms * ns_m * one_over_dt
-
-                    c = rho_tor_boundary
-
-                    d = vpr * gm3 * ms * gm8 * ns * chi_u / rho_tor_boundary
-
-                    e = vpr * gm3 * ms * gm8 * ns + ms * gm8 * ns_flux - ms * gm8 * vpr * rho_tor * k_phi * ns
-
-                    f = vpr * (U + gm8 * n_u_z)
-
-                    g = vpr * gm8 * (n_z + ms * ns * k_rho_bdry)
+                    R = vpr * (U - k_rho_bdry * ms * ns * us) * rho_tor_boundary
 
                     for jdx, bc in enumerate(equ.boundary_condition_type):
                         match bc:
@@ -439,9 +394,9 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                                 w = equ.boundary_value[jdx][0]
                             # 2: radial derivative of the field (-dy/drho_tor);
                             case 2:
-                                u = -e
+                                u = -V
                                 v = 1.0
-                                w = equ.boundary_value[jdx][0] * d
+                                w = equ.boundary_value[jdx][0] * D
                             # 3: scale length of the field y/(-dy/drho_tor);
                             case 3:
                                 raise NotImplementedError(f" # 3: scale length of the field y/(-dy/drho_tor);")
@@ -463,9 +418,7 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                 case _:
                     raise RuntimeError(f"Unknown equation of {equ.identifier}!")
 
-            ym = Path(identifier).get(core_profiles_1d_m, zero)(x)
-
-            equ["coefficient"] = [*bc_value, a, b, c, d, e, f, g, ym]
+            equ["coefficient"] = [*bc_value, d_dt, D, V, R]
 
         # 设定初值
         if current.Y0 is None:
@@ -483,16 +436,10 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
                 if equ.flux is not _not_found_ and equ.flux != 0:
                     current.Y0[idx * 2 + 1] = np.full_like(rho_tor_norm, equ.flux)
                 else:
-                    # flux = Path(f"{identifier}_flux").get(core_profiles_1d, _not_found_)
-                    # if flux is not _not_found_:
-                    #     current.Y0[idx * 2 + 1] = flux(rho_tor_norm)
-                    # else:
-                    if equ.identifier.endswith("He/temperature"):
-                        pass
-                    bc0, bc1, a, b, c, d, e, f, g, ym = equ.coefficient
+                    bc0, bc1, d_dt, D, V, R = equ.coefficient
                     y = current.Y0[idx * 2]
                     yp = derivative(y, rho_tor_norm)
-                    flux = -d(rho_tor_norm, *current.Y0) * yp + e(rho_tor_norm, *current.Y0) * y
+                    flux = -D(rho_tor_norm, *current.Y0) * yp + V(rho_tor_norm, *current.Y0) * y
                     current.Y0[idx * 2 + 1] = flux
 
         current.Y0 /= self.normalize_factor.reshape(-1, 1)
@@ -503,50 +450,30 @@ class FyTransTimeSlice(TransportSolverNumericsTimeSlice):
 
         Y = Y * self.normalize_factor.reshape(-1, 1)
 
-        # for idx, equ in enumerate(self.equations):
-        #     y = Y[idx * 2]
-        #     if equ.identifier.endswith("temperature") or equ.identifier.endswith("density"):
-        #         mark = y <= 0
-        #         if mark.sum() > 0:
-        #             logger.debug(equ.identifier)
-        #             Y[idx * 2] = np.where(mark, 1, y)
-        #         # logger.debug(Y[idx * 2])
-
         for idx, equ in enumerate(self.equations):
             y = Y[idx * 2]
             flux = Y[idx * 2 + 1]
 
-            bc0, bc1, a, b, c, d, e, f, g, ym = equ.coefficient
+            bc0, bc1, d_dt, D, V, R = equ.coefficient
             try:
-                a = a(x, *Y, *args) if isinstance(a, Expression) else a
-                b = b(x, *Y, *args) if isinstance(b, Expression) else b
-                c = c(x, *Y, *args) if isinstance(c, Expression) else c
-                d = d(x, *Y, *args) if isinstance(d, Expression) else d
-                e = e(x, *Y, *args) if isinstance(e, Expression) else e
-                f = f(x, *Y, *args) if isinstance(f, Expression) else f
-                g = g(x, *Y, *args) if isinstance(g, Expression) else g
-                ym = ym(x) if isinstance(ym, Expression) else ym
+                d_dt = d_dt(x, *Y, *args) if isinstance(d_dt, Expression) else d_dt
+                D = D(x, *Y, *args) if isinstance(D, Expression) else D
+                V = V(x, *Y, *args) if isinstance(V, Expression) else V
+                R = R(x, *Y, *args) if isinstance(R, Expression) else R
+
             except RuntimeError as error:
                 raise RuntimeError(f"Error when calcuate {equ.identifier}") from error
 
             yp = derivative(y, x)
 
-            d_dr = (-flux + e * y + hyper_diff * yp) / (d + hyper_diff)
-
-            dy_dt = a * y - b * ym
+            d_dr = (-flux + V * y + hyper_diff * yp) / (D + hyper_diff)
 
             fluxp = derivative(flux, x)
 
-            dflux_dr = (f - g * y - dy_dt + hyper_diff * fluxp) / (1.0 / c + hyper_diff)
+            dflux_dr = (R - d_dt + hyper_diff * fluxp) / (1.0 + hyper_diff)
 
             Yp[idx * 2] = d_dr
             Yp[idx * 2 + 1] = dflux_dr
-
-            # if equ.identifier.endswith("He/temperature"):
-            #     logger.debug(Yp[idx * 2, -4:])
-
-            # if np.any(np.isnan(d_dr)) or np.any(np.isnan(dflux_dr)):
-            #     raise RuntimeError(f"Error! {equ.identifier} {( a, b, c, d, e, f, g)} ")
 
         Yp /= self.normalize_factor.reshape(-1, 1)
 
@@ -626,6 +553,8 @@ class FyTrans(TransportSolverNumerics):
     See  :cite:`hinton_theory_1976,coster_european_2010,pereverzev_astraautomated_1991`"""
 
     code: Code = {"name": "fy_trans"}
+
+    solver: str = "fy_trans_bvp_solver"
 
     primary_coordinate: str | Variable = "rho_tor_norm"
 

@@ -131,8 +131,9 @@ class TransportSolverNumerics(IDS):
     r""" 与 core_profiles 的 primary coordinate 磁面坐标一致
       rho_tor_norm $\bar{\rho}_{tor}=\sqrt{ \Phi/\Phi_{boundary}}$ """
 
-    thermal_particle: typing.List[str] = []
-    fast_particle: typing.List[str] = []
+    fusion_reactions: typing.List[str] = []
+    ion: typing.List[str] = []
+    neutral: typing.List[str] = []
     impurities: typing.List[str] = []
 
     boundary_condition_type: typing.Dict[str, typing.Any]
@@ -227,7 +228,8 @@ class TransportSolverNumerics(IDS):
 
         Ti = zero
         ni = zero
-        for s in self.thermal_particle:
+
+        for s in self.ion:
             variables[f"ion/{s}/density"] = ns = Variable(
                 (i := i + 1),
                 f"ion/{s}/density",
@@ -299,7 +301,7 @@ class TransportSolverNumerics(IDS):
         # 平均离子温度？ FIXME: 需要 double check 离子平均温度的定义
         Ti /= ni
 
-        for s in self.fast_particle:
+        for reaction in self.fusion_reactions:
             variables[f"ion/{s}/density"] = ns = Variable(
                 (i := i + 1),
                 f"ion/{s}/density",
@@ -324,9 +326,8 @@ class TransportSolverNumerics(IDS):
             n_e += z * ns
             flux_e += z * ns_flux
 
-        if len(self.fast_particle) > 0:
-            ash = self.fast_particle[-1]
-
+        fusion_ash = []
+        for ash in fusion_ash:
             # 令 He ash 的温度等于离子温度
             variables[f"ion/{ash}/temperature"] = Ti
 
@@ -349,7 +350,7 @@ class TransportSolverNumerics(IDS):
 
         current._cache["variables"] = variables
 
-        normalize_units = self.normalize_units
+        normalize_units = self.code.parameters.normalize_units
 
         for equ in current.equations:
             equ["profile"] = initial_value.get(equ.identifier, zero)
