@@ -26,13 +26,13 @@ _predef_atoms = {
     "n": {
         "label": "n",
         "z": 0,
-        "a": scipy.constants.neutron_mass / scipy.constants.atomic_mass,
+        "a": 1,
         "mass": scipy.constants.neutron_mass,
     },
     "p": {
         "label": "p",
         "z": 1,
-        "a": scipy.constants.proton_mass / scipy.constants.atomic_mass,
+        "a": 1,
         "mass": scipy.constants.proton_mass,
     },
     "H": {
@@ -120,7 +120,7 @@ class Reaction:
     products: tuple
     reactivities: Function = sp_property(label=r"\sigma")
 
-    @sp_property(units="eV")
+    @sp_property(units="W")
     def energy(self) -> float:
         r0, r1 = self.reactants
         p0, p1 = self.products
@@ -130,7 +130,7 @@ class Reaction:
         m_p0 = atoms[p0].mass
         m_p1 = atoms[p1].mass
 
-        return (m_r0 + m_r1 - m_p0 - m_p1) * scipy.constants.c**2 / scipy.constants.electron_volt
+        return (m_r0 + m_r1 - m_p0 - m_p1) * scipy.constants.c**2
 
 
 class NuclearReaction(Dict[Reaction]):
@@ -143,11 +143,11 @@ nuclear_reaction = NuclearReaction(
         r"D(t,n)alpha": {
             "reactants": ["D", "T"],
             "products": ["n", "alpha"],
-            "energy": 13.5e6,  # eV
             "reactivities": (
                 # eV
                 np.array(
                     [
+                        0.0,
                         0.20e3,
                         0.30e3,
                         0.40e3,
@@ -180,6 +180,7 @@ nuclear_reaction = NuclearReaction(
                 # m^3/s
                 np.array(
                     [
+                        0.0,
                         1.254e-32,
                         7.292e-31,
                         9.344e-30,

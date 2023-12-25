@@ -495,6 +495,7 @@ class FyTrans(TransportSolverNumerics):
                         # transp_F += core_transp_1d.get(f"{spec}/particles/flux", 0)
 
                     S = Sij.get(label, zero)
+
                     for source in trans_sources:
                         source_1d = source.profiles_1d
                         S += source_1d.get(f"{spec}/particles", zero)
@@ -569,6 +570,7 @@ class FyTrans(TransportSolverNumerics):
                         flux_multiplier = one
 
                     Q = Qij.get(label, zero)
+                    
                     for source in trans_sources:
                         source_1d = source.profiles_1d
                         Q += source_1d.get(f"{spec}/energy", zero)
@@ -704,12 +706,12 @@ class FyTrans(TransportSolverNumerics):
             X = current.grid.rho_tor_norm
             Y = np.zeros([len(self.equations) * 2, X.size])
 
-            for idx, equ in enumerate(current.equations):
+            for idx, equ in enumerate(self.equations):
                 profile = initial_value.get(equ.identifier, 0)
                 profile = profile(X) if isinstance(profile, Expression) else profile
                 Y[idx * 2] = np.full_like(X, profile)
 
-            for idx, equ in enumerate(current.equations):
+            for idx, equ in enumerate(self.equations):
                 d_dt, D, V, R = equ.coefficient
                 y = Y[idx * 2]
                 Y[idx * 2 + 1] = -D(X, *Y) * derivative(y, X) + V(X, *Y) * y
@@ -717,6 +719,7 @@ class FyTrans(TransportSolverNumerics):
             Y /= self.normalize_factor.reshape(-1, 1)
 
             current.Y = Y
+
         return current
 
     def func(self, X: array_type, Y: array_type, *args) -> array_type:
@@ -727,17 +730,20 @@ class FyTrans(TransportSolverNumerics):
         # 添加量纲和归一化系数，复原为物理量
         Y = Y * self.normalize_factor.reshape(-1, 1)
 
+        # 将负值置为0
+        Y[2:] = np.where(Y[2:] < 0, 1.0e3, Y[2:])
+
         for idx, equ in enumerate(self.equations):
             y = Y[idx * 2]
             flux = Y[idx * 2 + 1]
 
             d_dt, D, V, R = equ.coefficient
+
             try:
                 d_dt = d_dt(X, *Y, *args) if isinstance(d_dt, Expression) else d_dt
                 D = D(X, *Y, *args) if isinstance(D, Expression) else D
                 V = V(X, *Y, *args) if isinstance(V, Expression) else V
                 R = R(X, *Y, *args) if isinstance(R, Expression) else R
-
             except RuntimeError as error:
                 raise RuntimeError(f"Error when calcuate {equ.identifier}") from error
 
@@ -748,6 +754,13 @@ class FyTrans(TransportSolverNumerics):
             fluxp = derivative(flux, X)
 
             dflux_dr = (R - d_dt + hyper_diff * fluxp) / (1.0 + hyper_diff)
+
+            # if np.any(np.isnan(d_dr)):
+            #     # logger.warning(f"NaN in {equ.identifier}! {D} {V}  ")
+            #     d_dr = np.nan_to_num(d_dr)
+            # elif np.any(np.isnan(dflux_dr)):
+            #     # logger.warning(f"NaN in {equ.identifier}! {R} {equ.coefficient[3]}")
+            #     dflux_dr =np.nan_to_num(dflux_dr)
 
             # 无量纲，归一化
             res[idx * 2] = d_dr / self.normalize_factor[idx * 2]
@@ -800,6 +813,9 @@ class FyTrans(TransportSolverNumerics):
         # 设定初值
         if Y is None:
             Y = np.zeros([len(self.equations) * 2, len(X)])
+
+        # if np.count_nonzero(np.isnan(Y)) != 0:
+        #     raise RuntimeError(f"Initial value has nan! {np.count_nonzero(np.isnan(Y))}")
 
         sol = solve_bvp(
             self.func,

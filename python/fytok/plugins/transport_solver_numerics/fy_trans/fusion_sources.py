@@ -1,5 +1,5 @@
 import typing
-
+import scipy.constants
 from spdm.data.Expression import Variable, Expression, zero
 from fytok.utils.atoms import nuclear_reaction, atoms
 from fytok.utils.logger import logger
@@ -59,7 +59,6 @@ def fusion_sources(
     lnGamma = 17
 
     # tau_slowing_down = 1.99 * ((Te / 1000) ** (3 / 2)) / (ne * 1.0e-19 * lnGamma)
-    nu_slowing_down = (ne * 1.0e-19 * lnGamma) / (1.99 * ((Te / 1000) ** (3 / 2)))
 
     for tag in fusion_reactions:
         reaction = nuclear_reaction[tag]
@@ -80,6 +79,8 @@ def fusion_sources(
 
         Ti = (n0 * T0 + n1 * T1) / (n0 + n1)
 
+        nu_slowing_down = (ne * 1.0e-19 * lnGamma) / (1.99 * ((Ti / 1000) ** (3 / 2)))
+
         S = reaction.reactivities(Ti) * n0 * n1
 
         if r0 == r1:
@@ -92,17 +93,20 @@ def fusion_sources(
         Sij[p0] = Sij.get(p0, zero) + S
         Sij[p1] = Sij.get(p1, zero) + S - nEP * nu_slowing_down
         Sij[ash] = Sij.get(ash, zero) + nEP * nu_slowing_down
+        # Sij[ash] = Sij.get(ash, zero) + S
 
-        fusion_energy = reaction.energy
-        logger.debug(fusion_energy)
+        fusion_energy = reaction.energy / scipy.constants.electron_volt
+
         if atoms[p0].z == 0:
-            fusion_energy = reaction.energy * mass_p0 / (mass_p0 + mass_p1)
+            fusion_energy *= mass_p0 / (mass_p0 + mass_p1)
         elif atoms[p1].z == 0:
-            fusion_energy = reaction.energy * mass_p1 / (mass_p0 + mass_p1)
+            fusion_energy *= mass_p1 / (mass_p0 + mass_p1)
+
+        fusion_energy *= nEP * nu_slowing_down
 
         # 假设 He ash 的温度为离子平均温度，alpha 粒子慢化后能量传递给电子
-        t_i_average = variables.get("t_i_average", Ti)
+        # t_i_average = variables.get("t_i_average", Ti)
         # 加热
-        Qij["electrons"] = Qij.get("electrons", zero) + (fusion_energy - t_i_average) * nEP * nu_slowing_down
+        Qij["electrons"] = Qij.get("electrons", zero) + fusion_energy  #    fusion_energy * S  #
 
     return Sij, Qij
