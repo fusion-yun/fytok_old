@@ -1,9 +1,9 @@
 import collections.abc
-
+import typing
 import numpy as np
 import scipy.constants
 from spdm.data.Path import Path
-from spdm.data.HTree import Dict, Node, List
+from spdm.data.HTree import Dict
 from spdm.data.Function import Function
 from spdm.data.sp_property import SpTree, sp_property, sp_tree, PropertyTree
 from spdm.data.AoS import AoS
@@ -11,16 +11,60 @@ from spdm.data.Path import update_tree
 from spdm.utils.typing import get_args
 from spdm.utils.tags import _not_found_
 
+#################################################
+# TODO: 需要 AMNS 数据库接口
+#################################################
 _predef_atoms = {
-    "e": {"label": "e", "z": -1, "a": scipy.constants.m_e / scipy.constants.m_p},
+    "e": {
+        "label": "e",
+        "z": -1,
+        "a": scipy.constants.electron_mass / scipy.constants.atomic_mass,
+        "mass": scipy.constants.electron_mass,
+    },
     "electron": "e",
     "electrons": "e",
-    "n": {"label": "n", "z": 0, "a": scipy.constants.m_n / scipy.constants.m_p},
-    "p": {"label": "p", "z": 1, "a": 1},
-    "H": {"label": "H", "z": 1, "a": 1},
-    "D": {"label": "D", "z": 1, "a": 2},
-    "T": {"label": "T", "z": 1, "a": 3},
-    "He": {"label": "He", "z": 2, "a": 4},
+    "n": {
+        "label": "n",
+        "z": 0,
+        "a": scipy.constants.neutron_mass / scipy.constants.atomic_mass,
+        "mass": scipy.constants.neutron_mass,
+    },
+    "p": {
+        "label": "p",
+        "z": 1,
+        "a": scipy.constants.proton_mass / scipy.constants.atomic_mass,
+        "mass": scipy.constants.proton_mass,
+    },
+    "H": {
+        "label": "H",
+        "z": 1,
+        "a": 1,
+        "mass": scipy.constants.physical_constants["proton mass"][0],
+    },
+    "D": {
+        "label": "D",
+        "z": 1,
+        "a": 2,
+        "mass": scipy.constants.physical_constants["deuteron mass"][0],
+    },
+    "T": {
+        "label": "T",
+        "z": 1,
+        "a": 3,
+        "mass": scipy.constants.physical_constants["triton mass"][0],
+    },
+    "3He": {
+        "label": "3He",
+        "z": 2,
+        "a": 3,
+        "mass": scipy.constants.physical_constants["helion mass"][0],
+    },
+    "He": {
+        "label": "He",
+        "z": 2,
+        "a": 4,
+        "mass": scipy.constants.physical_constants["alpha particle mass"][0],
+    },
     "alpha": "He",
     "Be": {"label": "Be", "z": 4, "a": 9},
     "Ar": {"label": "Ar", "z": 18, "a": 40},
@@ -32,6 +76,7 @@ class Atom:
     label: str
     z: float
     a: float
+    mass: float
     elements: AoS[PropertyTree]
 
 
@@ -71,10 +116,21 @@ def get_species(species):
 
 @sp_tree
 class Reaction:
-    reactants: List[str]
-    products: List[str]
-    energy: float = sp_property(units="eV")
+    reactants: tuple
+    products: tuple
     reactivities: Function = sp_property(label=r"\sigma")
+
+    @sp_property(units="eV")
+    def energy(self) -> float:
+        r0, r1 = self.reactants
+        p0, p1 = self.products
+
+        m_r0 = atoms[r0].mass
+        m_r1 = atoms[r1].mass
+        m_p0 = atoms[p0].mass
+        m_p1 = atoms[p1].mass
+
+        return (m_r0 + m_r1 - m_p0 - m_p1) * scipy.constants.c**2 / scipy.constants.electron_volt
 
 
 class NuclearReaction(Dict[Reaction]):

@@ -10,7 +10,7 @@ from spdm.data.Expression import Expression, Variable, zero
 
 def collisional_sources(Qij: typing.Dict[str, Expression], variables: typing.Dict[str, Expression]):
     # 粒子组份，包含离子和电子，如 electrons, ion/D,ion/T, ...
-    return Qij
+    return {}
     species = ["/".join(k.split("/")[:-1]) for k in variables.keys() if k.endswith("temperature")]
 
     epsilon = scipy.constants.epsilon_0

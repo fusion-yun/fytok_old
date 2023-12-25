@@ -374,7 +374,7 @@ class FyTrans(TransportSolverNumerics):
         Uij = {}
 
         # 粒子交换，核反应
-        Sij, Qij = fusion_sources(Sij, Qij, variables, fusion_reactions=self.code.parameters.fusion_reactions or [])
+        Sij, Qij = fusion_sources(Sij, Qij, variables, fusion_reactions=self.fusion_reactions)
 
         # 碰撞 - 能量交换
         Qij = collisional_sources(Qij, variables)
@@ -396,11 +396,13 @@ class FyTrans(TransportSolverNumerics):
         for idx, equ in enumerate(self.equations):
             identifier = equ.identifier
 
-            var_name = identifier.split("/")
+            pth = identifier.split("/")
 
-            quantity_name = var_name[-1]
+            quantity_name = pth[-1]
 
-            spec = "/".join(var_name[:-1])
+            label = pth[-2] if len(pth) >= 2 else pth[0]
+
+            spec = "/".join(pth[:-1])
 
             bc_value = boundary_value.get(equ.identifier, None)
 
@@ -492,7 +494,7 @@ class FyTrans(TransportSolverNumerics):
                         transp_V += core_transp_1d.get(f"{spec}/particles/v", zero)
                         # transp_F += core_transp_1d.get(f"{spec}/particles/flux", 0)
 
-                    S = Sij.get(spec, zero)
+                    S = Sij.get(label, zero)
                     for source in trans_sources:
                         source_1d = source.profiles_1d
                         S += source_1d.get(f"{spec}/particles", zero)
@@ -566,7 +568,7 @@ class FyTrans(TransportSolverNumerics):
                     if flux_multiplier is zero:
                         flux_multiplier = one
 
-                    Q = Qij.get(spec, zero)
+                    Q = Qij.get(label, zero)
                     for source in trans_sources:
                         source_1d = source.profiles_1d
                         Q += source_1d.get(f"{spec}/energy", zero)
@@ -639,7 +641,7 @@ class FyTrans(TransportSolverNumerics):
                         chi_u += trans_1d.get(f"{spec}/momentum/d", zero)
                         V_u_pinch += trans_1d.get(f"{spec}/momentum/v", zero)
 
-                    U = Uij.get(spec, zero) * gm8
+                    U = Uij.get(label, zero) * gm8
                     for source in trans_sources:
                         source_1d = source.profiles_1d
                         U += source_1d.get(f"{spec}/momentum/toroidal", zero)

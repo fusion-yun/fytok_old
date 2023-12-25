@@ -67,28 +67,42 @@ def fusion_sources(
         r0, r1 = reaction.reactants
         p0, p1 = reaction.products
 
-        ash = f"ion/{atoms[p1].label}"
-        r0 = f"ion/{r0}"
-        r1 = f"ion/{r1}"
-        p0 = f"ion/{p0}"
-        p1 = f"ion/{p1}"
+        ash = atoms[p1].label
 
-        n0 = variables.get(f"{r0}/density")
-        n1 = variables.get(f"{r1}/density")
+        mass_p0 = atoms[p0].mass
+        mass_p1 = atoms[p1].mass
 
-        T0 = variables.get(f"{r0}/temperature")
-        T1 = variables.get(f"{r1}/temperature")
+        n0 = variables.get(f"ion/{r0}/density")
+        n1 = variables.get(f"ion/{r1}/density")
+
+        T0 = variables.get(f"ion/{r0}/temperature")
+        T1 = variables.get(f"ion/{r1}/temperature")
 
         Ti = (n0 * T0 + n1 * T1) / (n0 + n1)
 
         S = reaction.reactivities(Ti) * n0 * n1
 
-        nEP: Expression | None = variables.get(f"{p1}/density")
+        if r0 == r1:
+            S *= 0.5
+
+        nEP: Expression | None = variables.get(f"ion/{p1}/density")
 
         Sij[r0] = Sij.get(r0, zero) - S
         Sij[r1] = Sij.get(r1, zero) - S
         Sij[p0] = Sij.get(p0, zero) + S
         Sij[p1] = Sij.get(p1, zero) + S - nEP * nu_slowing_down
         Sij[ash] = Sij.get(ash, zero) + nEP * nu_slowing_down
+
+        fusion_energy = reaction.energy
+        logger.debug(fusion_energy)
+        if atoms[p0].z == 0:
+            fusion_energy = reaction.energy * mass_p0 / (mass_p0 + mass_p1)
+        elif atoms[p1].z == 0:
+            fusion_energy = reaction.energy * mass_p1 / (mass_p0 + mass_p1)
+
+        # 假设 He ash 的温度为离子平均温度，alpha 粒子慢化后能量传递给电子
+        t_i_average = variables.get("t_i_average", Ti)
+        # 加热
+        Qij["electrons"] = Qij.get("electrons", zero) + (fusion_energy - t_i_average) * nEP * nu_slowing_down
 
     return Sij, Qij
