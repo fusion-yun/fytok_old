@@ -16,6 +16,26 @@ from ..ontology import core_sources
 
 
 @sp_tree
+class CoreSourcesMomentum(SpTree):
+    """Source terms for vector components in predefined directions"""
+
+    radial: Expression = sp_property(units="kg.m^-1.s^-2")
+    """ Radial component"""
+
+    diamagnetic: Expression = sp_property(units="kg.m^-1.s^-2")
+    """ Diamagnetic component"""
+
+    parallel: Expression = sp_property(units="kg.m^-1.s^-2")
+    """ Parallel component"""
+
+    poloidal: Expression = sp_property(units="kg.m^-1.s^-2")
+    """ Poloidal component"""
+
+    toroidal: Expression = sp_property(units="kg.m^-1.s^-2")
+    """ Toroidal component"""
+
+
+@sp_tree
 class CoreSourcesSpecies(SpTree):
     """Source terms related to electrons"""
 
@@ -69,6 +89,8 @@ class CoreSourcesSpecies(SpTree):
         """Power coupled to electrons inside the flux surface. Cumulative volume integral
         of the source term for the electron energy equation"""
         return self.energy.I
+
+    momentum: CoreSourcesMomentum
 
 
 @sp_tree
