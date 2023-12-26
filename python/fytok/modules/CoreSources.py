@@ -106,11 +106,14 @@ class CoreSourcesProfiles1D(core_sources._T_core_sources_source_profiles_1d):
 
     conductivity_parallel: Expression
 
+    Electrons = CoreSourcesElectrons
     electrons: CoreSourcesElectrons = {"label": "electrons"}
 
-    ion: AoS[CoreSourcesSpecies] = sp_property(default_value={})
+    Ion = CoreSourcesSpecies
+    ion: AoS[CoreSourcesSpecies] = sp_property(default_initial={})
 
-    neutral: AoS[CoreSourcesNeutral]
+    Neutral = CoreSourcesNeutral
+    neutral: AoS[CoreSourcesNeutral] = sp_property(default_initial={})
 
 
 @sp_tree

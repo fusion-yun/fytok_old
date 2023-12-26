@@ -176,16 +176,6 @@ class TransportSolverNumerics(IDS):
 
         profiles_1d = CoreProfiles.TimeSlice.Profiles1D({"grid": current.grid})
 
-        ions = [k.split("/")[-2] for k in self.variables.keys() if k.startswith("ion") and k.endswith("density")]
-
-        for k, v in self.variables.items():
-            value = v(X, *Y)
-            if not k.startswith("ion"):
-                profiles_1d[k] = value
-            else:
-                # FIXME: Path 需要增加这段功能，
-                pth = k.split("/")
-                idx = ions.index(pth[1])
-                profiles_1d.ion[idx].update({"label": pth[1], pth[2]: value})
+        profiles_1d.update({k: v(X, *Y) for k, v in self.variables.items() if not k.endswith("_flux")})
 
         return profiles_1d

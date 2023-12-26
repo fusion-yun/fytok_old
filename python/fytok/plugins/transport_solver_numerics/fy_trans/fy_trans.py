@@ -100,7 +100,7 @@ class FyTrans(TransportSolverNumerics):
         # 计算总离子密度
         t_i_average = zero
         n_i_total = zero
-        n_i_flux_totoal = zero
+        n_i_totoal_flux = zero
 
         for s in self.ion_thermal:
             variables[f"ion/{s}/density"] = ns = Variable(
@@ -166,7 +166,7 @@ class FyTrans(TransportSolverNumerics):
             z = atoms[s].z
             t_i_average += z * ns * Ts
             n_i_total += z * ns
-            n_i_flux_totoal += z * ns_flux
+            n_i_totoal_flux += z * ns_flux
 
         # 平均离子温度, 没有计入反应产物 alpha 和 He ash
         t_i_average /= n_i_total
@@ -195,14 +195,14 @@ class FyTrans(TransportSolverNumerics):
 
             z = atoms[s].z
             n_i_total += z * ns
-            n_i_flux_totoal += z * ns_flux
+            n_i_totoal_flux += z * ns_flux
 
         # for ash in fusion_ash:
         #     # 令 He ash 的温度等于平均离子温度
         #     variables[f"ion/{ash}/temperature"] = t_i_average
 
         variables["n_i_total"] = n_i_total
-        variables["n_i_flux_totoal"] = n_i_flux_totoal
+        variables["n_i_totoal_flux"] = n_i_totoal_flux
 
         self.primary_coordinate = x
         self._cache["variables"] = variables
@@ -270,7 +270,7 @@ class FyTrans(TransportSolverNumerics):
             # n_imp_flux += (core_profiles_1d.ion[s].density_flux * z_ion_1d)(x)
 
         n_e = n_imp + self.variables["n_i_total"]
-        n_e_flux = n_imp_flux + self.variables["n_i_flux_totoal"]
+        n_e_flux = n_imp_flux + self.variables["n_i_totoal_flux"]
 
         # quasi neutrality condition
         n_e._metadata["name"] = "ne"

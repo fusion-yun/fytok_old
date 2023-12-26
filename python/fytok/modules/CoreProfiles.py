@@ -151,10 +151,10 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
     electrons: CoreProfilesElectrons
 
     Ion = CoreProfilesIon
-    ion: AoS[CoreProfilesIon] = sp_property(identifier="label")
+    ion: AoS[CoreProfilesIon] = sp_property(identifier="label", default_initial={})
 
     Neutral = CoreProfilesNeutral
-    neutral: AoS[CoreProfilesNeutral] = sp_property(identifier="label")
+    neutral: AoS[CoreProfilesNeutral] = sp_property(identifier="label", default_initial={})
 
     @sp_property
     def zeff(self) -> Expression:
