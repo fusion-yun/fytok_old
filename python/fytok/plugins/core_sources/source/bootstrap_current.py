@@ -19,19 +19,21 @@ class BootstrapCurrent(CoreSources.Source):
         "description": "Bootstrap current, based on  Tokamaks, 3ed, sec 14.12 J.A.Wesson 2003",
     }
 
-    def refresh(
-        self, *args, equilibrium: Equilibrium.TimeSlice, core_profiles_1d: CoreProfiles.Profiles1d, **kwargs
-    ) -> float:
-        residual = super().refresh(*args, equilibrium=equilibrium, core_profiles_1d=core_profiles_1d, **kwargs)
+    def execute(
+        self, current: CoreSources.Source.TimeSlice, *previous: CoreSources.Source.TimeSlice
+    ) -> CoreSources.Source.TimeSlice:
+        equilibrium: Equilibrium.TimeSlice = self.inputs.get_source("equilibrium").time_slice.current
+        core_profiles: CoreProfiles.TimeSlice = self.inputs.get_source("core_profiles").time_slice.current
 
         equilibrium_1d = equilibrium.profiles_1d
-        profiles_1d = self.profiles_1d.current
+        core_profiles_1d = core_profiles.profiles_1d
 
-        radial_grid = core_profiles_1d.grid
+        radial_grid = equilibrium_1d.grid
 
         eV = constants.electron_volt
-        B0 = equilibrium._parent.vacuum_toroidal_field.b0(equilibrium.time)
-        R0 = equilibrium._parent.vacuum_toroidal_field.r0
+
+        B0 = equilibrium.vacuum_toroidal_field.b0
+        R0 = equilibrium.vacuum_toroidal_field.r0
 
         # rho_tor_norm = (core_profile.grid.rho_tor_norm[:-1]+core_profile.grid.rho_tor_norm[1:])*0.5
         # rho_tor = (core_profile.grid.rho_tor[:-1]+core_profile.grid.rho_tor[1:])*0.5
@@ -83,7 +85,6 @@ class BootstrapCurrent(CoreSources.Source):
         j_bootstrap = np.asarray(c1 * dlnPe + c3 * dlnTe)
 
         for sp in core_profiles_1d.ion:
-            logger.debug(sp.label)
             Ti = sp.temperature(rho_tor_norm)
             Ni = sp.density(rho_tor_norm)
             logger.debug(Ni)
@@ -135,11 +136,8 @@ class BootstrapCurrent(CoreSources.Source):
             / (2.0 * constants.pi * B0),
         )
 
-        profiles_1d["j_parallel"] = function_like(
-            profiles_1d.grid.rho_tor_norm, np.hstack([j_bootstrap[0], j_bootstrap])
-        )
+        source_1d = current.profiles_1d
+        source_1d["grid"] = radial_grid
+        source_1d["j_parallel"] = np.hstack([j_bootstrap[0], j_bootstrap])
 
-        return residual
-
-
-__SP_EXPORT__ = BootstrapCurrent
+        return current

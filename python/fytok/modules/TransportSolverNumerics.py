@@ -116,13 +116,13 @@ class TransportSolverNumerics(IDS):
 
     solver: str = "ion_solver"
 
-    fusion_reactions: set = set()
+    ion_thermal: set = set()
 
-    ion: set = set()
-
-    neutral: set = set()
+    ion_non_thermal: set = set()
 
     impurities: set = set()
+
+    neutral: set = set()
 
     primary_coordinate: str | Variable = "rho_tor_norm"
     r""" 与 core_profiles 的 primary coordinate 磁面坐标一致
@@ -177,6 +177,7 @@ class TransportSolverNumerics(IDS):
         profiles_1d = CoreProfiles.TimeSlice.Profiles1D({"grid": current.grid})
 
         ions = [k.split("/")[-2] for k in self.variables.keys() if k.startswith("ion") and k.endswith("density")]
+
         for k, v in self.variables.items():
             value = v(X, *Y)
             if not k.startswith("ion"):

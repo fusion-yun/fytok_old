@@ -48,7 +48,7 @@ class CoreSourcesSpecies(SpTree):
     a: float
     """ Mass number of the neutral species"""
 
-    particles: Expression = sp_property(units="s^-1.m^-3")
+    particles: Expression = sp_property(units="s^-1.m^-3", default_value=0)
     """Source term for electron density equation"""
 
     particles_decomposed: _Decomposed
@@ -59,7 +59,7 @@ class CoreSourcesSpecies(SpTree):
         source term for the electron density equation."""
         return self.particles.I
 
-    energy: Expression = sp_property(units="W.m^-3")
+    energy: Expression = sp_property(units="W.m^-3", default_value=0)
     """Source term for the electron energy equation"""
 
     energy_decomposed: _Decomposed
@@ -108,7 +108,7 @@ class CoreSourcesProfiles1D(core_sources._T_core_sources_source_profiles_1d):
 
     electrons: CoreSourcesElectrons = {"label": "electrons"}
 
-    ion: AoS[CoreSourcesSpecies]
+    ion: AoS[CoreSourcesSpecies] = sp_property(default_value={})
 
     neutral: AoS[CoreSourcesNeutral]
 

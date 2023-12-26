@@ -127,7 +127,7 @@ class Module(Actor):
     def tag(self) -> str:
         return f"{FY_JOBID}/{self._plugin_prefix}{self.code.name}"
 
-    def execute(self, current: TimeSlice, *previous: TimeSlice):
+    def execute(self, current: TimeSlice, *previous: TimeSlice) -> typing.Type[TimeSlice]:
         logger.info(f"Execute module {self.code.module_path}")
         return super().execute(current, *previous)
 

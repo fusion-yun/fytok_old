@@ -1,14 +1,15 @@
 import numpy as np
+from scipy import constants
+from spdm.numlib.misc import array_like
+from spdm.data.Function import Function, function_like
+from spdm.data.Entry import _next_
+from spdm.utils.tags import _not_found_
+from spdm.data.Path import update_tree
 from fytok.modules.CoreProfiles import CoreProfiles
 from fytok.modules.CoreTransport import CoreTransport
 from fytok.modules.Equilibrium import Equilibrium
-from spdm.numlib.misc import array_like
-from scipy import constants
-from spdm.data import Function, function_like
-from spdm.data.Entry import _next_
 from fytok.utils.logger import logger
-from spdm.utils.tags import _not_found_
-from spdm.data.Path import update_tree
+
 
 
 class NeoClassical(CoreTransport.Model):

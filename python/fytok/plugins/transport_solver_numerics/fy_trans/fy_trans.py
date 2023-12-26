@@ -28,9 +28,6 @@ from fytok.utils.logger import logger
 from fytok.utils.envs import FY_DEBUG
 
 
-from .fusion_sources import fusion_sources
-from .momentum_sources import momentum_sources
-from .collisional_sources import collisional_sources
 from .bvp import solve_bvp
 
 EPSILON = 1.0e-32
@@ -105,27 +102,7 @@ class FyTrans(TransportSolverNumerics):
         n_i_total = zero
         n_i_flux_totoal = zero
 
-        fusion_products = set()
-        fusion_ash = set()
-        for tag in self.fusion_reactions:
-            reaction = nuclear_reaction[tag]
-            for r in reaction.reactants:
-                if r not in ["electrons", "e", "n", "p", "alpha"]:
-                    r = r.capitalize()
-                self.ion.add(r)
-            for p in reaction.products:
-                if p not in ["electrons", "e", "n", "p", "alpha"]:
-                    p = r.capitalize()
-                if p == "n":
-                    continue
-
-                ash = atoms[p].label
-                if ash == p:
-                    raise NotImplementedError(f"TODO: give unified identifier to fast particle")
-                fusion_products.add(p)
-                fusion_ash.add(ash)
-
-        for s in self.ion:
+        for s in self.ion_thermal:
             variables[f"ion/{s}/density"] = ns = Variable(
                 (i := i + 1),
                 f"ion/{s}/density",
@@ -196,7 +173,7 @@ class FyTrans(TransportSolverNumerics):
 
         variables["t_i_average"] = t_i_average
 
-        for s in list(fusion_products) + list(fusion_ash):
+        for s in self.ion_non_thermal:
             variables[f"ion/{s}/density"] = ns = Variable(
                 (i := i + 1),
                 f"ion/{s}/density",
@@ -220,9 +197,9 @@ class FyTrans(TransportSolverNumerics):
             n_i_total += z * ns
             n_i_flux_totoal += z * ns_flux
 
-        for ash in fusion_ash:
-            # 令 He ash 的温度等于平均离子温度
-            variables[f"ion/{ash}/temperature"] = t_i_average
+        # for ash in fusion_ash:
+        #     # 令 He ash 的温度等于平均离子温度
+        #     variables[f"ion/{ash}/temperature"] = t_i_average
 
         variables["n_i_total"] = n_i_total
         variables["n_i_flux_totoal"] = n_i_flux_totoal
@@ -288,9 +265,9 @@ class FyTrans(TransportSolverNumerics):
         n_imp_flux = zero
 
         for s in self.impurities:
-            z_ion_1d = core_profiles_1d.get(f"ion/{s}/z_ion_1d", zero)
-            n_imp += (core_profiles_1d.get(f"ion/{s}/density", zero) * z_ion_1d)(x)
-            n_imp_flux += (core_profiles_1d.get(f"ion/{s}/density_flux", zero) * z_ion_1d)(x)
+            z_ion_1d = core_profiles_1d.ion[s].z_ion_1d
+            n_imp += (core_profiles_1d.ion[s].density * z_ion_1d)(x)
+            # n_imp_flux += (core_profiles_1d.ion[s].density_flux * z_ion_1d)(x)
 
         n_e = n_imp + self.variables["n_i_total"]
         n_e_flux = n_imp_flux + self.variables["n_i_flux_totoal"]
@@ -369,18 +346,18 @@ class FyTrans(TransportSolverNumerics):
 
         k_vppr = 0  # (3 / 2) * k_rho_bdry - k_phi *　x * vpr(psi).dln()
 
-        Sij = {}
-        Qij = {}
-        Uij = {}
+        # Sij = {}
+        # Qij = {}
+        # Uij = {}
 
-        # 粒子交换，核反应
-        Sij, Qij = fusion_sources(Sij, Qij, variables, fusion_reactions=self.fusion_reactions)
+        # # 粒子交换，核反应
+        # Sij, Qij = fusion_sources(Sij, Qij, variables, fusion_reactions=self.fusion_reactions)
 
-        # 碰撞 - 能量交换
-        Qij = collisional_sources(Qij, variables)
+        # # 碰撞 - 能量交换
+        # Qij = collisional_sources(Qij, variables)
 
-        # 环向转动动量交换 momentum exchange with other ion components:
-        Uij = momentum_sources(Uij, variables)
+        # # 环向转动动量交换 momentum exchange with other ion components:
+        # Uij = momentum_sources(Uij, variables)
 
         trans_models: typing.List[CoreTransport.Model.TimeSlice] = [
             model.fetch(x, **variables) for model in core_transport.model
@@ -494,7 +471,7 @@ class FyTrans(TransportSolverNumerics):
                         transp_V += core_transp_1d.get(f"{spec}/particles/v", zero)
                         # transp_F += core_transp_1d.get(f"{spec}/particles/flux", 0)
 
-                    S = Sij.get(label, zero)
+                    S = zero
 
                     for source in trans_sources:
                         source_1d = source.profiles_1d
@@ -569,8 +546,8 @@ class FyTrans(TransportSolverNumerics):
                     if flux_multiplier is zero:
                         flux_multiplier = one
 
-                    Q = Qij.get(label, zero)
-                    
+                    Q = zero
+
                     for source in trans_sources:
                         source_1d = source.profiles_1d
                         Q += source_1d.get(f"{spec}/energy", zero)
@@ -643,10 +620,13 @@ class FyTrans(TransportSolverNumerics):
                         chi_u += trans_1d.get(f"{spec}/momentum/d", zero)
                         V_u_pinch += trans_1d.get(f"{spec}/momentum/v", zero)
 
-                    U = Uij.get(label, zero) * gm8
+                    U = zero
+
                     for source in trans_sources:
                         source_1d = source.profiles_1d
                         U += source_1d.get(f"{spec}/momentum/toroidal", zero)
+
+                    U *= gm8
 
                     ms = atoms[spec].a
 

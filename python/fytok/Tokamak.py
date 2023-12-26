@@ -171,6 +171,27 @@ Modules:
     summary                 : Summary                   
     # fmt:on
 
+    def setup(self, *args, **kwargs):
+        fusion_products = set()
+        fusion_ash = set()
+        for tag in self.fusion_reactions:
+            reaction = nuclear_reaction[tag]
+            for r in reaction.reactants:
+                if r not in ["electrons", "e", "n", "p", "alpha"]:
+                    r = r.capitalize()
+                self.ion.add(r)
+            for p in reaction.products:
+                if p not in ["electrons", "e", "n", "p", "alpha"]:
+                    p = r.capitalize()
+                if p == "n":
+                    continue
+
+                ash = atoms[p].label
+                if ash == p:
+                    raise NotImplementedError(f"TODO: give unified identifier to fast particle")
+                fusion_products.add(p)
+                fusion_ash.add(ash)
+
     def advance(self, *args, **kwargs):
         return super().advance(*args, **kwargs)
 
