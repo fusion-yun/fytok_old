@@ -130,8 +130,20 @@ def read_iter_profiles(path):
     Cped = 0.17
     Ccore = 0.4
     # Function( profiles["Xi"].values,bs_r_norm)  Cped = 0.2
-    chi = Piecewise([Ccore * (1.0 + 3 * (_x**2)), Cped], [(_x < r_ped), (_x >= r_ped)], label=r"\chi")
-    chi_e = Piecewise([0.5 * Ccore * (1.0 + 3 * (_x**2)), Cped], [(_x < r_ped), (_x >= r_ped)], label=r"\chi_e")
+    chi = Piecewise(
+        [
+            (Ccore * (1.0 + 3 * (_x**2)), (_x < r_ped)),
+            (Cped, (_x >= r_ped)),
+        ],
+        label=r"\chi",
+    )
+    chi_e = Piecewise(
+        [
+            (0.5 * Ccore * (1.0 + 3 * (_x**2)), (_x < r_ped)),
+            (Cped, (_x >= r_ped)),
+        ],
+        label=r"\chi_e",
+    )
 
     D = 0.1 * (chi + chi_e)
 
@@ -167,7 +179,7 @@ def read_iter_profiles(path):
             # + profiles_1D["Paux"].values
             - profiles_1D["Prad"].values
             - profiles_1D["Pneu"].values
-            - profiles_1D["Peic"].values
+            # - profiles_1D["Peic"].values
             # + profiles_1D["Pdte"].values
         )
         * 1e6
@@ -175,7 +187,11 @@ def read_iter_profiles(path):
     )
 
     Q_DT = (
-        (profiles_1D["Pibm"].values + profiles_1D["Peic"].values + profiles_1D["Pdti"].values)
+        (
+            profiles_1D["Pibm"].values
+            #  + profiles_1D["Peic"].values
+            + profiles_1D["Pdti"].values
+        )
         * 1e6
         / scipy.constants.electron_volt
     )
@@ -185,7 +201,7 @@ def read_iter_profiles(path):
     # Core Source
     entry["core_sources/source/0/time_slice/0/profiles_1d"] = {
         "grid": grid,
-        "conductivity_parallel": profiles_1D["Joh"].values * 1.0e6 / profiles_1D["U"].values * (TWOPI * R0),
+        # "conductivity_parallel": profiles_1D["Joh"].values * 1.0e6 / profiles_1D["U"].values * (TWOPI * R0),
         "j_parallel": profiles_1D["Jtot"].values * 1e6,  # A/m^2
         # "j_parallel": 1e6
         # * (  # A/m^2

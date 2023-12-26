@@ -388,27 +388,21 @@ class FyTrans(TransportSolverNumerics):
                     psi = variables.get(f"psi", zero)
                     psi_m = Path(f"psi").get(core_profiles_1d_m, zero)(x)
 
-                    conductivity_parallel = zero
+                    conductivity_parallel: Expression = zero
 
-                    j_parallel = zero
+                    j_parallel: Expression = zero
 
-                    if core_sources is not None:
-                        for source in trans_sources:
-                            core_source_1d = source.profiles_1d
-                            conductivity_parallel += core_source_1d.conductivity_parallel or zero
-                            j_parallel += core_source_1d.j_parallel or zero
-                            # j_parallel_imp += core_source_1d.j_parallel_imp or zero
-
-                    if j_parallel is zero:
-                        j_parallel = eq_1d.j_tor(psi_norm)  # FIXME:这里应该是 j_parallel
+                    for source in trans_sources:
+                        core_source_1d = source.profiles_1d
+                        conductivity_parallel += core_source_1d.conductivity_parallel or zero
+                        j_parallel += core_source_1d.j_parallel or zero
 
                     c = (scipy.constants.mu_0 * B0 * x * (rho_tor_boundary**2)) / fpol2
 
                     d_dt = one_over_dt * conductivity_parallel * (psi - psi_m) * c
 
-                    D = (
-                        vpr * gm2 / fpol / (-(2.0 * scipy.constants.pi))
-                    ) / rho_tor_boundary  # FIXME: 检查 psi 的定义，符号，2Pi系数
+                    D = (vpr * gm2 / fpol / (-(2.0 * scipy.constants.pi))) / rho_tor_boundary
+                    # FIXME: 检查 psi 的定义，符号，2Pi系数
 
                     V = -k_phi * x * conductivity_parallel * c
 
@@ -725,7 +719,7 @@ class FyTrans(TransportSolverNumerics):
                 V = V(X, *Y, *args) if isinstance(V, Expression) else V
                 R = R(X, *Y, *args) if isinstance(R, Expression) else R
             except RuntimeError as error:
-                raise RuntimeError(f"Error when calcuate {equ.identifier}") from error
+                raise RuntimeError(f"Error when calcuate {equ.identifier} {R}") from error
 
             yp = derivative(y, X)
 
