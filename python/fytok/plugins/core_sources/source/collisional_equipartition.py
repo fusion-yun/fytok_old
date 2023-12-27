@@ -4,9 +4,9 @@ import typing
 from fytok.modules.CoreProfiles import CoreProfiles
 from fytok.modules.Equilibrium import Equilibrium
 
-
+from spdm.utils.typing import array_type
 from spdm.utils.tags import _not_found_
-from spdm.data.Expression import Expression, Variable, Piecewise, zero
+from spdm.data.Expression import Expression, Variable, Piecewise, piecewise, zero
 from spdm.data.sp_property import sp_tree
 
 from fytok.modules.CoreSources import CoreSources
@@ -21,7 +21,7 @@ class CollisionalEquipartition(CoreSources.Source):
     code = {"name": "collisional_equipartition", "description": "Fusion reaction"}  # type: ignore
 
     def fetch(self, x: Variable, **variables: Expression) -> CoreSources.Source.TimeSlice:
-        current: CoreSources.Source.TimeSlice = super().fetch()
+        current: CoreSources.Source.TimeSlice = super().fetch(x, **variables)
 
         source_1d = current.profiles_1d
 
@@ -32,7 +32,7 @@ class CollisionalEquipartition(CoreSources.Source):
         Te = variables.get(f"electrons/temperature")
         ve = variables.get(f"electrons/velocity/toroidal")
 
-        clog = Piecewise(
+        clog = piecewise(
             [
                 (30.9 - 1.15 * np.log10(ne) + 2.30 * np.log10(Te), Te >= 10),
                 (29.9 - 1.15 * np.log10(ne) + 3.45 * np.log10(Te), Te < 10),
@@ -62,7 +62,7 @@ class CollisionalEquipartition(CoreSources.Source):
 
             # electron-Ion collisions:
             #   Coulomb logarithm:
-            clog = Piecewise(
+            clog = piecewise(
                 [
                     (30.9 - 1.15 * np.log10(ne) + 2.30 * np.log10(Te), Te >= 10 * zi**2),
                     (29.9 - 1.15 * np.log10(ne) + 3.45 * np.log10(Te), Te < 10 * zi**2),

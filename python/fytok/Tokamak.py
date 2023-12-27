@@ -211,9 +211,9 @@ Modules:
 
         self.equilibrium.flush()
 
-        self.core_sources.flush()
-
         self.core_transport.flush()
+
+        self.core_sources.flush()
 
         self.transport_solver.flush()
 
