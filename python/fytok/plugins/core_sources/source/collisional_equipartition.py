@@ -47,69 +47,65 @@ class CollisionalEquipartition(CoreSources.Source):
         # Plasma electrical conductivity:
         source_1d.conductivity_parallel = 1.96e-09 * e**2 / me * ne * tau_e
 
-        species = [k.split("/")[1] for k in variables.keys() if k.endswith("temperature") and k.startswith("ion")]
-
+        species = [
+            "/".join(k.split("/")[:-1])
+            for k, v in variables.items()
+            if k.endswith("temperature")
+            and v is not zero
+            and not (not isinstance(v, (array_type, Expression)) and v == 0)
+        ]
+        logger.debug(species)
         for idx, i in enumerate(species):
             zi = atoms[i].z
             mi = atoms[i].mass
 
-            ni = variables.get(f"ion/{i}/density", zero)
-            Ti = variables.get(f"ion/{i}/temperature", zero)
-            vi = variables.get(f"ion/{i}/velocity/toroidal", zero)
+            ni = variables.get(f"{i}/density", zero)
+            Ti = variables.get(f"{i}/temperature", zero)
+            vi = variables.get(f"{i}/velocity/toroidal", zero)
 
             if Ti is zero:
                 continue
-
-            # electron-Ion collisions:
-            #   Coulomb logarithm:
-            clog = piecewise(
-                [
-                    (30.9 - 1.15 * np.log10(ne) + 2.30 * np.log10(Te), Te >= 10 * zi**2),
-                    (29.9 - 1.15 * np.log10(ne) + 3.45 * np.log10(Te), Te < 10 * zi**2),
-                ],
-                name="clog",
-                label=r"\Lambda_{ei}",
-            )
-
-            # clog = 24.0e0 - 1.15 * np.log(1.0e-6) - 1.15 * np.log(ne) + 2.30 * np.log(Te)
-
-            # electron-ion collision time and energy exchange term:
-            tau_ie = (Te * mi + Ti * me) ** 1.5 / 1.8e-25 / (np.sqrt(mi * me)) / zi**2 / clog
-
-            source_1d.ion[i].energy += ni * (Ti - Te) / tau_ie
-            source_1d.ion[i].momentum.toroidal += me * ne * (vi - ve) / tau_ie
-
-            source_1d.electrons.energy += (Te - Ti) / tau_ie
-            source_1d.electrons.momentum.toroidal += (ve - vi) / tau_ie
 
             # ion-ion collisions:
             for j in species[idx + 1 :]:
                 zj = atoms[j].z
                 mj = atoms[j].mass
-                if j != "electrons":
-                    j = f"ion/{j}"
 
-                nj = variables.get(f"ion/{j}/density", zero)
-                Tj = variables.get(f"ion/{j}/temperature", zero)
-                vj = variables.get(f"ion/{j}/velocity/toroidal", zero)
+                nj = variables.get(f"{j}/density", zero)
+                Tj = variables.get(f"{j}/temperature", zero)
+                vj = variables.get(f"{j}/velocity/toroidal", zero)
 
-                if Tj is zero:
+                if Tj is _not_found_ or Tj is zero:
                     continue
 
-                # Coulomb logarithm:
-                clog = (
-                    29.9
-                    - np.log10(zi * zj * (mi + mj) / (mi * Tj + mj * Ti))
-                    - np.log10(np.sqrt(ni * zi**2.0 / Ti + nj * zj**2.0 / Tj))
-                )
+                #   Coulomb logarithm:
+                if i == "electrons":  # electron-Ion collisions:
+                    clog = piecewise(
+                        [
+                            (30.9 - 1.15 * np.log10(ni) + 2.30 * np.log10(Ti), Ti >= 10 * zi**2),
+                            (29.9 - 1.15 * np.log10(ni) + 3.45 * np.log10(Ti), Ti < 10 * zi**2),
+                        ],
+                        name="clog",
+                        label=r"\Lambda_{ei}",
+                    )
 
-                # ion-ion collision time and energy exchange term:
+                else:  # ion-Ion collisions:
+                    clog = (
+                        29.9
+                        - np.log10(zi * zj * (mi + mj) / (mi * Tj + mj * Ti))
+                        - np.log10(np.sqrt(ni * zi**2.0 / Ti + nj * zj**2.0 / Tj))
+                    )
+
+                # collision time :
                 tau_ij = (Ti * mj + Tj * mi) ** 1.5 / 1.8e-25 / (np.sqrt(mi * mj)) / (zi * zj) ** 2 / clog
 
-                source_1d.ion[i].energy += (Ti - Tj) / tau_ij
-                source_1d.ion[j].energy += (Tj - Ti) / tau_ij
-                source_1d.ion[i].momentum.toroidal += (mi * ni * vi - mj * nj * vj) / tau_ij
-                source_1d.ion[j].momentum.toroidal += (mj * nj * vj - mi * ni * vi) / tau_ij
+                # energy exchange term
+                source_1d[i].energy += (Ti - Tj) / tau_ij
+                source_1d[j].energy += (Tj - Ti) / tau_ij
+
+                # momentum exchange term
+                source_1d[i].momentum.toroidal += mj * nj * (vi - vj) / tau_ij
+                source_1d[j].momentum.toroidal += mi * ni * (vj - vi) / tau_ij
 
         return current
 
