@@ -115,7 +115,15 @@ def read_iter_profiles(path):
 
     entry["core_transport"] = {
         "model": [
-            {"code": {"name": "dummy"}, "time_slice": [{"time": time, "vacuum_toroidal_field": vacuum_toroidal_field}]}
+            {
+                "code": {"name": "dummy"},
+                "time_slice": [
+                    {
+                        "time": time,
+                        "vacuum_toroidal_field": vacuum_toroidal_field,
+                    }
+                ],
+            }
         ]
     }
 
@@ -179,7 +187,7 @@ def read_iter_profiles(path):
             # + profiles_1D["Paux"].values
             - profiles_1D["Prad"].values
             - profiles_1D["Pneu"].values
-            # - profiles_1D["Peic"].values
+            - profiles_1D["Peic"].values
             # + profiles_1D["Pdte"].values
         )
         * 1e6
@@ -187,11 +195,7 @@ def read_iter_profiles(path):
     )
 
     Q_DT = (
-        (
-            profiles_1D["Pibm"].values
-            #  + profiles_1D["Peic"].values
-            + profiles_1D["Pdti"].values
-        )
+        (profiles_1D["Pibm"].values + profiles_1D["Peic"].values + profiles_1D["Pdti"].values)
         * 1e6
         / scipy.constants.electron_volt
     )
@@ -203,15 +207,6 @@ def read_iter_profiles(path):
         "grid": grid,
         # "conductivity_parallel": profiles_1D["Joh"].values * 1.0e6 / profiles_1D["U"].values * (TWOPI * R0),
         "j_parallel": profiles_1D["Jtot"].values * 1e6,  # A/m^2
-        # "j_parallel": 1e6
-        # * (  # A/m^2
-        #     profiles_1D["Joh"].values
-        #     + profiles_1D["Jext"].values
-        #     + profiles_1D["Jbs"].values
-        #     + profiles_1D["Jnb"].values
-        #     + profiles_1D["Jrf"].values
-        #     + profiles_1D["Jbsa"].values
-        # ),
         "electrons": {"label": "e", "particles": S, "energy": Q_e},
         "ion": [
             {"label": "D", "particles": S * 0.5, "energy": Q_DT * 0.5},

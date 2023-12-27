@@ -118,9 +118,8 @@ class CoreTransportModel(Module):
 
     time_slice: TimeSeriesAoS[CoreTransportTimeSlice]
 
-    def preprocess(self, *args, **kwargs):
-        super().preprocess(*args, **kwargs)
-        current = self.time_slice.current
+    def preprocess(self, *args, **kwargs) -> CoreTransportTimeSlice:
+        current = super().preprocess(*args, **kwargs)
 
         grid = current.cache_get("profiles_1d/grid_d", _not_found_)
 
@@ -131,12 +130,9 @@ class CoreTransportModel(Module):
 
             current["profiles_1d/grid_d"] = equilibrium.profiles_1d.grid.remesh(grid, rho_tor_norm=rho_tor_norm)
 
-    def refresh(self, *args, core_profiles: CoreProfiles = None, equilibrium: Equilibrium = None, **kwargs):
-        super().refresh(*args, core_profiles=core_profiles, equilibrium=equilibrium, **kwargs)
-
-    def fetch(self, *args, **kwargs) -> typing.Type[TimeSlice]:
+    def fetch(self, x=None, **kwargs) -> CoreTransportTimeSlice:
         """获得当前时间片的拷贝。"""
-        current: CoreTransportTimeSlice = super().fetch()
+        current = self.time_slice.current
 
         grid = current.profiles_1d.cache_get("grid_d", _not_found_)
 
@@ -152,7 +148,44 @@ class CoreTransportModel(Module):
                 grid["psi_boundary"] = eq_grid.psi_boundary
                 grid["rho_tor_boundary"] = eq_grid.rho_tor_boundary
 
+        if x is not None:
+            current = current.clone(lambda o: o(x, **kwargs) if isinstance(o, Expression) else o)
+            if isinstance(x, array_type):
+                current.profiles_1d["grid_d"] = current.profiles_1d.grid_d.remesh(x)
+
         return current
+
+    def flush(self) -> CoreTransportTimeSlice:
+        current = super().flush()
+
+        core_profiles: CoreProfiles.TimeSlice = self.inputs.get_source("core_profiles").time_slice.current
+
+        profiles_1d = core_profiles.profiles_1d
+
+        x = profiles_1d.grid.rho_tor_norm
+
+        variables = {
+            "psi": profiles_1d.psi(x),
+            "electrons/density": profiles_1d.electrons.density(x),
+            "electrons/temperature": profiles_1d.electrons.temperature(x),
+            "electrons/velocity/toroidal": profiles_1d.electrons.velocity.toroidal(x),
+            **{"ion/{s}/density": ion.density(x) for ion in profiles_1d.ion},
+            **{"ion/{s}/temperature": ion.temperature(x) for ion in profiles_1d.ion},
+            **{"ion/{s}/velocity/toroidal": ion.velocity.toroidal(x) for ion in profiles_1d.ion},
+        }
+
+        current.update(self.fetch(x, **variables))
+
+        return current
+
+    def refresh(
+        self,
+        *args,
+        core_profiles: CoreProfiles = None,
+        equilibrium: Equilibrium = None,
+        **kwargs,
+    ) -> CoreTransportTimeSlice:
+        return super().refresh(*args, core_profiles=core_profiles, equilibrium=equilibrium, **kwargs)
 
 
 @sp_tree
@@ -173,3 +206,8 @@ class CoreTransport(IDS):
 
         for model in self.model:
             model.advance(time=self.time, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
+
+    def flush(self):
+        super().flush()
+        for model in self.model:
+            model.flush()

@@ -4,7 +4,7 @@ import math
 from spdm.data.AoS import AoS
 from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
-from spdm.data.Expression import Expression, zero, one
+from spdm.data.Expression import Expression, Variable, zero, one
 from spdm.utils.tags import _not_found_
 
 from .CoreProfiles import CoreProfiles
@@ -13,26 +13,6 @@ from .Utilities import *
 from ..utils.atoms import atoms
 
 from ..ontology import core_sources
-
-
-@sp_tree
-class CoreSourcesMomentum(SpTree):
-    """Source terms for vector components in predefined directions"""
-
-    radial: Expression = sp_property(units="kg.m^-1.s^-2")
-    """ Radial component"""
-
-    diamagnetic: Expression = sp_property(units="kg.m^-1.s^-2")
-    """ Diamagnetic component"""
-
-    parallel: Expression = sp_property(units="kg.m^-1.s^-2")
-    """ Parallel component"""
-
-    poloidal: Expression = sp_property(units="kg.m^-1.s^-2")
-    """ Poloidal component"""
-
-    toroidal: Expression = sp_property(units="kg.m^-1.s^-2")
-    """ Toroidal component"""
 
 
 @sp_tree
@@ -90,7 +70,7 @@ class CoreSourcesSpecies(SpTree):
         of the source term for the electron energy equation"""
         return self.energy.I
 
-    momentum: CoreSourcesMomentum
+    momentum: CoreVectorComponents = sp_property(units="kg.m^-1.s^-2")
 
 
 @sp_tree
@@ -166,10 +146,8 @@ class CoreSourcesSource(Module):
 
     time_slice: TimeSeriesAoS[CoreSourcesTimeSlice]
 
-    def preprocess(self, *args, **kwargs):
-        super().preprocess(*args, **kwargs)
-
-        current = self.time_slice.current
+    def preprocess(self, *args, **kwargs) -> CoreSourcesTimeSlice:
+        current = super().preprocess(*args, **kwargs)
 
         grid = current.cache_get("profiles_1d/grid", _not_found_)
 
@@ -180,8 +158,62 @@ class CoreSourcesSource(Module):
 
             current["profiles_1d/grid"] = equilibrium.profiles_1d.grid.remesh(grid, rho_tor_norm=rho_tor_norm)
 
-    def refresh(self, *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None, **kwargs):
-        super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
+    def fetch(self, x: Variable | array_type = None, **kwargs) -> CoreSourcesTimeSlice:
+        """获得当前时间片的拷贝。"""
+        current = self.time_slice.current
+
+        grid = current.profiles_1d.cache_get("grid", _not_found_)
+
+        if grid is _not_found_:
+            current.profiles_1d["grid"] = self.inputs.get_source("equilibrium").time_slice.current.profiles_1d.grid
+
+        else:
+            grid = current.profiles_1d.grid
+            if grid.psi_axis is _not_found_ or grid.psi_axis is None:
+                eq_grid: CoreRadialGrid = self.inputs.get_source("equilibrium").time_slice.current.profiles_1d.grid
+
+                grid["psi_axis"] = eq_grid.psi_axis
+                grid["psi_boundary"] = eq_grid.psi_boundary
+                grid["rho_tor_boundary"] = eq_grid.rho_tor_boundary
+
+        if x is not None:
+            current = current.clone(lambda o: o(x, **kwargs) if isinstance(o, Expression) else o)
+
+            if isinstance(x, array_type):
+                current.profiles_1d["grid"] = current.profiles_1d.grid.remesh(x)
+
+        return current
+
+    def flush(self) -> CoreSourcesTimeSlice:
+        current = super().flush()
+
+        core_profiles: CoreProfiles.TimeSlice = self.inputs.get_source("core_profiles").time_slice.current
+
+        profiles_1d = core_profiles.profiles_1d
+
+        x = profiles_1d.grid.rho_tor_norm
+
+        variables = {
+            "psi": profiles_1d.psi(x),
+            "electrons/density": profiles_1d.electrons.density(x),
+            "electrons/temperature": profiles_1d.electrons.temperature(x),
+            "electrons/velocity/toroidal": profiles_1d.electrons.velocity.toroidal(x),
+            **{f"ion/{ion.label}/density": ion.density(x) for ion in profiles_1d.ion},
+            **{f"ion/{ion.label}/temperature": ion.temperature(x) for ion in profiles_1d.ion},
+            **{f"ion/{ion.label}/velocity/toroidal": ion.velocity.toroidal(x) for ion in profiles_1d.ion},
+        }
+
+        current.update(self.fetch(x, **variables))
+        return current
+
+    def refresh(
+        self,
+        *args,
+        equilibrium: Equilibrium = None,
+        core_profiles: CoreProfiles = None,
+        **kwargs,
+    ) -> CoreSourcesTimeSlice:
+        return super().refresh(*args, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
 
 @sp_tree
@@ -201,3 +233,9 @@ class CoreSources(IDS):
 
         for source in self.source:
             source.advance(time=self.time, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
+
+    def flush(self):
+        super().flush()
+
+        for source in self.source:
+            source.flush()

@@ -204,6 +204,19 @@ Modules:
 
         self.core_transport.refresh(time=self.time, **self._inputs.fetch())
 
+    def flush(self, *args, **kwargs):
+        super().flush(*args, **kwargs)
+
+        self.core_profiles.flush(profiles_1d=self.transport_solver.as_core_profiles_1d())
+
+        self.equilibrium.flush()
+
+        self.core_sources.flush()
+
+        self.core_transport.flush()
+
+        self.transport_solver.flush()
+
     def __geometry__(self, **kwargs) -> GeoObject:
         geo = {}
 

@@ -9,7 +9,7 @@ from spdm.data.Path import Path, update_tree
 from spdm.data.Actor import Actor
 from spdm.data.AoS import AoS
 from spdm.data.Field import Field
-from spdm.data.Expression import Expression
+from spdm.data.Expression import Expression, zero
 from spdm.data.Function import Function
 from spdm.data.HTree import Dict, HTree, List
 from spdm.data.Signal import Signal, SignalND
@@ -263,6 +263,26 @@ class CoreRadialGrid:
     @sp_property
     def rho_pol_norm(self) -> array_type:
         return np.sqrt(self.psi_norm)
+
+
+@sp_tree
+class CoreVectorComponents(SpTree):
+    """Vector components in predefined directions"""
+
+    radial: Expression = zero
+    """ Radial component"""
+
+    diamagnetic: Expression = zero
+    """ Diamagnetic component"""
+
+    parallel: Expression = zero
+    """ Parallel component"""
+
+    poloidal: Expression = zero
+    """ Poloidal component"""
+
+    toroidal: Expression = zero
+    """ Toroidal component"""
 
 
 class DetectorAperture:  # (utilities._T_detector_aperture):

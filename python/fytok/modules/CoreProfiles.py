@@ -5,7 +5,7 @@ import numpy as np
 import scipy.constants
 from scipy import constants
 from spdm.data.AoS import AoS
-from spdm.data.Expression import Expression, zero
+from spdm.data.Expression import Expression, Variable, zero
 from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.data.Path import update_tree
@@ -38,14 +38,14 @@ class CoreProfilesSpecies:
 
     a: float
 
-    temperature: Expression = sp_property(units="eV")
+    temperature: Expression = sp_property(units="eV", default_value=zero)
 
-    density: Expression = sp_property(units="m^-3")
+    density: Expression = sp_property(units="m^-3", default_value=zero)
     # return self.density_thermal + self.density_fast
 
-    density_thermal: Expression = sp_property(units="m^-3")
+    density_thermal: Expression = sp_property(units="m^-3", default_value=zero)
 
-    density_fast: Expression = sp_property(units="m^-3", default_value=0)
+    density_fast: Expression = sp_property(units="m^-3", default_value=zero)
 
     @sp_property
     def pressure(self) -> Expression:
@@ -61,6 +61,8 @@ class CoreProfilesSpecies:
     pressure_fast_parallel: Expression = sp_property(units="Pa", default_value=zero)
 
     rotation_frequency_tor: Expression = sp_property(units="rad.s^-1", default_value=zero)
+
+    velocity: CoreVectorComponents = sp_property(units="m.s^-1")
 
 
 @sp_tree(coordinate1=".../grid/rho_tor_norm")
@@ -172,7 +174,7 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
     def pressure_thermal(self) -> Expression:
         return sum([ion.pressure_thermal for ion in self.ion], self.electrons.pressure_thermal)
 
-    psi: Expression = sp_property(label=r"\psi", units="Wb")
+    psi: Expression = sp_property(label=r"\psi", units="Wb", default_value=zero)
 
     @sp_property(label=r"\bar{\psi}", units="-")
     def psi_norm(self) -> Expression:
@@ -400,23 +402,31 @@ class CoreProfiles(IDS):
     def advance(self, *args, **kwargs):
         super().advance(*args, **kwargs)
 
-    def fetch(self, *args, **kwargs) -> CoreProfilesTimeSlice:
-        """获得当前时间片的拷贝。"""
-        current: CoreProfilesTimeSlice = super().fetch()
+    def fetch(self, x: Variable | array_type = None, **kwargs) -> CoreProfilesTimeSlice:
+        current = self.time_slice.current
 
-        grid = current.profiles_1d.grid
+        grid = current.profiles_1d.cache_get("grid", _not_found_)
 
-        if not isinstance(grid, CoreRadialGrid):
-            raise RuntimeError(f"'grid' is not defined!")
+        if grid is _not_found_:
+            current.profiles_1d["grid"] = self.inputs.get_source("equilibrium").time_slice.current.profiles_1d.grid
 
-        elif grid.psi_axis is _not_found_ or grid.psi_axis is None:
-            eq_grid: CoreRadialGrid = self.inputs.get_source("equilibrium").time_slice.current.profiles_1d.grid
+        else:
+            grid = current.profiles_1d.grid
+            if grid.psi_axis is _not_found_ or grid.psi_axis is None:
+                eq_grid: CoreRadialGrid = self.inputs.get_source("equilibrium").time_slice.current.profiles_1d.grid
 
-            grid["psi_axis"] = eq_grid.psi_axis
-            grid["psi_boundary"] = eq_grid.psi_boundary
-            grid["rho_tor_boundary"] = eq_grid.rho_tor_boundary
+                grid["psi_axis"] = eq_grid.psi_axis
+                grid["psi_boundary"] = eq_grid.psi_boundary
+                grid["rho_tor_boundary"] = eq_grid.rho_tor_boundary
+
+        if x is not None:
+            current = current.clone(lambda o: o(x, **kwargs) if isinstance(o, Expression) else o)
+            if isinstance(x, array_type):
+                current.profiles_1d["grid"] = current.profiles_1d.grid.remesh(x)
 
         psi = current.profiles_1d.cache_get("psi", _not_found_)
         if psi is _not_found_:
             current.profiles_1d["psi"] = current.profiles_1d.grid.psi
+        return current
+
         return current

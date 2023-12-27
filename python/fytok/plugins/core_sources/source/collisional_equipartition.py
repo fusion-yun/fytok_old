@@ -1,6 +1,8 @@
 import numpy as np
 import scipy.constants
 import typing
+from fytok.modules.CoreProfiles import CoreProfiles
+from fytok.modules.Equilibrium import Equilibrium
 
 
 from spdm.utils.tags import _not_found_
@@ -23,7 +25,6 @@ class CollisionalEquipartition(CoreSources.Source):
 
         source_1d = current.profiles_1d
 
-        epsilon = scipy.constants.epsilon_0
         e = scipy.constants.elementary_charge
         me = scipy.constants.electron_mass
 
@@ -33,22 +34,20 @@ class CollisionalEquipartition(CoreSources.Source):
 
         clog = Piecewise(
             [
-                (24.0e0 - 1.15 * np.log(ne * 1.0e-6) + 2.30e0 * np.log(Te), Te >= 10),
-                (23.0e0 - 1.15 * np.log(ne * 1.0e-6) + 3.45e0 * np.log(Te), Te < 10),
+                (30.9 - 1.15 * np.log10(ne) + 2.30 * np.log10(Te), Te >= 10),
+                (29.9 - 1.15 * np.log10(ne) + 3.45 * np.log10(Te), Te < 10),
             ],
             name="clog",
             label=r"\Lambda_{e}",
         )
 
         # electron collision time:
-        tau_e = (np.sqrt(2.0 * me) * (Te) ** 1.5) / 1.8e-19 / (ne * 1.0e-6) / clog
+        tau_e = np.sqrt(2.0 * me) / 1.8e-25 * (Te**1.5) / ne / clog
 
         # Plasma electrical conductivity:
-        source_1d.conductivity_parallel = 1.96e0 * e**2 * ne * 1.0e-6 * tau_e / me / 9.0e9
+        source_1d.conductivity_parallel = 1.96e-09 * e**2 / me * ne * tau_e
 
         species = [k.split("/")[1] for k in variables.keys() if k.endswith("temperature") and k.startswith("ion")]
-
-        logger.debug(species)
 
         for idx, i in enumerate(species):
             zi = atoms[i].z
@@ -65,8 +64,8 @@ class CollisionalEquipartition(CoreSources.Source):
             #   Coulomb logarithm:
             clog = Piecewise(
                 [
-                    (24.0e0 - 1.15 * np.log(1.0e-6) - 1.15 * np.log(ne) + 2.30 * np.log(Te), Te >= 10 * zi**2),
-                    (23.0e0 - 1.15 * np.log(1.0e-6) - 1.15 * np.log(ne) + 3.45 * np.log(Te), Te < 10 * zi**2),
+                    (30.9 - 1.15 * np.log10(ne) + 2.30 * np.log10(Te), Te >= 10 * zi**2),
+                    (29.9 - 1.15 * np.log10(ne) + 3.45 * np.log10(Te), Te < 10 * zi**2),
                 ],
                 name="clog",
                 label=r"\Lambda_{ei}",
@@ -99,10 +98,9 @@ class CollisionalEquipartition(CoreSources.Source):
 
                 # Coulomb logarithm:
                 clog = (
-                    23.0
-                    - np.log(1.0e-3)
-                    - np.log(zi * zj * (mi + mj) / (mi * Tj + mj * Ti))
-                    - np.log(np.sqrt(ni * zi**2.0 / Ti + nj * zj**2.0 / Tj))
+                    29.9
+                    - np.log10(zi * zj * (mi + mj) / (mi * Tj + mj * Ti))
+                    - np.log10(np.sqrt(ni * zi**2.0 / Ti + nj * zj**2.0 / Tj))
                 )
 
                 # ion-ion collision time and energy exchange term:

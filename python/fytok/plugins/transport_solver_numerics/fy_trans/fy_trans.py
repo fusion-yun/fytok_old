@@ -106,13 +106,13 @@ class FyTrans(TransportSolverNumerics):
             variables[f"ion/{s}/density"] = ns = Variable(
                 (i := i + 1),
                 f"ion/{s}/density",
-                label=rf"n_{s}",
+                label=rf"n_{{{s}}}",
             )
 
             variables[f"ion/{s}/density_flux"] = ns_flux = Variable(
                 (i := i + 1),
                 f"ion/{s}/density_flux",
-                label=rf"\Gamma_{s}",
+                label=rf"\Gamma_{{{s}}}",
             )
 
             equations.append(
@@ -143,23 +143,23 @@ class FyTrans(TransportSolverNumerics):
             )
 
             if enable_momentum:
-                variables[f"ion/{s}/momentum"] = ns = Variable(
+                variables[f"ion/{s}/velocity/toroidal"] = ns = Variable(
                     (i := i + 1),
-                    f"ion/{s}/momentum",
-                    label=rf"u_{s}",
+                    f"ion/{s}/velocity/toroidal",
+                    label=rf"u_{{{s}}}",
                 )
 
-                variables[f"ion/{s}/momentum_flux"] = ns_flux = Variable(
+                variables[f"ion/{s}/velocity/toroidal_flux"] = ns_flux = Variable(
                     (i := i + 1),
-                    f"ion/{s}/momentum_flux",
-                    label=rf"U_{s}",
+                    f"ion/{s}/velocity/toroidal_flux",
+                    label=rf"U_{{{s}}}",
                 )
 
                 equations.append(
                     {
-                        "identifier": f"ion/{s}/momentum",
-                        "boundary_condition_type": bc_type.get(f"ion/{s}/momentum", None)
-                        or bc_type.get(f"*/momentum", 1),
+                        "identifier": f"ion/{s}/velocity/toroidal",
+                        "boundary_condition_type": bc_type.get(f"ion/{s}/velocity/toroidal", None)
+                        or bc_type.get(f"*/velocity/toroidal", 1),
                     }
                 )
 
@@ -177,13 +177,13 @@ class FyTrans(TransportSolverNumerics):
             variables[f"ion/{s}/density"] = ns = Variable(
                 (i := i + 1),
                 f"ion/{s}/density",
-                label=rf"n_{s}",
+                label=rf"n_{{{s}}}",
             )
 
             variables[f"ion/{s}/density_flux"] = ns_flux = Variable(
                 (i := i + 1),
                 f"ion/{s}/density_flux",
-                label=rf"\Gamma_{s}",
+                label=rf"\Gamma_{{{s}}}",
             )
 
             equations.append(

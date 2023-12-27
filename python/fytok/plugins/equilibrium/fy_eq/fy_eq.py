@@ -150,7 +150,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         if psi_norm is _not_found_ or psi_norm is None:
             psi_norm = np.linspace(0.001, 0.9995, 64)
-            logger.warning(f"Can not get psi_norm, using default {psi_norm}")
+            # logger.warning(f"Can not get psi_norm, using default {psi_norm}")
 
         elif not np.all(np.diff(psi_norm) > 0):
             raise RuntimeError(f"psi_norm is not monotonically increasing!")

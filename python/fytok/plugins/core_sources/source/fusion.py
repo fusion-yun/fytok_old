@@ -2,9 +2,12 @@ import typing
 import scipy.constants
 from spdm.data.Expression import Variable, Expression, zero
 from spdm.data.sp_property import sp_tree
+from spdm.utils.typing import array_type
 from fytok.utils.atoms import nuclear_reaction, atoms
-from fytok.modules.CoreSources import CoreSources
 from fytok.utils.logger import logger
+
+from fytok.modules.CoreSources import CoreSources
+from fytok.modules.Utilities import *
 
 
 @sp_tree
@@ -54,8 +57,8 @@ class FusionReaction(CoreSources.Source):
 
     code = {"name": "fusion", "description": "Fusion reaction"}  # type: ignore
 
-    def fetch(self, x: Variable, **variables: Expression) -> CoreSources.Source.TimeSlice:
-        current: CoreSources.Source.TimeSlice = super().fetch()
+    def fetch(self, x: Variable | array_type, **variables: Expression) -> CoreSources.Source.TimeSlice:
+        current: CoreSources.Source.TimeSlice = super().fetch(x, **variables)
 
         source_1d = current.profiles_1d
 
@@ -86,7 +89,7 @@ class FusionReaction(CoreSources.Source):
             T1 = variables.get(f"ion/{r1}/temperature")
             ni = n0 + n1
             Ti = (n0 * T0 + n1 * T1) / ni
-            nEP = variables.get(f"ion/{p1}/density")
+            nEP = variables.get(f"ion/{p1}/density", 0)
 
             nu_slowing_down = (ni * 1.0e-19 * lnGamma) / (1.99 * ((Ti / 1000) ** (3 / 2)))
 
