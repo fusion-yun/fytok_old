@@ -1164,16 +1164,16 @@ def solve_bvp(
         rms_res = estimate_rms_residuals(fun_wrapped, sol, x, h, p, r_middle, f_middle)
         ########################################
         # add by salmon 2021.6.15
+        if bvp_rms_mask is not None:
+            rms_mask = False
 
-        rms_mask = False
+            for xd in bvp_rms_mask or []:
+                rms_mask |= (x[:-1] <= xd) & (xd <= x[1:])
 
-        for xd in bvp_rms_mask or []:
-            rms_mask |= (x[:-1] <= xd) & (xd <= x[1:])
+            (rms_mask_idx,) = np.nonzero(rms_mask)
 
-        (rms_mask_idx,) = np.nonzero(rms_mask)
-
-        rms_res[rms_mask_idx] = 0.0
-        rms_res[:4] = 0
+            rms_res[rms_mask_idx] = 0.0
+            rms_res[:4] = 0
         ########################################
         max_rms_res = np.max(rms_res)
 

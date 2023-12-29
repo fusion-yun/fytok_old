@@ -6,12 +6,29 @@ from fytok.modules.Equilibrium import Equilibrium
 
 from spdm.utils.typing import array_type
 from spdm.utils.tags import _not_found_
-from spdm.data.Expression import Expression, Variable, Piecewise, piecewise, zero
+from spdm.data.Expression import Expression, Variable, Piecewise, piecewise, smooth, zero
 from spdm.data.sp_property import sp_tree
 
 from fytok.modules.CoreSources import CoreSources
 from fytok.utils.atoms import atoms
 from fytok.utils.logger import logger
+
+
+def deburr(y: array_type):
+    m = np.diff(y) > 0  # marker
+    idx = np.where((np.bitwise_not(m)) & (np.roll(m, shift=1)) & (np.roll(m, shift=-1)))[0]
+
+    ym = y[idx] + y[idx + 1]
+    y[idx] = ym
+    y[idx + 1] = ym
+    # for i in idx:
+    #     if i == 0 or i == y.size - 1:
+    #         continue
+    #     ym = y[i] + y[i + 1]
+    #     y[i] = ym
+    #     y[i + 1] = ym
+
+    return y
 
 
 @sp_tree
@@ -27,86 +44,108 @@ class CollisionalEquipartition(CoreSources.Source):
 
         e = scipy.constants.elementary_charge
         me = scipy.constants.electron_mass
+        ae = scipy.constants.electron_mass / scipy.constants.atomic_mass
 
         ne = variables.get(f"electrons/density")
         Te = variables.get(f"electrons/temperature")
-        ve = variables.get(f"electrons/velocity/toroidal")
 
-        clog = piecewise(
-            [
-                (30.9 - 1.15 * np.log10(ne) + 2.30 * np.log10(Te), Te >= 10),
-                (29.9 - 1.15 * np.log10(ne) + 3.45 * np.log10(Te), Te < 10),
-            ],
-            name="clog",
-            label=r"\Lambda_{e}",
-        )
+        conductivity_parallel = zero
 
-        # electron collision time:
-        tau_e = np.sqrt(2.0 * me) / 1.8e-25 * (Te**1.5) / ne / clog
-
-        # Plasma electrical conductivity:
-        source_1d.conductivity_parallel = 1.96e-09 * e**2 / me * ne * tau_e
-
-        species = [
+        species = ["electrons"] + [
             "/".join(k.split("/")[:-1])
             for k, v in variables.items()
-            if k.endswith("temperature")
+            if k.endswith("/temperature")
+            and k.startswith("ion/")
             and v is not zero
             and not (not isinstance(v, (array_type, Expression)) and v == 0)
         ]
-        logger.debug(species)
+
         for idx, i in enumerate(species):
             zi = atoms[i].z
+            ai = atoms[i].a
             mi = atoms[i].mass
 
-            ni = variables.get(f"{i}/density", zero)
-            Ti = variables.get(f"{i}/temperature", zero)
+            ni = variables.get(f"{i}/density")
+            Ti = variables.get(f"{i}/temperature")
             vi = variables.get(f"{i}/velocity/toroidal", zero)
 
-            if Ti is zero:
-                continue
-
-            # ion-ion collisions:
+            # collisions frequency and energy exchange terms:
+            # @ref NRL 2019 p.34
             for j in species[idx + 1 :]:
                 zj = atoms[j].z
+                aj = atoms[j].a
                 mj = atoms[j].mass
 
-                nj = variables.get(f"{j}/density", zero)
-                Tj = variables.get(f"{j}/temperature", zero)
+                nj = variables.get(f"{j}/density")
+                Tj = variables.get(f"{j}/temperature")
                 vj = variables.get(f"{j}/velocity/toroidal", zero)
 
-                if Tj is _not_found_ or Tj is zero:
-                    continue
-
-                #   Coulomb logarithm:
+                # Coulomb logarithm:
                 if i == "electrons":  # electron-Ion collisions:
                     clog = piecewise(
                         [
-                            (30.9 - 1.15 * np.log10(ni) + 2.30 * np.log10(Ti), Ti >= 10 * zi**2),
-                            (29.9 - 1.15 * np.log10(ni) + 3.45 * np.log10(Ti), Ti < 10 * zi**2),
+                            (
+                                16 - np.log(zj * zj * aj) - 0.5 * np.log(nj * 1.0e-6) + 1.5 * np.log(Tj),
+                                Te <= (Ti * me / mj),
+                            ),
+                            (
+                                23 - np.log(zj) - 0.5 * np.log(ne * 1.0e-6) + 1.5 * np.log(Te),
+                                ((Ti * me / mj) < Te) & (Te <= (10 * zj * zj)),
+                            ),
+                            (
+                                24 - 0.5 * np.log(ne * 1.0e-6) + np.log(Te),
+                                ((10 * zj * zj) < Te),  # & (Ti * me / mj) < (10 * zj * zj))
+                            ),
                         ],
                         name="clog",
                         label=r"\Lambda_{ei}",
                     )
+                    nv_ij = 3.2e-9 * zj * zj * clog / aj * Te**1.5
 
+                    conductivity_parallel += 1.96e-09 * e**2 / me * ne * nj / nv_ij
                 else:  # ion-Ion collisions:
                     clog = (
-                        29.9
-                        - np.log10(zi * zj * (mi + mj) / (mi * Tj + mj * Ti))
-                        - np.log10(np.sqrt(ni * zi**2.0 / Ti + nj * zj**2.0 / Tj))
+                        23
+                        - np.log(zi * zj * (ai + aj) / (ai * aj) / (Ti / ai + Tj / aj))
+                        - 0.5 * np.log((ni * zi * zi / Ti + nj * zj * zj / Tj) * 1.0e-6)
                     )
 
-                # collision time :
-                tau_ij = (Ti * mj + Tj * mi) ** 1.5 / 1.8e-25 / (np.sqrt(mi * mj)) / (zi * zj) ** 2 / clog
+                    nv_ij = (
+                        1.8e-19
+                        * (mi * mj * 1.0e-6)
+                        * (zi * zi * zj * zj)
+                        * (((Ti * mj + Tj * mi) * 1.0e-3) ** (-1.5))
+                        * clog
+                    )
+
+                # nv_ij = smooth(nv_ij, window_length=3, polyorder=2)
+
+                nv_ij = ni * nj * nv_ij * 1.0e-12
+
+                Tij = Ti - Tj
+                # Tij = Expression(deburr, Ti - Tj)
+
+                ##############################
+                # 增加阻尼，消除震荡
+                # epsilon = 1.0e-10
+
+                # c = (1.5 - 1.0 / (1.0 + np.exp(-np.abs(Ti - Tj) / (Ti + Tj) / epsilon))) * 2
+                # Tij = (Ti - Tj) * c
+                # if isinstance(c, array_type):
+                #     logger.debug((c,))
+                ##############################
 
                 # energy exchange term
-                source_1d[i].energy += (Ti - Tj) / tau_ij
-                source_1d[j].energy += (Tj - Ti) / tau_ij
+
+                source_1d[i].energy -= Tij * nv_ij
+                source_1d[j].energy += Tij * nv_ij
 
                 # momentum exchange term
-                source_1d[i].momentum.toroidal += mj * nj * (vi - vj) / tau_ij
-                source_1d[j].momentum.toroidal += mi * ni * (vj - vi) / tau_ij
+                source_1d[i].momentum.toroidal += (vi - vj) * nv_ij
+                source_1d[j].momentum.toroidal += (vj - vi) * nv_ij
 
+        # Plasma electrical conductivity:
+        source_1d.conductivity_parallel = conductivity_parallel
         return current
 
 

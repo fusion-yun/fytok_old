@@ -48,7 +48,6 @@ class FyTrans(TransportSolverNumerics):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.hyper_diff = self.code.parameters.hyper_diff or 0.001
-
         self.rho_tor_norm = self.code.parameters.rho_tor_norm
 
         if self.rho_tor_norm is _not_found_:
@@ -705,7 +704,7 @@ class FyTrans(TransportSolverNumerics):
         Y = Y * self.normalize_factor.reshape(-1, 1)
 
         # 将负值置为0
-        Y[2:] = np.where(Y[2:] < 0, 1.0e3, Y[2:])
+        # Y[2:] = np.where(Y[2:] < 0, 1.0e3, Y[2:])
 
         for idx, equ in enumerate(self.equations):
             y = Y[idx * 2]
@@ -728,13 +727,6 @@ class FyTrans(TransportSolverNumerics):
             fluxp = derivative(flux, X)
 
             dflux_dr = (R - d_dt + hyper_diff * fluxp) / (1.0 + hyper_diff)
-
-            # if np.any(np.isnan(d_dr)):
-            #     # logger.warning(f"NaN in {equ.identifier}! {D} {V}  ")
-            #     d_dr = np.nan_to_num(d_dr)
-            # elif np.any(np.isnan(dflux_dr)):
-            #     # logger.warning(f"NaN in {equ.identifier}! {R} {equ.coefficient[3]}")
-            #     dflux_dr =np.nan_to_num(dflux_dr)
 
             # 无量纲，归一化
             res[idx * 2] = d_dr / self.normalize_factor[idx * 2]

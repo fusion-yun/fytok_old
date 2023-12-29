@@ -1,6 +1,4 @@
 import pathlib
-
-import pathlib
 import re
 import scipy.constants
 import numpy as np
@@ -10,9 +8,14 @@ from spdm.data.Expression import Piecewise, Variable
 from spdm.data.File import File
 from spdm.data.Entry import Entry
 from spdm.numlib.smooth import smooth_1d
+from spdm.numlib.misc import step_function_approx
 
 PI = scipy.constants.pi
 TWOPI = scipy.constants.pi * 2.0
+
+
+def step_function(x, scale=1.0e-2):
+    return 1 / (1 + np.exp(-x / scale))
 
 
 def read_iter_profiles(path):
@@ -127,7 +130,7 @@ def read_iter_profiles(path):
         ]
     }
 
-    _x = Variable(0, "rho_tor_norm")
+    _x = Variable(0, name="rho_tor_norm", label=r"\bar{\rho}_{tor}")
 
     # Core profiles
     r_ped = 0.96  # np.sqrt(0.88)
@@ -138,20 +141,25 @@ def read_iter_profiles(path):
     Cped = 0.17
     Ccore = 0.4
     # Function( profiles["Xi"].values,bs_r_norm)  Cped = 0.2
-    chi = Piecewise(
-        [
-            (Ccore * (1.0 + 3 * (_x**2)), (_x < r_ped)),
-            (Cped, (_x >= r_ped)),
-        ],
-        label=r"\chi",
-    )
-    chi_e = Piecewise(
-        [
-            (0.5 * Ccore * (1.0 + 3 * (_x**2)), (_x < r_ped)),
-            (Cped, (_x >= r_ped)),
-        ],
-        label=r"\chi_e",
-    )
+    # chi = Piecewise(
+    #     [
+    #         (Ccore * (1.0 + 3 * (_x**2)), (_x < r_ped)),
+    #         (Cped, (_x >= r_ped)),
+    #     ],
+    #     label=r"\chi",
+    # )
+    # chi_e = Piecewise(
+    #     [
+    #         (0.5 * Ccore * (1.0 + 3 * (_x**2)), (_x < r_ped)),
+    #         (Cped, (_x >= r_ped)),
+    #     ],
+    #     label=r"\chi_e",
+    # )
+
+    delta = step_function_approx(_x - r_ped, scale=0.005)
+
+    chi = (Ccore * (1.0 + 3 * (_x**2))) * (1 - delta) + Cped * delta
+    chi_e = (0.5 * Ccore * (1.0 + 3 * (_x**2))) * (1 - delta) + Cped * delta
 
     D = 0.1 * (chi + chi_e)
 
@@ -184,10 +192,10 @@ def read_iter_profiles(path):
     Q_e = (
         (
             profiles_1D["Poh"].values
-            # + profiles_1D["Paux"].values
+            + profiles_1D["Paux"].values
             - profiles_1D["Prad"].values
             - profiles_1D["Pneu"].values
-            - profiles_1D["Peic"].values
+            # - profiles_1D["Peic"].values
             # + profiles_1D["Pdte"].values
         )
         * 1e6
@@ -195,7 +203,11 @@ def read_iter_profiles(path):
     )
 
     Q_DT = (
-        (profiles_1D["Pibm"].values + profiles_1D["Peic"].values + profiles_1D["Pdti"].values)
+        (
+            profiles_1D["Pibm"].values
+            #  + profiles_1D["Peic"].values
+            + profiles_1D["Pdti"].values
+        )
         * 1e6
         / scipy.constants.electron_volt
     )
@@ -205,7 +217,7 @@ def read_iter_profiles(path):
     # Core Source
     entry["core_sources/source/0/time_slice/0/profiles_1d"] = {
         "grid": grid,
-        # "conductivity_parallel": profiles_1D["Joh"].values * 1.0e6 / profiles_1D["U"].values * (TWOPI * R0),
+        "conductivity_parallel": profiles_1D["Joh"].values * 1.0e6 / profiles_1D["U"].values * (TWOPI * R0),
         "j_parallel": profiles_1D["Jtot"].values * 1e6,  # A/m^2
         "electrons": {"label": "e", "particles": S, "energy": Q_e},
         "ion": [
