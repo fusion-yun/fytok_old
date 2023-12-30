@@ -2,12 +2,15 @@ import typing
 import scipy.constants
 from spdm.data.Expression import Variable, Expression, zero
 from spdm.data.sp_property import sp_tree
+from spdm.numlib.misc import step_function_approx
 from spdm.utils.typing import array_type
 from fytok.utils.atoms import nuclear_reaction, atoms
 from fytok.utils.logger import logger
 
 from fytok.modules.CoreSources import CoreSources
 from fytok.modules.Utilities import *
+
+PI = scipy.constants.pi
 
 
 @sp_tree
@@ -57,30 +60,34 @@ class FusionReaction(CoreSources.Source):
 
     code = {"name": "fusion", "description": "Fusion reaction"}  # type: ignore
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _x = Variable(0, "x")
+        x = np.linspace(0, 10, 256)
+        dF = Function(x, 1.0 / (1 + x**1.5))
+        F = Function(x, dF.I(x), label="F")
+        self._sivukhin = F / (_x)
+
     def fetch(self, x: Variable | array_type, **variables: Expression) -> CoreSources.Source.TimeSlice:
         current: CoreSources.Source.TimeSlice = super().fetch(x, **variables)
 
         source_1d = current.profiles_1d
+        me = atoms["electrons"].mass
+        Te = variables.get("electrons/temperature")
 
         fusion_reactions: typing.List[str] = self.code.parameters.fusion_reactions or []
 
-        # Te = variables.get("electrons/temperature")
-        # ne = variables.get("electrons/density")
-
-        lnGamma = 17
-
-        # tau_slowing_down = 1.99 * ((Te / 1000) ** (3 / 2)) / (ne * 1.0e-19 * lnGamma)
+        ne = variables.get(f"electrons/density")
 
         for tag in fusion_reactions:
+            if tag != "D(t,n)alpha":
+                raise NotImplementedError(f"NOT IMPLEMENTED YET！！ By now only support D(t,n)alpha!")
             reaction = nuclear_reaction[tag]
 
             r0, r1 = reaction.reactants
             p0, p1 = reaction.products
 
             pa = atoms[p1].label
-
-            mass_p0 = atoms[p0].mass
-            mass_p1 = atoms[p1].mass
 
             n0 = variables.get(f"ion/{r0}/density")
             n1 = variables.get(f"ion/{r1}/density")
@@ -90,6 +97,8 @@ class FusionReaction(CoreSources.Source):
             ni = n0 + n1
             Ti = (n0 * T0 + n1 * T1) / ni
             nEP = variables.get(f"ion/{p1}/density", 0)
+
+            lnGamma = 17
 
             nu_slowing_down = (ni * 1.0e-19 * lnGamma) / (1.99 * ((Ti / 1000) ** (3 / 2)))
 
@@ -104,19 +113,45 @@ class FusionReaction(CoreSources.Source):
             source_1d.ion[p1].particles += S - nEP * nu_slowing_down
             source_1d.ion[pa].particles += nEP * nu_slowing_down
 
-            fusion_energy = reaction.energy / scipy.constants.electron_volt
+            E0, E1 = reaction.energy
 
-            if atoms[p0].z == 0:
-                fusion_energy *= mass_p0 / (mass_p0 + mass_p1)
-            elif atoms[p1].z == 0:
-                fusion_energy *= mass_p1 / (mass_p0 + mass_p1)
+            Efus = E1 * nEP * nu_slowing_down
 
-            fusion_energy *= nEP * nu_slowing_down
+            mp: float = atoms[p1].mass
+            # 离子加热分量
+            #  [Stix, Plasma Phys. 14 (1972) 367 Eq.15
+            C = 0.0
+            m_tot = 0
+            for k, var in variables.items():
+                k_ = k.split("/")
+                if not (k_[0] == "ion" and k_[-1] == "temperature"):
+                    continue
+                s = k_[1]
+                if s == p1:
+                    continue
+                atom = atoms[s]
+                mi = atom.mass
+                zi = atom.z
 
-            # 假设 He ash 的温度为离子平均温度，alpha 粒子慢化后能量传递给电子
-            # t_i_average = variables.get("t_i_average", Ti)
-            # 加热
-            source_1d.electrons.energy += fusion_energy
+                ni = variables.get(f"ion/{s}/density")
+
+                m_tot += mi
+
+                C += ni * zi**2 / (mi / mp)
+
+            Ecrit = Te * (4 * np.sqrt(me / mp) / (3 * np.sqrt(PI) * C / ne)) ** (-2.0 / 3.0)
+
+            frac = self._sivukhin(E1 / Ecrit)
+
+            # 加热离子
+            for k, var in variables.items():
+                k_ = k.split("/")
+                if not (k_[0] == "ion" and k_[-1] == "temperature"):
+                    continue
+                s = k_[1]
+                source_1d.ion[s].energy += Efus * frac * atoms[s].mass / m_tot
+
+            source_1d.electrons.energy += Efus * (1.0 - frac)
 
         return current
 

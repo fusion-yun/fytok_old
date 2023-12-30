@@ -206,7 +206,7 @@ def read_iter_profiles(path):
         (
             profiles_1D["Pibm"].values
             #  + profiles_1D["Peic"].values
-            + profiles_1D["Pdti"].values
+            # + profiles_1D["Pdti"].values
         )
         * 1e6
         / scipy.constants.electron_volt

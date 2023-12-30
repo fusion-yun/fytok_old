@@ -703,20 +703,17 @@ class FyTrans(TransportSolverNumerics):
         # 添加量纲和归一化系数，复原为物理量
         Y = Y * self.normalize_factor.reshape(-1, 1)
 
-        # 将负值置为0
-        # Y[2:] = np.where(Y[2:] < 0, 1.0e3, Y[2:])
-
         for idx, equ in enumerate(self.equations):
             y = Y[idx * 2]
             flux = Y[idx * 2 + 1]
 
-            d_dt, D, V, R = equ.coefficient
+            _d_dt, _D, _V, _R = equ.coefficient
 
             try:
-                d_dt = d_dt(X, *Y, *args) if isinstance(d_dt, Expression) else d_dt
-                D = D(X, *Y, *args) if isinstance(D, Expression) else D
-                V = V(X, *Y, *args) if isinstance(V, Expression) else V
-                R = R(X, *Y, *args) if isinstance(R, Expression) else R
+                d_dt = _d_dt(X, *Y, *args) if isinstance(_d_dt, Expression) else _d_dt
+                D = _D(X, *Y, *args) if isinstance(_D, Expression) else _D
+                V = _V(X, *Y, *args) if isinstance(_V, Expression) else _V
+                R = _R(X, *Y, *args) if isinstance(_R, Expression) else _R
             except RuntimeError as error:
                 raise RuntimeError(f"Error when calcuate {equ.identifier} {R}") from error
 
@@ -727,6 +724,11 @@ class FyTrans(TransportSolverNumerics):
             fluxp = derivative(flux, X)
 
             dflux_dr = (R - d_dt + hyper_diff * fluxp) / (1.0 + hyper_diff)
+
+            if np.any(np.isnan(dflux_dr)):
+                logger.warning(f"Error: {equ.identifier} nan in dflux_dr {_R._render_latex_()} {R}")
+            elif np.any(np.isnan(d_dr)):
+                logger.warning(f"Error: {equ.identifier} nan in d_dr")
 
             # 无量纲，归一化
             res[idx * 2] = d_dr / self.normalize_factor[idx * 2]

@@ -14,23 +14,6 @@ from fytok.utils.atoms import atoms
 from fytok.utils.logger import logger
 
 
-def deburr(y: array_type):
-    m = np.diff(y) > 0  # marker
-    idx = np.where((np.bitwise_not(m)) & (np.roll(m, shift=1)) & (np.roll(m, shift=-1)))[0]
-
-    ym = y[idx] + y[idx + 1]
-    y[idx] = ym
-    y[idx + 1] = ym
-    # for i in idx:
-    #     if i == 0 or i == y.size - 1:
-    #         continue
-    #     ym = y[i] + y[i + 1]
-    #     y[i] = ym
-    #     y[i + 1] = ym
-
-    return y
-
-
 @sp_tree
 class CollisionalEquipartition(CoreSources.Source):
     identifier = "collisional_equipartition"
