@@ -40,6 +40,8 @@ class TransportSolverNumericsEquation:
     flux: array_type | Expression
     """ Flux of the primary quantity"""
 
+    units: typing.Tuple[float, float]
+
     d_dr: array_type | Expression
     """ Radial derivative with respect to the primary coordinate"""
 
@@ -131,6 +133,8 @@ class TransportSolverNumerics(IDS):
     equations: AoS[TransportSolverNumericsEquation]
 
     variables: typing.Dict[str, Expression]
+
+    profiles_1d: CoreProfiles.TimeSlice.Profiles1D
 
     TimeSlice = TransportSolverNumericsTimeSlice
 

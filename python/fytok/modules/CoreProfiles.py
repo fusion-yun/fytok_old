@@ -158,6 +158,8 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
     Neutral = CoreProfilesNeutral
     neutral: AoS[CoreProfilesNeutral] = sp_property(identifier="label", default_initial={})
 
+    rho_tor_norm: array_type | Expression
+
     @sp_property
     def zeff(self) -> Expression:
         return sum([((ion.z_ion_1d**2) * ion.density) for ion in self.ion]) / self.n_i_total
