@@ -48,6 +48,7 @@ class FyTrans(TransportSolverNumerics):
         enable_momentum = self.code.parameters.enable_momentum or False
         enable_impurity = self.code.parameters.enable_impurity or False
 
+        self.primary_coordinate
         ######################################################################################
         # 确定待求未知量
 
@@ -88,7 +89,7 @@ class FyTrans(TransportSolverNumerics):
                 unknowns.add(f"ion/{s}/density")
                 unknowns.add(f"ion/{s}/temperature")
                 if enable_momentum:
-                    unknowns.add(f"{s}/velocity/toroidal")
+                    unknowns.add(f"ion/{s}/velocity/toroidal")
         else:
             # 杂质分布需要由外部 （core_profiles）给定
             pass
@@ -213,7 +214,7 @@ class FyTrans(TransportSolverNumerics):
 
         for s in self.impurities:
             pth = Path(f"ion/{s}/density")
-            self.profiles_1d[pth] = pth.get(profiles_1d)(x)
+            self.profiles_1d[pth] = pth.get(profiles_1d,zero)(x)
 
         if self.primary_coordinate != "psi_norm":
             psi_norm = Function(grid[self.primary_coordinate], grid.psi_norm, label=r"\bar{\psi}_{norm}")(x)
