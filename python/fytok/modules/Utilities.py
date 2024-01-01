@@ -5,7 +5,7 @@ import typing
 from dataclasses import dataclass
 from enum import IntFlag
 import numpy as np
-from spdm.data.Path import Path, update_tree
+from spdm.data.Path import Path, update_tree, merge_tree
 from spdm.data.Actor import Actor
 from spdm.data.AoS import AoS
 from spdm.data.Field import Field
@@ -47,20 +47,23 @@ class Library:
 class Code:
     name: str
     """代码名称，也是调用 plugin 的 identifier"""
+
     module_path: str
     """模块路径， 可用于 import 模块"""
-    parameters: PropertyTree
-    """指定参数列表，代码调用时所需，但不在由 Module 定义的参数列表中的参数。 """
 
     commit: str
     version: str
-    copyright: str
+    copyright: str = ""
     repository: str
     output_flag: array_type
     library: List[Library]
+    parameters: PropertyTree
+    """指定参数列表，代码调用时所需，但不在由 Module 定义的参数列表中的参数。 """
 
     def __str__(self) -> str:
-        return "-".join([s for s in [self.name, self.version, self.copyright] if s is not _not_found_])
+        return "-".join(
+            [s for s in [self.module_path, self.version, self.copyright] if s not in (_not_found_, None, "")]
+        )
 
     def __repr__(self) -> str:
         desc = {
@@ -106,18 +109,12 @@ class Module(Actor):
 
         super().__init__(*args, **kwargs)
 
-        code = self._metadata.get("code", _not_found_)
-        if code is not _not_found_:
-            self.code.update(code)
-
-        if self.code.name is _not_found_:
+        if not self.code.name:
             self.code.name = self.__class__.__name__
 
-        self.code.module_path = f"{self._plugin_prefix}{self.code.name}"
+        self.code.module_path = f"{self.__class__._plugin_prefix}{self.code.name}"
 
-        logger.info(
-            f"Initialize module {self.code.module_path}{ (' ['+ self.code.copyright+']') if self.code.copyright is not _not_found_ else ''  } "
-        )
+        logger.info(f"Initialize module {self.code} ")
 
     code: Code
     """ 对于 Module 的一般性说明。 
@@ -125,7 +122,7 @@ class Module(Actor):
 
     @property
     def tag(self) -> str:
-        return f"{FY_JOBID}/{self._plugin_prefix}{self.code.name}"
+        return f"{FY_JOBID}/{self.code.module_path}"
 
     def execute(self, current: TimeSlice, *previous: TimeSlice) -> typing.Type[TimeSlice]:
         logger.info(f"Execute module {self.code.module_path}")
@@ -182,8 +179,8 @@ class CoreRadialGrid:
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        if self.cache_get("psi_norm", _not_found_) is _not_found_:
-            psi = self.cache_get("psi", _not_found_)
+        if self.fetch_cache("psi_norm", _not_found_) is _not_found_:
+            psi = self.fetch_cache("psi", _not_found_)
             if psi is _not_found_:
                 raise RuntimeError(f"Missing 'psi_norm' and 'psi' ! {args} {kwargs} ")
             psi = as_array(psi)
@@ -192,8 +189,8 @@ class CoreRadialGrid:
             self._cache["psi_norm"] = (psi - psi_axis) / (psi_boundary - psi_axis)
             self._cache["psi"] = psi
 
-        if self.cache_get("rho_tor_norm", _not_found_) is _not_found_:
-            rho_tor = self.cache_get("rho_tor", _not_found_)
+        if self.fetch_cache("rho_tor_norm", _not_found_) is _not_found_:
+            rho_tor = self.fetch_cache("rho_tor", _not_found_)
             if rho_tor is _not_found_:
                 raise RuntimeError(f"Missing 'rho_tor_norm' and 'rho_tor' ! ")
             rho_tor = as_array(rho_tor)

@@ -93,9 +93,9 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._B0 = self.cache_get("b0")
-        self._R0 = self.cache_get("r0")
-        self._Ip = self.cache_get("ip")
+        self._B0 = self.fetch_cache("b0")
+        self._R0 = self.fetch_cache("r0")
+        self._Ip = self.fetch_cache("ip")
 
         self._s_B0 = np.sign(self._B0)
         self._s_Ip = np.sign(self._Ip)
@@ -104,7 +104,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         self._s_eBp_2PI = 1.0 if self._e_Bp == 0 else (2.0 * scipy.constants.pi)
 
-        psirz: Field = self.cache_get("psirz")
+        psirz: Field = self.fetch_cache("psirz")
 
         #  归一化二维 极向磁通 psirz
 
@@ -140,7 +140,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         )
 
         # 磁面坐标
-        psi_norm = self.cache_get("psi_norm", _not_found_)
+        psi_norm = self.fetch_cache("psi_norm", _not_found_)
 
         if psi_norm is _not_found_:
             psi_norm = self.get(".../code/parameters/psi_norm", _not_found_)
@@ -164,11 +164,11 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         # 磁面坐标的函数，ffprime，pprime
 
-        psi_: array_type = self.cache_get("psi")
+        psi_: array_type = self.fetch_cache("psi")
 
-        ffprime: array_type = self.cache_get("ffprime")
+        ffprime: array_type = self.fetch_cache("ffprime")
 
-        pprime: array_type = self.cache_get("pprime")
+        pprime: array_type = self.fetch_cache("pprime")
 
         if not isinstance(psi_, array_type):
             num_of_psi = len(ffprime)
@@ -257,10 +257,10 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
     @sp_property
     def grid(self) -> Mesh:
-        theta = self.cache_get("grid/dim2", _not_found_)
+        theta = self.fetch_cache("grid/dim2", _not_found_)
 
         if theta is _not_found_:
-            ntheta = self.cache_get(".../code/parameters/num_of_theta", 64)
+            ntheta = self.fetch_cache(".../code/parameters/num_of_theta", 64)
             theta = np.linspace(0, 2.0 * scipy.constants.pi, ntheta, endpoint=False)
 
         if not (isinstance(theta, np.ndarray) and theta.ndim == 1):
@@ -787,10 +787,10 @@ class FyEquilibriumProfiles2D(Equilibrium.TimeSlice.Profiles2D):
 
     @sp_property
     def grid(self) -> Mesh:
-        g = self.cache_get("grid")
-        dim1 = self.cache_get("grid/dim1")
-        dim2 = self.cache_get("grid/dim2")
-        mesh_type = self.cache_get("grid_type/name")
+        g = self.fetch_cache("grid")
+        dim1 = self.fetch_cache("grid/dim1")
+        dim2 = self.fetch_cache("grid/dim2")
+        mesh_type = self.fetch_cache("grid_type/name")
         return Mesh(dim1, dim2, type=mesh_type)
 
     @sp_property
@@ -954,16 +954,16 @@ class FyEquilibriumBoundarySeparatrix(FyEquilibriumBoundary):
 class FyEquilibriumTimeSlice(Equilibrium.TimeSlice):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        coordinate_system = self.cache_get("coordinate_system", {})
+        coordinate_system = self.fetch_cache("coordinate_system", {})
         coordinate_system.update(
             {  # 仅需这些量，其他物理量计算可得
-                "r0": self.cache_get("vacuum_toroidal_field/r0"),
-                "b0": self.cache_get("vacuum_toroidal_field/b0"),
-                "ip": self.cache_get("global_quantities/ip"),
-                "psi": self.cache_get("profiles_1d/psi"),
-                "ffprime": self.cache_get("profiles_1d/f_df_dpsi"),
-                "pprime": self.cache_get("profiles_1d/dpressure_dpsi"),
-                "psirz": Field(self.cache_get("profiles_2d/psi"), mesh=self.cache_get("profiles_2d/grid")),
+                "r0": self.fetch_cache("vacuum_toroidal_field/r0"),
+                "b0": self.fetch_cache("vacuum_toroidal_field/b0"),
+                "ip": self.fetch_cache("global_quantities/ip"),
+                "psi": self.fetch_cache("profiles_1d/psi"),
+                "ffprime": self.fetch_cache("profiles_1d/f_df_dpsi"),
+                "pprime": self.fetch_cache("profiles_1d/dpressure_dpsi"),
+                "psirz": Field(self.fetch_cache("profiles_2d/psi"), mesh=self.fetch_cache("profiles_2d/grid")),
             }
         )
 
@@ -1008,7 +1008,7 @@ class FyEqAnalyze(Equilibrium):
 
     """
 
-    code: Code = {"name": "fy_eq"}
+    code: Code = {"name": "fy_eq", "copyright": "FyTok"}
 
     TimeSlice = FyEquilibriumTimeSlice
 

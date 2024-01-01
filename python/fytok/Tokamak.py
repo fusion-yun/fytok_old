@@ -76,9 +76,6 @@ class Tokamak(Actor):
         self._shot = shot
         self._run = run
         self._device = device
-        # if time is not None:
-        #     self.refresh(time=time)
-        # logger.debug(self.brief_summary())
 
     @property
     def brief_summary(self) -> str:

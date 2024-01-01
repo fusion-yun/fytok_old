@@ -37,7 +37,7 @@ class FyTrans(TransportSolverNumerics):
     Solve transport equations $\rho=\sqrt{ \Phi/\pi B_{0}}$
     See  :cite:`hinton_theory_1976,coster_european_2010,pereverzev_astraautomated_1991`"""
 
-    code: Code = {"name": "fy_trans"}
+    code: Code = {"name": "fy_trans", "copyright": "FyTok"}
 
     solver: str = "fy_trans_bvp_solver"
 
@@ -48,20 +48,19 @@ class FyTrans(TransportSolverNumerics):
         enable_momentum = self.code.parameters.enable_momentum or False
         enable_impurity = self.code.parameters.enable_impurity or False
 
-        self.primary_coordinate
         ######################################################################################
         # 确定待求未知量
 
-        unknowns: typing.Set[str] = self.code.parameters.unknowns or set()
+        unknowns = self.code.parameters.unknowns or list()
 
         # 极向磁通
-        unknowns.add("psi")
+        unknowns.append("psi")
 
         # 电子
         # - 电子密度由准中性条件给出
         # - 电子温度，求解
         # - 电子转动，跟随离子，不求解
-        unknowns.add("electrons/temperature")
+        unknowns.append("electrons/temperature")
 
         for s in self.ion_thermal:
             # 热化离子组份
@@ -69,10 +68,10 @@ class FyTrans(TransportSolverNumerics):
             # - 温度 temperature,可求解，
             # - 环向转动 velocity/totoridal，可求解，
 
-            unknowns.add(f"ion/{s}/density")
-            unknowns.add(f"ion/{s}/temperature")
+            unknowns.append(f"ion/{s}/density")
+            unknowns.append(f"ion/{s}/temperature")
             if enable_momentum:
-                unknowns.add(f"ion/{s}/velocity/toroidal")
+                unknowns.append(f"ion/{s}/velocity/toroidal")
 
         for s in self.ion_non_thermal:
             # 非热化离子组份，
@@ -81,15 +80,15 @@ class FyTrans(TransportSolverNumerics):
             #    - He ash 温度与离子温度一致，alpha粒子满足慢化分布
             # - 环向转动 velocity/totoridal，无统一定义不求解
             #
-            unknowns.add(f"ion/{s}/density")
+            unknowns.append(f"ion/{s}/density")
 
         if enable_impurity:
             # enable 杂质输运
             for s in self.impurities:
-                unknowns.add(f"ion/{s}/density")
-                unknowns.add(f"ion/{s}/temperature")
+                unknowns.append(f"ion/{s}/density")
+                unknowns.append(f"ion/{s}/temperature")
                 if enable_momentum:
-                    unknowns.add(f"ion/{s}/velocity/toroidal")
+                    unknowns.append(f"ion/{s}/velocity/toroidal")
         else:
             # 杂质分布需要由外部 （core_profiles）给定
             pass
@@ -112,11 +111,11 @@ class FyTrans(TransportSolverNumerics):
 
         # 在 x=0 处边界条件唯一， flux=0 (n,T,u) or \farc{d \psi}{dx}=0 ( for psi )
         # 在 \rho_{bdry} 处边界条件类型可由参数指定
-        bc_type = self.cache_get("boundary_condition_type", {})
+        bc_type = self.fetch_cache("boundary_condition_type", {})
 
         # 归一化/无量纲化单位
         # 在放入标准求解器前，系数矩阵需要无量纲、归一化
-        units = self.code.parameters.units or Dict({})
+        units = self.code.parameters.units
 
         for s in unknowns:
             pth = Path(s)
@@ -153,10 +152,15 @@ class FyTrans(TransportSolverNumerics):
             equations.append(
                 {
                     "identifier": s,
-                    "units": [pth.get(units, 1), pth.with_suffix("_flux").get(units, 1)],
+                    "units": (pth.get(units, 1), pth.with_suffix("_flux").get(units, 1)),
                     "boundary_condition_type": pth.get(bc_type, 1),
                 }
             )
+
+        ##################################################################################################
+        # 赋值属性
+        self.profiles_1d.update(profiles_1d)
+        self.equations = equations
 
         ##################################################################################################
         # 定义内部控制参数
@@ -167,11 +171,6 @@ class FyTrans(TransportSolverNumerics):
         self._rho_tor_norm = self.code.parameters.rho_tor_norm
         if self._rho_tor_norm is _not_found_:
             self._rho_tor_norm = np.linspace(0.001, 0.995, 128)
-
-        ##################################################################################################
-        # 赋值属性
-        self.profiles_1d.update(profiles_1d)
-        self.equations = equations
 
         logger.debug(f" Unknowns : {unknowns}")
 
@@ -199,7 +198,7 @@ class FyTrans(TransportSolverNumerics):
 
         core_sources: AoS[CoreSources.Source] = self.inputs.get_source("core_sources/source")
 
-        grid = current.cache_get("grid", _not_found_)
+        grid = current.fetch_cache("grid", _not_found_)
 
         if not isinstance(grid, CoreRadialGrid):
             # TODO: 根据时间获取时间片, 例如：
@@ -214,7 +213,7 @@ class FyTrans(TransportSolverNumerics):
 
         for s in self.impurities:
             pth = Path(f"ion/{s}/density")
-            self.profiles_1d[pth] = pth.get(profiles_1d,zero)(x)
+            self.profiles_1d[pth] = pth.get(profiles_1d, zero)(x)
 
         if self.primary_coordinate != "psi_norm":
             psi_norm = Function(grid[self.primary_coordinate], grid.psi_norm, label=r"\bar{\psi}_{norm}")(x)

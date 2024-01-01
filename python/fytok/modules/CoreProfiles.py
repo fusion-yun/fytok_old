@@ -407,7 +407,7 @@ class CoreProfiles(IDS):
     def fetch(self, x: Variable | array_type = None, **kwargs) -> CoreProfilesTimeSlice:
         current = self.time_slice.current
 
-        grid = current.profiles_1d.cache_get("grid", _not_found_)
+        grid = current.profiles_1d.fetch_cache("grid", _not_found_)
 
         if grid is _not_found_:
             current.profiles_1d["grid"] = self.inputs.get_source("equilibrium").time_slice.current.profiles_1d.grid
@@ -426,7 +426,7 @@ class CoreProfiles(IDS):
             if isinstance(x, array_type):
                 current.profiles_1d["grid"] = current.profiles_1d.grid.remesh(x)
 
-        psi = current.profiles_1d.cache_get("psi", _not_found_)
+        psi = current.profiles_1d.fetch_cache("psi", _not_found_)
         if psi is _not_found_:
             current.profiles_1d["psi"] = current.profiles_1d.grid.psi
         return current

@@ -121,7 +121,7 @@ class CoreTransportModel(Module):
     def preprocess(self, *args, **kwargs) -> CoreTransportTimeSlice:
         current = super().preprocess(*args, **kwargs)
 
-        grid = current.cache_get("profiles_1d/grid_d", _not_found_)
+        grid = current.fetch_cache("profiles_1d/grid_d", _not_found_)
 
         if not isinstance(grid, CoreRadialGrid):
             equilibrium: Equilibrium.TimeSlice = self.inputs.get_source("equilibrium").time_slice.current
@@ -134,7 +134,7 @@ class CoreTransportModel(Module):
         """获得当前时间片的拷贝。"""
         current = self.time_slice.current
 
-        grid = current.profiles_1d.cache_get("grid_d", _not_found_)
+        grid = current.profiles_1d.fetch_cache("grid_d", _not_found_)
 
         if grid is _not_found_:
             current.profiles_1d["grid_d"] = self.inputs.get_source("equilibrium").time_slice.current.profiles_1d.grid
