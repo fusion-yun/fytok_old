@@ -282,11 +282,11 @@ class FyTrans(TransportSolverNumerics):
         k_vppr = 0  # (3 / 2) * k_rho_bdry - k_phi *　x * vpr(psi).dln()
 
         trans_models: typing.List[CoreTransport.Model.TimeSlice] = [
-            #  model.fetch(self.profiles_1d) for model in core_transport
+            model.fetch(self.profiles_1d) for model in core_transport
         ]
 
         trans_sources: typing.List[CoreSources.Source.TimeSlice] = [
-            # source.fetch(self.profiles_1d) for source in core_sources
+            source.fetch(self.profiles_1d) for source in core_sources
         ]
 
         if boundary_value is None:

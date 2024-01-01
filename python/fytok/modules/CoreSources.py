@@ -178,7 +178,7 @@ class CoreSourcesSource(Module):
         x = profiles_1d.rho_tor_norm
 
         if x is not None:
-            current = current.clone(lambda o: o(profiles_1d) if isinstance(o, Expression) else o)
+            current = current.clone(lambda o: o(x) if isinstance(o, Expression) else o)
 
             if isinstance(profiles_1d.rho_tor_norm, array_type):
                 current.profiles_1d["grid"] = current.profiles_1d.grid.remesh(x)
