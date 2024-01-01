@@ -9,6 +9,7 @@ from fytok.utils.logger import logger
 from fytok.utils.atoms import atoms
 from fytok.modules.AMNSData import amns
 from fytok.modules.CoreSources import CoreSources
+from fytok.modules.CoreProfiles import CoreProfiles
 from fytok.modules.Utilities import *
 
 PI = scipy.constants.pi
@@ -31,20 +32,15 @@ class Radiation(CoreSources.Source):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def fetch(self, x: Variable | array_type, **variables: Expression) -> CoreSources.Source.TimeSlice:
-        current: CoreSources.Source.TimeSlice = super().fetch(x, **variables)
+    def fetch(self, profiles_1d: CoreProfiles.TimeSlice.Profiles1D) -> CoreSources.Source.TimeSlice:
+        current: CoreSources.Source.TimeSlice = super().fetch(profiles_1d)
 
         source_1d = current.profiles_1d
 
-        ne = variables.get(f"electrons/density")
-        Te = variables.get(f"electrons/temperature")
+        ne = profiles_1d.electrons.density
+        Te = profiles_1d.electrons.temperature
 
-        Qrad = zero
-
-        for k, ns in variables.items():
-            k_ = k.split("/")
-            if k_[0] == "ion" and k_[-1] == "density":
-                Qrad += ne * ns * amns[k_[1]].radiation(Te)
+        Qrad = sum([ne * ion.density * amns[ion.label].radiation(Te) for ion in profiles_1d.ion], zero)
 
         source_1d.electrons.energy -= Qrad
 

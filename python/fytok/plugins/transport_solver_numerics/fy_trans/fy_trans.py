@@ -164,7 +164,7 @@ class FyTrans(TransportSolverNumerics):
 
         ##################################################################################################
         # 定义内部控制参数
-        self._units = np.array(itertools.chain(*[equ.units for equ in self.equations]))
+        self._units = np.array(sum([equ.units for equ in self.equations], tuple()))
 
         self._hyper_diff = self.code.parameters.hyper_diff or 0.001
 
@@ -180,6 +180,8 @@ class FyTrans(TransportSolverNumerics):
         - 初值 from initial_value
         - 边界值 from boundary_value
         """
+        logger.debug(self.profiles_1d._cache)
+
         current: TransportSolverNumericsTimeSlice = super().preprocess(*args, **kwargs)
 
         eq_1d: Equilibrium.TimeSlice.Profiles1D = self.inputs.get_source("equilibrium/time_slice/0/profiles_1d")
@@ -213,7 +215,8 @@ class FyTrans(TransportSolverNumerics):
 
         for s in self.impurities:
             pth = Path(f"ion/{s}/density")
-            self.profiles_1d[pth] = pth.get(profiles_1d, zero)(x)
+            n_imp = pth.get(profiles_1d, zero)
+            self.profiles_1d[pth] = n_imp(x)
 
         if self.primary_coordinate != "psi_norm":
             psi_norm = Function(grid[self.primary_coordinate], grid.psi_norm, label=r"\bar{\psi}_{norm}")(x)
@@ -253,8 +256,10 @@ class FyTrans(TransportSolverNumerics):
         else:
             dt = eq_1d._parent.time - eq_1d_m._parent.time
 
-            if np.isclose(dt, 0.0) or dt < 0:
+            if dt < 0:
                 raise RuntimeError(f"dt={dt}<=0")
+            elif np.isclose(dt, 0.0):
+                one_over_dt = 0.0
             else:
                 one_over_dt = one / dt
 
@@ -275,158 +280,12 @@ class FyTrans(TransportSolverNumerics):
 
         k_vppr = 0  # (3 / 2) * k_rho_bdry - k_phi *　x * vpr(psi).dln()
 
-        # variables = self.variables
-        # variables["psi"] = Variable((i := i + 1), "psi", label=r"\psi")
-        # variables["psi_flux"] = Variable((i := i + 1), "psi", label=r"\Gamma_{\psi}")
-        # equations.append({"identifier": "psi", "boundary_condition_type": bc_type.get("psi", 1)})
-        # variables["electrons/temperature"] = Te = Variable(
-        #     (i := i + 1),
-        #     "electrons/temperature",
-        #     label=r"T_{e}",
-        # )
-        # variables["electrons/temperature_flux"] = Variable(
-        #     (i := i + 1),
-        #     "electrons/temperature",
-        #     label=r"H_{Te}",
-        # )
-        # equations.append(
-        #     {
-        #         "identifier": "electrons/temperature",
-        #         "boundary_condition_type": bc_type.get("electrons/temperature", None)
-        #         or bc_type.get(f"*/temperature", 1),
-        #     }
-        # )
-        # 计算总离子密度
-        # t_i_average = zero
-        # n_i_total = zero
-        # n_i_totoal_flux = zero
-        # for s in self.ion_thermal:
-        # variables[f"ion/{s}/density"] = ns = Variable(
-        #     (i := i + 1),
-        #     f"ion/{s}/density",
-        #     label=rf"n_{{{s}}}",
-        # )
-        # variables[f"ion/{s}/density_flux"] = ns_flux = Variable(
-        #     (i := i + 1),
-        #     f"ion/{s}/density_flux",
-        #     label=rf"\Gamma_{{{s}}}",
-        # )
-        # equations.append(
-        #     {
-        #         "identifier": f"ion/{s}/density",
-        #         "boundary_condition_type": bc_type.get(f"ion/{s}/density", None) or bc_type.get(f"*/density", 1),
-        #     }
-        # )
-        # variables[f"ion/{s}/temperature"] = Ts = Variable(
-        #     (i := i + 1),
-        #     f"ion/{s}/temperature",
-        #     label=rf"T_{{{s}}}",
-        # )
-        # variables[f"ion/{s}/temperature_flux"] = Variable(
-        #     (i := i + 1),
-        #     f"ion/{s}/temperature_flux",
-        #     label=rf"H_{{{s}}}",
-        # )
-        # equations.append(
-        #     {
-        #         "identifier": f"ion/{s}/temperature",
-        #         "boundary_condition_type": bc_type.get(f"ion/{s}/temperature", None)
-        #         or bc_type.get(f"*/temperature", 1),
-        #     }
-        # )
-        # if enable_momentum:
-        #     variables[f"ion/{s}/velocity/toroidal"] = ns = Variable(
-        #         (i := i + 1),
-        #         f"ion/{s}/velocity/toroidal",
-        #         label=rf"u_{{{s}}}",
-        #     )
-        #     variables[f"ion/{s}/velocity/toroidal_flux"] = ns_flux = Variable(
-        #         (i := i + 1),
-        #         f"ion/{s}/velocity/toroidal_flux",
-        #         label=rf"U_{{{s}}}",
-        #     )
-        #     equations.append(
-        #         {
-        #             "identifier": f"ion/{s}/velocity/toroidal",
-        #             "boundary_condition_type": bc_type.get(f"ion/{s}/velocity/toroidal", None)
-        #             or bc_type.get(f"*/velocity/toroidal", 1),
-        #         }
-        #     )
-        # z = atoms[s].z
-        # t_i_average += z * ns * Ts
-        # n_i_total += z * ns
-        # n_i_totoal_flux += z * ns_flux
-        # 平均离子温度, 没有计入反应产物 alpha 和 He ash
-        # t_i_average /= n_i_total
-        # variables["t_i_average"] = t_i_average
-        # for s in self.ion_non_thermal:
-        #     variables[f"ion/{s}/density"] = ns = Variable(
-        #         (i := i + 1),
-        #         f"ion/{s}/density",
-        #         label=rf"n_{{{s}}}",
-        #     )
-        #     variables[f"ion/{s}/density_flux"] = ns_flux = Variable(
-        #         (i := i + 1),
-        #         f"ion/{s}/density_flux",
-        #         label=rf"\Gamma_{{{s}}}",
-        #     )
-        #     equations.append(
-        #         {
-        #             "identifier": f"ion/{s}/density",
-        #             "boundary_condition_type": bc_type.get(f"ion/{s}/density", None) or bc_type.get(f"*/density", 1),
-        #         }
-        #     )
-        # z = atoms[s].z
-        # n_i_total += z * ns
-        # n_i_totoal_flux += z * ns_flux
-        # for ash in fusion_ash:
-        #     # 令 He ash 的温度等于平均离子温度
-        #     variables[f"ion/{ash}/temperature"] = t_i_average
-        # variables["n_i_total"] = n_i_total
-        # variables["n_i_totoal_flux"] = n_i_totoal_flux
-        # # quasi-neutrality condition
-        # n_i_total = zero
-        # n_i_total_flux = zero
-        # for k, v in variables:
-        #     pth = k.split("/")
-        #     if pth[0] != "ion" or pth[-1] not in ("density", "density_flux"):
-        #         continue
-        #     z = atoms[pth[1]].z
-        #     if pth[-1] == "density":
-        #         n_i_total += z * v
-        #     elif pth[-1] == "density_flux":
-        #         n_i_total_flux += z * v
-
-        # n_i_total._metadata["name"] = "n_i_total"
-        # n_i_total._metadata["label"] = "n_{i}"
-
-        # n_i_total_flux._metadata["name"] = "n_i_total_flux"
-        # n_i_total_flux._metadata["label"] = r"\Gamma_{i}"
-
-        # variables["n_i_total"] = n_i_total
-        # variables["n_i_total_flux"] = n_i_total_flux
-        # 从 core_profiles 获得杂质分布
-        # n_imp = zero
-        # n_imp_flux = zero
-        # for s in self.impurities:
-        #     z_ion_1d = core_profiles_1d.ion[s].z_ion_1d
-        #     n_imp += (core_profiles_1d.ion[s].density * z_ion_1d)(x)
-        #     # n_imp_flux += (core_profiles_1d.ion[s].density_flux * z_ion_1d)(x)
-        # n_e = n_imp + self.variables["n_i_total"]
-        # n_e_flux = n_imp_flux + self.variables["n_i_totoal_flux"]
-        # quasi neutrality condition
-        # n_e._metadata["name"] = "ne"
-        # n_e._metadata["label"] = r"n_{e}"
-        # n_e_flux._metadata["label"] = r"\Gamma_{e}"
-        # n_e = variables["electrons/density"]
-        # n_e_flux = variables["electrons/density_flux"]
-
         trans_models: typing.List[CoreTransport.Model.TimeSlice] = [
-            model.fetch(self.profiles_1d) for model in core_transport
+            #  model.fetch(self.profiles_1d) for model in core_transport
         ]
 
         trans_sources: typing.List[CoreSources.Source.TimeSlice] = [
-            source.fetch(self.profiles_1d) for source in core_sources
+            # source.fetch(self.profiles_1d) for source in core_sources
         ]
 
         if boundary_value is None:
@@ -435,18 +294,19 @@ class FyTrans(TransportSolverNumerics):
         hyper_diff = self._hyper_diff
 
         for idx, equ in enumerate(self.equations):
-            if equ.identifier.endswith("velocity/toroidal"):
-                pth = Path(equ.identifier).parent.parent
+            pth = Path(equ.identifier)
+            # if equ.identifier.endswith("velocity/toroidal"):
+            #     pth = Path(equ.identifier).parent.parent
 
-            else:
-                pth = Path(equ.identifier).parent
+            # elif equ.identifier.endswith("density") or equ.identifier.endswith("temperature"):
+            #     pth = Path(equ.identifier).parent
 
-            bc_value = pth.get(boundary_value, None)
+            bc_value = boundary_value.get(equ.identifier, None)
 
             match pth[-1]:
                 case "psi":
-                    psi = (pth / "psi").get(self.profiles_1d, zero)
-                    psi_m = (pth / "psi").get(profiles_1d_m, zero)(x)
+                    psi = pth.get(self.profiles_1d, zero)
+                    psi_m = pth.get(profiles_1d_m, zero)(x)
 
                     conductivity_parallel: Expression = zero
 
@@ -481,9 +341,9 @@ class FyTrans(TransportSolverNumerics):
                     match equ.boundary_condition_type:
                         # poloidal flux;
                         case 1:
-                            u = equ.units[1] / self.normalize_factor[idx * 2]
+                            u = equ.units[1]
                             v = 0
-                            w = bc_value * equ.units[1] / self.normalize_factor[idx * 2]
+                            w = bc_value * equ.units[1]
 
                         # ip, total current inside x=1
                         case 2:
@@ -508,8 +368,8 @@ class FyTrans(TransportSolverNumerics):
                     bc += [[u, v, w]]
 
                 case "density":
-                    ns = (pth / "density").get(self.profiles_1d, zero)
-                    ns_m = (pth / "density").get(profiles_1d_m, zero)(x)
+                    ns = (pth / "../density").get(self.profiles_1d, zero)
+                    ns_m = (pth / "../density").get(profiles_1d_m, zero)(x)
 
                     transp_D = zero
                     transp_V = zero
@@ -517,15 +377,15 @@ class FyTrans(TransportSolverNumerics):
                     for model in trans_models:
                         core_transp_1d = model.profiles_1d
 
-                        transp_D += (pth / "particles/d").get(core_transp_1d, zero)
-                        transp_V += (pth / "particles/v").get(core_transp_1d, zero)
+                        transp_D += (pth / "../particles/d").get(core_transp_1d, zero)
+                        transp_V += (pth / "../particles/v").get(core_transp_1d, zero)
                         # transp_F += (pth / "particles/flux").get(core_transp_1d, zero)
 
                     S = zero
 
                     for source in trans_sources:
                         source_1d = source.profiles_1d
-                        S += (pth / "particles ").get(source_1d, zero)
+                        S += (pth / "../particles ").get(source_1d, zero)
 
                     d_dt = one_over_dt * (vpr * ns - vpr_m * ns_m) * rho_tor_boundary
 
@@ -541,9 +401,9 @@ class FyTrans(TransportSolverNumerics):
                     # at boundary x=1
                     match equ.boundary_condition_type:
                         case 1:  # 1: value of the field y;
-                            u = equ.units[1] / self.normalize_factor[idx * 2]
+                            u = equ.units[1]
                             v = 0
-                            w = bc_value * equ.units[1] / self.normalize_factor[idx * 2]
+                            w = bc_value * equ.units[1]
 
                         case 2:  # 2: radial derivative of the field (-dy/drho_tor);
                             u = V
@@ -568,12 +428,12 @@ class FyTrans(TransportSolverNumerics):
                     bc += [[u, v, w]]
 
                 case "temperature":
-                    ns = (pth / "density").get(self.profiles_1d)
-                    Gs = (pth / "density_flux").get(self.profiles_1d)
-                    Ts = (pth / "temperature").get(self.profiles_1d)
+                    ns = (pth / "../density").get(self.profiles_1d, zero)
+                    Gs = (pth / "../density_flux").get(self.profiles_1d, zero)
+                    Ts = (pth / "../temperature").get(self.profiles_1d, zero)
 
-                    ns_m = (pth / "density").get(profiles_1d_m, zero)(x)
-                    Ts_m = (pth / "temperature").get(profiles_1d_m, zero)(x)
+                    ns_m = (pth / "../density").get(profiles_1d_m, zero)(x)
+                    Ts_m = (pth / "../temperature").get(profiles_1d_m, zero)(x)
 
                     energy_D = zero
                     energy_V = zero
@@ -586,9 +446,9 @@ class FyTrans(TransportSolverNumerics):
 
                         trans_1d = model.profiles_1d
 
-                        energy_D += (pth / "energy/d").get(trans_1d, zero)
-                        energy_V += (pth / "energy/v").get(trans_1d, zero)
-                        energy_F += (pth / "energy/flux").get(trans_1d, zero)
+                        energy_D += (pth / "../energy/d").get(trans_1d, zero)
+                        energy_V += (pth / "../energy/v").get(trans_1d, zero)
+                        energy_F += (pth / "../energy/flux").get(trans_1d, zero)
 
                     if flux_multiplier is zero:
                         flux_multiplier = one
@@ -597,7 +457,7 @@ class FyTrans(TransportSolverNumerics):
 
                     for source in trans_sources:
                         source_1d = source.profiles_1d
-                        Q += (pth / "energy").get(source_1d, zero)
+                        Q += (pth / "../energy").get(source_1d, zero)
 
                     d_dt = (
                         one_over_dt
@@ -618,9 +478,9 @@ class FyTrans(TransportSolverNumerics):
                     # at boundary x=1
                     match equ.boundary_condition_type:
                         case 1:  # 1: value of the field y;
-                            u = equ.units[1] / self.normalize_factor[idx * 2]
+                            u = equ.units[1]
                             v = 0
-                            w = bc_value * equ.units[1] / self.normalize_factor[idx * 2]
+                            w = bc_value * equ.units[1]
 
                         case 2:  # 2: radial derivative of the field (-dy/drho_tor);
                             u = V
@@ -645,26 +505,26 @@ class FyTrans(TransportSolverNumerics):
                     bc += [[u, v, w]]
 
                 case "toroidal":
-                    us = (pth / "velocity/toroidal").get(self.profiles_1d, zero)
-                    ns = (pth / "density").get(self.profiles_1d, zero)
-                    Gs = (pth / "density_flux").get(self.profiles_1d, zero)
+                    us = (pth).get(self.profiles_1d, zero)
+                    ns = (pth / "../../density").get(self.profiles_1d, zero)
+                    Gs = (pth / "../../density_flux").get(self.profiles_1d, zero)
 
-                    us_m = (pth / "velocity/toroidal").get(profiles_1d_m, zero)(x)
-                    ns_m = (pth / "density").get(profiles_1d_m, zero)(x)
+                    us_m = (pth).get(profiles_1d_m, zero)(x)
+                    ns_m = (pth / "../../density").get(profiles_1d_m, zero)(x)
 
                     chi_u = zero
                     V_u_pinch = zero
 
                     for model in trans_models:
                         trans_1d = model.profiles_1d
-                        chi_u += (pth / "momentum/toroidal/d").get(trans_1d, zero)
-                        V_u_pinch += (pth / "momentum/toroidal/v").get(trans_1d, zero)
+                        chi_u += (pth / "../../momentum/toroidal/d").get(trans_1d, zero)
+                        V_u_pinch += (pth / "../../momentum/toroidal/v").get(trans_1d, zero)
 
                     U = zero
 
                     for source in trans_sources:
                         source_1d = source.profiles_1d
-                        U += (pth / "momentum/toroidal").get(source_1d, zero)
+                        U += (pth / "../../momentum/toroidal").get(source_1d, zero)
 
                     U *= gm8
 
@@ -684,9 +544,9 @@ class FyTrans(TransportSolverNumerics):
                     # at boundary x=1
                     match equ.boundary_condition_type:
                         case 1:  # 1: value of the field y;
-                            u = equ.units[1] / self.normalize_factor[idx * 2]
+                            u = equ.units[1]
                             v = 0
-                            w = bc_value * equ.units[1] / self.normalize_factor[idx * 2]
+                            w = bc_value * equ.units[1]
 
                         case 2:  # 2: radial derivative of the field (-dy/drho_tor);
                             u = V
@@ -732,7 +592,7 @@ class FyTrans(TransportSolverNumerics):
                 y = Y[idx * 2]
                 Y[idx * 2 + 1] = -D(X, *Y) * derivative(y, X) + V(X, *Y) * y
 
-            Y /= self.normalize_factor.reshape(-1, 1)
+            Y /= self._units.reshape(-1, 1)
 
             current.Y = Y
 
@@ -863,10 +723,10 @@ class FyTrans(TransportSolverNumerics):
                     "identifier": equ.identifier,
                     "boundary_condition_type": equ.boundary_condition_type,
                     "boundary_condition_value": equ.boundary_condition_value,
-                    "profile": sol.y[2 * idx] * self.normalize_factor[2 * idx],
-                    "flux": sol.y[2 * idx + 1] * self.normalize_factor[2 * idx + 1],
-                    "d_dr": sol.yp[2 * idx] * self.normalize_factor[2 * idx],
-                    "dflux_dr": sol.yp[2 * idx + 1] * self.normalize_factor[2 * idx + 1],
+                    "profile": sol.y[2 * idx] * self._units[2 * idx],
+                    "flux": sol.y[2 * idx + 1] * self._units[2 * idx + 1],
+                    "d_dr": sol.yp[2 * idx] * self._units[2 * idx],
+                    "dflux_dr": sol.yp[2 * idx + 1] * self._units[2 * idx + 1],
                 }
             )
 

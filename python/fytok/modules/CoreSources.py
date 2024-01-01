@@ -158,8 +158,7 @@ class CoreSourcesSource(Module):
 
             current["profiles_1d/grid"] = equilibrium.profiles_1d.grid.remesh(grid, rho_tor_norm=rho_tor_norm)
 
-    def fetch(self, x: Variable | array_type = None, **kwargs) -> CoreSourcesTimeSlice:
-        """获得当前时间片的拷贝。"""
+    def fetch(self, profiles_1d: CoreProfiles.TimeSlice.Profiles1D, **kwargs) -> CoreSourcesTimeSlice:
         current = self.time_slice.current
 
         grid = current.profiles_1d.fetch_cache("grid", _not_found_)
@@ -176,10 +175,12 @@ class CoreSourcesSource(Module):
                 grid["psi_boundary"] = eq_grid.psi_boundary
                 grid["rho_tor_boundary"] = eq_grid.rho_tor_boundary
 
-        if x is not None:
-            current = current.clone(lambda o: o(x, **kwargs) if isinstance(o, Expression) else o)
+        x = profiles_1d.rho_tor_norm
 
-            if isinstance(x, array_type):
+        if x is not None:
+            current = current.clone(lambda o: o(profiles_1d) if isinstance(o, Expression) else o)
+
+            if isinstance(profiles_1d.rho_tor_norm, array_type):
                 current.profiles_1d["grid"] = current.profiles_1d.grid.remesh(x)
 
         return current

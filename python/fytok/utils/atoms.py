@@ -93,7 +93,7 @@ class Atoms(Dict[Atom]):
         elif isinstance(value, str):
             return self.__getitem__(value)
         else:
-            return super()._as_child(value, key, _type_hint=Atom)
+            return super()._type_convert(value, key, _type_hint=Atom)
 
 
 atoms = Atoms(_predef_atoms)
@@ -139,7 +139,7 @@ class Reaction:
 
 class NuclearReaction(Dict[Reaction]):
     def __getitem__(self, key) -> Reaction:
-        return self._get(key, _type_hint=Reaction)
+        return self._fetch(key, _type_hint=Reaction)
 
 
 nuclear_reaction = NuclearReaction(

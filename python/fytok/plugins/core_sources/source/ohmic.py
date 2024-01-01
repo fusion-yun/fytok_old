@@ -6,7 +6,7 @@ from fytok.modules.Equilibrium import Equilibrium
 
 from spdm.utils.typing import array_type
 from spdm.utils.tags import _not_found_
-from spdm.data.Expression import Expression, Variable,  zero
+from spdm.data.Expression import Expression, Variable, zero
 from spdm.data.sp_property import sp_tree
 
 from fytok.modules.CoreSources import CoreSources
@@ -20,8 +20,8 @@ class Ohmic(CoreSources.Source):
 
     code = {"name": "ohmic", "description": "Fusion reaction"}  # type: ignore
 
-    def fetch(self, x: Variable, **variables: Expression) -> CoreSources.Source.TimeSlice:
-        current: CoreSources.Source.TimeSlice = super().fetch(x, **variables)
+    def fetch(self, profiles_1d: CoreProfiles.TimeSlice.Profiles1D) -> CoreSources.Source.TimeSlice:
+        current: CoreSources.Source.TimeSlice = super().fetch(profiles_1d)
 
         #! +++ Radial electric field and ohmic heating:
         #      rho_loop13: DO irho=1,nrho

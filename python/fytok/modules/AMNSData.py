@@ -42,7 +42,7 @@ class AMNS(Dict[AMNSData]):
         elif isinstance(res, AMNSData):
             return res
         else:
-            return self._as_child(res, key, _type_hint=AMNSData)
+            return self._type_convert(res, key, _type_hint=AMNSData)
 
 
 ############################################################################

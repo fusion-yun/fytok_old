@@ -8,6 +8,7 @@ from fytok.utils.atoms import nuclear_reaction, atoms
 from fytok.utils.logger import logger
 
 from fytok.modules.CoreSources import CoreSources
+from fytok.modules.CoreProfiles import CoreProfiles
 from fytok.modules.Utilities import *
 
 PI = scipy.constants.pi
@@ -68,16 +69,18 @@ class FusionReaction(CoreSources.Source):
         F = Function(x, dF.I(x), label="F")
         self._sivukhin = F / (_x)
 
-    def fetch(self, x: Variable | array_type, **variables: Expression) -> CoreSources.Source.TimeSlice:
-        current: CoreSources.Source.TimeSlice = super().fetch(x, **variables)
+    def fetch(self, profiles_1d: CoreProfiles.TimeSlice.Profiles1D) -> CoreSources.Source.TimeSlice:
+        current: CoreSources.Source.TimeSlice = super().fetch(profiles_1d)
+
+        x = profiles_1d.rho_tor_norm
 
         source_1d = current.profiles_1d
         me = atoms["electrons"].mass
-        Te = variables.get("electrons/temperature")
+        Te = profiles_1d.electrons.temperature
 
         fusion_reactions: typing.List[str] = self.code.parameters.fusion_reactions or []
 
-        ne = variables.get(f"electrons/density")
+        ne = profiles_1d.electrons.density
 
         for tag in fusion_reactions:
             if tag != "D(t,n)alpha":
@@ -89,14 +92,14 @@ class FusionReaction(CoreSources.Source):
 
             pa = atoms[p1].label
 
-            n0 = variables.get(f"ion/{r0}/density")
-            n1 = variables.get(f"ion/{r1}/density")
+            n0 = profiles_1d.ion[r0].density
+            n1 = profiles_1d.ion[r1].density
 
-            T0 = variables.get(f"ion/{r0}/temperature")
-            T1 = variables.get(f"ion/{r1}/temperature")
+            T0 = profiles_1d.ion[r0].temperature
+            T1 = profiles_1d.ion[r1].temperature
             ni = n0 + n1
             Ti = (n0 * T0 + n1 * T1) / ni
-            nEP = variables.get(f"ion/{p1}/density", 0)
+            nEP = profiles_1d.ion[p1].density or zero
 
             lnGamma = 17
 
@@ -122,18 +125,12 @@ class FusionReaction(CoreSources.Source):
             #  [Stix, Plasma Phys. 14 (1972) 367 Eq.15
             C = 0.0
             m_tot = 0
-            for k, var in variables.items():
-                k_ = k.split("/")
-                if not (k_[0] == "ion" and k_[-1] == "temperature"):
-                    continue
-                s = k_[1]
-                if s == p1:
-                    continue
-                atom = atoms[s]
-                mi = atom.mass
-                zi = atom.z
 
-                ni = variables.get(f"ion/{s}/density")
+            for ion in profiles_1d.ion:
+                mi = ion.a * scipy.constants.atomic_mass
+                zi = ion.z
+
+                ni = ion.density
 
                 m_tot += mi
 
@@ -144,12 +141,8 @@ class FusionReaction(CoreSources.Source):
             frac = self._sivukhin(E1 / Ecrit)
 
             # 加热离子
-            for k, var in variables.items():
-                k_ = k.split("/")
-                if not (k_[0] == "ion" and k_[-1] == "temperature"):
-                    continue
-                s = k_[1]
-                source_1d.ion[s].energy += Efus * frac * atoms[s].mass / m_tot
+            for ion in profiles_1d.ion:
+                source_1d.ion[ion.label].energy += Efus * frac * ion.a * scipy.constants.atomic_mass / m_tot
 
             source_1d.electrons.energy += Efus * (1.0 - frac)
 

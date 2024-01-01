@@ -8,8 +8,9 @@ from spdm.utils.typing import array_type
 from fytok.utils.logger import logger
 from fytok.utils.atoms import atoms
 
-from fytok.modules.CoreSources import CoreSources
 from fytok.modules.Equilibrium import Equilibrium
+from fytok.modules.CoreSources import CoreSources
+from fytok.modules.CoreProfiles import CoreProfiles
 
 from fytok.modules.Utilities import *
 
@@ -31,13 +32,14 @@ class SynchrotronRadiation(CoreSources.Source):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def fetch(self, x: Variable | array_type, **variables: Expression) -> CoreSources.Source.TimeSlice:
-        current: CoreSources.Source.TimeSlice = super().fetch(x, **variables)
+    def fetch(self, profiles_1d: CoreProfiles.TimeSlice.Profiles1D) -> CoreSources.Source.TimeSlice:
+        current: CoreSources.Source.TimeSlice = super().fetch(profiles_1d)
 
         source_1d = current.profiles_1d
 
-        ne = variables.get(f"electrons/density")
-        Te = variables.get(f"electrons/temperature")
+        ne = profiles_1d.electrons.density
+        Te = profiles_1d.electrons.temperature
+
         equilibrium: Equilibrium.TimeSlice = self.inputs.get_source("equilibrium").time_slice.current
 
         B0 = np.abs(equilibrium.vacuum_toroidal_field.b0)
