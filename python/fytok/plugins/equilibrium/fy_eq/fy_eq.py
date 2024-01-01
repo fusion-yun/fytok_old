@@ -145,8 +145,8 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         if psi_norm is _not_found_:
             psi_norm = self.get(".../code/parameters/psi_norm", _not_found_)
 
-        if psi_norm is _not_found_ and isinstance(psi, array_type):
-            psi_norm = ((psi - self.psi_axis) / (self.psi_boundary - self.psi_axis),)
+        # if psi_norm is _not_found_ and isinstance(psi, array_type):
+        #     psi_norm = ((psi - self.psi_axis) / (self.psi_boundary - self.psi_axis),)
 
         if psi_norm is _not_found_ or psi_norm is None:
             psi_norm = np.linspace(0.001, 0.9995, 64)

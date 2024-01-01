@@ -130,53 +130,38 @@ class CoreTransportModel(Module):
 
             current["profiles_1d/grid_d"] = equilibrium.profiles_1d.grid.remesh(grid, rho_tor_norm=rho_tor_norm)
 
-    def fetch(self, profiles_1d: CoreProfiles.TimeSlice.Profiles1D, **kwargs) -> CoreTransportTimeSlice:
+    def fetch(self, profiles_1d: CoreProfiles.TimeSlice.Profiles1D) -> CoreTransportTimeSlice:
         current = self.time_slice.current
 
         grid = current.profiles_1d.fetch_cache("grid_d", _not_found_)
 
         if grid is _not_found_:
-            current.profiles_1d["grid_d"] = self.inputs.get_source("equilibrium").time_slice.current.profiles_1d.grid
+            current.profiles_1d["grid_d"] = profiles_1d.grid
 
         else:
             grid = current.profiles_1d.grid_d
             if grid.psi_axis is _not_found_ or grid.psi_axis is None:
-                eq_grid: CoreRadialGrid = self.inputs.get_source("equilibrium").time_slice.current.profiles_1d.grid
-
-                grid["psi_axis"] = eq_grid.psi_axis
-                grid["psi_boundary"] = eq_grid.psi_boundary
-                grid["rho_tor_boundary"] = eq_grid.rho_tor_boundary
+                grid["psi_axis"] = profiles_1d.grid.psi_axis
+                grid["psi_boundary"] = profiles_1d.grid.psi_boundary
+                grid["rho_tor_boundary"] = profiles_1d.grid.rho_tor_boundary
 
         x = profiles_1d.rho_tor_norm
 
-        if x is not None:
-            current = current.clone(lambda o: o(profiles_1d) if isinstance(o, Expression) else o)
-            if isinstance(x, array_type):
-                current.profiles_1d["grid_d"] = current.profiles_1d.grid_d.remesh(x)
+        current = current.clone(lambda o: o(x) if isinstance(o, Expression) else o)
+
+        if isinstance(x, array_type):
+            current.profiles_1d["grid_d"] = profiles_1d.grid
 
         return current
 
     def flush(self) -> CoreTransportTimeSlice:
         current = super().flush()
 
-        core_profiles: CoreProfiles.TimeSlice = self.inputs.get_source("core_profiles").time_slice.current
+        profiles_1d: CoreProfiles.TimeSlice.Profiles1D = self.inputs.get_source(
+            "core_profiles/time_slice/0/profiles_1d"
+        )
 
-        profiles_1d = core_profiles.profiles_1d
-
-        x = profiles_1d.grid.rho_tor_norm
-
-        variables = {
-            "psi": profiles_1d.psi(x),
-            "electrons/density": profiles_1d.electrons.density(x),
-            "electrons/temperature": profiles_1d.electrons.temperature(x),
-            "electrons/velocity/toroidal": profiles_1d.electrons.velocity.toroidal(x),
-            **{"ion/{s}/density": ion.density(x) for ion in profiles_1d.ion},
-            **{"ion/{s}/temperature": ion.temperature(x) for ion in profiles_1d.ion},
-            **{"ion/{s}/velocity/toroidal": ion.velocity.toroidal(x) for ion in profiles_1d.ion},
-        }
-
-        current.update(self.fetch(x, **variables))
-
+        current.update(self.fetch(profiles_1d))
         return current
 
     def refresh(

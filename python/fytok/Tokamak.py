@@ -204,7 +204,9 @@ Modules:
     def flush(self, *args, **kwargs):
         super().flush(*args, **kwargs)
 
-        self.core_profiles.flush(profiles_1d=self.transport_solver.as_core_profiles_1d())
+        profiles_1d = self.transport_solver.fetch()
+
+        self.core_profiles.flush(profiles_1d=profiles_1d)
 
         self.equilibrium.flush()
 

@@ -109,13 +109,13 @@ class CoreSourcesProfiles1D(core_sources._T_core_sources_source_profiles_1d):
     conductivity_parallel: Expression
 
     Electrons = CoreSourcesElectrons
-    electrons: CoreSourcesElectrons = {"label": "electrons"}
+    electrons: CoreSourcesElectrons
 
     Ion = CoreSourcesSpecies
-    ion: AoS[CoreSourcesSpecies] = sp_property(default_initial={})
+    ion: AoS[CoreSourcesSpecies]
 
     Neutral = CoreSourcesNeutral
-    neutral: AoS[CoreSourcesNeutral] = sp_property(default_initial={})
+    neutral: AoS[CoreSourcesNeutral]
 
 
 @sp_tree
@@ -164,47 +164,31 @@ class CoreSourcesSource(Module):
         grid = current.profiles_1d.fetch_cache("grid", _not_found_)
 
         if grid is _not_found_:
-            current.profiles_1d["grid"] = self.inputs.get_source("equilibrium").time_slice.current.profiles_1d.grid
+            current.profiles_1d["grid"] = profiles_1d.grid
 
         else:
             grid = current.profiles_1d.grid
             if grid.psi_axis is _not_found_ or grid.psi_axis is None:
-                eq_grid: CoreRadialGrid = self.inputs.get_source("equilibrium").time_slice.current.profiles_1d.grid
-
-                grid["psi_axis"] = eq_grid.psi_axis
-                grid["psi_boundary"] = eq_grid.psi_boundary
-                grid["rho_tor_boundary"] = eq_grid.rho_tor_boundary
+                grid["psi_axis"] = profiles_1d.grid.psi_axis
+                grid["psi_boundary"] = profiles_1d.grid.psi_boundary
+                grid["rho_tor_boundary"] = profiles_1d.grid.rho_tor_boundary
 
         x = profiles_1d.rho_tor_norm
 
-        if x is not None:
-            current = current.clone(lambda o: o(x) if isinstance(o, Expression) else o)
+        current = current.clone(lambda o: o(x) if isinstance(o, Expression) else o)
 
-            if isinstance(profiles_1d.rho_tor_norm, array_type):
-                current.profiles_1d["grid"] = current.profiles_1d.grid.remesh(x)
+        if isinstance(x, array_type):
+            current.profiles_1d["grid"] = profiles_1d.grid
 
         return current
 
     def flush(self) -> CoreSourcesTimeSlice:
         current = super().flush()
 
-        core_profiles: CoreProfiles.TimeSlice = self.inputs.get_source("core_profiles").time_slice.current
-
-        profiles_1d = core_profiles.profiles_1d
-
-        x = profiles_1d.grid.rho_tor_norm
-
-        variables = {
-            "psi": profiles_1d.psi(x),
-            "electrons/density": profiles_1d.electrons.density(x),
-            "electrons/temperature": profiles_1d.electrons.temperature(x),
-            "electrons/velocity/toroidal": profiles_1d.electrons.velocity.toroidal(x),
-            **{f"ion/{ion.label}/density": ion.density(x) for ion in profiles_1d.ion},
-            **{f"ion/{ion.label}/temperature": ion.temperature(x) for ion in profiles_1d.ion},
-            **{f"ion/{ion.label}/velocity/toroidal": ion.velocity.toroidal(x) for ion in profiles_1d.ion},
-        }
-
-        current.update(self.fetch(x, **variables))
+        profiles_1d: CoreProfiles.TimeSlice.Profiles1D = self.inputs.get_source(
+            "core_profiles/time_slice/0/profiles_1d"
+        )
+        current.update(self.fetch(profiles_1d))
         return current
 
     def refresh(

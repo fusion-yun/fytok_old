@@ -174,14 +174,17 @@ class TransportSolverNumerics(IDS):
 
     def fetch(self, *args, **kwargs) -> CoreProfiles.TimeSlice.Profiles1D:
         """获得 CoreProfiles.TimeSlice.Profiles1D 形式状态树。"""
+
         current: TransportSolverNumericsTimeSlice = self.time_slice.current
 
         X = current.grid.rho_tor_norm
-        
+
         Y = sum([[equ.profile, equ.flux] for equ in current.equations], [])
 
-        profiles_1d = CoreProfiles.TimeSlice.Profiles1D({"grid": current.grid})
+        self.profiles_1d["grid"] = current.grid
 
-        profiles_1d.update({k: v(X, *Y) for k, v in self.variables.items() if not k.endswith("_flux")})
+        profiles_1d = self.profiles_1d.clone(lambda o: o(X, *Y) if isinstance(o, Expression) else o)
+
+        profiles_1d["grid"] = current.grid
 
         return profiles_1d

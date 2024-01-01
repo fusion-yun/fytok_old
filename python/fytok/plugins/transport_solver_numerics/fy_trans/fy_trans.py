@@ -113,7 +113,7 @@ class FyTrans(TransportSolverNumerics):
 
         # 归一化/无量纲化单位
         # 在放入标准求解器前，系数矩阵需要无量纲、归一化
-        units = self.code.parameters.units
+        units = self.code.parameters.units or {}
 
         self.profiles_1d[self.primary_coordinate] = x
 
@@ -149,14 +149,17 @@ class FyTrans(TransportSolverNumerics):
 
             self.profiles_1d[s] = Variable((i := i + 1), s, label=label_p)
             self.profiles_1d[f"{s}_flux"] = Variable((i := i + 1), f"{s}_flux", label=label_f)
+
+            unit_profile = units._cache.get(s, None) or units._cache.get(f"*/{pth[-1]}", 1)
+            unit_flux = units._cache.get(f"{s}_flux", None) or units._cache.get(f"*/{pth[-1]}_flux", 1)
+
             self.equations.append(
                 {
                     "identifier": s,
-                    "units": (pth.get(units, 1), pth.with_suffix("_flux").get(units, 1)),
+                    "units": (unit_profile, unit_flux),
                     "boundary_condition_type": pth.get(bc_type, 1),
                 }
             )
-
         logger.debug(self.profiles_1d.ion._cache)
         logger.debug(self.equations._cache)
         # ##################################################################################################
@@ -167,7 +170,6 @@ class FyTrans(TransportSolverNumerics):
         ##################################################################################################
         # 定义内部控制参数
         self._units = np.array(sum([equ.units for equ in self.equations], tuple()))
-
         self._hyper_diff = self.code.parameters.hyper_diff or 0.001
 
         self._rho_tor_norm = self.code.parameters.rho_tor_norm
@@ -211,6 +213,8 @@ class FyTrans(TransportSolverNumerics):
             current["grid"] = grid
         else:
             self._rho_tor_norm = grid.rho_tor_norm
+
+        self.profiles_1d["grid"] = current.grid
 
         x: Expression = self.profiles_1d.get(self.primary_coordinate)
 
@@ -342,9 +346,9 @@ class FyTrans(TransportSolverNumerics):
                     match equ.boundary_condition_type:
                         # poloidal flux;
                         case 1:
-                            u = equ.units[1]
+                            u = equ.units[1]/equ.units[0]
                             v = 0
-                            w = bc_value * equ.units[1]
+                            w = bc_value * equ.units[1]/equ.units[0]
 
                         # ip, total current inside x=1
                         case 2:
@@ -402,9 +406,9 @@ class FyTrans(TransportSolverNumerics):
                     # at boundary x=1
                     match equ.boundary_condition_type:
                         case 1:  # 1: value of the field y;
-                            u = equ.units[1]
+                            u = equ.units[1] / equ.units[0]
                             v = 0
-                            w = bc_value * equ.units[1]
+                            w = bc_value * equ.units[1] / equ.units[0]
 
                         case 2:  # 2: radial derivative of the field (-dy/drho_tor);
                             u = V
@@ -467,7 +471,9 @@ class FyTrans(TransportSolverNumerics):
                         * rho_tor_boundary
                     )
 
-                    D = vpr * gm3 * ns * energy_D / rho_tor_boundary
+                    D = vpr * gm3 * ns * energy_D  #
+
+                    D = D / rho_tor_boundary
 
                     V = vpr * gm3 * ns * energy_V + Gs * flux_multiplier - (3 / 2) * k_phi * vpr * rho_tor * ns
 
@@ -479,9 +485,9 @@ class FyTrans(TransportSolverNumerics):
                     # at boundary x=1
                     match equ.boundary_condition_type:
                         case 1:  # 1: value of the field y;
-                            u = equ.units[1]
+                            u = equ.units[1] / equ.units[0]
                             v = 0
-                            w = bc_value * equ.units[1]
+                            w = bc_value * equ.units[1] / equ.units[0]
 
                         case 2:  # 2: radial derivative of the field (-dy/drho_tor);
                             u = V
@@ -591,7 +597,9 @@ class FyTrans(TransportSolverNumerics):
             for idx, equ in enumerate(self.equations):
                 d_dt, D, V, R = equ.coefficient
                 y = Y[idx * 2]
-                Y[idx * 2 + 1] = -D(X, *Y) * derivative(y, X) + V(X, *Y) * y
+                yp = derivative(y, X)
+                Y[idx * 2 + 1] = -D(X, *Y) * yp + V(X, *Y) * y
+                # Y[idx * 2 + 1] = -D(X, *Y) * derivative(y, X) + V(X, *Y) * y
 
             Y /= self._units.reshape(-1, 1)
 
