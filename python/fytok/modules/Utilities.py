@@ -139,7 +139,7 @@ class IDS(Module):
     """Interface Data Structure properties. This element identifies the node above as an IDS"""
 
     def __geometry__(self):
-        return {}, {}
+        return {}
 
     def _repr_svg_(self) -> str:
         try:

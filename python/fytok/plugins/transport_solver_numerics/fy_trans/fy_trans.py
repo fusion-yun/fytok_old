@@ -104,10 +104,8 @@ class FyTrans(TransportSolverNumerics):
 
         ######################################################################################
         # 声明  variables 和 equations
-
-        profiles_1d = {self.primary_coordinate: x}
-
-        equations: typing.List[typing.Dict[str, typing.Any]] = []
+        # profiles_1d = {self.primary_coordinate: x}
+        # equations: typing.List[typing.Dict[str, typing.Any]] = []
 
         # 在 x=0 处边界条件唯一， flux=0 (n,T,u) or \farc{d \psi}{dx}=0 ( for psi )
         # 在 \rho_{bdry} 处边界条件类型可由参数指定
@@ -116,6 +114,8 @@ class FyTrans(TransportSolverNumerics):
         # 归一化/无量纲化单位
         # 在放入标准求解器前，系数矩阵需要无量纲、归一化
         units = self.code.parameters.units
+
+        self.profiles_1d[self.primary_coordinate] = x
 
         for s in unknowns:
             pth = Path(s)
@@ -147,9 +147,9 @@ class FyTrans(TransportSolverNumerics):
                 label_p += f"_{{{pth[1]}}}"
                 label_f += f"_{{{pth[1]}}}"
 
-            profiles_1d[s] = Variable((i := i + 1), s, label=label_p)
-            profiles_1d[f"{s}_flux"] = Variable((i := i + 1), f"{s}_flux", label=label_f)
-            equations.append(
+            self.profiles_1d[s] = Variable((i := i + 1), s, label=label_p)
+            self.profiles_1d[f"{s}_flux"] = Variable((i := i + 1), f"{s}_flux", label=label_f)
+            self.equations.append(
                 {
                     "identifier": s,
                     "units": (pth.get(units, 1), pth.with_suffix("_flux").get(units, 1)),
@@ -157,10 +157,12 @@ class FyTrans(TransportSolverNumerics):
                 }
             )
 
-        ##################################################################################################
-        # 赋值属性
-        self.profiles_1d.update(profiles_1d)
-        self.equations = equations
+        logger.debug(self.profiles_1d.ion._cache)
+        logger.debug(self.equations._cache)
+        # ##################################################################################################
+        # # 赋值属性
+        # self.profiles_1d.update(profiles_1d)
+        # self.equations = equations
 
         ##################################################################################################
         # 定义内部控制参数
@@ -180,7 +182,6 @@ class FyTrans(TransportSolverNumerics):
         - 初值 from initial_value
         - 边界值 from boundary_value
         """
-        logger.debug(self.profiles_1d._cache)
 
         current: TransportSolverNumericsTimeSlice = super().preprocess(*args, **kwargs)
 
@@ -211,7 +212,7 @@ class FyTrans(TransportSolverNumerics):
         else:
             self._rho_tor_norm = grid.rho_tor_norm
 
-        x = Path(self.primary_coordinate).get(self.profiles_1d)
+        x: Expression = self.profiles_1d.get(self.primary_coordinate)
 
         for s in self.impurities:
             pth = Path(f"ion/{s}/density")

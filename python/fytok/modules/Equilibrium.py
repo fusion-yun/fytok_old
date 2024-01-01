@@ -469,6 +469,7 @@ class Equilibrium(IDS):
 
     - O. Sauter and S. Yu Medvedev, "Tokamak coordinate conventions: COCOS", Computer Physics Communications 184, 2 (2013), pp. 293--302.
     """
+    _plugin_registry = {}
 
     _plugin_prefix = "fytok.plugins.equilibrium."
 
