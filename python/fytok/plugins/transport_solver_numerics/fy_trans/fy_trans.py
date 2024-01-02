@@ -198,11 +198,11 @@ class FyTrans(TransportSolverNumerics):
             "equilibrium/time_slice/-1/profiles_1d", _not_found_
         )
 
-        profiles_1d: CoreProfiles.TimeSlice.Profiles1D = self.inputs.get_source(
+        core_profiles_1d: CoreProfiles.TimeSlice.Profiles1D = self.inputs.get_source(
             "core_profiles/time_slice/0/profiles_1d"
         )
 
-        profiles_1d_m: CoreProfiles.TimeSlice.Profiles1D = self.inputs.get_source(
+        core_profiles_1d_m: CoreProfiles.TimeSlice.Profiles1D = self.inputs.get_source(
             "core_profiles/time_slice/-1/profiles_1d", _not_found_
         )
 
@@ -221,14 +221,15 @@ class FyTrans(TransportSolverNumerics):
         else:
             self._rho_tor_norm = grid.rho_tor_norm
 
-        self.profiles_1d["grid"] = current.grid
+        current_profiles_1d = self.profiles_1d
+        current_profiles_1d["grid"] = current.grid
 
-        x: Expression = self.profiles_1d.get(self.primary_coordinate)
+        x: Expression = current_profiles_1d.get(self.primary_coordinate)
 
         for s in self.impurities:
             pth = Path(f"ion/{s}/density")
-            n_imp = pth.get(profiles_1d, zero)
-            self.profiles_1d[pth] = n_imp(x)
+            n_imp = pth.get(core_profiles_1d, zero)
+            current_profiles_1d[pth] = n_imp(x)
 
         if self.primary_coordinate != "psi_norm":
             psi_norm = Function(grid[self.primary_coordinate], grid.psi_norm, label=r"\bar{\psi}_{norm}")(x)
@@ -292,12 +293,14 @@ class FyTrans(TransportSolverNumerics):
 
         k_vppr = 0  # (3 / 2) * k_rho_bdry - k_phi *　x * vpr(psi).dln()
 
+        logger.debug("============================Model & Source =========================================")
+
         trans_models: typing.List[CoreTransport.Model.TimeSlice] = [
-            model.fetch(self.profiles_1d) for model in core_transport
+            model.fetch(current_profiles_1d) for model in core_transport
         ]
 
         trans_sources: typing.List[CoreSources.Source.TimeSlice] = [
-            source.fetch(self.profiles_1d) for source in core_sources
+            source.fetch(current_profiles_1d) for source in core_sources
         ]
 
         if boundary_value is None:
@@ -317,8 +320,8 @@ class FyTrans(TransportSolverNumerics):
 
             match pth[-1]:
                 case "psi":
-                    psi = pth.get(self.profiles_1d, zero)
-                    psi_m = pth.get(profiles_1d_m, zero)(x)
+                    psi = pth.get(current_profiles_1d, zero)
+                    psi_m = pth.get(core_profiles_1d_m, zero)(x)
 
                     conductivity_parallel: Expression = zero
 
@@ -380,8 +383,8 @@ class FyTrans(TransportSolverNumerics):
                     bc += [[u, v, w]]
 
                 case "density":
-                    ns = (pth / "../density").get(self.profiles_1d, zero)
-                    ns_m = (pth / "../density").get(profiles_1d_m, zero)(x)
+                    ns = (pth / "../density").get(current_profiles_1d, zero)
+                    ns_m = (pth / "../density").get(core_profiles_1d_m, zero)(x)
 
                     transp_D = zero
                     transp_V = zero
@@ -440,12 +443,12 @@ class FyTrans(TransportSolverNumerics):
                     bc += [[u, v, w]]
 
                 case "temperature":
-                    ns = (pth / "../density").get(self.profiles_1d, zero)
-                    Gs = (pth / "../density_flux").get(self.profiles_1d, zero)
-                    Ts = (pth / "../temperature").get(self.profiles_1d, zero)
+                    ns = (pth / "../density").get(current_profiles_1d, zero)
+                    Gs = (pth / "../density_flux").get(current_profiles_1d, zero)
+                    Ts = (pth / "../temperature").get(current_profiles_1d, zero)
 
-                    ns_m = (pth / "../density").get(profiles_1d_m, zero)(x)
-                    Ts_m = (pth / "../temperature").get(profiles_1d_m, zero)(x)
+                    ns_m = (pth / "../density").get(core_profiles_1d_m, zero)(x)
+                    Ts_m = (pth / "../temperature").get(core_profiles_1d_m, zero)(x)
 
                     energy_D = zero
                     energy_V = zero
@@ -519,12 +522,12 @@ class FyTrans(TransportSolverNumerics):
                     bc += [[u, v, w]]
 
                 case "toroidal":
-                    us = (pth).get(self.profiles_1d, zero)
-                    ns = (pth / "../../density").get(self.profiles_1d, zero)
-                    Gs = (pth / "../../density_flux").get(self.profiles_1d, zero)
+                    us = (pth).get(current_profiles_1d, zero)
+                    ns = (pth / "../../density").get(current_profiles_1d, zero)
+                    Gs = (pth / "../../density_flux").get(current_profiles_1d, zero)
 
-                    us_m = (pth).get(profiles_1d_m, zero)(x)
-                    ns_m = (pth / "../../density").get(profiles_1d_m, zero)(x)
+                    us_m = (pth).get(core_profiles_1d_m, zero)(x)
+                    ns_m = (pth / "../../density").get(core_profiles_1d_m, zero)(x)
 
                     chi_u = zero
                     V_u_pinch = zero

@@ -27,7 +27,7 @@ class CoreProfilesSpecies:
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         if self.label is _not_found_:
-            raise RuntimeError(f"Unknown ion /electrons")
+            raise RuntimeError(f"Unknown ion/electrons")
 
         atom_desc = atoms[self.label]
 

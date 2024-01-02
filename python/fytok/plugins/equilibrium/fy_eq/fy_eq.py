@@ -200,8 +200,8 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     def radial_grid(self) -> CoreRadialGrid:
         return CoreRadialGrid(
             {
-                "psi_norm": self.psi_norm,
-                "rho_tor_norm": self.rho_tor_norm,
+                "psi_norm": np.asarray(self.psi_norm),
+                "rho_tor_norm": np.asarray(self.rho_tor_norm),
                 "psi_axis": self.psi_axis,
                 "psi_boundary": self.psi_boundary,
                 "rho_tor_boundary": self.rho_tor_boundary,

@@ -241,7 +241,7 @@ Modules:
                 g = g.__geometry__(**kwargs)
 
             except Exception as error:
-                logger.error(f"Can not get {o.__class__.__name__}.__geometry__ ! {error}")
+                logger.error(f"Can not get {g.__class__.__name__}.__geometry__ ! {error}")
                 # raise RuntimeError(f"Can not get {g.__class__.__name__}.__geometry__ !") from error
             else:
                 geo[o_name] = g
