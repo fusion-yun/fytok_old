@@ -113,7 +113,11 @@ class FyTrans(TransportSolverNumerics):
 
         # 归一化/无量纲化单位
         # 在放入标准求解器前，系数矩阵需要无量纲、归一化
-        units = self.code.parameters.units.__value__ or {}
+        units = self.code.parameters.units
+        if units is _not_found_:
+            units = {}
+        else:
+            units = units.__value__
 
         profiles_1d = self.profiles_1d
 
@@ -165,8 +169,7 @@ class FyTrans(TransportSolverNumerics):
                     "boundary_condition_type": bc,
                 }
             )
-        logger.debug(self.profiles_1d.ion._cache)
-        logger.debug(self.equations._cache)
+        
         # ##################################################################################################
         # # 赋值属性
         # self.profiles_1d.update(profiles_1d)

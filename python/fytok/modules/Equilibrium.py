@@ -433,9 +433,9 @@ class EquilibriumTimeSlice(equilibrium._T_equilibrium_time_slice):
                         for idx, p in enumerate(self.boundary.x_point)
                     ]
 
-                    geo["strike_points"] = [
-                        Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(self.boundary.strike_point)
-                    ]
+                    # geo["strike_points"] = [
+                    #     Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(self.boundary.strike_point)
+                    # ]
 
                     geo["boundary"] = self.boundary.outline
                     geo["boundary"]._metadata["styles"] = {
