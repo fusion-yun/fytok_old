@@ -171,7 +171,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         pprime: array_type = self.fetch_cache("pprime")
 
         if not isinstance(psi_, array_type):
-            num_of_psi = len(ffprime)
+            num_of_psi = len(ffprime) if isinstance(ffprime, array_type) else 128
             psi_ = np.linspace(self.psi_axis, self.psi_boundary, num_of_psi)
 
         if isinstance(ffprime, array_type):

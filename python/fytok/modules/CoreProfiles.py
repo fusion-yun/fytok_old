@@ -26,15 +26,15 @@ TWOPI = 2.0 * PI
 class CoreProfilesSpecies:
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-
         if self.label is _not_found_:
-            self.label=self.__name__
+            raise RuntimeError(f"Unknown ion /electrons")
+
         atom_desc = atoms[self.label]
 
         self._cache["z"] = atom_desc.z
         self._cache["a"] = atom_desc.a
 
-    label: str
+    label: str = sp_property(alias="@name")
 
     z: float
 
@@ -130,9 +130,9 @@ class CoreProfilesNeutral(CoreProfilesSpecies):
     """ Quantities related to the different states of the species (energy, excitation,...)"""
 
 
-@sp_tree(coordinate1="../grid/rho_tor_norm")
+@sp_tree(coordinate1="../grid/rho_tor_norm", name="electrons")
 class CoreProfilesElectrons(CoreProfilesSpecies):
-    label = "e"
+    label: str = "e"
 
     @sp_property(units="-")
     def collisionality_norm(self) -> Expression:
@@ -155,10 +155,10 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
     electrons: CoreProfilesElectrons
 
     Ion = CoreProfilesIon
-    ion: AoS[CoreProfilesIon] = sp_property(identifier="label", default_initial={})
+    ion: AoS[CoreProfilesIon]
 
     Neutral = CoreProfilesNeutral
-    neutral: AoS[CoreProfilesNeutral] = sp_property(identifier="label", default_initial={})
+    neutral: AoS[CoreProfilesNeutral]
 
     rho_tor_norm: array_type | Expression
 

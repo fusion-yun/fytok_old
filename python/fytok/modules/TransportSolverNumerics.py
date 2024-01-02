@@ -29,7 +29,7 @@ TWOPI = 2.0 * constants.pi
 class TransportSolverNumericsEquation:
     """Profile and derivatives a the primary quantity for a 1D transport equation"""
 
-    identifier: str
+    identifier: str = sp_property(alias="@name")
     """ Identifier of the primary quantity of the transport equation. The description
         node contains the path to the quantity in the physics IDS (example:
         core_profiles/profiles_1d/ion/D/density)"""

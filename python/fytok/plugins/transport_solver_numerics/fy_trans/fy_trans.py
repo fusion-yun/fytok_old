@@ -113,9 +113,13 @@ class FyTrans(TransportSolverNumerics):
 
         # 归一化/无量纲化单位
         # 在放入标准求解器前，系数矩阵需要无量纲、归一化
-        units = self.code.parameters.units or {}
+        units = self.code.parameters.units.__value__ or {}
 
-        self.profiles_1d[self.primary_coordinate] = x
+        profiles_1d = self.profiles_1d
+
+        equations = self.equations
+
+        profiles_1d[self.primary_coordinate] = x
 
         for s in unknowns:
             pth = Path(s)
@@ -147,17 +151,18 @@ class FyTrans(TransportSolverNumerics):
                 label_p += f"_{{{pth[1]}}}"
                 label_f += f"_{{{pth[1]}}}"
 
-            self.profiles_1d[s] = Variable((i := i + 1), s, label=label_p)
-            self.profiles_1d[f"{s}_flux"] = Variable((i := i + 1), f"{s}_flux", label=label_f)
+            profiles_1d[s] = Variable((i := i + 1), s, label=label_p)
+            profiles_1d[f"{s}_flux"] = Variable((i := i + 1), f"{s}_flux", label=label_f)
 
-            unit_profile = units._cache.get(s, None) or units._cache.get(f"*/{pth[-1]}", 1)
-            unit_flux = units._cache.get(f"{s}_flux", None) or units._cache.get(f"*/{pth[-1]}_flux", 1)
+            unit_profile = units.get(s, None) or units.get(f"*/{pth[-1]}", 1)
+            unit_flux = units.get(f"{s}_flux", None) or units.get(f"*/{pth[-1]}_flux", 1)
 
-            self.equations.append(
+            equations.append(
                 {
+                    "@name": s,
                     "identifier": s,
                     "units": (unit_profile, unit_flux),
-                    "boundary_condition_type": pth.get(bc_type, 1),
+                    "boundary_condition_type": bc,
                 }
             )
         logger.debug(self.profiles_1d.ion._cache)
@@ -346,9 +351,9 @@ class FyTrans(TransportSolverNumerics):
                     match equ.boundary_condition_type:
                         # poloidal flux;
                         case 1:
-                            u = equ.units[1]/equ.units[0]
+                            u = equ.units[1] / equ.units[0]
                             v = 0
-                            w = bc_value * equ.units[1]/equ.units[0]
+                            w = bc_value * equ.units[1] / equ.units[0]
 
                         # ip, total current inside x=1
                         case 2:
