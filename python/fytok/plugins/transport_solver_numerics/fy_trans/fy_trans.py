@@ -194,14 +194,16 @@ class FyTrans(TransportSolverNumerics):
 
         eq_1d: Equilibrium.TimeSlice.Profiles1D = self.inputs.get_source("equilibrium/time_slice/0/profiles_1d")
 
-        eq_1d_m: Equilibrium.TimeSlice.Profiles1D = self.inputs.get_source("equilibrium/time_slice/-1/profiles_1d")
+        eq_1d_m: Equilibrium.TimeSlice.Profiles1D = self.inputs.get_source(
+            "equilibrium/time_slice/-1/profiles_1d", _not_found_
+        )
 
         profiles_1d: CoreProfiles.TimeSlice.Profiles1D = self.inputs.get_source(
             "core_profiles/time_slice/0/profiles_1d"
         )
 
         profiles_1d_m: CoreProfiles.TimeSlice.Profiles1D = self.inputs.get_source(
-            "core_profiles/time_slice/-1/profiles_1d"
+            "core_profiles/time_slice/-1/profiles_1d", _not_found_
         )
 
         core_transport: AoS[CoreTransport.Model] = self.inputs.get_source("core_transport/model")
