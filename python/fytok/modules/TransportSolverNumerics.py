@@ -186,5 +186,6 @@ class TransportSolverNumerics(IDS):
         profiles_1d = self.profiles_1d.clone(lambda o: o(X, *Y) if isinstance(o, Expression) else o)
 
         profiles_1d["grid"] = current.grid
+        profiles_1d[self.primary_coordinate] = current.grid.get(self.primary_coordinate)
 
         return profiles_1d

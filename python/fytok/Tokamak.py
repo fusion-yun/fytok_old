@@ -205,8 +205,9 @@ Modules:
         super().flush(*args, **kwargs)
 
         profiles_1d = self.transport_solver.fetch()
-
-        self.core_profiles.flush(profiles_1d=profiles_1d)
+        
+        self.core_profiles.time_slice.current["profiles_1d"] = profiles_1d
+        # self.core_profiles.flush(profiles_1d=profiles_1d)
 
         self.equilibrium.flush()
 

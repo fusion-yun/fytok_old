@@ -118,6 +118,9 @@ class CoreTransportModel(Module):
 
     time_slice: TimeSeriesAoS[CoreTransportTimeSlice]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def preprocess(self, *args, **kwargs) -> CoreTransportTimeSlice:
         current = super().preprocess(*args, **kwargs)
 
