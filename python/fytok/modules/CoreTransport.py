@@ -124,7 +124,7 @@ class CoreTransportModel(Module):
     def preprocess(self, *args, **kwargs) -> CoreTransportTimeSlice:
         current = super().preprocess(*args, **kwargs)
 
-        grid = current.fetch_cache("profiles_1d/grid_d", _not_found_)
+        grid = current.find_cache("profiles_1d/grid_d", _not_found_)
 
         if not isinstance(grid, CoreRadialGrid):
             equilibrium: Equilibrium.TimeSlice = self.inputs.get_source("equilibrium").time_slice.current
@@ -136,7 +136,7 @@ class CoreTransportModel(Module):
     def fetch(self, profiles_1d: CoreProfiles.TimeSlice.Profiles1D) -> CoreTransportTimeSlice:
         current = self.time_slice.current
 
-        grid = current.profiles_1d.fetch_cache("grid_d", _not_found_)
+        grid = current.profiles_1d.find_cache("grid_d", _not_found_)
 
         if grid is _not_found_:
             current.profiles_1d["grid_d"] = profiles_1d.grid
@@ -150,7 +150,9 @@ class CoreTransportModel(Module):
 
         x = profiles_1d.rho_tor_norm
 
-        current = current.clone(lambda o: o(x) if isinstance(o, Expression) else o)
+        logger.debug(x)
+
+        current = current.clone(x)
 
         if isinstance(x, array_type):
             current.profiles_1d["grid_d"] = profiles_1d.grid

@@ -168,54 +168,52 @@ Modules:
     summary                 : Summary                   
     # fmt:on
 
-    def setup(self, *args, **kwargs):
-        fusion_products = set()
-        fusion_ash = set()
-        for tag in self.fusion_reactions:
-            reaction = nuclear_reaction[tag]
-            for r in reaction.reactants:
-                if r not in ["electrons", "e", "n", "p", "alpha"]:
-                    r = r.capitalize()
-                self.ion.add(r)
-            for p in reaction.products:
-                if p not in ["electrons", "e", "n", "p", "alpha"]:
-                    p = r.capitalize()
-                if p == "n":
-                    continue
+    def initialize(self, *args, **kwargs):
+        super().initialize(*args, **kwargs)
 
-                ash = atoms[p].label
-                if ash == p:
-                    raise NotImplementedError(f"TODO: give unified identifier to fast particle")
-                fusion_products.add(p)
-                fusion_ash.add(ash)
+        self.core_profiles.initialize(*args, **kwargs)
+        self.equilibrium.initialize(*args, **kwargs)
+        self.core_sources.initialize(*args, **kwargs)
+        self.core_transport.initialize(*args, **kwargs)
+        self.transport_solver.initialize(*args, **kwargs)
 
     def advance(self, *args, **kwargs):
-        return super().advance(*args, **kwargs)
+        super().advance(*args, **kwargs)
+        self.equilibrium.advance(time=self.time)
+        self.core_sources.advance(time=self.time)
+        self.core_transport.advance(time=self.time)
+        self.transport_solver.advance(time=self.time)
 
-    def refresh(self, *args, **kwargs) -> None:
-        super().refresh(*args, **kwargs)
+        return
 
-        self.equilibrium.refresh(time=self.time, **self._inputs.fetch())
+    def refresh(self, *args, time=None, **kwargs) -> None:
+        super().refresh(time=time)
 
-        self.core_sources.refresh(time=self.time, **self._inputs.fetch())
-
-        self.core_transport.refresh(time=self.time, **self._inputs.fetch())
-
-    def flush(self, *args, **kwargs):
-        super().flush(*args, **kwargs)
+        self.core_profiles.refresh(time=self.time)
+        self.equilibrium.refresh(time=self.time)
+        self.core_sources.refresh(time=self.time)
+        self.core_transport.refresh(time=self.time)
+        
+        self.transport_solver.refresh(*args, time=self.time, **kwargs)
 
         profiles_1d = self.transport_solver.fetch()
-        
+
         self.core_profiles.time_slice.current["profiles_1d"] = profiles_1d
-        # self.core_profiles.flush(profiles_1d=profiles_1d)
 
+ 
+
+    def flush(self):
+        profiles_1d = self.transport_solver.fetch()
+
+        self.core_profiles.time_slice.current["profiles_1d"] = profiles_1d
+
+        self.core_profiles.flush()
         self.equilibrium.flush()
-
         self.core_transport.flush()
-
         self.core_sources.flush()
-
         self.transport_solver.flush()
+
+        super().flush()
 
     def __geometry__(self, **kwargs) -> GeoObject:
         geo = {}

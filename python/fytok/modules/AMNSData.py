@@ -31,7 +31,7 @@ class AMNS(Dict[AMNSData]):
     def __getitem__(self, key: str) -> AMNSData:
         _key = key
         while isinstance(_key, str):
-            res = self.fetch_cache(_key, _not_found_)
+            res = self.find_cache(_key, _not_found_)
             if isinstance(res, str):
                 _key = res
             else:

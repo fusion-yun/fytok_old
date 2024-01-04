@@ -129,6 +129,7 @@ class Module(Actor):
         return super().execute(current, *previous)
 
 
+
 class IDS(Module):
     """Base class of IDS"""
 
@@ -179,8 +180,8 @@ class CoreRadialGrid:
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        if self.fetch_cache("psi_norm", _not_found_) is _not_found_:
-            psi = self.fetch_cache("psi", _not_found_)
+        if self.find_cache("psi_norm", _not_found_) is _not_found_:
+            psi = self.find_cache("psi", _not_found_)
             if psi is not _not_found_:
                 psi = as_array(psi)
                 self._cache["psi_axis"] = psi_axis = psi[0]
@@ -188,8 +189,8 @@ class CoreRadialGrid:
                 self._cache["psi_norm"] = (psi - psi_axis) / (psi_boundary - psi_axis)
                 self._cache["psi"] = psi
 
-        if self.fetch_cache("rho_tor_norm", _not_found_) is _not_found_:
-            rho_tor = self.fetch_cache("rho_tor", _not_found_)
+        if self.find_cache("rho_tor_norm", _not_found_) is _not_found_:
+            rho_tor = self.find_cache("rho_tor", _not_found_)
             if rho_tor is not _not_found_:
                 rho_tor = as_array(rho_tor)
                 self._cache["rho_tor_boundary"] = rho_tor[-1]
@@ -251,6 +252,9 @@ class CoreRadialGrid:
             }
         )
 
+    def fetch(self, *args, **kwargs) -> CoreRadialGrid:
+        return self.remesh(*args,**kwargs)
+    
     psi_axis: float
     psi_boundary: float
     rho_tor_boundary: float

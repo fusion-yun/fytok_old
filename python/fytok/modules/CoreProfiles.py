@@ -160,7 +160,7 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
     Neutral = CoreProfilesNeutral
     neutral: AoS[CoreProfilesNeutral]
 
-    rho_tor_norm: array_type | Expression
+    rho_tor_norm: array_type | Expression = sp_property(label=r"\bar{\rho}_{tor}", units="-")
 
     @sp_property
     def zeff(self) -> Expression:
@@ -178,11 +178,11 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
     def pressure_thermal(self) -> Expression:
         return sum([ion.pressure_thermal for ion in self.ion], self.electrons.pressure_thermal)
 
-    psi: Expression = sp_property(label=r"\psi", units="Wb", default_value=zero)
+    @sp_property(label=r"\psi", units="Wb")
+    def psi(self) -> Expression:
+        return (self.psi_norm) * (self.grid.psi_boundary - self.grid.psi_axis) + self.grid.psi_axis
 
-    @sp_property(label=r"\bar{\psi}", units="-")
-    def psi_norm(self) -> Expression:
-        return (self.psi - self.grid.psi_axis) / (self.grid.psi_boundary - self.grid.psi_axis)
+    psi_norm: Expression = sp_property(label=r"\bar{\psi}", units="-")
 
     @sp_property
     def t_i_average(self) -> Expression:
@@ -388,6 +388,28 @@ class CoreProfilesTimeSlice(TimeSlice):
 
     vacuum_toroidal_field: VacuumToroidalField
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        grid: CoreRadialGrid = self.find_cache("profiles_1d/grid", _not_found_)
+
+        if grid is _not_found_ or Path("psi_axis").get(grid, ...) is ...:
+            eq_grid: CoreRadialGrid = self._parent.inputs.get_source("equilibrium/time_slice/0/profiles_1d/grid")
+
+            if grid is _not_found_:
+                grid = eq_grid
+            else:
+                grid["psi_axis"] = eq_grid.psi_axis
+                grid["psi_boundary"] = eq_grid.psi_boundary
+                grid["rho_tor_boundary"] = eq_grid.rho_tor_boundary
+
+            self["profiles_1d/grid"] = grid
+
+        psi = self.find_cache("profiles_1d/psi", _not_found_)
+
+        if psi is _not_found_:
+            self["profiles_1d/psi"] = psi
+
 
 @sp_tree
 class CoreProfiles(IDS):
@@ -406,31 +428,5 @@ class CoreProfiles(IDS):
     def advance(self, *args, **kwargs):
         super().advance(*args, **kwargs)
 
-    def fetch(self, x: Variable | array_type = None, **kwargs) -> CoreProfilesTimeSlice:
-        current = self.time_slice.current
-
-        grid = current.profiles_1d.fetch_cache("grid", _not_found_)
-
-        if grid is _not_found_:
-            current.profiles_1d["grid"] = self.inputs.get_source("equilibrium").time_slice.current.profiles_1d.grid
-
-        else:
-            grid = current.profiles_1d.grid
-            if grid.psi_axis is _not_found_ or grid.psi_axis is None:
-                eq_grid: CoreRadialGrid = self.inputs.get_source("equilibrium").time_slice.current.profiles_1d.grid
-
-                grid["psi_axis"] = eq_grid.psi_axis
-                grid["psi_boundary"] = eq_grid.psi_boundary
-                grid["rho_tor_boundary"] = eq_grid.rho_tor_boundary
-
-        if x is not None:
-            current = current.clone(lambda o: o(x, **kwargs) if isinstance(o, Expression) else o)
-            if isinstance(x, array_type):
-                current.profiles_1d["grid"] = current.profiles_1d.grid.remesh(x)
-
-        psi = current.profiles_1d.fetch_cache("psi", _not_found_)
-        if psi is _not_found_:
-            current.profiles_1d["psi"] = current.profiles_1d.grid.psi
-        return current
-
-        return current
+    def fetch(self, *args, **kwargs) -> CoreProfilesTimeSlice:
+        return super().fetch(*args, **kwargs)
