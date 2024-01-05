@@ -129,7 +129,6 @@ class Module(Actor):
         return super().execute(current, *previous)
 
 
-
 class IDS(Module):
     """Base class of IDS"""
 
@@ -225,7 +224,7 @@ class CoreRadialGrid:
             grid = kwargs
         elif isinstance(args[0], dict):
             grid = collections.ChainMap(args[0], kwargs)
-        elif isinstance(args[0], array_type):
+        elif isinstance(args[0], (array_type, Expression)):
             grid = collections.ChainMap({"rho_tor_norm": args[0]}, kwargs)
         else:
             raise TypeError(f"Invalid type of argument {args} {kwargs}")
@@ -238,9 +237,20 @@ class CoreRadialGrid:
                 psi_norm = self.psi_norm
                 rho_tor_norm = self.rho_tor_norm
             else:
-                rho_tor_norm = Function(self.psi_norm, self.rho_tor_norm)(psi_norm)
+                rho_tor_norm = Function(
+                    self.psi_norm,
+                    self.rho_tor_norm,
+                    name="rho_tor_norm",
+                    label=r"$\bar{\rho}$",
+                )(psi_norm)
+
         elif psi_norm is _not_found_ or psi_norm is None:
-            psi_norm = Function(self.rho_tor_norm, self.psi_norm)(rho_tor_norm)
+            psi_norm = Function(
+                self.rho_tor_norm,
+                self.psi_norm,
+                name="psi_norm",
+                label=r"$\bar{\psi}$",
+            )(rho_tor_norm)
 
         return CoreRadialGrid(
             {
@@ -253,8 +263,8 @@ class CoreRadialGrid:
         )
 
     def fetch(self, *args, **kwargs) -> CoreRadialGrid:
-        return self.remesh(*args,**kwargs)
-    
+        return self.remesh(*args, **kwargs)
+
     psi_axis: float
     psi_boundary: float
     rho_tor_boundary: float

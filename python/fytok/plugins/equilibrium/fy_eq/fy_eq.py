@@ -529,7 +529,7 @@ class FyEquilibriumGlobalQuantities(Equilibrium.TimeSlice.GlobalQuantities):
 class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._coord: FyEquilibriumCoordinateSystem = self.get(".../coordinate_system")
+        self._coord: FyEquilibriumCoordinateSystem = self.get(".../coordinate_system", _not_found_)
 
     @sp_property
     def grid(self) -> CoreRadialGrid:

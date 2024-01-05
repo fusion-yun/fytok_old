@@ -99,12 +99,11 @@ class CoreTransportProfiles1D(core_transport._T_core_transport_model_profiles_1d
 
 @sp_tree
 class CoreTransportTimeSlice(TimeSlice):
-    Profiles1D = CoreTransportProfiles1D
-
     vacuum_toroidal_field: VacuumToroidalField
 
     flux_multiplier: float = sp_property(default_value=0)
 
+    Profiles1D = CoreTransportProfiles1D
     profiles_1d: CoreTransportProfiles1D
 
 
@@ -112,14 +111,10 @@ class CoreTransportTimeSlice(TimeSlice):
 class CoreTransportModel(Module):
     _plugin_prefix = "fytok.plugins.core_transport.model."
 
-    TimeSlice = CoreTransportTimeSlice
-
     identifier: str
 
+    TimeSlice = CoreTransportTimeSlice
     time_slice: TimeSeriesAoS[CoreTransportTimeSlice]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     def preprocess(self, *args, **kwargs) -> CoreTransportTimeSlice:
         current = super().preprocess(*args, **kwargs)
@@ -152,7 +147,7 @@ class CoreTransportModel(Module):
 
         logger.debug(x)
 
-        current = current.clone(x)
+        current = current.fetch(x)
 
         if isinstance(x, array_type):
             current.profiles_1d["grid_d"] = profiles_1d.grid

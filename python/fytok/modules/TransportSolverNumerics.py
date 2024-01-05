@@ -143,26 +143,17 @@ class TransportSolverNumerics(IDS):
     def initialize(self, *args, **kwargs):
         super().initialize(*args, **kwargs)
 
-        grid = self.profiles_1d.find_cache("grid", _not_found_)
+        grid = self.profiles_1d.get("grid", _not_found_)
 
-        if grid is _not_found_:
-            grid = self.inports["equilibrium/time_slice/0/profiles_1d/grid"].node
-
-        if grid is _not_found_:
-            raise RuntimeError(f"Can not get profiles_1d.grid")
-
-        self.profiles_1d["grid"] = grid
-
-        rho_tor_norm = self.profiles_1d.grid.rho_tor_norm
-
-        if rho_tor_norm is _not_found_:
+        if isinstance(grid, CoreRadialGrid) and grid.rho_tor_norm is not _not_found_:
+            rho_tor_norm = grid.rho_tor_norm
+        else:
             rho_tor_norm = self.code.parameters.rho_tor_norm
 
         if rho_tor_norm is _not_found_:
-            rho_tor_norm = np.linspace(0.001, 0.995, 64)
+            raise RuntimeError(f"rho_tor_norm is not defined!")
 
-        if rho_tor_norm is not self.profiles_1d.grid.rho_tor_norm:
-            self.profiles_1d.grid.remesh(rho_tor_norm)
+        self.profiles_1d["grid"] = self.inports["equilibrium/time_slice/0/profiles_1d/grid"].fetch(rho_tor_norm)
 
     def preprocess(self, *args, **kwargs) -> typing.Type[TimeSlice]:
         rho_tor_norm = self.profiles_1d.grid.rho_tor_norm
@@ -224,7 +215,7 @@ class TransportSolverNumerics(IDS):
 
         Y = sum([[equ.profile, equ.flux] for equ in current.equations], [])
 
-        profiles_1d = self.profiles_1d.clone(X, *Y)
+        profiles_1d = self.profiles_1d.fetch(X, *Y)
 
         profiles_1d["grid"] = current.grid
 

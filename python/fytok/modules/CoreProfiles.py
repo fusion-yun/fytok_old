@@ -27,7 +27,7 @@ class CoreProfilesSpecies:
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         if self.label is _not_found_ or self.label is None:
-            raise RuntimeError(f"Unknown ion/electrons")
+            raise RuntimeError(f"Unknown ion ")
 
         atom_desc = atoms[self.label]
 
@@ -394,7 +394,7 @@ class CoreProfilesTimeSlice(TimeSlice):
         grid: CoreRadialGrid = self.find_cache("profiles_1d/grid", _not_found_)
 
         if grid is _not_found_ or Path("psi_axis").get(grid, ...) is ...:
-            eq_grid: CoreRadialGrid = self._parent.inputs.get_source("equilibrium/time_slice/0/profiles_1d/grid")
+            eq_grid: CoreRadialGrid = self._parent.inports["equilibrium/time_slice/0/profiles_1d/grid"].fetch()
 
             if grid is _not_found_:
                 grid = eq_grid

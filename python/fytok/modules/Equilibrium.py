@@ -101,7 +101,7 @@ class EquilibriumGlobalQuantities(equilibrium._T_equilibrium_global_quantities):
     plasma_resistance: float = sp_property(units="ohm")
 
 
-@sp_tree(coordinate1="grid/psi_norm", extrapolate="zeros")
+@sp_tree(coordinate1="psi_norm", extrapolate="zeros")
 class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
     """
     1D profiles of the equilibrium quantities
@@ -114,25 +114,28 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
     """
 
+    def fetch(self, psi_norm: array_type | Expression, *args, **kwargs) -> EquilibriumProfiles1D:
+        res = super().fetch(psi_norm, *args, **kwargs)
+        res["grid"] = self.grid.fetch(psi_norm=psi_norm)
+        return res
+
     @property
-    def _root(self) -> Equilibrium.TimeSlice:
+    def _root(self) -> EquilibriumTimeSlice:
         return self._parent
 
-    @property
-    def grid(self) -> CoreRadialGrid:
-        return self._root.coordinate_system.radial_grid
+    grid: CoreRadialGrid = sp_property(alias="../coordinate_system/radial_grid")
 
-    psi_norm: array_type = sp_property(units="-", label=r"$\bar{\psi}$")
+    psi_norm: array_type | Expression = sp_property(units="-", label=r"$\bar{\psi}$", alias="grid/psi_norm")
 
-    psi: Expression = sp_property(units="Wb", label=r"$\psi$")
+    psi: array_type | Expression = sp_property(units="Wb", label=r"$\psi$", alias="grid/psi")
 
     dphi_dpsi: Expression = sp_property(label=r"\frac{d\phi}{d\psi}", units="-")
 
     phi: Expression = sp_property(units="Wb", label=r"\phi")
 
-    q: Expression
+    q: Expression = sp_property(units="-", label="q")
 
-    pressure: Expression = sp_property(units="Pa", label=r"P")
+    pressure: Expression = sp_property(units="Pa", label="P")
 
     dpressure_dpsi: Expression = sp_property(units="Pa.Wb^-1", label=r"\frac{dP}{d\psi}")
 
@@ -140,11 +143,11 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
     f_df_dpsi: Expression = sp_property(units="T^2.m^2/Wb", label=r"\frac{f d f}{d \psi}")
 
-    j_tor: Expression = sp_property(units="A.m^-2")
+    j_tor: Expression = sp_property(units="A \cdot m^{-2}")
 
     j_parallel: Expression = sp_property(units="A/m^2")
 
-    magnetic_shear: Expression
+    magnetic_shear: Expression = sp_property(units="-")
 
     r_inboard: Expression = sp_property(units="m")
 
@@ -188,13 +191,13 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
     rho_volume_norm: Expression
 
-    dvolume_dpsi: Expression = sp_property(units="m^3.Wb^-1")
+    dvolume_dpsi: Expression = sp_property(units="m^3 \cdot Wb^{-1}")
 
     dvolume_drho_tor: Expression = sp_property(units="m^2", label=r"V^{\prime}")
 
     area: Expression = sp_property(units="m^2")
 
-    darea_dpsi: Expression = sp_property(units="m^2.Wb^-1")
+    darea_dpsi: Expression = sp_property(units="m^2 \cdot Wb^{-1}")
 
     darea_drho_tor: Expression = sp_property(units="m")
 
@@ -220,7 +223,7 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
     beta_pol: Expression
 
-    mass_density: Expression = sp_property(units="kg.m^-3")
+    mass_density: Expression = sp_property(units="kg \cdot m^{-3}")
 
 
 @sp_tree(mesh="grid")
@@ -344,66 +347,31 @@ class EquilibriumGGD(equilibrium._T_equilibrium_ggd):
 
 @sp_tree
 class EquilibriumTimeSlice(equilibrium._T_equilibrium_time_slice):
-    Constraints = EequilibriumConstraints
-    BoundarySeparatrix = EquilibriumBoundarySeparatrix
-    Boundary = EquilibriumBoundary
-    GlobalQuantities = EquilibriumGlobalQuantities
-    CoordinateSystem = EquilibriumCoordinateSystem
-    Profiles1D = EquilibriumProfiles1D
-    Profiles2D = EquilibriumProfiles2D
-    GGD = EquilibriumGGD
-
     vacuum_toroidal_field: VacuumToroidalField
 
+    Boundary = EquilibriumBoundary
     boundary: EquilibriumBoundary
 
+    BoundarySeparatrix = EquilibriumBoundarySeparatrix
     boundary_separatrix: BoundarySeparatrix
 
+    Constraints = EequilibriumConstraints
     constraints: Constraints
 
+    GlobalQuantities = EquilibriumGlobalQuantities
     global_quantities: EquilibriumGlobalQuantities
 
+    Profiles1D = EquilibriumProfiles1D
     profiles_1d: Profiles1D
 
+    Profiles2D = EquilibriumProfiles2D
     profiles_2d: Profiles2D
 
+    CoordinateSystem = EquilibriumCoordinateSystem
     coordinate_system: CoordinateSystem
 
+    GGD = EquilibriumGGD
     ggd: GGD
-
-    # def __geometry__(self, view_port="RZ", **kwargs) -> GeoObject:
-    #     geo = {}
-
-    #     if view_port == "RZ":
-    #         o_points, x_points = self.coordinate_system.critical_points
-
-    #         geo["o_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(o_points)]
-    #         geo["x_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(x_points)]
-
-    #         geo["boundary"] = Curve(self.boundary.outline.r.__array__(), self.boundary.outline.z.__array__())
-
-    #         geo["boundary_separatrix"] = Curve(
-    #             self.boundary_separatrix.outline.r.__array__(),
-    #             self.boundary_separatrix.outline.z.__array__(),
-    #         )
-
-    #     geo["psi"] = self.profiles_2d.psi.__geometry__()
-
-    #     styles = {
-    #         "o_points": {"$matplotlib": {"c": "red", "marker": "."}},
-    #         "x_points": {"$matplotlib": {"c": "blue", "marker": "x"}},
-    #         "boundary": {"$matplotlib": {"color": "red", "linewidth": 0.5}},
-    #         "boundary_separatrix": {
-    #             "$matplotlib": {
-    #                 "color": "red",
-    #                 "linestyle": "dashed",
-    #                 "linewidth": 0.25,
-    #             }
-    #         },
-    #     }
-    #     styles = update_tree(styles, kwargs)
-
-    #     return geo, styles
 
     def __geometry__(self, view_point="RZ", **kwargs) -> GeoObject:
         """
@@ -452,6 +420,40 @@ class EquilibriumTimeSlice(equilibrium._T_equilibrium_time_slice):
         geo["styles"] = kwargs
 
         return geo
+
+    # def __geometry__(self, view_port="RZ", **kwargs) -> GeoObject:
+    #     geo = {}
+
+    #     if view_port == "RZ":
+    #         o_points, x_points = self.coordinate_system.critical_points
+
+    #         geo["o_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(o_points)]
+    #         geo["x_points"] = [Point(p.r, p.z, name=f"{idx}") for idx, p in enumerate(x_points)]
+
+    #         geo["boundary"] = Curve(self.boundary.outline.r.__array__(), self.boundary.outline.z.__array__())
+
+    #         geo["boundary_separatrix"] = Curve(
+    #             self.boundary_separatrix.outline.r.__array__(),
+    #             self.boundary_separatrix.outline.z.__array__(),
+    #         )
+
+    #     geo["psi"] = self.profiles_2d.psi.__geometry__()
+
+    #     styles = {
+    #         "o_points": {"$matplotlib": {"c": "red", "marker": "."}},
+    #         "x_points": {"$matplotlib": {"c": "blue", "marker": "x"}},
+    #         "boundary": {"$matplotlib": {"color": "red", "linewidth": 0.5}},
+    #         "boundary_separatrix": {
+    #             "$matplotlib": {
+    #                 "color": "red",
+    #                 "linestyle": "dashed",
+    #                 "linewidth": 0.25,
+    #             }
+    #         },
+    #     }
+    #     styles = update_tree(styles, kwargs)
+
+    #     return geo, styles
 
 
 from .Wall import Wall
@@ -504,8 +506,6 @@ class Equilibrium(IDS):
             **kwargs,
         )
 
-    def fetch(self, *args, **kwargs) -> EquilibriumTimeSlice:
-        return super().fetch(*args,**kwargs)
 
 r"""
   COCOS  11
