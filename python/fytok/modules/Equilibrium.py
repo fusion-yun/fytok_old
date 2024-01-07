@@ -1,5 +1,6 @@
 from __future__ import annotations
 import numpy as np
+from typing_extensions import Self
 
 from spdm.data.AoS import AoS
 from spdm.data.Expression import Expression
@@ -13,9 +14,7 @@ from spdm.data.Path import update_tree
 from spdm.mesh.Mesh import Mesh
 
 from .Utilities import *
-
 from ..utils.logger import logger
-
 from ..ontology import equilibrium
 
 
@@ -24,8 +23,6 @@ class EquilibriumCoordinateSystem(equilibrium._T_equilibrium_coordinate_system):
     grid_type: Identifier
 
     grid: Mesh
-
-    radial_grid: CoreRadialGrid
 
     r: Field = sp_property(units="m")
 
@@ -40,13 +37,28 @@ class EquilibriumCoordinateSystem(equilibrium._T_equilibrium_coordinate_system):
 
 @sp_tree
 class EquilibriumGlobalQuantities(equilibrium._T_equilibrium_global_quantities):
+    psi_axis: float = sp_property(units="Wb")
+
+    psi_boundary: float = sp_property(units="Wb")
+
+    # @sp_tree
+    # class MagneticAxis:
+    #     r: float = sp_property(units="m")
+    #     z: float = sp_property(units="m")
+    #     b_field_tor: float = sp_property(units="T")
+
+    b_field_tor_axis: float = sp_property(units="T")
+
+    magnetic_axis: Point
+    """ Magnetic axis position and toroidal field"""
+
+    ip: float = sp_property(units="A")
+
     beta_pol: float
 
     beta_tor: float
 
     beta_normal: float
-
-    ip: float = sp_property(units="A")
 
     li_3: float
 
@@ -57,19 +69,6 @@ class EquilibriumGlobalQuantities(equilibrium._T_equilibrium_global_quantities):
     surface: float = sp_property(units="m^2")
 
     length_pol: float = sp_property(units="m")
-
-    psi_axis: float = sp_property(units="Wb")
-
-    psi_boundary: float = sp_property(units="Wb")
-
-    @sp_tree
-    class MagneticAxis:
-        r: float = sp_property(units="m")
-        z: float = sp_property(units="m")
-        b_field_tor: float = sp_property(units="T")
-
-    magnetic_axis: MagneticAxis
-    """ Magnetic axis position and toroidal field"""
 
     @sp_tree
     class CurrentCentre:
@@ -114,20 +113,41 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
     """
 
-    def fetch(self, psi_norm: array_type | Expression, *args, **kwargs) -> EquilibriumProfiles1D:
-        res = super().fetch(psi_norm, *args, **kwargs)
-        res["grid"] = self.grid.fetch(psi_norm=psi_norm)
-        return res
-
     @property
-    def _root(self) -> EquilibriumTimeSlice:
+    def _root(self) :# -> EquilibriumTimeSlice:
         return self._parent
 
-    grid: CoreRadialGrid = sp_property(alias="../coordinate_system/radial_grid")
+    @sp_property
+    def grid(self) -> CoreRadialGrid:
+        L = (self.psi[-1] - self.psi[0]) / (self.psi_norm[-1] - self.psi_norm[0])
+        psi_axis = self.psi[-1] - L * self.psi_norm[-1]
+        psi_boundary = L + psi_axis
 
-    psi_norm: array_type | Expression = sp_property(units="-", label=r"$\bar{\psi}$", alias="grid/psi_norm")
+        return CoreRadialGrid(
+            {
+                "psi_norm": self.psi_norm,
+                "rho_tor_norm": np.asarray(self.rho_tor_norm),
+                "psi_axis": psi_axis,
+                "psi_boundary": psi_boundary,
+                "rho_tor_boundary": self.rho_tor[-1] / self.rho_tor_norm[-1],
+            }
+        )
 
-    psi: array_type | Expression = sp_property(units="Wb", label=r"$\psi$", alias="grid/psi")
+    def fetch(self, psi_norm: array_type | Expression, *args, **kwargs) -> Self:
+        grid = self.grid
+
+        if isinstance(psi_norm, array_type):
+            grid = grid.fetch(psi_norm=psi_norm)
+
+        res = super().fetch(psi_norm, *args, **kwargs)
+
+        res["grid"] = grid
+
+        return res
+
+    psi_norm: array_type | Expression = sp_property(units="-", label=r"$\bar{\psi}$")
+
+    psi: array_type | Expression = sp_property(units="Wb", label=r"$\psi$")
 
     dphi_dpsi: Expression = sp_property(label=r"\frac{d\phi}{d\psi}", units="-")
 

@@ -97,7 +97,7 @@ class Module(Actor):
         pth = Path("code/name")
         plugin_name = pth.get(cache, None) or pth.get(kwargs, None)
         if plugin_name is None:
-            plugin_name = Path("code/metadata/default_value/name").get(cls, None)
+            plugin_name = Path("code/default_value/name").get(cls, None)
         return plugin_name
 
     def __init__(self, *args, **kwargs):
@@ -218,19 +218,13 @@ class CoreRadialGrid:
             dumper,
         )
 
-    def remesh(self, *args, **kwargs) -> CoreRadialGrid:
+    def remesh(self, rho_tor_norm=None, **kwargs) -> CoreRadialGrid:
         """Duplicate the grid with new rho_tor_norm or psi_norm"""
-        if len(args) == 0 or args[0] is _not_found_ or args[0] is None:
-            grid = kwargs
-        elif isinstance(args[0], dict):
-            grid = collections.ChainMap(args[0], kwargs)
-        elif isinstance(args[0], (array_type, Expression)):
-            grid = collections.ChainMap({"rho_tor_norm": args[0]}, kwargs)
-        else:
-            raise TypeError(f"Invalid type of argument {args} {kwargs}")
 
-        rho_tor_norm = grid.get("rho_tor_norm", _not_found_)
-        psi_norm = grid.get("psi_norm", _not_found_)
+        if rho_tor_norm is None:
+            rho_tor_norm = kwargs.get("rho_tor_norm", None)
+
+        psi_norm = kwargs.get("psi_norm", None)
 
         if rho_tor_norm is None or rho_tor_norm is _not_found_:
             if psi_norm is _not_found_ or psi_norm is None:
@@ -252,6 +246,9 @@ class CoreRadialGrid:
                 label=r"$\bar{\psi}$",
             )(rho_tor_norm)
 
+        else:
+            raise RuntimeError(f"{psi_norm} {rho_tor_norm}")
+
         return CoreRadialGrid(
             {
                 "rho_tor_norm": rho_tor_norm,
@@ -267,14 +264,21 @@ class CoreRadialGrid:
 
     psi_axis: float
     psi_boundary: float
-    rho_tor_boundary: float
-
     psi_norm: array_type
+
+    phi_boundary: float
+    phi_norm: array_type
+
+    rho_tor_boundary: float
     rho_tor_norm: array_type
 
     @sp_property
     def psi(self) -> array_type:
         return self.psi_norm * (self.psi_boundary - self.psi_axis) + self.psi_axis
+
+    @sp_property
+    def phi(self) -> array_type:
+        return self.phi_norm * self.phi_boundary
 
     @sp_property
     def rho_tor(self) -> array_type:

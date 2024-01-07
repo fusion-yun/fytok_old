@@ -364,8 +364,7 @@ def sp_from_geqdsk(geqdsk: dict, eq: typing.Optional[Entry] = None) -> Entry:
                 "psi_boundary": psi_boundary,
                 "ip": Ip,
             },
-            # boundary
-            "boundary": {
+            "boundary": {  # Boundary
                 "outline": {
                     "r": geqdsk["bbsrz"][:, 0],
                     "z": geqdsk["bbsrz"][:, 1],
@@ -375,13 +374,7 @@ def sp_from_geqdsk(geqdsk: dict, eq: typing.Optional[Entry] = None) -> Entry:
                     "z": geqdsk["zmid"],
                 },
             },
-            # profile 1d
-            "profiles_1d": {
-                # "grid": {
-                #     "psi_axis": psi_axis,
-                #     "psi_boundary": psi_boundary,
-                #     "psi_norm": psi_norm,
-                # },
+            "profiles_1d": {  # Profiles 1D
                 "psi_norm": np.linspace(0.0, 1.0, nw),
                 "psi": np.linspace(psi_axis, psi_boundary, nw),
                 "f": geqdsk["fpol"],
@@ -390,7 +383,7 @@ def sp_from_geqdsk(geqdsk: dict, eq: typing.Optional[Entry] = None) -> Entry:
                 "dpressure_dpsi": geqdsk["pprim"],
                 "q": geqdsk["qpsi"],
             },
-            "profiles_2d": {
+            "profiles_2d": {  # profiles 2D
                 "type": "total",  # total field
                 "grid_type": {"name": "rectangular", "index": 1},
                 "grid": {"dim1": np.linspace(rmin, rmax, nw), "dim2": np.linspace(zmin, zmax, nh)},
