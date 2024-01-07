@@ -141,9 +141,9 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     psi_axis: float = sp_property(alias="../global_quantities/psi_axis")
     psi_boundary: float = sp_property(alias="../global_quantities/psi_boundary")
 
-    psi_norm: array_type == sp_property(alias="../profiles_1d/psi_norm")
-    ffprime: Expression = sp_property(label=r" \frac{f df}{d\psi}", alias="../profiles_1d/f_df_dpsi")
-    pprime: Expression = sp_property(label=r" \frac{dP}{d\psi}", alias="../profiles_1d/dpressure_dpsi")
+    psi_norm: array_type = sp_property(alias="../profiles_1d/psi_norm")
+    ffprime: Expression = sp_property(alias="../profiles_1d/f_df_dpsi", label=r" \frac{f df}{d\psi}")
+    pprime: Expression = sp_property(alias="../profiles_1d/dpressure_dpsi", label=r" \frac{dP}{d\psi}")
 
     psirz: Field = sp_property(alias="../profiles_2d/psi")
 
@@ -151,10 +151,24 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     def psirz_norm(self) -> Field:
         """normalized psirz"""
         value = (self.psirz.__array__() - self.psi_axis) / (self.psi_boundary - self.psi_axis)
-        return Field(value, mesh=self.psirz.mesh, name="psirz_norm", label=r"\bar{\psi}")
+        mesh = self.psirz.mesh
+        return Field(value, mesh=mesh, name="psirz_norm", label=r"\bar{\psi}")
+
+    @sp_property
+    def dvolume_dpsi(self) -> Expression:
+        return Expression(*self._surface_integral(1.0), name="dvolume_dpsi", label=r"\frac{d V}{d\psi}")
+
+    @sp_property
+    def Bpol(self) -> Expression:
+        r"""$B_{pol}= \left|\nabla \psi \right|/2 \pi R $"""
+        return (
+            np.sqrt(self.psirz.pd(1, 0) ** 2 + self.psirz.pd(0, 1) ** 2)
+            / _R
+            * np.abs(self._s_RpZ * self._s_Bp / self._s_eBp_2PI)
+        )
 
     #################################
-    # profiles 2d
+    # Profiles 2D
 
     @sp_property
     def grid(self) -> Mesh:
@@ -167,9 +181,17 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         if not (isinstance(theta, np.ndarray) and theta.ndim == 1):
             raise ValueError(f"Can not create grid! theta={theta}")
 
-        surfs = GeoObjectSet([surf for _, surf in self.find_surfaces(self.psi_norm)])
+        psi_norm = self.find_cache("grid/dim1", _not_found_)
 
-        return CurvilinearMesh(self.psi_norm, theta, geometry=surfs, cycles=[False, 2.0 * scipy.constants.pi])
+        if psi_norm is _not_found_:
+            psi_norm = self.psi_norm
+
+        if psi_norm is _not_found_:
+            psi_norm = self.find_cache(".../code/parameters/psi_norm", np.linspace(0.001, 0.995, 127))
+
+        surfs = GeoObjectSet([surf for _, surf in self.find_surfaces(psi_norm)])
+
+        return CurvilinearMesh(psi_norm, theta, geometry=surfs, cycles=[False, 2.0 * scipy.constants.pi])
 
     @sp_property
     def r(self) -> Field:
@@ -190,49 +212,6 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     @sp_property
     def tensor_contravariant(self) -> Field:
         raise NotImplementedError(f"")
-
-    @sp_property
-    def Bpol2(self) -> Expression:
-        r"""$B_{pol}= \left|\nabla \psi \right|/2 \pi R $"""
-        return self.b_field_r**2 + self.b_field_z**2
-
-    @sp_property
-    def Bpol(self) -> Expression:
-        r"""$B_{pol}= \left|\nabla \psi \right|/2 \pi R $"""
-        return np.sqrt(self.b_field_r**2 + self.b_field_z**2)
-
-    @sp_property(label="B_{r}")
-    def b_field_r(self) -> Expression:
-        """COCOS Eq.19 [O. Sauter and S.Yu. Medvedev, Computer Physics Communications 184 (2013) 293]"""
-        return self.psirz.pd(0, 1) / _R * (self._s_RpZ * self._s_Bp / self._s_eBp_2PI)
-
-    @sp_property(label="B_{z}")
-    def b_field_z(self) -> Expression:
-        return -self.psirz.pd(1, 0) / _R * (self._s_RpZ * self._s_Bp / self._s_eBp_2PI)
-
-    @sp_property  # (label="B_{tor}")
-    def b_field_tor(self) -> Expression:
-        return self.f(self.psirz_norm) / _R
-
-    @sp_property
-    def B2(self) -> Expression:
-        return self.b_field_r**2 + self.b_field_z**2 + self.b_field_tor**2
-
-    @sp_property
-    def grad_psi2(self) -> Expression:
-        return self.psirz.pd(1, 0) ** 2 + self.psirz.pd(0, 1) ** 2
-
-    @sp_property
-    def grad_psi(self) -> Expression:
-        return np.sqrt(self.grad_psi2)
-
-    @sp_property
-    def ddpsi(self) -> Expression:
-        return np.sqrt(self.psirz.pd(2, 0) * self.psirz.pd(0, 2) + self.psirz.pd(1, 1) ** 2)
-
-    @sp_property
-    def j_tor(self) -> Expression:
-        return _R * self.pprime(self.psirz_norm) + self.ffprime(self.psirz_norm) / (_R * scipy.constants.mu_0)
 
     ###############################
     # surface integral
@@ -327,7 +306,9 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
                 Function(psi_norm, r_outboard, name="r_outboard"),
             )
 
-    def _surface_integral(self, func: Expression, psi_norm: NumericType = None) -> typing.Tuple[ArrayLike, ArrayLike]:
+    def _surface_integral(
+        self, func: Expression, psi_norm: array_type | float = None
+    ) -> typing.Tuple[ArrayLike, ArrayLike]:
         r"""
         $ V^{\prime} =  2 \pi  \int{ R / \left|\nabla \psi \right| * dl }$
         $ V^{\prime}(psi)= 2 \pi  \int{ dl * R / \left|\nabla \psi \right|}$
@@ -342,7 +323,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
                 psi_norm = [psi_norm]
             surfs_list = self.find_surfaces(psi_norm)
 
-        psi_norm = []
+        psi_norm: list = []
         res = []
         for p, surf in surfs_list:
             if isinstance(surf, Curve):
@@ -357,7 +338,6 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
             else:
                 continue
                 logger.warning(f"Found an island at psi={p} pos={surf}")
-                v = np.nan
             res.append(v)
             psi_norm.append(p)
 
@@ -365,8 +345,6 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
             return np.asarray(psi_norm, dtype=float), np.asarray(res, dtype=float)
         else:
             return psi_norm[0], res[0]
-
-        # return np.asarray([(axis.integral(func/self.Bpol) if not np.isclose(p, 0) else func(r0, z0) * c0) for p, axis in surfs_list], dtype=float)
 
     def surface_integral(self, func: Expression, psi_norm: NumericType = None) -> Expression | float:
         psi_norm, value = self._surface_integral(func, psi_norm)
@@ -388,43 +366,90 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         return self.surface_integral(func, *xargs) / self.dvolume_dpsi(*xargs)
 
 
-class FyEquilibriumGlobalQuantities(Equilibrium.TimeSlice.GlobalQuantities):
-    _root: Equilibrium.TimeSlice = sp_property(alias="../")
-
+@sp_tree(mesh="grid")
+class FyEquilibriumProfiles2D(Equilibrium.TimeSlice.Profiles2D):
     _coord: FyEquilibriumCoordinateSystem = sp_property(alias="../coordinate_system")
+    _profiles_1d: Equilibrium.TimeSlice.Profiles1D = sp_property(alias="../profiles_1d")
+    _global_quantities: Equilibrium.TimeSlice.GlobalQuantities = sp_property(alias="../global_quantities")
 
-    psi_axis: float
+    psi: Field
 
-    psi_boundary: float
-
-    magnetic_axis: Point = sp_property(alias="../coordinate_system/magnetic_axis")
-
-    @sp_property
-    def b_field_tor_axis(self) -> float:
-        return (self._root.profiles_2d.b_field_tor(self.magnetic_axis.r, self.magnetic_axis.z),)
+    j_parallel: Field
 
     @sp_property
-    def q_axis(self) -> float:
-        return self._root.profiles_1d.q(0.0)
+    def grid(self) -> Mesh:
+        g = self.find_cache("grid")
+        dim1 = self.find_cache("grid/dim1")
+        dim2 = self.find_cache("grid/dim2")
+        mesh_type = self.find_cache("grid_type/name")
+        return Mesh(dim1, dim2, type=mesh_type)
 
     @sp_property
-    def q_95(self) -> float:
-        return self._root.profiles_1d.q(0.95)
+    def r(self) -> array_type:
+        return self.grid.points[0]
 
     @sp_property
-    def q_min(self) -> typing.Tuple[float, float]:
-        q = np.asarray(self._root.profiles_1d.q)
-        idx = np.argmin(q)
-        return q[idx], self._root.profiles_1d.rho_tor_norm[idx]
+    def z(self) -> array_type:
+        return self.grid.points[1]
+
+    @sp_property
+    def phi(self) -> Expression:
+        return self._profiles_1d.phi(self._coord.psirz_norm)
+
+    @sp_property
+    def theta(self) -> Expression:
+        return self._coord.theta
+
+    @sp_property
+    def j_tor(self) -> Expression:
+        return _R * self._profiles_1d.dpressure_dpsi(self._coord.psirz_norm) + self._profiles_1d.f_df_dpsi(
+            self._coord.psirz_norm
+        ) / (_R * scipy.constants.mu_0)
+
+    @sp_property(label="B_{r}")
+    def b_field_r(self) -> Expression:
+        """COCOS Eq.19 [O. Sauter and S.Yu. Medvedev, Computer Physics Communications 184 (2013) 293]"""
+        return self.psi.pd(0, 1) / _R * (self._coord._s_RpZ * self._coord._s_Bp / self._coord._s_eBp_2PI)
+
+    @sp_property(label="B_{z}")
+    def b_field_z(self) -> Expression:
+        return -self.psi.pd(1, 0) / _R * (self._coord._s_RpZ * self._coord._s_Bp / self._coord._s_eBp_2PI)
+
+    @sp_property(label="B_{tor}")
+    def b_field_tor(self) -> Expression:
+        return self._profiles_1d.f(self._coord.psirz_norm) / _R
+
+    @sp_property
+    def Bpol2(self) -> Expression:
+        r"""$B_{pol}= \left|\nabla \psi \right|/2 \pi R $"""
+        return self.b_field_r**2 + self.b_field_z**2
+
+    @sp_property(label="B^2")
+    def B2(self) -> Expression:
+        return self.b_field_r**2 + self.b_field_z**2 + self.b_field_tor**2
+
+    @sp_property
+    def grad_psi2(self) -> Expression:
+        return self.psi.pd(1, 0) ** 2 + self.psi.pd(0, 1) ** 2
+
+    @sp_property
+    def grad_psi(self) -> Expression:
+        return np.sqrt(self.grad_psi2)
+
+    @sp_property
+    def ddpsi(self) -> Expression:
+        return np.sqrt(self.psi.pd(2, 0) * self.psi.pd(0, 2) + self.psi.pd(1, 1) ** 2)
 
 
 @sp_tree(coordinate1="psi_norm")
 class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
-    _root:  Equilibrium.TimeSlice  = sp_property("../")
+    _root: Equilibrium.TimeSlice = sp_property(alias="../")
 
-    _coord: FyEquilibriumCoordinateSystem = sp_property("../coordinate_system")
+    _profiles_2d: FyEquilibriumProfiles2D = sp_property(alias="../profiles_2d")
 
-    psi_norm: array_type = sp_property(alias="../code/parameters/psi_norm", default_value=np.linspace(0, 0.995, 128))
+    _coord: FyEquilibriumCoordinateSystem = sp_property(alias="../coordinate_system")
+
+    psi_norm: array_type = sp_property(alias=".../code/parameters/psi_norm", default_value=np.linspace(0, 0.995, 128))
 
     f_df_dpsi: Expression
 
@@ -433,6 +458,20 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
     dpressure_dpsi: Expression
 
     pprime: Expression = sp_property(alias="dpressure_dpsi")
+
+    @sp_property
+    def grid(self) -> CoreRadialGrid:
+        return CoreRadialGrid(
+            {
+                "psi_norm": self.psi_norm,
+                "rho_tor_norm": np.asarray(self.rho_tor_norm),
+                "psi_axis": self._coord.psi_axis,
+                "psi_boundary": self._coord.psi_boundary,
+                "rho_tor_boundary": np.sqrt(
+                    np.abs(self.phi(self._coord.psi_boundary) / (scipy.constants.pi * self._coord.b0))
+                ),
+            }
+        )
 
     @sp_property(label=r"\psi")
     def psi(self) -> Expression:
@@ -447,15 +486,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
 
     @sp_property(label=r"\phi")
     def phi(self) -> Expression:
-        return self.dphi_dpsi.I * (self.psi_boundary - self.psi_axis)
-
-    @sp_property(label=r"\frac{d\phi}{d\psi}")
-    def dphi_dpsi(self) -> Expression:
-        return self.f * self._coord.surface_integral(1.0 / (_R**2))
-
-    @sp_property(label=r"q")
-    def q(self) -> Expression:
-        return self.dphi_dpsi * (self._coord._s_eBp_2PI / (2.0 * scipy.constants.pi))
+        return self.dphi_dpsi.I * (self._coord.psi_boundary - self._coord.psi_axis)
 
     @sp_property(label=r"\rho_{tor}")
     def rho_tor(self) -> Expression:
@@ -463,11 +494,19 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
 
     @sp_property(label=r"\bar{\rho}_{tor}")
     def rho_tor_norm(self) -> Expression:
-        return np.sqrt(self.phi / self.phi(self._root.boundary.psi_norm))
+        return np.sqrt(self.phi / self.phi(self._root.boundary.psi_norm or self.psi_norm[-1]))
 
     @sp_property
     def dvolume_dpsi(self) -> Expression:
         return Expression(*self._coord._surface_integral(1.0), name="dvolume_dpsi", label=r"\frac{d V}{d\psi}")
+
+    @sp_property(label=r"q")
+    def q(self) -> Expression:
+        return self.dphi_dpsi * (self._coord._s_eBp_2PI / (2.0 * scipy.constants.pi))
+
+    @sp_property(label=r"\frac{d\phi}{d\psi}")
+    def dphi_dpsi(self) -> Expression:
+        return self.f * self._coord.surface_integral(1.0 / (_R**2))
 
     @sp_property
     def drho_tor_dpsi(self) -> Expression:
@@ -535,27 +574,29 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
 
     @sp_property
     def gm2(self) -> Expression:
-        return self._coord.surface_average(self._coord.grad_psi2 / (_R**2)) / (self.dpsi_drho_tor**2)
+        return self._coord.surface_average(self._profiles_2d.grad_psi2 / (_R**2)) / (self.dpsi_drho_tor**2)
 
     @sp_property
     def gm3(self) -> Expression:
-        return self._coord.surface_average(self._coord.grad_psi2) / (self.dpsi_drho_tor**2)
+        return self._coord.surface_average(self._profiles_2d.grad_psi2) / (self.dpsi_drho_tor**2)
 
     @sp_property
     def gm4(self) -> Expression:
-        return self._coord.surface_average(1.0 / self._coord.B2)
+        return self._coord.surface_average(1.0 / self._profiles_2d.B2)
 
     @sp_property
     def gm5(self) -> Expression:
-        return self._coord.surface_average(self._coord.B2)
+        return self._coord.surface_average(self._profiles_2d.B2)
 
     @sp_property
     def gm6(self) -> Expression:
-        return self._coord.surface_average(self._coord.grad_psi2 / self._coord.B2) / (self.dpsi_drho_tor**2)
+        return self._coord.surface_average(self._profiles_2d.grad_psi2 / self._profiles_2d.B2) / (
+            self.dpsi_drho_tor**2
+        )
 
     @sp_property
     def gm7(self) -> Expression:
-        return self._coord.surface_average(np.sqrt(self._coord.grad_psi2)) / self.dpsi_drho_tor
+        return self._coord.surface_average(np.sqrt(self._profiles_2d.grad_psi2)) / self.dpsi_drho_tor
 
     @sp_property
     def gm8(self) -> Expression:
@@ -664,75 +705,38 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
         # return self._coord._R0*(self.f / fvac)**2 * d
 
 
-@sp_tree(mesh="grid")
-class FyEquilibriumProfiles2D(Equilibrium.TimeSlice.Profiles2D):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._coord: FyEquilibriumCoordinateSystem = self.get(".../coordinate_system")
+class FyEquilibriumGlobalQuantities(Equilibrium.TimeSlice.GlobalQuantities):
+    _root: Equilibrium.TimeSlice = sp_property(alias="../")
 
-    @property
-    def _profiles_1d(self) -> FyEquilibriumProfiles1D:
-        return self._root.profiles_1d
+    _coord: FyEquilibriumCoordinateSystem = sp_property(alias="../coordinate_system")
 
-    @sp_property
-    def grid(self) -> Mesh:
-        g = self.find_cache("grid")
-        dim1 = self.find_cache("grid/dim1")
-        dim2 = self.find_cache("grid/dim2")
-        mesh_type = self.find_cache("grid_type/name")
-        return Mesh(dim1, dim2, type=mesh_type)
+    psi_axis: float
+
+    psi_boundary: float
+
+    magnetic_axis: Point = sp_property(alias="../coordinate_system/magnetic_axis")
 
     @sp_property
-    def r(self) -> array_type:
-        return self.grid.points[0]
+    def b_field_tor_axis(self) -> float:
+        return (self._root.profiles_2d.b_field_tor(self.magnetic_axis.r, self.magnetic_axis.z),)
 
     @sp_property
-    def z(self) -> array_type:
-        return self.grid.points[1]
+    def q_axis(self) -> float:
+        return self._root.profiles_1d.q(0.0)
 
     @sp_property
-    def psi(self) -> Expression:
-        return self._coord.psirz
+    def q_95(self) -> float:
+        return self._root.profiles_1d.q(0.95)
 
     @sp_property
-    def phi(self) -> Expression:
-        return self._coord.phi(self._coord.psirz_norm)
-
-    @sp_property
-    def theta(self) -> Expression:
-        return self._coord.theta(self._coord.psirz_norm)
-
-    @sp_property
-    def j_tor(self) -> Expression:
-        return _R * self._profiles_1d.pprime(self.psi) + self._profiles_1d.ffprime(self.psi) / (
-            _R * scipy.constants.mu_0
-        )
-        # return super().j_tor  # return self._profiles_1d.j_tor(self.psi)
-
-    @sp_property
-    def j_parallel(self) -> Expression:
-        return super().j_parallel  # return self._profiles_1d.j_parallel(self.psi)
-
-    @sp_property
-    def b_field_r(self) -> Expression:
-        """COCOS Eq.19 [O. Sauter and S.Yu. Medvedev, Computer Physics Communications 184 (2013) 293]"""
-        return self._coord.b_field_r
-        # self.psi.pd(0, 1) / _R * (self._coord._s_RpZ * self._coord._s_Bp / self._coord._s_eBp_2PI)
-
-    @sp_property
-    def b_field_z(self) -> Expression:
-        return self._coord.b_field_z
-        # -self.psi.pd(1, 0) / _R * (self._coord._s_RpZ * self._coord._s_Bp / self._coord._s_eBp_2PI)
-
-    @sp_property
-    def b_field_tor(self) -> Expression:
-        return self._coord.b_field_tor  # self._root.profiles_1d.f(self.psi) / _R
+    def q_min(self) -> typing.Tuple[float, float]:
+        q = np.asarray(self._root.profiles_1d.q)
+        idx = np.argmin(q)
+        return q[idx], self._root.profiles_1d.rho_tor_norm[idx]
 
 
 class FyEquilibriumBoundary(Equilibrium.TimeSlice.Boundary):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._coord: FyEquilibriumCoordinateSystem = self.get(".../coordinate_system")
+    _coord: FyEquilibriumCoordinateSystem = sp_property(alias="../coordinate_system")
 
     @sp_property(coordinates="r z")
     def outline(self) -> Curve:
@@ -827,9 +831,7 @@ class FyEquilibriumBoundary(Equilibrium.TimeSlice.Boundary):
 
 @sp_tree
 class FyEquilibriumBoundarySeparatrix(FyEquilibriumBoundary):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._coord: FyEquilibriumCoordinateSystem = self.get(".../coordinate_system")
+    _coord: FyEquilibriumCoordinateSystem = sp_property(alias="../coordinate_system")
 
     @sp_property(coordinates="r z")
     def outline(self) -> GeoObjectSet:
@@ -841,30 +843,6 @@ class FyEquilibriumBoundarySeparatrix(FyEquilibriumBoundary):
 
 @sp_tree
 class FyEquilibriumTimeSlice(Equilibrium.TimeSlice):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # coordinate_system = self.find_cache("coordinate_system", {})
-        # coordinate_system.update(
-        #     {  # 仅需这些量，其他物理量计算可得
-        #         "r0": self.find_cache("vacuum_toroidal_field/r0"),
-        #         "b0": self.find_cache("vacuum_toroidal_field/b0"),
-        #         "ip": self.find_cache("global_quantities/ip"),
-        #         "psi": self.find_cache("profiles_1d/psi"),
-        #         "ffprime": self.find_cache("profiles_1d/f_df_dpsi"),
-        #         "pprime": self.find_cache("profiles_1d/dpressure_dpsi"),
-        #         "psirz": Field(self.find_cache("profiles_2d/psi"), mesh=self.find_cache("profiles_2d/grid")),
-        #     }
-        # )
-
-        # self._cache = {
-        #     "global_quantities": None,
-        #     "profiles_1d": None,
-        #     "profiles_2d": None,
-        #     "boundary": None,
-        #     "boundary_separatrix": None,
-        #     "coordinate_system": coordinate_system,
-        # }
-
     vacuum_toroidal_field: VacuumToroidalField
 
     global_quantities: FyEquilibriumGlobalQuantities
@@ -877,7 +855,7 @@ class FyEquilibriumTimeSlice(Equilibrium.TimeSlice):
 
     boundary_separatrix: FyEquilibriumBoundarySeparatrix
 
-    coordinate_system: FyEquilibriumCoordinateSystem
+    coordinate_system: FyEquilibriumCoordinateSystem = sp_property(default_value={})
 
 
 @sp_tree

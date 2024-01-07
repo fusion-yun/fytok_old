@@ -97,7 +97,7 @@ class Module(Actor):
         pth = Path("code/name")
         plugin_name = pth.get(cache, None) or pth.get(kwargs, None)
         if plugin_name is None:
-            plugin_name = Path("code/default_value/name").get(cls, None)
+            plugin_name = Path("default_value/name").get(cls.code, None)
         return plugin_name
 
     def __init__(self, *args, **kwargs):
