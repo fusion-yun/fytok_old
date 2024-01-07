@@ -100,22 +100,23 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         self._s_eBp_2PI = 1.0 if self._e_Bp == 0 else (2.0 * scipy.constants.pi)
 
-        if self.psi_axis is _not_found_ or self.psi_boundary is _not_found_:
-            o_points, x_points = find_critical_points(self.psirz)
+        o_points, x_points = find_critical_points(self.psirz)
 
-            if len(o_points) == 0:
-                raise RuntimeError(f"Can not find O-point!")
+        if len(o_points) == 0:
+            raise RuntimeError(f"Can not find O-point!")
 
-            if len(x_points) == 0:
-                raise RuntimeError(f"Can not find X-point!")
+        if len(x_points) == 0:
+            raise RuntimeError(f"Can not find X-point!")
 
-            self.magnetic_axis = Point(o_points[0].r, o_points[0].z)
+        self.x_point = x_points
 
-            self.psi_axis = o_points[0].value
+        self.magnetic_axis = Point(o_points[0].r, o_points[0].z)
 
-            self.psi_boundary = x_points[0].value
+        self.psi_axis = o_points[0].value
 
-            self.x_point = x_points
+        self.psi_boundary = x_points[0].value
+
+        # if self.psi_axis is _not_found_ or self.psi_boundary is _not_found_:
 
         # 磁面坐标
 
