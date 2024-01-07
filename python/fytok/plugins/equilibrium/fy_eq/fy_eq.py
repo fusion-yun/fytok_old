@@ -464,7 +464,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
         return CoreRadialGrid(
             {
                 "psi_norm": self.psi_norm,
-                "rho_tor_norm": np.asarray(self.rho_tor_norm),
+                "rho_tor_norm": self.rho_tor_norm(self.psi_norm),
                 "psi_axis": self._coord.psi_axis,
                 "psi_boundary": self._coord.psi_boundary,
                 "rho_tor_boundary": np.sqrt(
@@ -494,7 +494,10 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
 
     @sp_property(label=r"\bar{\rho}_{tor}")
     def rho_tor_norm(self) -> Expression:
-        return np.sqrt(self.phi / self.phi(self._root.boundary.psi_norm or self.psi_norm[-1]))
+        phi = self.phi
+        psi_norm_boundary = self._root.boundary.psi_norm
+        phi_boundary = phi(psi_norm_boundary)
+        return np.sqrt(phi / phi_boundary)
 
     @sp_property
     def dvolume_dpsi(self) -> Expression:
@@ -503,6 +506,10 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
     @sp_property(label=r"q")
     def q(self) -> Expression:
         return self.dphi_dpsi * (self._coord._s_eBp_2PI / (2.0 * scipy.constants.pi))
+
+    @sp_property
+    def magnetic_shear(self) -> Expression:
+        return self.rho_tor * self.q.d / self.q * self.dpsi_drho_tor
 
     @sp_property(label=r"\frac{d\phi}{d\psi}")
     def dphi_dpsi(self) -> Expression:
@@ -538,14 +545,6 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
     @sp_property
     def volume(self) -> Expression:
         return self.dvolume_dpsi.I * (self.grid.psi_boundary - self.grid.psi_axis)
-
-    @sp_property
-    def q(self) -> Expression:
-        return self._coord.q
-
-    @sp_property
-    def magnetic_shear(self) -> Expression:
-        return self.rho_tor * self.q.d / self.q * self.dpsi_drho_tor
 
     @sp_property
     def area(self) -> Expression:
@@ -738,26 +737,18 @@ class FyEquilibriumGlobalQuantities(Equilibrium.TimeSlice.GlobalQuantities):
 class FyEquilibriumBoundary(Equilibrium.TimeSlice.Boundary):
     _coord: FyEquilibriumCoordinateSystem = sp_property(alias="../coordinate_system")
 
+    # psi_norm: float
+
+    psi: float
+
+    phi: float
+
+    rho_tor_norm: float
+
     @sp_property(coordinates="r z")
     def outline(self) -> Curve:
         _, surf = next(self._coord.find_surfaces(self.psi_norm))
         return surf
-
-    @sp_property
-    def psi_norm(self) -> float:
-        return self._coord.psi_norm[-1]
-
-    @sp_property
-    def psi(self) -> float:
-        return self._coord.psi(self.psi_norm)
-
-    @sp_property
-    def phi(self) -> float:
-        return self._coord.phi(self.psi_norm)
-
-    @sp_property
-    def rho_tor(self) -> float:
-        return self._coord.rho_tor(self.psi_norm)
 
     @functools.cached_property
     def _shape_property(self) -> FyEquilibriumCoordinateSystem.ShapeProperty:

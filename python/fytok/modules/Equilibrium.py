@@ -114,7 +114,7 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
     """
 
     @property
-    def _root(self) :# -> EquilibriumTimeSlice:
+    def _root(self):  # -> EquilibriumTimeSlice:
         return self._parent
 
     @sp_property
@@ -126,7 +126,7 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
         return CoreRadialGrid(
             {
                 "psi_norm": self.psi_norm,
-                "rho_tor_norm": np.asarray(self.rho_tor_norm),
+                "rho_tor_norm": self.rho_tor_norm(self.psi_norm),
                 "psi_axis": psi_axis,
                 "psi_boundary": psi_boundary,
                 "rho_tor_boundary": self.rho_tor[-1] / self.rho_tor_norm[-1],
@@ -281,7 +281,7 @@ class EquilibriumBoundary(equilibrium._T_equilibrium_boundary):
 
     outline: Curve
 
-    psi_norm: float
+    psi_norm: float = sp_property(alias=".../code/parameters/psi_norm_boundary", default_value=0.995)
 
     psi: float = sp_property(units="Wb")
 
@@ -373,22 +373,22 @@ class EquilibriumTimeSlice(equilibrium._T_equilibrium_time_slice):
     boundary: EquilibriumBoundary
 
     BoundarySeparatrix = EquilibriumBoundarySeparatrix
-    boundary_separatrix: BoundarySeparatrix
+    boundary_separatrix: EquilibriumBoundarySeparatrix
 
     Constraints = EequilibriumConstraints
-    constraints: Constraints
+    constraints: EequilibriumConstraints
 
     GlobalQuantities = EquilibriumGlobalQuantities
     global_quantities: EquilibriumGlobalQuantities
 
     Profiles1D = EquilibriumProfiles1D
-    profiles_1d: Profiles1D
+    profiles_1d: EquilibriumProfiles1D
 
     Profiles2D = EquilibriumProfiles2D
-    profiles_2d: Profiles2D
+    profiles_2d: EquilibriumProfiles2D
 
     CoordinateSystem = EquilibriumCoordinateSystem
-    coordinate_system: CoordinateSystem
+    coordinate_system: EquilibriumCoordinateSystem
 
     GGD = EquilibriumGGD
     ggd: GGD
