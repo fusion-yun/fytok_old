@@ -128,7 +128,17 @@ class CoreTransportModel(Module):
 
             current["profiles_1d/grid_d"] = equilibrium.profiles_1d.grid.remesh(grid, rho_tor_norm=rho_tor_norm)
 
-    def fetch(self, *args, **kwargs) -> CoreTransportTimeSlice:
+    def fetch(self, first=None, *args, **kwargs) -> CoreTransportTimeSlice:
+        if isinstance(first, array_type):
+            rho_tor_norm = first
+        elif isinstance(first, CoreProfiles.TimeSlice.Profiles1D):
+            rho_tor_norm = first.rho_tor_norm
+        elif first is None:
+            rho_tor_norm = kwargs.get("rho_tor_norm", None)
+        else:
+            raise TypeError(f"Unknown argument {first}")
+
+        return super().fetch(rho_tor_norm)
         current: CoreTransportTimeSlice = super().fetch(*args, **kwargs)
 
         # grid = current.profiles_1d.find_cache("grid_d", _not_found_)
@@ -156,8 +166,6 @@ class CoreTransportModel(Module):
         super().flush()
 
         current = self.time_slice.current
-
-        self.inports.refresh()
 
         profiles_1d: CoreProfiles.TimeSlice.Profiles1D = self.inports["core_profiles/time_slice/0/profiles_1d"].fetch()
 

@@ -222,9 +222,9 @@ class FyTrans(TransportSolverNumerics):
 
         core_m: CoreProfiles.TimeSlice.Profiles1D = self.inports["core_profiles/time_slice/-1/profiles_1d"].fetch()
 
-        tranport: AoS[CoreTransport.Model.TimeSlice] = self.inports["core_transport/model/*/time_slice/0/profiles_1d"].fetch()
+        tranport: AoS[CoreTransport.Model.TimeSlice.Profiles1D] = self.inports["core_transport/model/*/time_slice/0/profiles_1d"].fetch()
 
-        sources: AoS[CoreSources.Source.TimeSlice] = self.inports["core_sources/source/*/time_slice/0/profiles_1d"].fetch()
+        sources: AoS[CoreSources.Source.TimeSlice.Profiles1D] = self.inports["core_sources/source/*/time_slice/0/profiles_1d"].fetch()
 
         # fmt:on
         for s in self.impurities:
@@ -316,7 +316,7 @@ class FyTrans(TransportSolverNumerics):
                     j_parallel: Expression = zero
 
                     for source_1d in sources:
-                        conductivity_parallel += source_1d.conductivity_parallel
+                        conductivity_parallel += source_1d.conductivity_parallel(rho_tor_norm)
                         j_parallel += source_1d.j_parallel(rho_tor_norm)
 
                     c = (scipy.constants.mu_0 * B0 * rho_tor_norm * (rho_tor_boundary**2)) / fpol2
