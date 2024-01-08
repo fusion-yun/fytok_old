@@ -128,40 +128,39 @@ class CoreTransportModel(Module):
 
             current["profiles_1d/grid_d"] = equilibrium.profiles_1d.grid.remesh(grid, rho_tor_norm=rho_tor_norm)
 
-    def fetch(self, profiles_1d: CoreProfiles.TimeSlice.Profiles1D) -> CoreTransportTimeSlice:
-        current = self.time_slice.current
+    def fetch(self, *args, **kwargs) -> CoreTransportTimeSlice:
+        current: CoreTransportTimeSlice = super().fetch(*args, **kwargs)
 
-        grid = current.profiles_1d.find_cache("grid_d", _not_found_)
+        # grid = current.profiles_1d.find_cache("grid_d", _not_found_)
 
-        if grid is _not_found_:
-            current.profiles_1d["grid_d"] = profiles_1d.grid
+        # if grid is _not_found_:
+        #     current.profiles_1d["grid_d"] = profiles_1d.grid
 
-        else:
-            grid = current.profiles_1d.grid_d
-            if grid.psi_axis is _not_found_ or grid.psi_axis is None:
-                grid["psi_axis"] = profiles_1d.grid.psi_axis
-                grid["psi_boundary"] = profiles_1d.grid.psi_boundary
-                grid["rho_tor_boundary"] = profiles_1d.grid.rho_tor_boundary
+        # else:
+        #     grid = current.profiles_1d.grid_d
+        #     if grid.psi_axis is _not_found_ or grid.psi_axis is None:
+        #         grid["psi_axis"] = profiles_1d.grid.psi_axis
+        #         grid["psi_boundary"] = profiles_1d.grid.psi_boundary
+        #         grid["rho_tor_boundary"] = profiles_1d.grid.rho_tor_boundary
 
-        x = profiles_1d.rho_tor_norm
+        # x = profiles_1d.rho_tor_norm
 
-        logger.debug(x)
+        # current = current.fetch(x)
 
-        current = current.fetch(x)
-
-        if isinstance(x, array_type):
-            current.profiles_1d["grid_d"] = profiles_1d.grid
+        # if isinstance(x, array_type):
+        #     current.profiles_1d["grid_d"] = profiles_1d.grid
 
         return current
 
     def flush(self) -> CoreTransportTimeSlice:
-        current = super().flush()
+        super().flush()
 
-        profiles_1d: CoreProfiles.TimeSlice.Profiles1D = self.inputs.get_source(
-            "core_profiles/time_slice/0/profiles_1d"
-        )
+        current = self.time_slice.current
+
+        profiles_1d: CoreProfiles.TimeSlice.Profiles1D = self.inports["core_profiles/time_slice/0/profiles_1d"].fetch()
 
         current.update(self.fetch(profiles_1d))
+
         return current
 
     def refresh(

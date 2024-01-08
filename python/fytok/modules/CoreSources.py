@@ -159,31 +159,31 @@ class CoreSourcesSource(Module):
             current["profiles_1d/grid"] = equilibrium.profiles_1d.grid.remesh(grid, rho_tor_norm=rho_tor_norm)
 
     def fetch(self, *args, **kwargs) -> CoreSourcesTimeSlice:
-        current = self.time_slice.current
+        current: CoreSourcesTimeSlice = super().fetch(*args, **kwargs)
 
+        # current = self.time_slice.current
         # grid = current.profiles_1d.find_cache("grid", _not_found_)
-
         # if grid is _not_found_:
         #     current.profiles_1d["grid"] = profiles_1d.grid
-
         # else:
         #     grid = current.profiles_1d.grid
         #     if grid.psi_axis is _not_found_ or grid.psi_axis is None:
         #         grid["psi_axis"] = profiles_1d.grid.psi_axis
         #         grid["psi_boundary"] = profiles_1d.grid.psi_boundary
         #         grid["rho_tor_boundary"] = profiles_1d.grid.rho_tor_boundary
-
         # current = current
 
         return current
 
     def flush(self) -> CoreSourcesTimeSlice:
-        current = super().flush()
+        super().flush()
 
-        profiles_1d: CoreProfiles.TimeSlice.Profiles1D = self.inputs.get_source(
-            "core_profiles/time_slice/0/profiles_1d"
-        )
+        current: CoreSourcesTimeSlice = self.time_slice.current
+
+        profiles_1d: CoreProfiles.TimeSlice.Profiles1D = self.inports["core_profiles/time_slice/0/profiles_1d"].fetch()
+
         current.update(self.fetch(profiles_1d))
+
         return current
 
     def refresh(

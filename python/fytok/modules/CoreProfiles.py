@@ -160,11 +160,11 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
     Neutral = CoreProfilesNeutral
     neutral: AoS[CoreProfilesNeutral]
 
-    rho_tor_norm: Expression = sp_property(label=r"\bar{\rho}_{tor}", units="-", alias="grid/rho_tor_nrom")
+    rho_tor_norm: array_type | Expression = sp_property(label=r"\bar{\rho}_{tor}", units="-", alias="grid/rho_tor_nrom")
 
     rho_tor: Expression = sp_property(label=r"\rho_{tor}", units="m", alias="grid/rho_tor")
 
-    psi_norm: Expression = sp_property(label=r"\bar{\psi}", units="-", alias="grid/psi_norm")
+    psi_norm: array_type | Expression = sp_property(label=r"\bar{\psi}", units="-", alias="grid/psi_norm")
 
     psi: Expression = sp_property(label=r"\psi", units="Wb", alias="grid/psi")
 

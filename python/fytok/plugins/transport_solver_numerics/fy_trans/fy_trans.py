@@ -98,6 +98,7 @@ class FyTrans(TransportSolverNumerics):
         # \rho_{tor}= \sqrt{\frac{\Phi}{B_0 \pi}}
 
         x = Variable((i := 0), self.primary_coordinate)
+
         if self.primary_coordinate == "rho_tor_norm":
             x._metadata["label"] = r"\bar{\rho}_{tor}"
 
@@ -173,13 +174,14 @@ class FyTrans(TransportSolverNumerics):
         # # 赋值属性
         # self.profiles_1d.update(profiles_1d)
         # self.equations = equations
-
         ##################################################################################################
         # 定义内部控制参数
         self._units = np.array(sum([equ.units for equ in self.equations], tuple()))
+
         self._hyper_diff = self.code.parameters.hyper_diff or 0.001
 
         self._rho_tor_norm = self.code.parameters.rho_tor_norm
+
         if self._rho_tor_norm is _not_found_:
             self._rho_tor_norm = np.linspace(0.001, 0.995, 128)
 
@@ -211,23 +213,24 @@ class FyTrans(TransportSolverNumerics):
             )(rho_tor_norm)
 
         # fmt:off
-        eq: Equilibrium.TimeSlice.Profiles1D = self.inports["equilibrium/time_slice/0/profiles_1d"].fetch(psi_norm)
+            
+        eq: Equilibrium.TimeSlice.Profiles1D = self.inports["equilibrium/time_slice/0/profiles_1d"].fetch()
 
-        eq_m: Equilibrium.TimeSlice.Profiles1D = self.inports["equilibrium/time_slice/-1/profiles_1d"].fetch(psi_norm)
+        eq_m: Equilibrium.TimeSlice.Profiles1D = self.inports["equilibrium/time_slice/-1/profiles_1d"].fetch()
 
-        core: CoreProfiles.TimeSlice.Profiles1D = self.inports["core_profiles/time_slice/0/profiles_1d"].fetch(rho_tor_norm)
+        core: CoreProfiles.TimeSlice.Profiles1D = self.inports["core_profiles/time_slice/0/profiles_1d"].fetch()
 
-        core_m: CoreProfiles.TimeSlice.Profiles1D = self.inports["core_profiles/time_slice/-1/profiles_1d"].fetch(rho_tor_norm)
+        core_m: CoreProfiles.TimeSlice.Profiles1D = self.inports["core_profiles/time_slice/-1/profiles_1d"].fetch()
 
-        tranport: AoS[CoreTransport.Model.TimeSlice] = self.inports["core_transport/model"].fetch(profiles)
+        tranport: AoS[CoreTransport.Model.TimeSlice] = self.inports["core_transport/model/*/time_slice/0/profiles_1d"].fetch()
 
-        sources: AoS[CoreSources.Source.TimeSlice] = self.inports["core_sources/source"].fetch(profiles)
+        sources: AoS[CoreSources.Source.TimeSlice] = self.inports["core_sources/source/*/time_slice/0/profiles_1d"].fetch()
+
         # fmt:on
         for s in self.impurities:
-            path = as_path(f"ion/{s}/density")
-            n_imp = path.get(core, zero)
-            profiles[path] = n_imp(x)
-
+            identifier = as_path(f"ion/{s}/density")
+            n_imp = identifier.get(core, zero)(rho_tor_norm)
+            profiles[identifier] = n_imp
         # 设定全局参数
         # $R_0$ characteristic major radius of the device   [m]
         R0 = eq._root.vacuum_toroidal_field.r0
@@ -238,20 +241,20 @@ class FyTrans(TransportSolverNumerics):
         rho_tor_boundary = Scalar(current.grid.rho_tor_boundary)
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        vpr = eq.dvolume_drho_tor
+        vpr = eq.dvolume_drho_tor(psi_norm)
 
         # diamagnetic function,$F=R B_\phi$                 [T*m]
-        fpol = eq.f
+        fpol = eq.f(psi_norm)
 
         fpol2 = fpol**2
 
         # $q$ safety factor                                 [-]
-        qsf = eq.q
+        qsf = eq.q(psi_norm)
 
-        gm1 = eq.gm1  # <1/R^2>
-        gm2 = eq.gm2  # <|grad_rho_tor|^2/R^2>
-        gm3 = eq.gm3  # <|grad_rho_tor|^2>
-        gm8 = eq.gm8  # <R>
+        gm1 = eq.gm1(psi_norm)  # <1/R^2>
+        gm2 = eq.gm2(psi_norm)  # <|grad_rho_tor|^2/R^2>
+        gm3 = eq.gm3(psi_norm)  # <|grad_rho_tor|^2>
+        gm8 = eq.gm8(psi_norm)  # <R>
 
         if eq_m is _not_found_ or eq_m is None:
             one_over_dt = 0
@@ -271,8 +274,8 @@ class FyTrans(TransportSolverNumerics):
 
             B0m = eq_m._root.vacuum_toroidal_field.b0
             rho_tor_boundary_m = eq_m.grid.rho_tor_boundary
-            vpr_m = eq_m.dvolume_drho_tor
-            gm8_m = eq_m.gm8
+            vpr_m = eq_m.dvolume_drho_tor(psi_norm)
+            gm8_m = eq_m.gm8(psi_norm)
 
         k_B = (B0 - B0m) / (B0 + B0m) * one_over_dt
 
@@ -292,28 +295,29 @@ class FyTrans(TransportSolverNumerics):
         hyper_diff = self._hyper_diff
 
         for idx, equ in enumerate(self.equations):
-            path = Path(equ.identifier)
-            # if equ.identifier.endswith("velocity/toroidal"):
-            #     pth = Path(equ.identifier).parent.parent
+            identifier = as_path(equ.identifier)
+            path = identifier.parent
+            quantity = identifier[-1]
 
-            # elif equ.identifier.endswith("density") or equ.identifier.endswith("temperature"):
-            #     pth = Path(equ.identifier).parent
+            if quantity == "toroidal":
+                quantity = "velocity/toroidal"
+                path = path.parent
 
             bc_value = boundary_value.get(equ.identifier, None)
 
-            match path[-1]:
+            match quantity:
                 case "psi":
-                    psi = path.get(profiles, zero)
-                    psi_m = path.get(core_m, zero)
+                    psi = profiles.psi
+
+                    psi_m = identifier.get(core_m, zero)(rho_tor_norm)
 
                     conductivity_parallel: Expression = zero
 
                     j_parallel: Expression = zero
 
-                    for source in sources:
-                        core_source_1d = source.profiles_1d
-                        conductivity_parallel += core_source_1d.conductivity_parallel
-                        j_parallel += core_source_1d.j_parallel
+                    for source_1d in sources:
+                        conductivity_parallel += source_1d.conductivity_parallel
+                        j_parallel += source_1d.j_parallel(rho_tor_norm)
 
                     c = (scipy.constants.mu_0 * B0 * rho_tor_norm * (rho_tor_boundary**2)) / fpol2
 
@@ -369,24 +373,21 @@ class FyTrans(TransportSolverNumerics):
                     bc += [[u, v, w]]
 
                 case "density":
-                    ns = (path / "../density").get(profiles, zero)
-                    ns_m = (path / "../density").get(core_m, zero)(x)
+                    ns = (path / "density").get(profiles, zero)
+                    ns_m = (path / "density").get(core_m, zero)(rho_tor_norm)
 
                     transp_D = zero
                     transp_V = zero
 
-                    for model in tranport:
-                        core_transp_1d = model.profiles_1d
-
-                        transp_D += (path / "../particles/d").get(core_transp_1d, zero)
-                        transp_V += (path / "../particles/v").get(core_transp_1d, zero)
+                    for transp_1d in tranport:
+                        transp_D += (path / "particles/d").get(transp_1d, zero)(profiles)
+                        transp_V += (path / "particles/v").get(transp_1d, zero)(profiles)
                         # transp_F += (pth / "particles/flux").get(core_transp_1d, zero)
 
                     S = zero
 
-                    for source in sources:
-                        source_1d = source.profiles_1d
-                        S += (path / "../particles ").get(source_1d, zero)
+                    for source_1d in sources:
+                        S += (path / "particles ").get(source_1d, zero)(profiles)
 
                     d_dt = one_over_dt * (vpr * ns - vpr_m * ns_m) * rho_tor_boundary
 
@@ -429,12 +430,12 @@ class FyTrans(TransportSolverNumerics):
                     bc += [[u, v, w]]
 
                 case "temperature":
-                    ns = (path / "../density").get(profiles, zero)
-                    Gs = (path / "../density_flux").get(profiles, zero)
-                    Ts = (path / "../temperature").get(profiles, zero)
+                    ns = (path / "density").get(profiles, zero)
+                    Gs = (path / "density_flux").get(profiles, zero)
+                    Ts = (path / "temperature").get(profiles, zero)
 
-                    ns_m = (path / "../density").get(core_m, zero)(x)
-                    Ts_m = (path / "../temperature").get(core_m, zero)(x)
+                    ns_m = (path / "density").get(core_m, zero)(rho_tor_norm)
+                    Ts_m = (path / "temperature").get(core_m, zero)(rho_tor_norm)
 
                     energy_D = zero
                     energy_V = zero
@@ -442,23 +443,20 @@ class FyTrans(TransportSolverNumerics):
 
                     flux_multiplier = zero
 
-                    for model in tranport:
-                        flux_multiplier += model.flux_multiplier
+                    for trans_1d in tranport:
+                        flux_multiplier += trans_1d._parent.flux_multiplier
 
-                        trans_1d = model.profiles_1d
-
-                        energy_D += (path / "../energy/d").get(trans_1d, zero)
-                        energy_V += (path / "../energy/v").get(trans_1d, zero)
-                        energy_F += (path / "../energy/flux").get(trans_1d, zero)
+                        energy_D += (path / "energy/d").get(trans_1d, zero)(rho_tor_norm)
+                        energy_V += (path / "energy/v").get(trans_1d, zero)(rho_tor_norm)
+                        energy_F += (path / "energy/flux").get(trans_1d, zero)(rho_tor_norm)
 
                     if flux_multiplier is zero:
                         flux_multiplier = one
 
                     Q = zero
 
-                    for source in sources:
-                        source_1d = source.profiles_1d
-                        Q += (path / "../energy").get(source_1d, zero)
+                    for source_1d in sources:
+                        Q += (path / "energy").get(source_1d, zero)(rho_tor_norm)
 
                     d_dt = (
                         one_over_dt
@@ -507,31 +505,29 @@ class FyTrans(TransportSolverNumerics):
 
                     bc += [[u, v, w]]
 
-                case "toroidal":
-                    us = path.get(profiles, zero)
-                    ns = (path / "../../density").get(profiles, zero)
-                    Gs = (path / "../../density_flux").get(profiles, zero)
+                case "velocity/toroidal":
+                    us = (path / "velocity/toroidal").get(profiles, zero)
+                    ns = (path / "density").get(profiles, zero)
+                    Gs = (path / "density_flux").get(profiles, zero)
 
-                    us_m = path.get(core_m, zero)(x)
-                    ns_m = (path / "../../density").get(core_m, zero)(x)
+                    us_m = (path / "velocity/toroidal").get(core_m, zero)(rho_tor_norm)
+                    ns_m = (path / "density").get(core_m, zero)(rho_tor_norm)
 
                     chi_u = zero
                     V_u_pinch = zero
 
-                    for model in tranport:
-                        trans_1d = model.profiles_1d
-                        chi_u += (path / "../../momentum/toroidal/d").get(trans_1d, zero)
-                        V_u_pinch += (path / "../../momentum/toroidal/v").get(trans_1d, zero)
+                    for trans_1d in tranport:
+                        chi_u += (path / "momentum/toroidal/d").get(trans_1d, zero)(rho_tor_norm)
+                        V_u_pinch += (path / "momentum/toroidal/v").get(trans_1d, zero)(rho_tor_norm)
 
                     U = zero
 
-                    for source in sources:
-                        source_1d = source.profiles_1d
-                        U += (path / "../../momentum/toroidal").get(source_1d, zero)
+                    for source_1d in sources:
+                        U += (identifier / "../../momentum/toroidal").get(source_1d, zero)(rho_tor_norm)
 
                     U *= gm8
 
-                    ms = path.get(atoms).a
+                    ms = identifier.get(atoms).a
 
                     d_dt = one_over_dt * ms * (vpr * gm8 * ns * us - vpr_m * gm8_m * ns_m * us_m) * rho_tor_boundary
 
@@ -581,25 +577,25 @@ class FyTrans(TransportSolverNumerics):
 
             equ["boundary_condition_value"] = bc
 
-        # if isinstance(initial_value, dict):
-        #     X = current.grid.rho_tor_norm
-        #     Y = np.zeros([len(self.equations) * 2, X.size])
+        if (initial_value := kwargs.get("initial_value", _not_found_)) is not _not_found_:
+            X = current.grid.rho_tor_norm
+            Y = np.zeros([len(self.equations) * 2, X.size])
 
-        #     for idx, equ in enumerate(self.equations):
-        #         profile = initial_value.get(equ.identifier, 0)
-        #         profile = profile(X) if isinstance(profile, Expression) else profile
-        #         Y[idx * 2] = np.full_like(X, profile)
+            for idx, equ in enumerate(self.equations):
+                profile = initial_value.get(equ.identifier, 0)
+                profile = profile(X) if isinstance(profile, Expression) else profile
+                Y[idx * 2] = np.full_like(X, profile)
 
-        #     for idx, equ in enumerate(self.equations):
-        #         d_dt, D, V, R = equ.coefficient
-        #         y = Y[idx * 2]
-        #         yp = derivative(y, X)
-        #         Y[idx * 2 + 1] = -D(X, *Y) * yp + V(X, *Y) * y
-        #         # Y[idx * 2 + 1] = -D(X, *Y) * derivative(y, X) + V(X, *Y) * y
+            for idx, equ in enumerate(self.equations):
+                d_dt, D, V, R = equ.coefficient
+                y = Y[idx * 2]
+                yp = derivative(y, X)
+                Y[idx * 2 + 1] = -D(X, *Y) * yp + V(X, *Y) * y
+                # Y[idx * 2 + 1] = -D(X, *Y) * derivative(y, X) + V(X, *Y) * y
 
-        #     Y /= self._units.reshape(-1, 1)
+            Y /= self._units.reshape(-1, 1)
 
-        #     current.Y = Y
+            current.Y = Y
 
         return current
 

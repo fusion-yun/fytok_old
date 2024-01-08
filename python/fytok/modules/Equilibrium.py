@@ -133,18 +133,6 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
             }
         )
 
-    def fetch(self, psi_norm: array_type | Expression, *args, **kwargs) -> Self:
-        grid = self.grid
-
-        if isinstance(psi_norm, array_type):
-            grid = grid.fetch(psi_norm=psi_norm)
-
-        res = super().fetch(psi_norm, *args, **kwargs)
-
-        res["grid"] = grid
-
-        return res
-
     psi_norm: array_type | Expression = sp_property(units="-", label=r"\bar{\psi}")
 
     psi: array_type | Expression = sp_property(units="Wb", label=r"\psi")

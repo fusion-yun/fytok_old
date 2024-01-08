@@ -199,13 +199,18 @@ class CoreRadialGrid:
             dumper,
         )
 
-    def remesh(self, rho_tor_norm=None, **kwargs) -> CoreRadialGrid:
+    def remesh(self, first=None, *args, **kwargs) -> CoreRadialGrid:
         """Duplicate the grid with new rho_tor_norm or psi_norm"""
 
-        if rho_tor_norm is None:
-            rho_tor_norm = kwargs.get("rho_tor_norm", None)
+        if isinstance(first, array_type):
+            rho_tor_norm = first
+        else:
+            rho_tor_norm = getattr(first, "rho_tor_norm", kwargs.get("rho_tor_norm", None))
 
-        psi_norm = kwargs.get("psi_norm", None)
+        if isinstance(first, SpTree):
+            psi_norm = getattr(first, "psi_norm", kwargs.get("psi_norm", None))
+        else:
+            psi_norm = kwargs.get("psi_norm", None)
 
         if rho_tor_norm is None or rho_tor_norm is _not_found_:
             if psi_norm is _not_found_ or psi_norm is None:
@@ -218,8 +223,10 @@ class CoreRadialGrid:
                     name="rho_tor_norm",
                     label=r"\bar{\rho}",
                 )(psi_norm)
+        else:
+            rho_tor_norm = np.asarray(rho_tor_norm)
 
-        elif psi_norm is _not_found_ or psi_norm is None:
+        if psi_norm is _not_found_ or psi_norm is None:
             psi_norm = Function(
                 self.rho_tor_norm,
                 self.psi_norm,
@@ -228,7 +235,8 @@ class CoreRadialGrid:
             )(rho_tor_norm)
 
         else:
-            raise RuntimeError(f"{psi_norm} {rho_tor_norm}")
+            psi_norm = np.asarray(psi_norm)
+            # raise RuntimeError(f"{psi_norm} {rho_tor_norm}")
 
         return CoreRadialGrid(
             {
