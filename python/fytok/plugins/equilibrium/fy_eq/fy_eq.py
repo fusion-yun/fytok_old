@@ -2,30 +2,29 @@ import collections
 import collections.abc
 import functools
 import typing
-from dataclasses import dataclass
 import numpy as np
 import scipy.constants
+from dataclasses import dataclass
 
 
-from spdm.data.Expression import Expression, Variable
-from spdm.data.Field import Field
-from spdm.data.Expression import Expression
 from spdm.data.HTree import List
 from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
-from spdm.geometry.Curve import Curve
+from spdm.data.Expression import Expression, Variable
+from spdm.data.Field import Field
 from spdm.geometry.GeoObject import GeoObject, GeoObjectSet
 from spdm.geometry.Point import Point
+from spdm.geometry.Curve import Curve
 from spdm.mesh.Mesh import Mesh
 from spdm.mesh.mesh_curvilinear import CurvilinearMesh
-from spdm.numlib.contours import find_critical_points, find_contours
-
 from spdm.utils.tags import _not_found_
 from spdm.utils.typing import ArrayLike, NumericType, array_type, scalar_type, as_array
 
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.utils.logger import logger
 from fytok.modules.Utilities import *
+
+from .contours import find_critical_points, find_contours
 
 
 PI = scipy.constants.pi
@@ -70,7 +69,7 @@ COCOS_TABLE = [
 # fmt:on
 
 
-@sp_tree(coordinate1="psi_norm", mesh="grid")
+@sp_tree
 class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     r"""
     Flux surface coordinate system on a square grid of flux and poloidal angle
@@ -188,60 +187,54 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
             psi_norm = self.psi_norm
 
         if psi_norm is _not_found_:
-            psi_norm = self.find_cache(".../code/parameters/psi_norm", np.linspace(0.001, 0.995, 127))
+            psi_norm = self.find_cache(".../code/parameters/psi_norm", np.linspace(0.0, 0.995, 128))
 
         surfs = GeoObjectSet([surf for _, surf in self.find_surfaces(psi_norm)])
 
         return CurvilinearMesh(psi_norm, theta, geometry=surfs, cycles=[False, 2.0 * scipy.constants.pi])
 
-    @sp_property
+    @sp_property(mesh="grid")
     def r(self) -> Field:
         return self.grid.points[0]
 
-    @sp_property
+    @sp_property(mesh="grid")
     def z(self) -> Field:
         return self.grid.points[1]
 
-    @sp_property
+    @sp_property(mesh="grid")
     def jacobian(self) -> Field:
         raise NotImplementedError(f"")
 
-    @sp_property
+    @sp_property(mesh="grid")
     def tensor_covariant(self) -> Field:
         raise NotImplementedError(f"")
 
-    @sp_property
+    @sp_property(mesh="grid")
     def tensor_contravariant(self) -> Field:
         raise NotImplementedError(f"")
 
     ###############################
     # surface integral
-    def find_surfaces_by_psi(self, psi, *args, **kwargs):
+    def find_surfaces_by_psi(
+        self, psi, *args, magnetic_axis=None, **kwargs
+    ) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
+        if magnetic_axis is None:
+            magnetic_axis = (self.magnetic_axis.r, self.magnetic_axis.z, self.psi_axis)
+
         if psi is None or psi is _not_found_:
             return
         elif isinstance(psi, float):
             psi = [psi]
 
+        psirz = self.psirz
+
         for p in psi:
-            yield from self.find_surfaces(
-                (as_array(p) - self.psi_axis) * (self.psi_boundary - self.psi_axis),
-                *args,
-                **kwargs,
-            )
+            yield from find_contours(psirz, p, *args, axis=magnetic_axis, **kwargs)
 
-    def find_surfaces(
-        self, psi_norm, *args, axis=None, **kwargs
-    ) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
-        if axis is None:
-            axis = (self.magnetic_axis.r, self.magnetic_axis.z, self.psi_axis)
-
-        if psi_norm is None or psi_norm is _not_found_:
-            return
-        if isinstance(psi_norm, float):
-            psi_norm = [psi_norm]
-
-        for p in psi_norm:
-            yield from find_contours(self.psirz_norm, p, *args, axis=axis, **kwargs)
+    def find_surfaces(self, psi_norm, *args, **kwargs) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
+        psi = psi_norm * (self.psi_boundary - self.psi_axis) + self.psi_axis
+        for p, surf in self.find_surfaces_by_psi(psi, *args, **kwargs):
+            yield (p - self.psi_axis) / (self.psi_boundary - self.psi_axis), surf
 
     @dataclass
     class ShapeProperty:
@@ -318,7 +311,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         # r0, z0 = self.magnetic_axis
 
         if psi_norm is None:
-            surfs_list = zip(self.psi_norm, self.grid.geometry)
+            surfs_list = zip(self.grid.dims[0], self.grid.geometry)
         else:
             if isinstance(psi_norm, scalar_type):
                 psi_norm = [psi_norm]
@@ -335,7 +328,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
                 # logger.debug((R, Z, v))
                 # # v *= r**2/self.ddpsi(r, z)
                 # logger.warning(f"Found point pos={surf.points}  psi={p}")
-                v = np.nan
+                v = 0  # np.nan
             else:
                 continue
                 logger.warning(f"Found an island at psi={p} pos={surf}")
@@ -828,7 +821,7 @@ class FyEquilibriumBoundarySeparatrix(FyEquilibriumBoundary):
     @sp_property(coordinates="r z")
     def outline(self) -> GeoObjectSet:
         """RZ outline of the plasma boundary"""
-        return GeoObjectSet([surf for _, surf in self._coord.find_surfaces(self.psi_norm, axis=False)])
+        return GeoObjectSet([surf for _, surf in self._coord.find_surfaces(self.psi_norm, magnetic_axis=False)])
 
     psi_norm: float = 1.0
 

@@ -145,9 +145,9 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
         return res
 
-    psi_norm: array_type | Expression = sp_property(units="-", label=r"$\bar{\psi}$")
+    psi_norm: array_type | Expression = sp_property(units="-", label=r"\bar{\psi}")
 
-    psi: array_type | Expression = sp_property(units="Wb", label=r"$\psi$")
+    psi: array_type | Expression = sp_property(units="Wb", label=r"\psi")
 
     dphi_dpsi: Expression = sp_property(label=r"\frac{d\phi}{d\psi}", units="-")
 

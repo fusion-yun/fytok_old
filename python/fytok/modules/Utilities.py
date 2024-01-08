@@ -176,25 +176,6 @@ class VacuumToroidalField:
 
 @sp_tree
 class CoreRadialGrid:
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
-        if self.find_cache("psi_norm", _not_found_) is _not_found_:
-            psi = self.find_cache("psi", _not_found_)
-            if psi is not _not_found_:
-                psi = as_array(psi)
-                self._cache["psi_axis"] = psi_axis = psi[0]
-                self._cache["psi_boundary"] = psi_boundary = psi[-1]
-                self._cache["psi_norm"] = (psi - psi_axis) / (psi_boundary - psi_axis)
-                self._cache["psi"] = psi
-
-        if self.find_cache("rho_tor_norm", _not_found_) is _not_found_:
-            rho_tor = self.find_cache("rho_tor", _not_found_)
-            if rho_tor is not _not_found_:
-                rho_tor = as_array(rho_tor)
-                self._cache["rho_tor_boundary"] = rho_tor[-1]
-                self._cache["rho_tor_norm"] = rho_tor / rho_tor[-1]
-
     def __copy__(self) -> CoreRadialGrid:
         return CoreRadialGrid(
             {
@@ -235,7 +216,7 @@ class CoreRadialGrid:
                     self.psi_norm,
                     self.rho_tor_norm,
                     name="rho_tor_norm",
-                    label=r"$\bar{\rho}$",
+                    label=r"\bar{\rho}",
                 )(psi_norm)
 
         elif psi_norm is _not_found_ or psi_norm is None:
@@ -243,7 +224,7 @@ class CoreRadialGrid:
                 self.rho_tor_norm,
                 self.psi_norm,
                 name="psi_norm",
-                label=r"$\bar{\psi}$",
+                label=r"\bar{\psi}",
             )(rho_tor_norm)
 
         else:
