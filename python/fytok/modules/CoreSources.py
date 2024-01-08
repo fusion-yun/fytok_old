@@ -202,6 +202,11 @@ class CoreSources(IDS):
 
     source: AoS[CoreSourcesSource]
 
+    def initialize(self, *args, **kwargs) -> None:
+        super().initialize(*args, **kwargs)
+        for source in self.source:
+            source.initialize()
+
     def refresh(self, *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None, **kwargs):
         super().refresh(*args, **kwargs)
 

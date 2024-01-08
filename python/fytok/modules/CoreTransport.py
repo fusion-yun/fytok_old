@@ -157,6 +157,8 @@ class CoreTransportModel(Module):
 
         current = self.time_slice.current
 
+        self.inports.refresh()
+
         profiles_1d: CoreProfiles.TimeSlice.Profiles1D = self.inports["core_profiles/time_slice/0/profiles_1d"].fetch()
 
         current.update(self.fetch(profiles_1d))
@@ -178,6 +180,11 @@ class CoreTransport(IDS):
     Model = CoreTransportModel
 
     model: AoS[CoreTransportModel]
+
+    def initialize(self, *args, **kwargs) -> None:
+        super().initialize(*args, **kwargs)
+        for model in self.model:
+            model.initialize()
 
     def refresh(self, *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None, **kwargs):
         super().refresh(*args, **kwargs)

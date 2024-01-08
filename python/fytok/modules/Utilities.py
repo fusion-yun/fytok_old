@@ -125,7 +125,7 @@ class Module(Actor):
         return f"{FY_JOBID}/{self.code.module_path}"
 
     def execute(self, current: TimeSlice, *previous: TimeSlice) -> typing.Type[TimeSlice]:
-        logger.info(f"Execute module {self.code.module_path}")
+        logger.info(f"Execute module {self.code.module_path} {self.__class__.__name__}")
         return super().execute(current, *previous)
 
 
@@ -138,15 +138,14 @@ class IDS(Module):
 
     """Interface Data Structure properties. This element identifies the node above as an IDS"""
 
-    def __geometry__(self):
-        return {}
-
     def _repr_svg_(self) -> str:
-        try:
-            res = sp_view.display(self.__geometry__(), output="svg")
-        except Exception as error:
-            raise RuntimeError(f"{self}") from error
-            # res = None
+        if hasattr(self.__class__, "__geometry__"):
+            try:
+                res = sp_view.display(self.__geometry__(), output="svg")
+            except Exception as error:
+                raise RuntimeError(f"{self}") from error
+        else:
+            res = None
         return res
 
 
