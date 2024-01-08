@@ -90,9 +90,6 @@ class TransportSolverNumericsTimeSlice(TimeSlice):
     """Numerics related to 1D radial solver for a given time slice"""
 
     grid: CoreRadialGrid
-    """ Radial grid"""
-
-    primary_coordinate: str
 
     equations: AoS[TransportSolverNumericsEquation]
     """ Set of transport equations"""
@@ -143,31 +140,19 @@ class TransportSolverNumerics(IDS):
     def initialize(self, *args, **kwargs):
         super().initialize(*args, **kwargs)
 
-        grid = self.profiles_1d.get("grid", _not_found_)
-
-        if isinstance(grid, CoreRadialGrid) and grid.rho_tor_norm is not _not_found_:
-            rho_tor_norm = grid.rho_tor_norm
-        else:
-            rho_tor_norm = self.code.parameters.rho_tor_norm
-
-        if rho_tor_norm is _not_found_:
-            raise RuntimeError(f"rho_tor_norm is not defined!")
-
-        self.profiles_1d["grid"] = self.inports["equilibrium/time_slice/0/profiles_1d/grid"].fetch(rho_tor_norm)
-
     def preprocess(self, *args, **kwargs) -> typing.Type[TimeSlice]:
-        rho_tor_norm = self.profiles_1d.grid.rho_tor_norm
+        current = super().preprocess(*args, **kwargs)
 
-        if rho_tor_norm is _not_found_:
-            raise RuntimeError(f"gird.rho_tor_norm is not defined!")
+        x = self.get(f".../code/parameters/{self.primary_coordinate}", _not_found_)
 
-        grid: CoreRadialGrid = self.inports["equilibrium/time_slice/0/profiles_1d/grid"].fetch(rho_tor_norm)
+        if x is not _not_found_:
+            current["grid"] = self.inports["equilibrium/time_slice/0/profiles_1d/grid"].fetch(
+                **{self.primary_coordinate: x}
+            )
+        else:
+            current["grid"] = self.inports["equilibrium/time_slice/0/profiles_1d/grid"].fetch()
 
-        self.profiles_1d["grid"] = grid
-
-        self.profiles_1d["psi_norm"] = Function(grid.rho_tor_norm, grid.psi_norm)(self.profiles_1d.rho_tor_norm)
-
-        return super().preprocess(*args, **kwargs)
+        return current
 
     def execute(
         self,
@@ -178,15 +163,7 @@ class TransportSolverNumerics(IDS):
         return super().execute(current, *previous)
 
     def postprocess(self, current: TransportSolverNumericsTimeSlice) -> TransportSolverNumericsTimeSlice:
-        super().postprocess(current)
-
-        grid = current.grid
-
-        self.profiles_1d["grid"] = grid
-
-        self.profiles_1d["psi_norm"] = Function(grid.rho_tor_norm, grid.psi_norm)(self.profiles_1d.rho_tor_norm)
-
-        return current
+        return super().postprocess(current)
 
     def refresh(
         self,

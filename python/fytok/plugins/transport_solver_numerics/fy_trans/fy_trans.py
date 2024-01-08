@@ -193,40 +193,36 @@ class FyTrans(TransportSolverNumerics):
         """
         current: TransportSolverNumericsTimeSlice = super().preprocess(*args, **kwargs)
 
-        # if not isinstance(grid, CoreRadialGrid):
-        #     # TODO: 根据时间获取时间片, 例如：
-        #     # assert math.isclose(equilibrium.time, self.time), f"{equilibrium.time} != {current.time}"
-        #     #   eq:Equilibrium.TimeSlice= equilibrium.time_slice.get(self.time)
-        #     grid = eq_1d.grid.remesh(self._rho_tor_norm)
-        #     current["grid"] = grid
-        # else:
-        #     self._rho_tor_norm = grid.rho_tor_norm
-
         profiles = self.profiles_1d
+
+        x: Expression = profiles[self.primary_coordinate]
 
         if self.primary_coordinate != "rho_tor_norm":
             raise NotImplementedError(self.primary_coordinate)
 
+        else:
+            rho_tor_norm = x
+
+            psi_norm = Function(
+                current.grid.rho_tor_norm,
+                current.grid.psi_norm,
+                name="psi_norm",
+                label=r"\bar{\psi}",
+            )(rho_tor_norm)
+
         # fmt:off
-
-        x: Expression = profiles.rho_tor_norm
-
-        psi_norm = profiles.psi_norm(x)
-
         eq: Equilibrium.TimeSlice.Profiles1D = self.inports["equilibrium/time_slice/0/profiles_1d"].fetch(psi_norm)
 
         eq_m: Equilibrium.TimeSlice.Profiles1D = self.inports["equilibrium/time_slice/-1/profiles_1d"].fetch(psi_norm)
 
-        core: CoreProfiles.TimeSlice.Profiles1D = self.inports["core_profiles/time_slice/0/profiles_1d"].fetch(x)
+        core: CoreProfiles.TimeSlice.Profiles1D = self.inports["core_profiles/time_slice/0/profiles_1d"].fetch(rho_tor_norm)
 
-        core_m: CoreProfiles.TimeSlice.Profiles1D = self.inports["core_profiles/time_slice/-1/profiles_1d"].fetch(x)
+        core_m: CoreProfiles.TimeSlice.Profiles1D = self.inports["core_profiles/time_slice/-1/profiles_1d"].fetch(rho_tor_norm)
 
         tranport: AoS[CoreTransport.Model.TimeSlice] = self.inports["core_transport/model"].fetch(profiles)
 
         sources: AoS[CoreSources.Source.TimeSlice] = self.inports["core_sources/source"].fetch(profiles)
-
         # fmt:on
-
         for s in self.impurities:
             path = as_path(f"ion/{s}/density")
             n_imp = path.get(core, zero)
@@ -239,7 +235,7 @@ class FyTrans(TransportSolverNumerics):
         # $B_0$ magnetic field measured at $R_0$            [T]
         B0 = eq._root.vacuum_toroidal_field.b0
 
-        rho_tor_boundary = Scalar(eq.grid.rho_tor_boundary)
+        rho_tor_boundary = Scalar(current.grid.rho_tor_boundary)
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
         vpr = eq.dvolume_drho_tor
@@ -284,7 +280,7 @@ class FyTrans(TransportSolverNumerics):
 
         k_phi = k_B + k_rho_bdry
 
-        rho_tor = rho_tor_boundary * x
+        rho_tor = rho_tor_boundary * rho_tor_norm
 
         inv_vpr23 = vpr ** (-2 / 3)
 
@@ -308,7 +304,7 @@ class FyTrans(TransportSolverNumerics):
             match path[-1]:
                 case "psi":
                     psi = path.get(profiles, zero)
-                    psi_m = path.get(core_m, zero) 
+                    psi_m = path.get(core_m, zero)
 
                     conductivity_parallel: Expression = zero
 
@@ -316,21 +312,24 @@ class FyTrans(TransportSolverNumerics):
 
                     for source in sources:
                         core_source_1d = source.profiles_1d
-                        conductivity_parallel += core_source_1d.conductivity_parallel or zero
-                        j_parallel += core_source_1d.j_parallel or zero
+                        conductivity_parallel += core_source_1d.conductivity_parallel
+                        j_parallel += core_source_1d.j_parallel
 
-                    c = (scipy.constants.mu_0 * B0 * x * (rho_tor_boundary**2)) / fpol2
+                    c = (scipy.constants.mu_0 * B0 * rho_tor_norm * (rho_tor_boundary**2)) / fpol2
 
                     d_dt = one_over_dt * conductivity_parallel * (psi - psi_m) * c
 
                     D = (vpr * gm2 / fpol / (-(2.0 * scipy.constants.pi))) / rho_tor_boundary
                     # FIXME: 检查 psi 的定义，符号，2Pi系数
 
-                    V = -k_phi * x * conductivity_parallel * c
+                    V = -k_phi * rho_tor_norm * conductivity_parallel * c
 
                     R = (
-                        -vpr * (j_parallel) / (2.0 * scipy.constants.pi * x * rho_tor_boundary)
-                        - k_phi * conductivity_parallel * (2 - 2 * x * fpol.dln + x * conductivity_parallel.dln) * psi
+                        -vpr * (j_parallel) / (2.0 * scipy.constants.pi * rho_tor)
+                        - k_phi
+                        * conductivity_parallel
+                        * (2 - 2 * rho_tor_norm * fpol.dln + rho_tor_norm * conductivity_parallel.dln)
+                        * psi
                     ) * c
 
                     if bc_value is None:
@@ -582,25 +581,25 @@ class FyTrans(TransportSolverNumerics):
 
             equ["boundary_condition_value"] = bc
 
-        if isinstance(initial_value, dict):
-            X = current.grid.rho_tor_norm
-            Y = np.zeros([len(self.equations) * 2, X.size])
+        # if isinstance(initial_value, dict):
+        #     X = current.grid.rho_tor_norm
+        #     Y = np.zeros([len(self.equations) * 2, X.size])
 
-            for idx, equ in enumerate(self.equations):
-                profile = initial_value.get(equ.identifier, 0)
-                profile = profile(X) if isinstance(profile, Expression) else profile
-                Y[idx * 2] = np.full_like(X, profile)
+        #     for idx, equ in enumerate(self.equations):
+        #         profile = initial_value.get(equ.identifier, 0)
+        #         profile = profile(X) if isinstance(profile, Expression) else profile
+        #         Y[idx * 2] = np.full_like(X, profile)
 
-            for idx, equ in enumerate(self.equations):
-                d_dt, D, V, R = equ.coefficient
-                y = Y[idx * 2]
-                yp = derivative(y, X)
-                Y[idx * 2 + 1] = -D(X, *Y) * yp + V(X, *Y) * y
-                # Y[idx * 2 + 1] = -D(X, *Y) * derivative(y, X) + V(X, *Y) * y
+        #     for idx, equ in enumerate(self.equations):
+        #         d_dt, D, V, R = equ.coefficient
+        #         y = Y[idx * 2]
+        #         yp = derivative(y, X)
+        #         Y[idx * 2 + 1] = -D(X, *Y) * yp + V(X, *Y) * y
+        #         # Y[idx * 2 + 1] = -D(X, *Y) * derivative(y, X) + V(X, *Y) * y
 
-            Y /= self._units.reshape(-1, 1)
+        #     Y /= self._units.reshape(-1, 1)
 
-            current.Y = Y
+        #     current.Y = Y
 
         return current
 
@@ -686,7 +685,7 @@ class FyTrans(TransportSolverNumerics):
     ) -> TransportSolverNumericsTimeSlice:
         current = super().execute(current, *previous)
 
-        X = current.grid.rho_tor_norm
+        X = current.grid.get(self.primary_coordinate)
         Y = getattr(current, "Y", None)
 
         # 设定初值

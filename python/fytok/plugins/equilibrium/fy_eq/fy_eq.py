@@ -99,6 +99,8 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         self._s_eBp_2PI = 1.0 if self._e_Bp == 0 else (2.0 * scipy.constants.pi)
 
+        self.psirz = self._parent.profiles_2d.psi
+
         o_points, x_points = find_critical_points(self.psirz)
 
         if len(o_points) == 0:
@@ -115,9 +117,8 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
         self.psi_boundary = x_points[0].value
 
-        # if self.psi_axis is _not_found_ or self.psi_boundary is _not_found_:
-
         # 磁面坐标
+        self.psi_norm = self._parent.profiles_1d.psi_norm
 
         if self.psi_norm is _not_found_ or self.psi_norm is None:
             self.psi_norm = np.linspace(0.001, 0.9995, 64)
@@ -137,22 +138,15 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     r0: float = sp_property(alias="../vacuum_toroidal_field/r0")
     ip: float = sp_property(alias="../global_quantities/ip")
 
-    magnetic_axis: Point = sp_property(alias="../global_quantities/magnetic_axis")
-    psi_axis: float = sp_property(alias="../global_quantities/psi_axis")
-    psi_boundary: float = sp_property(alias="../global_quantities/psi_boundary")
+    # magnetic_axis: Point = sp_property(alias="../global_quantities/magnetic_axis")
+    # psi_axis: float = sp_property(alias="../global_quantities/psi_axis")
+    # psi_boundary: float = sp_property(alias="../global_quantities/psi_boundary")
+    # psi_norm: array_type = sp_property(alias="../profiles_1d/psi_norm")
 
-    psi_norm: array_type = sp_property(alias="../profiles_1d/psi_norm")
     ffprime: Expression = sp_property(alias="../profiles_1d/f_df_dpsi", label=r" \frac{f df}{d\psi}")
     pprime: Expression = sp_property(alias="../profiles_1d/dpressure_dpsi", label=r" \frac{dP}{d\psi}")
 
-    psirz: Field = sp_property(alias="../profiles_2d/psi")
-
-    @sp_property
-    def psirz_norm(self) -> Field:
-        """normalized psirz"""
-        value = (self.psirz.__array__() - self.psi_axis) / (self.psi_boundary - self.psi_axis)
-        mesh = self.psirz.mesh
-        return Field(value, mesh=mesh, name="psirz_norm", label=r"\bar{\psi}")
+    # psirz: Field = sp_property(alias="../profiles_2d/psi")
 
     @sp_property
     def dvolume_dpsi(self) -> Expression:
@@ -226,10 +220,8 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         elif isinstance(psi, float):
             psi = [psi]
 
-        psirz = self.psirz
-
         for p in psi:
-            yield from find_contours(psirz, p, *args, axis=magnetic_axis, **kwargs)
+            yield from find_contours(self.psirz, p, *args, axis=magnetic_axis, **kwargs)
 
     def find_surfaces(self, psi_norm, *args, **kwargs) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
         psi = psi_norm * (self.psi_boundary - self.psi_axis) + self.psi_axis
@@ -387,8 +379,13 @@ class FyEquilibriumProfiles2D(Equilibrium.TimeSlice.Profiles2D):
         return self.grid.points[1]
 
     @sp_property
+    def psi_norm(self) -> Expression:
+        """normalized psirz"""
+        return (self.psi - self._coord.psi_axis) / (self._coord.psi_boundary - self._coord.psi_axis)
+
+    @sp_property
     def phi(self) -> Expression:
-        return self._profiles_1d.phi(self._coord.psirz_norm)
+        return self._profiles_1d.phi(self._coord.psi_norm)
 
     @sp_property
     def theta(self) -> Expression:
@@ -396,8 +393,8 @@ class FyEquilibriumProfiles2D(Equilibrium.TimeSlice.Profiles2D):
 
     @sp_property
     def j_tor(self) -> Expression:
-        return _R * self._profiles_1d.dpressure_dpsi(self._coord.psirz_norm) + self._profiles_1d.f_df_dpsi(
-            self._coord.psirz_norm
+        return _R * self._profiles_1d.dpressure_dpsi(self._coord.psi_norm) + self._profiles_1d.f_df_dpsi(
+            self._coord.psi_norm
         ) / (_R * scipy.constants.mu_0)
 
     @sp_property(label="B_{r}")
@@ -411,7 +408,7 @@ class FyEquilibriumProfiles2D(Equilibrium.TimeSlice.Profiles2D):
 
     @sp_property(label="B_{tor}")
     def b_field_tor(self) -> Expression:
-        return self._profiles_1d.f(self._coord.psirz_norm) / _R
+        return self._profiles_1d.f(self._coord.psi_norm) / _R
 
     @sp_property
     def Bpol2(self) -> Expression:
