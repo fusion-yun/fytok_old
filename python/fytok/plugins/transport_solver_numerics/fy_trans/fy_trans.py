@@ -52,14 +52,14 @@ class FyTrans(TransportSolverNumerics):
 
         unknowns = self.code.parameters.unknowns or list()
 
-        # 极向磁通
-        unknowns.append("psi")
+        # # 极向磁通
+        # unknowns.append("psi")
 
         # 电子
         # - 电子密度由准中性条件给出
         # - 电子温度，求解
         # - 电子转动，跟随离子，不求解
-        unknowns.append("electrons/temperature")
+        # unknowns.append("electrons/temperature")
 
         for s in self.ion_thermal:
             # 热化离子组份
@@ -68,7 +68,7 @@ class FyTrans(TransportSolverNumerics):
             # - 环向转动 velocity/totoridal，可求解，
 
             unknowns.append(f"ion/{s}/density")
-            unknowns.append(f"ion/{s}/temperature")
+            # unknowns.append(f"ion/{s}/temperature")
             if enable_momentum:
                 unknowns.append(f"ion/{s}/velocity/toroidal")
 
@@ -116,6 +116,7 @@ class FyTrans(TransportSolverNumerics):
         units = self.code.parameters.units
         if units is _not_found_:
             units = {}
+
         else:
             units = units.__value__
 
@@ -127,6 +128,7 @@ class FyTrans(TransportSolverNumerics):
 
         for s in unknowns:
             pth = Path(s)
+
             if pth[0] == "psi":
                 label_p = r"\psi"
                 label_f = r"\Psi"
@@ -156,9 +158,11 @@ class FyTrans(TransportSolverNumerics):
                 label_f += f"_{{{pth[1]}}}"
 
             profiles_1d[s] = Variable((i := i + 1), s, label=label_p)
+
             profiles_1d[f"{s}_flux"] = Variable((i := i + 1), f"{s}_flux", label=label_f)
 
             unit_profile = units.get(s, None) or units.get(f"*/{pth[-1]}", 1)
+
             unit_flux = units.get(f"{s}_flux", None) or units.get(f"*/{pth[-1]}_flux", 1)
 
             equations.append(
@@ -170,8 +174,14 @@ class FyTrans(TransportSolverNumerics):
                 }
             )
 
-        # ##################################################################################################
-        # # 赋值属性
+        ni = sum([ion.z * ion.density for ion in profiles_1d.ion], zero)
+        ni_flux = sum([ion.z * ion.get("density_flux") for ion in profiles_1d.ion], zero)
+
+        profiles_1d.electrons["density"] = ni
+        profiles_1d.electrons["density_flux"] = ni_flux
+
+        ###################################################################################################
+        # 赋值属性
         # self.profiles_1d.update(profiles_1d)
         # self.equations = equations
         ##################################################################################################
@@ -387,7 +397,8 @@ class FyTrans(TransportSolverNumerics):
                     S = zero
 
                     for source_1d in sources:
-                        S += (path / "particles ").get(source_1d, zero)(profiles)
+                        Ss = (path / "particles").get(source_1d, zero)
+                        S += Ss(profiles)
 
                     d_dt = one_over_dt * (vpr * ns - vpr_m * ns_m) * rho_tor_boundary
 
@@ -719,6 +730,8 @@ class FyTrans(TransportSolverNumerics):
         equations = []
 
         for idx, equ in enumerate(self.equations):
+            d_dt, D, V, R = equ.coefficient
+
             equations.append(
                 {
                     "identifier": equ.identifier,
@@ -728,6 +741,7 @@ class FyTrans(TransportSolverNumerics):
                     "flux": sol.y[2 * idx + 1] * self._units[2 * idx + 1],
                     "d_dr": sol.yp[2 * idx] * self._units[2 * idx],
                     "dflux_dr": sol.yp[2 * idx + 1] * self._units[2 * idx + 1],
+                    "coefficient": [d_dt(sol.x, *sol.y), D(sol.x, *sol.y), V(sol.x, *sol.y), R(sol.x, *sol.y)],
                 }
             )
 

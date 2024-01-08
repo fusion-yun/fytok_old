@@ -39,7 +39,7 @@ class CoreSourcesSpecies(SpTree):
             self.z = ion.z
             self.a = ion.a
 
-    label: str
+    label: str = sp_property(alias="@name")
     """ String identifying the neutral species (e.g. H, D, T, He, C, ...)"""
 
     z: int

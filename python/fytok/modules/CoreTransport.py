@@ -39,6 +39,9 @@ class CoreTransportModelMomentum(core_transport._T_core_transport_model_4_moment
 
 @sp_tree
 class CoreTransportElectrons(core_transport._T_core_transport_model_electrons):
+    label: str = "electrons"
+    """ String identifying the neutral species (e.g. H, D, T, He, C, ...)"""
+
     particles: CoreTransportModelParticles
     energy: CoreTransportModelEnergy
     momentum: CoreTransportModelMomentum
@@ -48,13 +51,14 @@ class CoreTransportElectrons(core_transport._T_core_transport_model_electrons):
 class CoreTransportIon(core_transport._T_core_transport_model_ions):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+        logger.debug(self.label)
+        if self.label is _not_found_:
+            raise RuntimeError(f"{self._cache}")
+        ion = atoms[self.label]
+        self.z = ion.z
+        self.a = ion.a
 
-        if self.z is _not_found_:
-            ion = atoms[self.label]
-            self.z = ion.z
-            self.a = ion.a
-
-    label: str
+    label: str = sp_property(alias="@name")
     """ String identifying the neutral species (e.g. H, D, T, He, C, ...)"""
 
     z: int

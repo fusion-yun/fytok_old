@@ -164,9 +164,9 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
 
     rho_tor: Expression = sp_property(label=r"\rho_{tor}", units="m", alias="grid/rho_tor")
 
-    psi_norm: array_type | Expression = sp_property(label=r"\bar{\psi}", units="-", alias="grid/psi_norm")
+    psi_norm: array_type | Expression = sp_property(label=r"\bar{\psi}", units="-")
 
-    psi: Expression = sp_property(label=r"\psi", units="Wb", alias="grid/psi")
+    psi: Expression = sp_property(label=r"\psi", units="Wb")
 
     @sp_property
     def zeff(self) -> Expression:

@@ -94,11 +94,11 @@ def read_iter_profiles(path):
         "grid": grid,
         "electrons": {"label": "e", "density": b_ne, "temperature": b_Te},
         "ion": [
-            {"@name": "D", "label": "D", "density": b_nDT, "temperature": b_Ti},
-            {"@name": "T", "label": "T", "density": b_nDT, "temperature": b_Ti},
-            {"@name": "Be", "label": "Be", "density": 0.02 * b_ne, "temperature": b_Ti, "z_ion_1d": z_Be},
-            {"@name": "Ar", "label": "Ar", "density": 0.0012 * b_ne, "temperature": b_Ti, "z_ion_1d": z_Ar},
-            {"@name": "He", "label": "He", "density": b_nath},
+            {"@name": "D", "density": b_nDT, "temperature": b_Ti},
+            {"@name": "T", "density": b_nDT, "temperature": b_Ti},
+            {"@name": "Be", "density": 0.02 * b_ne, "temperature": b_Ti, "z_ion_1d": z_Be},
+            {"@name": "Ar", "density": 0.0012 * b_ne, "temperature": b_Ti, "z_ion_1d": z_Ar},
+            {"@name": "He", "density": b_nath},
             # {"label": "He", "density": b_nHe, "temperature": b_Ti},
         ],
         # "e_field": {"parallel":  Function(e_parallel,bs_r_norm)},
@@ -172,12 +172,12 @@ def read_iter_profiles(path):
 
     entry["core_transport/model/0/time_slice/0/profiles_1d"] = {
         "grid_d": grid,
-        "electrons": {"label": "e", "particles": {"d": D, "v": v_pinch_ne}, "energy": {"d": chi_e, "v": v_pinch_Te}},
+        "electrons": {"@name": "e", "particles": {"d": D, "v": v_pinch_ne}, "energy": {"d": chi_e, "v": v_pinch_Te}},
         "ion": [
-            {"label": "D", "particles": {"d": D, "v": v_pinch_ni}, "energy": {"d": chi, "v": v_pinch_Ti}},
-            {"label": "T", "particles": {"d": D, "v": v_pinch_ni}, "energy": {"d": chi, "v": v_pinch_Ti}},
-            {"label": "He", "particles": {"d": D, "v": v_pinch_ni}, "energy": {"d": chi, "v": v_pinch_Ti}},
-            {"label": "alpha", "particles": {"d": 0.001 * D, "v": 0}},
+            {"@name": "D", "particles": {"d": D, "v": v_pinch_ni}, "energy": {"d": chi, "v": v_pinch_Ti}},
+            {"@name": "T", "particles": {"d": D, "v": v_pinch_ni}, "energy": {"d": chi, "v": v_pinch_Ti}},
+            {"@name": "He", "particles": {"d": D, "v": v_pinch_ni}, "energy": {"d": chi, "v": v_pinch_Ti}},
+            {"@name": "alpha", "particles": {"d": 0.001 * D, "v": 0}},
         ],
     }
 
@@ -215,11 +215,11 @@ def read_iter_profiles(path):
         "grid": grid,
         "conductivity_parallel": profiles_1D["Joh"].values * 1.0e6 / profiles_1D["U"].values * (TWOPI * R0),
         "j_parallel": profiles_1D["Jtot"].values * 1e6,  # A/m^2
-        "electrons": {"label": "e", "particles": S, "energy": Q_e},
+        "electrons": {"@name": "e", "particles": S, "energy": Q_e},
         "ion": [
-            {"label": "D", "particles": S * 0.5, "energy": Q_DT * 0.5},
-            {"label": "T", "particles": S * 0.5, "energy": Q_DT * 0.5},
-            {"label": "He", "particles": S * 0.01, "energy": 0},  #
+            {"@name": "D", "particles": S * 0.5, "energy": Q_DT * 0.5},
+            {"@name": "T", "particles": S * 0.5, "energy": Q_DT * 0.5},
+            {"@name": "He", "particles": S * 0.01, "energy": 0},  #
             # {"label": "alpha", "particles": S * 0.01, "energy": Q_DT * 0.01},
         ],
     }
