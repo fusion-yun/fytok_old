@@ -51,9 +51,7 @@ class CoreTransportElectrons(core_transport._T_core_transport_model_electrons):
 class CoreTransportIon(core_transport._T_core_transport_model_ions):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        logger.debug(self.label)
-        if self.label is _not_found_:
-            raise RuntimeError(f"{self._cache}")
+
         ion = atoms[self.label]
         self.z = ion.z
         self.a = ion.a

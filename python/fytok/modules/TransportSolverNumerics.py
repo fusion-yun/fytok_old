@@ -143,14 +143,12 @@ class TransportSolverNumerics(IDS):
     def preprocess(self, *args, **kwargs) -> typing.Type[TimeSlice]:
         current = super().preprocess(*args, **kwargs)
 
-        eq_grid = self.inports["equilibrium/time_slice/0/profiles_1d/grid"]
+        eq_grid = self.inports["equilibrium/time_slice/0/profiles_1d/grid"].fetch()
 
         x = self.get(f".../code/parameters/{self.primary_coordinate}", _not_found_)
-
+        
         if x is not _not_found_:
-            eq_grid = eq_grid.fetch(**{self.primary_coordinate: x})
-        else:
-            eq_grid = eq_grid.fetch()
+            eq_grid = eq_grid.remesh(**{self.primary_coordinate: x})
 
         current["grid"] = eq_grid
 

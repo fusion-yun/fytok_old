@@ -214,7 +214,7 @@ def read_iter_profiles(path):
     entry["core_sources/source/0/time_slice/0/profiles_1d"] = {
         "grid": grid,
         "conductivity_parallel": profiles_1D["Joh"].values * 1.0e6 / profiles_1D["U"].values * (TWOPI * R0),
-        "j_parallel": profiles_1D["Jtot"].values * 1e6,  # A/m^2
+        "j_parallel": -profiles_1D["Jtot"].values * 1e6,  # A/m^2
         "electrons": {"@name": "e", "particles": S, "energy": Q_e},
         "ion": [
             {"@name": "D", "particles": S * 0.5, "energy": Q_DT * 0.5},

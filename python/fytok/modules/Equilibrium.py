@@ -165,7 +165,7 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
     rho_tor_norm: Expression = sp_property(units="m", label=r"\bar{\rho_{tor}}")
 
-    dpsi_drho_tor: Expression = sp_property(units="Wb/m", label=r"\frac{d\psi}{\rho_{tor}}")
+    dpsi_drho_tor: Expression = sp_property(units="Wb/m", label=r"\frac{d\psi}{d\rho_{tor}}")
 
     @sp_property
     def geometric_axis(self) -> Point:

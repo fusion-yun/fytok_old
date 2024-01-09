@@ -52,14 +52,14 @@ class FyTrans(TransportSolverNumerics):
 
         unknowns = self.code.parameters.unknowns or list()
 
-        # # 极向磁通
-        # unknowns.append("psi")
+        # 极向磁通
+        unknowns.append("psi")
 
         # 电子
         # - 电子密度由准中性条件给出
         # - 电子温度，求解
         # - 电子转动，跟随离子，不求解
-        # unknowns.append("electrons/temperature")
+        unknowns.append("electrons/temperature")
 
         for s in self.ion_thermal:
             # 热化离子组份
@@ -68,7 +68,7 @@ class FyTrans(TransportSolverNumerics):
             # - 环向转动 velocity/totoridal，可求解，
 
             unknowns.append(f"ion/{s}/density")
-            # unknowns.append(f"ion/{s}/temperature")
+            unknowns.append(f"ion/{s}/temperature")
             if enable_momentum:
                 unknowns.append(f"ion/{s}/velocity/toroidal")
 
@@ -122,7 +122,13 @@ class FyTrans(TransportSolverNumerics):
 
         profiles_1d = self.profiles_1d
 
-        equations = self.equations
+        ni = sum([ion.z * ion.density for ion in profiles_1d.ion], zero)
+        ni_flux = sum([ion.z * ion.get("density_flux") for ion in profiles_1d.ion], zero)
+
+        profiles_1d.electrons["density"] = ni
+        profiles_1d.electrons["density_flux"] = ni_flux
+
+        equations = []
 
         profiles_1d[self.primary_coordinate] = x
 
@@ -174,11 +180,7 @@ class FyTrans(TransportSolverNumerics):
                 }
             )
 
-        ni = sum([ion.z * ion.density for ion in profiles_1d.ion], zero)
-        ni_flux = sum([ion.z * ion.get("density_flux") for ion in profiles_1d.ion], zero)
-
-        profiles_1d.electrons["density"] = ni
-        profiles_1d.electrons["density_flux"] = ni_flux
+        self.equations = equations
 
         ###################################################################################################
         # 赋值属性
@@ -196,6 +198,7 @@ class FyTrans(TransportSolverNumerics):
             self._rho_tor_norm = np.linspace(0.001, 0.995, 128)
 
         logger.debug(f" Unknowns : {unknowns}")
+        logger.debug(f" normalize units: {self._units}")
 
     def preprocess(self, *args, boundary_value=None, **kwargs) -> TransportSolverNumericsTimeSlice:
         """准备迭代求解
@@ -304,6 +307,8 @@ class FyTrans(TransportSolverNumerics):
 
         hyper_diff = self._hyper_diff
 
+        logger.debug(rho_tor_boundary)
+
         for idx, equ in enumerate(self.equations):
             identifier = as_path(equ.identifier)
             path = identifier.parent
@@ -314,7 +319,6 @@ class FyTrans(TransportSolverNumerics):
                 path = path.parent
 
             bc_value = boundary_value.get(equ.identifier, None)
-
             match quantity:
                 case "psi":
                     psi = profiles.psi
@@ -329,14 +333,13 @@ class FyTrans(TransportSolverNumerics):
                         conductivity_parallel += source_1d.conductivity_parallel(rho_tor_norm)
                         j_parallel += source_1d.j_parallel(rho_tor_norm)
 
-                    c = (scipy.constants.mu_0 * B0 * rho_tor_norm * (rho_tor_boundary**2)) / fpol2
+                    c = fpol2 / (scipy.constants.mu_0 * B0 * rho_tor * (rho_tor_boundary))
 
-                    d_dt = one_over_dt * conductivity_parallel * (psi - psi_m) * c
+                    d_dt = one_over_dt * conductivity_parallel * (psi - psi_m) / c
 
-                    D = (vpr * gm2 / fpol / (-(2.0 * scipy.constants.pi))) / rho_tor_boundary
-                    # FIXME: 检查 psi 的定义，符号，2Pi系数
+                    D = vpr * gm2 / (fpol * rho_tor_boundary * 2.0 * scipy.constants.pi)
 
-                    V = -k_phi * rho_tor_norm * conductivity_parallel * c
+                    V = -k_phi * rho_tor_norm * conductivity_parallel
 
                     R = (
                         -vpr * (j_parallel) / (2.0 * scipy.constants.pi * rho_tor)
@@ -344,13 +347,17 @@ class FyTrans(TransportSolverNumerics):
                         * conductivity_parallel
                         * (2 - 2 * rho_tor_norm * fpol.dln + rho_tor_norm * conductivity_parallel.dln)
                         * psi
-                    ) * c
+                    ) / c
 
                     if bc_value is None:
                         bc_value = current.grid.psi_boundary
 
                     # at axis x=0 , dpsi_dx=0
                     bc = [[0, 1, 0]]
+
+                    if bc_value is None:
+                        assert equ.boundary_condition_type == 1
+                        bc_value = current.grid.psi_boundary
 
                     # at boundary x=1
                     match equ.boundary_condition_type:
@@ -397,12 +404,11 @@ class FyTrans(TransportSolverNumerics):
                     S = zero
 
                     for source_1d in sources:
-                        Ss = (path / "particles").get(source_1d, zero)
-                        S += Ss(profiles)
+                        S += (path / "particles").get(source_1d, zero)(profiles)
 
                     d_dt = one_over_dt * (vpr * ns - vpr_m * ns_m) * rho_tor_boundary
 
-                    D = vpr * gm3 * transp_D / rho_tor_boundary
+                    D = vpr * gm3 * transp_D / rho_tor_boundary  #
 
                     V = vpr * gm3 * (transp_V - rho_tor * k_phi)
 

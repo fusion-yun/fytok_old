@@ -371,11 +371,11 @@ class FyEquilibriumProfiles2D(Equilibrium.TimeSlice.Profiles2D):
         return Mesh(dim1, dim2, type=mesh_type)
 
     @sp_property
-    def r(self) -> array_type:
+    def r(self) -> Field:
         return self.grid.points[0]
 
     @sp_property
-    def z(self) -> array_type:
+    def z(self) -> Field:
         return self.grid.points[1]
 
     @sp_property
@@ -385,7 +385,7 @@ class FyEquilibriumProfiles2D(Equilibrium.TimeSlice.Profiles2D):
 
     @sp_property
     def phi(self) -> Expression:
-        return self._profiles_1d.phi(self._coord.psi_norm)
+        return self._profiles_1d.phi(self.psi_norm)
 
     @sp_property
     def theta(self) -> Expression:
@@ -393,9 +393,9 @@ class FyEquilibriumProfiles2D(Equilibrium.TimeSlice.Profiles2D):
 
     @sp_property
     def j_tor(self) -> Expression:
-        return _R * self._profiles_1d.dpressure_dpsi(self._coord.psi_norm) + self._profiles_1d.f_df_dpsi(
-            self._coord.psi_norm
-        ) / (_R * scipy.constants.mu_0)
+        return _R * self._profiles_1d.dpressure_dpsi(self.psi_norm) + self._profiles_1d.f_df_dpsi(self.psi_norm) / (
+            _R * scipy.constants.mu_0
+        )
 
     @sp_property(label="B_{r}")
     def b_field_r(self) -> Expression:
@@ -408,7 +408,7 @@ class FyEquilibriumProfiles2D(Equilibrium.TimeSlice.Profiles2D):
 
     @sp_property(label="B_{tor}")
     def b_field_tor(self) -> Expression:
-        return self._profiles_1d.f(self._coord.psi_norm) / _R
+        return self._profiles_1d.f(self.psi_norm) / _R
 
     @sp_property
     def Bpol2(self) -> Expression:
@@ -440,7 +440,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
 
     _coord: FyEquilibriumCoordinateSystem = sp_property(alias="../coordinate_system")
 
-    psi_norm: array_type = sp_property(alias=".../code/parameters/psi_norm", default_value=np.linspace(0, 0.995, 128))
+    psi_norm: array_type
 
     f_df_dpsi: Expression
 
@@ -457,9 +457,9 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
                 "psi_norm": self.psi_norm,
                 "rho_tor_norm": self.rho_tor_norm(self.psi_norm),
                 "psi_axis": self._coord.psi_axis,
-                "psi_boundary": self._coord.psi_boundary,
+                "psi_boundary": self.psi_norm[-1],
                 "rho_tor_boundary": np.sqrt(
-                    np.abs(self.phi(self._coord.psi_boundary) / (scipy.constants.pi * self._coord.b0))
+                    np.abs(self.phi(self.psi_norm[-1]) / (scipy.constants.pi * self._coord.b0))
                 ),
             }
         )
@@ -544,7 +544,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
     @sp_property
     def darea_dpsi(self) -> Expression:
         """FIXME: just a simple approximation!"""
-        return self.dvolume_dpsi / ((2.0 * scipy.constants.pi) * self._coord._R0)
+        return self.dvolume_dpsi / ((2.0 * scipy.constants.pi) * self._coord.r0)
 
     @sp_property
     def darea_drho_tor(self) -> Expression:
