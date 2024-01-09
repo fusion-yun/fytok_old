@@ -180,7 +180,7 @@ class FyTrans(TransportSolverNumerics):
                 }
             )
 
-        self.equations = equations
+        self["equations"] = equations
 
         ###################################################################################################
         # 赋值属性
@@ -188,17 +188,10 @@ class FyTrans(TransportSolverNumerics):
         # self.equations = equations
         ##################################################################################################
         # 定义内部控制参数
-        self._units = np.array(sum([equ.units for equ in self.equations], tuple()))
 
         self._hyper_diff = self.code.parameters.hyper_diff or 0.001
 
-        self._rho_tor_norm = self.code.parameters.rho_tor_norm
-
-        if self._rho_tor_norm is _not_found_:
-            self._rho_tor_norm = np.linspace(0.001, 0.995, 128)
-
-        logger.debug(f" Unknowns : {unknowns}")
-        logger.debug(f" normalize units: {self._units}")
+        logger.debug([equ.identifier for equ in self.equations])
 
     def preprocess(self, *args, boundary_value=None, **kwargs) -> TransportSolverNumericsTimeSlice:
         """准备迭代求解
@@ -306,8 +299,6 @@ class FyTrans(TransportSolverNumerics):
             boundary_value = {}
 
         hyper_diff = self._hyper_diff
-
-        logger.debug(rho_tor_boundary)
 
         for idx, equ in enumerate(self.equations):
             identifier = as_path(equ.identifier)
@@ -594,10 +585,12 @@ class FyTrans(TransportSolverNumerics):
 
             equ["boundary_condition_value"] = bc
 
-        if (initial_value := kwargs.get("initial_value", _not_found_)) is not _not_found_:
-            X = current.grid.rho_tor_norm
-            Y = np.zeros([len(self.equations) * 2, X.size])
+        self._units = np.array(sum([equ.units for equ in self.equations], tuple()))
 
+        X = current.grid.rho_tor_norm
+        Y = np.zeros([len(self.equations) * 2, X.size])
+
+        if (initial_value := kwargs.get("initial_value", _not_found_)) is not _not_found_:
             for idx, equ in enumerate(self.equations):
                 profile = initial_value.get(equ.identifier, 0)
                 profile = profile(X) if isinstance(profile, Expression) else profile
@@ -612,7 +605,8 @@ class FyTrans(TransportSolverNumerics):
 
             Y /= self._units.reshape(-1, 1)
 
-            current.Y = Y
+        current.X = X
+        current.Y = Y
 
         return current
 
@@ -698,8 +692,8 @@ class FyTrans(TransportSolverNumerics):
     ) -> TransportSolverNumericsTimeSlice:
         current = super().execute(current, *previous)
 
-        X = current.grid.get(self.primary_coordinate)
-        Y = getattr(current, "Y", None)
+        X = current.X
+        Y = current.Y
 
         # 设定初值
         if Y is None:
@@ -729,9 +723,11 @@ class FyTrans(TransportSolverNumerics):
             verbose=self.code.parameters.verbose or 0,
         )
 
-        current["grid"] = current.grid.remesh(sol.x)
-
+        current.X = sol.x
         current.Y = sol.y
+        current.Yp = sol.yp
+
+        current["grid"] = current.grid.remesh(sol.x)
 
         equations = []
 
@@ -751,7 +747,7 @@ class FyTrans(TransportSolverNumerics):
                 }
             )
 
-        current._cache["equations"] = equations
+        current.equations = equations
 
         logger.debug(f"Solve BVP { 'success' if sol.success else 'failed'}: {sol.message} , {sol.niter} iterations")
 
