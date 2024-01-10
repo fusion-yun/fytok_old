@@ -166,22 +166,22 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
     @sp_property
     def grid(self) -> Mesh:
-        theta = self.find_cache("grid/dim2", _not_found_)
+        theta = self.get_cache("grid/dim2", _not_found_)
 
         if theta is _not_found_:
-            ntheta = self.find_cache(".../code/parameters/num_of_theta", 64)
+            ntheta = self.get_cache(".../code/parameters/num_of_theta", 64)
             theta = np.linspace(0, 2.0 * scipy.constants.pi, ntheta, endpoint=False)
 
         if not (isinstance(theta, np.ndarray) and theta.ndim == 1):
             raise ValueError(f"Can not create grid! theta={theta}")
 
-        psi_norm = self.find_cache("grid/dim1", _not_found_)
+        psi_norm = self.get_cache("grid/dim1", _not_found_)
 
         if psi_norm is _not_found_:
             psi_norm = self.psi_norm
 
         if psi_norm is _not_found_:
-            psi_norm = self.find_cache(".../code/parameters/psi_norm", np.linspace(0.0, 0.995, 128))
+            psi_norm = self.get_cache(".../code/parameters/psi_norm", np.linspace(0.0, 0.995, 128))
 
         surfs = GeoObjectSet([surf for _, surf in self.find_surfaces(psi_norm)])
 
@@ -364,10 +364,10 @@ class FyEquilibriumProfiles2D(Equilibrium.TimeSlice.Profiles2D):
 
     @sp_property
     def grid(self) -> Mesh:
-        g = self.find_cache("grid")
-        dim1 = self.find_cache("grid/dim1")
-        dim2 = self.find_cache("grid/dim2")
-        mesh_type = self.find_cache("grid_type/name")
+        g = self.get_cache("grid")
+        dim1 = self.get_cache("grid/dim1")
+        dim2 = self.get_cache("grid/dim2")
+        mesh_type = self.get_cache("grid_type/name")
         return Mesh(dim1, dim2, type=mesh_type)
 
     @sp_property

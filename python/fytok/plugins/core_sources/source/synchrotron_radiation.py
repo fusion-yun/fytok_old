@@ -44,7 +44,7 @@ class SynchrotronRadiation(CoreSources.Source):
 
         B0 = np.abs(equilibrium.vacuum_toroidal_field.b0)
         R0 = equilibrium.vacuum_toroidal_field.r0
-        if False:
+        if True:
             #   Reference: (GACODE)
             #    Synchrotron synchrotron
             #        - Trubnikov, JETP Lett. 16 (1972) 25.

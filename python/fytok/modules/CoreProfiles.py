@@ -40,14 +40,14 @@ class CoreProfilesSpecies:
 
     a: float
 
-    temperature: Expression = sp_property(units="eV", default_value=zero)
+    temperature: Expression = sp_property(units="eV")
 
-    density: Expression = sp_property(units="m^-3", default_value=zero)
+    density: Expression = sp_property(units="m^-3")
     # return self.density_thermal + self.density_fast
 
-    density_thermal: Expression = sp_property(units="m^-3", default_value=zero)
+    density_thermal: Expression = sp_property(units="m^-3")
 
-    density_fast: Expression = sp_property(units="m^-3", default_value=zero)
+    density_fast: Expression = sp_property(units="m^-3")
 
     @sp_property
     def pressure(self) -> Expression:
@@ -58,11 +58,11 @@ class CoreProfilesSpecies:
     def pressure_thermal(self) -> Expression:
         return self.density_thermal * self.temperature * scipy.constants.electron_volt
 
-    pressure_fast_perpendicular: Expression = sp_property(units="Pa", default_value=zero)
+    pressure_fast_perpendicular: Expression = sp_property(units="Pa")
 
-    pressure_fast_parallel: Expression = sp_property(units="Pa", default_value=zero)
+    pressure_fast_parallel: Expression = sp_property(units="Pa")
 
-    rotation_frequency_tor: Expression = sp_property(units="rad.s^-1", default_value=zero)
+    rotation_frequency_tor: Expression = sp_property(units="rad.s^-1")
 
     velocity: CoreVectorComponents = sp_property(units="m.s^-1")
 
@@ -393,7 +393,7 @@ class CoreProfilesTimeSlice(TimeSlice):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        grid: CoreRadialGrid = self.find_cache("profiles_1d/grid", _not_found_)
+        grid: CoreRadialGrid = self.get_cache("profiles_1d/grid", _not_found_)
 
         if grid is _not_found_ or Path("psi_axis").get(grid, ...) is ...:
             eq_grid: CoreRadialGrid = self._parent.inports["equilibrium/time_slice/0/profiles_1d/grid"].fetch()

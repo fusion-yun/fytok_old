@@ -122,12 +122,6 @@ class FyTrans(TransportSolverNumerics):
 
         profiles_1d = self.profiles_1d
 
-        ni = sum([ion.z * ion.density for ion in profiles_1d.ion], zero)
-        ni_flux = sum([ion.z * ion.get("density_flux") for ion in profiles_1d.ion], zero)
-
-        profiles_1d.electrons["density"] = ni
-        profiles_1d.electrons["density_flux"] = ni_flux
-
         equations = []
 
         profiles_1d[self.primary_coordinate] = x
@@ -181,6 +175,12 @@ class FyTrans(TransportSolverNumerics):
             )
 
         self["equations"] = equations
+
+        ni = sum([ion.z * ion.density for ion in profiles_1d.ion], zero)
+        ni_flux = sum([ion.z * ion.get("density_flux") for ion in profiles_1d.ion], zero)
+
+        profiles_1d.electrons["density"] = ni
+        profiles_1d.electrons["density_flux"] = ni_flux
 
         ###################################################################################################
         # 赋值属性
@@ -388,7 +388,9 @@ class FyTrans(TransportSolverNumerics):
                     transp_V = zero
 
                     for transp_1d in tranport:
-                        transp_D += (path / "particles/d").get(transp_1d, zero)(profiles)
+                        tmp = (path / "particles/d").get(transp_1d, zero)(profiles)
+                        logger.debug((equ.identifier, tmp))
+                        transp_D += tmp
                         transp_V += (path / "particles/v").get(transp_1d, zero)(profiles)
                         # transp_F += (pth / "particles/flux").get(core_transp_1d, zero)
 
@@ -451,12 +453,12 @@ class FyTrans(TransportSolverNumerics):
 
                     flux_multiplier = zero
 
-                    for trans_1d in tranport:
-                        flux_multiplier += trans_1d._parent.flux_multiplier
+                    for transp_1d in tranport:
+                        flux_multiplier += transp_1d._parent.flux_multiplier
 
-                        energy_D += (path / "energy/d").get(trans_1d, zero)(rho_tor_norm)
-                        energy_V += (path / "energy/v").get(trans_1d, zero)(rho_tor_norm)
-                        energy_F += (path / "energy/flux").get(trans_1d, zero)(rho_tor_norm)
+                        energy_D += (path / "energy/d").get(transp_1d, zero)(rho_tor_norm)
+                        energy_V += (path / "energy/v").get(transp_1d, zero)(rho_tor_norm)
+                        energy_F += (path / "energy/flux").get(transp_1d, zero)(rho_tor_norm)
 
                     if flux_multiplier is zero:
                         flux_multiplier = one
@@ -524,9 +526,9 @@ class FyTrans(TransportSolverNumerics):
                     chi_u = zero
                     V_u_pinch = zero
 
-                    for trans_1d in tranport:
-                        chi_u += (path / "momentum/toroidal/d").get(trans_1d, zero)(rho_tor_norm)
-                        V_u_pinch += (path / "momentum/toroidal/v").get(trans_1d, zero)(rho_tor_norm)
+                    for transp_1d in tranport:
+                        chi_u += (path / "momentum/toroidal/d").get(transp_1d, zero)(rho_tor_norm)
+                        V_u_pinch += (path / "momentum/toroidal/v").get(transp_1d, zero)(rho_tor_norm)
 
                     U = zero
 
@@ -654,8 +656,7 @@ class FyTrans(TransportSolverNumerics):
         return res
 
     def bc(self, ya: array_type, yb: array_type, *args) -> array_type:
-        x0 = self._rho_tor_norm[0]
-        x1 = self._rho_tor_norm[-1]
+        x0, x1 = self.bc_pos
 
         bc = []
 
@@ -694,7 +695,7 @@ class FyTrans(TransportSolverNumerics):
 
         X = current.X
         Y = current.Y
-
+        self.bc_pos = (X[0], X[-1])
         # 设定初值
         if Y is None:
             Y = np.zeros([len(self.equations) * 2, len(X)])

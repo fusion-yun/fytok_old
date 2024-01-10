@@ -149,7 +149,7 @@ class CoreSourcesSource(Module):
     def preprocess(self, *args, **kwargs) -> CoreSourcesTimeSlice:
         current = super().preprocess(*args, **kwargs)
 
-        grid = current.find_cache("profiles_1d/grid", _not_found_)
+        grid = current.get_cache("profiles_1d/grid", _not_found_)
 
         if not isinstance(grid, CoreRadialGrid):
             equilibrium: Equilibrium.TimeSlice = self.inputs.get_source("equilibrium").time_slice.current
