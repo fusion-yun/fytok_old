@@ -91,6 +91,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        logger.debug(f"Create {self.__class__.__name__} {self}")
 
         self._s_B0 = np.sign(self.b0)
         self._s_Ip = np.sign(self.ip)
