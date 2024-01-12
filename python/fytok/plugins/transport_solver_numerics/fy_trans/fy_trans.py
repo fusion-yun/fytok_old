@@ -191,7 +191,7 @@ class FyTrans(TransportSolverNumerics):
 
         self._hyper_diff = self.code.parameters.hyper_diff or 0.001
 
-        logger.debug([equ.identifier for equ in self.equations])
+        # logger.debug([equ.identifier for equ in self.equations])
 
     def preprocess(self, *args, boundary_value=None, **kwargs) -> TransportSolverNumericsTimeSlice:
         """准备迭代求解
