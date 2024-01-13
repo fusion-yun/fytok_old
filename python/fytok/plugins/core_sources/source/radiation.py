@@ -2,7 +2,7 @@ import typing
 import scipy.constants
 from spdm.data.Expression import Variable, Expression, zero
 from spdm.data.sp_property import sp_tree
-from spdm.numlib.misc import sTep_function_approx
+from spdm.numlib.misc import step_function_approx
 from spdm.utils.typing import array_type
 
 from fytok.utils.logger import logger

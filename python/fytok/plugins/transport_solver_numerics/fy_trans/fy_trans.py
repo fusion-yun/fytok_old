@@ -165,16 +165,14 @@ class FyTrans(TransportSolverNumerics):
 
             unit_flux = units.get(f"{s}_flux", None) or units.get(f"*/{pth[-1]}_flux", 1)
 
-            equations.append(
-                {
-                    "@name": s,
-                    "identifier": s,
-                    "units": (unit_profile, unit_flux),
-                    "boundary_condition_type": bc,
-                }
-            )
-
-        self["equations"] = equations
+            # self.equations.append(
+            #     {
+            #         "@name": s,
+            #         "identifier": s,
+            #         "units": (unit_profile, unit_flux),
+            #         "boundary_condition_type": bc,
+            #     }
+            # )
 
         ni = sum([ion.z * ion.density for ion in profiles_1d.ion], zero)
         ni_flux = sum([ion.z * ion.get("density_flux") for ion in profiles_1d.ion], zero)
