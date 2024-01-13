@@ -114,7 +114,7 @@ class Module(Actor):
 
         self.code.module_path = f"{self.__class__._plugin_prefix}{self.code.name}"
 
-        logger.info(f"Initialize module {self.code} ")
+        logger.info(f"Initialize module {self.__class__.__name__} {self.code} ")
 
     code: Code = {"copyright": "FyTok"}
     """ 对于 Module 的一般性说明。 
