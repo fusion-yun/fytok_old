@@ -122,8 +122,6 @@ class FyTrans(TransportSolverNumerics):
 
         profiles_1d = self.profiles_1d
 
-        equations = []
-
         profiles_1d[self.primary_coordinate] = x
 
         for s in unknowns:
