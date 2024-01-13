@@ -45,16 +45,16 @@ class Library:
 
 @sp_tree
 class Code:
-    name: str
+    name: str = _not_found_
     """代码名称，也是调用 plugin 的 identifier"""
 
-    module_path: str
+    module_path: str = _not_found_
     """模块路径， 可用于 import 模块"""
 
-    commit: str
-    version: str
-    copyright: str = ""
-    repository: str
+    commit: str = _not_found_
+    version: str = _not_found_
+    copyright: str = "FyTok"
+    repository: str = _not_found_
     output_flag: array_type
     library: List[Library]
     parameters: PropertyTree
@@ -116,7 +116,7 @@ class Module(Actor):
 
         logger.info(f"Initialize module {self.code} ")
 
-    code: Code
+    code: Code = {"copyright": "FyTok"}
     """ 对于 Module 的一般性说明。 
         @note code 在 __init__ 时由初始化参数定义，同时会根据 code.name 查找相应的 plugin 。"""
 
