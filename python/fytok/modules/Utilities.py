@@ -45,16 +45,16 @@ class Library:
 
 @sp_tree
 class Code:
-    name: str = _not_found_
+    name: str
     """代码名称，也是调用 plugin 的 identifier"""
 
-    module_path: str = _not_found_
+    module_path: str
     """模块路径， 可用于 import 模块"""
 
-    commit: str = _not_found_
-    version: str = _not_found_
-    copyright: str = "FyTok"
-    repository: str = _not_found_
+    commit: str
+    version: str
+    copyright: str
+    repository: str
     output_flag: array_type
     library: List[Library]
     parameters: PropertyTree
@@ -114,9 +114,9 @@ class Module(Actor):
 
         self.code.module_path = f"{self.__class__._plugin_prefix}{self.code.name}"
 
-        logger.info(f"Initialize module {self.__class__.__name__} {self.code} ")
+        logger.info(f"Initialize module {self.code} ")
 
-    code: Code = {"copyright": "FyTok"}
+    code: Code
     """ 对于 Module 的一般性说明。 
         @note code 在 __init__ 时由初始化参数定义，同时会根据 code.name 查找相应的 plugin 。"""
 
@@ -175,6 +175,13 @@ class VacuumToroidalField:
 
 @sp_tree
 class CoreRadialGrid:
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        assert self.psi_axis is not _not_found_, "psi_axis must be specified"
+        assert self.psi_boundary is not _not_found_, "psi_boundary must be specified"
+        assert self.rho_tor_boundary is not _not_found_, "rho_tor_boundary must be specified"
+        assert self.psi_axis < self.psi_boundary, "psi_axis must be smaller than psi_boundary"
+
     def __copy__(self) -> CoreRadialGrid:
         return CoreRadialGrid(
             {

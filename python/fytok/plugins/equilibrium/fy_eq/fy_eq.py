@@ -458,7 +458,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
                 "psi_norm": self.psi_norm,
                 "rho_tor_norm": self.rho_tor_norm(self.psi_norm),
                 "psi_axis": self._coord.psi_axis,
-                "psi_boundary": self.psi_norm[-1],
+                "psi_boundary": self._coord.psi_boundary,
                 "rho_tor_boundary": np.sqrt(
                     np.abs(self.phi(self.psi_norm[-1]) / (scipy.constants.pi * self._coord.b0))
                 ),
@@ -858,7 +858,7 @@ class FyEqAnalyze(Equilibrium):
 
     """
 
-    code: Code = {"name": "fy_eq", "copyright": "FyTok"}
+    code: Code = {"name": "fy_eq", "copyright": "FUYUN"}
 
     TimeSlice = FyEquilibriumTimeSlice
 

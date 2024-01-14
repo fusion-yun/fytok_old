@@ -172,8 +172,8 @@ class FyTrans(TransportSolverNumerics):
                 }
             )
 
-        ni = sum([ion.z * ion.density for ion in profiles_1d.ion], zero)
-        ni_flux = sum([ion.z * ion.get("density_flux") for ion in profiles_1d.ion], zero)
+        ni = sum([ion.z * ion.get("density", zero) for ion in profiles_1d.ion], zero)
+        ni_flux = sum([ion.z * ion.get("density_flux", zero) for ion in profiles_1d.ion], zero)
 
         profiles_1d.electrons["density"] = ni
         profiles_1d.electrons["density_flux"] = ni_flux
@@ -317,8 +317,8 @@ class FyTrans(TransportSolverNumerics):
                     j_parallel: Expression = zero
 
                     for source_1d in sources:
-                        conductivity_parallel += source_1d.conductivity_parallel(rho_tor_norm)
-                        j_parallel += source_1d.j_parallel(rho_tor_norm)
+                        conductivity_parallel += source_1d.get("conductivity_parallel", zero)(rho_tor_norm)
+                        j_parallel += source_1d.get("j_parallel", zero)(rho_tor_norm)
 
                     c = fpol2 / (scipy.constants.mu_0 * B0 * rho_tor * (rho_tor_boundary))
 
@@ -385,7 +385,7 @@ class FyTrans(TransportSolverNumerics):
 
                     for transp_1d in tranport:
                         tmp = (path / "particles/d").get(transp_1d, zero)(profiles)
-                        logger.debug((equ.identifier, tmp))
+
                         transp_D += tmp
                         transp_V += (path / "particles/v").get(transp_1d, zero)(profiles)
                         # transp_F += (pth / "particles/flux").get(core_transp_1d, zero)

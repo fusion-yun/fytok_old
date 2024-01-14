@@ -28,7 +28,7 @@ class AMNSData(amns_data._T_amns_data):
 
 
 class AMNS(Dict[AMNSData]):
-    def __getitem__(self, key: str) -> AMNSData:
+    def __find__(self, key: str,*args,**kwargs) -> AMNSData:
         _key = key
         while isinstance(_key, str):
             res = self.get_cache(_key, _not_found_)

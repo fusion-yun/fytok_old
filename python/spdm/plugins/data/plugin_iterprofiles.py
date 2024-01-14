@@ -191,12 +191,12 @@ def read_iter_profiles(path):
 
     Q_e = (
         (
-            profiles_1D["Poh"].values
-            + profiles_1D["Paux"].values
-            - profiles_1D["Prad"].values
-            - profiles_1D["Pneu"].values
-            - profiles_1D["Peic"].values
-            + profiles_1D["Pdte"].values
+            # profiles_1D["Poh"].values
+            +profiles_1D["Paux"].values
+            # - profiles_1D["Prad"].values
+            # - profiles_1D["Pneu"].values
+            # - profiles_1D["Peic"].values
+            # + profiles_1D["Pdte"].values
         )
         * 1e6
         / scipy.constants.electron_volt
