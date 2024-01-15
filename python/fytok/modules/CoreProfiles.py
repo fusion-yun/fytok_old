@@ -393,19 +393,19 @@ class CoreProfilesTimeSlice(TimeSlice):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        grid: CoreRadialGrid = self.get_cache("profiles_1d/grid", _not_found_)
+        # grid: CoreRadialGrid = self.get_cache("profiles_1d/grid", _not_found_)
 
-        if grid is _not_found_ or Path("psi_axis").get(grid, ...) is ...:
-            eq_grid: CoreRadialGrid = self._parent.inports["equilibrium/time_slice/0/profiles_1d/grid"].fetch()
+        # if grid is _not_found_ or Path("psi_axis").get(grid, ...) is ...:
+        #     eq_grid: CoreRadialGrid = self._parent.inports["equilibrium/time_slice/0/profiles_1d/grid"].fetch()
 
-            if grid is _not_found_:
-                grid = eq_grid
-            else:
-                grid["psi_axis"] = eq_grid.psi_axis
-                grid["psi_boundary"] = eq_grid.psi_boundary
-                grid["rho_tor_boundary"] = eq_grid.rho_tor_boundary
+        #     if grid is _not_found_:
+        #         grid = eq_grid
+        #     else:
+        #         grid["psi_axis"] = eq_grid.psi_axis
+        #         grid["psi_boundary"] = eq_grid.psi_boundary
+        #         grid["rho_tor_boundary"] = eq_grid.rho_tor_boundary
 
-            self["profiles_1d/grid"] = grid
+        #     self["profiles_1d/grid"] = grid
 
 
 @sp_tree
@@ -425,10 +425,12 @@ class CoreProfiles(IDS):
             eq_grid: CoreRadialGrid = self.inports["equilibrium/time_slice/0/profiles_1d/grid"].fetch()
 
             if isinstance(grid, dict):
-                new_grid = {
-                    **eq_grid._cache,
-                    **{k: v for k, v in grid.items() if v is not _not_found_ and v is not None},
-                }
+                new_grid = grid
+              
+                if not isinstance(grid.get("psi_axis", _not_found_),float):
+                    new_grid["psi_axis"] = eq_grid.psi_axis
+                    new_grid["psi_boundary"] = eq_grid.psi_boundary
+                    new_grid["rho_tor_boundary"] = eq_grid.rho_tor_boundary
             else:
                 rho_tor_norm = kwargs.get("rho_tor_norm", _not_found_)
 

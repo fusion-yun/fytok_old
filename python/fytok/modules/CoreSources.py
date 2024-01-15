@@ -155,10 +155,15 @@ class CoreSourcesSource(Module):
             eq_grid: CoreRadialGrid = self.inports["equilibrium/time_slice/0/profiles_1d/grid"].fetch()
 
             if isinstance(grid, dict):
-                new_grid = {
-                    **eq_grid._cache,
-                    **{k: v for k, v in grid.items() if v is not _not_found_ and v is not None},
-                }
+                new_grid = grid
+                if not isinstance(grid.get("psi_axis", _not_found_), float):
+                    new_grid["psi_axis"] = eq_grid.psi_axis
+                    new_grid["psi_boundary"] = eq_grid.psi_boundary
+                    new_grid["rho_tor_boundary"] = eq_grid.rho_tor_boundary
+                # new_grid = {
+                #     **eq_grid._cache,
+                #     **{k: v for k, v in grid.items() if v is not _not_found_ and v is not None},
+                # }
             else:
                 rho_tor_norm = kwargs.get("rho_tor_norm", _not_found_)
 
@@ -168,20 +173,14 @@ class CoreSourcesSource(Module):
                 new_grid = eq_grid.remesh(rho_tor_norm)
 
             current["profiles_1d/grid"] = new_grid
-            
+
         return current
 
-    def fetch(self, first=None, *args, **kwargs) -> CoreSourcesTimeSlice:
-        if isinstance(first, array_type):
-            rho_tor_norm = first
-        elif isinstance(first, CoreProfiles.TimeSlice.Profiles1D):
-            rho_tor_norm = first.rho_tor_norm
-        elif first is None:
-            rho_tor_norm = kwargs.get("rho_tor_norm", None)
-        else:
-            raise TypeError(f"Unknown argument {first}")
+    def fetch(self, *args, **kwargs) -> CoreSourcesTimeSlice:
+        if len(args) > 0 and isinstance(args[0], CoreProfiles.TimeSlice.Profiles1D):
+            args = (args[0].rho_tor_norm, *args[1:])
 
-        return super().fetch(rho_tor_norm)
+        return super().fetch(*args, **kwargs)
 
     def flush(self) -> CoreSourcesTimeSlice:
         super().flush()
@@ -189,6 +188,7 @@ class CoreSourcesSource(Module):
         current: CoreSourcesTimeSlice = self.time_slice.current
 
         profiles_1d: CoreProfiles.TimeSlice.Profiles1D = self.inports["core_profiles/time_slice/0/profiles_1d"].fetch()
+        # eq_grid: CoreRadialGrid = self.inports["equilibrium/time_slice/0/profiles_1d/grid"].fetch()
 
         current.update(self.fetch(profiles_1d)._cache)
 

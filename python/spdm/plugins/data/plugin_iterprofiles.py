@@ -7,6 +7,7 @@ import pandas as pd
 from spdm.data.Expression import Piecewise, Variable
 from spdm.data.File import File
 from spdm.data.Entry import Entry
+from spdm.utils.typing import _not_found_
 from spdm.numlib.smooth import smooth_1d
 from spdm.numlib.misc import step_function_approx
 
@@ -55,8 +56,8 @@ def read_iter_profiles(path):
         "rho_tor_norm": rho_tor_norm,
         "rho_tor_boundary": rho_tor[-1],
         "psi_norm": psi_norm,
-        "psi_boundary": None,
-        "psi_axis": None,
+        "psi_boundary": _not_found_,
+        "psi_axis": _not_found_,
     }
 
     entry["core_profiles"] = {"time_slice": [{"time": time, "vacuum_toroidal_field": vacuum_toroidal_field}]}

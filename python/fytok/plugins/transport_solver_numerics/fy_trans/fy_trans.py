@@ -132,6 +132,11 @@ class FyTrans(TransportSolverNumerics):
                 label_f = r"\Psi"
                 bc = bc_type.get(s, 1)
 
+            if pth[0] == "psi_norm":
+                label_p = r"\bar{\psi}"
+                label_f = r"\bar{\Psi}"
+                bc = bc_type.get(s, 1)
+
             if pth[-1] == "density":
                 label_p = "n"
                 label_f = r"\Gamma"
@@ -199,21 +204,6 @@ class FyTrans(TransportSolverNumerics):
 
         profiles = self.profiles_1d
 
-        x: Expression = profiles[self.primary_coordinate]
-
-        if self.primary_coordinate != "rho_tor_norm":
-            raise NotImplementedError(self.primary_coordinate)
-
-        else:
-            rho_tor_norm = x
-
-            psi_norm = Function(
-                current.grid.rho_tor_norm,
-                current.grid.psi_norm,
-                name="psi_norm",
-                label=r"\bar{\psi}",
-            )(rho_tor_norm)
-
         # fmt:off
             
         eq0: Equilibrium.TimeSlice = self.inports["equilibrium/time_slice/0"].fetch()
@@ -224,13 +214,31 @@ class FyTrans(TransportSolverNumerics):
 
         core1_1d: CoreProfiles.TimeSlice.Profiles1D = self.inports["core_profiles/time_slice/-1/profiles_1d"].fetch()
 
-        tranport: AoS[CoreTransport.Model.TimeSlice.Profiles1D] = self.inports["core_transport/model/*"].fetch(profiles) 
+        tranport: AoS[CoreTransport.Model.TimeSlice] = self.inports["core_transport/model/*"].fetch(profiles) 
 
-        sources: AoS[CoreSources.Source.TimeSlice.Profiles1D] = self.inports["core_sources/source/*"].fetch(profiles) 
+        sources: AoS[CoreSources.Source.TimeSlice] = self.inports["core_sources/source/*"].fetch(profiles) 
 
         eq0_1d = eq0.profiles_1d
 
         # fmt:on
+
+        rho_tor_norm = profiles.rho_tor_norm
+
+        psi_norm = profiles.psi_norm
+        if self.primary_coordinate == "rho_tor_norm":
+            x = rho_tor_norm
+        else:
+            raise NotImplementedError(self.primary_coordinate)
+
+        if psi_norm is _not_found_:
+            # psi_norm = profiles.psi / (eq0_1d.grid.psi_boundary - eq0_1d.grid.psi_axis)
+
+            psi_norm = Function(
+                eq0_1d.grid.rho_tor_norm,
+                eq0_1d.grid.psi_norm,
+                name="psi_norm",
+                label=r"\bar{\psi}",
+            )(rho_tor_norm)
 
         for ion in core0_1d.ion:
             if ion.label not in self.impurities:
@@ -343,6 +351,82 @@ class FyTrans(TransportSolverNumerics):
 
                     if bc_value is None:
                         bc_value = current.grid.psi_boundary
+
+                    # at axis x=0 , dpsi_dx=0
+                    bc = [[0, 1, 0]]
+
+                    if bc_value is None:
+                        assert equ.boundary_condition_type == 1
+                        bc_value = current.grid.psi_boundary
+
+                    # at boundary x=1
+                    match equ.boundary_condition_type:
+                        # poloidal flux;
+                        case 1:
+                            u = equ.units[1] / equ.units[0]
+                            v = 0
+                            w = bc_value * equ.units[1] / equ.units[0]
+
+                        # ip, total current inside x=1
+                        case 2:
+                            Ip = bc_value
+                            u = 0
+                            v = 1
+                            w = scipy.constants.mu_0 * Ip / fpol
+
+                        # loop voltage;
+                        case 3:
+                            Uloop_bdry = bc_value
+                            u = 0
+                            v = 1
+                            w = (dt * Uloop_bdry + psi_m) * (D - hyper_diff)
+
+                        #  generic boundary condition y expressed as a1y'+a2y=a3.
+                        case _:
+                            if not isinstance(bc_value, (tuple, list)) or len(bc_value) != 3:
+                                raise NotImplementedError(f"5: generic boundary condition y expressed as a1y'+a2y=a3.")
+                            u, v, w = bc_value
+
+                    bc += [[u, v, w]]
+
+                case "psi_norm":
+                    dpsi = current.grid.psi_boundary - current.grid.psi_axis
+
+                    psi_norm = profiles.psi_norm
+
+                    psi_norm_m = identifier.get(core1_1d, zero)(rho_tor_norm)
+
+                    conductivity_parallel: Expression = zero
+
+                    j_parallel: Expression = zero
+
+                    for source in sources:
+                        source_1d = source.profiles_1d
+                        conductivity_parallel += source_1d.get("conductivity_parallel", zero)
+                        j_parallel += source_1d.get("j_parallel", zero)
+
+                    c = fpol2 / (scipy.constants.mu_0 * B0 * rho_tor * (rho_tor_boundary))
+
+                    d_dt = one_over_dt * conductivity_parallel * (psi_norm - psi_norm_m) / c
+
+                    D = vpr * gm2 / (fpol * rho_tor_boundary * 2.0 * scipy.constants.pi)
+
+                    V = -k_phi * rho_tor_norm * conductivity_parallel
+
+                    R = (
+                        (
+                            -vpr * (j_parallel) / (2.0 * scipy.constants.pi * rho_tor)
+                            - k_phi
+                            * conductivity_parallel
+                            * (2 - 2 * rho_tor_norm * fpol.dln + rho_tor_norm * conductivity_parallel.dln)
+                            * psi_norm
+                        )
+                        / c
+                        / dpsi
+                    )
+
+                    if bc_value is None:
+                        bc_value = current.grid.psi_norm[-1]
 
                     # at axis x=0 , dpsi_dx=0
                     bc = [[0, 1, 0]]
@@ -609,13 +693,7 @@ class FyTrans(TransportSolverNumerics):
                 d_dt, D, V, R = equ.coefficient
                 y = Y[idx * 2]
                 yp = derivative(y, X)
-
-                # D_ = D(X, *Y)
-                # V_ = V(X, *Y)
-                # Y[idx * 2 + 1] = -D_ * yp + V_ * y
-
                 Y[idx * 2 + 1] = -D(X, *Y) * yp + V(X, *Y) * y
-                # Y[idx * 2 + 1] = -D(X, *Y) * derivative(y, X) + V(X, *Y) * y
 
             Y /= self._units.reshape(-1, 1)
 
