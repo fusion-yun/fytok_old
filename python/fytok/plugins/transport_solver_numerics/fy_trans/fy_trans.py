@@ -216,56 +216,60 @@ class FyTrans(TransportSolverNumerics):
 
         # fmt:off
             
-        eq: Equilibrium.TimeSlice.Profiles1D = self.inports["equilibrium/time_slice/0/profiles_1d"].fetch()
+        eq0: Equilibrium.TimeSlice = self.inports["equilibrium/time_slice/0"].fetch()
 
-        eq_m: Equilibrium.TimeSlice.Profiles1D = self.inports["equilibrium/time_slice/-1/profiles_1d"].fetch()
+        eq1: Equilibrium.TimeSlice = self.inports["equilibrium/time_slice/-1"].fetch()
 
-        core: CoreProfiles.TimeSlice.Profiles1D = self.inports["core_profiles/time_slice/0/profiles_1d"].fetch()
+        core0_1d: CoreProfiles.TimeSlice.Profiles1D = self.inports["core_profiles/time_slice/0/profiles_1d"].fetch()
 
-        core_m: CoreProfiles.TimeSlice.Profiles1D = self.inports["core_profiles/time_slice/-1/profiles_1d"].fetch()
+        core1_1d: CoreProfiles.TimeSlice.Profiles1D = self.inports["core_profiles/time_slice/-1/profiles_1d"].fetch()
 
-        tranport: AoS[CoreTransport.Model.TimeSlice.Profiles1D] = self.inports["core_transport/model/*/time_slice/0/profiles_1d"].fetch()
+        tranport: AoS[CoreTransport.Model.TimeSlice.Profiles1D] = self.inports["core_transport/model/*"].fetch(profiles) 
 
-        sources: AoS[CoreSources.Source.TimeSlice.Profiles1D] = self.inports["core_sources/source/*/time_slice/0/profiles_1d"].fetch()
+        sources: AoS[CoreSources.Source.TimeSlice.Profiles1D] = self.inports["core_sources/source/*"].fetch(profiles) 
+
+        eq0_1d = eq0.profiles_1d
 
         # fmt:on
-        for s in self.impurities:
-            identifier = as_path(f"ion/{s}/density")
-            n_imp = identifier.get(core, zero)(rho_tor_norm)
-            profiles[identifier] = n_imp
+
+        for ion in core0_1d.ion:
+            if ion.label not in self.impurities:
+                continue
+            profiles[f"ion/{ion.label}/density"] = ion.density(rho_tor_norm)
+
         # 设定全局参数
         # $R_0$ characteristic major radius of the device   [m]
-        R0 = eq._root.vacuum_toroidal_field.r0
+        R0 = eq0.vacuum_toroidal_field.r0
 
         # $B_0$ magnetic field measured at $R_0$            [T]
-        B0 = eq._root.vacuum_toroidal_field.b0
+        B0 = eq0.vacuum_toroidal_field.b0
 
         rho_tor_boundary = Scalar(current.grid.rho_tor_boundary)
 
         # $\frac{\partial V}{\partial\rho}$ V',             [m^2]
-        vpr = eq.dvolume_drho_tor(psi_norm)
+        vpr = eq0_1d.dvolume_drho_tor(psi_norm)
 
         # diamagnetic function,$F=R B_\phi$                 [T*m]
-        fpol = eq.f(psi_norm)
+        fpol = eq0_1d.f(psi_norm)
 
         fpol2 = fpol**2
 
         # $q$ safety factor                                 [-]
-        qsf = eq.q(psi_norm)
+        qsf = eq0_1d.q(psi_norm)
 
-        gm1 = eq.gm1(psi_norm)  # <1/R^2>
-        gm2 = eq.gm2(psi_norm)  # <|grad_rho_tor|^2/R^2>
-        gm3 = eq.gm3(psi_norm)  # <|grad_rho_tor|^2>
-        gm8 = eq.gm8(psi_norm)  # <R>
+        gm1 = eq0_1d.gm1(psi_norm)  # <1/R^2>
+        gm2 = eq0_1d.gm2(psi_norm)  # <|grad_rho_tor|^2/R^2>
+        gm3 = eq0_1d.gm3(psi_norm)  # <|grad_rho_tor|^2>
+        gm8 = eq0_1d.gm8(psi_norm)  # <R>
 
-        if eq_m is _not_found_ or eq_m is None:
+        if eq1 is _not_found_ or eq1 is None:
             one_over_dt = 0
-            B0m = B0
+            B1 = B0
             rho_tor_boundary_m = rho_tor_boundary
             vpr_m = vpr
             gm8_m = gm8
         else:
-            dt = eq._root.time - eq_m._root.time
+            dt = eq0.time - eq1.time
 
             if dt < 0:
                 raise RuntimeError(f"dt={dt}<=0")
@@ -274,12 +278,12 @@ class FyTrans(TransportSolverNumerics):
             else:
                 one_over_dt = one / dt
 
-            B0m = eq_m._root.vacuum_toroidal_field.b0
-            rho_tor_boundary_m = eq_m.grid.rho_tor_boundary
-            vpr_m = eq_m.dvolume_drho_tor(psi_norm)
-            gm8_m = eq_m.gm8(psi_norm)
+            B1 = eq1.vacuum_toroidal_field.b0
+            rho_tor_boundary_m = eq1.profiles_1d.grid.rho_tor_boundary
+            vpr_m = eq1.profiles_1d.dvolume_drho_tor(psi_norm)
+            gm8_m = eq1.profiles_1d.gm8(psi_norm)
 
-        k_B = (B0 - B0m) / (B0 + B0m) * one_over_dt
+        k_B = (B0 - B1) / (B0 + B1) * one_over_dt
 
         k_rho_bdry = (rho_tor_boundary - rho_tor_boundary_m) / (rho_tor_boundary + rho_tor_boundary_m) * one_over_dt
 
@@ -310,15 +314,16 @@ class FyTrans(TransportSolverNumerics):
                 case "psi":
                     psi = profiles.psi
 
-                    psi_m = identifier.get(core_m, zero)(rho_tor_norm)
+                    psi_m = identifier.get(core1_1d, zero)(rho_tor_norm)
 
                     conductivity_parallel: Expression = zero
 
                     j_parallel: Expression = zero
 
-                    for source_1d in sources:
-                        conductivity_parallel += source_1d.get("conductivity_parallel", zero)(rho_tor_norm)
-                        j_parallel += source_1d.get("j_parallel", zero)(rho_tor_norm)
+                    for source in sources:
+                        source_1d = source.profiles_1d
+                        conductivity_parallel += source_1d.get("conductivity_parallel", zero)
+                        j_parallel += source_1d.get("j_parallel", zero)
 
                     c = fpol2 / (scipy.constants.mu_0 * B0 * rho_tor * (rho_tor_boundary))
 
@@ -378,12 +383,14 @@ class FyTrans(TransportSolverNumerics):
 
                 case "density":
                     ns = (path / "density").get(profiles, zero)
-                    ns_m = (path / "density").get(core_m, zero)(rho_tor_norm)
+                    ns_m = (path / "density").get(core1_1d, zero)(rho_tor_norm)
 
                     transp_D = zero
                     transp_V = zero
 
-                    for transp_1d in tranport:
+                    for transp in tranport:
+                        transp_1d = transp.profiles_1d
+
                         tmp = (path / "particles/d").get(transp_1d, zero)(profiles)
 
                         transp_D += tmp
@@ -392,8 +399,9 @@ class FyTrans(TransportSolverNumerics):
 
                     S = zero
 
-                    for source_1d in sources:
-                        S += (path / "particles").get(source_1d, zero)(profiles)
+                    for source in sources:
+                        source_1d = source.profiles_1d
+                        S += (path / "particles").get(source_1d, zero)
 
                     d_dt = one_over_dt * (vpr * ns - vpr_m * ns_m) * rho_tor_boundary
 
@@ -440,8 +448,8 @@ class FyTrans(TransportSolverNumerics):
                     Gs = (path / "density_flux").get(profiles, zero)
                     Ts = (path / "temperature").get(profiles, zero)
 
-                    ns_m = (path / "density").get(core_m, zero)(rho_tor_norm)
-                    Ts_m = (path / "temperature").get(core_m, zero)(rho_tor_norm)
+                    ns_m = (path / "density").get(core1_1d, zero)(rho_tor_norm)
+                    Ts_m = (path / "temperature").get(core1_1d, zero)(rho_tor_norm)
 
                     energy_D = zero
                     energy_V = zero
@@ -449,20 +457,22 @@ class FyTrans(TransportSolverNumerics):
 
                     flux_multiplier = zero
 
-                    for transp_1d in tranport:
+                    for transp in tranport:
+                        transp_1d = transp.profiles_1d
                         flux_multiplier += transp_1d._parent.flux_multiplier
 
-                        energy_D += (path / "energy/d").get(transp_1d, zero)(rho_tor_norm)
-                        energy_V += (path / "energy/v").get(transp_1d, zero)(rho_tor_norm)
-                        energy_F += (path / "energy/flux").get(transp_1d, zero)(rho_tor_norm)
+                        energy_D += (path / "energy/d").get(transp_1d, zero)
+                        energy_V += (path / "energy/v").get(transp_1d, zero)
+                        energy_F += (path / "energy/flux").get(transp_1d, zero)
 
                     if flux_multiplier is zero:
                         flux_multiplier = one
 
                     Q = zero
 
-                    for source_1d in sources:
-                        Q += (path / "energy").get(source_1d, zero)(rho_tor_norm)
+                    for source in sources:
+                        source_1d = source.profiles_1d
+                        Q += (path / "energy").get(source_1d, zero)
 
                     d_dt = (
                         one_over_dt
@@ -514,20 +524,23 @@ class FyTrans(TransportSolverNumerics):
                     ns = (path / "density").get(profiles, zero)
                     Gs = (path / "density_flux").get(profiles, zero)
 
-                    us_m = (path / "velocity/toroidal").get(core_m, zero)(rho_tor_norm)
-                    ns_m = (path / "density").get(core_m, zero)(rho_tor_norm)
+                    us_m = (path / "velocity/toroidal").get(core1_1d, zero)(rho_tor_norm)
+                    ns_m = (path / "density").get(core1_1d, zero)(rho_tor_norm)
 
                     chi_u = zero
                     V_u_pinch = zero
 
-                    for transp_1d in tranport:
-                        chi_u += (path / "momentum/toroidal/d").get(transp_1d, zero)(rho_tor_norm)
-                        V_u_pinch += (path / "momentum/toroidal/v").get(transp_1d, zero)(rho_tor_norm)
+                    for transp in tranport:
+                        transp_1d = transp.profiles_1d
+
+                        chi_u += (path / "momentum/toroidal/d").get(transp_1d, zero)
+                        V_u_pinch += (path / "momentum/toroidal/v").get(transp_1d, zero)
 
                     U = zero
 
-                    for source_1d in sources:
-                        U += (identifier / "../../momentum/toroidal").get(source_1d, zero)(rho_tor_norm)
+                    for source in sources:
+                        source_1d = source.profiles_1d
+                        U += (identifier / "../../momentum/toroidal").get(source_1d, zero)
 
                     U *= gm8
 

@@ -416,14 +416,36 @@ class CoreProfiles(IDS):
 
     time_slice: TimeSeriesAoS[CoreProfilesTimeSlice]
 
-    def preprocess(self, *args, **kwargs):
-        super().preprocess(*args, **kwargs)
+    def preprocess(self, *args, **kwargs) -> CoreProfilesTimeSlice:
+        current: CoreProfilesTimeSlice = super().preprocess(*args, **kwargs)
+
+        grid = current.get_cache("profiles_1d/grid", _not_found_)
+
+        if not isinstance(grid, CoreRadialGrid):
+            eq_grid: CoreRadialGrid = self.inports["equilibrium/time_slice/0/profiles_1d/grid"].fetch()
+
+            if isinstance(grid, dict):
+                new_grid = {
+                    **eq_grid._cache,
+                    **{k: v for k, v in grid.items() if v is not _not_found_ and v is not None},
+                }
+            else:
+                rho_tor_norm = kwargs.get("rho_tor_norm", _not_found_)
+
+                if rho_tor_norm is _not_found_:
+                    rho_tor_norm = self.code.parameters.rho_tor_norm
+
+                new_grid = eq_grid.remesh(rho_tor_norm)
+
+            current["profiles_1d/grid"] = new_grid
+
+        return current
 
     def refresh(self, *args, equilibrium: Equilibrium = None, **kwargs):
-        super().refresh(*args, equilibrium=equilibrium, **kwargs)
+        return super().refresh(*args, equilibrium=equilibrium, **kwargs)
 
     def advance(self, *args, **kwargs):
-        super().advance(*args, **kwargs)
+        return super().advance(*args, **kwargs)
 
     def fetch(self, *args, **kwargs) -> CoreProfilesTimeSlice:
         return super().fetch(*args, **kwargs)

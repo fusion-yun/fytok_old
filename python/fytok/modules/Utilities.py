@@ -177,10 +177,9 @@ class VacuumToroidalField:
 class CoreRadialGrid:
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        assert self.psi_axis is not _not_found_, "psi_axis must be specified"
-        assert self.psi_boundary is not _not_found_, "psi_boundary must be specified"
-        assert self.rho_tor_boundary is not _not_found_, "rho_tor_boundary must be specified"
-        assert self.psi_axis < self.psi_boundary, "psi_axis must be smaller than psi_boundary"
+        assert isinstance(self.psi_axis, float), f"psi_axis must be specified  {self.psi_axis}"
+        assert isinstance(self.psi_boundary, float), f"psi_boundary must be specified {self.psi_boundary}"
+        assert isinstance(self.rho_tor_boundary, float), f"rho_tor_boundary must be specified {self.rho_tor_boundary}"
 
     def __copy__(self) -> CoreRadialGrid:
         return CoreRadialGrid(
@@ -283,6 +282,7 @@ class CoreRadialGrid:
 
 @sp_tree
 class CoreVectorComponents(SpTree):
+
     """Vector components in predefined directions"""
 
     radial: Expression = zero
