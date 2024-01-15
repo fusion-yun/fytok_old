@@ -471,9 +471,7 @@ class FyTrans(TransportSolverNumerics):
                         * rho_tor_boundary
                     )
 
-                    D = vpr * gm3 * ns * energy_D  #
-
-                    D = D / rho_tor_boundary
+                    D = vpr * gm3 * ns * energy_D / rho_tor_boundary
 
                     V = vpr * gm3 * ns * energy_V + Gs * flux_multiplier - (3 / 2) * k_phi * vpr * rho_tor * ns
 
@@ -598,7 +596,12 @@ class FyTrans(TransportSolverNumerics):
                 d_dt, D, V, R = equ.coefficient
                 y = Y[idx * 2]
                 yp = derivative(y, X)
-                Y[idx * 2 + 1] = -D(X, *Y) * yp + V(X, *Y) * y
+
+                D_ = D(X, *Y)
+                V_ = V(X, *Y)
+                Y[idx * 2 + 1] = -D_ * yp + V_ * y
+
+                # Y[idx * 2 + 1] = -D(X, *Y) * yp + V(X, *Y) * y
                 # Y[idx * 2 + 1] = -D(X, *Y) * derivative(y, X) + V(X, *Y) * y
 
             Y /= self._units.reshape(-1, 1)
