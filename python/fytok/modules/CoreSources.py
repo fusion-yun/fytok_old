@@ -152,11 +152,24 @@ class CoreSourcesSource(Module):
         grid = current.get_cache("profiles_1d/grid", _not_found_)
 
         if not isinstance(grid, CoreRadialGrid):
-            equilibrium: Equilibrium.TimeSlice = self.inputs.get_source("equilibrium").time_slice.current
+            eq_grid: CoreRadialGrid = self.inports["equilibrium/time_slice/0/profiles_1d/grid"].fetch()
 
-            rho_tor_norm = kwargs.get("rho_tor_norm", self.code.parameters.get("rho_tor_norm", None))
+            if isinstance(grid, dict):
+                new_grid = {
+                    **eq_grid._cache,
+                    **{k: v for k, v in grid.items() if v is not _not_found_ and v is not None},
+                }
+            else:
+                rho_tor_norm = kwargs.get("rho_tor_norm", _not_found_)
 
-            current["profiles_1d/grid"] = equilibrium.profiles_1d.grid.remesh(grid, rho_tor_norm=rho_tor_norm)
+                if rho_tor_norm is _not_found_:
+                    rho_tor_norm = self.code.parameters.rho_tor_norm
+
+                new_grid = eq_grid.remesh(rho_tor_norm)
+
+            current["profiles_1d/grid"] = new_grid
+            
+        return current
 
     def fetch(self, first=None, *args, **kwargs) -> CoreSourcesTimeSlice:
         if isinstance(first, array_type):

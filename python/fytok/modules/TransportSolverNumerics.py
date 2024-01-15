@@ -123,7 +123,7 @@ class TransportSolverNumerics(IDS):
 
     neutral: set = set()
 
-    primary_coordinate: str | Variable = "rho_tor_norm"
+    primary_coordinate: str = "rho_tor_norm"
     r""" 与 core_profiles 的 primary coordinate 磁面坐标一致
       rho_tor_norm $\bar{\rho}_{tor}=\sqrt{ \Phi/\Phi_{boundary}}$ """
 
@@ -138,21 +138,30 @@ class TransportSolverNumerics(IDS):
     time_slice: TimeSeriesAoS[TransportSolverNumericsTimeSlice]
 
     def initialize(self, *args, **kwargs):
-        super().initialize(*args, **kwargs)
+        return super().initialize(*args, **kwargs)
 
-    def preprocess(self, *args, **kwargs) -> typing.Type[TimeSlice]:
+    def preprocess(self, *args, **kwargs) -> TransportSolverNumericsTimeSlice:
         current = super().preprocess(*args, **kwargs)
 
-        eq_grid = self.inports["equilibrium/time_slice/0/profiles_1d/grid"].fetch()
+        grid = current.get_cache("grid", _not_found_)
 
-        x = self.get(f".../code/parameters/{self.primary_coordinate}", _not_found_)
-        
-        if x is not _not_found_:
-            eq_grid = eq_grid.remesh(**{self.primary_coordinate: x})
+        if not isinstance(grid, CoreRadialGrid):
+            eq_grid: CoreRadialGrid = self.inports["equilibrium/time_slice/0/profiles_1d/grid"].fetch()
 
-        current["grid"] = eq_grid
+            if isinstance(grid, dict):
+                new_grid = {
+                    **eq_grid._cache,
+                    **{k: v for k, v in grid.items() if v is not _not_found_ and v is not None},
+                }
+            else:
+                rho_tor_norm = kwargs.get("rho_tor_norm", _not_found_)
 
-        self.profiles_1d["grid"] = eq_grid
+                if rho_tor_norm is _not_found_:
+                    rho_tor_norm = self.code.parameters.rho_tor_norm
+
+                new_grid = eq_grid.remesh(rho_tor_norm)
+
+            current["grid"] = new_grid
 
         return current
 

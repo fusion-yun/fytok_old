@@ -40,7 +40,7 @@ class FyTrans(TransportSolverNumerics):
 
     solver: str = "fy_trans_bvp_solver"
 
-    primary_coordinate: str | Variable = "rho_tor_norm"
+    primary_coordinate: str = "rho_tor_norm"
 
     def initialize(self, *args, **kwargs):
         super().initialize(*args, **kwargs)
@@ -597,11 +597,11 @@ class FyTrans(TransportSolverNumerics):
                 y = Y[idx * 2]
                 yp = derivative(y, X)
 
-                D_ = D(X, *Y)
-                V_ = V(X, *Y)
-                Y[idx * 2 + 1] = -D_ * yp + V_ * y
+                # D_ = D(X, *Y)
+                # V_ = V(X, *Y)
+                # Y[idx * 2 + 1] = -D_ * yp + V_ * y
 
-                # Y[idx * 2 + 1] = -D(X, *Y) * yp + V(X, *Y) * y
+                Y[idx * 2 + 1] = -D(X, *Y) * yp + V(X, *Y) * y
                 # Y[idx * 2 + 1] = -D(X, *Y) * derivative(y, X) + V(X, *Y) * y
 
             Y /= self._units.reshape(-1, 1)

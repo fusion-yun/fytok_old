@@ -124,45 +124,31 @@ class CoreTransportModel(Module):
         grid = current.get_cache("profiles_1d/grid_d", _not_found_)
 
         if not isinstance(grid, CoreRadialGrid):
-            equilibrium: Equilibrium.TimeSlice = self.inputs.get_source("equilibrium").time_slice.current
+            eq_grid: CoreRadialGrid = self.inports["equilibrium/time_slice/0/profiles_1d/grid"].fetch()
 
-            rho_tor_norm = kwargs.get("rho_tor_norm", self.code.parameters.get("rho_tor_norm", None))
+            if isinstance(grid, dict):
+                new_grid = {
+                    **eq_grid._cache,
+                    **{k: v for k, v in grid.items() if v is not _not_found_ and v is not None},
+                }
+            else:
+                rho_tor_norm = kwargs.get("rho_tor_norm", self.code.parameters.get("rho_tor_norm", None))
+                new_grid = eq_grid.remesh(rho_tor_norm)
 
-            current["profiles_1d/grid_d"] = equilibrium.profiles_1d.grid.remesh(grid, rho_tor_norm=rho_tor_norm)
-
-    def fetch(self, first=None, *args, **kwargs) -> CoreTransportTimeSlice:
-        if isinstance(first, array_type):
-            rho_tor_norm = first
-        elif isinstance(first, CoreProfiles.TimeSlice.Profiles1D):
-            rho_tor_norm = first.rho_tor_norm
-        elif first is None:
-            rho_tor_norm = kwargs.get("rho_tor_norm", None)
-        else:
-            raise TypeError(f"Unknown argument {first}")
-
-        return super().fetch(rho_tor_norm)
-        current: CoreTransportTimeSlice = super().fetch(*args, **kwargs)
-
-        # grid = current.profiles_1d.find_cache("grid_d", _not_found_)
-
-        # if grid is _not_found_:
-        #     current.profiles_1d["grid_d"] = profiles_1d.grid
-
-        # else:
-        #     grid = current.profiles_1d.grid_d
-        #     if grid.psi_axis is _not_found_ or grid.psi_axis is None:
-        #         grid["psi_axis"] = profiles_1d.grid.psi_axis
-        #         grid["psi_boundary"] = profiles_1d.grid.psi_boundary
-        #         grid["rho_tor_boundary"] = profiles_1d.grid.rho_tor_boundary
-
-        # x = profiles_1d.rho_tor_norm
-
-        # current = current.fetch(x)
-
-        # if isinstance(x, array_type):
-        #     current.profiles_1d["grid_d"] = profiles_1d.grid
+            current["profiles_1d/grid_d"] = new_grid
 
         return current
+
+    def fetch(self, core_profiles_1d: CoreProfiles.TimeSlice.Profiles1D = None, **kwargs) -> CoreTransportTimeSlice:
+        if core_profiles_1d is not None:
+            rho_tor_norm = core_profiles_1d.rho_tor_norm
+        else:
+            rho_tor_norm = kwargs.get("rho_tor_norm", None)
+
+        if rho_tor_norm is _not_found_ or rho_tor_norm is None:
+            return super().fetch()
+        else:
+            return super().fetch(rho_tor_norm)
 
     def flush(self) -> CoreTransportTimeSlice:
         super().flush()
@@ -176,11 +162,7 @@ class CoreTransportModel(Module):
         return current
 
     def refresh(
-        self,
-        *args,
-        core_profiles: CoreProfiles = None,
-        equilibrium: Equilibrium = None,
-        **kwargs,
+        self, *args, core_profiles: CoreProfiles = None, equilibrium: Equilibrium = None, **kwargs
     ) -> CoreTransportTimeSlice:
         return super().refresh(*args, core_profiles=core_profiles, equilibrium=equilibrium, **kwargs)
 

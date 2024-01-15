@@ -125,7 +125,7 @@ class Module(Actor):
         return f"{FY_JOBID}/{self.code.module_path}"
 
     def execute(self, current: TimeSlice, *previous: TimeSlice) -> typing.Type[TimeSlice]:
-        logger.info(f"Execute module {self.code.module_path} {self.__class__.__name__}")
+        logger.info(f"Execute module {self.code.module_path}")
         return super().execute(current, *previous)
 
 
