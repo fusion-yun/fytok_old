@@ -4,7 +4,7 @@ from spdm.data.Expression import Variable, Expression, zero
 from spdm.data.sp_property import sp_tree
 from spdm.numlib.misc import step_function_approx
 from spdm.utils.typing import array_type
-
+from spdm.utils.tags import _not_found_
 from fytok.utils.logger import logger
 from fytok.utils.atoms import atoms
 from fytok.modules.AMNSData import amns
@@ -40,11 +40,18 @@ class Radiation(CoreSources.Source):
         ne = profiles_1d.electrons.density
         Te = profiles_1d.electrons.temperature
 
-        Qrad = sum([ne * ion.density * amns[ion.label].radiation(Te) for ion in profiles_1d.ion], zero)
+        Qrad = sum(
+            [
+                ne * ion.density * amns[ion.label].radiation(Te)
+                for ion in profiles_1d.ion
+                if ion.temperature is not _not_found_
+            ],
+            zero,
+        )
 
         source_1d.electrons.energy -= Qrad
 
         return current
 
 
-CoreSources.Source.regisTer(["radiation"], Radiation)
+CoreSources.Source.register(["radiation"], Radiation)

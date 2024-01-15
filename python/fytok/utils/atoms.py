@@ -138,8 +138,8 @@ class Reaction:
 
 
 class NuclearReaction(Dict[Reaction]):
-    def __getitem__(self, key) -> Reaction:
-        return self._find(key, _type_hint=Reaction)
+    def get(self, key, default_value=_not_found_) -> Reaction:
+        return self._find_(key, default_value=default_value)
 
 
 nuclear_reaction = NuclearReaction(

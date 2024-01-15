@@ -2,8 +2,6 @@ import typing
 import scipy.constants
 from spdm.data.Expression import Variable, Expression, zero
 from spdm.data.sp_property import sp_tree
-from spdm.numlib.misc import sTep_function_approx
-from spdm.utils.typing import array_type
 
 from fytok.utils.logger import logger
 from fytok.utils.atoms import atoms
@@ -11,7 +9,6 @@ from fytok.utils.atoms import atoms
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.modules.CoreSources import CoreSources
 from fytok.modules.CoreProfiles import CoreProfiles
-
 from fytok.modules.Utilities import *
 
 PI = scipy.constants.pi
@@ -40,16 +37,17 @@ class SynchrotronRadiation(CoreSources.Source):
         ne = profiles_1d.electrons.density
         Te = profiles_1d.electrons.temperature
 
-        equilibrium: Equilibrium.TimeSlice = self.inputs.get_source("equilibrium").time_slice.current
+        eq_1d: Equilibrium.TimeSlice.Profiles1D = self.inports["equilibrium/time_slice/current/profiles_1d"].fetch()
 
-        B0 = np.abs(equilibrium.vacuum_toroidal_field.b0)
-        R0 = equilibrium.vacuum_toroidal_field.r0
+        B0 = np.abs(eq_1d._parent.vacuum_toroidal_field.b0)
+        R0 = eq_1d._parent.vacuum_toroidal_field.r0
+
+        x = profiles_1d.rho_tor_norm
+
         if True:
             #   Reference: (GACODE)
             #    Synchrotron synchrotron
             #        - Trubnikov, JETP Lett. 16 (1972) 25.
-
-            eq_1d = equilibrium.profiles_1d
 
             psi_norm = Function(eq_1d.grid.rho_tor_norm, eq_1d.grid.psi_norm, label=r"\bar{\psi}")(x)
 
@@ -83,4 +81,4 @@ class SynchrotronRadiation(CoreSources.Source):
         return current
 
 
-CoreSources.Source.regisTer(["synchrotron_radiation"], SynchrotronRadiation)
+CoreSources.Source.register(["synchrotron_radiation"], SynchrotronRadiation)

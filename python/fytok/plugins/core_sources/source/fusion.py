@@ -99,7 +99,7 @@ class FusionReaction(CoreSources.Source):
             T1 = profiles_1d.ion[r1].temperature
             ni = n0 + n1
             Ti = (n0 * T0 + n1 * T1) / ni
-            nEP = profiles_1d.ion[p1].density or zero
+            nEP = profiles_1d.ion[p1].density
 
             lnGamma = 17
 

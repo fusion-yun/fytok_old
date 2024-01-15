@@ -47,6 +47,9 @@ class CollisionalEquipartition(CoreSources.Source):
             Ti = ion_i.temperature
             vi = ion_i.velocity.toroidal
 
+            if Ti is _not_found_:
+                continue
+
             clog_ei = piecewise(
                 [
                     (
@@ -94,6 +97,9 @@ class CollisionalEquipartition(CoreSources.Source):
                 nj = ion_j.density
                 Tj = ion_j.temperature
                 vj = ion_j.velocity.toroidal
+
+                if Tj is _not_found_:
+                    continue
 
                 # Coulomb logarithm:
                 clog = (

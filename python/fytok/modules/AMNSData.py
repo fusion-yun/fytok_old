@@ -3,8 +3,7 @@ import numpy as np
 from spdm.data.HTree import Dict, HTree
 from spdm.data.Expression import Expression
 from spdm.data.Function import Function, Polynomials
-
-from spdm.data.sp_property import sp_property, sp_tree
+from spdm.data.sp_property import sp_property, sp_tree, SpTree
 from spdm.utils.tags import _not_found_
 from spdm.utils.typing import array_type
 
@@ -12,8 +11,7 @@ from spdm.utils.typing import array_type
 from ..ontology import amns_data
 
 
-@sp_tree
-class AMNSData(amns_data._T_amns_data):
+class AMNSProcess(SpTree):
     def __init__(self, *args, **kwargs):
         if len(args) > 0 and isinstance(args[0], (list, array_type)):
             args = [{"radiation": args[0]}, *args[1:]]
@@ -27,8 +25,8 @@ class AMNSData(amns_data._T_amns_data):
     )
 
 
-class AMNS(Dict[AMNSData]):
-    def __find__(self, key: str,*args,**kwargs) -> AMNSData:
+class AMNS(Dict[AMNSProcess]):
+    def _find_(self, key: str, *args, **kwargs) -> AMNSProcess:
         _key = key
         while isinstance(_key, str):
             res = self.get_cache(_key, _not_found_)
@@ -38,11 +36,12 @@ class AMNS(Dict[AMNSData]):
                 break
 
         if res is _not_found_:
-            return self.__missing__(key)
-        elif isinstance(res, AMNSData):
-            return res
-        else:
-            return self._type_convert(res, key, _type_hint=AMNSData)
+            res = self.__missing__(key)
+
+        if not isinstance(res, AMNSProcess):
+            res = self._type_convert(res, key, _type_hint=AMNSProcess)
+
+        return res
 
 
 ############################################################################
