@@ -50,22 +50,22 @@ class CollisionalEquipartition(CoreSources.Source):
             clog_ei = piecewise(
                 [
                     (
-                        16 - np.log(zj * zj * aj) - 0.5 * np.log(nj * 1.0e-6) + 1.5 * np.log(Tj),
-                        Te <= (Ti * me / mj),
+                        16 - np.log(ze * ze * ae) - 0.5 * np.log(ne * 1.0e-6) + 1.5 * np.log(Te),
+                        Te <= (Ti * me / me),
                     ),
                     (
-                        23 - np.log(zj) - 0.5 * np.log(ne * 1.0e-6) + 1.5 * np.log(Te),
-                        ((Ti * me / mj) < Te) & (Te <= (10 * zj * zj)),
+                        23 - np.log(ze) - 0.5 * np.log(ne * 1.0e-6) + 1.5 * np.log(Te),
+                        ((Ti * me / me) < Te) & (Te <= (10 * ze * ze)),
                     ),
                     (
                         24 - 0.5 * np.log(ne * 1.0e-6) + np.log(Te),
-                        ((10 * zj * zj) < Te),  # & (Ti * me / mj) < (10 * zj * zj))
+                        ((10 * ze * ze) < Te),  # & (Ti * me / mj) < (10 * zj * zj))
                     ),
                 ],
                 name="clog",
                 label=r"\Lambda_{ei}",
             )
-            nv_ei = 3.2e-9 * zj * ze * clog_ei / ae * Te**1.5
+            nv_ei = 3.2e-9 * ze * ze * clog_ei / ae * Te**1.5
 
             conductivity_parallel += 1.96e-09 * e**2 / me * ne * ne / nv_ei
 

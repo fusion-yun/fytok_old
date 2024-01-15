@@ -637,14 +637,15 @@ class FyTrans(TransportSolverNumerics):
 
             d_dr = (-flux + V * y + hyper_diff * yp) / (D + hyper_diff)
 
+            if np.any(np.isnan(d_dr)):
+                logger.exception(f"Error: {equ.identifier} nan in d_dr")
+
             fluxp = derivative(flux, X)
 
             dflux_dr = (R - d_dt + hyper_diff * fluxp) / (1.0 + hyper_diff)
 
             if np.any(np.isnan(dflux_dr)):
-                logger.warning(f"Error: {equ.identifier} nan in dflux_dr {_R._render_latex_()} {dflux_dr}")
-            elif np.any(np.isnan(d_dr)):
-                logger.warning(f"Error: {equ.identifier} nan in d_dr")
+                logger.exception(f"Error: {equ.identifier} nan in dflux_dr {_R._render_latex_()} {dflux_dr}")
 
             # 无量纲，归一化
             res[idx * 2] = d_dr

@@ -203,9 +203,9 @@ class TransportSolverNumerics(IDS):
 
         Y = sum([[equ.profile, equ.flux] for equ in current.equations], [])
 
-        profiles_1d = self.profiles_1d.fetch(X, *Y)
+        self.profiles_1d["grid"] = current.grid
 
-        profiles_1d["grid"] = current.grid
+        profiles_1d = self.profiles_1d.fetch(X, *Y)
 
         profiles_1d[self.primary_coordinate] = current.grid.get(self.primary_coordinate)
 

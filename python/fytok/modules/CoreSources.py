@@ -190,7 +190,7 @@ class CoreSourcesSource(Module):
 
         profiles_1d: CoreProfiles.TimeSlice.Profiles1D = self.inports["core_profiles/time_slice/0/profiles_1d"].fetch()
 
-        current._update_(self.fetch(profiles_1d))
+        current.update(self.fetch(profiles_1d)._cache)
 
         return current
 
