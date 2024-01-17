@@ -177,9 +177,9 @@ class VacuumToroidalField:
 class CoreRadialGrid:
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        assert isinstance(self.psi_axis, float), f"psi_axis must be specified  {self.psi_axis}"
-        assert isinstance(self.psi_boundary, float), f"psi_boundary must be specified {self.psi_boundary}"
-        assert isinstance(self.rho_tor_boundary, float), f"rho_tor_boundary must be specified {self.rho_tor_boundary}"
+        # assert isinstance(self.psi_axis, float), f"psi_axis must be specified  {self.psi_axis}"
+        # assert isinstance(self.psi_boundary, float), f"psi_boundary must be specified {self.psi_boundary}"
+        # assert isinstance(self.rho_tor_boundary, float), f"rho_tor_boundary must be specified {self.rho_tor_boundary}"
 
     def __copy__(self) -> CoreRadialGrid:
         return CoreRadialGrid(
@@ -207,7 +207,7 @@ class CoreRadialGrid:
     def remesh(self, rho_tor_norm=None, *args, **kwargs) -> CoreRadialGrid:
         """Duplicate the grid with new rho_tor_norm or psi_norm"""
 
-        if rho_tor_norm is None:
+        if rho_tor_norm is None or rho_tor_norm is _not_found_:
             rho_tor_norm = self.rho_tor_norm
             psi_norm = self.psi_norm
         else:
@@ -291,19 +291,19 @@ class CoreVectorComponents(SpTree):
 
     """Vector components in predefined directions"""
 
-    radial: Expression = zero
+    radial: Expression 
     """ Radial component"""
 
-    diamagnetic: Expression = zero
+    diamagnetic: Expression
     """ Diamagnetic component"""
 
-    parallel: Expression = zero
+    parallel: Expression
     """ Parallel component"""
 
-    poloidal: Expression = zero
+    poloidal: Expression 
     """ Poloidal component"""
 
-    toroidal: Expression = zero
+    toroidal: Expression
     """ Toroidal component"""
 
 

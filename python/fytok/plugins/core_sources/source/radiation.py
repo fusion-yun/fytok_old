@@ -40,11 +40,14 @@ class Radiation(CoreSources.Source):
         ne = profiles_1d.electrons.density
         Te = profiles_1d.electrons.temperature
 
+        if ne is _not_found_ or Te is _not_found_:
+            raise RuntimeError(f"{ne} {Te}")
+
         Qrad = sum(
             [
                 ne * ion.density * amns[ion.label].radiation(Te)
                 for ion in profiles_1d.ion
-                if ion.temperature is not _not_found_
+                if ion.density is not _not_found_
             ],
             zero,
         )

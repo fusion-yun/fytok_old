@@ -116,6 +116,9 @@ class FusionReaction(CoreSources.Source):
             source_1d.ion[p1].particles += S - nEP * nu_slowing_down
             source_1d.ion[pa].particles += nEP * nu_slowing_down
 
+            logger.debug(nEP._render_latex_())
+            logger.debug(nu_slowing_down._render_latex_())
+
             E0, E1 = reaction.energy
 
             Efus = E1 * nEP * nu_slowing_down

@@ -177,12 +177,6 @@ class FyTrans(TransportSolverNumerics):
                 }
             )
 
-        ni = sum([ion.z * ion.get("density", zero) for ion in profiles_1d.ion], zero)
-        ni_flux = sum([ion.z * ion.get("density_flux", zero) for ion in profiles_1d.ion], zero)
-
-        profiles_1d.electrons["density"] = ni
-        profiles_1d.electrons["density_flux"] = ni_flux
-
         ###################################################################################################
         # 赋值属性
         # self.profiles_1d.update(profiles_1d)
@@ -214,6 +208,18 @@ class FyTrans(TransportSolverNumerics):
 
         core1_1d: CoreProfiles.TimeSlice.Profiles1D = self.inports["core_profiles/time_slice/-1/profiles_1d"].fetch()
 
+
+        ni = sum([ion.z * ion.get("density", zero) for ion in profiles.ion], zero)
+        ni_flux = sum([ion.z * ion.get("density_flux", zero) for ion in profiles.ion], zero)
+
+        for label in self.impurities:
+            ni += core0_1d.ion[label].density(rho_tor_norm)
+            # ni_flux += core0_1d.ion[label].density_flux(rho_tor_norm)
+
+        profiles.electrons["density"] = ni
+        profiles.electrons["density_flux"] = ni_flux
+
+
         tranport: AoS[CoreTransport.Model.TimeSlice] = self.inports["core_transport/model/*"].fetch(profiles) 
 
         sources: AoS[CoreSources.Source.TimeSlice] = self.inports["core_sources/source/*"].fetch(profiles) 
@@ -240,10 +246,7 @@ class FyTrans(TransportSolverNumerics):
                 label=r"\bar{\psi}",
             )(rho_tor_norm)
 
-        for ion in core0_1d.ion:
-            if ion.label not in self.impurities:
-                continue
-            profiles[f"ion/{ion.label}/density"] = ion.density(rho_tor_norm)
+  
 
         # 设定全局参数
         # $R_0$ characteristic major radius of the device   [m]
@@ -728,15 +731,15 @@ class FyTrans(TransportSolverNumerics):
 
             d_dr = (-flux + V * y + hyper_diff * yp) / (D + hyper_diff)
 
-            if np.any(np.isnan(d_dr)):
-                logger.exception(f"Error: {equ.identifier} nan in d_dr")
+            # if np.any(np.isnan(d_dr)):
+            #     logger.exception(f"Error: {equ.identifier} nan in d_dr")
 
             fluxp = derivative(flux, X)
 
             dflux_dr = (R - d_dt + hyper_diff * fluxp) / (1.0 + hyper_diff)
 
-            if np.any(np.isnan(dflux_dr)):
-                logger.exception(f"Error: {equ.identifier} nan in dflux_dr {_R._render_latex_()} {dflux_dr}")
+            # if np.any(np.isnan(dflux_dr)):
+            #     logger.exception(f"Error: {equ.identifier} nan in dflux_dr {_R._render_latex_()} {dflux_dr}")
 
             # 无量纲，归一化
             res[idx * 2] = d_dr
@@ -786,6 +789,7 @@ class FyTrans(TransportSolverNumerics):
 
         X = current.X
         Y = current.Y
+
         self.bc_pos = (X[0], X[-1])
         # 设定初值
         if Y is None:
@@ -818,28 +822,7 @@ class FyTrans(TransportSolverNumerics):
         current.X = sol.x
         current.Y = sol.y
         current.Yp = sol.yp
-
-        current["grid"] = current.grid.remesh(sol.x)
-
-        equations = []
-
-        for idx, equ in enumerate(self.equations):
-            d_dt, D, V, R = equ.coefficient
-
-            equations.append(
-                {
-                    "identifier": equ.identifier,
-                    "boundary_condition_type": equ.boundary_condition_type,
-                    "boundary_condition_value": equ.boundary_condition_value,
-                    "profile": sol.y[2 * idx] * self._units[2 * idx],
-                    "flux": sol.y[2 * idx + 1] * self._units[2 * idx + 1],
-                    "d_dr": sol.yp[2 * idx] * self._units[2 * idx],
-                    "dflux_dr": sol.yp[2 * idx + 1] * self._units[2 * idx + 1],
-                    "coefficient": [d_dt(sol.x, *sol.y), D(sol.x, *sol.y), V(sol.x, *sol.y), R(sol.x, *sol.y)],
-                }
-            )
-
-        current.equations = equations
+        current.rms_residuals = sol.rms_residuals
 
         logger.debug(f"Solve BVP { 'success' if sol.success else 'failed'}: {sol.message} , {sol.niter} iterations")
 
@@ -847,6 +830,35 @@ class FyTrans(TransportSolverNumerics):
             logger.info(f"Solve transport equations success!")
         else:
             logger.error(f"Solve transport equations failed!")
+
+        return current
+
+    def postprocess(self, current: TransportSolverNumericsTimeSlice) -> TransportSolverNumericsTimeSlice:
+        current = super().postprocess(current)
+
+        X = current.X
+        Y = current.Y * self._units.reshape(-1, 1)
+        Yp = current.Yp * self._units.reshape(-1, 1)
+
+        current["grid"] = current.grid.remesh(X)
+
+        current["equations"] = []
+
+        for idx, equ in enumerate(self.equations):
+            d_dt, D, V, R = equ.coefficient
+
+            current.equations.append(
+                {
+                    "@name": equ.identifier,
+                    "boundary_condition_type": equ.boundary_condition_type,
+                    "boundary_condition_value": equ.boundary_condition_value,
+                    "profile": Y[2 * idx],
+                    "flux": Y[2 * idx + 1],
+                    "coefficient": [d_dt(X, *Y), D(X, *Y), V(X, *Y), R(X, *Y)],
+                    "d_dr": Yp[2 * idx],
+                    "dflux_dr": Yp[2 * idx + 1],
+                }
+            )
 
         return current
 

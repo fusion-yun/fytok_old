@@ -36,9 +36,11 @@ class CollisionalEquipartition(CoreSources.Source):
 
         conductivity_parallel = zero
 
+        source_1d.electrons.energy = zero
+
         species: typing.List[CoreProfilesSpecies] = [*profiles_1d.ion]
 
-        for i, ion_i in enumerate(species[:-1]):
+        for i, ion_i in enumerate(species):
             zi = ion_i.z
             ai = ion_i.a
             mi = ion_i.a * scipy.constants.atomic_mass
@@ -53,41 +55,43 @@ class CollisionalEquipartition(CoreSources.Source):
             clog_ei = piecewise(
                 [
                     (
-                        16 - np.log(ze * ze * ae) - 0.5 * np.log(ne * 1.0e-6) + 1.5 * np.log(Te),
-                        Te <= (Ti * me / me),
-                    ),
-                    (
-                        23 - np.log(ze) - 0.5 * np.log(ne * 1.0e-6) + 1.5 * np.log(Te),
-                        ((Ti * me / me) < Te) & (Te <= (10 * ze * ze)),
+                        23 - np.log(zi) - 0.5 * np.log(ne * 1.0e-6) + 1.5 * np.log(Te),
+                        ((Ti * me / mi) < Te) & (Te <= (10 * zi * zi)),
                     ),
                     (
                         24 - 0.5 * np.log(ne * 1.0e-6) + np.log(Te),
-                        ((10 * ze * ze) < Te),  # & (Ti * me / mj) < (10 * zj * zj))
+                        (((Ti * me / mi) < (10 * zi * zi)) & ((10 * zi * zi) < Te)),
+                    ),
+                    (
+                        16 - np.log(zi * zi * ae) - 0.5 * np.log(ne * 1.0e-6) + 1.5 * np.log(Te),
+                        Te <= (Ti * me / mi),
                     ),
                 ],
                 name="clog",
                 label=r"\Lambda_{ei}",
             )
-            nv_ei = 3.2e-9 * ze * ze * clog_ei / ae * Te**1.5
+            nv_ei = 3.2e-9 * zi * zi * clog_ei / ai * Te ** (-1.5)
 
             conductivity_parallel += 1.96e-09 * e**2 / me * ne * ne / nv_ei
 
             nv_ei = ni * ne * nv_ei * 1.0e-12
 
-            Tei = Ti - Te
+            Tie = Ti - Te
 
             # energy exchange term
-
-            source_1d.ion[ion_i.label].energy -= Tei * nv_ei
-            source_1d.electrons.energy += Tei * nv_ei
+            source_1d.ion[ion_i.label].energy -= Tie * nv_ei
+            source_1d.electrons.energy += Tie * nv_ei
 
             # momentum exchange term
-            source_1d.ion[ion_i.label].momentum.toroidal += (vi - ve) * nv_ei
-            source_1d.electrons.momentum.toroidal += (ve - vi) * nv_ei
+            if vi is not _not_found_ and ve is not _not_found_:
+                source_1d.ion[ion_i.label].momentum.toroidal -= (vi - ve) * nv_ei
+                source_1d.electrons.momentum.toroidal += (ve - vi) * nv_ei
 
             # collisions frequency and energy exchange terms:
             # @ref NRL 2019 p.34
             for ion_j in species[i + 1 :]:
+                if ion_i.label == ion_j.label:
+                    continue
                 # ion-Ion collisions:
 
                 zj = ion_j.z
@@ -104,7 +108,7 @@ class CollisionalEquipartition(CoreSources.Source):
                 # Coulomb logarithm:
                 clog = (
                     23
-                    - np.log(zi * zj * (ai + aj) / (ai * aj) / (Ti / ai + Tj / aj))
+                    - np.log(zi * zj * (ai + aj) / (Ti * aj + Tj * ai))
                     - 0.5 * np.log((ni * zi * zi / Ti + nj * zj * zj / Tj) * 1.0e-6)
                 )
 
@@ -123,20 +127,19 @@ class CollisionalEquipartition(CoreSources.Source):
                 Tij = Ti - Tj
 
                 # energy exchange term
-
                 source_1d.ion[ion_i.label].energy -= Tij * nv_ij
                 source_1d.ion[ion_j.label].energy += Tij * nv_ij
 
                 # momentum exchange term
-                source_1d.ion[ion_i.label].momentum.toroidal += (vi - vj) * nv_ij
-                source_1d.ion[ion_j.label].momentum.toroidal += (vj - vi) * nv_ij
+                if vi is not _not_found_ and vj is not _not_found_:
+                    source_1d.ion[ion_i.label].momentum.toroidal += (vi - vj) * nv_ij
+                    source_1d.ion[ion_j.label].momentum.toroidal += (vj - vi) * nv_ij
 
                 # Tij = Expression(deburr, Ti - Tj)
 
                 ##############################
                 # 增加阻尼，消除震荡
                 # epsilon = 1.0e-10
-
                 # c = (1.5 - 1.0 / (1.0 + np.exp(-np.abs(Ti - Tj) / (Ti + Tj) / epsilon))) * 2
                 # Tij = (Ti - Tj) * c
                 # if isinstance(c, array_type):

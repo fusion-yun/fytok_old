@@ -84,14 +84,17 @@ class Atoms(Dict[Atom]):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def __getitem__(self, key: str) -> Atom:
+    def get(self, key: str, default_value=_not_found_) -> Atom:
+        if not isinstance(key, str):
+            raise RuntimeError(f"Atom key must be a string, not {key} {self._cache}")
+
         if key.startswith("ion/"):
             key = key.split("/")[1]
         value = super().get_cache(key, _not_found_)
         if value is _not_found_:
             raise KeyError(f"Can not find atom {key}")
         elif isinstance(value, str):
-            return self.__getitem__(value)
+            return self.get(value, default_value)
         else:
             return super()._type_convert(value, key, _type_hint=Atom)
 

@@ -116,71 +116,61 @@ def read_iter_profiles(path):
         "ffprime": profiles_1D["EQFF"].values,
         "pprime": profiles_1D["EQPF"].values,
     }
-
-    entry["core_transport"] = {
-        "model": [
-            {
-                "code": {"name": "dummy"},
-                "time_slice": [
-                    {
-                        "time": time,
-                        "vacuum_toroidal_field": vacuum_toroidal_field,
-                    }
-                ],
-            }
-        ]
-    }
-
     _x = Variable(0, name="rho_tor_norm", label=r"\bar{\rho}_{tor}")
 
-    # Core profiles
-    r_ped = 0.96  # np.sqrt(0.88)
-    i_ped = np.argmin(np.abs(rho_tor_norm - r_ped))
-
-    # Core Transport
-
-    Cped = 0.17
-    Ccore = 0.4
-    # Function( profiles["Xi"].values,bs_r_norm)  Cped = 0.2
-    # chi = Piecewise(
-    #     [
-    #         (Ccore * (1.0 + 3 * (_x**2)), (_x < r_ped)),
-    #         (Cped, (_x >= r_ped)),
+    # entry["core_transport"] = {
+    #     "model": [
+    #         {
+    #             "code": {"name": "dummy"},
+    #             "time_slice": [
+    #                 {
+    #                     "time": time,
+    #                     "vacuum_toroidal_field": vacuum_toroidal_field,
+    #                 }
+    #             ],
+    #         }
+    #     ]
+    # }
+    # # Core profiles
+    # r_ped = 0.96  # np.sqrt(0.88)
+    # i_ped = np.argmin(np.abs(rho_tor_norm - r_ped))
+    # # Core Transport
+    # Cped = 0.17
+    # Ccore = 0.4
+    # # Function( profiles["Xi"].values,bs_r_norm)  Cped = 0.2
+    # # chi = Piecewise(
+    # #     [
+    # #         (Ccore * (1.0 + 3 * (_x**2)), (_x < r_ped)),
+    # #         (Cped, (_x >= r_ped)),
+    # #     ],
+    # #     label=r"\chi",
+    # # )
+    # # chi_e = Piecewise(
+    # #     [
+    # #         (0.5 * Ccore * (1.0 + 3 * (_x**2)), (_x < r_ped)),
+    # #         (Cped, (_x >= r_ped)),
+    # #     ],
+    # #     label=r"\chi_e",
+    # # )
+    # delta = step_function_approx(_x - r_ped, scale=0.005)
+    # chi = (Ccore * (1.0 + 3 * (_x**2))) * (1 - delta) + Cped * delta
+    # chi_e = (0.5 * Ccore * (1.0 + 3 * (_x**2))) * (1 - delta) + Cped * delta
+    # D = 0.1 * (chi + chi_e)
+    # v_pinch_ne = 0.6 * D * _x / R0
+    # v_pinch_Te = 2.5 * chi_e * _x / R0
+    # v_pinch_ni = D * _x / R0
+    # v_pinch_Ti = chi * _x / R0
+    # entry["core_transport/model/0/time_slice/0/flux_multiplier"] = 3 / 2
+    # entry["core_transport/model/0/time_slice/0/profiles_1d"] = {
+    #     "grid_d": grid,
+    #     "electrons": {"@name": "e", "particles": {"d": D, "v": v_pinch_ne}, "energy": {"d": chi_e, "v": v_pinch_Te}},
+    #     "ion": [
+    #         {"@name": "D", "particles": {"d": D, "v": v_pinch_ni}, "energy": {"d": chi, "v": v_pinch_Ti}},
+    #         {"@name": "T", "particles": {"d": D, "v": v_pinch_ni}, "energy": {"d": chi, "v": v_pinch_Ti}},
+    #         {"@name": "He", "particles": {"d": D, "v": v_pinch_ni}, "energy": {"d": chi, "v": v_pinch_Ti}},
+    #         {"@name": "alpha", "particles": {"d": 0.001 * D, "v": 0}},
     #     ],
-    #     label=r"\chi",
-    # )
-    # chi_e = Piecewise(
-    #     [
-    #         (0.5 * Ccore * (1.0 + 3 * (_x**2)), (_x < r_ped)),
-    #         (Cped, (_x >= r_ped)),
-    #     ],
-    #     label=r"\chi_e",
-    # )
-
-    delta = step_function_approx(_x - r_ped, scale=0.005)
-
-    chi = (Ccore * (1.0 + 3 * (_x**2))) * (1 - delta) + Cped * delta
-    chi_e = (0.5 * Ccore * (1.0 + 3 * (_x**2))) * (1 - delta) + Cped * delta
-
-    D = 0.1 * (chi + chi_e)
-
-    v_pinch_ne = 0.6 * D * _x / R0
-    v_pinch_Te = 2.5 * chi_e * _x / R0
-    v_pinch_ni = D * _x / R0
-    v_pinch_Ti = chi * _x / R0
-
-    entry["core_transport/model/0/time_slice/0/flux_multiplier"] = 3 / 2
-
-    entry["core_transport/model/0/time_slice/0/profiles_1d"] = {
-        "grid_d": grid,
-        "electrons": {"@name": "e", "particles": {"d": D, "v": v_pinch_ne}, "energy": {"d": chi_e, "v": v_pinch_Te}},
-        "ion": [
-            {"@name": "D", "particles": {"d": D, "v": v_pinch_ni}, "energy": {"d": chi, "v": v_pinch_Ti}},
-            {"@name": "T", "particles": {"d": D, "v": v_pinch_ni}, "energy": {"d": chi, "v": v_pinch_Ti}},
-            {"@name": "He", "particles": {"d": D, "v": v_pinch_ni}, "energy": {"d": chi, "v": v_pinch_Ti}},
-            {"@name": "alpha", "particles": {"d": 0.001 * D, "v": 0}},
-        ],
-    }
+    # }
 
     entry["core_sources"] = {
         "source": [
@@ -196,7 +186,7 @@ def read_iter_profiles(path):
             + profiles_1D["Paux"].values
             - profiles_1D["Prad"].values
             - profiles_1D["Pneu"].values
-            - profiles_1D["Peic"].values
+            # - profiles_1D["Peic"].values
             + profiles_1D["Pdte"].values
         )
         * 1e6
@@ -204,7 +194,11 @@ def read_iter_profiles(path):
     )
 
     Q_DT = (
-        (profiles_1D["Pibm"].values + profiles_1D["Peic"].values + profiles_1D["Pdti"].values)
+        (
+            profiles_1D["Pibm"].values
+            # + profiles_1D["Peic"].values
+             + profiles_1D["Pdti"].values
+        )
         * 1e6
         / scipy.constants.electron_volt
     )
@@ -220,8 +214,8 @@ def read_iter_profiles(path):
         "ion": [
             {"@name": "D", "particles": S * 0.5, "energy": Q_DT * 0.5},
             {"@name": "T", "particles": S * 0.5, "energy": Q_DT * 0.5},
-            {"@name": "He", "particles": S * 0.01, "energy": Q_DT * 0.01},  #
-            # {"label": "alpha", "particles": S * 0.01, "energy": Q_DT * 0.01},
+            {"@name": "He", "particles": S * 0.01, "energy": 0.0},  #
+            {"@name": "alpha", "particles": S * 0.01, "energy": Q_DT * 0.01},
         ],
     }
 

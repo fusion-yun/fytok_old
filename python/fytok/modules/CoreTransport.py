@@ -137,7 +137,7 @@ class CoreTransportModel(Module):
                 #     **{k: v for k, v in grid.items() if v is not _not_found_ and v is not None},
                 # }
             else:
-                rho_tor_norm = kwargs.get("rho_tor_norm", self.code.parameters.get("rho_tor_norm", None))
+                rho_tor_norm = kwargs.get("rho_tor_norm", self.code.parameters.rho_tor_norm)
                 new_grid = eq_grid.remesh(rho_tor_norm)
 
             current["profiles_1d/grid_d"] = new_grid

@@ -20,7 +20,7 @@ class AMNSProcess(SpTree):
     radiation: Polynomials = sp_property(
         units="eV*m^3/s",
         type="chebyshev",
-        preprocess=(lambda x: -1.0 + 2 * np.log(x / 50) / np.log(1000)),  # domain 50eV ~ 50000eV
+        preprocess=(lambda x: -1.0 + 2 * np.log(np.abs(x) / 50) / np.log(1000)),  # domain 50eV ~ 50000eV
         postprocess=(lambda y: np.exp(y) / (1.6022e-12 * 1.0e6)),  # change units erg.cm^-3/s => eV.m^-3/s
     )
 

@@ -146,6 +146,9 @@ class CoreSourcesSource(Module):
 
     time_slice: TimeSeriesAoS[CoreSourcesTimeSlice]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def preprocess(self, *args, **kwargs) -> CoreSourcesTimeSlice:
         current = super().preprocess(*args, **kwargs)
 
@@ -176,11 +179,13 @@ class CoreSourcesSource(Module):
 
         return current
 
-    def fetch(self, *args, **kwargs) -> CoreSourcesTimeSlice:
-        if len(args) > 0 and isinstance(args[0], CoreProfiles.TimeSlice.Profiles1D):
-            args = (args[0].rho_tor_norm, *args[1:])
+    def fetch(self, profiles_1d: CoreProfiles.TimeSlice.Profiles1D, *args, **kwargs) -> CoreSourcesTimeSlice:
+        rho_tor_norm = profiles_1d.rho_tor_norm
+        
+        if rho_tor_norm is _not_found_:
+            raise RuntimeError(f"Incomplete input {args}")
 
-        return super().fetch(*args, **kwargs)
+        return super().fetch(rho_tor_norm, *args, **kwargs)
 
     def flush(self) -> CoreSourcesTimeSlice:
         super().flush()

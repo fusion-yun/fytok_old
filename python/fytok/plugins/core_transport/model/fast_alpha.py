@@ -1,18 +1,22 @@
 import collections
 
 import numpy as np
-from fytok.modules.CoreProfiles import CoreProfiles
-from fytok.modules.CoreTransport import CoreTransport
-from fytok.modules.Equilibrium import Equilibrium
-from scipy import constants
+
 from spdm.utils.logger import logger
 from spdm.utils.tags import _not_found_
 from spdm.data.Expression import Variable, Expression, Piecewise, derivative
 from spdm.data.sp_property import sp_tree
+from spdm.numlib.misc import step_function_approx
+
+from fytok.modules.CoreProfiles import CoreProfiles
+from fytok.modules.CoreTransport import CoreTransport
+from fytok.modules.Equilibrium import Equilibrium
+
+from .predefined import PredefinedTransport
 
 
 @sp_tree
-class FastAlpha(CoreTransport.Model):
+class FastAlpha(PredefinedTransport):
     """
     FastAlpha   Model
 
@@ -27,22 +31,24 @@ class FastAlpha(CoreTransport.Model):
 
     """
 
-    identifier = "slowing_down"
-    code = {"name": "fast_alpha", "description": f" Fast alpha", "copyright": "fytok"}
+    identifier = "alpha"
+    code = {"name": "fast_alpha", "description": f" Fast alpha, Angioni's model"}
 
-    def fetch(self, x: Variable, **variables: Expression) -> CoreTransport.Model.TimeSlice:
-        r_ped = 0.96
-        Cped = 0.17
-        Ccore = 0.4
-        # Function( profiles["Xi"].values,bs_r_norm)  Cped = 0.2
-        chi = Piecewise([Ccore * (1.0 + 3 * (x**2)), Cped], [(x < r_ped), (x >= r_ped)], label=r"\chi")
-        chi_e = Piecewise([0.5 * Ccore * (1.0 + 3 * (x**2)), Cped], [(x < r_ped), (x >= r_ped)], label=r"\chi_e")
+    def fetch(self, profiles_1d: CoreProfiles.TimeSlice.Profiles1D, *args, **kwargs) -> CoreTransport.Model.TimeSlice:
+        current: CoreTransport.Model.TimeSlice = super().fetch(profiles_1d, *args, **kwargs)
+
+        rho_tor_norm = profiles_1d.rho_tor_norm
+
+        _x = rho_tor_norm
+
+        chi = current.profiles_1d.ion["D"].energy.d
+        chi_e = current.profiles_1d.electrons.energy.d
 
         D = 0.1 * (chi + chi_e)
 
-        Te = variables.get("electrons/temperature")
+        Te = profiles_1d.electrons.temperature
         # ne = vars.get("electrons/density")
-        inv_L_Te = Te.dln(x)
+        inv_L_Te = Te.dln(_x)
 
         Te_Ea = Te / 3.5e6  # Te/ 3.5MeV
 
@@ -52,15 +58,14 @@ class FastAlpha(CoreTransport.Model):
 
         fast_factor_v = fast_factor_d * 1.5 * (1.0 / np.log((Ec_Ea ** (-1.5) + 1) * (Ec_Ea**1.5 + 1)) - 1) * inv_L_Te
 
-        current: CoreTransport.Model.TimeSlice = super().fetch()
-
-        current.profiles_1d["ion"] = [
+        current.profiles_1d.ion = [
             {
-                "label": "alpha",
+                "@name": "alpha",
                 "particles": {"d": fast_factor_d, "v": fast_factor_v},
                 #  "energy": {"d_fast": diff, "v_fast": vconv}
-            },
+            }
         ]
+
         return current
 
 
