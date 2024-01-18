@@ -48,7 +48,7 @@ class FastAlpha(PredefinedTransport):
 
         Te = profiles_1d.electrons.temperature
         # ne = vars.get("electrons/density")
-        inv_L_Te = Te.dln(_x)
+        inv_L_Te = Te.d(_x) / Te
 
         Te_Ea = Te / 3.5e6  # Te/ 3.5MeV
 
@@ -58,13 +58,7 @@ class FastAlpha(PredefinedTransport):
 
         fast_factor_v = fast_factor_d * 1.5 * (1.0 / np.log((Ec_Ea ** (-1.5) + 1) * (Ec_Ea**1.5 + 1)) - 1) * inv_L_Te
 
-        current.profiles_1d.ion = [
-            {
-                "@name": "alpha",
-                "particles": {"d": fast_factor_d, "v": fast_factor_v},
-                #  "energy": {"d_fast": diff, "v_fast": vconv}
-            }
-        ]
+        current.profiles_1d.ion = [{"@name": "alpha", "particles": {"d": fast_factor_d, "v": fast_factor_v}}]
 
         return current
 

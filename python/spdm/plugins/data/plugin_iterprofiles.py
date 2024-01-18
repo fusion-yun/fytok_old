@@ -74,6 +74,7 @@ def read_iter_profiles(path):
     b_ne =    smooth_1d(rho_tor_norm, profiles_1D["NE"].values,      i_end=i_ped-10, window_len=21)*1.0e19
     b_nDT =   smooth_1d(rho_tor_norm, profiles_1D["Nd+t"].values,    i_end=i_ped-10, window_len=21)*1.0e19*0.5
     b_nath =   smooth_1d(rho_tor_norm, profiles_1D["Nath"].values,    i_end=i_ped-10, window_len=21)*1.0e19
+    b_nalpha =   smooth_1d(rho_tor_norm, profiles_1D["Nalf"].values,    i_end=i_ped-10, window_len=21)*1.0e19
     b_nImp =  smooth_1d(rho_tor_norm, profiles_1D["Nz"].values,      i_end=i_ped-10, window_len=21)*1.0e19
     b_zeff = profiles_1D["Zeff"].values
     # fmt:on
@@ -99,8 +100,8 @@ def read_iter_profiles(path):
             {"@name": "T", "density": b_nDT, "temperature": b_Ti},
             {"@name": "Be", "density": 0.02 * b_ne, "temperature": b_Ti, "z_ion_1d": z_Be},
             {"@name": "Ar", "density": 0.0012 * b_ne, "temperature": b_Ti, "z_ion_1d": z_Ar},
-            {"@name": "He", "density": b_nath},
-            # {"label": "He", "density": b_nHe, "temperature": b_Ti},
+            {"@name": "He", "density": b_nath, "temperature": b_Ti},
+            {"@name": "alpha", "density": b_nalpha - b_nath},
         ],
         # "e_field": {"parallel":  Function(e_parallel,bs_r_norm)},
         # "conductivity_parallel": Function(baseline["Joh"].values*1.0e6 / baseline["U"].values * (TWOPI * grid.r0),bs_r_norm),
@@ -197,7 +198,7 @@ def read_iter_profiles(path):
         (
             profiles_1D["Pibm"].values
             # + profiles_1D["Peic"].values
-             + profiles_1D["Pdti"].values
+            + profiles_1D["Pdti"].values
         )
         * 1e6
         / scipy.constants.electron_volt
@@ -214,8 +215,8 @@ def read_iter_profiles(path):
         "ion": [
             {"@name": "D", "particles": S * 0.5, "energy": Q_DT * 0.5},
             {"@name": "T", "particles": S * 0.5, "energy": Q_DT * 0.5},
-            {"@name": "He", "particles": S * 0.01, "energy": 0.0},  #
-            {"@name": "alpha", "particles": S * 0.01, "energy": Q_DT * 0.01},
+            {"@name": "He", "particles": S * 0.02, "energy": Q_DT * 0.05},  #
+            # {"@name": "alpha", "particles": S * 0.01, "energy": Q_DT * 0.01},
         ],
     }
 

@@ -4,9 +4,10 @@ from spdm.data.Expression import Variable, Expression, zero
 from spdm.data.sp_property import sp_tree
 from spdm.numlib.misc import step_function_approx
 from spdm.utils.typing import array_type
+from spdm.utils.tags import _not_found_
+
 from fytok.utils.atoms import nuclear_reaction, atoms
 from fytok.utils.logger import logger
-
 from fytok.modules.CoreSources import CoreSources
 from fytok.modules.CoreProfiles import CoreProfiles
 from fytok.modules.Utilities import *
@@ -65,8 +66,8 @@ class FusionReaction(CoreSources.Source):
         super().__init__(*args, **kwargs)
         _x = Variable(0, "x")
         x = np.linspace(0, 10, 256)
-        dF = Function(x, 1.0 / (1 + x**1.5))
-        F = Function(x, dF.I(x), label="F")
+        F = Function(x, 1.0 / (1 + x**1.5)).I
+        # F = Function(x, dF.I(x), label="F")
         self._sivukhin = F / (_x)
 
     def fetch(self, profiles_1d: CoreProfiles.TimeSlice.Profiles1D) -> CoreSources.Source.TimeSlice:
@@ -116,38 +117,41 @@ class FusionReaction(CoreSources.Source):
             source_1d.ion[p1].particles += S - nEP * nu_slowing_down
             source_1d.ion[pa].particles += nEP * nu_slowing_down
 
-            logger.debug(nEP._render_latex_())
-            logger.debug(nu_slowing_down._render_latex_())
-
             E0, E1 = reaction.energy
 
             Efus = E1 * nEP * nu_slowing_down
 
             mp: float = atoms[p1].mass
-            # 离子加热分量
-            #  [Stix, Plasma Phys. 14 (1972) 367 Eq.15
-            C = 0.0
-            m_tot = 0
 
-            for ion in profiles_1d.ion:
-                mi = ion.a * scipy.constants.atomic_mass
-                zi = ion.z
+            if False:
+                # 离子加热分量
+                #  [Stix, Plasma Phys. 14 (1972) 367 Eq.15
+                C = 0.0
+                m_tot = 0
 
-                ni = ion.density
+                for ion in profiles_1d.ion:
+                    if ion.temperature is _not_found_:
+                        continue
 
-                m_tot += mi
+                    mi = ion.a * scipy.constants.atomic_mass
+                    zi = ion.z
 
-                C += ni * zi**2 / (mi / mp)
+                    ni = ion.density
 
-            Ecrit = Te * (4 * np.sqrt(me / mp) / (3 * np.sqrt(PI) * C / ne)) ** (-2.0 / 3.0)
+                    m_tot += mi
 
-            frac = self._sivukhin(E1 / Ecrit)
+                    C += ni * zi**2 / (mi / mp)
 
-            # 加热离子
-            for ion in profiles_1d.ion:
-                source_1d.ion[ion.label].energy += Efus * frac * ion.a * scipy.constants.atomic_mass / m_tot
+                Ecrit = Te * (4 * np.sqrt(me / mp) / (3 * np.sqrt(PI) * C / ne)) ** (-2.0 / 3.0)
 
-            source_1d.electrons.energy += Efus * (1.0 - frac)
+                frac = self._sivukhin(E1 / Ecrit)
+
+                # 加热离子
+                for ion in profiles_1d.ion:
+                    if ion.temperature is _not_found_:
+                        continue
+                    source_1d.ion[ion.label].energy += Efus * frac * ion.a * scipy.constants.atomic_mass / m_tot
+                source_1d.electrons.energy += Efus * (1.0 - frac)
 
         return current
 

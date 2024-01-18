@@ -46,7 +46,7 @@ class PredefinedTransport(CoreTransport.Model):
         delta = step_function_approx(_x - r_ped, scale=0.002)
 
         chi = (Ccore * (1.0 + 3 * (_x**2))) * (1 - delta) + Cped * delta
-        chi_e = (0.5 * Ccore * (1.0 + 3 * (_x**2))) * (1 - delta) + Cped * delta
+        chi_e = Ccore * (1.0 + 3 * (_x**2)) * (1 - delta) * 0.5 + Cped * delta
 
         D = 0.1 * (chi + chi_e)
 
@@ -68,7 +68,7 @@ class PredefinedTransport(CoreTransport.Model):
                 {"@name": "D", "particles": {"d": D, "v": v_pinch_ni}, "energy": {"d": chi, "v": v_pinch_Ti}},
                 {"@name": "T", "particles": {"d": D, "v": v_pinch_ni}, "energy": {"d": chi, "v": v_pinch_Ti}},
                 {"@name": "He", "particles": {"d": D, "v": v_pinch_ni}, "energy": {"d": chi, "v": v_pinch_Ti}},
-                # {"@name": "alpha", "particles": {"d": 0.001 * D, "v": 0}},
+                {"@name": "alpha", "particles": {"d": 0.001 * D, "v": 0}},
             ]
         )
 

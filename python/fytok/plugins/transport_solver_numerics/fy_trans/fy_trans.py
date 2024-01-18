@@ -53,7 +53,7 @@ class FyTrans(TransportSolverNumerics):
         unknowns = self.code.parameters.unknowns or list()
 
         # 极向磁通
-        unknowns.append("psi")
+        unknowns.append("psi_norm")
 
         # 电子
         # - 电子密度由准中性条件给出
@@ -217,8 +217,8 @@ class FyTrans(TransportSolverNumerics):
             # ni_flux += core0_1d.ion[label].density_flux(rho_tor_norm)
 
         profiles.electrons["density"] = ni
-        profiles.electrons["density_flux"] = ni_flux
 
+        profiles.electrons["density_flux"] = ni_flux
 
         tranport: AoS[CoreTransport.Model.TimeSlice] = self.inports["core_transport/model/*"].fetch(profiles) 
 
@@ -231,22 +231,15 @@ class FyTrans(TransportSolverNumerics):
         rho_tor_norm = profiles.rho_tor_norm
 
         psi_norm = profiles.psi_norm
-        if self.primary_coordinate == "rho_tor_norm":
-            x = rho_tor_norm
-        else:
-            raise NotImplementedError(self.primary_coordinate)
 
-        if psi_norm is _not_found_:
-            # psi_norm = profiles.psi / (eq0_1d.grid.psi_boundary - eq0_1d.grid.psi_axis)
-
-            psi_norm = Function(
-                eq0_1d.grid.rho_tor_norm,
-                eq0_1d.grid.psi_norm,
-                name="psi_norm",
-                label=r"\bar{\psi}",
-            )(rho_tor_norm)
-
-  
+        # if psi_norm is _not_found_:
+        #     # psi_norm = profiles.psi / (eq0_1d.grid.psi_boundary - eq0_1d.grid.psi_axis)
+        #     psi_norm = Function(
+        #         eq0_1d.grid.rho_tor_norm,
+        #         eq0_1d.grid.psi_norm,
+        #         name="psi_norm",
+        #         label=r"\bar{\psi}",
+        #     )(rho_tor_norm)
 
         # 设定全局参数
         # $R_0$ characteristic major radius of the device   [m]
@@ -840,7 +833,15 @@ class FyTrans(TransportSolverNumerics):
         Y = current.Y * self._units.reshape(-1, 1)
         Yp = current.Yp * self._units.reshape(-1, 1)
 
-        current["grid"] = current.grid.remesh(X)
+        current["grid"] = CoreRadialGrid(
+            {
+                "rho_tor_norm": X,
+                "psi_norm": Y[0],
+                "psi_axis": current.grid.psi_axis,
+                "psi_boundary": current.grid.psi_boundary,
+                "rho_tor_boundary": current.grid.rho_tor_boundary,
+            }
+        )
 
         current["equations"] = []
 

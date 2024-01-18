@@ -21,6 +21,8 @@ class CollisionalEquipartition(CoreSources.Source):
     code = {"name": "collisional_equipartition", "description": "Fusion reaction"}  # type: ignore
 
     def fetch(self, profiles_1d: CoreProfiles.TimeSlice.Profiles1D) -> CoreSources.Source.TimeSlice:
+        ii_collision: bool = self.code.parameters.ii_collision
+        ie_collision: bool = self.code.parameters.ie_collision
         current: CoreSources.Source.TimeSlice = super().fetch(profiles_1d)
 
         source_1d = current.profiles_1d
@@ -52,41 +54,44 @@ class CollisionalEquipartition(CoreSources.Source):
             if Ti is _not_found_:
                 continue
 
-            clog_ei = piecewise(
-                [
-                    (
-                        23 - np.log(zi) - 0.5 * np.log(ne * 1.0e-6) + 1.5 * np.log(Te),
-                        ((Ti * me / mi) < Te) & (Te <= (10 * zi * zi)),
-                    ),
-                    (
-                        24 - 0.5 * np.log(ne * 1.0e-6) + np.log(Te),
-                        (((Ti * me / mi) < (10 * zi * zi)) & ((10 * zi * zi) < Te)),
-                    ),
-                    (
-                        16 - np.log(zi * zi * ae) - 0.5 * np.log(ne * 1.0e-6) + 1.5 * np.log(Te),
-                        Te <= (Ti * me / mi),
-                    ),
-                ],
-                name="clog",
-                label=r"\Lambda_{ei}",
-            )
-            nv_ei = 3.2e-9 * zi * zi * clog_ei / ai * Te ** (-1.5)
+            if ie_collision is not False:
+                clog_ei = piecewise(
+                    [
+                        (
+                            23 - np.log(zi) - 0.5 * np.log(ne * 1.0e-6) + 1.5 * np.log(Te),
+                            ((Ti * me / mi) < Te) & (Te <= (10 * zi * zi)),
+                        ),
+                        (
+                            24 - 0.5 * np.log(ne * 1.0e-6) + np.log(Te),
+                            (((Ti * me / mi) < (10 * zi * zi)) & ((10 * zi * zi) < Te)),
+                        ),
+                        (
+                            16 - np.log(zi * zi * ae) - 0.5 * np.log(ne * 1.0e-6) + 1.5 * np.log(Te),
+                            Te <= (Ti * me / mi),
+                        ),
+                    ],
+                    name="clog",
+                    label=r"\Lambda_{ei}",
+                )
+                nv_ei = 3.2e-9 * zi * zi * clog_ei / ai * Te ** (-1.5)
 
-            conductivity_parallel += 1.96e-09 * e**2 / me * ne * ne / nv_ei
+                conductivity_parallel += 1.96e-09 * e**2 / me * ne * ne / nv_ei
 
-            nv_ei = ni * ne * nv_ei * 1.0e-12
+                nv_ei = ni * ne * nv_ei * 1.0e-12
 
-            Tie = Ti - Te
+                Tie = Ti - Te
 
-            # energy exchange term
-            source_1d.ion[ion_i.label].energy -= Tie * nv_ei
-            source_1d.electrons.energy += Tie * nv_ei
+                # energy exchange term
+                source_1d.ion[ion_i.label].energy -= Tie * nv_ei
+                source_1d.electrons.energy += Tie * nv_ei
 
-            # momentum exchange term
-            if vi is not _not_found_ and ve is not _not_found_:
-                source_1d.ion[ion_i.label].momentum.toroidal -= (vi - ve) * nv_ei
-                source_1d.electrons.momentum.toroidal += (ve - vi) * nv_ei
+                # momentum exchange term
+                if vi is not _not_found_ and ve is not _not_found_:
+                    source_1d.ion[ion_i.label].momentum.toroidal -= (vi - ve) * nv_ei
+                    source_1d.electrons.momentum.toroidal += (ve - vi) * nv_ei
 
+            if not ii_collision:
+                continue
             # collisions frequency and energy exchange terms:
             # @ref NRL 2019 p.34
             for ion_j in species[i + 1 :]:
