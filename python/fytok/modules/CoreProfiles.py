@@ -5,7 +5,7 @@ import numpy as np
 import scipy.constants
 from scipy import constants
 from spdm.data.AoS import AoS
-from spdm.data.Expression import Expression, Variable, zero
+from spdm.data.Expression import Expression, Variable, zero, derivative
 from spdm.data.sp_property import sp_property, sp_tree
 from spdm.data.TimeSeries import TimeSeriesAoS
 from spdm.data.Path import update_tree
@@ -178,7 +178,7 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
 
     @sp_property
     def pprime(self) -> Expression:
-        return self.pressure.d()
+        return self.pressure.d
 
     @sp_property
     def pressure_thermal(self) -> Expression:
@@ -226,7 +226,7 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
 
     @sp_property(units="A")
     def current_parallel_inside(self) -> Expression:
-        return self.j_total.antiderivative()
+        return self.j_total.I
 
     j_tor: Expression = sp_property(units="A/m^2")
 
@@ -274,7 +274,7 @@ class CoreProfiles1D(core_profiles._T_core_profiles_profiles_1d):
 
     @sp_property(units="-")
     def magnetic_shear(self) -> Expression:
-        return self.grid.rho_tor_norm * (self.q.derivative() / self.q())
+        return self.grid.rho_tor_norm * self.q.dln
 
     @sp_property
     def beta_pol(self) -> Expression:
@@ -426,8 +426,8 @@ class CoreProfiles(IDS):
 
             if isinstance(grid, dict):
                 new_grid = grid
-              
-                if not isinstance(grid.get("psi_axis", _not_found_),float):
+
+                if not isinstance(grid.get("psi_axis", _not_found_), float):
                     new_grid["psi_axis"] = eq_grid.psi_axis
                     new_grid["psi_boundary"] = eq_grid.psi_boundary
                     new_grid["rho_tor_boundary"] = eq_grid.rho_tor_boundary

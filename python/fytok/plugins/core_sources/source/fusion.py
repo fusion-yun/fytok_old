@@ -1,6 +1,6 @@
 import typing
 import scipy.constants
-from spdm.data.Expression import Variable, Expression, zero
+from spdm.data.Expression import Variable, Expression, zero, antiderivative
 from spdm.data.sp_property import sp_tree
 from spdm.numlib.misc import step_function_approx
 from spdm.utils.typing import array_type
@@ -65,10 +65,7 @@ class FusionReaction(CoreSources.Source):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         _x = Variable(0, "x")
-        x = np.linspace(0, 10, 256)
-        F = Function(x, 1.0 / (1 + x**1.5)).I
-        # F = Function(x, dF.I(x), label="F")
-        self._sivukhin = F / (_x)
+        self._sivukhin = antiderivative(1.0 / (1 + _x**1.5), _x) / (_x)
 
     def fetch(self, profiles_1d: CoreProfiles.TimeSlice.Profiles1D) -> CoreSources.Source.TimeSlice:
         current: CoreSources.Source.TimeSlice = super().fetch(profiles_1d)

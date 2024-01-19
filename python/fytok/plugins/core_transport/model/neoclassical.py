@@ -2,6 +2,7 @@ import numpy as np
 from scipy import constants
 from spdm.numlib.misc import array_like
 from spdm.data.Function import Function, function_like
+from spdm.data.Expression import derivative
 from spdm.data.Entry import _next_
 from spdm.utils.tags import _not_found_
 from spdm.data.Path import update_tree
@@ -9,7 +10,6 @@ from fytok.modules.CoreProfiles import CoreProfiles
 from fytok.modules.CoreTransport import CoreTransport
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.utils.logger import logger
-
 
 
 class NeoClassical(CoreTransport.Model):
@@ -61,8 +61,8 @@ class NeoClassical(CoreTransport.Model):
         Te = core_profiles_1d.electrons.temperature(rho_tor_norm)
         Ne = core_profiles_1d.electrons.density(rho_tor_norm)
         Pe = core_profiles_1d.electrons.pressure(rho_tor_norm)
-        dlnTe = core_profiles_1d.electrons.temperature.derivative(rho_tor_norm) / Te / rho_tor_lcfs
-        dlnNe = core_profiles_1d.electrons.density.derivative(rho_tor_norm) / Ne / rho_tor_lcfs
+        dlnTe = derivative(core_profiles_1d.electrons.temperature, rho_tor_norm) / Te / rho_tor_lcfs
+        dlnNe = derivative(core_profiles_1d.electrons.density, rho_tor_norm) / Ne / rho_tor_lcfs
         dlnPe = dlnNe + dlnTe
 
         vTe = np.sqrt(Te * eV / constants.electron_mass)
@@ -87,10 +87,7 @@ class NeoClassical(CoreTransport.Model):
         ###########################################################################################
         # Sec 14.11 Chang-Hinton formula for \Chi_i
         # Shafranov shift
-        delta_ = (
-            function_like(equilibrium_1d.geometric_axis.r(psi_norm) - R0, rho_tor_norm).derivative(rho_tor_norm)
-            / rho_tor_lcfs
-        )
+        delta_ = derivative(equilibrium_1d.geometric_axis.r(psi_norm) - R0, rho_tor_norm) / rho_tor_lcfs
 
         # impurity ions
         nZ2_imp = np.sum(
@@ -160,8 +157,8 @@ class NeoClassical(CoreTransport.Model):
             #########################################################################
             # Sec 14.11 Chang-Hinton formula for \Chi_i
             if not ion.is_impurity:
-                dlnTi = ion.temperature.derivative(rho_tor_norm) / Ti / rho_tor_lcfs
-                dlnNi = ion.density.derivative(rho_tor_norm) / Ni / rho_tor_lcfs
+                dlnTi = derivative(ion.temperature, rho_tor_norm) / Ti / rho_tor_lcfs
+                dlnNi = derivative(ion.density, rho_tor_norm) / Ni / rho_tor_lcfs
                 dlnPi = dlnNi + dlnTi
                 alpha = nZ2_imp / nZ2_ion
 
@@ -195,7 +192,7 @@ class NeoClassical(CoreTransport.Model):
 
                 #########################################################################
                 # for e_field_radial
-                sum1 = sum1 + chi_i / 3.0 * ion.pressure.derivative(rho_tor_norm) / rho_tor_lcfs * Zi / Ti
+                sum1 = sum1 + chi_i / 3.0 * derivative(ion.pressure, rho_tor_norm) / rho_tor_lcfs * Zi / Ti
                 sum2 = sum2 + chi_i / 3.0 * nZ2_ion / Ti
 
             #########################################################################

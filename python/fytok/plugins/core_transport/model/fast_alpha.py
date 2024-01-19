@@ -48,7 +48,7 @@ class FastAlpha(PredefinedTransport):
 
         Te = profiles_1d.electrons.temperature
         # ne = vars.get("electrons/density")
-        inv_L_Te = Te.d(_x) / Te
+        inv_L_Te = derivative(Te, _x) / Te
 
         Te_Ea = Te / 3.5e6  # Te/ 3.5MeV
 
