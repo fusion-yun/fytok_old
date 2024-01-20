@@ -204,15 +204,16 @@ class CoreRadialGrid:
             dumper,
         )
 
-    def remesh(self, rho_tor_norm=None, *args, **kwargs) -> CoreRadialGrid:
+    def remesh(self, rho_tor_norm=None, *args, psi_norm=None, **kwargs) -> CoreRadialGrid:
         """Duplicate the grid with new rho_tor_norm or psi_norm"""
 
-        if rho_tor_norm is None or rho_tor_norm is _not_found_:
+        if isinstance(rho_tor_norm, array_type):
+            psi_norm = Function(self.rho_tor_norm, self.psi_norm)(rho_tor_norm)
+        elif isinstance(psi_norm, array_type):
+            rho_tor_norm = Function(self.psi_norm, self.rho_tor_norm)(psi_norm)
+        else:
             rho_tor_norm = self.rho_tor_norm
             psi_norm = self.psi_norm
-        else:
-            psi_norm = Function(self.rho_tor_norm, self.psi_norm)(rho_tor_norm)
-
         # if rho_tor_norm is None or rho_tor_norm is _not_found_:
         #     if psi_norm is _not_found_ or psi_norm is None:
         #         psi_norm = self.psi_norm
@@ -291,7 +292,7 @@ class CoreVectorComponents(SpTree):
 
     """Vector components in predefined directions"""
 
-    radial: Expression 
+    radial: Expression
     """ Radial component"""
 
     diamagnetic: Expression
@@ -300,7 +301,7 @@ class CoreVectorComponents(SpTree):
     parallel: Expression
     """ Parallel component"""
 
-    poloidal: Expression 
+    poloidal: Expression
     """ Poloidal component"""
 
     toroidal: Expression

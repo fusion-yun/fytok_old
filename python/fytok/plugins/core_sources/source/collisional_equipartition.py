@@ -7,6 +7,7 @@ from spdm.utils.typing import array_type
 from spdm.utils.tags import _not_found_
 from spdm.data.Expression import Expression, Variable, Piecewise, piecewise, smooth, zero
 from spdm.data.sp_property import sp_tree
+from spdm.numlib.misc import step_function_approx
 from fytok.modules.CoreProfiles import CoreProfiles, CoreProfilesSpecies
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.modules.CoreSources import CoreSources
@@ -55,25 +56,37 @@ class CollisionalEquipartition(CoreSources.Source):
                 continue
 
             if ie_collision is not False:
-                clog_ei = piecewise(
-                    [
-                        (
-                            23 - np.log(zi) - 0.5 * np.log(ne * 1.0e-6) + 1.5 * np.log(Te),
-                            ((Ti * me / mi) < Te) & (Te <= (10 * zi * zi)),
-                        ),
-                        (
-                            24 - 0.5 * np.log(ne * 1.0e-6) + np.log(Te),
-                            (((Ti * me / mi) < (10 * zi * zi)) & ((10 * zi * zi) < Te)),
-                        ),
-                        (
-                            16 - np.log(zi * zi * ae) - 0.5 * np.log(ne * 1.0e-6) + 1.5 * np.log(Te),
-                            Te <= (Ti * me / mi),
-                        ),
-                    ],
-                    name="clog",
-                    label=r"\Lambda_{ei}",
+                # clog_ei = piecewise(
+                #     [
+                #         (
+                #             23 - np.log(zi) - 0.5 * np.log(ne * 1.0e-6) + 1.5 * np.log(Te),
+                #             ((Ti * me / mi) < Te) & (Te <= (10 * zi * zi)),
+                #         ),
+                #         (
+                #             24 - 0.5 * np.log(ne * 1.0e-6) + np.log(Te),
+                #             (((Ti * me / mi) < (10 * zi * zi)) & ((10 * zi * zi) < Te)),
+                #         ),
+                #         (
+                #             16 - np.log(zi * zi * ae) - 0.5 * np.log(ne * 1.0e-6) + 1.5 * np.log(Te),
+                #             Te <= (Ti * me / mi),
+                #         ),
+                #     ],
+                #     name="clog",
+                #     label=r"\Lambda_{ei}",
+                # )
+                delta0 = step_function_approx(Ti * me / mi)
+                delta1 = step_function_approx(10 * zi * zi)
+
+                clog_ei = (
+                    +(23 - np.log(zi) - 0.5 * np.log(ne * 1.0e-6) + 1.5 * np.log(Te)) * delta0 * (1 - delta1)
+                    + (24 - 0.5 * np.log(ne * 1.0e-6) + np.log(Te)) * delta1
+                    + (16 - np.log(zi * zi * ai) - 0.5 * np.log(ni * 1.0e-6) + 1.5 * np.log(Ti)) * (1 - delta0)
                 )
-                nv_ei = 3.2e-9 * zi * zi * clog_ei / ai * Te ** (-1.5)
+
+                clog_ei._metadata["name"] = "clog"
+                clog_ei._metadata["label"] = r"\Lambda_{ei}"
+
+                nv_ei = (3.2e-9 * zi * zi / ai) * Te ** (-1.5) * clog_ei
 
                 conductivity_parallel += 1.96e-09 * e**2 / me * ne * ne / nv_ei
 
@@ -90,7 +103,7 @@ class CollisionalEquipartition(CoreSources.Source):
                     source_1d.ion[ion_i.label].momentum.toroidal -= (vi - ve) * nv_ei
                     source_1d.electrons.momentum.toroidal += (ve - vi) * nv_ei
 
-            if not ii_collision:
+            if ii_collision is False:
                 continue
             # collisions frequency and energy exchange terms:
             # @ref NRL 2019 p.34
@@ -112,14 +125,14 @@ class CollisionalEquipartition(CoreSources.Source):
 
                 # Coulomb logarithm:
                 clog = (
-                    23
-                    - np.log(zi * zj * (ai + aj) / (Ti * aj + Tj * ai))
+                    (23 - np.log(zi * zj * (ai + aj)))
+                    + np.log(Ti * aj + Tj * ai)
                     - 0.5 * np.log((ni * zi * zi / Ti + nj * zj * zj / Tj) * 1.0e-6)
                 )
 
                 nv_ij = (
                     1.8e-19
-                    * (mi * mj * 1.0e-6)
+                    * np.sqrt(mi * mj * 1.0e-6)
                     * (zi * zi * zj * zj)
                     * (((Ti * mj + Tj * mi) * 1.0e-3) ** (-1.5))
                     * clog

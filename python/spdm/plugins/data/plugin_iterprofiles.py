@@ -188,7 +188,7 @@ def read_iter_profiles(path):
             - profiles_1D["Prad"].values
             - profiles_1D["Pneu"].values
             # - profiles_1D["Peic"].values
-            + profiles_1D["Pdte"].values
+            # + profiles_1D["Pdte"].values
         )
         * 1e6
         / scipy.constants.electron_volt
@@ -198,7 +198,7 @@ def read_iter_profiles(path):
         (
             profiles_1D["Pibm"].values
             # + profiles_1D["Peic"].values
-            + profiles_1D["Pdti"].values
+            # + profiles_1D["Pdti"].values
         )
         * 1e6
         / scipy.constants.electron_volt
@@ -213,9 +213,9 @@ def read_iter_profiles(path):
         "j_parallel": -profiles_1D["Jtot"].values * 1e6,  # A/m^2
         "electrons": {"@name": "e", "particles": S, "energy": Q_e},
         "ion": [
-            {"@name": "D", "particles": S * 0.5, "energy": Q_DT * 0.5},
-            {"@name": "T", "particles": S * 0.5, "energy": Q_DT * 0.5},
-            {"@name": "He", "particles": S * 0.02, "energy": Q_DT * 0.05},  #
+            {"@name": "D", "particles": S * 0.48, "energy": Q_DT * 0.5},
+            {"@name": "T", "particles": S * 0.48, "energy": Q_DT * 0.5},
+            {"@name": "He", "particles": S * 0.02, "energy": Q_DT * 0.02},  #
             # {"@name": "alpha", "particles": S * 0.01, "energy": Q_DT * 0.01},
         ],
     }

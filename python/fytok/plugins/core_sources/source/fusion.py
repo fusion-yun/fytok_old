@@ -64,8 +64,11 @@ class FusionReaction(CoreSources.Source):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        x = np.linspace(0, 10.0, 256)
         _x = Variable(0, "x")
-        self._sivukhin = antiderivative(1.0 / (1 + _x**1.5), _x) / (_x)
+        self._sivukhin = Function(x, 1.0 / (1 + x**1.5)).I / (_x)
+        self._sivukhin._metadata["name"] = "sivukhin"
+        self._sivukhin._metadata["label"] = "F"
 
     def fetch(self, profiles_1d: CoreProfiles.TimeSlice.Profiles1D) -> CoreSources.Source.TimeSlice:
         current: CoreSources.Source.TimeSlice = super().fetch(profiles_1d)
@@ -120,7 +123,7 @@ class FusionReaction(CoreSources.Source):
 
             mp: float = atoms[p1].mass
 
-            if False:
+            if True:
                 # 离子加热分量
                 #  [Stix, Plasma Phys. 14 (1972) 367 Eq.15
                 C = 0.0
@@ -139,7 +142,7 @@ class FusionReaction(CoreSources.Source):
 
                     C += ni * zi**2 / (mi / mp)
 
-                Ecrit = Te * (4 * np.sqrt(me / mp) / (3 * np.sqrt(PI) * C / ne)) ** (-2.0 / 3.0)
+                Ecrit = (Te) * (4 * np.sqrt(me / mp) / (3 * np.sqrt(PI) * C / ne)) ** (-2.0 / 3.0)
 
                 frac = self._sivukhin(E1 / Ecrit)
 

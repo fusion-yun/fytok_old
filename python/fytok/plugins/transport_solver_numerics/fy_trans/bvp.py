@@ -459,7 +459,7 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol, bc_tol):
 
     # Maximum number of backtracking steps, the minimum step is then
     # tau ** n_trial.
-    n_trial = 4
+    n_trial = 8
 
     col_res, y_middle, f, f_middle = col_fun(y, p)
     bc_res = bc(y[:, 0], y[:, -1], p)
@@ -485,11 +485,25 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol, bc_tol):
         p_step = step[m * n :]
 
         alpha = 1
-        for trial in range(n_trial + 1):
+        trial = 0
+
+        # if np.any(y[::2] <= 0 | np.isnan(y[::2])):
+        #     raise RuntimeError((y[::2]))
+
+        while trial < n_trial:
+            trial += 1
             y_new = y - alpha * y_step
             if B is not None:
                 y_new[:, 0] = np.dot(B, y_new[:, 0])
             p_new = p - alpha * p_step
+
+            ##################################################################
+            # 确保非负
+            # add by salmon
+            if (np.any(y_new[::2] < 0)) and alpha > 1.0e-8:
+                alpha *= tau
+                continue
+            ##################################################################
 
             col_res, y_middle, f, f_middle = col_fun(y_new, p_new)
             bc_res = bc(y_new[:, 0], y_new[:, -1], p_new)
@@ -1166,6 +1180,7 @@ def solve_bvp(
         # add by salmon 2021.6.15
         # change by salmon 2023.12.29
         if isinstance(bvp_rms_mask, (list, np.ndarray)):
+            print(bvp_rms_mask)
             rms_mask = False
 
             for xd in bvp_rms_mask:

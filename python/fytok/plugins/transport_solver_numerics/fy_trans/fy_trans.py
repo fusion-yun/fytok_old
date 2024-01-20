@@ -754,13 +754,13 @@ class FyTrans(TransportSolverNumerics):
 
         return current
 
-    def func(self, X: array_type, Y: array_type, *args) -> array_type:
+    def func(self, X: array_type, _Y: array_type, *args) -> array_type:
         res = np.zeros([len(self.equations) * 2, X.size])
 
         hyper_diff = self._hyper_diff
 
         # 添加量纲和归一化系数，复原为物理量
-        Y = Y * self._units.reshape(-1, 1)
+        Y = _Y * self._units.reshape(-1, 1)
 
         for idx, equ in enumerate(self.equations):
             y = Y[idx * 2]
@@ -861,7 +861,7 @@ class FyTrans(TransportSolverNumerics):
             self.bc,
             X,
             Y,
-            bvp_rms_mask=self.code.parameters.bvp_rms_mask,
+            bvp_rms_mask=self.code.parameters.bvp_rms_mask or [],
             tol=self.code.parameters.tolerance or 1.0e-3,
             bc_tol=self.code.parameters.bc_tol or 1e6,
             max_nodes=self.code.parameters.max_nodes or 1000,
