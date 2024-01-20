@@ -371,9 +371,10 @@ class FyTrans(TransportSolverNumerics):
                 path = path.parent
 
             bc_value = boundary_value.get(equ.identifier, None)
+
             match quantity:
                 case "psi":
-                    psi = profiles.psi
+                    psi = identifier.get(profiles, zero)
 
                     psi_m = identifier.get(core1_1d, zero)(rho_tor_norm)
 
@@ -383,8 +384,8 @@ class FyTrans(TransportSolverNumerics):
 
                     for source in sources:
                         source_1d = source.profiles_1d
-                        conductivity_parallel += source_1d.get("conductivity_parallel", zero)
-                        j_parallel += source_1d.get("j_parallel", zero)
+                        conductivity_parallel += as_path("conductivity_parallel").get(source_1d, zero)
+                        j_parallel += as_path("j_parallel").get(source_1d, zero)
 
                     c = fpol2 / (scipy.constants.mu_0 * B0 * rho_tor * (rho_tor_boundary))
 
@@ -455,8 +456,8 @@ class FyTrans(TransportSolverNumerics):
 
                     for source in sources:
                         source_1d = source.profiles_1d
-                        conductivity_parallel += source_1d.get("conductivity_parallel", zero)
-                        j_parallel += source_1d.get("j_parallel", zero)
+                        conductivity_parallel += as_path("conductivity_parallel").get(source_1d, zero)
+                        j_parallel += as_path("j_parallel").get(source_1d, zero)
 
                     c = fpol2 / (scipy.constants.mu_0 * B0 * rho_tor * (rho_tor_boundary))
 
@@ -528,10 +529,8 @@ class FyTrans(TransportSolverNumerics):
                     for transp in tranport:
                         transp_1d = transp.profiles_1d
 
-                        tmp = (path / "particles/d").get(transp_1d, zero)
-
-                        transp_D += tmp(profiles)
-                        transp_V += (path / "particles/v").get(transp_1d, zero)(profiles)
+                        transp_D += (path / "particles/d").get(transp_1d, zero)
+                        transp_V += (path / "particles/v").get(transp_1d, zero)
                         # transp_F += (pth / "particles/flux").get(core_transp_1d, zero)
 
                     S = zero
@@ -585,8 +584,8 @@ class FyTrans(TransportSolverNumerics):
                     Gs = (path / "density_flux").get(profiles, zero)
                     Ts = (path / "temperature").get(profiles, zero)
 
-                    ns_m = (path / "density").get(core1_1d, zero)(rho_tor_norm)
-                    Ts_m = (path / "temperature").get(core1_1d, zero)(rho_tor_norm)
+                    ns_m = (path / "density").get(core1_1d, zero)(profiles)
+                    Ts_m = (path / "temperature").get(core1_1d, zero)(profiles)
 
                     energy_D = zero
                     energy_V = zero

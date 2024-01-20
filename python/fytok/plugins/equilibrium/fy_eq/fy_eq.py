@@ -433,7 +433,7 @@ class FyEquilibriumProfiles2D(Equilibrium.TimeSlice.Profiles2D):
         return np.sqrt(self.psi.pd(2, 0) * self.psi.pd(0, 2) + self.psi.pd(1, 1) ** 2)
 
 
-@sp_tree(coordinate1="psi_norm")
+@sp_tree
 class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
     _root: Equilibrium.TimeSlice = sp_property(alias="../")
 
@@ -472,7 +472,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
     @sp_property(label="f")
     def f(self) -> Expression:
         return np.sqrt(
-            2.0 * (self._coord.psi_boundary - self._coord.psi_axis) * self.ffprime.I
+            2.0 * (self._coord.psi_boundary - self._coord.psi_axis) * self.f_df_dpsi.I
             + (self._coord.b0 * self._coord.r0) ** 2
         )
 
