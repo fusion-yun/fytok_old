@@ -43,7 +43,7 @@ class PredefinedTransport(CoreTransport.Model):
         Cped = 0.17
         Ccore = 0.4
 
-        delta = step_function_approx(_x - r_ped, scale=0.002)
+        delta = step_function_approx(_x - r_ped, scale=0.00001)
 
         chi = (Ccore * (1.0 + 3 * (_x**2))) * (1 - delta) + Cped * delta
         chi_e = Ccore * (1.0 + 3 * (_x**2)) * (1 - delta) * 0.5 + Cped * delta

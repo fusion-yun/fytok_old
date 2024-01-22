@@ -76,6 +76,7 @@ class Tokamak(Actor):
         self._shot = shot
         self._run = run
         self._device = device
+        self._metadata.setdefault("name", device)
 
     @property
     def brief_summary(self) -> str:
@@ -193,17 +194,14 @@ Modules:
         self.equilibrium.refresh(time=self.time)
         self.core_sources.refresh(time=self.time)
         self.core_transport.refresh(time=self.time)
-        
+
         self.transport_solver.refresh(*args, time=self.time, **kwargs)
 
         profiles_1d = self.transport_solver.fetch()
 
         self.core_profiles.time_slice.current["profiles_1d"] = profiles_1d
 
- 
-
     def flush(self):
-     
         profiles_1d = self.transport_solver.fetch()
 
         self.core_profiles.time_slice.current["profiles_1d"] = profiles_1d

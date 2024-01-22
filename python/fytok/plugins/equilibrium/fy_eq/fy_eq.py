@@ -91,7 +91,6 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        logger.debug(f"Create {self.__class__.__name__} {self}")
 
         self._s_B0 = np.sign(self.b0)
         self._s_Ip = np.sign(self.ip)
@@ -128,10 +127,10 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         elif not np.all(np.diff(self.psi_norm) > 0):
             raise RuntimeError(f"psi_norm is not monotonically increasing!")
 
-        if np.isclose(self.psi_norm[0], 0.0) and np.isclose(self.psi_norm[-1], 1.0):
-            logger.warning(
-                f"Singular values are caused when psi_norm takes values of 0.0 or 1.0.! {self.psi_norm[0]} {self.psi_norm[-1]}"
-            )
+        # if np.isclose(self.psi_norm[0], 0.0) and np.isclose(self.psi_norm[-1], 1.0):
+        #     logger.warning(
+        #         f"Singular values are caused when psi_norm takes values of 0.0 or 1.0.! {self.psi_norm[0]} {self.psi_norm[-1]}"
+        #     )
 
         # 磁面坐标的函数，ffprime，pprime
 
@@ -453,10 +452,14 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
 
     @sp_property
     def grid(self) -> CoreRadialGrid:
+        psi_norm = self.psi_norm
+        rho_tor_norm = self.rho_tor_norm(self.psi_norm)
+        if rho_tor_norm[0] < 0 :
+             rho_tor_norm[0]=0.0
         return CoreRadialGrid(
             {
-                "psi_norm": self.psi_norm,
-                "rho_tor_norm": self.rho_tor_norm(self.psi_norm),
+                "psi_norm": psi_norm,
+                "rho_tor_norm": rho_tor_norm,
                 "psi_axis": self._coord.psi_axis,
                 "psi_boundary": self._coord.psi_boundary,
                 "rho_tor_boundary": np.sqrt(
@@ -478,7 +481,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
 
     @sp_property(label=r"\phi")
     def phi(self) -> Expression:
-        return self.dphi_dpsi.I * (self._coord.psi_boundary - self._coord.psi_axis)
+        return  self.dphi_dpsi.I* (self._coord.psi_boundary - self._coord.psi_axis)
 
     @sp_property(label=r"\rho_{tor}")
     def rho_tor(self) -> Expression:
@@ -486,10 +489,16 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
 
     @sp_property(label=r"\bar{\rho}_{tor}")
     def rho_tor_norm(self) -> Expression:
-        phi = self.phi
-        psi_norm_boundary = self._root.boundary.psi_norm
-        phi_boundary = phi(psi_norm_boundary)
-        return np.sqrt(phi / phi_boundary)
+        phi = np.asarray(self.phi)
+
+        if np.isclose(self.psi_norm[-1], 1.0):
+            phi_boundary = phi[-1]
+        else:
+            phi_boundary = self.phi(1.0)
+        r_ = np.sqrt(phi / phi_boundary)
+        if r_[0] < 0:
+            r_[0] = 0.0
+        return r_
 
     @sp_property
     def dvolume_dpsi(self) -> Expression:

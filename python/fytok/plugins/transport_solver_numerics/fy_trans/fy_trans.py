@@ -2,6 +2,8 @@
 # @NOTE：
 #   在插件中 from __future__ import annotations 会导致插件无法加载，
 #   故障点是：typing.get_type_hints() 找不到类型， i.e. Code,TimeSeriesAoS
+from scipy.interpolate import InterpolatedUnivariateSpline
+
 
 import typing
 import numpy as np
@@ -28,6 +30,21 @@ from fytok.utils.atoms import atoms
 from .bvp import solve_bvp
 
 EPSILON = 1.0e-32
+
+
+def derivative_(y: array_type, x: array_type, dc_index=None):
+    res = derivative(y, x)
+
+    if dc_index is not None:
+        res[dc_index - 1 : dc_index + 1] = 0.5 * (res[dc_index - 1] + res[dc_index + 1])
+        # res = np.zeros_like(x)
+        # # res[:dc_index] = InterpolatedUnivariateSpline(x[:dc_index], y[:dc_index], ext=0).derivative()(x[:dc_index])
+        # # res[dc_index:] = InterpolatedUnivariateSpline(x[dc_index:], y[dc_index:], ext=0).derivative()(x[dc_index:])
+        # res[:dc_index] = (y[1 : dc_index + 1] - y[:dc_index]) / (x[1 : dc_index + 1] - x[:dc_index])
+        # res[dc_index:-1] = (y[dc_index + 1 :] - y[dc_index:-1]) / (x[dc_index + 1 :] - x[dc_index:-1])
+        # res[-1] = res[-2]
+
+    return res
 
 
 @sp_tree
@@ -242,6 +259,7 @@ class FyTrans(TransportSolverNumerics):
         # 定义内部控制参数
 
         self._hyper_diff = self.code.parameters.hyper_diff or 0.001
+        self._dc_pos = self.code.parameters.dc_pos or None
 
         # logger.debug([equ.identifier for equ in self.equations])
 
@@ -255,8 +273,6 @@ class FyTrans(TransportSolverNumerics):
 
         profiles = self.profiles_1d
 
-        # fmt:off
-            
         eq0: Equilibrium.TimeSlice = self.inports["equilibrium/time_slice/0"].fetch()
 
         eq1: Equilibrium.TimeSlice = self.inports["equilibrium/time_slice/-1"].fetch()
@@ -265,8 +281,8 @@ class FyTrans(TransportSolverNumerics):
 
         core1_1d: CoreProfiles.TimeSlice.Profiles1D = self.inports["core_profiles/time_slice/-1/profiles_1d"].fetch()
 
-
         ni = sum([ion.z * ion.get("density", zero) for ion in profiles.ion], zero)
+
         ni_flux = sum([ion.z * ion.get("density_flux", zero) for ion in profiles.ion], zero)
 
         for label in self.impurities:
@@ -277,9 +293,9 @@ class FyTrans(TransportSolverNumerics):
 
         profiles.electrons["density_flux"] = ni_flux
 
-        tranport: AoS[CoreTransport.Model.TimeSlice] = self.inports["core_transport/model/*"].fetch(profiles) 
+        tranport: AoS[CoreTransport.Model.TimeSlice] = self.inports["core_transport/model/*"].fetch(profiles)
 
-        sources: AoS[CoreSources.Source.TimeSlice] = self.inports["core_sources/source/*"].fetch(profiles) 
+        sources: AoS[CoreSources.Source.TimeSlice] = self.inports["core_sources/source/*"].fetch(profiles)
 
         eq0_1d = eq0.profiles_1d
 
@@ -736,10 +752,17 @@ class FyTrans(TransportSolverNumerics):
         Y = np.zeros([len(self.equations) * 2, X.size])
 
         if (initial_value := kwargs.get("initial_value", _not_found_)) is not _not_found_:
+            if isinstance(self._dc_pos, float):
+                dc_index = np.argmax(X > self._dc_pos)
+            else:
+                dc_index = None
+
+            logger.debug(X[dc_index - 1 : dc_index + 1])
+
             for idx, equ in enumerate(self.equations):
                 profile = initial_value.get(equ.identifier, 0)
-                profile = profile(X) if isinstance(profile, Expression) else profile
-                Y[idx * 2] = np.full_like(X, profile)
+
+                Y[idx * 2] = profile(X) if isinstance(profile, Expression) else np.full_like(X, profile)
 
             for idx, equ in enumerate(self.equations):
                 d_dt, D, V, R = equ.coefficient
@@ -755,10 +778,13 @@ class FyTrans(TransportSolverNumerics):
         return current
 
     def func(self, X: array_type, _Y: array_type, *args) -> array_type:
-        res = np.zeros([len(self.equations) * 2, X.size])
+        dY = np.zeros([len(self.equations) * 2, X.size])
 
         hyper_diff = self._hyper_diff
-
+        if isinstance(self._dc_pos, float):
+            dc_index = np.argmax(X > self._dc_pos) + 1
+        else:
+            dc_index = None
         # 添加量纲和归一化系数，复原为物理量
         Y = _Y * self._units.reshape(-1, 1)
 
@@ -776,27 +802,35 @@ class FyTrans(TransportSolverNumerics):
             except RuntimeError as error:
                 raise RuntimeError(f"Error when calcuate {equ.identifier} {_R}") from error
 
-            yp = derivative(y, X)
-
+            # yp = np.zeros_like(X)
+            # yp[:-1] += 0.5 * ((y[1:] - y[:-1]) / (X[1:] - X[:-1]))  # derivative(flux, X)
+            # yp[1:] += yp[:-1]
+            # yp[0] = 0
+            # yp[-1] *= 2
+            yp = derivative_(y, X, dc_index)
             d_dr = (-flux + V * y + hyper_diff * yp) / (D + hyper_diff)
 
-            # if np.any(np.isnan(d_dr)):
-            #     logger.exception(f"Error: {equ.identifier} nan in d_dr")
+            # fluxp = np.zeros_like(X)
+            # fluxp[:-1] = 0.5 * (flux[1:] - flux[:-1]) / (X[1:] - X[:-1])
+            # fluxp[1:] += fluxp[:-1]
+            # fluxp[0] = 0
+            # flux[-1] *= 2
 
-            fluxp = derivative(flux, X)
-
+            fluxp = derivative_(flux, X, dc_index)
             dflux_dr = (R - d_dt + hyper_diff * fluxp) / (1.0 + hyper_diff)
 
+            if equ.identifier == "ion/alpha/density":
+                dflux_dr[-1] = dflux_dr[-2]
             # if np.any(np.isnan(dflux_dr)):
             #     logger.exception(f"Error: {equ.identifier} nan in dflux_dr {_R._render_latex_()} {dflux_dr}")
 
             # 无量纲，归一化
-            res[idx * 2] = d_dr
-            res[idx * 2 + 1] = dflux_dr
+            dY[idx * 2] = d_dr
+            dY[idx * 2 + 1] = dflux_dr
 
-        res /= self._units.reshape(-1, 1)
+        dY /= self._units.reshape(-1, 1)
 
-        return res
+        return dY
 
     def bc(self, ya: array_type, yb: array_type, *args) -> array_type:
         x0, x1 = self.bc_pos
@@ -861,7 +895,7 @@ class FyTrans(TransportSolverNumerics):
             self.bc,
             X,
             Y,
-            bvp_rms_mask=self.code.parameters.bvp_rms_mask or [],
+            discontinuity=self.code.parameters.discontinuity or [],
             tol=self.code.parameters.tolerance or 1.0e-3,
             bc_tol=self.code.parameters.bc_tol or 1e6,
             max_nodes=self.code.parameters.max_nodes or 1000,

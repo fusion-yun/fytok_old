@@ -141,27 +141,20 @@ class TransportSolverNumerics(IDS):
         return super().initialize(*args, **kwargs)
 
     def preprocess(self, *args, **kwargs) -> TransportSolverNumericsTimeSlice:
+        eq_grid: CoreRadialGrid = self.inports["equilibrium/time_slice/0/profiles_1d/grid"].fetch()
+
+        rho_tor_norm = kwargs.get("rho_tor_norm", _not_found_)
+
+        if rho_tor_norm is _not_found_:
+            rho_tor_norm = self.code.parameters.rho_tor_norm
+
+        new_grid = eq_grid.remesh(rho_tor_norm)
+
+        self.profiles_1d["grid"] = new_grid
+
         current = super().preprocess(*args, **kwargs)
 
-        grid = current.get_cache("grid", _not_found_)
-
-        if not isinstance(grid, CoreRadialGrid):
-            eq_grid: CoreRadialGrid = self.inports["equilibrium/time_slice/0/profiles_1d/grid"].fetch()
-
-            if isinstance(grid, dict):
-                new_grid = {
-                    **eq_grid._cache,
-                    **{k: v for k, v in grid.items() if v is not _not_found_ and v is not None},
-                }
-            else:
-                rho_tor_norm = kwargs.get("rho_tor_norm", _not_found_)
-
-                if rho_tor_norm is _not_found_:
-                    rho_tor_norm = self.code.parameters.rho_tor_norm
-
-                new_grid = eq_grid.remesh(rho_tor_norm)
-
-            current["grid"] = new_grid
+        current["grid"] = new_grid
 
         return current
 

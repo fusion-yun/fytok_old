@@ -66,7 +66,7 @@ class FusionReaction(CoreSources.Source):
         super().__init__(*args, **kwargs)
         x = np.linspace(0, 10.0, 256)
         _x = Variable(0, "x")
-        self._sivukhin = Function(x, 1.0 / (1 + x**1.5)).I / (_x)
+        self._sivukhin = Function(x, 1.0 / (1 + x**1.5)).I(_x) / (_x)
         self._sivukhin._metadata["name"] = "sivukhin"
         self._sivukhin._metadata["label"] = "F"
 
@@ -123,15 +123,14 @@ class FusionReaction(CoreSources.Source):
 
             mp: float = atoms[p1].mass
 
-            if True:
+            if False:
                 # 离子加热分量
                 #  [Stix, Plasma Phys. 14 (1972) 367 Eq.15
                 C = 0.0
                 m_tot = 0
 
-                for ion in profiles_1d.ion:
-                    if ion.temperature is _not_found_:
-                        continue
+                for label in [r0, r1]:
+                    ion = profiles_1d.ion[label]
 
                     mi = ion.a * scipy.constants.atomic_mass
                     zi = ion.z
@@ -147,10 +146,10 @@ class FusionReaction(CoreSources.Source):
                 frac = self._sivukhin(E1 / Ecrit)
 
                 # 加热离子
-                for ion in profiles_1d.ion:
-                    if ion.temperature is _not_found_:
-                        continue
-                    source_1d.ion[ion.label].energy += Efus * frac * ion.a * scipy.constants.atomic_mass / m_tot
+                for label in [r0, r1]:
+                    ion = source_1d.ion[label]
+                    ion.energy += Efus * frac * ion.a * scipy.constants.atomic_mass / m_tot
+
                 source_1d.electrons.energy += Efus * (1.0 - frac)
 
         return current

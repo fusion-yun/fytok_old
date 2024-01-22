@@ -154,7 +154,7 @@ nuclear_reaction = NuclearReaction(
                 # eV
                 np.array(
                     [
-                        0.0,
+                        0.10e3,
                         0.20e3,
                         0.30e3,
                         0.40e3,
@@ -187,7 +187,7 @@ nuclear_reaction = NuclearReaction(
                 # m^3/s
                 np.array(
                     [
-                        0.0,
+                        1.000e-33,  # 人工补充的点，
                         1.254e-32,
                         7.292e-31,
                         9.344e-30,

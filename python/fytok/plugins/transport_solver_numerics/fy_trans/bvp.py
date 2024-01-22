@@ -301,7 +301,7 @@ def construct_global_jac(n, m, k, i_jac, j_jac, h, df_dy, df_dy_middle, df_dp, d
     return csc_matrix(J)
 
 
-def collocation_fun(fun, y, p, x, h):
+def collocation_fun(fun, y, p, x, h, discontinuity=None):
     """
     Evaluate collocation residuals.
 
@@ -500,9 +500,10 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol, bc_tol):
             ##################################################################
             # 确保非负
             # add by salmon
-            if (np.any(y_new[::2] < 0)) and alpha > 1.0e-8:
-                alpha *= tau
-                continue
+            # if (np.any(y_new[::2] < 0)) and alpha > 1.0e-8:
+            #     alpha *= tau
+            #     trial -= 1
+            #     continue
             ##################################################################
 
             col_res, y_middle, f, f_middle = col_fun(y_new, p_new)
@@ -788,7 +789,7 @@ def solve_bvp(
     max_nodes=1000,
     verbose=0,
     bc_tol=None,
-    bvp_rms_mask=None,
+    discontinuity=None,
     **kwargs,
 ):
     """
@@ -1167,7 +1168,7 @@ def solve_bvp(
         y, p, singular = solve_newton(n, m, h, col_fun, bc_wrapped, jac_sys, y, p, B, tol, bc_tol)
         iteration += 1
 
-        col_res, y_middle, f, f_middle = collocation_fun(fun_wrapped, y, p, x, h)
+        col_res, y_middle, f, f_middle = collocation_fun(fun_wrapped, y, p, x, h, discontinuity)
         bc_res = bc_wrapped(y[:, 0], y[:, -1], p)
         max_bc_res = np.max(abs(bc_res))
 
@@ -1179,11 +1180,11 @@ def solve_bvp(
         ########################################
         # add by salmon 2021.6.15
         # change by salmon 2023.12.29
-        if isinstance(bvp_rms_mask, (list, np.ndarray)):
-            print(bvp_rms_mask)
+        if isinstance(discontinuity, (list, np.ndarray)):
+            print(discontinuity)
             rms_mask = False
 
-            for xd in bvp_rms_mask:
+            for xd in discontinuity:
                 rms_mask |= (x[:-1] <= xd) & (xd <= x[1:])
 
             (rms_mask_idx,) = np.nonzero(rms_mask)

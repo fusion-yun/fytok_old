@@ -150,7 +150,7 @@ class CoreSourcesSource(Module):
         super().__init__(*args, **kwargs)
 
     def preprocess(self, *args, **kwargs) -> CoreSourcesTimeSlice:
-        current = super().preprocess(*args, **kwargs)
+        current: CoreSourcesTimeSlice = super().preprocess(*args, **kwargs)
 
         grid = current.get_cache("profiles_1d/grid", _not_found_)
 
@@ -180,12 +180,7 @@ class CoreSourcesSource(Module):
         return current
 
     def fetch(self, profiles_1d: CoreProfiles.TimeSlice.Profiles1D, *args, **kwargs) -> CoreSourcesTimeSlice:
-        rho_tor_norm = profiles_1d.rho_tor_norm
-        
-        if rho_tor_norm is _not_found_:
-            raise RuntimeError(f"Incomplete input {args}")
-
-        return super().fetch(rho_tor_norm, *args, **kwargs)
+        return super().fetch(profiles_1d.rho_tor_norm, *args, **kwargs)
 
     def flush(self) -> CoreSourcesTimeSlice:
         super().flush()
