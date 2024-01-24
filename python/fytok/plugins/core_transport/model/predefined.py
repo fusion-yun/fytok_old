@@ -9,7 +9,6 @@ from spdm.utils.typing import array_type
 from spdm.utils.tags import _not_found_
 from spdm.data.Expression import Variable, Expression, Piecewise, derivative
 from spdm.data.sp_property import sp_tree
-from spdm.numlib.misc import step_function_approx
 
 
 @sp_tree
@@ -43,7 +42,7 @@ class PredefinedTransport(CoreTransport.Model):
         Cped = 0.17
         Ccore = 0.4
 
-        delta = step_function_approx(_x - r_ped, scale=0.00001)
+        delta = np.heaviside(_x - r_ped, 0.5)
 
         chi = (Ccore * (1.0 + 3 * (_x**2))) * (1 - delta) + Cped * delta
         chi_e = Ccore * (1.0 + 3 * (_x**2)) * (1 - delta) * 0.5 + Cped * delta
@@ -59,16 +58,15 @@ class PredefinedTransport(CoreTransport.Model):
 
         current.profiles_1d.grid_d = eq_1d.grid
         current.profiles_1d.electrons.particles.d = D
-        current.profiles_1d.electrons.particles.v = v_pinch_ne
+        current.profiles_1d.electrons.particles.v = -v_pinch_ne
         current.profiles_1d.electrons.energy.d = chi_e
-        current.profiles_1d.electrons.energy.v = v_pinch_Te
+        current.profiles_1d.electrons.energy.v = -v_pinch_Te
 
         current.profiles_1d.ion.extend(
             [
-                {"@name": "D", "particles": {"d": D, "v": v_pinch_ni}, "energy": {"d": chi, "v": v_pinch_Ti}},
-                {"@name": "T", "particles": {"d": D, "v": v_pinch_ni}, "energy": {"d": chi, "v": v_pinch_Ti}},
-                {"@name": "He", "particles": {"d": D, "v": v_pinch_ni}, "energy": {"d": chi, "v": v_pinch_Ti}},
-                {"@name": "alpha", "particles": {"d": 0.001 * D, "v": 0}},
+                {"@name": "D", "particles": {"d": D, "v": -v_pinch_ni}, "energy": {"d": chi, "v": -v_pinch_Ti}},
+                {"@name": "T", "particles": {"d": D, "v": -v_pinch_ni}, "energy": {"d": chi, "v": -v_pinch_Ti}},
+                {"@name": "He", "particles": {"d": D, "v": -v_pinch_ni}, "energy": {"d": chi, "v": -v_pinch_Ti}},
             ]
         )
 

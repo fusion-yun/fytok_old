@@ -1,11 +1,7 @@
 import typing
 import scipy.constants
-from spdm.data.Expression import Variable, Expression, zero, antiderivative
+from spdm.data.Expression import Variable, zero
 from spdm.data.sp_property import sp_tree
-from spdm.numlib.misc import step_function_approx
-from spdm.utils.typing import array_type
-from spdm.utils.tags import _not_found_
-
 from fytok.utils.atoms import nuclear_reaction, atoms
 from fytok.utils.logger import logger
 from fytok.modules.CoreSources import CoreSources
@@ -73,10 +69,14 @@ class FusionReaction(CoreSources.Source):
     def fetch(self, profiles_1d: CoreProfiles.TimeSlice.Profiles1D) -> CoreSources.Source.TimeSlice:
         current: CoreSources.Source.TimeSlice = super().fetch(profiles_1d)
 
-        x = profiles_1d.rho_tor_norm
+        heating = self.code.parameters.heating is not False
+
+        rho_tor_norm = profiles_1d.rho_tor_norm
 
         source_1d = current.profiles_1d
-        me = atoms["electrons"].mass
+        m_e = scipy.constants.physical_constants["electron mass"][0]
+        m_alpha = scipy.constants.physical_constants["alpha particle mass"][0]
+        a_alpha = 4
         Te = profiles_1d.electrons.temperature
 
         fusion_reactions: typing.List[str] = self.code.parameters.fusion_reactions or []
@@ -102,53 +102,62 @@ class FusionReaction(CoreSources.Source):
             Ti = (n0 * T0 + n1 * T1) / ni
             nEP = profiles_1d.ion[p1].density
 
-            lnGamma = 17
+            E0, E1 = reaction.energy
 
-            nu_slowing_down = (ni * 1.0e-19 * lnGamma) / (1.99 * ((Ti / 1000) ** (3 / 2)))
+            logger.debug((E0, E1))
+
+            lnGamma = 20 # FIXME: 粗略估计
+
+            C = zero
+            a_tot = 0
+
+            for label in [r0, r1]:
+                ion = profiles_1d.ion[label]
+                a_tot += ion.a
+                C += ion.density * (ion.z**2) / (ion.a / a_alpha)
+
+            C /= ne
+
+            Ecrit = (Te) * (4 * np.sqrt(m_e / m_alpha) / (3 * np.sqrt(PI) * C)) ** (-2.0 / 3.0)
+
+            # nu_slowing_down = (ni * 1.0e-19 * lnGamma) / (1.99 * ((Ti / 1000) ** (3 / 2)))
+
+            tau_e = (1.99 * ((Te / 1000) ** (3 / 2))) / (ne * 1.0e-19 * lnGamma)
+
+            tau_s = tau_e * np.log((E1 / Ecrit) ** 1.5 + 1) / 3
 
             S = reaction.reactivities(Ti) * n0 * n1
 
             if r0 == r1:
                 S *= 0.5
 
+            # r_ped = 0.99  #
+
+            # delta = np.heaviside(rho_tor_norm - r_ped, 0.5)
+
+            # S = S * (1 - delta)
+
             source_1d.ion[r0].particles -= S
             source_1d.ion[r1].particles -= S
             source_1d.ion[p0].particles += S
-            source_1d.ion[p1].particles += S - nEP * nu_slowing_down
-            source_1d.ion[pa].particles += nEP * nu_slowing_down
+            source_1d.ion[p1].particles += S - nEP / tau_s
+            source_1d.ion[pa].particles += nEP / tau_s
 
-            E0, E1 = reaction.energy
+            Efus = S * E1  # nEP * nu_slowing_down
 
-            Efus = E1 * nEP * nu_slowing_down
+            frac = 0.0
 
-            mp: float = atoms[p1].mass
-
-            if False:
+            if heating:
                 # 离子加热分量
                 #  [Stix, Plasma Phys. 14 (1972) 367 Eq.15
-                C = 0.0
-                m_tot = 0
-
-                for label in [r0, r1]:
-                    ion = profiles_1d.ion[label]
-
-                    mi = ion.a * scipy.constants.atomic_mass
-                    zi = ion.z
-
-                    ni = ion.density
-
-                    m_tot += mi
-
-                    C += ni * zi**2 / (mi / mp)
-
-                Ecrit = (Te) * (4 * np.sqrt(me / mp) / (3 * np.sqrt(PI) * C / ne)) ** (-2.0 / 3.0)
 
                 frac = self._sivukhin(E1 / Ecrit)
 
                 # 加热离子
                 for label in [r0, r1]:
                     ion = source_1d.ion[label]
-                    ion.energy += Efus * frac * ion.a * scipy.constants.atomic_mass / m_tot
+
+                    ion.energy += Efus * frac * ion.a / a_tot
 
                 source_1d.electrons.energy += Efus * (1.0 - frac)
 

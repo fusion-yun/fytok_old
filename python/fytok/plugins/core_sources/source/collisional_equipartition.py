@@ -5,9 +5,8 @@ import typing
 
 from spdm.utils.typing import array_type
 from spdm.utils.tags import _not_found_
-from spdm.data.Expression import Expression, Variable, Piecewise, piecewise, smooth, zero
+from spdm.data.Expression import Expression, Variable, smooth, zero
 from spdm.data.sp_property import sp_tree
-from spdm.numlib.misc import step_function_approx
 from fytok.modules.CoreProfiles import CoreProfiles, CoreProfilesSpecies
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.modules.CoreSources import CoreSources
@@ -55,56 +54,54 @@ class CollisionalEquipartition(CoreSources.Source):
             if Ti is _not_found_:
                 continue
 
-            if ie_collision is not False:
-                # clog_ei = piecewise(
-                #     [
-                #         (
-                #             23 - np.log(zi) - 0.5 * np.log(ne * 1.0e-6) + 1.5 * np.log(Te),
-                #             ((Ti * me / mi) < Te) & (Te <= (10 * zi * zi)),
-                #         ),
-                #         (
-                #             24 - 0.5 * np.log(ne * 1.0e-6) + np.log(Te),
-                #             (((Ti * me / mi) < (10 * zi * zi)) & ((10 * zi * zi) < Te)),
-                #         ),
-                #         (
-                #             16 - np.log(zi * zi * ae) - 0.5 * np.log(ne * 1.0e-6) + 1.5 * np.log(Te),
-                #             Te <= (Ti * me / mi),
-                #         ),
-                #     ],
-                #     name="clog",
-                #     label=r"\Lambda_{ei}",
-                # )
-                delta0 = step_function_approx(Ti * me / mi)
-                delta1 = step_function_approx(10 * zi * zi)
+            # clog_ei = piecewise(
+            #     [
+            #         (
+            #             23 - np.log(zi) - 0.5 * np.log(ne * 1.0e-6) + 1.5 * np.log(Te),
+            #             ((Ti * me / mi) < Te) & (Te <= (10 * zi * zi)),
+            #         ),
+            #         (
+            #             24 - 0.5 * np.log(ne * 1.0e-6) + np.log(Te),
+            #             (((Ti * me / mi) < (10 * zi * zi)) & ((10 * zi * zi) < Te)),
+            #         ),
+            #         (
+            #             16 - np.log(zi * zi * ae) - 0.5 * np.log(ne * 1.0e-6) + 1.5 * np.log(Te),
+            #             Te <= (Ti * me / mi),
+            #         ),
+            #     ],
+            #     name="clog",
+            #     label=r"\Lambda_{ei}",
+            # )
+            delta0 = np.heaviside(Te - Ti * me / mi, 0.5)
+            delta1 = np.heaviside(Te - 10 * zi * zi, 0.5)
+            delta2 = np.heaviside(Ti * me / mi - 10 * zi * zi, 0.5)
 
-                clog_ei = (
-                    +(23 - np.log(zi) - 0.5 * np.log(ne * 1.0e-6) + 1.5 * np.log(Te)) * delta0 * (1 - delta1)
-                    + (24 - 0.5 * np.log(ne * 1.0e-6) + np.log(Te)) * delta1
-                    + (16 - np.log(zi * zi * ai) - 0.5 * np.log(ni * 1.0e-6) + 1.5 * np.log(Ti)) * (1 - delta0)
-                )
+            clog_ei = (
+                +(23 - np.log(zi) - 0.5 * np.log(ne * 1.0e-6) + 1.5 * np.log(Te)) * delta0 * (1 - delta1)
+                + (24 - 0.5 * np.log(ne * 1.0e-6) + np.log(Te)) * delta1
+                + (16 - np.log(zi * zi * ai) - 0.5 * np.log(ni * 1.0e-6) + 1.5 * np.log(Ti)) * (1 - delta0)
+            )
 
-                clog_ei._metadata["name"] = "clog"
-                clog_ei._metadata["label"] = r"\Lambda_{ei}"
+            clog_ei._metadata["name"] = "clog"
+            clog_ei._metadata["label"] = r"\Lambda_{ei}"
 
-                nv_ei = (3.2e-9 * zi * zi / ai) * Te ** (-1.5) * clog_ei
+            nv_ei = (3.2e-9 * zi * zi / ai) * Te ** (-1.5) * clog_ei * 1.5e-6 # FIXME: 1.5e-6 符合 astra 结果，需要再次复核 
 
-                conductivity_parallel += 1.96e-09 * e**2 / me * ne * ne / nv_ei
+            conductivity_parallel += 1.96e-15 * e**2 / me * ne * ne / nv_ei
 
-                nv_ei = ni * ne * nv_ei * 1.0e-12
+            nv_ei = ni * ne * nv_ei
 
-                Tie = Ti - Te
+            Tie = Ti - Te
 
-                # energy exchange term
-                source_1d.ion[ion_i.label].energy -= Tie * nv_ei
-                source_1d.electrons.energy += Tie * nv_ei
+            # energy exchange term
+            source_1d.ion[ion_i.label].energy -= Tie * nv_ei
+            source_1d.electrons.energy += Tie * nv_ei
 
-                # momentum exchange term
-                if vi is not _not_found_ and ve is not _not_found_:
-                    source_1d.ion[ion_i.label].momentum.toroidal -= (vi - ve) * nv_ei
-                    source_1d.electrons.momentum.toroidal += (ve - vi) * nv_ei
+            # momentum exchange term
+            if vi is not _not_found_ and ve is not _not_found_:
+                source_1d.ion[ion_i.label].momentum.toroidal -= (vi - ve) * nv_ei
+                source_1d.electrons.momentum.toroidal += (ve - vi) * nv_ei
 
-            if ii_collision is False:
-                continue
             # collisions frequency and energy exchange terms:
             # @ref NRL 2019 p.34
             for ion_j in species[i + 1 :]:
@@ -136,11 +133,12 @@ class CollisionalEquipartition(CoreSources.Source):
                     * (zi * zi * zj * zj)
                     * (((Ti * mj + Tj * mi) * 1.0e-3) ** (-1.5))
                     * clog
+                    * 1.0e-6
                 )
 
                 # nv_ij = smooth(nv_ij, window_length=3, polyorder=2)
 
-                nv_ij = ni * nj * nv_ij * 1.0e-12
+                nv_ij = ni * nj * nv_ij
 
                 Tij = Ti - Tj
 

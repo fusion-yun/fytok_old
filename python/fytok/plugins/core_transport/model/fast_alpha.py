@@ -1,12 +1,7 @@
-import collections
-
 import numpy as np
 
-from spdm.utils.logger import logger
-from spdm.utils.tags import _not_found_
-from spdm.data.Expression import Variable, Expression, Piecewise, derivative
+from spdm.data.Expression import derivative
 from spdm.data.sp_property import sp_tree
-from spdm.numlib.misc import step_function_approx
 
 from fytok.modules.CoreProfiles import CoreProfiles
 from fytok.modules.CoreTransport import CoreTransport
@@ -37,28 +32,39 @@ class FastAlpha(PredefinedTransport):
     def fetch(self, profiles_1d: CoreProfiles.TimeSlice.Profiles1D, *args, **kwargs) -> CoreTransport.Model.TimeSlice:
         current: CoreTransport.Model.TimeSlice = super().fetch(profiles_1d, *args, **kwargs)
 
+        eq: Equilibrium.TimeSlice = self.inports["equilibrium/time_slice/current"].fetch()
+
+        R0 = eq.vacuum_toroidal_field.r0
+
         rho_tor_norm = profiles_1d.rho_tor_norm
 
-        _x = rho_tor_norm
+        # _x = rho_tor_norm
 
-        chi = current.profiles_1d.ion["D"].energy.d
-        chi_e = current.profiles_1d.electrons.energy.d
+        # chi = current.profiles_1d.ion["D"].energy.d
 
-        D = 0.1 * (chi + chi_e)
+        # chi_e = current.profiles_1d.electrons.energy.d
+
+        D = current.profiles_1d.ion["D"].particles.d  # 0.1 * (chi + chi_e)
 
         Te = profiles_1d.electrons.temperature
-        # ne = vars.get("electrons/density")
-        inv_L_Te = derivative(Te, _x) / Te
+
+        inv_L_Te = -derivative(Te, rho_tor_norm) / Te
 
         Te_Ea = Te / 3.5e6  # Te/ 3.5MeV
 
         Ec_Ea = 33.05 * Te_Ea
 
+        r_ped = 0.96  #
+
+        delta = np.heaviside(rho_tor_norm - r_ped, 0.5)
+
         fast_factor_d = (0.02 + 4.5 * (Te_Ea) + 8.0 * (Te_Ea**2) + 350 * (Te_Ea**3)) * D
 
-        fast_factor_v = fast_factor_d * 1.5 * (1.0 / np.log((Ec_Ea ** (-1.5) + 1) * (Ec_Ea**1.5 + 1)) - 1) * inv_L_Te
+        Cs = 1.5 * (1.0 / np.log((Ec_Ea ** (-1.5) + 1) * (Ec_Ea**1.5 + 1)) - 1) * inv_L_Te
 
-        current.profiles_1d.ion = [{"@name": "alpha", "particles": {"d": fast_factor_d, "v": fast_factor_v}}]
+        fast_factor_v = fast_factor_d * rho_tor_norm / R0  # Cs * (1 - delta)
+
+        current.profiles_1d.ion = [{"@name": "alpha", "particles": {"d": fast_factor_d, "v": -fast_factor_v}}]
 
         return current
 

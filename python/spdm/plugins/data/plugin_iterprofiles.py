@@ -213,10 +213,10 @@ def read_iter_profiles(path):
         "j_parallel": -profiles_1D["Jtot"].values * 1e6,  # A/m^2
         "electrons": {"@name": "e", "particles": S, "energy": Q_e},
         "ion": [
-            {"@name": "D", "particles": S * 0.48, "energy": Q_DT * 0.5},
-            {"@name": "T", "particles": S * 0.48, "energy": Q_DT * 0.5},
-            {"@name": "He", "particles": S * 0.02, "energy": Q_DT * 0.02},  #
-            # {"@name": "alpha", "particles": S * 0.01, "energy": Q_DT * 0.01},
+            {"@name": "D", "particles": S * 0.5, "energy": Q_DT * 0.5},
+            {"@name": "T", "particles": S * 0.5, "energy": Q_DT * 0.5},
+            # {"@name": "He", "particles": S * 0.00, "energy": Q_DT * 0.00},  #
+            # {"@name": "alpha", "particles": S * 0.2, "energy": Q_DT * 0.01},
         ],
     }
 

@@ -487,9 +487,6 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol, bc_tol):
         alpha = 1
         trial = 0
 
-        # if np.any(y[::2] <= 0 | np.isnan(y[::2])):
-        #     raise RuntimeError((y[::2]))
-
         while trial < n_trial:
             trial += 1
             y_new = y - alpha * y_step
@@ -1181,7 +1178,7 @@ def solve_bvp(
         # add by salmon 2021.6.15
         # change by salmon 2023.12.29
         if isinstance(discontinuity, (list, np.ndarray)):
-            print(discontinuity)
+            
             rms_mask = False
 
             for xd in discontinuity:

@@ -411,7 +411,7 @@ class FyTrans(TransportSolverNumerics):
 
                     V = -k_phi * rho_tor_norm * conductivity_parallel
 
-                    R = (
+                    S = (
                         -vpr * (j_parallel) / (2.0 * scipy.constants.pi * rho_tor)
                         - k_phi
                         * conductivity_parallel
@@ -483,7 +483,7 @@ class FyTrans(TransportSolverNumerics):
 
                     V = -k_phi * rho_tor_norm * conductivity_parallel
 
-                    R = (
+                    S = (
                         (
                             -vpr * (j_parallel) / (2.0 * scipy.constants.pi * rho_tor)
                             - k_phi
@@ -561,7 +561,7 @@ class FyTrans(TransportSolverNumerics):
 
                     V = vpr * gm3 * (transp_V - rho_tor * k_phi)
 
-                    R = vpr * (S - k_phi * ns) * rho_tor_boundary
+                    S = vpr * (S - k_phi * ns) * rho_tor_boundary
 
                     # at axis x=0 , flux=0
                     bc = [[0, 1, 0]]
@@ -637,7 +637,7 @@ class FyTrans(TransportSolverNumerics):
 
                     V = vpr * gm3 * ns * energy_V + Gs * flux_multiplier - (3 / 2) * k_phi * vpr * rho_tor * ns
 
-                    R = vpr * (Q - k_vppr * ns * Ts) * rho_tor_boundary
+                    S = vpr * (Q - k_vppr * ns * Ts) * rho_tor_boundary
 
                     # at axis x=0, dH_dx=0
                     bc = [[0, 1, 0]]
@@ -704,7 +704,7 @@ class FyTrans(TransportSolverNumerics):
 
                     V = (vpr * gm3 * ns * V_u_pinch + Gs - k_phi * vpr * rho_tor * ns) * gm8 * ms
 
-                    R = vpr * (U - k_rho_bdry * ms * ns * us) * rho_tor_boundary
+                    S = vpr * (U - k_rho_bdry * ms * ns * us) * rho_tor_boundary
 
                     # at axis x=0, du_dx=0
                     bc = [[0, 1, 0]]
@@ -742,7 +742,7 @@ class FyTrans(TransportSolverNumerics):
                 case _:
                     raise RuntimeError(f"Unknown equation of {equ.identifier}!")
 
-            equ["coefficient"] = [d_dt, D, V, R]
+            equ["coefficient"] = [d_dt, D, V, S]
 
             equ["boundary_condition_value"] = bc
 
@@ -752,12 +752,12 @@ class FyTrans(TransportSolverNumerics):
         Y = np.zeros([len(self.equations) * 2, X.size])
 
         if (initial_value := kwargs.get("initial_value", _not_found_)) is not _not_found_:
-            if isinstance(self._dc_pos, float):
-                dc_index = np.argmax(X > self._dc_pos)
-            else:
-                dc_index = None
+            # if isinstance(self._dc_pos, float):
+            #     dc_index = np.argmax(X > self._dc_pos)
+            # else:
+            #     dc_index = None
 
-            logger.debug(X[dc_index - 1 : dc_index + 1])
+            # logger.debug(X[dc_index - 1 : dc_index + 1])
 
             for idx, equ in enumerate(self.equations):
                 profile = initial_value.get(equ.identifier, 0)
@@ -765,7 +765,7 @@ class FyTrans(TransportSolverNumerics):
                 Y[idx * 2] = profile(X) if isinstance(profile, Expression) else np.full_like(X, profile)
 
             for idx, equ in enumerate(self.equations):
-                d_dt, D, V, R = equ.coefficient
+                d_dt, D, V, S = equ.coefficient
                 y = Y[idx * 2]
                 yp = derivative(y, X)
                 Y[idx * 2 + 1] = -D(X, *Y) * yp + V(X, *Y) * y
@@ -781,10 +781,7 @@ class FyTrans(TransportSolverNumerics):
         dY = np.zeros([len(self.equations) * 2, X.size])
 
         hyper_diff = self._hyper_diff
-        if isinstance(self._dc_pos, float):
-            dc_index = np.argmax(X > self._dc_pos) + 1
-        else:
-            dc_index = None
+ 
         # 添加量纲和归一化系数，复原为物理量
         Y = _Y * self._units.reshape(-1, 1)
 
@@ -792,22 +789,22 @@ class FyTrans(TransportSolverNumerics):
             y = Y[idx * 2]
             flux = Y[idx * 2 + 1]
 
-            _d_dt, _D, _V, _R = equ.coefficient
+            _d_dt, _D, _V, _S = equ.coefficient
 
             try:
                 d_dt = _d_dt(X, *Y, *args) if isinstance(_d_dt, Expression) else _d_dt
                 D = _D(X, *Y, *args) if isinstance(_D, Expression) else _D
                 V = _V(X, *Y, *args) if isinstance(_V, Expression) else _V
-                R = _R(X, *Y, *args) if isinstance(_R, Expression) else _R
+                S = _S(X, *Y, *args) if isinstance(_S, Expression) else _S
             except RuntimeError as error:
-                raise RuntimeError(f"Error when calcuate {equ.identifier} {_R}") from error
+                raise RuntimeError(f"Error when calcuate {equ.identifier} {_S}") from error
 
             # yp = np.zeros_like(X)
             # yp[:-1] += 0.5 * ((y[1:] - y[:-1]) / (X[1:] - X[:-1]))  # derivative(flux, X)
             # yp[1:] += yp[:-1]
             # yp[0] = 0
             # yp[-1] *= 2
-            yp = derivative_(y, X, dc_index)
+            yp = derivative(y, X)
             d_dr = (-flux + V * y + hyper_diff * yp) / (D + hyper_diff)
 
             # fluxp = np.zeros_like(X)
@@ -816,18 +813,19 @@ class FyTrans(TransportSolverNumerics):
             # fluxp[0] = 0
             # flux[-1] *= 2
 
-            fluxp = derivative_(flux, X, dc_index)
-            dflux_dr = (R - d_dt + hyper_diff * fluxp) / (1.0 + hyper_diff)
+            fluxp = derivative(flux, X)
+            dflux_dr = (S - d_dt + hyper_diff * fluxp) / (1.0 + hyper_diff)
 
-            if equ.identifier == "ion/alpha/density":
-                dflux_dr[-1] = dflux_dr[-2]
+            # if equ.identifier == "ion/alpha/density":
+            #     dflux_dr[-1] = dflux_dr[-2]
             # if np.any(np.isnan(dflux_dr)):
             #     logger.exception(f"Error: {equ.identifier} nan in dflux_dr {_R._render_latex_()} {dflux_dr}")
 
             # 无量纲，归一化
             dY[idx * 2] = d_dr
             dY[idx * 2 + 1] = dflux_dr
-
+            dY[idx * 2, 0] = 0
+            # dY[idx * 2 + 1, 0] = 0
         dY /= self._units.reshape(-1, 1)
 
         return dY
@@ -907,12 +905,9 @@ class FyTrans(TransportSolverNumerics):
         current.Yp = sol.yp
         current.rms_residuals = sol.rms_residuals
 
-        logger.debug(f"Solve BVP { 'success' if sol.success else 'failed'}: {sol.message} , {sol.niter} iterations")
-
-        if sol.status == 0:
-            logger.info(f"Solve transport equations success!")
-        else:
-            logger.error(f"Solve transport equations failed!")
+        logger.info(
+            f"Solving the transport equation [{ 'success' if sol.success else 'failed'}]: {sol.message} , {sol.niter} iterations"
+        )
 
         return current
 

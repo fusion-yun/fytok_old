@@ -4,6 +4,7 @@ import numpy as np
 import scipy.constants
 from spdm.data.Path import Path
 from spdm.data.HTree import Dict
+from spdm.data.Expression import Variable, Expression
 from spdm.data.Function import Function
 from spdm.data.sp_property import SpTree, sp_property, sp_tree, PropertyTree
 from spdm.data.AoS import AoS
@@ -123,7 +124,7 @@ def get_species(species):
 class Reaction:
     reactants: tuple
     products: tuple
-    reactivities: Function = sp_property(label=r"\sigma")
+    reactivities: Expression = sp_property(label=r"\sigma")
 
     @sp_property(units="eV")
     def energy(self) -> typing.Tuple[float, float]:
@@ -145,79 +146,103 @@ class NuclearReaction(Dict[Reaction]):
         return self._find_(key, default_value=default_value)
 
 
+def reactivities_DT(ti): 
+    # H.-S. Bosch and G.M. Hale, Nucl. Fusion 32 (1992) 611.
+
+    # Table VII:
+    c1 = 1.17302e-9
+    c2 = 1.51361e-2
+    c3 = 7.51886e-2
+    c4 = 4.60643e-3
+    c5 = 1.3500e-2
+    c6 = -1.06750e-4
+    c7 = 1.36600e-5
+    bg = 34.3827
+    er = 1.124656e6
+    ti = ti * 1.0e-3
+    # Eq. (12)
+    r0 = ti * (c2 + ti * (c4 + ti * c6)) / (1.0 + ti * (c3 + ti * (c5 + ti * c7)))
+    theta = ti / (1.0 - r0)
+    xi = (bg**2 / (4.0 * theta)) ** (1.0 / 3.0)
+
+    sigv = c1 * theta * np.sqrt(xi / (er * (ti) ** 3)) * np.exp(-3.0 * xi)
+    return sigv * 1.0e-6 # m^3/s
+
+
 nuclear_reaction = NuclearReaction(
     {
         r"D(t,n)alpha": {
             "reactants": ["D", "T"],
             "products": ["n", "alpha"],
-            "reactivities": (
-                # eV
-                np.array(
-                    [
-                        0.10e3,
-                        0.20e3,
-                        0.30e3,
-                        0.40e3,
-                        0.50e3,
-                        0.60e3,
-                        0.70e3,
-                        0.80e3,
-                        1.00e3,
-                        1.25e3,
-                        1.30e3,
-                        1.50e3,
-                        1.75e3,
-                        1.80e3,
-                        2.00e3,
-                        2.50e3,
-                        3.00e3,
-                        4.00e3,
-                        5.00e3,
-                        6.00e3,
-                        8.00e3,
-                        10.0e3,
-                        12.0e3,
-                        15.0e3,
-                        20.0e3,
-                        30.0e3,
-                        40.0e3,
-                        50.0e3,
-                    ]
-                ),
-                # m^3/s
-                np.array(
-                    [
-                        1.000e-33,  # 人工补充的点，
-                        1.254e-32,
-                        7.292e-31,
-                        9.344e-30,
-                        5.697e-29,
-                        2.253e-28,
-                        6.740e-28,
-                        1.662e-27,
-                        6.857e-27,
-                        2.546e-26,
-                        3.174e-26,
-                        6.923e-26,
-                        1.539e-25,
-                        1.773e-25,
-                        2.977e-25,
-                        8.425e-25,
-                        1.867e-24,
-                        5.974e-24,
-                        1.366e-23,
-                        2.554e-23,
-                        6.222e-23,
-                        1.136e-22,
-                        1.747e-22,
-                        2.740e-22,
-                        4.330e-22,
-                        6.681e-22,
-                        7.998e-22,
-                        8.649e-22,
-                    ]
-                ),
-            ),
+            "reactivities": reactivities_DT
+            # (
+            #     # eV
+            #     np.array(
+            #         [
+            #             0.10e3,
+            #             0.20e3,
+            #             0.30e3,
+            #             0.40e3,
+            #             0.50e3,
+            #             0.60e3,
+            #             0.70e3,
+            #             0.80e3,
+            #             1.00e3,
+            #             1.25e3,
+            #             1.30e3,
+            #             1.50e3,
+            #             1.75e3,
+            #             1.80e3,
+            #             2.00e3,
+            #             2.50e3,
+            #             3.00e3,
+            #             4.00e3,
+            #             5.00e3,
+            #             6.00e3,
+            #             8.00e3,
+            #             10.0e3,
+            #             12.0e3,
+            #             15.0e3,
+            #             20.0e3,
+            #             30.0e3,
+            #             40.0e3,
+            #             50.0e3,
+            #         ]
+            #     ),
+            #     # m^3/s
+            #     np.array(
+            #         [
+            #             0.000e-33,
+            #             1.254e-32,
+            #             7.292e-31,
+            #             9.344e-30,
+            #             5.697e-29,
+            #             2.253e-28,
+            #             6.740e-28,
+            #             1.662e-27,
+            #             6.857e-27,
+            #             2.546e-26,
+            #             3.174e-26,
+            #             6.923e-26,
+            #             1.539e-25,
+            #             1.773e-25,
+            #             2.977e-25,
+            #             8.425e-25,
+            #             1.867e-24,
+            #             5.974e-24,
+            #             1.366e-23,
+            #             2.554e-23,
+            #             6.222e-23,
+            #             1.136e-22,
+            #             1.747e-22,
+            #             2.740e-22,
+            #             4.330e-22,
+            #             6.681e-22,
+            #             7.998e-22,
+            #             8.649e-22,
+            #         ]
+            #     ),
+            # ),
         },
         r"3He(t,n)alpha": {
             "reactants": ["3He", "T"],

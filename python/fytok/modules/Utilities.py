@@ -181,7 +181,7 @@ class CoreRadialGrid:
         # assert isinstance(self.psi_boundary, float), f"psi_boundary must be specified {self.psi_boundary}"
         # assert isinstance(self.rho_tor_boundary, float), f"rho_tor_boundary must be specified {self.rho_tor_boundary}"
         assert self.rho_tor_norm[0] >= 0 and self.rho_tor_norm[-1] <= 1.0, f"illegal rho_tor_norm {self.rho_tor_norm}"
-        assert self.psi_norm[0] >= 0 and self.psi_norm[-1] <= 1.0, f"illegal psi_norm {self.psi_norm}"
+        # assert self.psi_norm[0] >= 0 and self.psi_norm[-1] <= 1.0, f"illegal psi_norm {self.psi_norm}"
 
     def __copy__(self) -> CoreRadialGrid:
         return CoreRadialGrid(
