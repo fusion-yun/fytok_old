@@ -85,7 +85,7 @@ class CollisionalEquipartition(CoreSources.Source):
             clog_ei._metadata["name"] = "clog"
             clog_ei._metadata["label"] = r"\Lambda_{ei}"
 
-            nv_ei = (3.2e-9 * zi * zi / ai) * Te ** (-1.5) * clog_ei * 1.5e-6 # FIXME: 1.5e-6 符合 astra 结果，需要再次复核 
+            nv_ei = (3.2e-9 * zi * zi / ai) * (Te ** (-1.5)) * clog_ei * 1.5e-6 # FIXME: 1.5e-6 符合 astra 结果，需要再次复核 
 
             conductivity_parallel += 1.96e-15 * e**2 / me * ne * ne / nv_ei
 

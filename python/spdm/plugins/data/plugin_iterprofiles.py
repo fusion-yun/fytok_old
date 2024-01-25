@@ -98,8 +98,8 @@ def read_iter_profiles(path):
         "ion": [
             {"@name": "D", "density": b_nDT, "temperature": b_Ti},
             {"@name": "T", "density": b_nDT, "temperature": b_Ti},
-            {"@name": "Be", "density": 0.02 * b_ne, "temperature": b_Ti, "z_ion_1d": z_Be},
-            {"@name": "Ar", "density": 0.0012 * b_ne, "temperature": b_Ti, "z_ion_1d": z_Ar},
+            {"@name": "Be", "density": 0.02 * b_ne, "z_ion_1d": z_Be},
+            {"@name": "Ar", "density": 0.0012 * b_ne, "z_ion_1d": z_Ar},
             {"@name": "He", "density": b_nath, "temperature": b_Ti},
             {"@name": "alpha", "density": b_nalpha - b_nath},
         ],
@@ -183,12 +183,12 @@ def read_iter_profiles(path):
 
     Q_e = (
         (
-            profiles_1D["Poh"].values
-            + profiles_1D["Paux"].values
+            # profiles_1D["Poh"].values
+            +profiles_1D["Paux"].values
             - profiles_1D["Prad"].values
             - profiles_1D["Pneu"].values
             # - profiles_1D["Peic"].values
-            + profiles_1D["Pdte"].values
+            # + profiles_1D["Pdte"].values
         )
         * 1e6
         / scipy.constants.electron_volt
@@ -196,9 +196,9 @@ def read_iter_profiles(path):
 
     Q_DT = (
         (
-            profiles_1D["Pibm"].values
+            +profiles_1D["Pibm"].values
             # + profiles_1D["Peic"].values
-            + profiles_1D["Pdti"].values
+            # + profiles_1D["Pdti"].values
         )
         * 1e6
         / scipy.constants.electron_volt

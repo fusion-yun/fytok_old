@@ -104,9 +104,7 @@ class FusionReaction(CoreSources.Source):
 
             E0, E1 = reaction.energy
 
-            logger.debug((E0, E1))
-
-            lnGamma = 20 # FIXME: 粗略估计
+            lnGamma = 17  # FIXME: 粗略估计
 
             C = zero
             a_tot = 0
@@ -147,19 +145,19 @@ class FusionReaction(CoreSources.Source):
 
             frac = 0.0
 
-            if heating:
-                # 离子加热分量
-                #  [Stix, Plasma Phys. 14 (1972) 367 Eq.15
+            # if heating:
+            # 离子加热分量
+            #  [Stix, Plasma Phys. 14 (1972) 367 Eq.15
 
-                frac = self._sivukhin(E1 / Ecrit)
+            frac = self._sivukhin(E1 / Ecrit) 
 
-                # 加热离子
-                for label in [r0, r1]:
-                    ion = source_1d.ion[label]
+            # 加热离子
+            for label in [r0, r1]:
+                ion = source_1d.ion[label]
 
-                    ion.energy += Efus * frac * ion.a / a_tot
+                ion.energy += Efus * frac * ion.a / a_tot
 
-                source_1d.electrons.energy += Efus * (1.0 - frac)
+            source_1d.electrons.energy += Efus * (1.0 - frac)
 
         return current
 

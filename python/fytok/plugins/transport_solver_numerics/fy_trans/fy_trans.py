@@ -121,6 +121,8 @@ class FyTrans(TransportSolverNumerics):
         enable_momentum = self.code.parameters.enable_momentum or False
         enable_impurity = self.code.parameters.enable_impurity or False
 
+        profiles_1d = self.profiles_1d
+
         ######################################################################################
         # 确定待求未知量
 
@@ -155,16 +157,13 @@ class FyTrans(TransportSolverNumerics):
             #
             unknowns.append(f"ion/{s}/density")
 
-        if enable_impurity:
-            # enable 杂质输运
-            for s in self.impurities:
-                unknowns.append(f"ion/{s}/density")
-                unknowns.append(f"ion/{s}/temperature")
-                if enable_momentum:
-                    unknowns.append(f"ion/{s}/velocity/toroidal")
-        else:
-            # 杂质分布需要由外部 （core_profiles）给定
-            pass
+        # if enable_impurity:
+        #     # enable 杂质输运
+        #     for s in self.impurities:
+        #         unknowns.append(f"ion/{s}/density")
+        #         unknowns.append(f"ion/{s}/temperature")
+        #         if enable_momentum:
+        #             unknowns.append(f"ion/{s}/velocity/toroidal")
 
         ######################################################################################
         # 声明主磁面坐标 primary_coordinate
@@ -273,6 +272,10 @@ class FyTrans(TransportSolverNumerics):
 
         profiles = self.profiles_1d
 
+        rho_tor_norm = profiles.rho_tor_norm
+
+        psi_norm = profiles.psi_norm
+
         eq0: Equilibrium.TimeSlice = self.inports["equilibrium/time_slice/0"].fetch()
 
         eq1: Equilibrium.TimeSlice = self.inports["equilibrium/time_slice/-1"].fetch()
@@ -285,25 +288,24 @@ class FyTrans(TransportSolverNumerics):
 
         ni_flux = sum([ion.z * ion.get("density_flux", zero) for ion in profiles.ion], zero)
 
-        for label in self.impurities:
-            ni += core0_1d.ion[label].density(rho_tor_norm)
-            # ni_flux += core0_1d.ion[label].density_flux(rho_tor_norm)
+        # 杂质密度
+        # for label in self.impurities:
+        #     logger.debug(label)
+        #     imp = core0_1d.ion[label]
+        #     ni += imp.z * imp.density(rho_tor_norm)
+        # ni_flux += core0_1d.ion[label].density_flux(rho_tor_norm)
 
-        profiles.electrons["density"] = ni
+        impurity_fraction = kwargs.get("impurity_fraction", 0.0)
 
-        profiles.electrons["density_flux"] = ni_flux
+        profiles.electrons["density"] = ni / (1.0 - impurity_fraction)
+
+        profiles.electrons["density_flux"] = ni_flux / (1.0 - impurity_fraction)
 
         tranport: AoS[CoreTransport.Model.TimeSlice] = self.inports["core_transport/model/*"].fetch(profiles)
 
         sources: AoS[CoreSources.Source.TimeSlice] = self.inports["core_sources/source/*"].fetch(profiles)
 
         eq0_1d = eq0.profiles_1d
-
-        # fmt:on
-
-        rho_tor_norm = profiles.rho_tor_norm
-
-        psi_norm = profiles.psi_norm
 
         # if psi_norm is _not_found_:
         #     # psi_norm = profiles.psi / (eq0_1d.grid.psi_boundary - eq0_1d.grid.psi_axis)
@@ -374,6 +376,20 @@ class FyTrans(TransportSolverNumerics):
 
         if boundary_value is None:
             boundary_value = {}
+        self._units = np.array(sum([equ.units for equ in self.equations], tuple()))
+
+        X = current.grid.rho_tor_norm
+        Y = np.zeros([len(self.equations) * 2, X.size])
+
+        if (initial_value := kwargs.get("initial_value", _not_found_)) is not _not_found_:
+            for idx, equ in enumerate(self.equations):
+                value = initial_value.get(equ.identifier, 0)
+
+                Y[idx * 2] = value(X) if isinstance(value, Expression) else np.full_like(X, value)
+
+                boundary_value.setdefault(equ.identifier, Y[idx * 2][-1])
+
+        logger.debug(boundary_value)
 
         hyper_diff = self._hyper_diff
 
@@ -746,34 +762,15 @@ class FyTrans(TransportSolverNumerics):
 
             equ["boundary_condition_value"] = bc
 
-        self._units = np.array(sum([equ.units for equ in self.equations], tuple()))
-
-        X = current.grid.rho_tor_norm
-        Y = np.zeros([len(self.equations) * 2, X.size])
-
         if (initial_value := kwargs.get("initial_value", _not_found_)) is not _not_found_:
-            # if isinstance(self._dc_pos, float):
-            #     dc_index = np.argmax(X > self._dc_pos)
-            # else:
-            #     dc_index = None
-
-            # logger.debug(X[dc_index - 1 : dc_index + 1])
-
-            for idx, equ in enumerate(self.equations):
-                profile = initial_value.get(equ.identifier, 0)
-
-                Y[idx * 2] = profile(X) if isinstance(profile, Expression) else np.full_like(X, profile)
-
             for idx, equ in enumerate(self.equations):
                 d_dt, D, V, S = equ.coefficient
                 y = Y[idx * 2]
                 yp = derivative(y, X)
                 Y[idx * 2 + 1] = -D(X, *Y) * yp + V(X, *Y) * y
 
-            Y /= self._units.reshape(-1, 1)
-
         current.X = X
-        current.Y = Y
+        current.Y = Y / self._units.reshape(-1, 1)
 
         return current
 
@@ -781,7 +778,7 @@ class FyTrans(TransportSolverNumerics):
         dY = np.zeros([len(self.equations) * 2, X.size])
 
         hyper_diff = self._hyper_diff
- 
+
         # 添加量纲和归一化系数，复原为物理量
         Y = _Y * self._units.reshape(-1, 1)
 
@@ -824,8 +821,10 @@ class FyTrans(TransportSolverNumerics):
             # 无量纲，归一化
             dY[idx * 2] = d_dr
             dY[idx * 2 + 1] = dflux_dr
-            dY[idx * 2, 0] = 0
-            # dY[idx * 2 + 1, 0] = 0
+            if equ.identifier == "ion/alpha/density":
+                #     dY[idx * 2, 0] = 0
+                dY[idx * 2 + 1, -1] = 0
+
         dY /= self._units.reshape(-1, 1)
 
         return dY
