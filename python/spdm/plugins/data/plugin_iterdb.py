@@ -103,7 +103,8 @@ def sp_to_imas(data: dict):
 
 
     for i_prim in range(nprim):        
-        entry[f"core_profiles/time_slice/0/profiles_1d/ion/{i_prim}/label"]                        = namep[i_prim]                # ion name  
+        
+        entry[f"core_profiles/time_slice/0/profiles_1d/ion/{i_prim}/@name"]                        = namep[i_prim].capitalize()               # ion name  
         entry[f"core_profiles/time_slice/0/profiles_1d/ion/{i_prim}/density"]                      = np.asarray(data[n:=n+1][1:]) # primary ion density, #/meter**3, species: d       
         entry[f"core_profiles/time_slice/0/profiles_1d/ion/{i_prim}/temperature"]                  = Ti
     for i_prim in range(nprim):

@@ -52,15 +52,13 @@ class CoreProfilesSpecies:
     @sp_property
     def pressure(self) -> Expression:
         # FIXME: coefficient on pressure fast
-        return self.pressure_thermal + self.pressure_fast_perpendicular + self.pressure_fast_parallel
+        return self.density * self.temperature * scipy.constants.electron_volt
 
-    @sp_property
-    def pressure_thermal(self) -> Expression:
-        return self.density_thermal * self.temperature * scipy.constants.electron_volt
+    pressure_thermal: Expression = sp_property(units="Pa", default_value=zero)
 
-    pressure_fast_perpendicular: Expression = sp_property(units="Pa")
+    pressure_fast_perpendicular: Expression = sp_property(units="Pa", default_value=zero)
 
-    pressure_fast_parallel: Expression = sp_property(units="Pa")
+    pressure_fast_parallel: Expression = sp_property(units="Pa", default_value=zero)
 
     rotation_frequency_tor: Expression = sp_property(units="rad.s^-1")
 

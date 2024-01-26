@@ -226,6 +226,9 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
     def find_surfaces(self, psi_norm, *args, **kwargs) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
         psi = psi_norm * (self.psi_boundary - self.psi_axis) + self.psi_axis
         for p, surf in self.find_surfaces_by_psi(psi, *args, **kwargs):
+            if surf is None:
+                logger.exception(f"Can not find surf at {p} {(p-self.psi_axis)/(self.psi_boundary-self.psi_axis)}")
+                continue
             yield (p - self.psi_axis) / (self.psi_boundary - self.psi_axis), surf
 
     @dataclass
@@ -265,7 +268,7 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
             return rmin, zmin, rmax, zmax, rzmin, rzmax, r_inboard, r_outboard
 
         if psi_norm is None:
-            psi_norm = self.psi
+            psi_norm = self.psi_norm
         elif not isinstance(psi_norm, (np.ndarray, collections.abc.MutableSequence)):
             psi_norm = [psi_norm]
 
@@ -454,8 +457,8 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
     def grid(self) -> CoreRadialGrid:
         psi_norm = self.psi_norm
         rho_tor_norm = self.rho_tor_norm(self.psi_norm)
-        if rho_tor_norm[0] < 0 :
-             rho_tor_norm[0]=0.0
+        if rho_tor_norm[0] < 0:
+            rho_tor_norm[0] = 0.0
         return CoreRadialGrid(
             {
                 "psi_norm": psi_norm,
@@ -481,7 +484,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
 
     @sp_property(label=r"\phi")
     def phi(self) -> Expression:
-        return  self.dphi_dpsi.I* (self._coord.psi_boundary - self._coord.psi_axis)
+        return self.dphi_dpsi.I * (self._coord.psi_boundary - self._coord.psi_axis)
 
     @sp_property(label=r"\rho_{tor}")
     def rho_tor(self) -> Expression:

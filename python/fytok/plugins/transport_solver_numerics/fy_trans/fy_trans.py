@@ -374,22 +374,18 @@ class FyTrans(TransportSolverNumerics):
 
         k_vppr = 0  # (3 / 2) * k_rho_bdry - k_phi *　x * vpr(psi).dln()
 
-        if boundary_value is None:
-            boundary_value = {}
         self._units = np.array(sum([equ.units for equ in self.equations], tuple()))
 
         X = current.grid.rho_tor_norm
         Y = np.zeros([len(self.equations) * 2, X.size])
 
+        if boundary_value is None:
+            boundary_value = {}
+
         if (initial_value := kwargs.get("initial_value", _not_found_)) is not _not_found_:
             for idx, equ in enumerate(self.equations):
                 value = initial_value.get(equ.identifier, 0)
-
                 Y[idx * 2] = value(X) if isinstance(value, Expression) else np.full_like(X, value)
-
-                boundary_value.setdefault(equ.identifier, Y[idx * 2][-1])
-
-        logger.debug(boundary_value)
 
         hyper_diff = self._hyper_diff
 
@@ -402,7 +398,7 @@ class FyTrans(TransportSolverNumerics):
                 quantity = "velocity/toroidal"
                 path = path.parent
 
-            bc_value = boundary_value.get(equ.identifier, None)
+            bc_value = boundary_value.get(equ.identifier, Y[idx * 2][-1])
 
             match quantity:
                 case "psi":
@@ -821,7 +817,7 @@ class FyTrans(TransportSolverNumerics):
             # 无量纲，归一化
             dY[idx * 2] = d_dr
             dY[idx * 2 + 1] = dflux_dr
-            if equ.identifier == "ion/alpha/density":
+            if equ.identifier in ["ion/alpha/density", "ion/He/density"]:
                 #     dY[idx * 2, 0] = 0
                 dY[idx * 2 + 1, -1] = 0
 
