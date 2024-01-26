@@ -83,6 +83,15 @@ class Code:
 
 @sp_tree
 class Identifier:
+    def __init__(self, *args, **kwargs):
+        if len(args) == 0:
+            pass
+        elif isinstance(args[0], str):
+            args[0] = {"name": args[0]}
+        elif isinstance(args[0], int):
+            args[0] = {"int": args[0]}
+        super().__init__(*args, **kwargs)
+
     name: str
     index: int
     description: str
@@ -124,9 +133,15 @@ class Module(Actor):
     def tag(self) -> str:
         return f"{FY_JOBID}/{self.code.module_path}"
 
-    def execute(self, current: TimeSlice, *previous: TimeSlice) -> typing.Type[TimeSlice]:
-        logger.info(f"Execute module {self.code.module_path}")
-        return super().execute(current, *previous)
+    def refresh(self, *args, **kwargs) -> typing.Type[TimeSlice]:
+        """更新当前 Actor 的状态。
+        更新当前状态树 （time_slice），并执行 self.iteration+=1
+
+        """
+        logger.info(f"Refresh module {self.code.module_path}")
+        current = super().refresh(*args, **kwargs)
+
+        return current
 
 
 class IDS(Module):
@@ -217,7 +232,7 @@ class CoreRadialGrid:
             rho_tor_norm = Function(self.psi_norm, self.rho_tor_norm)(psi_norm)
             if rho_tor_norm[0] < 0:
                 psi_norm[0] = 0.0
-          
+
         else:
             rho_tor_norm = self.rho_tor_norm
             psi_norm = self.psi_norm
