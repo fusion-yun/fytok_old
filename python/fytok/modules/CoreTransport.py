@@ -166,6 +166,27 @@ class CoreTransportModel(Module):
     ) -> CoreTransportTimeSlice:
         return super().refresh(*args, core_profiles=core_profiles, equilibrium=equilibrium, **kwargs)
 
+    @staticmethod
+    def _flux2DV(
+        spec: CoreTransport.Model.TimeSlice.Profiles1D.Ion,
+        ion: CoreProfiles.TimeSlice.Profiles1D.Ion,
+        R0: float,
+        rho_tor_boundary,
+    ):
+        """Convert flux to d,v ,
+        @ref https://wpcd-workflows.github.io/ets.html#ds-and-vs-from-turbulence-codes-to-transport-solvers
+        """
+        inv_Ln = 1 / R0  # np.max(1 / R0, ion.density.dln / rho_tor_boundary)
+        inv_LT = 1 / R0  # np.max(1 / R0, ion.temperature.dln / rho_tor_boundary)
+        D_ = np.abs(spec.particles.flux) / inv_Ln
+        Chi_ = np.abs(spec.energy.flux) / inv_LT
+        D = np.max(D_, Chi_ / 5)
+        Chi = np.max(Chi_, D_ / 5)
+        spec.particles.d = D
+        spec.particles.v = spec.particles.flux + D * ion.density.dln / rho_tor_boundary
+        spec.energy.d = Chi
+        spec.energy.v = spec.energy.flux + Chi * ion.temperature.dln / rho_tor_boundary
+
 
 @sp_tree
 class CoreTransport(IDS):
