@@ -12,6 +12,8 @@ from spdm.geometry.Curve import Curve
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Point import Point
 from spdm.utils.logger import deprecated, logger
+from spdm.utils.tags import _not_found_
+
 from .optimize import minimize_filter
 
 # import matplotlib.pyplot as plt
@@ -79,7 +81,7 @@ def find_countours_skimage(vals: list, z: np.ndarray, x: np.ndarray, y: np.ndarr
         #     yield val, None
 
 
-def _find_contours(
+def find_contours(
     *args, values, **kwargs
 ) -> typing.Generator[typing.Tuple[float, typing.Generator[GeoObject | None, None, None]], None, None]:
     if len(args) == 3:
@@ -159,7 +161,7 @@ def find_critical_points(psi: Field) -> typing.Tuple[typing.Sequence[OXPoint], t
     return opoints, xpoints
 
 
-def find_contours(psirz: Field, psi, axis=None) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
+def find_contours_old(psirz: Field, psi, axis=None) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
     """
     if axis is not None:
         only return  closed surface  enclosed axis
@@ -169,11 +171,13 @@ def find_contours(psirz: Field, psi, axis=None) -> typing.Generator[typing.Tuple
         do not guarantee the number of surface == len(psi)
         return all surface ,
     """
-    if isinstance(psi, float):
+    if psi is None or psi is _not_found_:
+        psi = []
+    elif isinstance(psi, float):
         psi = [psi]
 
     if axis is None or axis is False:
-        for psi_val, surfs in _find_contours(psirz, values=psi):
+        for psi_val, surfs in find_contours(psirz, values=psi):
             for surf in surfs:
                 if isinstance(surf, GeoObject):
                     surf.set_coordinates("r", "z")
@@ -193,7 +197,7 @@ def find_contours(psirz: Field, psi, axis=None) -> typing.Generator[typing.Tuple
 
         current_psi = np.nan
         current_count = 0
-        for psi_val, surfs in _find_contours(psirz, values=psi):
+        for psi_val, surfs in find_contours(psirz, values=psi):
             # 累计相同 level 的 surface个数
             # 如果累计的 surface 个数大于1，说明存在磁岛
             # 如果累计的 surface 个数等于0，说明该 level 对应的 surface 不存在

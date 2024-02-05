@@ -209,26 +209,33 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
 
     ###############################
     # surface integral
-    def find_surfaces_by_psi(
-        self, psi, *args, magnetic_axis=None, **kwargs
-    ) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
-        if magnetic_axis is None:
-            magnetic_axis = (self.magnetic_axis.r, self.magnetic_axis.z, self.psi_axis)
+    def find_surfaces_by_psi(self, psi) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
 
-        if psi is None or psi is _not_found_:
-            return
-        elif isinstance(psi, float):
-            psi = [psi]
+        psi_axis = self.psi_axis
+        psi_boundary = self.psi_boundary
+        R = self.magnetic_axis.r
+        Z = self.magnetic_axis.z
+        
+        for psi_val, surfs in find_contours(self.psirz, values=psi):
 
-        for p in psi:
-            yield from find_contours(self.psirz, p, *args, axis=magnetic_axis, **kwargs)
+            if np.isclose(psi_val, psi_axis):
+                yield psi_val, Point(R, Z)
 
-    def find_surfaces(self, psi_norm, *args, **kwargs) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
+            elif np.isclose(psi_val, psi_boundary):
+                yield psi_val, next(surfs)
+
+            else:
+                for surf in surfs:
+                    if isinstance(surf, Curve) and surf.is_closed and surf.enclose(R, Z):
+                        surf.set_coordinates("r", "z")
+                        yield psi_val, surf
+                        break
+                else:
+                    logger.exception(f"Can not find surf at {psi_val}  ")
+
+    def find_surfaces(self, psi_norm) -> typing.Generator[typing.Tuple[float, GeoObject], None, None]:
         psi = psi_norm * (self.psi_boundary - self.psi_axis) + self.psi_axis
-        for p, surf in self.find_surfaces_by_psi(psi, *args, **kwargs):
-            if surf is None:
-                logger.exception(f"Can not find surf at {p} {(p-self.psi_axis)/(self.psi_boundary-self.psi_axis)}")
-                continue
+        for p, surf in self.find_surfaces_by_psi(psi):
             yield (p - self.psi_axis) / (self.psi_boundary - self.psi_axis), surf
 
     @dataclass
@@ -593,9 +600,7 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
 
     @sp_property
     def gm6(self) -> Expression:
-        return self._coord.surface_average(self._profiles_2d.grad_psi2 / self._profiles_2d.B2) / (
-            self.dpsi_drho_tor**2
-        )
+        return self._coord.surface_average(self._profiles_2d.grad_psi2 / self._profiles_2d.B2) / (self.dpsi_drho_tor**2)
 
     @sp_property
     def gm7(self) -> Expression:
