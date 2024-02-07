@@ -144,6 +144,12 @@ class CoreTransportModel(Module):
 
         return current
 
+    def execute(self, current: CoreTransportTimeSlice, *previous: CoreTransportTimeSlice) -> CoreTransportTimeSlice:
+        return super().execute(current, *previous)
+
+    def postprocess(self, current: CoreTransportTimeSlice) -> CoreTransportTimeSlice:
+        return super().postprocess(current)
+
     def fetch(self, *args, **kwargs) -> CoreTransportTimeSlice:
         if len(args) > 0 and isinstance(args[0], CoreProfiles.TimeSlice.Profiles1D):
             args = (args[0].rho_tor_norm, *args[1:])
@@ -180,8 +186,8 @@ class CoreTransportModel(Module):
         inv_LT = 1 / R0  # np.max(1 / R0, ion.temperature.dln / rho_tor_boundary)
         D_ = np.abs(spec.particles.flux) / inv_Ln
         Chi_ = np.abs(spec.energy.flux) / inv_LT
-        D = np.max(D_, Chi_ / 5)
-        Chi = np.max(Chi_, D_ / 5)
+        D = np.maximum(D_, Chi_ / 5)
+        Chi = np.maximum(Chi_, D_ / 5)
         spec.particles.d = D
         spec.particles.v = spec.particles.flux + D * ion.density.dln / rho_tor_boundary
         spec.energy.d = Chi

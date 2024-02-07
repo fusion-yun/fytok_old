@@ -215,14 +215,14 @@ class FyEquilibriumCoordinateSystem(Equilibrium.TimeSlice.CoordinateSystem):
         psi_boundary = self.psi_boundary
         R = self.magnetic_axis.r
         Z = self.magnetic_axis.z
-        
+
         for psi_val, surfs in find_contours(self.psirz, values=psi):
 
             if np.isclose(psi_val, psi_axis):
                 yield psi_val, Point(R, Z)
 
-            elif np.isclose(psi_val, psi_boundary):
-                yield psi_val, next(surfs)
+            # elif np.isclose(psi_val, psi_boundary):
+            #     yield psi_val, next(surfs)
 
             else:
                 for surf in surfs:

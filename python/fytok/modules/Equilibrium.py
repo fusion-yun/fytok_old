@@ -200,7 +200,7 @@ class EquilibriumProfiles1D(equilibrium._T_equilibrium_profiles_1d):
 
     squareness_lower_outer: Expression
 
-    squareness: Expression
+    squareness: Expression = sp_property(default_value=zero)
 
     volume: Expression = sp_property(units="m^3")
 
@@ -486,6 +486,7 @@ class Equilibrium(IDS):
 
     - O. Sauter and S. Yu Medvedev, "Tokamak coordinate conventions: COCOS", Computer Physics Communications 184, 2 (2013), pp. 293--302.
     """
+
     _plugin_registry = {}
 
     _plugin_prefix = "fytok.plugins.equilibrium."
