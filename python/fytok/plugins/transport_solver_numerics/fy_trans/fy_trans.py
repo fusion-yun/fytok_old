@@ -9,9 +9,9 @@ import typing
 import numpy as np
 import scipy.constants
 
-from spdm.data.Expression import Variable, Expression, Scalar, one, zero, derivative
-from spdm.data.sp_property import sp_tree
-from spdm.data.Path import as_path
+from spdm.core.Expression import Variable, Expression, Scalar, one, zero, derivative
+from spdm.core.sp_property import sp_tree
+from spdm.core.Path import as_path
 
 from spdm.utils.typing import array_type
 from spdm.utils.tags import _not_found_

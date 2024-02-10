@@ -6,12 +6,12 @@ import numpy as np
 import scipy.constants
 
 
-from spdm.data.Expression import Expression, Variable
-from spdm.data.Field import Field
-from spdm.data.Expression import Expression
-from spdm.data.HTree import List
-from spdm.data.sp_property import sp_property, sp_tree
-from spdm.data.TimeSeries import TimeSeriesAoS
+from spdm.core.Expression import Expression, Variable
+from spdm.core.Field import Field
+from spdm.core.Expression import Expression
+from spdm.core.HTree import List
+from spdm.core.sp_property import sp_property, sp_tree
+from spdm.core.TimeSeries import TimeSeriesAoS
 from spdm.geometry.Curve import Curve
 from spdm.geometry.GeoObject import GeoObject, GeoObjectSet
 from spdm.geometry.Point import Point

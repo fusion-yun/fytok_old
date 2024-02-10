@@ -1,6 +1,6 @@
 import scipy.constants
-from spdm.data.Expression import zero
-from spdm.data.sp_property import sp_tree
+from spdm.core.Expression import zero
+from spdm.core.sp_property import sp_tree
 from spdm.utils.tags import _not_found_
 from fytok.modules.AMNSData import amns
 from fytok.modules.CoreSources import CoreSources

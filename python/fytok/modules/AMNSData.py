@@ -1,9 +1,9 @@
 import numpy as np
 
-from spdm.data.HTree import Dict, HTree
-from spdm.data.Expression import Expression
-from spdm.data.Function import Function, Polynomials
-from spdm.data.sp_property import sp_property, sp_tree, SpTree
+from spdm.core.HTree import Dict, HTree
+from spdm.core.Expression import Expression
+from spdm.core.Function import Function, Polynomials
+from spdm.core.sp_property import sp_property, sp_tree, SpTree
 from spdm.utils.tags import _not_found_
 from spdm.utils.typing import array_type
 

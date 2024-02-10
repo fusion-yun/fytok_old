@@ -2,8 +2,8 @@ import os
 import pathlib
 
 import numpy as np
-from spdm.data.Entry import Entry
-from spdm.data.File import File
+from spdm.core.Entry import Entry
+from spdm.core.File import File
 from fytok.utils.logger import logger
 from spdm.view.View import display
 

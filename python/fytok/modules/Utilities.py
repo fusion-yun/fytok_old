@@ -5,17 +5,17 @@ import typing
 from dataclasses import dataclass
 from enum import IntFlag
 import numpy as np
-from spdm.data.Path import Path, update_tree, merge_tree
-from spdm.data.Actor import Actor
-from spdm.data.AoS import AoS
-from spdm.data.Field import Field
-from spdm.data.Expression import Expression, zero
-from spdm.data.Function import Function
-from spdm.data.HTree import Dict, HTree, List
-from spdm.data.Signal import Signal, SignalND
+from spdm.core.Path import Path, update_tree, merge_tree
+from spdm.core.Actor import Actor
+from spdm.core.AoS import AoS
+from spdm.core.Field import Field
+from spdm.core.Expression import Expression, zero
+from spdm.core.Function import Function
+from spdm.core.HTree import Dict, HTree, List
+from spdm.core.Signal import Signal, SignalND
 
-from spdm.data.sp_property import SpTree, sp_property, sp_tree, PropertyTree
-from spdm.data.TimeSeries import TimeSeriesAoS, TimeSlice
+from spdm.core.sp_property import SpTree, sp_property, sp_tree, PropertyTree
+from spdm.core.TimeSeries import TimeSeriesAoS, TimeSlice
 from spdm.geometry.Curve import Curve
 from spdm.utils.typing import array_type, is_array, as_array
 from spdm.utils.tags import _not_found_

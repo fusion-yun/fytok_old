@@ -3,10 +3,10 @@ from __future__ import annotations
 from scipy import constants
 from copy import copy
 import math
-from spdm.data.Expression import Expression, Variable, zero
-from spdm.data.sp_property import sp_tree, sp_property, PropertyTree
-from spdm.data.TimeSeries import TimeSlice, TimeSeriesAoS
-from spdm.data.AoS import AoS
+from spdm.core.Expression import Expression, Variable, zero
+from spdm.core.sp_property import sp_tree, sp_property, PropertyTree
+from spdm.core.TimeSeries import TimeSlice, TimeSeriesAoS
+from spdm.core.AoS import AoS
 from spdm.utils.tags import _not_found_
 from spdm.utils.typing import array_type
 

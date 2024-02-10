@@ -6,8 +6,8 @@ import collections.abc
 import scipy.interpolate
 from skimage import measure
 
-from spdm.data.Field import Field
-from spdm.data.Expression import Variable
+from spdm.core.Field import Field
+from spdm.core.Expression import Variable
 from spdm.geometry.Curve import Curve
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Point import Point

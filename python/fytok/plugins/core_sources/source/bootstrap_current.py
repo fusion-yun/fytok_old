@@ -7,9 +7,9 @@ from fytok.modules.Equilibrium import Equilibrium
 from fytok.utils.atoms import atoms
 from fytok.utils.logger import logger
 
-from spdm.data.Function import Function
-from spdm.data.Expression import Variable, Expression, piecewise
-from spdm.data.sp_property import sp_tree
+from spdm.core.Function import Function
+from spdm.core.Expression import Variable, Expression, piecewise
+from spdm.core.sp_property import sp_tree
 from spdm.utils.typing import array_type
 
 

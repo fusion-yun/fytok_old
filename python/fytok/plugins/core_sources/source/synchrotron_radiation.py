@@ -1,7 +1,7 @@
 import typing
 import scipy.constants
-from spdm.data.Expression import Variable, Expression, zero
-from spdm.data.sp_property import sp_tree
+from spdm.core.Expression import Variable, Expression, zero
+from spdm.core.sp_property import sp_tree
 
 from fytok.utils.logger import logger
 from fytok.utils.atoms import atoms

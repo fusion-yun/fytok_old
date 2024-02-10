@@ -2,15 +2,15 @@ from __future__ import annotations
 import numpy as np
 from typing_extensions import Self
 
-from spdm.data.AoS import AoS
-from spdm.data.Expression import Expression
-from spdm.data.sp_property import sp_property
-from spdm.data.TimeSeries import TimeSeriesAoS, TimeSlice
+from spdm.core.AoS import AoS
+from spdm.core.Expression import Expression
+from spdm.core.sp_property import sp_property
+from spdm.core.TimeSeries import TimeSeriesAoS, TimeSlice
 from spdm.geometry.Curve import Curve
 from spdm.geometry.GeoObject import GeoObject, GeoObjectSet
 from spdm.geometry.Point import Point
 from spdm.utils.tags import _not_found_
-from spdm.data.Path import update_tree
+from spdm.core.Path import update_tree
 from spdm.mesh.Mesh import Mesh
 
 from .Utilities import *

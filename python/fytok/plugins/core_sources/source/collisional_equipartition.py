@@ -5,8 +5,8 @@ import typing
 
 from spdm.utils.typing import array_type
 from spdm.utils.tags import _not_found_
-from spdm.data.Expression import Expression, Variable, smooth, zero
-from spdm.data.sp_property import sp_tree
+from spdm.core.Expression import Expression, Variable, smooth, zero
+from spdm.core.sp_property import sp_tree
 from fytok.modules.CoreProfiles import CoreProfiles, CoreProfilesSpecies
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.modules.CoreSources import CoreSources

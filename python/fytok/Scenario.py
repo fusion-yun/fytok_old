@@ -1,7 +1,7 @@
 from functools import cached_property
 
-from spdm.data.Actor import Actor
-from spdm.data.sp_property import sp_tree
+from spdm.core.Actor import Actor
+from spdm.core.sp_property import sp_tree
 from .modules.PulseSchedule import PulseSchedule
 from .modules.TransportSolverNumerics import TransportSolverNumerics
 

@@ -2,9 +2,9 @@ from functools import cached_property
 
 from  ..ontology import edge_sources import _T_edge_sources, _T_edge_sources_source
 from spdm.utils.tags import _undefined_
-from spdm.data.Dict import Dict
-from spdm.data.HTree import List
-from spdm.data.sp_property import sp_property, SpTree
+from spdm.core.Dict import Dict
+from spdm.core.HTree import List
+from spdm.core.sp_property import sp_property, SpTree
 
 
 class EdgeSources(_T_edge_sources):

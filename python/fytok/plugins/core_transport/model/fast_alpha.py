@@ -1,7 +1,7 @@
 import numpy as np
 
-from spdm.data.Expression import derivative
-from spdm.data.sp_property import sp_tree
+from spdm.core.Expression import derivative
+from spdm.core.sp_property import sp_tree
 
 from fytok.modules.CoreProfiles import CoreProfiles
 from fytok.modules.CoreTransport import CoreTransport

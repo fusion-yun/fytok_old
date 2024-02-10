@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.constants
-from spdm.data.sp_property import sp_tree
+from spdm.core.sp_property import sp_tree
 from fytok.modules.CoreProfiles import CoreProfiles
 from fytok.modules.CoreTransport import CoreTransport
 from fytok.modules.CoreSources import CoreSources

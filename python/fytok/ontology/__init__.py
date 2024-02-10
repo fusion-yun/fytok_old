@@ -2,7 +2,7 @@ __path__ = __import__("pkgutil").extend_path(__path__, __name__)
 
 import os
 import typing
-from spdm.data.sp_property import PropertyTree
+from spdm.core.sp_property import PropertyTree
 from ..utils.logger import logger
 
 

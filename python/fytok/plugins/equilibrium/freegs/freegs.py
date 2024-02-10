@@ -14,9 +14,9 @@ from fytok.modules.Magnetics import Magnetics
 from fytok.modules.PFActive import PFActive
 from fytok.modules.Wall import Wall
 from fytok.plugins.equilibrium.fy_eq import FyEqAnalyze
-from spdm.data.TimeSeries import TimeSlice
+from spdm.core.TimeSeries import TimeSlice
 from spdm.mesh.Mesh import Mesh
-from spdm.data.Field import Field
+from spdm.core.Field import Field
 
 from fytok.modules.Utilities import *
 from spdm.utils.constants import *

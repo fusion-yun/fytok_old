@@ -5,8 +5,8 @@ import numpy as np
 import scipy.optimize
 import scipy.ndimage  # for maximum_filter,binary_erosion, generate_binary_structure
 
-from spdm.data.Expression import Variable
-from spdm.data.Field import Field
+from spdm.core.Expression import Variable
+from spdm.core.Field import Field
 from spdm.utils.logger import logger
 from spdm.utils.typing import ArrayType, NumericType, ScalarType
 

@@ -3,9 +3,9 @@ import itertools
 import re
 import numpy as np
 from spdm.utils.logger import logger
-from spdm.data.File import File
-from spdm.data.Entry import Entry
-from spdm.data.Expression import Expression
+from spdm.core.File import File
+from spdm.core.Entry import Entry
+from spdm.core.Expression import Expression
 from scipy.interpolate import CubicHermiteSpline
 
 

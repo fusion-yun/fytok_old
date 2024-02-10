@@ -20,7 +20,7 @@ __version__ = FY_VERSION
 try:
     from importlib import resources as impresources
     from . import _mapping
-    from spdm.data.Entry import EntryProxy
+    from spdm.core.Entry import EntryProxy
 
     EntryProxy._mapping_path.extend([p.resolve() for p in impresources.files(_mapping)._paths])
 

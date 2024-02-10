@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from spdm.data.Path import update_tree
-from spdm.data.Entry import open_entry
-from spdm.data.HTree import HTree
-from spdm.data.Actor import Actor
-from spdm.data.sp_property import sp_tree
-from spdm.data.TimeSeries import TimeSlice, TimeSeriesAoS
+from spdm.core.Path import update_tree
+from spdm.core.Entry import open_entry
+from spdm.core.HTree import HTree
+from spdm.core.Actor import Actor
+from spdm.core.sp_property import sp_tree
+from spdm.core.TimeSeries import TimeSlice, TimeSeriesAoS
 from spdm.geometry.GeoObject import GeoObject
 from spdm.utils.tags import _not_found_
 from spdm.view import View as sp_view

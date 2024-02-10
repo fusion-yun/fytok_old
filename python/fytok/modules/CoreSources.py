@@ -1,10 +1,10 @@
 from __future__ import annotations
 from copy import copy, deepcopy
 import math
-from spdm.data.AoS import AoS
-from spdm.data.sp_property import sp_property, sp_tree
-from spdm.data.TimeSeries import TimeSeriesAoS
-from spdm.data.Expression import Expression, Variable, zero, one
+from spdm.core.AoS import AoS
+from spdm.core.sp_property import sp_property, sp_tree
+from spdm.core.TimeSeries import TimeSeriesAoS
+from spdm.core.Expression import Expression, Variable, zero, one
 from spdm.utils.tags import _not_found_
 
 from .CoreProfiles import CoreProfiles

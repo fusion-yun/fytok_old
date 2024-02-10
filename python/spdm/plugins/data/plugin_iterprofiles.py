@@ -4,9 +4,9 @@ import scipy.constants
 import numpy as np
 import pandas as pd
 
-from spdm.data.Expression import Piecewise, Variable
-from spdm.data.File import File
-from spdm.data.Entry import Entry
+from spdm.core.Expression import Piecewise, Variable
+from spdm.core.File import File
+from spdm.core.Entry import Entry
 from spdm.utils.typing import _not_found_
 from spdm.numlib.smooth import smooth_1d
 from spdm.numlib.misc import step_function_approx

@@ -4,11 +4,11 @@ from __future__ import annotations
 import numpy as np
 import scipy.constants
 from scipy import constants
-from spdm.data.AoS import AoS
-from spdm.data.Expression import Expression, Variable, zero, derivative
-from spdm.data.sp_property import sp_property, sp_tree
-from spdm.data.TimeSeries import TimeSeriesAoS
-from spdm.data.Path import update_tree
+from spdm.core.AoS import AoS
+from spdm.core.Expression import Expression, Variable, zero, derivative
+from spdm.core.sp_property import sp_property, sp_tree
+from spdm.core.TimeSeries import TimeSeriesAoS
+from spdm.core.Path import update_tree
 from spdm.utils.tags import _not_found_
 
 from ..utils.atoms import atoms

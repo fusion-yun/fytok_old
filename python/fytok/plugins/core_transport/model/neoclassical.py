@@ -1,11 +1,11 @@
 import numpy as np
 from scipy import constants
 from spdm.numlib.misc import array_like
-from spdm.data.Function import Function, function_like
-from spdm.data.Expression import derivative
-from spdm.data.Entry import _next_
+from spdm.core.Function import Function, function_like
+from spdm.core.Expression import derivative
+from spdm.core.Entry import _next_
 from spdm.utils.tags import _not_found_
-from spdm.data.Path import update_tree
+from spdm.core.Path import update_tree
 from fytok.modules.CoreProfiles import CoreProfiles
 from fytok.modules.CoreTransport import CoreTransport
 from fytok.modules.Equilibrium import Equilibrium

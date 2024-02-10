@@ -1,5 +1,5 @@
 import typing
-from spdm.data.AoS import AoS
+from spdm.core.AoS import AoS
 from spdm.geometry.Circle import Circle
 from spdm.geometry.GeoObject import GeoObject
 from spdm.geometry.Polyline import Polyline

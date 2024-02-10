@@ -7,8 +7,8 @@ from fytok.modules.Equilibrium import Equilibrium
 from spdm.utils.logger import logger
 from spdm.utils.typing import array_type
 from spdm.utils.tags import _not_found_
-from spdm.data.Expression import Variable, Expression, Piecewise, derivative
-from spdm.data.sp_property import sp_tree
+from spdm.core.Expression import Variable, Expression, Piecewise, derivative
+from spdm.core.sp_property import sp_tree
 
 
 @sp_tree
