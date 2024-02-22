@@ -119,7 +119,9 @@ class CoreTransportModel(Module):
     time_slice: TimeSeriesAoS[CoreTransportTimeSlice]
 
     def preprocess(self, *args, **kwargs) -> CoreTransportTimeSlice:
-        current = super().preprocess(*args, **kwargs)
+        current: CoreTransportTimeSlice = super().preprocess(*args, **kwargs)
+
+        current["vacuum_toroidal_field"] = self.inports["equilibrium/time_slice/0/vacuum_toroidal_field"].fetch()
 
         grid = current.get_cache("profiles_1d/grid_d", _not_found_)
 

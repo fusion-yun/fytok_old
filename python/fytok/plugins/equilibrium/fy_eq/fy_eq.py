@@ -546,6 +546,10 @@ class FyEquilibriumProfiles1D(Equilibrium.TimeSlice.Profiles1D):
         return self.dpsi_drho_tor * self._coord.rho_tor_boundary
 
     @sp_property
+    def dpsi_norm_drho_tor_norm(self) -> Expression:
+        return self.dpsi_drho_tor * self._coord.rho_tor_boundary/(self._coord.psi_boundary-self._coord.psi_axis)
+
+    @sp_property
     def dvolume_dpsi(self) -> Expression:
         return self._coord.dvolume_dpsi
 
