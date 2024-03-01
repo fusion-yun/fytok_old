@@ -18,7 +18,7 @@ from spdm.geometry.Curve import Curve
 from spdm.mesh.Mesh import Mesh
 from spdm.mesh.mesh_curvilinear import CurvilinearMesh
 from spdm.utils.tags import _not_found_
-from spdm.utils.typing import ArrayLike, NumericType, array_type, scalar_type, as_array
+from spdm.utils.typing import ArrayLike, NumericType, array_type, scalar_type
 
 from fytok.modules.Equilibrium import Equilibrium
 from fytok.utils.logger import logger
@@ -840,7 +840,7 @@ class FyEquilibriumBoundarySeparatrix(FyEquilibriumBoundary):
     @sp_property(coordinates="r z")
     def outline(self) -> GeoObjectSet:
         """RZ outline of the plasma boundary"""
-        return GeoObjectSet([surf for _, surf in self._coord.find_surfaces(self.psi_norm, magnetic_axis=False)])
+        return GeoObjectSet([surf for _, surf in self._coord.find_surfaces(self.psi_norm)])
 
     psi_norm: float = 1.0
 

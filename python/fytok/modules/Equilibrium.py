@@ -424,11 +424,11 @@ class EquilibriumTimeSlice(equilibrium._T_equilibrium_time_slice):
                     geo["boundary"]._metadata["styles"] = {
                         "$matplotlib": {"color": "blue", "linestyle": "dotted", "linewidth": 0.5}
                     }
-                    geo["boundary_separatrix"] = self.boundary_separatrix.outline
-                    if geo["boundary_separatrix"] is not _not_found_:
-                        geo["boundary_separatrix"]._metadata["styles"] = {
-                            "$matplotlib": {"color": "red", "linestyle": "dashed", "linewidth": 0.25}
-                        }
+                    # geo["boundary_separatrix"] = self.boundary_separatrix.outline
+                    # if geo["boundary_separatrix"] is not _not_found_:
+                    #     geo["boundary_separatrix"]._metadata["styles"] = {
+                    #         "$matplotlib": {"color": "red", "linestyle": "dashed", "linewidth": 0.25}
+                    #     }
                 except Exception as error:
                     raise error
 
