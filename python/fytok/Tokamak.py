@@ -1,14 +1,16 @@
 from __future__ import annotations
-
+import typing
 from spdm.core.Path import update_tree
 from spdm.core.Entry import open_entry
 from spdm.core.HTree import HTree
 from spdm.core.Actor import Actor
 from spdm.core.sp_property import sp_tree
-from spdm.core.TimeSeries import TimeSlice, TimeSeriesAoS
 from spdm.geometry.GeoObject import GeoObject
 from spdm.utils.tags import _not_found_
-from spdm.view import View as sp_view
+
+# ---------------------------------
+from .utils.envs import *
+from .utils.logger import logger
 
 # ---------------------------------
 from .modules.DatasetFAIR import DatasetFAIR
@@ -29,8 +31,6 @@ from .modules.TF import TF
 from .modules.Wall import Wall
 from .modules.TransportSolverNumerics import TransportSolverNumerics
 
-from .utils.envs import *
-from .utils.logger import logger
 from .ontology import GLOBAL_ONTOLOGY
 
 # from .modules.EdgeProfiles import EdgeProfiles
@@ -42,6 +42,87 @@ from .ontology import GLOBAL_ONTOLOGY
 
 @sp_tree
 class Tokamak(Actor):
+    # fmt:off
+    dataset_fair            : DatasetFAIR               
+
+    # device
+    wall                    : Wall                      
+
+    # magnetics
+    tf                      : TF                        
+    pf_active               : PFActive                  
+    magnetics               : Magnetics                 
+
+    # aux
+    ec_launchers            : ECLaunchers               
+    ic_antennas             : ICAntennas                    
+    lh_antennas             : LHAntennas                
+    nbi                     : NBI                       
+    pellets                 : Pellets                   
+
+    # diag
+    interferometer          : Interferometer            
+
+    # transport: state of device
+    equilibrium             : Equilibrium               
+
+    core_profiles           : CoreProfiles              
+    core_transport          : CoreTransport             
+    core_sources            : CoreSources               
+
+    # edge_profiles         : EdgeProfiles              
+    # edge_transport        : EdgeTransport             
+    # edge_sources          : EdgeSources               
+    # edge_transport_solver : EdgeTransportSolver       
+
+    # solver
+    transport_solver        : TransportSolverNumerics   
+
+    summary                 : Summary                   
+    # fmt:on
+
+    @property
+    def brief_summary(self) -> str:
+        """综述模拟内容"""
+        return f"""{FY_LOGO}
+---------------------------------------------------------------------------------------------------
+                                                Brief Summary
+---------------------------------------------------------------------------------------------------
+Dataset Description:
+{self.dataset_fair}
+---------------------------------------------------------------------------------------------------
+Modules:
+    transport_solver        : {self.transport_solver.code }
+    equilibrium             : {self.equilibrium.code }
+
+    core_profiles           : N/A             
+    core_transport          : {','.join([str(s.code) for s in self.core_transport.model])}
+    core_sources            : {','.join([str(s.code)  for s in self.core_sources.source])}
+---------------------------------------------------------------------------------------------------
+"""
+
+    @property
+    def title(self) -> str:
+        """标题，由初始化信息 dataset_fair.description"""
+        return f"{self.dataset_fair.description}  time={self.time:.2f}s"
+
+    @property
+    def tag(self) -> str:
+        """当前状态标签，由程序版本、用户名、时间戳等信息确定"""
+        return f"{self.dataset_fair.description.tag}_{int(self.time*100):06d}"
+
+    @property
+    def shot(self) -> int:
+        return self._shot
+
+    @property
+    def run(self) -> int:
+        return self._run
+
+    @property
+    def device(self) -> str:
+        return self._device
+
     def __init__(
         self,
         *args,
@@ -78,128 +159,36 @@ class Tokamak(Actor):
         self._device = device
         self._metadata.setdefault("name", device)
 
-    @property
-    def brief_summary(self) -> str:
-        """综述模拟内容"""
-        return f"""{FY_LOGO}
----------------------------------------------------------------------------------------------------
-                                                Brief Summary
----------------------------------------------------------------------------------------------------
-Dataset Description:
-{self.dataset_fair}
----------------------------------------------------------------------------------------------------
-Modules:
-    transport_solver        : {self.transport_solver.code }
-    equilibrium             : {self.equilibrium.code }
-
-    core_profiles           : N/A             
-    core_transport          : {','.join([str(s.code) for s in self.core_transport.model])}
-    core_sources            : {','.join([str(s.code)  for s in self.core_sources.source])}
----------------------------------------------------------------------------------------------------
-"""
-
-    # Data source:
-    #     {pprint.pformat(str(self._entry).split(','))}
-    # ---------------------------------------------------------------------------------------------------
-
-    # File: {__file__}:{__package__}.{self.__class__.__name__}
-
-    # edge_profiles           : N/A
-    # edge_transport          : N/A
-    # edge_sources            : N/A
-    # edge_transport_solver   : N/A
-    @property
-    def title(self) -> str:
-        """标题，由初始化信息 dataset_fair.description"""
-        return f"{self.dataset_fair.description}  time={self.time:.2f}s"
-
-    @property
-    def tag(self) -> str:
-        """当前状态标签，由程序版本、用户名、时间戳等信息确定"""
-        return f"{self.dataset_fair.description.tag}_{int(self.time*100):06d}"
-
-    @property
-    def shot(self) -> int:
-        return self._shot
-
-    @property
-    def run(self) -> int:
-        return self._run
-
-    @property
-    def device(self) -> str:
-        return self._device
-
-    # fmt:off
-    # device
-    dataset_fair            : DatasetFAIR               
-
-    wall                    : Wall                      
-
-    # magnetics
-    tf                      : TF                        
-    pf_active               : PFActive                  
-    magnetics               : Magnetics                 
-
-    # aux
-    ec_launchers            : ECLaunchers               
-    ic_antennas             : ICAntennas                    
-    lh_antennas             : LHAntennas                
-    nbi                     : NBI                       
-    pellets                 : Pellets                   
-
-    # diag
-    interferometer          : Interferometer            
-
-    # transport: state of device
-    equilibrium             : Equilibrium               
-
-    core_profiles           : CoreProfiles              
-    core_transport          : CoreTransport             
-    core_sources            : CoreSources               
-
-    # edge_profiles         : EdgeProfiles              
-    # edge_transport        : EdgeTransport             
-    # edge_sources          : EdgeSources               
-    # edge_transport_solver : EdgeTransportSolver       
-
-    # solver
-    transport_solver        : TransportSolverNumerics   
-
-    summary                 : Summary                   
-    # fmt:on
-
     def initialize(self, *args, **kwargs):
         super().initialize(*args, **kwargs)
 
-        self.core_profiles.initialize(*args, **kwargs)
-        self.equilibrium.initialize(*args, **kwargs)
-        self.core_sources.initialize(*args, **kwargs)
-        self.core_transport.initialize(*args, **kwargs)
-        self.transport_solver.initialize(*args, **kwargs)
+        self.core_profiles.initialize(time=self.time)
+        self.equilibrium.initialize(time=self.time, pf_active=self.pf_active, wall=self.wall, magnetics=self.magnetics)
+        self.core_sources.initialize(time=self.time, equilibrium=self.equilibrium, core_profiles=self.core_profiles)
+        self.core_transport.initialize(time=self.time, equilibrium=self.equilibrium, core_profiles=self.core_profiles)
+        self.transport_solver.initialize(
+            time=self.time,
+            equilibrium=self.equilibrium,
+            core_profiles=self.core_profiles,
+            core_sources=self.core_sources,
+            core_transport=self.core_transport,
+        )
 
-    def advance(self, *args, **kwargs):
-        super().advance(*args, **kwargs)
-        self.equilibrium.advance(time=self.time)
-        self.core_sources.advance(time=self.time)
-        self.core_transport.advance(time=self.time)
-        self.transport_solver.advance(time=self.time)
-
-        return
-
-    def refresh(self, *args, time=None, **kwargs) -> None:
-        super().refresh(time=time)
+    def refresh(self, *args, **kwargs) -> None:
+        super().refresh(*args, **kwargs)
 
         self.core_profiles.refresh(time=self.time)
         self.equilibrium.refresh(time=self.time)
         self.core_sources.refresh(time=self.time)
         self.core_transport.refresh(time=self.time)
 
-        self.transport_solver.refresh(*args, time=self.time, **kwargs)
-
+    def solve(self, *args, **kwargs) -> None:
+        solver_1d = self.transport_solver.refresh(*args, time=self.time, **kwargs)
         profiles_1d = self.transport_solver.fetch()
 
         self.core_profiles.time_slice.current["profiles_1d"] = profiles_1d
+    
+        return solver_1d
 
     def flush(self):
         profiles_1d = self.transport_solver.fetch()
@@ -214,7 +203,7 @@ Modules:
 
         super().flush()
 
-    def __geometry__(self, **kwargs) -> GeoObject:
+    def __geometry__(self, **kwargs) -> GeoObject | typing.Dict:
         geo = {}
 
         o_list = [
@@ -257,60 +246,3 @@ Modules:
         geo["$styles"] = styles
 
         return geo
-
-    def _repr_svg_(self):
-        try:
-            res = sp_view.display(self.__geometry__(), output="svg")
-        except Exception as error:
-            raise RuntimeError(f"{self}") from error
-            # res = None
-        return res
-
-    # def plot(self, axis=None, /,  **kwargs):
-    #     import matplotlib.pylab as plt
-    #     if axis is None:
-    #         axis = plt.gca()
-    #     if kwargs.get("wall", True) is not False:
-    #         self.wall.plot(axis, **kwargs.get("wall", {}))
-    #     if kwargs.get("pf_active", True) is not False:
-    #         self.pf_active.plot(axis, **kwargs.get("pf_active", {}))
-    #     if kwargs.get("magnetics", True) is not False:
-    #         self.magnetics.plot(axis,  **kwargs.get("magnetics", {}))
-    #     if kwargs.get("equilibrium", True) is not False:
-    #         self.equilibrium.plot(axis,  **kwargs.get("equilibrium", {}))
-    #     axis.set_aspect('equal')
-    #     axis.axis('scaled')
-    #     axis.set_xlabel(r"Major radius $R$ [m]")
-    #     axis.set_ylabel(r"Height $Z$ [m]")
-    #     # axis.legend()
-    #     return axis
-    # def display(self, *args, **kwargs):
-    #     return display([(self.wall, kwargs.pop("wall", {})),
-    #                     (self.pf_active, kwargs.pop("pf_active", {})),
-    #                     (self.magnetics, kwargs.pop("magnetics", {})),
-    #                     (self.equilibrium, kwargs.pop("equilibrium", {})),
-    #                     ], *args,
-    #                    xlabel=kwargs.pop("xlabel", r"Major radius $R$ [m]"),
-    #                    ylabel=kwargs.pop("ylabel", r"Height $Z$ [m]"),
-    #                    title=kwargs.pop("title", f"{self.name} time={self.time}s"),
-    #                    **kwargs)
-    # def initialize(self):
-    #     r"""
-    #         Set initial conditions self-consistently
-    #     """
-    #     gamma = self.equilibrium.profiles_1d.dvolume_drho_tor  \
-    #         * self.equilibrium.profiles_1d.gm2    \
-    #         / self.equilibrium.profiles_1d.fpol \
-    #         * self.equilibrium.profiles_1d.dpsi_drho_tor \
-    #         / (TWOPI**2)
-    #     j_total = -gamma.derivative  \
-    #         / self.equilibrium.profiles_1d.rho_tor[-1]**2 \
-    #         * self.equilibrium.profiles_1d.dpsi_drho_tor  \
-    #         * (self.equilibrium.profiles_1d.fpol**2) \
-    #         / (constants.mu_0*self.vacuum_toroidal_field.b0) \
-    #         * (constants.pi)
-
-    #     j_total[1:] /= self.equilibrium.profiles_1d.dvolume_drho_tor[1:]
-    #     j_total[0] = 2*j_total[1]-j_total[2]
-
-    #     self.core_sources["j_parallel"] = j_total
