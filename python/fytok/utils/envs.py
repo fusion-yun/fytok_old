@@ -41,11 +41,8 @@ FY_LOGO = rf"""
 /_/    \__, /    |_|\___/|_|\_\
       /____/
 
- Copyright (c) 2021-present Zhi YU (Institute of Plasma Physics Chinese Academy of Sciences)
+ Copyright (c) 2021-present Zhi YU @ Institute of Plasma Physics Chinese Academy of Sciences 
             
- url: https://gitee.com/openfusion/fytok_tutorial 
-      https://github.com/fusion-yun/fytok_tutorial
-
  version = {FY_VERSION}  (spdm={sp_envs.SP_VERSION} {FY_EXT_VERSION})
 
  Run by {getpass.getuser()} at {datetime.datetime.now().isoformat()}.
