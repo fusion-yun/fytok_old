@@ -207,18 +207,11 @@ class CoreTransport(IDS):
         for model in self.model:
             model.initialize()
 
-    def refresh(self, *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None, **kwargs):
-        super().refresh(*args, **kwargs)
+    def refresh(self, *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None, time=None, **kwargs):
+        super().refresh(*args, time=time, **kwargs)
 
         for model in self.model:
             model.refresh(time=self.time, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
-
-    def advance(self, *args, equilibrium: Equilibrium = None, core_profiles: CoreProfiles = None, **kwargs):
-        """advance time_series to next slice"""
-        super().advance(*args, **kwargs)
-
-        for model in self.model:
-            model.advance(time=self.time, equilibrium=equilibrium, core_profiles=core_profiles, **kwargs)
 
     def flush(self):
         super().flush()

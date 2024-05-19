@@ -41,12 +41,6 @@ class EquilibriumGlobalQuantities(equilibrium._T_equilibrium_global_quantities):
 
     psi_boundary: float = sp_property(units="Wb")
 
-    # @sp_tree
-    # class MagneticAxis:
-    #     r: float = sp_property(units="m")
-    #     z: float = sp_property(units="m")
-    #     b_field_tor: float = sp_property(units="T")
-
     b_field_tor_axis: float = sp_property(units="T")
 
     magnetic_axis: Point
@@ -424,11 +418,11 @@ class EquilibriumTimeSlice(equilibrium._T_equilibrium_time_slice):
                     geo["boundary"]._metadata["styles"] = {
                         "$matplotlib": {"color": "blue", "linestyle": "dotted", "linewidth": 0.5}
                     }
-                    geo["boundary_separatrix"] = self.boundary_separatrix.outline
-                    if geo["boundary_separatrix"] is not _not_found_:
-                        geo["boundary_separatrix"]._metadata["styles"] = {
-                            "$matplotlib": {"color": "red", "linestyle": "dashed", "linewidth": 0.25}
-                        }
+                    # geo["boundary_separatrix"] = self.boundary_separatrix.outline
+                    # if geo["boundary_separatrix"] is not _not_found_:
+                    #     geo["boundary_separatrix"]._metadata["styles"] = {
+                    #         "$matplotlib": {"color": "red", "linestyle": "dashed", "linewidth": 0.25}
+                    #     }
                 except Exception as error:
                     raise error
 

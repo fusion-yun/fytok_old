@@ -444,8 +444,5 @@ class CoreProfiles(IDS):
     def refresh(self, *args, equilibrium: Equilibrium = None, **kwargs):
         return super().refresh(*args, equilibrium=equilibrium, **kwargs)
 
-    def advance(self, *args, **kwargs):
-        return super().advance(*args, **kwargs)
-
     def fetch(self, *args, **kwargs) -> CoreProfilesTimeSlice:
         return super().fetch(*args, **kwargs)
